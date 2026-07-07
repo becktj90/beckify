@@ -12,11 +12,15 @@
 export interface ResultRow {
   label: string;
   value: string;
+  unit?: string;
+  note?: string;
   kind?: "normal" | "header" | "warn" | "pass" | "fail" | "note";
 }
 
-/** A calculator either produces result rows or a single error message. */
-export type ComputeResult = { rows: ResultRow[] } | { error: string };
+/** A calculator produces result rows. */
+export interface ComputeResult {
+  rows: ResultRow[];
+}
 
 export const ok = (rows: ResultRow[]): ComputeResult => ({ rows });
 export const err = (error: string): ComputeResult => ({ error });
