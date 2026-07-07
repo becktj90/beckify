@@ -30,6 +30,12 @@ import {
   computeCircularMils,
   computeUnitConversions,
 } from "@/lib/ee/fundamentals";
+import {
+  computeVoltageDrop,
+  computeMinWireSize,
+  computeConduitFill,
+  computeLightingVdOptimizer,
+} from "@/lib/ee/conductors";
 
 // ============================================================================
 // FUNDAMENTALS
@@ -389,7 +395,7 @@ const conductorsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeVoltageDrop,
     formula: "VD = (2 × K × I × L) / CM",
   },
   {
@@ -427,7 +433,7 @@ const conductorsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeMinWireSize,
     reference: "NEC Table 310.16",
   },
   {
@@ -455,7 +461,7 @@ const conductorsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeConduitFill,
     reference: "NEC Chapter 9, Table 1",
   },
   {
@@ -493,7 +499,7 @@ const conductorsTools: Tool[] = [
         unit: "ft",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeLightingVdOptimizer,
   },
 ];
 
