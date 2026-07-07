@@ -1,0 +1,508 @@
+/**
+ * ============================================================================
+ * DESIGN TOKENS
+ * ============================================================================
+ * Change a color, font, radius, or shadow here and it updates everywhere on
+ * the site. This is the ONE place to edit the visual system.
+ *
+ * Theme: deep-space / nebula. Near-black background, glowing violet/blue
+ * accents, starfield backdrop. See .starfield and .nebula-glow below.
+ * ============================================================================
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Orbitron:wght@600;700;800&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-logo: "Orbitron", "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", "Courier New", monospace;
+
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px -8px rgba(0, 0, 0, 0.55);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.35), 0 20px 48px -12px rgba(139, 123, 255, 0.22);
+}
+
+:root {
+  /* Base neutrals — deep space */
+  --background: #05060f;
+  --surface: rgba(255, 255, 255, 0.035);
+  --foreground: #eef0fa;
+  --muted: #9497b8;
+  --border: rgba(255, 255, 255, 0.09);
+
+  /* Accent — nebula violet -> blue */
+  --accent: #8b7bff;
+  --accent-2: #4f8bff;
+  --accent-foreground: #ffffff;
+  --accent-soft: rgba(139, 123, 255, 0.14);
+  --accent-ring: rgba(139, 123, 255, 0.4);
+
+  /* Spacing / sizing tokens */
+  --content-max-width: 72rem;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Reusable utility classes used by page components */
+.card-surface {
+  background-color: var(--surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.card-surface:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Wordmark treatment matching the geometric font used in the Beckify logo. */
+.logo-text {
+  font-family: var(--font-logo);
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================================
+ * BRAND LOCKUP — hero mark + wordmark, styled like real logo/branding art:
+ * pulsing sonar rings behind the mark, a reticle frame around it, a
+ * breathing glow, a glowing wordmark, and a shimmering underline.
+ * ============================================================================ */
+.brand-mark {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .brand-mark {
+    width: 7.5rem;
+    height: 7.5rem;
+  }
+}
+
+.brand-mark-glow {
+  position: absolute;
+  inset: -25%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 65%);
+  filter: blur(26px);
+  opacity: 0.5;
+}
+
+.brand-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  animation: ring-pulse 4.2s ease-out infinite;
+}
+
+@keyframes ring-pulse {
+  0% { transform: scale(0.82); opacity: 0.6; }
+  70% { opacity: 0.08; }
+  100% { transform: scale(1.75); opacity: 0; }
+}
+
+.brand-mark-img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: mark-breathe 5s ease-in-out infinite;
+}
+
+@keyframes mark-breathe {
+  0%, 100% {
+    filter: drop-shadow(0 0 14px rgba(139, 123, 255, 0.5)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.4));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 28px rgba(139, 123, 255, 0.8)) drop-shadow(0 0 46px rgba(79, 139, 255, 0.4));
+    transform: scale(1.035);
+  }
+}
+
+.brand-frame {
+  position: absolute;
+  inset: -1.15rem;
+  pointer-events: none;
+}
+
+.frame-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--accent);
+  opacity: 0.5;
+}
+
+.frame-corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 4px 0 0 0; }
+.frame-corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 4px 0 0; }
+.frame-corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 4px; }
+.frame-corner.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 4px 0; }
+
+.brand-wordmark {
+  position: relative;
+  display: inline-block;
+  animation: wordmark-glow 5s ease-in-out infinite;
+}
+
+@keyframes wordmark-glow {
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(139, 123, 255, 0.3)) drop-shadow(0 0 40px rgba(79, 139, 255, 0.12)); }
+  50% { filter: drop-shadow(0 0 30px rgba(139, 123, 255, 0.55)) drop-shadow(0 0 60px rgba(79, 139, 255, 0.28)); }
+}
+
+.brand-underline {
+  width: 130px;
+  height: 2px;
+  margin: 0 auto;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  background-size: 200% 100%;
+  animation: underline-shimmer 3.5s linear infinite;
+}
+
+@keyframes underline-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Fixed starfield backdrop — layered radial-gradient dots at different
+ * scales/opacities to fake a scattered field of stars cheaply. Two star
+ * layers drift slowly at different speeds (parallax) and twinkle so the
+ * background feels alive rather than static. */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: var(--background);
+}
+
+.starfield::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image:
+    radial-gradient(1.6px 1.6px at 15% 20%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1.2px 1.2px at 65% 10%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.4px 1.4px at 40% 55%, rgba(255,255,255,0.85), transparent),
+    radial-gradient(1px 1px at 85% 65%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.3px 1.3px at 25% 80%, rgba(255,255,255,0.75), transparent),
+    radial-gradient(1px 1px at 92% 30%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 55% 88%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 5% 45%, rgba(255,255,255,0.5), transparent);
+  background-repeat: repeat;
+  background-size: 340px 340px;
+  animation: star-drift-slow 140s linear infinite, star-twinkle 6s ease-in-out infinite;
+}
+
+.starfield::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image:
+    radial-gradient(1px 1px at 30% 30%, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1px 1px at 70% 70%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 10% 90%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.4), transparent);
+  background-repeat: repeat;
+  background-size: 560px 560px;
+  opacity: 0.8;
+  animation: star-drift-fast 90s linear infinite reverse, star-twinkle 4s ease-in-out infinite 1.5s;
+}
+
+@keyframes star-drift-slow {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-170px, 120px, 0); }
+}
+
+@keyframes star-drift-fast {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(220px, -160px, 0); }
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Occasional shooting star streaking across the sky. */
+.shooting-star {
+  position: absolute;
+  top: 12%;
+  left: -10%;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 0 6px 1px rgba(255,255,255,0.9);
+  opacity: 0;
+  animation: shoot 9s linear infinite;
+}
+
+.shooting-star::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 130px;
+  height: 1.5px;
+  background: linear-gradient(to left, rgba(255,255,255,0.8), transparent);
+  transform: translateY(-50%);
+}
+
+.shooting-star:nth-child(2) {
+  top: 32%;
+  animation-delay: 4.2s;
+  animation-duration: 11s;
+}
+
+.shooting-star:nth-child(3) {
+  top: 62%;
+  animation-delay: 7.8s;
+  animation-duration: 13s;
+}
+
+@keyframes shoot {
+  0% { transform: translate(0, 0); opacity: 0; }
+  2% { opacity: 1; }
+  16% { transform: translate(140vw, 90vh); opacity: 0; }
+  100% { transform: translate(140vw, 90vh); opacity: 0; }
+}
+
+/* Slow-drifting planet + asteroid accents for a richer, less flat sky. */
+.space-object {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.space-object.planet {
+  top: 12%;
+  right: 8%;
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle at 35% 30%, #b9a6ff 0%, #6f5bff 45%, #211a4d 100%);
+  box-shadow: 0 0 40px 6px rgba(139, 123, 255, 0.35), inset -10px -10px 20px rgba(0,0,0,0.5);
+  animation: float-slow 18s ease-in-out infinite;
+}
+
+.space-object.planet::after {
+  content: "";
+  position: absolute;
+  inset: -14px -30px;
+  border: 2px solid rgba(255,255,255,0.18);
+  border-radius: 9999px;
+  transform: rotate(-18deg);
+}
+
+.space-object.moon {
+  bottom: 16%;
+  left: 10%;
+  width: 26px;
+  height: 26px;
+  background: radial-gradient(circle at 40% 35%, #eef0fa 0%, #9497b8 60%, #4a4c66 100%);
+  box-shadow: 0 0 18px 2px rgba(255,255,255,0.15);
+  animation: float-slow 13s ease-in-out infinite reverse;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-10px, 16px); }
+}
+
+/* Blurred nebula glows layered above the starfield, behind content. Each
+ * cloud drifts on its own slow loop for a subtle sense of motion. */
+.nebula-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.nebula-glow span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.35;
+}
+
+.nebula-glow span:nth-child(1) {
+  top: -10%;
+  left: 5%;
+  width: 42rem;
+  height: 42rem;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  animation: nebula-drift-1 26s ease-in-out infinite;
+}
+
+.nebula-glow span:nth-child(2) {
+  top: 20%;
+  right: -10%;
+  width: 36rem;
+  height: 36rem;
+  background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%);
+  animation: nebula-drift-2 32s ease-in-out infinite;
+}
+
+.nebula-glow span:nth-child(3) {
+  bottom: -15%;
+  left: 30%;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, #6f5bff 0%, transparent 70%);
+  opacity: 0.22;
+  animation: nebula-drift-3 38s ease-in-out infinite;
+}
+
+@keyframes nebula-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3%, 4%) scale(1.08); }
+}
+
+@keyframes nebula-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-4%, 3%) scale(1.05); }
+}
+
+@keyframes nebula-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3%, -3%) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield::before,
+  .starfield::after,
+  .shooting-star,
+  .space-object,
+  .nebula-glow span,
+  .brand-ring,
+  .brand-mark-img,
+  .brand-wordmark,
+  .brand-underline {
+    animation: none;
+  }
+}
+
+/* ============================================================================
+ * BENTO GRID — asymmetric multi-column layout used on the home page.
+ * Desktop: 3 columns. Hero spans 2 cols × 2 rows (top-left anchor).
+ *          Remaining 4 tiles fill the 3 remaining cells in the grid.
+ * Mobile: single column, tiles stack naturally.
+ * ============================================================================ */
+
+/* Shared bento card base — padding, height rules, cursor */
+.bento-card {
+  padding: 1.5rem;
+  cursor: pointer;
+  height: 100%;
+}
+
+/* Outer grid container */
+.bento-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+}
+
+/* Hero tile — full width on mobile */
+.bento-hero {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+
+/* Content tiles — full width on mobile */
+.bento-cell {
+  grid-column: span 1;
+  grid-row: span 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Desktop breakpoint (≥ 768px) ── */
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, auto);
+    gap: 1.1rem;
+    align-items: stretch;
+  }
+
+  /* Hero spans 2 cols × 2 rows — anchors the top-left */
+  .bento-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  /* Each content cell takes 1 col × 1 row */
+  .bento-cell {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+/* Enhanced hover — lift + stronger border glow on any interactive card */
+.card-surface:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  transform: translateY(-3px);
+}
+
+/* Bento cells get a slightly larger lift */
+.bento-cell .card-surface:hover,
+.bento-hero .card-surface:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 24px 56px -12px rgba(139, 123, 255, 0.28);
+}

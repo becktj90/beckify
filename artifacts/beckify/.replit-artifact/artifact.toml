@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Beckify"
+version = "1.0.0"
+id = "artifacts/beckify"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25282
+
+[services.development]
+run = "pnpm --filter @workspace/beckify run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/beckify", "run", "build" ]
+publicDir = "artifacts/beckify/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25282"
+BASE_PATH = "/"

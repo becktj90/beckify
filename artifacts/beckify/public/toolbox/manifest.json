@@ -1,0 +1,8 @@
+{
+  "name": "Facilities Electrical Toolbox",
+  "short_name": "Toolbox",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d97706",
+  "start_url": "./index.html"
+}
