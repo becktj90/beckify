@@ -36,6 +36,28 @@ import {
   computeConduitFill,
   computeLightingVdOptimizer,
 } from "@/lib/ee/conductors";
+import {
+  computeMotorHpFla,
+  computeTransformerSizing,
+  computeTapChanger,
+} from "@/lib/ee/motors";
+import {
+  computeShortCircuit,
+  computeUpsSizing,
+  computeGeneratorSizing,
+  computeBuildingLoadCalc,
+  computeHarmonicsTHD,
+  computeBessPeakShave,
+} from "@/lib/ee/power-systems";
+import {
+  computeLuxFc,
+  computeInverseSquare,
+  computePhotometrics,
+} from "@/lib/ee/lighting";
+import {
+  computeHazardousAreaLookup,
+  computeIsLoopVerifier,
+} from "@/lib/ee/hazardous";
 
 // ============================================================================
 // FUNDAMENTALS
@@ -544,7 +566,7 @@ const motorsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeMotorHpFla,
     reference: "NEC Table 430.248 / 430.250",
   },
   {
@@ -578,7 +600,7 @@ const motorsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeTransformerSizing,
     formula: "kVA = (V × I) / 1000",
   },
   {
@@ -609,7 +631,7 @@ const motorsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeTapChanger,
   },
 ];
 
@@ -640,7 +662,7 @@ const powerSystemsTools: Tool[] = [
         unit: "kV",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeShortCircuit,
   },
   {
     id: "ups-sizing",
@@ -664,7 +686,7 @@ const powerSystemsTools: Tool[] = [
         unit: "minutes",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeUpsSizing,
   },
   {
     id: "generator-sizing",
@@ -689,7 +711,7 @@ const powerSystemsTools: Tool[] = [
         step: "0.05",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeGeneratorSizing,
   },
   {
     id: "building-load-calc",
@@ -717,7 +739,7 @@ const powerSystemsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeBuildingLoadCalc,
     reference: "NEC Article 220",
   },
   {
@@ -748,7 +770,7 @@ const powerSystemsTools: Tool[] = [
         unit: "A",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeHarmonicsTHD,
   },
   {
     id: "bess-peak-shave",
@@ -774,7 +796,7 @@ const powerSystemsTools: Tool[] = [
         placeholder: "1",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeBessPeakShave,
   },
   {
     id: "lsi-breaker",
@@ -818,7 +840,7 @@ const lightingTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeLuxFc,
   },
   {
     id: "inverse-square",
@@ -842,7 +864,7 @@ const lightingTools: Tool[] = [
         unit: "ft",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeInverseSquare,
     formula: "E = I / d²",
   },
   {
@@ -868,7 +890,7 @@ const lightingTools: Tool[] = [
         unit: "W",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computePhotometrics,
   },
 ];
 
@@ -898,7 +920,7 @@ const hazardousTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeHazardousAreaLookup,
     reference: "NEC Article 500",
   },
   {
@@ -924,7 +946,7 @@ const hazardousTools: Tool[] = [
         unit: "Ω",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeIsLoopVerifier,
   },
 ];
 
