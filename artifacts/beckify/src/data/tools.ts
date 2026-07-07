@@ -19,6 +19,17 @@ import {
   Cog,
 } from "lucide-react";
 import type { Tool } from "@/lib/ee/types";
+import {
+  computeOhmsLaw,
+  computeDcPower,
+  computeAcPower1Ph,
+  computeAcPower3Ph,
+  computeReactanceImpedance,
+  computeResonance,
+  computePfc,
+  computeCircularMils,
+  computeUnitConversions,
+} from "@/lib/ee/fundamentals";
 
 // ============================================================================
 // FUNDAMENTALS
@@ -56,7 +67,7 @@ const fundamentalsTools: Tool[] = [
         placeholder: "Enter resistance",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeOhmsLaw,
     formula: "V = I × R",
     reference: "Ohm's Law",
   },
@@ -94,7 +105,7 @@ const fundamentalsTools: Tool[] = [
         unit: "Ω",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeDcPower,
     formula: "P = V × I = I² × R = V² / R",
   },
   {
@@ -127,7 +138,7 @@ const fundamentalsTools: Tool[] = [
         step: "0.01",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeAcPower1Ph,
     formula: "P = V × I × PF",
   },
   {
@@ -159,7 +170,7 @@ const fundamentalsTools: Tool[] = [
         step: "0.01",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeAcPower3Ph,
     formula: "P = √3 × V × I × PF",
   },
   {
@@ -198,7 +209,7 @@ const fundamentalsTools: Tool[] = [
         unit: "Ω",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeReactanceImpedance,
     formula: "XL = 2πfL, XC = 1/(2πfC), Z = √(R² + X²)",
   },
   {
@@ -223,7 +234,7 @@ const fundamentalsTools: Tool[] = [
         unit: "F",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeResonance,
     formula: "f = 1 / (2π√(LC))",
   },
   {
@@ -256,7 +267,7 @@ const fundamentalsTools: Tool[] = [
         step: "0.01",
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computePfc,
   },
   {
     id: "circular-mils",
@@ -280,7 +291,7 @@ const fundamentalsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeCircularMils,
   },
   {
     id: "unit-conversions",
@@ -320,7 +331,7 @@ const fundamentalsTools: Tool[] = [
         ],
       },
     ],
-    compute: () => ({ rows: [] }),
+    compute: computeUnitConversions,
   },
 ];
 
