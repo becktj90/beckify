@@ -169,7 +169,44 @@ export const TOOLBOX = {
 /** ------------------------------------------------------------------------
  * GAMES
  * -------------------------------------------------------------------- */
-export const GAME = {
-  name: "Finger Runner",
-  embedUrl: "https://finger-runner--trevorjohnbeck.replit.app/",
-};
+export interface Game {
+  name: string;
+  description: string;
+  url: string;
+}
+
+export const GAMES: Game[] = [
+  {
+    name: "Finger Runner",
+    description: "A fast-paced runner game where you tap to jump and avoid obstacles.",
+    url: "https://finger-runner--trevorjohnbeck.replit.app/",
+  },
+  {
+    name: "New Glenn Runner",
+    description: "An interstellar space runner with dynamic obstacles.",
+    url: "#",
+  },
+  {
+    name: "Pad Rat Ops",
+    description: "Strategic arcade gameplay with tactical elements.",
+    url: "#",
+  },
+  {
+    name: "Bin Block Blaster",
+    description: "A block-busting puzzle arcade classic.",
+    url: "#",
+  },
+  {
+    name: "Trying To Be Normal",
+    description: "A quirky puzzle game with a twist.",
+    url: "#",
+  },
+  {
+    name: "Starforge",
+    description: "Build, defend, and survive in an endless space adventure.",
+    url: "#",
+  },
+];
+
+// Legacy single-game export for backwards compatibility
+export const GAME = GAMES[0];

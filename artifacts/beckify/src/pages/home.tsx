@@ -63,9 +63,9 @@ export default function Home() {
                     <div className="brand-underline" />
                   </div>
 
-                  <p className="text-sm md:text-base text-[var(--muted)] leading-relaxed max-w-xs">
-                    Electrical engineering tools, builds, and a few things
-                    worth sharing.
+                  <p className="text-sm md:text-base text-[var(--muted)] leading-relaxed max-w-sm">
+                    Native React calculators. Aerospace engineering. Open-source builds.
+                    All in one place, all rigorously verified.
                   </p>
                 </div>
 
@@ -113,7 +113,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Electrical calculators and quick-reference tools — Ohm's law, motor calcs, UPS sizing, and more.
+                      24+ native React calculators. Voltage drop, motor FLA, short circuit, power factor, harmonics, and everything NEC-verified.
                     </p>
                   </div>
                 </div>

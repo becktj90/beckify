@@ -2,8 +2,6 @@ import { Activity, GraduationCap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { PROFILE, CONTACT_LINKS } from "@/data/site-content";
 import profilePhoto from "@/assets/beck-profile.jpg";
-import familySara from "@/assets/family-sara.jpg";
-import familyTrevorSon from "@/assets/family-trevor-son.jpg";
 
 /**
  * Hero / About section. Edit PROFILE in src/data/site-content.ts to change
@@ -59,25 +57,6 @@ export const About = () => {
         <p className="text-base md:text-lg leading-relaxed text-[var(--muted)] max-w-2xl">
           {PROFILE.bio}
         </p>
-      </FadeIn>
-
-      <FadeIn delay={0.25}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          <div className="overflow-hidden rounded-2xl border border-[var(--border)] shadow-sm">
-            <img
-              src={familySara}
-              alt="Sara Beck"
-              className="w-full aspect-[4/5] object-cover"
-            />
-          </div>
-          <div className="overflow-hidden rounded-2xl border border-[var(--border)] shadow-sm md:translate-y-6">
-            <img
-              src={familyTrevorSon}
-              alt="Trevor with one of the boys"
-              className="w-full aspect-[4/5] object-cover"
-            />
-          </div>
-        </div>
       </FadeIn>
     </header>
   );

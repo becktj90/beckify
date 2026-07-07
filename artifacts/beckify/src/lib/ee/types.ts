@@ -10,7 +10,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import type { ComputeResult } from "./format";
+import type { ComputeResult, ResultRow } from "./format";
 
 export type Values = Record<string, string>;
 
@@ -73,3 +73,5 @@ export interface CustomTool extends BaseTool {
 }
 
 export type Tool = CalcSpec | CustomTool;
+
+export type { ComputeResult, ResultRow } from "./format";
