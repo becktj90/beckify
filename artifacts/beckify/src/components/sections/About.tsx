@@ -3,10 +3,6 @@ import { FadeIn } from "@/components/FadeIn";
 import { PROFILE, CONTACT_LINKS } from "@/data/site-content";
 import profilePhoto from "@/assets/beck-profile.jpg";
 
-/**
- * Hero / About section. Edit PROFILE in src/data/site-content.ts to change
- * the name, title, education, or bio text.
- */
 export const About = () => {
   const socialLinks = CONTACT_LINKS.filter((l) => l.external);
 
@@ -15,10 +11,15 @@ export const About = () => {
       <FadeIn delay={0.05}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8">
           <div className="relative shrink-0">
+            <div
+              className="absolute inset-0 rounded-2xl blur-lg opacity-30 pointer-events-none"
+              style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)", transform: "scale(1.15)" }}
+            />
             <img
               src={profilePhoto}
               alt={PROFILE.name}
-              className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl object-cover border border-[var(--border)] shadow-lg"
+              className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover border border-[var(--border)] shadow-xl"
+              style={{ filter: "grayscale(100%) contrast(1.05)" }}
             />
           </div>
           <div className="space-y-3">
