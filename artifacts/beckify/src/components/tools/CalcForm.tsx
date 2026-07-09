@@ -7,15 +7,17 @@
  * ============================================================================
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NumberField, SelectField } from "./NumberField";
 import { ResultCard } from "./ResultCard";
-import type { CalcSpec, Values } from "@/lib/ee/types";
+import type { CalcSpec, ComputeResult, Values } from "@/lib/ee/types";
 
 interface CalcFormProps {
   spec: CalcSpec;
+  values?: Values;
+  onValuesChange?: (values: Values) => void;
 }
 
 function exportReport(spec: CalcSpec, values: Values, result: ReturnType<CalcSpec["compute"]>) {
@@ -77,16 +79,33 @@ function exportReport(spec: CalcSpec, values: Values, result: ReturnType<CalcSpe
   URL.revokeObjectURL(url);
 }
 
-export function CalcForm({ spec }: CalcFormProps) {
-  const [values, setValues] = useState<Values>(
-    Object.fromEntries(spec.fields.map((f) => [f.id, f.default || ""]))
+export function CalcForm({ spec, values: controlledValues, onValuesChange }: CalcFormProps) {
+  const defaultValues = useMemo(
+    () => Object.fromEntries(spec.fields.map((f) => [f.id, f.default || ""])),
+    [spec]
   );
-  const [result, setResult] = useState(spec.compute(values));
+  const [internalValues, setInternalValues] = useState<Values>(defaultValues);
+  const values = controlledValues ?? internalValues;
+  const [result, setResult] = useState<ComputeResult | null>(spec.compute(values));
   const [error, setError] = useState<string>();
 
+  useEffect(() => {
+    if (!controlledValues) {
+      setInternalValues(defaultValues);
+    }
+  }, [controlledValues, defaultValues]);
+
+  useEffect(() => {
+    setResult(spec.compute(values));
+  }, [spec, values]);
+
   const handleFieldChange = useCallback((fieldId: string, value: string) => {
-    setValues((prev) => ({ ...prev, [fieldId]: value }));
-  }, []);
+    const nextValues = { ...values, [fieldId]: value };
+    if (!controlledValues) {
+      setInternalValues(nextValues);
+    }
+    onValuesChange?.(nextValues);
+  }, [controlledValues, onValuesChange, values]);
 
   const handleCompute = useCallback(() => {
     try {
