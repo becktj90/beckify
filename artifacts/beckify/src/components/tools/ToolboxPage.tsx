@@ -20,7 +20,7 @@ export function ToolboxPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="flex flex-col md:flex-row h-screen">
+      <div className="flex flex-col md:flex-row min-h-screen">
         {/* Navigation sidebar + search (moves above content on mobile) */}
         <div className="w-full md:w-80 md:min-h-screen border-b md:border-b-0 md:border-r border-[var(--border)] overflow-y-auto">
           <ToolLayout

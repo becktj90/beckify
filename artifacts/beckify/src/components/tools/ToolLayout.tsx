@@ -8,7 +8,8 @@
  */
 
 import { useState, useMemo } from "react";
-import { Search, X } from "lucide-react";
+import { Link } from "wouter";
+import { Search, X, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { Tool, ToolCategory } from "@/lib/ee/types";
@@ -47,6 +48,15 @@ export function ToolLayout({ selectedToolId, onSelectTool }: ToolLayoutProps) {
       {/* Sidebar: Search & Categories */}
       <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[var(--border)] bg-[var(--surface)] p-4 md:p-6 overflow-y-auto">
         <div className="space-y-6">
+          {/* Home link — always visible hero to return to hub */}
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm font-medium text-[var(--muted)] hover:text-[var(--accent)] transition-colors duration-200 group"
+          >
+            <Home className="w-4 h-4 group-hover:text-[var(--accent)]" />
+            <span>Back to Home</span>
+          </Link>
+
           {/* Search */}
           <div className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">

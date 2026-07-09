@@ -142,8 +142,8 @@ const fundamentalsTools: Tool[] = [
     category: "Fundamentals",
     icon: Waves,
     kind: "calc",
-    description: "Calculate real, reactive, and apparent power in single-phase AC circuits",
-    keywords: ["ac", "power", "watt", "var", "volt ampere", "pf"],
+    description: "Solve for voltage, current, power factor, or real power in single-phase AC circuits. Enter any 2+ values to solve for the rest.",
+    keywords: ["ac", "power", "watt", "var", "volt ampere", "pf", "current"],
     fields: [
       {
         id: "voltage",
@@ -165,9 +165,15 @@ const fundamentalsTools: Tool[] = [
         min: 0,
         step: "0.01",
       },
+      {
+        id: "realPower",
+        label: "Real Power",
+        type: "number",
+        unit: "W",
+      },
     ],
     compute: computeAcPower1Ph,
-    formula: "P = V × I × PF",
+    formula: "P = V × I × PF  |  I = P / (V × PF)  |  V = P / (I × PF)",
   },
   {
     id: "ac-power-3ph",
@@ -175,8 +181,8 @@ const fundamentalsTools: Tool[] = [
     category: "Fundamentals",
     icon: Waves,
     kind: "calc",
-    description: "Calculate real, reactive, and apparent power in three-phase AC circuits",
-    keywords: ["ac", "three phase", "3ph", "power", "watt", "pf"],
+    description: "Solve for line voltage, current, power factor, or real power in three-phase AC circuits. Enter any 2+ values to solve for the rest.",
+    keywords: ["ac", "three phase", "3ph", "power", "watt", "pf", "current"],
     fields: [
       {
         id: "voltage",
@@ -197,9 +203,15 @@ const fundamentalsTools: Tool[] = [
         placeholder: "0.85",
         step: "0.01",
       },
+      {
+        id: "realPower",
+        label: "Real Power",
+        type: "number",
+        unit: "W",
+      },
     ],
     compute: computeAcPower3Ph,
-    formula: "P = √3 × V × I × PF",
+    formula: "P = √3 × V × I × PF  |  I = P / (√3 × V × PF)  |  V = P / (√3 × I × PF)",
   },
   {
     id: "reactance-impedance",

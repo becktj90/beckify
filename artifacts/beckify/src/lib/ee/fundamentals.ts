@@ -196,61 +196,131 @@ export function computeDcPower(v: Values): ComputeResult {
 // P (real) = V × I × PF  (watts)
 // S (apparent) = V × I  (VA)
 // Q (reactive) = V × I × sin(arccos(PF))  (VAR)
+//
+// Solves for any one unknown given the other three.
 
 export function computeAcPower1Ph(v: Values): ComputeResult {
   const voltage = num(v.voltage);
   const current = num(v.current);
   const pf = num(v.pf);
+  const realPowerIn = num(v.realPower);
 
-  if (!isPos(voltage, current)) {
-    return err("Voltage and Current must be positive");
-  }
-  if (!isNum(pf) || pf < 0 || pf > 1) {
-    return err("Power Factor must be 0–1");
+  const hasV = isNum(voltage) && voltage > 0;
+  const hasI = isNum(current) && current > 0;
+  const hasPF = isNum(pf) && pf >= 0 && pf <= 1;
+  const hasP = isNum(realPowerIn) && realPowerIn > 0;
+
+  const knownCount = [hasV, hasI, hasPF, hasP].filter(Boolean).length;
+
+  if (knownCount < 2) {
+    return err("Provide at least two of: Voltage, Current, Power Factor, Real Power");
   }
 
-  const apparentPower = voltage * current;
-  const realPower = apparentPower * pf;
-  const powerAngle = Math.acos(pf);
-  const reactivePower = apparentPower * Math.sin(powerAngle);
+  let V = voltage, I = current, PF = pf, P = realPowerIn;
+
+  // Solve for the one unknown (or compute all from V, I, PF)
+  if (hasV && hasI && hasPF) {
+    // Solve for P
+    P = V * I * PF;
+  } else if (hasP && hasV && hasPF) {
+    // Solve for I
+    if (V * PF === 0) return err("Voltage × PF must be non-zero");
+    I = P / (V * PF);
+  } else if (hasP && hasI && hasPF) {
+    // Solve for V
+    if (I * PF === 0) return err("Current × PF must be non-zero");
+    V = P / (I * PF);
+  } else if (hasP && hasV && hasI) {
+    // Solve for PF
+    const S = V * I;
+    if (S === 0) return err("V × I must be non-zero");
+    PF = P / S;
+    if (PF < 0 || PF > 1) return err("Computed PF is out of range (0–1); check inputs");
+  } else if (hasV && hasPF) {
+    return err("Provide at least one power or current value");
+  } else {
+    return err("Insufficient data — provide any 2 of: V, I, PF, P");
+  }
+
+  const S = V * I;
+  const realPower = hasP ? P : V * I * PF;
+  const powerAngle = Math.acos(PF);
+  const reactivePower = S * Math.sin(powerAngle);
 
   return ok([
+    { label: "Voltage", value: fmt(V), unit: "V" },
+    { label: "Current", value: fmt(I), unit: "A" },
+    { label: "Power Factor", value: fmt(PF, 3), unit: "" },
     { label: "Real Power (P)", value: fmt(realPower), unit: "W" },
     { label: "Reactive Power (Q)", value: fmt(reactivePower), unit: "VAR" },
-    { label: "Apparent Power (S)", value: fmt(apparentPower), unit: "VA" },
-    { label: "Power Factor", value: fmt(pf, 3), unit: "" },
+    { label: "Apparent Power (S)", value: fmt(S), unit: "VA" },
   ]);
 }
 
 // ============================================================================
 // AC POWER (THREE PHASE)
 // ============================================================================
-// P = √3 × V × I × PF
-// Note: V and I are line values
+// P = √3 × V × I × PF  (line values)
+// S = √3 × V × I
+// Q = S × sin(arccos(PF))
+//
+// Solves for any one unknown given the other three.
 
 export function computeAcPower3Ph(v: Values): ComputeResult {
   const voltage = num(v.voltage);
   const current = num(v.current);
   const pf = num(v.pf);
+  const realPowerIn = num(v.realPower);
 
-  if (!isPos(voltage, current)) {
-    return err("Voltage and Current must be positive");
-  }
-  if (!isNum(pf) || pf < 0 || pf > 1) {
-    return err("Power Factor must be 0–1");
+  const hasV = isNum(voltage) && voltage > 0;
+  const hasI = isNum(current) && current > 0;
+  const hasPF = isNum(pf) && pf >= 0 && pf <= 1;
+  const hasP = isNum(realPowerIn) && realPowerIn > 0;
+
+  const knownCount = [hasV, hasI, hasPF, hasP].filter(Boolean).length;
+
+  if (knownCount < 2) {
+    return err("Provide at least two of: Line Voltage, Line Current, Power Factor, Real Power");
   }
 
   const SQRT3 = Math.sqrt(3);
-  const apparentPower = SQRT3 * voltage * current;
-  const realPower = apparentPower * pf;
-  const powerAngle = Math.acos(pf);
-  const reactivePower = apparentPower * Math.sin(powerAngle);
+  let V = voltage, I = current, PF = pf, P = realPowerIn;
+
+  if (hasV && hasI && hasPF) {
+    // Solve for P
+    P = SQRT3 * V * I * PF;
+  } else if (hasP && hasV && hasPF) {
+    // Solve for I
+    const denom = SQRT3 * V * PF;
+    if (denom === 0) return err("√3 × Voltage × PF must be non-zero");
+    I = P / denom;
+  } else if (hasP && hasI && hasPF) {
+    // Solve for V
+    const denom = SQRT3 * I * PF;
+    if (denom === 0) return err("√3 × Current × PF must be non-zero");
+    V = P / denom;
+  } else if (hasP && hasV && hasI) {
+    // Solve for PF
+    const S = SQRT3 * V * I;
+    if (S === 0) return err("√3 × V × I must be non-zero");
+    PF = P / S;
+    if (PF < 0 || PF > 1) return err("Computed PF is out of range (0–1); check inputs");
+  } else {
+    return err("Insufficient data — provide any 2+ of: V, I, PF, P");
+  }
+
+  const S = SQRT3 * V * I;
+  const realPower = P;
+  const powerAngle = Math.acos(Math.min(1, Math.max(-1, PF)));
+  const reactivePower = S * Math.sin(powerAngle);
 
   return ok([
+    { label: "Line Voltage", value: fmt(V), unit: "V" },
+    { label: "Line Current", value: fmt(I), unit: "A" },
+    { label: "Power Factor", value: fmt(PF, 3), unit: "" },
     { label: "Real Power (P)", value: fmt(realPower), unit: "W" },
     { label: "Reactive Power (Q)", value: fmt(reactivePower), unit: "VAR" },
-    { label: "Apparent Power (S)", value: fmt(apparentPower), unit: "VA" },
-    { label: "Power Factor", value: fmt(pf, 3), unit: "" },
+    { label: "Apparent Power (S)", value: fmt(S), unit: "VA" },
   ]);
 }
 
