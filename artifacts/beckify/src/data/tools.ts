@@ -387,8 +387,8 @@ const conductorsTools: Tool[] = [
     icon: Cable,
     kind: "calc",
     description:
-      "Calculate voltage drop in a conductor run (1φ or 3φ AC, DC)",
-    keywords: ["voltage drop", "conductor", "wire", "distance"],
+      "Reactive AC/DC voltage drop calculator with kW, kVA, A, or hp load entry",
+    keywords: ["voltage drop", "vd", "ac", "dc", "conductor", "wire", "distance"],
     fields: [
       {
         id: "phase",
@@ -549,7 +549,7 @@ const motorsTools: Tool[] = [
     icon: Plug,
     kind: "calc",
     description: "Look up Full Load Amperes for AC motors by HP and voltage",
-    keywords: ["motor", "horsepower", "fla", "amperes", "nec"],
+    keywords: ["motor", "horsepower", "fla", "flc", "full load current", "amperes", "nec"],
     fields: [
       {
         id: "hp",
@@ -659,7 +659,7 @@ const powerSystemsTools: Tool[] = [
     icon: Zap,
     kind: "calc",
     description: "Calculate short circuit current at a point in the system",
-    keywords: ["short circuit", "fla", "scc", "isc"],
+    keywords: ["short circuit", "fault current", "scc", "isc", "available fault current"],
     fields: [
       {
         id: "mva",
@@ -1072,12 +1072,55 @@ ALL_TOOLS.forEach((tool) => {
   TOOLS_BY_CATEGORY.get(key)!.push(tool);
 });
 
+function normalizeSearchValue(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function isFuzzyMatch(query: string, target: string): boolean {
+  let qIndex = 0;
+  for (let tIndex = 0; tIndex < target.length && qIndex < query.length; tIndex += 1) {
+    if (target[tIndex] === query[qIndex]) {
+      qIndex += 1;
+    }
+  }
+  return qIndex === query.length;
+}
+
+function scoreTool(tool: Tool, query: string): number {
+  const haystacks = [tool.name, tool.description, ...tool.keywords];
+  let bestScore = 0;
+
+  haystacks.forEach((entry) => {
+    const lower = entry.toLowerCase();
+    const normalized = normalizeSearchValue(entry);
+
+    if (lower === query || normalized === query) {
+      bestScore = Math.max(bestScore, 120);
+    } else if (normalized.startsWith(query)) {
+      bestScore = Math.max(bestScore, 95);
+    } else if (normalized.includes(query) || lower.includes(query)) {
+      bestScore = Math.max(bestScore, 80);
+    } else if (isFuzzyMatch(query, normalized)) {
+      bestScore = Math.max(bestScore, 60);
+    }
+  });
+
+  return bestScore;
+}
+
 export function searchTools(query: string): Tool[] {
-  const q = query.toLowerCase();
-  return ALL_TOOLS.filter(
-    (tool) =>
-      tool.name.toLowerCase().includes(q) ||
-      tool.description.toLowerCase().includes(q) ||
-      tool.keywords.some((k) => k.includes(q))
-  );
+  const normalizedQuery = normalizeSearchValue(query);
+  if (!normalizedQuery) {
+    return ALL_TOOLS;
+  }
+
+  return ALL_TOOLS
+    .map((tool) => ({
+      tool,
+      score: scoreTool(tool, normalizedQuery),
+      sortName: tool.name.toLowerCase(),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score || left.sortName.localeCompare(right.sortName))
+    .map((entry) => entry.tool);
 }
