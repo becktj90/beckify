@@ -19,7 +19,7 @@ interface CalcFormProps {
 }
 
 function exportReport(spec: CalcSpec, values: Values, result: ReturnType<CalcSpec["compute"]>) {
-  const now = new Date().toLocaleString("en-US", { timeZoneName: "short" });
+  const now = new Date().toLocaleString(undefined, { timeZoneName: "short" });
   const lines: string[] = [
     "BECKIFY ENGINEERING CALCULATOR REPORT",
     "=".repeat(50),
@@ -151,7 +151,7 @@ export function CalcForm({ spec }: CalcFormProps) {
             <p className="text-xs uppercase tracking-wider font-semibold text-[var(--muted)] mb-1">
               Formula
             </p>
-            <p className="font-mono text-sm text-[var(--foreground)] break-all">
+            <p className="font-mono text-sm text-[var(--foreground)] break-words">
               {spec.formula}
             </p>
           </div>

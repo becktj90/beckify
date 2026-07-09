@@ -213,7 +213,7 @@ export function computeAcPower1Ph(v: Values): ComputeResult {
   const knownCount = [hasV, hasI, hasPF, hasP].filter(Boolean).length;
 
   if (knownCount < 2) {
-    return err("Provide at least two of: Voltage, Current, Power Factor, Real Power");
+    return err("Provide at least two of: Voltage, Current, Power Factor, or Real Power to solve for the unknown(s)");
   }
 
   let V = voltage, I = current, PF = pf, P = realPowerIn;
@@ -243,7 +243,8 @@ export function computeAcPower1Ph(v: Values): ComputeResult {
   }
 
   const S = V * I;
-  const realPower = hasP ? P : V * I * PF;
+  // P is guaranteed to be set correctly by all branches above
+  const realPower = P;
   const powerAngle = Math.acos(PF);
   const reactivePower = S * Math.sin(powerAngle);
 
@@ -280,7 +281,7 @@ export function computeAcPower3Ph(v: Values): ComputeResult {
   const knownCount = [hasV, hasI, hasPF, hasP].filter(Boolean).length;
 
   if (knownCount < 2) {
-    return err("Provide at least two of: Line Voltage, Line Current, Power Factor, Real Power");
+    return err("Provide at least two of: Line Voltage, Line Current, Power Factor, or Real Power to solve for the unknown(s)");
   }
 
   const SQRT3 = Math.sqrt(3);
@@ -310,7 +311,9 @@ export function computeAcPower3Ph(v: Values): ComputeResult {
   }
 
   const S = SQRT3 * V * I;
+  // P is guaranteed to be set correctly by all branches above
   const realPower = P;
+  // Clamp PF to [-1,1] for Math.acos to guard against float-precision drift near boundary
   const powerAngle = Math.acos(Math.min(1, Math.max(-1, PF)));
   const reactivePower = S * Math.sin(powerAngle);
 
