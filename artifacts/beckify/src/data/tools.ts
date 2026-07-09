@@ -1078,8 +1078,8 @@ function normalizeSearchValue(value: string): string {
 
 function isFuzzyMatch(query: string, target: string): boolean {
   let qIndex = 0;
-  for (let index = 0; index < target.length && qIndex < query.length; index += 1) {
-    if (target[index] === query[qIndex]) {
+  for (let tIndex = 0; tIndex < target.length && qIndex < query.length; tIndex += 1) {
+    if (target[tIndex] === query[qIndex]) {
       qIndex += 1;
     }
   }
@@ -1118,8 +1118,9 @@ export function searchTools(query: string): Tool[] {
     .map((tool) => ({
       tool,
       score: scoreTool(tool, normalizedQuery),
+      sortName: tool.name.toLowerCase(),
     }))
     .filter((entry) => entry.score > 0)
-    .sort((left, right) => right.score - left.score || left.tool.name.localeCompare(right.tool.name))
+    .sort((left, right) => right.score - left.score || left.sortName.localeCompare(right.sortName))
     .map((entry) => entry.tool);
 }

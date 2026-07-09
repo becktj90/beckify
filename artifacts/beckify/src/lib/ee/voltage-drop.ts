@@ -53,8 +53,9 @@ export interface VoltageDropComputation {
   error?: string;
 }
 
-const COPPER_RESISTIVITY_OHM_MM2_PER_KM = 17.241;
+const COPPER_RESISTIVITY_OHM_MM2_PER_KM = 17.241; // Copper at 20°C
 const CIRCULAR_MILS_PER_MM2 = 1973.52524139;
+const WATTS_PER_HP = 746;
 const SQRT3 = Math.sqrt(3);
 
 export const VOLTAGE_DROP_DEFAULTS: VoltageDropFormValues = {
@@ -151,19 +152,19 @@ function calculateCurrent(
     return { error: "Power factor must be between 0 and 1 for kW and hp loads" };
   }
 
-  const watts = loadUnit === "kw" ? loadValue * 1000 : loadValue * 746;
-  const unitLabel = loadUnit === "kw" ? "kW" : "hp";
+  const loadMultiplier = loadUnit === "kw" ? 1000 : WATTS_PER_HP;
+  const watts = loadValue * loadMultiplier;
 
   if (phase === "3ph") {
     return {
       value: watts / (SQRT3 * voltage * powerFactor),
-      formula: `I = (${round(loadValue, 4)} ${unitLabel === "kW" ? "× 1000" : "× 746"}) / (√3 × ${round(voltage, 4)} × ${round(powerFactor, 4)})`,
+      formula: `I = (${round(loadValue, 4)} × ${loadMultiplier}) / (√3 × ${round(voltage, 4)} × ${round(powerFactor, 4)})`,
     };
   }
 
   return {
     value: watts / (voltage * powerFactor),
-    formula: `I = (${round(loadValue, 4)} ${unitLabel === "kW" ? "× 1000" : "× 746"}) / (${round(voltage, 4)} × ${round(powerFactor, 4)})`,
+    formula: `I = (${round(loadValue, 4)} × ${loadMultiplier}) / (${round(voltage, 4)} × ${round(powerFactor, 4)})`,
   };
 }
 

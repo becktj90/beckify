@@ -43,6 +43,15 @@ interface ToolboxState {
 
 const TOOLBOX_STATE_KEY = "beckify.toolbox.dashboard.v1";
 const DEFAULT_TOOL_ID = "voltage-drop";
+const DEFAULT_TOOL: Tool = (() => {
+  const tool = TOOLS_BY_ID.get(DEFAULT_TOOL_ID);
+  if (!tool) {
+    throw new Error(
+      `Default tool '${DEFAULT_TOOL_ID}' not found in TOOLS_BY_ID. Ensure it is registered in artifacts/beckify/src/data/tools.ts.`
+    );
+  }
+  return tool;
+})();
 
 const MODULES: ToolboxModule[] = [
   {
@@ -135,6 +144,10 @@ function loadState(): ToolboxState {
 
 function toolKeywordPreview(tool: Tool): string {
   return tool.keywords.slice(0, 3).join(" · ");
+}
+
+function formatModuleName(moduleId: ToolboxModuleId): string {
+  return moduleId.replace(/-/g, " ");
 }
 
 function NavigationPane({
@@ -268,7 +281,7 @@ function ToolCard({
           <Icon className="h-5 w-5" />
         </div>
         <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">
-          {getToolModule(tool).replace("-", " ")}
+          {formatModuleName(getToolModule(tool))}
         </span>
       </div>
       <h3 className="mt-4 text-lg font-semibold text-[var(--foreground)]">{tool.name}</h3>
@@ -284,7 +297,7 @@ export function ToolboxPage() {
   const [state, setState] = useState<ToolboxState>(() => loadState());
   const [searchQuery, setSearchQuery] = useState("");
   const [commandOpen, setCommandOpen] = useState(false);
-  const selectedTool = TOOLS_BY_ID.get(state.selectedToolId) ?? TOOLS_BY_ID.get(DEFAULT_TOOL_ID)!;
+  const selectedTool = TOOLS_BY_ID.get(state.selectedToolId) ?? DEFAULT_TOOL;
   const activeModule = MODULES.find((module) => module.id === state.selectedModuleId) ?? MODULES[0];
 
   useEffect(() => {

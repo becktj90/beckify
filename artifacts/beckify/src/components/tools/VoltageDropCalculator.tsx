@@ -197,7 +197,7 @@ export function VoltageDropCalculator({
               AC/DC Voltage Drop
             </h2>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Reactive conductor drop calculator with direct formula substitution.
+              Real-time conductor drop calculator with direct formula substitution.
             </p>
           </div>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-3 text-[var(--accent)]">
