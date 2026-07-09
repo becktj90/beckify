@@ -15,11 +15,13 @@ interface ResultCardProps {
 }
 
 export function ResultCard({ result, error }: ResultCardProps) {
-  if (error) {
+  const errorMsg = error || result?.error;
+
+  if (errorMsg) {
     return (
       <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/5">
         <p className="text-sm text-red-600 font-medium">Error</p>
-        <p className="text-xs text-red-500 mt-1">{error}</p>
+        <p className="text-xs text-red-500 mt-1">{errorMsg}</p>
       </div>
     );
   }
