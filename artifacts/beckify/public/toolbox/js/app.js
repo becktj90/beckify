@@ -10,7 +10,7 @@ window.TOOLBOX_VERSION = '4.0.0';
 /* ============================================================
    NAVIGATION
    ============================================================ */
-const DEFAULT_SECTION_ID = 'sec-ohm';
+const DEFAULT_SECTION_ID = 'sec-home';
 
 function getHashSectionId() {
   if (!location.hash) return '';
@@ -48,6 +48,41 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (window.matchMedia('(max-width: 768px)').matches) closeMobileSidebar();
   });
 });
+
+/* ── Sidebar search filter ── */
+(function () {
+  const navSearch = document.getElementById('nav-search');
+  if (!navSearch) return;
+
+  navSearch.addEventListener('input', () => {
+    const q = navSearch.value.toLowerCase().trim();
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      if (btn.classList.contains('home-btn')) { btn.style.display = ''; return; }
+      const text = (btn.textContent + ' ' + (btn.dataset.keywords || '')).toLowerCase();
+      btn.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+    document.querySelectorAll('.sidebar-section').forEach(sec => {
+      if (!q) { sec.style.display = ''; return; }
+      const hasVisible = [...sec.querySelectorAll('.nav-btn')].some(b => b.style.display !== 'none');
+      sec.style.display = hasVisible ? '' : 'none';
+    });
+  });
+
+  /* Press / to focus search from anywhere */
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement ? document.activeElement.tagName : '';
+    if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+      e.preventDefault();
+      navSearch.focus();
+      navSearch.select();
+    }
+    if (e.key === 'Escape' && document.activeElement === navSearch) {
+      navSearch.value = '';
+      navSearch.dispatchEvent(new Event('input'));
+      navSearch.blur();
+    }
+  });
+})();
 
 /* ── Tab switcher (within sections) ── */
 document.querySelectorAll('.tab-btn').forEach(btn => {

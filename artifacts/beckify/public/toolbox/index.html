@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#d97706">
+  <meta name="theme-color" content="#8b7bff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Toolbox">
@@ -32,28 +32,31 @@
 
   <!-- ── SIDEBAR NAV ── -->
   <nav class="sidebar" id="sidebar-nav">
+    <div class="sidebar-home-btn-wrap">
+      <button class="nav-btn home-btn" data-target="sec-home">⊞ All Tools</button>
+    </div>
     <div class="sidebar-search">
-      <label for="nav-search">Search Calculators</label>
-      <input type="search" id="nav-search" placeholder="/ search calculators…">
+      <label for="nav-search">Search <kbd>/</kbd></label>
+      <input type="search" id="nav-search" placeholder="search calculators…">
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Fundamentals</div>
+      <div class="sidebar-section-title">⚡ Fundamentals</div>
       <button class="nav-btn" data-target="sec-ohm">Ohm's Law</button>
       <button class="nav-btn" data-target="sec-power-dc">DC Power</button>
       <button class="nav-btn" data-target="sec-power-ac">AC Power</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">AC Circuits</div>
+      <div class="sidebar-section-title">〰 AC Circuits</div>
       <button class="nav-btn" data-target="sec-reactance">Reactance &amp; Impedance</button>
       <button class="nav-btn" data-target="sec-resonance">Resonance</button>
       <button class="nav-btn" data-target="sec-pfc">Power Factor Correction</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Series / Parallel</div>
+      <div class="sidebar-section-title">⇄ Series / Parallel</div>
       <button class="nav-btn" data-target="sec-sp">Resistance, C, L</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Distribution</div>
+      <div class="sidebar-section-title">🔌 Distribution</div>
       <button class="nav-btn" data-target="sec-vdrop">Voltage Drop</button>
       <button class="nav-btn" data-target="sec-motor">Motor Calculations</button>
       <button class="nav-btn" data-target="sec-xfmr">Transformer</button>
@@ -61,13 +64,13 @@
       <button class="nav-btn" data-target="sec-sc">Short Circuit</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Power Systems</div>
+      <div class="sidebar-section-title">🔋 Power Systems</div>
       <button class="nav-btn" data-target="sec-ups">UPS Sizing</button>
       <button class="nav-btn" data-target="sec-gen">Generator Sizing</button>
       <button class="nav-btn" data-target="sec-hybrid">Hybrid Generator</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Reference Tables</div>
+      <div class="sidebar-section-title">📋 Reference Tables</div>
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
       <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
@@ -76,11 +79,11 @@
       <button class="nav-btn" data-target="sec-nec-tables">NEC Code Tables</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">NEC Calculations</div>
+      <div class="sidebar-section-title">📐 NEC Calculations</div>
       <button class="nav-btn" data-target="sec-nec">NEC Circuit Calc</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Tools</div>
+      <div class="sidebar-section-title">🔧 Tools</div>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
@@ -88,26 +91,26 @@
       <button class="nav-btn" data-target="sec-arcade" data-keywords="new glenn runner Odyssey Blue Moon launch game rocket arcade" title="Odyssey-inspired rocket arcade">🚀 New Glenn Runner</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Extras</div>
+      <div class="sidebar-section-title">🎮 Games</div>
       <button class="nav-btn" data-target="sec-pad-rat" data-keywords="pad rat ops launch operations game simulation">🎮 Pad Rat Ops</button>
       <button class="nav-btn" data-target="sec-bin-blaster" data-keywords="bin block blaster bubble shooter pad rat puzzle">🧱 Bin Block Blaster</button>
       <button class="nav-btn" data-target="sec-trying-normal" data-keywords="trying to be normal social awkward comedy game suspicion normality">🫥 Trying To Be Normal</button>
       <button class="nav-btn" data-target="sec-starforge" data-keywords="starforge frontier idle strategy space game">🌌 Starforge Frontier</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Advanced Tools</div>
+      <div class="sidebar-section-title">🔬 Advanced</div>
       <button class="nav-btn" data-target="sec-lsi">LSI Breaker Visualizer</button>
       <button class="nav-btn" data-target="sec-bess">BESS Peak-Shave</button>
       <button class="nav-btn" data-target="sec-tap">Tap-Changer Calc</button>
       <button class="nav-btn" data-target="sec-harmonics">Harmonics Tool</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">Hazardous / Safety</div>
+      <div class="sidebar-section-title">⚠ Hazardous / Safety</div>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">NEC Specialized</div>
+      <div class="sidebar-section-title">📏 NEC Specialized</div>
       <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
       <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
     </div>
@@ -115,6 +118,125 @@
 
   <!-- ── MAIN CONTENT ── -->
   <main class="main">
+
+    <!-- ════════════════════════════════════════
+         HOME DASHBOARD
+         ════════════════════════════════════════ -->
+    <section id="sec-home" class="section">
+      <div class="home-header">
+        <h2 class="home-title">EE Toolbox</h2>
+        <p class="home-subtitle">35 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
+      </div>
+
+      <div class="home-grid">
+
+        <div class="home-cat-card" style="--cat-color:#8b7bff">
+          <div class="home-cat-header"><span class="home-cat-icon">⚡</span><span class="home-cat-name">Fundamentals</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-ohm">Ohm's Law</a></li>
+            <li><a class="home-tool-link" href="#sec-power-dc">DC Power</a></li>
+            <li><a class="home-tool-link" href="#sec-power-ac">AC Power (1Ø &amp; 3Ø)</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#4f8bff">
+          <div class="home-cat-header"><span class="home-cat-icon">〰</span><span class="home-cat-name">AC Circuits</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-reactance">Reactance &amp; Impedance</a></li>
+            <li><a class="home-tool-link" href="#sec-resonance">Resonance</a></li>
+            <li><a class="home-tool-link" href="#sec-pfc">Power Factor Correction</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#22d3ee">
+          <div class="home-cat-header"><span class="home-cat-icon">⇄</span><span class="home-cat-name">Series / Parallel</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-sp">R, C, L Networks</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#4ade80">
+          <div class="home-cat-header"><span class="home-cat-icon">🔌</span><span class="home-cat-name">Distribution</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-vdrop">Voltage Drop</a></li>
+            <li><a class="home-tool-link" href="#sec-motor">Motor Calculations</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr">Transformer Sizing</a></li>
+            <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
+            <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#a78bfa">
+          <div class="home-cat-header"><span class="home-cat-icon">🔋</span><span class="home-cat-name">Power Systems</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-ups">UPS Sizing</a></li>
+            <li><a class="home-tool-link" href="#sec-gen">Generator Sizing</a></li>
+            <li><a class="home-tool-link" href="#sec-hybrid">Hybrid Generator</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#94a3b8">
+          <div class="home-cat-header"><span class="home-cat-icon">📋</span><span class="home-cat-name">Reference Tables</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-wire-ref">Conductor Ampacity</a></li>
+            <li><a class="home-tool-link" href="#sec-motor-ref">Motor FLA Tables</a></li>
+            <li><a class="home-tool-link" href="#sec-conduit-ref">Conduit Fill Tables</a></li>
+            <li><a class="home-tool-link" href="#sec-ip-rating">IP Rating Chart</a></li>
+            <li><a class="home-tool-link" href="#sec-nema-class">NEMA Enclosures</a></li>
+            <li><a class="home-tool-link" href="#sec-nec-tables">NEC Code Tables</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#fb923c">
+          <div class="home-cat-header"><span class="home-cat-icon">📐</span><span class="home-cat-name">NEC Calculations</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-nec">NEC Circuit Calc</a></li>
+            <li><a class="home-tool-link" href="#sec-lighting-opt">Lighting VD Optimizer</a></li>
+            <li><a class="home-tool-link" href="#sec-bldg-load">Building Load Calc</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#fbbf24">
+          <div class="home-cat-header"><span class="home-cat-icon">🔧</span><span class="home-cat-name">Tools</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-convert">Unit Conversions</a></li>
+            <li><a class="home-tool-link" href="#sec-cm">Circular Mils</a></li>
+            <li><a class="home-tool-link" href="#sec-photometrics">Photometrics</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule OCR</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#f472b6">
+          <div class="home-cat-header"><span class="home-cat-icon">🔬</span><span class="home-cat-name">Advanced Tools</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-lsi">LSI Breaker Visualizer</a></li>
+            <li><a class="home-tool-link" href="#sec-bess">BESS Peak-Shave</a></li>
+            <li><a class="home-tool-link" href="#sec-tap">Tap-Changer Calc</a></li>
+            <li><a class="home-tool-link" href="#sec-harmonics">Harmonics Tool</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#f87171">
+          <div class="home-cat-header"><span class="home-cat-icon">⚠</span><span class="home-cat-name">Hazardous / Safety</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-haz">Hazardous Area Lookup</a></li>
+            <li><a class="home-tool-link" href="#sec-isloop">IS Loop Verifier</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card home-cat-games" style="--cat-color:#818cf8">
+          <div class="home-cat-header"><span class="home-cat-icon">🎮</span><span class="home-cat-name">Games</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-arcade">🚀 New Glenn Runner</a></li>
+            <li><a class="home-tool-link" href="#sec-pad-rat">🎮 Pad Rat Ops</a></li>
+            <li><a class="home-tool-link" href="#sec-bin-blaster">🧱 Bin Block Blaster</a></li>
+            <li><a class="home-tool-link" href="#sec-trying-normal">🫥 Trying To Be Normal</a></li>
+            <li><a class="home-tool-link" href="#sec-starforge">🌌 Starforge Frontier</a></li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
 
     <!-- ════════════════════════════════════════
          OHM'S LAW
@@ -1033,7 +1155,7 @@
               <div><label>Primary Voltage — Vp (V)</label><input type="number" id="xfmr_vp" placeholder="e.g. 480" step="any" min="0"></div>
             </div>
             <div class="input-group single">
-              <div><label>Secondary Voltage — Vs (V) <small style="color:var(--green-mid)">(L-L for 3Ø)</small></label><input type="number" id="xfmr_vs" placeholder="e.g. 208" step="any" min="0"></div>
+              <div><label>Secondary Voltage — Vs (V) <small style="color:var(--fg-muted)">(L-L for 3Ø)</small></label><input type="number" id="xfmr_vs" placeholder="e.g. 208" step="any" min="0"></div>
             </div>
             <button class="btn" onclick="calcXfmr()">Calculate</button>
             <div id="xfmr_result" class="result"></div>
@@ -2401,26 +2523,26 @@
               Design kVA = Total kVA &times; (1 + Safety Margin)
             </div>
 
-            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; Motor Loads</div>
+            <div style="margin-bottom:6px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">&#9658; Motor Loads</div>
             <div class="input-group triple">
               <div><label>Motor kW (per unit)</label><input type="number" id="gen_motor_kw" placeholder="kW" step="any" min="0"></div>
               <div><label>Quantity</label><input type="number" id="gen_motor_qty" placeholder="units" value="1" step="1" min="1"></div>
               <div><label>Demand Factor (%)</label><input type="number" id="gen_motor_df" placeholder="e.g. 80" value="80" step="any" min="0" max="100"></div>
             </div>
 
-            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; Lighting / Receptacle Loads</div>
+            <div style="margin-bottom:6px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">&#9658; Lighting / Receptacle Loads</div>
             <div class="input-group">
               <div><label>Lighting kW</label><input type="number" id="gen_light_kw" placeholder="kW" step="any" min="0"></div>
               <div><label>Demand Factor (%)</label><input type="number" id="gen_light_df" placeholder="e.g. 100" value="100" step="any" min="0" max="100"></div>
             </div>
 
-            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; HVAC Loads</div>
+            <div style="margin-bottom:6px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">&#9658; HVAC Loads</div>
             <div class="input-group">
               <div><label>HVAC kW</label><input type="number" id="gen_hvac_kw" placeholder="kW" step="any" min="0"></div>
               <div><label>Demand Factor (%)</label><input type="number" id="gen_hvac_df" placeholder="e.g. 70" value="70" step="any" min="0" max="100"></div>
             </div>
 
-            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; Other Critical Loads</div>
+            <div style="margin-bottom:6px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">&#9658; Other Critical Loads</div>
             <div class="input-group triple">
               <div><label>Other kW</label><input type="number" id="gen_other_kw" placeholder="kW" step="any" min="0"></div>
               <div><label>Power Factor (%)</label><input type="number" id="gen_pf" placeholder="e.g. 85" value="85" step="any" min="1" max="100"></div>
@@ -2750,23 +2872,23 @@
           <div class="card-title">&#128640; New Glenn Runner &mdash; LC-36 Vertical Launch Simulation</div>
           <div class="card-body" style="text-align:center">
             <div id="arcade-fs-wrapper" style="position:relative;display:inline-block;width:100%">
-              <canvas id="arcadeCanvas" width="420" height="640" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
+              <canvas id="arcadeCanvas" width="420" height="640" style="display:block;margin:0 auto;border:2px solid var(--violet);box-shadow:0 4px 16px rgba(139,123,255,0.15);cursor:pointer;max-width:100%"></canvas>
               <div style="position:absolute;top:4px;right:4px;display:flex;gap:4px;z-index:10">
-                <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">🔊</button>
-                <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">⏸</button>
-                <button onclick="arcadeToggleSettings()" title="Mission settings" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">⚙</button>
-                <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">&#x26F6; FS</button>
+                <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">🔊</button>
+                <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">⏸</button>
+                <button onclick="arcadeToggleSettings()" title="Mission settings" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">⚙</button>
+                <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">&#x26F6; FS</button>
               </div>
             </div>
 
             <!-- On-screen touch controls (great for mobile, useful on desktop too) -->
             <div id="arcade-touch-btns" style="display:flex;gap:6px;margin:8px auto;max-width:420px;user-select:none">
-              <button id="atb-left" style="flex:1;font-size:1.3rem;padding:14px 0;background:rgba(0,30,0,0.85);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);cursor:pointer;border-radius:3px;touch-action:none">&#9664; LEFT</button>
-              <button id="atb-boost" style="flex:2;font-size:1rem;padding:14px 0;background:rgba(0,40,0,0.9);color:var(--amber);border:2px solid var(--amber);font-family:var(--font-mono);cursor:pointer;border-radius:3px;touch-action:none;font-weight:bold">&#128640; BOOST</button>
-              <button id="atb-right" style="flex:1;font-size:1.3rem;padding:14px 0;background:rgba(0,30,0,0.85);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);cursor:pointer;border-radius:3px;touch-action:none">RIGHT &#9654;</button>
+              <button id="atb-left" style="flex:1;font-size:1.3rem;padding:14px 0;background:rgba(10,10,30,0.85);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);cursor:pointer;border-radius:3px;touch-action:none">&#9664; LEFT</button>
+              <button id="atb-boost" style="flex:2;font-size:1rem;padding:14px 0;background:rgba(20,10,50,0.9);color:var(--violet);border:2px solid var(--violet);font-family:var(--font-main);cursor:pointer;border-radius:3px;touch-action:none;font-weight:bold">&#128640; BOOST</button>
+              <button id="atb-right" style="flex:1;font-size:1.3rem;padding:14px 0;background:rgba(10,10,30,0.85);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);cursor:pointer;border-radius:3px;touch-action:none">RIGHT &#9654;</button>
             </div>
 
-            <div style="margin-top:4px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">
+            <div style="margin-top:4px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">
               HOLD BOOST during countdown = build liftoff charge<br>
               BOOST in flight = climb<br>
               LEFT/RIGHT buttons or A/D or Left/Right arrow keys = steer
@@ -2780,7 +2902,7 @@
         <div class="card">
           <div class="card-title">Mission Record</div>
           <div class="card-body">
-            <div id="arcade-hi-score" style="font-family:var(--font-mono);font-size:1.5rem;color:var(--amber);text-shadow:var(--glow-amber)">NO MISSIONS FLOWN</div>
+            <div id="arcade-hi-score" style="font-family:var(--font-main);font-size:1.5rem;color:var(--violet);text-shadow:0 0 8px rgba(139,123,255,0.5), 0 0 20px rgba(139,123,255,0.2)">NO MISSIONS FLOWN</div>
             <button class="btn btn-sm" onclick="arcadeReset()" style="margin-top:8px">RESET MISSION RECORD</button>
           </div>
         </div>
@@ -2865,7 +2987,7 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">TCC Curve (Log-Log)</div>
           <div class="card-body" style="text-align:center">
-            <canvas id="lsiCanvas" width="620" height="420" style="display:block;margin:0 auto;border:1px solid var(--green-dim);max-width:100%"></canvas>
+            <canvas id="lsiCanvas" width="620" height="420" style="display:block;margin:0 auto;border:1px solid var(--fg-dim);max-width:100%"></canvas>
             <div class="note" style="text-align:left;margin-top:8px">
               &#9432; The curve shows the three protection regions: Long-time (L), Short-time (S), and Instantaneous (I). Axes are logarithmic. Vertical axis = time (s), Horizontal axis = current (A).
             </div>
@@ -3905,7 +4027,7 @@
           <p>Pad rats! Clear the pad before launch. Match 3 or more bin blocks of the same paint code.</p>
           <div id="binblaster-fs-wrapper" style="position:relative; display:inline-block">
             <canvas id="binBlasterCanvas" width="420" height="640" tabindex="0"
-              style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
+              style="display:block;margin:0 auto;border:2px solid var(--violet);box-shadow:0 4px 16px rgba(139,123,255,0.15);cursor:pointer;max-width:100%"></canvas>
           </div>
           <div style="margin-top:8px">
             <button class="btn" data-action="binBlasterStart">Start Mission</button>
@@ -4030,7 +4152,7 @@
         <div class="card">
           <div class="card-title">Sector Map</div>
           <div class="card-body" style="text-align:center">
-            <canvas id="sf-starfield" width="700" height="280" style="display:block;margin:0 auto;max-width:100%;border:2px solid var(--green);box-shadow:var(--glow-md)"></canvas>
+            <canvas id="sf-starfield" width="700" height="280" style="display:block;margin:0 auto;max-width:100%;border:2px solid var(--violet);box-shadow:0 4px 16px rgba(139,123,255,0.15)"></canvas>
           </div>
         </div>
       </div>

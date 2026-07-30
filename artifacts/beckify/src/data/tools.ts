@@ -142,8 +142,8 @@ const fundamentalsTools: Tool[] = [
     category: "Fundamentals",
     icon: Waves,
     kind: "calc",
-    description: "Calculate real, reactive, and apparent power in single-phase AC circuits",
-    keywords: ["ac", "power", "watt", "var", "volt ampere", "pf"],
+    description: "Solve for voltage, current, power factor, or real power in single-phase AC circuits. Enter any 2+ values to solve for the rest.",
+    keywords: ["ac", "power", "watt", "var", "volt ampere", "pf", "current"],
     fields: [
       {
         id: "voltage",
@@ -165,9 +165,15 @@ const fundamentalsTools: Tool[] = [
         min: 0,
         step: "0.01",
       },
+      {
+        id: "realPower",
+        label: "Real Power",
+        type: "number",
+        unit: "W",
+      },
     ],
     compute: computeAcPower1Ph,
-    formula: "P = V × I × PF",
+    formula: "P = V × I × PF  |  I = P / (V × PF)  |  V = P / (I × PF)",
   },
   {
     id: "ac-power-3ph",
@@ -175,8 +181,8 @@ const fundamentalsTools: Tool[] = [
     category: "Fundamentals",
     icon: Waves,
     kind: "calc",
-    description: "Calculate real, reactive, and apparent power in three-phase AC circuits",
-    keywords: ["ac", "three phase", "3ph", "power", "watt", "pf"],
+    description: "Solve for line voltage, current, power factor, or real power in three-phase AC circuits. Enter any 2+ values to solve for the rest.",
+    keywords: ["ac", "three phase", "3ph", "power", "watt", "pf", "current"],
     fields: [
       {
         id: "voltage",
@@ -197,9 +203,15 @@ const fundamentalsTools: Tool[] = [
         placeholder: "0.85",
         step: "0.01",
       },
+      {
+        id: "realPower",
+        label: "Real Power",
+        type: "number",
+        unit: "W",
+      },
     ],
     compute: computeAcPower3Ph,
-    formula: "P = √3 × V × I × PF",
+    formula: "P = √3 × V × I × PF  |  I = P / (√3 × V × PF)  |  V = P / (√3 × I × PF)",
   },
   {
     id: "reactance-impedance",
@@ -375,8 +387,8 @@ const conductorsTools: Tool[] = [
     icon: Cable,
     kind: "calc",
     description:
-      "Calculate voltage drop in a conductor run (1φ or 3φ AC, DC)",
-    keywords: ["voltage drop", "conductor", "wire", "distance"],
+      "Reactive AC/DC voltage drop calculator with kW, kVA, A, or hp load entry",
+    keywords: ["voltage drop", "vd", "ac", "dc", "conductor", "wire", "distance"],
     fields: [
       {
         id: "phase",
@@ -537,7 +549,7 @@ const motorsTools: Tool[] = [
     icon: Plug,
     kind: "calc",
     description: "Look up Full Load Amperes for AC motors by HP and voltage",
-    keywords: ["motor", "horsepower", "fla", "amperes", "nec"],
+    keywords: ["motor", "horsepower", "fla", "flc", "full load current", "amperes", "nec"],
     fields: [
       {
         id: "hp",
@@ -647,7 +659,7 @@ const powerSystemsTools: Tool[] = [
     icon: Zap,
     kind: "calc",
     description: "Calculate short circuit current at a point in the system",
-    keywords: ["short circuit", "fla", "scc", "isc"],
+    keywords: ["short circuit", "fault current", "scc", "isc", "available fault current"],
     fields: [
       {
         id: "mva",
@@ -1060,12 +1072,55 @@ ALL_TOOLS.forEach((tool) => {
   TOOLS_BY_CATEGORY.get(key)!.push(tool);
 });
 
+function normalizeSearchValue(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function isFuzzyMatch(query: string, target: string): boolean {
+  let qIndex = 0;
+  for (let tIndex = 0; tIndex < target.length && qIndex < query.length; tIndex += 1) {
+    if (target[tIndex] === query[qIndex]) {
+      qIndex += 1;
+    }
+  }
+  return qIndex === query.length;
+}
+
+function scoreTool(tool: Tool, query: string): number {
+  const haystacks = [tool.name, tool.description, ...tool.keywords];
+  let bestScore = 0;
+
+  haystacks.forEach((entry) => {
+    const lower = entry.toLowerCase();
+    const normalized = normalizeSearchValue(entry);
+
+    if (lower === query || normalized === query) {
+      bestScore = Math.max(bestScore, 120);
+    } else if (normalized.startsWith(query)) {
+      bestScore = Math.max(bestScore, 95);
+    } else if (normalized.includes(query) || lower.includes(query)) {
+      bestScore = Math.max(bestScore, 80);
+    } else if (isFuzzyMatch(query, normalized)) {
+      bestScore = Math.max(bestScore, 60);
+    }
+  });
+
+  return bestScore;
+}
+
 export function searchTools(query: string): Tool[] {
-  const q = query.toLowerCase();
-  return ALL_TOOLS.filter(
-    (tool) =>
-      tool.name.toLowerCase().includes(q) ||
-      tool.description.toLowerCase().includes(q) ||
-      tool.keywords.some((k) => k.includes(q))
-  );
+  const normalizedQuery = normalizeSearchValue(query);
+  if (!normalizedQuery) {
+    return ALL_TOOLS;
+  }
+
+  return ALL_TOOLS
+    .map((tool) => ({
+      tool,
+      score: scoreTool(tool, normalizedQuery),
+      sortName: tool.name.toLowerCase(),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score || left.sortName.localeCompare(right.sortName))
+    .map((entry) => entry.tool);
 }

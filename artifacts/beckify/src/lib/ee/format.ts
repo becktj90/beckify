@@ -17,13 +17,14 @@ export interface ResultRow {
   kind?: "normal" | "header" | "warn" | "pass" | "fail" | "note";
 }
 
-/** A calculator produces result rows. */
+/** A calculator produces result rows, with an optional error message. */
 export interface ComputeResult {
   rows: ResultRow[];
+  error?: string;
 }
 
 export const ok = (rows: ResultRow[]): ComputeResult => ({ rows });
-export const err = (error: string): ComputeResult => ({ error });
+export const err = (error: string): ComputeResult => ({ rows: [], error });
 
 /** Parse a raw string input into a number (NaN if empty/invalid). */
 export function num(v: string | number | undefined): number {
