@@ -6,6 +6,7 @@ import AboutPage from "@/pages/about";
 import ToolboxPage from "@/pages/toolbox";
 import ProjectsPage from "@/pages/projects";
 import GamesPage from "@/pages/games";
+import SiteMapPage from "@/pages/sitemap";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/toolbox" component={ToolboxPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/games" component={GamesPage} />
+      <Route path="/sitemap" component={SiteMapPage} />
       <Route component={NotFound} />
     </Switch>
   );

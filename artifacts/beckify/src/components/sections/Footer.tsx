@@ -1,4 +1,5 @@
 import { Wifi } from "lucide-react";
+import { Link } from "wouter";
 import { CONTACT_LINKS, SITE_VERSION } from "@/data/site-content";
 import beckifyMark from "@/assets/beckify-mark-white.png";
 
@@ -9,6 +10,9 @@ export const Footer = () => (
         <img src={beckifyMark} alt="Beckify" className="w-full h-full object-contain" />
       </div>
       <p>© {new Date().getFullYear()} Beck</p>
+      <Link href="/sitemap" className="hover:text-[var(--accent)] transition-colors duration-200">
+        Site Map
+      </Link>
       {CONTACT_LINKS.map(({ href, label, icon: Icon, external }) => (
         <a
           key={href}
