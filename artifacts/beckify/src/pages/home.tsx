@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { ArrowUpRight, Orbit, Wrench, Rocket, Gamepad2, Terminal, Zap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
+import { NautilusTrace } from "@/components/NautilusTrace";
 import { Starfield } from "@/components/Starfield";
 import { Nav } from "@/components/sections/Nav";
 import { Footer } from "@/components/sections/Footer";
@@ -63,10 +64,7 @@ export default function Home() {
                     <div className="brand-underline" />
                   </div>
 
-                  <p className="text-sm md:text-base text-[var(--muted)] leading-relaxed max-w-sm">
-                    Native React calculators. Aerospace engineering. Open-source builds.
-                    All in one place, all rigorously verified.
-                  </p>
+                  <NautilusTrace className="block mx-auto h-44 w-44 md:h-56 md:w-56" />
                 </div>
 
                 {/* Profile chip */}

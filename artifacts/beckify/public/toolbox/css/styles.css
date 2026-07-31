@@ -56,6 +56,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Aperiodic Penrose P3 tiling, shared with the main site (see
+ * scripts/generate-penrose.mjs). Masked and held at low opacity so it reads as
+ * paper texture rather than a graphic. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.13;
+  background-image: url('/penrose.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 38%, #000 0%, transparent 76%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 38%, #000 0%, transparent 76%);
+}
+
 /* Subtle nebula glow fixed in background */
 body::before {
   content: '';

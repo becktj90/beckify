@@ -358,6 +358,22 @@ html {
   50% { transform: translate(-10px, 16px); }
 }
 
+/* Aperiodic Penrose P3 tiling drawn once behind every page. Kept at very low
+ * opacity and masked to fade out toward the edges so it reads as paper
+ * texture rather than a graphic — geometry you notice only if you look. */
+.penrose-field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  object-fit: cover;
+  opacity: 0.13;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 38%, #000 0%, transparent 76%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 38%, #000 0%, transparent 76%);
+}
+
 /* Blurred nebula glows layered above the starfield, behind content. Each
  * cloud drifts on its own slow loop for a subtle sense of motion. */
 .nebula-glow {
