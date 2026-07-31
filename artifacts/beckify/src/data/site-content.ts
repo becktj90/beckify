@@ -92,7 +92,19 @@ export const HOME_NAV_CARDS: HubCard[] = [
 ];
 
 /** ------------------------------------------------------------------------
+ * SITE IDENTITY
+ * How the site presents itself — nav, hero, metadata. Deliberately separate
+ * from PROFILE: the site is branded "Beckify", not as a personal homepage.
+ * PROFILE below is only for the About page, where the bio belongs.
+ * -------------------------------------------------------------------- */
+export const SITE = {
+  name: "Beckify",
+  tagline: "Engineering tools, references & builds",
+};
+
+/** ------------------------------------------------------------------------
  * PROFILE / ABOUT
+ * Used only by the About page.
  * -------------------------------------------------------------------- */
 export const PROFILE = {
   name: "Trevor Beck",

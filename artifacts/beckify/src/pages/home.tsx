@@ -5,7 +5,7 @@ import { NautilusTrace } from "@/components/NautilusTrace";
 import { Starfield } from "@/components/Starfield";
 import { Nav } from "@/components/sections/Nav";
 import { Footer } from "@/components/sections/Footer";
-import { PROFILE } from "@/data/site-content";
+import { SITE } from "@/data/site-content";
 import beckifyMark from "@/assets/beckify-mark-white.png";
 
 /**
@@ -53,10 +53,19 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.22em] uppercase text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20 px-3 py-1 rounded-full">
-                      <Orbit className="w-3 h-3" />
-                      Engineering Resource
+                  {/* text-center + the wrapper below keep the badge on its own
+                      line. The badge is inline-flex and .brand-wordmark is
+                      inline-block, so without a block-level parent they share a
+                      line instead of stacking, and drift out of alignment with
+                      the centred mark, underline and spiral. */}
+                  {/* pt-2 clears the reticle frame, which is inset -25% and so
+                      overhangs the mark's box. */}
+                  <div className="space-y-2 text-center pt-2">
+                    <div>
+                      <span className="inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.22em] uppercase text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20 px-3 py-1 rounded-full">
+                        <Orbit className="w-3 h-3" />
+                        Engineering Resource
+                      </span>
                     </div>
                     <h1 className="logo-text brand-wordmark text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
                       <span className="gradient-text">Beckify</span>
@@ -78,8 +87,8 @@ export default function Home() {
                     <img src={beckifyMark} alt="" className="w-4 h-4 object-contain" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-[var(--foreground)]">{PROFILE.name}</p>
-                    <p className="text-[10px] text-[var(--muted)]">{PROFILE.title}</p>
+                    <p className="text-xs font-semibold text-[var(--foreground)]">{SITE.name}</p>
+                    <p className="text-[10px] text-[var(--muted)]">{SITE.tagline}</p>
                   </div>
                 </div>
               </div>
@@ -111,7 +120,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      24+ native React calculators. Voltage drop, motor FLA, short circuit, power factor, harmonics, and everything NEC-verified.
+                      35 native React calculators. Voltage drop, motor FLA, short circuit, power factor, harmonics, and everything NEC-verified.
                     </p>
                   </div>
                 </div>

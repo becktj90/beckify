@@ -114,7 +114,10 @@ html {
   position: relative;
   width: 6rem;
   height: 6rem;
-  margin: 0 auto;
+  /* margin-inline, not `margin: 0 auto` — the shorthand also zeroed the
+     vertical margin that the hero's space-y utility sets, collapsing the gap
+     below the mark so the reticle frame overlapped the badge beneath it. */
+  margin-inline: auto;
 }
 
 @media (min-width: 768px) {
