@@ -1,4 +1,4 @@
-import { Gamepad2, ExternalLink } from "lucide-react";
+import { Gamepad2, ExternalLink, Play } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GAMES } from "@/data/site-content";
@@ -53,12 +53,19 @@ export const Games = () => (
                 ) : (
                   <a
                     href={game.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    // Games hosted elsewhere open in a new tab; the ones
+                    // embedded in this site's toolbox stay in place.
+                    {...(game.external
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
                     className="inline-flex items-center gap-2"
                   >
                     <span>Play Now</span>
-                    <ExternalLink className="w-4 h-4" />
+                    {game.external ? (
+                      <ExternalLink className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
                   </a>
                 )}
               </Button>

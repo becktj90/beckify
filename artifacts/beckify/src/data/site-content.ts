@@ -180,43 +180,61 @@ export const TOOLBOX = {
 
 /** ------------------------------------------------------------------------
  * GAMES
+ *
+ * Three homes, so `url` varies in shape:
+ *  - play.beckify.com — the games hub built from the Finger-Runner repo.
+ *  - /toolbox/#sec-… — games embedded in the standalone toolbox app. It
+ *    routes on the initial hash, so these deep-link straight to the game.
+ *  - Replit — the older Finger Runner deploy.
+ * Set `external` for anything off beckify.com so it opens in a new tab.
  * -------------------------------------------------------------------- */
 export interface Game {
   name: string;
   description: string;
+  /** "#" renders a disabled "Coming Soon" card. */
   url: string;
+  external?: boolean;
 }
 
 export const GAMES: Game[] = [
   {
-    name: "Finger Runner",
-    description: "A fast-paced runner game where you tap to jump and avoid obstacles.",
-    url: "https://finger-runner--trevorjohnbeck.replit.app/",
+    name: "Booty Butt Scooter",
+    description:
+      "Endless lane-dodging runner. Switch lanes, slice obstacles with your saber, and hit the fart-turbo boost.",
+    url: "https://play.beckify.com/scooter/",
+    external: true,
   },
   {
     name: "New Glenn Runner",
-    description: "An interstellar space runner with dynamic obstacles.",
-    url: "#",
+    description:
+      "Vertical launch arcade. Ride the blast-off plume off LC-36 and steer through descending bin-block hazards as ascent speed builds.",
+    url: "/toolbox/#sec-arcade",
   },
   {
     name: "Pad Rat Ops",
-    description: "Strategic arcade gameplay with tactical elements.",
-    url: "#",
+    description: "Mission-control mini game — launch operations run from the console.",
+    url: "/toolbox/#sec-pad-rat",
   },
   {
     name: "Bin Block Blaster",
-    description: "A block-busting puzzle arcade classic.",
-    url: "#",
+    description: "Bubble-shooter puzzler. Blast the bin blocks before they stack up.",
+    url: "/toolbox/#sec-bin-blaster",
   },
   {
     name: "Trying To Be Normal",
-    description: "A quirky puzzle game with a twist.",
-    url: "#",
+    description: "A social-awkwardness comedy game. Keep suspicion down and act normal.",
+    url: "/toolbox/#sec-trying-normal",
   },
   {
-    name: "Starforge",
-    description: "Build, defend, and survive in an endless space adventure.",
-    url: "#",
+    name: "Starforge Frontier",
+    description: "Idle space-frontier strategy. Build, defend, and survive.",
+    url: "/toolbox/#sec-starforge",
+  },
+  {
+    name: "Finger Runner",
+    description: "The original tap-to-jump endless runner that grew into Booty Butt Scooter.",
+    url: "https://finger-runner--trevorjohnbeck.replit.app/",
+    external: true,
   },
 ];
 

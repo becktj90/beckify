@@ -188,7 +188,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Games</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Finger Runner and arcade extras — no install, just play.
+                      Booty Butt Scooter, New Glenn Runner and more — no install, just play.
                     </p>
                   </div>
                 </div>
