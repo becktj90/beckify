@@ -52,10 +52,13 @@ export const Nav = () => {
 
           {/* Nav links */}
           <div className="flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-              const active = location === href;
+            {NAV_LINKS.map(({ href, label, icon: Icon, external }) => {
+              const active = location === href || (external && location === href.replace(/\/$/, ""));
+              /* External entries leave the SPA, so they must be real anchors —
+                 wouter would otherwise route them client-side. */
+              const LinkTag = (external ? "a" : Link) as typeof Link;
               return (
-                <Link
+                <LinkTag
                   key={href}
                   href={href}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
@@ -68,7 +71,7 @@ export const Nav = () => {
                     className={`w-3.5 h-3.5 ${active ? "opacity-100" : "opacity-70"}`}
                   />
                   <span className="hidden sm:inline">{label}</span>
-                </Link>
+                </LinkTag>
               );
             })}
           </div>

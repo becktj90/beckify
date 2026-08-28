@@ -96,7 +96,8 @@ export default function Home() {
 
             {/* ── EE TOOLBOX ──────────────────────────────────────────── */}
             <FadeIn delay={0.08} className="bento-cell">
-              <Link href="/toolbox" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              {/* Real navigation — the toolbox is a standalone app, not a React route. */}
+              <a href="/toolbox/" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -120,11 +121,11 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      35 native React calculators. Voltage drop, motor FLA, short circuit, power factor, harmonics, and everything NEC-verified.
+                      39 calculators and reference tables. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics — all NEC-referenced.
                     </p>
                   </div>
                 </div>
-              </Link>
+              </a>
             </FadeIn>
 
             {/* ── PROJECTS ──────────────────────────────────────────────── */}

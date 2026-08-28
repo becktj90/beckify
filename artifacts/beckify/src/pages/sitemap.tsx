@@ -3,8 +3,6 @@ import { ArrowUpRight, MapIcon, Terminal, Wrench, Rocket, Gamepad2, Orbit } from
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
-import { ALL_TOOLS } from "@/data/tools";
-import type { ToolCategory } from "@/lib/ee/types";
 
 /**
  * Fixed-order categorical palette (validated for CVD-safety + contrast on
@@ -31,33 +29,77 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/games", label: "Games", description: "Finger Runner and arcade extras.", icon: Gamepad2, hue: HUES.magenta },
 ];
 
-const CATEGORY_HUES: Record<ToolCategory, string> = {
-  "Fundamentals": HUES.blue,
-  "Conductors & Raceway": HUES.orange,
-  "Motors & Transformers": HUES.aqua,
-  "Power Systems": HUES.yellow,
-  "Lighting & Power Quality": HUES.magenta,
-  "Hazardous & Instrumentation": HUES.red,
-  "Reference": HUES.violet,
-};
+/**
+ * The toolbox is a standalone app under /toolbox/, so this mirrors its actual
+ * sidebar groups and deep-links into each one. It is a hand-maintained list
+ * rather than a generated one — the toolbox is not a React module, so there is
+ * nothing to import. Keep it in step with the sidebar in
+ * public/toolbox/index.html.
+ */
+interface ToolboxCategory {
+  label: string;
+  hue: string;
+  /** Section id in the toolbox app, linked as /toolbox/#<anchor>. */
+  anchor: string;
+  tools: string[];
+}
 
-const CATEGORY_ORDER: ToolCategory[] = [
-  "Fundamentals",
-  "Conductors & Raceway",
-  "Motors & Transformers",
-  "Power Systems",
-  "Lighting & Power Quality",
-  "Hazardous & Instrumentation",
-  "Reference",
+const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
+  {
+    label: "Fundamentals", hue: HUES.blue, anchor: "sec-ohm",
+    tools: ["Ohm's Law", "DC Power", "Power & Current Converter", "AC Power"],
+  },
+  {
+    label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance",
+    tools: ["Reactance & Impedance", "Resonance", "Power Factor Correction"],
+  },
+  {
+    label: "Series / Parallel", hue: HUES.violet, anchor: "sec-sp",
+    tools: ["Resistance, C, L"],
+  },
+  {
+    label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
+    tools: [
+      "Voltage Drop", "Motor Calculations", "Transformer", "Transformer Sizing",
+      "Conduit Fill", "Conduit Fill (Mixed)", "Wire Size & Ampacity", "Short Circuit",
+    ],
+  },
+  {
+    label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
+    tools: ["UPS Sizing", "Generator Sizing", "Hybrid Generator"],
+  },
+  {
+    label: "NEC Calculations", hue: HUES.green, anchor: "sec-nec",
+    tools: ["NEC Circuit Calculator"],
+  },
+  {
+    label: "NEC Specialized", hue: HUES.magenta, anchor: "sec-lighting-opt",
+    tools: ["Lighting VD Optimizer", "Building Load Calculator"],
+  },
+  {
+    label: "Advanced", hue: HUES.blue, anchor: "sec-lsi",
+    tools: ["LSI Breaker Visualizer", "BESS Peak-Shave", "Tap-Changer Calc", "Harmonics Tool"],
+  },
+  {
+    label: "Hazardous & Safety", hue: HUES.red, anchor: "sec-haz",
+    tools: ["Hazardous Area Lookup", "IS Loop Verifier"],
+  },
+  {
+    label: "Tools", hue: HUES.orange, anchor: "sec-convert",
+    tools: ["Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule OCR"],
+  },
+  {
+    label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",
+    tools: [
+      "Conductor Reference", "Motor FLA Tables", "Conduit Fill Tables",
+      "IP Rating Chart", "NEMA Enclosures", "NEC Code Tables",
+    ],
+  },
 ];
 
+const TOOLBOX_TOOL_COUNT = TOOLBOX_CATEGORIES.reduce((n, c) => n + c.tools.length, 0);
+
 export default function SiteMapPage() {
-  const toolsByCategory = new Map<ToolCategory, typeof ALL_TOOLS>();
-  for (const tool of ALL_TOOLS) {
-    const list = toolsByCategory.get(tool.category) ?? [];
-    list.push(tool);
-    toolsByCategory.set(tool.category, list);
-  }
 
   return (
     <Layout>
@@ -106,50 +148,48 @@ export default function SiteMapPage() {
             Toolbox categories
           </h2>
           <p className="text-sm text-[var(--muted)]">
-            {ALL_TOOLS.length} calculators across {CATEGORY_ORDER.length} categories — click any card to open the toolbox.
+            {TOOLBOX_TOOL_COUNT} calculators across {TOOLBOX_CATEGORIES.length} categories — open any group directly.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {CATEGORY_ORDER.map((category) => {
-            const tools = toolsByCategory.get(category) ?? [];
-            const hue = CATEGORY_HUES[category];
-            return (
-              <Link
-                key={category}
-                href="/toolbox"
-                className="card-surface group p-5 rounded-2xl relative overflow-hidden block"
-                style={{ borderColor: `color-mix(in srgb, ${hue} 30%, var(--border))` }}
-              >
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: `radial-gradient(ellipse at 90% 0%, ${hue}1a 0%, transparent 60%)` }}
-                />
-                <div className="relative z-10 flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: hue }} />
-                    <h3 className="font-display text-sm font-semibold text-[var(--foreground)]">{category}</h3>
-                  </div>
+          {TOOLBOX_CATEGORIES.map(({ label, hue, anchor, tools }) => (
+            /* The toolbox is a separate app, so this is a real navigation
+               rather than a client-side route. */
+            <a
+              key={label}
+              href={`/toolbox/#${anchor}`}
+              className="card-surface group p-5 rounded-2xl relative overflow-hidden block"
+              style={{ borderColor: `color-mix(in srgb, ${hue} 30%, var(--border))` }}
+            >
+              <div
+                className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: `radial-gradient(ellipse at 90% 0%, ${hue}1a 0%, transparent 60%)` }}
+              />
+              <div className="relative z-10 flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: hue }} />
+                  <h3 className="font-display text-sm font-semibold text-[var(--foreground)]">{label}</h3>
+                </div>
+                <span
+                  className="text-[10px] font-semibold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full"
+                  style={{ background: `${hue}26`, color: hue }}
+                >
+                  {tools.length} tool{tools.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="relative z-10 flex flex-wrap gap-1.5">
+                {tools.map((tool) => (
                   <span
-                    className="text-[10px] font-semibold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full"
-                    style={{ background: `${hue}26`, color: hue }}
+                    key={tool}
+                    className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)]"
                   >
-                    {tools.length} tool{tools.length === 1 ? "" : "s"}
+                    {tool}
                   </span>
-                </div>
-                <div className="relative z-10 flex flex-wrap gap-1.5">
-                  {tools.map((tool) => (
-                    <span
-                      key={tool.id}
-                      className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)]"
-                    >
-                      {tool.name}
-                    </span>
-                  ))}
-                </div>
-              </Link>
-            );
-          })}
+                ))}
+              </div>
+            </a>
+          ))}
         </div>
       </FadeIn>
     </Layout>

@@ -252,6 +252,10 @@ header .subtitle {
 /* ── Sections ── */
 .section { display: none; }
 .section.active { display: block; }
+/* The header is sticky and overlays the content, so a hash jump would otherwise
+   park a tool's title underneath it. scroll-margin-top offsets the landing
+   point for both in-app navigation and direct deep links. */
+.section { scroll-margin-top: calc(var(--header-h, 58px) + 10px); }
 
 .section-header {
   border-bottom: 1px solid var(--border);
@@ -830,19 +834,42 @@ kbd {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .layout { flex-direction: column; }
+  /* The tool list is an overlay drawer on mobile, not an inline block. As an
+     inline block it inserted ~1140px above the content, so selecting a tool
+     collapsed it again and left the page scrolled past the tool. As a fixed
+     overlay the content underneath never moves. */
   .sidebar {
+    position: fixed;
+    top: var(--header-h, 58px);
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: auto;
-    position: relative;
-    top: 0;
+    z-index: 180;
     display: none;
     flex-wrap: wrap;
-    padding: 8px;
-    gap: 4px;
+    align-content: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px;
+    gap: 6px;
+    background: var(--bg-sidebar);
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
   body.sidebar-open .sidebar { display: flex; }
+  /* Stop the page behind the drawer from scrolling with it. */
+  body.sidebar-open { overflow: hidden; }
+  .sidebar-search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-sidebar);
+    padding-bottom: 8px;
+  }
+  /* Comfortable tap targets in the drawer. */
+  .nav-btn { min-height: 40px; display: inline-flex; align-items: center; }
   .sidebar-toggle-btn { display: inline-block; }
   .sidebar-section { padding: 0; }
   .sidebar-section-title { display: none; }

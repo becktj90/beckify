@@ -17,7 +17,28 @@ function getHashSectionId() {
   return location.hash.slice(1).split('?')[0];
 }
 
-function setActiveSection(sectionId) {
+/* The header is sticky, so the mobile drawer has to start below it. Publish the
+   measured height as a CSS variable rather than hard-coding a guess. */
+function syncHeaderHeight() {
+  const header = document.querySelector('header');
+  if (!header) return;
+  document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+}
+
+/* Only one section is ever visible, and it sits at the top of .main, so the top
+   of the document is the top of the selected tool. Switching tools without
+   resetting scroll left the user parked wherever they had scrolled to in the
+   tool list, with the tool's inputs above the viewport. */
+function scrollToActiveTool() {
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  try {
+    window.scrollTo({ top: 0, behavior: behavior });
+  } catch (_) {
+    window.scrollTo(0, 0);
+  }
+}
+
+function setActiveSection(sectionId, opts) {
   const fallback = document.getElementById(DEFAULT_SECTION_ID);
   const target = document.getElementById(sectionId) || fallback;
   if (!target) return;
@@ -28,6 +49,8 @@ function setActiveSection(sectionId) {
   document.querySelectorAll('.section').forEach(sec => {
     sec.classList.toggle('active', sec.id === target.id);
   });
+
+  if (!opts || opts.scroll !== false) scrollToActiveTool();
 }
 
 const SIDEBAR_OPEN_KEY = 'toolbox-sidebar-open';
@@ -2246,7 +2269,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('hashchange', () => {
-    setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
+    setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID, { scroll: false });
   });
   setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
 
@@ -2265,8 +2288,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const isOpen = document.body.classList.toggle('sidebar-open');
       sidebarToggle.setAttribute('aria-expanded', String(isOpen));
       try { localStorage.setItem(SIDEBAR_OPEN_KEY, isOpen ? '1' : '0'); } catch (_) {}
+      if (isOpen) syncHeaderHeight();
+    });
+
+    /* Escape closes the drawer, matching normal overlay behaviour. */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+        closeMobileSidebar();
+      }
     });
   }
+
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight);
+
+  /* Leaving the mobile breakpoint must not strand the body in overflow:hidden. */
+  const mobileQuery = window.matchMedia('(max-width: 768px)');
+  const onBreakpointChange = (e) => { if (!e.matches) closeMobileSidebar(); };
+  if (mobileQuery.addEventListener) mobileQuery.addEventListener('change', onBreakpointChange);
 
   const navSearch = document.getElementById('nav-search');
   if (navSearch) {

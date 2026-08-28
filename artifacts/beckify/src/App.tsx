@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import AboutPage from "@/pages/about";
-import ToolboxPage from "@/pages/toolbox";
 import ProjectsPage from "@/pages/projects";
 import GamesPage from "@/pages/games";
 import SiteMapPage from "@/pages/sitemap";
@@ -24,7 +23,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/about" component={AboutPage} />
-      <Route path="/toolbox" component={ToolboxPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/games" component={GamesPage} />
       <Route path="/sitemap" component={SiteMapPage} />

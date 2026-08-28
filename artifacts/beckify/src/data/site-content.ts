@@ -43,11 +43,17 @@ export interface NavLink {
   href: string;
   label: string;
   icon: LucideIcon;
+  /**
+   * The toolbox is a standalone app served from /toolbox/, not a React route,
+   * so it needs a real navigation. Client-side routing to it would render a
+   * React page instead of the actual toolbox.
+   */
+  external?: boolean;
 }
 
 export const NAV_LINKS: NavLink[] = [
   { href: "/about", label: "About", icon: Terminal },
-  { href: "/toolbox", label: "Toolbox", icon: Wrench },
+  { href: "/toolbox/", label: "Toolbox", icon: Wrench, external: true },
   { href: "/projects", label: "Projects", icon: Rocket },
   { href: "/games", label: "Games", icon: Gamepad2 },
 ];
@@ -62,13 +68,16 @@ export interface HubCard {
   description: string;
   href: string;
   icon: LucideIcon;
+  /** See NavLink.external. */
+  external?: boolean;
 }
 
 export const HOME_NAV_CARDS: HubCard[] = [
   {
     title: "EE Toolbox",
     description: "Electrical calculators and quick-reference tools.",
-    href: "/toolbox",
+    href: "/toolbox/",
+    external: true,
     icon: Wrench,
   },
   {
