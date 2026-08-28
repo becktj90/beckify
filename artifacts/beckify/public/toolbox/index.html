@@ -43,6 +43,7 @@
       <div class="sidebar-section-title">⚡ Fundamentals</div>
       <button class="nav-btn" data-target="sec-ohm">Ohm's Law</button>
       <button class="nav-btn" data-target="sec-power-dc">DC Power</button>
+      <button class="nav-btn" data-target="sec-power-convert" data-keywords="power current converter amps to kw kw to amps kva hp horsepower single phase three phase convert solve">Power &amp; Current Converter</button>
       <button class="nav-btn" data-target="sec-power-ac">AC Power</button>
     </div>
     <div class="sidebar-section">
@@ -60,6 +61,7 @@
       <button class="nav-btn" data-target="sec-vdrop">Voltage Drop</button>
       <button class="nav-btn" data-target="sec-motor">Motor Calculations</button>
       <button class="nav-btn" data-target="sec-xfmr">Transformer</button>
+      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="transformer sizing selection protection ocpd overcurrent 450.3 standard kva primary secondary">Transformer Sizing</button>
       <button class="nav-btn" data-target="sec-conduit">Conduit Fill</button>
       <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
       <button class="nav-btn" data-target="sec-wire-select" data-keywords="wire size selector ampacity conductor selection voltage drop parallel runs cost derating ambient termination 310.16 110.14 continuous load">Wire Size &amp; Ampacity</button>
@@ -166,6 +168,8 @@
             <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
             <li><a class="home-tool-link" href="#sec-conduit-adv">Conduit Fill (Mixed)</a></li>
             <li><a class="home-tool-link" href="#sec-wire-select">Wire Size &amp; Ampacity</a></li>
+            <li><a class="home-tool-link" href="#sec-power-convert">Power &amp; Current Converter</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
           </ul>
         </div>
@@ -1439,6 +1443,217 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         POWER & CURRENT CONVERTER
+         ════════════════════════════════════════ -->
+    <section id="sec-power-convert" class="section">
+      <div class="section-header">
+        <h2>🔀 Power &amp; Current Converter</h2>
+        <p>Solve for amps, kW, kVA or HP from any one of the others — DC, single-phase or three-phase.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Power Conversions</summary>
+          <div class="section-info-body">
+            Pick which quantity you already know and the rest are derived from it. The relationships are:
+            <ul>
+              <li><strong>DC</strong> — S = V × I, and there is no power factor</li>
+              <li><strong>Single-phase</strong> — S = V × I, P = S × PF</li>
+              <li><strong>Three-phase</strong> — S = √3 × V<sub>L-L</sub> × I<sub>L</sub>, P = S × PF</li>
+            </ul>
+            <strong>Horsepower is shaft output, not electrical input.</strong> A 10 HP motor at 90% efficiency draws 10 × 746 ÷ 0.90 = 8,289 W from the supply, not 7,460 W. Mixing those up is the usual source of an undersized motor circuit.<br><br>
+            For <strong>motor conductor and overcurrent sizing the NEC requires the table value</strong> from Article 430 (Tables 430.248 and 430.250), not a current you calculated from nameplate horsepower — see NEC 430.6(A)(1). Use this tool for load estimating and the Motor FLA tables for code compliance.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Convert</div>
+          <div class="card-body">
+            <div class="formula-box">
+              1Ø: kVA = V × I ÷ 1000 &nbsp;|&nbsp; 3Ø: kVA = √3 × V<sub>L-L</sub> × I<sub>L</sub> ÷ 1000<br>
+              kW = kVA × PF &nbsp;|&nbsp; HP = kW × 1000 × Eff ÷ 746
+            </div>
+            <div class="input-group">
+              <div>
+                <label>System</label>
+                <select id="pc_system">
+                  <option value="3ph">3-Phase AC</option>
+                  <option value="1ph">1-Phase AC</option>
+                  <option value="dc">DC</option>
+                </select>
+              </div>
+              <div>
+                <label>Voltage (V)</label>
+                <input type="number" id="pc_voltage" value="480" min="1" step="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>I know the…</label>
+                <select id="pc_known">
+                  <option value="kw">Real power (kW)</option>
+                  <option value="a">Current (A)</option>
+                  <option value="kva">Apparent power (kVA)</option>
+                  <option value="hp">Horsepower (HP)</option>
+                </select>
+              </div>
+              <div>
+                <label>Value</label>
+                <input type="number" id="pc_value" value="50" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Power Factor (%)</label>
+                <input type="number" id="pc_pf" value="90" min="1" max="100" step="1">
+              </div>
+              <div>
+                <label>Efficiency (%)</label>
+                <input type="number" id="pc_eff" value="93" min="1" max="100" step="1">
+              </div>
+            </div>
+            <button class="btn" onclick="calcPowerConvert()">Convert</button>
+            <div id="pc_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Which formula applies</div>
+          <div class="card-body">
+            <table class="ref-table">
+              <thead><tr><th>Solving for</th><th>Single-phase</th><th>Three-phase</th></tr></thead>
+              <tbody>
+                <tr><td>Amps from kW</td><td>kW×1000 / (V×PF)</td><td>kW×1000 / (√3×V×PF)</td></tr>
+                <tr><td>Amps from kVA</td><td>kVA×1000 / V</td><td>kVA×1000 / (√3×V)</td></tr>
+                <tr><td>Amps from HP</td><td>HP×746 / (V×PF×Eff)</td><td>HP×746 / (√3×V×PF×Eff)</td></tr>
+                <tr><td>kVA from amps</td><td>V×I / 1000</td><td>√3×V×I / 1000</td></tr>
+                <tr><td>kW from kVA</td><td>kVA × PF</td><td>kVA × PF</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:12px;font-size:0.78rem;line-height:1.6;color:var(--fg-muted)">
+              Three-phase voltage is always line-to-line and current is line current.
+              Power factor is the cosine of the angle between voltage and current, so at
+              PF = 1 the kVA and kW are equal and the reactive component is zero.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TRANSFORMER SIZING & PROTECTION
+         ════════════════════════════════════════ -->
+    <section id="sec-xfmr-size" class="section">
+      <div class="section-header">
+        <h2>🔄 Transformer Sizing &amp; Protection</h2>
+        <p>Pick a standard kVA for a load, then size the overcurrent protection per NEC Table 450.3(B).</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Transformer Protection</summary>
+          <div class="section-info-body">
+            <strong>NEC Table 450.3(B)</strong> gives the maximum overcurrent protection for transformers rated 1000 V or less. There are two permitted methods:<br><br>
+            <strong>Primary protection only</strong>
+            <ul>
+              <li>Primary current 9 A or more → <strong>125%</strong> (next standard size up permitted, Note 1)</li>
+              <li>Primary current 2 A up to 9 A → <strong>167%</strong></li>
+              <li>Primary current under 2 A → <strong>300%</strong></li>
+            </ul>
+            <strong>Primary and secondary protection</strong>
+            <ul>
+              <li>Primary → <strong>250%</strong></li>
+              <li>Secondary 9 A or more → <strong>125%</strong> (next size up permitted)</li>
+              <li>Secondary under 9 A → <strong>167%</strong></li>
+            </ul>
+            The primary device is allowed to be much larger under the second method because the secondary device provides the closer protection. <strong>Note 1</strong> permits rounding up to the next standard rating from 240.6(A) only where the calculation is 125% and does not land on a standard size — the 167% and 300% rows are hard ceilings.<br><br>
+            These limits protect <strong>the transformer</strong>. Conductors need their own protection under Article 240, and secondary conductors under 240.21(C).
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Load &amp; Connection</div>
+          <div class="card-body">
+            <div class="formula-box">
+              1Ø: I = kVA × 1000 ÷ V &nbsp;|&nbsp; 3Ø: I = kVA × 1000 ÷ (√3 × V)
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Phase</label>
+                <select id="xs_phase">
+                  <option value="3ph">3-Phase</option>
+                  <option value="1ph">1-Phase</option>
+                </select>
+              </div>
+              <div>
+                <label>Load Units</label>
+                <select id="xs_load_unit">
+                  <option value="kva">kVA</option>
+                  <option value="kw">kW</option>
+                  <option value="a">Amps (secondary)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Load Value</label>
+                <input type="number" id="xs_load" value="90" min="0" step="any">
+              </div>
+              <div>
+                <label>Power Factor (%) — for kW</label>
+                <input type="number" id="xs_pf" value="90" min="1" max="100" step="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Primary Voltage (V)</label>
+                <input type="number" id="xs_vp" value="480" min="1" step="1">
+              </div>
+              <div>
+                <label>Secondary Voltage (V)</label>
+                <input type="number" id="xs_vs" value="208" min="1" step="1">
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="xs_continuous">
+              <label for="xs_continuous" style="margin:0">Continuous load — size at 125%</label>
+            </div>
+            <button class="btn" onclick="calcXfmrSizing()">Size Transformer</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">NEC Table 450.3(B) — 1000 V and Less</div>
+          <div class="card-body">
+            <table class="ref-table">
+              <thead><tr><th>Method</th><th>Current</th><th>Max OCPD</th></tr></thead>
+              <tbody>
+                <tr><td>Primary only</td><td>≥ 9 A</td><td>125%</td></tr>
+                <tr><td>Primary only</td><td>2 A to &lt; 9 A</td><td>167%</td></tr>
+                <tr><td>Primary only</td><td>&lt; 2 A</td><td>300%</td></tr>
+                <tr><td>Pri + Sec</td><td>Primary</td><td>250%</td></tr>
+                <tr><td>Pri + Sec</td><td>Secondary ≥ 9 A</td><td>125%</td></tr>
+                <tr><td>Pri + Sec</td><td>Secondary &lt; 9 A</td><td>167%</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:12px;font-size:0.78rem;line-height:1.6;color:var(--fg-muted)">
+              Note 1 permits the next higher standard rating from 240.6(A) where 125% does
+              not correspond to a standard size. The 167% and 300% rows are ceilings, so the
+              device must land at or below them.
+            </p>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Result</div>
+          <div class="card-body">
+            <div id="xs_result" class="result"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
          WIRE SIZE & AMPACITY SELECTOR
          ════════════════════════════════════════ -->
     <section id="sec-wire-select" class="section">
@@ -1600,17 +1815,27 @@
       <div class="card-grid">
 
         <div class="card">
-          <div class="card-title">Available Fault Current (Three-Phase)</div>
+          <div class="card-title">Available Fault Current</div>
           <div class="card-body">
             <div class="formula-box">
-              I_base = kVA × 1000 / (√3 × V_sec)<br>
+              3Ø: I_base = kVA × 1000 / (√3 × V_sec)<br>
+              1Ø: I_base = kVA × 1000 / V_sec<br>
               I_SC   = I_base / Z_pu &nbsp;&nbsp; (Z_pu = %Z / 100)<br>
               K = √(1 + 2·exp(−2π/(X/R)))<br>
               I_asym = I_SC × K
             </div>
             <div class="input-group">
+              <div>
+                <label>Phase</label>
+                <select id="sc_phase">
+                  <option value="3ph">3-Phase</option>
+                  <option value="1ph">1-Phase</option>
+                </select>
+              </div>
               <div><label>Transformer Rating (kVA)</label><input type="number" id="sc_kva" placeholder="e.g. 500" step="any" min="0"></div>
-              <div><label>Secondary Voltage — L-L (V)</label><input type="number" id="sc_vs" placeholder="e.g. 480" step="any" min="0"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Secondary Voltage (V) — L-L for 3Ø</label><input type="number" id="sc_vs" placeholder="e.g. 480" step="any" min="0"></div>
             </div>
             <div class="input-group">
               <div><label>Transformer Impedance — %Z</label><input type="number" id="sc_z" placeholder="e.g. 5.75" step="any" min="0"></div>
@@ -1747,7 +1972,9 @@
 
         <div id="tab-mr-1p" class="tab-pane">
           <div class="card-grid wide">
-            <div class="card">
+            
+        <div class="card" style="grid-column:1/-1"><div class="card-body"><div class="formula-box">Source: NEC Table 430.248 (single-phase) and Table 430.250 (three-phase squirrel-cage). Use these table values for conductor and OCPD sizing per NEC 430.6(A)(1) &mdash; not motor nameplate current.</div></div></div>
+<div class="card">
               <div class="card-title">Single-Phase AC Motor FLA — NEC Table 430.248</div>
               <div class="card-body">
                 <div class="ref-table-wrap">
@@ -1837,7 +2064,9 @@
       </div>
       <div class="card-grid wide">
 
-        <div class="card">
+        
+        <div class="card" style="grid-column:1/-1"><div class="card-body"><div class="formula-box">Source: NEC Annex C, Table C.1 &mdash; maximum THHN/THWN-2 conductors in EMT at the 40% fill limit. Chapter 9 Table 4 gives raceway areas; Table 5 gives conductor areas.</div></div></div>
+<div class="card">
           <div class="card-title">EMT Trade Sizes — Internal Dimensions &amp; Fill Areas</div>
           <div class="card-body">
             <div class="ref-table-wrap">
@@ -3099,6 +3328,13 @@
       <div class="section-header">
         <h2>🗂️ Revit Panel Schedule OCR</h2>
         <p>Open the dedicated OCR workspace to extract panel schedules from images and print a clean half-sheet format.</p>
+        <details class="section-info">
+          <summary>&#8505; More Info &mdash; Panel Schedule OCR</summary>
+          <div class="section-info-body">
+            Reads a panel-schedule image with <strong>Tesseract.js</strong> in your browser &mdash; nothing is uploaded to a server &mdash; then parses circuit numbers, descriptions, breaker sizes and loads into an editable table you can print as a half sheet.<br><br>
+            <strong>OCR is a starting point, not a source of truth.</strong> Always check the parsed breaker sizes and phase assignments against the original drawing before using them for a load calculation. Panel schedule layout and required content are governed by <strong>NEC 408.4</strong> (circuit directory marking) and the load calculation itself by <strong>NEC Article 220</strong>.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
         <div class="card" style="grid-column:1/-1">
@@ -3802,7 +4038,9 @@
       </div>
       <div class="card-grid">
 
-        <div class="card">
+        
+        <div class="card" style="grid-column:1/-1"><div class="card-body"><div class="formula-box">Source: IEC 60529 &mdash; IP XY, first digit solid-particle protection (0&ndash;6), second digit liquid protection (0&ndash;9K).</div></div></div>
+<div class="card">
           <div class="card-title">First Digit — Solid Particle Protection</div>
           <div class="card-body">
             <div class="ref-table-wrap">
@@ -4440,6 +4678,7 @@
 <script src="js/nec-data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/wire-tools.js"></script>
+<script src="js/power-tools.js"></script>
 <script src="js/arcade.js"></script>
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>

@@ -816,15 +816,23 @@ window.calcConduitFill = function () {
 window.calcSC = function () {
   const kVA = val('sc_kva'), Vs = val('sc_vs'), Zp = val('sc_z') / 100;
   const xrInput = val('sc_xr');
+  const phaseEl = document.getElementById('sc_phase');
+  const phase = phaseEl ? phaseEl.value : '3ph';
   const xRatio = isFinite(xrInput) && xrInput > 0 ? xrInput : DEFAULT_SC_XR_RATIO;
   if (!isPos(kVA, Vs, Zp)) return showError('sc_result', 'Enter transformer kVA, secondary voltage (V), and impedance %.');
-  const I_base = kVA * 1000 / (Math.sqrt(3) * Vs);
+  // Single-phase base current has no sqrt(3). Using the three-phase form on a
+  // 1-phase bank understates the fault current by 1.73x, which is the unsafe
+  // direction when checking equipment interrupting ratings.
+  const I_base = phase === '1ph'
+    ? kVA * 1000 / Vs
+    : kVA * 1000 / (Math.sqrt(3) * Vs);
   const I_fault = I_base / Zp;  // simplified (neglects line impedance)
   const I_sym  = I_fault;
   // IEEE asymmetrical factor calculation based on X/R ratio
   const asymmetricalFactor = Math.sqrt(1 + 2 * Math.exp(-2 * Math.PI / xRatio));
   const I_asym = I_fault * asymmetricalFactor;
   showResult('sc_result', [
+    ['System', phase === '1ph' ? '1-Phase' : '3-Phase'],
     ['Base Current (I_base)', fmt(I_base, 2) + ' A'],
     ['Available Short Circuit (Symmetrical)', fmt(I_sym, 0) + ' A'],
     ['Asymmetrical Factor (IEEE, X/R=' + fmt(xRatio, 2) + ')', fmt(asymmetricalFactor, 4)],
