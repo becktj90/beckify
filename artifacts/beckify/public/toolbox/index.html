@@ -61,6 +61,8 @@
       <button class="nav-btn" data-target="sec-motor">Motor Calculations</button>
       <button class="nav-btn" data-target="sec-xfmr">Transformer</button>
       <button class="nav-btn" data-target="sec-conduit">Conduit Fill</button>
+      <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
+      <button class="nav-btn" data-target="sec-wire-select" data-keywords="wire size selector ampacity conductor selection voltage drop parallel runs cost derating ambient termination 310.16 110.14 continuous load">Wire Size &amp; Ampacity</button>
       <button class="nav-btn" data-target="sec-sc">Short Circuit</button>
     </div>
     <div class="sidebar-section">
@@ -162,6 +164,8 @@
             <li><a class="home-tool-link" href="#sec-motor">Motor Calculations</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
+            <li><a class="home-tool-link" href="#sec-conduit-adv">Conduit Fill (Mixed)</a></li>
+            <li><a class="home-tool-link" href="#sec-wire-select">Wire Size &amp; Ampacity</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
           </ul>
         </div>
@@ -1324,6 +1328,257 @@
 
       </div>
     </section>
+
+    <!-- ════════════════════════════════════════
+         CONDUIT FILL — MIXED CONDUCTORS
+         ════════════════════════════════════════ -->
+    <section id="sec-conduit-adv" class="section">
+      <div class="section-header">
+        <h2>🔵 Conduit Fill — Mixed Conductors</h2>
+        <p>Any Chapter 9 raceway, any mix of conductor sizes and insulations, with the minimum size recommended for you.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Mixed Conduit Fill</summary>
+          <div class="section-info-body">
+            Unlike the single-size calculator, this one sums <strong>each conductor group separately</strong>, so a run carrying 3&nbsp;×&nbsp;250&nbsp;kcmil phases, 1&nbsp;×&nbsp;2/0 neutral and 1&nbsp;×&nbsp;4&nbsp;AWG ground is handled in one pass.<br><br>
+            <strong>NEC Chapter 9, Table 1 fill limits:</strong>
+            <ul>
+              <li>1 conductor → 53%</li>
+              <li>2 conductors → 31%</li>
+              <li>Over 2 conductors → 40%</li>
+              <li>Nipples 24&nbsp;in or shorter → 60% (Table 1, Note 4)</li>
+            </ul>
+            Raceway areas come from <strong>Chapter 9, Table 4</strong> and conductor areas from <strong>Table 5</strong>. Because Table 5 areas are published rounded, a computed conductor count can land one below the Annex C table at an exact boundary — Annex C governs when every conductor is the same size.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Conductors &amp; Raceway</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Fill% = (Σ conductor areas / raceway area) × 100<br>
+              Limit: 1 wire = 53% | 2 wires = 31% | 3+ = 40% | nipple = 60%
+            </div>
+
+            <label>Conductors in the raceway</label>
+            <div id="cfa_rows"></div>
+            <div class="cfa-actions">
+              <button type="button" class="btn btn-secondary" onclick="addConduitRow()">+ Add conductor group</button>
+            </div>
+
+            <div class="input-group">
+              <div>
+                <label>Raceway Type</label>
+                <select id="cfa_type">
+                  <option value="EMT">EMT</option>
+                  <option value="IMC">IMC</option>
+                  <option value="RMC">RMC (Rigid)</option>
+                  <option value="PVC40">PVC Schedule 40</option>
+                  <option value="PVC80">PVC Schedule 80</option>
+                  <option value="ENT">ENT</option>
+                  <option value="FMC">FMC (Flex)</option>
+                  <option value="LFMC">LFMC (Liquidtight)</option>
+                </select>
+              </div>
+              <div>
+                <label>Trade Size</label>
+                <select id="cfa_size">
+                  <option value="auto">Auto — find minimum</option>
+                  <option value="1/2">1/2"</option>
+                  <option value="3/4">3/4"</option>
+                  <option value="1">1"</option>
+                  <option value="1-1/4">1-1/4"</option>
+                  <option value="1-1/2">1-1/2"</option>
+                  <option value="2">2"</option>
+                  <option value="2-1/2">2-1/2"</option>
+                  <option value="3">3"</option>
+                  <option value="3-1/2">3-1/2"</option>
+                  <option value="4">4"</option>
+                  <option value="5">5"</option>
+                  <option value="6">6"</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="cfa-check">
+              <input type="checkbox" id="cfa_nipple">
+              <label for="cfa_nipple" style="margin:0">Nipple — 24 in or shorter (60% fill allowed)</label>
+            </div>
+
+            <button class="btn" onclick="calcConduitFillAdvanced()">Check Fill</button>
+            <div id="cfa_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">How the limits work</div>
+          <div class="card-body">
+            <div class="formula-box">
+              NEC Ch.9 Table 1
+            </div>
+            <table class="ref-table">
+              <thead><tr><th>Conductors</th><th>Max fill</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>53%</td></tr>
+                <tr><td>2</td><td>31%</td></tr>
+                <tr><td>Over 2</td><td>40%</td></tr>
+                <tr><td>Nipple ≤ 24 in</td><td>60%</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:12px;font-size:0.78rem;line-height:1.6;color:var(--fg-muted)">
+              The two-conductor case is the tightest because two round conductors in a round
+              raceway leave the most unusable space. Equipment grounding conductors count toward
+              the conductor total for fill even though they are not current-carrying — that
+              distinction only matters for the ampacity adjustment in the Wire Size tool.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         WIRE SIZE & AMPACITY SELECTOR
+         ════════════════════════════════════════ -->
+    <section id="sec-wire-select" class="section">
+      <div class="section-header">
+        <h2>🧲 Wire Size &amp; Ampacity</h2>
+        <p>Picks the smallest conductor that satisfies both ampacity and your voltage-drop ceiling, then prices the parallel-run options.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Wire Sizing</summary>
+          <div class="section-info-body">
+            Conductor selection has to clear <strong>two independent hurdles</strong>, and on long runs the second one usually governs:
+            <ul>
+              <li><strong>Ampacity</strong> — NEC Table 310.16, corrected for ambient temperature (310.15(B)(1)), adjusted for more than three current-carrying conductors (310.15(C)(1)), then capped by the equipment termination rating (110.14(C)). Continuous loads are sized at 125% per 210.19(A)/215.2(A).</li>
+              <li><strong>Voltage drop</strong> — not a hard NEC requirement, but 3% on a branch circuit and 5% total is the long-standing informational-note guidance (210.19(A) and 215.2(A) FPNs).</li>
+            </ul>
+            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. Paralleling often beats a single large conductor on both cost and installability — this tool prices the options so the trade-off is visible.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Circuit &amp; Load</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>System</label>
+                <select id="ws_phase">
+                  <option value="3ph">3-Phase AC</option>
+                  <option value="1ph">1-Phase AC</option>
+                </select>
+              </div>
+              <div>
+                <label>Voltage (V)</label>
+                <input type="number" id="ws_voltage" value="480" min="1" step="1">
+              </div>
+            </div>
+            <div class="input-group triple">
+              <div>
+                <label>Load</label>
+                <input type="number" id="ws_load" value="150" min="0" step="any">
+              </div>
+              <div>
+                <label>Units</label>
+                <select id="ws_load_unit">
+                  <option value="a">Amps</option>
+                  <option value="kw">kW</option>
+                  <option value="kva">kVA</option>
+                  <option value="hp">HP</option>
+                </select>
+              </div>
+              <div>
+                <label>Power Factor</label>
+                <input type="number" id="ws_pf" value="0.9" min="0.1" max="1" step="0.01">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>One-Way Length (ft)</label>
+                <input type="number" id="ws_length" value="250" min="1" step="1">
+              </div>
+              <div>
+                <label>Max Voltage Drop (%)</label>
+                <input type="number" id="ws_maxvd" value="3" min="0.1" max="15" step="0.1">
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="ws_continuous" checked>
+              <label for="ws_continuous" style="margin:0">Continuous load — size at 125%</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Conductor &amp; Conditions</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>Material</label>
+                <select id="ws_material">
+                  <option value="cu">Copper</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+              <div>
+                <label>Insulation Rating</label>
+                <select id="ws_insul">
+                  <option value="90" selected>90°C (THHN/XHHW-2)</option>
+                  <option value="75">75°C (THWN/RHW)</option>
+                  <option value="60">60°C (TW/UF)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Termination Rating</label>
+                <select id="ws_term">
+                  <option value="75" selected>75°C</option>
+                  <option value="60">60°C</option>
+                  <option value="90">90°C</option>
+                </select>
+              </div>
+              <div>
+                <label>Ambient Temp (°C)</label>
+                <input type="number" id="ws_ambient" value="30" min="-10" max="90" step="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Current-Carrying Conductors</label>
+                <input type="number" id="ws_ccc" value="3" min="1" max="60" step="1">
+              </div>
+              <div>
+                <label>Max Parallel Runs</label>
+                <input type="number" id="ws_maxruns" value="4" min="1" max="10" step="1">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Price Multiplier (1.0 = built-in estimates)</label>
+                <input type="number" id="ws_price_mult" value="1" min="0.1" max="10" step="0.05">
+              </div>
+            </div>
+            <button class="btn" onclick="calcWireSelection()">Select Conductor</button>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Result</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Ampacity: I<sub>design</sub> ≤ Table 310.16 × C<sub>ambient</sub> × A<sub>bundle</sub>, capped at the termination column<br>
+              Voltage drop: ΔV = (2 or √3) × I × L × (R·cosθ + X·sinθ) / (1000 × runs)
+            </div>
+            <div id="ws_result" class="result"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
 
     <!-- ════════════════════════════════════════
          SHORT CIRCUIT
@@ -4182,7 +4437,9 @@
 </div><!-- end .layout -->
 
 <script src="js/vendor/solver.js"></script>
+<script src="js/nec-data.js"></script>
 <script src="js/app.js"></script>
+<script src="js/wire-tools.js"></script>
 <script src="js/arcade.js"></script>
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>

@@ -19,6 +19,7 @@ import {
   Cog,
 } from "lucide-react";
 import type { Tool } from "@/lib/ee/types";
+import { EMT_SIZES, sizeLabel } from "@/lib/ee/constants";
 import {
   computeOhmsLaw,
   computeDcPower,
@@ -483,20 +484,33 @@ const conductorsTools: Tool[] = [
         id: "conductorCount",
         label: "Number of Conductors",
         type: "number",
+        default: "3",
+        min: 1,
+      },
+      {
+        id: "wireSize",
+        label: "Conductor Size (THHN)",
+        type: "select",
+        default: "12",
+        options: [
+          "14", "12", "10", "8", "6", "4", "3", "2", "1",
+          "1/0", "2/0", "3/0", "4/0", "250", "300", "350", "400", "500",
+        ].map((s) => ({ value: s, label: sizeLabel(s) })),
       },
       {
         id: "conduitSize",
-        label: "Conduit Size",
+        label: "EMT Trade Size",
         type: "select",
-        options: [
-          { value: "0.5", label: "1/2\"" },
-          { value: "0.75", label: "3/4\"" },
-          { value: "1", label: "1\"" },
-        ],
+        default: "3/4",
+        options: EMT_SIZES.map((c) => ({
+          value: c.size,
+          label: `${c.size}" (${c.area} in²)`,
+        })),
       },
     ],
     compute: computeConduitFill,
-    reference: "NEC Chapter 9, Table 1",
+    reference:
+      "NEC Chapter 9, Table 1 (fill limits), Table 4 (raceway areas), Table 5 (conductor areas)",
   },
   {
     id: "lighting-vd-optimizer",

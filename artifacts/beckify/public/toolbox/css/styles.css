@@ -276,13 +276,17 @@ header .subtitle {
 }
 
 /* ── Card grid ── */
+/* min() keeps the track from ever being wider than the container, so a narrow
+   viewport collapses to one column instead of overflowing horizontally. The
+   mobile media query below resets .card-grid, but a more specific modifier
+   like .two-col would otherwise win and reintroduce the overflow. */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
   gap: 16px;
 }
 .card-grid.wide { grid-template-columns: 1fr; }
-.card-grid.two-col { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+.card-grid.two-col { grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); }
 
 /* ── Card ── */
 .card {
@@ -960,4 +964,56 @@ canvas {
   color: var(--violet);
   animation: blink 1s step-end infinite;
   margin-left: 2px;
+}
+
+/* ── Conduit-fill conductor rows ─────────────────────────────────────────── */
+.cfa-row {
+  display: grid;
+  grid-template-columns: 4.5rem auto minmax(0, 1fr) minmax(0, 1.3fr) 2rem;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.cfa-row .cfa-x {
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.cfa-row input,
+.cfa-row select { margin: 0; }
+.cfa-del {
+  background: rgba(255, 138, 138, 0.12);
+  border: 1px solid rgba(255, 138, 138, 0.3);
+  color: #ff8a8a;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 7px 0;
+  transition: background 0.15s ease;
+}
+.cfa-del:hover { background: rgba(255, 138, 138, 0.25); }
+.cfa-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+.btn-secondary {
+  background: rgba(139, 123, 255, 0.12);
+  border: 1px solid rgba(139, 123, 255, 0.35);
+  color: var(--violet);
+}
+.btn-secondary:hover { background: rgba(139, 123, 255, 0.22); }
+.cfa-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+}
+.cfa-check input { width: auto; margin: 0; }
+
+/* Narrow screens: let the conductor row wrap instead of squeezing the selects */
+@media (max-width: 560px) {
+  .cfa-row {
+    grid-template-columns: 4rem auto minmax(0, 1fr) 2rem;
+  }
+  .cfa-row .cfa-insul { grid-column: 1 / -1; }
 }
