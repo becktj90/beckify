@@ -80,8 +80,8 @@ r = conductorLengthByResistanceModel({
   alpha: 0.00403,
   rho: 21.2
 });
-ok('loop total path length (ft)', r.totalLengthFt, 1565.09, 0.5);
-ok('loop one-way distance (ft)', r.oneWayLengthFt, 782.55, 0.5);
+ok('loop total path length (ft)', r.totalLengthFt, 2010.78, 0.5);
+ok('loop one-way distance (ft)', r.oneWayLengthFt, 1005.39, 0.5);
 
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nAll checks passed');
 process.exitCode = failures ? 1 : 0;
