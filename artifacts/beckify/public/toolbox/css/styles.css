@@ -1346,3 +1346,46 @@ body.report-open { overflow: hidden; }
   color: var(--fg-dim);
   margin-top: 10px;
 }
+
+/* ── Transformer Wizard ── */
+.xw-steps { display: flex; gap: 0; margin-bottom: 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.xw-step-tab { flex: 1; padding: 8px 4px; font-size: 0.72rem; text-align: center; background: var(--bg-card); color: var(--fg-muted); cursor: pointer; border: none; font-family: var(--font-main); transition: background 0.2s; }
+.xw-step-tab.active { background: var(--violet-soft); color: var(--violet); font-weight: 700; }
+.xw-type-card { border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.xw-type-card:hover { border-color: var(--violet); background: var(--violet-soft); }
+.xw-type-card.selected { border-color: #6ee7b7; background: rgba(110,231,183,0.08); }
+.xw-type-title { font-weight: 700; color: var(--violet); font-size: 0.9rem; margin-bottom: 4px; }
+.xw-type-ctx { font-size: 0.78rem; color: var(--fg-muted); margin-bottom: 6px; line-height: 1.5; }
+.xw-pros { font-size: 0.75rem; color: #6ee7b7; padding-left: 0; list-style: none; margin-bottom: 6px; }
+.xw-pros li { margin-bottom: 2px; }
+.xw-nec-note { font-size: 0.72rem; color: #f5c451; background: rgba(245,196,81,0.06); border-left: 2px solid #f5c451; padding: 4px 8px; border-radius: 0 4px 4px 0; }
+.xw-svg-wrap { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+
+/* ── Circuit Simulator ── */
+.cs-schematic { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.cs-bode { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; margin: 8px 0; }
+.cs-example-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.cs-example-btn { padding: 6px 12px; font-size: 0.78rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--fg-muted); cursor: pointer; font-family: var(--font-main); transition: border-color 0.2s, color 0.2s; }
+.cs-example-btn:hover, .cs-example-btn.active { border-color: var(--violet); color: var(--violet); }
+.cs-details-btn { font-size: 0.74rem; color: var(--blue); background: none; border: none; cursor: pointer; padding: 0; font-family: var(--font-main); text-decoration: underline; }
+.cs-step-box { background: rgba(79,139,255,0.06); border: 1px solid rgba(79,139,255,0.2); border-radius: 6px; padding: 10px; font-size: 0.78rem; color: var(--fg-muted); line-height: 1.6; margin-top: 8px; }
+
+/* ── Smith Chart ── */
+.sc-canvas-wrap { position: relative; display: inline-block; }
+#sc-canvas { cursor: crosshair; border-radius: 8px; display: block; }
+.sc-point-list { font-size: 0.78rem; max-height: 200px; overflow-y: auto; }
+.sc-point-row { display: flex; gap: 10px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.sc-ex-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.sc-ex-btn { padding: 5px 10px; font-size: 0.76rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 5px; color: var(--fg-muted); cursor: pointer; font-family: var(--font-main); transition: border-color 0.2s; }
+.sc-ex-btn:hover { border-color: var(--violet); color: var(--violet); }
+
+/* ── STEM Tools ── */
+.stem-tab-group .tab-btn { font-size: 0.72rem; padding: 6px 10px; }
+.stem-canvas { border-radius: 8px; display: block; background: #0d1117; }
+.stem-svg-wrap { display: flex; justify-content: center; margin: 8px 0; }
+.stem-result-tbl { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 8px 0; }
+.stem-result-tbl th { background: var(--violet-soft); color: var(--violet); padding: 4px 8px; text-align: left; }
+.stem-result-tbl td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.stem-result-tbl tr:hover td { background: var(--bg-card); }
+.stem-highlight { color: #6ee7b7; font-weight: 700; }
+.stem-formula { font-family: monospace; background: var(--bg-input); border-radius: 4px; padding: 2px 6px; color: #f5c451; }
