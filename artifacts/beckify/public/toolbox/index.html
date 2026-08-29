@@ -67,6 +67,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔌 Distribution</div>
       <button class="nav-btn" data-target="sec-vdrop" data-keywords="#PowerDistribution #NEC #Calculators voltage drop feeder branch circuit">Voltage Drop</button>
+      <button class="nav-btn" data-target="sec-conductor-length" data-keywords="conductor length by resistance distance loop test one way wire length awg kcmil circular mils rho copper aluminum">Conductor Length by Resistance</button>
       <button class="nav-btn" data-target="sec-motor" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower">Motor Calculations</button>
       <button class="nav-btn" data-target="sec-xfmr" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio">Transformer</button>
       <button class="nav-btn" data-target="sec-xfmr-engine" data-keywords="#PowerDistribution #NEC #Calculators transformer conductor selection engine ocpd egc gec voltage drop conduit 450.3 250.122 250.66 310.16 primary secondary feeder">Transformer Engine</button>
@@ -143,7 +144,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h2 class="home-title">EE Toolbox</h2>
-        <p class="home-subtitle">35 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">36 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -177,6 +178,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">🔌</span><span class="home-cat-name">Distribution</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-vdrop">Voltage Drop</a></li>
+            <li><a class="home-tool-link" href="#sec-conductor-length">Conductor Length by Resistance</a></li>
             <li><a class="home-tool-link" href="#sec-motor">Motor Calculations</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
@@ -1042,6 +1044,189 @@
             <div class="note">Voltage drop calculations above use standard formulas. For grounded systems, verify that the correct supply voltage (L-L or L-N) is entered per your topology.</div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         CONDUCTOR LENGTH BY RESISTANCE
+         ════════════════════════════════════════ -->
+    <section id="sec-conductor-length" class="section">
+      <div class="section-header">
+        <h2>📏 Conductor Length by Resistance</h2>
+        <p>Estimate one-way distance from measured conductor resistance, circular mil area, and material resistivity.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Conductor Length by Resistance</summary>
+          <div class="section-info-body">
+            This tool solves conductor length from the resistivity relationship <strong>R = ρ × L / CM</strong>, rearranged as <strong>L = R × CM / ρ</strong>.<br><br>
+            Enter the measured loop or single-conductor resistance, pick wire size/material, then apply temperature compensation to normalize resistance to the selected resistivity reference temperature.<br><br>
+            <strong>Temperature compensation:</strong> R<sub>T2</sub> = R<sub>T1</sub> × [1 + α × (T2 − T1)]<br>
+            The calculator uses this form to convert measured resistance at ambient temperature to the selected reference temperature before solving length.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Inputs</div>
+          <div class="card-body">
+            <div class="formula-box">
+              L<sub>total</sub> = (R<sub>ref</sub> × CM) / ρ &nbsp;|&nbsp;
+              R<sub>ref</sub> = R<sub>measured</sub> / [1 + α × (T<sub>measured</sub> − T<sub>ref</sub>)]
+            </div>
+
+            <div class="input-group">
+              <div>
+                <label>Measured Resistance</label>
+                <input type="number" id="clr_resistance" value="250" min="0" step="any">
+              </div>
+              <div>
+                <label>Resistance Unit</label>
+                <select id="clr_r_unit">
+                  <option value="mohm">Milliohms (mΩ)</option>
+                  <option value="ohm">Ohms (Ω)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <div>
+                <label>Conductor Gauge / Size</label>
+                <select id="clr_size" onchange="conductorLengthSizeChange()">
+                  <option value="14">14 AWG (4,110 cmil)</option>
+                  <option value="12">12 AWG (6,530 cmil)</option>
+                  <option value="10">10 AWG (10,380 cmil)</option>
+                  <option value="8">8 AWG (16,510 cmil)</option>
+                  <option value="6">6 AWG (26,240 cmil)</option>
+                  <option value="4">4 AWG (41,740 cmil)</option>
+                  <option value="3">3 AWG (52,620 cmil)</option>
+                  <option value="2">2 AWG (66,360 cmil)</option>
+                  <option value="1">1 AWG (83,690 cmil)</option>
+                  <option value="1/0">1/0 AWG (105,600 cmil)</option>
+                  <option value="2/0">2/0 AWG (133,100 cmil)</option>
+                  <option value="3/0">3/0 AWG (167,800 cmil)</option>
+                  <option value="4/0">4/0 AWG (211,600 cmil)</option>
+                  <option value="250">250 kcmil</option>
+                  <option value="300">300 kcmil</option>
+                  <option value="350">350 kcmil</option>
+                  <option value="400">400 kcmil</option>
+                  <option value="500">500 kcmil</option>
+                  <option value="600">600 kcmil</option>
+                  <option value="700">700 kcmil</option>
+                  <option value="750">750 kcmil</option>
+                  <option value="800">800 kcmil</option>
+                  <option value="1000">1000 kcmil</option>
+                  <option value="custom">Custom Circular Mils</option>
+                </select>
+              </div>
+              <div id="clr_custom_wrap" style="display:none">
+                <label>Custom Circular Mils (cmil)</label>
+                <input type="number" id="clr_custom_cmil" value="250000" min="1" step="any">
+              </div>
+            </div>
+
+            <div class="input-group">
+              <div>
+                <label>Conductor Material</label>
+                <select id="clr_material" onchange="conductorLengthPresetChange()">
+                  <option value="cu-annealed">Copper (Annealed)</option>
+                  <option value="cu-hard">Copper (Hard-Drawn)</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+              <div>
+                <label>Measurement Method</label>
+                <select id="clr_method" onchange="conductorLengthMethodChange()">
+                  <option value="single">Single Conductor (One-Way)</option>
+                  <option value="loop2">Loop Resistance (2-Conductor Shorted at Far End)</option>
+                  <option value="loop3">3-Phase Loop (Symmetrical Far-End Short)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <div>
+                <label>Ambient / Measurement Temperature</label>
+                <input type="number" id="clr_temp" value="20" step="any">
+              </div>
+              <div>
+                <label>Temperature Unit</label>
+                <select id="clr_temp_unit">
+                  <option value="c">°C</option>
+                  <option value="f">°F</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <div>
+                <label>Reference Resistivity Temperature</label>
+                <select id="clr_ref_temp" onchange="conductorLengthPresetChange()">
+                  <option value="20">20°C (68°F)</option>
+                  <option value="75">75°C (167°F)</option>
+                </select>
+              </div>
+              <div>
+                <label>Temperature Coefficient α (1/°C)</label>
+                <input type="number" id="clr_alpha" value="0.00393" step="0.00001" min="0">
+              </div>
+            </div>
+
+            <div class="input-group single">
+              <div>
+                <label>Volume Resistivity ρ (Ω·cmil/ft)</label>
+                <input type="number" id="clr_rho" value="10.371" step="0.001" min="0">
+              </div>
+            </div>
+
+            <button class="btn" onclick="calcConductorLengthByResistance()">Calculate Length</button>
+            <div id="clr_result" class="result"></div>
+            <div class="note">
+              Presets: Cu ρ = 10.371 @20°C / 12.9 @75°C, Al ρ = 17.02 @20°C / 21.2 @75°C. Hard-drawn copper uses the copper preset as a starting point; edit ρ when you have manufacturer-specific data.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Measurement Circuit Diagram</div>
+          <div class="card-body">
+            <svg class="clr-diagram" id="clr_diagram" viewBox="0 0 560 260" role="img" aria-labelledby="clr_diag_title clr_diag_desc">
+              <title id="clr_diag_title">Conductor resistance measurement circuit</title>
+              <desc id="clr_diag_desc">Selectable wiring diagrams for single-conductor, two-conductor loop, and three-phase loop resistance methods.</desc>
+
+              <rect x="18" y="30" width="120" height="70" rx="8" class="clr-diag-meter"></rect>
+              <text x="78" y="58" text-anchor="middle" class="clr-diag-label">DMM</text>
+              <text x="78" y="80" text-anchor="middle" class="clr-diag-sub">Ω Mode</text>
+
+              <text x="182" y="36" class="clr-diag-tag">Near End</text>
+              <text x="440" y="36" class="clr-diag-tag">Far End</text>
+
+              <g id="clr_diag_single">
+                <line x1="138" y1="65" x2="498" y2="65" class="clr-diag-wire"></line>
+                <circle cx="496" cy="65" r="7" class="clr-diag-probe"></circle>
+                <text x="260" y="56" class="clr-diag-sub">Single conductor test path</text>
+              </g>
+
+              <g id="clr_diag_loop2" style="display:none">
+                <line x1="138" y1="55" x2="470" y2="55" class="clr-diag-wire"></line>
+                <line x1="138" y1="95" x2="470" y2="95" class="clr-diag-wire"></line>
+                <line x1="470" y1="55" x2="470" y2="95" class="clr-diag-jumper"></line>
+                <text x="260" y="122" class="clr-diag-sub">Far-end jumper closes a 2-conductor loop</text>
+              </g>
+
+              <g id="clr_diag_loop3" style="display:none">
+                <line x1="138" y1="45" x2="455" y2="45" class="clr-diag-wire"></line>
+                <line x1="138" y1="75" x2="455" y2="75" class="clr-diag-wire"></line>
+                <line x1="138" y1="105" x2="455" y2="105" class="clr-diag-wire"></line>
+                <line x1="455" y1="35" x2="455" y2="115" class="clr-diag-jumper"></line>
+                <text x="260" y="132" class="clr-diag-sub">Symmetrical far-end short across phase conductors</text>
+              </g>
+
+              <text x="26" y="170" class="clr-diag-note">Displayed one-way distance = total solved path ÷ loop factor</text>
+              <text x="26" y="194" class="clr-diag-note" id="clr_diag_factor">Loop factor: ×1 (single conductor)</text>
+            </svg>
+          </div>
+        </div>
+
       </div>
     </section>
 

@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ['sec-power-convert', 'power-convert', 'calcPowerConvert'],
     ['sec-xfmr-size', 'xfmr-size', 'calcXfmrSizing'],
     ['sec-vdrop', 'vdrop', null],
+    ['sec-conductor-length', 'conductor-length', 'calcConductorLengthByResistance'],
     ['sec-conduit', 'conduit', 'calcConduitFill'],
     ['sec-sc', 'short-circuit', 'calcSC'],
     ['sec-nec', 'nec-circuit', 'calcNEC'],

@@ -60,7 +60,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
-      "Voltage Drop", "Motor Calculations", "Transformer", "Transformer Engine",
+      "Voltage Drop", "Conductor Length by Resistance", "Motor Calculations", "Transformer", "Transformer Engine",
       "Transformer Sizing", "Conduit Fill", "Conduit Fill (Mixed)",
       "Wire Size & Ampacity", "Short Circuit",
     ],

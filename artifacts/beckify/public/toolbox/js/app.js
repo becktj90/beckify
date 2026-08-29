@@ -865,7 +865,151 @@ window.calcSC = function () {
 };
 
 /* ============================================================
-   14. UNIT CONVERSIONS
+   14. CONDUCTOR LENGTH BY RESISTANCE
+   ============================================================ */
+const CLR_SIZE_CMIL = {
+  '14': 4110, '12': 6530, '10': 10380, '8': 16510, '6': 26240, '4': 41740,
+  '3': 52620, '2': 66360, '1': 83690, '1/0': 105600, '2/0': 133100,
+  '3/0': 167800, '4/0': 211600, '250': 250000, '300': 300000, '350': 350000,
+  '400': 400000, '500': 500000, '600': 600000, '700': 700000, '750': 750000,
+  '800': 800000, '1000': 1000000
+};
+
+const CLR_MATERIAL_PRESETS = {
+  'cu-annealed': { label: 'Copper (Annealed)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  'cu-hard': { label: 'Copper (Hard-Drawn)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  al: { label: 'Aluminum', rho20: 17.02, rho75: 21.2, alpha: 0.00403 }
+};
+
+function clrTempToC(temp, unit) {
+  return unit === 'f' ? ((temp - 32) * 5 / 9) : temp;
+}
+
+function clrResistanceToOhms(resistance, unit) {
+  return unit === 'mohm' ? resistance / 1000 : resistance;
+}
+
+function clrPathFactor(method) {
+  return method === 'single' ? 1 : 2;
+}
+
+function conductorLengthByResistanceModel(input) {
+  const resistanceOhms = clrResistanceToOhms(input.resistance, input.resistanceUnit);
+  const measuredTempC = clrTempToC(input.temperature, input.temperatureUnit);
+  const refTempC = input.referenceTempC;
+  const alpha = input.alpha;
+  const rho = input.rho;
+  const cmil = input.circularMils;
+  const pathFactor = clrPathFactor(input.method);
+  const denom = 1 + alpha * (measuredTempC - refTempC);
+
+  if (!isPos(resistanceOhms, cmil, rho)) throw new Error('Resistance, conductor area, and ρ must be greater than zero.');
+  if (!isNum(measuredTempC, refTempC, alpha) || alpha < 0) throw new Error('Enter valid temperatures and α.');
+  if (Math.abs(denom) < 1e-9 || denom <= 0) throw new Error('Temperature compensation produced an invalid resistance factor.');
+
+  const resistanceAtRefTemp = resistanceOhms / denom;
+  const totalLengthFt = resistanceAtRefTemp * cmil / rho;
+  const oneWayLengthFt = totalLengthFt / pathFactor;
+
+  return {
+    resistanceOhms: resistanceOhms,
+    measuredTempC: measuredTempC,
+    resistanceAtRefTemp: resistanceAtRefTemp,
+    totalLengthFt: totalLengthFt,
+    oneWayLengthFt: oneWayLengthFt,
+    totalLengthM: totalLengthFt * 0.3048,
+    oneWayLengthM: oneWayLengthFt * 0.3048,
+    pathFactor: pathFactor
+  };
+}
+
+window.conductorLengthByResistanceModel = conductorLengthByResistanceModel;
+
+window.conductorLengthSizeChange = function () {
+  const sizeEl = document.getElementById('clr_size');
+  const customWrap = document.getElementById('clr_custom_wrap');
+  if (!sizeEl || !customWrap) return;
+  customWrap.style.display = sizeEl.value === 'custom' ? '' : 'none';
+};
+
+window.conductorLengthMethodChange = function () {
+  const methodEl = document.getElementById('clr_method');
+  const factorEl = document.getElementById('clr_diag_factor');
+  if (!methodEl) return;
+  const method = methodEl.value;
+  const single = document.getElementById('clr_diag_single');
+  const loop2 = document.getElementById('clr_diag_loop2');
+  const loop3 = document.getElementById('clr_diag_loop3');
+  if (single) single.style.display = method === 'single' ? '' : 'none';
+  if (loop2) loop2.style.display = method === 'loop2' ? '' : 'none';
+  if (loop3) loop3.style.display = method === 'loop3' ? '' : 'none';
+  if (factorEl) factorEl.textContent = method === 'single'
+    ? 'Loop factor: ×1 (single conductor)'
+    : 'Loop factor: ÷2 to report one-way distance';
+};
+
+window.conductorLengthPresetChange = function () {
+  const materialEl = document.getElementById('clr_material');
+  const refTempEl = document.getElementById('clr_ref_temp');
+  const rhoEl = document.getElementById('clr_rho');
+  const alphaEl = document.getElementById('clr_alpha');
+  if (!materialEl || !refTempEl || !rhoEl || !alphaEl) return;
+  const preset = CLR_MATERIAL_PRESETS[materialEl.value] || CLR_MATERIAL_PRESETS['cu-annealed'];
+  const refTemp = parseFloat(refTempEl.value) === 75 ? 75 : 20;
+  rhoEl.value = String(refTemp === 75 ? preset.rho75 : preset.rho20);
+  alphaEl.value = String(preset.alpha);
+};
+
+window.calcConductorLengthByResistance = function () {
+  const resistance = val('clr_resistance');
+  const resistanceUnit = document.getElementById('clr_r_unit').value;
+  const size = document.getElementById('clr_size').value;
+  const cmil = size === 'custom' ? val('clr_custom_cmil') : CLR_SIZE_CMIL[size];
+  const material = document.getElementById('clr_material').value;
+  const method = document.getElementById('clr_method').value;
+  const temperature = val('clr_temp');
+  const temperatureUnit = document.getElementById('clr_temp_unit').value;
+  const referenceTempC = val('clr_ref_temp');
+  const alpha = val('clr_alpha');
+  const rho = val('clr_rho');
+
+  if (!isNum(resistance, temperature, referenceTempC, alpha, rho)) {
+    return showError('clr_result', 'Enter resistance, temperature, α, and ρ.');
+  }
+  if (!cmil || !isFinite(cmil) || cmil <= 0) return showError('clr_result', 'Select a wire size or enter custom circular mils.');
+
+  try {
+    const result = conductorLengthByResistanceModel({
+      resistance: resistance,
+      resistanceUnit: resistanceUnit,
+      circularMils: cmil,
+      material: material,
+      method: method,
+      temperature: temperature,
+      temperatureUnit: temperatureUnit,
+      referenceTempC: referenceTempC,
+      alpha: alpha,
+      rho: rho
+    });
+    const materialLabel = (CLR_MATERIAL_PRESETS[material] && CLR_MATERIAL_PRESETS[material].label) || 'Custom';
+    showResult('clr_result', [
+      ['One-Way Distance', fmt(result.oneWayLengthFt, 2) + ' ft (' + fmt(result.oneWayLengthM, 2) + ' m)'],
+      ['Total Conductor Wire Length', fmt(result.totalLengthFt, 2) + ' ft (' + fmt(result.totalLengthM, 2) + ' m)'],
+      ['Temperature-Corrected Resistance @ ' + fmt(referenceTempC, 0) + '°C', fmt(result.resistanceAtRefTemp, 6) + ' Ω'],
+      ['Resistance Used', fmt(result.resistanceOhms, 6) + ' Ω'],
+      ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
+      ['Material / ρ', materialLabel + ' — ' + fmt(rho, 4) + ' Ω·cmil/ft'],
+      ['Measurement Method', method === 'single'
+        ? 'Single conductor: one-way equals solved path length'
+        : 'Loop measurement: one-way = total solved path ÷ 2']
+    ]);
+  } catch (err) {
+    showError('clr_result', err && err.message ? err.message : 'Could not solve conductor length.');
+  }
+};
+
+/* ============================================================
+   15. UNIT CONVERSIONS
    ============================================================ */
 const UNIT_GROUPS = {
   power: { 'W': 1, 'kW': 1e3, 'MW': 1e6, 'HP': 746, 'BTU/h': 0.29307107 },
@@ -975,7 +1119,7 @@ window.cmModeChange = function () {
 };
 
 /* ============================================================
-   15. UPS SIZING CALCULATOR
+   16. UPS SIZING CALCULATOR
    ============================================================ */
 window.calcUPS = function () {
   const loadKW = val('ups_kw');
@@ -1009,7 +1153,7 @@ window.calcUPS = function () {
 };
 
 /* ============================================================
-   16. GENERATOR SIZING (IEEE 446 / NFPA 110)
+   17. GENERATOR SIZING (IEEE 446 / NFPA 110)
    ============================================================ */
 window.calcGenerator = function () {
   const pf     = val('gen_pf') / 100;
@@ -1056,7 +1200,7 @@ window.calcGenerator = function () {
 };
 
 /* ============================================================
-   17. HYBRID GENERATOR CALCULATOR
+   18. HYBRID GENERATOR CALCULATOR
    ============================================================ */
 window.calcHybridGen = function () {
   const genKW       = val('hyb_gen_kw');
@@ -1097,7 +1241,7 @@ window.calcHybridGen = function () {
 };
 
 /* ============================================================
-   18. NEC CIRCUIT CALCULATOR
+   19. NEC CIRCUIT CALCULATOR
    ============================================================ */
 
 /* NEC 310.15(B)(16) — 75°C column
@@ -2341,6 +2485,10 @@ document.addEventListener('DOMContentLoaded', () => {
     syncUnitToOptions();
   }
 
+  conductorLengthSizeChange();
+  conductorLengthPresetChange();
+  conductorLengthMethodChange();
+
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.setAttribute('inputmode', 'decimal');
   });
@@ -2364,4 +2512,3 @@ document.addEventListener('DOMContentLoaded', () => {
   dcPowerModeChange();
   cmModeChange();
 });
-

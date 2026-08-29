@@ -607,6 +607,42 @@ select option { background: #0d0e1f; color: var(--fg); }
 }
 .note::before { content: 'ℹ '; color: var(--blue); }
 
+.clr-diagram {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.32);
+}
+.clr-diag-meter {
+  fill: rgba(79, 139, 255, 0.14);
+  stroke: rgba(79, 139, 255, 0.85);
+  stroke-width: 2;
+}
+.clr-diag-wire {
+  stroke: rgba(74, 222, 128, 0.95);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.clr-diag-jumper {
+  stroke: rgba(251, 146, 60, 0.95);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.clr-diag-probe {
+  fill: rgba(139, 123, 255, 0.85);
+}
+.clr-diag-label {
+  fill: var(--fg);
+  font-size: 15px;
+  font-weight: 700;
+}
+.clr-diag-sub,
+.clr-diag-tag,
+.clr-diag-note {
+  fill: var(--fg-muted);
+  font-size: 12px;
+}
+
 /* ── Expandable Info Panels ── */
 .section-info {
   margin-top: 10px;
