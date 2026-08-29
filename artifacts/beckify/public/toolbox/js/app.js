@@ -493,7 +493,7 @@ const CLR_SIZE_CM = {
 };
 const CLR_MATERIALS = {
   cu_annealed: { label: 'Copper (Annealed)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
-  cu_hard: { label: 'Copper (Hard-Drawn)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  cu_hard: { label: 'Copper (Hard-Drawn)', rho20: 10.745, rho75: 13.37, alpha: 0.00393 },
   aluminum: { label: 'Aluminum', rho20: 17.02, rho75: 21.2, alpha: 0.00403 }
 };
 
@@ -573,7 +573,10 @@ window.calcConductorLengthByResistance = function () {
   const resistanceOhms = resistanceUnitEl.value === 'mohm' ? resistanceInput / 1000 : resistanceInput;
   const measuredTempC = clrTempToC(tempInput, tempUnitEl.value);
   const refTempC = parseFloat(refTempEl.value);
-  const rho = refTempC === 75 ? material.rho75 : material.rho20;
+  let rho;
+  if (refTempC === 20) rho = material.rho20;
+  else if (refTempC === 75) rho = material.rho75;
+  else return showError('clr_result', 'Select a valid resistivity reference temperature.');
 
   const tempFactor = 1 + material.alpha * (measuredTempC - refTempC);
   if (!isFinite(tempFactor) || tempFactor <= 0) {
@@ -588,9 +591,7 @@ window.calcConductorLengthByResistance = function () {
   const oneWayLengthFt = methodEl.value === 'single' ? totalLengthFt : totalLengthFt / 2;
   const totalLengthM = totalLengthFt * 0.3048;
   const oneWayLengthM = oneWayLengthFt * 0.3048;
-  const methodLabel = methodEl.options[methodEl.selectedIndex]
-    ? methodEl.options[methodEl.selectedIndex].text
-    : methodEl.value;
+  const methodLabel = methodEl.options[methodEl.selectedIndex].text;
 
   showResult('clr_result', [
     ['Measurement Method', methodLabel],

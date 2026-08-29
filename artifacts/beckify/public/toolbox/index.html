@@ -1149,7 +1149,7 @@
 
             <button class="btn btn-accent" onclick="calcConductorLengthByResistance()">&#9654; Calculate Length</button>
             <div id="clr_result" class="result"></div>
-            <div class="note">Hard-drawn copper uses the same reference ρ values as copper above unless project-specific test data is available.</div>
+            <div class="note">Hard-drawn copper applies a higher resistivity than annealed copper to reflect its lower conductivity.</div>
           </div>
         </div>
 
@@ -1173,11 +1173,11 @@
                 <line x1="180" y1="125" x2="560" y2="125" id="clr-diag-third" class="clr-diag-third" style="display:none"></line>
 
                 <text x="370" y="93" text-anchor="middle" class="clr-diag-label" id="clr-diag-path-label">Measured loop path</text>
-                <text x="370" y="172" text-anchor="middle" class="clr-diag-subtle" id="clr-diag-length-label">Length model: L_total = 2 × one-way</text>
-                <text x="560" y="166" text-anchor="middle" class="clr-diag-subtle" id="clr-diag-far-label">Far-end short jumper</text>
+                <text x="370" y="172" text-anchor="middle" class="clr-diag-subtle" id="clr-diag-length-label">Length model: one-way = total path length</text>
+                <text x="560" y="166" text-anchor="middle" class="clr-diag-subtle" id="clr-diag-far-label">No far-end short required</text>
               </svg>
             </div>
-            <div class="note" id="clr-method-note">Loop method selected: divide solved total path length by 2 for one-way distance.</div>
+            <div class="note" id="clr-method-note">Single conductor mode selected: solved length is already one-way distance.</div>
           </div>
         </div>
       </div>
