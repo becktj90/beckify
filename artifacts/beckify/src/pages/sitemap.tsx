@@ -3,6 +3,7 @@ import { ArrowUpRight, MapIcon, Terminal, Wrench, Rocket, Gamepad2, Orbit } from
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SchemaHead } from "@/components/seo/SchemaHead";
 
 /**
  * Fixed-order categorical palette (validated for CVD-safety + contrast on
@@ -24,9 +25,9 @@ const HUES = {
 const PAGES: { href: string; label: string; description: string; icon: typeof Terminal; hue: string }[] = [
   { href: "/", label: "Home", description: "Hub page — hero and links to everything below.", icon: Orbit, hue: HUES.blue },
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
-  { href: "/toolbox", label: "Toolbox", description: "26+ native EE calculators, organized by category.", icon: Wrench, hue: HUES.aqua },
+  { href: "/toolbox", label: "Toolbox", description: "40+ native EE calculators, organized by category.", icon: Wrench, hue: HUES.aqua },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
-  { href: "/games", label: "Games", description: "Finger Runner and arcade extras.", icon: Gamepad2, hue: HUES.magenta },
+  { href: "/games", label: "Games", description: "Booty Butt Scooter, New Glenn Runner, and Finger Runner.", icon: Gamepad2, hue: HUES.magenta },
 ];
 
 /**
@@ -112,6 +113,11 @@ export default function SiteMapPage() {
 
   return (
     <Layout>
+      <SchemaHead
+        title="Beckify Site Map | Engineering Tools and Projects"
+        description="Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."
+        path="/sitemap"
+      />
       <FadeIn>
         <SectionHeader
           title="Site Map"

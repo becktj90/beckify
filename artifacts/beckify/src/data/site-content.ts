@@ -209,39 +209,19 @@ export const GAMES: Game[] = [
   {
     name: "Booty Butt Scooter",
     description:
-      "Endless lane-dodging runner. Switch lanes, slice obstacles with your saber, and hit the fart-turbo boost.",
+      "Endless lane-dodging runner with responsive mobile controls, score persistence, and fast arcade pacing.",
     url: "https://play.beckify.com/scooter/",
     external: true,
   },
   {
     name: "New Glenn Runner",
     description:
-      "Vertical launch arcade. Ride the blast-off plume off LC-36 and steer through descending bin-block hazards as ascent speed builds.",
+      "Vertical launch arcade with parallax backgrounds, smooth launch physics, and mission scoring.",
     url: "/toolbox/#sec-arcade",
   },
   {
-    name: "Pad Rat Ops",
-    description: "Mission-control mini game — launch operations run from the console.",
-    url: "/toolbox/#sec-pad-rat",
-  },
-  {
-    name: "Bin Block Blaster",
-    description: "Bubble-shooter puzzler. Blast the bin blocks before they stack up.",
-    url: "/toolbox/#sec-bin-blaster",
-  },
-  {
-    name: "Trying To Be Normal",
-    description: "A social-awkwardness comedy game. Keep suspicion down and act normal.",
-    url: "/toolbox/#sec-trying-normal",
-  },
-  {
-    name: "Starforge Frontier",
-    description: "Idle space-frontier strategy. Build, defend, and survive.",
-    url: "/toolbox/#sec-starforge",
-  },
-  {
     name: "Finger Runner",
-    description: "The original tap-to-jump endless runner that grew into Booty Butt Scooter.",
+    description: "The original tap-to-jump runner with precise drag input and clean end-game feedback.",
     url: "https://finger-runner--trevorjohnbeck.replit.app/",
     external: true,
   },

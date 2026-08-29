@@ -31,7 +31,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 
@@ -39,9 +39,6 @@ const SHELL = [
   './',
   './index.html',
   './manifest.json',
-  './style.css',
-  './pad-rat.html',
-  './game.js',
   './panel-schedule.html',
   './css/styles.css',
   './css/panel-schedule.css',
@@ -54,13 +51,17 @@ const SHELL = [
   './js/timer555.js',
   './js/report-export.js',
   './js/url-state.js',
+  './js/tdr-analyzer.js',
   './js/local-store.js',
   './js/projects-ui.js',
   './js/arcade.js',
-  './js/bin-blaster.js',
-  './js/trying-to-be-normal.js',
-  './js/starforge.js',
   './js/panel-schedule.js',
+  './js/conduit-guide.js',
+  './js/xfmr-wizard.js',
+  './js/circuit-sim.js',
+  './js/smith-chart.js',
+  './js/stem-tools.js',
+  './js/math-explanations.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',

@@ -251,7 +251,6 @@ function applyUnitSystem(system) {
 
 const GAME_NAMES = {
   'new-glenn-runner': '🚀 New Glenn Runner',
-  'bin-block-blaster': '🧱 Bin Block Blaster',
 };
 
 function recordGameScore(gameId, score) {

@@ -355,7 +355,7 @@ function refreshGameStats() {
       const p = document.createElement('p');
       p.className = 'proj-empty';
       p.textContent = 'No games finished yet on this device. ' +
-        'New Glenn Runner and Bin Block Blaster record a best score and a play count here.';
+        'New Glenn Runner records a best score and a play count here.';
       host.appendChild(p);
       return;
     }

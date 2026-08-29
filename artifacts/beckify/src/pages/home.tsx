@@ -7,6 +7,7 @@ import { Nav } from "@/components/sections/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
 import beckifyMark from "@/assets/beckify-mark-white.png";
+import { SchemaHead } from "@/components/seo/SchemaHead";
 
 /**
  * Home — Bento-style hub. Asymmetric multi-column grid on desktop,
@@ -17,6 +18,11 @@ import beckifyMark from "@/assets/beckify-mark-white.png";
 export default function Home() {
   return (
     <div className="relative min-h-[100dvh]">
+      <SchemaHead
+        title="Beckify | Engineering Tools, References & Builds"
+        description="Beckify brings practical electrical engineering calculators, NEC references, field tools, hands-on builds, and browser games together in one fast resource."
+        path="/"
+      />
       <Starfield />
       <div className="relative z-10">
         <Nav />
@@ -121,7 +127,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      39 calculators and reference tables. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics — all NEC-referenced.
+                      40 calculators and reference tables. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, and TDR fault locating — all NEC-referenced.
                     </p>
                   </div>
                 </div>
@@ -189,7 +195,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Games</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Booty Butt Scooter, New Glenn Runner and more — no install, just play.
+                      Booty Butt Scooter, New Glenn Runner, and Finger Runner — no install, just play.
                     </p>
                   </div>
                 </div>

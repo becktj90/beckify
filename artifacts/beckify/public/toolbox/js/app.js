@@ -2413,7 +2413,7 @@ async function shareApp() {
   const url = location.origin + location.pathname;
   const shareData = {
     title: 'Facilities Electrical Toolbox',
-    text: 'Electrical calculators + New Glenn Runner and Bin Block Blaster. Built by a pad rat.',
+    text: 'Electrical calculators plus New Glenn Runner. Built for field work and launches.',
     url
   };
 
@@ -2499,18 +2499,6 @@ function setupSplash() {
   window.splashEnterGame = () => {
     dismiss();
     location.hash = '#sec-arcade';
-  };
-  window.splashEnterPadRat = () => {
-    dismiss();
-    location.hash = '#sec-pad-rat';
-  };
-  window.splashEnterBinBlaster = () => {
-    dismiss();
-    location.hash = '#sec-bin-blaster';
-  };
-  window.splashEnterTryingNormal = () => {
-    dismiss();
-    location.hash = '#sec-trying-normal';
   };
 
   modal.hidden = false;

@@ -5,19 +5,137 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#8b7bff">
+  <link rel="canonical" href="https://beckify.com/toolbox/">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Toolbox">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta property="og:title" content="Facilities Electrical Toolbox + Arcade Games">
-  <meta property="og:description" content="NEC calculators for the day job, plus New Glenn Runner, Bin Block Blaster, and Trying To Be Normal for breaks. Installable as a home-screen app.">
+  <meta property="og:title" content="Beckify Electrical Engineering Toolbox">
+  <meta property="og:description" content="Fast electrical engineering calculators, NEC references, field test tools, and the Megger TDR trace analyzer.">
   <meta property="og:image" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/">
+  <meta property="og:url" content="https://beckify.com/toolbox/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn Runner, Bin Block Blaster, and Trying To Be Normal games.">
+  <meta name="description" content="Fast electrical engineering calculators, NEC references, field test tools, and the Megger TDR trace analyzer.">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": ["SoftwareApplication", "WebApplication"],
+      "name": "Beckify Electrical Engineering Toolbox",
+      "description": "Electrical engineering calculators, NEC references, and field test tools including the Megger TDR trace analyzer.",
+      "url": "https://beckify.com/toolbox/",
+      "operatingSystem": "All",
+      "applicationCategory": "EngineeringApplication",
+      "isAccessibleForFree": true,
+      "publisher": { "@type": "Organization", "name": "Beckify", "url": "https://beckify.com" }
+    }
+  </script>
   <title>Facilities Electrical Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .tdr-drop-zone {
+      display: grid;
+      place-items: center;
+      gap: 10px;
+      min-height: 210px;
+      padding: 20px;
+      text-align: center;
+      border: 2px dashed rgba(139, 123, 255, 0.45);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .tdr-drop-zone.is-dragover {
+      background: rgba(251, 191, 36, 0.08);
+      border-color: rgba(251, 191, 36, 0.8);
+      transform: translateY(-1px);
+    }
+    .tdr-preview-frame {
+      position: relative;
+      min-height: 280px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .tdr-preview-frame img {
+      display: none;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .tdr-preview-frame.has-image img {
+      display: block;
+    }
+    .tdr-preview-frame.has-image .tdr-preview-placeholder {
+      display: none;
+    }
+    .tdr-preview-placeholder {
+      position: absolute;
+      inset: 12px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--fg-muted);
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .field-block {
+      display: grid;
+      gap: 6px;
+    }
+    .field-block span {
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .tdr-event-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;
+    }
+    .tdr-event-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .tdr-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .tdr-pill.up { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+    .tdr-pill.down { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+    .tdr-pill.unknown { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
+    .feynman-lesson { margin: 14px 0 18px; padding: 16px 18px; border: 1px solid rgba(110, 231, 183, 0.28); border-radius: 14px; background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(79,139,255,0.05)); }
+    .feynman-lesson-title { color: #6ee7b7; font-weight: 700; font-size: 0.98rem; }
+    .feynman-formula { margin: 8px 0; color: #eef0fa; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
+    .feynman-lesson-body { margin: 0; color: var(--fg-muted); line-height: 1.6; max-width: 78ch; }
+  </style>
   <!-- Webfonts load without blocking: media="print" keeps the stylesheet out of
        the critical path, and the onload swap applies it once it arrives. If the
        font host is slow, blocked, or the device is offline, the toolbox renders
@@ -77,6 +195,10 @@
       <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
       <button class="nav-btn" data-target="sec-wire-select" data-keywords="wire size selector ampacity conductor selection voltage drop parallel runs cost derating ambient termination 310.16 110.14 continuous load">Wire Size &amp; Ampacity</button>
       <button class="nav-btn" data-target="sec-sc" data-keywords="#PowerDistribution #NEC #Calculators short circuit fault current interrupting rating">Short Circuit</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🧪 Field Test &amp; Fault Locating</div>
+      <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔋 Power Systems</div>
@@ -155,7 +277,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h2 class="home-title">EE Toolbox</h2>
-        <p class="home-subtitle">39 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">40 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -200,6 +322,13 @@
             <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#f59e0b">
+          <div class="home-cat-header"><span class="home-cat-icon">🧪</span><span class="home-cat-name">Field Test &amp; Fault Locating</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Analyzer</a></li>
           </ul>
         </div>
 
@@ -5813,6 +5942,124 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         MEGGER TDR TRACE ANALYZER
+         ════════════════════════════════════════ -->
+    <section id="sec-tdr" class="section">
+      <div class="section-header">
+        <h2>🧪 Megger TDR Trace Analyzer</h2>
+        <p>OCR a Megger TDR500 screen, identify open/short reflections, and recompute distance live when the technician adjusts VF.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Megger TDR Trace Analyzer</summary>
+          <div class="section-info-body">
+            This analyzer reads the TDR LCD image with a vision model, extracts the on-screen Velocity Factor, Range, and Impedance, and labels the visible reflections. Upward / positive reflections generally indicate an <strong>open</strong> or higher-impedance discontinuity; downward / negative reflections generally indicate a <strong>short</strong> or lower-impedance discontinuity.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Upload TDR Screen</div>
+          <div class="card-body">
+            <div id="tdr-drop-zone" class="tdr-drop-zone" role="button" tabindex="0" aria-label="Drag and drop a Megger TDR photo or choose a file">
+              <div style="font-size:2rem">📷</div>
+              <div>
+                <strong>Drag and drop a Megger TDR500 photo here</strong><br>
+                or choose a file to begin OCR analysis.
+              </div>
+              <input id="tdr-file-input" type="file" accept="image/*" hidden>
+              <button id="tdr-browse-btn" class="btn btn-accent" type="button">Choose Photo</button>
+            </div>
+
+            <div id="tdr-preview-frame" class="tdr-preview-frame" style="margin-top:12px">
+              <div id="tdr-preview-placeholder" class="tdr-preview-placeholder">No image loaded yet.</div>
+              <img id="tdr-preview-image" alt="Megger TDR screen preview">
+            </div>
+
+            <div class="input-group" style="margin-top:12px">
+              <div>
+                <label>File</label>
+                <div id="tdr-file-name" class="note">No file selected</div>
+              </div>
+              <div>
+                <label>Status</label>
+                <div id="tdr-status" class="note">Ready for a TDR image.</div>
+              </div>
+            </div>
+
+            <div class="progress-shell" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px">
+              <div class="progress-bar" style="height:18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:999px;overflow:hidden">
+                <div id="tdr-progress-fill" class="progress-fill" style="width:0%;height:100%;background:linear-gradient(90deg,var(--violet) 0%,var(--blue) 100%)"></div>
+              </div>
+              <span id="tdr-progress-label" style="min-width:46px;text-align:right;font-weight:700">0%</span>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button id="tdr-analyze-btn" class="btn btn-accent" type="button" disabled>Analyze Trace</button>
+              <button id="tdr-reset-btn" class="btn" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Trace Controls</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Distance = base distance × VF ratio × range ratio<br>
+              Upward pulse = open&nbsp;|&nbsp;Downward pulse = short
+            </div>
+            <div class="input-group" style="margin-top:12px">
+              <div>
+                <label for="tdr-vf-slider">Velocity Factor — 0.20 to 0.99</label>
+                <input id="tdr-vf-slider" type="range" min="0.20" max="0.99" step="0.01" value="0.66">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="tdr-vf-value">VF Override</label>
+                <input id="tdr-vf-value" type="number" min="0.20" max="0.99" step="0.01" value="0.66">
+              </div>
+              <div>
+                <label for="tdr-range-ft">Range (ft)</label>
+                <input id="tdr-range-ft" type="number" min="1" step="1" value="1000">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label for="tdr-impedance-ohm">Impedance (Ω)</label>
+                <input id="tdr-impedance-ohm" type="number" min="1" step="1" value="75">
+              </div>
+            </div>
+            <div id="tdr-detected-readout" class="note" style="margin-top:12px">
+              <strong>Detected settings:</strong><br>
+              VF 0.66 | Range 1000 ft | Impedance 75 Ω<br>
+              Current VF 0.66 | Current Range 1000 ft | Current Impedance 75 Ω<br>
+              Distance scale 1.000×
+            </div>
+            <div id="tdr-warnings-host" class="note" style="margin-top:12px;display:none"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Detected Fault Events</div>
+          <div class="card-body">
+            <div id="tdr-events-host"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Feynman-Style Reflection Physics</div>
+          <div class="card-body">
+            <div class="note">
+              Think of the TDR pulse like a tiny fast-moving ball rolling down a cable. If the cable suddenly changes impedance, some of the pulse energy comes back. When the cable opens up or the impedance increases, the reflected wave rides upward. When the cable pinches down into a short or lower impedance, the reflected wave flips downward. The farther the mismatch sits from the launch point, the longer the round trip takes, so the analyzer converts that time delay into distance using the displayed VF.
+            </div>
+            <div class="note" style="margin-top:10px">
+              Use the VF slider when the cable spec is known better than the screen OCR. The fault distances re-scale instantly so the repair callout stays usable in the field.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
          ROCKET ARCADE
          ════════════════════════════════════════ -->
     <section id="sec-arcade" class="section">
@@ -6974,147 +7221,6 @@
 
 
     <!-- ════════════════════════════════════════
-         BIN BLOCK BLASTER
-         ════════════════════════════════════════ -->
-    <section class="section" id="sec-bin-blaster">
-      <div class="section-header"><h2>🧱 Bin Block Blaster</h2></div>
-      <div class="card">
-        <div class="card-body" style="text-align:center">
-          <p>Pad rats! Clear the pad before launch. Match 3 or more bin blocks of the same paint code.</p>
-          <div id="binblaster-fs-wrapper" style="position:relative; display:inline-block">
-            <canvas id="binBlasterCanvas" width="420" height="640" tabindex="0"
-              style="display:block;margin:0 auto;border:2px solid var(--violet);box-shadow:0 4px 16px rgba(139,123,255,0.15);cursor:pointer;max-width:100%"></canvas>
-          </div>
-          <div style="margin-top:8px">
-            <button class="btn" data-action="binBlasterStart">Start Mission</button>
-            <button class="btn" data-action="binBlasterReset">Reset</button>
-            <button class="btn" data-action="binBlasterFullscreen">Fullscreen</button>
-            <span id="binblaster-hi-score" style="margin-left:12px"></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">How to Play</div>
-        <div class="card-body">
-          <div class="formula-box">
-            CLICK or TAP canvas = aim &amp; fire<br>
-            SPACE or &#8593; = fire &nbsp;|&nbsp; &#8592; / &#8594; = aim left / right<br>
-            MOVE MOUSE over canvas = aim launcher<br>
-            S = swap current block with next block<br>
-            1 / 2 / 3 = activate power-up in tray slot<br>
-            P = pause &nbsp;|&nbsp; M = mute / unmute<br><br>
-            Match 3+ blocks of the same color to clear them.<br>
-            Complete all rows before time runs out to win.<br>
-            Clear missions in order to unlock harder ones.<br><br>
-            ⚠️ Mission 2+: Water cannons on the walls fire jets that<br>
-            deflect your block — watch the blinking red light!
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- ════════════════════════════════════════
-         TRYING TO BE NORMAL
-         ════════════════════════════════════════ -->
-    <section class="section" id="sec-trying-normal">
-      <div class="section-header">
-        <h2>🫥 Trying To Be Normal</h2>
-        <p>A comedy social-simulation game about surviving tiny awkward moments without getting too suspicious.</p>
-      </div>
-      <div class="card">
-        <div class="card-body">
-          <div id="tbn-game">
-            <canvas id="tbn-bg" aria-hidden="true"></canvas>
-            <div id="tbn-ui">
-              <h3 id="tbn-level">Grocery Store</h3>
-              <div id="tbn-meters">
-                <span>Normality: <strong id="tbn-normality">100</strong></span>
-                <span>Suspicion: <strong id="tbn-suspicion">0</strong></span>
-              </div>
-              <p id="tbn-scenario"></p>
-              <div id="tbn-choices"></div>
-              <div id="tbn-thoughts"></div>
-              <button class="btn" id="tbn-next-btn" type="button">Next</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">How to Play</div>
-        <div class="card-body">
-          <div class="formula-box">
-            Pick one response per awkward moment.<br>
-            Keep Normality above 0 and Suspicion below 100.<br>
-            Move to the next scenario with NEXT.<br><br>
-            If Suspicion maxes out or Normality collapses, society detects your weirdness.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════
-         STARFORGE FRONTIER
-         ════════════════════════════════════════ -->
-    <section class="section" id="sec-starforge">
-      <div class="section-header">
-        <h2>🌌 Starforge Frontier</h2>
-        <p>Deep idle strategy with fleet logistics, research upgrades, and procedural sector expansion.</p>
-      </div>
-
-      <div class="card-grid">
-        <div class="card" style="grid-column:1/-1">
-          <div class="card-title">Command Hub</div>
-          <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px">
-              <div class="formula-box">Credits: <strong id="sf-credits">0</strong></div>
-              <div class="formula-box">Energy: <strong id="sf-energy">0</strong></div>
-              <div class="formula-box">Alloys: <strong id="sf-alloys">0</strong></div>
-              <div class="formula-box">Science: <strong id="sf-science">0</strong></div>
-            </div>
-
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-              <button class="btn btn-sm" onclick="starforgeGame && starforgeGame.mine()">Manual Mine</button>
-              <button class="btn btn-sm" onclick="starforgeGame && starforgeGame.scan()">Deep Scan</button>
-              <button class="btn btn-sm" onclick="starforgeGame && starforgeGame.expand()">Expand Sector</button>
-            </div>
-
-            <div id="sf-log" class="formula-box" style="max-height:180px;overflow:auto;font-size:0.8rem"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Infrastructure</div>
-          <div class="card-body"><div id="sf-buildings"></div></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Research Tree</div>
-          <div class="card-body"><div id="sf-research"></div></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Fleet Systems</div>
-          <div class="card-body">
-            <div class="formula-box">Sectors: <strong id="sf-sectors">0</strong></div>
-            <div class="formula-box">Mining Drones: <strong id="sf-drones">0</strong></div>
-            <div class="formula-box">Escort Ships: <strong id="sf-escorts">0</strong></div>
-            <div class="formula-box">Cargo Freighters: <strong id="sf-freighters">0</strong></div>
-            <div class="formula-box">Threat Level: <strong id="sf-threat">0</strong>%</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Sector Map</div>
-          <div class="card-body" style="text-align:center">
-            <canvas id="sf-starfield" width="700" height="280" style="display:block;margin:0 auto;max-width:100%;border:2px solid var(--violet);box-shadow:0 4px 16px rgba(139,123,255,0.15)"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════
          SAVED JOBS & SETTINGS  (local-first, IndexedDB)
          ════════════════════════════════════════ -->
     <section id="sec-projects" class="section">
@@ -7171,26 +7277,6 @@
       </div>
     </section>
 
-    <!-- ════════════════════════════════════════
-         PAD RAT OPS
-         ════════════════════════════════════════ -->
-    <section class="section" id="sec-pad-rat">
-      <div class="section-header">
-        <h2>🎮 Pad Rat Ops</h2>
-        <p>Mission-control mini game integrated into the toolbox.</p>
-      </div>
-      <div class="card">
-        <div class="card-body" style="padding:0;overflow:hidden">
-          <iframe
-            src="pad-rat.html"
-            title="Pad Rat Ops Game"
-            loading="lazy"
-            style="display:block;width:100%;min-height:78vh;border:0;background:#060b12;">
-          </iframe>
-        </div>
-      </div>
-    </section>
-
   </main><!-- end .main -->
 </div><!-- end .layout -->
 
@@ -7203,17 +7289,16 @@
 <script src="js/timer555.js"></script>
 <script src="js/report-export.js"></script>
 <script src="js/url-state.js"></script>
+<script src="js/tdr-analyzer.js"></script>
 <script src="js/local-store.js"></script>
 <script src="js/projects-ui.js"></script>
 <script src="js/arcade.js"></script>
-<script src="js/bin-blaster.js"></script>
-<script src="js/trying-to-be-normal.js"></script>
-<script src="js/starforge.js"></script>
 <script src="js/conduit-guide.js"></script>
 <script src="js/xfmr-wizard.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
 <script src="js/stem-tools.js"></script>
+<script src="js/math-explanations.js"></script>
 <script>
   // Initialize Smith chart and STEM tools after DOM is ready
   document.addEventListener('DOMContentLoaded', function() {
@@ -7254,6 +7339,7 @@
       window.calcIntegrate = calcNumericalIntegration;
     if (typeof window.calcTaylor !== 'function' && typeof calcTaylorSeries === 'function')
       window.calcTaylor = calcTaylorSeries;
+    if (typeof window.initStemTools === 'function') window.initStemTools();
   });
 </script>
 

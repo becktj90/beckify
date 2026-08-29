@@ -20,7 +20,7 @@
 
 const URL_TOOLS = {};
 /** Prefixes stripped from element ids to keep parameter names readable. */
-const URL_PREFIXES = ['xe_', 'ws_', 'cfa_', 'cf_', 't555_', 'pc_', 'xs_', 'sc_', 'nec_', 'bl_'];
+const URL_PREFIXES = ['xe_', 'ws_', 'cfa_', 'cf_', 't555_', 'pc_', 'xs_', 'sc_', 'nec_', 'bl_', 'tdr_'];
 const URL_WRITE_DELAY = 250;
 
 let urlWriteTimer = null;
@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ['sec-conduit', 'conduit', 'calcConduitFill'],
     ['sec-sc', 'short-circuit', 'calcSC'],
     ['sec-nec', 'nec-circuit', 'calcNEC'],
+    ['sec-tdr', 'tdr', 'calcTdrAnalyzer'],
   ];
   tools.forEach(function (t) {
     registerUrlState(t[0], t[1], t[2] ? function () {
