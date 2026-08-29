@@ -92,9 +92,23 @@
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
       <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
+      <button class="nav-btn" data-target="sec-conduit-guide" data-keywords="conduit fittings guide EMT IMC RMC PVC FMC LFMC ENT HDPE type selection NEC AFSPCMAN 91-710 NASA AF space force">Conduit &amp; Fittings Guide</button>
       <button class="nav-btn" data-target="sec-ip-rating">IP Rating Chart</button>
       <button class="nav-btn" data-target="sec-nema-class">NEMA Enclosures</button>
       <button class="nav-btn" data-target="sec-nec-tables">NEC Code Tables</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🔌 Transformer Wizard</div>
+      <button class="nav-btn" data-target="sec-xfmr-wizard" data-keywords="transformer wizard design kva sizing type dry liquid oil winding delta wye conductor protection ocpd disconnect single line diagram SLD NEC 450">Transformer Design Wizard</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🔬 RF &amp; Circuit Tools</div>
+      <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
+      <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">📚 STEM Tools</div>
+      <button class="nav-btn" data-target="sec-stem-tools" data-keywords="differential equations ODE trig trigonometry linear algebra matrix chemistry calculus optics quantum physics linear programming LP STEM math">STEM Toolkit</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">📐 NEC Calculations</div>
@@ -220,9 +234,39 @@
             <li><a class="home-tool-link" href="#sec-wire-ref">Conductor Ampacity</a></li>
             <li><a class="home-tool-link" href="#sec-motor-ref">Motor FLA Tables</a></li>
             <li><a class="home-tool-link" href="#sec-conduit-ref">Conduit Fill Tables</a></li>
+            <li><a class="home-tool-link" href="#sec-conduit-guide">Conduit &amp; Fittings Guide</a></li>
             <li><a class="home-tool-link" href="#sec-ip-rating">IP Rating Chart</a></li>
             <li><a class="home-tool-link" href="#sec-nema-class">NEMA Enclosures</a></li>
             <li><a class="home-tool-link" href="#sec-nec-tables">NEC Code Tables</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#f97316">
+          <div class="home-cat-header"><span class="home-cat-icon">🔌</span><span class="home-cat-name">Transformer Wizard</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Step-by-step Design</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Type &amp; Winding Selection</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Conductor Optimization</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Single-Line Diagram</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#06b6d4">
+          <div class="home-cat-header"><span class="home-cat-icon">📡</span><span class="home-cat-name">RF &amp; Circuit Tools</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-circuit-sim">Circuit Simulator (MNA)</a></li>
+            <li><a class="home-tool-link" href="#sec-smith-chart">Smith Chart</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#a78bfa">
+          <div class="home-cat-header"><span class="home-cat-icon">📚</span><span class="home-cat-name">STEM Toolkit</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-stem-tools">Differential Equations</a></li>
+            <li><a class="home-tool-link" href="#sec-stem-tools">Trig / Unit Circle</a></li>
+            <li><a class="home-tool-link" href="#sec-stem-tools">Linear Algebra</a></li>
+            <li><a class="home-tool-link" href="#sec-stem-tools">Chemistry, Calculus, Optics</a></li>
+            <li><a class="home-tool-link" href="#sec-stem-tools">Quantum Physics &amp; LP</a></li>
           </ul>
         </div>
 
@@ -2699,6 +2743,1731 @@
 
       </div>
     </section>
+
+
+    <!-- ════════════════════════════════════════
+         CONDUIT & FITTINGS GUIDE
+         ════════════════════════════════════════ -->
+    <section id="sec-conduit-guide" class="section">
+      <div class="section-header">
+        <h2>📐 Conduit &amp; Fittings Guide</h2>
+        <p>Complete reference for all NEC wiring methods — cross-section illustrations, selection guidance, fitting types, and Air Force / Space Force / NASA special requirements.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Conduit &amp; Fittings Guide</summary>
+          <div class="section-info-body">
+            This guide covers all major wiring methods listed in NEC Chapter 3. Each type includes:<br><br>
+            <ul>
+              <li><strong>Cross-section illustration</strong> — wall thickness and bore drawn to proportion, with flexible conduit side-profile showing corrugation</li>
+              <li><strong>NEC article reference</strong> — permitted uses, not-permitted uses, support spacing</li>
+              <li><strong>Location matrix</strong> — dry / damp / wet / direct burial / hazardous class ratings</li>
+              <li><strong>Pros, cons, and common applications</strong></li>
+              <li><strong>Air Force / Space Force / NASA guidance</strong> — AFSPCMAN 91-710, AFI 32-1064, UFC 3-550-01, and NASA KSC-E-165 requirements</li>
+            </ul>
+            Use the <strong>Conduit Type Selector</strong> at the top to answer a few questions and get a ranked recommendation.
+          </div>
+        </details>
+      </div>
+
+      <!-- ── SELECTOR ── -->
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">⚙ Conduit Type Selector</div>
+          <div class="card-body">
+            <div class="formula-box">Answer the questions below to get a ranked conduit recommendation. All NEC Articles and AF/Space Force requirements are applied.</div>
+            <div class="input-group">
+              <div>
+                <label>Location</label>
+                <select id="cg_outdoor">
+                  <option value="no">Indoor</option>
+                  <option value="yes">Outdoor / Exposed exterior</option>
+                </select>
+              </div>
+              <div>
+                <label>Moisture level</label>
+                <select id="cg_wet">
+                  <option value="dry">Dry location</option>
+                  <option value="damp">Damp location</option>
+                  <option value="yes">Wet location</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Underground / direct burial?</label>
+                <select id="cg_burial">
+                  <option value="no">No — above grade</option>
+                  <option value="concrete">Concrete-encased duct bank</option>
+                  <option value="yes">Direct earth burial</option>
+                </select>
+              </div>
+              <div>
+                <label>Hazardous location</label>
+                <select id="cg_hazardous">
+                  <option value="none">None — ordinary location</option>
+                  <option value="c1d2">Class I, Division 2</option>
+                  <option value="c1d1">Class I, Division 1</option>
+                  <option value="c2">Class II (dust)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Physical damage exposure</label>
+                <select id="cg_damage">
+                  <option value="none">None — concealed or protected</option>
+                  <option value="moderate">Moderate — exposed in building</option>
+                  <option value="severe">Severe — forklift zone, exposed outdoor</option>
+                </select>
+              </div>
+              <div>
+                <label>Corrosive environment?</label>
+                <select id="cg_corrosive">
+                  <option value="no">No</option>
+                  <option value="yes">Yes — chemicals / coastal / wash-down</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Facility type</label>
+                <select id="cg_facility">
+                  <option value="none">Commercial / industrial (NEC only)</option>
+                  <option value="af-gen">Air Force / Space Force general facility</option>
+                  <option value="launch">AF/SF launch complex or propellant area</option>
+                  <option value="nasa">NASA facility</option>
+                </select>
+              </div>
+              <div>
+                <label>Flexibility required?</label>
+                <select id="cg_flexible">
+                  <option value="no">No — general wiring</option>
+                  <option value="yes">Yes — equipment whip / vibration isolation</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn" onclick="runConduitSelector()">Find Best Conduit Type</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recommendation</div>
+          <div class="card-body">
+            <div id="cg-selector-result" class="result"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CONDUIT TYPES TAB GROUP ── -->
+      <div class="card" style="grid-column:1/-1;margin-top:0">
+        <div class="card-title">Conduit Types — NEC Chapter 3 Wiring Methods</div>
+        <div class="card-body" style="padding-top:8px">
+          <div id="cg-type-tabs" class="tab-group">
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+              <button class="tab-btn" data-tab="cg-pane-emt">EMT</button>
+              <button class="tab-btn" data-tab="cg-pane-imc">IMC</button>
+              <button class="tab-btn" data-tab="cg-pane-rmc">RMC / GRC</button>
+              <button class="tab-btn" data-tab="cg-pane-fmc">FMC</button>
+              <button class="tab-btn" data-tab="cg-pane-lfmc">LFMC</button>
+              <button class="tab-btn" data-tab="cg-pane-pvc40">PVC Sch. 40</button>
+              <button class="tab-btn" data-tab="cg-pane-pvc80">PVC Sch. 80</button>
+              <button class="tab-btn" data-tab="cg-pane-ent">ENT</button>
+              <button class="tab-btn" data-tab="cg-pane-lfnc">LFNC</button>
+              <button class="tab-btn" data-tab="cg-pane-hdpe">HDPE</button>
+            </div>
+
+            <!-- EMT -->
+            <div id="cg-pane-emt" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-emt" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>358</strong></td></tr>
+                      <tr><td>Material</td><td>Steel (galvanized) or Aluminum</td></tr>
+                      <tr><td>Wall type</td><td>Thin (0.042&quot; at 1&quot; trade size)</td></tr>
+                      <tr><td>Max trade size</td><td>4&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>No — set-screw or compression fittings</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;20&nbsp;°C to +75&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Every 10 ft; within 3 ft of each box (358.30)</td></tr>
+                      <tr><td>EGC function</td><td>Yes — when bonded per 250.118(4)</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Electrical Metallic Tubing (EMT) — &ldquo;Thin-Wall&rdquo;</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">The most widely used metallic conduit in commercial construction. EMT&rsquo;s thin wall makes it easy to cut and bend, and it installs faster than any other rigid metal conduit. Not threaded — uses mechanical set-screw or compression connectors.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (358.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Exposed and concealed locations</li>
+                        <li>In concrete (above earth)</li>
+                        <li>Damp &amp; wet locations (listed fittings)</li>
+                        <li>Fished in existing walls</li>
+                        <li>All atmospheric conditions with listed fittings</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (358.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Direct contact with earth or fill</li>
+                        <li>Severe physical damage exposure</li>
+                        <li>Class I, Div. 1 hazardous locations</li>
+                        <li>Destructive corrosive agents</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#f5c451;margin-bottom:4px">⚡ Pros &amp; Cons</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Lightest metallic conduit</li><li>Fastest to install</li><li>Lowest metallic-conduit cost</li><li>No threading required</li><li>Serves as EGC when bonded</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>Thin — crushes under mechanical damage</li><li>No threads — weaker joint than RMC/IMC</li><li>Galvanized version may corrode coastal</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Set-screw connectors &amp; couplings, compression connectors (watertight), conduit bodies (LB, LL, LR, C, T, X), 1-hole straps, beam clamps, lay-in straps. Compression fittings are required for wet locations.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> NOT permitted in launch complexes, propellant areas, Class I hazardous locations, or within ESQD arcs. Approved for general office/support areas only. <em>AFSPCMAN 91-710 Vol. 3; AFI 32-1064 §3; UFC 3-550-01.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- IMC -->
+            <div id="cg-pane-imc" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-imc" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>342</strong></td></tr>
+                      <tr><td>Material</td><td>Steel (galvanized) — medium wall</td></tr>
+                      <tr><td>Wall type</td><td>Medium (heavier than EMT, lighter than RMC)</td></tr>
+                      <tr><td>Max trade size</td><td>4&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>Yes — same NPT thread as RMC</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;20&nbsp;°C to +75&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Every 10 ft; within 3 ft of each box (342.30)</td></tr>
+                      <tr><td>EGC function</td><td>Yes — when bonded per 250.118(5)</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Intermediate Metal Conduit (IMC) — Medium Wall</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">IMC provides the threaded joint strength of RMC at roughly 25% less weight. It is listed for all the same locations as RMC and is an acceptable substitute in most applications. Common in industrial and outdoor installations where RMC cost is a concern.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (342.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>All atmospheric conditions</li>
+                        <li>Direct burial in earth or concrete</li>
+                        <li>Hazardous locations (Class I Div. 1 &amp; 2, Class II)</li>
+                        <li>Wet and corrosive locations (with suitable material)</li>
+                        <li>Exposed, concealed, outdoor</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (342.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Severe corrosion without protective coating or stainless material</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Lighter than RMC</li><li>Threaded — same fittings as RMC</li><li>Listed for all RMC applications</li><li>Good balance of strength and workability</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>More expensive than EMT</li><li>Requires threading tools</li><li>Heavier than EMT</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Threaded couplings, locknuts, insulating bushings, Myers hubs, conduit bodies, weatherproof fittings, expansion fittings.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Acceptable substitute for RMC in most Air Force/Space Force applications. Preferred over EMT for outdoor, exposed, or industrially classified areas. <em>UFC 3-550-01 §3-3; AFSPCMAN 91-710 Vol. 3.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RMC -->
+            <div id="cg-pane-rmc" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-rmc" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>344</strong></td></tr>
+                      <tr><td>Material</td><td>Steel (hot-dip galv.), stainless steel, or aluminum</td></tr>
+                      <tr><td>Wall type</td><td>Heavy — thickest metallic conduit</td></tr>
+                      <tr><td>Max trade size</td><td>6&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>Yes — tapered NPT threads</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;20&nbsp;°C to +75&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Every 10 ft; within 3 ft of each box (344.30)</td></tr>
+                      <tr><td>EGC function</td><td>Yes — when bonded per 250.118(6)</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:#f59e0b">Rigid Metal Conduit (RMC / GRC) — Heavy Wall ★ Gold Standard</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">RMC is the most universally permitted wiring method in the NEC — it is listed for every location type. The thick, threaded wall provides maximum mechanical protection. Stainless steel variants are used in corrosive, coastal, or propellant environments. This is the baseline requirement for Air Force/Space Force critical infrastructure.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (344.10) — Universal</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>All atmospheric conditions</li>
+                        <li>Direct burial in earth or concrete</li>
+                        <li>All hazardous location classes/divisions</li>
+                        <li>Severe physical damage exposure</li>
+                        <li>Corrosive environments (with suitable material)</li>
+                        <li>Marine / coastal / launch facility</li>
+                        <li>Explosion-proof systems</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (344.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Severe corrosion without protection — specify galvanized, stainless, or PVC-coated RMC as appropriate</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Maximum physical protection</li><li>Threaded joints — strongest connection</li><li>No location restrictions in NEC</li><li>Can use as EGC</li><li>Stainless / PVC-coated for severe corrosion</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>Heaviest — labor-intensive</li><li>Requires threading equipment</li><li>Highest cost of rigid conduit</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Threaded couplings (NPT), union couplings, threaded conduit bodies, Myers hubs, weatherproof hubs, explosion-proof fittings, rain-tight connectors, expansion fittings, bonding locknuts.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA REQUIRED:</strong> Mandatory in launch complex structures, propellant/explosive handling areas, Class I Div. 1 locations, within ESQD arcs, and all outdoor exposed runs in operational facilities. Stainless steel RMC required for propellant piping areas, salt-air coastal facilities. <em>AFSPCMAN 91-710 Vol. 3 §3-2; AFI 32-1064 §3-1; UFC 3-550-01 §3-2; NASA KSC-E-165 §4.2.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FMC -->
+            <div id="cg-pane-fmc" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-fmc" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>348</strong></td></tr>
+                      <tr><td>Material</td><td>Interlocked steel or aluminum spiral strip</td></tr>
+                      <tr><td>Wall type</td><td>Flexible armor — no fixed wall thickness</td></tr>
+                      <tr><td>Max trade size</td><td>4&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>No — squeeze or screw connectors</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;20&nbsp;°C to +60&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Every 4.5 ft; within 12 in of boxes (348.30)</td></tr>
+                      <tr><td>EGC function</td><td>Only in specific sizes with specific listings — verify; usually run a separate EGC inside (348.60)</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Flexible Metal Conduit (FMC) — &ldquo;Greenfield&rdquo;</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">FMC&rsquo;s spiral armor allows it to flex around obstacles and absorb vibration, making it ideal for equipment connection whips. It is NOT a general wiring method — it is restricted to dry locations and short runs. Always verify whether the FMC alone qualifies as an EGC for the application; when in doubt, run a separate copper EGC inside.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (348.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Dry locations</li>
+                        <li>Exposed or concealed</li>
+                        <li>Equipment whips (motors, transformers, HVAC)</li>
+                        <li>Where flexibility is required for routing</li>
+                        <li>Connection to luminaires (ceiling fan whips)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (348.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Wet or damp locations (use LFMC)</li>
+                        <li>Direct burial</li>
+                        <li>Concrete encasement</li>
+                        <li>Hazardous locations (except listed types)</li>
+                        <li>Physical damage exposure</li>
+                        <li>Over 6 ft for equipment whips (general rule)</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Excellent vibration isolation</li><li>Easy routing around obstacles</li><li>No bending tools needed</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>Dry-only — no outdoor use</li><li>Short whips only</li><li>EGC often required inside</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Squeeze connectors (straight &amp; 90°), screw-in connectors, die-cast fittings for liquid-tight applications, strain-relief fittings.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Permitted for equipment whip connections only (≤ 6 ft, dry locations). Not a general wiring method in mission-critical areas. Always verify a separate EGC is present. <em>UFC 3-550-01 §3-5; AFI 32-1064.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LFMC -->
+            <div id="cg-pane-lfmc" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-lfmc" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>350</strong></td></tr>
+                      <tr><td>Material</td><td>Interlocked metal core + PVC or thermoplastic jacket</td></tr>
+                      <tr><td>Wall type</td><td>Flexible armored core with liquidtight outer jacket</td></tr>
+                      <tr><td>Max trade size</td><td>4&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>No — liquidtight connectors</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;40&nbsp;°C to +60&nbsp;°C (type-dependent)</td></tr>
+                      <tr><td>Support spacing</td><td>Every 4.5 ft; within 12 in of boxes (350.30)</td></tr>
+                      <tr><td>EGC function</td><td>Separate EGC required inside (350.60) in most cases</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Liquidtight Flexible Metal Conduit (LFMC) — &ldquo;Sealtite&rdquo;</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">LFMC adds a liquidtight PVC jacket over flexible metal armor, making it suitable for outdoor and wet equipment connections. It is the preferred choice for outdoor motor whips, rooftop HVAC connections, and any wet-location equipment requiring vibration isolation. Like FMC, it is limited to short whip connections — not general wiring.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (350.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Wet and damp locations</li>
+                        <li>Outdoor equipment connections</li>
+                        <li>Class I, Div. 2 and Class II (when listed)</li>
+                        <li>Where LFMC is direct-burial-listed</li>
+                        <li>Oil and chemical resistant jacket types</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (350.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Direct burial (unless specifically listed)</li>
+                        <li>Concrete encasement</li>
+                        <li>Class I, Div. 1</li>
+                        <li>Physical damage exposure</li>
+                        <li>Over 6 ft whip length</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Weatherproof — outdoor-rated</li><li>Vibration isolation</li><li>Oil/chemical-resistant jackets available</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>More expensive than FMC</li><li>Short whips only</li><li>EGC required inside</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Liquidtight straight &amp; 90° connectors, strain-relief fittings, weatherproof box connectors, O-ring seal types for Class I Div. 2.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Required for all outdoor motor and equipment whip connections. Preferred over FMC for any damp or wet environment equipment connection. Confirm EGC is inside. <em>UFC 3-550-01 §3-6; AFI 32-1064.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PVC Sch 40 -->
+            <div id="cg-pane-pvc40" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-pvc40" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>352</strong></td></tr>
+                      <tr><td>Material</td><td>PVC — gray or orange</td></tr>
+                      <tr><td>Wall type</td><td>Thin-wall plastic</td></tr>
+                      <tr><td>Max trade size</td><td>6&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>No — solvent-cement joints (bell end or couplings)</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;20&nbsp;°C to +75&nbsp;°C (derating may apply)</td></tr>
+                      <tr><td>Support spacing</td><td>Per Table 352.30(B): 3 ft (1/2&quot;) to 8 ft (&gt;2&quot;)</td></tr>
+                      <tr><td>EGC function</td><td>Never — always run separate EGC inside</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Rigid PVC Conduit — Schedule 40 (RNC Type A)</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">PVC Sch. 40 is the workhorse for underground and direct-burial electrical work. Its corrosion immunity makes it ideal for underground feeders, duct banks, and chemical-area wiring. Thermal expansion is significant — expansion fittings are required for long runs. It cannot serve as an EGC, so a separate copper or aluminum grounding conductor must always be included.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (352.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Underground direct burial (352.10(B))</li>
+                        <li>Concrete-encased duct banks</li>
+                        <li>Wet and corrosive locations above grade</li>
+                        <li>Concealed in walls, ceilings, floors</li>
+                        <li>Exposed (not subject to physical damage)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (352.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Hazardous locations</li>
+                        <li>Exposed where physical damage likely</li>
+                        <li>Ambient &gt; 50&nbsp;°C without derating</li>
+                        <li>Direct sunlight (without UV-stabilized type)</li>
+                        <li>Support of luminaires</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Corrosion-proof — ideal underground</li><li>Lightweight — easy to install</li><li>Low friction for long cable pulls</li><li>Solvent-cement joints — fast</li><li>Lowest-cost conduit per foot</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>No EGC function — always add ground wire</li><li>Brittle below &minus;10&nbsp;°C</li><li>High thermal expansion — needs exp. fittings</li><li>Not for above-grade exposed (mechanically weak)</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Solvent-cement couplings, bell-end adapters, PVC expansion joints (required &gt; 25 ft runs above grade), PVC conduit bodies, PVC-to-metallic adapters, PVC LB bodies.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Permitted underground only. NOT above grade in AF/SF operational or mission buildings. Transition to RMC at building entries. Concrete-encased PVC duct banks standard for site distribution. <em>UFC 3-550-01 §3-4; AFSPCMAN 91-710 Vol. 3 §3-5; NASA KSC-E-165 §4.3.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PVC Sch 80 -->
+            <div id="cg-pane-pvc80" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-pvc80" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>352</strong></td></tr>
+                      <tr><td>Material</td><td>PVC — gray, heavy wall</td></tr>
+                      <tr><td>Wall type</td><td>Medium-heavy plastic (thicker than Sch. 40)</td></tr>
+                      <tr><td>Max trade size</td><td>6&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>Yes — can be threaded (unlike Sch. 40)</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;20&nbsp;°C to +75&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Per Table 352.30(B)</td></tr>
+                      <tr><td>EGC function</td><td>Never — always run separate EGC inside</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Rigid PVC Conduit — Schedule 80 (RNC Type B — Heavy Wall)</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">Sch. 80 has a thicker wall than Sch. 40, making it suitable for exposed above-grade runs in areas with moderate physical damage potential. It can be threaded, enabling metal-type fittings. The thicker wall reduces internal bore area — conductor capacity per Table C.12 is lower than Sch. 40 for the same trade size. Ideal for chemical plants and coastal facilities where metallic conduit would corrode.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses — superset of Sch. 40</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>All Sch. 40 applications</li>
+                        <li>Exposed above grade with moderate damage risk</li>
+                        <li>Chemical / wash-down / coastal areas</li>
+                        <li>Threaded fittings (Schedule 80 ends)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Same restrictions as Sch. 40</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Hazardous locations</li>
+                        <li>Severe physical damage (use RMC)</li>
+                        <li>Cannot serve as EGC</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Better physical protection than Sch. 40</li><li>Corrosion-proof</li><li>Threadable</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>Higher cost than Sch. 40</li><li>Smaller bore for same trade size</li><li>Still not for severe damage / hazardous</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Same as Sch. 40 plus threaded couplings (Schedule 80 threaded ends match NPT but lighter wall — confirm listing).</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Preferred over Sch. 40 for corrosive above-grade areas where RMC is not required. Not a substitute for RMC in hazardous or mission-critical locations. <em>UFC 3-550-01 §3-4.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ENT -->
+            <div id="cg-pane-ent" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-ent" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>362</strong></td></tr>
+                      <tr><td>Material</td><td>Corrugated PVC — typically blue or orange</td></tr>
+                      <tr><td>Wall type</td><td>Thin corrugated plastic (flexible)</td></tr>
+                      <tr><td>Max trade size</td><td>2&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>No — snap-in or push fittings</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;10&nbsp;°C to +60&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Every 3 ft; within 3 ft of each box (362.30)</td></tr>
+                      <tr><td>EGC function</td><td>Never — always run separate EGC inside</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Electrical Nonmetallic Tubing (ENT) — &ldquo;Smurf Tube&rdquo;</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">ENT is a corrugated, flexible PVC conduit used almost exclusively in residential and light-commercial concealed rough-in. Its trademark blue color (though not required) makes it easy to spot in walls during construction. ENT cannot be used exposed, is limited to 3 floors max, and is entirely unsuitable for industrial or mission-critical use. Separate EGC is always required.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (362.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Concealed in walls, ceilings, floors</li>
+                        <li>Concrete encasement (in slabs)</li>
+                        <li>Residential and light commercial (≤ 3 floors)</li>
+                        <li>Pre-wired stud-wall rough-in</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (362.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Exposed locations — never</li>
+                        <li>Direct burial</li>
+                        <li>Wet or damp locations</li>
+                        <li>Hazardous locations</li>
+                        <li>Buildings exceeding 3 floors</li>
+                        <li>Ambient over 50&nbsp;°C</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Snap-in box connectors, ENT-to-EMT transition adapters, push-in couplings, plastic box adapters.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #ff8a8a;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> NOT PERMITTED in Air Force, Space Force, or NASA facilities. Residential rough-in only. Never appropriate for any commercial, industrial, or mission-critical application. <em>UFC 3-550-01 (not listed as a permitted type).</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LFNC -->
+            <div id="cg-pane-lfnc" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-lfnc" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>356</strong></td></tr>
+                      <tr><td>Material</td><td>Flexible PVC corrugated tube with smooth PVC jacket</td></tr>
+                      <tr><td>Wall type</td><td>Flexible plastic (Type B: smooth outer; Type A: corrugated outer)</td></tr>
+                      <tr><td>Max trade size</td><td>4&quot;</td></tr>
+                      <tr><td>Threaded?</td><td>No — liquidtight nonmetallic connectors</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;10&nbsp;°C to +60&nbsp;°C</td></tr>
+                      <tr><td>Support spacing</td><td>Every 3 ft; within 12 in of each termination (356.30)</td></tr>
+                      <tr><td>EGC function</td><td>Never — always run separate EGC inside</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">Liquidtight Flexible Nonmetallic Conduit (LFNC)</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">LFNC serves the same role as LFMC but without any metallic component, making it useful where metallic conduit would cause galvanic corrosion or where non-magnetic properties are needed. Common in food processing, chemical plants, and wash-down areas. Like all flexible conduit, it is limited to short whips — not general wiring.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (356.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Wet / damp / outdoor locations</li>
+                        <li>Where flexibility is required</li>
+                        <li>Corrosive chemical environments</li>
+                        <li>Food processing / wash-down areas</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (356.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Direct burial / concrete</li>
+                        <li>Hazardous locations</li>
+                        <li>Physical damage exposure</li>
+                        <li>Over 6 ft length</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Liquidtight nonmetallic connectors (straight &amp; 90°), snap-in type, LFNC-to-PVC adapters.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Seldom used. When needed for corrosive-environment equipment whips, verify EGC is inside and confirm AHJ acceptance. Not appropriate for mission-critical installations. <em>UFC 3-550-01.</em></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HDPE -->
+            <div id="cg-pane-hdpe" class="tab-pane">
+              <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:20px;align-items:start">
+                <div>
+                  <div id="cg-xsec-hdpe" style="margin-bottom:8px"></div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <tbody>
+                      <tr><td>NEC Article</td><td><strong>353</strong></td></tr>
+                      <tr><td>Material</td><td>HDPE — black, orange (telecom), or yellow (gas)</td></tr>
+                      <tr><td>Wall type</td><td>Medium-heavy plastic — direct-burial rated</td></tr>
+                      <tr><td>Max trade size</td><td>6&quot;+</td></tr>
+                      <tr><td>Threaded?</td><td>No — heat-fusion or mechanical couplings</td></tr>
+                      <tr><td>Temp rating</td><td>&minus;40&nbsp;°C to +75&nbsp;°C (excellent cold resistance)</td></tr>
+                      <tr><td>Support spacing</td><td>Per manufacturer; typically used in duct banks</td></tr>
+                      <tr><td>EGC function</td><td>Never — always run separate EGC inside</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <p style="margin:0 0 8px;font-weight:700;color:var(--accent)">HDPE Conduit — High-Density Polyethylene (Type RTRC)</p>
+                  <p style="margin:0 0 10px;font-size:0.85rem;line-height:1.6">HDPE is the material of choice for large underground duct banks, telecom infrastructure, and medium-voltage cable systems. Its extreme chemical resistance, excellent cold-weather performance, and low friction coefficient (great for long cable pulls) make it the preferred underground option for site distribution networks. Above-grade use is not permitted.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#6ee7b7;margin-bottom:4px">✓ Permitted Uses (353.10)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Direct burial in earth</li>
+                        <li>Concrete-encased duct banks</li>
+                        <li>High water-table or coastal underground</li>
+                        <li>Corrosive soil environments</li>
+                        <li>Medium-voltage cable duct banks</li>
+                        <li>Telecom and fiber-optic underground</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.1em;color:#ff8a8a;margin-bottom:4px">✗ Not Permitted (353.12)</div>
+                      <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                        <li>Above grade or exposed</li>
+                        <li>Hazardous locations</li>
+                        <li>Above temperature rating</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem">
+                    <ul style="margin:0;padding-left:16px;line-height:1.7"><li>Extreme corrosion resistance</li><li>Lowest friction — longest cable pulls</li><li>Excellent cold-weather performance</li><li>Long service life underground</li></ul>
+                    <ul style="margin:0;padding-left:16px;line-height:1.7;color:#f5c451"><li>Above-grade not permitted</li><li>Requires heat-fusion tools</li><li>Cannot serve as EGC</li></ul>
+                  </div>
+                  <div class="note" style="margin-top:10px"><strong>Fittings:</strong> Heat-fusion couplings, mechanical compression couplings, bell-end insert adapters, pull boxes (for direction changes), manhole entries.</div>
+                  <div class="note" style="margin-top:6px;border-left:3px solid #f59e0b;padding-left:8px"><strong>🚀 AF/SF/NASA:</strong> Used for underground site-utility duct banks at AF/SF installations. Transition to RMC required at building entries per UFC. Typical for medium-voltage underground cable and telecom duct banks. Coordinate design with civil engineering. <em>UFC 3-550-01 §3-4; AFSPCMAN 91-710 Vol. 3; NASA KSC-E-165 §4.3.</em></div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- end tab-group #cg-type-tabs -->
+        </div>
+      </div><!-- end card -->
+
+      <!-- ── FITTINGS GUIDE ── -->
+      <div class="card" style="grid-column:1/-1;margin-top:0">
+        <div class="card-title">Fittings Guide</div>
+        <div class="card-body" style="padding-top:8px">
+          <div class="tab-group">
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+              <button class="tab-btn" data-tab="cg-fit-connectors">Connectors</button>
+              <button class="tab-btn" data-tab="cg-fit-bodies">Conduit Bodies</button>
+              <button class="tab-btn" data-tab="cg-fit-expansion">Expansion &amp; Seals</button>
+              <button class="tab-btn" data-tab="cg-fit-support">Support &amp; Straps</button>
+              <button class="tab-btn" data-tab="cg-fit-lt">Liquidtight</button>
+            </div>
+
+            <!-- Connectors -->
+            <div id="cg-fit-connectors" class="tab-pane">
+              <div class="card-grid two-col" style="gap:12px">
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Set-Screw Connector/Coupling (EMT)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">A machined steel or die-cast connector that accepts the EMT end and clamps it with one or two set screws. Fast installation. The set-screw provides mechanical and ground continuity. <strong>NOT approved for wet locations without a listed rain-tight type</strong> — use compression fittings instead for wet/damp.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>NEC 358.42 — connectors must be made up tight</li><li>Steel or die-cast zinc; steel preferred in damp areas</li><li>Duplex (two set-screw) types preferred for vibration resistance</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Compression Connector/Coupling (EMT)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">A two-piece fitting with a ferrule that is compressed onto the EMT end by tightening a threaded nut. Provides a more positive mechanical and electrical bond than set-screw. Rain-tight compression fittings are <strong>required for wet locations</strong> per 358.42. More expensive but recommended for damp, wet, or vibrating installations.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Use for all wet/damp EMT installations</li><li>Listed as rain-tight or concrete-tight per listing</li><li>Copper-free aluminum versions for aluminum EMT</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Threaded Coupling / Connector (RMC, IMC)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">RMC and IMC use NPT (National Pipe Taper) threads. Couplings join two conduit lengths. Connectors terminate conduit into a box or enclosure with a locknut and insulating bushing. Threaded connections provide the strongest mechanical joint and reliable ground continuity. Use a bonding locknut or bonding bushing wherever continuity is critical.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Thread lubricant (anti-gall) recommended for stainless</li><li>Myers hubs (watertight): 344.42 — use where water entry must be prevented</li><li>Explosion-proof fittings: RMC threaded into explosionproof equipment per 501.10(A)</li><li>Bonding bushings at service equipment (250.92)</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">PVC Solvent-Cement Coupling</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">PVC conduit is joined with a primer and solvent cement that chemically fuses the mating surfaces. Joints are permanent and watertight. Primer is usually required (clear or purple) — check local requirements. For above-grade runs, expansion fittings must be installed where temperature variation exceeds 25 °F (approximately every 25 ft for 100 °F range).</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Primer: ASTM F656; Cement: ASTM D2564</li><li>Allow cure time before cable pull</li><li>Expansion fittings required per Table 352.44</li><li>Bell-end (factory socket) preferred for underground — no separate coupling needed</li></ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Conduit Bodies -->
+            <div id="cg-fit-bodies" class="tab-pane">
+              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 12px">Conduit bodies (NEC 314.16(C)) provide access for wire pulling and changes of direction. They may NOT be used as splice points unless listed for the purpose and the fill limits of 314.16(C) are met. Each body&rsquo;s internal cross-sectional area must be &ge; twice the cross-sectional area of the largest conduit connected to it.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start" id="cg-fitting-tabs">
+                <div style="text-align:center">
+                  <div id="cg-fitting-LB"></div>
+                  <div style="font-size:0.75rem;margin-top:4px;color:var(--fg-muted)">LB — back entry</div>
+                </div>
+                <div style="text-align:center">
+                  <div id="cg-fitting-LL"></div>
+                  <div style="font-size:0.75rem;margin-top:4px;color:var(--fg-muted)">LL — left exit</div>
+                </div>
+                <div style="text-align:center">
+                  <div id="cg-fitting-LR"></div>
+                  <div style="font-size:0.75rem;margin-top:4px;color:var(--fg-muted)">LR — right exit</div>
+                </div>
+                <div style="text-align:center">
+                  <div id="cg-fitting-C"></div>
+                  <div style="font-size:0.75rem;margin-top:4px;color:var(--fg-muted)">C — inline pull</div>
+                </div>
+                <div style="text-align:center">
+                  <div id="cg-fitting-T"></div>
+                  <div style="font-size:0.75rem;margin-top:4px;color:var(--fg-muted)">T — tee (3 ports)</div>
+                </div>
+                <div style="text-align:center">
+                  <div id="cg-fitting-X"></div>
+                  <div style="font-size:0.75rem;margin-top:4px;color:var(--fg-muted)">X — cross (4 ports)</div>
+                </div>
+              </div>
+              <div class="note" style="margin-top:12px">
+                <strong>Selection guide:</strong>
+                LB = 90° change of direction (wall penetration, most common).
+                LL / LR = 90° turn to the left / right.
+                C = inline — straight pull to access conductors.
+                T = 3-way split, branch takeoff.
+                X = 4-way crossing.
+                <br><strong>NEC 314.16(C):</strong> Conduit bodies with fewer than 3 conduits may be used as a junction point when accessible; fill must not exceed the limits for that conduit body size. Conduit bodies with 3 or more conduits must be listed for splicing.
+              </div>
+            </div>
+
+            <!-- Expansion & Seals -->
+            <div id="cg-fit-expansion" class="tab-pane">
+              <div class="card-grid two-col" style="gap:12px">
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Expansion Fittings — PVC (NEC 352.44)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">PVC expands significantly with temperature — approximately 3.4 in per 100 ft per 100 °F change. Expansion fittings (slip-joint telescoping fittings) absorb this movement without stressing conduit or fittings. Required wherever temperature swing creates movement that would crack joints or pull conductors. NEC Table 352.44 gives maximum spacing based on temperature range.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>NEC Table 352.44: place at intervals per table based on local temperature range</li><li>Provide for conductor slack at each expansion fitting</li><li>Available for 1/2&quot; through 6&quot; PVC</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Expansion Fittings — Metallic (NEC 344.44, 358.44)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">Metal conduit expands less than PVC but long straight runs across building expansion joints require expansion/deflection fittings. Combination expansion-deflection fittings accommodate both linear growth and lateral movement. Required at structural expansion joints in buildings and bridges.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Required at building/structural expansion joints (344.44)</li><li>Combo expansion-deflection types accommodate &plusmn;3/4&quot; to &plusmn;3&quot; movement</li><li>Bonding jumper required across expansion fittings (250.98)</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Conduit Sealing Fittings (Explosive Locations, NEC 501.15)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">In Class I hazardous locations, conduit seals prevent the passage of flammable gases or vapors from one area to another and prevent the propagation of an explosion through conduit. Required within 18 in of explosion-proof equipment and at all conduit entries into enclosures, at boundaries between hazardous and non-hazardous areas, and at changes of direction in certain applications.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>NEC 501.15(A)(1): within 18 in of explosion-proof equipment entries</li><li>NEC 501.15(A)(2): at boundary when conduit leaves Class I Div. 1</li><li>501.15(C)(1): fill compound fills at least 85% of interior cross-section</li><li>Must be accessible after installation</li><li><strong>🚀 AF/SF/NASA:</strong> All conduit penetrations of Class I boundaries in propellant areas require seals. Verify seals are listed for the gas/vapor group (Group C, D, etc.). <em>AFSPCMAN 91-710 Vol. 3 §3-4; NEC 501.15.</em></li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Drain / Breather Fittings (Outdoor Metallic Conduit)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">Temperature cycling in sealed metallic conduit systems causes condensation inside. Breather fittings allow pressure equalization and drain accumulated moisture. They are required in some NEC applications and are best practice for all outdoor metallic conduit runs longer than a few feet to prevent corrosion and moisture damage to conductors and equipment. UL-listed types include combined drain/breather units.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Install at low points of outdoor conduit runs</li><li>Required in explosion-proof systems where liquid seals are impractical</li><li>Best practice for all coastal/outdoor metallic conduit</li></ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Support & Straps -->
+            <div id="cg-fit-support" class="tab-pane">
+              <div class="card-grid two-col" style="gap:12px">
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">One-Hole &amp; Two-Hole Straps</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">Standard steel straps (one-hole and two-hole) screw directly to walls, studs, or framing. Two-hole straps are preferred wherever vibration is present. Strap spacing must meet the conduit article requirements (e.g., every 10 ft for EMT/RMC, every 3 ft for ENT). Use stainless steel straps in corrosive or coastal environments.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>EMT/RMC/IMC: max 10 ft on center, within 3 ft of each termination (art. 358.30, 344.30, 342.30)</li><li>ENT: max 3 ft on center (362.30)</li><li>Rigid PVC: per Table 352.30(B) — 3 ft (1/2&quot;) to 8 ft (over 2&quot;)</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Conduit Hangers &amp; Beam Clamps</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">Conduit hangers are used for suspended ceiling runs and exposed runs from overhead structure. Beam clamps attach to structural steel without drilling. Conduit hangers come in one-hole (single conduit), multi-conduit (trapeze/rack), and adjustable versions. Seismic bracing is required in high-seismic zones (IBC Seismic Design Category C through F) per ASCE 7 and NEC 517 (healthcare).</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Trapeze hangers for multiple parallel runs — most efficient above ceilings</li><li>Spring-steel clips (EMT, small sizes): quick install, verify load capacity</li><li><strong>🚀 AF/SF/NASA:</strong> Seismic restraint required for all conduit systems in launch facilities per ASCE 7 and UFC 3-310-04. Verify lateral bracing intervals with structural engineer. <em>UFC 3-310-04; UFC 3-550-01.</em></li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Conduit Nipples</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">A nipple is a short (usually 6&quot; or less) conduit piece used to directly connect two adjacent enclosures. Fill limit is 60% for nipples 24 in or less in length per NEC Ch. 9 Table 1, Note 4 — significantly more than the standard 40% for longer runs. Nipples must still be supported per the conduit article unless the enclosures provide adequate support.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>NEC Ch. 9 Table 1 Note 4: 60% fill for nipples ≤ 24 in</li><li>Use close (extra-close) nipples for panel-to-panel connections</li><li>Size the nipple for the actual conductors at 60% fill</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Reducing Fittings &amp; Unions</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">Conduit reducers allow connection between different trade sizes. Unions allow disconnection of rigid conduit sections without cutting (e.g., at equipment that must be removed). Concentric and eccentric reducing washers are used to step down a knockout to accept a smaller conduit size.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Eccentric reducers preferred at conduit stubs entering panels — allows conduit to exit horizontally without offset</li><li>Insulating bushings required at conduit ends where conductors 4 AWG and larger enter metallic enclosures (300.4(F) / 312.6(C))</li></ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Liquidtight -->
+            <div id="cg-fit-lt" class="tab-pane">
+              <div class="card-grid two-col" style="gap:12px">
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Liquidtight Connectors (LFMC)</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">LFMC liquidtight connectors use a compression ferrule and O-ring (or neoprene gland) to seal the conduit entry at a box or enclosure. Available in straight and 90° configurations. Rated for wet locations and NEMA 3R / 4 enclosures when listed. Use insulated-throat types where conductors 4 AWG or larger enter (300.4(F)).</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Verify connector is rated to match enclosure NEMA rating (e.g., NEMA 4 for hose-down)</li><li>Anti-short sleeve required where insulation could be damaged</li><li>Stainless steel versions for corrosive environments</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">Strain Relief / Cord Grips</div>
+                  <p style="font-size:0.82rem;line-height:1.6;margin:0 0 6px">Where flexible conduit enters equipment, strain-relief fittings prevent mechanical load from being transferred to the conductors inside. Conduit LFMC fittings with integral strain relief are available. For portable cord entries, listed cord grips (cord connectors) are required by Article 400 and the equipment listing.</p>
+                  <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7"><li>Required at all portable/flexible cord entries to equipment (400.10)</li><li>Sized for the specific cord diameter — do not over-torque on flexible conduit</li></ul>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent);margin-bottom:6px">NEMA Enclosure Ratings Reference</div>
+                  <table class="ref-table" style="font-size:0.78rem">
+                    <thead><tr><th>NEMA Type</th><th>Protection</th><th>Conduit Fittings Required</th></tr></thead>
+                    <tbody>
+                      <tr><td>1</td><td>Indoor general purpose</td><td>Standard knockouts, locknuts</td></tr>
+                      <tr><td>3R</td><td>Outdoor rain/sleet</td><td>Rain-tight compression fittings or LFMC connectors</td></tr>
+                      <tr><td>4</td><td>Watertight, hose-directed</td><td>Listed watertight LFMC connectors, Myers hubs</td></tr>
+                      <tr><td>4X</td><td>Watertight + corrosion</td><td>SS or listed corrosion-resistant LFMC/LFNC connectors</td></tr>
+                      <tr><td>7/9</td><td>Explosion-proof (Class I/II)</td><td>Listed explosion-proof hubs, threaded RMC only</td></tr>
+                      <tr><td>12</td><td>Industrial dust-tight</td><td>Compression fittings, gasketed connectors</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- end fittings tab-group -->
+        </div>
+      </div><!-- end fittings card -->
+
+      <!-- ── NEC QUICK REFERENCE TABLE ── -->
+      <div class="card" style="grid-column:1/-1;margin-top:0">
+        <div class="card-title">NEC Wiring Methods — Quick Reference</div>
+        <div class="card-body">
+          <div class="ref-table-wrap">
+            <table class="ref-table">
+              <thead>
+                <tr>
+                  <th>Type</th><th>Article</th><th>Threaded</th><th>Dry</th><th>Damp/Wet</th>
+                  <th>Direct Burial</th><th>Cl. I Div. 1</th><th>Cl. I Div. 2</th><th>EGC</th><th>AF/SF Level</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>RMC/GRC</strong></td><td>344</td><td>✓ NPT</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td style="color:#f59e0b">★ Required</td></tr>
+                <tr><td><strong>IMC</strong></td><td>342</td><td>✓ NPT</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td style="color:#6ee7b7">Acceptable</td></tr>
+                <tr><td><strong>EMT</strong></td><td>358</td><td>—</td><td>✓</td><td>Listed</td><td>—</td><td>—</td><td>—</td><td>Listed</td><td style="color:#f5c451">Support only</td></tr>
+                <tr><td><strong>FMC</strong></td><td>348</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Size/listing</td><td style="color:#94a3b8">Whips only</td></tr>
+                <tr><td><strong>LFMC</strong></td><td>350</td><td>—</td><td>✓</td><td>✓</td><td>Listed</td><td>—</td><td>Listed</td><td>Separate EGC</td><td style="color:#94a3b8">Outdoor whips</td></tr>
+                <tr><td><strong>PVC Sch. 40</strong></td><td>352</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Never</td><td style="color:#94a3b8">Underground</td></tr>
+                <tr><td><strong>PVC Sch. 80</strong></td><td>352</td><td>✓ ends</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Never</td><td style="color:#94a3b8">Underground</td></tr>
+                <tr><td><strong>ENT</strong></td><td>362</td><td>—</td><td>Concl.</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Never</td><td style="color:#ff8a8a">Not permitted</td></tr>
+                <tr><td><strong>LFNC</strong></td><td>356</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>Never</td><td style="color:#94a3b8">Corrosive whips</td></tr>
+                <tr><td><strong>HDPE</strong></td><td>353</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Never</td><td style="color:#94a3b8">Underground UG</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="note">✓ = permitted; — = not permitted or not applicable; "Listed" = only when specifically listed for that application. "EGC" column: whether the conduit itself is listed as equipment grounding conductor. Always consult the current NEC and local amendments.</div>
+        </div>
+      </div>
+
+      <!-- ── AF / SPACE FORCE / NASA GUIDELINES ── -->
+      <div class="card" style="grid-column:1/-1;margin-top:0">
+        <div class="card-title" style="border-left:4px solid #f59e0b;padding-left:12px">🚀 Air Force / Space Force / NASA Conduit Requirements</div>
+        <div class="card-body">
+          <div class="formula-box" style="margin-bottom:16px">
+            Key governing documents: <strong>AFSPCMAN 91-710</strong> · <strong>AFI 32-1064</strong> · <strong>UFC 3-550-01</strong> · <strong>UFC 3-310-04</strong> · <strong>NASA KSC-E-165</strong> · <strong>NEC (NFPA 70)</strong> · <strong>NFPA 101</strong>
+          </div>
+
+          <div class="card-grid two-col" style="gap:16px">
+
+            <div>
+              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">AFSPCMAN 91-710 — Range Safety User Requirements</div>
+              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">AFSPCMAN 91-710 (Air Force Space Command Manual 91-710) is the Range Safety User Requirements Manual governing activities at the Eastern Range (Cape Canaveral / Patrick SFB) and Western Range (Vandenberg SFB). It establishes minimum electrical safety standards for launch facility construction beyond the NEC.</p>
+              <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                <li><strong>Volume 3, §3:</strong> All wiring in explosive and propellant facilities shall use <strong>RMC (rigid metal conduit)</strong> or approved explosion-proof raceways. EMT is specifically excluded.</li>
+                <li><strong>Bonding and grounding:</strong> All metallic conduit must be bonded to the facility ground system; static dissipation critical in propellant areas. Isolated grounding is not permitted in propellant handling rooms.</li>
+                <li><strong>Conduit seals:</strong> All conduit entering or leaving a Class I hazardous location (propellant, fuel, LOX, LH₂ areas) must be sealed per NEC 501.15, placed within 18 in of the enclosure entry.</li>
+                <li><strong>Material specification:</strong> Galvanized or stainless steel RMC. PVC or plastic conduit above grade is not permitted in propellant or launch complex structures.</li>
+                <li><strong>Underground:</strong> PVC Sch. 40 or HDPE duct banks are permitted for site distribution underground but must transition to RMC at all building entries.</li>
+                <li><strong>ESQD arc areas:</strong> All wiring within Explosive Safety Quantity Distance arcs must use RMC with listed explosion-proof fittings. Verify with Range Safety Office for current ESQD arc boundaries.</li>
+              </ul>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">AFI 32-1064 / UFC 3-550-01 — AF Electrical Systems</div>
+              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">AFI 32-1064 (Electrical Safe Practices) and UFC 3-550-01 (Interior Electrical Systems) govern electrical design at all Air Force installations. UFC 3-550-01 has largely superseded many AFI 32-1064 sections for design purposes.</p>
+              <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                <li><strong>Primary conduit:</strong> RMC or IMC for all outdoor exposed, mechanical rooms, and industrial facilities. EMT permitted only indoors in dry, non-industrial, non-critical areas.</li>
+                <li><strong>Outdoor runs:</strong> RMC is the default for any outdoor exposed conduit at AF installations. IMC may be substituted with approval.</li>
+                <li><strong>Underground:</strong> PVC Sch. 40 in concrete-encased duct banks; direct-burial PVC only in non-critical site-distribution feeders. Coordinate with base civil engineer.</li>
+                <li><strong>Corrosive environments:</strong> PVC-coated RMC or stainless steel RMC for wastewater, chemical, or coastal facilities. Aluminum conduit not recommended in concrete.</li>
+                <li><strong>Flex conduit:</strong> LFMC required for all outdoor equipment whips. FMC limited to indoor dry equipment connections only.</li>
+                <li><strong>Seismic:</strong> UFC 3-310-04 seismic bracing requirements apply to all conduit over 1 in trade size in Seismic Design Categories C–F. Lateral bracing required — verify with structural engineer.</li>
+              </ul>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">NASA KSC-E-165 — Kennedy Space Center Electrical Design Standard</div>
+              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">KSC-E-165 is the electrical design standard for Kennedy Space Center, which shares the Eastern Range with Cape Canaveral SFS. It applies to all NASA facilities at KSC including launch pads, processing facilities, and support buildings.</p>
+              <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
+                <li><strong>§4.2 — Wiring methods:</strong> RMC is the required conduit type for all industrial, outdoor, and launch facility areas. EMT is permitted only in office spaces and environmentally controlled support buildings.</li>
+                <li><strong>§4.3 — Underground:</strong> PVC Sch. 40 in concrete duct banks for normal power distribution; HDPE for telecom and fiber-optic duct banks. Minimum 18-inch cover for duct banks under paved areas.</li>
+                <li><strong>Propellant facilities:</strong> Explosion-proof wiring methods (RMC + EXP fittings) required in all areas where propellants (LOX, LH₂, RP-1, N₂O₄, MMH/UDMH) are stored, transferred, or vented. Group C/D for hydrocarbons; Group A/B for hydrogen — specify fittings accordingly.</li>
+                <li><strong>Clean rooms:</strong> Conduit must be degreased and cleaned before installation in Class 10,000 or better clean rooms. Stainless steel RMC preferred to prevent particle generation.</li>
+                <li><strong>Lightning protection:</strong> Conduit bonding required to the facility lightning protection system per NFPA 780 and NASA-HDBK-8739.21.</li>
+              </ul>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">Hazardous Area Classification — Propellant Guidance</div>
+              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">NEC Article 500 classifies hazardous locations by material type and likelihood of occurrence. For launch and propellant facilities:</p>
+              <table class="ref-table" style="font-size:0.78rem;margin-bottom:10px">
+                <thead><tr><th>Propellant</th><th>NEC Class</th><th>Group</th><th>Conduit Requirement</th></tr></thead>
+                <tbody>
+                  <tr><td>Liquid Hydrogen (LH₂)</td><td>Class I, Div. 1 &amp; 2</td><td>Group B</td><td>RMC + EXP fittings (Group B listed)</td></tr>
+                  <tr><td>Kerosene / RP-1</td><td>Class I, Div. 1 &amp; 2</td><td>Group D</td><td>RMC + EXP fittings (Group D listed)</td></tr>
+                  <tr><td>LOX (Liquid Oxygen)</td><td>Oxidizer — NEC 500.5 Note</td><td>—</td><td>RMC, no organic materials; avoid Al with LOX</td></tr>
+                  <tr><td>N₂O₄ / NTO</td><td>Class I, Div. 1</td><td>Group C/D</td><td>RMC + EXP fittings; SS conduit recommended</td></tr>
+                  <tr><td>Hydrazine (N₂H₄)</td><td>Class I, Div. 1</td><td>Group C/D</td><td>RMC + EXP; fully sealed system</td></tr>
+                </tbody>
+              </table>
+              <div class="note">Always verify hazardous area classification drawing (HAC drawing) with the responsible engineer and Range Safety Officer. NEC Group listings must match the specific propellant — do not mix Group D fittings in a Group B (hydrogen) area.</div>
+            </div>
+
+          </div><!-- end two-col grid -->
+
+          <div class="note" style="margin-top:16px;border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:6px">
+            <strong>⚠ Disclaimer:</strong> AFSPCMAN 91-710 and related range safety manuals are controlled documents that may be export-controlled or For Official Use Only (FOUO). Access and application require coordination with the Range Safety Office (45th / 30th Space Wing or successor Space Launch Delta units), the base civil engineer, and the facility safety officer. The requirements above are general guidance based on publicly available information; always obtain and apply the current, official version of the applicable document for your project.
+          </div>
+        </div>
+      </div><!-- end AF/NASA card -->
+
+    </section><!-- end sec-conduit-guide -->
+
+    <!-- ════════════════════════════════════════
+         TRANSFORMER DESIGN WIZARD
+         ════════════════════════════════════════ -->
+    <section id="sec-xfmr-wizard" class="section">
+      <div class="section-header">
+        <h2>🔌 Transformer Design Wizard</h2>
+        <p>Step-by-step transformer selection, type guidance, winding configuration, NEC-compliant protection, conductor sizing with parallel run cost optimization, and a generated single-line diagram.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Transformer Design Wizard</summary>
+          <div class="section-info-body">
+            <strong>NEC References:</strong>
+            <ul>
+              <li><strong>NEC 450.3(B)</strong> — Overcurrent protection for transformers 600V and below</li>
+              <li><strong>NEC 450.14</strong> — Disconnecting means: within sight, ≤30 ft</li>
+              <li><strong>NEC 215.2(A)</strong> — Feeder conductor ampacity: 125% of continuous load</li>
+              <li><strong>NEC 250.30(A)</strong> — Grounding of separately derived systems</li>
+              <li><strong>NEC 250.122</strong> — Equipment grounding conductor sizing</li>
+              <li><strong>NEC 310.16</strong> — Conductor ampacity table (ambient/bundling corrections)</li>
+            </ul>
+            <strong>Standard kVA sizes</strong> per ANSI/NEMA ST-20, up to 4000 kVA.
+          </div>
+        </details>
+      </div>
+
+      <!-- Step tabs -->
+      <div class="xw-steps">
+        <button class="xw-step-tab active" id="xw-tab-1" onclick="xwStep(1)">1 · System</button>
+        <button class="xw-step-tab" id="xw-tab-2" onclick="xwStep(2)">2 · Transformer</button>
+        <button class="xw-step-tab" id="xw-tab-3" onclick="xwStep(3)">3 · Conductors</button>
+        <button class="xw-step-tab" id="xw-tab-4" onclick="xwStep(4)">4 · Results</button>
+      </div>
+
+      <!-- Step 1: System Parameters -->
+      <div id="xw-step-1">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">System Parameters</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div>
+                  <label>Phase</label>
+                  <select id="xw_phase">
+                    <option value="3ph">Three-Phase (3Ø)</option>
+                    <option value="1ph">Single-Phase (1Ø)</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Primary Voltage (V)</label>
+                  <input type="number" id="xw_pri_v" value="480" min="1" step="any">
+                </div>
+                <div>
+                  <label>Secondary Voltage (V)</label>
+                  <input type="number" id="xw_sec_v" value="208" min="1" step="any">
+                </div>
+                <div>
+                  <label>Load (kVA) — optional for sizing</label>
+                  <input type="number" id="xw_load_kva" placeholder="e.g. 85" min="0" step="any">
+                </div>
+                <div>
+                  <label>Demand Factor (0–1)</label>
+                  <input type="number" id="xw_demand" value="1.0" min="0.1" max="1" step="0.05">
+                </div>
+              </div>
+              <div id="xw_step1_err" class="error" style="display:none"></div>
+              <button class="btn" onclick="xwNext1()">Next: Select Transformer →</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Common Primary / Secondary Voltage Pairs</div>
+            <div class="card-body">
+              <table class="ref-table">
+                <tr><th>Primary</th><th>Secondary</th><th>Use</th></tr>
+                <tr><td>13,800 V</td><td>480/277 V</td><td>Utility substation → distribution</td></tr>
+                <tr><td>4,160 V</td><td>480/277 V</td><td>Medium voltage → MCC</td></tr>
+                <tr><td>480 V</td><td>208/120 V</td><td>Distribution → lighting/receptacle</td></tr>
+                <tr><td>480 V</td><td>240/120 V</td><td>High-leg delta (legacy)</td></tr>
+                <tr><td>240 V</td><td>120 V</td><td>Single-phase step-down</td></tr>
+                <tr><td>120 V</td><td>24 V</td><td>Control power / HVAC</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Transformer Type & Winding -->
+      <div id="xw-step-2" style="display:none">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">kVA Rating</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div>
+                  <label>Standard kVA Size</label>
+                  <select id="xw_kva"></select>
+                </div>
+              </div>
+              <div class="note">Sizes per ANSI/NEMA ST-20. Recommended size (✓) based on load input.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Transformer Type — select one</div>
+          <div class="card-body">
+            <div id="xw_type_cards"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Winding Configuration — select one</div>
+          <div class="card-body">
+            <div id="xw_winding_cards"></div>
+          </div>
+        </div>
+        <div id="xw_step2_err" class="error" style="display:none"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-secondary" onclick="xwBack(1)">← Back</button>
+          <button class="btn" onclick="xwNext2()">Next: Conductor Parameters →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Conductor & Install Parameters -->
+      <div id="xw-step-3" style="display:none">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Conductor Parameters</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div>
+                  <label>Conductor Material</label>
+                  <select id="xw_material">
+                    <option value="CU">Copper (CU)</option>
+                    <option value="AL">Aluminum (AL)</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Insulation</label>
+                  <select id="xw_insulation">
+                    <option value="THHN">THHN/THWN-2 (90°C)</option>
+                    <option value="XHHW">XHHW-2 (90°C)</option>
+                    <option value="THW">THW (75°C)</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Conduit Type</label>
+                  <select id="xw_conduit">
+                    <option value="EMT">EMT</option>
+                    <option value="IMC">IMC</option>
+                    <option value="RMC">RMC</option>
+                    <option value="PVC40">PVC Schedule 40</option>
+                    <option value="PVC80">PVC Schedule 80</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Termination Rating (°C)</label>
+                  <select id="xw_term">
+                    <option value="75" selected>75°C (standard)</option>
+                    <option value="90">90°C (listed equipment)</option>
+                    <option value="60">60°C</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Ambient Temperature (°C)</label>
+                  <input type="number" id="xw_ambient" value="30" step="1">
+                </div>
+                <div>
+                  <label>Current-Carrying Conductors in Bundle</label>
+                  <select id="xw_ccc">
+                    <option value="3">3 (no derating)</option>
+                    <option value="4">4–6 (80% derating)</option>
+                    <option value="7">7–9 (70% derating)</option>
+                    <option value="10">10–20 (50% derating)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Feeder Lengths &amp; Load</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div>
+                  <label>Primary Feeder Length (ft)</label>
+                  <input type="number" id="xw_pri_len" value="50" min="1" step="1">
+                </div>
+                <div>
+                  <label>Secondary Feeder Length (ft)</label>
+                  <input type="number" id="xw_sec_len" value="75" min="1" step="1">
+                </div>
+                <div>
+                  <label>Power Factor (%)</label>
+                  <input type="number" id="xw_pf" value="85" min="1" max="100" step="1">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-secondary" onclick="xwBack(2)">← Back</button>
+          <button class="btn" onclick="xwNext3()">Calculate &amp; Generate SLD →</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Results -->
+      <div id="xw-step-4" style="display:none">
+        <div class="xw-svg-wrap">
+          <div>
+            <div style="font-size:0.8rem;color:#64748b;text-align:center;margin-bottom:4px">Transformer Graphic</div>
+            <div id="xw_xfmr_svg"></div>
+          </div>
+          <div style="flex:1;min-width:300px">
+            <div style="font-size:0.8rem;color:#64748b;text-align:center;margin-bottom:4px">Single-Line Diagram</div>
+            <div id="xw_sld"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Design Results</div>
+          <div class="card-body">
+            <div id="xw_result" class="result"></div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-secondary" onclick="xwBack(3)">← Modify Parameters</button>
+          <button class="btn btn-secondary" onclick="xwStep(1)" style="margin-left:8px">↩ Start Over</button>
+        </div>
+      </div>
+    </section><!-- end sec-xfmr-wizard -->
+
+    <!-- ════════════════════════════════════════
+         CIRCUIT SIMULATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-circuit-sim" class="section">
+      <div class="section-header">
+        <h2>⚡ Circuit Simulator</h2>
+        <p>Modified Nodal Analysis (MNA) circuit solver with SVG schematics, DC and AC analysis, frequency sweeps, and Bode plots. Load a built-in example or explore the theory step by step.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Circuit Simulator</summary>
+          <div class="section-info-body">
+            <strong>Modified Nodal Analysis (MNA)</strong> formulates circuit equations as a matrix system <em>Ax = b</em>:<br><br>
+            <ul>
+              <li>Resistors: stamp conductance G = 1/R into the G matrix</li>
+              <li>Capacitors: DC = open circuit; AC = admittance Y = jωC</li>
+              <li>Inductors: DC = short circuit (very large G); AC = admittance Y = 1/(jωL)</li>
+              <li>Voltage sources: add current variable, stamp into B/C matrices</li>
+            </ul>
+            The system is solved using Gaussian elimination with partial pivoting, extended to complex arithmetic for AC analysis.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card" style="min-width:320px">
+          <div class="card-title">Example Circuits</div>
+          <div class="card-body">
+            <div class="cs-example-btns">
+              <button class="cs-example-btn" id="cs-ex-1" onclick="csLoadExample(1)">1. Voltage Divider</button>
+              <button class="cs-example-btn" id="cs-ex-2" onclick="csLoadExample(2)">2. Thévenin</button>
+              <button class="cs-example-btn" id="cs-ex-3" onclick="csLoadExample(3)">3. RC Low-Pass</button>
+              <button class="cs-example-btn" id="cs-ex-4" onclick="csLoadExample(4)">4. RLC Resonance</button>
+              <button class="cs-example-btn" id="cs-ex-5" onclick="csLoadExample(5)">5. Superposition</button>
+              <button class="cs-example-btn" id="cs-ex-6" onclick="csLoadExample(6)">6. Wheatstone Bridge</button>
+            </div>
+            <div class="cs-schematic" id="cs-schematic" style="min-height:220px;display:flex;align-items:center;justify-content:center">
+              <span style="color:#334155;font-size:0.85rem">Select an example to load a circuit →</span>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="min-width:280px">
+          <div class="card-title">Analysis Results</div>
+          <div class="card-body">
+            <div id="cs-result" class="result" style="min-height:180px">
+              <span style="color:#334155;font-size:0.85rem">Results will appear here after loading a circuit.</span>
+            </div>
+            <div id="cs-bode-wrap" style="display:none">
+              <div style="font-size:0.8rem;color:#64748b;margin:8px 0 4px">Bode Plot (Magnitude)</div>
+              <div id="cs-bode" class="cs-bode"></div>
+            </div>
+            <div id="cs-details-wrap"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-circuit-sim -->
+
+    <!-- ════════════════════════════════════════
+         SMITH CHART
+         ════════════════════════════════════════ -->
+    <section id="sec-smith-chart" class="section">
+      <div class="section-header">
+        <h2>📡 Smith Chart</h2>
+        <p>Interactive Smith chart for RF impedance matching. Click to plot impedances, compute VSWR and return loss, apply transmission line rotations, and work through student examples step by step.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Smith Chart Theory</summary>
+          <div class="section-info-body">
+            <strong>Reflection Coefficient:</strong> Γ = (Z − Z₀) / (Z + Z₀)<br>
+            <strong>Normalized impedance:</strong> z = Z/Z₀ = r + jx<br>
+            <strong>VSWR:</strong> (1 + |Γ|) / (1 − |Γ|)<br>
+            <strong>Return Loss (dB):</strong> −20 log₁₀|Γ|<br><br>
+            Constant-R circles: center (r/(r+1), 0), radius 1/(r+1)<br>
+            Constant-X circles: center (1, 1/x), radius 1/|x|<br><br>
+            Moving toward the generator rotates Γ clockwise (add electrical degrees).
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Smith Chart</div>
+          <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <div class="sc-canvas-wrap">
+              <canvas id="sc-canvas" width="500" height="500"></canvas>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%">
+              <label style="font-size:0.8rem;color:#94a3b8">Z₀ (Ω):</label>
+              <input type="number" id="sc_z0" value="50" min="1" step="1" style="width:70px" oninput="scSetZ0()">
+              <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem" onclick="scClearPoints()">Clear All</button>
+            </div>
+            <div class="sc-ex-btns">
+              <button class="sc-ex-btn" onclick="scLoadExample(1)">Matched Load</button>
+              <button class="sc-ex-btn" onclick="scLoadExample(2)">Open Circuit</button>
+              <button class="sc-ex-btn" onclick="scLoadExample(3)">Short Circuit</button>
+              <button class="sc-ex-btn" onclick="scLoadExample(4)">Capacitive Load</button>
+              <button class="sc-ex-btn" onclick="scLoadExample(5)">Matching Design</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Plot Impedance</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>R (real part, Ω)</label>
+                <input type="number" id="sc_r" placeholder="e.g. 75" step="any">
+              </div>
+              <div>
+                <label>X (imaginary part, Ω)</label>
+                <input type="number" id="sc_x" placeholder="e.g. -25" step="any">
+              </div>
+              <div>
+                <label>Frequency (Hz) — optional</label>
+                <input type="number" id="sc_freq" placeholder="e.g. 2.4e9" step="any">
+              </div>
+            </div>
+            <button class="btn" onclick="scPlotPoint()">Plot Point</button>
+            <hr style="border-color:var(--border);margin:12px 0">
+            <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:6px">Transmission Line Rotation</div>
+            <div class="input-group">
+              <div>
+                <label>Electrical Length (degrees)</label>
+                <input type="number" id="sc_tl_deg" placeholder="e.g. 45" step="any">
+              </div>
+              <div>
+                <label>Direction</label>
+                <select id="sc_tl_dir">
+                  <option value="gen">Toward Generator</option>
+                  <option value="load">Toward Load</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-secondary" onclick="scApplyTL()">Apply TL Rotation</button>
+            <hr style="border-color:var(--border);margin:12px 0">
+            <div class="card-title" style="font-size:0.85rem;margin-bottom:8px">Results</div>
+            <div id="sc-result" class="result" style="min-height:100px"></div>
+            <div style="margin-top:10px">
+              <div style="font-size:0.8rem;color:#64748b;margin-bottom:4px">Plotted Points</div>
+              <div class="sc-point-list" id="sc-point-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-smith-chart -->
+
+    <!-- ════════════════════════════════════════
+         STEM TOOLS
+         ════════════════════════════════════════ -->
+    <section id="sec-stem-tools" class="section">
+      <div class="section-header">
+        <h2>📚 STEM Toolkit</h2>
+        <p>Comprehensive calculators for students and engineers — differential equations, trigonometry, linear algebra, chemistry, calculus, optics, quantum physics, and linear programming.</p>
+      </div>
+      <div class="tab-group stem-tab-group">
+        <button class="tab-btn active" data-tab="stem-ode">📐 ODE</button>
+        <button class="tab-btn" data-tab="stem-trig">∠ Trig</button>
+        <button class="tab-btn" data-tab="stem-linalg">⊞ LinAlg</button>
+        <button class="tab-btn" data-tab="stem-chem">⚗ Chem</button>
+        <button class="tab-btn" data-tab="stem-calc">∫ Calculus</button>
+        <button class="tab-btn" data-tab="stem-optics">🔭 Optics</button>
+        <button class="tab-btn" data-tab="stem-quantum">⚛ Quantum</button>
+        <button class="tab-btn" data-tab="stem-lp">📊 LP</button>
+      </div>
+
+      <!-- ODE Tab -->
+      <div class="tab-pane active" id="stem-ode">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">2nd-Order ODE: ay″ + by′ + cy = 0</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>a</label><input type="number" id="de_a" value="1" step="any"></div>
+                <div><label>b</label><input type="number" id="de_b" value="3" step="any"></div>
+                <div><label>c</label><input type="number" id="de_c" value="2" step="any"></div>
+              </div>
+              <button class="btn" onclick="desolveODE()">Solve</button>
+              <div id="de_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Numerical IVP: dy/dt = f(t, y)</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>f(t, y) =</label><input type="text" id="de_expr" value="-2*y + t" placeholder="e.g. -2*y + t"></div>
+                <div><label>y₀ (initial value)</label><input type="number" id="de_y0" value="1" step="any"></div>
+                <div><label>t₀</label><input type="number" id="de_t0" value="0" step="any"></div>
+                <div><label>t end</label><input type="number" id="de_tend" value="3" step="any"></div>
+                <div><label>Step size h</label><input type="number" id="de_h" value="0.1" step="any" min="0.001"></div>
+              </div>
+              <button class="btn" onclick="desolveIVP()">Solve (Euler + RK4)</button>
+              <div id="de_ivp_result" class="result"></div>
+              <div id="de_ivp_chart" class="stem-svg-wrap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trig Tab -->
+      <div class="tab-pane" id="stem-trig">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Unit Circle</div>
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center">
+              <canvas id="trig_unit_circle" class="stem-canvas" width="280" height="280"></canvas>
+              <div style="margin-top:8px;font-size:0.8rem;color:#94a3b8">Click on the canvas to read angle values</div>
+              <div id="trig_click_result" class="result" style="margin-top:8px;width:100%"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Triangle Solver</div>
+            <div class="card-body">
+              <div style="font-size:0.78rem;color:#64748b;margin-bottom:8px">Enter any 3 of 6 values (at least one side). Leave unknowns blank.</div>
+              <div class="input-group">
+                <div><label>Side a</label><input type="number" id="trig_a" placeholder="blank = unknown" step="any"></div>
+                <div><label>Side b</label><input type="number" id="trig_b" placeholder="blank = unknown" step="any"></div>
+                <div><label>Side c</label><input type="number" id="trig_c" placeholder="blank = unknown" step="any"></div>
+                <div><label>Angle A (°)</label><input type="number" id="trig_A" placeholder="blank = unknown" step="any"></div>
+                <div><label>Angle B (°)</label><input type="number" id="trig_B" placeholder="blank = unknown" step="any"></div>
+                <div><label>Angle C (°)</label><input type="number" id="trig_C" placeholder="blank = unknown" step="any"></div>
+              </div>
+              <button class="btn" onclick="trigSolveTriangle()">Solve Triangle</button>
+              <div id="trig_tri_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title">Trigonometric Identities Reference</div>
+            <div class="card-body">
+              <div id="trig_identities"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linear Algebra Tab -->
+      <div class="tab-pane" id="stem-linalg">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Matrix Operations</div>
+            <div class="card-body">
+              <div style="margin-bottom:8px">
+                <label>Size: </label>
+                <select id="la_size" onchange="laRenderMatrices()">
+                  <option value="2">2×2</option>
+                  <option value="3" selected>3×3</option>
+                  <option value="4">4×4</option>
+                </select>
+                &nbsp;
+                <label>Operation: </label>
+                <select id="la_op">
+                  <option value="add">A + B</option>
+                  <option value="sub">A − B</option>
+                  <option value="mul">A × B</option>
+                  <option value="scalar">k × A</option>
+                  <option value="det">det(A)</option>
+                  <option value="inv">A⁻¹</option>
+                  <option value="eig">Eigenvalues (2×2)</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">
+                <div>
+                  <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:4px">Matrix A</div>
+                  <div id="la_mat_a"></div>
+                </div>
+                <div id="la_mat_b_wrap">
+                  <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:4px">Matrix B</div>
+                  <div id="la_mat_b"></div>
+                </div>
+                <div id="la_scalar_wrap" style="display:none">
+                  <label>Scalar k</label>
+                  <input type="number" id="la_k" value="2" style="width:60px" step="any">
+                </div>
+              </div>
+              <button class="btn" onclick="laCompute()">Compute</button>
+              <div id="la_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Dot &amp; Cross Product (3D Vectors)</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>A = [x, y, z]</label><input type="text" id="la_va" value="1, 2, 3" placeholder="1, 2, 3"></div>
+                <div><label>B = [x, y, z]</label><input type="text" id="la_vb" value="4, 5, 6" placeholder="4, 5, 6"></div>
+              </div>
+              <button class="btn" onclick="laVectorOps()">Compute</button>
+              <div id="la_vec_result" class="result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chemistry Tab -->
+      <div class="tab-pane" id="stem-chem">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Molar Mass Calculator</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>Chemical Formula</label><input type="text" id="chem_formula" placeholder="e.g. H2SO4, C6H12O6, Ca(OH)2"></div>
+              </div>
+              <button class="btn" onclick="chemMolarMass()">Calculate</button>
+              <div id="chem_mm_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Ideal Gas Law — PV = nRT</div>
+            <div class="card-body">
+              <div style="font-size:0.78rem;color:#64748b;margin-bottom:8px">Enter any 3 of 4 variables. Leave the unknown blank.</div>
+              <div class="input-group">
+                <div><label>P — Pressure (atm)</label><input type="number" id="chem_P" placeholder="blank = solve" step="any"></div>
+                <div><label>V — Volume (L)</label><input type="number" id="chem_V" placeholder="blank = solve" step="any"></div>
+                <div><label>n — Moles (mol)</label><input type="number" id="chem_n" placeholder="blank = solve" step="any"></div>
+                <div><label>T — Temperature (K or °C)</label><input type="text" id="chem_T" placeholder="e.g. 298 K or 25 C"></div>
+              </div>
+              <button class="btn" onclick="chemIdealGas()">Solve</button>
+              <div id="chem_gas_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Henderson-Hasselbalch</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>pKₐ</label><input type="number" id="chem_pka" value="4.74" step="any"></div>
+                <div><label>[A⁻] concentration</label><input type="number" id="chem_ca" value="0.1" step="any"></div>
+                <div><label>[HA] concentration</label><input type="number" id="chem_ha" value="0.1" step="any"></div>
+              </div>
+              <button class="btn" onclick="chemHH()">Calculate pH</button>
+              <div id="chem_hh_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title">Periodic Table — First 20 Elements</div>
+            <div class="card-body">
+              <div id="chem_ptable"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calculus Tab -->
+      <div class="tab-pane" id="stem-calc">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Numerical Derivative</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>f(x) =</label><input type="text" id="calc_f" value="x*x*x - 2*x + 1" placeholder="e.g. x**3 - 2*x"></div>
+                <div><label>Evaluate at x =</label><input type="number" id="calc_dx" value="2" step="any"></div>
+              </div>
+              <button class="btn" onclick="calcDerivative()">Compute f′(x)</button>
+              <div id="calc_deriv_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Numerical Integration</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>f(x) =</label><input type="text" id="calc_fi" value="x*x" placeholder="e.g. Math.sin(x)"></div>
+                <div><label>Lower limit a</label><input type="number" id="calc_a" value="0" step="any"></div>
+                <div><label>Upper limit b</label><input type="number" id="calc_b" value="3" step="any"></div>
+                <div><label>Intervals n</label><input type="number" id="calc_n" value="1000" min="2" step="2"></div>
+              </div>
+              <button class="btn" onclick="calcIntegrate()">Integrate</button>
+              <div id="calc_int_result" class="result"></div>
+              <div id="calc_int_chart" class="stem-svg-wrap"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Taylor Series</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div>
+                  <label>Function</label>
+                  <select id="calc_taylor_fn">
+                    <option value="sin">sin(x)</option>
+                    <option value="cos">cos(x)</option>
+                    <option value="exp">e^x</option>
+                    <option value="ln">ln(1+x)</option>
+                  </select>
+                </div>
+                <div><label>Center a</label><input type="number" id="calc_ta" value="0" step="any"></div>
+                <div><label>Order N</label><input type="number" id="calc_tn" value="6" min="1" max="20" step="1"></div>
+                <div><label>Evaluate at x</label><input type="number" id="calc_tx" value="0.5" step="any"></div>
+              </div>
+              <button class="btn" onclick="calcTaylor()">Expand</button>
+              <div id="calc_taylor_result" class="result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optics Tab -->
+      <div class="tab-pane" id="stem-optics">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Thin Lens / Mirror: 1/f = 1/dₒ + 1/dᵢ</div>
+            <div class="card-body">
+              <div style="font-size:0.78rem;color:#64748b;margin-bottom:8px">Enter any 2 of 3. Leave unknown blank.</div>
+              <div class="input-group">
+                <div><label>f — Focal length (cm)</label><input type="number" id="opt_f" placeholder="blank = solve" step="any"></div>
+                <div><label>dₒ — Object distance (cm)</label><input type="number" id="opt_do" placeholder="blank = solve" step="any"></div>
+                <div><label>dᵢ — Image distance (cm)</label><input type="number" id="opt_di" placeholder="blank = solve" step="any"></div>
+              </div>
+              <button class="btn" onclick="optThinLens()">Solve</button>
+              <div id="opt_lens_result" class="result"></div>
+              <div id="opt_ray_svg" class="stem-svg-wrap"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Snell's Law: n₁ sin θ₁ = n₂ sin θ₂</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>n₁</label><input type="number" id="opt_n1" value="1.5" step="any"></div>
+                <div><label>θ₁ (degrees)</label><input type="number" id="opt_t1" value="30" step="any"></div>
+                <div><label>n₂</label><input type="number" id="opt_n2" value="1.0" step="any"></div>
+              </div>
+              <button class="btn" onclick="optSnell()">Calculate θ₂</button>
+              <div id="opt_snell_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Diffraction Grating &amp; Double Slit</div>
+            <div class="card-body">
+              <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:6px">Diffraction Grating: d sin θ = mλ</div>
+              <div class="input-group">
+                <div><label>Lines/mm</label><input type="number" id="opt_lmm" value="600" step="any"></div>
+                <div><label>λ (nm)</label><input type="number" id="opt_lam" value="550" step="any"></div>
+                <div><label>Order m</label><input type="number" id="opt_m" value="1" step="1"></div>
+              </div>
+              <button class="btn" onclick="optGrating()">Calculate</button>
+              <div id="opt_grat_result" class="result"></div>
+              <hr style="border-color:var(--border);margin:12px 0">
+              <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:6px">Double Slit: Δy = λL/d</div>
+              <div class="input-group">
+                <div><label>λ (nm)</label><input type="number" id="opt_ds_lam" value="550" step="any"></div>
+                <div><label>L — screen distance (m)</label><input type="number" id="opt_ds_L" value="1" step="any"></div>
+                <div><label>d — slit separation (mm)</label><input type="number" id="opt_ds_d" value="0.2" step="any"></div>
+              </div>
+              <button class="btn" onclick="optDoubleSlit()">Calculate Fringes</button>
+              <div id="opt_ds_result" class="result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quantum Physics Tab -->
+      <div class="tab-pane" id="stem-quantum">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Particle in a Box</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>Box length L (nm)</label><input type="number" id="qp_L" value="1" step="any"></div>
+                <div><label>Quantum number n</label><input type="number" id="qp_n" value="1" min="1" step="1"></div>
+                <div>
+                  <label>Particle</label>
+                  <select id="qp_particle">
+                    <option value="e">Electron</option>
+                    <option value="p">Proton</option>
+                    <option value="n">Neutron</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn" onclick="qpParticleBox()">Calculate</button>
+              <div id="qp_box_result" class="result"></div>
+              <div id="qp_box_svg" class="stem-svg-wrap"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Hydrogen Energy Levels</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>Quantum number n (1–7)</label><input type="number" id="qp_hn" value="3" min="1" max="7" step="1"></div>
+              </div>
+              <button class="btn" onclick="qpHydrogen()">Calculate</button>
+              <div id="qp_H_result" class="result"></div>
+              <div id="qp_H_svg" class="stem-svg-wrap"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">de Broglie Wavelength &amp; Heisenberg Uncertainty</div>
+            <div class="card-body">
+              <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:6px">de Broglie: λ = h/(mv)</div>
+              <div class="input-group">
+                <div>
+                  <label>Particle</label>
+                  <select id="qp_db_par">
+                    <option value="e">Electron</option>
+                    <option value="p">Proton</option>
+                    <option value="n">Neutron</option>
+                  </select>
+                </div>
+                <div><label>Velocity (m/s)</label><input type="number" id="qp_db_v" value="1e6" step="any"></div>
+              </div>
+              <button class="btn" onclick="qpDeBroglie()">Calculate λ</button>
+              <div id="qp_db_result" class="result"></div>
+              <hr style="border-color:var(--border);margin:12px 0">
+              <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:6px">Heisenberg: ΔxΔp ≥ ℏ/2</div>
+              <div class="input-group">
+                <div><label>Δx (m) — position uncertainty</label><input type="number" id="qp_hei_dx" value="1e-10" step="any"></div>
+              </div>
+              <button class="btn" onclick="qpHeisenberg()">Find min Δp</button>
+              <div id="qp_hei_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Photoelectric Effect</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label>Wavelength λ (nm)</label><input type="number" id="qp_pe_lam" value="300" step="any"></div>
+                <div>
+                  <label>Metal (work function)</label>
+                  <select id="qp_pe_metal">
+                    <option value="2.1">Cesium (2.1 eV)</option>
+                    <option value="2.36">Sodium (2.36 eV)</option>
+                    <option value="4.08">Aluminum (4.08 eV)</option>
+                    <option value="4.7">Copper (4.7 eV)</option>
+                    <option value="5.1">Gold (5.1 eV)</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div><label>Custom φ (eV)</label><input type="number" id="qp_pe_phi" placeholder="optional" step="any"></div>
+              </div>
+              <button class="btn" onclick="qpPhotoelectric()">Calculate</button>
+              <div id="qp_pe_result" class="result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linear Programming Tab -->
+      <div class="tab-pane" id="stem-lp">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Linear Program Setup</div>
+            <div class="card-body">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                <select id="lp_obj_type" style="width:120px">
+                  <option value="max">Maximize</option>
+                  <option value="min">Minimize</option>
+                </select>
+                <span style="color:#94a3b8">z =</span>
+                <input type="number" id="lp_c1" value="5" style="width:60px" step="any">
+                <span style="color:#94a3b8">x₁ +</span>
+                <input type="number" id="lp_c2" value="4" style="width:60px" step="any">
+                <span style="color:#94a3b8">x₂</span>
+              </div>
+              <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px">Subject to (≤ constraints):</div>
+              <div id="lp_constraints">
+                <div class="lp-con-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+                  <input type="number" id="lp_a1" value="6" style="width:55px" step="any"><span style="color:#94a3b8">x₁ +</span>
+                  <input type="number" id="lp_b1" value="4" style="width:55px" step="any"><span style="color:#94a3b8">x₂ ≤</span>
+                  <input type="number" id="lp_r1" value="24" style="width:60px" step="any">
+                </div>
+                <div class="lp-con-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+                  <input type="number" id="lp_a2" value="1" style="width:55px" step="any"><span style="color:#94a3b8">x₁ +</span>
+                  <input type="number" id="lp_b2" value="2" style="width:55px" step="any"><span style="color:#94a3b8">x₂ ≤</span>
+                  <input type="number" id="lp_r2" value="6" style="width:60px" step="any">
+                </div>
+                <div class="lp-con-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+                  <input type="number" id="lp_a3" value="0" style="width:55px" step="any"><span style="color:#94a3b8">x₁ +</span>
+                  <input type="number" id="lp_b3" value="0" style="width:55px" step="any"><span style="color:#94a3b8">x₂ ≤</span>
+                  <input type="number" id="lp_r3" value="0" style="width:60px" step="any" placeholder="0=skip">
+                </div>
+              </div>
+              <div style="font-size:0.76rem;color:#64748b;margin-bottom:8px">x₁, x₂ ≥ 0 (non-negativity)</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn" onclick="lpSolve()">Solve</button>
+                <button class="btn btn-secondary" onclick="lpLoadExample(1)">Ex 1: Production</button>
+                <button class="btn btn-secondary" onclick="lpLoadExample(2)">Ex 2: Diet</button>
+                <button class="btn btn-secondary" onclick="lpLoadExample(3)">Ex 3: Blending</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Feasible Region</div>
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center">
+              <canvas id="lp_canvas" class="stem-canvas" width="320" height="320"></canvas>
+            </div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title">Solution &amp; Simplex Tableau</div>
+            <div class="card-body">
+              <div id="lp_result" class="result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-stem-tools -->
 
     <!-- ════════════════════════════════════════
          NEC CODE TABLES
@@ -5458,6 +7227,53 @@
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>
 <script src="js/starforge.js"></script>
+<script src="js/conduit-guide.js"></script>
+<script src="js/xfmr-wizard.js"></script>
+<script src="js/circuit-sim.js"></script>
+<script src="js/smith-chart.js"></script>
+<script src="js/stem-tools.js"></script>
+<script>
+  // Initialize Smith chart and STEM tools after DOM is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof scInit === 'function') scInit();
+    if (typeof renderLAMatrixInputs === 'function') renderLAMatrixInputs();
+    if (typeof renderChemPeriodicTable === 'function') renderChemPeriodicTable();
+    if (typeof initTrigUnitCircle === 'function') initTrigUnitCircle();
+    if (typeof renderTrigIdentities === 'function') renderTrigIdentities();
+  });
+
+  // Bridge aliases: HTML onclick names → stem-tools.js exported names
+  function desolveODE()      { if (typeof calcDESecondOrder === 'function') calcDESecondOrder(); }
+  function desolveIVP()      { if (typeof calcDEIVP === 'function') calcDEIVP(); }
+  function chemMolarMass()   { if (typeof calcChemMolarMass === 'function') calcChemMolarMass(); }
+  function chemIdealGas()    { if (typeof calcChemIdealGas === 'function') calcChemIdealGas(); }
+  function chemHH()          { if (typeof calcChemHenderson === 'function') calcChemHenderson(); }
+  function laCompute()       { if (typeof calcLAMatrixOp === 'function') calcLAMatrixOp(); }
+  function laRenderMatrices(){ if (typeof renderLAMatrixInputs === 'function') renderLAMatrixInputs(); }
+  function laVectorOps()     { if (typeof calcLAVectors === 'function') calcLAVectors(); }
+  function lpSolve()         { if (typeof solveLinearProgram === 'function') solveLinearProgram(); }
+  function lpLoadExample(n)  { if (typeof loadLPExample === 'function') loadLPExample(n); }
+  function optThinLens()     { if (typeof calcThinLens === 'function') calcThinLens(); }
+  function optSnell()        { if (typeof calcSnellLaw === 'function') calcSnellLaw(); }
+  function optGrating()      { if (typeof calcDiffractionGrating === 'function') calcDiffractionGrating(); }
+  function optDoubleSlit()   { if (typeof calcDoubleSlit === 'function') calcDoubleSlit(); }
+  function trigSolveTriangle(){ if (typeof calcTrigTriangle === 'function') calcTrigTriangle(); }
+  function qpParticleBox()   { if (typeof calcParticleInBox === 'function') calcParticleInBox(); }
+  function qpHydrogen()      { if (typeof calcHydrogenLevels === 'function') calcHydrogenLevels(); }
+  function qpDeBroglie()     { if (typeof calcDeBroglie === 'function') calcDeBroglie(); }
+  function qpHeisenberg()    { if (typeof calcHeisenberg === 'function') calcHeisenberg(); }
+  function qpPhotoelectric() { if (typeof calcPhotoelectric === 'function') calcPhotoelectric(); }
+  // calcDerivative, calcIntegrate, calcTaylor are already used in older tools —
+  // only alias if they're not defined by existing scripts
+  window.addEventListener('load', function() {
+    if (typeof window.calcDerivative !== 'function' && typeof calcNumericalDerivative === 'function')
+      window.calcDerivative = calcNumericalDerivative;
+    if (typeof window.calcIntegrate !== 'function' && typeof calcNumericalIntegration === 'function')
+      window.calcIntegrate = calcNumericalIntegration;
+    if (typeof window.calcTaylor !== 'function' && typeof calcTaylorSeries === 'function')
+      window.calcTaylor = calcTaylorSeries;
+  });
+</script>
 
 <!-- Offline support. Registered after load so it never competes with the app's
      own scripts for bandwidth on a first visit, and swallowed on failure —
