@@ -865,7 +865,151 @@ window.calcSC = function () {
 };
 
 /* ============================================================
-   14. UNIT CONVERSIONS
+   14. CONDUCTOR LENGTH BY RESISTANCE
+   ============================================================ */
+const CLR_SIZE_CMIL = {
+  '14': 4110, '12': 6530, '10': 10380, '8': 16510, '6': 26240, '4': 41740,
+  '3': 52620, '2': 66360, '1': 83690, '1/0': 105600, '2/0': 133100,
+  '3/0': 167800, '4/0': 211600, '250': 250000, '300': 300000, '350': 350000,
+  '400': 400000, '500': 500000, '600': 600000, '700': 700000, '750': 750000,
+  '800': 800000, '1000': 1000000
+};
+
+const CLR_MATERIAL_PRESETS = {
+  'cu-annealed': { label: 'Copper (Annealed)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  'cu-hard': { label: 'Copper (Hard-Drawn)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  al: { label: 'Aluminum', rho20: 17.02, rho75: 21.2, alpha: 0.00403 }
+};
+
+function clrTempToC(temp, unit) {
+  return unit === 'f' ? ((temp - 32) * 5 / 9) : temp;
+}
+
+function clrResistanceToOhms(resistance, unit) {
+  return unit === 'mohm' ? resistance / 1000 : resistance;
+}
+
+function clrPathFactor(method) {
+  return method === 'single' ? 1 : 2;
+}
+
+function conductorLengthByResistanceModel(input) {
+  const resistanceOhms = clrResistanceToOhms(input.resistance, input.resistanceUnit);
+  const measuredTempC = clrTempToC(input.temperature, input.temperatureUnit);
+  const refTempC = input.referenceTempC;
+  const alpha = input.alpha;
+  const rho = input.rho;
+  const cmil = input.circularMils;
+  const pathFactor = clrPathFactor(input.method);
+  const denom = 1 + alpha * (measuredTempC - refTempC);
+
+  if (!isPos(resistanceOhms, cmil, rho)) throw new Error('Resistance, conductor area, and ρ must be greater than zero.');
+  if (!isNum(measuredTempC, refTempC, alpha) || alpha < 0) throw new Error('Enter valid temperatures and α.');
+  if (Math.abs(denom) < 1e-9 || denom <= 0) throw new Error('Temperature compensation produced an invalid resistance factor.');
+
+  const resistanceAtRefTemp = resistanceOhms / denom;
+  const totalLengthFt = resistanceAtRefTemp * cmil / rho;
+  const oneWayLengthFt = totalLengthFt / pathFactor;
+
+  return {
+    resistanceOhms: resistanceOhms,
+    measuredTempC: measuredTempC,
+    resistanceAtRefTemp: resistanceAtRefTemp,
+    totalLengthFt: totalLengthFt,
+    oneWayLengthFt: oneWayLengthFt,
+    totalLengthM: totalLengthFt * 0.3048,
+    oneWayLengthM: oneWayLengthFt * 0.3048,
+    pathFactor: pathFactor
+  };
+}
+
+window.conductorLengthByResistanceModel = conductorLengthByResistanceModel;
+
+window.conductorLengthSizeChange = function () {
+  const sizeEl = document.getElementById('clr_size');
+  const customWrap = document.getElementById('clr_custom_wrap');
+  if (!sizeEl || !customWrap) return;
+  customWrap.style.display = sizeEl.value === 'custom' ? '' : 'none';
+};
+
+window.conductorLengthMethodChange = function () {
+  const methodEl = document.getElementById('clr_method');
+  const factorEl = document.getElementById('clr_diag_factor');
+  if (!methodEl) return;
+  const method = methodEl.value;
+  const single = document.getElementById('clr_diag_single');
+  const loop2 = document.getElementById('clr_diag_loop2');
+  const loop3 = document.getElementById('clr_diag_loop3');
+  if (single) single.style.display = method === 'single' ? '' : 'none';
+  if (loop2) loop2.style.display = method === 'loop2' ? '' : 'none';
+  if (loop3) loop3.style.display = method === 'loop3' ? '' : 'none';
+  if (factorEl) factorEl.textContent = method === 'single'
+    ? 'Loop factor: ×1 (single conductor)'
+    : 'Loop factor: ÷2 to report one-way distance';
+};
+
+window.conductorLengthPresetChange = function () {
+  const materialEl = document.getElementById('clr_material');
+  const refTempEl = document.getElementById('clr_ref_temp');
+  const rhoEl = document.getElementById('clr_rho');
+  const alphaEl = document.getElementById('clr_alpha');
+  if (!materialEl || !refTempEl || !rhoEl || !alphaEl) return;
+  const preset = CLR_MATERIAL_PRESETS[materialEl.value] || CLR_MATERIAL_PRESETS['cu-annealed'];
+  const refTemp = parseFloat(refTempEl.value) === 75 ? 75 : 20;
+  rhoEl.value = String(refTemp === 75 ? preset.rho75 : preset.rho20);
+  alphaEl.value = String(preset.alpha);
+};
+
+window.calcConductorLengthByResistance = function () {
+  const resistance = val('clr_resistance');
+  const resistanceUnit = document.getElementById('clr_r_unit').value;
+  const size = document.getElementById('clr_size').value;
+  const cmil = size === 'custom' ? val('clr_custom_cmil') : CLR_SIZE_CMIL[size];
+  const material = document.getElementById('clr_material').value;
+  const method = document.getElementById('clr_method').value;
+  const temperature = val('clr_temp');
+  const temperatureUnit = document.getElementById('clr_temp_unit').value;
+  const referenceTempC = val('clr_ref_temp');
+  const alpha = val('clr_alpha');
+  const rho = val('clr_rho');
+
+  if (!isNum(resistance, temperature, referenceTempC, alpha, rho)) {
+    return showError('clr_result', 'Enter resistance, temperature, α, and ρ.');
+  }
+  if (!cmil || !isFinite(cmil) || cmil <= 0) return showError('clr_result', 'Select a wire size or enter custom circular mils.');
+
+  try {
+    const result = conductorLengthByResistanceModel({
+      resistance: resistance,
+      resistanceUnit: resistanceUnit,
+      circularMils: cmil,
+      material: material,
+      method: method,
+      temperature: temperature,
+      temperatureUnit: temperatureUnit,
+      referenceTempC: referenceTempC,
+      alpha: alpha,
+      rho: rho
+    });
+    const materialLabel = (CLR_MATERIAL_PRESETS[material] && CLR_MATERIAL_PRESETS[material].label) || 'Custom';
+    showResult('clr_result', [
+      ['One-Way Distance', fmt(result.oneWayLengthFt, 2) + ' ft (' + fmt(result.oneWayLengthM, 2) + ' m)'],
+      ['Total Conductor Wire Length', fmt(result.totalLengthFt, 2) + ' ft (' + fmt(result.totalLengthM, 2) + ' m)'],
+      ['Temperature-Corrected Resistance @ ' + fmt(referenceTempC, 0) + '°C', fmt(result.resistanceAtRefTemp, 6) + ' Ω'],
+      ['Resistance Used', fmt(result.resistanceOhms, 6) + ' Ω'],
+      ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
+      ['Material / ρ', materialLabel + ' — ' + fmt(rho, 4) + ' Ω·cmil/ft'],
+      ['Measurement Method', method === 'single'
+        ? 'Single conductor: one-way equals solved path length'
+        : 'Loop measurement: one-way = total solved path ÷ 2']
+    ]);
+  } catch (err) {
+    showError('clr_result', err && err.message ? err.message : 'Could not solve conductor length.');
+  }
+};
+
+/* ============================================================
+   15. UNIT CONVERSIONS
    ============================================================ */
 const UNIT_GROUPS = {
   power: { 'W': 1, 'kW': 1e3, 'MW': 1e6, 'HP': 746, 'BTU/h': 0.29307107 },
@@ -975,7 +1119,7 @@ window.cmModeChange = function () {
 };
 
 /* ============================================================
-   15. UPS SIZING CALCULATOR
+   16. UPS SIZING CALCULATOR
    ============================================================ */
 window.calcUPS = function () {
   const loadKW = val('ups_kw');
@@ -1009,7 +1153,7 @@ window.calcUPS = function () {
 };
 
 /* ============================================================
-   16. GENERATOR SIZING (IEEE 446 / NFPA 110)
+   17. GENERATOR SIZING (IEEE 446 / NFPA 110)
    ============================================================ */
 window.calcGenerator = function () {
   const pf     = val('gen_pf') / 100;
@@ -1056,7 +1200,7 @@ window.calcGenerator = function () {
 };
 
 /* ============================================================
-   17. HYBRID GENERATOR CALCULATOR
+   18. HYBRID GENERATOR CALCULATOR
    ============================================================ */
 window.calcHybridGen = function () {
   const genKW       = val('hyb_gen_kw');
@@ -1097,7 +1241,150 @@ window.calcHybridGen = function () {
 };
 
 /* ============================================================
-   18. NEC CIRCUIT CALCULATOR
+   19. E-BIKE BUILD TOOLS
+   ============================================================ */
+function ebPowerToWatts(power, unit) {
+  if (unit === 'w') return power;
+  if (unit === 'hp') return power * 746;
+  return power * 1000;
+}
+
+function ebWheelSpeedMph(outputRpm, wheelDiameterIn) {
+  if (!isPos(outputRpm, wheelDiameterIn)) return NaN;
+  const diameterFt = wheelDiameterIn / 12;
+  const circumferenceFt = Math.PI * diameterFt;
+  return outputRpm * circumferenceFt * 60 / 5280;
+}
+
+function updateEbSprocketDiagram(driveTeeth, drivenTeeth, ratio, outputRpm) {
+  const driveLabel = document.getElementById('eb_drive_label');
+  const drivenLabel = document.getElementById('eb_driven_label');
+  const ratioLabel = document.getElementById('eb_ratio_label');
+  const outputLabel = document.getElementById('eb_output_label');
+  if (driveLabel) driveLabel.textContent = fmt(driveTeeth, 0) + 'T';
+  if (drivenLabel) drivenLabel.textContent = fmt(drivenTeeth, 0) + 'T';
+  if (ratioLabel) ratioLabel.textContent = 'Ratio ' + fmt(ratio, 3) + ':1';
+  if (outputLabel) outputLabel.textContent = 'Output ' + fmt(outputRpm, 1) + ' rpm';
+}
+
+window.ebikeTorqueModeChange = function () {
+  const mode = document.getElementById('eb_solve_for').value;
+  const rpmWrap = document.getElementById('eb_rpm_wrap');
+  const torqueWrap = document.getElementById('eb_torque_wrap');
+  if (rpmWrap) rpmWrap.style.display = mode === 'torque' ? '' : 'none';
+  if (torqueWrap) torqueWrap.style.display = mode === 'rpm' ? '' : 'none';
+};
+
+window.calcEbTorqueRpm = function () {
+  const mode = document.getElementById('eb_solve_for').value;
+  const power = val('eb_power');
+  const powerUnit = document.getElementById('eb_power_unit').value;
+  const powerW = ebPowerToWatts(power, powerUnit);
+  if (!isPos(powerW)) return showError('eb_tr_result', 'Enter power greater than zero.');
+  if (mode === 'torque') {
+    const rpm = val('eb_rpm');
+    if (!isPos(rpm)) return showError('eb_tr_result', 'Enter RPM greater than zero.');
+    const torqueNm = powerW * 60 / (2 * Math.PI * rpm);
+    const torqueLbFt = torqueNm * 0.737562;
+    return showResult('eb_tr_result', [
+      ['Power', fmt(powerW, 1) + ' W'],
+      ['RPM', fmt(rpm, 1) + ' rpm'],
+      ['Torque', fmt(torqueNm, 3) + ' N·m (' + fmt(torqueLbFt, 3) + ' lb-ft)']
+    ]);
+  }
+  const torqueNm = val('eb_torque');
+  if (!isPos(torqueNm)) return showError('eb_tr_result', 'Enter torque greater than zero.');
+  const rpm = powerW * 60 / (2 * Math.PI * torqueNm);
+  showResult('eb_tr_result', [
+    ['Power', fmt(powerW, 1) + ' W'],
+    ['Torque', fmt(torqueNm, 3) + ' N·m'],
+    ['RPM', fmt(rpm, 2) + ' rpm']
+  ]);
+};
+
+window.calcEbSprocket = function () {
+  const motorRpm = val('eb_motor_rpm');
+  const motorTorque = val('eb_motor_torque');
+  const driveTeeth = val('eb_drive_teeth');
+  const drivenTeeth = val('eb_driven_teeth');
+  const efficiency = val('eb_eff') / 100;
+  const wheelDiameter = val('eb_wheel_diam');
+  if (!isPos(motorRpm, motorTorque, driveTeeth, drivenTeeth, efficiency)) {
+    return showError('eb_sprocket_result', 'Enter motor RPM/torque, sprocket teeth, and efficiency.');
+  }
+  const ratio = drivenTeeth / driveTeeth;
+  const outputRpm = motorRpm / ratio;
+  const outputTorque = motorTorque * ratio * efficiency;
+  const speedMph = ebWheelSpeedMph(outputRpm, wheelDiameter);
+  updateEbSprocketDiagram(driveTeeth, drivenTeeth, ratio, outputRpm);
+  const rows = [
+    ['Gear Ratio (driven/drive)', fmt(ratio, 3) + ':1'],
+    ['Output RPM', fmt(outputRpm, 1) + ' rpm'],
+    ['Output Torque', fmt(outputTorque, 3) + ' N·m (' + fmt(outputTorque * 0.737562, 3) + ' lb-ft)'],
+    ['Input Mechanical Power', fmt(motorTorque * motorRpm * 2 * Math.PI / 60, 1) + ' W']
+  ];
+  if (isFinite(speedMph)) rows.push(['Estimated Wheel Speed', fmt(speedMph, 2) + ' mph']);
+  showResult('eb_sprocket_result', rows);
+};
+
+window.calcEbTargetSprocket = function () {
+  const motorRpm = val('eb_target_motor_rpm');
+  const motorTorque = val('eb_target_motor_torque');
+  const targetRpm = val('eb_target_rpm');
+  const targetTorque = val('eb_target_torque');
+  const driveTeeth = val('eb_target_drive_teeth');
+  const efficiency = val('eb_target_eff') / 100;
+  if (!isPos(motorRpm, motorTorque, driveTeeth, efficiency)) {
+    return showError('eb_target_result', 'Enter motor RPM/torque, drive teeth, and efficiency.');
+  }
+  const rows = [];
+  let chosenRatio = NaN;
+  let chosenDriven = NaN;
+  if (isPos(targetRpm)) {
+    const ratioRpm = motorRpm / targetRpm;
+    rows.push(['Required Ratio for Target RPM', fmt(ratioRpm, 3) + ':1']);
+    rows.push(['Suggested Driven Teeth (RPM target)', fmt(driveTeeth * ratioRpm, 0)]);
+    chosenRatio = ratioRpm;
+    chosenDriven = driveTeeth * ratioRpm;
+  }
+  if (isPos(targetTorque)) {
+    const ratioTorque = targetTorque / (motorTorque * efficiency);
+    rows.push(['Required Ratio for Target Torque', fmt(ratioTorque, 3) + ':1']);
+    rows.push(['Suggested Driven Teeth (Torque target)', fmt(driveTeeth * ratioTorque, 0)]);
+    if (!isFinite(chosenRatio)) {
+      chosenRatio = ratioTorque;
+      chosenDriven = driveTeeth * ratioTorque;
+    }
+  }
+  if (!rows.length) return showError('eb_target_result', 'Enter a target RPM and/or target torque greater than zero.');
+  if (isFinite(chosenRatio) && isFinite(chosenDriven) && chosenRatio > 0) {
+    updateEbSprocketDiagram(driveTeeth, chosenDriven, chosenRatio, motorRpm / chosenRatio);
+  }
+  showResult('eb_target_result', rows);
+};
+
+window.calcEbRange = function () {
+  const volts = val('eb_batt_v');
+  const ampHours = val('eb_batt_ah');
+  const whPerMile = val('eb_whmi');
+  const avgPower = val('eb_avg_power');
+  if (!isPos(volts, ampHours, whPerMile, avgPower)) {
+    return showError('eb_range_result', 'Enter battery, consumption, and power values greater than zero.');
+  }
+  const batteryWh = volts * ampHours;
+  const miles = batteryWh / whPerMile;
+  const kilometers = miles * 1.609344;
+  const runtimeHours = batteryWh / avgPower;
+  showResult('eb_range_result', [
+    ['Battery Energy', fmt(batteryWh, 1) + ' Wh (' + fmt(batteryWh / 1000, 2) + ' kWh)'],
+    ['Estimated Range', fmt(miles, 2) + ' mi (' + fmt(kilometers, 2) + ' km)'],
+    ['Runtime at Avg Power', fmt(runtimeHours, 2) + ' h'],
+    ['Avg Speed Implied', fmt(miles / runtimeHours, 2) + ' mph']
+  ]);
+};
+
+/* ============================================================
+   20. NEC CIRCUIT CALCULATOR
    ============================================================ */
 
 /* NEC 310.15(B)(16) — 75°C column
@@ -2341,6 +2628,12 @@ document.addEventListener('DOMContentLoaded', () => {
     syncUnitToOptions();
   }
 
+  conductorLengthSizeChange();
+  conductorLengthPresetChange();
+  conductorLengthMethodChange();
+  ebikeTorqueModeChange();
+  updateEbSprocketDiagram(14, 56, 4, 800);
+
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.setAttribute('inputmode', 'decimal');
   });
@@ -2364,4 +2657,3 @@ document.addEventListener('DOMContentLoaded', () => {
   dcPowerModeChange();
   cmModeChange();
 });
-

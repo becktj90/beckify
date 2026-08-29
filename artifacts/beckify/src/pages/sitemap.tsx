@@ -60,7 +60,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
-      "Voltage Drop", "Motor Calculations", "Transformer", "Transformer Engine",
+      "Voltage Drop", "Conductor Length by Resistance", "Motor Calculations", "Transformer", "Transformer Engine",
       "Transformer Sizing", "Conduit Fill", "Conduit Fill (Mixed)",
       "Wire Size & Ampacity", "Short Circuit",
     ],
@@ -70,11 +70,15 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: ["UPS Sizing", "Generator Sizing", "Hybrid Generator"],
   },
   {
-    label: "NEC Calculations", hue: HUES.green, anchor: "sec-nec",
+    label: "E-Bike Build", hue: HUES.green, anchor: "sec-ebike-tools",
+    tools: ["Torque/RPM Calculator", "Sprocket Ratio Calculator", "E-Bike Range Planner"],
+  },
+  {
+    label: "NEC Calculations", hue: HUES.magenta, anchor: "sec-nec",
     tools: ["NEC Circuit Calculator"],
   },
   {
-    label: "NEC Specialized", hue: HUES.magenta, anchor: "sec-lighting-opt",
+    label: "NEC Specialized", hue: HUES.violet, anchor: "sec-lighting-opt",
     tools: ["Lighting VD Optimizer", "Building Load Calculator"],
   },
   {
