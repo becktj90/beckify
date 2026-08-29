@@ -84,6 +84,20 @@ r = conductorLengthByResistanceModel({
 ok('loop total path length (ft)', r.totalLengthFt, 2010.78, 0.5);
 ok('loop one-way distance (ft)', r.oneWayLengthFt, 1005.39, 0.5);
 
+// 3-phase loop follows product requirement: one-way is solved length / 2.
+r = conductorLengthByResistanceModel({
+  resistance: 0.3,
+  resistanceUnit: 'ohm',
+  circularMils: 167800,
+  method: 'loop3',
+  temperature: 20,
+  temperatureUnit: 'c',
+  referenceTempC: 20,
+  alpha: 0.00393,
+  rho: 10.371
+});
+ok('3-phase loop one-way uses ÷2 factor', r.oneWayLengthFt, r.totalLengthFt / 2, 1e-9);
+
 console.log('\n--- E-bike helpers ---');
 ok('2 kW to watts', ebPowerToWatts(2, 'kw'), 2000, 0);
 ok('1 hp to watts', ebPowerToWatts(1, 'hp'), 746, 0);

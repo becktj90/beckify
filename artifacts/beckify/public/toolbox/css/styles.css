@@ -642,6 +642,12 @@ select option { background: #0d0e1f; color: var(--fg); }
   fill: var(--fg-muted);
   font-size: 12px;
 }
+.eb-gear-drive,
+.eb-gear-driven {
+  fill: rgba(16, 185, 129, 0.12);
+  stroke: rgba(16, 185, 129, 0.95);
+  stroke-width: 3;
+}
 
 /* ── Expandable Info Panels ── */
 .section-info {

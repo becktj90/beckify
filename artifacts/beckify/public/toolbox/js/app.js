@@ -1256,6 +1256,17 @@ function ebWheelSpeedMph(outputRpm, wheelDiameterIn) {
   return outputRpm * circumferenceFt * 60 / 5280;
 }
 
+function updateEbSprocketDiagram(driveTeeth, drivenTeeth, ratio, outputRpm) {
+  const driveLabel = document.getElementById('eb_drive_label');
+  const drivenLabel = document.getElementById('eb_driven_label');
+  const ratioLabel = document.getElementById('eb_ratio_label');
+  const outputLabel = document.getElementById('eb_output_label');
+  if (driveLabel) driveLabel.textContent = fmt(driveTeeth, 0) + 'T';
+  if (drivenLabel) drivenLabel.textContent = fmt(drivenTeeth, 0) + 'T';
+  if (ratioLabel) ratioLabel.textContent = 'Ratio ' + fmt(ratio, 3) + ':1';
+  if (outputLabel) outputLabel.textContent = 'Output ' + fmt(outputRpm, 1) + ' rpm';
+}
+
 window.ebikeTorqueModeChange = function () {
   const mode = document.getElementById('eb_solve_for').value;
   const rpmWrap = document.getElementById('eb_rpm_wrap');
@@ -1305,6 +1316,7 @@ window.calcEbSprocket = function () {
   const outputRpm = motorRpm / ratio;
   const outputTorque = motorTorque * ratio * efficiency;
   const speedMph = ebWheelSpeedMph(outputRpm, wheelDiameter);
+  updateEbSprocketDiagram(driveTeeth, drivenTeeth, ratio, outputRpm);
   const rows = [
     ['Gear Ratio (driven/drive)', fmt(ratio, 3) + ':1'],
     ['Output RPM', fmt(outputRpm, 1) + ' rpm'],
@@ -1326,17 +1338,28 @@ window.calcEbTargetSprocket = function () {
     return showError('eb_target_result', 'Enter motor RPM/torque, drive teeth, and efficiency.');
   }
   const rows = [];
+  let chosenRatio = NaN;
+  let chosenDriven = NaN;
   if (isPos(targetRpm)) {
     const ratioRpm = motorRpm / targetRpm;
     rows.push(['Required Ratio for Target RPM', fmt(ratioRpm, 3) + ':1']);
     rows.push(['Suggested Driven Teeth (RPM target)', fmt(driveTeeth * ratioRpm, 0)]);
+    chosenRatio = ratioRpm;
+    chosenDriven = driveTeeth * ratioRpm;
   }
   if (isPos(targetTorque)) {
     const ratioTorque = targetTorque / (motorTorque * efficiency);
     rows.push(['Required Ratio for Target Torque', fmt(ratioTorque, 3) + ':1']);
     rows.push(['Suggested Driven Teeth (Torque target)', fmt(driveTeeth * ratioTorque, 0)]);
+    if (!isFinite(chosenRatio)) {
+      chosenRatio = ratioTorque;
+      chosenDriven = driveTeeth * ratioTorque;
+    }
   }
   if (!rows.length) return showError('eb_target_result', 'Enter a target RPM and/or target torque greater than zero.');
+  if (isFinite(chosenRatio) && isFinite(chosenDriven) && chosenRatio > 0) {
+    updateEbSprocketDiagram(driveTeeth, chosenDriven, chosenRatio, motorRpm / chosenRatio);
+  }
   showResult('eb_target_result', rows);
 };
 
@@ -2609,6 +2632,7 @@ document.addEventListener('DOMContentLoaded', () => {
   conductorLengthPresetChange();
   conductorLengthMethodChange();
   ebikeTorqueModeChange();
+  updateEbSprocketDiagram(14, 56, 4, 800);
 
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.setAttribute('inputmode', 'decimal');
