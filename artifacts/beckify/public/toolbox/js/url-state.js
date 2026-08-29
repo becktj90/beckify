@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ['sec-xfmr-size', 'xfmr-size', 'calcXfmrSizing'],
     ['sec-vdrop', 'vdrop', null],
     ['sec-conductor-length', 'conductor-length', 'calcConductorLengthByResistance'],
+    ['sec-ebike-tools', 'ebike-tools', 'calcEbSprocket'],
     ['sec-conduit', 'conduit', 'calcConduitFill'],
     ['sec-sc', 'short-circuit', 'calcSC'],
     ['sec-nec', 'nec-circuit', 'calcNEC'],

@@ -84,6 +84,10 @@
       <button class="nav-btn" data-target="sec-hybrid">Hybrid Generator</button>
     </div>
     <div class="sidebar-section">
+      <div class="sidebar-section-title">🚲 E-Bike Build</div>
+      <button class="nav-btn" data-target="sec-ebike-tools" data-keywords="ebike e-bike torque rpm sprocket chainring gear ratio wheel speed range battery wh per mile">E-Bike Drivetrain Tools</button>
+    </div>
+    <div class="sidebar-section">
       <div class="sidebar-section-title">📋 Reference Tables</div>
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
       <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
@@ -144,7 +148,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h2 class="home-title">EE Toolbox</h2>
-        <p class="home-subtitle">36 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">39 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -198,6 +202,15 @@
             <li><a class="home-tool-link" href="#sec-ups">UPS Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-gen">Generator Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-hybrid">Hybrid Generator</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#10b981">
+          <div class="home-cat-header"><span class="home-cat-icon">🚲</span><span class="home-cat-name">E-Bike Build</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-ebike-tools">Torque/RPM Calculator</a></li>
+            <li><a class="home-tool-link" href="#sec-ebike-tools">Sprocket Ratio Designer</a></li>
+            <li><a class="home-tool-link" href="#sec-ebike-tools">Range Estimator</a></li>
           </ul>
         </div>
 
@@ -3688,6 +3701,135 @@
               Storage &ge; 15&#8211;30 min of average load
             </div>
             <div class="note">&#9432; Hybrid gains are greatest at low average loads. Diesel generators run inefficiently below 30% rated load &#8212; batteries absorb/supply transient demand.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         E-BIKE BUILD TOOLS
+         ════════════════════════════════════════ -->
+    <section id="sec-ebike-tools" class="section">
+      <div class="section-header">
+        <h2>🚲 E-Bike Drivetrain &amp; Build Tools</h2>
+        <p>Torque/RPM conversion, sprocket sizing from performance targets, and quick battery range planning.</p>
+      </div>
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Torque ↔ RPM from Power</div>
+          <div class="card-body">
+            <div class="formula-box">
+              P(W) = T(N·m) × 2π × RPM / 60<br>
+              T(N·m) = P × 60 / (2π × RPM)<br>
+              RPM = P × 60 / (2π × T)
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Solve For</label>
+                <select id="eb_solve_for" onchange="ebikeTorqueModeChange()">
+                  <option value="torque">Torque</option>
+                  <option value="rpm">RPM</option>
+                </select>
+              </div>
+              <div>
+                <label>Power Unit</label>
+                <select id="eb_power_unit">
+                  <option value="kw">kW</option>
+                  <option value="w">W</option>
+                  <option value="hp">HP</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Power</label>
+                <input type="number" id="eb_power" value="2" min="0" step="any">
+              </div>
+              <div id="eb_rpm_wrap">
+                <label>RPM</label>
+                <input type="number" id="eb_rpm" value="3200" min="0" step="any">
+              </div>
+              <div id="eb_torque_wrap" style="display:none">
+                <label>Torque (N·m)</label>
+                <input type="number" id="eb_torque" value="6" min="0" step="any">
+              </div>
+            </div>
+            <button class="btn" onclick="calcEbTorqueRpm()">Calculate</button>
+            <div id="eb_tr_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sprocket Ratio Calculator</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Ratio = Driven Teeth / Drive Teeth<br>
+              Output RPM = Motor RPM / Ratio<br>
+              Output Torque = Motor Torque × Ratio × η
+            </div>
+            <div class="input-group">
+              <div><label>Motor RPM</label><input type="number" id="eb_motor_rpm" value="3200" min="0" step="any"></div>
+              <div><label>Motor Torque (N·m)</label><input type="number" id="eb_motor_torque" value="6" min="0" step="any"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Drive Sprocket Teeth</label><input type="number" id="eb_drive_teeth" value="14" min="8" step="1"></div>
+              <div><label>Driven Sprocket Teeth</label><input type="number" id="eb_driven_teeth" value="56" min="10" step="1"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Drivetrain Efficiency (%)</label><input type="number" id="eb_eff" value="92" min="1" max="100" step="any"></div>
+              <div><label>Wheel Diameter (in, optional)</label><input type="number" id="eb_wheel_diam" value="26" min="0" step="any"></div>
+            </div>
+            <button class="btn" onclick="calcEbSprocket()">Calculate Ratio</button>
+            <div id="eb_sprocket_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Target Torque / RPM → Sprocket Size</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Ratio for target RPM = Motor RPM / Target Output RPM<br>
+              Ratio for target torque = Target Output Torque / (Motor Torque × η)<br>
+              Suggested driven teeth = Drive teeth × required ratio
+            </div>
+            <div class="input-group">
+              <div><label>Motor RPM</label><input type="number" id="eb_target_motor_rpm" value="3200" min="0" step="any"></div>
+              <div><label>Motor Torque (N·m)</label><input type="number" id="eb_target_motor_torque" value="6" min="0" step="any"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Target Output RPM</label><input type="number" id="eb_target_rpm" value="800" min="0" step="any"></div>
+              <div><label>Target Output Torque (N·m)</label><input type="number" id="eb_target_torque" value="20" min="0" step="any"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Drive Sprocket Teeth</label><input type="number" id="eb_target_drive_teeth" value="14" min="8" step="1"></div>
+              <div><label>Drivetrain Efficiency (%)</label><input type="number" id="eb_target_eff" value="92" min="1" max="100" step="any"></div>
+            </div>
+            <button class="btn" onclick="calcEbTargetSprocket()">Suggest Sprocket</button>
+            <div id="eb_target_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">E-Bike Range Planner</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Battery Wh = V × Ah<br>
+              Range (mi) = Battery Wh / Wh-per-mile<br>
+              Runtime (h) = Battery Wh / Average Power (W)
+            </div>
+            <div class="input-group">
+              <div><label>Battery Voltage (V)</label><input type="number" id="eb_batt_v" value="52" min="0" step="any"></div>
+              <div><label>Battery Capacity (Ah)</label><input type="number" id="eb_batt_ah" value="20" min="0" step="any"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Expected Consumption (Wh/mi)</label><input type="number" id="eb_whmi" value="28" min="0" step="any"></div>
+              <div><label>Average Power Draw (W)</label><input type="number" id="eb_avg_power" value="700" min="0" step="any"></div>
+            </div>
+            <button class="btn" onclick="calcEbRange()">Estimate Range</button>
+            <div id="eb_range_result" class="result"></div>
+            <div class="note">Real-world range varies with rider mass, grade, wind, tire pressure, assist level, and ambient temperature.</div>
           </div>
         </div>
 

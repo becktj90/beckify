@@ -27,7 +27,8 @@ sandbox.window.addEventListener = () => {};
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(dir + 'app.js', 'utf8'), sandbox, { filename: 'app.js' });
 
-const { conductorLengthByResistanceModel } = vm.runInContext('({ conductorLengthByResistanceModel })', sandbox);
+const { conductorLengthByResistanceModel, ebPowerToWatts, ebWheelSpeedMph } =
+  vm.runInContext('({ conductorLengthByResistanceModel, ebPowerToWatts, ebWheelSpeedMph })', sandbox);
 
 let failures = 0;
 const ok = (name, got, want, tol) => {
@@ -82,6 +83,11 @@ r = conductorLengthByResistanceModel({
 });
 ok('loop total path length (ft)', r.totalLengthFt, 2010.78, 0.5);
 ok('loop one-way distance (ft)', r.oneWayLengthFt, 1005.39, 0.5);
+
+console.log('\n--- E-bike helpers ---');
+ok('2 kW to watts', ebPowerToWatts(2, 'kw'), 2000, 0);
+ok('1 hp to watts', ebPowerToWatts(1, 'hp'), 746, 0);
+ok('800 rpm, 26in wheel speed mph', ebWheelSpeedMph(800, 26), 61.85, 0.05);
 
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nAll checks passed');
 process.exitCode = failures ? 1 : 0;

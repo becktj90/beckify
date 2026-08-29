@@ -1241,7 +1241,127 @@ window.calcHybridGen = function () {
 };
 
 /* ============================================================
-   19. NEC CIRCUIT CALCULATOR
+   19. E-BIKE BUILD TOOLS
+   ============================================================ */
+function ebPowerToWatts(power, unit) {
+  if (unit === 'w') return power;
+  if (unit === 'hp') return power * 746;
+  return power * 1000;
+}
+
+function ebWheelSpeedMph(outputRpm, wheelDiameterIn) {
+  if (!isPos(outputRpm, wheelDiameterIn)) return NaN;
+  const diameterFt = wheelDiameterIn / 12;
+  const circumferenceFt = Math.PI * diameterFt;
+  return outputRpm * circumferenceFt * 60 / 5280;
+}
+
+window.ebikeTorqueModeChange = function () {
+  const mode = document.getElementById('eb_solve_for').value;
+  const rpmWrap = document.getElementById('eb_rpm_wrap');
+  const torqueWrap = document.getElementById('eb_torque_wrap');
+  if (rpmWrap) rpmWrap.style.display = mode === 'torque' ? '' : 'none';
+  if (torqueWrap) torqueWrap.style.display = mode === 'rpm' ? '' : 'none';
+};
+
+window.calcEbTorqueRpm = function () {
+  const mode = document.getElementById('eb_solve_for').value;
+  const power = val('eb_power');
+  const powerUnit = document.getElementById('eb_power_unit').value;
+  const powerW = ebPowerToWatts(power, powerUnit);
+  if (!isPos(powerW)) return showError('eb_tr_result', 'Enter power greater than zero.');
+  if (mode === 'torque') {
+    const rpm = val('eb_rpm');
+    if (!isPos(rpm)) return showError('eb_tr_result', 'Enter RPM greater than zero.');
+    const torqueNm = powerW * 60 / (2 * Math.PI * rpm);
+    const torqueLbFt = torqueNm * 0.737562;
+    return showResult('eb_tr_result', [
+      ['Power', fmt(powerW, 1) + ' W'],
+      ['RPM', fmt(rpm, 1) + ' rpm'],
+      ['Torque', fmt(torqueNm, 3) + ' N·m (' + fmt(torqueLbFt, 3) + ' lb-ft)']
+    ]);
+  }
+  const torqueNm = val('eb_torque');
+  if (!isPos(torqueNm)) return showError('eb_tr_result', 'Enter torque greater than zero.');
+  const rpm = powerW * 60 / (2 * Math.PI * torqueNm);
+  showResult('eb_tr_result', [
+    ['Power', fmt(powerW, 1) + ' W'],
+    ['Torque', fmt(torqueNm, 3) + ' N·m'],
+    ['RPM', fmt(rpm, 2) + ' rpm']
+  ]);
+};
+
+window.calcEbSprocket = function () {
+  const motorRpm = val('eb_motor_rpm');
+  const motorTorque = val('eb_motor_torque');
+  const driveTeeth = val('eb_drive_teeth');
+  const drivenTeeth = val('eb_driven_teeth');
+  const efficiency = val('eb_eff') / 100;
+  const wheelDiameter = val('eb_wheel_diam');
+  if (!isPos(motorRpm, motorTorque, driveTeeth, drivenTeeth, efficiency)) {
+    return showError('eb_sprocket_result', 'Enter motor RPM/torque, sprocket teeth, and efficiency.');
+  }
+  const ratio = drivenTeeth / driveTeeth;
+  const outputRpm = motorRpm / ratio;
+  const outputTorque = motorTorque * ratio * efficiency;
+  const speedMph = ebWheelSpeedMph(outputRpm, wheelDiameter);
+  const rows = [
+    ['Gear Ratio (driven/drive)', fmt(ratio, 3) + ':1'],
+    ['Output RPM', fmt(outputRpm, 1) + ' rpm'],
+    ['Output Torque', fmt(outputTorque, 3) + ' N·m (' + fmt(outputTorque * 0.737562, 3) + ' lb-ft)'],
+    ['Input Mechanical Power', fmt(motorTorque * motorRpm * 2 * Math.PI / 60, 1) + ' W']
+  ];
+  if (isFinite(speedMph)) rows.push(['Estimated Wheel Speed', fmt(speedMph, 2) + ' mph']);
+  showResult('eb_sprocket_result', rows);
+};
+
+window.calcEbTargetSprocket = function () {
+  const motorRpm = val('eb_target_motor_rpm');
+  const motorTorque = val('eb_target_motor_torque');
+  const targetRpm = val('eb_target_rpm');
+  const targetTorque = val('eb_target_torque');
+  const driveTeeth = val('eb_target_drive_teeth');
+  const efficiency = val('eb_target_eff') / 100;
+  if (!isPos(motorRpm, motorTorque, driveTeeth, efficiency)) {
+    return showError('eb_target_result', 'Enter motor RPM/torque, drive teeth, and efficiency.');
+  }
+  const rows = [];
+  if (isPos(targetRpm)) {
+    const ratioRpm = motorRpm / targetRpm;
+    rows.push(['Required Ratio for Target RPM', fmt(ratioRpm, 3) + ':1']);
+    rows.push(['Suggested Driven Teeth (RPM target)', fmt(driveTeeth * ratioRpm, 0)]);
+  }
+  if (isPos(targetTorque)) {
+    const ratioTorque = targetTorque / (motorTorque * efficiency);
+    rows.push(['Required Ratio for Target Torque', fmt(ratioTorque, 3) + ':1']);
+    rows.push(['Suggested Driven Teeth (Torque target)', fmt(driveTeeth * ratioTorque, 0)]);
+  }
+  if (!rows.length) return showError('eb_target_result', 'Enter a target RPM and/or target torque greater than zero.');
+  showResult('eb_target_result', rows);
+};
+
+window.calcEbRange = function () {
+  const volts = val('eb_batt_v');
+  const ampHours = val('eb_batt_ah');
+  const whPerMile = val('eb_whmi');
+  const avgPower = val('eb_avg_power');
+  if (!isPos(volts, ampHours, whPerMile, avgPower)) {
+    return showError('eb_range_result', 'Enter battery, consumption, and power values greater than zero.');
+  }
+  const batteryWh = volts * ampHours;
+  const miles = batteryWh / whPerMile;
+  const kilometers = miles * 1.609344;
+  const runtimeHours = batteryWh / avgPower;
+  showResult('eb_range_result', [
+    ['Battery Energy', fmt(batteryWh, 1) + ' Wh (' + fmt(batteryWh / 1000, 2) + ' kWh)'],
+    ['Estimated Range', fmt(miles, 2) + ' mi (' + fmt(kilometers, 2) + ' km)'],
+    ['Runtime at Avg Power', fmt(runtimeHours, 2) + ' h'],
+    ['Avg Speed Implied', fmt(miles / runtimeHours, 2) + ' mph']
+  ]);
+};
+
+/* ============================================================
+   20. NEC CIRCUIT CALCULATOR
    ============================================================ */
 
 /* NEC 310.15(B)(16) — 75°C column
@@ -2488,6 +2608,7 @@ document.addEventListener('DOMContentLoaded', () => {
   conductorLengthSizeChange();
   conductorLengthPresetChange();
   conductorLengthMethodChange();
+  ebikeTorqueModeChange();
 
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.setAttribute('inputmode', 'decimal');
