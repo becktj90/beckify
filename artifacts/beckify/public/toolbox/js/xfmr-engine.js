@@ -27,9 +27,6 @@ function xeInt(n) {
   return Math.round(n).toLocaleString('en-US');
 }
 
-/* Standard ANSI/NEMA dry-type ratings offered in the picker. */
-const XE_STD_KVA = [15, 30, 45, 75, 112.5, 150, 225, 300, 500, 750, 1000, 1500, 2000, 2500];
-
 /** Line current for a given kVA and voltage. */
 function xeFla(kva, volts, phase) {
   const denom = phase === '3ph' ? XE_SQRT3 * volts : volts;

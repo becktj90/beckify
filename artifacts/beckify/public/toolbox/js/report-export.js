@@ -258,8 +258,6 @@ function buildModal() {
   return modal;
 }
 
-let activeReport = null;
-
 function closeReportModal() {
   const modal = document.getElementById('report-modal');
   if (modal) modal.hidden = true;
@@ -310,7 +308,7 @@ window.openReportModal = function (sectionId, resultId) {
     if (el) el.value = meta[id] || '';
   });
 
-  activeReport = data;
+  // The generate handler closes over `data`, so there is no need to stash it.
   document.getElementById('report-generate').onclick = function () { generateReport(data); };
 
   modal.hidden = false;

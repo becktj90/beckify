@@ -1,0 +1,93 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "files": {
+    "includes": [
+      "src/**/*.{ts,tsx,js,jsx}",
+      "tests/**/*.cjs",
+      "public/toolbox/js/*.js",
+      "public/toolbox/sw.js",
+      "!src/components/ui/**",
+      "!public/toolbox/js/vendor/**",
+      "!public/toolbox/js/arcade.js",
+      "!public/toolbox/js/bin-blaster.js",
+      "!public/toolbox/js/starforge.js",
+      "!public/toolbox/js/trying-to-be-normal.js",
+      "!public/toolbox/js/panel-schedule.js",
+      "!public/toolbox/js/app.js",
+      "!dist/**"
+    ]
+  },
+  // The formatter is deliberately off. Turning it on rewrites every file it
+  // touches, and a whole-repo reformat buried inside a feature commit makes the
+  // real change unreviewable. Enabling it should be its own commit, on its own.
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "none",
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "warn",
+        "noUndeclaredVariables": "off",
+        "useValidTypeof": "error",
+        "noSelfAssign": "error",
+        "noConstantCondition": "error",
+        "noSwitchDeclarations": "error"
+      },
+      "suspicious": {
+        "noDoubleEquals": "error",
+        "noDuplicateObjectKeys": "error",
+        "noDuplicateCase": "error",
+        "noDuplicateParameters": "error",
+        "noFallthroughSwitchClause": "error",
+        "noSelfCompare": "error",
+        "noAssignInExpressions": "error",
+        "noRedeclare": "error",
+        "noGlobalAssign": "error",
+        "noCompareNegZero": "error",
+        "noDebugger": "error",
+        "noSparseArray": "error"
+      },
+      "complexity": {
+        "noUselessTernary": "warn",
+        "noUselessCatch": "warn",
+        "noExtraBooleanCast": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtmlWithChildren": "error"
+      }
+    }
+  },
+  "javascript": {
+    "globals": ["LocalStore", "applyUnitSystem", "recordGameScore"]
+  },
+  "overrides": [
+    {
+      // The toolbox scripts are classic <script> tags with no build step, so
+      // they share one global scope: nec-data.js declares the NEC tables that
+      // wire-tools.js and xfmr-engine.js consume, and so on. Biome analyses
+      // each file on its own, so every one of those shared declarations reads
+      // as unused — 18 false positives against 2 real ones when this was first
+      // run. The two real ones were removed; the rule is off here because it
+      // cannot be right about this file layout, not because the noise is
+      // inconvenient. It stays on for src/ and tests/, which are real modules.
+      //
+      // noAssignInExpressions is off for the same reason of fit: `while ((m =
+      // re.exec(s)) !== null)` is the documented way to iterate a global regex.
+      "includes": ["public/toolbox/js/*.js", "public/toolbox/sw.js"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off"
+          },
+          "suspicious": {
+            "noAssignInExpressions": "off"
+          }
+        }
+      }
+    }
+  ]
+}

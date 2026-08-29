@@ -5115,5 +5115,17 @@
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>
 <script src="js/starforge.js"></script>
+
+<!-- Offline support. Registered after load so it never competes with the app's
+     own scripts for bandwidth on a first visit, and swallowed on failure —
+     the toolbox works perfectly well without a service worker, and file://
+     or an unsupported browser must not throw. -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>
