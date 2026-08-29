@@ -41,31 +41,32 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">⚡ Fundamentals</div>
-      <button class="nav-btn" data-target="sec-ohm">Ohm's Law</button>
-      <button class="nav-btn" data-target="sec-power-dc">DC Power</button>
+      <button class="nav-btn" data-target="sec-ohm" data-keywords="#Electronics #Calculators ohms law voltage current resistance">Ohm's Law</button>
+      <button class="nav-btn" data-target="sec-power-dc" data-keywords="#Electronics #Calculators dc power watts">DC Power</button>
       <button class="nav-btn" data-target="sec-power-convert" data-keywords="power current converter amps to kw kw to amps kva hp horsepower single phase three phase convert solve">Power &amp; Current Converter</button>
-      <button class="nav-btn" data-target="sec-power-ac">AC Power</button>
+      <button class="nav-btn" data-target="sec-power-ac" data-keywords="#Electronics #Calculators ac power kva kw kvar power triangle">AC Power</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">〰 AC Circuits</div>
-      <button class="nav-btn" data-target="sec-reactance">Reactance &amp; Impedance</button>
-      <button class="nav-btn" data-target="sec-resonance">Resonance</button>
+      <button class="nav-btn" data-target="sec-reactance" data-keywords="#Electronics #Calculators reactance impedance capacitive inductive">Reactance &amp; Impedance</button>
+      <button class="nav-btn" data-target="sec-resonance" data-keywords="#Electronics #Calculators resonance lc tank frequency">Resonance</button>
       <button class="nav-btn" data-target="sec-pfc">Power Factor Correction</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">⇄ Series / Parallel</div>
-      <button class="nav-btn" data-target="sec-sp">Resistance, C, L</button>
+      <button class="nav-btn" data-target="sec-sp" data-keywords="#Electronics #Calculators series parallel resistance capacitance inductance">Resistance, C, L</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔌 Distribution</div>
-      <button class="nav-btn" data-target="sec-vdrop">Voltage Drop</button>
-      <button class="nav-btn" data-target="sec-motor">Motor Calculations</button>
-      <button class="nav-btn" data-target="sec-xfmr">Transformer</button>
+      <button class="nav-btn" data-target="sec-vdrop" data-keywords="#PowerDistribution #NEC #Calculators voltage drop feeder branch circuit">Voltage Drop</button>
+      <button class="nav-btn" data-target="sec-motor" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower">Motor Calculations</button>
+      <button class="nav-btn" data-target="sec-xfmr" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio">Transformer</button>
+      <button class="nav-btn" data-target="sec-xfmr-engine" data-keywords="#PowerDistribution #NEC #Calculators transformer conductor selection engine ocpd egc gec voltage drop conduit 450.3 250.122 250.66 310.16 primary secondary feeder">Transformer Engine</button>
       <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="transformer sizing selection protection ocpd overcurrent 450.3 standard kva primary secondary">Transformer Sizing</button>
-      <button class="nav-btn" data-target="sec-conduit">Conduit Fill</button>
+      <button class="nav-btn" data-target="sec-conduit" data-keywords="#PowerDistribution #NEC #Calculators conduit fill emt">Conduit Fill</button>
       <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
       <button class="nav-btn" data-target="sec-wire-select" data-keywords="wire size selector ampacity conductor selection voltage drop parallel runs cost derating ambient termination 310.16 110.14 continuous load">Wire Size &amp; Ampacity</button>
-      <button class="nav-btn" data-target="sec-sc">Short Circuit</button>
+      <button class="nav-btn" data-target="sec-sc" data-keywords="#PowerDistribution #NEC #Calculators short circuit fault current interrupting rating">Short Circuit</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔋 Power Systems</div>
@@ -84,10 +85,11 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">📐 NEC Calculations</div>
-      <button class="nav-btn" data-target="sec-nec">NEC Circuit Calc</button>
+      <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔧 Tools</div>
+      <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
@@ -168,7 +170,9 @@
             <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
             <li><a class="home-tool-link" href="#sec-conduit-adv">Conduit Fill (Mixed)</a></li>
             <li><a class="home-tool-link" href="#sec-wire-select">Wire Size &amp; Ampacity</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr-engine">Transformer Engine</a></li>
             <li><a class="home-tool-link" href="#sec-power-convert">Power &amp; Current Converter</a></li>
+            <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
           </ul>
@@ -1435,6 +1439,352 @@
               raceway leave the most unusable space. Equipment grounding conductors count toward
               the conductor total for fill even though they are not current-carrying — that
               distinction only matters for the ampacity adjustment in the Wire Size tool.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TRANSFORMER & CONDUCTOR SELECTION ENGINE
+         ════════════════════════════════════════ -->
+    <section id="sec-xfmr-engine" class="section">
+      <div class="section-header">
+        <h2>🏗 Transformer &amp; Conductor Selection Engine</h2>
+        <p>Designs both feeders end to end — OCPD, conductors, grounding, voltage drop and conduit — and shows every step.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Selection Engine</summary>
+          <div class="section-info-body">
+            This models a complete transformer installation on both sides of the unit and states the code basis for each result.
+            <ul>
+              <li><strong>Full load amps</strong> — kVA × 1000 ÷ V for single-phase, ÷ (√3 × V) for three-phase.</li>
+              <li><strong>Overcurrent protection</strong> — NEC Table 450.3(B). Primary-only protection uses the 125% / 167% / 300% tiers; adding a secondary device raises the primary allowance to 250% because the secondary device then provides the closer protection.</li>
+              <li><strong>Conductors</strong> — 125% of FLA per NEC 215.2(A)(1), checked against Table 310.16 with ambient correction 310.15(B)(1) and bundling adjustment 310.15(C)(1), then capped by the termination rating in 110.14(C).</li>
+              <li><strong>Equipment grounding conductor</strong> — Table 250.122, sized from the overcurrent device ahead of the circuit, never from the phase conductor.</li>
+              <li><strong>Grounding electrode conductor</strong> — a transformer secondary is a separately derived system, so 250.30(A)(5) sends you to Table 250.66 sized on the derived ungrounded conductors.</li>
+              <li><strong>Voltage drop</strong> — Z = R·cosθ + X·sinθ using Chapter 9 Table 8 resistance and Table 9 reactance. The 3% per feeder and 5% total figures are informational notes in 210.19(A) and 215.2(A), not enforceable limits.</li>
+              <li><strong>Conduit</strong> — Chapter 9 Table 1 at 40% fill for more than two conductors, against Table 4 raceway areas and Table 5 conductor areas.</li>
+            </ul>
+            Results are shareable: the URL updates with your inputs, so a link reproduces the whole design.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Transformer</div>
+          <div class="card-body">
+            <div class="formula-box">
+              3Ø: I = kVA × 1000 ÷ (√3 × V) &nbsp;|&nbsp; 1Ø: I = kVA × 1000 ÷ V
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Rating (kVA)</label>
+                <select id="xe_kva">
+                  <option value="15">15 kVA</option>
+                  <option value="30">30 kVA</option>
+                  <option value="45">45 kVA</option>
+                  <option value="75" selected>75 kVA</option>
+                  <option value="112.5">112.5 kVA</option>
+                  <option value="150">150 kVA</option>
+                  <option value="225">225 kVA</option>
+                  <option value="300">300 kVA</option>
+                  <option value="500">500 kVA</option>
+                  <option value="750">750 kVA</option>
+                  <option value="1000">1000 kVA</option>
+                  <option value="1500">1500 kVA</option>
+                  <option value="2000">2000 kVA</option>
+                  <option value="2500">2500 kVA</option>
+                  <option value="custom">Custom…</option>
+                </select>
+              </div>
+              <div id="xe_kva_custom_wrap" style="display:none">
+                <label>Custom kVA</label>
+                <input type="number" id="xe_kva_custom" value="75" min="0" step="any">
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="xe_sec_protected" checked>
+              <label for="xe_sec_protected" style="margin:0">Secondary overcurrent device fitted (allows 250% primary)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Installation Conditions</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>Conductor Material</label>
+                <select id="xe_material">
+                  <option value="cu">Copper</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+              <div>
+                <label>Insulation</label>
+                <select id="xe_insulation">
+                  <option value="THHN" selected>THHN / THWN-2 (90°C)</option>
+                  <option value="XHHW">XHHW-2 (90°C)</option>
+                  <option value="RHW">RHH / RHW-2 (90°C)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Conduit Type</label>
+                <select id="xe_conduit">
+                  <option value="EMT" selected>EMT</option>
+                  <option value="PVC40">PVC Schedule 40</option>
+                  <option value="PVC80">PVC Schedule 80</option>
+                  <option value="RMC">RMC (Rigid)</option>
+                  <option value="IMC">IMC</option>
+                  <option value="LFMC">LFMC (Liquidtight)</option>
+                </select>
+              </div>
+              <div>
+                <label>Termination Rating</label>
+                <select id="xe_term">
+                  <option value="75" selected>75°C</option>
+                  <option value="60">60°C</option>
+                  <option value="90">90°C</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group triple">
+              <div>
+                <label>Ambient (°C)</label>
+                <input type="number" id="xe_ambient" value="30" min="-10" max="90" step="1">
+              </div>
+              <div>
+                <label>CCC in raceway</label>
+                <input type="number" id="xe_ccc" value="3" min="1" max="60" step="1">
+              </div>
+              <div>
+                <label>Power Factor (%)</label>
+                <input type="number" id="xe_pf" value="90" min="1" max="100" step="1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Primary Feed</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>Phase</label>
+                <select id="xe_pri_phase">
+                  <option value="3ph" selected>3-Phase</option>
+                  <option value="1ph">1-Phase</option>
+                </select>
+              </div>
+              <div>
+                <label>Voltage (V)</label>
+                <input type="number" id="xe_pri_v" value="480" min="1" step="any" list="xe_pri_volts">
+                <datalist id="xe_pri_volts">
+                  <option value="4160"></option><option value="480"></option>
+                  <option value="240"></option><option value="208"></option><option value="120"></option>
+                </datalist>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Connection</label>
+                <select id="xe_pri_conn">
+                  <option value="delta" selected>Delta</option>
+                  <option value="wye">Wye</option>
+                  <option value="single">Single Phase</option>
+                </select>
+              </div>
+              <div>
+                <label>One-Way Length (ft)</label>
+                <input type="number" id="xe_pri_len" value="120" min="1" step="1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Secondary Feed</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>Phase</label>
+                <select id="xe_sec_phase">
+                  <option value="3ph" selected>3-Phase</option>
+                  <option value="1ph">1-Phase</option>
+                </select>
+              </div>
+              <div>
+                <label>Voltage (V)</label>
+                <input type="number" id="xe_sec_v" value="208" min="1" step="any" list="xe_sec_volts">
+                <datalist id="xe_sec_volts">
+                  <option value="480"></option><option value="208"></option>
+                  <option value="240"></option><option value="120"></option>
+                </datalist>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Connection</label>
+                <select id="xe_sec_conn">
+                  <option value="wye" selected>Wye (e.g. 208Y/120)</option>
+                  <option value="delta">Delta</option>
+                  <option value="highleg">High-Leg Delta (240/120)</option>
+                  <option value="corner">Corner-Grounded Delta</option>
+                  <option value="single">Single Phase (120/240)</option>
+                </select>
+              </div>
+              <div>
+                <label>One-Way Length (ft)</label>
+                <input type="number" id="xe_sec_len" value="80" min="1" step="1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-body">
+            <button class="btn" onclick="calcXfmrEngine()">Run Selection Engine</button>
+            <div id="xe_result" class="result"></div>
+            <button type="button" class="btn btn-secondary" id="xe_proof_btn"
+                    aria-expanded="false" aria-controls="xe_proof"
+                    onclick="toggleXeProof()" style="margin-top:10px">▸ Show step-by-step proof</button>
+            <div id="xe_proof" class="xe-proof" hidden>
+              <div id="xe_proof_body"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         555 TIMER
+         ════════════════════════════════════════ -->
+    <section id="sec-555" class="section">
+      <div class="section-header">
+        <h2>⏱ 555 Timer Calculator</h2>
+        <p>Astable oscillator and monostable one-shot timing, with the output waveform drawn to scale.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — 555 Timer</summary>
+          <div class="section-info-body">
+            The 555 charges its timing capacitor toward Vcc and switches at two internal comparator thresholds set by a resistor divider: <strong>1/3 Vcc</strong> and <strong>2/3 Vcc</strong>.<br><br>
+            <strong>Where the magic numbers come from.</strong> Charging between those two thresholds takes <strong>ln(2) = 0.6931</strong> time constants, which is the 0.693 in every astable formula. A monostable runs from 0 V to 2/3 Vcc instead, which takes <strong>ln(3) = 1.0986</strong> time constants — the familiar <strong>1.1</strong>. Neither is an empirical fudge factor.<br><br>
+            <strong>Astable:</strong> the capacitor charges through R1+R2 and discharges through R2 alone, so t<sub>high</sub> is always longer than t<sub>low</sub> and the duty cycle <strong>cannot reach 50%</strong> in the standard circuit. A diode across R2 gives the charge path R1 only, which unlocks the full range.<br><br>
+            <strong>Practical limits:</strong> keep R ≥ 1 kΩ so the discharge transistor is not overloaded, and below about 10 MΩ so bias currents and capacitor leakage do not dominate. Above a few hundred kHz, use a CMOS 7555/TLC555 rather than the bipolar NE555.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Astable — Free-Running Oscillator</div>
+          <div class="card-body">
+            <div class="formula-box">
+              t<sub>1</sub> = ln(2) × (R1 + R2) × C &nbsp;|&nbsp; t<sub>2</sub> = ln(2) × R2 × C<br>
+              f = 1.44 / ((R1 + 2·R2) × C) &nbsp;|&nbsp; D = (R1 + R2) / (R1 + 2·R2)
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Resistor R1</label>
+                <input type="number" id="t555_r1" value="10" min="0" step="any">
+              </div>
+              <div>
+                <label>R1 Units</label>
+                <select id="t555_r1_u">
+                  <option value="k" selected>kΩ</option>
+                  <option value="ohm">Ω</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Resistor R2</label>
+                <input type="number" id="t555_r2" value="47" min="0" step="any">
+              </div>
+              <div>
+                <label>R2 Units</label>
+                <select id="t555_r2_u">
+                  <option value="k" selected>kΩ</option>
+                  <option value="ohm">Ω</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Capacitor C</label>
+                <input type="number" id="t555_c" value="1" min="0" step="any">
+              </div>
+              <div>
+                <label>C Units</label>
+                <select id="t555_c_u">
+                  <option value="uF" selected>µF</option>
+                  <option value="nF">nF</option>
+                  <option value="pF">pF</option>
+                </select>
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="t555_diode">
+              <label for="t555_diode" style="margin:0">Diode across R2 — allows duty cycle below 50%</label>
+            </div>
+            <button class="btn" onclick="calc555Astable()">Calculate Astable</button>
+            <div id="t555_a_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Monostable — One-Shot</div>
+          <div class="card-body">
+            <div class="formula-box">
+              t = 1.1 × R × C &nbsp;&nbsp;(1.1 = ln(3), the 0 → 2/3 Vcc charge interval)
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Resistor R</label>
+                <input type="number" id="t555_mr" value="100" min="0" step="any">
+              </div>
+              <div>
+                <label>R Units</label>
+                <select id="t555_mr_u">
+                  <option value="k" selected>kΩ</option>
+                  <option value="ohm">Ω</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Capacitor C</label>
+                <input type="number" id="t555_mc" value="10" min="0" step="any">
+              </div>
+              <div>
+                <label>C Units</label>
+                <select id="t555_mc_u">
+                  <option value="uF" selected>µF</option>
+                  <option value="nF">nF</option>
+                  <option value="pF">pF</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn" onclick="calc555Monostable()">Calculate One-Shot</button>
+            <div id="t555_m_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Output Waveform</div>
+          <div class="card-body">
+            <div id="t555_wave" class="wave-host"></div>
+            <p style="margin-top:10px;font-size:0.78rem;line-height:1.6;color:var(--fg-muted)">
+              Green is the output pin; amber is the timing capacitor charging toward 2/3 Vcc
+              and discharging to 1/3 Vcc. Two full cycles are shown so the duty cycle is
+              visible at a glance. Run the astable calculation to draw it.
             </p>
           </div>
         </div>
@@ -4679,6 +5029,9 @@
 <script src="js/app.js"></script>
 <script src="js/wire-tools.js"></script>
 <script src="js/power-tools.js"></script>
+<script src="js/xfmr-engine.js"></script>
+<script src="js/timer555.js"></script>
+<script src="js/report-export.js"></script>
 <script src="js/arcade.js"></script>
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>

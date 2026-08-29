@@ -1044,3 +1044,162 @@ canvas {
   }
   .cfa-row .cfa-insul { grid-column: 1 / -1; }
 }
+
+/* ── PDF submittal export ────────────────────────────────────────────────── */
+.report-export-btn {
+  margin-top: 10px;
+  font-size: 0.76rem;
+  padding: 7px 14px;
+}
+.report-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(3, 4, 10, 0.78);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.report-modal[hidden] { display: none; }
+body.report-open { overflow: hidden; }
+.report-panel {
+  background: #0a0c18;
+  border: 1px solid var(--violet-ring);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 70px -12px rgba(0, 0, 0, 0.8);
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+.report-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.report-panel-head h3 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+.report-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.report-close:hover { background: rgba(255, 255, 255, 0.06); color: var(--fg); }
+.report-panel-body { padding: 16px; overflow-y: auto; }
+.report-intro {
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  margin-bottom: 14px;
+}
+.report-field { margin-bottom: 12px; }
+.report-preview {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(139, 123, 255, 0.06);
+}
+.report-preview-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+.report-preview-sub {
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  margin-top: 3px;
+}
+.report-status { font-size: 0.74rem; margin-top: 10px; min-height: 1em; color: var(--fg-muted); }
+.report-status.ok { color: var(--green-ok); }
+.report-status.warn { color: #f5c451; }
+.report-panel-foot {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 560px) {
+  .report-modal { padding: 0; align-items: stretch; }
+  .report-panel { max-width: none; max-height: 100vh; border-radius: 0; border: none; }
+}
+
+/* ── 555 timer waveform ──────────────────────────────────────────────────── */
+.wave-host {
+  background: #070912;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  overflow-x: auto;
+}
+.wave-host svg { display: block; min-width: 380px; }
+
+/* ── Transformer engine: side-by-side compare + proof drawer ─────────────── */
+.res-row.xe-compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+.res-row.xe-compare .res-val { text-align: right; }
+.res-row.xe-compare .xe-pri { color: #7aa2ff; }
+.res-row.xe-compare .xe-sec { color: #6ee7b7; }
+.xe-proof {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #070912;
+  padding: 12px;
+  max-height: 460px;
+  overflow-y: auto;
+}
+.xe-step { padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.xe-step:last-child { border-bottom: none; }
+.xe-step-head {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--violet);
+  margin-bottom: 6px;
+}
+.xe-step-line {
+  font-family: var(--font-main);
+  font-size: 0.72rem;
+  line-height: 1.7;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.xe-step-ref {
+  margin-top: 5px;
+  font-size: 0.68rem;
+  color: var(--fg-dim);
+  font-style: italic;
+}
+@media (max-width: 620px) {
+  .res-row.xe-compare {
+    grid-template-columns: 1fr auto;
+  }
+  .res-row.xe-compare .xe-pri { grid-column: 2; }
+  .res-row.xe-compare .xe-sec { grid-column: 2; }
+}

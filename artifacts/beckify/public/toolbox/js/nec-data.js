@@ -250,3 +250,67 @@ const SMALL_CONDUCTOR_MAX_OCPD = { '14': 15, '12': 20, '10': 30 };
 
 /* NEC 310.10(G) — conductors may only be paralleled in sizes 1/0 and larger. */
 const MIN_PARALLEL_SIZE_CMIL = WIRE_CMIL['1/0'];
+
+/* ---------------------------------------------------------------------------
+   NEC Table 250.122 — minimum equipment grounding conductor, sized from the
+   rating of the overcurrent device ahead of the circuit (not from the phase
+   conductor). Sizes are AWG/kcmil keyed to WIRE_SIZE_ORDER.
+   --------------------------------------------------------------------------- */
+const EGC_250_122 = [
+  { maxOCPD: 15, cu: '14', al: '12' },
+  { maxOCPD: 20, cu: '12', al: '10' },
+  { maxOCPD: 60, cu: '10', al: '8' },
+  { maxOCPD: 100, cu: '8', al: '6' },
+  { maxOCPD: 200, cu: '6', al: '4' },
+  { maxOCPD: 300, cu: '4', al: '2' },
+  { maxOCPD: 400, cu: '3', al: '1' },
+  { maxOCPD: 500, cu: '2', al: '1/0' },
+  { maxOCPD: 600, cu: '1', al: '2/0' },
+  { maxOCPD: 800, cu: '1/0', al: '3/0' },
+  { maxOCPD: 1000, cu: '2/0', al: '4/0' },
+  { maxOCPD: 1200, cu: '3/0', al: '250' },
+  { maxOCPD: 1600, cu: '4/0', al: '350' },
+  { maxOCPD: 2000, cu: '250', al: '400' },
+  { maxOCPD: 2500, cu: '350', al: '600' },
+  { maxOCPD: 3000, cu: '400', al: '600' },
+  { maxOCPD: 4000, cu: '500', al: '800' },
+  { maxOCPD: 5000, cu: '700', al: '1000' },
+  { maxOCPD: 6000, cu: '800', al: '1000' },
+];
+
+function egcForOCPD(ocpdAmps, material) {
+  const row = EGC_250_122.find((r) => ocpdAmps <= r.maxOCPD);
+  if (!row) return null;
+  return { size: material === 'al' ? row.al : row.cu, maxOCPD: row.maxOCPD };
+}
+
+/* ---------------------------------------------------------------------------
+   NEC Table 250.66 — grounding electrode conductor, sized from the largest
+   ungrounded conductor (or the equivalent area of a parallel set). For a
+   separately derived system this is the derived secondary conductor, per
+   250.30(A)(5). Thresholds are expressed in circular mils so parallel sets
+   can be compared on total area.
+   --------------------------------------------------------------------------- */
+const GEC_250_66 = [
+  // Cu service conductor 2 AWG or smaller / Al 1/0 or smaller
+  { maxCmilCu: WIRE_CMIL['2'], maxCmilAl: WIRE_CMIL['1/0'], cu: '8', al: '6' },
+  // 1 or 1/0 Cu / 2/0 or 3/0 Al
+  { maxCmilCu: WIRE_CMIL['1/0'], maxCmilAl: WIRE_CMIL['3/0'], cu: '6', al: '4' },
+  // 2/0 or 3/0 Cu / 4/0 or 250 Al
+  { maxCmilCu: WIRE_CMIL['3/0'], maxCmilAl: WIRE_CMIL['250'], cu: '4', al: '2' },
+  // Over 3/0 through 350 Cu / over 250 through 500 Al
+  { maxCmilCu: WIRE_CMIL['350'], maxCmilAl: WIRE_CMIL['500'], cu: '2', al: '1/0' },
+  // Over 350 through 600 Cu / over 500 through 900 Al
+  { maxCmilCu: WIRE_CMIL['600'], maxCmilAl: WIRE_CMIL['900'], cu: '1/0', al: '3/0' },
+  // Over 600 through 1100 Cu / over 900 through 1750 Al
+  { maxCmilCu: 1100000, maxCmilAl: 1750000, cu: '2/0', al: '4/0' },
+  // Over 1100 Cu / over 1750 Al
+  { maxCmilCu: Infinity, maxCmilAl: Infinity, cu: '3/0', al: '250' },
+];
+
+function gecForConductor(totalCmil, material) {
+  const key = material === 'al' ? 'maxCmilAl' : 'maxCmilCu';
+  const row = GEC_250_66.find((r) => totalCmil <= r[key]);
+  if (!row) return null;
+  return { size: material === 'al' ? row.al : row.cu };
+}
