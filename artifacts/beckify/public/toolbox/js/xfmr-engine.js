@@ -339,11 +339,7 @@ window.calcXfmrEngine = function () {
     secondaryProtected: secondaryProtected, insulation: insulation,
   });
 
-  syncEngineUrl({
-    kva: kva, priVolts: priVolts, secVolts: secVolts, priPhase: priPhase, secPhase: secPhase,
-    priConn: priConn, secConn: secConn, priLen: priLen, secLen: secLen, material: material,
-    conduit: conduitType, ambient: ambientC, ccc: ccc, pf: val('xe_pf'),
-  });
+  if (typeof writeUrlState === 'function') writeUrlState('sec-xfmr-engine');
 
   appendCopyBtn(el);
 };
@@ -476,61 +472,9 @@ window.toggleXeProof = function () {
   }
 };
 
-/* ---------------------------------------------------------------------------
-   URL state — deep links such as ?kva=75&priVolts=480&secVolts=208
-   --------------------------------------------------------------------------- */
-function syncEngineUrl(state) {
-  try {
-    const params = new URLSearchParams();
-    Object.keys(state).forEach(function (k) {
-      if (state[k] !== '' && state[k] != null) params.set(k, String(state[k]));
-    });
-    const url = location.pathname + '?' + params.toString() + '#sec-xfmr-engine';
-    history.replaceState(null, '', url);
-  } catch (_) {}
-}
-
-function restoreEngineFromUrl() {
-  let params;
-  try { params = new URLSearchParams(location.search); } catch (_) { return false; }
-  if (!params.has('kva')) return false;
-
-  const setVal = function (id, key) {
-    if (!params.has(key)) return;
-    const el = document.getElementById(id);
-    if (el) el.value = params.get(key);
-  };
-
-  // kVA may be a standard step or a custom value.
-  const kva = params.get('kva');
-  const sel = document.getElementById('xe_kva');
-  if (sel) {
-    const match = Array.prototype.slice.call(sel.options)
-      .some(function (o) { return o.value === kva; });
-    if (match) sel.value = kva;
-    else {
-      sel.value = 'custom';
-      const custom = document.getElementById('xe_kva_custom');
-      if (custom) custom.value = kva;
-    }
-    toggleCustomKva();
-  }
-
-  setVal('xe_pri_v', 'priVolts');
-  setVal('xe_sec_v', 'secVolts');
-  setVal('xe_pri_phase', 'priPhase');
-  setVal('xe_sec_phase', 'secPhase');
-  setVal('xe_pri_conn', 'priConn');
-  setVal('xe_sec_conn', 'secConn');
-  setVal('xe_pri_len', 'priLen');
-  setVal('xe_sec_len', 'secLen');
-  setVal('xe_material', 'material');
-  setVal('xe_conduit', 'conduit');
-  setVal('xe_ambient', 'ambient');
-  setVal('xe_ccc', 'ccc');
-  setVal('xe_pf', 'pf');
-  return true;
-}
+/* URL state is handled by the shared binder in url-state.js, which mirrors
+   every field of every calculator. Keeping a second bespoke implementation
+   here would mean two writers racing over history.replaceState. */
 
 window.toggleCustomKva = function toggleCustomKva() {
   const sel = document.getElementById('xe_kva');
@@ -544,11 +488,6 @@ document.addEventListener('DOMContentLoaded', function () {
   toggleCustomKva();
   const sel = document.getElementById('xe_kva');
   if (sel) sel.addEventListener('change', toggleCustomKva);
-
-  // A deep link should land on a computed result, not an empty form.
-  if (restoreEngineFromUrl()) {
-    setTimeout(function () { window.calcXfmrEngine(); }, 60);
-  }
 
   if (typeof registerReport === 'function') {
     registerReport('xe_result', {

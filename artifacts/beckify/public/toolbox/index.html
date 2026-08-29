@@ -18,6 +18,14 @@
   <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn Runner, Bin Block Blaster, and Trying To Be Normal games.">
   <title>Facilities Electrical Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Webfonts load without blocking: media="print" keeps the stylesheet out of
+       the critical path, and the onload swap applies it once it arrives. If the
+       font host is slow, blocked, or the device is offline, the toolbox renders
+       immediately in the fallback monospace stack instead of stalling. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
 </head>
 <body>
 
@@ -119,6 +127,10 @@
       <div class="sidebar-section-title">📏 NEC Specialized</div>
       <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
       <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🗂 Workspace</div>
+      <button class="nav-btn" data-target="sec-projects" data-keywords="saved jobs projects history save load offline storage preferences units imperial metric game statistics high scores">Saved Jobs &amp; Settings</button>
     </div>
   </nav>
 
@@ -244,6 +256,13 @@
             <li><a class="home-tool-link" href="#sec-bin-blaster">🧱 Bin Block Blaster</a></li>
             <li><a class="home-tool-link" href="#sec-trying-normal">🫥 Trying To Be Normal</a></li>
             <li><a class="home-tool-link" href="#sec-starforge">🌌 Starforge Frontier</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#38bdf8">
+          <div class="home-cat-header"><span class="home-cat-icon">🗂</span><span class="home-cat-name">Workspace</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-projects">Saved Jobs &amp; Settings</a></li>
           </ul>
         </div>
 
@@ -5002,6 +5021,63 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         SAVED JOBS & SETTINGS  (local-first, IndexedDB)
+         ════════════════════════════════════════ -->
+    <section id="sec-projects" class="section">
+      <div class="section-header">
+        <h2>🗂 Saved Jobs &amp; Settings</h2>
+        <p>Calculation runs you have saved, grouped by job. Everything is stored on this device and works offline.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — How saving works</summary>
+          <div class="section-info-body">
+            Every calculator has a <strong>🗂 Save to job</strong> button beside its results. Saving records the inputs, the results, and the calculator's own deep link, so reopening a run puts the calculator back exactly as it was rather than showing a static copy of the numbers.<br><br>
+            <strong>Where it lives.</strong> Saved work is written to this browser's IndexedDB. There is no account and nothing is uploaded — which also means saved jobs do not follow you to another browser or another device, and clearing site data deletes them. Export a PDF submittal for anything you need to keep off-device.<br><br>
+            <strong>Offline.</strong> Because storage is local, saving, loading and deleting all work with no network connection.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+
+        <div class="card">
+          <div class="card-title">Saved Jobs</div>
+          <div class="card-body">
+            <button type="button" class="btn btn-secondary proj-btn" id="proj_new">➕ New empty job</button>
+            <div id="projects_host" style="margin-top:12px"></div>
+            <div class="proj-usage" id="projects_usage"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Preferences</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="pref_units">Unit system</label>
+                <select id="pref_units">
+                  <option value="imperial">Imperial (ft, in², °C)</option>
+                  <option value="metric">Metric (m, cm², °C)</option>
+                </select>
+              </div>
+            </div>
+            <p class="proj-empty" style="margin-top:10px">
+              The calculators work in the units the NEC tables are published in, so this setting converts
+              lengths and areas for display and leaves the code tables themselves alone.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Game Statistics</div>
+          <div class="card-body">
+            <div id="game_stats_host"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
          PAD RAT OPS
          ════════════════════════════════════════ -->
     <section class="section" id="sec-pad-rat">
@@ -5032,6 +5108,9 @@
 <script src="js/xfmr-engine.js"></script>
 <script src="js/timer555.js"></script>
 <script src="js/report-export.js"></script>
+<script src="js/url-state.js"></script>
+<script src="js/local-store.js"></script>
+<script src="js/projects-ui.js"></script>
 <script src="js/arcade.js"></script>
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>

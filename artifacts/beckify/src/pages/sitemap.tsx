@@ -60,8 +60,9 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
-      "Voltage Drop", "Motor Calculations", "Transformer", "Transformer Sizing",
-      "Conduit Fill", "Conduit Fill (Mixed)", "Wire Size & Ampacity", "Short Circuit",
+      "Voltage Drop", "Motor Calculations", "Transformer", "Transformer Engine",
+      "Transformer Sizing", "Conduit Fill", "Conduit Fill (Mixed)",
+      "Wire Size & Ampacity", "Short Circuit",
     ],
   },
   {
@@ -86,7 +87,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   },
   {
     label: "Tools", hue: HUES.orange, anchor: "sec-convert",
-    tools: ["Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule OCR"],
+    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule OCR"],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",
@@ -94,6 +95,10 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       "Conductor Reference", "Motor FLA Tables", "Conduit Fill Tables",
       "IP Rating Chart", "NEMA Enclosures", "NEC Code Tables",
     ],
+  },
+  {
+    label: "Workspace", hue: HUES.aqua, anchor: "sec-projects",
+    tools: ["Saved Jobs & Settings"],
   },
 ];
 

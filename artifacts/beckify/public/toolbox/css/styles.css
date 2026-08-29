@@ -3,7 +3,13 @@
    Matches Beckify.com's nebula-violet design system
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+/* Webfonts are loaded from index.html, not with an @import.
+   An @import is discovered only after this file has been fetched and parsed,
+   it blocks rendering, and — because a pending stylesheet also blocks the
+   classic <script> tags behind it — a slow or unreachable fonts.googleapis.com
+   stalls the whole toolbox rather than just its typography. The <link> in
+   index.html loads the same stylesheet without blocking, so an offline or
+   blocked load simply falls back to the local monospace stack. */
 
 /* ── Design tokens ── */
 :root {
@@ -1202,4 +1208,99 @@ body.report-open { overflow: hidden; }
   }
   .res-row.xe-compare .xe-pri { grid-column: 2; }
   .res-row.xe-compare .xe-sec { grid-column: 2; }
+}
+
+/* ── Saved jobs (local-first storage) ────────────────────────────────────── */
+.save-run-btn {
+  font-size: 0.76rem;
+  padding: 7px 14px;
+}
+/* Holds the export and save buttons for one result. */
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.result-actions .report-export-btn { margin-top: 0; }
+.proj-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(139, 123, 255, 0.045);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.proj-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proj-name {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg);
+  word-break: break-word;
+}
+.proj-count {
+  font-size: 0.68rem;
+  color: var(--violet);
+  border: 1px solid var(--violet-ring);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.proj-meta {
+  flex-basis: 100%;
+  font-size: 0.68rem;
+  color: var(--fg-dim);
+}
+.proj-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+}
+.proj-btn {
+  font-size: 0.7rem;
+  padding: 5px 11px;
+}
+.proj-danger { color: #f5a3a3; border-color: rgba(245, 163, 163, 0.35); }
+.proj-danger:hover { background: rgba(245, 163, 163, 0.1); }
+.proj-run {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.proj-run-info { flex: 1 1 200px; min-width: 0; }
+.proj-run-label {
+  font-size: 0.78rem;
+  color: var(--fg);
+  word-break: break-word;
+}
+.proj-run-date {
+  font-size: 0.67rem;
+  color: var(--fg-dim);
+  margin-top: 2px;
+  word-break: break-word;
+}
+.proj-run-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.proj-empty {
+  font-size: 0.76rem;
+  color: var(--fg-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.proj-usage {
+  font-size: 0.68rem;
+  color: var(--fg-dim);
+  margin-top: 10px;
 }

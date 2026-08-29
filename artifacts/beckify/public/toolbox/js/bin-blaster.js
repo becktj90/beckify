@@ -661,6 +661,11 @@
   }
 
   function checkHiScore(score, missionId) {
+    // Called once at the end of every mission, win or lose, so it is also the
+    // right place to hand the run to the toolbox's cross-game record.
+    if (typeof window.recordGameScore === 'function') {
+      window.recordGameScore('bin-block-blaster', score);
+    }
     const key = String(missionId);
     if (!S.hiScores[key]) S.hiScores[key] = [];
     const list = S.hiScores[key];

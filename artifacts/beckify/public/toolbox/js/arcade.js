@@ -1488,6 +1488,10 @@
   }
 
   function updateBestFlight(success) {
+    // Cross-game record kept by the toolbox; a no-op if storage is unavailable.
+    if (typeof window.recordGameScore === 'function') {
+      window.recordGameScore('new-glenn-runner', state.session.score);
+    }
     const medal = missionMedal(state.session.score);
     const record = {
       name: state.session.missionName,
