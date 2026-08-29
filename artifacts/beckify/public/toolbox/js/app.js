@@ -108,15 +108,26 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 })();
 
 /* ── Tab switcher (within sections) ── */
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const group = btn.closest('.tab-group');
-    group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    group.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    group.querySelector('#' + btn.dataset.tab).classList.add('active');
+function activateTab(btn) {
+  const group = btn.closest('.tab-group');
+  const paneId = btn.dataset.tab;
+  const pane = group && paneId ? document.getElementById(paneId) : null;
+  if (pane && !group.contains(pane)) return;
+  if (!group || !pane) return;
+  group.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+  group.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p === pane));
+}
+
+function wireTabNavigation() {
+  const root = document.documentElement;
+  if (root && root.dataset && root.dataset.tabsWired === '1') return;
+  if (root && root.dataset) root.dataset.tabsWired = '1';
+  document.addEventListener('click', event => {
+    const btn = event.target.closest('.tab-btn');
+    if (btn) activateTab(btn);
   });
-});
+}
+wireTabNavigation();
 
 /* ============================================================
    HELPER UTILITIES

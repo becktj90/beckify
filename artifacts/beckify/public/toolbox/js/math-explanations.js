@@ -8,12 +8,42 @@
     'sec-555': ['A capacitor is a bucket for charge', 'I = C\\frac{dV}{dt}', 'A capacitor resists sudden voltage changes because its stored charge must arrive through a finite current. That is why RC circuits make time.'],
     'sec-tdr': ['A TDR is radar for copper', 'd = \\frac{VF\\,c\\,t}{2}', 'The pulse travels out, notices a change in the cable, and returns. The divide-by-two matters because the measured time includes both trips.']
   };
+  function texFallback(tex) {
+    const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    let html = esc(tex.trim());
+    html = html.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '<span class="tex-frac"><span>$1</span><span>$2</span></span>');
+    html = html.replace(/\\text\{([^{}]+)\}/g, '<span class="tex-text">$1</span>');
+    html = html.replace(/\\quad/g, '<span class="tex-space"></span>');
+    html = html.replace(/\\,/g, '<span class="tex-thin-space"></span>');
+    html = html.replace(/\\Delta/g, '&Delta;').replace(/\\sum/g, '&sum;');
+    return html;
+  }
+  function renderFormula(formula) {
+    const tex = formula.dataset.tex || formula.textContent.replace(/^\$\$|\$\$$/g, '').trim();
+    formula.dataset.tex = tex;
+    formula.innerHTML = texFallback(tex);
+    if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+      formula.textContent = '$$' + tex + '$$';
+      window.MathJax.typesetPromise([formula]).catch(() => {});
+    }
+  }
+  function loadMathJax() {
+    if (document.querySelector('script[data-beckify-mathjax]')) return;
+    window.MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] }, startup: { typeset: false } };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+    script.async = true;
+    script.dataset.beckifyMathjax = '1';
+    script.onload = () => document.querySelectorAll('.feynman-formula').forEach(renderFormula);
+    script.onerror = () => {};
+    document.head.appendChild(script);
+  }
   function addLesson(section) {
     const lesson = LESSONS[section.id];
     if (!lesson || section.querySelector('.feynman-lesson')) return;
     const card = document.createElement('aside'); card.className = 'feynman-lesson';
     const title = document.createElement('div'); title.className = 'feynman-lesson-title'; title.textContent = lesson[0];
-    const formula = document.createElement('div'); formula.className = 'feynman-formula'; formula.textContent = '$$' + lesson[1] + '$$';
+    const formula = document.createElement('div'); formula.className = 'feynman-formula'; formula.textContent = '$$' + lesson[1] + '$$'; renderFormula(formula);
     const body = document.createElement('p'); body.className = 'feynman-lesson-body'; body.textContent = lesson[2];
     card.append(title, formula, body); (section.querySelector('.section-header, .home-header') || section.firstElementChild)?.after(card);
   }
@@ -25,6 +55,6 @@
     Promise.resolve(context.registerTool(explain, { signal: lifecycle.signal })).catch(() => {});
     window.addEventListener('pagehide', () => lifecycle.abort(), { once: true });
   }
-  window.addEventListener('DOMContentLoaded', () => { initLessons(); registerWebMcp(); });
+  window.addEventListener('DOMContentLoaded', () => { initLessons(); registerWebMcp(); loadMathJax(); });
   if (document.readyState !== 'loading') { initLessons(); registerWebMcp(); }
 })();
