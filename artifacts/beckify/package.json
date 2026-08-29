@@ -7,6 +7,7 @@
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "BASE_PATH=\"${BASE_PATH:-/}\" vite build --config vite.config.ts",
+    "postbuild": "node scripts/generate-sitemap.mjs --dist",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "biome lint .",
