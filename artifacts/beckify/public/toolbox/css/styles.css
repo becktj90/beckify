@@ -167,6 +167,29 @@ header .subtitle {
   border-color: var(--violet-ring);
 }
 
+.header-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-right: auto;
+}
+.header-logo:hover {
+  background: var(--violet-soft);
+  color: var(--violet);
+  border-color: var(--violet-ring);
+}
+
+
 /* ── Layout ── */
 .layout {
   display: flex;

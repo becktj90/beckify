@@ -32,6 +32,7 @@
 <!-- ── HEADER (slim — sidebar toggle only, branding lives on the parent site) ── -->
 <header>
   <div class="header-inner">
+    <a href="/" class="header-logo" title="Back to Beckify">🏠</a>
     <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" type="button" aria-expanded="false" aria-controls="sidebar-nav">[≡ MENU]</button>
   </div>
 </header>
@@ -121,14 +122,6 @@
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
       <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule ocr revit circuit directory print">Panel Schedule OCR</button>
-      <button class="nav-btn" data-target="sec-arcade" data-keywords="new glenn runner Odyssey Blue Moon launch game rocket arcade" title="Odyssey-inspired rocket arcade">🚀 New Glenn Runner</button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-section-title">🎮 Games</div>
-      <button class="nav-btn" data-target="sec-pad-rat" data-keywords="pad rat ops launch operations game simulation">🎮 Pad Rat Ops</button>
-      <button class="nav-btn" data-target="sec-bin-blaster" data-keywords="bin block blaster bubble shooter pad rat puzzle">🧱 Bin Block Blaster</button>
-      <button class="nav-btn" data-target="sec-trying-normal" data-keywords="trying to be normal social awkward comedy game suspicion normality">🫥 Trying To Be Normal</button>
-      <button class="nav-btn" data-target="sec-starforge" data-keywords="starforge frontier idle strategy space game">🌌 Starforge Frontier</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔬 Advanced</div>
@@ -304,17 +297,6 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-haz">Hazardous Area Lookup</a></li>
             <li><a class="home-tool-link" href="#sec-isloop">IS Loop Verifier</a></li>
-          </ul>
-        </div>
-
-        <div class="home-cat-card home-cat-games" style="--cat-color:#818cf8">
-          <div class="home-cat-header"><span class="home-cat-icon">🎮</span><span class="home-cat-name">Games</span></div>
-          <ul class="home-tool-list">
-            <li><a class="home-tool-link" href="#sec-arcade">🚀 New Glenn Runner</a></li>
-            <li><a class="home-tool-link" href="#sec-pad-rat">🎮 Pad Rat Ops</a></li>
-            <li><a class="home-tool-link" href="#sec-bin-blaster">🧱 Bin Block Blaster</a></li>
-            <li><a class="home-tool-link" href="#sec-trying-normal">🫥 Trying To Be Normal</a></li>
-            <li><a class="home-tool-link" href="#sec-starforge">🌌 Starforge Frontier</a></li>
           </ul>
         </div>
 
@@ -631,9 +613,9 @@
               PF = cos(θ) = R / Z
             </div>
             <div class="input-group triple">
-              <div><label>Resistance — R (Ω)</label><input type="number" id="imp_r" placeholder="0 if none" step="any" min="0" value="0"></div>
-              <div><label>Inductive React. — XL (Ω)</label><input type="number" id="imp_xl" placeholder="0 if none" step="any" min="0" value="0"></div>
-              <div><label>Capacitive React. — XC (Ω)</label><input type="number" id="imp_xc" placeholder="0 if none" step="any" min="0" value="0"></div>
+              <div><label>Resistance — R (Ω)</label><input type="number" id="imp_r" placeholder="0 if none" step="any" value="0"></div>
+              <div><label>Inductive React. — XL (Ω)</label><input type="number" id="imp_xl" placeholder="0 if none" step="any" value="0"></div>
+              <div><label>Capacitive React. — XC (Ω)</label><input type="number" id="imp_xc" placeholder="0 if none" step="any" value="0"></div>
             </div>
             <button class="btn" onclick="calcImpedance()">Calculate Z</button>
             <div id="imp_result" class="result"></div>
