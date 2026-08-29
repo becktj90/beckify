@@ -632,7 +632,8 @@
     WZ.conduitType = fields.xw_conduit || 'EMT';
     WZ.ambientC = parseFloat(fields.xw_ambient) || 30;
     WZ.ccc = parseInt(fields.xw_ccc) || 3;
-    WZ.pf = parseFloat(fields.xw_pf) / 100 || 0.85;
+    const pfRaw = parseFloat(fields.xw_pf);
+    WZ.pf = isNaN(pfRaw) ? 0.85 : (pfRaw > 1 ? pfRaw / 100 : pfRaw);
     WZ.priLen = parseFloat(fields.xw_pri_len) || 50;
     WZ.secLen = parseFloat(fields.xw_sec_len) || 75;
     WZ.terminationTemp = parseInt(fields.xw_term) || 75;

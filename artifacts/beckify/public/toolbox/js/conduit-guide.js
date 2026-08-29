@@ -783,7 +783,7 @@ function buildFittingSvg(type) {
     case 'LR': {
       svg += `<rect x="${cx - boxW/2}" y="${cy - boxH/2}" width="${boxW}" height="${boxH}" fill="${fill}" stroke="${stroke}" stroke-width="2" rx="3"/>`;
       svg += `<rect x="${cx - r}" y="${cy - boxH/2 - 28}" width="${r*2}" height="28" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
-      svg += `<rect x="${cx + boxW/2}" y="${cy - r}" width="28" height="${r*2}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+      svg += `<rect x="${cx - boxW/2 - 28}" y="${cy - r}" width="28" height="${r*2}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
       svg += `<text x="${cx}" y="${H - 8}" fill="${textC}" font-size="11" text-anchor="middle" font-family="ui-monospace">LR</text>`;
       break;
     }
@@ -1079,13 +1079,18 @@ window.cgShowTab = function (tabId, groupId) {
 document.addEventListener('DOMContentLoaded', function () {
   if (!document.getElementById('sec-conduit-guide')) return;
 
-  // Inject SVG cross-sections into prepared placeholders
+  // Inject SVG cross-sections into prepared placeholders.
+  // NOTE: buildXsectionSvg generates SVG markup entirely from the static
+  // CONDUIT_DATA constant defined in this file — no user-supplied values are
+  // interpolated into the HTML, so this innerHTML assignment is safe.
   CONDUIT_DATA.forEach(function (c) {
     const el = document.getElementById('cg-xsec-' + c.id);
     if (el) el.innerHTML = buildXsectionSvg(c);
   });
 
-  // Inject fitting body diagrams
+  // Inject fitting body diagrams.
+  // Same note as above: buildFittingSvg only interpolates static numeric
+  // constants — no user input reaches these strings.
   ['LB', 'LL', 'LR', 'C', 'T', 'X'].forEach(function (t) {
     const el = document.getElementById('cg-fitting-' + t);
     if (el) el.innerHTML = buildFittingSvg(t);
