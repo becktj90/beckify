@@ -482,6 +482,131 @@ window.calcMinWire = function (phase) {
 };
 
 /* ============================================================
+   8B. CONDUCTOR LENGTH BY RESISTANCE
+   ============================================================ */
+const CLR_SIZE_CM = {
+  '14': 4110, '12': 6530, '10': 10380, '8': 16510, '6': 26240, '4': 41740,
+  '3': 52620, '2': 66360, '1': 83690, '1/0': 105600, '2/0': 133100,
+  '3/0': 167800, '4/0': 211600, '250': 250000, '300': 300000, '350': 350000,
+  '400': 400000, '500': 500000, '600': 600000, '700': 700000, '750': 750000,
+  '800': 800000, '900': 900000, '1000': 1000000
+};
+const CLR_MATERIALS = {
+  cu_annealed: { label: 'Copper (Annealed)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  cu_hard: { label: 'Copper (Hard-Drawn)', rho20: 10.371, rho75: 12.9, alpha: 0.00393 },
+  aluminum: { label: 'Aluminum', rho20: 17.02, rho75: 21.2, alpha: 0.00403 }
+};
+
+function clrTempToC(value, unit) {
+  return unit === 'F' ? (value - 32) * 5 / 9 : value;
+}
+
+window.clrSizeChange = function () {
+  const sizeEl = document.getElementById('clr_size');
+  const wrap = document.getElementById('clr_custom_wrap');
+  if (!sizeEl || !wrap) return;
+  const showCustom = sizeEl.value === 'custom';
+  wrap.style.display = showCustom ? '' : 'none';
+};
+
+window.updateConductorLengthDiagram = function () {
+  const methodEl = document.getElementById('clr_method');
+  if (!methodEl) return;
+  const method = methodEl.value;
+  const jumper = document.getElementById('clr-diag-jumper');
+  const third = document.getElementById('clr-diag-third');
+  const pathLabel = document.getElementById('clr-diag-path-label');
+  const lengthLabel = document.getElementById('clr-diag-length-label');
+  const farLabel = document.getElementById('clr-diag-far-label');
+  const note = document.getElementById('clr-method-note');
+  if (!jumper || !third || !pathLabel || !lengthLabel || !farLabel || !note) return;
+
+  if (method === 'single') {
+    jumper.style.display = 'none';
+    third.style.display = 'none';
+    pathLabel.textContent = 'One conductor measured end-to-end';
+    lengthLabel.textContent = 'Length model: one-way = total path length';
+    farLabel.textContent = 'No far-end short required';
+    note.textContent = 'Single conductor mode selected: solved length is already one-way distance.';
+    return;
+  }
+
+  jumper.style.display = '';
+  if (method === 'loop3') {
+    third.style.display = '';
+    pathLabel.textContent = 'Symmetrical loop model with far-end short';
+    lengthLabel.textContent = 'Length model: one-way = total path length ÷ 2';
+    farLabel.textContent = 'Far-end 3Ø shorting setup';
+    note.textContent = '3-phase loop mode selected: solved loop path is divided by 2 for one-way distance.';
+  } else {
+    third.style.display = 'none';
+    pathLabel.textContent = 'Two-conductor loop with far-end short';
+    lengthLabel.textContent = 'Length model: one-way = total path length ÷ 2';
+    farLabel.textContent = 'Far-end jumper short';
+    note.textContent = '2-conductor loop mode selected: solved loop path is divided by 2 for one-way distance.';
+  }
+};
+
+window.calcConductorLengthByResistance = function () {
+  const resistanceInput = val('clr_resistance');
+  const resistanceUnitEl = document.getElementById('clr_res_unit');
+  const sizeEl = document.getElementById('clr_size');
+  const customCmil = val('clr_custom_cmil');
+  const materialEl = document.getElementById('clr_material');
+  const methodEl = document.getElementById('clr_method');
+  const tempInput = val('clr_temp');
+  const tempUnitEl = document.getElementById('clr_temp_unit');
+  const refTempEl = document.getElementById('clr_rho_ref_temp');
+
+  if (!isPos(resistanceInput)) return showError('clr_result', 'Enter a measured resistance greater than 0.');
+  if (!sizeEl || !materialEl || !methodEl || !tempUnitEl || !resistanceUnitEl || !refTempEl) {
+    return showError('clr_result', 'Calculator controls are unavailable.');
+  }
+  if (!isFinite(tempInput)) return showError('clr_result', 'Enter a valid measured conductor temperature.');
+
+  const material = CLR_MATERIALS[materialEl.value];
+  if (!material) return showError('clr_result', 'Select a valid conductor material.');
+
+  const cmil = sizeEl.value === 'custom' ? customCmil : CLR_SIZE_CM[sizeEl.value];
+  if (!isPos(cmil)) return showError('clr_result', 'Enter a valid circular mil area.');
+
+  const resistanceOhms = resistanceUnitEl.value === 'mohm' ? resistanceInput / 1000 : resistanceInput;
+  const measuredTempC = clrTempToC(tempInput, tempUnitEl.value);
+  const refTempC = parseFloat(refTempEl.value);
+  const rho = refTempC === 75 ? material.rho75 : material.rho20;
+
+  const tempFactor = 1 + material.alpha * (measuredTempC - refTempC);
+  if (!isFinite(tempFactor) || tempFactor <= 0) {
+    return showError('clr_result', 'Temperature compensation factor is invalid. Check temperatures and material.');
+  }
+  const compensatedResistance = resistanceOhms / tempFactor;
+  const totalLengthFt = compensatedResistance * cmil / rho;
+  if (!isFinite(totalLengthFt) || totalLengthFt <= 0) {
+    return showError('clr_result', 'Inputs produce an invalid length. Verify resistance, area, and settings.');
+  }
+
+  const oneWayLengthFt = methodEl.value === 'single' ? totalLengthFt : totalLengthFt / 2;
+  const totalLengthM = totalLengthFt * 0.3048;
+  const oneWayLengthM = oneWayLengthFt * 0.3048;
+  const methodLabel = methodEl.options[methodEl.selectedIndex]
+    ? methodEl.options[methodEl.selectedIndex].text
+    : methodEl.value;
+
+  showResult('clr_result', [
+    ['Measurement Method', methodLabel],
+    ['Conductor Material', material.label],
+    ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
+    ['Measured Resistance', fmt(resistanceOhms, 6) + ' Ω'],
+    ['Measured Temperature', fmt(measuredTempC, 2) + ' °C'],
+    ['Reference Resistivity (ρ)', fmt(rho, 3) + ' Ω·cmil/ft @ ' + refTempC + '°C'],
+    ['Temperature Coefficient (α)', fmt(material.alpha, 5) + ' /°C'],
+    ['Compensated Resistance @ Ref Temp', fmt(compensatedResistance, 6) + ' Ω'],
+    ['One-Way Distance', fmt(oneWayLengthFt, 2) + ' ft (' + fmt(oneWayLengthM, 2) + ' m)'],
+    ['Total Conductor Wire Length', fmt(totalLengthFt, 2) + ' ft (' + fmt(totalLengthM, 2) + ' m)']
+  ]);
+};
+
+/* ============================================================
    9. SERIES / PARALLEL CIRCUITS
    ============================================================ */
 function getDynValues(prefix) {
@@ -2363,5 +2488,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // show default DC power form
   dcPowerModeChange();
   cmModeChange();
+  clrSizeChange();
+  updateConductorLengthDiagram();
 });
-

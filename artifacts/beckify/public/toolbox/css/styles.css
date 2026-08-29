@@ -607,6 +607,55 @@ select option { background: #0d0e1f; color: var(--fg); }
 }
 .note::before { content: 'ℹ '; color: var(--blue); }
 
+/* ── Conductor-length diagram ── */
+.clr-diagram-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.28);
+  padding: 10px;
+}
+.clr-diagram-wrap svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.clr-diag-meter {
+  fill: rgba(79,139,255,0.08);
+  stroke: rgba(79,139,255,0.35);
+}
+.clr-diag-wire {
+  stroke: #b4c3ff;
+  stroke-width: 3;
+}
+.clr-diag-jumper {
+  stroke: #fbbf24;
+  stroke-width: 3;
+}
+.clr-diag-third {
+  stroke: rgba(139,123,255,0.75);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 6;
+}
+.clr-diag-node {
+  fill: #dbe6ff;
+}
+.clr-diag-text {
+  fill: var(--fg);
+  font-family: var(--font-main);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+.clr-diag-label {
+  fill: var(--fg);
+  font-family: var(--font-main);
+  font-size: 13px;
+}
+.clr-diag-subtle {
+  fill: var(--fg-muted);
+  font-family: var(--font-main);
+  font-size: 11px;
+}
+
 /* ── Expandable Info Panels ── */
 .section-info {
   margin-top: 10px;
