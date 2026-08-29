@@ -980,6 +980,7 @@ kbd {
   height: 100vh;
   padding: 12px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 #arcade-fs-wrapper:fullscreen canvas,
 #arcade-fs-wrapper:-webkit-full-screen canvas,
@@ -987,6 +988,7 @@ kbd {
 #binblaster-fs-wrapper:-webkit-full-screen canvas {
   max-width: none !important;
   max-height: none !important;
+  flex: 0 1 auto;
 }
 
 /* ── Trying To Be Normal game ── */

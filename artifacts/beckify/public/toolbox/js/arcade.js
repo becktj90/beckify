@@ -136,10 +136,10 @@
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
-  const NO_THRUST_FAIL_SEC = 1.0;
-  const MAX_NO_THRUST_TIME_SEC = 2;
-  const NO_THRUST_DROP_RATE = 28;
-  const MAX_NO_THRUST_DROP = 90;
+  const NO_THRUST_FAIL_SEC = 2.2;
+  const MAX_NO_THRUST_TIME_SEC = 3.5;
+  const NO_THRUST_DROP_RATE = 18;
+  const MAX_NO_THRUST_DROP = 62;
   const NO_THRUST_TUMBLE_FREQ = 17;
   const NO_THRUST_TUMBLE_GAIN = 0.09;
   const MAX_NO_THRUST_TUMBLE = 0.34;
@@ -152,7 +152,7 @@
   const LATERAL_ACCEL_ATMO = 0.32;
   const LATERAL_DAMPING_SPACE = 0.96;
   const LATERAL_DAMPING_ATMO = 0.965;
-  const MAX_LATERAL_VELOCITY = 5.4;
+  const MAX_LATERAL_VELOCITY = 6.8;
   const GRAVITY_SPACE = 0.045;
   const GRAVITY_ATMO = 0.11;
   const THRUSTLESS_DROP_RATE = 0.05;
@@ -1331,7 +1331,7 @@
     }
     // Atmospheric wind gusts (sinusoidal multi-frequency — harder to predict).
     if (!lowGravity && state.session.phase !== 'STAGE_SEP') {
-      const windBase = state.session.phase === 'MAX_Q' ? WIND_GUST_FORCE_MAXQ : WIND_GUST_FORCE_ATMO;
+      const windBase = state.session.phase === 'MAX_Q' ? WIND_GUST_FORCE_MAXQ * 0.7 : WIND_GUST_FORCE_ATMO * 0.7;
       const t = state.session.totalElapsed;
       state.rocket.vx += (Math.sin(t * WIND_FREQ_PRIMARY) * windBase + Math.sin(t * WIND_FREQ_SECONDARY + WIND_PHASE_OFFSET) * windBase * WIND_SECONDARY_SCALE) * step;
     }
@@ -3341,13 +3341,17 @@
     map.forEach(([id, down, up]) => {
       const el = document.getElementById(id);
       if (!el) return;
-      const onDown = (e) => { e.preventDefault(); down(); };
+      const onDown = (e) => {
+        e.preventDefault();
+        if (el.setPointerCapture && e.pointerId !== undefined) el.setPointerCapture(e.pointerId);
+        down();
+      };
       const onUp = (e) => { e.preventDefault(); up(); };
-      el.addEventListener('touchstart', onDown, { passive: false });
-      el.addEventListener('touchend', onUp, { passive: false });
-      el.addEventListener('mousedown', onDown);
-      el.addEventListener('mouseup', onUp);
-      el.addEventListener('mouseleave', onUp);
+      // Pointer events prevent duplicate mouse + touch input on hybrid devices.
+      el.addEventListener('pointerdown', onDown, { passive: false });
+      el.addEventListener('pointerup', onUp, { passive: false });
+      el.addEventListener('pointercancel', onUp, { passive: false });
+      el.addEventListener('pointerleave', onUp, { passive: false });
     });
   }
 
@@ -3490,11 +3494,22 @@
     const fs = document.fullscreenElement || document.webkitFullscreenElement;
     if (!fs) {
       const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
-      if (req) req.call(wrapper);
+      if (!req) {
+        showOverlayMessage('Fullscreen is not supported in this browser.', 2.4);
+        return;
+      }
+      const result = req.call(wrapper, { navigationUI: 'hide' });
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => {
+          // Older Safari rejects the options object; retry with no options.
+          try { req.call(wrapper); } catch (_) { showOverlayMessage('Tap FS again to enter fullscreen.', 2.4); }
+        });
+      }
     } else {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
       if (exit) exit.call(document);
     }
+    window.setTimeout(resizeCanvas, 80);
   };
   window.arcadeToggleMute = toggleMute;
   window.arcadeTogglePause = togglePause;
