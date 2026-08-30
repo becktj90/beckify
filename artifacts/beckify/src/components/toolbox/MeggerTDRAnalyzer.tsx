@@ -36,6 +36,7 @@ interface MeggerTDRAnalyzerProps {
 const DEFAULT_VF = 0.66;
 const VF_MIN = 0.2;
 const VF_MAX = 0.99;
+const TDR_API_BASE_URL = (import.meta.env.VITE_TDR_API_BASE_URL || "").replace(/\/$/, "");
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -68,7 +69,7 @@ function getPulseClass(polarity: PulsePolarity) {
 }
 
 export function MeggerTDRAnalyzer({
-  endpoint = `${import.meta.env.VITE_TDR_API_BASE_URL || ""}/api/analyze-tdr`,
+  endpoint = `${TDR_API_BASE_URL}/api/analyze-tdr`,
   className = "",
 }: MeggerTDRAnalyzerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);

@@ -767,9 +767,9 @@
   /* 1. DIFFERENTIAL EQUATIONS */
   window.calcDESecondOrder = function () {
     const a = numVal('de_a'), b = numVal('de_b'), c = numVal('de_c');
-    if (![a, b, c].every(finite)) return showError('de_ode_result', 'Enter a, b, and c.');
-    if (!nz(a)) return showError('de_ode_result', 'a must be non-zero for a second-order ODE.');
-    const out = prepareResult('de_ode_result');
+    if (![a, b, c].every(finite)) return showError('de_result', 'Enter a, b, and c.');
+    if (!nz(a)) return showError('de_result', 'a must be non-zero for a second-order ODE.');
+    const out = prepareResult('de_result');
     const D = b * b - 4 * a * c;
     const wn = a * c > 0 ? Math.sqrt(c / a) : NaN;
     const zeta = a * c > 0 ? b / (2 * Math.sqrt(a * c)) : NaN;
