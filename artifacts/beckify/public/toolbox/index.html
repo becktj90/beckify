@@ -205,6 +205,7 @@
       <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
       <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
       <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
+      <button class="nav-btn" data-target="sec-load-factors" data-keywords="demand factor diversity factor coincidence factor load factor capacity factor connected load maximum demand kva">Load Factors &amp; Capacity</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">03 · System planning</div>
@@ -222,7 +223,7 @@
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
-      <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule ocr revit circuit directory print">Panel Schedule OCR</button>
+      <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule photo OCR load analyzer FLA demand diversity capacity circuit directory">Panel Schedule Load Analyzer</button>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
     </div>
@@ -299,6 +300,7 @@
             <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
+            <li><a class="home-tool-link" href="#sec-load-factors">Load Factors &amp; Capacity</a></li>
           </ul>
         </div>
 
@@ -306,6 +308,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">🧪</span><span class="home-cat-name">Field Test &amp; Fault Locating</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Analyzer</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
           </ul>
         </div>
 
@@ -384,7 +387,7 @@
             <li><a class="home-tool-link" href="#sec-convert">Unit Conversions</a></li>
             <li><a class="home-tool-link" href="#sec-cm">Circular Mils</a></li>
             <li><a class="home-tool-link" href="#sec-photometrics">Photometrics</a></li>
-            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule OCR</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
           </ul>
         </div>
 
@@ -5890,13 +5893,13 @@
          ════════════════════════════════════════ -->
     <section id="sec-panel-schedule" class="section">
       <div class="section-header">
-        <h2>🗂️ Revit Panel Schedule OCR</h2>
-        <p>Open the dedicated OCR workspace to extract panel schedules from images and print a clean half-sheet format.</p>
+        <h2>🗂️ Panel Schedule Load Analyzer</h2>
+        <p>Upload a panel schedule photo, review OCR results, classify loads, and calculate estimated demand, current, diversity, and capacity.</p>
         <details class="section-info">
-          <summary>&#8505; More Info &mdash; Panel Schedule OCR</summary>
+          <summary>&#8505; More Info &mdash; Panel Schedule Load Analyzer</summary>
           <div class="section-info-body">
-            Reads a panel-schedule image with <strong>Tesseract.js</strong> in your browser &mdash; nothing is uploaded to a server &mdash; then parses circuit numbers, descriptions, breaker sizes and loads into an editable table you can print as a half sheet.<br><br>
-            <strong>OCR is a starting point, not a source of truth.</strong> Always check the parsed breaker sizes and phase assignments against the original drawing before using them for a load calculation. Panel schedule layout and required content are governed by <strong>NEC 408.4</strong> (circuit directory marking) and the load calculation itself by <strong>NEC Article 220</strong>.
+            Reads a panel-schedule image with <strong>Tesseract.js</strong> in your browser &mdash; nothing is uploaded to a server &mdash; then parses circuit numbers, descriptions, and breaker sizes into an editable load table. It suggests a load type from the description; you control every amperage and demand-factor assumption before the summary is used.<br><br>
+            <strong>OCR is a starting point, not a source of truth.</strong> Breaker trip is not motor FLA or measured demand, so replace it with the best available scheduled or measured current before relying on results. Panel schedule layout and required content are governed by <strong>NEC 408.4</strong> (circuit directory marking) and the load calculation itself by <strong>NEC Article 220</strong>.
           </div>
         </details>
       </div>
@@ -5904,9 +5907,9 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Panel Schedule Tool</div>
           <div class="card-body">
-            <div class="note">This tool runs entirely in your browser using Tesseract.js for OCR. Upload a Revit panel schedule image, review parsed circuits, then print.</div>
+            <div class="note">This browser-only workspace OCRs a panel image, suggests load categories from descriptions, then lets you correct circuits and calculate estimated kVA, current, diversity, and available capacity.</div>
             <p style="margin-top:10px">
-              <a class="btn btn-accent" href="panel-schedule.html">Open Panel Schedule OCR</a>
+              <a class="btn btn-accent" href="panel-schedule.html">Open Panel Schedule Load Analyzer</a>
             </p>
           </div>
         </div>
@@ -6612,6 +6615,56 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         LOAD FACTORS & CAPACITY
+         ════════════════════════════════════════ -->
+    <section id="sec-load-factors" class="section">
+      <div class="section-header">
+        <h2>📊 Load Factors &amp; Capacity</h2>
+        <p>Translate connected load, measured peak demand, and available capacity into the factors used to describe how a system is actually used.</p>
+        <details class="section-info">
+          <summary>ℹ Definitions and what to enter</summary>
+          <div class="section-info-body">
+            <ul>
+              <li><strong>Demand factor</strong> = maximum demand ÷ connected load. It describes how much of the installed load is expected to run together.</li>
+              <li><strong>Diversity factor</strong> = sum of individual maximum demands ÷ maximum system demand. It is normally 1.00 or greater because loads peak at different times.</li>
+              <li><strong>Coincidence factor</strong> = maximum system demand ÷ sum of individual maximum demands (the inverse of diversity).</li>
+              <li><strong>Load factor</strong> = average demand ÷ maximum demand over the same interval. Use utility, BMS, or logger data for the interval you are studying.</li>
+              <li><strong>Capacity utilization</strong> = maximum demand ÷ available capacity. It is a planning check, not an equipment rating or code calculation.</li>
+            </ul>
+            If a value is unknown, leave it blank. The tool will show what can be calculated and point to the record that normally supplies it. It never invents an NEC demand factor; verify the applicable code method and equipment data before design or protection decisions.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Known load data</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div><label for="lf_connected">Connected load (kVA)</label><input id="lf_connected" type="number" min="0" step="any" placeholder="e.g. 180"></div>
+              <div><label for="lf_peak">Maximum system demand (kVA)</label><input id="lf_peak" type="number" min="0" step="any" placeholder="e.g. 126"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="lf_individual">Sum of individual max demands (kVA)</label><input id="lf_individual" type="number" min="0" step="any" placeholder="e.g. 150"></div>
+              <div><label for="lf_average">Average demand (kVA)</label><input id="lf_average" type="number" min="0" step="any" placeholder="same interval as peak"></div>
+            </div>
+            <div class="input-group single"><div><label for="lf_capacity">Available capacity (kVA)</label><input id="lf_capacity" type="number" min="0" step="any" placeholder="e.g. 225"></div></div>
+            <button class="btn btn-accent" type="button" onclick="calcLoadFactors()">Calculate factors</button>
+            <div id="lf_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">When information is missing</div>
+          <div class="card-body">
+            <div class="formula-box">Demand factor = Peak ÷ Connected<br>Diversity factor = Σ individual peaks ÷ System peak<br>Load factor = Average ÷ Peak<br>Capacity margin = Capacity − Peak</div>
+            <div class="note"><strong>No connected load?</strong> Start with nameplates, schedules, and panel directories. Do not substitute breaker ratings for actual load without marking it as an estimate.</div>
+            <div class="note" style="margin-top:10px"><strong>No peak demand?</strong> Export the highest matching-interval kW/kVA from a utility meter, BMS, power logger, or demand controller. Use the same interval for average demand.</div>
+            <div class="note" style="margin-top:10px"><strong>No diversity data?</strong> Group loads by operating schedule, collect individual peaks, and use 1.00 until documented diversity exists. A number above 1.00 needs a defensible simultaneous-load basis.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
          INTRINSICALLY SAFE LOOP VERIFIER
          ════════════════════════════════════════ -->
     <section id="sec-isloop" class="section">
@@ -7278,6 +7331,7 @@
 <script src="js/app.js"></script>
 <script src="js/wire-tools.js"></script>
 <script src="js/power-tools.js"></script>
+<script src="js/factor-tools.js"></script>
 <script src="js/xfmr-engine.js"></script>
 <script src="js/timer555.js"></script>
 <script src="js/report-export.js"></script>

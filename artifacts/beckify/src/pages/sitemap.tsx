@@ -66,6 +66,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       "Voltage Drop", "Conductor Length by Resistance", "Motor Calculations", "Transformer", "Transformer Engine",
       "Transformer Sizing", "Conduit Fill", "Conduit Fill (Mixed)",
       "Wire Size & Ampacity", "Short Circuit",
+      "Load Factors & Capacity",
     ],
   },
   {
@@ -94,7 +95,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   },
   {
     label: "Tools", hue: HUES.orange, anchor: "sec-convert",
-    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule OCR"],
+    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule Load Analyzer"],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",

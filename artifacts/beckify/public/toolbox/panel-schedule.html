@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Revit Panel Schedule OCR</title>
+  <title>Panel Schedule Load Analyzer</title>
   <link rel="stylesheet" href="css/panel-schedule.css">
 </head>
 <body>
   <div class="app-shell">
     <header class="hero screen-only">
       <div class="title-bar">
-        <span class="title-bar-text">Revit Panel Schedule OCR.exe</span>
+        <span class="title-bar-text">Panel Schedule Load Analyzer.exe</span>
         <div class="title-bar-actions" aria-hidden="true">
           <span class="win-dot">_</span>
           <span class="win-dot">□</span>
@@ -19,9 +19,9 @@
       </div>
       <div class="hero-body">
         <div>
-          <p class="hero-kicker">Beckify Electrical Engineering Toolbox / 1998 Edition</p>
-          <h1>Revit Panel Schedule OCR</h1>
-          <p class="hero-copy">Drop in a Revit panel schedule image, extract circuits with Tesseract.js, correct OCR misreads, and print a clean half-sheet schedule sized for cardstock.</p>
+          <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
+          <h1>Panel Schedule Load Analyzer</h1>
+          <p class="hero-copy">Drop in a panel schedule photo, extract circuits with Tesseract.js, correct the OCR, then review estimated load, demand, diversity, and capacity before printing.</p>
         </div>
         <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
       </div>
@@ -42,7 +42,7 @@
 
           <label id="dropZone" class="drop-zone" for="imageInput">
             <span class="drop-zone-icon">📂</span>
-            <strong>Drag &amp; drop a Revit panel schedule here</strong>
+            <strong>Drag &amp; drop a panel schedule here</strong>
             <span>PNG, JPG, WEBP, or scanned photos work best when the schedule is square to the camera and high contrast.</span>
           </label>
 
@@ -87,7 +87,23 @@
               <span>Date</span>
               <input id="panelDate" type="text" placeholder="2026-05-07">
             </label>
+            <label>
+              <span>System phase</span>
+              <select id="panelPhase">
+                <option value="3" selected>3-phase, 4-wire</option>
+                <option value="1">Single-phase</option>
+              </select>
+            </label>
+            <label>
+              <span>Panel capacity (A)</span>
+              <input id="panelCapacityAmps" type="number" min="0" step="any" placeholder="read from main / feed">
+            </label>
+            <label>
+              <span>System diversity factor</span>
+              <input id="panelDiversity" type="number" min="1" step="0.01" value="1" aria-describedby="diversityHelp">
+            </label>
           </div>
+          <p id="diversityHelp" class="field-help">Use 1.00 when no documented diversity study exists. Values above 1.00 reduce the summed circuit demand to an estimated coincident panel demand.</p>
 
           <div class="toolbar toolbar-wrap">
             <button id="parseTextButton" class="btn" type="button">Parse Text</button>
@@ -108,12 +124,26 @@
                   <th>Load Description</th>
                   <th>Trip/Amps</th>
                   <th>Poles</th>
+                  <th>Load Type</th>
+                  <th>Est. Load A</th>
+                  <th>Demand %</th>
                   <th class="col-actions">Action</th>
                 </tr>
               </thead>
               <tbody id="editorTableBody"></tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <section class="window screen-only" aria-labelledby="analysis-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="analysis-title">Electrical Load Summary</span>
+        </div>
+        <div class="window-body stack-lg">
+          <div class="analysis-grid" id="analysisGrid" aria-live="polite"></div>
+          <div id="analysisGuidance" class="analysis-guidance"></div>
+          <p class="field-help">“Est. Load A” begins as the OCR breaker-trip value only to make review faster. Replace it with measured/scheduled current or documented FLA. This is a planning estimate—not an NEC Article 220 load calculation, an equipment rating, or a protection setting.</p>
         </div>
       </section>
 

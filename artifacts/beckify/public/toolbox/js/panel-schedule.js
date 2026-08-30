@@ -1,5 +1,6 @@
 const MAX_CIRCUIT_SLOTS = 42;
 const PRINT_ROW_PAIRS = MAX_CIRCUIT_SLOTS / 2;
+const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];
 
 const state = {
   file: null,
@@ -34,6 +35,9 @@ function cacheElements() {
   elements.panelVoltage = document.getElementById('panelVoltage');
   elements.panelFeed = document.getElementById('panelFeed');
   elements.panelDate = document.getElementById('panelDate');
+  elements.panelPhase = document.getElementById('panelPhase');
+  elements.panelCapacityAmps = document.getElementById('panelCapacityAmps');
+  elements.panelDiversity = document.getElementById('panelDiversity');
   elements.parseTextButton = document.getElementById('parseTextButton');
   elements.addRowButton = document.getElementById('addRowButton');
   elements.fillSlotsButton = document.getElementById('fillSlotsButton');
@@ -44,6 +48,8 @@ function cacheElements() {
   elements.sheetFeed = document.getElementById('sheetFeed');
   elements.sheetDate = document.getElementById('sheetDate');
   elements.printScheduleBody = document.getElementById('printScheduleBody');
+  elements.analysisGrid = document.getElementById('analysisGrid');
+  elements.analysisGuidance = document.getElementById('analysisGuidance');
 }
 
 function bindEvents() {
@@ -85,8 +91,9 @@ function bindEvents() {
     setStatus('Seeded 42 editable circuit rows for manual entry.');
   });
 
-  [elements.panelName, elements.panelVoltage, elements.panelFeed, elements.panelDate].forEach(input => {
-    input.addEventListener('input', renderPrintSheet);
+  [elements.panelName, elements.panelVoltage, elements.panelFeed, elements.panelDate, elements.panelPhase, elements.panelCapacityAmps, elements.panelDiversity].forEach(input => {
+    input.addEventListener('input', renderAll);
+    input.addEventListener('change', renderAll);
   });
 }
 
@@ -344,9 +351,12 @@ function normalizeRows(rows) {
       circuit: normalizeCircuit(row.circuit),
       description: String(row.description || '').trim(),
       trip: normalizeTrip(row.trip),
-      poles: String(row.poles || '').replace(/P/i, '').trim()
+      poles: String(row.poles || '').replace(/P/i, '').trim(),
+      loadType: LOAD_TYPES.includes(row.loadType) ? row.loadType : inferLoadType(row.description),
+      loadAmps: normalizeLoadAmps(row.loadAmps, row.trip),
+      demandFactor: normalizeDemandFactor(row.demandFactor)
     }))
-    .filter(row => row.circuit || row.description || row.trip || row.poles)
+    .filter(row => row.circuit || row.description || row.trip || row.poles || row.loadAmps)
     .sort(compareCircuitRows);
 }
 
@@ -375,6 +385,39 @@ function normalizeTrip(value) {
     return '';
   }
   return /A$/.test(cleaned) ? cleaned : `${cleaned}A`;
+}
+
+function tripAmps(value) {
+  const match = String(value || '').match(/[\d.]+/);
+  return match ? Number(match[0]) : 0;
+}
+
+function normalizeLoadAmps(value, trip) {
+  const text = String(value ?? '').trim();
+  const number = Number(text);
+  if (text && Number.isFinite(number) && number >= 0) return String(number);
+  const fallback = tripAmps(trip);
+  return fallback > 0 ? String(fallback) : '';
+}
+
+function normalizeDemandFactor(value) {
+  const text = String(value ?? '').trim();
+  const number = Number(text);
+  return text && Number.isFinite(number) && number >= 0 ? String(number) : '1';
+}
+
+function inferLoadType(description) {
+  const text = String(description || '').toLowerCase();
+  if (/spare|space|future/.test(text)) return 'Spare';
+  if (/light|fixture|luminaire|led/.test(text)) return 'Lighting';
+  if (/recept|outlet|plug/.test(text)) return 'Receptacle';
+  if (/motor|pump|fan|blower|compressor|elevator/.test(text)) return 'Motor';
+  if (/hvac|air.?handler|condens|furnace|rtu|heat/.test(text)) return 'HVAC';
+  if (/kitchen|range|oven|dishwasher|disposal/.test(text)) return 'Kitchen';
+  if (/server|data|network|ups|computer/.test(text)) return 'IT / Electronics';
+  if (/charger|evse|electric vehicle/.test(text)) return 'EV Charging';
+  if (/machine|welder|process|equipment/.test(text)) return 'Process';
+  return 'General';
 }
 
 function firstCircuitNumber(value) {
@@ -422,12 +465,17 @@ function applyMetadataIfBlank(meta) {
 function renderAll() {
   renderEditorTable();
   renderPrintSheet();
+  renderLoadAnalysis();
 }
 
 function renderEditorTable() {
   const rows = state.rows.length ? state.rows : [createEmptyRow()];
 
-  elements.editorTableBody.innerHTML = rows.map((row, index) => `
+  elements.editorTableBody.innerHTML = rows.map((row, index) => {
+    const type = LOAD_TYPES.includes(row.loadType) ? row.loadType : inferLoadType(row.description);
+    const loadAmps = normalizeLoadAmps(row.loadAmps, row.trip);
+    const demandFactor = normalizeDemandFactor(row.demandFactor);
+    return `
       <tr>
       <td><input type="text" data-field="circuit" data-index="${index}" value="${escapeHtml(row.circuit)}" placeholder="1"></td>
       <td><input type="text" data-field="description" data-index="${index}" value="${escapeHtml(row.description)}" placeholder="Lighting"></td>
@@ -440,9 +488,13 @@ function renderEditorTable() {
           <option value="3" ${row.poles === '3' ? 'selected' : ''}>3</option>
         </select>
       </td>
+      <td><select data-field="loadType" data-index="${index}">${LOAD_TYPES.map(option => `<option value="${escapeHtml(option)}" ${type === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
+      <td><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA"></td>
+      <td><input type="number" min="0" step="0.01" data-field="demandFactor" data-index="${index}" value="${escapeHtml(demandFactor)}" aria-label="Demand factor for circuit ${escapeHtml(row.circuit || String(index + 1))}"></td>
       <td><button class="btn btn-row-delete" type="button" data-delete-index="${index}">Delete</button></td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   elements.editorTableBody.querySelectorAll('[data-field]').forEach(input => {
     input.addEventListener('input', handleRowEdit);
@@ -469,11 +521,96 @@ function handleRowEdit(event) {
     state.rows[index][field] = normalizeCircuit(event.target.value);
   } else if (field === 'trip') {
     state.rows[index][field] = normalizeTrip(event.target.value);
+    if (!state.rows[index].loadAmps) state.rows[index].loadAmps = normalizeLoadAmps('', event.target.value);
+  } else if (field === 'loadAmps') {
+    state.rows[index][field] = normalizeLoadAmps(event.target.value, '');
+  } else if (field === 'demandFactor') {
+    state.rows[index][field] = normalizeDemandFactor(event.target.value);
+  } else if (field === 'loadType') {
+    state.rows[index][field] = LOAD_TYPES.includes(event.target.value) ? event.target.value : 'General';
   } else {
     state.rows[index][field] = String(event.target.value || '').trim();
   }
 
   renderPrintSheet();
+  renderLoadAnalysis();
+}
+
+function panelVoltageInfo(value) {
+  const text = String(value || '');
+  const pair = text.match(/(\d+(?:\.\d+)?)\s*(?:Y)?\s*\/\s*(\d+(?:\.\d+)?)/i);
+  if (pair) return { lineToLine: Number(pair[1]), lineToNeutral: Number(pair[2]) };
+  const single = text.match(/\d+(?:\.\d+)?/);
+  const lineToLine = single ? Number(single[0]) : NaN;
+  return { lineToLine, lineToNeutral: lineToLine };
+}
+
+function rowLoadVa(row, voltage, phase) {
+  const amps = Number(row.loadAmps);
+  const poles = Number(row.poles) || 1;
+  if (!Number.isFinite(amps) || amps <= 0 || !Number.isFinite(voltage.lineToLine) || voltage.lineToLine <= 0) return 0;
+  if (phase === 3 && poles >= 3) return Math.sqrt(3) * voltage.lineToLine * amps;
+  if (phase === 3 && poles === 1) return voltage.lineToNeutral * amps;
+  return voltage.lineToLine * amps;
+}
+
+function panelNumber(value, fallback = NaN) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function summaryMetric(label, value, detail = '') {
+  return `<article class="analysis-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</article>`;
+}
+
+function renderLoadAnalysis() {
+  if (!elements.analysisGrid || !elements.analysisGuidance) return;
+  const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
+  const voltage = panelVoltageInfo(elements.panelVoltage.value);
+  const phase = Number(elements.panelPhase.value) || 3;
+  const diversity = Math.max(1, panelNumber(elements.panelDiversity.value, 1));
+  const knownVoltage = Number.isFinite(voltage.lineToLine) && voltage.lineToLine > 0;
+  const connectedVa = knownVoltage ? rows.reduce((total, row) => total + rowLoadVa(row, voltage, phase), 0) : 0;
+  const demandVa = knownVoltage ? rows.reduce((total, row) => total + rowLoadVa(row, voltage, phase) * panelNumber(row.demandFactor, 1), 0) : 0;
+  const coincidentVa = demandVa / diversity;
+  const equivalentAmps = knownVoltage && coincidentVa > 0
+    ? coincidentVa / (phase === 3 ? Math.sqrt(3) * voltage.lineToLine : voltage.lineToLine)
+    : 0;
+  const capacityAmps = panelNumber(elements.panelCapacityAmps.value, 0);
+  const capacityVa = knownVoltage && capacityAmps > 0
+    ? capacityAmps * voltage.lineToLine * (phase === 3 ? Math.sqrt(3) : 1)
+    : 0;
+  const remainingVa = capacityVa ? capacityVa - coincidentVa : 0;
+  const typeCounts = rows.reduce((counts, row) => {
+    counts[row.loadType] = (counts[row.loadType] || 0) + 1;
+    return counts;
+  }, {});
+
+  elements.analysisGrid.innerHTML = [
+    summaryMetric('Scheduled connected load', knownVoltage ? `${formatKva(connectedVa)} kVA` : 'Needs voltage', `${rows.length} reviewed circuit${rows.length === 1 ? '' : 's'}`),
+    summaryMetric('After circuit demand factors', knownVoltage ? `${formatKva(demandVa)} kVA` : 'Needs voltage', `before diversity`),
+    summaryMetric('Estimated coincident demand', knownVoltage ? `${formatKva(coincidentVa)} kVA` : 'Needs voltage', `diversity ${diversity.toFixed(2)}`),
+    summaryMetric('Estimated panel FLA', knownVoltage ? `${formatNumber(equivalentAmps)} A` : 'Needs voltage', phase === 3 ? `${formatNumber(voltage.lineToLine)} V 3Ø equivalent` : `${formatNumber(voltage.lineToLine)} V 1Ø equivalent`),
+    summaryMetric('Available capacity', capacityVa ? `${formatKva(capacityVa)} kVA` : 'Not entered', capacityAmps ? `${formatNumber(capacityAmps)} A` : 'read the panel main/feed'),
+    summaryMetric('Capacity remaining', capacityVa ? `${formatKva(remainingVa)} kVA` : 'Not calculated', capacityVa && remainingVa < 0 ? 'estimated demand exceeds stated capacity' : 'planning check'),
+  ].join('');
+
+  const notes = [];
+  if (!knownVoltage) notes.push('Enter the panel voltage (for example, 208Y/120V or 480Y/277V) to convert reviewed circuit amps into kVA.');
+  if (!rows.length) notes.push('No loaded circuits are available yet. Upload and read a schedule, or add/edit rows manually.');
+  if (rows.some(row => Number(row.loadAmps) === tripAmps(row.trip) && tripAmps(row.trip) > 0)) notes.push('Some estimated-load amps still match breaker trip values. Confirm motor FLA, nameplate current, or measured load before treating this as a design value.');
+  if (diversity === 1) notes.push('System diversity is 1.00, a conservative no-diversity assumption. Enter a documented diversity value only when the individual and coincident peaks use the same interval.');
+  if (!capacityAmps) notes.push('Enter the panel capacity from the main/feed to see remaining capacity; a branch breaker sum is not panel capacity.');
+  if (Object.keys(typeCounts).length) notes.push(`Detected / selected load types: ${Object.entries(typeCounts).map(([type, count]) => `${count} ${type}`).join(', ')}.`);
+  elements.analysisGuidance.innerHTML = notes.map(note => `<p>${escapeHtml(note)}</p>`).join('');
+}
+
+function formatKva(va) {
+  return formatNumber(va / 1000);
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function renderPrintSheet() {
@@ -543,7 +680,7 @@ function createPlaceholderRow(circuit) {
 }
 
 function createEmptyRow() {
-  return { circuit: '', description: '', trip: '', poles: '' };
+  return { circuit: '', description: '', trip: '', poles: '', loadType: 'General', loadAmps: '', demandFactor: '1' };
 }
 
 function seedRows(count) {
@@ -552,7 +689,10 @@ function seedRows(count) {
     circuit: String(index + 1),
     description: '',
     trip: '',
-    poles: ''
+    poles: '',
+    loadType: 'General',
+    loadAmps: '',
+    demandFactor: '1'
   }));
 }
 
@@ -571,6 +711,9 @@ function resetApp() {
   elements.panelVoltage.value = '';
   elements.panelFeed.value = '';
   elements.panelDate.value = '';
+  elements.panelPhase.value = '3';
+  elements.panelCapacityAmps.value = '';
+  elements.panelDiversity.value = '1';
   elements.imagePreview.removeAttribute('src');
   elements.previewFrame.classList.remove('has-image');
   elements.fileName.textContent = 'No file selected';
@@ -650,6 +793,11 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     isIgnoredLine,
     findSecondaryCircuitIndex,
     createEmptyRow,
-    createPlaceholderRow
+    createPlaceholderRow,
+    inferLoadType,
+    panelVoltageInfo,
+    rowLoadVa,
+    normalizeLoadAmps,
+    normalizeDemandFactor
   };
 }

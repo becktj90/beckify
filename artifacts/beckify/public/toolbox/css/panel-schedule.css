@@ -311,6 +311,8 @@ button {
 }
 
 input[type="text"],
+input[type="number"],
+select,
 textarea,
 .editor-table input,
 .editor-table select {
@@ -360,6 +362,58 @@ textarea {
 
 .editor-table .col-actions {
   width: 72px;
+}
+
+.field-help {
+  margin: -2px 0 0;
+  color: #333;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.analysis-metric {
+  min-height: 90px;
+  padding: 10px;
+  color: #111;
+  background: #fff;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+.analysis-metric span,
+.analysis-metric small {
+  display: block;
+  color: #444;
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.analysis-metric strong {
+  display: block;
+  margin: 5px 0;
+  font-size: 1.16rem;
+}
+
+.analysis-guidance {
+  display: grid;
+  gap: 8px;
+}
+
+.analysis-guidance p {
+  margin: 0;
+  padding: 8px 10px;
+  background: #fff8cc;
+  border: 1px solid #a48b24;
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 .btn-row-delete {
@@ -518,6 +572,10 @@ textarea {
   }
 
   .meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-grid {
     grid-template-columns: 1fr;
   }
 
