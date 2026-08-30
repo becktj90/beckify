@@ -6,8 +6,8 @@ const gearSchema = [
   {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Electrical Qualification and Field Gear Guide",
-    about: ["electrical exam preparation", "electrical testing equipment", "wire termination", "field diagnostics"],
+    name: "Electrical Test Equipment and Field Gear Guide",
+    about: ["electrical testing equipment", "aerospace electrical tooling", "wire termination", "TDR cable fault locating"],
   },
   {
     "@context": "https://schema.org",
@@ -15,23 +15,23 @@ const gearSchema = [
     mainEntity: [
       {
         "@type": "Question",
-        name: "Can a tool guarantee that I become a qualified electrician?",
-        acceptedAnswer: { "@type": "Answer", text: "No. Tools and study products can support preparation, but qualification depends on the applicable authority, supervised experience, training, and exam or certification requirements." },
+        name: "Can buying a product guarantee Amazon Associates approval?",
+        acceptedAnswer: { "@type": "Answer", text: "No. Amazon evaluates qualifying purchases and program compliance; no individual product guarantees approval or sales." },
       },
       {
         "@type": "Question",
-        name: "What should I buy first for electrical exam preparation?",
-        acceptedAnswer: { "@type": "Answer", text: "Start with the current exam-preparation material and code reference accepted by your licensing authority. Add a reliable meter and supervised measurement practice before specialized diagnostic equipment." },
+        name: "What should I check before buying electrical test equipment?",
+        acceptedAnswer: { "@type": "Answer", text: "Confirm the safety category, voltage and measurement range, accuracy, cable or connector compatibility, calibration requirements, included accessories, and manufacturer documentation." },
       },
       {
         "@type": "Question",
-        name: "How long does the Beckify field kit plan take?",
-        acceptedAnswer: { "@type": "Answer", text: "The guide is organized as a 90-day preparation pathway with 30-day milestones. It is a study and practice framework, not a promise of a license or certification by a particular date." },
+        name: "How does the Beckify three-sale plan work?",
+        acceptedAnswer: { "@type": "Answer", text: "The guide organizes useful buying content around three real field use cases within the initial 180-day window. It does not guarantee sales or Amazon Associates approval." },
       },
     ],
   },
 ];
 
 export default function GearPage() {
-  return <Layout><SchemaHead title="Best Electrical Exam Prep and Field Test Tools | Beckify" description="An expert-curated electrical gear guide with exam prep, NEC references, meters, crimpers, and field testers organized into a 180-day plan." path="/gear" schema={gearSchema} /><GearMatrix /></Layout>;
+  return <Layout><SchemaHead title="Best Electrical Test Equipment and TDR Tools | Beckify" description="Expert-curated electrical test equipment for aerospace harness work, TDR cable fault locating, field diagnostics, and bench testing, with tagged shopping links." path="/gear" schema={gearSchema} /><GearMatrix /></Layout>;
 }

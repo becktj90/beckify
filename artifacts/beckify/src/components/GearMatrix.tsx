@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Activity,
   BadgeCheck,
-  BookOpen,
   Cable,
   CheckCircle2,
   ExternalLink,
@@ -15,7 +14,6 @@ import {
 } from "lucide-react";
 
 type GearCategory =
-  | "Exam Preparation"
   | "Aerospace Hand Tools"
   | "Wire Termination"
   | "Test Equipment"
@@ -49,28 +47,6 @@ const amazonSearchUrl = (query: string) => {
 };
 
 const gear: Gear[] = [
-  {
-    category: "Exam Preparation",
-    name: "Mike Holt 2026 Electrical Exam Preparation Book + Journeyman Practice Exam",
-    model: "2026 code edition · Product 26EPJX",
-    justification: "A structured study product covering theory, code, and calculations with timed practice exams. It is the right first purchase when the goal is exam readiness, not just collecting field hardware.",
-    use: "First 30 days: baseline diagnostic, code-navigation drills, and calculation practice",
-    retailerQuery: "Mike Holt 2026 Electrical Exam Preparation Book Journeyman Practice Exam 26EPJX",
-    manufacturerUrl: "https://www.mikeholt.com/productitem.php?id=7439",
-    stage: "First 30 days",
-    checkpoint: "Complete the baseline exam, log weak topics, and confirm the licensing authority accepts the applicable code edition and exam provider.",
-  },
-  {
-    category: "Exam Preparation",
-    name: "Mike Holt 2026 Illustrated Handbook Program",
-    model: "NEC navigation and theory reference · Product 26HBPKG-MH",
-    justification: "Color-coded tabs, illustrated NEC explanations, and challenge questions help you find an article quickly and explain why it applies, not merely memorize an answer.",
-    use: "Days 31–60: code lookup speed, grounding, overcurrent protection, and applied calculations",
-    retailerQuery: "Mike Holt 2026 Illustrated Handbook Program NEC 26HBPKG-MH",
-    manufacturerUrl: "https://www.mikeholt.com/productitem.php?id=7467",
-    stage: "Days 31–60",
-    checkpoint: "Answer a timed set of code questions with article references and review every miss against the authority having jurisdiction’s exam bulletin.",
-  },
   {
     category: "Aerospace Hand Tools",
     name: "Daniels Manufacturing AF8",
@@ -230,7 +206,6 @@ const gear: Gear[] = [
 
 const categories = [
   "All",
-  "Exam Preparation",
   "Aerospace Hand Tools",
   "Wire Termination",
   "Test Equipment",
@@ -239,13 +214,12 @@ const categories = [
 ] as const;
 
 const launchPlan = [
-  gear.find((item) => item.name.startsWith("Mike Holt 2026 Electrical Exam")),
   gear.find((item) => item.name === "Daniels Manufacturing AF8"),
   gear.find((item) => item.name === "Megger TDR500/3 Handheld Time Domain Reflectometer"),
+  gear.find((item) => item.name === "Fluke 325 True-RMS Clamp Meter"),
 ].filter((item): item is Gear => Boolean(item));
 
 function getGearIcon(category: GearCategory) {
-  if (category === "Exam Preparation") return BookOpen;
   if (category === "Aerospace Hand Tools") return ShieldCheck;
   if (category === "Wire Termination") return Cable;
   if (category === "Test Equipment") return Activity;
@@ -292,25 +266,25 @@ export function GearMatrix() {
   return (
     <section className="space-y-6" aria-labelledby="gear-title">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Electrical qualification pathway</p>
-        <h1 id="gear-title" className="mt-2 font-display text-4xl font-bold">A practical 180-day field and exam kit.</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Expert electrical gear matrix</p>
+        <h1 id="gear-title" className="mt-2 font-display text-4xl font-bold">Field and aerospace tools, chosen for the work.</h1>
         <p className="mt-4 max-w-2xl text-[var(--muted)]">
-          Specific models for exam preparation, aerospace harness work, field diagnostics, and electrical test. Every recommendation explains the engineering fit, what to practice, and when it belongs in the plan.
+          Specific models for aerospace harness work, field diagnostics, electrical test, and TDR fault locating. Every recommendation explains the engineering fit and the real task it supports.
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3" aria-label="Preparation milestones">
-        {(["First 30 days", "Days 31–60", "Days 61–90"] as const).map((time, index) => (
+      <div className="grid gap-3 md:grid-cols-3" aria-label="Tool selection milestones">
+        {(["Define the task", "Choose the instrument", "Document the result"] as const).map((time, index) => (
           <div className="card-surface p-5" key={time}>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent)]">{time}</p>
-            <h2 className="mt-2 font-display text-lg font-bold">{["Build the measurement habit", "Learn the code and terminate", "Prove the process under supervision"][index]}</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{["Practice safe meter setup, nameplate reading, and controlled first power-up.", "Use code references while documenting connector, panel, and harness work.", "Use checklists, insulation tests, and timed practice while following local requirements."][index]}</p>
+            <h2 className="mt-2 font-display text-lg font-bold">{["Start with the failure mode", "Match specs to the job", "Keep evidence of the test"][index]}</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{["Identify whether you need measurement, termination, inspection, or fault location.", "Compare safety category, range, accuracy, connector family, and environment.", "Record the setup, readings, photos, and manufacturer references with the result."][index]}</p>
           </div>
         ))}
       </div>
 
       <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm leading-6 text-[var(--muted)]">
-        <strong className="text-[var(--foreground)]">Important:</strong> These products cannot guarantee a license, certification, employment outcome, exam result, or Amazon Associates approval. Requirements vary by jurisdiction and credential. This plan is for useful content and responsible product selection, not a promise that three qualifying sales will occur.
+        <strong className="text-[var(--foreground)]">Important:</strong> These products cannot guarantee a license, certification, employment outcome, or Amazon Associates approval. This is an expert product-selection guide, not a promise that three qualifying sales will occur.
       </div>
 
       <section className="card-surface overflow-hidden" aria-labelledby="affiliate-goal-title">
@@ -327,7 +301,7 @@ export function GearMatrix() {
         <div className="grid gap-px bg-[var(--border)] md:grid-cols-3">
           {launchPlan.map((item, index) => (
             <article className="bg-[var(--surface)] p-5" key={item.name}>
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted)]"><span>Priority {index + 1}</span><span className="text-[var(--accent)]">{item.stage}</span></div>
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted)]"><span>Priority {index + 1}</span><span className="text-[var(--accent)]">{item.stage ?? "Use-case fit"}</span></div>
               <h3 className="mt-3 font-display text-lg font-bold">{item.name}</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.use}</p>
               <a href={amazonSearchUrl(item.retailerQuery)} target="_blank" rel={hasAffiliateTag ? "sponsored noopener noreferrer" : "noopener noreferrer"} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"><ShoppingBag className="h-4 w-4" aria-hidden="true" /> View current availability <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>
