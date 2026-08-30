@@ -6,9 +6,9 @@ const gearSchema = [
   {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Recommended Electrical Test Equipment for Bench and Field Work",
-    description: "A practical list of recommended DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for electrical diagnostics.",
-    about: ["electrical test equipment", "avionics test equipment", "insulation resistance testing", "oscilloscope diagnostics", "RF cable analysis"],
+    name: "Recommended Tools for High-Consequence Electrical Work",
+    description: "A practical list of hand tools, DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for electrical workers and engineers.",
+    about: ["electrical hand tools", "electrical test equipment", "insulation resistance testing", "oscilloscope diagnostics", "RF cable analysis"],
   },
   {
     "@context": "https://schema.org",
@@ -34,5 +34,5 @@ const gearSchema = [
 ];
 
 export default function GearPage() {
-  return <Layout><SchemaHead title="Recommended Electrical Test Equipment for Bench and Field Work | Beckify" description="Recommended DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for electrical bench work and field diagnostics." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
+  return <Layout><SchemaHead title="Recommended Electrical Tools for Engineers and Field Workers | Beckify" description="Recommended hand tools, DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for high-consequence electrical work." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
 }
