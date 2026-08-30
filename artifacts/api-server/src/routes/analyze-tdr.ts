@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request } from "express";
 import {
   TDR_VISION_SYSTEM_PROMPT,
   type TdrVisionAnalysis,
-} from "../prompts/tdrVisionPrompt";
+} from "../prompts/tdrVisionPrompt.js";
 
 type VisionProvider = "openai" | "anthropic";
 

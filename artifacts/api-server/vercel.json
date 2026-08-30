@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "echo Vercel uses the Express function entrypoint",
+  "functions": {
+    "src/index.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
+}
