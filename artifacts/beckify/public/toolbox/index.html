@@ -136,6 +136,8 @@
     .feynman-lesson-title { color: #6ee7b7; font-weight: 700; font-size: 0.98rem; }
     .feynman-formula { margin: 8px 0; color: #eef0fa; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
     .feynman-lesson-body { margin: 0; color: var(--fg-muted); line-height: 1.6; max-width: 78ch; }
+    .calculation-visual { margin: 14px 0 10px; padding: 10px 0 2px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .calculation-visual svg { display: block; min-height: 108px; overflow: visible; }
   </style>
   <!-- Webfonts load without blocking: media="print" keeps the stylesheet out of
        the critical path, and the onload swap applies it once it arrives. If the
@@ -7301,6 +7303,7 @@
 <script src="js/smith-chart.js"></script>
 <script src="js/stem-tools.js"></script>
 <script src="js/math-explanations.js"></script>
+<script src="js/result-visuals.js"></script>
 <script src="js/icons.js"></script>
 <script>
   // Initialize Smith chart and STEM tools after DOM is ready

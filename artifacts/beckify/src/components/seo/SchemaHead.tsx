@@ -42,13 +42,25 @@ export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMA
     upsertMeta('meta[property="og:type"]', { property: "og:type" }, type);
     upsertMeta('meta[property="og:url"]', { property: "og:url" }, canonicalUrl);
     upsertMeta('meta[property="og:image"]', { property: "og:image" }, image);
+    upsertMeta('meta[property="og:site_name"]', { property: "og:site_name" }, "Beckify");
     upsertMeta('meta[name="twitter:card"]', { name: "twitter:card" }, "summary_large_image");
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, title);
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description" }, description);
     upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, image);
+    upsertMeta('meta[name="robots"]', { name: "robots" }, "index,follow,max-image-preview:large");
 
     document.head.querySelectorAll('script[data-beckify-schema="true"]').forEach((node) => node.remove());
-    const schemas = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+    const schemas = [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: title,
+        description,
+        url: canonicalUrl,
+        isPartOf: { "@type": "WebSite", name: "Beckify", url: SITE_URL },
+      },
+      ...(schema ? (Array.isArray(schema) ? schema : [schema]) : []),
+    ];
     schemas.forEach((value) => {
       const script = document.createElement("script");
       script.type = "application/ld+json";

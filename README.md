@@ -2,7 +2,7 @@
 
   Trevor Beck's personal engineering resource site — EE calculators, builds, and games.
 
-  **Live site:** https://beckify.replit.app  
+  **Live site:** https://beckify.com
   **Stack:** React + Vite + Tailwind CSS · pnpm monorepo
 
   ## What's here
@@ -17,4 +17,3 @@
   pnpm install
   pnpm --filter @workspace/beckify run dev
   ```
-  
