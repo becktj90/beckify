@@ -6,8 +6,9 @@ const gearSchema = [
   {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Electrical Test Equipment and Field Gear Guide",
-    about: ["electrical testing equipment", "aerospace electrical tooling", "wire termination", "TDR cable fault locating"],
+    name: "Recommended Electrical Test Equipment for Bench and Field Work",
+    description: "A practical list of recommended DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for electrical diagnostics.",
+    about: ["electrical test equipment", "avionics test equipment", "insulation resistance testing", "oscilloscope diagnostics", "RF cable analysis"],
   },
   {
     "@context": "https://schema.org",
@@ -15,23 +16,23 @@ const gearSchema = [
     mainEntity: [
       {
         "@type": "Question",
-        name: "Can buying a product guarantee Amazon Associates approval?",
-        acceptedAnswer: { "@type": "Answer", text: "No. Amazon evaluates qualifying purchases and program compliance; no individual product guarantees approval or sales." },
+        name: "What is the best first electrical test tool for field troubleshooting?",
+        acceptedAnswer: { "@type": "Answer", text: "A professional True-RMS handheld DMM is the most broadly useful first tool for voltage, resistance, continuity, and current troubleshooting. A dedicated insulation tester, oscilloscope, clamp meter, or RF analyzer should be added only when the task requires it." },
       },
       {
         "@type": "Question",
-        name: "What should I check before buying electrical test equipment?",
-        acceptedAnswer: { "@type": "Answer", text: "Confirm the safety category, voltage and measurement range, accuracy, cable or connector compatibility, calibration requirements, included accessories, and manufacturer documentation." },
+        name: "Can an insulation tester or hipot tester be used on any aircraft circuit?",
+        acceptedAnswer: { "@type": "Answer", text: "No. The applicable aircraft and component maintenance data determines whether testing is permitted, the required isolation, and the allowed test voltage. Sensitive equipment must be protected or disconnected exactly as specified." },
       },
       {
         "@type": "Question",
-        name: "How does the Beckify three-sale plan work?",
-        acceptedAnswer: { "@type": "Answer", text: "The guide organizes useful buying content around three real field use cases within the initial 180-day window. It does not guarantee sales or Amazon Associates approval." },
+        name: "When do I need a cable and antenna analyzer instead of a multimeter?",
+        acceptedAnswer: { "@type": "Answer", text: "Use a cable and antenna analyzer for RF-path measurements such as return loss, VSWR, cable loss, and distance-to-fault. A multimeter cannot perform those RF measurements." },
       },
     ],
   },
 ];
 
 export default function GearPage() {
-  return <Layout><SchemaHead title="Best Electrical Test Equipment and TDR Tools | Beckify" description="Expert-curated electrical test equipment for aerospace harness work, TDR cable fault locating, field diagnostics, and bench testing, with tagged shopping links." path="/gear" schema={gearSchema} /><GearMatrix /></Layout>;
+  return <Layout><SchemaHead title="Recommended Electrical Test Equipment for Bench and Field Work | Beckify" description="Recommended DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for electrical bench work and field diagnostics." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
 }

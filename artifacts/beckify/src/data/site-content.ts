@@ -25,6 +25,7 @@ import {
   Github,
   Youtube,
   Phone,
+  RadioTower,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -54,6 +55,7 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { href: "/about", label: "About", icon: Terminal },
   { href: "/toolbox/", label: "Toolbox", icon: Wrench, external: true },
+  { href: "/gear", label: "Gear", icon: RadioTower },
   { href: "/projects", label: "Projects", icon: Rocket },
   { href: "/games", label: "Games", icon: Gamepad2 },
 ];
@@ -73,6 +75,12 @@ export interface HubCard {
 }
 
 export const HOME_NAV_CARDS: HubCard[] = [
+  {
+    title: "Recommended Gear",
+    description: "Electrical test equipment for bench and field diagnostics.",
+    href: "/gear",
+    icon: RadioTower,
+  },
   {
     title: "EE Toolbox",
     description: "Electrical calculators and quick-reference tools.",
