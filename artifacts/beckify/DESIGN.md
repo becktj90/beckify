@@ -51,7 +51,7 @@ Beckify Arcade should feel like a well-loved tabletop arcade cabinet tuned for a
 - **Locale(s) and language policy:** English UI with short, plain action labels.
 - **Usage scene:** Phone or laptop, short breaks, touch-first controls and a readable desktop keyboard path.
 - **Register:** Hybrid — Beckify brand shell with product-like game controls.
-- **Memorable signature:** A luminous cabinet edge and a single bright play/reward color per game.
+- **Memorable signature:** A luminous cabinet edge and a single bright play/reward color per game. Cosmic Cadet extends this into a portrait arcade cabinet with a three-part combat HUD, a physical-looking touch d-pad, and a dedicated shoot button.
 - **Restraint:** HUDs stay at the outer edge and never cover the player or the lower-middle playfield during a round.
 - **Anti-references:** Admin dashboards, tiny unlabeled icon controls, and permanent tutorial panels over gameplay.
 - **Token ownership/runtime mapping:** This document mirrors the canonical CSS variables in `src/index.css`; it does not generate runtime tokens.
@@ -66,7 +66,7 @@ Space Grotesk is used for game titles and state headings; Inter carries directio
 
 ## Layout
 
-The canvas is the primary surface. Controls sit immediately below it in a wrapping command bar with 44px minimum touch targets. The header contains only title, best score, sound, and fullscreen. Mobile fullscreen maintains the playfield’s aspect ratio and always exposes an exit affordance.
+The canvas is the primary surface. Cosmic Cadet frames it with a sparse desktop mission brief and quick tips; on phones those secondary panels collapse, leaving the portrait cabinet and thumb controls. Controls sit immediately below it with 44px minimum touch targets. The header contains only title, best score, sound, and fullscreen. Mobile fullscreen maintains the playfield’s aspect ratio and always exposes an exit affordance.
 
 ## Elevation & Depth
 
