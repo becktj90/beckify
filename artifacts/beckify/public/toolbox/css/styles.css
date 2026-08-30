@@ -1488,5 +1488,12 @@ body.report-open { overflow: hidden; }
 .analog-plot { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; min-height: 260px; }
 .analog-plot svg { display: block; width: 100%; min-width: 560px; height: auto; }
 .analog-plot-label { color: var(--fg-muted); font-size: 0.75rem; font-weight: 400; margin-left: 6px; }
+.battery-tabs { margin-bottom: 16px; }
+.battery-table { overflow-x: auto; }
+.battery-table table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.battery-table th, .battery-table td { padding: 7px 9px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.battery-table th { color: var(--violet); background: var(--violet-soft); }
+.battery-layout { min-height: 260px; overflow: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; }
+.battery-layout svg { display: block; min-width: 420px; width: 100%; height: auto; }
 @media (max-width: 620px) { .logic-gate-row { grid-template-columns: 34px 1fr 1fr auto; } .logic-gate-row select:nth-of-type(3) { grid-column: 2 / span 2; } }
 @media (max-width: 620px) { .manual-price-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

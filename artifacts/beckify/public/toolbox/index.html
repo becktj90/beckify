@@ -246,6 +246,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">07 · Specialist tools</div>
       <button class="nav-btn" data-target="sec-ebike-tools" data-keywords="ebike e-bike torque rpm sprocket chainring gear ratio wheel speed range battery wh per mile">E-Bike Drivetrain Tools</button>
+      <button class="nav-btn" data-target="sec-battery-build" data-keywords="18650 battery pack nickel strip ampacity series parallel C rate honeycomb grid cell layout lithium ion battery design">Battery Build Designer</button>
       <button class="nav-btn" data-target="sec-stem-tools" data-keywords="differential equations ODE trig trigonometry linear algebra matrix chemistry calculus optics quantum physics linear programming LP STEM math">STEM Toolkit</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
     </div>
@@ -1116,6 +1117,16 @@
         </div>
         <div class="card analog-response-card"><div class="card-title">Magnitude response <span id="af_plot_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_plot" class="analog-plot" role="img" aria-label="Filter magnitude response plot"></div></div></div>
       </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         BATTERY BUILD DESIGNER
+         ════════════════════════════════════════ -->
+    <section id="sec-battery-build" class="section">
+      <div class="section-header"><h2>Battery Build Designer</h2><p>Plan 18650 series/parallel packs and nickel-strip cross sections with transparent, editable assumptions.</p><details class="section-info"><summary>ℹ More Info — Battery safety</summary><div class="section-info-body">This is a planning tool, not a build approval. Verify the exact cell datasheet, BMS, fusing, insulation, busbar/strip temperature rise, weld quality, enclosure clearances, charger, fault protection, and applicable transport/fire requirements before assembling a lithium-ion pack.</div></details></div>
+      <div class="tabs battery-tabs" role="tablist" aria-label="Battery build tools"><button id="battery-tab-strip" class="tab-btn active" type="button" onclick="showBatteryPanel('strip')">Nickel strip calculator</button><button id="battery-tab-pack" class="tab-btn" type="button" onclick="showBatteryPanel('pack')">18650 pack designer</button></div>
+      <div id="battery-panel-strip" class="battery-panel"><div class="card-grid two-col"><div class="card"><div class="card-title">Nickel strip cross section</div><div class="card-body"><div class="input-group"><div><label for="ns_width">Strip width (mm)</label><input id="ns_width" type="number" value="8" min="0.1" step="0.1"></div><div><label for="ns_thickness">Thickness (mm)</label><input id="ns_thickness" type="number" value="0.15" min="0.01" step="0.01"></div></div><div class="input-group"><div><label for="ns_cont_j">Continuous density (A/mm²)</label><input id="ns_cont_j" type="number" value="5" min="0.1" step="0.1"></div><div><label for="ns_pulse_j">Short-pulse density (A/mm²)</label><input id="ns_pulse_j" type="number" value="10" min="0.1" step="0.1"></div></div><button class="btn" type="button" onclick="calcNickelStrip()">Calculate strip capacity</button></div></div><div class="card"><div class="card-title">Strip result</div><div class="card-body"><div id="ns_result" class="result" aria-live="polite"></div></div></div></div><div class="card"><div class="card-title">Common pure-nickel strip planning table</div><div class="card-body"><div id="ns_table" class="battery-table"></div></div></div></div>
+      <div id="battery-panel-pack" class="battery-panel" hidden><div class="card-grid two-col"><div class="card"><div class="card-title">Design target</div><div class="card-body"><div class="input-group"><div><label for="bp_voltage">Nominal pack voltage (V)</label><input id="bp_voltage" type="number" value="36" min="1" step="any"></div><div><label for="bp_current">Continuous current (A, optional)</label><input id="bp_current" type="number" placeholder="e.g. 20" min="0" step="any"></div></div><div class="input-group"><div><label for="bp_power">Continuous power (W, optional)</label><input id="bp_power" type="number" placeholder="e.g. 750" min="0" step="any"></div><div><label for="bp_pattern">Cell pattern</label><select id="bp_pattern"><option value="honeycomb">Honeycomb</option><option value="grid">Grid</option></select></div></div><div class="input-group"><div><label for="bp_space_w">Max enclosure width (mm, optional)</label><input id="bp_space_w" type="number" placeholder="leave blank" min="0" step="any"></div><div><label for="bp_space_h">Max enclosure height (mm, optional)</label><input id="bp_space_h" type="number" placeholder="leave blank" min="0" step="any"></div></div></div></div><div class="card"><div class="card-title">Cell specification</div><div class="card-body"><div class="input-group"><div><label for="bp_cell_v">Nominal voltage (V)</label><input id="bp_cell_v" type="number" value="3.6" min="1" step="0.01"></div><div><label for="bp_cell_ah">Capacity (Ah)</label><input id="bp_cell_ah" type="number" value="3" min="0.1" step="0.1"></div></div><div class="input-group"><div><label for="bp_cell_a">Continuous current (A)</label><input id="bp_cell_a" type="number" value="10" min="0.1" step="0.1"></div><div><label for="bp_cell_d">Diameter (mm)</label><input id="bp_cell_d" type="number" value="18.5" min="1" step="0.1"></div></div><div class="input-group single"><div><label for="bp_cell_l">Length (mm)</label><input id="bp_cell_l" type="number" value="65.2" min="1" step="0.1"></div></div><button class="btn" type="button" onclick="calc18650Pack()">Design battery pack</button></div></div></div><div class="card-grid two-col battery-output-grid"><div class="card"><div class="card-title">Recommended architecture</div><div class="card-body"><div id="bp_result" class="result" aria-live="polite"></div></div></div><div class="card"><div class="card-title">Pack layout</div><div class="card-body"><div id="bp_layout" class="battery-layout" role="img" aria-label="Battery pack cell layout"></div></div></div></div></div>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -7464,6 +7475,7 @@
 <script src="js/timer555.js"></script>
 <script src="js/digital-tools.js"></script>
 <script src="js/analog-tools.js"></script>
+<script src="js/battery-tools.js"></script>
 <script src="js/report-export.js"></script>
 <script src="js/url-state.js"></script>
 <script src="js/tdr-analyzer.js"></script>
