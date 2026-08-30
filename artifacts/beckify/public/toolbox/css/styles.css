@@ -1481,5 +1481,12 @@ body.report-open { overflow: hidden; }
 .manual-price-row { display: grid; grid-template-columns: minmax(0, 1fr) 78px; align-items: center; gap: 6px; color: var(--fg-muted); font: 0.76rem var(--font-main); }
 .manual-price-row input { min-width: 0; padding: 7px; }
 .cost-optimum { border-left: 3px solid var(--green-ok); padding-left: 10px; }
+.analog-tabs { margin-bottom: 16px; }
+.analog-fields { display: grid; gap: 10px; margin: 12px 0; }
+.analog-fields .input-group { margin: 0; }
+.analog-response-card { margin-top: 16px; }
+.analog-plot { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; min-height: 260px; }
+.analog-plot svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.analog-plot-label { color: var(--fg-muted); font-size: 0.75rem; font-weight: 400; margin-left: 6px; }
 @media (max-width: 620px) { .logic-gate-row { grid-template-columns: 34px 1fr 1fr auto; } .logic-gate-row select:nth-of-type(3) { grid-column: 2 / span 2; } }
 @media (max-width: 620px) { .manual-price-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

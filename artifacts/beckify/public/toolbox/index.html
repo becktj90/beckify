@@ -193,6 +193,7 @@
       <button class="nav-btn" data-target="sec-sp" data-keywords="#Electronics #Calculators series parallel resistance capacitance inductance">Resistance, C, L</button>
       <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
       <button class="nav-btn" data-target="sec-digital" data-keywords="digital logic gates boolean expression truth table circuit simulator AND OR NOT XOR NAND NOR">Digital Logic Workbench</button>
+      <button class="nav-btn" data-target="sec-analog-design" data-keywords="op amp operational amplifier gain inverting non-inverting differential summing integrator differentiator comparator schmitt transimpedance instrumentation filter designer low pass high pass band pass notch all pass sallen key rlc">Analog Design Workbench</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">03 · Power distribution</div>
@@ -1075,6 +1076,45 @@
           <div class="card-title">Truth table</div>
           <div class="card-body"><div id="logic-truth-table" class="logic-truth-table"></div></div>
         </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         ANALOG DESIGN WORKBENCH
+         ════════════════════════════════════════ -->
+    <section id="sec-analog-design" class="section">
+      <div class="section-header">
+        <h2>Analog Design Workbench</h2>
+        <p>Size common op-amp stages and explore practical analog-filter families with a live response plot.</p>
+        <details class="section-info"><summary>ℹ More Info — Analog design</summary><div class="section-info-body">Ideal first-pass calculations only: verify supply range, input/output swing, gain-bandwidth, slew rate, noise, stability, component tolerance, source/load impedance, and the exact topology before building hardware.</div></details>
+      </div>
+      <div class="tabs analog-tabs" role="tablist" aria-label="Analog design tools">
+        <button class="tab-btn active" id="analog-tab-opamp" type="button" onclick="showAnalogPanel('opamp')">Op-amp calculators</button>
+        <button class="tab-btn" id="analog-tab-filter" type="button" onclick="showAnalogPanel('filter')">Filter designer &amp; response</button>
+      </div>
+      <div id="analog-panel-opamp" class="analog-panel">
+        <div class="card-grid two-col">
+          <div class="card"><div class="card-title">Op-amp topology</div><div class="card-body">
+            <label for="ao_type">Calculator</label>
+            <select id="ao_type" onchange="renderOpAmpFields()"><option value="inverting">Inverting amplifier</option><option value="noninverting">Non-inverting amplifier</option><option value="difference">Difference amplifier</option><option value="summing">Inverting summer</option><option value="transimpedance">Transimpedance amplifier</option><option value="integrator">Integrator</option><option value="differentiator">Differentiator</option><option value="comparator">Comparator / reference</option><option value="schmitt">Non-inverting Schmitt trigger</option><option value="instrumentation">3-op-amp instrumentation amplifier</option></select>
+            <div id="ao_fields" class="analog-fields"></div><button class="btn" type="button" onclick="calcOpAmp()">Calculate stage</button>
+          </div></div>
+          <div class="card"><div class="card-title">Result</div><div class="card-body"><div id="ao_result" class="result" aria-live="polite">Choose a topology and calculate its ideal transfer relationship.</div></div></div>
+        </div>
+      </div>
+      <div id="analog-panel-filter" class="analog-panel" hidden>
+        <div class="card-grid two-col">
+          <div class="card"><div class="card-title">Filter family &amp; target</div><div class="card-body">
+            <label for="af_type">Filter family</label>
+            <select id="af_type" onchange="calcAnalogFilter()"><optgroup label="First-order passive"><option value="rc-low">RC low-pass</option><option value="rc-high">RC high-pass</option></optgroup><optgroup label="Second-order / resonant"><option value="sk-low">Sallen–Key low-pass</option><option value="sk-high">Sallen–Key high-pass</option><option value="rlc-band">RLC band-pass</option><option value="rlc-notch">RLC notch / band-stop</option><option value="mfb-band">Multiple-feedback band-pass</option><option value="state-variable">State-variable filter (LP / BP / HP)</option><option value="twin-t">Twin-T notch</option><option value="allpass">All-pass phase shifter</option></optgroup></select>
+            <div class="input-group"><div><label for="af_freq">Design frequency (Hz)</label><input id="af_freq" type="number" value="1000" min="0.01" step="any"></div><div><label for="af_q">Q / selectivity</label><input id="af_q" type="number" value="0.707" min="0.05" step="0.01"></div></div>
+            <div class="input-group"><div><label for="af_gain">Passband gain (V/V)</label><input id="af_gain" type="number" value="1" min="0.01" step="0.01"></div><div><label for="af_r">Reference R (Ω)</label><input id="af_r" type="number" value="10000" min="1" step="any"></div></div>
+            <div class="input-group single"><div><label for="af_c">Reference C (F)</label><input id="af_c" type="number" value="0.00000001" min="0.000000000001" step="any"></div></div>
+            <button class="btn" type="button" onclick="calcAnalogFilter()">Design &amp; plot response</button>
+          </div></div>
+          <div class="card"><div class="card-title">Design notes</div><div class="card-body"><div id="af_result" class="result" aria-live="polite"></div></div></div>
+        </div>
+        <div class="card analog-response-card"><div class="card-title">Magnitude response <span id="af_plot_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_plot" class="analog-plot" role="img" aria-label="Filter magnitude response plot"></div></div></div>
       </div>
     </section>
 
@@ -7423,6 +7463,7 @@
 <script src="js/xfmr-engine.js"></script>
 <script src="js/timer555.js"></script>
 <script src="js/digital-tools.js"></script>
+<script src="js/analog-tools.js"></script>
 <script src="js/report-export.js"></script>
 <script src="js/url-state.js"></script>
 <script src="js/tdr-analyzer.js"></script>
