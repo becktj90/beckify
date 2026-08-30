@@ -56,10 +56,11 @@ const categories = [
 ];
 
 const escapeXml = (value) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
-const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrical Toolbox" }) => `<!doctype html>
+const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrical Toolbox", showAds = true }) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeXml(`${title} | Beckify`)}</title><meta name="description" content="${escapeXml(description)}"><meta name="robots" content="index,follow">
 <link rel="canonical" href="${siteUrl}${path}"><meta property="og:title" content="${escapeXml(`${title} | Beckify`)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${siteUrl}${path}"><meta property="og:image" content="${siteUrl}/opengraph.jpg"><meta name="twitter:card" content="summary_large_image">
+${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5333275222472637" crossorigin="anonymous"></script>` : ""}
 <script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": ["SoftwareApplication", "WebApplication"], name: title, description, url: `${siteUrl}${path}`, operatingSystem: "All", applicationCategory: "EngineeringApplication", isAccessibleForFree: true, publisher: { "@type": "Organization", name: "Beckify", url: siteUrl } })}</script>
 <style>body{margin:0;background:#05060f;color:#eef0fa;font:16px/1.6 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:48px 22px}a{color:#9b8cff}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1}p{color:#b7bad2;max-width:680px}.eyebrow{color:#9b8cff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;font-weight:700}.cta{display:inline-block;margin:18px 0;padding:12px 18px;border-radius:9px;background:#8b7bff;color:#fff;text-decoration:none;font-weight:700}iframe{width:100%;height:720px;border:1px solid #30304a;border-radius:14px;margin-top:22px;background:#111326}</style></head>
 <body><main><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><p>Beckify tools are designed for quick field calculations and engineering reference work. Confirm final designs against the applicable NEC edition, equipment documentation, and site requirements.</p><a class="cta" href="${toolPath}">Open the interactive tool</a><iframe src="/toolbox/index.html#${toolPath.split("#")[1]}" title="${escapeXml(title)}"></iframe></main></body></html>`;
@@ -77,7 +78,7 @@ if (process.argv.includes("--dist")) {
   for (const [slug, title, description, anchor] of tools) {
     const directory = resolve(output, "toolbox", slug);
     await mkdir(directory, { recursive: true });
-    await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/${slug}/`, toolPath: `/toolbox/#${anchor}` }));
+    await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/${slug}/`, toolPath: `/toolbox/#${anchor}`, showAds: !["smith-chart", "lsi-breaker"].includes(slug) }));
   }
   for (const [slug, title, description, anchor] of categories) {
     const directory = resolve(output, "toolbox/category", slug);

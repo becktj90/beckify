@@ -8,6 +8,7 @@ import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
 import beckifyMark from "@/assets/beckify-mark-white.png";
 import { SchemaHead } from "@/components/seo/SchemaHead";
+import { MinimalAdUnit } from "@/components/ads/MinimalAdUnit";
 
 /**
  * Home — Bento-style hub. Asymmetric multi-column grid on desktop,
@@ -234,6 +235,7 @@ export default function Home() {
 
           </div>
 
+          <MinimalAdUnit type="adsense" placement="toolbox-sidebar" />
           <Footer />
         </main>
       </div>

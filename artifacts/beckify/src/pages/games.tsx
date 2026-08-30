@@ -5,7 +5,7 @@ import { KidsSpaceShooter } from "@/components/games/KidsSpaceShooter";
 
 export default function GamesPage() {
   return (
-    <Layout>
+    <Layout showAds={false}>
       <SchemaHead
         title="Browser Games | Beckify"
         description="Play lightweight browser games from Beckify, including arcade runners built for quick breaks on desktop and mobile."

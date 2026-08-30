@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 
 interface AdProps {
   placement?: "toolbox-sidebar" | "build-footer";
-  type?: "ethicalads" | "carbon";
+  type?: "ethicalads" | "carbon" | "adsense";
 }
 
 const AD_TIMEOUT_MS = 8000;
+const ADSENSE_CLIENT_ID = "ca-pub-5333275222472637";
 
 export function MinimalAdUnit({ placement = "toolbox-sidebar", type = "ethicalads" }: AdProps) {
   const adRef = useRef<HTMLDivElement>(null);
@@ -33,7 +34,10 @@ export function MinimalAdUnit({ placement = "toolbox-sidebar", type = "ethicalad
     script.async = true;
     script.src = type === "ethicalads"
       ? "https://media.ethicalads.io/media/client/ethicalads.min.js"
-      : "https://cdn.carbonads.com/carbon.js?serve=CKYIK27J&placement=beckifycom";
+      : type === "carbon"
+        ? "https://cdn.carbonads.com/carbon.js?serve=CKYIK27J&placement=beckifycom"
+        : `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
+    if (type === "adsense") script.crossOrigin = "anonymous";
     script.addEventListener("load", reveal, { once: true });
     script.addEventListener("error", collapse, { once: true });
     window.addEventListener("ea-publisher-empty", collapse, { once: true });
@@ -55,12 +59,22 @@ export function MinimalAdUnit({ placement = "toolbox-sidebar", type = "ethicalad
         className="h-[120px] w-full max-w-[320px] overflow-hidden rounded-lg border border-slate-800 bg-slate-900/50 p-3 text-xs text-slate-400 shadow-sm"
         data-ad-placement={placement}
       >
-        <div
-          className="horizontal flat"
-          data-ea-publisher="beckify-com"
-          data-ea-type="image"
-          data-ea-style="stickybox"
-        />
+        {type === "adsense" ? (
+          <ins
+            className="adsbygoogle"
+            style={{ display: "block", minHeight: 90, width: "100%" }}
+            data-ad-client={ADSENSE_CLIENT_ID}
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          />
+        ) : (
+          <div
+            className="horizontal flat"
+            data-ea-publisher="beckify-com"
+            data-ea-type="image"
+            data-ea-style="stickybox"
+          />
+        )}
       </div>
     </aside>
   );
