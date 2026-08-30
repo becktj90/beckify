@@ -55,7 +55,7 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { href: "/about", label: "About", icon: Terminal },
   { href: "/toolbox/", label: "Toolbox", icon: Wrench, external: true },
-  { href: "/gear", label: "Gear", icon: RadioTower },
+  { href: "/gear", label: "Recommended Gear", icon: RadioTower },
   { href: "/projects", label: "Projects", icon: Rocket },
   { href: "/games", label: "Games", icon: Gamepad2 },
 ];
