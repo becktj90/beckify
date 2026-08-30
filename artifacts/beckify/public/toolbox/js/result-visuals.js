@@ -334,6 +334,47 @@
     text(svg, 20, 124, 'Inputs and outputs stay in the result above', { fill: PALETTE.muted, 'font-size': 11 });
   }
 
+  function conductorLength(svg) {
+    text(svg, 320, 23, 'CONDUCTOR LENGTH FROM RESISTANCE', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.4 });
+    line(svg, 78, 92, 562, 92, { stroke: PALETTE.blue, 'stroke-width': 5 });
+    for (let x = 98; x <= 542; x += 37) line(svg, x, 80, x, 104, { stroke: PALETTE.text, 'stroke-width': 1 });
+    svg.appendChild(svgElement('circle', { cx: 92, cy: 92, r: 12, fill: PALETTE.green }));
+    svg.appendChild(svgElement('circle', { cx: 548, cy: 92, r: 12, fill: PALETTE.yellow }));
+    text(svg, 92, 126, 'test lead', { fill: PALETTE.green, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 548, 126, 'far end', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 151, 'measured resistance × conductor area estimates the path length', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function loadFactors(svg) {
+    text(svg, 320, 23, 'LOAD FACTOR RELATIONSHIPS', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.4 });
+    const rows = [
+      ['connected', 0.92, PALETTE.blue],
+      ['peak demand', 0.68, PALETTE.yellow],
+      ['average load', 0.42, PALETTE.green],
+    ];
+    rows.forEach(([label, value, color], index) => {
+      const y = 53 + index * 28;
+      text(svg, 132, y + 8, label, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+      svg.appendChild(svgElement('rect', { x: 148, y, width: 360, height: 14, rx: 4, fill: 'rgba(255,255,255,0.08)' }));
+      svg.appendChild(svgElement('rect', { x: 148, y, width: 360 * Number(value), height: 14, rx: 4, fill: color }));
+    });
+    line(svg, 508, 44, 508, 134, { stroke: PALETTE.text, 'stroke-width': 1, 'stroke-dasharray': '4 4' });
+    text(svg, 508, 40, 'capacity', { fill: PALETTE.text, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 151, 'compare like-for-like intervals before applying demand or diversity assumptions', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function panelLoad(svg) {
+    text(svg, 320, 23, 'PANEL LOAD BUILD-UP', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.4 });
+    const blocks = [['lighting', PALETTE.yellow], ['motors', PALETTE.blue], ['receptacles', PALETTE.green], ['process', PALETTE.accent]];
+    blocks.forEach(([label, color], index) => {
+      const x = 112 + index * 108;
+      svg.appendChild(svgElement('rect', { x, y: 66, width: 78, height: 48, rx: 5, fill: 'rgba(255,255,255,0.05)', stroke: color, 'stroke-width': 2 }));
+      text(svg, x + 39, 94, label, { fill: color, 'font-size': 10, 'font-weight': 700, 'text-anchor': 'middle' });
+      if (index < blocks.length - 1) line(svg, x + 80, 90, x + 101, 90, { stroke: PALETTE.line, 'stroke-width': 2 });
+    });
+    text(svg, 320, 151, 'OCR extracts the schedule; reviewed load categories build the planning estimate', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
   function build(result) {
     if (!result || result.dataset.visualized === '1' || !result.classList.contains('show') || result.classList.contains('error')) return;
     // Native STEM charts carry the explanation; do not append a generic signal over them.
@@ -344,7 +385,8 @@
     const values = resultNumbers(result);
     const id = section.id;
     if (id === 'sec-ohm') return ohms(shell(result, 'Ohm\'s law relationship between voltage, current, and resistance'));
-    if (id === 'sec-vdrop') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
+    if (id === 'sec-conductor-length') return conductorLength(shell(result, 'Conductor path measured from test resistance'));
+    if (id === 'sec-vdrop') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((_value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
     if (id === 'sec-conduit' || id === 'sec-conduit-adv') return conduitSection(shell(result, 'Conduit cross-section and conductor fill envelope'));
     if (id === 'sec-power-dc') return energyBars(shell(result, 'DC power load and capacity relationship'), 'DC POWER BALANCE');
     if (id === 'sec-power-wizard') return;
@@ -367,10 +409,12 @@
     if (id === 'sec-convert') return unitFlow(shell(result, 'Electrical unit conversion path'));
     if (id === 'sec-haz') return hazardBoundary(shell(result, 'Hazardous-area classification boundary'));
     if (id === 'sec-bldg-load') return energyBars(shell(result, 'Building load and reserve relationship'), 'BUILDING LOAD');
+    if (id === 'sec-load-factors') return loadFactors(shell(result, 'Connected, peak, and average load relationships used for demand and diversity factors'));
     if (id === 'sec-power-ac') return powerTriangle(shell(result, 'Power triangle showing real, reactive, and apparent power'));
     if (id === 'sec-tdr') return pulseTrace(shell(result, 'Time-domain reflectometry launch pulse and reflected fault event'));
     if (id === 'sec-stem-tools') return numericSignal(shell(result, 'Visual summary of the numerical values shown above'), values.length ? values : [0, 1]);
-    return;
+    if (id === 'sec-panel-schedule') return panelLoad(shell(result, 'Panel schedule load categories building toward a capacity estimate'));
+    return numericSignal(shell(result, 'Data-driven visual summary of the calculated values shown above'), values.length ? values : [0, 1]);
   }
 
   function init() {

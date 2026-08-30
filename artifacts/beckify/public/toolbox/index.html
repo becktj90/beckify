@@ -2188,16 +2188,18 @@
             </div>
             <div class="power-wave-panel" aria-live="polite">
               <div class="power-wave-heading"><strong>AC waveform</strong><span id="power_wave_caption">Choose an AC system to compare voltage and current phase.</span></div>
-              <svg id="power-wizard-wave" viewBox="0 0 720 190" role="img" aria-label="Voltage and current sine waves with phase angle">
+              <svg id="power-wizard-wave" viewBox="0 0 720 190" role="img" aria-label="Electrical waveform visualization">
                 <line x1="48" y1="92" x2="690" y2="92" class="wave-axis" />
                 <line x1="48" y1="34" x2="48" y2="150" class="wave-axis" />
                 <path id="power_wave_voltage" class="wave-voltage" d="" />
                 <path id="power_wave_current" class="wave-current" d="" />
-                <text x="54" y="28" class="wave-label wave-label-voltage">Voltage V</text>
-                <text x="54" y="174" class="wave-label wave-label-current">Current I</text>
+                <path id="power_wave_phase_b" class="wave-phase-b" d="" />
+                <path id="power_wave_phase_c" class="wave-phase-c" d="" />
+                <text id="power_wave_voltage_label" x="54" y="28" class="wave-label wave-label-voltage">Voltage V</text>
+                <text id="power_wave_current_label" x="54" y="174" class="wave-label wave-label-current">Current I</text>
                 <text id="power_wave_angle" x="660" y="28" text-anchor="end" class="wave-angle">DC</text>
               </svg>
-              <p class="wave-note">For AC, the horizontal separation is the phase angle θ. The current curve shifts right as power factor falls, while real power follows <strong>kW = kVA × PF</strong>.</p>
+              <p id="power_wave_note" class="wave-note">For AC, the horizontal separation is the phase angle θ. The current curve shifts right as power factor falls, while real power follows <strong>kW = kVA × PF</strong>.</p>
             </div>
             <div class="input-group">
               <div>

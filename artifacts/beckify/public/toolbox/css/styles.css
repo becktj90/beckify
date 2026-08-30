@@ -1252,6 +1252,8 @@ body.report-open { overflow: hidden; }
 .power-wave-panel .wave-axis { stroke: rgba(255,255,255,0.17); stroke-width: 1; stroke-dasharray: 4 5; }
 .power-wave-panel .wave-voltage { fill: none; stroke: #60a5fa; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .power-wave-panel .wave-current { fill: none; stroke: #f5c451; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.power-wave-panel .wave-phase-b { fill: none; stroke: #6ee7b7; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.power-wave-panel .wave-phase-c { fill: none; stroke: #ff8a8a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .power-wave-panel .wave-label { font: 600 12px 'JetBrains Mono', monospace; }
 .power-wave-panel .wave-label-voltage { fill: #60a5fa; }
 .power-wave-panel .wave-label-current { fill: #f5c451; }

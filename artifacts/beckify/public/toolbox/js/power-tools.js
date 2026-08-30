@@ -23,10 +23,15 @@ const SQRT3 = Math.sqrt(3);
 window.updatePowerWizardWave = function () {
   const voltagePath = document.getElementById('power_wave_voltage');
   const currentPath = document.getElementById('power_wave_current');
+  const phaseBPath = document.getElementById('power_wave_phase_b');
+  const phaseCPath = document.getElementById('power_wave_phase_c');
+  const voltageLabel = document.getElementById('power_wave_voltage_label');
+  const currentLabel = document.getElementById('power_wave_current_label');
   const caption = document.getElementById('power_wave_caption');
+  const note = document.getElementById('power_wave_note');
   const angleLabel = document.getElementById('power_wave_angle');
   const systemEl = document.getElementById('pc_system');
-  if (!voltagePath || !currentPath || !systemEl) return;
+  if (!voltagePath || !currentPath || !phaseBPath || !phaseCPath || !systemEl) return;
 
   const system = systemEl.value;
   const pfInput = Number(document.getElementById('pc_pf')?.value);
@@ -51,17 +56,39 @@ window.updatePowerWizardWave = function () {
   if (system === 'dc') {
     voltagePath.setAttribute('d', `M ${start} ${center - amplitude} L ${end} ${center - amplitude}`);
     currentPath.setAttribute('d', `M ${start} ${center + amplitude} L ${end} ${center + amplitude}`);
+    phaseBPath.setAttribute('d', '');
+    phaseCPath.setAttribute('d', '');
     if (caption) caption.textContent = 'DC has no phase angle: voltage and current are steady values.';
     if (angleLabel) angleLabel.textContent = 'DC · θ = 0°';
+    if (voltageLabel) voltageLabel.textContent = 'Voltage V';
+    if (currentLabel) currentLabel.textContent = 'Current I';
+    if (note) note.textContent = 'DC has no rotating phase relationship; the two lines show steady voltage and current values.';
     return;
   }
 
   voltagePath.setAttribute('d', pathFor(0));
+  if (system === '3ph') {
+    currentPath.setAttribute('d', pathFor((2 * Math.PI) / 3));
+    phaseBPath.setAttribute('d', pathFor((4 * Math.PI) / 3));
+    phaseCPath.setAttribute('d', '');
+    if (caption) caption.textContent = 'Three-phase AC · A, B, and C are 120° apart; this plot shows the three phase-voltage references.';
+    if (angleLabel) angleLabel.textContent = 'A · B · C = 120°';
+    if (voltageLabel) voltageLabel.textContent = 'A phase';
+    if (currentLabel) currentLabel.textContent = 'B / C phases';
+    if (note) note.innerHTML = 'Blue, amber, and green are the three line-to-neutral phase voltages. Their 120° separation creates a rotating field; <strong>kVA = √3 × V<sub>L-L</sub> × I<sub>L</sub></strong>.';
+    return;
+  }
+
   currentPath.setAttribute('d', pathFor(theta));
+  phaseBPath.setAttribute('d', '');
+  phaseCPath.setAttribute('d', '');
   const degrees = Math.round(theta * 180 / Math.PI);
   const systemLabel = system === '3ph' ? 'three-phase' : 'single-phase';
   if (caption) caption.textContent = `${systemLabel} AC · current lags voltage by ${degrees}° at PF ${Math.round(pf * 100)}%.`;
   if (angleLabel) angleLabel.textContent = `θ = ${degrees}°`;
+  if (voltageLabel) voltageLabel.textContent = 'Voltage V';
+  if (currentLabel) currentLabel.textContent = 'Current I';
+  if (note) note.innerHTML = 'For single-phase AC, the horizontal separation is phase angle θ. The current curve shifts right as power factor falls, while real power follows <strong>kW = kVA × PF</strong>.';
 };
 
 document.addEventListener('DOMContentLoaded', function () {
