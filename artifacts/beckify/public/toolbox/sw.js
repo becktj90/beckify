@@ -62,6 +62,7 @@ const SHELL = [
   './js/smith-chart.js',
   './js/stem-tools.js',
   './js/math-explanations.js',
+  './js/icons.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
