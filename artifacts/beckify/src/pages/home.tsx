@@ -26,7 +26,7 @@ export default function Home() {
         description="Beckify brings practical electrical engineering calculators, NEC references, field tools, hands-on builds, and browser games together in one fast resource."
         path="/"
       />
-      <Starfield />
+      <Starfield showPenrose={false} />
       <div className="relative z-10">
         <Nav />
 

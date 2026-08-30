@@ -7,7 +7,7 @@ import { PenroseField } from "@/components/PenroseField";
  * behind every page's content. Purely decorative — animations live in
  * src/index.css.
  */
-export const Starfield = () => (
+export const Starfield = ({ showPenrose = true }: { showPenrose?: boolean }) => (
   <>
     <div className="starfield">
       <span className="shooting-star" />
@@ -16,7 +16,7 @@ export const Starfield = () => (
       <div className="space-object planet" />
       <div className="space-object moon" />
     </div>
-    <PenroseField />
+    {showPenrose && <PenroseField />}
     <div className="nebula-glow">
       <span />
       <span />

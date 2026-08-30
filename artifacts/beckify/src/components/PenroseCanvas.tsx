@@ -51,7 +51,7 @@ function buildPatch(width: number, height: number) {
     const c = { x: Math.cos(((2 * i + 1) * Math.PI) / 10), y: Math.sin(((2 * i + 1) * Math.PI) / 10) };
     triangles.push(i % 2 === 0 ? { thin: false, a: origin, b: c, c: b } : { thin: false, a: origin, b, c });
   }
-  for (let i = 0; i < 4; i += 1) triangles = deflate(triangles);
+  for (let i = 0; i < 3; i += 1) triangles = deflate(triangles);
 
   const scale = Math.min(width, height) * 0.64;
   const center = { x: width * 0.7, y: height * 0.5 };
@@ -74,12 +74,17 @@ function buildPatch(width: number, height: number) {
       c,
       // Build from the centre out: the star establishes itself first, then
       // each ring keys into the previous one like a physical puzzle.
-      order: distance * 1180 + seeded(index) * 220,
+      order: distance,
       driftX: Math.cos(angle) * drift,
       driftY: Math.sin(angle) * drift,
       hue: seeded(index + 3),
     };
-  }).sort((left, right) => left.order - right.order);
+  }).sort((left, right) => left.order - right.order).map((tile, index) => ({
+    ...tile,
+    // Let the first two pieces establish the centre, then introduce only a
+    // handful at a time. The result reads as assembly, not a quick reveal.
+    order: index === 0 ? 0 : index === 1 ? 520 : 980 + Math.floor((index - 2) / 6) * 620 + ((index - 2) % 6) * 56,
+  }));
 }
 
 function easeOutCubic(value: number) {
@@ -147,7 +152,7 @@ export function PenroseCanvas({ className = "" }: { className?: string }) {
       const elapsed = reducedMotion ? 4800 : now - start;
       context.clearRect(0, 0, width, height);
       for (const tile of tiles) {
-        const progress = Math.max(0, Math.min(1, (elapsed - tile.order) / 760));
+        const progress = Math.max(0, Math.min(1, (elapsed - tile.order) / 680));
         if (progress > 0) paintTriangle(context, tile, progress, elapsed);
       }
       // Assemble once, then only allow an extremely slow aurora glint. No
