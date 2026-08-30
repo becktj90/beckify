@@ -5,11 +5,15 @@ import {
   ArrowRight,
   ArrowUp,
   Maximize2,
+  Minimize2,
   Pause,
   Play,
   RotateCcw,
+  Volume2,
+  VolumeX,
   Wind,
 } from "lucide-react";
+import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
 type Status = "ready" | "running" | "paused" | "gameover";
 type Character = "apollo" | "rocco";
@@ -252,6 +256,7 @@ export function BootyButtScooter() {
   const invulnerableRef = useRef(0);
   const puffsRef = useRef<Puff[]>([]);
   const riderRef = useRef<Character>("apollo");
+  const soundRef = useRef(true);
   const startRef = useRef<(() => void) | null>(null);
   const resetRef = useRef<(() => void) | null>(null);
   const hopRef = useRef<((direction: "up" | "down" | "left" | "right") => void) | null>(null);
@@ -262,6 +267,8 @@ export function BootyButtScooter() {
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(() => (typeof window === "undefined" ? 0 : Number(localStorage.getItem(BEST_KEY) || 0)));
   const [character, setCharacter] = useState<Character>("apollo");
+  const [sound, setSound] = useState(true);
+  const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
 
   useEffect(() => {
     bestRef.current = best;
@@ -270,6 +277,10 @@ export function BootyButtScooter() {
   useEffect(() => {
     riderRef.current = character;
   }, [character]);
+
+  useEffect(() => {
+    soundRef.current = sound;
+  }, [sound]);
 
   useEffect(() => {
     const image = new Image();
@@ -286,6 +297,23 @@ export function BootyButtScooter() {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
+
+    let audio: AudioContext | null = null;
+    const chirp = (notes: number[], duration = 0.12, type: OscillatorType = "triangle", volume = 0.035) => {
+      if (!soundRef.current || typeof window === "undefined") return;
+      audio ??= new AudioContext();
+      notes.forEach((note, index) => {
+        const oscillator = audio!.createOscillator();
+        const gain = audio!.createGain();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(note, audio!.currentTime + index * 0.035);
+        gain.gain.setValueAtTime(volume, audio!.currentTime + index * 0.035);
+        gain.gain.exponentialRampToValueAtTime(0.001, audio!.currentTime + index * 0.035 + duration);
+        oscillator.connect(gain).connect(audio!.destination);
+        oscillator.start(audio!.currentTime + index * 0.035);
+        oscillator.stop(audio!.currentTime + index * 0.035 + duration);
+      });
+    };
 
     const player = {
       row: 0,
@@ -325,6 +353,7 @@ export function BootyButtScooter() {
     const startRun = () => {
       resetWorld();
       setGameStatus("running");
+      chirp([523, 659, 784], 0.14, "triangle", 0.025);
     };
 
     const canMoveTo = (row: number, col: number) => row >= 0 && row < 9999 && col >= 0 && col < COLS;
@@ -347,6 +376,7 @@ export function BootyButtScooter() {
       };
       moveRef.current = player.move;
       if (kind === "fart") {
+        chirp([180, 126, 88], 0.16, "sawtooth", 0.04);
         fartFlashRef.current = 0.72;
         invulnerableRef.current = 0.7;
         puffsRef.current.push(
@@ -380,6 +410,7 @@ export function BootyButtScooter() {
       if (direction === "down") pushMove(-1, 0, "hop");
       if (direction === "left") pushMove(0, -1, "hop");
       if (direction === "right") pushMove(0, 1, "hop");
+      chirp(direction === "up" ? [420, 620] : [360], 0.07, "square", 0.018);
     };
     hopRef.current = hop;
 
@@ -391,6 +422,7 @@ export function BootyButtScooter() {
         localStorage.setItem(BEST_KEY, String(nextBest));
       }
       setGameStatus("gameover");
+      chirp([180, 125, 80], 0.24, "sawtooth", 0.055);
     };
 
     const collisionAt = (renderRow: number, renderCol: number) => {
@@ -454,6 +486,7 @@ export function BootyButtScooter() {
           if (player.row > scoreRef.current) {
             scoreRef.current = player.row;
             setScore(scoreRef.current);
+            if (player.row > 0 && player.row % 5 === 0) chirp([784, 988, 1175], 0.14, "triangle", 0.035);
           }
           if (collisionAt(player.renderRow, player.renderCol)) {
             finish();
@@ -683,17 +716,9 @@ export function BootyButtScooter() {
       fartRef.current = null;
       setStatusRef.current = null;
       spriteRef.current = null;
+      audio?.close();
     };
   }, []);
-
-  const toggleFullscreen = async () => {
-    if (!stageRef.current) return;
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-      return;
-    }
-    await stageRef.current.requestFullscreen?.();
-  };
 
   const reset = () => {
     resetRef.current?.();
@@ -717,20 +742,21 @@ export function BootyButtScooter() {
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
           <span>BEST {best.toString().padStart(3, "0")}</span>
+          <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => setSound((value) => !value)} aria-label={sound ? "Mute game sounds" : "Enable game sounds"}>{sound ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
           <button
             type="button"
-            className="rounded-md border border-[var(--border)] p-2"
-            onClick={toggleFullscreen}
-            aria-label="Toggle fullscreen"
+            className="game-icon-button rounded-md border border-[var(--border)] p-2"
+            onClick={() => toggleFullscreen(stageRef.current)}
+            aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}
           >
-            <Maximize2 size={16} />
+            {immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
         </div>
       </div>
 
       <div
         ref={stageRef}
-        className="relative mx-auto max-w-[960px] overflow-hidden rounded-3xl border border-[#29446c] bg-[#06101f] shadow-[0_24px_80px_rgba(0,0,0,.42)]"
+        className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "max-w-[960px] rounded-3xl border border-[#29446c]"}`}
       >
         <canvas
           ref={canvasRef}
@@ -739,6 +765,7 @@ export function BootyButtScooter() {
           className="block h-auto w-full touch-none select-none"
           aria-label="Booty Butt Scooter crossy road game"
         />
+        {immersive ? <button type="button" className="absolute right-4 top-4 z-20 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
 
         {status !== "running" ? (
           <div className="absolute inset-0 flex items-center justify-center bg-[#06101f]/76 p-6 text-center backdrop-blur-[2px]">
@@ -757,14 +784,14 @@ export function BootyButtScooter() {
               <div className="mt-5 flex justify-center gap-2">
                 <button
                   type="button"
-                  className={`rounded-full border px-3 py-2 text-sm font-semibold ${character === "apollo" ? "border-[#6df0df] bg-[#6df0df] text-[#06101f]" : "border-[var(--border)] text-white"}`}
+                  className={`game-control rounded-full border px-3 py-2 text-sm font-semibold ${character === "apollo" ? "border-[#6df0df] bg-[#6df0df] text-[#06101f]" : "border-[var(--border)] text-white"}`}
                   onClick={() => changeCharacter("apollo")}
                 >
                   Apollo
                 </button>
                 <button
                   type="button"
-                  className={`rounded-full border px-3 py-2 text-sm font-semibold ${character === "rocco" ? "border-[#ffcb75] bg-[#ffcb75] text-[#06101f]" : "border-[var(--border)] text-white"}`}
+                  className={`game-control rounded-full border px-3 py-2 text-sm font-semibold ${character === "rocco" ? "border-[#ffcb75] bg-[#ffcb75] text-[#06101f]" : "border-[var(--border)] text-white"}`}
                   onClick={() => changeCharacter("rocco")}
                 >
                   Rocco
@@ -772,7 +799,7 @@ export function BootyButtScooter() {
               </div>
               <button
                 type="button"
-                className="pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#6df0df] px-5 py-3 text-sm font-semibold text-[#06101f]"
+                className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#6df0df] px-5 py-3 text-sm font-semibold text-[#06101f]"
                 onClick={() => (status === "paused" ? setStatusRef.current?.("running") : startRef.current?.())}
               >
                 <Play size={16} />
@@ -783,40 +810,40 @@ export function BootyButtScooter() {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
+      <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
         <span>
           Score {score} · Best {best} · Rider {character === "apollo" ? "Apollo" : "Rocco"}
         </span>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" aria-label="Scooter controls">
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2"
+            className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2"
             onClick={() => setStatusRef.current?.(status === "paused" ? "running" : "paused")}
           >
             <Pause size={14} />
             {status === "paused" ? "Resume" : "Pause"}
           </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={reset}>
+          <button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={reset}>
             <RotateCcw size={14} />
             Reset
           </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("left")}>
+          <button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("left")}>
             <ArrowLeft size={14} />
             Left
           </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("up")}>
+          <button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("up")}>
             <ArrowUp size={14} />
             Hop
           </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => fartRef.current?.()}>
+          <button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => fartRef.current?.()}>
             <Wind size={14} />
             Fart
           </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("right")}>
+          <button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("right")}>
             Right
             <ArrowRight size={14} />
           </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("down")}>
+          <button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => hopRef.current?.("down")}>
             <ArrowDown size={14} />
             Back
           </button>

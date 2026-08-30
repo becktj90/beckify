@@ -4,6 +4,8 @@
   const CW = 420;
   const CH = 640;
   const BASE_FPS = 60;
+  // Real mission telemetry, compressed into a short arcade flight.
+  const MISSION_PACE = 5;
   const STORAGE_KEY = 'newGlennRunnerStateV3';
   const LEGACY_KEY = 'newGlennRunnerSettingsV2';
   const DEFAULT_SETTINGS = {
@@ -130,8 +132,8 @@
   const LAUNCH_BOOST_MAX = 2.7;
   const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 1.6; // Denser spawn pacing; lower = more frequent obstacles.
   const ASCENT_INITIAL_SPAWN_AT = 1.5;
-  const ASCENT_INITIAL_OBSTACLE_TARGET = 22;
-  const ASCENT_MAX_OBSTACLE_TARGET = 35;
+  const ASCENT_INITIAL_OBSTACLE_TARGET = 14;
+  const ASCENT_MAX_OBSTACLE_TARGET = 24;
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
@@ -840,7 +842,7 @@
     if (!state.canvas || !state.ctx) return;
     const wrapper = state.wrapper || state.canvas.parentElement;
     const fs = document.fullscreenElement || document.webkitFullscreenElement;
-    const isFullscreen = !!(wrapper && fs === wrapper);
+    const isFullscreen = !!(wrapper && (fs === wrapper || wrapper.classList.contains('arcade-immersive')));
     const dpr = window.devicePixelRatio || 1;
     const maxW = isFullscreen
       ? Math.max(1, window.innerWidth - 24)
@@ -1633,7 +1635,7 @@
 
   function updateMission(dt) {
     updateWorldScroll(dt);
-    state.session.phaseElapsed += dt;
+    state.session.phaseElapsed += dt * MISSION_PACE;
     if (state.ui.radioTimer > 0) state.ui.radioTimer -= dt;
     if (state.ui.overlayTimer > 0) state.ui.overlayTimer -= dt;
     if (state.ui.phaseCaptionTimer > 0) state.ui.phaseCaptionTimer -= dt;
@@ -1754,7 +1756,7 @@
   function updateAscent(dt) {
     const step = dt * BASE_FPS;
     const mode = currentDifficulty();
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.25 + state.world.cameraVy * 0.55);
     applyRocketControl(dt, false);
     if (state.ui.tutorialTimer > 0) {
@@ -1811,8 +1813,9 @@
       if (o.y > CH + 30) {
         state.obstacles.splice(i, 1);
         state.session.obstacleStreak += 1;
-        if (state.session.obstacleStreak > 0 && state.session.obstacleStreak % 5 === 0) {
-          showOverlayMessage(`STREAK x${state.session.obstacleStreak}`, 1.2);
+        state.session.score += 0.25;
+        if (state.session.obstacleStreak > 0 && state.session.obstacleStreak % 3 === 0) {
+          showOverlayMessage(`CLEAR SKY x${state.session.obstacleStreak}  +FLIGHT POINTS`, 1.2);
           Audio.play('boop', state.settings);
           Particles.burst(18, () => ({
             kind: 'flash',
@@ -1846,7 +1849,7 @@
 
   function updateMaxQ(dt) {
     const mode = currentDifficulty();
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.3 + state.world.cameraVy * 0.6);
     applyRocketControl(dt, false);
     Audio.updateRumble(0.58, state.settings);
@@ -1874,7 +1877,7 @@
 
   function updateCoast(dt) {
     const mode = currentDifficulty();
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.24 + state.world.cameraVy * 0.5);
     applyRocketControl(dt, false);
     Audio.updateRumble(0.35, state.settings);
@@ -1884,7 +1887,7 @@
   }
 
   function updateStageSep(dt) {
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.18 + state.world.cameraVy * 0.3);
     state.effects.stageSepPuff = Math.max(0, state.effects.stageSepPuff - dt * 0.8);
     if (state.effects.stageSepPuff > 0.4) {
@@ -1951,7 +1954,7 @@
   }
 
   function updateSplitPhase(dt) {
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     state.effects.splitView = true;
     updateSky(dt, 0.14 + state.world.cameraVy * 0.28);
     if (state.effects.fairingSplit > 0) state.effects.fairingSplit = Math.max(0, state.effects.fairingSplit - dt);
@@ -1988,7 +1991,7 @@
 
   function updateOrbitInsert(dt) {
     const mode = currentDifficulty();
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.1 + state.world.cameraVy * 0.2);
     state.upper.targetBand = 0.5 + Math.sin(state.session.phaseElapsed * 2.2) * 0.22;
     if (state.input.boostHeld) state.upper.throttle = clamp(state.upper.throttle + dt * 0.75, 0, 1);
@@ -2013,7 +2016,7 @@
   }
 
   function updatePayload(dt) {
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.08 + state.world.cameraVy * 0.18);
     state.upper.deployAngle = approach(state.upper.deployAngle, 0.55, dt * 1.5);
     if (state.input.boostPressed && !state.upper.released) {
@@ -2031,7 +2034,7 @@
   }
 
   function updateExtended(dt) {
-    state.session.totalElapsed += dt;
+    state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.12 + state.world.cameraVy * 0.35);
     applyRocketControl(dt, true);
     if (Math.random() < 0.05) spawnUpperHazard();
@@ -2828,8 +2831,8 @@
     ctx.fillRect(0, 0, CW, CH);
     ctx.fillStyle = '#33ff33';
     ctx.textAlign = 'center';
-    ctx.font = '36px "VT323", monospace';
-    ctx.fillText('NEW GLENN RUNNER v' + (window.TOOLBOX_VERSION || '4.0.0'), CW / 2, 124);
+    ctx.font = '20px "VT323", monospace';
+    ctx.fillText('NEW GLENN // FLIGHT MISSION', CW / 2, 124);
     ctx.font = '12px "Share Tech Mono", monospace';
     ctx.fillStyle = '#8ce0ff';
     ctx.fillText('FIRST NEWLY-BUILT ORBITAL PAD SINCE THE 1960s', CW / 2, 154);
@@ -2839,7 +2842,7 @@
     ctx.strokeStyle = '#ffcf5d';
     ctx.strokeRect(86, 254, CW - 172, 42);
     ctx.font = 'bold 16px "Share Tech Mono", monospace';
-    ctx.fillText('TAP OR PRESS SPACE TO BEGIN PAD OPS', CW / 2, 281);
+    ctx.fillText('TAP OR PRESS SPACE TO START PREFLIGHT', CW / 2, 281);
     state.ui.difficultyButtons = [
       { mode: 'KID', x: 80, y: 302, w: 78, h: 24 },
       { mode: 'CADET', x: 171, y: 302, w: 78, h: 24 },
@@ -2854,11 +2857,12 @@
     });
     ctx.fillStyle = '#33ff33';
     ctx.font = '11px "Share Tech Mono", monospace';
-    ctx.fillText('GOAL: Liftoff → Stage Sep → Orbit Insertion → Deploy Payload. Everything explodes on impact.', CW / 2, 346);
-    ctx.fillText('TVC gimbal lags — steer early. Control loss = RUD. Gradatim Ferociter.', CW / 2, 362);
-    ctx.fillText('KID: forgiving  |  CADET: explodes on hit  |  PAD RAT: realistic & brutal', CW / 2, 378);
-    if (state.settings.bestFlight) ctx.fillText(`Mission Record: ${state.settings.bestFlight.name} | ${state.settings.bestFlight.medal}`, CW / 2, 394);
-    ctx.fillText('P pause | M mute | Settings in pause menu', CW / 2, 410);
+    ctx.fillText('HOLD BOOST TO LIFT. STEER AROUND HAZARDS.', CW / 2, 346);
+    ctx.fillText('TAP THE GOLD PROMPT FOR STAGE SEP + PAYLOAD.', CW / 2, 362);
+    ctx.fillText('CLEAR SKY STREAKS = EXTRA FLIGHT POINTS.', CW / 2, 378);
+    ctx.fillText('KID = FRIENDLY | CADET = CLASSIC | PAD RAT = HARD', CW / 2, 394);
+    if (state.settings.bestFlight) ctx.fillText(`BEST: ${state.settings.bestFlight.name} | ${state.settings.bestFlight.medal}`, CW / 2, 410);
+    ctx.fillText('P pause | M mute | Settings in pause menu', CW / 2, 426);
   }
 
   function drawPadOverlay(ctx) {
@@ -3492,17 +3496,33 @@
     const wrapper = state.wrapper || document.getElementById('arcade-fs-wrapper');
     if (!wrapper) return;
     const fs = document.fullscreenElement || document.webkitFullscreenElement;
+    const button = document.getElementById('arcade-fullscreen-btn');
+    const setImmersive = (active) => {
+      wrapper.classList.toggle('arcade-immersive', active);
+      document.documentElement.classList.toggle('arcade-immersive-open', active);
+      if (button) {
+        button.textContent = active ? '↙ EXIT' : '⛶ FS';
+        button.title = active ? 'Exit fullscreen' : 'Play fullscreen';
+        button.setAttribute('aria-label', button.title);
+      }
+      window.setTimeout(resizeCanvas, 0);
+    };
+    if (wrapper.classList.contains('arcade-immersive')) {
+      setImmersive(false);
+      return;
+    }
     if (!fs) {
       const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
       if (!req) {
-        showOverlayMessage('Fullscreen is not supported in this browser.', 2.4);
+        setImmersive(true);
         return;
       }
       const result = req.call(wrapper, { navigationUI: 'hide' });
       if (result && typeof result.catch === 'function') {
         result.catch(() => {
-          // Older Safari rejects the options object; retry with no options.
-          try { req.call(wrapper); } catch (_) { showOverlayMessage('Tap FS again to enter fullscreen.', 2.4); }
+          // iPhone Safari rejects arbitrary-element fullscreen. Keep a usable,
+          // in-page fullscreen mode rather than leaving the button as a dead end.
+          setImmersive(true);
         });
       }
     } else {

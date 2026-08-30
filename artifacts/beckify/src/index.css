@@ -54,6 +54,9 @@
 
   /* Spacing / sizing tokens */
   --content-max-width: 72rem;
+  --game-play: #55e6cb;
+  --game-reward: #ffb84a;
+  --game-control-height: 2.75rem;
 }
 
 html {
@@ -524,4 +527,82 @@ html {
     0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
     0 8px 24px rgba(0, 0, 0, 0.4),
     0 24px 56px -12px rgba(139, 123, 255, 0.28);
+}
+
+/* Native fullscreen needs explicit sizing; Safari/iPhone falls back to the
+   component's fixed immersive mode when arbitrary element fullscreen is not supported. */
+.game-stage:fullscreen {
+  width: 100vw;
+  max-width: none !important;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #06101f;
+}
+
+.game-stage:fullscreen canvas {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Game surfaces use cabinet-like edge lighting without adding permanent UI
+   weight over the playable canvas. */
+.game-stage {
+  isolation: isolate;
+  touch-action: manipulation;
+}
+
+.game-stage:not(:fullscreen)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(117, 211, 255, 0.1), inset 0 0 48px rgba(96, 89, 222, 0.07);
+}
+
+.game-control,
+.game-icon-button {
+  min-height: var(--game-control-height);
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.game-control:hover,
+.game-icon-button:hover {
+  border-color: color-mix(in srgb, var(--game-play) 55%, var(--border));
+  background-color: color-mix(in srgb, var(--game-play) 8%, transparent);
+}
+
+.game-control:active,
+.game-icon-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.game-control:focus-visible,
+.game-icon-button:focus-visible {
+  outline: 2px solid var(--game-play);
+  outline-offset: 2px;
+}
+
+.game-command-bar {
+  padding: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 0.875rem;
+  background: rgba(3, 9, 24, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-control,
+  .game-icon-button { transition: none; }
 }
