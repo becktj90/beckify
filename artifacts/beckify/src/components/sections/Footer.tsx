@@ -14,7 +14,7 @@ export const Footer = () => (
         Site Map
       </Link>
       <Link href="/gear" className="hover:text-[var(--accent)] transition-colors duration-200">
-        Field gear
+        Recommended Gear
       </Link>
       {CONTACT_LINKS.map(({ href, label, icon: Icon, external }) => (
         <a
