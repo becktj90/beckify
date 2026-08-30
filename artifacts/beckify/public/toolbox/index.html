@@ -182,16 +182,20 @@
       <button class="nav-btn" data-target="sec-ohm" data-keywords="#Electronics #Calculators ohms law voltage current resistance">Ohm's Law</button>
       <button class="nav-btn" data-target="sec-power-dc" data-keywords="#Electronics #Calculators dc power watts">DC Power</button>
       <button class="nav-btn" data-target="sec-power-wizard" data-keywords="#Electronics #Calculators power current converter ac dc single phase three phase kva kw kvar power factor sine wave">Power Wizard</button>
+      <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
+      <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">02 · Electronics &amp; digital design</div>
       <button class="nav-btn" data-target="sec-reactance" data-keywords="#Electronics #Calculators reactance impedance capacitive inductive">Reactance &amp; Impedance</button>
       <button class="nav-btn" data-target="sec-resonance" data-keywords="#Electronics #Calculators resonance lc tank frequency">Resonance</button>
       <button class="nav-btn" data-target="sec-pfc">Power Factor Correction</button>
       <button class="nav-btn" data-target="sec-sp" data-keywords="#Electronics #Calculators series parallel resistance capacitance inductance">Resistance, C, L</button>
       <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
-      <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
-      <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
+      <button class="nav-btn" data-target="sec-digital" data-keywords="digital logic gates boolean expression truth table circuit simulator AND OR NOT XOR NAND NOR">Digital Logic Workbench</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">02 · Power distribution</div>
+      <div class="sidebar-section-title">03 · Power distribution</div>
       <button class="nav-btn" data-target="sec-vdrop" data-keywords="#PowerDistribution #NEC #Calculators voltage drop feeder branch circuit">Voltage Drop</button>
       <button class="nav-btn" data-target="sec-conductor-length" data-keywords="conductor length by resistance distance loop test one way wire length awg kcmil circular mils rho copper aluminum">Conductor Length by Resistance</button>
       <button class="nav-btn" data-target="sec-motor" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower">Motor Calculations</button>
@@ -208,7 +212,7 @@
       <button class="nav-btn" data-target="sec-load-factors" data-keywords="demand factor diversity factor coincidence factor load factor capacity factor connected load maximum demand kva">Load Factors &amp; Capacity</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">03 · System planning</div>
+      <div class="sidebar-section-title">04 · System planning</div>
       <button class="nav-btn" data-target="sec-ups">UPS Sizing</button>
       <button class="nav-btn" data-target="sec-gen">Generator Sizing</button>
       <button class="nav-btn" data-target="sec-hybrid">Hybrid Generator</button>
@@ -219,7 +223,7 @@
       <button class="nav-btn" data-target="sec-harmonics">Harmonics Tool</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">04 · Test &amp; analysis</div>
+      <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
@@ -228,7 +232,7 @@
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">05 · References &amp; workspace</div>
+      <div class="sidebar-section-title">06 · References &amp; workspace</div>
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
       <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
@@ -239,7 +243,7 @@
       <button class="nav-btn" data-target="sec-projects" data-keywords="saved jobs projects history save load offline storage preferences units imperial metric game statistics high scores">Saved Jobs &amp; Settings</button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">06 · Specialist tools</div>
+      <div class="sidebar-section-title">07 · Specialist tools</div>
       <button class="nav-btn" data-target="sec-ebike-tools" data-keywords="ebike e-bike torque rpm sprocket chainring gear ratio wheel speed range battery wh per mile">E-Bike Drivetrain Tools</button>
       <button class="nav-btn" data-target="sec-stem-tools" data-keywords="differential equations ODE trig trigonometry linear algebra matrix chemistry calculus optics quantum physics linear programming LP STEM math">STEM Toolkit</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
@@ -935,6 +939,18 @@
                 <div id="sp_result_pr" class="result"></div>
               </div>
             </div>
+            <div class="card">
+              <div class="card-title">Target RT — parallel pair finder</div>
+              <div class="card-body">
+                <div class="formula-box">R<sub>T</sub> = (R₁ × R₂) / (R₁ + R₂)<br>Searches standard resistor pairs for the closest target.</div>
+                <div class="input-group">
+                  <div><label for="pt_target">Target RT (Ω)</label><input id="pt_target" type="number" min="0.001" step="any" placeholder="e.g. 1000"></div>
+                  <div><label for="pt_series">Preferred series</label><select id="pt_series"><option value="E12">E12</option><option value="E24" selected>E24</option></select></div>
+                </div>
+                <button class="btn" type="button" onclick="calcParallelTarget()">Find resistor pairs</button>
+                <div id="pt_result" class="target-pair-result" aria-live="polite"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1003,6 +1019,63 @@
         </div>
 
       </div><!-- end tab-group -->
+    </section>
+
+    <!-- ════════════════════════════════════════
+         DIGITAL LOGIC WORKBENCH
+         ════════════════════════════════════════ -->
+    <section id="sec-digital" class="section">
+      <div class="section-header">
+        <h2>Digital Logic Workbench</h2>
+        <p>Build small combinational circuits, simulate signals, view truth tables, and convert between gate diagrams and Boolean expressions.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Boolean logic</summary>
+          <div class="section-info-body"><strong>Boolean expression:</strong> use <code>AND</code>, <code>OR</code>, <code>NOT</code>, and <code>XOR</code>, or the symbols <code>*</code>, <code>+</code>, <code>!</code>, and <code>^</code>. Parentheses control grouping. This workbench is for combinational logic; it does not model propagation delay, flip-flops, or physical wiring constraints.</div>
+        </details>
+      </div>
+      <div class="card-grid digital-grid">
+        <div class="card">
+          <div class="card-title">Boolean expression ⇄ logic diagram</div>
+          <div class="card-body">
+            <label for="logic-expression">Expression for output Y</label>
+            <textarea id="logic-expression" class="logic-expression" spellcheck="false" rows="3">(A AND B) OR (NOT C)</textarea>
+            <div class="logic-actions">
+              <button id="logic-build-expression" class="btn" type="button">Build diagram from expression</button>
+              <button id="logic-example" class="btn btn-sm" type="button">Load example</button>
+            </div>
+            <div id="logic-expression-status" class="note" aria-live="polite">Use A–D as inputs. The diagram and truth table update from the active expression.</div>
+            <div class="logic-inputs" role="group" aria-label="Logic input switches">
+              <label><input id="logic-input-a" type="checkbox"> A</label>
+              <label><input id="logic-input-b" type="checkbox"> B</label>
+              <label><input id="logic-input-c" type="checkbox"> C</label>
+              <label><input id="logic-input-d" type="checkbox"> D</label>
+            </div>
+            <div id="logic-live-output" class="logic-output" aria-live="polite">Y = —</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Gate diagram editor</div>
+          <div class="card-body">
+            <p class="note">Create named intermediate gates, then extract an equivalent Boolean expression. Gates may reference A–D or an earlier gate.</p>
+            <div id="logic-gate-editor" class="logic-gate-editor"></div>
+            <div class="logic-actions">
+              <button id="logic-add-gate" class="btn btn-sm" type="button">+ Add gate</button>
+              <button id="logic-extract-gates" class="btn" type="button">Extract Boolean from diagram</button>
+            </div>
+            <div id="logic-gate-status" class="note" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-grid digital-grid-secondary">
+        <div class="card logic-diagram-card">
+          <div class="card-title">Live logic diagram</div>
+          <div class="card-body"><div id="logic-diagram" class="logic-diagram" role="img" aria-label="Logic circuit diagram"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Truth table</div>
+          <div class="card-body"><div id="logic-truth-table" class="logic-truth-table"></div></div>
+        </div>
+      </div>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -7336,6 +7409,7 @@
 <script src="js/factor-tools.js"></script>
 <script src="js/xfmr-engine.js"></script>
 <script src="js/timer555.js"></script>
+<script src="js/digital-tools.js"></script>
 <script src="js/report-export.js"></script>
 <script src="js/url-state.js"></script>
 <script src="js/tdr-analyzer.js"></script>

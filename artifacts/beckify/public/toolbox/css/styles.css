@@ -1448,3 +1448,29 @@ body.report-open { overflow: hidden; }
 .stem-result-tbl tr:hover td { background: var(--bg-card); }
 .stem-highlight { color: #6ee7b7; font-weight: 700; }
 .stem-formula { font-family: monospace; background: var(--bg-input); border-radius: 4px; padding: 2px 6px; color: #f5c451; }
+
+/* ── Digital logic workbench ── */
+.digital-grid-secondary { margin-top: 16px; }
+.logic-expression { width: 100%; resize: vertical; min-height: 74px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 7px; color: var(--fg); padding: 9px; font: 0.82rem/1.45 var(--font-main); }
+.logic-expression:focus { outline: 2px solid var(--violet-ring); border-color: var(--violet); }
+.logic-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.logic-inputs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.logic-inputs label { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 9px; color: var(--fg-muted); cursor: pointer; font-size: 0.78rem; }
+.logic-inputs input { accent-color: var(--violet); }
+.logic-output { margin-top: 12px; padding: 10px; border-radius: 7px; background: var(--violet-soft); border: 1px solid var(--violet-ring); font: 700 1rem var(--font-main); color: var(--violet); }
+.logic-gate-editor { display: grid; gap: 7px; }
+.logic-gate-row { display: grid; grid-template-columns: 40px 1fr 1fr 1fr auto; align-items: center; gap: 6px; }
+.logic-gate-row select { min-width: 0; }
+.logic-gate-name { color: var(--blue); font: 700 0.76rem var(--font-main); }
+.logic-remove { padding: 4px 8px; min-height: 30px; }
+.logic-diagram { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; min-height: 270px; }
+.logic-diagram svg { display: block; min-width: 560px; width: 100%; height: auto; }
+.logic-truth-table { overflow-x: auto; }
+.logic-truth-table table, .target-pair-result table { width: 100%; border-collapse: collapse; font-size: 0.77rem; }
+.logic-truth-table th, .target-pair-result th { text-align: left; color: var(--violet); background: var(--violet-soft); }
+.logic-truth-table th, .logic-truth-table td, .target-pair-result th, .target-pair-result td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-family: var(--font-main); white-space: nowrap; }
+.logic-on { color: var(--green-ok); font-weight: 700; }
+.logic-off { color: var(--fg-dim); }
+.target-pair-result { margin-top: 12px; overflow-x: auto; }
+.target-pair-result .note { margin: 8px 0 0; }
+@media (max-width: 620px) { .logic-gate-row { grid-template-columns: 34px 1fr 1fr auto; } .logic-gate-row select:nth-of-type(3) { grid-column: 2 / span 2; } }
