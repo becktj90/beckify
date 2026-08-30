@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ['sec-wire-select', 'wire-select', 'calcWireSelection'],
     ['sec-conduit-adv', 'conduit-fill', 'calcConduitFillAdvanced'],
     ['sec-555', '555', 'calc555Astable'],
-    ['sec-power-convert', 'power-convert', 'calcPowerConvert'],
+    ['sec-power-wizard', 'power-wizard', 'calcPowerConvert'],
     ['sec-xfmr-size', 'xfmr-size', 'calcXfmrSizing'],
     ['sec-vdrop', 'vdrop', null],
     ['sec-conductor-length', 'conductor-length', 'calcConductorLengthByResistance'],

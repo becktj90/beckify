@@ -181,8 +181,7 @@
       <div class="sidebar-section-title">⚡ Fundamentals</div>
       <button class="nav-btn" data-target="sec-ohm" data-keywords="#Electronics #Calculators ohms law voltage current resistance">Ohm's Law</button>
       <button class="nav-btn" data-target="sec-power-dc" data-keywords="#Electronics #Calculators dc power watts">DC Power</button>
-      <button class="nav-btn" data-target="sec-power-convert" data-keywords="power current converter amps to kw kw to amps kva hp horsepower single phase three phase convert solve">Power &amp; Current Converter</button>
-      <button class="nav-btn" data-target="sec-power-ac" data-keywords="#Electronics #Calculators ac power kva kw kvar power triangle">AC Power</button>
+      <button class="nav-btn" data-target="sec-power-wizard" data-keywords="#Electronics #Calculators power current converter ac dc single phase three phase kva kw kvar power factor sine wave">Power Wizard</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">〰 AC Circuits</div>
@@ -298,7 +297,7 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-ohm">Ohm's Law</a></li>
             <li><a class="home-tool-link" href="#sec-power-dc">DC Power</a></li>
-            <li><a class="home-tool-link" href="#sec-power-ac">AC Power (1Ø &amp; 3Ø)</a></li>
+            <li><a class="home-tool-link" href="#sec-power-wizard">Power Wizard (DC, 1Ø &amp; 3Ø AC)</a></li>
           </ul>
         </div>
 
@@ -329,7 +328,7 @@
             <li><a class="home-tool-link" href="#sec-conduit-adv">Conduit Fill (Mixed)</a></li>
             <li><a class="home-tool-link" href="#sec-wire-select">Wire Size &amp; Ampacity</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-engine">Transformer Engine</a></li>
-            <li><a class="home-tool-link" href="#sec-power-convert">Power &amp; Current Converter</a></li>
+            <li><a class="home-tool-link" href="#sec-power-wizard">Power Wizard (DC, 1Ø &amp; 3Ø AC)</a></li>
             <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
@@ -595,7 +594,7 @@
     <!-- ════════════════════════════════════════
          AC POWER
          ════════════════════════════════════════ -->
-    <section id="sec-power-ac" class="section">
+    <section id="sec-power-ac-legacy" class="section" hidden>
       <div class="section-header">
         <h2>🌀 AC Power Formulas</h2>
         <p>Single-phase and three-phase apparent, real, and reactive power calculations.</p>
@@ -2190,12 +2189,12 @@
     <!-- ════════════════════════════════════════
          POWER & CURRENT CONVERTER
          ════════════════════════════════════════ -->
-    <section id="sec-power-convert" class="section">
+    <section id="sec-power-wizard" class="section">
       <div class="section-header">
-        <h2>🔀 Power &amp; Current Converter</h2>
-        <p>Solve for amps, kW, kVA or HP from any one of the others — DC, single-phase or three-phase.</p>
+        <h2>Power Wizard</h2>
+        <p>One guided path for DC, single-phase AC, and three-phase AC power, current, kVA, kW, and motor horsepower.</p>
         <details class="section-info">
-          <summary>ℹ More Info — Power Conversions</summary>
+          <summary>ℹ How to use the Power Wizard</summary>
           <div class="section-info-body">
             Pick which quantity you already know and the rest are derived from it. The relationships are:
             <ul>
@@ -2217,10 +2216,23 @@
               1Ø: kVA = V × I ÷ 1000 &nbsp;|&nbsp; 3Ø: kVA = √3 × V<sub>L-L</sub> × I<sub>L</sub> ÷ 1000<br>
               kW = kVA × PF &nbsp;|&nbsp; HP = kW × 1000 × Eff ÷ 746
             </div>
+            <div class="power-wave-panel" aria-live="polite">
+              <div class="power-wave-heading"><strong>AC waveform</strong><span id="power_wave_caption">Choose an AC system to compare voltage and current phase.</span></div>
+              <svg id="power-wizard-wave" viewBox="0 0 720 190" role="img" aria-label="Voltage and current sine waves with phase angle">
+                <line x1="48" y1="92" x2="690" y2="92" class="wave-axis" />
+                <line x1="48" y1="34" x2="48" y2="150" class="wave-axis" />
+                <path id="power_wave_voltage" class="wave-voltage" d="" />
+                <path id="power_wave_current" class="wave-current" d="" />
+                <text x="54" y="28" class="wave-label wave-label-voltage">Voltage V</text>
+                <text x="54" y="174" class="wave-label wave-label-current">Current I</text>
+                <text id="power_wave_angle" x="660" y="28" text-anchor="end" class="wave-angle">DC</text>
+              </svg>
+              <p class="wave-note">For AC, the horizontal separation is the phase angle θ. The current curve shifts right as power factor falls, while real power follows <strong>kW = kVA × PF</strong>.</p>
+            </div>
             <div class="input-group">
               <div>
                 <label>System</label>
-                <select id="pc_system">
+                <select id="pc_system" onchange="updatePowerWizardWave()">
                   <option value="3ph">3-Phase AC</option>
                   <option value="1ph">1-Phase AC</option>
                   <option value="dc">DC</option>
@@ -2228,7 +2240,7 @@
               </div>
               <div>
                 <label>Voltage (V)</label>
-                <input type="number" id="pc_voltage" value="480" min="1" step="1">
+                <input type="number" id="pc_voltage" value="480" min="1" step="1" oninput="updatePowerWizardWave()">
               </div>
             </div>
             <div class="input-group">
@@ -2243,20 +2255,20 @@
               </div>
               <div>
                 <label>Value</label>
-                <input type="number" id="pc_value" value="50" min="0" step="any">
+                <input type="number" id="pc_value" value="50" min="0" step="any" oninput="updatePowerWizardWave()">
               </div>
             </div>
             <div class="input-group">
               <div>
                 <label>Power Factor (%)</label>
-                <input type="number" id="pc_pf" value="90" min="1" max="100" step="1">
+                <input type="number" id="pc_pf" value="90" min="1" max="100" step="1" oninput="updatePowerWizardWave()">
               </div>
               <div>
                 <label>Efficiency (%)</label>
-                <input type="number" id="pc_eff" value="93" min="1" max="100" step="1">
+                <input type="number" id="pc_eff" value="93" min="1" max="100" step="1" oninput="updatePowerWizardWave()">
               </div>
             </div>
-            <button class="btn" onclick="calcPowerConvert()">Convert</button>
+            <button class="btn" onclick="calcPowerConvert()">Run Power Wizard</button>
             <div id="pc_result" class="result"></div>
           </div>
         </div>

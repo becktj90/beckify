@@ -30,7 +30,7 @@
     wrap.className = 'calculation-visual';
     wrap.setAttribute('role', 'img');
     wrap.setAttribute('aria-label', label);
-    const svg = svgElement('svg', { viewBox: '0 0 640 156', width: '100%', height: 'auto', focusable: 'false', 'aria-hidden': 'true' });
+    const svg = svgElement('svg', { viewBox: '0 0 640 180', width: '100%', height: 'auto', focusable: 'false', 'aria-hidden': 'true' });
     wrap.appendChild(svg);
     const copy = result.querySelector('.result-copy-row');
     result.insertBefore(wrap, copy || null);
@@ -66,6 +66,232 @@
     svg.appendChild(svgElement('polyline', { points: points.join(' '), fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-linejoin': 'round' }));
     text(svg, 24, 124, '0', { fill: PALETTE.muted, 'font-size': 11 });
     text(svg, 616, 124, 'time ->', { fill: PALETTE.muted, 'font-size': 11, 'text-anchor': 'end' });
+  }
+
+  function plotAxes(svg, title, xLabel, yLabel) {
+    text(svg, 16, 24, title, { fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 48, 132, 616, 132, { stroke: PALETTE.line });
+    line(svg, 48, 42, 48, 132, { stroke: PALETTE.line });
+    text(svg, 616, 151, xLabel, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+    text(svg, 42, 42, yLabel, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+  }
+
+  function powerTriangle(svg, title) {
+    text(svg, 320, 23, title, { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 180, 118, 470, 118, { stroke: PALETTE.blue, 'stroke-width': 3 });
+    line(svg, 470, 118, 470, 58, { stroke: PALETTE.yellow, 'stroke-width': 3 });
+    line(svg, 180, 118, 470, 58, { stroke: PALETTE.accent, 'stroke-width': 3 });
+    text(svg, 320, 137, 'kW · real work', { 'text-anchor': 'middle', fill: PALETTE.blue, 'font-size': 11, 'font-weight': 700 });
+    text(svg, 486, 91, 'kVAR', { fill: PALETTE.yellow, 'font-size': 11, 'font-weight': 700 });
+    text(svg, 315, 75, 'kVA · apparent', { 'text-anchor': 'middle', fill: PALETTE.accent, 'font-size': 11, 'font-weight': 700 });
+    text(svg, 180, 151, 'PF = kW / kVA', { fill: PALETTE.muted, 'font-size': 10 });
+  }
+
+  function reactancePlot(svg) {
+    plotAxes(svg, 'REACTANCE VS FREQUENCY', 'frequency →', 'Ω');
+    const xl = [], xc = [];
+    for (let x = 48; x <= 616; x += 7) {
+      const t = (x - 48) / 568;
+      xl.push(`${x},${132 - t * 76}`);
+      xc.push(`${x},${47 + t * 76}`);
+    }
+    svg.appendChild(svgElement('polyline', { points: xl.join(' '), fill: 'none', stroke: PALETTE.blue, 'stroke-width': 3 }));
+    svg.appendChild(svgElement('polyline', { points: xc.join(' '), fill: 'none', stroke: PALETTE.yellow, 'stroke-width': 3 }));
+    text(svg, 570, 58, 'XL = 2πfL', { fill: PALETTE.blue, 'font-size': 10, 'text-anchor': 'end' });
+    text(svg, 570, 126, 'XC = 1/(2πfC)', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'end' });
+  }
+
+  function resonancePlot(svg) {
+    plotAxes(svg, 'RESONANCE WINDOW', 'frequency →', 'response');
+    const points = [];
+    for (let x = 48; x <= 616; x += 7) {
+      const t = (x - 48) / 568;
+      const y = 132 - 82 * Math.exp(-Math.pow((t - 0.52) / 0.12, 2));
+      points.push(`${x},${y}`);
+    }
+    svg.appendChild(svgElement('polyline', { points: points.join(' '), fill: 'none', stroke: PALETTE.green, 'stroke-width': 3 }));
+    line(svg, 343, 42, 343, 132, { stroke: PALETTE.green, 'stroke-width': 1.5, 'stroke-dasharray': '4 4' });
+    text(svg, 343, 38, 'f₀', { fill: PALETTE.green, 'font-size': 12, 'text-anchor': 'middle', 'font-weight': 700 });
+    text(svg, 343, 151, 'resonant frequency', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function network(svg, parallel) {
+    text(svg, 320, 23, parallel ? 'PARALLEL PATHS' : 'SERIES PATH', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    const left = 94, right = 546, top = parallel ? 62 : 92;
+    if (parallel) {
+      line(svg, left, top, left, 122, { stroke: PALETTE.line });
+      line(svg, right, top, right, 122, { stroke: PALETTE.line });
+      line(svg, left, top, 546, top, { stroke: PALETTE.line });
+      line(svg, left, 122, 546, 122, { stroke: PALETTE.line });
+      line(svg, left, 72, 188, 72, { stroke: PALETTE.blue, 'stroke-width': 3 });
+      line(svg, 188, 72, 188, 112, { stroke: PALETTE.blue, 'stroke-width': 3 });
+      line(svg, 188, 112, 452, 112, { stroke: PALETTE.blue, 'stroke-width': 3 });
+      line(svg, 188, 72, 452, 72, { stroke: PALETTE.yellow, 'stroke-width': 3 });
+      text(svg, 320, 68, 'R₁', { fill: PALETTE.yellow, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' });
+      text(svg, 320, 108, 'R₂', { fill: PALETTE.blue, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' });
+      text(svg, 320, 151, 'two paths share the same voltage', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    } else {
+      line(svg, left, top, 205, top, { stroke: PALETTE.line });
+      line(svg, 205, top, 320, top, { stroke: PALETTE.blue, 'stroke-width': 3 });
+      line(svg, 320, top, 435, top, { stroke: PALETTE.yellow, 'stroke-width': 3 });
+      line(svg, 435, top, right, top, { stroke: PALETTE.line });
+      text(svg, 262, top - 10, 'R₁', { fill: PALETTE.blue, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' });
+      text(svg, 378, top - 10, 'R₂', { fill: PALETTE.yellow, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' });
+      text(svg, 320, 151, 'same current flows through each element', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    }
+    [left, right].forEach((x) => svg.appendChild(svgElement('circle', { cx: x, cy: top, r: 5, fill: PALETTE.text })));
+  }
+
+  function transformer(svg) {
+    text(svg, 320, 23, 'ENERGY TRANSFER', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    for (let i = 0; i < 4; i += 1) {
+      svg.appendChild(svgElement('path', { d: `M 176 ${55 + i * 18} q 24 9 0 18`, fill: 'none', stroke: PALETTE.blue, 'stroke-width': 3 }));
+      svg.appendChild(svgElement('path', { d: `M 464 ${55 + i * 18} q -24 9 0 18`, fill: 'none', stroke: PALETTE.green, 'stroke-width': 3 }));
+    }
+    line(svg, 232, 92, 400, 92, { stroke: PALETTE.accent, 'stroke-width': 2, 'stroke-dasharray': '5 5' });
+    text(svg, 138, 145, 'primary', { fill: PALETTE.blue, 'font-size': 11, 'text-anchor': 'middle' });
+    text(svg, 582, 145, 'secondary', { fill: PALETTE.green, 'font-size': 11, 'text-anchor': 'middle' });
+    text(svg, 320, 145, 'magnetic coupling', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function faultPath(svg) {
+    text(svg, 320, 23, 'FAULT CURRENT PATH', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 70, 92, 170, 92, { stroke: PALETTE.blue, 'stroke-width': 4 });
+    line(svg, 270, 92, 370, 92, { stroke: PALETTE.yellow, 'stroke-width': 4 });
+    line(svg, 470, 92, 570, 92, { stroke: PALETTE.red, 'stroke-width': 4 });
+    [70, 170, 270, 370, 470, 570].forEach((x) => svg.appendChild(svgElement('circle', { cx: x, cy: 92, r: 5, fill: PALETTE.text })));
+    text(svg, 120, 125, 'source', { fill: PALETTE.blue, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 220, 72, 'OCPD', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 420, 125, 'impedance', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 520, 72, 'fault', { fill: PALETTE.red, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 151, 'available current is limited by the path impedance', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function capacity(svg, title, valueLabel, color) {
+    text(svg, 20, 24, title, { fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 36, 88, 604, 88, { stroke: PALETTE.line, 'stroke-width': 16 });
+    line(svg, 36, 88, 470, 88, { stroke: color, 'stroke-width': 16 });
+    line(svg, 470, 56, 470, 120, { stroke: PALETTE.text, 'stroke-width': 2, 'stroke-dasharray': '4 4' });
+    text(svg, 470, 45, 'limit', { fill: PALETTE.text, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 36, 126, '0', { fill: PALETTE.muted, 'font-size': 10 });
+    text(svg, 604, 126, 'envelope', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+    text(svg, 320, 151, valueLabel, { fill: color, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' });
+  }
+
+  function conduitSection(svg) {
+    text(svg, 320, 23, 'RACEWAY FILL ENVELOPE', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    svg.appendChild(svgElement('ellipse', { cx: 320, cy: 91, rx: 78, ry: 49, fill: 'rgba(96,165,250,0.08)', stroke: PALETTE.blue, 'stroke-width': 3 }));
+    [[287, 72, PALETTE.red], [353, 72, PALETTE.yellow], [287, 111, PALETTE.green], [353, 111, PALETTE.accent]].forEach(([cx, cy, color]) => {
+      svg.appendChild(svgElement('circle', { cx, cy, r: 18, fill: String(color), opacity: 0.88 }));
+    });
+    text(svg, 320, 151, 'conductors must stay inside the permitted fill area', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function conductorCrossSection(svg) {
+    text(svg, 320, 23, 'CONDUCTOR AREA', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    svg.appendChild(svgElement('circle', { cx: 260, cy: 91, r: 48, fill: 'rgba(245,196,81,0.12)', stroke: PALETTE.yellow, 'stroke-width': 3 }));
+    svg.appendChild(svgElement('circle', { cx: 260, cy: 91, r: 30, fill: 'rgba(245,196,81,0.2)', stroke: PALETTE.yellow, 'stroke-width': 1 }));
+    line(svg, 332, 91, 548, 91, { stroke: PALETTE.green, 'stroke-width': 4 });
+    line(svg, 332, 65, 332, 117, { stroke: PALETTE.green, 'stroke-width': 2 });
+    line(svg, 548, 65, 548, 117, { stroke: PALETTE.green, 'stroke-width': 2 });
+    text(svg, 440, 78, 'diameter → circular mils', { fill: PALETTE.green, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 260, 151, 'area grows with the square of diameter', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function unitFlow(svg) {
+    text(svg, 320, 23, 'UNIT CONVERSION PATH', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    const nodes = [['input', 112, PALETTE.blue], ['base unit', 320, PALETTE.accent], ['output', 528, PALETTE.green]];
+    nodes.forEach(([label, x, color]) => {
+      svg.appendChild(svgElement('rect', { x: Number(x) - 50, y: 68, width: 100, height: 44, rx: 10, fill: 'rgba(255,255,255,0.05)', stroke: String(color), 'stroke-width': 2 }));
+      text(svg, Number(x), 95, String(label), { fill: String(color), 'font-size': 11, 'font-weight': 700, 'text-anchor': 'middle' });
+    });
+    line(svg, 164, 90, 268, 90, { stroke: PALETTE.line, 'stroke-width': 3 });
+    line(svg, 372, 90, 476, 90, { stroke: PALETTE.line, 'stroke-width': 3 });
+    text(svg, 320, 151, 'the numerical value changes; the physical quantity does not', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function hazardBoundary(svg) {
+    text(svg, 320, 23, 'HAZARD BOUNDARY', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    svg.appendChild(svgElement('circle', { cx: 320, cy: 91, r: 48, fill: 'rgba(255,138,138,0.14)', stroke: PALETTE.red, 'stroke-width': 3 }));
+    svg.appendChild(svgElement('circle', { cx: 320, cy: 91, r: 26, fill: 'rgba(245,196,81,0.18)', stroke: PALETTE.yellow, 'stroke-width': 2 }));
+    text(svg, 320, 95, 'classified', { fill: PALETTE.red, 'font-size': 10, 'text-anchor': 'middle', 'font-weight': 700 });
+    text(svg, 320, 158, 'equipment, gas group, and protection method must agree', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function energyBars(svg, title) {
+    text(svg, 320, 23, title, { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    const bars = [['load', 0.7, PALETTE.blue], ['headroom', 0.3, PALETTE.green], ['reserve', 0.18, PALETTE.yellow]];
+    bars.forEach(([label, width, color], index) => {
+      const y = 52 + index * 29;
+      text(svg, 86, y + 7, label, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+      svg.appendChild(svgElement('rect', { x: 104, y, width: 470, height: 13, rx: 6, fill: 'rgba(255,255,255,0.08)' }));
+      svg.appendChild(svgElement('rect', { x: 104, y, width: 470 * width, height: 13, rx: 6, fill: color }));
+    });
+    text(svg, 320, 151, 'capacity is read against demand and reserve', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function drivetrain(svg) {
+    text(svg, 320, 23, 'DRIVETRAIN RATIO', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    svg.appendChild(svgElement('circle', { cx: 190, cy: 92, r: 48, fill: 'none', stroke: PALETTE.blue, 'stroke-width': 3 }));
+    svg.appendChild(svgElement('circle', { cx: 450, cy: 92, r: 25, fill: 'none', stroke: PALETTE.yellow, 'stroke-width': 3 }));
+    for (let i = 0; i < 12; i += 1) {
+      const a = i * Math.PI / 6;
+      line(svg, 190 + Math.cos(a) * 40, 92 + Math.sin(a) * 40, 190 + Math.cos(a) * 50, 92 + Math.sin(a) * 50, { stroke: PALETTE.blue, 'stroke-width': 2 });
+    }
+    for (let i = 0; i < 8; i += 1) {
+      const a = i * Math.PI / 4;
+      line(svg, 450 + Math.cos(a) * 20, 92 + Math.sin(a) * 20, 450 + Math.cos(a) * 28, 92 + Math.sin(a) * 28, { stroke: PALETTE.yellow, 'stroke-width': 2 });
+    }
+    line(svg, 245, 92, 392, 92, { stroke: PALETTE.green, 'stroke-width': 3 });
+    text(svg, 190, 151, 'driven', { fill: PALETTE.blue, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 450, 151, 'driver', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function safetyLoop(svg) {
+    text(svg, 320, 23, 'INTRINSIC-SAFETY LOOP', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 108, 66, 214, 66, { stroke: PALETTE.blue, 'stroke-width': 3 });
+    line(svg, 326, 66, 432, 66, { stroke: PALETTE.yellow, 'stroke-width': 3 });
+    line(svg, 432, 118, 108, 118, { stroke: PALETTE.green, 'stroke-width': 3 });
+    [108, 214, 326, 432].forEach((x) => svg.appendChild(svgElement('circle', { cx: x, cy: x === 108 || x === 432 ? 66 : 66, r: 5, fill: PALETTE.text })));
+    text(svg, 160, 53, 'barrier', { fill: PALETTE.blue, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 380, 53, 'field device', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 145, 'entity parameters must close the loop', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function lightRays(svg) {
+    text(svg, 320, 23, 'ILLUMINATION GEOMETRY', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    svg.appendChild(svgElement('circle', { cx: 320, cy: 72, r: 10, fill: PALETTE.yellow }));
+    for (let i = 0; i < 9; i += 1) {
+      const x = 116 + i * 51;
+      line(svg, 320, 82, x, 128, { stroke: i % 2 ? PALETTE.yellow : PALETTE.blue, 'stroke-width': 2 });
+    }
+    line(svg, 88, 132, 552, 132, { stroke: PALETTE.line, 'stroke-width': 3 });
+    text(svg, 320, 151, 'inverse-square behavior depends on distance and geometry', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function tapLadder(svg) {
+    text(svg, 320, 23, 'TRANSFORMER TAP POSITION', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 88, 108, 552, 108, { stroke: PALETTE.line, 'stroke-width': 2 });
+    for (let i = 0; i < 7; i += 1) {
+      const x = 112 + i * 72;
+      const y = 108 - Math.abs(i - 3) * 12;
+      line(svg, x, y, x, 108, { stroke: i === 3 ? PALETTE.green : PALETTE.blue, 'stroke-width': 3 });
+      svg.appendChild(svgElement('circle', { cx: x, cy: y, r: 5, fill: i === 3 ? PALETTE.green : PALETTE.blue }));
+      text(svg, x, 132, `${i - 3 > 0 ? '+' : ''}${i - 3}`, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    }
+    text(svg, 320, 151, 'tap changes shift the secondary voltage around nominal', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
+  function harmonicSpectrum(svg) {
+    text(svg, 320, 23, 'HARMONIC SPECTRUM', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 80, 130, 590, 130, { stroke: PALETTE.line });
+    [0.92, 0.2, 0.36, 0.1, 0.22, 0.07, 0.14].forEach((height, index) => {
+      const x = 104 + index * 70;
+      svg.appendChild(svgElement('rect', { x, y: 130 - height * 76, width: 30, height: height * 76, rx: 4, fill: index === 0 ? PALETTE.blue : PALETTE.red }));
+      text(svg, x + 15, 148, `${index + 1}`, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    });
+    text(svg, 320, 23, 'HARMONIC SPECTRUM', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    text(svg, 320, 166, 'order →', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
   }
 
   function pulseTrace(svg) {
@@ -118,13 +344,33 @@
     const values = resultNumbers(result);
     const id = section.id;
     if (id === 'sec-ohm') return ohms(shell(result, 'Ohm\'s law relationship between voltage, current, and resistance'));
-    if (id === 'sec-vdrop' || id === 'sec-lighting-opt') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
-    if (id === 'sec-conduit' || id === 'sec-conduit-adv') return gauge(shell(result, 'Conduit fill shown against the permitted fill envelope'), values.find((value, index) => /fill/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'RACEWAY FILL', PALETTE.green);
-    if (id === 'sec-reactance' || id === 'sec-resonance' || id === 'sec-harmonics') return waveform(shell(result, 'AC waveform showing changing electrical response over time'), 'AC RESPONSE', PALETTE.blue);
-    if (id === 'sec-power-ac' || id === 'sec-pfc') return waveform(shell(result, 'Power waveform showing phase and energy flow'), 'POWER FLOW', PALETTE.accent);
+    if (id === 'sec-vdrop') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
+    if (id === 'sec-conduit' || id === 'sec-conduit-adv') return conduitSection(shell(result, 'Conduit cross-section and conductor fill envelope'));
+    if (id === 'sec-power-dc') return energyBars(shell(result, 'DC power load and capacity relationship'), 'DC POWER BALANCE');
+    if (id === 'sec-power-wizard') return;
+    if (id === 'sec-reactance') return reactancePlot(shell(result, 'Inductive reactance rises while capacitive reactance falls with frequency'));
+    if (id === 'sec-resonance') return resonancePlot(shell(result, 'Resonance response with a marked resonant frequency'));
+    if (id === 'sec-harmonics') return harmonicSpectrum(shell(result, 'Harmonic spectrum by order'));
+    if (id === 'sec-pfc') return powerTriangle(shell(result, 'Power triangle showing real, reactive, and apparent power'));
+    if (id === 'sec-sp') return network(shell(result, 'Series or parallel circuit relationship'), /parallel/i.test(result.textContent || ''));
+    if (id === 'sec-motor') return energyBars(shell(result, 'Motor electrical input, mechanical output, and reserve relationship'), 'MOTOR POWER PATH');
+    if (id === 'sec-xfmr' || id === 'sec-xfmr-size' || id === 'sec-xfmr-engine' || id === 'sec-xfmr-wizard') return transformer(shell(result, 'Transformer primary to secondary energy transfer'));
+    if (id === 'sec-wire-select') return capacity(shell(result, 'Conductor ampacity against the allowable design envelope'), 'AMPACITY SELECTION', 'selected conductor vs allowable envelope', PALETTE.green);
+    if (id === 'sec-sc') return faultPath(shell(result, 'Source through overcurrent protection to fault path'));
+    if (id === 'sec-ups' || id === 'sec-gen' || id === 'sec-hybrid' || id === 'sec-bess') return energyBars(shell(result, 'Load, reserve, and capacity relationship'), 'ENERGY CAPACITY');
+    if (id === 'sec-ebike-tools') return drivetrain(shell(result, 'E-bike drivetrain gear ratio relationship'));
+    if (id === 'sec-nec') return faultPath(shell(result, 'Branch circuit source, protection, conductors, and load path'));
+    if (id === 'sec-isloop') return safetyLoop(shell(result, 'Intrinsic-safety barrier and field-device loop'));
+    if (id === 'sec-lighting-opt' || id === 'sec-photometrics') return lightRays(shell(result, 'Lighting geometry and illumination spread'));
+    if (id === 'sec-tap') return tapLadder(shell(result, 'Transformer tap positions around nominal voltage'));
+    if (id === 'sec-cm') return conductorCrossSection(shell(result, 'Conductor diameter and circular-mil area relationship'));
+    if (id === 'sec-convert') return unitFlow(shell(result, 'Electrical unit conversion path'));
+    if (id === 'sec-haz') return hazardBoundary(shell(result, 'Hazardous-area classification boundary'));
+    if (id === 'sec-bldg-load') return energyBars(shell(result, 'Building load and reserve relationship'), 'BUILDING LOAD');
+    if (id === 'sec-power-ac') return powerTriangle(shell(result, 'Power triangle showing real, reactive, and apparent power'));
     if (id === 'sec-tdr') return pulseTrace(shell(result, 'Time-domain reflectometry launch pulse and reflected fault event'));
     if (id === 'sec-stem-tools') return numericSignal(shell(result, 'Visual summary of the numerical values shown above'), values.length ? values : [0, 1]);
-    return numericSignal(shell(result, 'Visual summary of the calculator values shown above'), values.length ? values : [0, 1]);
+    return;
   }
 
   function init() {

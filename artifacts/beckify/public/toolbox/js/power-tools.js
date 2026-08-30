@@ -14,6 +14,61 @@
 const SQRT3 = Math.sqrt(3);
 
 /* ---------------------------------------------------------------------------
+   POWER WIZARD WAVEFORM
+   ---------------------------------------------------------------------------
+   This is a teaching plot, not a measurement trace: voltage is the reference
+   sine wave and current is shifted by theta = acos(PF).  A lower PF therefore
+   produces a visible lag instead of another generic result graphic.
+   --------------------------------------------------------------------------- */
+window.updatePowerWizardWave = function () {
+  const voltagePath = document.getElementById('power_wave_voltage');
+  const currentPath = document.getElementById('power_wave_current');
+  const caption = document.getElementById('power_wave_caption');
+  const angleLabel = document.getElementById('power_wave_angle');
+  const systemEl = document.getElementById('pc_system');
+  if (!voltagePath || !currentPath || !systemEl) return;
+
+  const system = systemEl.value;
+  const pfInput = Number(document.getElementById('pc_pf')?.value);
+  const pf = Math.max(0.01, Math.min(1, (Number.isFinite(pfInput) ? pfInput : 100) / 100));
+  const theta = system === 'dc' ? 0 : Math.acos(pf);
+  const start = 48;
+  const end = 690;
+  const center = 92;
+  const amplitude = 42;
+  const cycles = 2;
+  const span = end - start;
+  const pathFor = (phase) => {
+    const points = [];
+    for (let x = start; x <= end; x += 5) {
+      const t = ((x - start) / span) * Math.PI * 2 * cycles;
+      const y = center - Math.sin(t - phase) * amplitude;
+      points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    return `M ${points.join(' L ')}`;
+  };
+
+  if (system === 'dc') {
+    voltagePath.setAttribute('d', `M ${start} ${center - amplitude} L ${end} ${center - amplitude}`);
+    currentPath.setAttribute('d', `M ${start} ${center + amplitude} L ${end} ${center + amplitude}`);
+    if (caption) caption.textContent = 'DC has no phase angle: voltage and current are steady values.';
+    if (angleLabel) angleLabel.textContent = 'DC · θ = 0°';
+    return;
+  }
+
+  voltagePath.setAttribute('d', pathFor(0));
+  currentPath.setAttribute('d', pathFor(theta));
+  const degrees = Math.round(theta * 180 / Math.PI);
+  const systemLabel = system === '3ph' ? 'three-phase' : 'single-phase';
+  if (caption) caption.textContent = `${systemLabel} AC · current lags voltage by ${degrees}° at PF ${Math.round(pf * 100)}%.`;
+  if (angleLabel) angleLabel.textContent = `θ = ${degrees}°`;
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+  window.updatePowerWizardWave();
+});
+
+/* ---------------------------------------------------------------------------
    1. POWER & CURRENT CONVERTER
    ---------------------------------------------------------------------------
    DC        S = V x I                     (no power factor)

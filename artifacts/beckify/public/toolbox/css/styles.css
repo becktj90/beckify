@@ -1238,6 +1238,27 @@ body.report-open { overflow: hidden; }
 }
 .wave-host svg { display: block; min-width: 380px; }
 
+/* Power Wizard: phase-aware teaching plot */
+.power-wave-panel {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid rgba(139, 123, 255, 0.28);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(139, 123, 255, 0.08), rgba(96, 165, 250, 0.04));
+}
+.power-wave-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--fg-muted); font-size: 0.78rem; }
+.power-wave-heading strong { color: var(--fg); font-family: 'Space Grotesk', sans-serif; font-size: 0.92rem; }
+.power-wave-panel svg { display: block; width: 100%; height: auto; min-height: 150px; }
+.power-wave-panel .wave-axis { stroke: rgba(255,255,255,0.17); stroke-width: 1; stroke-dasharray: 4 5; }
+.power-wave-panel .wave-voltage { fill: none; stroke: #60a5fa; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.power-wave-panel .wave-current { fill: none; stroke: #f5c451; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.power-wave-panel .wave-label { font: 600 12px 'JetBrains Mono', monospace; }
+.power-wave-panel .wave-label-voltage { fill: #60a5fa; }
+.power-wave-panel .wave-label-current { fill: #f5c451; }
+.power-wave-panel .wave-angle { fill: var(--fg); font: 600 12px 'JetBrains Mono', monospace; }
+.wave-note { margin: 8px 0 0; color: var(--fg-muted); font-size: 0.75rem; line-height: 1.55; }
+.wave-note strong { color: var(--fg); }
+
 /* ── Transformer engine: side-by-side compare + proof drawer ─────────────── */
 .res-row.xe-compare {
   display: grid;
