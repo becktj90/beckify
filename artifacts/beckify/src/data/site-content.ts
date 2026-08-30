@@ -221,9 +221,8 @@ export const GAMES: Game[] = [
   {
     name: "Booty Butt Scooter",
     description:
-      "Endless lane-dodging runner with responsive mobile controls, score persistence, and fast arcade pacing.",
-    url: "https://play.beckify.com/scooter/",
-    external: true,
+      "Responsive scooter lane runner with swipe controls, jump timing, score persistence, and fast arcade pacing.",
+    url: "/games/booty-butt-scooter",
   },
   {
     name: "New Glenn Runner",

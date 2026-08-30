@@ -61,12 +61,13 @@ const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrica
 <title>${escapeXml(`${title} | Beckify`)}</title><meta name="description" content="${escapeXml(description)}"><meta name="robots" content="index,follow">
 <link rel="canonical" href="${siteUrl}${path}"><meta property="og:title" content="${escapeXml(`${title} | Beckify`)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${siteUrl}${path}"><meta property="og:image" content="${siteUrl}/opengraph.jpg"><meta name="twitter:card" content="summary_large_image">
 ${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5333275222472637" crossorigin="anonymous"></script>` : ""}
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZVFZ9X595E');</script>
 <script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": ["SoftwareApplication", "WebApplication"], name: title, description, url: `${siteUrl}${path}`, operatingSystem: "All", applicationCategory: "EngineeringApplication", isAccessibleForFree: true, publisher: { "@type": "Organization", name: "Beckify", url: siteUrl } })}</script>
 <style>body{margin:0;background:#05060f;color:#eef0fa;font:16px/1.6 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:48px 22px}a{color:#9b8cff}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1}p{color:#b7bad2;max-width:680px}.eyebrow{color:#9b8cff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;font-weight:700}.cta{display:inline-block;margin:18px 0;padding:12px 18px;border-radius:9px;background:#8b7bff;color:#fff;text-decoration:none;font-weight:700}iframe{width:100%;height:720px;border:1px solid #30304a;border-radius:14px;margin-top:22px;background:#111326}</style></head>
 <body><main><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><p>Beckify tools are designed for quick field calculations and engineering reference work. Confirm final designs against the applicable NEC edition, equipment documentation, and site requirements.</p><a class="cta" href="${toolPath}">Open the interactive tool</a><iframe src="/toolbox/index.html#${toolPath.split("#")[1]}" title="${escapeXml(title)}"></iframe></main></body></html>`;
 
 const urls = [
-  ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/games/cosmic-cadet", "monthly", "0.7"], ["/games/finger-runner", "monthly", "0.7"], ["/projects", "weekly", "0.8"], ["/projects/vespa-p200e", "monthly", "0.8"], ["/gear", "monthly", "0.7"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
+  ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/games/cosmic-cadet", "monthly", "0.7"], ["/games/booty-butt-scooter", "monthly", "0.7"], ["/games/finger-runner", "monthly", "0.7"], ["/projects", "weekly", "0.8"], ["/projects/vespa-p200e", "monthly", "0.8"], ["/gear", "monthly", "0.7"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
   ...categories.map(([slug], index) => [`/toolbox/category/${slug}/`, index === 5 ? "weekly" : "monthly", "0.8"]),
   ...tools.map(([slug], index) => [`/toolbox/${slug}/`, index === 36 ? "weekly" : "monthly", index === 36 ? "0.9" : "0.8"]),
 ];
@@ -75,6 +76,7 @@ await writeFile(resolve(root, "public/sitemap.xml"), xml);
 
 if (process.argv.includes("--dist")) {
   const output = resolve(root, "dist/public");
+  await writeFile(resolve(output, "sitemap.xml"), xml);
   for (const [slug, title, description, anchor] of tools) {
     const directory = resolve(output, "toolbox", slug);
     await mkdir(directory, { recursive: true });

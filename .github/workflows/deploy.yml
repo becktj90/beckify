@@ -42,6 +42,18 @@ jobs:
           PORT: "3000"
           VITE_AMAZON_ASSOCIATE_TAG: ${{ vars.AMAZON_ASSOCIATE_TAG }}
 
+      - name: Verify crawl files before publish
+        run: |
+          test -s artifacts/beckify/dist/public/sitemap.xml
+          test -s artifacts/beckify/dist/public/robots.txt
+          head -n 1 artifacts/beckify/dist/public/sitemap.xml | grep -q 'xml version'
+          grep -q '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' artifacts/beckify/dist/public/sitemap.xml
+          grep -q 'Sitemap: https://beckify.com/sitemap.xml' artifacts/beckify/dist/public/robots.txt
+          if grep -qi '<html' artifacts/beckify/dist/public/sitemap.xml; then
+            echo "sitemap.xml must be XML, not an HTML fallback"
+            exit 1
+          fi
+
       - name: Configure TDR API endpoint
         run: node -e 'const fs=require("fs"); const p="artifacts/beckify/dist/public/toolbox/index.html"; const endpoint=(process.env.TDR_API_BASE_URL||"").replace(/\/$/,"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"); fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace("<meta name=\"beckify-api-base-url\" content=\"\">",`<meta name="beckify-api-base-url" content="${endpoint}">`));'
         env:

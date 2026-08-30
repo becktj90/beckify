@@ -15,6 +15,7 @@ const routes = [
   "gear",
   "games",
   "games/cosmic-cadet",
+  "games/booty-butt-scooter",
   "games/finger-runner",
   "sitemap",
 ];
