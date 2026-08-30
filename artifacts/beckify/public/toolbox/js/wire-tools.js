@@ -290,6 +290,70 @@ const CONDUCTOR_PRICE_PER_FT = {
   },
 };
 
+/* Manual entries begin with the same average allowance as the automatic
+   price book. They are kept separately for copper and aluminum so changing
+   material never silently discards a user's current takeoff pricing. */
+const MANUAL_CONDUCTOR_PRICE_PER_FT = {
+  cu: { ...CONDUCTOR_PRICE_PER_FT.cu },
+  al: { ...CONDUCTOR_PRICE_PER_FT.al },
+};
+
+function wirePriceInputId(size) {
+  return 'ws_price_' + String(size).replaceAll('/', '_');
+}
+
+function renderManualWirePrices() {
+  const host = document.getElementById('ws_manual_price_rows');
+  const materialField = document.getElementById('ws_material');
+  if (!host || !materialField) return;
+  const material = materialField.value;
+  const prices = MANUAL_CONDUCTOR_PRICE_PER_FT[material];
+  host.textContent = '';
+  WIRE_SIZE_ORDER.filter((size) => typeof prices[size] === 'number').forEach((size) => {
+    const row = document.createElement('div');
+    row.className = 'manual-price-row';
+    const label = document.createElement('label');
+    const id = wirePriceInputId(size);
+    label.htmlFor = id;
+    label.textContent = wireSizeLabel(size);
+    const input = document.createElement('input');
+    input.type = 'number'; input.id = id; input.min = '0.01'; input.step = '0.01';
+    input.value = prices[size].toFixed(2);
+    input.setAttribute('aria-label', wireSizeLabel(size) + ' ' + (material === 'cu' ? 'copper' : 'aluminum') + ' price per foot');
+    input.addEventListener('input', function () {
+      const next = Number(input.value);
+      if (Number.isFinite(next) && next > 0) prices[size] = next;
+    });
+    row.append(label, input); host.appendChild(row);
+  });
+}
+
+window.setWirePriceMode = function () {
+  const mode = document.getElementById('ws_price_mode')?.value || 'average';
+  const manual = document.getElementById('ws_manual_prices');
+  const market = document.getElementById('ws_market_adjust');
+  const help = document.getElementById('ws_price_help');
+  if (manual) manual.hidden = mode !== 'manual';
+  if (market) market.hidden = mode === 'manual';
+  if (help) help.textContent = mode === 'manual'
+    ? 'Manual prices are used exactly as entered. EMT remains a default material allowance.'
+    : 'Average prices are a planning baseline, not a live quote. Use 1.00 for the default allowance.';
+  if (mode === 'manual') renderManualWirePrices();
+};
+
+function activeConductorPriceBook(material) {
+  const mode = document.getElementById('ws_price_mode')?.value || 'average';
+  if (mode !== 'manual') return { prices: CONDUCTOR_PRICE_PER_FT[material], multiplier: val('ws_price_mult'), label: 'average material allowance' };
+  const prices = MANUAL_CONDUCTOR_PRICE_PER_FT[material];
+  Object.keys(prices).forEach((size) => {
+    const field = document.getElementById(wirePriceInputId(size));
+    if (field) prices[size] = Number(field.value);
+  });
+  const invalid = Object.keys(prices).some((size) => !Number.isFinite(prices[size]) || prices[size] <= 0);
+  if (invalid) return null;
+  return { prices: prices, multiplier: 1, label: 'manual conductor price book' };
+}
+
 const CONDUIT_PRICE_PER_FT = {
   '1/2': 1.10, '3/4': 1.60, '1': 2.60, '1-1/4': 3.80, '1-1/2': 4.70, '2': 6.10,
   '2-1/2': 11.50, '3': 14.50, '3-1/2': 18.00, '4': 21.00, '5': 32.00, '6': 42.00,
@@ -361,7 +425,7 @@ window.calcWireSelection = function () {
   const ccc = parseInt(document.getElementById('ws_ccc').value, 10);
   const continuous = document.getElementById('ws_continuous').checked;
   const maxRuns = parseInt(document.getElementById('ws_maxruns').value, 10) || 1;
-  const priceMult = val('ws_price_mult');
+  const priceBook = activeConductorPriceBook(material);
 
   if (!isPos(voltage)) return showError('ws_result', 'Supply voltage must be greater than zero.');
   if (!isPos(loadValue)) return showError('ws_result', 'Load must be greater than zero.');
@@ -373,6 +437,9 @@ window.calcWireSelection = function () {
   }
   if (terminationTemp > insulTemp) {
     return showError('ws_result', 'Termination rating cannot exceed the conductor insulation rating.');
+  }
+  if (!priceBook || !isPos(priceBook.multiplier)) {
+    return showError('ws_result', 'Enter a positive price for every conductor size and a positive market adjustment.');
   }
 
   /* ---- Load current ---- */
@@ -434,12 +501,12 @@ window.calcWireSelection = function () {
         .filter((t) => emt.areas[t] !== undefined)
         .find((t) => emt.areas[t] * 0.4 >= bundleArea);
 
-      const wirePrice = CONDUCTOR_PRICE_PER_FT[material][size];
+      const wirePrice = priceBook.prices[size];
       if (typeof wirePrice !== 'number') continue;
       const conduitPrice = tradeSize ? CONDUIT_PRICE_PER_FT[tradeSize] : null;
 
-      const conductorCost = wirePrice * lengthFt * perRunConductors * runs * priceMult;
-      const conduitCost = conduitPrice ? conduitPrice * lengthFt * runs * priceMult : 0;
+      const conductorCost = wirePrice * lengthFt * perRunConductors * runs * priceBook.multiplier;
+      const conduitCost = conduitPrice ? conduitPrice * lengthFt * runs * priceBook.multiplier : 0;
 
       options.push({
         runs: runs,
@@ -454,7 +521,6 @@ window.calcWireSelection = function () {
         conduitCost: conduitCost,
         totalCost: conductorCost + conduitCost,
       });
-      break; // smallest size that works at this run count
     }
   }
 
@@ -467,9 +533,10 @@ window.calcWireSelection = function () {
     );
   }
 
-  const cheapest = options.reduce((a, b) => (b.totalCost < a.totalCost ? b : a));
-  const single = options.find((o) => o.runs === 1);
-  const recommended = single || options[0];
+  const ranked = options.slice().sort((a, b) => a.totalCost - b.totalCost || a.runs - b.runs || WIRE_CMIL[a.size] - WIRE_CMIL[b.size]);
+  const cheapest = ranked[0];
+  const single = ranked.find((o) => o.runs === 1);
+  const recommended = cheapest;
 
   el.className = 'result show';
 
@@ -494,7 +561,8 @@ window.calcWireSelection = function () {
     : terminationTemp + '°C column — NEC 110.14(C)');
 
   /* ---- Recommendation ---- */
-  wtHeading(el, 'Recommended');
+  wtHeading(el, 'Lowest modeled material cost');
+  el.lastElementChild.classList.add('cost-optimum');
   wtRow(el, 'Conductor', recommended.runs + ' run' + (recommended.runs > 1 ? 's' : '') +
     ' × ' + wireSizeLabel(recommended.size) + ' ' + (material === 'cu' ? 'Cu' : 'Al'),
     { bold: true, color: PASS_COLOR });
@@ -506,6 +574,8 @@ window.calcWireSelection = function () {
     wtRow(el, 'Conduit per run', recommended.tradeSize + '" EMT  (' +
       recommended.perRunConductors + ' conductors)');
   }
+  wtRow(el, 'Modeled material cost', '$' + recommended.totalCost.toLocaleString('en-US', { maximumFractionDigits: 0 }), { bold: true, color: PASS_COLOR });
+  wtRow(el, 'Price source', priceBook.label + (priceBook.multiplier !== 1 ? ' × ' + fmt(priceBook.multiplier, 2) : ''));
 
   const ocpd = nextStandardOCPD(designCurrent);
   if (ocpd) {
@@ -516,8 +586,8 @@ window.calcWireSelection = function () {
   }
 
   /* ---- Parallel-run comparison ---- */
-  wtHeading(el, 'Parallel-run cost comparison');
-  options.forEach((o) => {
+  wtHeading(el, 'Lowest-cost compliant options');
+  ranked.slice(0, 8).forEach((o) => {
     const isCheapest = o === cheapest;
     wtRow(
       el,
@@ -529,17 +599,17 @@ window.calcWireSelection = function () {
     );
   });
 
-  if (cheapest !== recommended) {
-    const saving = recommended.totalCost - cheapest.totalCost;
-    wtRow(el, 'Saving vs single run',
+  if (single && cheapest !== single) {
+    const saving = single.totalCost - cheapest.totalCost;
+    wtRow(el, 'Saving vs lowest single run',
       '$' + saving.toLocaleString('en-US', { maximumFractionDigits: 0 }) +
-      '  (' + fmt((saving / recommended.totalCost) * 100, 1) + ' %)',
+      '  (' + fmt((saving / single.totalCost) * 100, 1) + ' %)',
       { color: PASS_COLOR });
   }
 
   wtNote(el,
     'Costs cover conductor and EMT material only — no labour, fittings, terminations or ' +
-    'boxes — and metal prices move constantly, so treat them as a relative comparison ' +
+    'boxes — and automatic prices are averages, so treat them as a relative comparison ' +
     'rather than a quote. Each parallel set must be the same length, size and material, ' +
     'and terminate identically (NEC 310.10(G)).');
 
@@ -551,5 +621,11 @@ document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('cfa_rows')) {
     addConduitRow({ qty: '3', size: '12', insul: 'THHN' });
     addConduitRow({ qty: '1', size: '12', insul: 'THHN' });
+  }
+  if (document.getElementById('ws_price_mode')) {
+    document.getElementById('ws_material').addEventListener('change', function () {
+      if (document.getElementById('ws_price_mode').value === 'manual') renderManualWirePrices();
+    });
+    window.setWirePriceMode();
   }
 });

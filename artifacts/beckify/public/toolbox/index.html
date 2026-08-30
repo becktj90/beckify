@@ -204,7 +204,7 @@
       <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="transformer sizing selection protection ocpd overcurrent 450.3 standard kva primary secondary">Transformer | Sizing and Protection</button>
       <button class="nav-btn" data-target="sec-conduit" data-keywords="#PowerDistribution #NEC #Calculators conduit fill emt">Conduit Fill</button>
       <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
-      <button class="nav-btn" data-target="sec-wire-select" data-keywords="wire size selector ampacity conductor selection voltage drop parallel runs cost derating ambient termination 310.16 110.14 continuous load">Wire Size &amp; Ampacity</button>
+      <button class="nav-btn" data-target="sec-wire-select" data-keywords="conductor cost optimizer wire size ampacity conductor selection voltage drop parallel runs price estimate copper aluminum derating ambient termination 310.16 110.14 continuous load">Conductor Cost Optimizer</button>
       <button class="nav-btn" data-target="sec-sc" data-keywords="#PowerDistribution #NEC #Calculators short circuit fault current interrupting rating">Short Circuit</button>
       <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
       <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
@@ -298,7 +298,7 @@
             <li><a class="home-tool-link" href="#sec-xfmr">Transformer Sizing</a></li>
             <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
             <li><a class="home-tool-link" href="#sec-conduit-adv">Conduit Fill (Mixed)</a></li>
-            <li><a class="home-tool-link" href="#sec-wire-select">Wire Size &amp; Ampacity</a></li>
+            <li><a class="home-tool-link" href="#sec-wire-select">Conductor Cost Optimizer</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-engine">Transformer Engine</a></li>
             <li><a class="home-tool-link" href="#sec-power-wizard">Power Wizard (DC, 1Ø &amp; 3Ø AC)</a></li>
             <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
@@ -2460,8 +2460,8 @@
          ════════════════════════════════════════ -->
     <section id="sec-wire-select" class="section">
       <div class="section-header">
-        <h2>🧲 Wire Size &amp; Ampacity</h2>
-        <p>Picks the smallest conductor that satisfies both ampacity and your voltage-drop ceiling, then prices the parallel-run options.</p>
+        <h2>💸 Conductor Cost Optimizer</h2>
+        <p>Find the lowest modeled material cost across compliant conductor sizes and parallel-run counts.</p>
         <details class="section-info">
           <summary>ℹ More Info — Wire Sizing</summary>
           <div class="section-info-body">
@@ -2470,7 +2470,7 @@
               <li><strong>Ampacity</strong> — NEC Table 310.16, corrected for ambient temperature (310.15(B)(1)), adjusted for more than three current-carrying conductors (310.15(C)(1)), then capped by the equipment termination rating (110.14(C)). Continuous loads are sized at 125% per 210.19(A)/215.2(A).</li>
               <li><strong>Voltage drop</strong> — not a hard NEC requirement, but 3% on a branch circuit and 5% total is the long-standing informational-note guidance (210.19(A) and 215.2(A) FPNs).</li>
             </ul>
-            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. Paralleling often beats a single large conductor on both cost and installability — this tool prices the options so the trade-off is visible.
+            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. The default price book is an average material allowance for quick comparisons; switch to manual pricing before using supplier, project, or quoted prices.
           </div>
         </details>
       </div>
@@ -2572,13 +2572,26 @@
                 <input type="number" id="ws_maxruns" value="4" min="1" max="10" step="1">
               </div>
             </div>
-            <div class="input-group single">
+            <div class="input-group">
               <div>
-                <label>Price Multiplier (1.0 = built-in estimates)</label>
-                <input type="number" id="ws_price_mult" value="1" min="0.1" max="10" step="0.05">
+                <label>Pricing source</label>
+                <select id="ws_price_mode" onchange="setWirePriceMode()">
+                  <option value="average">Automatic average pricing</option>
+                  <option value="manual">Manual price book</option>
+                </select>
+              </div>
+              <div id="ws_market_adjust">
+                <label>Market adjustment</label>
+                <input type="number" id="ws_price_mult" value="1" min="0.1" max="10" step="0.05" aria-describedby="ws_price_help">
               </div>
             </div>
-            <button class="btn" onclick="calcWireSelection()">Select Conductor</button>
+            <p id="ws_price_help" class="tool-note">Average prices are a planning baseline, not a live quote. Use 1.00 for the default allowance.</p>
+            <details id="ws_manual_prices" class="manual-price-book" hidden>
+              <summary>Enter manual conductor prices ($ / ft)</summary>
+              <p>Each field starts at the average allowance for the selected material. Replace it with supplier, project, or quoted material pricing.</p>
+              <div id="ws_manual_price_rows" class="manual-price-rows"></div>
+            </details>
+            <button class="btn" onclick="calcWireSelection()">Optimize conductor cost</button>
           </div>
         </div>
 

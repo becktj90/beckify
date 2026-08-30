@@ -1473,4 +1473,13 @@ body.report-open { overflow: hidden; }
 .logic-off { color: var(--fg-dim); }
 .target-pair-result { margin-top: 12px; overflow-x: auto; }
 .target-pair-result .note { margin: 8px 0 0; }
+.tool-note { margin: 8px 0 12px; color: var(--fg-muted); font-size: 0.78rem; line-height: 1.5; }
+.manual-price-book { margin: 10px 0 12px; border: 1px solid rgba(139, 123, 255, 0.28); border-radius: 10px; background: rgba(139, 123, 255, 0.05); }
+.manual-price-book summary { padding: 10px 12px; color: var(--fg); cursor: pointer; font-weight: 700; }
+.manual-price-book > p { margin: 0 12px 10px; color: var(--fg-muted); font-size: 0.78rem; line-height: 1.5; }
+.manual-price-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; padding: 0 12px 12px; }
+.manual-price-row { display: grid; grid-template-columns: minmax(0, 1fr) 78px; align-items: center; gap: 6px; color: var(--fg-muted); font: 0.76rem var(--font-main); }
+.manual-price-row input { min-width: 0; padding: 7px; }
+.cost-optimum { border-left: 3px solid var(--green-ok); padding-left: 10px; }
 @media (max-width: 620px) { .logic-gate-row { grid-template-columns: 34px 1fr 1fr auto; } .logic-gate-row select:nth-of-type(3) { grid-column: 2 / span 2; } }
+@media (max-width: 620px) { .manual-price-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

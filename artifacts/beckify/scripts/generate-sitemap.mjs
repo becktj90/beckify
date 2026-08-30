@@ -20,6 +20,7 @@ const tools = [
   ["conduit-fill", "Conduit Fill Calculator", "Check conductor count and raceway fill using electrical conductor and conduit areas.", "sec-conduit"],
   ["conduit-fill-mixed", "Mixed Conduit Fill Calculator", "Calculate raceway fill for mixed conductor sizes and common EMT, PVC, IMC, and RMC systems.", "sec-conduit-adv"],
   ["wire-size-ampacity", "Wire Size and Ampacity Calculator", "Select conductors using ampacity, derating, termination temperature, and voltage drop constraints.", "sec-wire-select"],
+  ["conductor-cost-optimizer", "Conductor Cost Optimizer", "Compare compliant conductor sizes and parallel runs using average or manual material pricing to find the lowest modeled cost.", "sec-wire-select"],
   ["short-circuit", "Short-Circuit Current Calculator", "Estimate available fault current and interrupting requirements for electrical distribution systems.", "sec-sc"],
   ["ups-sizing", "UPS Sizing Calculator", "Estimate UPS capacity and runtime requirements from connected electrical loads.", "sec-ups"],
   ["generator-sizing", "Generator Sizing Calculator", "Estimate generator capacity from motor, continuous, and mixed electrical loads.", "sec-gen"],
