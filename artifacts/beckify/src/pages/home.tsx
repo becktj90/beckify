@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ArrowUpRight, Orbit, Wrench, Rocket, Gamepad2, Terminal, Zap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NautilusTrace } from "@/components/NautilusTrace";
+import { PenroseCanvas } from "@/components/PenroseCanvas";
 import { Starfield } from "@/components/Starfield";
 import { Nav } from "@/components/sections/Nav";
 import { Footer } from "@/components/sections/Footer";
@@ -43,6 +44,7 @@ export default function Home() {
                       "radial-gradient(ellipse at 20% 50%, rgba(139,123,255,0.08) 0%, transparent 65%)",
                   }}
                 />
+                <PenroseCanvas className="pointer-events-none absolute inset-0 h-full w-full opacity-35" />
 
                 <div className="relative z-10 space-y-6">
                   {/* Brand mark */}
