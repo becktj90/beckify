@@ -283,6 +283,7 @@
     let musicTimer = null;
     let musicMode = 'idle';
     let voices = [];
+    let audioUnlocked = false;
 
     // Shared 4/4 pop hook (E G A G E D C, resolving) — same melodic DNA reused
     // across every mission phase so the whole game feels built around one
@@ -298,7 +299,7 @@
     };
 
     function ensure(settings) {
-      if (settings && settings.muted) return false;
+      if (!audioUnlocked || (settings && settings.muted)) return false;
       if (ctx) return true;
       try {
         ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -325,6 +326,17 @@
     function resume(settings) {
       if (!ensure(settings)) return;
       if (ctx.state === 'suspended') ctx.resume();
+    }
+
+    // Browsers block Web Audio until a real user gesture. Do not construct or
+    // resume the context while the Toolbox is simply loading in the background.
+    function unlock(settings) {
+      if (settings && settings.muted) return false;
+      audioUnlocked = true;
+      if (!ensure(settings)) return false;
+      if (ctx.state === 'suspended') ctx.resume();
+      if (settings && settings.music) setMood(musicMode, settings);
+      return true;
     }
 
     function stopMusic() {
@@ -473,7 +485,7 @@
       }
     }
 
-    return { ensure, resume, play, setMood, updateRumble, stopRumble, stopMusic, setMute };
+    return { ensure, unlock, resume, play, setMood, updateRumble, stopRumble, stopMusic, setMute };
   })();
 
   const Particles = (() => {
@@ -3377,6 +3389,10 @@
     Audio.setMute(state.settings);
     Audio.setMood('idle', state.settings);
 
+    document.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('#sec-arcade')) Audio.unlock(state.settings);
+    }, { capture: true });
+
     state.canvas.addEventListener('mousedown', (e) => {
       const p = mapPointer(e.clientX, e.clientY);
       state.input.pointerDown = true;
@@ -3408,6 +3424,7 @@
     state.canvas.addEventListener('touchend', (e) => { e.preventDefault(); state.input.pointerDown = false; setBoostHeld(false); }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
+      Audio.unlock(state.settings);
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') state.input.left = true;
       if (e.code === 'ArrowRight' || e.code === 'KeyD') state.input.right = true;
       if (e.code === 'Space') {

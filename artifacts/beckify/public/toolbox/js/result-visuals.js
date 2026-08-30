@@ -30,7 +30,8 @@
     wrap.className = 'calculation-visual';
     wrap.setAttribute('role', 'img');
     wrap.setAttribute('aria-label', label);
-    const svg = svgElement('svg', { viewBox: '0 0 640 180', width: '100%', height: 'auto', focusable: 'false', 'aria-hidden': 'true' });
+    // SVG height must be a numeric length or omitted. CSS owns responsive sizing.
+    const svg = svgElement('svg', { viewBox: '0 0 640 180', width: '100%', focusable: 'false', 'aria-hidden': 'true' });
     wrap.appendChild(svg);
     const copy = result.querySelector('.result-copy-row');
     result.insertBefore(wrap, copy || null);

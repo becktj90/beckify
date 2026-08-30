@@ -96,3 +96,30 @@ Motion is short and stateful: a cabinet glow for readiness, a bounce for success
 - **Do:** reward clear player actions with a small visual and audio response.
 - **Don't:** place long instructions or card grids over a live game.
 - **Don't:** use a dashboard-like HUD that competes with the world being played.
+
+## Toolbox Visual System
+
+The Electrical Engineering Toolbox is a separate product register from the
+Arcade: it should feel like a well-labelled bench instrument and a field
+notebook, not a game or a generic analytics dashboard. The reader is an
+electrician, technician, or engineer checking a calculation quickly, often on
+a phone beside equipment.
+
+- **Primary job:** Make the relationship behind a calculation immediately
+  legible, while keeping every exact value copyable and visible as text.
+- **Visual hierarchy:** Inputs and result rows remain the source of truth;
+  the diagram explains their relationship and never replaces them.
+- **Color roles:** violet is the primary calculated relationship, blue is an
+  electrical reference/input, green indicates a satisfactory margin or output,
+  amber means a limit or caution, and red is reserved for an invalid condition
+  or hazard. No result depends on color alone.
+- **Chart policy:** A graphic must use the active inputs or calculated result.
+  Do not display a generic trend line or sample bar chart where the values are
+  not a real ordered series. Prefer direct labels, thresholds, and annotated
+  schematic paths over detached legends.
+- **Mobile rule:** SVG diagrams scale to one column, retain a text alternative,
+  and never require hover to expose a value or warning. Motion is optional and
+  must honor reduced-motion preferences.
+- **Safety rule:** Limit lines and status colors communicate a calculation
+  result, not code compliance or an installation approval. Keep assumptions,
+  applicable-code notes, and uncertainty visible next to the result.
