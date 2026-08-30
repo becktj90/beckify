@@ -94,6 +94,8 @@
 
   function build(result) {
     if (!result || result.dataset.visualized === '1' || !result.classList.contains('show') || result.classList.contains('error')) return;
+    // Native STEM charts carry the explanation; do not append a generic signal over them.
+    if (result.querySelector('svg, .calculation-visual')) return;
     const section = result.closest('.section');
     if (!section) return;
     result.dataset.visualized = '1';

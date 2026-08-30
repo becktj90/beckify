@@ -31,7 +31,7 @@
       "publisher": { "@type": "Organization", "name": "Beckify", "url": "https://beckify.com" }
     }
   </script>
-  <title>Facilities Electrical Toolbox</title>
+  <title>Beckify Electrical Engineering Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .tdr-drop-zone {
@@ -191,9 +191,9 @@
       <button class="nav-btn" data-target="sec-vdrop" data-keywords="#PowerDistribution #NEC #Calculators voltage drop feeder branch circuit">Voltage Drop</button>
       <button class="nav-btn" data-target="sec-conductor-length" data-keywords="conductor length by resistance distance loop test one way wire length awg kcmil circular mils rho copper aluminum">Conductor Length by Resistance</button>
       <button class="nav-btn" data-target="sec-motor" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower">Motor Calculations</button>
-      <button class="nav-btn" data-target="sec-xfmr" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio">Transformer</button>
-      <button class="nav-btn" data-target="sec-xfmr-engine" data-keywords="#PowerDistribution #NEC #Calculators transformer conductor selection engine ocpd egc gec voltage drop conduit 450.3 250.122 250.66 310.16 primary secondary feeder">Transformer Engine</button>
-      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="transformer sizing selection protection ocpd overcurrent 450.3 standard kva primary secondary">Transformer Sizing</button>
+      <button class="nav-btn" data-target="sec-xfmr" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio sizing protection conductor wizard">Transformer Workbench</button>
+      <button class="nav-btn" data-target="sec-xfmr-engine" data-keywords="#PowerDistribution #NEC #Calculators transformer conductor selection engine ocpd egc gec voltage drop conduit 450.3 250.122 250.66 310.16 primary secondary feeder">Transformer | Conductor Engine</button>
+      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="transformer sizing selection protection ocpd overcurrent 450.3 standard kva primary secondary">Transformer | Sizing and Protection</button>
       <button class="nav-btn" data-target="sec-conduit" data-keywords="#PowerDistribution #NEC #Calculators conduit fill emt">Conduit Fill</button>
       <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
       <button class="nav-btn" data-target="sec-wire-select" data-keywords="wire size selector ampacity conductor selection voltage drop parallel runs cost derating ambient termination 310.16 110.14 continuous load">Wire Size &amp; Ampacity</button>
@@ -225,7 +225,7 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔌 Transformer Wizard</div>
-      <button class="nav-btn" data-target="sec-xfmr-wizard" data-keywords="transformer wizard design kva sizing type dry liquid oil winding delta wye conductor protection ocpd disconnect single line diagram SLD NEC 450">Transformer Design Wizard</button>
+      <button class="nav-btn" data-target="sec-xfmr-wizard" data-keywords="transformer wizard design kva sizing type dry liquid oil winding delta wye conductor protection ocpd disconnect single line diagram SLD NEC 450">Transformer | Design Wizard</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">🔬 RF &amp; Circuit Tools</div>
@@ -280,7 +280,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h2 class="home-title">EE Toolbox</h2>
-        <p class="home-subtitle">40 calculators, reference tables, and tools for facilities electrical engineering. Pick a category or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">40 calculators, reference tables, and field tools for electrical engineering, commissioning, and maintenance. Pick a category or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -1495,7 +1495,7 @@
          ════════════════════════════════════════ -->
     <section id="sec-xfmr" class="section">
       <div class="section-header">
-        <h2>🔄 Transformer Calculations</h2>
+        <h2>Transformer Workbench</h2>
         <p>Currents, turns ratio, standard sizing, conductor selection, conduit, and OCP per NEC 450.3.</p>
         <details class="section-info">
           <summary>ℹ More Info — Transformer Calculations</summary>
@@ -1512,6 +1512,18 @@
             <strong>Typical %Z:</strong> Dry-type ≤15 kVA: 2–4%; 15–500 kVA: 4–6%; Liquid-filled: 5–7%.
           </div>
         </details>
+      </div>
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(139,123,255,0.42);background:linear-gradient(135deg,rgba(139,123,255,0.10),rgba(96,165,250,0.05))">
+        <div class="card-title">One workflow, four views</div>
+        <div class="card-body">
+          <p style="margin-top:0;color:var(--fg-muted)">Start with the electrical relationship, then move to protection, conductor selection, or the guided design path. Each view stays available at its original address for bookmarked and indexed links.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem" aria-label="Transformer workbench views">
+            <button class="btn" data-target="sec-xfmr">Core values</button>
+            <button class="btn" data-target="sec-xfmr-size">Sizing and protection</button>
+            <button class="btn" data-target="sec-xfmr-engine">Conductor engine</button>
+            <button class="btn" data-target="sec-xfmr-wizard">Design wizard</button>
+          </div>
+        </div>
       </div>
       <div class="card-grid">
 
@@ -4004,7 +4016,7 @@
     <section id="sec-circuit-sim" class="section">
       <div class="section-header">
         <h2>⚡ Circuit Simulator</h2>
-        <p>Modified Nodal Analysis (MNA) circuit solver with SVG schematics, DC and AC analysis, frequency sweeps, and Bode plots. Load a built-in example or explore the theory step by step.</p>
+        <p>Build and solve resistor, capacitor, inductor, voltage-source, and current-source circuits with Modified Nodal Analysis (MNA). Edit component values and node connections, then inspect the schematic and circuit parameters.</p>
         <details class="section-info">
           <summary>ℹ More Info — Circuit Simulator</summary>
           <div class="section-info-body">
@@ -4019,37 +4031,7 @@
           </div>
         </details>
       </div>
-      <div class="card-grid">
-        <div class="card" style="min-width:320px">
-          <div class="card-title">Example Circuits</div>
-          <div class="card-body">
-            <div class="cs-example-btns">
-              <button class="cs-example-btn" id="cs-ex-1" onclick="csLoadExample(1)">1. Voltage Divider</button>
-              <button class="cs-example-btn" id="cs-ex-2" onclick="csLoadExample(2)">2. Thévenin</button>
-              <button class="cs-example-btn" id="cs-ex-3" onclick="csLoadExample(3)">3. RC Low-Pass</button>
-              <button class="cs-example-btn" id="cs-ex-4" onclick="csLoadExample(4)">4. RLC Resonance</button>
-              <button class="cs-example-btn" id="cs-ex-5" onclick="csLoadExample(5)">5. Superposition</button>
-              <button class="cs-example-btn" id="cs-ex-6" onclick="csLoadExample(6)">6. Wheatstone Bridge</button>
-            </div>
-            <div class="cs-schematic" id="cs-schematic" style="min-height:220px;display:flex;align-items:center;justify-content:center">
-              <span style="color:#334155;font-size:0.85rem">Select an example to load a circuit →</span>
-            </div>
-          </div>
-        </div>
-        <div class="card" style="min-width:280px">
-          <div class="card-title">Analysis Results</div>
-          <div class="card-body">
-            <div id="cs-result" class="result" style="min-height:180px">
-              <span style="color:#334155;font-size:0.85rem">Results will appear here after loading a circuit.</span>
-            </div>
-            <div id="cs-bode-wrap" style="display:none">
-              <div style="font-size:0.8rem;color:#64748b;margin:8px 0 4px">Bode Plot (Magnitude)</div>
-              <div id="cs-bode" class="cs-bode"></div>
-            </div>
-            <div id="cs-details-wrap"></div>
-          </div>
-        </div>
-      </div>
+      <div id="circuit-sim-root" data-circuit-sim-root></div>
     </section><!-- end sec-circuit-sim -->
 
     <!-- ════════════════════════════════════════

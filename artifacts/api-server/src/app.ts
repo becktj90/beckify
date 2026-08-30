@@ -6,6 +6,10 @@ import { logger } from "./lib/logger.js";
 
 const app: Express = express();
 
+// Vercel terminates the client connection at a trusted proxy. Preserve the
+// client IP there so per-client abuse controls do not collapse into one bucket.
+app.set("trust proxy", process.env["VERCEL"] ? 1 : false);
+
 const defaultCorsOrigins = [
   "https://beckify.com",
   "https://www.beckify.com",
@@ -53,9 +57,11 @@ app.use(cors({
   allowedHeaders: ["Content-Type"],
   maxAge: 86400,
 }));
-// The TDR service accepts an 8 MiB decoded image; base64 plus JSON stays below 12 MiB.
-app.use(express.json({ limit: "12mb" }));
-app.use(express.urlencoded({ extended: true, limit: "12mb" }));
+// Keep the large parser scoped to the image endpoint. Other routes do not need
+// multi-megabyte request bodies and should reject oversized JSON early.
+app.use("/api/analyze-tdr", express.json({ limit: "12mb" }));
+app.use(express.json({ limit: "64kb" }));
+app.use(express.urlencoded({ extended: true, limit: "64kb" }));
 
 app.use("/api", router);
 

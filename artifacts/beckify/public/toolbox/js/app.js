@@ -1,6 +1,6 @@
 /**
- * Facilities Electrical Toolbox — Calculator Logic
- * Tools for Facilities Electrical Engineering
+ * Beckify Electrical Engineering Toolbox — Calculator Logic
+ * Tools for Electrical Engineering, Commissioning, and Maintenance
  */
 
 'use strict';
@@ -2425,8 +2425,8 @@ window.showToast = showToast;
 async function shareApp() {
   const url = location.origin + location.pathname;
   const shareData = {
-    title: 'Facilities Electrical Toolbox',
-    text: 'Electrical calculators plus New Glenn Runner. Built for field work and launches.',
+    title: 'Beckify Electrical Engineering Toolbox',
+    text: 'Electrical calculators and field tools for engineering, commissioning, and maintenance.',
     url
   };
 

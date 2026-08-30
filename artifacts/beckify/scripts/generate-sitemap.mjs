@@ -56,7 +56,7 @@ const categories = [
 ];
 
 const escapeXml = (value) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
-const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrical Toolbox", showAds = true }) => `<!doctype html>
+const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrical Engineering Toolbox", showAds = true }) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeXml(`${title} | Beckify`)}</title><meta name="description" content="${escapeXml(description)}"><meta name="robots" content="index,follow">
 <link rel="canonical" href="${siteUrl}${path}"><meta property="og:title" content="${escapeXml(`${title} | Beckify`)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${siteUrl}${path}"><meta property="og:image" content="${siteUrl}/opengraph.jpg"><meta name="twitter:card" content="summary_large_image">

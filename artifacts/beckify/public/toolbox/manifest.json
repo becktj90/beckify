@@ -1,6 +1,6 @@
 {
   "id": "/toolbox/",
-  "name": "Facilities Electrical Toolbox",
+  "name": "Beckify Electrical Engineering Toolbox",
   "short_name": "Toolbox",
   "description": "NEC calculators, reference tables and submittal exports that work offline.",
   "display": "standalone",

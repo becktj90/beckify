@@ -125,7 +125,23 @@
     }
   }
 
-  function byId(id) { return document.getElementById(id); }
+  const ID_ALIASES = {
+    de_ivp_expr: 'de_expr', de_ivp_y0: 'de_y0', de_ivp_t0: 'de_t0', de_ivp_tend: 'de_tend', de_ivp_h: 'de_h',
+    trig_side_a: 'trig_a', trig_side_b: 'trig_b', trig_side_c: 'trig_c', trig_angle_A: 'trig_A', trig_angle_B: 'trig_B', trig_angle_C: 'trig_C',
+    trig_triangle_result: 'trig_tri_result', trig_unit_circle_result: 'trig_click_result',
+    la_matrix_size: 'la_size', la_matrix_op: 'la_op', la_matrixA: 'la_mat_a', la_matrixB: 'la_mat_b',
+    la_matrix_result: 'la_result', la_vector_result: 'la_vec_result',
+    calc_diff_expr: 'calc_f', calc_diff_a: 'calc_dx', calc_diff_result: 'calc_deriv_result',
+    calc_int_expr: 'calc_fi', calc_int_a: 'calc_a', calc_int_b: 'calc_b', calc_int_n: 'calc_n',
+    calc_taylor_type: 'calc_taylor_fn', calc_taylor_a: 'calc_ta', calc_taylor_n: 'calc_tn', calc_taylor_x: 'calc_tx',
+    chem_molar_result: 'chem_mm_result', chem_periodic: 'chem_ptable',
+    chem_gas_P: 'chem_P', chem_gas_V: 'chem_V', chem_gas_n: 'chem_n', chem_gas_T: 'chem_T',
+    chem_hh_pKa: 'chem_pka', chem_hh_acid: 'chem_ca', chem_hh_base: 'chem_ha',
+    opt_theta1: 'opt_t1', opt_grating_linesmm: 'opt_lmm', opt_grating_lambda: 'opt_lam', opt_grating_m: 'opt_m',
+    opt_grating_result: 'opt_grat_result', opt_ds_lambda: 'opt_ds_lam',
+    qp_box_particle: 'qp_particle', qp_db_preset: 'qp_db_par', qp_db_velocity: 'qp_db_v', qp_h_n: 'qp_hn', qp_pe_lambda: 'qp_pe_lam'
+  };
+  function byId(id) { return document.getElementById(id) || document.getElementById(ID_ALIASES[id] || ''); }
   function numVal(id) {
     const el = byId(id);
     if (!el) return NaN;
@@ -327,6 +343,13 @@
       svg.appendChild(lab);
     });
 
+    if (opts && opts.guides) {
+      opts.guides.forEach((guide) => {
+        if (!finite(guide.x) || !finite(guide.y)) return;
+        svg.appendChild(svgEl('line', { x1: px(guide.x), y1: py(0), x2: px(guide.x), y2: py(guide.y), stroke: guide.color || COLORS.green, 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: 0.7 }));
+      });
+    }
+
     if (opts && opts.area && opts.area.points && opts.area.points.length) {
       const d = opts.area.points.map((p, idx) => (idx ? 'L' : 'M') + px(p.x) + ' ' + py(p.y)).join(' ');
       svg.appendChild(svgEl('path', { d: d, fill: opts.area.fill || 'rgba(110,231,183,0.18)', stroke: 'none' }));
@@ -346,6 +369,77 @@
       svg.appendChild(t);
     });
     return svg;
+  }
+
+  function calculusPlot(series, opts) {
+    const svg = plotSeries(series, 520, 250, opts);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', opts && opts.label ? opts.label : 'Calculus visualization');
+    const note = svgEl('text', { x: 18, y: 238, fill: COLORS.muted, 'font-size': 11 });
+    note.textContent = opts && opts.note ? opts.note : '';
+    svg.appendChild(note);
+    return svg;
+  }
+
+  function sampleFunction(expr, lo, hi, count) {
+    const points = [];
+    for (let i = 0; i <= count; i++) {
+      const x = lo + (hi - lo) * i / count;
+      try {
+        const y = safeEvalX(expr, x);
+        if (finite(y) && Math.abs(y) < 1e6) points.push({ x: x, y: y });
+      } catch (_) { /* skip discontinuities */ }
+    }
+    return points;
+  }
+
+  function derivativeDiagram(expr, a, h, slope) {
+    const span = Math.max(2, Math.abs(a) * 0.35 + 1);
+    const lo = a - span, hi = a + span;
+    const curve = sampleFunction(expr, lo, hi, 120);
+    const fa = safeEvalX(expr, a);
+    const tangent = [{ x: lo, y: fa + slope * (lo - a) }, { x: hi, y: fa + slope * (hi - a) }];
+    const secant = [{ x: a - h, y: safeEvalX(expr, a - h) }, { x: a + h, y: safeEvalX(expr, a + h) }];
+    return calculusPlot([
+      { label: 'f(x)', color: COLORS.accent, points: curve, width: 3 },
+      { label: 'tangent', color: COLORS.green, points: tangent, width: 2 },
+      { label: 'secant', color: COLORS.yellow, points: secant, width: 2 }
+    ], { label: 'Curve with tangent and secant lines at the selected point', note: 'As h shrinks, the secant rotates toward the tangent: slope = f′(a).' });
+  }
+
+  function integralDiagram(expr, a, b, n) {
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    const curve = sampleFunction(expr, lo, hi, 140);
+    const area = [{ x: lo, y: 0 }].concat(curve).concat([{ x: hi, y: 0 }]);
+    const guides = [];
+    const step = (hi - lo) / Math.max(1, Math.min(n, 24));
+    for (let i = 0; i <= Math.min(n, 24); i++) {
+      const x = lo + i * step;
+      guides.push({ x: x, y: safeEvalX(expr, x), color: i === 0 || i === Math.min(n, 24) ? COLORS.yellow : COLORS.green });
+    }
+    return calculusPlot([{ label: 'f(x)', color: COLORS.accent, points: curve, width: 3 }], {
+      label: 'Area under the curve between the integration limits',
+      area: { points: area, fill: 'rgba(110,231,183,0.2)' },
+      guides: guides,
+      note: 'The shaded region is accumulated area; more rectangles make the approximation hug the curve.'
+    });
+  }
+
+  function taylorDiagram(type, a, N, x) {
+    const lo = Math.min(a - 3, x - 1), hi = Math.max(a + 3, x + 1);
+    let sum = 0;
+    const approx = [];
+    for (let i = 0; i <= 140; i++) {
+      const q = lo + (hi - lo) * i / 140;
+      sum = 0;
+      for (let n = 0; n <= N; n++) sum += taylorDerivativeValue(type, a, n) * Math.pow(q - a, n) / factorial(n);
+      approx.push({ x: q, y: sum });
+    }
+    const exact = sampleFunction(type === 'ln1p' ? 'log(1+x)' : type + '(x)', lo, hi, 140);
+    return calculusPlot([
+      { label: 'exact', color: COLORS.accent, points: exact, width: 3 },
+      { label: 'Taylor N=' + N, color: COLORS.yellow, points: approx, width: 2 }
+    ], { label: 'Exact function compared with its Taylor polynomial', note: 'Near a, the polynomial shadows the function; increasing N usually widens the useful neighborhood.' });
   }
 
   function rationalPiLabel(degrees) {
@@ -1205,6 +1299,7 @@
       const out = prepareResult('calc_diff_result');
       addText(out, 'Central difference: f′(a) ≈ [f(a+h) - f(a-h)] / (2h), h = 1e-7');
       addRow(out, 'f′(' + fmtNum(a, 6) + ')', fmtNum(fp, 8), { bold: true, color: COLORS.green });
+      appendSvg(out, derivativeDiagram(expr, a, h, fp));
     } catch (err) {
       showError('calc_diff_result', err.message || 'Derivative failed.');
     }
@@ -1238,15 +1333,6 @@
       const t = trap(n), s = simpson(n), m = midpoint(n);
       const refN = Math.max(200, n * 10 + (n * 10 % 2));
       const ref = simpson(refN);
-      const pts = [];
-      const areaPts = [{ x: a, y: 0 }];
-      for (let i = 0; i <= 120; i++) {
-        const x = a + (b - a) * i / 120;
-        const y = safeEvalX(expr, x);
-        pts.push({ x: x, y: y });
-        if (x >= Math.min(a, b) && x <= Math.max(a, b)) areaPts.push({ x: x, y: y });
-      }
-      areaPts.push({ x: b, y: 0 });
       const out = prepareResult('calc_int_result');
       addRow(out, 'Trapezoid', fmtNum(t, 8), { color: COLORS.yellow });
       addRow(out, 'Simpson 1/3', fmtNum(s, 8), { color: COLORS.green, bold: true });
@@ -1256,7 +1342,7 @@
         ['Simpson', fmtNum(s, 8), fmtNum(Math.abs(s - ref), 8)],
         ['Midpoint', fmtNum(m, 8), fmtNum(Math.abs(m - ref), 8)]
       ]);
-      appendSvg(out, plotSeries([{ label: 'f(x)', color: COLORS.accent, points: pts }], 400, 200, { area: { points: areaPts, fill: 'rgba(96,165,250,0.16)' } }));
+      appendSvg(out, integralDiagram(expr, a, b, n));
     } catch (err) {
       showError('calc_int_result', err.message || 'Integration failed.');
     }
@@ -1288,7 +1374,7 @@
   }
 
   window.calcTaylorSeries = function () {
-    const type = strVal('calc_taylor_type') || 'sin';
+    const type = (strVal('calc_taylor_type') || 'sin') === 'ln' ? 'ln1p' : (strVal('calc_taylor_type') || 'sin');
     const a = numVal('calc_taylor_a'), N = Math.max(0, Math.round(numVal('calc_taylor_n'))), x = numVal('calc_taylor_x');
     if (![a, N, x].every(finite)) return showError('calc_taylor_result', 'Enter center a, order N, and x.');
     if (type === 'ln1p' && (a <= -1 || x <= -1)) return showError('calc_taylor_result', 'ln(1+x) needs x > -1 and a > -1.');
@@ -1306,6 +1392,7 @@
     addRow(out, 'Exact value', fmtNum(exact, 10));
     addRow(out, 'Absolute error', fmtNum(Math.abs(sum - exact), 10));
     addTable(out, ['n', 'f⁽ⁿ⁾(a)', 'termₙ', 'partial sum'], rows);
+    appendSvg(out, taylorDiagram(type, a, N, x));
   };
 
   window.calcRelatedRates = function () {

@@ -148,8 +148,13 @@
       '.cs-card h3,.cs-card h4{margin:0 0 10px;color:' + ACCENT + ';}' +
       '.cs-meta{color:#cbd5e1;margin:0 0 14px;}' +
       '.cs-note{color:' + MUTED + ';font-size:12px;}' +
-      '.cs-editor-row{display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;margin-bottom:8px;}' +
-      '.cs-editor-row input{width:100%;box-sizing:border-box;background:#0b1220;color:' + TEXT + ';border:1px solid #334155;border-radius:8px;padding:8px;}' +
+      '.cs-editor-row{display:grid;grid-template-columns:minmax(105px,1.2fr) minmax(100px,1fr) repeat(2,minmax(72px,.7fr)) auto;gap:8px;align-items:center;margin-bottom:8px;}' +
+      '.cs-editor-row input,.cs-editor-row select{width:100%;box-sizing:border-box;background:#0b1220;color:' + TEXT + ';border:1px solid #334155;border-radius:8px;padding:8px;}' +
+      '.cs-editor-row button{padding:7px 9px;}' +
+      '.cs-builder-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;padding:10px;margin:10px 0 14px;background:#0b1220;border:1px solid #1f2937;border-radius:10px;}' +
+      '.cs-builder-bar label{display:grid;gap:4px;color:#94a3b8;font-size:11px;}' +
+      '.cs-builder-bar select{min-width:120px;background:#111827;color:' + TEXT + ';border:1px solid #334155;border-radius:8px;padding:8px;}' +
+      '@media (max-width:620px){.cs-editor-row{grid-template-columns:1fr 1fr;}.cs-editor-row button{grid-column:span 2;}.cs-editor-row input,.cs-editor-row select{min-width:0;}}' +
       '.cs-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid rgba(100,116,139,.18);}' +
       '.cs-row:last-child{border-bottom:none;}' +
       '.cs-k{color:#cbd5e1;}' +
@@ -641,12 +646,30 @@
     return { x: PAD + gridPt[0] * GRID, y: PAD + gridPt[1] * GRID };
   }
 
+  function customLayout(circuit) {
+    const components = {};
+    const wires = [];
+    let i;
+    for (i = 0; i < circuit.netlist.length; i += 1) {
+      const x = 1 + i * 1.4;
+      components[circuit.netlist[i].name] = [[x, 2], [x + 1, 2]];
+      if (i > 0) wires.push([[x - 0.4, 2], [x, 2]]);
+    }
+    return {
+      size: [Math.max(5, 3 + circuit.netlist.length * 1.4), 4],
+      components: components,
+      wires: wires,
+      grounds: circuit.netlist.length ? [[1, 2]] : [],
+      labels: [{ text: 'User-built topology', at: [3, 0.7] }],
+    };
+  }
+
   function renderSchematic(circuit) {
     const host = document.getElementById('cs_schematic');
     host.textContent = '';
     host.appendChild(mk('h3', '', 'Schematic'));
 
-    const layout = circuit.layout;
+    const layout = circuit.analysis.kind === 'custom' ? customLayout(circuit) : circuit.layout;
     const width = PAD * 2 + layout.size[0] * GRID;
     const height = PAD * 2 + layout.size[1] * GRID;
     const svgRoot = svg('svg', {
@@ -695,6 +718,28 @@
     host.appendChild(mk('h3', '', 'Component Values'));
     host.appendChild(mk('p', 'cs-note', 'Edit values, then run analysis. Scientific notation is supported.'));
 
+    const builder = mk('div', 'cs-builder-bar');
+    const typeLabel = mk('label', '', 'Add component');
+    const typeSelect = document.createElement('select');
+    typeSelect.id = 'cs_add_type';
+    [['R', 'Resistor'], ['C', 'Capacitor'], ['L', 'Inductor'], ['V', 'Voltage source'], ['I', 'Current source']].forEach(function (item) {
+      const option = document.createElement('option');
+      option.value = item[0];
+      option.textContent = item[1];
+      typeSelect.appendChild(option);
+    });
+    typeLabel.appendChild(typeSelect);
+    const add = mk('button', '', 'Add component');
+    add.type = 'button';
+    add.addEventListener('click', function () { window.csAddComponent(typeSelect.value); });
+    builder.appendChild(typeLabel);
+    builder.appendChild(add);
+    host.appendChild(builder);
+
+    const header = mk('div', 'cs-editor-row cs-note');
+    ['Part', 'Value', 'Node +', 'Node -', ''].forEach(function (label) { header.appendChild(mk('div', '', label)); });
+    host.appendChild(header);
+
     let i;
     for (i = 0; i < circuit.netlist.length; i += 1) {
       const comp = circuit.netlist[i];
@@ -712,9 +757,31 @@
       const unit = mk('div', '', componentUnit(comp));
       setStyles(unit, { color: MUTED, minWidth: '42px', textAlign: 'right' });
 
+      const nodeOptions = function (selected, field) {
+        const select = document.createElement('select');
+        select.setAttribute('data-comp-name', comp.name);
+        select.setAttribute('data-field', field);
+        [0, 1, 2, 3, 4, 5, 6].forEach(function (node) {
+          const option = document.createElement('option');
+          option.value = String(node);
+          option.textContent = node === 0 ? 'GND' : 'N' + node;
+          option.selected = node === selected;
+          select.appendChild(option);
+        });
+        return select;
+      };
+      const remove = mk('button', '', 'Remove');
+      remove.type = 'button';
+      remove.addEventListener('click', function () { window.csRemoveComponent(comp.name); });
+
       row.appendChild(name);
-      row.appendChild(input);
-      row.appendChild(unit);
+      const valueCell = mk('div');
+      valueCell.appendChild(input);
+      valueCell.appendChild(unit);
+      row.appendChild(valueCell);
+      row.appendChild(nodeOptions(comp.n1, 'n1'));
+      row.appendChild(nodeOptions(comp.n2, 'n2'));
+      row.appendChild(remove);
       host.appendChild(row);
     }
   }
@@ -732,6 +799,11 @@
       let j;
       for (j = 0; j < circuit.netlist.length; j += 1) {
         if (circuit.netlist[j].name === name) {
+          if ((field === 'n1' || field === 'n2') && circuit.netlist[j][field] !== value) {
+            circuit.analysis = { kind: 'custom', mode: 'dc' };
+            circuit.name = 'Custom Circuit';
+            circuit.description = 'User-built circuit with editable component values and node connections.';
+          }
           circuit.netlist[j][field] = value;
           if (field === 'dc' && circuit.netlist[j].value != null) circuit.netlist[j].value = value;
           break;
@@ -1069,12 +1141,38 @@
   }
 
   function analyzeCircuit(circuit) {
+    if (circuit.analysis.kind === 'custom') return analyzeCustom(circuit);
     if (circuit.analysis.kind === 'voltage-divider') return analyzeVoltageDivider(circuit);
     if (circuit.analysis.kind === 'thevenin') return analyzeThevenin(circuit);
     if (circuit.analysis.kind === 'rc-lowpass') return analyzeRcLowPass(circuit);
     if (circuit.analysis.kind === 'rlc-series') return analyzeRlc(circuit);
     if (circuit.analysis.kind === 'superposition') return analyzeSuperposition(circuit);
     return analyzeWheatstone(circuit);
+  }
+
+  function analyzeCustom(circuit) {
+    const sol = solveMna(circuit.netlist, { mode: 'dc' });
+    const sources = circuit.netlist.filter(function (comp) { return comp.type === 'V' || comp.type === 'I'; }).length;
+    const passive = circuit.netlist.filter(function (comp) { return comp.type === 'R' || comp.type === 'C' || comp.type === 'L'; }).length;
+    return {
+      mode: 'dc',
+      badge: 'Custom DC operating point',
+      solution: sol,
+      steps: [
+        'Each component is converted to its conductance or source stamp in the MNA matrix.',
+        'The node connections shown in the editor define the circuit topology.',
+        'The matrix is solved for every node voltage and branch current.',
+        'Change a value or node connection, then run the analysis again to compare the result.',
+      ],
+      extras: function (host) {
+        const sec = addSection(host, 'Circuit Parameters');
+        addRow(sec, 'Components', String(circuit.netlist.length));
+        addRow(sec, 'Passive elements', String(passive));
+        addRow(sec, 'Independent sources', String(sources));
+        addRow(sec, 'Nodes plus ground', String(sol.nodes.length + 1));
+        addRow(sec, 'Matrix size', String(sol.nodes.length + sources));
+      },
+    };
   }
 
   function renderSummary(result) {
@@ -1250,6 +1348,34 @@
       details.appendChild(mk('h3', '', 'Explanation'));
       details.appendChild(mk('p', 'cs-note', 'Check component values and topology, then run analysis again.'));
     }
+  };
+
+  window.csAddComponent = function (type) {
+    const circuit = readEditedCircuit();
+    const prefix = String(type || 'R').toUpperCase();
+    let index = 1;
+    while (findComp(circuit, prefix + index)) index += 1;
+    const defaults = { R: 1000, C: 1e-6, L: 1e-3, V: 5, I: 1e-3 };
+    const component = { name: prefix + index, type: prefix, n1: 1, n2: 0, value: defaults[prefix] || 1 };
+    if (prefix === 'V' || prefix === 'I') component.dc = component.value;
+    circuit.netlist.push(component);
+    circuit.analysis = { kind: 'custom', mode: 'dc' };
+    circuit.name = 'Custom Circuit';
+    circuit.description = 'User-built circuit with editable component values and node connections.';
+    state.currentCircuit = circuit;
+    renderEditor(circuit);
+    window.csRunAnalysis();
+  };
+
+  window.csRemoveComponent = function (name) {
+    const circuit = readEditedCircuit();
+    circuit.netlist = circuit.netlist.filter(function (comp) { return comp.name !== name; });
+    circuit.analysis = { kind: 'custom', mode: 'dc' };
+    circuit.name = 'Custom Circuit';
+    circuit.description = 'User-built circuit with editable component values and node connections.';
+    state.currentCircuit = circuit;
+    renderEditor(circuit);
+    window.csRunAnalysis();
   };
 
   window.csToggleDetails = function (id) {
