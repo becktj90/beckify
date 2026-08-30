@@ -45,7 +45,7 @@ export default function Home() {
                       "radial-gradient(ellipse at 20% 50%, rgba(139,123,255,0.08) 0%, transparent 65%)",
                   }}
                 />
-                <PenroseCanvas className="pointer-events-none absolute inset-0 h-full w-full opacity-20" />
+                <PenroseCanvas className="pointer-events-none absolute inset-0 h-full w-full opacity-50 md:opacity-20" />
 
                 <div className="relative z-10 space-y-6">
                   {/* Brand mark */}
