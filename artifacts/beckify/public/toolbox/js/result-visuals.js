@@ -68,6 +68,22 @@
     text(svg, 616, 124, 'time ->', { fill: PALETTE.muted, 'font-size': 11, 'text-anchor': 'end' });
   }
 
+  function pulseTrace(svg) {
+    text(svg, 16, 24, 'REFLECTION TRACE', { fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    line(svg, 24, 88, 616, 88, { stroke: PALETTE.line });
+    const points = [];
+    for (let x = 24; x <= 616; x += 4) {
+      let y = 88;
+      if (x > 94 && x < 168) y = 88 - (x < 112 ? (x - 94) * 1.8 : x < 150 ? 32 : (168 - x) * 1.8);
+      if (x > 360 && x < 430) y = 88 + (x < 378 ? (x - 360) * 1.5 : x < 414 ? 27 : (430 - x) * 1.5);
+      points.push(x + ',' + y);
+    }
+    svg.appendChild(svgElement('polyline', { points: points.join(' '), fill: 'none', stroke: PALETTE.green, 'stroke-width': 3, 'stroke-linejoin': 'round' }));
+    text(svg, 112, 58, 'launch', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 395, 125, 'reflected event', { fill: PALETTE.green, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 24, 124, 'time ->', { fill: PALETTE.muted, 'font-size': 11 });
+  }
+
   function gauge(svg, value, label, color) {
     const pct = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
     text(svg, 20, 28, label, { fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.2 });
@@ -106,8 +122,8 @@
     if (id === 'sec-conduit' || id === 'sec-conduit-adv') return gauge(shell(result, 'Conduit fill shown against the permitted fill envelope'), values.find((value, index) => /fill/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'RACEWAY FILL', PALETTE.green);
     if (id === 'sec-reactance' || id === 'sec-resonance' || id === 'sec-harmonics') return waveform(shell(result, 'AC waveform showing changing electrical response over time'), 'AC RESPONSE', PALETTE.blue);
     if (id === 'sec-power-ac' || id === 'sec-pfc') return waveform(shell(result, 'Power waveform showing phase and energy flow'), 'POWER FLOW', PALETTE.accent);
-    if (id === 'sec-tdr') return waveform(shell(result, 'Time-domain reflectometry pulse trace with a reflected event'), 'TDR TRACE', PALETTE.green);
-    if (id === 'sec-stem-tools') return waveform(shell(result, 'Numerical solution changing across the independent variable'), 'NUMERICAL SOLUTION', PALETTE.yellow);
+    if (id === 'sec-tdr') return pulseTrace(shell(result, 'Time-domain reflectometry launch pulse and reflected fault event'));
+    if (id === 'sec-stem-tools') return numericSignal(shell(result, 'Visual summary of the numerical values shown above'), values.length ? values : [0, 1]);
     return numericSignal(shell(result, 'Visual summary of the calculator values shown above'), values.length ? values : [0, 1]);
   }
 

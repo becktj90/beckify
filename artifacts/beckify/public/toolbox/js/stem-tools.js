@@ -46,6 +46,35 @@
     ['K', 'Potassium', 19, 39.098], ['Ca', 'Calcium', 20, 40.078]
   ];
 
+  const PERIODIC_FULL = ('H Hydrogen|He Helium|Li Lithium|Be Beryllium|B Boron|C Carbon|N Nitrogen|O Oxygen|F Fluorine|Ne Neon|' +
+    'Na Sodium|Mg Magnesium|Al Aluminum|Si Silicon|P Phosphorus|S Sulfur|Cl Chlorine|Ar Argon|K Potassium|Ca Calcium|' +
+    'Sc Scandium|Ti Titanium|V Vanadium|Cr Chromium|Mn Manganese|Fe Iron|Co Cobalt|Ni Nickel|Cu Copper|Zn Zinc|' +
+    'Ga Gallium|Ge Germanium|As Arsenic|Se Selenium|Br Bromine|Kr Krypton|Rb Rubidium|Sr Strontium|Y Yttrium|Zr Zirconium|' +
+    'Nb Niobium|Mo Molybdenum|Tc Technetium|Ru Ruthenium|Rh Rhodium|Pd Palladium|Ag Silver|Cd Cadmium|In Indium|Sn Tin|' +
+    'Sb Antimony|Te Tellurium|I Iodine|Xe Xenon|Cs Cesium|Ba Barium|La Lanthanum|Ce Cerium|Pr Praseodymium|Nd Neodymium|' +
+    'Pm Promethium|Sm Samarium|Eu Europium|Gd Gadolinium|Tb Terbium|Dy Dysprosium|Ho Holmium|Er Erbium|Tm Thulium|Yb Ytterbium|' +
+    'Lu Lutetium|Hf Hafnium|Ta Tantalum|W Tungsten|Re Rhenium|Os Osmium|Ir Iridium|Pt Platinum|Au Gold|Hg Mercury|' +
+    'Tl Thallium|Pb Lead|Bi Bismuth|Po Polonium|At Astatine|Rn Radon|Fr Francium|Ra Radium|Ac Actinium|Th Thorium|' +
+    'Pa Protactinium|U Uranium|Np Neptunium|Pu Plutonium|Am Americium|Cm Curium|Bk Berkelium|Cf Californium|Es Einsteinium|Fm Fermium|' +
+    'Md Mendelevium|No Nobelium|Lr Lawrencium|Rf Rutherfordium|Db Dubnium|Sg Seaborgium|Bh Bohrium|Hs Hassium|Mt Meitnerium|' +
+    'Ds Darmstadtium|Rg Roentgenium|Cn Copernicium|Nh Nihonium|Fl Flerovium|Mc Moscovium|Lv Livermorium|Ts Tennessine|Og Oganesson')
+    .split('|').map((entry, index) => {
+      const parts = entry.split(' ');
+      return { symbol: parts[0], name: parts.slice(1).join(' '), number: index + 1 };
+    });
+
+  const PERIODIC_ROWS = [
+    [1, 18], [3, 10], [11, 18], [19, 36], [37, 54], [55, 86], [87, 118]
+  ];
+  const ELEMENT_COLORS = ['#8b7bff', '#60a5fa', '#6ee7b7', '#f5c451', '#ff8a8a'];
+  function elementCategory(number) {
+    if ([1, 2, 6, 7, 8, 9, 15, 16, 17, 34, 35, 53].indexOf(number) >= 0) return 1;
+    if ([3, 11, 19, 37, 55, 87].indexOf(number) >= 0) return 2;
+    if ([4, 12, 20, 38, 56, 88].indexOf(number) >= 0) return 3;
+    if (number >= 57 && number <= 71 || number >= 89 && number <= 103) return 4;
+    return 0;
+  }
+
   const REFRACTIVE = [
     ['Air', 1.0003], ['Water', 1.333], ['Glass', 1.5], ['Diamond', 2.417]
   ];
@@ -1200,10 +1229,44 @@
         addRow(out, sym, count + ' × ' + fmtNum(ATOMIC_MASS[sym], 4) + ' = ' + fmtNum(mass, 4));
       });
       addRow(out, 'Total molar mass', fmtNum(total, 4) + ' g/mol', { bold: true, color: COLORS.green });
+      appendSvg(out, moleculeDiagram(counts, formula));
     } catch (err) {
       showError('chem_molar_result', err.message || 'Could not parse formula.');
     }
   };
+
+  function moleculeDiagram(counts, formula) {
+    const w = 520, h = 245;
+    const svg = svgEl('svg', { width: w, height: h, viewBox: '0 0 ' + w + ' ' + h, role: 'img', 'aria-label': 'Ball and stick model for ' + formula, style: 'background:' + COLORS.bg + ';border:1px solid rgba(255,255,255,0.08);border-radius:10px' });
+    const atoms = [];
+    Object.keys(counts).forEach((symbol) => { for (let i = 0; i < counts[symbol]; i++) atoms.push(symbol); });
+    const center = atoms.indexOf('C') >= 0 ? atoms.indexOf('C') : 0;
+    const ordered = atoms.splice(center, 1).concat(atoms);
+    const cx = 260, cy = 125;
+    const positions = ordered.map((symbol, index) => {
+      if (index === 0) return { symbol: symbol, x: cx, y: cy };
+      const angle = -Math.PI / 2 + (index - 1) * Math.PI * 2 / Math.max(1, ordered.length - 1);
+      const radius = ordered.length === 2 ? 100 : 78;
+      return { symbol: symbol, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+    });
+    if (formula.replace(/\s/g, '') === 'H2O') { positions[0] = { symbol: 'O', x: cx, y: cy }; positions[1] = { symbol: 'H', x: 180, y: 95 }; positions[2] = { symbol: 'H', x: 340, y: 95 }; }
+    if (formula.replace(/\s/g, '') === 'CO2') { positions[0] = { symbol: 'C', x: cx, y: cy }; positions[1] = { symbol: 'O', x: 145, y: cy }; positions[2] = { symbol: 'O', x: 375, y: cy }; }
+    positions.slice(1).forEach((atom) => svg.appendChild(svgEl('line', { x1: positions[0].x, y1: positions[0].y, x2: atom.x, y2: atom.y, stroke: '#9aa5bd', 'stroke-width': 8, 'stroke-linecap': 'round', opacity: 0.8 })));
+    positions.forEach((atom) => {
+      const color = atom.symbol === 'O' ? '#ff6b78' : atom.symbol === 'N' ? '#668cff' : atom.symbol === 'H' ? '#edf2ff' : atom.symbol === 'C' ? '#6ee7b7' : '#f5c451';
+      svg.appendChild(svgEl('circle', { cx: atom.x, cy: atom.y, r: atom.symbol === 'H' ? 22 : 30, fill: color, stroke: '#ffffff', 'stroke-width': 2, opacity: 0.95 }));
+      const label = svgEl('text', { x: atom.x, y: atom.y + 6, fill: atom.symbol === 'H' ? '#162033' : '#071018', 'font-size': 17, 'font-weight': 700, 'text-anchor': 'middle' });
+      label.textContent = atom.symbol;
+      svg.appendChild(label);
+    });
+    const title = svgEl('text', { x: 18, y: 24, fill: COLORS.accent, 'font-size': 12, 'letter-spacing': 1.2 });
+    title.textContent = 'BALL-AND-STICK MODEL · ' + formula;
+    svg.appendChild(title);
+    const note = svgEl('text', { x: 18, y: 226, fill: COLORS.muted, 'font-size': 11 });
+    note.textContent = 'Illustrative connectivity model; bond angles are not to scale.';
+    svg.appendChild(note);
+    return svg;
+  }
 
   window.calcChemIdealGas = function () {
     let P = numVal('chem_gas_P'), V = numVal('chem_gas_V'), n = numVal('chem_gas_n'), T = numVal('chem_gas_T');
@@ -1271,21 +1334,43 @@
     clearNode(host);
     host.className = 'result show';
     host.style.display = 'grid';
-    host.style.gridTemplateColumns = 'repeat(auto-fit, minmax(92px, 1fr))';
-    host.style.gap = '0.45rem';
-    PERIODIC20.forEach((e) => {
+    host.style.display = 'grid';
+    host.style.gridTemplateColumns = 'repeat(18, minmax(34px, 1fr))';
+    host.style.gap = '0.25rem';
+    host.style.minWidth = '680px';
+    host.style.overflowX = 'auto';
+    const byNumber = Object.fromEntries(PERIODIC_FULL.map((element) => [element.number, element]));
+    const addElement = (number, column, row) => {
+      const e = byNumber[number];
+      if (!e) return;
       const card = document.createElement('div');
       card.style.border = '1px solid ' + COLORS.line;
       card.style.borderRadius = '10px';
-      card.style.padding = '0.45rem';
-      card.style.background = 'rgba(139,123,255,0.07)';
-      const z = document.createElement('div'); z.textContent = String(e[2]); z.style.fontSize = '0.78em'; z.style.color = COLORS.yellow;
-      const sym = document.createElement('div'); sym.textContent = e[0]; sym.style.fontSize = '1.35em'; sym.style.fontWeight = '700';
-      const name = document.createElement('div'); name.textContent = e[1]; name.style.fontSize = '0.83em';
-      const mass = document.createElement('div'); mass.textContent = fmtNum(e[3], 3); mass.style.fontSize = '0.8em'; mass.style.color = COLORS.blue;
-      card.appendChild(z); card.appendChild(sym); card.appendChild(name); card.appendChild(mass);
+      card.style.padding = '0.28rem'; card.style.minHeight = '58px'; card.style.background = 'rgba(139,123,255,0.07)';
+      card.style.gridColumn = String(column); card.style.gridRow = String(row);
+      card.title = e.name;
+      const z = document.createElement('div'); z.textContent = String(e.number); z.style.fontSize = '0.68em'; z.style.color = COLORS.yellow;
+      const sym = document.createElement('div'); sym.textContent = e.symbol; sym.style.fontSize = '1.05em'; sym.style.fontWeight = '700'; sym.style.color = ELEMENT_COLORS[elementCategory(e.number)];
+      const name = document.createElement('div'); name.textContent = e.name; name.style.fontSize = '0.56em'; name.style.whiteSpace = 'nowrap'; name.style.overflow = 'hidden'; name.style.textOverflow = 'ellipsis';
+      card.appendChild(z); card.appendChild(sym); card.appendChild(name);
       host.appendChild(card);
+    };
+    PERIODIC_ROWS.forEach((range, periodIndex) => {
+      for (let number = range[0]; number <= range[1]; number++) {
+        let column = number, row = periodIndex + 1;
+        if (periodIndex === 0) column = number === 1 ? 1 : 18;
+        if (periodIndex === 1) column = number === 3 ? 1 : number === 4 ? 2 : number - 3 + 12;
+        if (periodIndex === 2) column = number === 11 ? 1 : number === 12 ? 2 : number - 11 + 12;
+        if (periodIndex >= 3 && periodIndex <= 4) column = number - range[0] + 1;
+        if (periodIndex >= 5) column = number <= 56 || number >= 88 && number <= 103 ? (number % 2 ? 1 : 2) : number - range[0] + 1;
+        if (periodIndex === 5 && number >= 57 && number <= 71 || periodIndex === 6 && number >= 89 && number <= 103) return;
+        addElement(number, column, row);
+      }
     });
+    const fBlock = document.createElement('div');
+    fBlock.style.gridColumn = '4 / span 15'; fBlock.style.gridRow = '8 / span 2'; fBlock.style.display = 'grid'; fBlock.style.gridTemplateColumns = 'repeat(15, minmax(34px, 1fr))'; fBlock.style.gap = '0.25rem';
+    [57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103].forEach((number, index) => { const e = byNumber[number]; const card = document.createElement('div'); card.style.border = '1px solid ' + COLORS.line; card.style.borderRadius = '8px'; card.style.padding = '0.2rem'; card.title = e.name; card.textContent = e.symbol; card.style.color = ELEMENT_COLORS[4]; card.style.fontSize = '0.75em'; fBlock.appendChild(card); });
+    host.appendChild(fBlock);
   };
 
   /* 5. CALCULUS */
