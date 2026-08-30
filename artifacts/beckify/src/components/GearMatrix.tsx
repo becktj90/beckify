@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Activity, Cable, ExternalLink, Gauge, RadioTower, ShieldCheck, ShoppingBag, Wrench } from "lucide-react";
+import { useRef, useState } from "react";
+import { Activity, ArrowDown, Cable, ExternalLink, Gauge, RadioTower, ShieldCheck, ShoppingBag, Wrench } from "lucide-react";
 
 type GearCategory = "Hand tools" | "Electrical troubleshooting" | "Insulation and safety" | "Current and process" | "Bench and electronics" | "Cable and RF";
 
@@ -45,12 +45,12 @@ const gear: Gear[] = [
 const categories = ["All", "Hand tools", "Electrical troubleshooting", "Insulation and safety", "Current and process", "Bench and electronics", "Cable and RF"] as const;
 
 const categoryGuides = [
-  { category: "Hand tools" as const, title: "Prepare and terminate", description: "Strip, cut, crimp, and torque connections consistently.", icon: Wrench, accent: "from-emerald-500/25 to-teal-500/5" },
-  { category: "Electrical troubleshooting" as const, title: "Find electrical faults", description: "Check voltage, continuity, heat, and branch-circuit conditions.", icon: Gauge, accent: "from-cyan-500/25 to-blue-500/5" },
-  { category: "Insulation and safety" as const, title: "Test insulation", description: "Perform specified insulation-resistance work on isolated equipment.", icon: ShieldCheck, accent: "from-amber-500/25 to-orange-500/5" },
-  { category: "Current and process" as const, title: "Measure current", description: "Check AC/DC load or 4-20 mA process signals without opening circuits.", icon: Cable, accent: "from-rose-500/25 to-red-500/5" },
-  { category: "Bench and electronics" as const, title: "Characterize signals", description: "See waveforms and capture intermittent measurement behavior.", icon: Activity, accent: "from-violet-500/25 to-fuchsia-500/5" },
-  { category: "Cable and RF" as const, title: "Verify cable and RF", description: "Map copper cable and investigate antennas, coax, and impedance.", icon: RadioTower, accent: "from-sky-500/25 to-indigo-500/5" },
+  { category: "Hand tools" as const, label: "Hand tools", icon: Wrench },
+  { category: "Electrical troubleshooting" as const, label: "Electrical testing", icon: Gauge },
+  { category: "Insulation and safety" as const, label: "Insulation and safety", icon: ShieldCheck },
+  { category: "Current and process" as const, label: "Current and process", icon: Cable },
+  { category: "Bench and electronics" as const, label: "Bench and electronics", icon: Activity },
+  { category: "Cable and RF" as const, label: "Cable and RF", icon: RadioTower },
 ];
 
 function getGearIcon(category: GearCategory) {
@@ -90,7 +90,12 @@ function InstrumentGraphic() {
 
 export function GearMatrix() {
   const [category, setCategory] = useState<(typeof categories)[number]>("All");
+  const catalogRef = useRef<HTMLDivElement>(null);
   const visible = gear.filter((item) => category === "All" || item.category === category);
+  const selectCategory = (nextCategory: GearCategory) => {
+    setCategory(nextCategory);
+    requestAnimationFrame(() => catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   return <section className="space-y-6" aria-labelledby="gear-title">
     <div className="grid overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] lg:grid-cols-[1.1fr_.9fr]">
@@ -105,17 +110,13 @@ export function GearMatrix() {
 
     <div className="card-surface grid gap-5 p-5 md:grid-cols-[auto_1fr_1fr_1fr] md:items-center" aria-label="How to use this guide"><span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-bold text-[var(--accent)]">Start here</span><p className="m-0 text-sm leading-6 text-[var(--muted)]"><strong className="text-[var(--foreground)]">1. Define the task.</strong> Start with the connection, measurement, or signal path you need to verify.</p><p className="m-0 text-sm leading-6 text-[var(--muted)]"><strong className="text-[var(--foreground)]">2. Follow the procedure.</strong> The work instruction and safety process determine the acceptable method.</p><p className="m-0 text-sm leading-6 text-[var(--muted)]"><strong className="text-[var(--foreground)]">3. Match the instrument.</strong> Select the required function, category rating, and accuracy before buying or testing.</p></div>
 
-    <section aria-labelledby="category-map-title"><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Browse by work type</p><h2 id="category-map-title" className="mt-1 font-display text-2xl font-bold">What are you trying to do?</h2></div><Cable className="hidden h-7 w-7 text-[var(--accent)] md:block" aria-hidden="true" /></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{categoryGuides.map((guide) => { const Icon = guide.icon; return <button type="button" key={guide.category} onClick={() => setCategory(guide.category)} className={`group rounded-xl border border-[var(--border)] bg-gradient-to-br ${guide.accent} p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)]/60`}><Icon className="h-8 w-8 text-[var(--accent)]" aria-hidden="true" /><h3 className="mt-7 font-display text-lg font-bold">{guide.title}</h3><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{guide.description}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">Show recommendations <ExternalLink className="h-3.5 w-3.5" /></span></button>; })}</div></section>
+    <section aria-labelledby="category-map-title"><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Browse equipment</p><h2 id="category-map-title" className="mt-1 font-display text-2xl font-bold">Choose a category</h2><p className="mt-2 text-sm text-[var(--muted)]">Select a category to filter the product list below.</p></div><Cable className="hidden h-7 w-7 text-[var(--accent)] md:block" aria-hidden="true" /></div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{categoryGuides.map((guide) => { const Icon = guide.icon; const count = gear.filter((item) => item.category === guide.category).length; const isActive = category === guide.category; return <button type="button" key={guide.category} aria-pressed={isActive} onClick={() => selectCategory(guide.category)} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${isActive ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/60"}`}><span className="rounded-lg bg-[var(--accent-soft)] p-2"><Icon className="h-5 w-5 text-[var(--accent)]" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block font-display text-base font-bold text-[var(--foreground)]">{guide.label}</span><span className="mt-0.5 block text-xs text-[var(--muted)]">{count} recommendations</span></span><ArrowDown className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden="true" /></button>; })}</div></section>
 
     <div className="flex gap-3 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm leading-6 text-[var(--muted)]"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden="true" /><p className="m-0"><strong className="text-[var(--foreground)]">Safety note:</strong> These are diagnostic and maintenance-support tools. They do not replace lockout/tagout, an approved work procedure, required calibration, meter verification, or the tool manufacturer’s instructions.</p></div>
 
-    <div className="card-surface flex flex-wrap gap-2 p-4" aria-label="Filter recommendations by category">
-      {categories.map((item) => <button type="button" key={item} aria-pressed={category === item} onClick={() => setCategory(item)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${category === item ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"}`}>{item}</button>)}
-    </div>
-
     <p className="text-xs text-[var(--muted)]">Disclosure: As an Amazon Associate I earn from qualifying purchases. "View on Amazon" links are paid links.</p>
 
-    <div className="grid gap-4 md:grid-cols-2">
+    <div ref={catalogRef} className="scroll-mt-6"><div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Product list</p><h2 className="mt-1 font-display text-2xl font-bold">{category === "All" ? "All recommended gear" : category}</h2></div>{category !== "All" && <button type="button" onClick={() => setCategory("All")} className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">Show all 25 tools</button>}</div><div className="grid gap-4 md:grid-cols-2">
       {visible.map((item) => {
         const Icon = getGearIcon(item.category);
         return <article className="card-surface flex flex-col p-6" key={item.name}>
@@ -126,6 +127,6 @@ export function GearMatrix() {
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold"><a href={item.manufacturerUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline">Manufacturer details <ExternalLink className="h-3.5 w-3.5" /></a><a href={item.amazonUrl} target="_blank" rel="sponsored noopener noreferrer" className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline"><ShoppingBag className="h-4 w-4" /> View on Amazon <span className="text-[10px] font-medium">(paid link)</span><ExternalLink className="h-3.5 w-3.5" /></a></div>
         </article>;
       })}
-    </div>
+    </div></div>
   </section>;
 }
