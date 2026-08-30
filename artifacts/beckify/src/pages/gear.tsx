@@ -1,38 +1,46 @@
 import { Layout } from "@/components/Layout";
-import { GearMatrix } from "@/components/GearMatrix";
+import { GEAR_FAQS, GEAR_RECOMMENDATIONS, GearMatrix } from "@/components/GearMatrix";
 import { SchemaHead } from "@/components/seo/SchemaHead";
 
 const gearSchema = [
   {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Recommended Tools for High-Consequence Electrical Work",
-    description: "A practical list of hand tools, DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for electrical workers and engineers.",
+    "@id": "https://beckify.com/gear#webpage",
+    url: "https://beckify.com/gear",
+    name: "Recommended Electrical Test Equipment and Tools for Professionals",
+    description: "A practical list of hand tools, multimeters, insulation testers, oscilloscopes, clamp meters, cable testers, and RF analyzers for electrical workers and engineers.",
+    mainEntity: { "@id": "https://beckify.com/gear#recommendations" },
     about: ["electrical hand tools", "electrical test equipment", "insulation resistance testing", "oscilloscope diagnostics", "RF cable analysis"],
   },
   {
     "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": "https://beckify.com/gear#recommendations",
+    name: "Recommended Electrical Test Equipment",
+    description: "Model-specific recommendations for professional electrical field and bench work.",
+    numberOfItems: GEAR_RECOMMENDATIONS.length,
+    itemListElement: GEAR_RECOMMENDATIONS.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Thing",
+        name: `${item.name} - ${item.model}`,
+        sameAs: item.manufacturerUrl,
+      },
+    })),
+  },
+  {
+    "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What is the best first electrical test tool for field troubleshooting?",
-        acceptedAnswer: { "@type": "Answer", text: "A professional True-RMS handheld DMM is the most broadly useful first tool for voltage, resistance, continuity, and current troubleshooting. A dedicated insulation tester, oscilloscope, clamp meter, or RF analyzer should be added only when the task requires it." },
-      },
-      {
-        "@type": "Question",
-        name: "Can an insulation tester or hipot tester be used on any aircraft circuit?",
-        acceptedAnswer: { "@type": "Answer", text: "No. The applicable aircraft and component maintenance data determines whether testing is permitted, the required isolation, and the allowed test voltage. Sensitive equipment must be protected or disconnected exactly as specified." },
-      },
-      {
-        "@type": "Question",
-        name: "When do I need a cable and antenna analyzer instead of a multimeter?",
-        acceptedAnswer: { "@type": "Answer", text: "Use a cable and antenna analyzer for RF-path measurements such as return loss, VSWR, cable loss, and distance-to-fault. A multimeter cannot perform those RF measurements." },
-      },
-    ],
+    mainEntity: GEAR_FAQS.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
   },
 ];
 
 export default function GearPage() {
-  return <Layout><SchemaHead title="Recommended Electrical Tools for Engineers and Field Workers | Beckify" description="Recommended hand tools, DMMs, insulation testers, oscilloscopes, clamp meters, and RF cable analyzers for high-consequence electrical work." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
+  return <Layout><SchemaHead title="Recommended Electrical Test Equipment & Tools | Beckify" description="Direct model links for professional electrical test equipment: multimeters, clamp meters, insulation testers, hand tools, oscilloscopes, cable testers, RF analyzers, and budget picks." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
 }
