@@ -7,7 +7,7 @@ export default function BootyButtScooterPage() {
     <Layout showAds={false}>
       <SchemaHead
         title="Booty Butt Scooter | Beckify Games"
-        description="Play Booty Butt Scooter, a responsive lane runner with swipe controls, jump timing, local high scores, and fast arcade pacing."
+        description="Play Booty Butt Scooter, a Crossy-style scooter hopper starring Apollo and Rocco, with fart boosts, traffic dodges, and local high scores."
         path="/games/booty-butt-scooter"
       />
       <BootyButtScooter />

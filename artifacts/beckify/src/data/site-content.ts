@@ -221,7 +221,7 @@ export const GAMES: Game[] = [
   {
     name: "Booty Butt Scooter",
     description:
-      "Responsive scooter lane runner with swipe controls, jump timing, score persistence, and fast arcade pacing.",
+      "Crossy-style scooter hopper starring Apollo and Rocco, with fart boosts, traffic dodges, and score persistence.",
     url: "/games/booty-butt-scooter",
   },
   {
