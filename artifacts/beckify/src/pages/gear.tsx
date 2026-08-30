@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { GEAR_FAQS, GEAR_RECOMMENDATIONS, GearMatrix } from "@/components/GearMatrix";
+import { GEAR_RECOMMENDATIONS, GearMatrix } from "@/components/GearMatrix";
 import { SchemaHead } from "@/components/seo/SchemaHead";
 
 const gearSchema = [
@@ -8,17 +8,17 @@ const gearSchema = [
     "@type": "CollectionPage",
     "@id": "https://beckify.com/gear#webpage",
     url: "https://beckify.com/gear",
-    name: "Recommended Electrical Test Equipment and Tools for Professionals",
-    description: "A practical list of hand tools, multimeters, insulation testers, oscilloscopes, clamp meters, cable testers, and RF analyzers for electrical workers and engineers.",
+    name: "Recommended Electrical Tools, Supplies, and Field Gear",
+    description: "Model-specific tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices.",
     mainEntity: { "@id": "https://beckify.com/gear#recommendations" },
-    about: ["electrical hand tools", "electrical test equipment", "insulation resistance testing", "oscilloscope diagnostics", "RF cable analysis"],
+    about: ["electrical hand tools", "electrical test equipment", "cable fault location", "jobsite lighting", "portable power"],
   },
   {
     "@context": "https://schema.org",
     "@type": "ItemList",
     "@id": "https://beckify.com/gear#recommendations",
-    name: "Recommended Electrical Test Equipment",
-    description: "Model-specific recommendations for professional electrical field and bench work.",
+    name: "Recommended Electrical Tools and Field Gear",
+    description: "Model-specific recommendations for professional electrical work, supplies, and field support.",
     numberOfItems: GEAR_RECOMMENDATIONS.length,
     itemListElement: GEAR_RECOMMENDATIONS.map((item, index) => ({
       "@type": "ListItem",
@@ -30,17 +30,8 @@ const gearSchema = [
       },
     })),
   },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: GEAR_FAQS.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  },
 ];
 
 export default function GearPage() {
-  return <Layout><SchemaHead title="Recommended Electrical Test Equipment & Tools | Beckify" description="Direct model links for professional electrical test equipment: multimeters, clamp meters, insulation testers, hand tools, oscilloscopes, cable testers, RF analyzers, and budget picks." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
+  return <Layout><SchemaHead title="Recommended Electrical Tools, Supplies & Field Gear | Beckify" description="Direct model links for industry-standard tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
 }

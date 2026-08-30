@@ -5,26 +5,26 @@ const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist/public");
 const shell = resolve(dist, "index.html");
 
-const gearDescription = "Direct model links for professional electrical test equipment: multimeters, clamp meters, insulation testers, hand tools, oscilloscopes, cable testers, RF analyzers, and budget picks.";
+const gearDescription = "Direct model links for industry-standard tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices.";
 const gearSchema = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "Recommended Electrical Test Equipment and Tools for Professionals",
+  name: "Recommended Electrical Tools, Supplies, and Field Gear",
   description: gearDescription,
   url: "https://beckify.com/gear",
-  about: ["electrical test equipment", "electrical hand tools", "multimeters", "clamp meters", "insulation testing", "oscilloscopes", "RF test equipment"],
+  about: ["electrical test equipment", "electrical hand tools", "cable fault location", "jobsite lighting", "portable power"],
 });
 
 // The app sets page metadata after hydration, but this static entry also gives
 // search and sharing crawlers the route-specific information immediately.
 const gearShell = (await readFile(shell, "utf8"))
-  .replace(/<title>[^<]*<\/title>/, "<title>Recommended Electrical Test Equipment &amp; Tools | Beckify</title>")
+  .replace(/<title>[^<]*<\/title>/, "<title>Recommended Electrical Tools, Supplies &amp; Field Gear | Beckify</title>")
   .replace(/<meta name="description" content="[^"]*"\s*\/>/, `<meta name="description" content="${gearDescription}" />`)
   .replace(/<link rel="canonical" href="[^"]*"\s*\/>/, '<link rel="canonical" href="https://beckify.com/gear" />')
-  .replace(/<meta property="og:title" content="[^"]*"\s*\/>/, '<meta property="og:title" content="Recommended Electrical Test Equipment &amp; Tools | Beckify" />')
+  .replace(/<meta property="og:title" content="[^"]*"\s*\/>/, '<meta property="og:title" content="Recommended Electrical Tools, Supplies &amp; Field Gear | Beckify" />')
   .replace(/<meta property="og:description" content="[^"]*"\s*\/>/, `<meta property="og:description" content="${gearDescription}" />`)
   .replace(/<meta property="og:url" content="[^"]*"\s*\/>/, '<meta property="og:url" content="https://beckify.com/gear" />')
-  .replace(/<meta name="twitter:title" content="[^"]*"\s*\/>/, '<meta name="twitter:title" content="Recommended Electrical Test Equipment &amp; Tools | Beckify" />')
+  .replace(/<meta name="twitter:title" content="[^"]*"\s*\/>/, '<meta name="twitter:title" content="Recommended Electrical Tools, Supplies &amp; Field Gear | Beckify" />')
   .replace(/<meta name="twitter:description" content="[^"]*"\s*\/>/, `<meta name="twitter:description" content="${gearDescription}" />`)
   .replace("</head>", `<script type="application/ld+json">${gearSchema}</script></head>`);
 
