@@ -179,7 +179,7 @@
   }
 
   /* ── Parallel run cost optimizer ── */
-  function parallelRunOptions(requiredAmps, material, insulation, ambientC, ccc, terminationTemp, phase, connection) {
+  function parallelRunOptions(requiredAmps, material, _insulation, ambientC, ccc, terminationTemp, phase, connection) {
     const costs = material === 'CU' ? WIRE_COST_CU : WIRE_COST_AL;
     const results = [];
     for (let runs = 1; runs <= 6; runs++) {

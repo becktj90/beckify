@@ -13,7 +13,7 @@ export const SectionHeader = ({
 }: {
   title: string;
   subtitle?: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | React.ComponentType<{ className?: string }>;
 }) => (
   <div className="mb-8">
     <div className="inline-flex items-center gap-2.5 text-[var(--accent)] mb-3">

@@ -1,7 +1,8 @@
-import { ExternalLink, Wifi } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { PROJECTS } from "@/data/site-content";
+import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 
 /**
  * Projects grid. To add a new project card, add an entry to the PROJECTS
@@ -10,7 +11,7 @@ import { PROJECTS } from "@/data/site-content";
 export const Projects = () => (
   <section id="projects" className="space-y-8 scroll-mt-24">
     <FadeIn>
-      <SectionHeader title="Projects" icon={Wifi} />
+      <SectionHeader title="Projects" icon={(props: { className?: string }) => <BeckifyIcon name="projects" {...props} />} />
     </FadeIn>
 
     <FadeIn delay={0.1}>

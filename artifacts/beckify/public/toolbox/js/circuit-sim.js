@@ -777,7 +777,7 @@
     }
   }
 
-  function nameDirection(solution, name) {
+  function nameDirection(_solution, name) {
     const circuit = state.currentCircuit || {};
     const netlist = circuit.netlist || [];
     let i;

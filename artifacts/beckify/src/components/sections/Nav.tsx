@@ -2,6 +2,14 @@ import { Link, useLocation } from "wouter";
 import { NAV_LINKS } from "@/data/site-content";
 import beckifyMark from "@/assets/beckify-mark-white.png";
 import { EngineeringAssistant } from "@/components/EngineeringAssistant";
+import { BeckifyIcon, type BeckifyIconName } from "@/components/ui/icons/BeckifyIcon";
+
+const NAV_ICON_NAMES: Record<string, BeckifyIconName> = {
+  About: "about",
+  Toolbox: "toolbox",
+  Projects: "projects",
+  Games: "games",
+};
 
 /**
  * Full-width sticky top navigation bar.
@@ -54,7 +62,7 @@ export const Nav = () => {
           {/* Nav links */}
           <div className="flex items-center gap-1">
             <EngineeringAssistant />
-            {NAV_LINKS.map(({ href, label, icon: Icon, external }) => {
+            {NAV_LINKS.map(({ href, label, external }) => {
               const active = location === href || (external && location === href.replace(/\/$/, ""));
               /* External entries leave the SPA, so they must be real anchors —
                  wouter would otherwise route them client-side. */
@@ -71,7 +79,8 @@ export const Nav = () => {
                       : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/08"
                   }`}
                 >
-                  <Icon
+                  <BeckifyIcon
+                    name={NAV_ICON_NAMES[label] ?? "home"}
                     className={`w-3.5 h-3.5 ${active ? "opacity-100" : "opacity-70"}`}
                   />
                   <span className="hidden sm:inline">{label}</span>

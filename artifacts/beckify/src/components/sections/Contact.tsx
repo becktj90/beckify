@@ -1,7 +1,7 @@
-import { Mail } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { CONTACT_LINKS } from "@/data/site-content";
+import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 
 /**
  * Contact links grid. To add/remove a contact method, edit CONTACT_LINKS
@@ -13,7 +13,7 @@ export const Contact = () => (
       <SectionHeader
         title="Contact"
         subtitle="Best way to reach me is email, or find me on the links below."
-        icon={Mail}
+        icon={(props: { className?: string }) => <BeckifyIcon name="contact" {...props} />}
       />
     </FadeIn>
 

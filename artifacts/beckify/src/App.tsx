@@ -7,6 +7,7 @@ import ProjectsPage from "@/pages/projects";
 import GamesPage from "@/pages/games";
 import SiteMapPage from "@/pages/sitemap";
 import CosmicCadetPage from "@/pages/cosmic-cadet";
+import FingerRunnerPage from "@/pages/finger-runner";
 import VespaP200EPage from "@/pages/vespa-p200e";
 import GearPage from "@/pages/gear";
 
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/gear" component={GearPage} />
       <Route path="/games" component={GamesPage} />
       <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
+      <Route path="/games/finger-runner" component={FingerRunnerPage} />
       <Route path="/sitemap" component={SiteMapPage} />
       <Route component={NotFound} />
     </Switch>

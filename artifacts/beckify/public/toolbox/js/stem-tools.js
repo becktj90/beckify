@@ -320,7 +320,7 @@
       lab.textContent = fmtNum(x, 3);
       svg.appendChild(lab);
     });
-    [ymin, (ymin + ymax) / 2, ymax].forEach((y, i) => {
+    [ymin, (ymin + ymax) / 2, ymax].forEach((y, _i) => {
       const yy = py(y);
       const lab = svgEl('text', { x: 4, y: yy + 4, fill: COLORS.muted, 'font-size': 10 });
       lab.textContent = fmtNum(y, 3);

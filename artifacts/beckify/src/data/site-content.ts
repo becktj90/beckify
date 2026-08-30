@@ -144,7 +144,6 @@ export const CONTACT_LINKS: ContactLink[] = [
   { href: "https://www.linkedin.com/in/trevor-beck-892ab068", label: "LinkedIn", icon: Linkedin, external: true },
   { href: "https://github.com/becktj90", label: "GitHub", icon: Github, external: true },
   { href: "https://youtube.com/@trevorbeck7150", label: "YouTube", icon: Youtube, external: true },
-  { href: "https://replit.com/refer/trevorjohnbeck", label: "Replit", icon: Terminal, external: true },
 ];
 
 /** ------------------------------------------------------------------------
@@ -203,7 +202,6 @@ export const TOOLBOX = {
  *  - play.beckify.com — the games hub built from the Finger-Runner repo.
  *  - /toolbox/#sec-… — games embedded in the standalone toolbox app. It
  *    routes on the initial hash, so these deep-link straight to the game.
- *  - Replit — the older Finger Runner deploy.
  * Set `external` for anything off beckify.com so it opens in a new tab.
  * -------------------------------------------------------------------- */
 export interface Game {
@@ -235,9 +233,8 @@ export const GAMES: Game[] = [
   },
   {
     name: "Finger Runner",
-    description: "The original tap-to-jump runner with precise drag input and clean end-game feedback.",
-    url: "https://finger-runner--trevorjohnbeck.replit.app/",
-    external: true,
+    description: "A touch-friendly one-button runner with local high scores and fast arcade pacing.",
+    url: "/games/finger-runner",
   },
 ];
 

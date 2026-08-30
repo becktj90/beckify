@@ -1,9 +1,10 @@
 import { Link } from "wouter";
-import { ArrowUpRight, Orbit, Wrench, Rocket, Gamepad2, Terminal, Zap } from "lucide-react";
+import { ArrowUpRight, Orbit, Zap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NautilusTrace } from "@/components/NautilusTrace";
 import { PenroseCanvas } from "@/components/PenroseCanvas";
 import { Starfield } from "@/components/Starfield";
+import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 import { Nav } from "@/components/sections/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
@@ -119,7 +120,7 @@ export default function Home() {
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: "linear-gradient(135deg, rgba(139,123,255,0.25) 0%, rgba(79,139,255,0.15) 100%)" }}
                     >
-                      <Wrench className="w-4.5 h-4.5 text-[var(--accent)]" />
+                      <BeckifyIcon name="toolbox" className="w-4.5 h-4.5 text-[var(--accent)]" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
@@ -152,7 +153,7 @@ export default function Home() {
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: "linear-gradient(135deg, rgba(79,139,255,0.25) 0%, rgba(139,123,255,0.15) 100%)" }}
                     >
-                      <Rocket className="w-4.5 h-4.5 text-[var(--accent-2)]" />
+                      <BeckifyIcon name="projects" className="w-4.5 h-4.5 text-[var(--accent-2)]" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent-2)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
@@ -185,7 +186,7 @@ export default function Home() {
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: "linear-gradient(135deg, rgba(139,123,255,0.2) 0%, rgba(139,123,255,0.08) 100%)" }}
                     >
-                      <Gamepad2 className="w-4.5 h-4.5 text-[var(--accent)]" />
+                      <BeckifyIcon name="games" className="w-4.5 h-4.5 text-[var(--accent)]" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
@@ -198,7 +199,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Games</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Booty Butt Scooter, New Glenn Runner, and Finger Runner — no install, just play.
+                      Four arcade loops across shooters, runners, and launch simulation — no install, just play.
                     </p>
                   </div>
                 </div>
@@ -220,7 +221,7 @@ export default function Home() {
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: "rgba(255,255,255,0.06)" }}
                     >
-                      <Terminal className="w-4.5 h-4.5 text-[var(--muted)]" />
+                      <BeckifyIcon name="about" className="w-4.5 h-4.5 text-[var(--muted)]" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--foreground)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
