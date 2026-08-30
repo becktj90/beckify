@@ -168,8 +168,8 @@ export const PROJECTS: Project[] = [
   {
     name: "Vespa P200E EV Conversion",
     description:
-      "Converting a P200E to electric, one subsystem at a time — hand-built 72V battery pack, custom swingarm, wiring and controls. Full build thread with photos and details on endless-sphere.",
-    url: "https://endless-sphere.com/sphere/threads/vespa-p200e-ev-conversion.113986/",
+      "A 72V P200E conversion with a custom swingarm, hand-built battery pack, hub motor, and hard-earned lessons from the road.",
+    url: "/projects/vespa-p200e",
     icon: Zap,
   },
   {

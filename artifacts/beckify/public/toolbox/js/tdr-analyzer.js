@@ -61,6 +61,13 @@ function tdrFileToDataUrl(file) {
   });
 }
 
+function tdrApiUrl(path) {
+  const configured = document.querySelector('meta[name="beckify-api-base-url"]')?.getAttribute('content')
+    || window.BECKIFY_API_BASE_URL
+    || '';
+  return `${String(configured).replace(/\/$/, '')}${path}`;
+}
+
 function tdrResetProgress() {
   if (tdrEl.progressFill) tdrEl.progressFill.style.width = '0%';
   if (tdrEl.progressLabel) tdrEl.progressLabel.textContent = '0%';
@@ -318,7 +325,7 @@ async function tdrRunAnalysis() {
   try {
     const dataUrl = await tdrFileToDataUrl(tdrState.file);
     tdrSetProgress(42, 'Sending to vision model…');
-    const response = await fetch('/api/analyze-tdr', {
+    const response = await fetch(tdrApiUrl('/api/analyze-tdr'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

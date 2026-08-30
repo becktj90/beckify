@@ -7,6 +7,8 @@ import ProjectsPage from "@/pages/projects";
 import GamesPage from "@/pages/games";
 import SiteMapPage from "@/pages/sitemap";
 import CosmicCadetPage from "@/pages/cosmic-cadet";
+import VespaP200EPage from "@/pages/vespa-p200e";
+import GearPage from "@/pages/gear";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/about" component={AboutPage} />
       <Route path="/projects" component={ProjectsPage} />
+      <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
+      <Route path="/gear" component={GearPage} />
       <Route path="/games" component={GamesPage} />
       <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
       <Route path="/sitemap" component={SiteMapPage} />

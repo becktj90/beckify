@@ -726,8 +726,8 @@
     let xmax = Math.max(1, ...graph.vertices.map((p) => p.x));
     let ymax = Math.max(1, ...graph.vertices.map((p) => p.y));
     model.constraints.forEach((c) => {
-      if (!nz(c.a)) xmax = Math.max(xmax, c.c / c.a);
-      if (!nz(c.b)) ymax = Math.max(ymax, c.c / c.b);
+      if (nz(c.a)) xmax = Math.max(xmax, c.c / c.a);
+      if (nz(c.b)) ymax = Math.max(ymax, c.c / c.b);
     });
     xmax *= 1.15; ymax *= 1.15;
     const pad = 28;
@@ -742,8 +742,8 @@
 
     model.constraints.forEach((c) => {
       const pts = [];
-      if (!nz(c.b)) pts.push({ x: 0, y: c.c / c.b });
-      if (!nz(c.a)) pts.push({ x: c.c / c.a, y: 0 });
+      if (nz(c.b)) pts.push({ x: 0, y: c.c / c.b });
+      if (nz(c.a)) pts.push({ x: c.c / c.a, y: 0 });
       if (pts.length >= 2) {
         svg.appendChild(svgEl('line', { x1: px(pts[0].x), y1: py(pts[0].y), x2: px(pts[1].x), y2: py(pts[1].y), stroke: COLORS.blue, 'stroke-width': 1 }));
       }
@@ -751,8 +751,8 @@
 
     const z = graph.optimal.z;
     const objPts = [];
-    if (!nz(model.c2)) objPts.push({ x: 0, y: z / model.c2 });
-    if (!nz(model.c1)) objPts.push({ x: z / model.c1, y: 0 });
+    if (nz(model.c2)) objPts.push({ x: 0, y: z / model.c2 });
+    if (nz(model.c1)) objPts.push({ x: z / model.c1, y: 0 });
     if (objPts.length >= 2) svg.appendChild(svgEl('line', { x1: px(objPts[0].x), y1: py(objPts[0].y), x2: px(objPts[1].x), y2: py(objPts[1].y), stroke: COLORS.yellow, 'stroke-width': 2 }));
 
     graph.vertices.forEach((p, i) => {
@@ -768,7 +768,7 @@
   window.calcDESecondOrder = function () {
     const a = numVal('de_a'), b = numVal('de_b'), c = numVal('de_c');
     if (![a, b, c].every(finite)) return showError('de_ode_result', 'Enter a, b, and c.');
-    if (nz(a)) return showError('de_ode_result', 'a must be non-zero for a second-order ODE.');
+    if (!nz(a)) return showError('de_ode_result', 'a must be non-zero for a second-order ODE.');
     const out = prepareResult('de_ode_result');
     const D = b * b - 4 * a * c;
     const wn = a * c > 0 ? Math.sqrt(c / a) : NaN;
@@ -1553,26 +1553,27 @@
       row.style.gridTemplateColumns = '1fr 1fr auto 1fr';
       row.style.gap = '0.35rem';
       row.style.marginBottom = '0.35rem';
-      const a = document.createElement('input'); a.type = 'number'; a.step = 'any'; a.id = 'lp_a_' + i; a.placeholder = 'a';
-      const b = document.createElement('input'); b.type = 'number'; b.step = 'any'; b.id = 'lp_b_' + i; b.placeholder = 'b';
-      const op = document.createElement('select'); op.id = 'lp_op_' + i; ['<=', '>=', '='].forEach((v) => { const o = document.createElement('option'); o.value = v; o.textContent = v; op.appendChild(o); });
-      const c = document.createElement('input'); c.type = 'number'; c.step = 'any'; c.id = 'lp_c_' + i; c.placeholder = 'c';
+      const a = document.createElement('input'); a.type = 'number'; a.step = 'any'; a.id = 'lp_a_' + i; a.placeholder = 'a'; a.setAttribute('aria-label', `Constraint ${i} coefficient for x1`);
+      const b = document.createElement('input'); b.type = 'number'; b.step = 'any'; b.id = 'lp_b_' + i; b.placeholder = 'b'; b.setAttribute('aria-label', `Constraint ${i} coefficient for x2`);
+      const op = document.createElement('select'); op.id = 'lp_op_' + i; op.setAttribute('aria-label', `Constraint ${i} operator`); ['<=', '>=', '='].forEach((v) => { const o = document.createElement('option'); o.value = v; o.textContent = v; op.appendChild(o); });
+      const c = document.createElement('input'); c.type = 'number'; c.step = 'any'; c.id = 'lp_c_' + i; c.placeholder = 'c'; c.setAttribute('aria-label', `Constraint ${i} right-hand side`);
       row.appendChild(a); row.appendChild(b); row.appendChild(op); row.appendChild(c);
       host.appendChild(row);
     }
   };
 
-  window.loadLPExample = function () {
-    const ex = strVal('lp_example') || 'production';
+  window.loadLPExample = function (exampleNumber) {
+    const examples = { 1: 'production', 2: 'diet', 3: 'blending' };
+    const ex = examples[exampleNumber] || strVal('lp_example') || 'production';
     const sets = {
       production: { mode: 'max', c1: 3, c2: 5, cons: [[2, 1, '<=', 18], [2, 3, '<=', 42], [3, 1, '<=', 24]] },
       diet: { mode: 'min', c1: 0.5, c2: 0.8, cons: [[1, 1, '>=', 10], [2, 1, '>=', 16]] },
       blending: { mode: 'min', c1: 8, c2: 6, cons: [[1, 1, '=', 100], [1, 0, '>=', 30], [0, 1, '>=', 20]] }
     };
     const s = sets[ex] || sets.production;
-    if (byId('lp_mode')) byId('lp_mode').value = s.mode;
-    if (byId('lp_obj_c1')) byId('lp_obj_c1').value = s.c1;
-    if (byId('lp_obj_c2')) byId('lp_obj_c2').value = s.c2;
+    if (byId('lp_obj_type')) byId('lp_obj_type').value = s.mode;
+    if (byId('lp_c1')) byId('lp_c1').value = s.c1;
+    if (byId('lp_c2')) byId('lp_c2').value = s.c2;
     for (let i = 1; i <= 5; i++) {
       const a = byId('lp_a_' + i), b = byId('lp_b_' + i), op = byId('lp_op_' + i), c = byId('lp_c_' + i);
       if (!a || !b || !op || !c) continue;
@@ -1585,7 +1586,7 @@
   };
 
   window.solveLinearProgram = function () {
-    const model = { mode: strVal('lp_mode') || 'max', c1: numVal('lp_obj_c1'), c2: numVal('lp_obj_c2'), constraints: [] };
+    const model = { mode: strVal('lp_obj_type') || 'max', c1: numVal('lp_c1'), c2: numVal('lp_c2'), constraints: [] };
     if (![model.c1, model.c2].every(finite)) return showError('lp_result', 'Enter objective coefficients c1 and c2.');
     for (let i = 1; i <= 5; i++) {
       const a = numVal('lp_a_' + i), b = numVal('lp_b_' + i), c = numVal('lp_c_' + i), op = strVal('lp_op_' + i) || '<=';

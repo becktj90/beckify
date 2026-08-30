@@ -112,10 +112,12 @@ function activateTab(btn) {
   const group = btn.closest('.tab-group');
   const paneId = btn.dataset.tab;
   const pane = group && paneId ? document.getElementById(paneId) : null;
-  if (pane && !group.contains(pane)) return;
   if (!group || !pane) return;
+  // Some legacy sections keep their panes beside the tab button group.
+  const container = group.contains(pane) ? group : group.parentElement;
+  if (!container || !container.contains(pane)) return;
   group.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-  group.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p === pane));
+  container.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p === pane));
 }
 
 function wireTabNavigation() {

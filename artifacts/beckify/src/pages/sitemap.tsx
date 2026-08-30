@@ -25,8 +25,10 @@ const HUES = {
 const PAGES: { href: string; label: string; description: string; icon: typeof Terminal; hue: string }[] = [
   { href: "/", label: "Home", description: "Hub page — hero and links to everything below.", icon: Orbit, hue: HUES.blue },
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
-  { href: "/toolbox", label: "Toolbox", description: "40+ native EE calculators, organized by category.", icon: Wrench, hue: HUES.aqua },
+  { href: "/toolbox/", label: "Toolbox", description: "40+ native EE calculators, organized by category.", icon: Wrench, hue: HUES.aqua },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
+  { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
+  { href: "/gear", label: "Recommended Electrical Gear", description: "Technical tool recommendations for the bench and field.", icon: Wrench, hue: HUES.aqua },
   { href: "/games", label: "Games", description: "Booty Butt Scooter, New Glenn Runner, and Finger Runner.", icon: Gamepad2, hue: HUES.magenta },
 ];
 

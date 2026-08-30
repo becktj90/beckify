@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { NAV_LINKS } from "@/data/site-content";
 import beckifyMark from "@/assets/beckify-mark-white.png";
+import { EngineeringAssistant } from "@/components/EngineeringAssistant";
 
 /**
  * Full-width sticky top navigation bar.
@@ -52,6 +53,7 @@ export const Nav = () => {
 
           {/* Nav links */}
           <div className="flex items-center gap-1">
+            <EngineeringAssistant />
             {NAV_LINKS.map(({ href, label, icon: Icon, external }) => {
               const active = location === href || (external && location === href.replace(/\/$/, ""));
               /* External entries leave the SPA, so they must be real anchors —
@@ -61,6 +63,8 @@ export const Nav = () => {
                 <LinkTag
                   key={href}
                   href={href}
+                  aria-label={label}
+                  title={label}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                     active
                       ? "text-white bg-[var(--accent)] shadow-[0_0_12px_rgba(139,123,255,0.45)]"

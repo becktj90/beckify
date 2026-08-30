@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import {
   TDR_VISION_SYSTEM_PROMPT,
   type TdrVisionAnalysis,
@@ -15,6 +15,17 @@ interface AnalyzeTdrRequestBody {
   model?: string;
 }
 
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 5;
+const MAX_IN_FLIGHT_PER_CLIENT = 2;
+const PROVIDER_TIMEOUT_MS = 45_000;
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
+const serverProvider = configuredProvider();
+const serverModel = process.env["TDR_VISION_MODEL"]
+  || (serverProvider === "anthropic" ? "claude-3-5-sonnet-latest" : "gpt-4o");
+
 const router: IRouter = Router();
 
 router.post("/analyze-tdr", async (req, res) => {
@@ -26,17 +37,30 @@ router.post("/analyze-tdr", async (req, res) => {
     });
   }
 
-  const provider = (body.provider ?? process.env["TDR_VISION_PROVIDER"] ?? "openai")
-    .toLowerCase() as VisionProvider;
-  const mimeType = body.mimeType || inferMimeType(rawImage) || "image/jpeg";
-  const model = body.model
-    || process.env["TDR_VISION_MODEL"]
-    || (provider === "anthropic" ? "claude-3-5-sonnet-latest" : "gpt-4o");
+  if (body.provider !== undefined || body.model !== undefined) {
+    return res.status(400).json({ error: "Provider and model are configured by the server." });
+  }
+
+  const image = validateImage(rawImage, body.mimeType);
+  if (!image.ok) return res.status(image.status).json({ error: image.error });
+
+  const provider = serverProvider;
+  const model = serverModel;
+  const clientKey = getClientKey(req);
+  const bucket = consumeRateLimit(clientKey);
+  if (!bucket.allowed) {
+    res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - Date.now()) / 1000)));
+    return res.status(429).json({ error: "Too many TDR analyses. Please try again later." });
+  }
+  if (bucket.inFlight >= MAX_IN_FLIGHT_PER_CLIENT) {
+    return res.status(429).json({ error: "Too many TDR analyses in progress." });
+  }
+  bucket.inFlight += 1;
 
   try {
     const result = provider === "anthropic"
-      ? await analyzeWithAnthropic({ image: rawImage, mimeType, model })
-      : await analyzeWithOpenAI({ image: rawImage, mimeType, model });
+      ? await analyzeWithAnthropic({ image: image.base64, mimeType: image.mimeType, model })
+      : await analyzeWithOpenAI({ image: image.base64, mimeType: image.mimeType, model });
 
     const parsed = normalizeAnalysis(result);
     return res.json({
@@ -45,16 +69,76 @@ router.post("/analyze-tdr", async (req, res) => {
       analysis: parsed,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown analyzer error";
-    return res.status(502).json({
-      error: message,
+    const isTimeout = error instanceof ProviderTimeoutError;
+    console.error("TDR vision provider request failed", error);
+    return res.status(isTimeout ? 504 : 502).json({
+      error: isTimeout ? "The vision provider timed out. Please try again." : "The vision provider could not analyze this image.",
     });
+  } finally {
+    bucket.inFlight -= 1;
   }
 });
 
-function inferMimeType(dataUrlOrBase64: string): string | null {
-  const match = /^data:([^;]+);base64,/.exec(dataUrlOrBase64);
-  return match ? match[1] : null;
+class ProviderTimeoutError extends Error {
+  constructor() {
+    super("Vision provider request timed out.");
+    this.name = "ProviderTimeoutError";
+  }
+}
+
+function configuredProvider(): VisionProvider {
+  const provider = (process.env["TDR_VISION_PROVIDER"] ?? "openai").toLowerCase();
+  if (provider !== "openai" && provider !== "anthropic") {
+    throw new Error("TDR_VISION_PROVIDER must be openai or anthropic.");
+  }
+  return provider;
+}
+
+function getClientKey(req: Request): string {
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function consumeRateLimit(clientKey: string) {
+  const now = Date.now();
+  const current = rateBuckets.get(clientKey);
+  const bucket = !current || current.resetAt <= now
+    ? { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS, inFlight: 0 }
+    : current;
+  bucket.count += 1;
+  rateBuckets.set(clientKey, bucket);
+  if (rateBuckets.size > 10_000) {
+    for (const [key, value] of rateBuckets) {
+      if (value.resetAt <= now) rateBuckets.delete(key);
+    }
+  }
+  return { ...bucket, allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW };
+}
+
+function validateImage(rawImage: string, requestedMimeType?: string): { ok: true; base64: string; mimeType: string } | { ok: false; status: 400 | 413; error: string } {
+  const dataUrlMatch = /^data:([^;,]+);base64,([A-Za-z0-9+/=\s]+)$/.exec(rawImage.trim());
+  const mimeType = dataUrlMatch?.[1] || requestedMimeType || "image/jpeg";
+  const base64 = (dataUrlMatch?.[2] || rawImage).replace(/\s/g, "");
+  if (!SUPPORTED_IMAGE_TYPES.has(mimeType)) {
+    return { ok: false, status: 400, error: "Only JPEG, PNG, GIF, and WebP images are supported." };
+  }
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64) || base64.length % 4 === 1) {
+    return { ok: false, status: 400, error: "The image is not valid base64 data." };
+  }
+  const byteLength = Math.floor(base64.length * 3 / 4) - (base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0);
+  if (byteLength <= 0) return { ok: false, status: 400, error: "The image is empty." };
+  if (byteLength > MAX_IMAGE_BYTES) return { ok: false, status: 413, error: "The image must be 8 MiB or smaller." };
+  const bytes = Buffer.from(base64, "base64");
+  if (!hasImageSignature(bytes, mimeType)) {
+    return { ok: false, status: 400, error: "The image data does not match its declared type." };
+  }
+  return { ok: true, base64, mimeType };
+}
+
+function hasImageSignature(bytes: Buffer, mimeType: string): boolean {
+  if (mimeType === "image/jpeg") return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mimeType === "image/png") return bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (mimeType === "image/gif") return bytes.subarray(0, 6).toString("ascii") === "GIF87a" || bytes.subarray(0, 6).toString("ascii") === "GIF89a";
+  return bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
 }
 
 function stripDataUrl(image: string): string {
@@ -136,7 +220,7 @@ async function analyzeWithOpenAI(args: { image: string; mimeType: string; model:
     throw new Error("OPENAI_API_KEY is required for OpenAI vision analysis.");
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -193,7 +277,7 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
     throw new Error("ANTHROPIC_API_KEY is required for Anthropic vision analysis.");
   }
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -242,6 +326,19 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
   }
 
   return extractJsonObject(content);
+}
+
+async function fetchWithTimeout(input: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw new ProviderTimeoutError();
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export default router;

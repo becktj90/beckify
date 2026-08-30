@@ -68,7 +68,7 @@ function getPulseClass(polarity: PulsePolarity) {
 }
 
 export function MeggerTDRAnalyzer({
-  endpoint = "/api/analyze-tdr",
+  endpoint = `${import.meta.env.VITE_TDR_API_BASE_URL || ""}/api/analyze-tdr`,
   className = "",
 }: MeggerTDRAnalyzerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);

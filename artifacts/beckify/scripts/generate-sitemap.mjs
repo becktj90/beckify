@@ -66,7 +66,7 @@ ${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/
 <body><main><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><p>Beckify tools are designed for quick field calculations and engineering reference work. Confirm final designs against the applicable NEC edition, equipment documentation, and site requirements.</p><a class="cta" href="${toolPath}">Open the interactive tool</a><iframe src="/toolbox/index.html#${toolPath.split("#")[1]}" title="${escapeXml(title)}"></iframe></main></body></html>`;
 
 const urls = [
-  ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/projects", "weekly", "0.8"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
+  ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/projects", "weekly", "0.8"], ["/projects/vespa-p200e", "monthly", "0.8"], ["/gear", "monthly", "0.7"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
   ...categories.map(([slug], index) => [`/toolbox/category/${slug}/`, index === 5 ? "weekly" : "monthly", "0.8"]),
   ...tools.map(([slug], index) => [`/toolbox/${slug}/`, index === 36 ? "weekly" : "monthly", index === 36 ? "0.9" : "0.8"]),
 ];

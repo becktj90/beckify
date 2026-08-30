@@ -41,6 +41,11 @@ jobs:
           BASE_PATH: /
           PORT: "3000"
 
+      - name: Configure TDR API endpoint
+        run: node -e 'const fs=require("fs"); const p="artifacts/beckify/dist/public/toolbox/index.html"; const endpoint=(process.env.TDR_API_BASE_URL||"").replace(/\/$/,"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"); fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace("<meta name=\"beckify-api-base-url\" content=\"\">",`<meta name="beckify-api-base-url" content="${endpoint}">`));'
+        env:
+          TDR_API_BASE_URL: ${{ vars.TDR_API_BASE_URL }}
+
       - name: Add CNAME and SPA fallback
         run: |
           echo "beckify.com" > artifacts/beckify/dist/public/CNAME
