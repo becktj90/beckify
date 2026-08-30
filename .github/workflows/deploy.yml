@@ -40,6 +40,7 @@ jobs:
         env:
           BASE_PATH: /
           PORT: "3000"
+          VITE_AMAZON_ASSOCIATE_TAG: ${{ vars.AMAZON_ASSOCIATE_TAG }}
 
       - name: Configure TDR API endpoint
         run: node -e 'const fs=require("fs"); const p="artifacts/beckify/dist/public/toolbox/index.html"; const endpoint=(process.env.TDR_API_BASE_URL||"").replace(/\/$/,"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"); fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace("<meta name=\"beckify-api-base-url\" content=\"\">",`<meta name="beckify-api-base-url" content="${endpoint}">`));'
