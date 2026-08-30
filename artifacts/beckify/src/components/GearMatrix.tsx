@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Activity, Cable, ExternalLink, Gauge, RadioTower, ShieldCheck, ShoppingBag, Wrench } from "lucide-react";
+import gearHero from "@/assets/gear-hero.png";
 
 type GearCategory = "Field diagnostics" | "Bench and lab" | "RF and cable";
 
@@ -39,6 +40,12 @@ const gear: Gear[] = [
 
 const categories = ["All", "Field diagnostics", "Bench and lab", "RF and cable"] as const;
 
+const categoryGuides = [
+  { category: "Field diagnostics" as const, title: "Find the electrical fault", description: "Voltage, resistance, insulation, and current checks for practical field troubleshooting.", icon: Gauge, accent: "from-cyan-500/25 to-blue-500/5" },
+  { category: "Bench and lab" as const, title: "See the behavior", description: "Bench instruments for waveforms, calibration-grade measurements, and controlled safety testing.", icon: Activity, accent: "from-violet-500/25 to-fuchsia-500/5" },
+  { category: "RF and cable" as const, title: "Prove the signal path", description: "RF cable, antenna, connector, and network-cable diagnostics beyond basic continuity.", icon: RadioTower, accent: "from-amber-500/25 to-orange-500/5" },
+];
+
 function getGearIcon(category: GearCategory) {
   if (category === "Field diagnostics") return Gauge;
   if (category === "RF and cable") return RadioTower;
@@ -50,17 +57,23 @@ export function GearMatrix() {
   const visible = gear.filter((item) => category === "All" || item.category === category);
 
   return <section className="space-y-6" aria-labelledby="gear-title">
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Beckify gear guide</p>
-      <h1 id="gear-title" className="mt-2 font-display text-4xl font-bold">Recommended electrical test equipment for bench and field work.</h1>
-      <p className="mt-4 max-w-3xl text-[var(--muted)]">A focused list of current, industry-recognized tools for diagnosing electrical, cable, and RF problems. Each pick identifies the job it fits, the important limit, and the correct purchase path.</p>
+    <div className="grid overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] lg:grid-cols-[1.1fr_.9fr]">
+      <div className="p-7 md:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Beckify gear guide</p>
+        <h1 id="gear-title" className="mt-3 font-display text-4xl font-bold md:text-5xl">Recommended electrical test equipment for bench and field work.</h1>
+        <p className="mt-5 max-w-2xl text-[var(--muted)]">A focused list of current, industry-recognized tools for diagnosing electrical, cable, and RF problems. Each pick identifies the job it fits, the important limit, and the correct purchase path.</p>
+        <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold"><span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-[var(--accent)]">11 curated tools</span><span className="rounded-full border border-[var(--border)] px-3 py-1.5 text-[var(--muted)]">Bench + field</span><span className="rounded-full border border-[var(--border)] px-3 py-1.5 text-[var(--muted)]">Manufacturer sources</span></div>
+      </div>
+      <div className="relative min-h-64 bg-slate-950"><img src={gearHero} alt="Electrical test instruments and wire harness on an engineering bench" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/75">Tool selection starts with the failure mode</p></div></div>
     </div>
 
     <div className="grid gap-3 md:grid-cols-3" aria-label="Equipment selection principles">
       {[["Start with the fault", "Decide whether the task is measurement, insulation, waveform, current, or RF-path diagnosis."], ["Use the approved procedure", "Tool capability does not override aircraft, component, or manufacturer maintenance data."], ["Buy to the workflow", "Retail tools cover practical field and bench work; specialist instruments are quote, rental, and calibration decisions."]].map(([title, text], index) => <article className="card-surface p-5" key={title}><p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent)]">0{index + 1}</p><h2 className="mt-2 font-display text-lg font-bold">{title}</h2><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{text}</p></article>)}
     </div>
 
-    <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm leading-6 text-[var(--muted)]"><strong className="text-[var(--foreground)]">Safety note:</strong> These are diagnostic and maintenance-support tools. They do not certify airworthiness or replace approved maintenance data, required calibration, or the tool manufacturer’s instructions.</div>
+    <section aria-labelledby="category-map-title"><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Choose a category</p><h2 id="category-map-title" className="mt-1 font-display text-2xl font-bold">Match the instrument to the diagnostic job.</h2></div><Cable className="hidden h-7 w-7 text-[var(--accent)] md:block" aria-hidden="true" /></div><div className="grid gap-3 md:grid-cols-3">{categoryGuides.map((guide) => { const Icon = guide.icon; return <button type="button" key={guide.category} onClick={() => setCategory(guide.category)} className={`group rounded-xl border border-[var(--border)] bg-gradient-to-br ${guide.accent} p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)]/60`}><Icon className="h-8 w-8 text-[var(--accent)]" aria-hidden="true" /><h3 className="mt-7 font-display text-lg font-bold">{guide.title}</h3><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{guide.description}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">View tools <ExternalLink className="h-3.5 w-3.5" /></span></button>; })}</div></section>
+
+    <div className="flex gap-3 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm leading-6 text-[var(--muted)]"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden="true" /><p className="m-0"><strong className="text-[var(--foreground)]">Safety note:</strong> These are diagnostic and maintenance-support tools. They do not certify airworthiness or replace approved maintenance data, required calibration, or the tool manufacturer’s instructions.</p></div>
 
     <div className="card-surface flex flex-wrap gap-2 p-4" aria-label="Filter recommendations by category">
       {categories.map((item) => <button type="button" key={item} aria-pressed={category === item} onClick={() => setCategory(item)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${category === item ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"}`}>{item}</button>)}
