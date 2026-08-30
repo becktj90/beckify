@@ -19,8 +19,9 @@ export const Projects = () => (
           <a
             key={project.name}
             href={project.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...(project.external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
             className="card-surface group block p-8 relative overflow-hidden"
           >
             <div className="flex justify-between items-start mb-6 relative z-10">

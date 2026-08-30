@@ -1,7 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { Projects as ProjectsSection } from "@/components/sections/Projects";
 import { SchemaHead, SITE_URL } from "@/components/seo/SchemaHead";
-import { LC934Dashboard } from "@/components/projects/LC934Dashboard";
 
 export default function ProjectsPage() {
   return (
@@ -20,7 +19,6 @@ export default function ProjectsPage() {
           author: { "@type": "Person", name: "Trevor Beck" },
         }}
       />
-      <LC934Dashboard />
       <ProjectsSection />
     </Layout>
   );

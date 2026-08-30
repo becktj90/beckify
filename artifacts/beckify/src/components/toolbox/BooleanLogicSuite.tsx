@@ -6,7 +6,11 @@ function evaluate(expression: string, values: Record<string, boolean>) {
   const tokens = expression.toUpperCase().match(/AND|OR|NOT|[A-Z]|[()'·+]/g) ?? [];
   let cursor = 0;
   const peek = () => tokens[cursor];
-  const consume = (token?: string) => token && peek() === token ? (cursor += 1, true) : false;
+  const consume = (token?: string) => {
+    if (!token || peek() !== token) return false;
+    cursor += 1;
+    return true;
+  };
   const primary = (): boolean => {
     if (consume("(")) { const value = disjunction(); consume(")"); return value; }
     const name = peek();

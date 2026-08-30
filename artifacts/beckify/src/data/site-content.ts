@@ -160,6 +160,8 @@ export interface Project {
   description: string;
   url: string;
   icon: LucideIcon;
+  /** Set for destinations hosted outside Beckify. */
+  external?: boolean;
 }
 
 export const PROJECTS: Project[] = [
@@ -175,6 +177,13 @@ export const PROJECTS: Project[] = [
     description: "An experimental web project. Enter at your own risk.",
     url: "https://sniffmaster-web.vercel.app",
     icon: Wifi,
+    external: true,
+  },
+  {
+    name: "LC-9 3/4 Power Distribution",
+    description: "Protected internal-style power distribution dashboard. Sign in to view the dashboard.",
+    url: "/demos/lc9-34/",
+    icon: Terminal,
   },
 ];
 
@@ -206,6 +215,11 @@ export interface Game {
 }
 
 export const GAMES: Game[] = [
+  {
+    name: "Cosmic Cadet",
+    description: "A focused space-defense shooter with responsive aim, escalating waves, hull damage, pause, and fullscreen play.",
+    url: "/games/cosmic-cadet",
+  },
   {
     name: "Booty Butt Scooter",
     description:

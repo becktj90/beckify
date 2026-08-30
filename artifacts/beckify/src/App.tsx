@@ -6,6 +6,7 @@ import AboutPage from "@/pages/about";
 import ProjectsPage from "@/pages/projects";
 import GamesPage from "@/pages/games";
 import SiteMapPage from "@/pages/sitemap";
+import CosmicCadetPage from "@/pages/cosmic-cadet";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/games" component={GamesPage} />
+      <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
       <Route path="/sitemap" component={SiteMapPage} />
       <Route component={NotFound} />
     </Switch>
