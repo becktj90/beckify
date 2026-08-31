@@ -999,24 +999,27 @@
     });
     const marker = svgEl('circle', { cx: cx + r, cy: cy, r: 5, fill: COLORS.red });
     svg.appendChild(marker);
-    svg.addEventListener('click', function (ev) {
-      const rect = svg.getBoundingClientRect();
-      const x = ev.clientX - rect.left;
-      const y = ev.clientY - rect.top;
-      const ang = (deg(Math.atan2(cy - y, x - cx)) + 360) % 360;
+    const setAngle = function (angle) {
+      const ang = (Number(angle) % 360 + 360) % 360;
       const th = rad(ang);
       marker.setAttribute('cx', String(cx + r * Math.cos(th)));
       marker.setAttribute('cy', String(cy - r * Math.sin(th)));
+      const control = byId('trig_angle_control');
+      if (control) control.value = String(Math.round(ang));
       const s = Math.sin(th), c = Math.cos(th), t = Math.abs(c) < 1e-10 ? NaN : s / c;
       const out = prepareResult(outputId);
       addRow(out, 'Angle', fmtNum(ang, 3) + '° = ' + rationalPiLabel(Math.round(ang)), { bold: true });
       addRow(out, 'sin θ', trigValueText(s));
       addRow(out, 'cos θ', trigValueText(c));
       addRow(out, 'tan θ', trigValueText(t));
-      addRow(out, 'csc θ', trigValueText(Math.abs(s) < 1e-10 ? NaN : 1 / s));
-      addRow(out, 'sec θ', trigValueText(Math.abs(c) < 1e-10 ? NaN : 1 / c));
-      addRow(out, 'cot θ', trigValueText(Math.abs(s) < 1e-10 ? NaN : c / s));
       addRow(out, '(cos θ, sin θ)', '(' + fmtNum(c, 6) + ', ' + fmtNum(s, 6) + ')');
+    };
+    svg.addEventListener('click', function (ev) {
+      const rect = svg.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+      const ang = (deg(Math.atan2(cy - y, x - cx)) + 360) % 360;
+      setAngle(ang);
     });
     host.appendChild(svg);
     const legend = document.createElement('div');
@@ -1033,6 +1036,13 @@
       legend.appendChild(item);
     });
     host.appendChild(legend);
+    host.__setTrigAngle = setAngle;
+    setAngle(45);
+  };
+
+  window.setTrigAngle = function (angle) {
+    const host = byId('trig_unit_circle');
+    if (host && typeof host.__setTrigAngle === 'function') host.__setTrigAngle(angle);
   };
 
   window.calcTrigTriangle = function () {
@@ -1478,6 +1488,66 @@
     addRow(out, 'Absolute error', fmtNum(Math.abs(sum - exact), 10));
     addTable(out, ['n', 'f⁽ⁿ⁾(a)', 'termₙ', 'partial sum'], rows);
     appendSvg(out, taylorDiagram(type, a, N, x));
+  };
+
+  window.stemPlotFunction = function () {
+    const expr = strVal('stem_plot_expr');
+    const lo = numVal('stem_plot_min'), hi = numVal('stem_plot_max'), probe = numVal('stem_plot_x');
+    if (!expr || ![lo, hi, probe].every(finite) || hi <= lo) return showError('stem_plot_result', 'Enter f(x), a probe point, and an increasing x range.');
+    try {
+      const samples = sampleFunction(expr, lo, hi, 180);
+      if (samples.length < 2) return showError('stem_plot_result', 'This expression did not produce a drawable curve in the selected range.');
+      const y = safeEvalX(expr, probe);
+      const h = Math.max(1e-5, Math.abs(hi - lo) / 100000);
+      const slope = (safeEvalX(expr, probe + h) - safeEvalX(expr, probe - h)) / (2 * h);
+      const span = (hi - lo) * 0.14;
+      const tangent = [{ x: probe - span, y: y - slope * span }, { x: probe + span, y: y + slope * span }];
+      const out = prepareResult('stem_plot_result');
+      addRow(out, `f(${fmtNum(probe, 3)})`, fmtNum(y, 6), { bold: true, color: COLORS.green });
+      addRow(out, `f′(${fmtNum(probe, 3)})`, fmtNum(slope, 6), { color: COLORS.yellow });
+      addText(out, 'The blue curve is f(x); the gold segment is the local tangent. Its slope is the instantaneous rate of change at the probe point.');
+      appendSvg(out, calculusPlot([{ label: 'f(x)', color: COLORS.blue, points: samples }, { label: 'tangent', color: COLORS.yellow, points: tangent }], { label: 'Function curve and tangent line', guides: [{ x: probe, y: y, color: COLORS.green }], note: 'Move the probe point to connect value, slope, and geometry.' }));
+    } catch (err) { showError('stem_plot_result', err.message || 'Could not plot this expression.'); }
+  };
+
+  window.stemProjectile = function () {
+    const speed = numVal('motion_v'), angle = numVal('motion_angle'), height = numVal('motion_height'), gravity = numVal('motion_g');
+    if (![speed, angle, height, gravity].every(finite) || speed <= 0 || gravity <= 0 || angle < 0 || angle > 90 || height < 0) return showError('motion_result', 'Use positive speed and gravity, height ≥ 0, and an angle from 0° to 90°.');
+    const theta = rad(angle), vx = speed * Math.cos(theta), vy = speed * Math.sin(theta);
+    const flight = (vy + Math.sqrt(vy * vy + 2 * gravity * height)) / gravity;
+    const range = vx * flight, maxHeight = height + vy * vy / (2 * gravity), apexTime = vy / gravity;
+    const points = Array.from({ length: 101 }, (_, i) => { const t = flight * i / 100; return { x: vx * t, y: height + vy * t - 0.5 * gravity * t * t }; });
+    const out = prepareResult('motion_result');
+    addRow(out, 'Time of flight', fmtNum(flight, 3) + ' s', { bold: true, color: COLORS.green });
+    addRow(out, 'Horizontal range', fmtNum(range, 3) + ' m');
+    addRow(out, 'Maximum height', fmtNum(maxHeight, 3) + ' m');
+    addRow(out, 'Apex time', fmtNum(apexTime, 3) + ' s');
+    addText(out, 'Horizontal velocity stays constant; gravity changes vertical velocity by −g each second.');
+    appendSvg(out, calculusPlot([{ label: 'trajectory', color: COLORS.accent, points: points }], { label: 'Projectile trajectory with height versus horizontal distance', guides: [{ x: vx * apexTime, y: maxHeight, color: COLORS.yellow }], note: 'Axes: horizontal distance (m) and height (m). Gold guide marks the apex.' }));
+  };
+
+  window.stemVectorProjection = function () {
+    const ax = numVal('vec_ax'), ay = numVal('vec_ay'), bx = numVal('vec_bx'), by = numVal('vec_by');
+    if (![ax, ay, bx, by].every(finite) || (bx === 0 && by === 0)) return showError('vec_projection_result', 'Enter finite vector components and use a nonzero vector B.');
+    const b2 = bx * bx + by * by, dot = ax * bx + ay * by, scalar = dot / b2, px = scalar * bx, py = scalar * by;
+    const magA = Math.hypot(ax, ay), magB = Math.hypot(bx, by);
+    const angle = magA ? deg(Math.acos(clamp(dot / (magA * magB), -1, 1))) : NaN;
+    const out = prepareResult('vec_projection_result');
+    addRow(out, 'Dot product A · B', fmtNum(dot, 4), { bold: true, color: COLORS.green });
+    addRow(out, 'Projection of A onto B', `(${fmtNum(px, 4)}, ${fmtNum(py, 4)})`);
+    addRow(out, 'Scalar component along B', fmtNum(dot / magB, 4));
+    addRow(out, 'Angle between vectors', finite(angle) ? fmtNum(angle, 3) + '°' : 'undefined');
+    const max = Math.max(1, Math.abs(ax), Math.abs(ay), Math.abs(bx), Math.abs(by), Math.abs(px), Math.abs(py)) * 1.25;
+    const w = 420, h = 270, cx = w / 2, cy = h / 2, scale = Math.min(150 / max, 105 / max);
+    const svg = svgEl('svg', { width: w, height: h, viewBox: '0 0 420 270', role: 'img', 'aria-label': 'Vector A, vector B, and the projection of A onto B' });
+    svg.appendChild(svgEl('rect', { x: 0, y: 0, width: w, height: h, rx: 10, fill: COLORS.bg, stroke: 'rgba(255,255,255,0.1)' }));
+    svg.appendChild(svgEl('line', { x1: 20, y1: cy, x2: w - 20, y2: cy, stroke: '#536070' }));
+    svg.appendChild(svgEl('line', { x1: cx, y1: 20, x2: cx, y2: h - 20, stroke: '#536070' }));
+    const arrow = (x, y, color, label) => { const ex = cx + x * scale, ey = cy - y * scale; svg.appendChild(svgEl('line', { x1: cx, y1: cy, x2: ex, y2: ey, stroke: color, 'stroke-width': 4, 'stroke-linecap': 'round' })); const a = Math.atan2(ey - cy, ex - cx), size = 9; svg.appendChild(svgEl('path', { d: `M ${ex} ${ey} L ${ex - size * Math.cos(a - 0.48)} ${ey - size * Math.sin(a - 0.48)} L ${ex - size * Math.cos(a + 0.48)} ${ey - size * Math.sin(a + 0.48)} Z`, fill: color })); const t = svgEl('text', { x: ex + 8, y: ey - 8, fill: color, 'font-size': 12, 'font-weight': 700 }); t.textContent = label; svg.appendChild(t); return { x: ex, y: ey }; };
+    const aEnd = arrow(ax, ay, COLORS.blue, 'A'); const pEnd = arrow(px, py, COLORS.yellow, 'proj₍B₎ A'); arrow(bx, by, COLORS.green, 'B');
+    svg.appendChild(svgEl('line', { x1: aEnd.x, y1: aEnd.y, x2: pEnd.x, y2: pEnd.y, stroke: COLORS.muted, 'stroke-dasharray': '5 4' }));
+    const note = svgEl('text', { x: 18, y: h - 16, fill: COLORS.muted, 'font-size': 11 }); note.textContent = 'Gold is the part of A pointing in B’s direction; the dashed segment is perpendicular.'; svg.appendChild(note);
+    appendSvg(out, svg);
   };
 
   window.calcRelatedRates = function () {

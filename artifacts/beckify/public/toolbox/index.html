@@ -4208,6 +4208,7 @@
         <button class="tab-btn" data-tab="stem-linalg">⊞ LinAlg</button>
         <button class="tab-btn" data-tab="stem-chem">⚗ Chem</button>
         <button class="tab-btn" data-tab="stem-calc">∫ Calculus</button>
+        <button class="tab-btn" data-tab="stem-motion">↗ Motion</button>
         <button class="tab-btn" data-tab="stem-optics">🔭 Optics</button>
         <button class="tab-btn" data-tab="stem-quantum">⚛ Quantum</button>
         <button class="tab-btn" data-tab="stem-lp">📊 LP</button>
@@ -4252,8 +4253,9 @@
           <div class="card">
             <div class="card-title">Unit Circle</div>
             <div class="card-body" style="display:flex;flex-direction:column;align-items:center">
-              <canvas id="trig_unit_circle" class="stem-canvas" width="280" height="280"></canvas>
-              <div style="margin-top:8px;font-size:0.8rem;color:#94a3b8">Click on the canvas to read angle values</div>
+              <div id="trig_unit_circle" class="stem-svg-wrap" aria-label="Interactive unit circle"></div>
+              <div class="input-group single" style="width:100%;margin-top:10px"><div><label for="trig_angle_control">Angle θ (degrees)</label><input id="trig_angle_control" type="range" min="0" max="360" step="1" value="45" oninput="setTrigAngle(this.value)"></div></div>
+              <div style="margin-top:8px;font-size:0.8rem;color:#94a3b8">Drag the angle control or click the circle to read coordinates and trig values.</div>
               <div id="trig_click_result" class="result" style="margin-top:8px;width:100%"></div>
             </div>
           </div>
@@ -4434,6 +4436,57 @@
               </div>
               <button class="btn" onclick="calcTaylor()">Expand</button>
               <div id="calc_taylor_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Function Explorer</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label for="stem_plot_expr">f(x) =</label><input type="text" id="stem_plot_expr" value="sin(x)" placeholder="e.g. sin(x) or x*x - 4"></div>
+                <div><label for="stem_plot_x">Probe at x =</label><input type="number" id="stem_plot_x" value="1" step="any"></div>
+              </div>
+              <div class="input-group">
+                <div><label for="stem_plot_min">x minimum</label><input type="number" id="stem_plot_min" value="-6.28" step="any"></div>
+                <div><label for="stem_plot_max">x maximum</label><input type="number" id="stem_plot_max" value="6.28" step="any"></div>
+              </div>
+              <button class="btn" onclick="stemPlotFunction()">Plot function &amp; tangent</button>
+              <div id="stem_plot_result" class="result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Motion Tab -->
+      <div class="tab-pane" id="stem-motion">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Projectile Motion Lab</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label for="motion_v">Launch speed (m/s)</label><input id="motion_v" type="number" value="25" min="0" step="any"></div>
+                <div><label for="motion_angle">Launch angle (°)</label><input id="motion_angle" type="number" value="45" min="0" max="90" step="any"></div>
+              </div>
+              <div class="input-group">
+                <div><label for="motion_height">Launch height (m)</label><input id="motion_height" type="number" value="0" min="0" step="any"></div>
+                <div><label for="motion_g">Gravity (m/s²)</label><input id="motion_g" type="number" value="9.81" min="0.01" step="any"></div>
+              </div>
+              <button class="btn" onclick="stemProjectile()">Plot trajectory</button>
+              <div id="motion_result" class="result"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">2D Vector Projection</div>
+            <div class="card-body">
+              <div class="input-group">
+                <div><label for="vec_ax">Vector Aₓ</label><input id="vec_ax" type="number" value="4" step="any"></div>
+                <div><label for="vec_ay">Vector Aᵧ</label><input id="vec_ay" type="number" value="3" step="any"></div>
+              </div>
+              <div class="input-group">
+                <div><label for="vec_bx">Vector Bₓ</label><input id="vec_bx" type="number" value="5" step="any"></div>
+                <div><label for="vec_by">Vector Bᵧ</label><input id="vec_by" type="number" value="1" step="any"></div>
+              </div>
+              <button class="btn" onclick="stemVectorProjection()">Project A onto B</button>
+              <div id="vec_projection_result" class="result"></div>
             </div>
           </div>
         </div>
