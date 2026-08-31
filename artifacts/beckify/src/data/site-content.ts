@@ -249,9 +249,9 @@ export const GAMES: Game[] = [
     url: "/games/toot-troopers",
   },
   {
-    name: "Voxel Yard",
-    description: "A first-person WebGL voxel sandbox. Walk a seeded continent, mine and place blocks, fly, and keep your world in this browser.",
-    url: "/games/voxel-yard",
+    name: "Pup Planet",
+    description: "Play as Apollo or Rocco, the space pups, mining and building on their own seeded little planet in this first-person WebGL sandbox.",
+    url: "/games/pup-planet",
   },
   {
     name: "HexGL",

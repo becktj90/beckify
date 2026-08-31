@@ -3,8 +3,9 @@ import * as THREE from "three";
 import { Maximize2, Minimize2, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
-// First-person WebGL voxel sandbox. Chunked storage, seeded terrain, and
-// raycast mine/place follow the architecture of fogleman/Craft (MIT,
+// First-person WebGL voxel sandbox, starring Apollo and Rocco as playable
+// space-pup astronauts. Chunked storage, seeded terrain, and raycast
+// mine/place follow the architecture of fogleman/Craft (MIT,
 // https://github.com/fogleman/Craft). Original TypeScript + three.js — no
 // Craft source, shaders, textures, or assets are reused.
 
@@ -14,8 +15,9 @@ const SEA = 10;
 const VIEW = 3;
 const TILE = 16;
 const ATLAS = 4;
-const SAVE_KEY = "voxel-yard-save-v2";
-const STATS_KEY = "voxel-yard-stats-v1";
+const SAVE_KEY = "pup-planet-save-v1";
+const STATS_KEY = "pup-planet-stats-v1";
+const CHARACTER_KEY = "pup-planet-character-v1";
 const PLAYER_R = 0.28;
 const PLAYER_H = 1.72;
 const EYE = 1.58;
@@ -37,6 +39,23 @@ const PALETTE: Record<number, { name: string; color: string; top?: number; side?
 };
 
 const HOTBAR: BlockId[] = [BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.SAND, BLOCK.SNOW, BLOCK.WOOD, BLOCK.PLANK, BLOCK.BRICK, BLOCK.GLASS];
+
+// Same astronaut pups and colors already established in Booty Butt Scooter
+// and Toot Troopers — Apollo's teal spacesuit, Rocco's gold one — so picking
+// a pup here feels like the same character, not a reskin special to this game.
+type Character = "apollo" | "rocco";
+const CHARACTERS: Record<Character, { label: string; accent: string; ink: string; portrait: string }> = {
+  apollo: { label: "Apollo", accent: "#6df0df", ink: "#0a0f24", portrait: "games/toot-troopers/apollo.png" },
+  rocco: { label: "Rocco", accent: "#ffcb75", ink: "#0a0f24", portrait: "games/toot-troopers/rocco.png" },
+};
+const loadCharacter = (): Character => {
+  try {
+    const v = localStorage.getItem(CHARACTER_KEY);
+    return v === "rocco" ? "rocco" : "apollo";
+  } catch {
+    return "apollo";
+  }
+};
 
 const chunkOf = (n: number) => Math.floor(n / CHUNK);
 const loc = (n: number) => ((n % CHUNK) + CHUNK) % CHUNK;
@@ -135,7 +154,7 @@ const FACES: { dir: [number, number, number]; verts: [number, number, number][];
   { dir: [0, 0, -1], shade: 0.6, verts: [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]] },
 ];
 
-export function VoxelYard() {
+export function PupPlanet() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<BlockId>(BLOCK.GRASS);
@@ -149,12 +168,21 @@ export function VoxelYard() {
   const [stats, setStats] = useState(loadStats);
   const [started, setStarted] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
-  const [hint, setHint] = useState("Click the world to look around");
+  const [hint, setHint] = useState("Tap or click the world to look around");
+  const [character, setCharacter] = useState<Character>(loadCharacter);
+  const [touch, setTouch] = useState(false);
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
+  const pup = CHARACTERS[character];
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   useEffect(() => { selectedRef.current = selected; }, [selected]);
   useEffect(() => { flyingRef.current = flying; }, [flying]);
+  useEffect(() => { try { localStorage.setItem(CHARACTER_KEY, character); } catch { /* optional */ } }, [character]);
+  // Touch capability, not screen width: a full-size iPad is plenty wide
+  // enough to fail a "narrow phone" breakpoint check while still being a
+  // touchscreen with no mouse, which used to hide the on-screen controls
+  // entirely and leave nothing to move or mine/place with.
+  useEffect(() => { setTouch(window.matchMedia("(pointer: coarse)").matches); }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -598,7 +626,7 @@ export function VoxelYard() {
       fog.far = under ? 28 : 110;
 
       const hit = raycast();
-      let nextHint = flyingRef.current ? "Flying · Tab to walk" : "WASD move · click mine · right-click place";
+      let nextHint = flyingRef.current ? "Flying! Tab to land" : "Move · tap mine · tap place";
       if (hit) {
         highlight.visible = true;
         highlight.position.set(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
@@ -661,40 +689,59 @@ export function VoxelYard() {
   }, []);
 
   return (
-    <section className="space-y-6" aria-labelledby="voxel-yard-title">
+    <section className="space-y-6" aria-labelledby="pup-planet-title">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Sandbox / First-person voxel world</p>
-          <h1 id="voxel-yard-title" className="font-display text-3xl font-bold tracking-tight">Voxel Yard</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">A WebGL first-person sandbox: walk an endless seeded continent, mine and place blocks, fly, and keep your world in this browser. Built for pointer lock on desktop and drag-look on iPad.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Sandbox / First-person building</p>
+          <h1 id="pup-planet-title" className="font-display text-3xl font-bold tracking-tight">Pup Planet</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">Play as Apollo or Rocco, the space pups, mining and building on their own seeded little planet. Made big and simple for iPad.</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
+          <img src={`${import.meta.env.BASE_URL}${pup.portrait}`} alt="" width={36} height={36} className="h-9 w-9 rounded-full border-2 object-cover" style={{ borderColor: pup.accent }} />
           <span>MINED {stats.mined} · PLACED {stats.placed}{flying ? " · FLY" : ""}</span>
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => setMuted((v) => !v)} aria-label={muted ? "Enable game sounds" : "Mute game sounds"}>{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
         </div>
       </div>
 
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7fb6ea] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "aspect-[16/10] min-h-[420px] max-w-[960px] rounded-2xl border border-[#2e5d86]"}`}>
-        <canvas ref={canvasRef} className="block h-full w-full touch-none" aria-label="Voxel Yard first-person voxel world" />
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7fb6ea] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "aspect-[4/3] sm:aspect-[16/10] min-h-[480px] md:min-h-[640px] max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}>
+        <canvas ref={canvasRef} className="block h-full w-full touch-none" aria-label="Pup Planet first-person voxel world" />
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2">
           <span className="absolute left-1/2 top-0 h-4 w-px -translate-x-1/2 bg-white/90" />
           <span className="absolute left-0 top-1/2 h-px w-4 -translate-y-1/2 bg-white/90" />
         </div>
         <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/35 px-2 py-1 text-[11px] tracking-wide text-white/90">{hint}</p>
         {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
-        <div data-stick className="absolute bottom-4 left-4 z-10 h-24 w-24 rounded-full border border-white/30 bg-black/25 md:hidden" aria-label="Move" />
-        <div className="absolute bottom-4 right-4 z-10 flex gap-2 md:hidden">
-          <button type="button" className="rounded-full border border-white/30 bg-black/45 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
-          <button type="button" className="rounded-full border border-white/30 bg-[#6df0df]/90 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#0a0f24]" onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
-        </div>
+        {touch ? (
+          <>
+            <div data-stick className="absolute bottom-5 left-5 z-10 h-32 w-32 rounded-full border-2 border-white/40 bg-black/25" aria-label="Move" />
+            <div className="absolute bottom-5 right-5 z-10 flex gap-3">
+              <button type="button" className="rounded-full border-2 border-white/40 bg-black/50 px-6 py-4 text-sm font-bold uppercase tracking-wide text-white active:scale-95" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
+              <button type="button" className="rounded-full border-2 border-white/40 px-6 py-4 text-sm font-bold uppercase tracking-wide active:scale-95" style={{ background: pup.accent, color: pup.ink }} onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
+            </div>
+          </>
+        ) : null}
         {!started ? (
-          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-[#08203a]/55 p-6 text-center backdrop-blur-[2px]">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#08203a]/55 p-6 text-center backdrop-blur-[2px]">
             <div className="max-w-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6df0df]">WebGL world</p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-white">Enter the island</h2>
-              <p className="mt-3 text-sm leading-6 text-[#b9c8dc]">Click to capture the mouse. WASD to walk, Space to jump, Tab to fly, left click mine, right click place.</p>
-              <button type="button" className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#6df0df] px-5 py-3 text-sm font-semibold text-[#0a0f24]" onClick={() => void (stageRef.current as HTMLElement & { __enter?: () => void })?.__enter?.()}>Play</button>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Space-pup sandbox</p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-white">Pick your pup and land!</h2>
+              <div className="pointer-events-auto mt-4 flex justify-center gap-3">
+                {(Object.keys(CHARACTERS) as Character[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border-2 px-3 py-2.5 text-sm font-bold"
+                    style={character === id ? { borderColor: CHARACTERS[id].accent, background: CHARACTERS[id].accent, color: CHARACTERS[id].ink } : { borderColor: "rgba(255,255,255,0.35)", color: "white" }}
+                    onClick={() => setCharacter(id)}
+                  >
+                    <img src={`${import.meta.env.BASE_URL}${CHARACTERS[id].portrait}`} alt="" width={44} height={44} className="h-11 w-11 rounded-full object-cover" />
+                    {CHARACTERS[id].label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-4 text-sm leading-6 text-[#b9c8dc]">Tap Play, then move with the stick, and tap the buttons to Mine or Place. On a computer: WASD to walk, click to mine, right-click to place.</p>
+              <button type="button" className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg px-6 py-3.5 text-base font-bold" style={{ background: pup.accent, color: pup.ink }} onClick={() => void (stageRef.current as HTMLElement & { __enter?: () => void })?.__enter?.()}>Let's Play!</button>
             </div>
           </div>
         ) : null}
@@ -702,8 +749,22 @@ export function VoxelYard() {
 
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
         <span aria-live="polite">{hint}</span>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="game-control rounded-md border border-[var(--border)] px-3 py-2" onClick={() => setFlying((v) => !v)}>{flying ? "Walk" : "Fly"}</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1.5" aria-label="Choose your pup">
+            {(Object.keys(CHARACTERS) as Character[]).map((id) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={character === id}
+                className="game-control rounded-full border-2 px-3 py-2 font-semibold"
+                style={character === id ? { borderColor: CHARACTERS[id].accent, background: CHARACTERS[id].accent, color: CHARACTERS[id].ink } : undefined}
+                onClick={() => setCharacter(id)}
+              >
+                {CHARACTERS[id].label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="game-control rounded-md border border-[var(--border)] px-3 py-2" onClick={() => setFlying((v) => !v)}>{flying ? "Land" : "Fly"}</button>
           <button
             type="button"
             className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2"
@@ -717,7 +778,7 @@ export function VoxelYard() {
               (stageRef.current as HTMLElement & { __reset?: () => void } | null)?.__reset?.();
             }}
           >
-            <RefreshCw size={14} />{confirmingReset ? "Tap again to confirm" : "New world"}
+            <RefreshCw size={14} />{confirmingReset ? "Tap again to confirm" : "New planet"}
           </button>
         </div>
       </div>
@@ -729,18 +790,19 @@ export function VoxelYard() {
             type="button"
             role="option"
             aria-selected={selected === id}
-            className={`game-control flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold ${selected === id ? "border-[#6df0df] bg-[#6df0df] text-[#0a0f24]" : "border-[var(--border)]"}`}
+            className="game-control flex items-center gap-1.5 rounded-full border-2 px-4 py-2.5 text-sm font-semibold"
+            style={selected === id ? { borderColor: pup.accent, background: pup.accent, color: pup.ink } : undefined}
             onClick={() => setSelected(id)}
           >
-            <span className="inline-block h-3.5 w-3.5 rounded-sm border border-black/20" style={{ background: PALETTE[id].color }} />
+            <span className="inline-block h-4 w-4 rounded-sm border border-black/20" style={{ background: PALETTE[id].color }} />
             {PALETTE[id].name}
             <span className="opacity-60">{i + 1}</span>
           </button>
         ))}
       </div>
-      <p className="text-xs text-[var(--muted)]">WASD walk, Shift sprint, Space jump, Tab fly, 1–9 hotbar, left click mine, right click place. Your world autosaves in this browser.</p>
+      <p className="text-xs text-[var(--muted)]">Move with the stick or WASD, tap Mine or Place (or click / right-click), Fly to soar, 1–9 to pick a block. Your planet saves right in this browser.</p>
     </section>
   );
 }
 
-export default VoxelYard;
+export default PupPlanet;

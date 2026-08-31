@@ -16,7 +16,7 @@ const staticRoutes = [
   ["games/booty-butt-scooter", "Booty Butt Scooter Browser Game | Beckify", "Play Booty Butt Scooter, a quick browser game with responsive controls and score tracking."],
   ["games/finger-runner", "Finger Runner Browser Game | Beckify", "Play Finger Runner, a touch-friendly endless browser runner with simple controls, persistent high scores, and quick arcade sessions."],
   ["games/toot-troopers", "Toot Troopers Browser Game | Beckify", "Play Toot Troopers, an original fart-powered flight game starring Apollo and Rocco."],
-  ["games/voxel-yard", "Voxel Yard Browser Game | Beckify", "Play Voxel Yard, a first-person WebGL voxel sandbox: walk a seeded continent, mine and place blocks, fly, and keep your world in this browser."],
+  ["games/pup-planet", "Pup Planet Browser Game | Beckify", "Play Pup Planet: pick Apollo or Rocco, the space pups, and mine and build on a seeded little planet in this first-person WebGL sandbox. Built big and simple for iPad."],
   ["games/hexgl", "HexGL Browser Game | Beckify", "Play HexGL, a futuristic WebGL racing game by Thibaut Despoulain (BKcore), hosted on Beckify under the MIT License."],
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];

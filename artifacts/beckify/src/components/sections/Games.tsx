@@ -11,7 +11,7 @@ const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string
   "New Glenn Runner": { mode: "Launch arcade", input: "Keyboard + drag", accent: "#8b7bff" },
   "Finger Runner": { mode: "One-button runner", input: "Tap + Space", accent: "#ff6b8a" },
   "Toot Troopers": { mode: "Fart-flap flight", input: "Tap + Space", accent: "#6df0df" },
-  "Voxel Yard": { mode: "First-person WebGL", input: "Mouse + WASD", accent: "#caa25c" },
+  "Pup Planet": { mode: "First-person WebGL", input: "Touch + WASD", accent: "#6df0df" },
   HexGL: { mode: "WebGL racer", input: "Keyboard + mouse", accent: "#55e6cb" },
 };
 
