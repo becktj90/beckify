@@ -11,6 +11,7 @@ import BootyButtScooterPage from "@/pages/booty-butt-scooter";
 import FingerRunnerPage from "@/pages/finger-runner";
 import TootTroopersPage from "@/pages/toot-troopers";
 import VoxelYardPage from "@/pages/voxel-yard";
+import HexGLPage from "@/pages/hexgl";
 import VespaP200EPage from "@/pages/vespa-p200e";
 import GearPage from "@/pages/gear";
 
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/games/finger-runner" component={FingerRunnerPage} />
       <Route path="/games/toot-troopers" component={TootTroopersPage} />
       <Route path="/games/voxel-yard" component={VoxelYardPage} />
+      <Route path="/games/hexgl" component={HexGLPage} />
       <Route path="/sitemap" component={SiteMapPage} />
       <Route component={NotFound} />
     </Switch>

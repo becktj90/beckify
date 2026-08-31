@@ -11,7 +11,8 @@ const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string
   "New Glenn Runner": { mode: "Launch arcade", input: "Keyboard + drag", accent: "#8b7bff" },
   "Finger Runner": { mode: "One-button runner", input: "Tap + Space", accent: "#ff6b8a" },
   "Toot Troopers": { mode: "Fart-flap flight", input: "Tap + Space", accent: "#6df0df" },
-  "Voxel Yard": { mode: "Voxel sandbox", input: "Tap + keyboard", accent: "#caa25c" },
+  "Voxel Yard": { mode: "First-person WebGL", input: "Mouse + WASD", accent: "#caa25c" },
+  HexGL: { mode: "WebGL racer", input: "Keyboard + mouse", accent: "#55e6cb" },
 };
 
 /**
@@ -22,7 +23,7 @@ export const Games = () => (
     <FadeIn>
       <SectionHeader
         title="Games"
-        subtitle="Short, replayable browser games with readable controls, local high scores, and no install."
+        subtitle="Browser games with readable controls — including a first-person voxel world and a full WebGL racer."
         icon={(props: { className?: string }) => <BeckifyIcon name="games" {...props} />}
       />
     </FadeIn>
@@ -31,10 +32,10 @@ export const Games = () => (
       <div className="card-surface grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">The arcade brief</p>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Pick a quick loop, learn one verb, and try to beat your own record. The local games keep scores in this browser, so the collection stays private and fast.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Quick arcade loops plus two WebGL worlds. Local scores and saves stay in this browser.</p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">
-          {[{ label: "Games", value: "06", width: "100%" }, { label: "Input", value: "3", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => <div key={stat.label} className="min-w-20"><p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p><div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} /></div><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p></div>)}
+          {[{ label: "Games", value: "07", width: "100%" }, { label: "Input", value: "3", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => <div key={stat.label} className="min-w-20"><p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p><div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} /></div><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p></div>)}
         </div>
       </div>
     </FadeIn>

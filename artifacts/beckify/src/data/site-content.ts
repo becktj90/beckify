@@ -250,8 +250,13 @@ export const GAMES: Game[] = [
   },
   {
     name: "Voxel Yard",
-    description: "A touch-friendly isometric voxel-building sandbox. Mine, place, and reshape a procedurally generated island, playable on iPad.",
+    description: "A first-person WebGL voxel sandbox. Walk a seeded continent, mine and place blocks, fly, and keep your world in this browser.",
     url: "/games/voxel-yard",
+  },
+  {
+    name: "HexGL",
+    description: "A full WebGL futuristic racer by Thibaut Despoulain (BKcore), hosted here under the MIT License.",
+    url: "/games/hexgl",
   },
 ];
 

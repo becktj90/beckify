@@ -29,7 +29,7 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
   { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/gear", label: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, electrical testers, bench instruments, RF gear, and budget picks.", icon: Wrench, hue: HUES.aqua },
-  { href: "/games", label: "Games", description: "Cosmic Cadet, Finger Runner, Booty Butt Scooter, and New Glenn Runner.", icon: Gamepad2, hue: HUES.magenta },
+  { href: "/games", label: "Games", description: "Cosmic Cadet, Voxel Yard, HexGL, Finger Runner, Booty Butt Scooter, and New Glenn Runner.", icon: Gamepad2, hue: HUES.magenta },
 ];
 
 /**

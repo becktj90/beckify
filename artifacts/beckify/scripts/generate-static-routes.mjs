@@ -11,11 +11,13 @@ const staticRoutes = [
   ["projects", "Engineering Projects and Build Logs | Beckify", "Engineering projects, conversion build logs, prototypes, and practical maker work from Beckify."],
   ["projects/vespa-p200e", "Vespa P200E EV Conversion | Beckify", "An engineering case study of a 1979 Vespa P200E electric conversion: 20S10P battery, protection, motor control, hub motor and custom swingarm."],
   ["gear", "Recommended Electrical Tools, Supplies & Field Gear | Beckify", "Direct model links for industry-standard tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices."],
-  ["games", "Browser Games | Beckify", "Small, responsive browser games from Beckify, including arcade runners and a space shooter."],
+  ["games", "Browser Games | Beckify", "Browser games from Beckify, including arcade loops, a first-person voxel world, and HexGL."],
   ["games/cosmic-cadet", "Cosmic Cadet Browser Game | Beckify", "Play Cosmic Cadet, a responsive browser space shooter with keyboard, pointer, touch, waves, hull damage, pause, and fullscreen play."],
   ["games/booty-butt-scooter", "Booty Butt Scooter Browser Game | Beckify", "Play Booty Butt Scooter, a quick browser game with responsive controls and score tracking."],
   ["games/finger-runner", "Finger Runner Browser Game | Beckify", "Play Finger Runner, a touch-friendly endless browser runner with simple controls, persistent high scores, and quick arcade sessions."],
-  ["games/voxel-yard", "Voxel Yard Browser Game | Beckify", "Play Voxel Yard, a touch-friendly isometric voxel-building sandbox: mine, place, and reshape a procedurally generated island, playable on iPad."],
+  ["games/toot-troopers", "Toot Troopers Browser Game | Beckify", "Play Toot Troopers, an original fart-powered flight game starring Apollo and Rocco."],
+  ["games/voxel-yard", "Voxel Yard Browser Game | Beckify", "Play Voxel Yard, a first-person WebGL voxel sandbox: walk a seeded continent, mine and place blocks, fly, and keep your world in this browser."],
+  ["games/hexgl", "HexGL Browser Game | Beckify", "Play HexGL, a futuristic WebGL racing game by Thibaut Despoulain (BKcore), hosted on Beckify under the MIT License."],
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];
 
