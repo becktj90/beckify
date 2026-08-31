@@ -248,6 +248,11 @@ export const GAMES: Game[] = [
     description: "Original fart-powered flight starring Apollo and Rocco. Toot through sky gates and beat your local best.",
     url: "/games/toot-troopers",
   },
+  {
+    name: "Voxel Yard",
+    description: "A touch-friendly isometric voxel-building sandbox. Mine, place, and reshape a procedurally generated island, playable on iPad.",
+    url: "/games/voxel-yard",
+  },
 ];
 
 // Legacy single-game export for backwards compatibility

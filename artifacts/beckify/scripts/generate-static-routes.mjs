@@ -15,6 +15,7 @@ const staticRoutes = [
   ["games/cosmic-cadet", "Cosmic Cadet Browser Game | Beckify", "Play Cosmic Cadet, a responsive browser space shooter with keyboard, pointer, touch, waves, hull damage, pause, and fullscreen play."],
   ["games/booty-butt-scooter", "Booty Butt Scooter Browser Game | Beckify", "Play Booty Butt Scooter, a quick browser game with responsive controls and score tracking."],
   ["games/finger-runner", "Finger Runner Browser Game | Beckify", "Play Finger Runner, a touch-friendly endless browser runner with simple controls, persistent high scores, and quick arcade sessions."],
+  ["games/voxel-yard", "Voxel Yard Browser Game | Beckify", "Play Voxel Yard, a touch-friendly isometric voxel-building sandbox: mine, place, and reshape a procedurally generated island, playable on iPad."],
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];
 
