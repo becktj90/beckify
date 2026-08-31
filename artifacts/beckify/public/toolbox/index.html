@@ -210,7 +210,7 @@
       <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
       <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
       <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
-      <button class="nav-btn" data-target="sec-load-factors" data-keywords="demand factor diversity factor coincidence factor load factor capacity factor connected load maximum demand kva">Load Factors &amp; Capacity</button>
+      <button class="nav-btn" data-target="sec-load-factors" data-keywords="demand factor diversity factor coincidence factor load factor projected growth capacity factor connected load maximum demand kva">Demand, Diversity &amp; Growth</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">04 · System planning</div>
@@ -301,7 +301,7 @@
             <li><a class="home-tool-link" href="#sec-xfmr-engine">Transformer Engine</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing &amp; Protection</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
-            <li><a class="home-tool-link" href="#sec-load-factors">Load Factors &amp; Capacity</a></li>
+            <li><a class="home-tool-link" href="#sec-load-factors">Demand, Diversity &amp; Growth</a></li>
           </ul>
         </div>
 
@@ -6702,8 +6702,8 @@
          ════════════════════════════════════════ -->
     <section id="sec-load-factors" class="section">
       <div class="section-header">
-        <h2>📊 Load Factors &amp; Capacity</h2>
-        <p>Translate connected load, measured peak demand, and available capacity into the factors used to describe how a system is actually used.</p>
+        <h2>📊 Demand, Diversity &amp; Growth Planner</h2>
+        <p>Turn connected load, measured demand, and an explicit growth assumption into transparent planning factors and a capacity forecast.</p>
         <details class="section-info">
           <summary>ℹ Definitions and what to enter</summary>
           <div class="section-info-body">
@@ -6731,6 +6731,10 @@
               <div><label for="lf_average">Average demand (kVA)</label><input id="lf_average" type="number" min="0" step="any" placeholder="same interval as peak"></div>
             </div>
             <div class="input-group single"><div><label for="lf_capacity">Available capacity (kVA)</label><input id="lf_capacity" type="number" min="0" step="any" placeholder="e.g. 225"></div></div>
+            <div class="input-group">
+              <div><label for="lf_growth">Annual demand growth (%/yr, optional)</label><input id="lf_growth" type="number" min="0" step="0.1" placeholder="e.g. 3"></div>
+              <div><label for="lf_years">Forecast horizon (years, optional)</label><input id="lf_years" type="number" min="1" max="50" step="1" placeholder="e.g. 10"></div>
+            </div>
             <button class="btn btn-accent" type="button" onclick="calcLoadFactors()">Calculate factors</button>
             <div id="lf_result" class="result" aria-live="polite"></div>
           </div>
@@ -6739,6 +6743,7 @@
           <div class="card-title">When information is missing</div>
           <div class="card-body">
             <div class="formula-box">Demand factor = Peak ÷ Connected<br>Diversity factor = Σ individual peaks ÷ System peak<br>Load factor = Average ÷ Peak<br>Capacity margin = Capacity − Peak</div>
+            <div class="note" style="margin-top:10px"><strong>Growth forecast:</strong> projected demand = today's peak × (1 + annual growth)<sup>years</sup>. Enter a documented growth case, then compare it with usable—not merely nameplate—capacity.</div>
             <div class="note"><strong>No connected load?</strong> Start with nameplates, schedules, and panel directories. Do not substitute breaker ratings for actual load without marking it as an estimate.</div>
             <div class="note" style="margin-top:10px"><strong>No peak demand?</strong> Export the highest matching-interval kW/kVA from a utility meter, BMS, power logger, or demand controller. Use the same interval for average demand.</div>
             <div class="note" style="margin-top:10px"><strong>No diversity data?</strong> Group loads by operating schedule, collect individual peaks, and use 1.00 until documented diversity exists. A number above 1.00 needs a defensible simultaneous-load basis.</div>
