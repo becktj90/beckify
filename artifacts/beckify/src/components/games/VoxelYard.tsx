@@ -684,6 +684,10 @@ export function VoxelYard() {
         <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/35 px-2 py-1 text-[11px] tracking-wide text-white/90">{hint}</p>
         {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
         <div data-stick className="absolute bottom-4 left-4 z-10 h-24 w-24 rounded-full border border-white/30 bg-black/25 md:hidden" aria-label="Move" />
+        <div className="absolute bottom-4 right-4 z-10 flex gap-2 md:hidden">
+          <button type="button" className="rounded-full border border-white/30 bg-black/45 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
+          <button type="button" className="rounded-full border border-white/30 bg-[#6df0df]/90 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#0a0f24]" onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
+        </div>
         {!started ? (
           <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-[#08203a]/55 p-6 text-center backdrop-blur-[2px]">
             <div className="max-w-sm">
