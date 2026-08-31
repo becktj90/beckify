@@ -31,6 +31,21 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://beckify.com/games/toot-troopers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/games/voxel-yard</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/games/hexgl</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/projects</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
