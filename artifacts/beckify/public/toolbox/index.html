@@ -171,7 +171,7 @@
   <!-- ── SIDEBAR NAV ── -->
   <nav class="sidebar" id="sidebar-nav">
     <div class="sidebar-home-btn-wrap">
-      <button class="nav-btn home-btn" data-target="sec-home">⊞ All Tools</button>
+      <button class="nav-btn home-btn" data-target="sec-home" aria-label="Show all toolbox tools">⊞ All Tools</button>
     </div>
     <div class="sidebar-search">
       <label for="nav-search">Search <kbd>/</kbd></label>
@@ -726,15 +726,15 @@
           <div class="card-title">Series Impedance (Z)</div>
           <div class="card-body">
             <div class="formula-box">
-              Z = √(R² + (XL − XC)²)<br>
-              θ = arctan((XL − XC) / R)<br>
-              PF = cos(θ) = R / Z
+              Z = √(R² + X²)<br>
+              θ = atan2(X, R)<br>
+              PF = cos(θ) = R / |Z| (when |Z| &gt; 0)
             </div>
-            <div class="input-group triple">
+            <div class="input-group">
               <div><label>Resistance — R (Ω)</label><input type="number" id="imp_r" placeholder="0 if none" step="any" min="0" value="0"></div>
-              <div><label>Inductive React. — XL (Ω)</label><input type="number" id="imp_xl" placeholder="0 if none" step="any" value="0"></div>
-              <div><label>Capacitive React. — XC (Ω)</label><input type="number" id="imp_xc" placeholder="0 if none" step="any" value="0"></div>
+              <div><label>Net Reactance — X (Ω)</label><input type="number" id="imp_x" placeholder="positive = inductive; negative = capacitive" step="any" value="0"></div>
             </div>
+            <div class="note">+X = inductive (lagging); −X = capacitive (leading). XL and XC calculators above report positive magnitudes.</div>
             <button class="btn" onclick="calcImpedance()">Calculate Z</button>
             <div id="imp_result" class="result"></div>
           </div>
@@ -3019,7 +3019,7 @@
               <li><strong>NEC article reference</strong> — permitted uses, not-permitted uses, support spacing</li>
               <li><strong>Location matrix</strong> — dry / damp / wet / direct burial / hazardous class ratings</li>
               <li><strong>Pros, cons, and common applications</strong></li>
-              <li><strong>Air Force / Space Force / NASA guidance</strong> — AFSPCMAN 91-710, AFI 32-1064, UFC 3-550-01, and NASA KSC-E-165 requirements</li>
+              <li><strong>Project-facility advisory</strong> — verify owner, AHJ, and Range Safety criteria separately from NEC wiring-method screening</li>
             </ul>
             Use the <strong>Conduit Type Selector</strong> at the top to answer a few questions and get a ranked recommendation.
           </div>
@@ -3031,7 +3031,7 @@
         <div class="card">
           <div class="card-title">⚙ Conduit Type Selector</div>
           <div class="card-body">
-            <div class="formula-box">Answer the questions below to get a ranked conduit recommendation. All NEC Articles and AF/Space Force requirements are applied.</div>
+            <div class="formula-box">Answer the questions below for a ranked NEC wiring-method screen. Facility, owner, hazardous-location, and Range Safety criteria require independent verification.</div>
             <div class="input-group">
               <div>
                 <label>Location</label>
@@ -3842,77 +3842,18 @@
         </div>
       </div>
 
-      <!-- ── AF / SPACE FORCE / NASA GUIDELINES ── -->
       <div class="card" style="grid-column:1/-1;margin-top:0">
-        <div class="card-title" style="border-left:4px solid #f59e0b;padding-left:12px">🚀 Air Force / Space Force / NASA Conduit Requirements</div>
+        <div class="card-title" style="border-left:4px solid #f59e0b;padding-left:12px">Facility and Range-Safety Review</div>
         <div class="card-body">
-          <div class="formula-box" style="margin-bottom:16px">
-            Key governing documents: <strong>AFSPCMAN 91-710</strong> · <strong>AFI 32-1064</strong> · <strong>UFC 3-550-01</strong> · <strong>UFC 3-310-04</strong> · <strong>NASA KSC-E-165</strong> · <strong>NEC (NFPA 70)</strong> · <strong>NFPA 101</strong>
-          </div>
-
-          <div class="card-grid two-col" style="gap:16px">
-
-            <div>
-              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">AFSPCMAN 91-710 — Range Safety User Requirements</div>
-              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">AFSPCMAN 91-710 (Air Force Space Command Manual 91-710) is the Range Safety User Requirements Manual governing activities at the Eastern Range (Cape Canaveral / Patrick SFB) and Western Range (Vandenberg SFB). It establishes minimum electrical safety standards for launch facility construction beyond the NEC.</p>
-              <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
-                <li><strong>Volume 3, §3:</strong> All wiring in explosive and propellant facilities shall use <strong>RMC (rigid metal conduit)</strong> or approved explosion-proof raceways. EMT is specifically excluded.</li>
-                <li><strong>Bonding and grounding:</strong> All metallic conduit must be bonded to the facility ground system; static dissipation critical in propellant areas. Isolated grounding is not permitted in propellant handling rooms.</li>
-                <li><strong>Conduit seals:</strong> All conduit entering or leaving a Class I hazardous location (propellant, fuel, LOX, LH₂ areas) must be sealed per NEC 501.15, placed within 18 in of the enclosure entry.</li>
-                <li><strong>Material specification:</strong> Galvanized or stainless steel RMC. PVC or plastic conduit above grade is not permitted in propellant or launch complex structures.</li>
-                <li><strong>Underground:</strong> PVC Sch. 40 or HDPE duct banks are permitted for site distribution underground but must transition to RMC at all building entries.</li>
-                <li><strong>ESQD arc areas:</strong> All wiring within Explosive Safety Quantity Distance arcs must use RMC with listed explosion-proof fittings. Verify with Range Safety Office for current ESQD arc boundaries.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">AFI 32-1064 / UFC 3-550-01 — AF Electrical Systems</div>
-              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">AFI 32-1064 (Electrical Safe Practices) and UFC 3-550-01 (Interior Electrical Systems) govern electrical design at all Air Force installations. UFC 3-550-01 has largely superseded many AFI 32-1064 sections for design purposes.</p>
-              <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
-                <li><strong>Primary conduit:</strong> RMC or IMC for all outdoor exposed, mechanical rooms, and industrial facilities. EMT permitted only indoors in dry, non-industrial, non-critical areas.</li>
-                <li><strong>Outdoor runs:</strong> RMC is the default for any outdoor exposed conduit at AF installations. IMC may be substituted with approval.</li>
-                <li><strong>Underground:</strong> PVC Sch. 40 in concrete-encased duct banks; direct-burial PVC only in non-critical site-distribution feeders. Coordinate with base civil engineer.</li>
-                <li><strong>Corrosive environments:</strong> PVC-coated RMC or stainless steel RMC for wastewater, chemical, or coastal facilities. Aluminum conduit not recommended in concrete.</li>
-                <li><strong>Flex conduit:</strong> LFMC required for all outdoor equipment whips. FMC limited to indoor dry equipment connections only.</li>
-                <li><strong>Seismic:</strong> UFC 3-310-04 seismic bracing requirements apply to all conduit over 1 in trade size in Seismic Design Categories C–F. Lateral bracing required — verify with structural engineer.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">NASA KSC-E-165 — Kennedy Space Center Electrical Design Standard</div>
-              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">KSC-E-165 is the electrical design standard for Kennedy Space Center, which shares the Eastern Range with Cape Canaveral SFS. It applies to all NASA facilities at KSC including launch pads, processing facilities, and support buildings.</p>
-              <ul style="margin:0;padding-left:16px;font-size:0.8rem;line-height:1.7">
-                <li><strong>§4.2 — Wiring methods:</strong> RMC is the required conduit type for all industrial, outdoor, and launch facility areas. EMT is permitted only in office spaces and environmentally controlled support buildings.</li>
-                <li><strong>§4.3 — Underground:</strong> PVC Sch. 40 in concrete duct banks for normal power distribution; HDPE for telecom and fiber-optic duct banks. Minimum 18-inch cover for duct banks under paved areas.</li>
-                <li><strong>Propellant facilities:</strong> Explosion-proof wiring methods (RMC + EXP fittings) required in all areas where propellants (LOX, LH₂, RP-1, N₂O₄, MMH/UDMH) are stored, transferred, or vented. Group C/D for hydrocarbons; Group A/B for hydrogen — specify fittings accordingly.</li>
-                <li><strong>Clean rooms:</strong> Conduit must be degreased and cleaned before installation in Class 10,000 or better clean rooms. Stainless steel RMC preferred to prevent particle generation.</li>
-                <li><strong>Lightning protection:</strong> Conduit bonding required to the facility lightning protection system per NFPA 780 and NASA-HDBK-8739.21.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px">Hazardous Area Classification — Propellant Guidance</div>
-              <p style="font-size:0.82rem;line-height:1.6;margin:0 0 8px">NEC Article 500 classifies hazardous locations by material type and likelihood of occurrence. For launch and propellant facilities:</p>
-              <table class="ref-table" style="font-size:0.78rem;margin-bottom:10px">
-                <thead><tr><th>Propellant</th><th>NEC Class</th><th>Group</th><th>Conduit Requirement</th></tr></thead>
-                <tbody>
-                  <tr><td>Liquid Hydrogen (LH₂)</td><td>Class I, Div. 1 &amp; 2</td><td>Group B</td><td>RMC + EXP fittings (Group B listed)</td></tr>
-                  <tr><td>Kerosene / RP-1</td><td>Class I, Div. 1 &amp; 2</td><td>Group D</td><td>RMC + EXP fittings (Group D listed)</td></tr>
-                  <tr><td>LOX (Liquid Oxygen)</td><td>Oxidizer — NEC 500.5 Note</td><td>—</td><td>RMC, no organic materials; avoid Al with LOX</td></tr>
-                  <tr><td>N₂O₄ / NTO</td><td>Class I, Div. 1</td><td>Group C/D</td><td>RMC + EXP fittings; SS conduit recommended</td></tr>
-                  <tr><td>Hydrazine (N₂H₄)</td><td>Class I, Div. 1</td><td>Group C/D</td><td>RMC + EXP; fully sealed system</td></tr>
-                </tbody>
-              </table>
-              <div class="note">Always verify hazardous area classification drawing (HAC drawing) with the responsible engineer and Range Safety Officer. NEC Group listings must match the specific propellant — do not mix Group D fittings in a Group B (hydrogen) area.</div>
-            </div>
-
-          </div><!-- end two-col grid -->
-
-          <div class="note" style="margin-top:16px;border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:6px">
-            <strong>⚠ Disclaimer:</strong> AFSPCMAN 91-710 and related range safety manuals are controlled documents that may be export-controlled or For Official Use Only (FOUO). Access and application require coordination with the Range Safety Office (45th / 30th Space Wing or successor Space Launch Delta units), the base civil engineer, and the facility safety officer. The requirements above are general guidance based on publicly available information; always obtain and apply the current, official version of the applicable document for your project.
-          </div>
+          <p>This guide screens NEC wiring-method characteristics only. It does not establish Air Force, Space Force, NASA, Range Safety, or owner requirements.</p>
+          <ul>
+            <li>Use the current hazardous-location classification drawing and NEC requirements for classified locations.</li>
+            <li>Evaluate corrosion, physical damage, burial, seismic, and environmental exposure as engineering design inputs.</li>
+            <li>Obtain the current owner specification and AHJ/Range Safety approval before selecting a wiring method for a launch or mission facility.</li>
+          </ul>
+          <p class="note">Verified public references: <a href="https://www.wbdg.org/dod/ufc/ufc-3-550-01" target="_blank" rel="noopener">UFC 3-550-01, Exterior Electrical Power Distribution (2016, Change 3)</a>; <a href="https://static.e-publishing.af.mil/production/1/ssc/publication/sscman91-710v6/sscman91-710v6.pdf" target="_blank" rel="noopener">SSCMAN 91-710 Volume 6 (27 Dec 2022)</a>. NASA identifies KSC-E-165 Rev. F as an Electrical Ground Support Equipment Fabrication specification, not a universal KSC conduit standard.</p>
         </div>
-      </div><!-- end AF/NASA card -->
+      </div>
 
     </section><!-- end sec-conduit-guide -->
 

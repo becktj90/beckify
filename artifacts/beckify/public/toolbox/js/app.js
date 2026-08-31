@@ -328,19 +328,18 @@ window.calcXC = function () {
 };
 
 window.calcImpedance = function () {
-  const R = val('imp_r'), XL = val('imp_xl'), XC = val('imp_xc');
-  if (!isNum(R, XL, XC) || R < 0)
-    return showError('imp_result', 'Enter R (≥0), XL (≥0), XC (≥0).');
-  const X = XL - XC;
+  const R = val('imp_r'), X = val('imp_x');
+  if (!isNum(R, X) || R < 0)
+    return showError('imp_result', 'Enter resistance R (≥ 0) and a signed net reactance X.');
   const Z = Math.sqrt(R * R + X * X);
   const theta = deg(Math.atan2(X, R));
-  const PF = R / Z;
+  const PF = Z > 0 ? R / Z : null;
   showResult('imp_result', [
     ['Impedance (Z)', fmt(Z) + ' Ω'],
-    ['Net Reactance (X = XL − XC)', fmt(X) + ' Ω'],
+    ['Net Reactance (X)', fmt(X) + ' Ω'],
     ['Phase Angle (θ)', fmt(theta) + ' °'],
-    ['Power Factor (cos θ)', fmt(PF * 100) + ' %'],
-    ['Circuit Type', X > 0 ? 'Inductive (lagging)' : X < 0 ? 'Capacitive (leading)' : 'Resistive (unity PF)']
+    ['Power Factor (cos θ)', PF === null ? 'Undefined for zero impedance' : fmt(PF * 100) + ' %'],
+    ['Circuit Type', Z === 0 ? 'Zero impedance (R = 0, X = 0)' : X > 0 ? 'Inductive (lagging)' : X < 0 ? 'Capacitive (leading)' : 'Resistive (unity PF)']
   ]);
 };
 

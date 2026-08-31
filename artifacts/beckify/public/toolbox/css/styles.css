@@ -778,6 +778,10 @@ select option { background: #0d0e1f; color: var(--fg); }
   border-color: var(--violet-ring);
   color: #fff;
 }
+.sidebar-home-btn-wrap .home-btn:focus-visible {
+  outline: 3px solid #f5c451;
+  outline-offset: 3px;
+}
 .sidebar-search label {
   display: flex;
   align-items: center;

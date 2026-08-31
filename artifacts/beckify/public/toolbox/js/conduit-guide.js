@@ -8,8 +8,7 @@
      • Fitting-type diagrams (conduit bodies, connectors, straps)
      • Interactive selector: answer 6 questions → recommended type(s)
      • NEC article-by-article requirements & permitted/not-permitted uses
-     • Air Force / Space Force / NASA special requirements
-       (AFSPCMAN 91-710, AFI 32-1064, UFC 3-550-01, NASA KSC-E-165)
+     • NEC wiring-method screening plus project-specific advisory prompts
 
    All SVG is generated inline — no external images required.
    DOM manipulation uses textContent / createElement — no innerHTML for
@@ -940,25 +939,18 @@ window.runConduitSelector = function () {
       reasons.push('Flexible type — not preferred for general wiring');
     }
 
-    // Space Force / launch facility
+    // Launch facilities require a project/AHJ/Range Safety decision.  This
+    // selector must not convert an unverified facility preference into a NEC
+    // prohibition or requirement.
     if (facility === 'launch') {
       if (c.id === 'rmc') {
-        score += 4;
-        reasons.push('✓ REQUIRED for launch complex structures (AFSPCMAN 91-710)');
+        score += 1;
+        reasons.push('Robust metallic option; verify project specification and current AHJ/Range Safety requirements');
       } else if (c.id === 'imc') {
-        score += 2;
-        reasons.push('✓ Acceptable for non-hazardous launch facility areas');
-      } else if (c.id === 'emt') {
-        disqualified = true;
-        disqualReasons.push('NOT permitted in launch complexes or propellant areas (AFSPCMAN 91-710)');
-      } else if (c.isPlastic) {
-        if (burial === 'yes') {
-          score += 1;
-          reasons.push('Acceptable for underground site utilities');
-        } else {
-          disqualified = true;
-          disqualReasons.push('Not approved for above-grade launch facility use');
-        }
+        score += 1;
+        reasons.push('Metallic option; verify project specification and current AHJ/Range Safety requirements');
+      } else {
+        reasons.push('Facility-specific approval required; NEC screening alone is not sufficient');
       }
     } else if (facility === 'af-gen') {
       if (c.id === 'rmc' || c.id === 'imc') {
@@ -1046,8 +1038,8 @@ window.runConduitSelector = function () {
 
   addHeading('Design Notes');
   const top = qualified[0].conduit;
-  addNote('Scroll to the ' + top.fullName + ' card below for full NEC requirements, permitted/not-permitted uses, and Air Force/Space Force guidance.');
-  addNote('Always verify the local AHJ (Authority Having Jurisdiction) accepts the selected wiring method. Obtain AFSPCMAN 91-710 approvals for launch facility or Range Safety applications.');
+  addNote('Scroll to the ' + top.fullName + ' card below for the wiring-method notes used by this selector.');
+  addNote('This is NEC wiring-method screening, not a facility design approval. Verify hazardous-location classification, environmental/mechanical design, owner specifications, and current AHJ/Range Safety requirements for every project.');
 
   if (disqualified.length > 0) {
     addHeading('Eliminated Types');

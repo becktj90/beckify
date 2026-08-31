@@ -75,6 +75,12 @@ ok('  governed by termination', c.limitedBy, 'termination');
 c = G.xePickConductor(260.22, 'cu', 90, 75, 30, 3);
 ok('260.22 A -> 300 kcmil Cu', c.size, '300');
 ok('  usable 285 A', c.usable, 285, 0);
+c = G.xePickConductor(112.76, 'CU', 90, 75, 30, 3);
+ok('uppercase copper key is normalized', c.size, '2');
+c = G.xePickConductor(112.76, 'AL', 90, 75, 30, 3);
+ok('uppercase aluminium key is normalized', typeof c.size, 'string');
+c = G.xePickConductor(112.76, 'cu', 75, 75, 30, 3);
+ok('THW selection uses its 75C column', c.base, 115, 0);
 // 40C ambient and 6 CCC must push the size up.
 const hot = G.xePickConductor(112.76, 'cu', 90, 75, 40, 6);
 ok('derated 40C/6CCC needs a larger size', G.WIRE_CMIL[hot.size] > G.WIRE_CMIL['2'] ? 1 : 0, 1, 0);

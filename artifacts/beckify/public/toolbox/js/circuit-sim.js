@@ -734,6 +734,21 @@
     add.addEventListener('click', function () { window.csAddComponent(typeSelect.value); });
     builder.appendChild(typeLabel);
     builder.appendChild(add);
+    const modeLabel = mk('label', '', 'Custom analysis');
+    const modeSelect = document.createElement('select');
+    modeSelect.id = 'cs_custom_mode';
+    [['dc', 'DC operating point'], ['ac', 'AC analysis']].forEach(function (item) {
+      const option = document.createElement('option'); option.value = item[0]; option.textContent = item[1];
+      option.selected = (circuit.analysis.mode || 'dc') === item[0]; modeSelect.appendChild(option);
+    });
+    modeLabel.appendChild(modeSelect);
+    builder.appendChild(modeLabel);
+    const freqLabel = mk('label', '', 'AC frequency (Hz)');
+    const freqInput = document.createElement('input');
+    freqInput.type = 'number'; freqInput.min = '0'; freqInput.step = 'any'; freqInput.id = 'cs_custom_freq';
+    freqInput.value = String(circuit.analysis.frequency || 1000);
+    freqLabel.appendChild(freqInput);
+    builder.appendChild(freqLabel);
     host.appendChild(builder);
 
     const header = mk('div', 'cs-editor-row cs-note');
@@ -751,8 +766,8 @@
       input.type = 'number';
       input.step = 'any';
       input.setAttribute('data-comp-name', comp.name);
-      input.setAttribute('data-field', comp.type === 'V' && comp.ac != null ? 'ac' : comp.type === 'I' && comp.ac != null ? 'ac' : (comp.dc != null ? 'dc' : 'value'));
-      input.value = String(comp.type === 'V' && comp.ac != null ? comp.ac : comp.type === 'I' && comp.ac != null ? comp.ac : (comp.dc != null ? comp.dc : comp.value));
+      input.setAttribute('data-field', (comp.type === 'V' || comp.type === 'I') ? 'source' : 'value');
+      input.value = String((comp.type === 'V' || comp.type === 'I') ? (comp.value != null ? comp.value : (comp.dc != null ? comp.dc : comp.ac)) : comp.value);
 
       const unit = mk('div', '', componentUnit(comp));
       setStyles(unit, { color: MUTED, minWidth: '42px', textAlign: 'right' });
@@ -778,6 +793,14 @@
       const valueCell = mk('div');
       valueCell.appendChild(input);
       valueCell.appendChild(unit);
+      if (comp.type === 'V' || comp.type === 'I') {
+        const phase = document.createElement('input');
+        phase.type = 'number'; phase.step = 'any'; phase.value = String(comp.phase || 0);
+        phase.title = 'AC phase in degrees'; phase.setAttribute('aria-label', comp.name + ' AC phase in degrees');
+        phase.setAttribute('data-comp-name', comp.name); phase.setAttribute('data-field', 'phase');
+        phase.style.marginTop = '4px'; phase.placeholder = 'phase °';
+        valueCell.appendChild(phase);
+      }
       row.appendChild(valueCell);
       row.appendChild(nodeOptions(comp.n1, 'n1'));
       row.appendChild(nodeOptions(comp.n2, 'n2'));
@@ -789,6 +812,15 @@
   function readEditedCircuit() {
     const circuit = clone(state.currentCircuit || examples()[1]);
     const inputs = rootEl().querySelectorAll('[data-comp-name][data-field]');
+    const modeControl = document.getElementById('cs_custom_mode');
+    const freqControl = document.getElementById('cs_custom_freq');
+    if (modeControl && state.currentCircuit && state.currentCircuit.analysis.kind === 'custom') {
+      circuit.analysis.mode = modeControl.value;
+      circuit.analysis.frequency = parseFloat(freqControl && freqControl.value);
+      if (circuit.analysis.mode === 'ac' && (!isFinite(circuit.analysis.frequency) || circuit.analysis.frequency <= 0)) {
+        throw new Error('AC analysis requires a positive frequency.');
+      }
+    }
     let i;
     for (i = 0; i < inputs.length; i += 1) {
       const input = inputs[i];
@@ -805,7 +837,11 @@
             circuit.description = 'User-built circuit with editable component values and node connections.';
           }
           circuit.netlist[j][field] = value;
-          if (field === 'dc' && circuit.netlist[j].value != null) circuit.netlist[j].value = value;
+          if (field === 'source') {
+            circuit.netlist[j].value = value;
+            circuit.netlist[j].dc = value;
+            circuit.netlist[j].ac = value;
+          }
           break;
         }
       }
@@ -1151,15 +1187,18 @@
   }
 
   function analyzeCustom(circuit) {
-    const sol = solveMna(circuit.netlist, { mode: 'dc' });
+    const mode = circuit.analysis.mode || 'dc';
+    const frequency = circuit.analysis.frequency;
+    if (mode === 'ac' && (!isFinite(frequency) || frequency <= 0)) throw new Error('AC analysis requires a positive frequency.');
+    const sol = solveMna(circuit.netlist, { mode: mode, omega: mode === 'ac' ? 2 * Math.PI * frequency : 0 });
     const sources = circuit.netlist.filter(function (comp) { return comp.type === 'V' || comp.type === 'I'; }).length;
     const passive = circuit.netlist.filter(function (comp) { return comp.type === 'R' || comp.type === 'C' || comp.type === 'L'; }).length;
     return {
-      mode: 'dc',
-      badge: 'Custom DC operating point',
+      mode: mode,
+      badge: mode === 'ac' ? 'Custom AC analysis at ' + freqFmt(frequency) : 'Custom DC operating point',
       solution: sol,
       steps: [
-        'Each component is converted to its conductance or source stamp in the MNA matrix.',
+        mode === 'ac' ? 'AC sources use their entered magnitude and phase; capacitors and inductors use complex admittance at the selected frequency.' : 'DC capacitors are open circuits and inductors use a short-circuit approximation.',
         'The node connections shown in the editor define the circuit topology.',
         'The matrix is solved for every node voltage and branch current.',
         'Change a value or node connection, then run the analysis again to compare the result.',

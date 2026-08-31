@@ -38,6 +38,7 @@ function xeFla(kva, volts, phase) {
  * Returns the size plus every factor that shaped the decision.
  */
 function xePickConductor(required, material, insulTemp, terminationTemp, ambientC, ccc) {
+  material = String(material || 'cu').toLowerCase();
   const ambient = ambientCorrectionFactor(ambientC, insulTemp);
   const bundle = cccAdjustmentFactor(ccc);
   for (const size of WIRE_SIZE_ORDER) {
@@ -60,6 +61,7 @@ function xePickConductor(required, material, insulTemp, terminationTemp, ambient
 
 /** Effective impedance per 1000 ft at a given power factor. */
 function xeImpedance(size, material, pf) {
+  material = String(material || 'cu').toLowerCase();
   const r = DC_RESISTANCE[material] && DC_RESISTANCE[material][size];
   if (typeof r !== 'number') return null;
   const x = REACTANCE[size] || 0;
@@ -150,7 +152,7 @@ window.calcXfmrEngine = function () {
   const secConn = document.getElementById('xe_sec_conn').value;
   const secLen = val('xe_sec_len');
 
-  const material = document.getElementById('xe_material').value;
+  const material = String(document.getElementById('xe_material').value || 'cu').toLowerCase();
   const insulation = document.getElementById('xe_insulation').value;
   const conduitType = document.getElementById('xe_conduit').value;
   const ambientC = val('xe_ambient');

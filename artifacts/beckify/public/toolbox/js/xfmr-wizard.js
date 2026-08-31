@@ -169,7 +169,18 @@
 
   /* ── Helper: next standard OCPD (from nec-data.js) ── */
   function wzNextOcpd(a) {
-    return nextStandardOCPD ? nextStandardOCPD(a) : (STD_OCPD_RATINGS.find(r => r >= a) || null);
+    return typeof nextStandardOCPD === 'function'
+      ? nextStandardOCPD(a)
+      : (typeof STD_OCPD_RATINGS !== 'undefined' && STD_OCPD_RATINGS.find(r => r >= a)) || null;
+  }
+
+  function wzMaterialKey(value) {
+    return String(value || 'CU').toLowerCase() === 'al' ? 'al' : 'cu';
+  }
+
+  function wzInsulationTemp(value) {
+    const type = typeof INSULATION_TYPES !== 'undefined' && INSULATION_TYPES[value];
+    return type && Number(type.tempRating) || (value === 'THW' ? 75 : 90);
   }
 
   /* ── Next standard kVA ── */
@@ -180,12 +191,13 @@
 
   /* ── Parallel run cost optimizer ── */
   function parallelRunOptions(requiredAmps, material, _insulation, ambientC, ccc, terminationTemp, phase, connection) {
-    const costs = material === 'CU' ? WIRE_COST_CU : WIRE_COST_AL;
+    const materialKey = wzMaterialKey(material);
+    const costs = materialKey === 'cu' ? WIRE_COST_CU : WIRE_COST_AL;
     const results = [];
     for (let runs = 1; runs <= 6; runs++) {
       const ampsPerRun = requiredAmps / runs;
       const cond = typeof xePickConductor === 'function'
-        ? xePickConductor(ampsPerRun, material, 90, terminationTemp, ambientC, ccc)
+        ? xePickConductor(ampsPerRun, materialKey, wzInsulationTemp(_insulation), terminationTemp, ambientC, ccc)
         : null;
       if (!cond) continue;
       const costPerFt = costs[cond.size] || 0;
@@ -656,7 +668,7 @@
     const phase = WZ.phase;
     const priV = WZ.priV;
     const secV = WZ.secV;
-    const material = WZ.material;
+    const material = wzMaterialKey(WZ.material);
     const ambientC = WZ.ambientC;
     const ccc = WZ.ccc;
     const pf = WZ.pf;
@@ -694,7 +706,7 @@
     /* ── Conductors ── */
     function pickCond(fla) {
       if (typeof xePickConductor !== 'function') return null;
-      return xePickConductor(fla * 1.25, material, 90, termTemp, ambientC, ccc);
+      return xePickConductor(fla * 1.25, material, wzInsulationTemp(WZ.insulation), termTemp, ambientC, ccc);
     }
     const priCond = pickCond(priFla);
     const secCond = pickCond(secFla);
@@ -716,7 +728,10 @@
 
     /* ── EGC / GEC ── */
     const egcObj = (typeof egcForOCPD === 'function' && secOcpd) ? egcForOCPD(secOcpd, material) : null;
-    const gecObj = (typeof gecForConductor === 'function' && secCond) ? gecForConductor(secCond.size, material) : null;
+    const secBaseCmil = secCond ? WIRE_CMIL[secCond.size] : 0;
+    const secEquivalentCmil = secOptimal ? WIRE_CMIL[secOptimal.size] * secOptimal.runs : secBaseCmil;
+    const gecObj = (typeof gecForConductor === 'function' && secEquivalentCmil > 0)
+      ? gecForConductor(secEquivalentCmil, material) : null;
 
     /* ── Render results ── */
     xwStep(4);
@@ -775,7 +790,7 @@
     section('▶ Primary Conductors', '#8b7bff');
     if (priCond) {
       row('Required ampacity', fmt(priFla * 1.25, 2) + ' A', '125% × FLA per NEC 215.2(A)');
-      row('Conductor size', priCond.size + ' AWG/kcmil ' + material + ' THHN');
+      row('Conductor size', priCond.size + ' AWG/kcmil ' + material.toUpperCase() + ' ' + WZ.insulation);
       row('Base ampacity', fmt(priCond.base, 0) + ' A', 'NEC Table 310.16');
       row('Derated usable', fmt(priCond.usable, 1) + ' A');
       if (priVd) {
@@ -787,7 +802,7 @@
     section('▶ Secondary Conductors', '#6ee7b7');
     if (secCond) {
       row('Required ampacity', fmt(secFla * 1.25, 2) + ' A', '125% × FLA per NEC 215.2(A)');
-      row('Conductor size', secCond.size + ' AWG/kcmil ' + material + ' THHN');
+      row('Conductor size', secCond.size + ' AWG/kcmil ' + material.toUpperCase() + ' ' + WZ.insulation);
       row('Base ampacity', fmt(secCond.base, 0) + ' A', 'NEC Table 310.16');
       row('Derated usable', fmt(secCond.usable, 1) + ' A');
       if (secVd) {
@@ -832,7 +847,7 @@
     }
     if (gecObj) {
       section('▶ Grounding Electrode Conductor (GEC) — NEC 250.30(A)', '#6ee7b7');
-      row('GEC size', gecObj.size + ' ' + material, 'based on secondary conductor ' + (secCond ? secCond.size : '?'));
+      row('GEC size', gecObj.size + ' ' + material.toUpperCase(), 'based on ' + secEquivalentCmil.toLocaleString() + ' cmil of derived secondary conductor(s)');
       note('NEC 250.30(A)(4) — GEC sized per Table 250.66, based on the size of the largest derived phase conductor.');
     }
 
@@ -867,13 +882,16 @@
         priOcpd, secOcpd,
         priDisc: (priDisc || '—') + 'A DISC',
         material,
-        priCond: priOptimal ? { size: priOptimal.size, runs: priOptimal.runs } : priCond,
-        secCond: secOptimal ? { size: secOptimal.size, runs: secOptimal.runs } : secCond,
+        priCond: priCond ? { size: priCond.size, runs: 1 } : null,
+        secCond: secCond ? { size: secCond.size, runs: 1 } : null,
         priVd, secVd,
         egc: egcObj ? egcObj.size : null,
         gec: gecObj ? gecObj.size : null,
       };
       sldEl.appendChild(buildSldSvg(sldParams));
+      if (priOptimal && priOptimal.runs > 1 || secOptimal && secOptimal.runs > 1) {
+        note('SLD shows the single-run base design. The cost table identifies separate parallel alternatives; do not substitute an optimal parallel option without updating all conductors and grounding details.');
+      }
     }
   };
 

@@ -563,7 +563,7 @@
   }
 
   function readZ0() {
-    var z0 = readNumber(['sc-z0', 'sc_z0', 'Z0', 'z0'], state.z0);
+    var z0 = readNumber('sc_z0', state.z0);
     if (!isFinite(z0) || z0 <= 0) return state.z0;
     return z0;
   }
@@ -574,14 +574,14 @@
 
   function plotImpedance(realOhms, imagOhms, label, extraText) {
     state.z0 = readZ0();
-    setField(['sc-z0', 'sc_z0', 'Z0', 'z0'], state.z0);
+    setField('sc_z0', state.z0);
     clearRotation();
     return addPoint({
       kind: 'impedance',
       Z: complex(realOhms, imagOhms),
       label: label || 'Plotted load',
       extraText: extraText || '',
-      frequencyText: readText(['sc-frequency', 'sc_frequency', 'Frequency', 'frequency'], ''),
+      frequencyText: readText('sc_freq', ''),
     });
   }
 
@@ -592,7 +592,7 @@
       gamma: complex(gamma.re, gamma.im),
       label: label || 'Clicked point',
       extraText: extraText || '',
-      frequencyText: readText(['sc-frequency', 'sc_frequency', 'Frequency', 'frequency'], ''),
+      frequencyText: readText('sc_freq', ''),
     });
   }
 
@@ -640,8 +640,8 @@
   }
 
   function scPlotPoint() {
-    var zr = readNumber(['sc-z-real', 'sc_z_real', 'Z_real', 'z_real'], NaN);
-    var zi = readNumber(['sc-z-imag', 'sc_z_imag', 'Z_imag', 'z_imag'], NaN);
+    var zr = readNumber('sc_r', NaN);
+    var zi = readNumber('sc_x', NaN);
     var gamma;
     if (!ensureCanvas()) return;
     state.exampleNotes = [];
@@ -709,9 +709,9 @@
 
     if (n === 1) {
       state.z0 = 50;
-      setField(['sc-z0', 'sc_z0', 'Z0', 'z0'], '50');
-      setField(['sc-z-real', 'sc_z_real', 'Z_real', 'z_real'], '50');
-      setField(['sc-z-imag', 'sc_z_imag', 'Z_imag', 'z_imag'], '0');
+      setField('sc_z0', '50');
+      setField('sc_r', '50');
+      setField('sc_x', '0');
       state.exampleNotes.push('Perfectly matched — no reflection.');
       plotImpedance(50, 0, 'Matched load', 'Z = 50 + j0 Ω gives Γ = 0 at the center of the chart.');
       return;
@@ -719,7 +719,7 @@
 
     if (n === 2) {
       state.z0 = 50;
-      setField(['sc-z0', 'sc_z0', 'Z0', 'z0'], '50');
+      setField('sc_z0', '50');
       state.exampleNotes.push('Open circuit: Γ = 1 on the right edge and VSWR = ∞.');
       addPoint({
         kind: 'open',
@@ -731,7 +731,7 @@
 
     if (n === 3) {
       state.z0 = 50;
-      setField(['sc-z0', 'sc_z0', 'Z0', 'z0'], '50');
+      setField('sc_z0', '50');
       state.exampleNotes.push('Short circuit: Γ = −1 on the left edge and VSWR = ∞.');
       addPoint({
         kind: 'short',
@@ -743,9 +743,9 @@
 
     if (n === 4) {
       state.z0 = 50;
-      setField(['sc-z0', 'sc_z0', 'Z0', 'z0'], '50');
-      setField(['sc-z-real', 'sc_z_real', 'Z_real', 'z_real'], '50');
-      setField(['sc-z-imag', 'sc_z_imag', 'Z_imag', 'z_imag'], '-50');
+      setField('sc_z0', '50');
+      setField('sc_r', '50');
+      setField('sc_x', '-50');
       state.exampleNotes.push('Capacitive load: z = 1 − j1 sits in the lower half of the Smith chart.');
       state.exampleNotes.push('Because the point is capacitive, an equal inductive reactance is a natural matching correction.');
       plotImpedance(50, -50, 'Capacitive load', 'Example: add an inductive element or stub to cancel the negative reactance.');
@@ -754,9 +754,9 @@
 
     if (n === 5) {
       state.z0 = 50;
-      setField(['sc-z0', 'sc_z0', 'Z0', 'z0'], '50');
-      setField(['sc-z-real', 'sc_z_real', 'Z_real', 'z_real'], '25');
-      setField(['sc-z-imag', 'sc_z_imag', 'Z_imag', 'z_imag'], '30');
+      setField('sc_z0', '50');
+      setField('sc_r', '25');
+      setField('sc_x', '30');
       load = plotImpedance(25, 30, 'Load ZL', 'Step 1: plot the load ZL = 25 + j30 Ω.');
       intersection = chooseR1Intersection(load.current.gamma);
       if (intersection) {
@@ -794,8 +794,8 @@
 
   function scApplyTL() {
     var point = lastPoint();
-    var thetaDeg = readNumber(['sc-tl-deg', 'sc_tl_deg', 'TL Length', 'tl_deg', 'sc-length-deg'], NaN);
-    var dirRaw = readText(['sc-tl-dir', 'sc_tl_dir', 'tl_dir', 'sc-direction'], 'generator').toLowerCase();
+    var thetaDeg = readNumber('sc_tl_deg', NaN);
+    var dirRaw = readText('sc_tl_dir', 'generator').toLowerCase();
     var direction = dirRaw === 'load' ? 'load' : 'generator';
     var factor;
     var gammaRot;
@@ -830,13 +830,14 @@
   }
 
   function scSetZ0() {
-    var newZ0 = readZ0();
+    var newZ0 = readNumber('sc_z0', NaN);
     if (!isFinite(newZ0) || newZ0 <= 0) {
-      setMessage('Z₀ must be greater than zero.');
+      setMessage('Z₀ must be greater than zero. Existing points were not changed.');
       renderResults();
       return;
     }
     state.z0 = newZ0;
+    setMessage('Impedance-defined points were renormalized to the new Z₀. Chart-click and TL points retain their Γ definitions.');
     redraw();
     renderResults();
   }
