@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BatteryCharging, Cable, ChevronRight, ExternalLink, Gauge, RadioTower, ShieldCheck, ShoppingBag, Wrench } from "lucide-react";
 
 type GearCategory = "Tools and supplies" | "Test equipment" | "Cable and fault location" | "Job comfort and power";
@@ -89,10 +89,21 @@ function ProductVisual({ item }: { item: Gear }) {
   </div>;
 }
 
+function initialFilterFromUrl(): GearFilter {
+  if (typeof window === "undefined") return "All";
+  return new URLSearchParams(window.location.search).get("filter") === "usa-made" ? "USA made" : "All";
+}
+
 export function GearMatrix() {
-  const [filter, setFilter] = useState<GearFilter>("All");
+  const [filter, setFilter] = useState<GearFilter>(initialFilterFromUrl);
   const catalogRef = useRef<HTMLDivElement>(null);
   const visible = GEAR_RECOMMENDATIONS.filter((item) => filter === "All" || (filter === "USA made" ? item.usaMade : item.category === filter));
+
+  useEffect(() => {
+    if (filter === "USA made") catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Only meant to react to the initial deep link, not every filter change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const selectCategory = (nextFilter: GearFilter) => {
     setFilter(nextFilter);
     requestAnimationFrame(() => catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));

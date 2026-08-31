@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowUpRight, Orbit, Zap } from "lucide-react";
+import { ArrowUpRight, Orbit, Wrench, Zap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NautilusTrace } from "@/components/NautilusTrace";
 import { PenroseCanvas } from "@/components/PenroseCanvas";
@@ -234,6 +234,42 @@ export default function Home() {
                   </div>
                 </div>
               </Link>
+            </FadeIn>
+
+            {/* ── RECOMMENDED GEAR ─────────────────────────────────────── */}
+            <FadeIn delay={0.28} className="bento-cell">
+              <div className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: "radial-gradient(ellipse at 20% 20%, rgba(79,139,255,0.12) 0%, transparent 60%)",
+                  }}
+                />
+                <Link href="/gear" className="relative z-10 flex flex-col flex-1">
+                  <div className="flex items-start justify-between mb-auto">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg, rgba(79,139,255,0.25) 0%, rgba(139,123,255,0.15) 100%)" }}
+                    >
+                      <Wrench className="w-4.5 h-4.5 text-[var(--accent-2)]" />
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent-2)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
+                  </div>
+                  <div className="mt-4 space-y-1.5">
+                    <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Field-tested</p>
+                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Recommended Gear</h2>
+                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                      Model-specific tools, test equipment, and field power picks.
+                    </p>
+                  </div>
+                </Link>
+                <Link
+                  href="/gear?filter=usa-made"
+                  className="relative z-10 mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--border)] px-3 py-1.5 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent-2)] hover:text-[var(--accent-2)]"
+                >
+                  <span aria-hidden="true">🇺🇸</span> USA-made picks
+                </Link>
+              </div>
             </FadeIn>
 
           </div>
