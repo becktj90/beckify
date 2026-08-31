@@ -1,4 +1,4 @@
-import { ExternalLink, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GAMES } from "@/data/site-content";
@@ -8,8 +8,9 @@ import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string }> = {
   "Cosmic Cadet": { mode: "Wave shooter", input: "Keyboard + touch", accent: "#55e6cb" },
   "Booty Butt Scooter": { mode: "Crossy hopper", input: "Tap + keyboard", accent: "#ffb84a" },
-  "New Glenn Runner": { mode: "Launch sim", input: "Keyboard + drag", accent: "#8b7bff" },
+  "New Glenn Runner": { mode: "Launch arcade", input: "Keyboard + drag", accent: "#8b7bff" },
   "Finger Runner": { mode: "One-button runner", input: "Tap + Space", accent: "#ff6b8a" },
+  "Toot Troopers": { mode: "Fart-flap flight", input: "Tap + Space", accent: "#6df0df" },
 };
 
 /**
@@ -32,7 +33,7 @@ export const Games = () => (
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Pick a quick loop, learn one verb, and try to beat your own record. The local games keep scores in this browser, so the collection stays private and fast.</p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">
-          {[{ label: "Games", value: "04", width: "100%" }, { label: "Input", value: "3", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => <div key={stat.label} className="min-w-20"><p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p><div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} /></div><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p></div>)}
+          {[{ label: "Games", value: "05", width: "100%" }, { label: "Input", value: "3", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => <div key={stat.label} className="min-w-20"><p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p><div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} /></div><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p></div>)}
         </div>
       </div>
     </FadeIn>
@@ -62,7 +63,7 @@ export const Games = () => (
               <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                 <span className="rounded-full border border-[var(--border)] px-2.5 py-1">{GAME_DETAILS[game.name]?.mode ?? "Arcade"}</span>
                 <span className="rounded-full border border-[var(--border)] px-2.5 py-1">{GAME_DETAILS[game.name]?.input ?? "Pointer"}</span>
-                {game.external ? <span className="rounded-full border border-[var(--border)] px-2.5 py-1">Beckify play host</span> : <span className="rounded-full border border-[var(--border)] px-2.5 py-1">On-site</span>}
+                <span className="rounded-full border border-[var(--border)] px-2.5 py-1">On-site</span>
               </div>
 
               <Button
@@ -79,19 +80,10 @@ export const Games = () => (
                 ) : (
                   <a
                     href={game.url}
-                    // Games hosted elsewhere open in a new tab; the ones
-                    // embedded in this site's toolbox stay in place.
-                    {...(game.external
-                      ? { target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
                     className="inline-flex items-center gap-2"
                   >
                     <span>Play Now</span>
-                    {game.external ? (
-                      <ExternalLink className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
+                    <Play className="w-4 h-4" />
                   </a>
                 )}
               </Button>

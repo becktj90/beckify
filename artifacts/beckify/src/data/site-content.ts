@@ -223,7 +223,7 @@ export interface Game {
 export const GAMES: Game[] = [
   {
     name: "Cosmic Cadet",
-    description: "A focused space-defense shooter with responsive aim, escalating waves, hull damage, pause, and fullscreen play.",
+    description: "A focused space-defense shooter with responsive aim, escalating waves, hull damage, pause, fullscreen play, and a local best score.",
     url: "/games/cosmic-cadet",
   },
   {
@@ -235,13 +235,18 @@ export const GAMES: Game[] = [
   {
     name: "New Glenn Runner",
     description:
-      "Vertical launch arcade with parallax backgrounds, smooth launch physics, and mission scoring.",
-    url: "/toolbox/#sec-arcade",
+      "A stylized vertical launch arcade mission with parallax backgrounds, quick decisions, and local mission scoring.",
+    url: "/toolbox/index.html#sec-arcade",
   },
   {
     name: "Finger Runner",
     description: "A touch-friendly one-button runner with local high scores and fast arcade pacing.",
     url: "/games/finger-runner",
+  },
+  {
+    name: "Toot Troopers",
+    description: "Original fart-powered flight starring Apollo and Rocco. Toot through sky gates and beat your local best.",
+    url: "/games/toot-troopers",
   },
 ];
 
