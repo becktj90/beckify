@@ -499,9 +499,14 @@ export function VoxelYard() {
     const pointerDown = (event: PointerEvent) => {
       event.preventDefault();
       if (!startedRef.current) { void enter(); return; }
+      if (coarse) {
+        lookDrag.active = true; lookDrag.lx = event.clientX; lookDrag.ly = event.clientY;
+        canvas.setPointerCapture(event.pointerId);
+        return;
+      }
       if (event.button === 2) { place(); return; }
       if (event.button === 0) mine();
-      if (coarse || document.pointerLockElement !== canvas) {
+      if (document.pointerLockElement !== canvas) {
         lookDrag.active = true; lookDrag.lx = event.clientX; lookDrag.ly = event.clientY;
         canvas.setPointerCapture(event.pointerId);
       }
@@ -630,8 +635,10 @@ export function VoxelYard() {
       persist();
       tone(220, 0.2, "triangle", 0.05);
     };
-    (stage as HTMLElement & { __reset?: () => void; __enter?: () => void }).__reset = resetWorld;
-    (stage as HTMLElement & { __reset?: () => void; __enter?: () => void }).__enter = enter;
+    (stage as HTMLElement & { __reset?: () => void; __enter?: () => void; __mine?: () => void; __place?: () => void }).__reset = resetWorld;
+    (stage as HTMLElement & { __reset?: () => void; __enter?: () => void; __mine?: () => void; __place?: () => void }).__enter = enter;
+    (stage as HTMLElement & { __reset?: () => void; __enter?: () => void; __mine?: () => void; __place?: () => void }).__mine = mine;
+    (stage as HTMLElement & { __reset?: () => void; __enter?: () => void; __mine?: () => void; __place?: () => void }).__place = place;
 
     return () => {
       persist();
