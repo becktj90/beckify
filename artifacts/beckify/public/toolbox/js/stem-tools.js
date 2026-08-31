@@ -102,31 +102,78 @@
   function factorial(n) { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
   function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = b; b = a % b; a = t; } return a || 1; }
 
-  function sanitizeExpr(expr) {
-    const s0 = String(expr || '').trim();
-    if (!s0) throw new Error('Enter an expression.');
-    if (/[;\[\]{}\\]/.test(s0)) throw new Error('Unsupported characters in expression.');
-    if (/(?:window|document|constructor|prototype|__proto__|Function|eval|fetch|XMLHttpRequest|while|for|class|=>)/i.test(s0)) {
-      throw new Error('Unsupported token in expression.');
+  // Calculator input is parsed as arithmetic, never compiled as JavaScript.  Keep
+  // this small allowlist in sync with the help text rather than growing a denylist.
+  const MATH_FUNCTIONS = {
+    sin: Math.sin, cos: Math.cos, tan: Math.tan, asin: Math.asin, acos: Math.acos,
+    atan: Math.atan, atan2: Math.atan2, sqrt: Math.sqrt, abs: Math.abs, pow: Math.pow,
+    exp: Math.exp, log: Math.log, log10: Math.log10, ln: Math.log, floor: Math.floor,
+    ceil: Math.ceil, round: Math.round, max: Math.max, min: Math.min,
+    sec: function (u) { return 1 / Math.cos(u); },
+    csc: function (u) { return 1 / Math.sin(u); },
+    cot: function (u) { return 1 / Math.tan(u); }
+  };
+
+  function tokenizeMathExpression(expr) {
+    const source = String(expr || '').trim();
+    if (!source) throw new Error('Enter an expression.');
+    const tokens = [];
+    let pos = 0;
+    while (pos < source.length) {
+      if (/\s/.test(source[pos])) { pos += 1; continue; }
+      const number = source.slice(pos).match(/^(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/i);
+      if (number) { tokens.push({ type: 'number', value: Number(number[0]) }); pos += number[0].length; continue; }
+      const name = source.slice(pos).match(/^[A-Za-z_][A-Za-z0-9_]*/);
+      if (name) { tokens.push({ type: 'name', value: name[0] }); pos += name[0].length; continue; }
+      const operator = source.slice(pos, pos + 2) === '**' ? '**' : source[pos];
+      if ('+-*/%^(),.'.indexOf(operator) !== -1 || operator === '**') { tokens.push({ type: 'operator', value: operator }); pos += operator.length; continue; }
+      throw new Error('Expression contains an unsupported character.');
     }
-    let s = s0.replace(/\^/g, '**');
-    s = s.replace(/\bpi\b/gi, 'PI');
-    if (!/^[0-9+\-*/().,_ %a-zA-Z]*$/.test(s)) throw new Error('Expression contains invalid characters.');
-    return s;
+    return tokens;
   }
 
   function makeSafeEvaluator(vars, expr) {
     try {
-      const clean = sanitizeExpr(expr);
-      const body = [
-        'const {sin,cos,tan,asin,acos,atan,atan2,sqrt,abs,pow,exp,log,log10,floor,ceil,round,max,min,PI,E} = Math;',
-        'const ln = log;',
-        'const sec = (u) => 1 / cos(u);',
-        'const csc = (u) => 1 / sin(u);',
-        'const cot = (u) => 1 / tan(u);',
-        'return (' + clean + ');'
-      ].join(' ');
-      return new Function(...vars, body);
+      const tokens = tokenizeMathExpression(expr);
+      let cursor = 0;
+      const variableNames = new Set(vars);
+      const peek = function () { return tokens[cursor]; };
+      const consume = function (value) {
+        const token = peek();
+        if (!token || token.value !== value) throw new Error('Expected "' + value + '".');
+        cursor += 1;
+      };
+      const parsePrimary = function () {
+        const token = peek();
+        if (!token) throw new Error('Expression ended unexpectedly.');
+        if (token.type === 'number') { cursor += 1; return function () { return token.value; }; }
+        if (token.value === '(') { cursor += 1; const nested = parseSum(); consume(')'); return nested; }
+        if (token.type !== 'name') throw new Error('Expected a number, variable, or function.');
+        cursor += 1;
+        let name = token.value;
+        if (name === 'Math' && peek() && peek().value === '.') { cursor += 1; const member = peek(); if (!member || member.type !== 'name') throw new Error('Use a supported Math function.'); name = member.value; cursor += 1; }
+        const normalized = name.toLowerCase();
+        if (peek() && peek().value === '(') {
+          const fn = MATH_FUNCTIONS[normalized];
+          if (!fn) throw new Error('Unsupported function: ' + name + '.');
+          cursor += 1;
+          const args = [];
+          if (!peek() || peek().value !== ')') { do { args.push(parseSum()); if (!peek() || peek().value !== ',') break; cursor += 1; } while (true); }
+          consume(')');
+          return function (scope) { return fn.apply(null, args.map(function (arg) { return arg(scope); })); };
+        }
+        if (normalized === 'pi') return function () { return Math.PI; };
+        if (normalized === 'e') return function () { return Math.E; };
+        if (!variableNames.has(name)) throw new Error('Unsupported identifier: ' + name + '.');
+        return function (scope) { return scope[name]; };
+      };
+      const parseUnary = function () { const token = peek(); if (token && (token.value === '+' || token.value === '-')) { cursor += 1; const next = parseUnary(); return token.value === '-' ? function (scope) { return -next(scope); } : next; } return parsePrimary(); };
+      const parsePower = function () { let left = parseUnary(); if (peek() && (peek().value === '^' || peek().value === '**')) { cursor += 1; const right = parsePower(); left = function (a, b) { return function (scope) { return Math.pow(a(scope), b(scope)); }; }(left, right); } return left; };
+      const parseProduct = function () { let left = parsePower(); while (peek() && '*/%'.indexOf(peek().value) !== -1) { const operator = peek().value; cursor += 1; const right = parsePower(); left = function (a, b, op) { return function (scope) { const x = a(scope), y = b(scope); return op === '*' ? x * y : op === '/' ? x / y : x % y; }; }(left, right, operator); } return left; };
+      const parseSum = function () { let left = parseProduct(); while (peek() && (peek().value === '+' || peek().value === '-')) { const operator = peek().value; cursor += 1; const right = parseProduct(); left = function (a, b, op) { return function (scope) { return op === '+' ? a(scope) + b(scope) : a(scope) - b(scope); }; }(left, right, operator); } return left; };
+      const evaluate = parseSum();
+      if (cursor !== tokens.length) throw new Error('Unexpected token in expression.');
+      return function () { const scope = {}; const values = arguments; vars.forEach(function (name, index) { scope[name] = values[index]; }); return evaluate(scope); };
     } catch (err) {
       throw new Error(err && err.message ? err.message : 'Invalid expression.');
     }
