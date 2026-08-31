@@ -243,6 +243,11 @@ export const GAMES: Game[] = [
     description: "A touch-friendly one-button runner with local high scores and fast arcade pacing.",
     url: "/games/finger-runner",
   },
+  {
+    name: "Toot Troopers",
+    description: "Original fart-powered flight starring Apollo and Rocco. Toot through sky gates and beat your local best.",
+    url: "/games/toot-troopers",
+  },
 ];
 
 // Legacy single-game export for backwards compatibility
