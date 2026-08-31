@@ -431,65 +431,6 @@ const categories = [
   "Chassis",
 ] as const;
 
-function PartIllustration({ part }: { part: CatalogPart }) {
-  const label = part.name.includes("Precharger")
-    ? "PRE"
-    : part.name.includes("Contactor")
-      ? "HV"
-      : part.name.includes("rings")
-        ? "18650"
-        : part.name.includes("charger")
-          ? "84V"
-          : part.name.includes("breaker")
-            ? "2P"
-            : part.name.includes("meter")
-              ? "V/A"
-              : part.name.includes("connector")
-                ? "DC"
-                : part.name.includes("relay")
-                  ? "12V"
-                  : "M14";
-  return (
-    <div
-      className="part-card-illustration"
-      role="img"
-      aria-label={`${part.name} technical reference illustration`}
-    >
-      <svg viewBox="0 0 320 200" aria-hidden="true">
-        <rect
-          x="57"
-          y="40"
-          width="206"
-          height="120"
-          rx="12"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-        />
-        <path d="M86 100h148M160 67v66" stroke="currentColor" strokeWidth="3" />
-        <circle
-          cx="96"
-          cy="70"
-          r="9"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-        />
-        <circle
-          cx="224"
-          cy="130"
-          r="9"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-        />
-      </svg>
-      <strong>{label}</strong>
-      <span>Technical reference</span>
-    </div>
-  );
-}
-
 export function VespaPartsCatalog() {
   const [filter, setFilter] = useState<(typeof categories)[number]>("All");
   const shown = useMemo(
@@ -502,86 +443,82 @@ export function VespaPartsCatalog() {
 
   return (
     <FadeIn>
-      <>
-        <style>{`.part-card-illustration{display:grid;place-content:center;min-height:12.5rem;color:var(--foreground);text-align:center;background:linear-gradient(135deg,color-mix(in srgb,var(--surface) 82%,#111),color-mix(in srgb,var(--accent) 28%,var(--background)))}.part-card-illustration svg{width:8rem;height:5rem;margin:auto}.part-card-illustration strong{font-family:var(--font-display);font-size:1.7rem;line-height:1}.part-card-illustration span{margin-top:.45rem;font-family:var(--font-mono);font-size:.58rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase}`}</style>
-        <section
-          className="journal-section parts-catalog"
-          id="parts"
-          aria-labelledby="parts-catalog-title"
-        >
-          <div className="section-heading">
-            <p className="section-index">02b / build materials</p>
-            <h2 id="parts-catalog-title">Parts, with a job to do.</h2>
-            <p>
-              Start here when sourcing a similar build. Filter by system, see
-              what each item does, then follow the supplied vendor link where
-              one was recorded.
-            </p>
-          </div>
-          <p className="affiliate-note">
-            Affiliate disclosure: some outbound product links may earn Beckify a
-            commission if you make a qualifying purchase, at no extra cost to
-            you.
+      <section
+        className="journal-section parts-section"
+        id="parts"
+        aria-labelledby="parts-title"
+      >
+        <div className="section-heading">
+          <p className="section-index">02b / bill of materials</p>
+          <h2 id="parts-title">Bill of materials</h2>
+          <p>
+            Parts used in the build, what each one was for, and where to source
+            it. Links are direct vendor URLs or affiliate links where available.
           </p>
-          <div className="part-filter" aria-label="Filter parts by system">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setFilter(category)}
-                aria-pressed={filter === category}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-          <div className="parts-catalog-grid">
-            {shown.map((part) => (
-              <article className="part-card" key={part.name}>
-                <div className="part-card-image">
-                  {part.image ? (
-                    <img
-                      src={part.image}
-                      alt={part.alt ?? part.name}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <PartIllustration part={part} />
-                  )}
-                  <span>{part.category}</span>
-                </div>
-                <div className="part-card-body">
-                  <p className="part-card-supplier">
-                    {part.supplier} · Qty {part.quantity}
-                  </p>
-                  <h3>{part.name}</h3>
-                  <p className="part-card-caption">{part.caption}</p>
-                  <div className="part-card-footer">
-                    <strong>{part.price}</strong>
+        </div>
+        <p className="affiliate-note">
+          Affiliate disclosure: some outbound product links may earn Beckify a
+          commission if you make a qualifying purchase, at no extra cost to you.
+        </p>
+        <div className="part-filter" aria-label="Filter parts by system">
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setFilter(category)}
+              aria-pressed={filter === category}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+        <div className="parts-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Part</th>
+                <th>Used for</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>
+                  <span className="sr-only">Link</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((part) => (
+                <tr key={part.name}>
+                  <td>
+                    <strong>{part.name}</strong>
+                    <small>{part.supplier}</small>
+                  </td>
+                  <td>{part.caption}</td>
+                  <td>{part.quantity}</td>
+                  <td>{part.price}</td>
+                  <td>
                     {part.href ? (
                       <a
                         href={part.href}
                         target="_blank"
                         rel="sponsored noopener noreferrer"
                       >
-                        View part <ExternalLink size={15} aria-hidden="true" />
+                        View{" "}
+                        <ExternalLink size={14} aria-hidden="true" />
                       </a>
                     ) : (
-                      <span>Purchase link unavailable</span>
+                      <span className="unavailable">Not linked</span>
                     )}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-          <p className="photo-caption">
-            Build photographs appear only where they show the listed item.
-            Supplier links are retained for the original purchase record;
-            confirm the live listing, fit, voltage, and current ratings before
-            ordering.
-          </p>
-        </section>
-      </>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="photo-caption" style={{ marginTop: "1.25rem" }}>
+          Supplier links are retained for the original purchase record; confirm
+          the live listing, fit, voltage, and current ratings before ordering.
+        </p>
+      </section>
     </FadeIn>
   );
 }

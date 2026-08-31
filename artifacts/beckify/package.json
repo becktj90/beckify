@@ -84,6 +84,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "three": "^0.185.1"
   }
 }
