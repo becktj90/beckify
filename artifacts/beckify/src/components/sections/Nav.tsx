@@ -5,8 +5,8 @@ import { EngineeringAssistant } from "@/components/EngineeringAssistant";
 import { BeckifyIcon, type BeckifyIconName } from "@/components/ui/icons/BeckifyIcon";
 
 const NAV_ICON_NAMES: Record<string, BeckifyIconName> = {
-  About: "about",
   Toolbox: "toolbox",
+  "Control Systems": "toolbox",
   Projects: "projects",
   Games: "games",
 };

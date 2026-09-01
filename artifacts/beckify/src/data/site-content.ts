@@ -53,9 +53,9 @@ export interface NavLink {
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { href: "/about", label: "About", icon: Terminal },
   { href: "/toolbox/", label: "Toolbox", icon: Wrench, external: true },
   { href: "/gear", label: "Recommended Gear", icon: RadioTower },
+  { href: "/control-systems", label: "Control Systems", icon: Zap },
   { href: "/projects", label: "Projects", icon: Rocket },
   { href: "/games", label: "Games", icon: Gamepad2 },
 ];
@@ -101,10 +101,10 @@ export const HOME_NAV_CARDS: HubCard[] = [
     icon: Gamepad2,
   },
   {
-    title: "About Me",
-    description: "Bio, background, family, and how to get in touch.",
-    href: "/about",
-    icon: Terminal,
+    title: "Control System Toolbox",
+    description: "Model plants, tune loops, and compare LQR, PID, and MPC workflows.",
+    href: "/control-systems",
+    icon: Zap,
   },
 ];
 

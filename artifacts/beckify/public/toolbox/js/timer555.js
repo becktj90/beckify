@@ -275,6 +275,24 @@ window.calc555Monostable = function () {
   appendCopyBtn(el);
 };
 
+window.load555DocExample = function () {
+  var astable = {
+    t555_r1: '10',
+    t555_r1_u: 'k',
+    t555_r2: '47',
+    t555_r2_u: 'k',
+    t555_c: '0.1',
+    t555_c_u: 'uF'
+  };
+  Object.keys(astable).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = astable[id];
+  });
+  var diode = document.getElementById('t555_diode');
+  if (diode) diode.checked = false;
+  window.calc555Astable();
+};
+
 /* Register richer report metadata than the generic scraper can infer. */
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof registerReport !== 'function') return;

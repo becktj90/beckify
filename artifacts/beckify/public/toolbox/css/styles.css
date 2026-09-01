@@ -1432,6 +1432,15 @@ body.report-open { overflow: hidden; }
 .cs-example-btn:hover, .cs-example-btn.active { border-color: var(--violet); color: var(--violet); }
 .cs-details-btn { font-size: 0.74rem; color: var(--blue); background: none; border: none; cursor: pointer; padding: 0; font-family: var(--font-main); text-decoration: underline; }
 .cs-step-box { background: rgba(79,139,255,0.06); border: 1px solid rgba(79,139,255,0.2); border-radius: 6px; padding: 10px; font-size: 0.78rem; color: var(--fg-muted); line-height: 1.6; margin-top: 8px; }
+.tool-doc-card { margin: 14px 0 18px; padding: 16px; border: 1px solid rgba(139,123,255,0.24); border-radius: 12px; background: linear-gradient(180deg, rgba(139,123,255,0.09), rgba(255,255,255,0.02)); }
+.tool-doc-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.tool-doc-title { font-size: 0.76rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #c4b5fd; margin-bottom: 8px; }
+.tool-doc-copy { margin: 0; font-size: 0.82rem; line-height: 1.7; color: var(--fg-muted); }
+.tool-doc-list { margin: 0; padding-left: 18px; font-size: 0.8rem; line-height: 1.65; color: var(--fg-muted); }
+.tool-doc-list li + li { margin-top: 6px; }
+.tool-doc-example-list { list-style: disc; }
+.tool-doc-btn { margin-top: 12px; min-height: 34px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--fg); cursor: pointer; font: 700 0.76rem var(--font-main); transition: border-color 0.2s, color 0.2s, transform 0.2s; }
+.tool-doc-btn:hover { border-color: var(--violet); color: var(--violet); transform: translateY(-1px); }
 
 /* ── Smith Chart ── */
 .sc-canvas-wrap { position: relative; display: inline-block; }

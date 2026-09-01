@@ -6336,7 +6336,7 @@
     <section id="sec-bess" class="section">
       <div class="section-header">
         <h2>&#128267; BESS Peak-Shave Optimizer</h2>
-        <p>Use linear programming to select the highest-priority loads that can be served by available battery + solar capacity.</p>
+        <p>Estimate peak-shave battery capacity, then use linear programming to select the highest-priority loads that can be served by available battery and solar power.</p>
         <details class="section-info">
           <summary>ℹ More Info — BESS Peak-Shave</summary>
           <div class="section-info-body">
@@ -6347,6 +6347,38 @@
         </details>
       </div>
       <div class="card-grid">
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Peak-Shave Capacity Quick Sizer</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Required usable energy = (Facility Peak − Target Limit) × Peak Window Hours<br>
+              Installed capacity = Usable energy ÷ DoD
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Facility Peak Demand (kW)</label>
+                <input type="number" id="bess_peak_demand" placeholder="e.g. 450" step="any" min="0" value="450">
+              </div>
+              <div>
+                <label>Target Demand Limit (kW)</label>
+                <input type="number" id="bess_target_limit" placeholder="e.g. 300" step="any" min="0" value="300">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Peak Window Duration (hours)</label>
+                <input type="number" id="bess_peak_hours" placeholder="e.g. 3" step="any" min="0" value="3">
+              </div>
+              <div>
+                <label>Depth of Discharge (%)</label>
+                <input type="number" id="bess_dod" placeholder="e.g. 80" step="any" min="1" max="100" value="80">
+              </div>
+            </div>
+            <button class="btn" onclick="calcBessQuickSizer()">Size Peak-Shave Battery</button>
+            <div id="bess_quick_result" class="result"></div>
+          </div>
+        </div>
 
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Available Capacity</div>

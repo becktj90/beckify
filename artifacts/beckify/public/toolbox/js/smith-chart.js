@@ -848,6 +848,14 @@
   window.scLoadExample = scLoadExample;
   window.scApplyTL = scApplyTL;
   window.scSetZ0 = scSetZ0;
+  window.loadSmithChartDocExample = function () {
+    setField('sc_z0', '50');
+    setField('sc_r', '25');
+    setField('sc_x', '50');
+    state.z0 = 50;
+    scClearPoints();
+    scPlotPoint();
+  };
 
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {

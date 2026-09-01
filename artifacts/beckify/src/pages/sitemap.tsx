@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowUpRight, MapIcon, Terminal, Wrench, Rocket, Gamepad2, Orbit } from "lucide-react";
+import { ArrowUpRight, Gamepad2, MapIcon, Orbit, Rocket, Terminal, Wrench, Zap } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -26,6 +26,7 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/", label: "Home", description: "Hub page — hero and links to everything below.", icon: Orbit, hue: HUES.blue },
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
   { href: "/toolbox/", label: "Toolbox", description: "40+ native EE calculators, organized by category.", icon: Wrench, hue: HUES.aqua },
+  { href: "/control-systems", label: "Control System Toolbox", description: "Interactive modeling, Bode plots, PID tuning, LQR/LQG, and MPC visualizers.", icon: Zap, hue: HUES.violet },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
   { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/gear", label: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, electrical testers, bench instruments, RF gear, and budget picks.", icon: Wrench, hue: HUES.aqua },

@@ -206,30 +206,30 @@ export default function Home() {
               </Link>
             </FadeIn>
 
-            {/* ── ABOUT ME ──────────────────────────────────────────────── */}
+            {/* ── CONTROL SYSTEM TOOLBOX ───────────────────────────────── */}
             <FadeIn delay={0.23} className="bento-cell">
-              <Link href="/about" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              <Link href="/control-systems" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "radial-gradient(ellipse at 20% 80%, rgba(139,123,255,0.1) 0%, transparent 60%)",
+                    background: "radial-gradient(ellipse at 20% 80%, rgba(79,139,255,0.14) 0%, transparent 60%)",
                   }}
                 />
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.06)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(79,139,255,0.25) 0%, rgba(139,123,255,0.12) 100%)" }}
                     >
-                      <BeckifyIcon name="about" className="w-4.5 h-4.5 text-[var(--muted)]" />
+                      <Zap className="w-4.5 h-4.5 text-[var(--accent-2)]" />
                     </div>
-                    <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--foreground)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
+                    <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent-2)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
                   <div className="mt-4 space-y-1.5">
-                    <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--muted)]">Profile</p>
-                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">About Me</h2>
+                    <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Interactive design</p>
+                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Control System Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Bio, background, family, and how to get in touch.
+                      Model plants, inspect Bode and root-locus behavior, and compare PID, LQR, and MPC workflows.
                     </p>
                   </div>
                 </div>
