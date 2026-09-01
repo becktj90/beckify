@@ -3,10 +3,13 @@ import type { SVGProps } from "react";
 export type BeckifyIconName =
   | "about"
   | "contact"
+  | "gauge"
   | "games"
   | "home"
   | "map"
+  | "menu"
   | "projects"
+  | "signal"
   | "toolbox";
 
 type BeckifyIconProps = SVGProps<SVGSVGElement> & {
@@ -22,6 +25,13 @@ const PATHS: Record<BeckifyIconName, string[]> = {
   games: ["M7 9h10a3 3 0 0 1 2.8 4.1l-1.1 3.1a2 2 0 0 1-3.6.4L14 15h-4l-1.1 1.6a2 2 0 0 1-3.6-.4l-1.1-3.1A3 3 0 0 1 7 9Z", "M8 12v3m-1.5-1.5h3", "M16 12h.01M18 14h.01"],
   contact: ["M4 6h16v12H4z", "m5 7 7 6 7-6", "M8 15h3"],
   map: ["M4 5h5l3-2 3 2h5v14h-5l-3 2-3-2H4z", "M9 5v14m6-14v14"],
+  // A dial with a needle — distinguishes Control Systems from the toolbox
+  // wrench in the nav, where both previously used the same glyph.
+  gauge: ["M4 17a8 8 0 0 1 16 0", "M12 17 15.5 10.5", "M12 17h.01"],
+  menu: ["M4 7h16", "M4 12h16", "M4 17h16"],
+  // A mast with a signal arc — Recommended Gear is test/RF equipment, and
+  // previously had no entry here, silently falling back to the home icon.
+  signal: ["M12 20v-9", "M8 20h8", "M8.5 8a3.8 3.8 0 0 1 7 0", "M12 5h.01"],
 };
 
 export function BeckifyIcon({ name, title, ...props }: BeckifyIconProps) {
