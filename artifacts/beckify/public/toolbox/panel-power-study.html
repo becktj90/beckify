@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Schedule Power Study</title>
+  <link rel="stylesheet" href="css/panel-schedule.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero screen-only">
+      <div class="title-bar">
+        <span class="title-bar-text">Panel Schedule Power Study.exe</span>
+        <div class="title-bar-actions" aria-hidden="true">
+          <span class="win-dot">_</span>
+          <span class="win-dot">□</span>
+          <span class="win-dot">✕</span>
+        </div>
+      </div>
+      <div class="hero-body">
+        <div>
+          <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
+          <h1>Panel Schedule Power Study</h1>
+          <p class="hero-copy">Upload a clear panel schedule photo, review OCR output, correct every field, and run a full load/power study with demand, diversity, and expansion metrics before printing or saving.</p>
+        </div>
+        <div class="toolbar toolbar-wrap" style="justify-content:flex-end">
+          <button id="saveJsonButton" class="btn" type="button">Save Data (JSON)</button>
+          <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="window screen-only" aria-labelledby="upload-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="upload-title">Image Intake</span>
+        </div>
+        <div class="window-body stack-lg">
+          <div class="toolbar">
+            <label class="btn" for="imageInput">Upload Image</label>
+            <input id="imageInput" type="file" accept="image/*" hidden>
+            <button id="processButton" class="btn btn-primary" type="button" disabled>Read Schedule</button>
+            <button id="resetButton" class="btn" type="button">Reset</button>
+          </div>
+
+          <label id="dropZone" class="drop-zone" for="imageInput">
+            <span class="drop-zone-icon">📂</span>
+            <strong>Drag &amp; drop a panel schedule here</strong>
+            <span>For best OCR: square to camera, even lighting, high contrast, and all rows visible.</span>
+          </label>
+
+          <div class="status-strip" role="status" aria-live="polite">
+            <span id="statusText">Awaiting image upload.</span>
+            <span id="fileName">No file selected</span>
+          </div>
+
+          <div class="progress-shell" aria-label="OCR progress">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <span id="progressLabel">0%</span>
+          </div>
+
+          <div class="preview-frame">
+            <img id="imagePreview" alt="Uploaded panel schedule preview">
+            <div id="previewPlaceholder" class="preview-placeholder">Image preview appears here.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="window screen-only" aria-labelledby="editor-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="editor-title">OCR Review + Manual Corrections</span>
+        </div>
+        <div class="window-body stack-lg">
+          <div class="meta-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+            <label>
+              <span>Panel Name</span>
+              <input id="panelName" type="text" placeholder="MDP-1">
+            </label>
+            <label>
+              <span>Voltage</span>
+              <input id="panelVoltage" type="text" placeholder="208Y/120V">
+            </label>
+            <label>
+              <span>Main Rating (A)</span>
+              <input id="panelMainRating" type="number" min="0" step="any" placeholder="225">
+            </label>
+            <label>
+              <span>Feed</span>
+              <input id="panelFeed" type="text" placeholder="225A MCB">
+            </label>
+            <label>
+              <span>Main Type</span>
+              <select id="panelMainType">
+                <option value="MLO" selected>Main Lug Only (MLO)</option>
+                <option value="MCB">Main Breaker (MCB)</option>
+              </select>
+            </label>
+            <label>
+              <span>Number of Positions</span>
+              <input id="panelPositions" type="number" min="1" step="1" value="42">
+            </label>
+            <label>
+              <span>Default Breaker Series</span>
+              <input id="panelBreakerSeries" type="text" placeholder="QO">
+            </label>
+            <label>
+              <span>Date</span>
+              <input id="panelDate" type="text" placeholder="2026-05-07">
+            </label>
+            <label>
+              <span>System phase</span>
+              <select id="panelPhase">
+                <option value="3" selected>3-phase, 4-wire</option>
+                <option value="1">Single-phase</option>
+              </select>
+            </label>
+            <label>
+              <span>System diversity factor</span>
+              <input id="panelDiversity" type="number" min="1" step="0.01" value="1" aria-describedby="diversityHelp">
+            </label>
+          </div>
+          <p id="diversityHelp" class="field-help">Use 1.00 when no documented diversity study exists. Values above 1.00 reduce the summed circuit demand to estimated coincident demand.</p>
+
+          <div class="toolbar toolbar-wrap">
+            <button id="parseTextButton" class="btn" type="button">Parse Text</button>
+            <button id="addRowButton" class="btn" type="button">Add Circuit Row</button>
+            <button id="fillSlotsButton" class="btn" type="button">Seed Positions</button>
+          </div>
+
+          <label class="field-block">
+            <span>Raw OCR Text</span>
+            <textarea id="rawText" rows="8" placeholder="OCR output appears here. Edit and re-parse as needed."></textarea>
+          </label>
+
+          <div class="table-wrap">
+            <table class="editor-table">
+              <thead>
+                <tr>
+                  <th>Ckt</th>
+                  <th>Load Description</th>
+                  <th>Trip/Amps</th>
+                  <th>Series</th>
+                  <th>Poles</th>
+                  <th>Circuit Class</th>
+                  <th>Load Type</th>
+                  <th>Est. Load A</th>
+                  <th>Demand %</th>
+                  <th class="col-actions">Action</th>
+                </tr>
+              </thead>
+              <tbody id="editorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="window screen-only" aria-labelledby="analysis-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="analysis-title">Power Study Summary</span>
+        </div>
+        <div class="window-body stack-lg">
+          <div class="analysis-grid" id="analysisGrid" aria-live="polite"></div>
+          <div id="analysisGuidance" class="analysis-guidance"></div>
+          <p class="field-help">Planning estimate only. Validate all OCR values and perform formal design checks per governing codes and engineering standards.</p>
+        </div>
+      </section>
+
+      <section class="window preview-window" aria-labelledby="print-preview-title">
+        <div class="title-bar screen-only">
+          <span class="title-bar-text" id="print-preview-title">Print Preview</span>
+        </div>
+        <div class="window-body preview-body">
+          <article id="printSheet" class="print-sheet">
+            <header class="print-header">
+              <div class="print-header-top">
+                <div>
+                  <p class="print-eyebrow">Panel Schedule</p>
+                  <h2 id="sheetPanelName">Untitled Panel</h2>
+                </div>
+                <div class="print-logo">Beckify Electrical Engineering Toolbox</div>
+              </div>
+              <div class="print-meta-grid">
+                <div class="print-meta-field"><span>Voltage</span><strong id="sheetVoltage">—</strong></div>
+                <div class="print-meta-field"><span>Feed</span><strong id="sheetFeed">—</strong></div>
+                <div class="print-meta-field"><span>Main</span><strong id="sheetMain">—</strong></div>
+                <div class="print-meta-field"><span>Positions</span><strong id="sheetPositions">—</strong></div>
+                <div class="print-meta-field"><span>Date</span><strong id="sheetDate">—</strong></div>
+              </div>
+            </header>
+
+            <table class="schedule-table" aria-label="Printable panel schedule">
+              <thead>
+                <tr>
+                  <th>Ckt</th>
+                  <th>Description</th>
+                  <th>Trip</th>
+                  <th>P</th>
+                  <th>Cls</th>
+                  <th>Series</th>
+                  <th>Series</th>
+                  <th>Cls</th>
+                  <th>P</th>
+                  <th>Trip</th>
+                  <th>Description</th>
+                  <th>Ckt</th>
+                </tr>
+              </thead>
+              <tbody id="printScheduleBody"></tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="js/panel-power-study.js"></script>
+</body>
+</html>
