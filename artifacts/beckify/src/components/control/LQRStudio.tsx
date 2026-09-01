@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
@@ -26,6 +26,14 @@ function matrixToText(matrix: Matrix) {
   return matrix.map((row) => row.map((value) => value.toFixed(3)).join(", ")).join("\n");
 }
 
+function defaultDiagonalText(order: number, first: number, rest: number) {
+  return Array.from({ length: order }, (_, index) => (index === 0 ? first : rest)).join(", ");
+}
+
+function defaultPoleText(order: number) {
+  return Array.from({ length: order }, (_, index) => `-${(2.5 + index * 0.4).toFixed(1)}`).join(", ");
+}
+
 export function LQRStudio({
   system,
   exampleLabel,
@@ -35,11 +43,18 @@ export function LQRStudio({
   exampleLabel: string;
   onLoadExample?: () => void;
 }) {
-  const [qText, setQText] = useState(system.A.map((_, index) => (index === 0 ? 12 : 1)).join(", "));
+  const order = system.A.length;
+  const [qText, setQText] = useState(() => defaultDiagonalText(order, 12, 1));
   const [rText, setRText] = useState("0.5");
-  const [wText, setWText] = useState(system.A.map((_, index) => (index === 0 ? 0.4 : 0.1)).join(", "));
+  const [wText, setWText] = useState(() => defaultDiagonalText(order, 0.4, 0.1));
   const [vText, setVText] = useState("0.3");
-  const [poleText, setPoleText] = useState("-2.5, -2.8, -3.2, -3.5");
+  const [poleText, setPoleText] = useState(() => defaultPoleText(order));
+
+  useEffect(() => {
+    setQText(defaultDiagonalText(order, 12, 1));
+    setWText(defaultDiagonalText(order, 0.4, 0.1));
+    setPoleText(defaultPoleText(order));
+  }, [exampleLabel, order]);
 
   const q = useMemo(() => diagonalFromText(qText), [qText]);
   const r = useMemo(() => diagonalFromText(rText), [rText]);

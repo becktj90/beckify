@@ -130,8 +130,8 @@ export function GearMatrix() {
   const visible = useMemo(() => GEAR_RECOMMENDATIONS.filter((item) => filter === "All" || (filter === "USA made" ? item.usaMade : item.category === filter)).sort((left, right) => Number(Boolean(right.usaMade)) - Number(Boolean(left.usaMade))), [filter]);
 
   useEffect(() => {
-    if (filter === "USA made") catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [filter]);
+    if (initialFilterFromUrl() === "USA made") catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const selectCategory = (nextFilter: GearFilter) => {
     setFilter(nextFilter);

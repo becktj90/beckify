@@ -29,7 +29,7 @@ function simulatePredictiveController({
 
   const propagate = (state: number[], u: number) => {
     const next = state.map((_, rowIndex) => state.reduce((sum, value, columnIndex) => sum + value * (system.A[rowIndex]?.[columnIndex] ?? 0), 0) + (system.B[rowIndex]?.[0] ?? 0) * u);
-    const y = next.reduce((sum, value, columnIndex) => sum + value * (system.C[0]?.[columnIndex] ?? 0), 0) + (system.D[0]?.[0] ?? 0) * u;
+    const y = state.reduce((sum, value, columnIndex) => sum + value * (system.C[0]?.[columnIndex] ?? 0), 0) + (system.D[0]?.[0] ?? 0) * u;
     return { next, y };
   };
 
@@ -155,16 +155,17 @@ export function MPCSimulator({
           </ChartContainer>
         </div>
         <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
-          <p className="text-sm font-semibold text-[var(--foreground)]">LQR reference vs MPC control effort</p>
+          <p className="text-sm font-semibold text-[var(--foreground)]">MPC control effort and LQR output reference</p>
           <ChartContainer config={chartConfig} className="mt-4 h-72 w-full">
             <LineChart data={predictive.map((point, index) => ({ ...point, lqr: lqrStep[index]?.y ?? 0 }))}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="step" unit=" s" />
-              <YAxis />
+              <YAxis yAxisId="control" />
+              <YAxis yAxisId="output" orientation="right" />
               <Tooltip content={<ChartTooltipContent />} />
               <Legend />
-              <Line type="monotone" dataKey="u" stroke="var(--color-control)" dot={false} strokeWidth={2} />
-              <Line type="monotone" dataKey="lqr" stroke="var(--color-output)" dot={false} strokeDasharray="4 4" />
+              <Line type="monotone" dataKey="u" yAxisId="control" stroke="var(--color-control)" dot={false} strokeWidth={2} />
+              <Line type="monotone" dataKey="lqr" yAxisId="output" stroke="var(--color-output)" dot={false} strokeDasharray="4 4" />
             </LineChart>
           </ChartContainer>
         </div>

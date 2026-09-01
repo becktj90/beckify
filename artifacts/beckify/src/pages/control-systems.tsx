@@ -58,7 +58,7 @@ const CONTROL_PRESETS: Preset[] = [
   {
     id: "dc-motor",
     label: "DC Motor Speed Control",
-    summary: "Second-order motor model for PID tuning, bode analysis, and disturbance rejection tradeoffs.",
+    summary: "Second-order motor model for PID tuning, Bode analysis, and disturbance rejection tradeoffs.",
     transferFunction: { numerator: [0.6], denominator: [0.002, 0.08, 0.52] },
     stateSpace: {
       A: [[0, 1], [-260, -40]],
@@ -221,6 +221,7 @@ export default function ControlSystemsPage() {
   const metrics = useMemo(() => computePerformanceMetrics(continuousStep), [continuousStep]);
   const discrete = useMemo(() => discretizeStateSpace(stateSpace, sampleTime, discretizationMethod), [stateSpace, sampleTime, discretizationMethod]);
   const discreteStep = useMemo(() => simulateDiscreteSystem(discrete, { steps: 40 }), [discrete]);
+  const discreteByTime = useMemo(() => new Map(discreteStep.map((point) => [point.t.toFixed(2), point.y])), [discreteStep]);
   const tfStateSpace = useMemo(() => transferFunctionToStateSpace(transferFunction), [transferFunction]);
   const tfPoleZero = useMemo(() => poleZeroMap(transferFunction), [transferFunction]);
   const matrixEditors: { label: string; value: string; setter: Dispatch<SetStateAction<string>> }[] = [
@@ -350,7 +351,7 @@ export default function ControlSystemsPage() {
                   <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
                     <p className="text-sm font-semibold text-[var(--foreground)]">Continuous vs discrete step response</p>
                     <ChartContainer config={responseChartConfig} className="mt-4 h-80 w-full">
-                      <LineChart data={continuousStep.map((point, index) => ({ ...point, discrete: discreteStep[index]?.y ?? null }))}>
+                      <LineChart data={continuousStep.map((point) => ({ ...point, discrete: discreteByTime.get(point.t.toFixed(2)) ?? null }))}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="t" unit=" s" />
                         <YAxis />
