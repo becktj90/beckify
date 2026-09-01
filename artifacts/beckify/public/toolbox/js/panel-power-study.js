@@ -481,15 +481,15 @@ function renderEditorTable() {
         <td><input type="text" data-field="trip" data-index="${index}" value="${escapeHtml(row.trip)}" placeholder="20A"></td>
         <td><input type="text" data-field="breakerSeries" data-index="${index}" value="${escapeHtml(breakerSeries)}" placeholder="QO"></td>
         <td>
-          <select data-field="poles" data-index="${index}">
+          <select data-field="poles" data-index="${index}" aria-label="Poles for circuit ${escapeHtml(row.circuit || String(index + 1))}">
             <option value="" ${row.poles ? '' : 'selected'}>—</option>
             <option value="1" ${row.poles === '1' ? 'selected' : ''}>1</option>
             <option value="2" ${row.poles === '2' ? 'selected' : ''}>2</option>
             <option value="3" ${row.poles === '3' ? 'selected' : ''}>3</option>
           </select>
         </td>
-        <td><select data-field="circuitClass" data-index="${index}">${CIRCUIT_CLASSES.map(option => `<option value="${escapeHtml(option)}" ${circuitClass === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
-        <td><select data-field="loadType" data-index="${index}">${LOAD_TYPES.map(option => `<option value="${escapeHtml(option)}" ${type === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
+        <td><select data-field="circuitClass" data-index="${index}" aria-label="Circuit class for circuit ${escapeHtml(row.circuit || String(index + 1))}">${CIRCUIT_CLASSES.map(option => `<option value="${escapeHtml(option)}" ${circuitClass === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
+        <td><select data-field="loadType" data-index="${index}" aria-label="Load type for circuit ${escapeHtml(row.circuit || String(index + 1))}">${LOAD_TYPES.map(option => `<option value="${escapeHtml(option)}" ${type === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
         <td><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA"></td>
         <td><input type="number" min="0" step="0.01" data-field="demandFactor" data-index="${index}" value="${escapeHtml(demandFactor)}" aria-label="Demand factor for circuit ${escapeHtml(row.circuit || String(index + 1))}"></td>
         <td><button class="btn btn-row-delete" type="button" data-delete-index="${index}">Delete</button></td>

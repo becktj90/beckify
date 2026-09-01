@@ -137,6 +137,16 @@ button {
   align-items: start;
 }
 
+/* Grid items default to min-width: auto, which refuses to shrink below the
+   intrinsic width of their content — here, the OCR review table. That silently
+   defeats .table-wrap's own overflow:auto and .toolbar's flex-wrap, growing the
+   whole grid track (and the page) far past the viewport instead of scrolling
+   just the table. min-width: 0 lets the grid item actually shrink to its track,
+   so the wide table scrolls inside its own box like it was meant to. */
+.workspace > .window {
+  min-width: 0;
+}
+
 .stack-lg > * + * {
   margin-top: 14px;
 }
