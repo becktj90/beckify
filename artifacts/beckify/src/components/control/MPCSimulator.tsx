@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
@@ -54,7 +54,7 @@ function simulatePredictiveController({
     const actual = propagate(x, best.u);
     x = actual.next;
     lastU = best.u;
-    preview.push({ step: Number((step + 1) * dt).toFixed(2), y: actual.y, u: best.u, constrainedY: clamp(actual.y, -outputLimit, outputLimit) });
+    preview.push({ step: Number(((step + 1) * dt).toFixed(2)), y: actual.y, u: best.u, constrainedY: clamp(actual.y, -outputLimit, outputLimit) });
   }
 
   return preview;
@@ -87,6 +87,12 @@ export function MPCSimulator({
   const lqrStep = useMemo(() => simulateStepResponse(system, { duration: 6, dt: 0.05, feedbackGain: lqr.K }), [system, lqr]);
   const predictive = useMemo(() => simulatePredictiveController({ system, predictionHorizon, controlHorizon, outputLimit, slewLimit }), [system, predictionHorizon, controlHorizon, outputLimit, slewLimit]);
   const phasePortrait = predictive.map((point, index) => ({ x1: point.y, x2: index === 0 ? point.y / (system.sampleTime ?? 0.1) : (point.y - predictive[index - 1].y) / (system.sampleTime ?? 0.1) }));
+  const sliderConfigs: { label: string; value: number; setter: Dispatch<SetStateAction<number>>; min: number; max: number; step: number }[] = [
+    { label: "Prediction horizon (Nₚ)", value: predictionHorizon, setter: setPredictionHorizon, min: 4, max: 16, step: 1 },
+    { label: "Control horizon (N𝚌)", value: controlHorizon, setter: setControlHorizon, min: 1, max: 8, step: 1 },
+    { label: "Output limit", value: outputLimit, setter: setOutputLimit, min: 0.2, max: 1.2, step: 0.05 },
+    { label: "Δu max", value: slewLimit, setter: setSlewLimit, min: 0.05, max: 0.5, step: 0.01 },
+  ];
 
   return (
     <section className="card-surface rounded-3xl p-6">
@@ -124,16 +130,11 @@ export function MPCSimulator({
       </details>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["Prediction horizon (Nₚ)", predictionHorizon, setPredictionHorizon, 4, 16, 1],
-          ["Control horizon (N𝚌)", controlHorizon, setControlHorizon, 1, 8, 1],
-          ["Output limit", outputLimit, setOutputLimit, 0.2, 1.2, 0.05],
-          ["Δu max", slewLimit, setSlewLimit, 0.05, 0.5, 0.01],
-        ].map(([label, value, setter, min, max, step]) => (
-          <label key={String(label)} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]">
+        {sliderConfigs.map(({ label, value, setter, min, max, step }) => (
+          <label key={label} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]">
             <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</span>
-            <input className="mt-3 w-full" type="range" min={Number(min)} max={Number(max)} step={Number(step)} value={Number(value)} onChange={(event) => setter(Number(event.target.value))} />
-            <span className="mt-2 block text-lg font-semibold text-[var(--foreground)]">{Number(value).toFixed(step < 1 ? 2 : 0)}</span>
+            <input className="mt-3 w-full" type="range" min={min} max={max} step={step} value={value} onChange={(event) => setter(Number(event.target.value))} />
+            <span className="mt-2 block text-lg font-semibold text-[var(--foreground)]">{value.toFixed(step < 1 ? 2 : 0)}</span>
           </label>
         ))}
       </div>

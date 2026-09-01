@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Binary, BrainCircuit, Gauge, Radar, SlidersHorizontal, Waves, Zap } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
@@ -167,6 +167,11 @@ function PidTunerCard({ preset }: { preset: Preset }) {
     if (mode === "P") return { kp: T / (K * (filter + L)), ki: 0, kd: 0 };
     return { kp: (T + 0.5 * L) / (K * (filter + L)), ki: 1 / (T + 0.5 * L), kd: (T * L) / (2 * T + L) };
   }, [mode, method, gain, timeConstant, deadTime]);
+  const sliderConfigs: { label: string; value: number; setter: Dispatch<SetStateAction<number>>; min: number; max: number; step: number }[] = [
+    { label: "Plant gain", value: gain, setter: setGain, min: 0.2, max: 4, step: 0.05 },
+    { label: "Time constant", value: timeConstant, setter: setTimeConstant, min: 0.1, max: 3, step: 0.05 },
+    { label: "Dead time", value: deadTime, setter: setDeadTime, min: 0.01, max: 0.5, step: 0.01 },
+  ];
 
   return (
     <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-5">
@@ -188,7 +193,7 @@ function PidTunerCard({ preset }: { preset: Preset }) {
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <label className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]"><span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Controller</span><select className="mt-3 w-full rounded-xl border border-[var(--border)] bg-black/25 p-3 text-[var(--foreground)]" value={mode} onChange={(event) => setMode(event.target.value)}><option>P</option><option>PI</option><option>PD</option><option>PID</option></select></label>
         <label className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]"><span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Method</span><select className="mt-3 w-full rounded-xl border border-[var(--border)] bg-black/25 p-3 text-[var(--foreground)]" value={method} onChange={(event) => setMethod(event.target.value)}><option>IMC</option><option>Ziegler-Nichols</option><option>Cohen-Coon</option></select></label>
-        {[["Plant gain", gain, setGain, 0.2, 4, 0.05], ["Time constant", timeConstant, setTimeConstant, 0.1, 3, 0.05], ["Dead time", deadTime, setDeadTime, 0.01, 0.5, 0.01]].map(([label, value, setter, min, max, step]) => <label key={String(label)} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]"><span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</span><input className="mt-3 w-full" type="range" min={Number(min)} max={Number(max)} step={Number(step)} value={Number(value)} onChange={(event) => setter(Number(event.target.value))} /><span className="mt-2 block text-lg font-semibold text-[var(--foreground)]">{Number(value).toFixed(2)}</span></label>)}
+        {sliderConfigs.map(({ label, value, setter, min, max, step }) => <label key={label} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]"><span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</span><input className="mt-3 w-full" type="range" min={min} max={max} step={step} value={value} onChange={(event) => setter(Number(event.target.value))} /><span className="mt-2 block text-lg font-semibold text-[var(--foreground)]">{value.toFixed(2)}</span></label>)}
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         {[ ["Kp", tuning.kp], ["Ki", tuning.ki], ["Kd", tuning.kd] ].map(([label, value]) => <div key={String(label)} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4"><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{label}</p><p className="mt-2 text-xl font-semibold text-[var(--foreground)]">{fmt(Number(value), 3)}</p></div>)}
@@ -218,6 +223,12 @@ export default function ControlSystemsPage() {
   const discreteStep = useMemo(() => simulateDiscreteSystem(discrete, { steps: 40 }), [discrete]);
   const tfStateSpace = useMemo(() => transferFunctionToStateSpace(transferFunction), [transferFunction]);
   const tfPoleZero = useMemo(() => poleZeroMap(transferFunction), [transferFunction]);
+  const matrixEditors: { label: string; value: string; setter: Dispatch<SetStateAction<string>> }[] = [
+    { label: "A matrix", value: aText, setter: setAText },
+    { label: "B matrix", value: bText, setter: setBText },
+    { label: "C matrix", value: cText, setter: setCText },
+    { label: "D matrix", value: dText, setter: setDText },
+  ];
 
   const loadPreset = (next: Preset) => {
     setPresetId(next.id);
@@ -303,7 +314,7 @@ export default function ControlSystemsPage() {
                     </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {[ ["A matrix", aText, setAText], ["B matrix", bText, setBText], ["C matrix", cText, setCText], ["D matrix", dText, setDText] ].map(([label, value, setter]) => <label key={String(label)} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]"><span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</span><textarea className="mt-3 min-h-28 w-full rounded-xl border border-[var(--border)] bg-black/25 p-3 text-[var(--foreground)]" value={String(value)} onChange={(event) => setter(event.target.value)} /></label>)}
+                    {matrixEditors.map(({ label, value, setter }) => <label key={label} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]"><span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</span><textarea className="mt-3 min-h-28 w-full rounded-xl border border-[var(--border)] bg-black/25 p-3 text-[var(--foreground)]" value={value} onChange={(event) => setter(event.target.value)} /></label>)}
                   </div>
                 </div>
                 <div className="mt-6 grid gap-4 xl:grid-cols-3">

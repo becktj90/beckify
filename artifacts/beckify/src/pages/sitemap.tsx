@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowUpRight, MapIcon, Terminal, Wrench, Rocket, Gamepad2, Orbit } from "lucide-react";
+import { ArrowUpRight, Gamepad2, MapIcon, Orbit, Rocket, Terminal, Wrench, Zap } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
