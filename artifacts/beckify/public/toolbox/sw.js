@@ -31,7 +31,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 
@@ -40,6 +40,7 @@ const SHELL = [
   './index.html',
   './manifest.json',
   './panel-schedule.html',
+  './panel-power-study.html',
   './css/styles.css',
   './css/panel-schedule.css',
   './js/vendor/solver.js',
@@ -57,6 +58,7 @@ const SHELL = [
   './js/projects-ui.js',
   './js/arcade.js',
   './js/panel-schedule.js',
+  './js/panel-power-study.js',
   './js/conduit-guide.js',
   './js/xfmr-wizard.js',
   './js/circuit-sim.js',

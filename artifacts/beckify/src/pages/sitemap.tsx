@@ -96,7 +96,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   },
   {
     label: "Tools", hue: HUES.orange, anchor: "sec-convert",
-    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule Load Analyzer"],
+    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule Load Analyzer", "Panel Schedule Power Study"],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",

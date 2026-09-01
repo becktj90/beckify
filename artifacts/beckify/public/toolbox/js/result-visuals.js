@@ -414,7 +414,7 @@
     if (id === 'sec-power-ac') return powerTriangle(shell(result, 'Power triangle showing real, reactive, and apparent power'));
     if (id === 'sec-tdr') return pulseTrace(shell(result, 'Time-domain reflectometry launch pulse and reflected fault event'));
     if (id === 'sec-stem-tools') return numericSignal(shell(result, 'Visual summary of the numerical values shown above'), values.length ? values : [0, 1]);
-    if (id === 'sec-panel-schedule') return panelLoad(shell(result, 'Panel schedule load categories building toward a capacity estimate'));
+    if (id === 'sec-panel-schedule' || id === 'sec-panel-power-study') return panelLoad(shell(result, 'Panel schedule load categories building toward a capacity estimate'));
     return numericSignal(shell(result, 'Data-driven visual summary of the calculated values shown above'), values.length ? values : [0, 1]);
   }
 

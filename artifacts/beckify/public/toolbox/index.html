@@ -229,6 +229,7 @@
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule photo OCR load analyzer FLA demand diversity capacity circuit directory">Panel Schedule Load Analyzer</button>
+      <button class="nav-btn" data-target="sec-panel-power-study" data-keywords="panel schedule power study OCR breaker sizes series poles circuit class positions main rating demand factor diversity expansion">Panel Schedule Power Study</button>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
     </div>
@@ -310,6 +311,7 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Analyzer</a></li>
             <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-power-study">Panel Schedule Power Study</a></li>
           </ul>
         </div>
 
@@ -397,6 +399,7 @@
             <li><a class="home-tool-link" href="#sec-cm">Circular Mils</a></li>
             <li><a class="home-tool-link" href="#sec-photometrics">Photometrics</a></li>
             <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-power-study">Panel Schedule Power Study</a></li>
           </ul>
         </div>
 
@@ -6046,6 +6049,35 @@
             <div class="note">This browser-only workspace OCRs a panel image, suggests load categories from descriptions, then lets you correct circuits and calculate estimated kVA, current, diversity, and available capacity.</div>
             <p style="margin-top:10px">
               <a class="btn btn-accent" href="panel-schedule.html">Open Panel Schedule Load Analyzer</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         PANEL POWER STUDY
+         ════════════════════════════════════════ -->
+    <section id="sec-panel-power-study" class="section">
+      <div class="section-header">
+        <h2>📊 Panel Schedule Power Study</h2>
+        <p>Extract panel schedule data from a photo, manually correct every field, then run a full demand/diversity/capacity study.</p>
+        <details class="section-info">
+          <summary>&#8505; More Info &mdash; Panel Schedule Power Study</summary>
+          <div class="section-info-body">
+            This browser-only tool uses <strong>Tesseract.js</strong> to read schedule text from a clear panel photo and prefill breaker size, poles, and circuit details for review. You can manually edit panel metadata and every circuit row, including breaker series, circuit class, and positions used, then print a clean panel schedule or save the reviewed data to JSON.
+            <br><br>
+            The study view reports connected load, adjusted demand, coincident demand, calculated demand/diversity factors, and estimated room for expansion based on entered main rating and voltage.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Panel Power Study Tool</div>
+          <div class="card-body">
+            <div class="note">Start with OCR extraction from an image, manually correct any mistakes, then generate a printable clean schedule with a full panel demand/capacity study.</div>
+            <p style="margin-top:10px">
+              <a class="btn btn-accent" href="panel-power-study.html">Open Panel Schedule Power Study</a>
             </p>
           </div>
         </div>

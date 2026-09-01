@@ -19,7 +19,7 @@ export const TOOLBOX_CALCULATORS = [
   "sec-wire-select", "sec-sc", "sec-ups", "sec-gen", "sec-hybrid", "sec-ebike-tools",
   "sec-nec", "sec-lighting-opt", "sec-bldg-load", "sec-load-factors", "sec-lsi", "sec-bess", "sec-tap",
   "sec-harmonics", "sec-haz", "sec-isloop", "sec-555", "sec-convert", "sec-cm",
-  "sec-photometrics", "sec-panel-schedule", "sec-tdr", "sec-smith-chart", "sec-xfmr-wizard",
+  "sec-photometrics", "sec-panel-schedule", "sec-panel-power-study", "sec-tdr", "sec-smith-chart", "sec-xfmr-wizard",
 ];
 
 export function generateSitemapXml(entries: SitemapEntry[], siteUrl = "https://beckify.com") {
