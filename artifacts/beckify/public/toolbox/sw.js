@@ -31,7 +31,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 
@@ -65,6 +65,8 @@ const SHELL = [
   './js/smith-chart.js',
   './js/stem-tools.js',
   './js/math-explanations.js',
+  './js/analog-schematics.js',
+  './js/analog-tools.js',
   './js/icons.js',
   './icons/icon-192.png',
   './icons/icon-512.png',

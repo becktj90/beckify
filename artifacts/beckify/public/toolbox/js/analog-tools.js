@@ -23,7 +23,22 @@
     schmitt: () => `<div class="input-group">${field('High output rail', 'ao_vh', 5, 'V')}${field('Low output rail', 'ao_vl', 0, 'V')}</div><div class="input-group">${field('R top', 'ao_rf', 10000, 'Ω')}${field('R bottom', 'ao_rg', 10000, 'Ω')}</div>`,
     instrumentation: () => `<div class="input-group">${field('Differential input', 'ao_vin', 0.01, 'V')}${field('Gain resistor RG', 'ao_rg', 1000, 'Ω')}</div><div class="input-group single">${field('Internal gain constant', 'ao_k', 50000, 'Ω')}</div>`,
   };
-  window.renderOpAmpFields = function () { const type = $('ao_type')?.value || 'inverting'; $('ao_fields').innerHTML = opFields[type](); };
+  function renderOpAmpSchematic(type) {
+    const host = $('ao_schematic');
+    if (!host || !window.AnalogSchematics) return;
+    host.innerHTML = window.AnalogSchematics.opAmp(type);
+    const info = window.AnalogSchematics.opAmpTransfer(type);
+    const formula = $('ao_transfer');
+    if (formula && info) formula.innerHTML = `<div class="analog-formula">${info.h}</div><p class="analog-formula-note">${info.note}</p>`;
+    const label = $('ao_schematic_label');
+    if (label) label.textContent = $('ao_type')?.selectedOptions?.[0]?.textContent || '';
+  }
+
+  window.renderOpAmpFields = function () {
+    const type = $('ao_type')?.value || 'inverting';
+    $('ao_fields').innerHTML = opFields[type]();
+    renderOpAmpSchematic(type);
+  };
   window.calcOpAmp = function () {
     const host = $('ao_result'); host.textContent = ''; const type = $('ao_type').value; const n = (id) => num(id);
     const Rf = n('ao_rf'), Rin = n('ao_rin'), Rg = n('ao_rg'), Vin = n('ao_vin');
@@ -43,7 +58,55 @@
   };
   window.showAnalogPanel = function (name) { ['opamp', 'filter'].forEach((item) => { $('analog-panel-' + item).hidden = item !== name; $('analog-tab-' + item).classList.toggle('active', item === name); }); if (name === 'filter') window.calcAnalogFilter(); };
   function mag(type, x, q, gain) { const d = Math.sqrt((1 - x * x) ** 2 + (x / q) ** 2); if (['rc-low'].includes(type)) return gain / Math.sqrt(1 + x * x); if (['rc-high'].includes(type)) return gain * x / Math.sqrt(1 + x * x); if (['sk-low'].includes(type)) return gain / d; if (['sk-high'].includes(type)) return gain * x * x / d; if (['rlc-band', 'mfb-band', 'state-variable'].includes(type)) return gain * (x / q) / d; if (['rlc-notch', 'twin-t'].includes(type)) return gain * Math.abs(1 - x * x) / d; return gain; }
-  function plot(type, f0, q, gain) { const w = 700, h = 285, l = 58, r = 18, t = 18, b = 42, lo = Math.log10(f0) - 3, hi = Math.log10(f0) + 3; const x = (f) => l + (Math.log10(f) - lo) / (hi - lo) * (w - l - r); const y = (db) => t + (18 - Math.max(-72, Math.min(18, db))) / 90 * (h - t - b); let line = ''; for (let i = 0; i <= 220; i += 1) { const f = 10 ** (lo + (hi - lo) * i / 220); const db = 20 * Math.log10(Math.max(1e-6, mag(type, f / f0, q, gain))); line += `${i ? 'L' : 'M'}${x(f).toFixed(1)},${y(db).toFixed(1)} `; } const grid = [-60, -40, -20, 0].map((db) => `<line x1="${l}" x2="${w-r}" y1="${y(db)}" y2="${y(db)}" stroke="#334155"/><text x="8" y="${y(db)+4}" fill="#94a3b8" font-size="11">${db} dB</text>`).join(''); const marks = [-2, -1, 0, 1, 2].map((p) => { const f = 10 ** (Math.log10(f0) + p); return `<line x1="${x(f)}" x2="${x(f)}" y1="${t}" y2="${h-b}" stroke="#243047"/><text x="${x(f)}" y="${h-12}" text-anchor="middle" fill="#94a3b8" font-size="11">${f >= 1000 ? value(f/1000)+'k' : value(f)}</text>`; }).join(''); $('af_plot').innerHTML = `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true">${grid}${marks}<line x1="${l}" x2="${w-r}" y1="${h-b}" y2="${h-b}" stroke="#64748b"/><line x1="${x(f0)}" x2="${x(f0)}" y1="${t}" y2="${h-b}" stroke="#f5c451" stroke-dasharray="5 4"/><path d="${line}" fill="none" stroke="#8b7bff" stroke-width="3"/><text x="${x(f0)+6}" y="${t+14}" fill="#f5c451" font-size="12">f₀ ${hz(f0)}</text><text x="${w-22}" y="${h-12}" text-anchor="end" fill="#94a3b8" font-size="11">Hz (log)</text></svg>`; }
-  window.calcAnalogFilter = function () { const host = $('af_result'); const type = $('af_type').value, f0 = num('af_freq'), q = num('af_q'), gain = num('af_gain'), R = num('af_r'), C = num('af_c'); host.textContent = ''; if (![f0, q, gain, R, C].every(ok)) { text(host, 'Enter positive frequency, Q, gain, R, and C values.'); return; } host.className = 'result show'; const rc = 1 / (2 * Math.PI * R * C); const label = $('af_type').selectedOptions[0].textContent; row(host, 'Selected family', label, true); row(host, 'Design / center frequency', hz(f0)); if (['rc-low', 'rc-high', 'allpass'].includes(type)) { row(host, 'RC from reference parts', hz(rc)); row(host, 'To hit design f', 'C = ' + value(1e9 / (2 * Math.PI * R * f0)) + ' nF with ' + ohms(R)); } else if (type.startsWith('sk-')) { row(host, 'Equal-value starting point', 'R₁=R₂=' + ohms(R) + ', C₁=C₂=' + value(1e9 / (2 * Math.PI * R * f0)) + ' nF'); row(host, 'Equal-value Sallen–Key Q', 'Q ≈ 1 / (3 − K); Butterworth Q=.707 → K≈1.586'); } else if (type === 'twin-t') { row(host, 'Twin-T starting ratios', 'R, R, 2R and C, C, C/2'); row(host, 'Set C for f₀', value(1e9 / (2 * Math.PI * R * f0)) + ' nF, then use C/2 on the center leg'); } else { row(host, 'Selectivity', 'Q = ' + value(q)); row(host, '−3 dB bandwidth estimate', hz(f0 / q)); row(host, 'Reference RC for f₀', 'C = ' + value(1e9 / (2 * Math.PI * R * f0)) + ' nF with ' + ohms(R)); } row(host, 'Passband gain', value(gain) + ' V/V (' + value(20 * Math.log10(gain), 2) + ' dB)'); row(host, 'Reminder', 'Use the plotted ideal response to compare families; verify component-ratio equations for the selected topology.'); $('af_plot_label').textContent = `f₀ ${hz(f0)} · Q ${value(q)}`; plot(type, f0, q, gain); };
+  function plot(type, f0, q, gain) {
+    const w = 700, h = 320, l = 58, r = 56, t = 28, b = 46;
+    const lo = Math.log10(f0) - 3, hi = Math.log10(f0) + 3;
+    const plotH = h - t - b;
+    const x = (f) => l + (Math.log10(f) - lo) / (hi - lo) * (w - l - r);
+    const y = (db) => t + (18 - Math.max(-72, Math.min(18, db))) / 90 * plotH;
+    const yPhase = (deg) => t + (180 - Math.max(-180, Math.min(180, deg))) / 360 * plotH;
+    const phaseOf = window.AnalogSchematics ? window.AnalogSchematics.phaseDeg : null;
+
+    let line = '', phaseLine = '';
+    for (let i = 0; i <= 240; i += 1) {
+      const f = 10 ** (lo + (hi - lo) * i / 240);
+      const db = 20 * Math.log10(Math.max(1e-6, mag(type, f / f0, q, gain)));
+      line += `${i ? 'L' : 'M'}${x(f).toFixed(1)},${y(db).toFixed(1)} `;
+      if (phaseOf) {
+        const p = phaseOf(type, f / f0, q);
+        phaseLine += `${i ? 'L' : 'M'}${x(f).toFixed(1)},${yPhase(p).toFixed(1)} `;
+      }
+    }
+    const grid = [-60, -40, -20, 0].map((db) => `<line x1="${l}" x2="${w - r}" y1="${y(db)}" y2="${y(db)}" stroke="#334155"/><text x="8" y="${y(db) + 4}" fill="#8b7bff" font-size="11">${db} dB</text>`).join('');
+    const phaseGrid = [180, 90, 0, -90, -180].map((d) => `<text x="${w - r + 8}" y="${yPhase(d) + 4}" fill="#5ed7ff" font-size="11">${d}°</text>`).join('');
+    const marks = [-2, -1, 0, 1, 2].map((p) => {
+      const f = 10 ** (Math.log10(f0) + p);
+      return `<line x1="${x(f)}" x2="${x(f)}" y1="${t}" y2="${h - b}" stroke="#243047"/><text x="${x(f)}" y="${h - 26}" text-anchor="middle" fill="#94a3b8" font-size="11">${f >= 1000 ? value(f / 1000) + 'k' : value(f)}</text>`;
+    }).join('');
+    const legend = `<rect x="${l}" y="${h - 18}" width="14" height="3" fill="#8b7bff"/><text x="${l + 20}" y="${h - 12}" fill="#8b7bff" font-size="11">magnitude</text>` +
+      `<rect x="${l + 108}" y="${h - 18}" width="14" height="3" fill="#5ed7ff"/><text x="${l + 128}" y="${h - 12}" fill="#5ed7ff" font-size="11">phase</text>`;
+    $('af_plot').innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Filter magnitude and phase response">${grid}${phaseGrid}${marks}<line x1="${l}" x2="${w - r}" y1="${h - b}" y2="${h - b}" stroke="#64748b"/><line x1="${x(f0)}" x2="${x(f0)}" y1="${t}" y2="${h - b}" stroke="#f5c451" stroke-dasharray="5 4"/><path d="${phaseLine}" fill="none" stroke="#5ed7ff" stroke-width="2" stroke-dasharray="6 4" opacity="0.9"/><path d="${line}" fill="none" stroke="#8b7bff" stroke-width="3"/><text x="${x(f0) + 6}" y="${t + 14}" fill="#f5c451" font-size="12">f₀ ${hz(f0)}</text><text x="${w - r}" y="${h - 26}" text-anchor="end" fill="#94a3b8" font-size="11">Hz (log)</text>${legend}</svg>`;
+  }
+
+  function renderFilterSchematic(type) {
+    const host = $('af_schematic');
+    if (!host || !window.AnalogSchematics) return;
+    host.innerHTML = window.AnalogSchematics.filter(type);
+    const label = $('af_schematic_label');
+    if (label) label.textContent = $('af_type')?.selectedOptions?.[0]?.textContent || '';
+  }
+  window.calcAnalogFilter = function () { const host = $('af_result'); const type = $('af_type').value, f0 = num('af_freq'), q = num('af_q'), gain = num('af_gain'), R = num('af_r'), C = num('af_c'); host.textContent = ''; if (![f0, q, gain, R, C].every(ok)) { text(host, 'Enter positive frequency, Q, gain, R, and C values.'); return; } host.className = 'result show'; const rc = 1 / (2 * Math.PI * R * C); const label = $('af_type').selectedOptions[0].textContent; row(host, 'Selected family', label, true); row(host, 'Design / center frequency', hz(f0)); if (['rc-low', 'rc-high', 'allpass'].includes(type)) { row(host, 'RC from reference parts', hz(rc)); row(host, 'To hit design f', 'C = ' + value(1e9 / (2 * Math.PI * R * f0)) + ' nF with ' + ohms(R)); } else if (type.startsWith('sk-')) { row(host, 'Equal-value starting point', 'R₁=R₂=' + ohms(R) + ', C₁=C₂=' + value(1e9 / (2 * Math.PI * R * f0)) + ' nF'); row(host, 'Equal-value Sallen–Key Q', 'Q ≈ 1 / (3 − K); Butterworth Q=.707 → K≈1.586'); } else if (type === 'twin-t') { row(host, 'Twin-T starting ratios', 'R, R, 2R and C, C, C/2'); row(host, 'Set C for f₀', value(1e9 / (2 * Math.PI * R * f0)) + ' nF, then use C/2 on the center leg'); } else { row(host, 'Selectivity', 'Q = ' + value(q)); row(host, '−3 dB bandwidth estimate', hz(f0 / q)); row(host, 'Reference RC for f₀', 'C = ' + value(1e9 / (2 * Math.PI * R * f0)) + ' nF with ' + ohms(R)); } row(host, 'Passband gain', value(gain) + ' V/V (' + value(20 * Math.log10(gain), 2) + ' dB)'); row(host, 'Reminder', 'Use the plotted ideal response to compare families; verify component-ratio equations for the selected topology.'); $('af_plot_label').textContent = `f₀ ${hz(f0)} · Q ${value(q)}`; plot(type, f0, q, gain); renderFilterSchematic(type); renderFilterTransfer(type, f0, q, gain); };
+
+  function renderFilterTransfer(type, f0, q, gain) {
+    const formula = $('af_transfer');
+    if (!formula || !window.AnalogSchematics) return;
+    const info = window.AnalogSchematics.filterTransfer(type);
+    if (!info) { formula.innerHTML = ''; return; }
+    const sub = window.AnalogSchematics.substituted(type, f0, q, gain);
+    formula.innerHTML =
+      `<div class="analog-formula">${info.h}</div>` +
+      `<div class="analog-formula analog-formula-sub">${sub}</div>` +
+      `<p class="analog-formula-note">Order ${info.order} · ${info.roll} · ω₀ = 2π·${hz(f0)} = ${value(2 * Math.PI * f0, 1)} rad/s</p>`;
+  }
   document.addEventListener('DOMContentLoaded', function () { if (!$('sec-analog-design')) return; window.renderOpAmpFields(); window.calcOpAmp(); window.calcAnalogFilter(); });
 }());

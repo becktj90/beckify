@@ -1108,6 +1108,10 @@
           </div></div>
           <div class="card"><div class="card-title">Result</div><div class="card-body"><div id="ao_result" class="result" aria-live="polite">Choose a topology and calculate its ideal transfer relationship.</div></div></div>
         </div>
+        <div class="card-grid two-col analog-diagram-grid">
+          <div class="card"><div class="card-title">Circuit <span id="ao_schematic_label" class="analog-plot-label"></span></div><div class="card-body"><div id="ao_schematic" class="analog-schematic"></div></div></div>
+          <div class="card"><div class="card-title">Transfer function</div><div class="card-body"><div id="ao_transfer"></div></div></div>
+        </div>
       </div>
       <div id="analog-panel-filter" class="analog-panel" hidden>
         <div class="card-grid two-col">
@@ -1121,7 +1125,11 @@
           </div></div>
           <div class="card"><div class="card-title">Design notes</div><div class="card-body"><div id="af_result" class="result" aria-live="polite"></div></div></div>
         </div>
-        <div class="card analog-response-card"><div class="card-title">Magnitude response <span id="af_plot_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_plot" class="analog-plot" role="img" aria-label="Filter magnitude response plot"></div></div></div>
+        <div class="card-grid two-col analog-diagram-grid">
+          <div class="card"><div class="card-title">Circuit <span id="af_schematic_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_schematic" class="analog-schematic"></div></div></div>
+          <div class="card"><div class="card-title">Transfer function</div><div class="card-body"><div id="af_transfer"></div></div></div>
+        </div>
+        <div class="card analog-response-card"><div class="card-title">Magnitude &amp; phase response <span id="af_plot_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_plot" class="analog-plot" role="img" aria-label="Filter magnitude and phase response plot"></div></div></div>
       </div>
     </section>
 
@@ -7540,6 +7548,7 @@
 <script src="js/xfmr-engine.js"></script>
 <script src="js/timer555.js"></script>
 <script src="js/digital-tools.js"></script>
+<script src="js/analog-schematics.js"></script>
 <script src="js/analog-tools.js"></script>
 <script src="js/battery-tools.js"></script>
 <script src="js/report-export.js"></script>

@@ -1501,6 +1501,12 @@ body.report-open { overflow: hidden; }
 .analog-plot { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; min-height: 260px; }
 .analog-plot svg { display: block; width: 100%; min-width: 560px; height: auto; }
 .analog-plot-label { color: var(--fg-muted); font-size: 0.75rem; font-weight: 400; margin-left: 6px; }
+.analog-diagram-grid { margin-top: 16px; }
+.analog-schematic { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 4px; }
+.analog-schematic svg { display: block; width: 100%; min-width: 460px; height: auto; }
+.analog-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; color: #e2e8f0; background: #0d1117; border: 1px solid var(--border); border-left: 3px solid #8b7bff; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; overflow-x: auto; }
+.analog-formula-sub { border-left-color: #5ed7ff; color: #cbd5f5; font-size: 0.85rem; }
+.analog-formula-note { color: var(--fg-muted); font-size: 0.82rem; line-height: 1.55; margin: 0; }
 .battery-tabs { margin-bottom: 16px; }
 .battery-table { overflow-x: auto; }
 .battery-table table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
