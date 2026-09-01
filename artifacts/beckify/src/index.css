@@ -26,6 +26,15 @@
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-accent-foreground: var(--accent-foreground);
+  /* Several vendored shadcn/ui primitives (sheet, dialog, dropdown-menu, ...)
+     reference --color-ring and --color-secondary; neither existed here, so
+     their focus rings and "open" state silently resolved to nothing the
+     first time one of them shipped in a real page (Sheet, for the mobile
+     nav). Mapped to the site's own accent and surface tokens rather than
+     inventing a new color. */
+  --color-ring: var(--accent);
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--foreground);
 
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
