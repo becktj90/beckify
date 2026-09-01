@@ -15,6 +15,11 @@ function factorPercent(value) {
 
 function appendGrowthChart(host, peak, capacity, growthRate, years) {
   if (peak == null || growthRate == null || years == null || years < 1) return;
+  const projected = peak * ((1 + growthRate) ** years);
+  // A horizon/growth-rate combination that overflows to Infinity has nothing
+  // plottable — the numeric rows above already say so, so just skip the chart
+  // rather than drawing axes around an infinite value.
+  if (!Number.isFinite(projected)) return;
   const namespace = 'http://www.w3.org/2000/svg';
   const make = (name, attrs, label) => {
     const el = document.createElementNS(namespace, name);
@@ -22,7 +27,6 @@ function appendGrowthChart(host, peak, capacity, growthRate, years) {
     if (label != null) el.textContent = label;
     return el;
   };
-  const projected = peak * ((1 + growthRate) ** years);
   const maximum = Math.max(projected, capacity || 0, peak) * 1.12 || 1;
   const x0 = 52, y0 = 24, width = 500, height = 130;
   const x = (year) => x0 + (year / years) * width;
@@ -46,8 +50,16 @@ function appendGrowthChart(host, peak, capacity, growthRate, years) {
     svg.append(make('line', { x1: x0, y1: py, x2: x0 + width, y2: py, stroke: '#f6c453', 'stroke-width': '2', 'stroke-dasharray': '6 4' }));
     svg.append(make('text', { x: x0 + width, y: py - 6, fill: '#f6c453', 'font-size': '11', 'text-anchor': 'end' }, `capacity ${fmt(capacity)} kVA`));
   }
+  // One point per year would build a string with millions of coordinates for
+  // a multi-decade horizon (and throw RangeError: Invalid string length for
+  // an absurd one), so the curve is always sampled at a fixed resolution
+  // instead — the growth curve is smooth, so this is visually identical for
+  // any realistic forecast and merely coarser for pathological ones.
+  const MAX_SAMPLES = 200;
+  const step = Math.max(1, years / MAX_SAMPLES);
   let points = '';
-  for (let year = 0; year <= years; year += 1) points += `${x(year)},${y(peak * ((1 + growthRate) ** year))} `;
+  for (let year = 0; year <= years; year += step) points += `${x(year)},${y(peak * ((1 + growthRate) ** year))} `;
+  points += `${x(years)},${y(peak * ((1 + growthRate) ** years))} `;
   svg.append(make('polyline', { points, fill: 'none', stroke: '#49b8ff', 'stroke-width': '3', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
   [0, years].forEach((year) => {
     const value = peak * ((1 + growthRate) ** year);
@@ -72,13 +84,13 @@ window.calcLoadFactors = function calcLoadFactors() {
   const rows = [];
   const suggestions = [];
 
-  if (connected != null && peak != null) rows.push(['Demand factor', factorPercent(peak / connected)]);
-  else suggestions.push('Demand factor needs connected load and maximum system demand. Use schedules/nameplates for connected load and a matching-interval meter or BMS peak for demand.');
-  if (individual != null && peak != null && peak > 0) {
+  if (connected != null && peak != null && connected > 0) rows.push(['Demand factor', factorPercent(peak / connected)]);
+  else suggestions.push('Demand factor needs connected load greater than zero and maximum system demand. Use schedules/nameplates for connected load and a matching-interval meter or BMS peak for demand.');
+  if (individual != null && peak != null && peak > 0 && individual > 0) {
     const diversity = individual / peak;
     rows.push(['Diversity factor', diversity.toFixed(3)]);
     rows.push(['Coincidence factor', (1 / diversity).toFixed(3)]);
-  } else suggestions.push('Diversity and coincidence need the sum of individual maximum demands and the maximum system demand over the same interval.');
+  } else suggestions.push('Diversity and coincidence need the sum of individual maximum demands (greater than zero) and the maximum system demand over the same interval.');
   if (average != null && peak != null && peak > 0) rows.push(['Load factor', factorPercent(average / peak)]);
   else suggestions.push('Load factor needs average demand and the matching peak over the same time period.');
   if (capacity != null && peak != null && capacity > 0) {
@@ -88,12 +100,16 @@ window.calcLoadFactors = function calcLoadFactors() {
   } else suggestions.push('Capacity utilization needs the equipment capacity and maximum system demand. Use the applicable continuous-duty/equipment basis.');
   if (growthRate != null && years != null && peak != null && years > 0) {
     const projected = peak * ((1 + growthRate) ** years);
-    rows.push([`Projected peak (${fmt(years)} yr)`, `${fmt(projected, 1)} kVA`]);
-    if (capacity != null && capacity > 0) {
-      rows.push([`Projected utilization (${fmt(years)} yr)`, factorPercent(projected / capacity)]);
-      if (growthRate > 0 && peak < capacity) {
-        const threshold = Math.log(capacity / peak) / Math.log(1 + growthRate);
-        rows.push(['Capacity reached (growth case)', threshold >= 0 ? `${fmt(threshold, 1)} years` : 'Already exceeded']);
+    if (!Number.isFinite(projected)) {
+      rows.push([`Projected peak (${fmt(years)} yr)`, 'Exceeds the range this tool can project — shorten the horizon or growth rate.']);
+    } else {
+      rows.push([`Projected peak (${fmt(years)} yr)`, `${fmt(projected, 1)} kVA`]);
+      if (capacity != null && capacity > 0) {
+        rows.push([`Projected utilization (${fmt(years)} yr)`, factorPercent(projected / capacity)]);
+        if (growthRate > 0 && peak < capacity) {
+          const threshold = Math.log(capacity / peak) / Math.log(1 + growthRate);
+          rows.push(['Capacity reached (growth case)', threshold >= 0 ? `${fmt(threshold, 1)} years` : 'Already exceeded']);
+        }
       }
     }
   } else if (growthRate != null || years != null) suggestions.push('Growth projection needs current maximum demand, an annual growth percentage, and a forecast horizon.');
