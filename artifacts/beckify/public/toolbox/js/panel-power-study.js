@@ -539,13 +539,20 @@ function handleRowEdit(event) {
   renderLoadAnalysis();
 }
 
-function panelVoltageInfo(value) {
+// Accepts "208Y/120", "480/277", or a bare "480". When only one number is
+// given it is the line-to-line value, so the line-to-neutral value has to be
+// derived rather than reused: a bare 480 on a 3-phase panel means 277 V to
+// neutral, and treating it as 480 overstates every single-pole circuit by 73%.
+function panelVoltageInfo(value, phase = 3) {
   const text = String(value || '');
   const pair = text.match(/(\d+(?:\.\d+)?)\s*(?:Y)?\s*\/\s*(\d+(?:\.\d+)?)/i);
   if (pair) return { lineToLine: Number(pair[1]), lineToNeutral: Number(pair[2]) };
   const single = text.match(/\d+(?:\.\d+)?/);
   const lineToLine = single ? Number(single[0]) : NaN;
-  return { lineToLine, lineToNeutral: lineToLine };
+  if (!Number.isFinite(lineToLine)) return { lineToLine, lineToNeutral: lineToLine };
+  // 3-phase wye: V_LN = V_LL / sqrt(3). Single-phase 3-wire (240/120): V_LL / 2.
+  const divisor = Number(phase) === 3 ? Math.sqrt(3) : 2;
+  return { lineToLine, lineToNeutral: lineToLine / divisor };
 }
 
 function rowLoadVa(row, voltage, phase) {
@@ -570,8 +577,8 @@ function renderLoadAnalysis() {
   if (!elements.analysisGrid || !elements.analysisGuidance) return;
 
   const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
-  const voltage = panelVoltageInfo(elements.panelVoltage.value);
   const phase = Number(elements.panelPhase.value) || 3;
+  const voltage = panelVoltageInfo(elements.panelVoltage.value, phase);
   const diversityInput = Math.max(1, panelNumber(elements.panelDiversity.value, 1));
   const knownVoltage = Number.isFinite(voltage.lineToLine) && voltage.lineToLine > 0;
 

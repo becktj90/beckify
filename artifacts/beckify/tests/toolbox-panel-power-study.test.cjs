@@ -35,6 +35,21 @@ assert.equal(parsedVoltage.lineToLine, 480);
 assert.equal(parsedVoltage.lineToNeutral, 277);
 assert.ok(Math.abs(panel.rowLoadVa({ loadAmps: '10', poles: '3' }, parsedVoltage, 3) - 8313.843) < 0.01);
 
+// A bare line-to-line voltage has to derive line-to-neutral, not reuse the
+// same number: on a 3-phase panel "480" means 277 V to neutral, so a 1-pole
+// circuit is 2770 VA, not 4800 VA.
+const bare3Phase = panel.panelVoltageInfo('480', 3);
+assert.equal(bare3Phase.lineToLine, 480);
+assert.ok(Math.abs(bare3Phase.lineToNeutral - 277.128) < 0.01);
+assert.ok(Math.abs(panel.rowLoadVa({ loadAmps: '10', poles: '1' }, bare3Phase, 3) - 2771.28) < 0.01);
+
+// Single-phase 3-wire: a bare 240 means 120 V to neutral.
+const bare1Phase = panel.panelVoltageInfo('240', 1);
+assert.equal(bare1Phase.lineToNeutral, 120);
+
+// An explicit pair is still trusted verbatim.
+assert.equal(panel.panelVoltageInfo('208Y/120', 3).lineToNeutral, 120);
+
 const parsed = panel.parseScheduleText(`
 Panel: MDP-2
 Voltage: 480Y/277V
