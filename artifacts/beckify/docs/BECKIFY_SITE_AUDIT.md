@@ -395,6 +395,31 @@ package); accounts and cloud persistence; collaboration.
 _Updated as work lands._
 
 - Audit document created; baseline recorded.
+- **P0-3 fixed** (`c3d52ee`): load-factors calculator no longer crashes on a
+  large growth horizon (`RangeError: Invalid string length`) and no longer
+  leaks `NaN%`/`Infinity%`/`Infinity` from unguarded divisions. Regression
+  test added (`tests/toolbox-load-factors.test.cjs`).
+- **P0-1 and P0-2 fixed** (`516d2ec`): removed `maximum-scale=1` (pinch-zoom
+  restored on all React routes); replaced the non-wrapping header with a
+  responsive nav — full label row from `lg` up, a single menu button below
+  that opens the same links in an accessible slide-out sheet (focus trap,
+  Escape-to-close, 44px+ touch targets). Verified 0px horizontal overflow at
+  1440/1024/1023/820/768/390/320px (previously 6 of 7 widths overflowed).
+  Also fixed two icon defects surfaced by the same work: Control Systems and
+  Toolbox shared one glyph, and Recommended Gear silently fell back to the
+  home icon.
+- **P0-4 and P0-5 fixed** (`cf8784b`): added `aria-label` to the 3
+  per-circuit-row `<select>` elements in both panel tools (axe-core
+  `select-name`, critical, 210 nodes → 0). Fixed the CSS Grid `min-width:
+  auto` bug that let the OCR review table force the whole page to 608-732px
+  wide inside a 390px viewport, defeating the table's own `overflow: auto`;
+  one rule (`.workspace > .window { min-width: 0 }`) took both pages to 0px
+  overflow. Regression test added
+  (`tests/toolbox-panel-select-labels.test.cjs`).
+
+All five P0 findings are now fixed and verified (typecheck, lint, all 11
+unit tests, and Playwright/axe-core re-scans). None have been deployed to
+`main` yet.
 
 ## Deferred improvements
 
