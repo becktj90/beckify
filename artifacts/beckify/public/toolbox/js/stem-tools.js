@@ -158,7 +158,13 @@
           if (!fn) throw new Error('Unsupported function: ' + name + '.');
           cursor += 1;
           const args = [];
-          if (!peek() || peek().value !== ')') { do { args.push(parseSum()); if (!peek() || peek().value !== ',') break; cursor += 1; } while (true); }
+          if (!peek() || peek().value !== ')') {
+            args.push(parseSum());
+            while (peek() && peek().value === ',') {
+              cursor += 1;
+              args.push(parseSum());
+            }
+          }
           consume(')');
           return function (scope) { return fn.apply(null, args.map(function (arg) { return arg(scope); })); };
         }
@@ -1426,7 +1432,7 @@
     });
     const fBlock = document.createElement('div');
     fBlock.style.gridColumn = '4 / span 15'; fBlock.style.gridRow = '8 / span 2'; fBlock.style.display = 'grid'; fBlock.style.gridTemplateColumns = 'repeat(15, minmax(34px, 1fr))'; fBlock.style.gap = '0.25rem';
-    [57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103].forEach((number, index) => { const e = byNumber[number]; const card = document.createElement('div'); card.style.border = '1px solid ' + COLORS.line; card.style.borderRadius = '8px'; card.style.padding = '0.2rem'; card.title = e.name; card.textContent = e.symbol; card.style.color = ELEMENT_COLORS[4]; card.style.fontSize = '0.75em'; fBlock.appendChild(card); });
+    [57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103].forEach((number) => { const e = byNumber[number]; const card = document.createElement('div'); card.style.border = '1px solid ' + COLORS.line; card.style.borderRadius = '8px'; card.style.padding = '0.2rem'; card.title = e.name; card.textContent = e.symbol; card.style.color = ELEMENT_COLORS[4]; card.style.fontSize = '0.75em'; fBlock.appendChild(card); });
     host.appendChild(fBlock);
   };
 

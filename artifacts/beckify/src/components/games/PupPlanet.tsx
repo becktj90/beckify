@@ -360,7 +360,7 @@ export function PupPlanet() {
     };
 
     const dirty = new Set<string>();
-    const mark = (x: number, y: number, z: number) => {
+    const mark = (x: number, _y: number, z: number) => {
       dirty.add(ck(chunkOf(x), chunkOf(z)));
       if (loc(x) === 0) dirty.add(ck(chunkOf(x) - 1, chunkOf(z)));
       if (loc(x) === CHUNK - 1) dirty.add(ck(chunkOf(x) + 1, chunkOf(z)));
