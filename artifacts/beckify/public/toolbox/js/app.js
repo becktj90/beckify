@@ -493,6 +493,23 @@ window.calcMinWire = function (phase) {
   showResult('vdm_result_' + phase, rows);
 };
 
+window.loadVoltageDropExample = function () {
+  var tab = document.querySelector('[data-tab="tab-vd-calc"]');
+  if (tab) tab.click();
+  var values = {
+    vd_vs_3p: '480',
+    vd_i_3p: '45',
+    vd_l_3p: '250',
+    vd_mat_3p: 'CU',
+    vd_awg_3p: '4'
+  };
+  Object.keys(values).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = values[id];
+  });
+  window.calcVDrop('3p');
+};
+
 /* ============================================================
    9. SERIES / PARALLEL CIRCUITS
    ============================================================ */
@@ -1812,9 +1829,82 @@ window.drawLsiTcc = function () {
   ]);
 };
 
+window.loadLsiExample = function () {
+  var values = {
+    lsi_lt_pickup: '800',
+    lsi_lt_delay: '10',
+    lsi_st_pickup: '3200',
+    lsi_st_delay: '0.2',
+    lsi_inst_pickup: '6400'
+  };
+  Object.keys(values).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = values[id];
+  });
+  window.drawLsiTcc();
+};
+
 /* ============================================================
    BESS PEAK-SHAVE OPTIMIZER (LP)
    ============================================================ */
+window.calcBessQuickSizer = function () {
+  var peak = val('bess_peak_demand');
+  var target = val('bess_target_limit');
+  var hours = val('bess_peak_hours');
+  var dodPct = val('bess_dod');
+  if (!isPos(peak, hours, dodPct)) return showError('bess_quick_result', 'Enter positive peak demand, duration, and DoD values.');
+  if (!isFinite(target) || target < 0 || target >= peak) return showError('bess_quick_result', 'Target demand must be non-negative and lower than peak demand.');
+  if (dodPct > 100) return showError('bess_quick_result', 'Depth of discharge must be 100% or less.');
+  var shavedKw = peak - target;
+  var usable = shavedKw * hours;
+  var total = usable / (dodPct / 100);
+  showResult('bess_quick_result', [
+    ['Peak demand', fmt(peak, 1) + ' kW'],
+    ['Target demand limit', fmt(target, 1) + ' kW'],
+    ['Peak shave required', fmt(shavedKw, 1) + ' kW'],
+    ['Usable energy required', fmt(usable, 1) + ' kWh'],
+    ['Installed capacity @ DoD', fmt(total, 1) + ' kWh']
+  ]);
+};
+
+window.loadBessPeakShaveExample = function () {
+  var quickValues = {
+    bess_peak_demand: '450',
+    bess_target_limit: '300',
+    bess_peak_hours: '3',
+    bess_dod: '80'
+  };
+  Object.keys(quickValues).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = quickValues[id];
+  });
+  var optimizerValues = {
+    bess_battery: '150',
+    bess_solar: '0',
+    bess_name_1: 'Main Chiller Plant',
+    bess_kw_1: '150',
+    bess_pri_1: '10',
+    bess_name_2: 'Lighting',
+    bess_kw_2: '30',
+    bess_pri_2: '7',
+    bess_name_3: 'Controls',
+    bess_kw_3: '18',
+    bess_pri_3: '9',
+    bess_name_4: 'EV Chargers',
+    bess_kw_4: '80',
+    bess_pri_4: '2',
+    bess_name_5: 'Compressed Air',
+    bess_kw_5: '42',
+    bess_pri_5: '5'
+  };
+  Object.keys(optimizerValues).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = optimizerValues[id];
+  });
+  window.calcBessQuickSizer();
+  window.calcBessPeakShave();
+};
+
 window.calcBessPeakShave = function () {
   const battery = val('bess_battery');
   const solar   = val('bess_solar');

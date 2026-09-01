@@ -14,6 +14,7 @@ import PupPlanetPage from "@/pages/pup-planet";
 import HexGLPage from "@/pages/hexgl";
 import VespaP200EPage from "@/pages/vespa-p200e";
 import GearPage from "@/pages/gear";
+import ControlSystemsPage from "@/pages/control-systems";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
       <Route path="/gear" component={GearPage} />
+      <Route path="/control-systems" component={ControlSystemsPage} />
       <Route path="/games" component={GamesPage} />
       <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
       <Route path="/games/booty-butt-scooter" component={BootyButtScooterPage} />

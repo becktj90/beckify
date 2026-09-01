@@ -368,3 +368,21 @@ window.calcXfmrSizing = function () {
 
   appendCopyBtn(el);
 };
+
+window.loadTransformerSizingExample = function () {
+  var values = {
+    xs_phase: '3ph',
+    xs_load_unit: 'kw',
+    xs_load: '38',
+    xs_pf: '90',
+    xs_vp: '480',
+    xs_vs: '208'
+  };
+  Object.keys(values).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = values[id];
+  });
+  var continuous = document.getElementById('xs_continuous');
+  if (continuous) continuous.checked = true;
+  window.calcXfmrSizing();
+};

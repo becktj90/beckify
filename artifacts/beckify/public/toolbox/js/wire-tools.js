@@ -142,6 +142,7 @@ function addConduitRow(defaults) {
   row.appendChild(del);
   host.appendChild(row);
 }
+window.addConduitRow = addConduitRow;
 
 /** Reads the conductor rows into [{qty, size, insul, area}]. */
 function readConduitRows() {
@@ -265,6 +266,22 @@ window.calcConduitFillAdvanced = function () {
   }
 
   appendCopyBtn(el);
+};
+
+window.loadConduitFillExample = function () {
+  var typeEl = document.getElementById('cfa_type');
+  var sizeEl = document.getElementById('cfa_size');
+  var nippleEl = document.getElementById('cfa_nipple');
+  var rowsHost = document.getElementById('cfa_rows');
+  if (typeEl) typeEl.value = 'EMT';
+  if (sizeEl) sizeEl.value = 'auto';
+  if (nippleEl) nippleEl.checked = false;
+  if (rowsHost) rowsHost.textContent = '';
+  cfRowSeq = 0;
+  addConduitRow({ qty: '3', size: '3/0', insul: 'THHN' });
+  addConduitRow({ qty: '1', size: '3/0', insul: 'THHN' });
+  addConduitRow({ qty: '1', size: '6', insul: 'THHN' });
+  window.calcConduitFillAdvanced();
 };
 
 /* ============================================================================
