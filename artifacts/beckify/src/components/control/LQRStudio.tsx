@@ -127,7 +127,7 @@ export function LQRStudio({
 
         <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
           <p className="text-sm font-semibold text-[var(--foreground)]">Closed-loop step response</p>
-          <ChartContainer config={chartConfig} className="mt-4 h-72 w-full">
+          <ChartContainer config={chartConfig} className="mt-4 aspect-auto h-72 w-full">
             <LineChart data={closedLoop}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="t" unit=" s" />

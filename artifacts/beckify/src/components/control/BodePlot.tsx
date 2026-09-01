@@ -118,7 +118,7 @@ export function BodePlot({
         <div className="mt-6 grid gap-5 xl:grid-cols-2">
           <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
             <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Bode magnitude</p>
-            <ChartContainer config={chartConfig} className="h-72 w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={bode.map((point) => ({ ...point, x: log10(point.omega) }))}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="x" tickFormatter={(value) => `10^${Number(value).toFixed(1)}`} />
@@ -131,7 +131,7 @@ export function BodePlot({
           </div>
           <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
             <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Bode phase</p>
-            <ChartContainer config={chartConfig} className="h-72 w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={bode.map((point) => ({ ...point, x: log10(point.omega) }))}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="x" tickFormatter={(value) => `10^${Number(value).toFixed(1)}`} />
@@ -158,7 +158,7 @@ export function BodePlot({
           </div>
           <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
             <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Nichols chart</p>
-            <ChartContainer config={chartConfig} className="h-72 w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={bode}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="phaseDeg" unit="°" type="number" domain={["dataMin", "dataMax"]} />

@@ -142,7 +142,7 @@ export function MPCSimulator({
       <div className="mt-6 grid gap-5 xl:grid-cols-2">
         <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
           <p className="text-sm font-semibold text-[var(--foreground)]">Receding-horizon trajectory</p>
-          <ChartContainer config={chartConfig} className="mt-4 h-72 w-full">
+          <ChartContainer config={chartConfig} className="mt-4 aspect-auto h-72 w-full">
             <LineChart data={predictive}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="step" unit=" s" />
@@ -156,7 +156,7 @@ export function MPCSimulator({
         </div>
         <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
           <p className="text-sm font-semibold text-[var(--foreground)]">MPC control effort and LQR output reference</p>
-          <ChartContainer config={chartConfig} className="mt-4 h-72 w-full">
+          <ChartContainer config={chartConfig} className="mt-4 aspect-auto h-72 w-full">
             <LineChart data={predictive.map((point, index) => ({ ...point, lqr: lqrStep[index]?.y ?? 0 }))}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="step" unit=" s" />

@@ -262,8 +262,15 @@ export function parseMatrixInput(input: string): Matrix {
 }
 
 export function transferFunctionToStateSpace(tf: TransferFunction): StateSpaceSystem {
+  // normalizePolynomial divides the denominator through by its leading
+  // coefficient, so the numerator has to be divided by that same value or the
+  // model silently gains a 1/lead gain error. G = 0.6/(0.002s^2+0.08s+0.52)
+  // otherwise settles at 0.0023 instead of 1.1538 — off by 500x.
+  const rawDenominator = [...tf.denominator];
+  while (rawDenominator.length > 1 && Math.abs(rawDenominator[0]) < EPSILON) rawDenominator.shift();
+  const lead = Math.abs(rawDenominator[0] ?? 0) < EPSILON ? 1 : rawDenominator[0];
   const denominator = normalizePolynomial(tf.denominator);
-  const numerator = padPolynomial(tf.numerator, denominator.length);
+  const numerator = padPolynomial(tf.numerator.map((value) => value / lead), denominator.length);
   const order = denominator.length - 1;
   if (order < 1) {
     return {
@@ -474,6 +481,57 @@ export function poleZeroMap(tf: TransferFunction) {
     poles: polynomialRoots(tf.denominator),
     zeros: polynomialRoots(tf.numerator),
   };
+}
+
+export type PidGains = { kp: number; ki: number; kd: number };
+
+/**
+ * Ideal PID as a transfer function: Kp + Ki/s + Kd·s = (Kd s² + Kp s + Ki) / s.
+ * With ki = kd = 0 this collapses to proportional-only, and the extra pole at
+ * the origin cancels in seriesTransferFunction.
+ */
+export function pidTransferFunction({ kp, ki, kd }: PidGains): TransferFunction {
+  // Without integral action there is no pole at the origin. Writing PD as
+  // (Kd s² + Kp s)/s instead would leave an uncancelled s in both numerator and
+  // denominator, which is harmless in the response but makes the closed-loop
+  // denominator carry a spurious root at 0 — reporting stable loops as unstable.
+  if (Math.abs(ki) < EPSILON) {
+    if (Math.abs(kd) < EPSILON) return { numerator: [kp], denominator: [1] };
+    return { numerator: [kd, kp], denominator: [1] };
+  }
+  return { numerator: [kd, kp, ki], denominator: [1, 0] };
+}
+
+/** Series (cascade) connection: C(s)·G(s). */
+export function seriesTransferFunction(a: TransferFunction, b: TransferFunction): TransferFunction {
+  return {
+    numerator: multiplyPolynomials(a.numerator, b.numerator),
+    denominator: multiplyPolynomials(a.denominator, b.denominator),
+  };
+}
+
+/**
+ * Unity-negative-feedback closed loop: T = L / (1 + L) where L is the open-loop
+ * transfer function. With L = N/D that is N / (D + N).
+ */
+export function closedLoopTransferFunction(openLoop: TransferFunction): TransferFunction {
+  return {
+    numerator: [...openLoop.numerator],
+    denominator: addPolynomials(openLoop.denominator, openLoop.numerator),
+  };
+}
+
+/** Steady-state value of a step response, i.e. the DC gain N(0)/D(0). */
+export function dcGain(tf: TransferFunction): number {
+  const num = tf.numerator[tf.numerator.length - 1] ?? 0;
+  const den = tf.denominator[tf.denominator.length - 1] ?? 0;
+  if (Math.abs(den) < EPSILON) return Number.POSITIVE_INFINITY;
+  return num / den;
+}
+
+/** A system is stable when every closed-loop pole sits in the open left half plane. */
+export function isStable(tf: TransferFunction): boolean {
+  return polynomialRoots(tf.denominator).every((pole) => pole.re < -EPSILON);
 }
 
 function matrixExpSeries(A: Matrix, dt: number, order = 16): Matrix {
