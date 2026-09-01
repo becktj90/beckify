@@ -1,6 +1,14 @@
 import { ExternalLink } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FadeIn } from "@/components/FadeIn";
+
+/** Stable anchor id so the build narrative can link to a part by name. */
+export function partSlug(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 type Category = "Powertrain" | "Battery" | "Electrical" | "Chassis";
 
@@ -433,6 +441,19 @@ const categories = [
 
 export function VespaPartsCatalog() {
   const [filter, setFilter] = useState<(typeof categories)[number]>("All");
+
+  // An inline link in the story points at #part-<slug>. If a category filter is
+  // active that row may not be rendered, so the anchor would go nowhere — reset
+  // to "All" whenever the hash targets a specific part.
+  useEffect(() => {
+    const showTargetedPart = () => {
+      if (window.location.hash.startsWith("#part-")) setFilter("All");
+    };
+    showTargetedPart();
+    window.addEventListener("hashchange", showTargetedPart);
+    return () => window.removeEventListener("hashchange", showTargetedPart);
+  }, []);
+
   const shown = useMemo(
     () =>
       filter === "All"
@@ -449,11 +470,13 @@ export function VespaPartsCatalog() {
         aria-labelledby="parts-title"
       >
         <div className="section-heading">
-          <p className="section-index">02b / bill of materials</p>
+          <p className="section-index">10 / bill of materials</p>
           <h2 id="parts-title">Bill of materials</h2>
           <p>
-            Parts used in the build, what each one was for, and where to source
-            it. Links are direct vendor URLs or affiliate links where available.
+            Every part used in the build, what each one was for, and where to
+            source it. Part names linked in the story above jump to their row
+            here. Links are direct vendor URLs or affiliate links where
+            available.
           </p>
         </div>
         <p className="affiliate-note">
@@ -487,7 +510,7 @@ export function VespaPartsCatalog() {
             </thead>
             <tbody>
               {shown.map((part) => (
-                <tr key={part.name}>
+                <tr key={part.name} id={`part-${partSlug(part.name)}`}>
                   <td>
                     <strong>{part.name}</strong>
                     <small>{part.supplier}</small>

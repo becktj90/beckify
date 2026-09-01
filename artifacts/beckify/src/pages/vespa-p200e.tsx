@@ -9,8 +9,7 @@ import {
 } from "@/components/VespaBuildVisuals";
 import { VespaEngineeringNotebook } from "@/components/VespaEngineeringNotebook";
 import { VespaTheoreticalComparison } from "@/components/VespaTheoreticalComparison";
-import { VespaBatteryDiagram } from "@/components/VespaBatteryDiagram";
-import { VespaPartsCatalog } from "@/components/VespaPartsCatalog";
+import { VespaPartsCatalog, partSlug } from "@/components/VespaPartsCatalog";
 
 const img = {
   hero: "/projects/vespa/studio/vespa-side-profile.jpg",
@@ -26,12 +25,26 @@ const img = {
   harness: "/projects/vespa/journal/em100-harness.jpg",
   cad: "/projects/vespa/journal/swingarm-cad-render.jpg",
   weld: "/projects/vespa/journal/swingarm-weld.jpg",
+  wiring: "/projects/vespa/powertrain-wiring-diagram.jpg",
 } as const;
 
 function DownloadLink({ href, children }: { href: string; children: string }) {
   return (
     <a href={href} download className="download-link">
       <Download size={16} aria-hidden="true" /> {children}
+    </a>
+  );
+}
+
+/**
+ * Inline reference to a part, linking down to its row in the bill of materials
+ * at the foot of the page. Keeps the story readable while every component
+ * mentioned stays one click from its price, quantity, and supplier link.
+ */
+function Part({ name, children }: { name: string; children?: string }) {
+  return (
+    <a className="part-ref" href={`#part-${partSlug(name)}`} title={`${name} — see the bill of materials`}>
+      {children ?? name}
     </a>
   );
 }
@@ -52,7 +65,7 @@ export default function VespaP200EPage() {
           author: { "@type": "Person", name: "Trevor Beck" },
         }}
       />
-      <style>{`.vespa-journal{--paper:#f6f1e8;--ink:#1d2421;--muted:#59645d;--green:#184d3f;--red:#9f302b;--rule:#b9b3a8;background:var(--paper);color:var(--ink);overflow-x:hidden}.vespa-journal .starfield{display:none}.vespa-journal .max-w-5xl{max-width:72rem;padding-top:1.5rem}.vespa-journal *{box-sizing:border-box}.vespa-journal a:focus-visible,.vespa-journal button:focus-visible{outline:3px solid var(--red);outline-offset:3px}.vespa-journal p{font-size:1rem;line-height:1.7}.journal-breakout{width:100vw;margin-left:calc(50% - 50vw)}.journal-hero{position:relative;min-height:min(78vh,54rem);display:flex;align-items:end;isolation:isolate;background:#192923}.journal-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 37%;z-index:-2}.journal-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(11,18,15,.8),rgba(11,18,15,.34) 58%,rgba(11,18,15,.08))}.hero-content{width:min(72rem,100%);margin:0 auto;padding:4rem 2rem;color:#fffaf0}.hero-content h1{max-width:52rem;margin:0;font-family:Georgia,serif;font-size:clamp(3rem,8vw,7rem);line-height:.93;letter-spacing:-.055em}.hero-content p{max-width:38rem;margin:1.5rem 0 0;font-size:clamp(1rem,2vw,1.3rem);line-height:1.55}.scroll-cue{display:inline-flex;align-items:center;gap:.55rem;margin-top:2.5rem;border-bottom:1px solid currentColor;padding-bottom:.5rem;color:#fffaf0;font-size:.875rem;font-weight:700;text-decoration:none}.spec-strip{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--rule);padding:1.4rem 0;gap:1rem}.spec-strip div{min-width:0}.spec-strip small,.section-index,.parts-table-wrap th,.parts-table-wrap td small{display:block;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.spec-strip strong{display:block;margin-top:.35rem;font-size:.92rem;line-height:1.25}.journal-nav{display:flex;flex-wrap:wrap;gap:1.25rem;border-bottom:1px solid var(--rule);padding:1rem 0}.journal-nav a{color:var(--ink);font-size:.82rem;font-weight:700;text-decoration:none}.journal-nav a:hover{color:var(--red)}.journal-section{padding:6.5rem 0;border-bottom:1px solid var(--rule)}.section-index{color:var(--red);margin:0 0 .8rem}.section-heading{max-width:39rem}.section-heading h2,.story-copy h2{margin:0;font-family:Georgia,serif;font-size:clamp(2.35rem,5vw,4.5rem);line-height:.95;letter-spacing:-.045em}.section-heading>p:not(.section-index){margin:1.35rem 0 0;color:var(--muted)}.story-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(1.5rem,4vw,5rem);align-items:center}.story-media{grid-column:span 7;margin:0}.story-copy{grid-column:span 5}.story-copy p{color:var(--muted)}.story-grid.reverse .story-media{grid-column:6 / span 7;grid-row:1}.story-grid.reverse .story-copy{grid-column:1 / span 5;grid-row:1}figure{margin:0}.story-media img{display:block;width:100%;height:clamp(22rem,45vw,38rem);object-fit:cover}.story-media figcaption,.photo-caption{margin-top:.75rem;color:var(--muted);font-size:.78rem;line-height:1.45}.goal-list{margin:1.7rem 0 0;padding:0;list-style:none;border-top:1px solid var(--rule)}.goal-list li{display:grid;grid-template-columns:8rem 1fr;gap:1rem;border-bottom:1px solid var(--rule);padding:.8rem 0;color:var(--muted);font-size:.93rem;line-height:1.5}.goal-list strong{color:var(--ink)}.battery-layout{display:grid;grid-template-columns:7fr 5fr;gap:clamp(1.5rem,4vw,5rem);align-items:start;margin-top:2.75rem}.battery-main{position:relative;margin:0}.battery-main img{display:block;width:100%;height:clamp(28rem,50vw,45rem);object-fit:cover}.battery-callout{position:absolute;right:1rem;bottom:1rem;max-width:14rem;background:rgba(246,241,232,.95);border-left:4px solid var(--red);padding:1rem;color:var(--ink);font-size:.83rem;line-height:1.4}.battery-specs{margin:0;border-top:2px solid var(--ink)}.battery-specs div{border-bottom:1px solid var(--rule);padding:1rem 0}.battery-specs dt{color:var(--red);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.battery-specs dd{margin:.35rem 0 0;font-size:1rem;line-height:1.45}.battery-thumbs{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}.battery-thumbs img{width:100%;height:11rem;display:block;object-fit:cover}.tech-list{margin:1.5rem 0 0;padding:0;list-style:none}.tech-list li{border-top:1px solid var(--rule);padding:.9rem 0;color:var(--muted);font-size:.94rem;line-height:1.55}.tech-list strong{color:var(--ink)}.downloads{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.75rem}.download-link{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--ink);padding:.75rem .9rem;color:var(--ink);font-size:.8rem;font-weight:700;text-decoration:none}.download-link:hover{background:var(--ink);color:var(--paper)}.fabrication-pair{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.fabrication-pair img{width:100%;height:28rem;object-fit:cover;display:block}.at-glance{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:2.5rem}.at-glance div{background:var(--paper);padding:1.25rem}.at-glance strong{display:block;font-family:Georgia,serif;font-size:1.35rem}.at-glance span{display:block;margin-top:.45rem;color:var(--muted);font-size:.84rem;line-height:1.45}.parts-section{padding-bottom:5rem}.affiliate-note{margin:2rem 0 0;border-left:3px solid var(--red);padding:.7rem 1rem;background:#efe6d7;color:var(--muted);font-size:.83rem}.part-filter{display:flex;flex-wrap:wrap;gap:.45rem;margin:2rem 0 1rem}.part-filter button{border:1px solid var(--rule);background:transparent;padding:.55rem .8rem;color:var(--ink);font-size:.75rem;font-weight:700}.part-filter button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:white}.parts-table-wrap{overflow:auto;border-top:2px solid var(--ink)}table{width:100%;min-width:40rem;border-collapse:collapse}th,td{border-bottom:1px solid var(--rule);padding:.9rem .75rem;text-align:left;vertical-align:top;font-size:.85rem}th{font-size:.64rem}td strong{display:block}td small{color:var(--red);margin-top:.3rem}td a{display:inline-flex;align-items:center;gap:.3rem;color:var(--red);font-weight:700}.unavailable{color:var(--muted);font-size:.78rem}.parts-catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1.5rem}.part-card{display:flex;flex-direction:column;min-width:0;background:#efe6d7;border:1px solid var(--rule);box-shadow:0 1px 0 rgba(29,36,33,.08)}.part-card-image{position:relative;background:#1d2421;overflow:hidden}.part-card-image img{display:block;width:100%;height:12.5rem;object-fit:cover;transition:transform .35s ease}.part-card:hover .part-card-image img{transform:scale(1.035)}.part-card-image span{position:absolute;top:.7rem;left:.7rem;background:var(--paper);color:var(--ink);padding:.28rem .45rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.part-card-body{display:flex;flex:1;flex-direction:column;padding:1rem}.part-card-supplier{margin:0;color:var(--red);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.64rem!important;font-weight:700;letter-spacing:.07em;text-transform:uppercase;line-height:1.35!important}.part-card h3{margin:.55rem 0 0;font-family:Georgia,serif;font-size:1.35rem;line-height:1.05;letter-spacing:-.025em}.part-card-caption{margin:.65rem 0 1rem;color:var(--muted);font-size:.81rem!important;line-height:1.45!important}.part-card-footer{display:flex;align-items:center;justify-content:space-between;gap:.65rem;margin-top:auto;border-top:1px solid var(--rule);padding-top:.75rem;font-size:.8rem}.part-card-footer a{display:inline-flex;align-items:center;gap:.3rem;color:var(--red);font-weight:700;text-decoration:none}.part-card-footer a:hover{text-decoration:underline}.part-card-footer span{color:var(--muted);font-size:.72rem}.journal-cta{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:end;padding:6rem 0 2rem}.journal-cta h2{margin:0;font-family:Georgia,serif;font-size:clamp(2.4rem,5vw,4.8rem);line-height:.95;letter-spacing:-.05em}.journal-cta p{margin:0 0 1.5rem;color:var(--muted)}.cta-links{display:flex;gap:.75rem;flex-wrap:wrap}.cta-links a{padding:.8rem 1rem;background:var(--green);color:white;font-size:.82rem;font-weight:700;text-decoration:none}.cta-links a:last-child{background:transparent;border:1px solid var(--ink);color:var(--ink)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:900px){.parts-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.vespa-journal .max-w-5xl{padding-left:1.25rem;padding-right:1.25rem}.hero-content{padding:2rem 1.25rem}.journal-hero{min-height:38rem}.spec-strip{grid-template-columns:repeat(2,1fr);gap:1.25rem}.journal-nav{display:none}.journal-section{padding:4rem 0}.story-media,.story-copy,.story-grid.reverse .story-media,.story-grid.reverse .story-copy{grid-column:1/-1;grid-row:auto}.story-copy{order:2}.story-grid.reverse .story-media{order:1}.goal-list li{grid-template-columns:1fr}.battery-layout,.journal-cta{grid-template-columns:1fr}.battery-main img{height:31rem}.fabrication-pair{grid-template-columns:1fr}.fabrication-pair img{height:24rem}.at-glance{grid-template-columns:1fr 1fr}.parts-catalog-grid{grid-template-columns:1fr}.part-card-image img{height:15rem}.journal-cta{padding-top:4rem}}@media(prefers-reduced-motion:no-preference){.journal-hero img{animation:hero-settle 1.4s ease-out both}@keyframes hero-settle{from{transform:scale(1.035)}to{transform:scale(1)}}}`}</style>
+      <style>{`.vespa-journal{--paper:#f6f1e8;--ink:#1d2421;--muted:#59645d;--green:#184d3f;--red:#9f302b;--rule:#b9b3a8;background:var(--paper);color:var(--ink);overflow-x:hidden}.vespa-journal .starfield{display:none}.vespa-journal .max-w-5xl{max-width:72rem;padding-top:1.5rem}.vespa-journal *{box-sizing:border-box}.vespa-journal a:focus-visible,.vespa-journal button:focus-visible{outline:3px solid var(--red);outline-offset:3px}.vespa-journal p{font-size:1rem;line-height:1.7}.journal-breakout{width:100vw;margin-left:calc(50% - 50vw)}.journal-hero{position:relative;min-height:min(78vh,54rem);display:flex;align-items:end;isolation:isolate;background:#192923}.journal-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 37%;z-index:-2}.journal-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(11,18,15,.8),rgba(11,18,15,.34) 58%,rgba(11,18,15,.08))}.hero-content{width:min(72rem,100%);margin:0 auto;padding:4rem 2rem;color:#fffaf0}.hero-content h1{max-width:52rem;margin:0;font-family:Georgia,serif;font-size:clamp(3rem,8vw,7rem);line-height:.93;letter-spacing:-.055em}.hero-content p{max-width:38rem;margin:1.5rem 0 0;font-size:clamp(1rem,2vw,1.3rem);line-height:1.55}.scroll-cue{display:inline-flex;align-items:center;gap:.55rem;margin-top:2.5rem;border-bottom:1px solid currentColor;padding-bottom:.5rem;color:#fffaf0;font-size:.875rem;font-weight:700;text-decoration:none}.spec-strip{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--rule);padding:1.4rem 0;gap:1rem}.spec-strip div{min-width:0}.spec-strip small,.section-index,.parts-table-wrap td small{display:block}.spec-strip small,.section-index,.parts-table-wrap th,.parts-table-wrap td small{color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.spec-strip strong{display:block;margin-top:.35rem;font-size:.92rem;line-height:1.25}.journal-nav{display:flex;flex-wrap:wrap;gap:1.25rem;border-bottom:1px solid var(--rule);padding:1rem 0}.journal-nav a{color:var(--ink);font-size:.82rem;font-weight:700;text-decoration:none}.journal-nav a:hover{color:var(--red)}.journal-section{padding:6.5rem 0;border-bottom:1px solid var(--rule)}.section-index{color:var(--red);margin:0 0 .8rem}.section-heading{max-width:39rem}.section-heading h2,.story-copy h2{margin:0;font-family:Georgia,serif;font-size:clamp(2.35rem,5vw,4.5rem);line-height:.95;letter-spacing:-.045em}.section-heading>p:not(.section-index){margin:1.35rem 0 0;color:var(--muted)}.story-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(1.5rem,4vw,5rem);align-items:center}.story-media{grid-column:span 7;margin:0}.story-copy{grid-column:span 5}.story-copy p{color:var(--muted)}.story-grid.reverse .story-media{grid-column:6 / span 7;grid-row:1}.story-grid.reverse .story-copy{grid-column:1 / span 5;grid-row:1}figure{margin:0}.story-media img{display:block;width:100%;height:clamp(22rem,45vw,38rem);object-fit:cover}.story-media figcaption,.photo-caption{margin-top:.75rem;color:var(--muted);font-size:.78rem;line-height:1.45}.goal-list{margin:1.7rem 0 0;padding:0;list-style:none;border-top:1px solid var(--rule)}.goal-list li{display:grid;grid-template-columns:8rem 1fr;gap:1rem;border-bottom:1px solid var(--rule);padding:.8rem 0;color:var(--muted);font-size:.93rem;line-height:1.5}.goal-list strong{color:var(--ink)}.battery-layout{display:grid;grid-template-columns:7fr 5fr;gap:clamp(1.5rem,4vw,5rem);align-items:start;margin-top:2.75rem}.battery-main{position:relative;margin:0}.battery-main img{display:block;width:100%;height:clamp(28rem,50vw,45rem);object-fit:cover}.battery-callout{position:absolute;right:1rem;bottom:1rem;max-width:14rem;background:rgba(246,241,232,.95);border-left:4px solid var(--red);padding:1rem;color:var(--ink);font-size:.83rem;line-height:1.4}.battery-specs{margin:0;border-top:2px solid var(--ink)}.battery-specs div{border-bottom:1px solid var(--rule);padding:1rem 0}.battery-specs dt{color:var(--red);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.battery-specs dd{margin:.35rem 0 0;font-size:1rem;line-height:1.45}.battery-thumbs{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}.battery-thumbs img{width:100%;height:11rem;display:block;object-fit:cover}.tech-list{margin:1.5rem 0 0;padding:0;list-style:none}.tech-list li{border-top:1px solid var(--rule);padding:.9rem 0;color:var(--muted);font-size:.94rem;line-height:1.55}.tech-list strong{color:var(--ink)}.downloads{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.75rem}.download-link{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--ink);padding:.75rem .9rem;color:var(--ink);font-size:.8rem;font-weight:700;text-decoration:none}.download-link:hover{background:var(--ink);color:var(--paper)}.fabrication-pair{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.fabrication-pair img{width:100%;height:28rem;object-fit:cover;display:block}.at-glance{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:2.5rem}.at-glance div{background:var(--paper);padding:1.25rem}.at-glance strong{display:block;font-family:Georgia,serif;font-size:1.35rem}.at-glance span{display:block;margin-top:.45rem;color:var(--muted);font-size:.84rem;line-height:1.45}.parts-section{padding-bottom:5rem}.affiliate-note{margin:2rem 0 0;border-left:3px solid var(--red);padding:.7rem 1rem;background:#efe6d7;color:var(--muted);font-size:.83rem}.part-filter{display:flex;flex-wrap:wrap;gap:.45rem;margin:2rem 0 1rem}.part-filter button{border:1px solid var(--rule);background:transparent;padding:.55rem .8rem;color:var(--ink);font-size:.75rem;font-weight:700}.part-filter button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:white}.parts-table-wrap{overflow:auto;border-top:2px solid var(--ink)}table{width:100%;min-width:40rem;border-collapse:collapse}th,td{border-bottom:1px solid var(--rule);padding:.9rem .75rem;text-align:left;vertical-align:top;font-size:.85rem}th{font-size:.64rem}td strong{display:block}td small{color:var(--red);margin-top:.3rem}td a{display:inline-flex;align-items:center;gap:.3rem;color:var(--red);font-weight:700}.unavailable{color:var(--muted);font-size:.78rem}.parts-catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1.5rem}.part-card{display:flex;flex-direction:column;min-width:0;background:#efe6d7;border:1px solid var(--rule);box-shadow:0 1px 0 rgba(29,36,33,.08)}.part-card-image{position:relative;background:#1d2421;overflow:hidden}.part-card-image img{display:block;width:100%;height:12.5rem;object-fit:cover;transition:transform .35s ease}.part-card:hover .part-card-image img{transform:scale(1.035)}.part-card-image span{position:absolute;top:.7rem;left:.7rem;background:var(--paper);color:var(--ink);padding:.28rem .45rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.part-card-body{display:flex;flex:1;flex-direction:column;padding:1rem}.part-card-supplier{margin:0;color:var(--red);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.64rem!important;font-weight:700;letter-spacing:.07em;text-transform:uppercase;line-height:1.35!important}.part-card h3{margin:.55rem 0 0;font-family:Georgia,serif;font-size:1.35rem;line-height:1.05;letter-spacing:-.025em}.part-card-caption{margin:.65rem 0 1rem;color:var(--muted);font-size:.81rem!important;line-height:1.45!important}.part-card-footer{display:flex;align-items:center;justify-content:space-between;gap:.65rem;margin-top:auto;border-top:1px solid var(--rule);padding-top:.75rem;font-size:.8rem}.part-card-footer a{display:inline-flex;align-items:center;gap:.3rem;color:var(--red);font-weight:700;text-decoration:none}.part-card-footer a:hover{text-decoration:underline}.part-card-footer span{color:var(--muted);font-size:.72rem}.journal-cta{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:end;padding:6rem 0 2rem}.journal-cta h2{margin:0;font-family:Georgia,serif;font-size:clamp(2.4rem,5vw,4.8rem);line-height:.95;letter-spacing:-.05em}.journal-cta p{margin:0 0 1.5rem;color:var(--muted)}.cta-links{display:flex;gap:.75rem;flex-wrap:wrap}.cta-links a{padding:.8rem 1rem;background:var(--green);color:white;font-size:.82rem;font-weight:700;text-decoration:none}.cta-links a:last-child{background:transparent;border:1px solid var(--ink);color:var(--ink)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:900px){.parts-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.vespa-journal .max-w-5xl{padding-left:1.25rem;padding-right:1.25rem}.hero-content{padding:2rem 1.25rem}.journal-hero{min-height:38rem}.spec-strip{grid-template-columns:repeat(2,1fr);gap:1.25rem}.journal-nav{display:none}.journal-section{padding:4rem 0}.story-media,.story-copy,.story-grid.reverse .story-media,.story-grid.reverse .story-copy{grid-column:1/-1;grid-row:auto}.story-copy{order:2}.story-grid.reverse .story-media{order:1}.goal-list li{grid-template-columns:1fr}.battery-layout,.journal-cta{grid-template-columns:1fr}.battery-main img{height:31rem}.fabrication-pair{grid-template-columns:1fr}.fabrication-pair img{height:24rem}.at-glance{grid-template-columns:1fr 1fr}.parts-catalog-grid{grid-template-columns:1fr}.part-card-image img{height:15rem}.journal-cta{padding-top:4rem}}@media(prefers-reduced-motion:no-preference){.journal-hero img{animation:hero-settle 1.4s ease-out both}@keyframes hero-settle{from{transform:scale(1.035)}to{transform:scale(1)}}}`}</style>
       <style>{`
         .vespa-journal {
           --paper: var(--background);
@@ -89,6 +102,62 @@ export default function VespaP200EPage() {
         .vespa-journal .journal-nav a:hover,
         .vespa-journal .journal-nav a:focus-visible {
           color: var(--accent-2);
+        }
+        /* The scrolling box is the root element, not the page wrapper, so the
+           smooth-scroll rule has to be scoped from there. */
+        :root:has(.vespa-journal) {
+          scroll-behavior: smooth;
+        }
+        /* The nav is sticky, so anchored sections need to clear it. */
+        .vespa-journal main,
+        .vespa-journal .journal-section,
+        .vespa-journal [id] {
+          scroll-margin-top: 5.5rem;
+        }
+        @media (max-width: 760px) {
+          .vespa-journal [id] { scroll-margin-top: 1.5rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          :root:has(.vespa-journal) { scroll-behavior: auto; }
+        }
+        /* Inline part references: quiet in the prose, obvious on hover. */
+        .vespa-journal .part-ref {
+          color: inherit;
+          font-weight: 600;
+          text-decoration: none;
+          background-image: linear-gradient(var(--accent-2), var(--accent-2));
+          background-repeat: no-repeat;
+          background-position: 0 100%;
+          background-size: 100% 1px;
+          padding-bottom: 1px;
+          transition: background-size .18s ease, color .18s ease;
+        }
+        .vespa-journal .part-ref:hover,
+        .vespa-journal .part-ref:focus-visible {
+          color: var(--accent-2);
+          background-size: 100% 2px;
+        }
+        /* Momentary highlight when a part row is jumped to. */
+        .vespa-journal tr:target td {
+          background: color-mix(in srgb, var(--accent-2) 12%, transparent);
+        }
+        .vespa-journal .wiring-figure {
+          margin-top: clamp(2.5rem, 6vw, 4rem);
+        }
+        .vespa-journal .wiring-figure a {
+          display: block;
+          background: #fff;
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-card);
+        }
+        .vespa-journal .wiring-figure img {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+        .vespa-journal .wiring-figure figcaption {
+          max-width: 72ch;
+          margin-top: .9rem;
         }
         .vespa-journal .system-visual {
           margin-top: clamp(2.5rem, 6vw, 5rem);
@@ -190,9 +259,12 @@ export default function VespaP200EPage() {
         <a href="#story">Starting point</a>
         <a href="#battery">Battery &amp; power</a>
         <a href="#powertrain">Controller</a>
+        <a href="#wiring">Wiring</a>
         <a href="#integration">Integration</a>
         <a href="#fabrication">Swingarm</a>
         <a href="#finished">Finished scooter</a>
+        <a href="#theoretical-comparison">Performance</a>
+        <a href="#engineering">Engineering notes</a>
         <a href="#parts">Parts list</a>
       </nav>
       <main id="story">
@@ -249,10 +321,18 @@ export default function VespaP200EPage() {
               <p className="section-index">02 / battery pack</p>
               <h2>Battery and power electronics.</h2>
               <p>
-                It starts with 200 Samsung 25R cells: twenty series groups of
-                ten cells in parallel. The pack, BMS, breaker, contactor,
-                precharge circuit, charger, and controller form one electrical
-                system—not a loose collection of parts.
+                It starts with 200{" "}
+                <Part name="Samsung INR18650-25R cells">Samsung 25R cells</Part>
+                : twenty series groups of ten cells in parallel. The pack,{" "}
+                <Part name="Daly Li-ion 20S 72V 100A BMS">BMS</Part>,{" "}
+                <Part name="DZ47-125 2P circuit breaker">breaker</Part>,{" "}
+                <Part name="Contactor EMC-135">contactor</Part>,{" "}
+                <Part name="ZEVA Smart Precharger">precharge circuit</Part>,{" "}
+                <Part name="84V 3A 20S lithium-ion charger">charger</Part>, and{" "}
+                <Part name="VOTOL EM-100 controller, 72V / 100A">
+                  controller
+                </Part>{" "}
+                form one electrical system—not a loose collection of parts.
               </p>
             </div>
             <div className="battery-layout">
@@ -354,7 +434,6 @@ export default function VespaP200EPage() {
             <PowerElectronicsMap />
           </section>
         </FadeIn>
-        <VespaPartsCatalog />
         <FadeIn>
           <section
             className="journal-section story-grid reverse"
@@ -374,8 +453,15 @@ export default function VespaP200EPage() {
               <p className="section-index">03 / motor & controller</p>
               <h2>The VOTOL EM-100 is the brain.</h2>
               <p>
-                The VOTOL EM-100 takes battery DC and turns it into carefully
-                timed three-phase power for the hub motor. It reads throttle,
+                The{" "}
+                <Part name="VOTOL EM-100 controller, 72V / 100A">
+                  VOTOL EM-100
+                </Part>{" "}
+                takes battery DC and turns it into carefully timed three-phase
+                power for the{" "}
+                <Part name="QS 10-inch hub motor, 4kW 55H V3">hub motor</Part>.
+                It reads{" "}
+                <Part name="25mm three-wire twist throttle">throttle</Part>,
                 Hall sensors, brake inputs, reverse, and the key signal, then
                 controls current and switching timing to make the motor move.
               </p>
@@ -414,6 +500,57 @@ export default function VespaP200EPage() {
           </section>
         </FadeIn>
         <FadeIn>
+          <section className="journal-section" id="wiring" aria-labelledby="wiring-title">
+            <div className="section-heading">
+              <p className="section-index">04 / wiring</p>
+              <h2 id="wiring-title">The whole powertrain on one sheet.</h2>
+              <p>
+                Every subsystem in the sections above, drawn as a single
+                schematic: the 72V pack and its{" "}
+                <Part name="Daly Li-ion 20S 72V 100A BMS">BMS</Part>, the{" "}
+                <Part name="DZ47-125 2P circuit breaker">breaker</Part> and{" "}
+                <Part name="Contactor EMC-135">contactor</Part>, the{" "}
+                <Part name="ZEVA Smart Precharger">precharge assembly</Part>,
+                the <Part name="48–72V to 12V, 10A DC-DC converter">DC-DC converter</Part>{" "}
+                feeding the 12V branch, and the{" "}
+                <Part name="VOTOL EM-100 controller, 72V / 100A">EM-100</Part>{" "}
+                driving the three motor phases with Hall feedback returning.
+              </p>
+            </div>
+            <figure className="wiring-figure">
+              <a href={img.wiring} target="_blank" rel="noopener noreferrer" aria-label="Open the full-size powertrain wiring diagram">
+                <img
+                  src={img.wiring}
+                  alt="Wiring diagram of the 72V BLDC powertrain: battery pack with BMS, breaker, contactor, precharge resistor, DC-DC converter, fuse panel, VOTOL controller, hub motor phases, Hall sensors, throttle, and key switch"
+                  loading="lazy"
+                />
+              </a>
+              <figcaption className="photo-caption">
+                Left to right: the 20S10P pack and its integrated BMS, the
+                breaker and contactor, the precharge resistor assembly, the
+                step-down converter and 12V fuse panel, then the EM-100 and the
+                three motor phases with Hall feedback returning. The colour key
+                on the sheet separates the 72V traction path, the motor phases,
+                the 12V branch, logic and control, Hall sensors, throttle, and
+                the programming link. Tap the diagram for full size.
+              </figcaption>
+            </figure>
+            <div className="downloads">
+              <DownloadLink href={img.wiring}>
+                Download powertrain wiring diagram
+              </DownloadLink>
+              <DownloadLink href="/projects/vespa/documents/em100-wiring-harness.pdf">
+                EM-100 wiring harness sheet
+              </DownloadLink>
+            </div>
+            <p className="affiliate-note" style={{ marginTop: "1.75rem" }}>
+              Reference drawing for this build. Verify every rating, fuse value,
+              conductor size, and connector pinout against your own hardware
+              before energizing a pack.
+            </p>
+          </section>
+        </FadeIn>
+        <FadeIn>
           <section className="journal-section story-grid" id="integration">
             <figure className="story-media">
               <img
@@ -426,14 +563,27 @@ export default function VespaP200EPage() {
               </figcaption>
             </figure>
             <div className="story-copy">
-              <p className="section-index">04 / integration</p>
+              <p className="section-index">05 / integration</p>
               <h2>Separate power, control, and accessory circuits.</h2>
               <p>
                 The high-voltage battery circuit carries power to the controller
                 through protection and isolation hardware. The low-voltage
-                branch is supplied by the DC/DC converter for lighting, horn,
-                indicators, and other 12V accessories. The controller harness
-                carries low-current command and feedback signals.
+                branch is supplied by the{" "}
+                <Part name="48–72V to 12V, 10A DC-DC converter">
+                  DC/DC converter
+                </Part>{" "}
+                for{" "}
+                <Part name="LED headlight">lighting</Part>,{" "}
+                <Part name="SoundOriginal 12V waterproof horn kit">horn</Part>,{" "}
+                <Part name="iBrightstar amber 1156 LED signal bulbs">
+                  indicators
+                </Part>
+                , and other 12V accessories, distributed through a{" "}
+                <Part name="Six-position DIN-rail fuse distribution module">
+                  fused module
+                </Part>
+                . The controller harness carries low-current command and
+                feedback signals.
               </p>
               <ul className="goal-list">
                 <li>
@@ -464,14 +614,24 @@ export default function VespaP200EPage() {
         <FadeIn>
           <section className="journal-section" id="fabrication">
             <div className="section-heading">
-              <p className="section-index">05 / fabrication</p>
+              <p className="section-index">06 / fabrication</p>
               <h2>Rear structure designed around the wheel.</h2>
               <p>
                 The original P200E engine and transmission hung from a single
                 rear swing unit. A direct-drive hub motor has no place in that
-                arrangement, so the replacement swingarm had to locate the axle,
-                carry the brake reaction, retain the original pivot
-                relationship, and give the shock a proper home.
+                arrangement, so the replacement swingarm—welded up from{" "}
+                <Part name="2-inch square 1008–1010 steel tube, 0.083-inch wall">
+                  square
+                </Part>{" "}
+                and{" "}
+                <Part name="1 × 2-inch 1008–1010 rectangular steel tube, 0.120-inch wall">
+                  rectangular steel tube
+                </Part>
+                —had to locate the axle, carry the{" "}
+                <Part name="QS disc-brake kit">brake</Part> reaction, retain the
+                original pivot relationship, and give the{" "}
+                <Part name="Ridetech universal shock-tower mount">shock</Part> a
+                proper home.
               </p>
             </div>
             <div className="fabrication-pair" style={{ marginTop: "2.5rem" }}>
@@ -515,7 +675,7 @@ export default function VespaP200EPage() {
               </figcaption>
             </figure>
             <div className="story-copy">
-              <p className="section-index">06 / finished result</p>
+              <p className="section-index">07 / finished result</p>
               <h2>Classic form, electric drivetrain.</h2>
               <p>
                 Painted steel, chrome, floor rails, mirrors, legshield,
@@ -526,6 +686,9 @@ export default function VespaP200EPage() {
             </div>
           </section>
         </FadeIn>
+        <VespaTheoreticalComparison />
+        <VespaEngineeringNotebook />
+        <VespaPartsCatalog />
         <FadeIn>
           <section className="journal-cta">
             <div>
