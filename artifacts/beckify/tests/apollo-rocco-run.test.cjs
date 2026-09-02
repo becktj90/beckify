@@ -98,6 +98,15 @@ assert.equal(run.saveBest(store, 120), 120);
 assert.equal(run.saveBest(store, 40), 120, 'local best never drops');
 assert.equal(run.loadBest(store), 120);
 
+assert.equal(run.runPoints(100, 2), 110);
+assert.equal(run.runPoints(100.9, 0), 100);
+const pointsStore = {
+  data: {},
+  getItem(key) { return Object.prototype.hasOwnProperty.call(this.data, key) ? this.data[key] : null; },
+  setItem(key, value) { this.data[key] = String(value); },
+};
+assert.equal(run.saveBest(pointsStore, run.runPoints(40, 3)), 55, 'best uses the same points as the run HUD');
+
 const blocked = {
   getItem() { throw new Error('blocked'); },
   setItem() { throw new Error('blocked'); },

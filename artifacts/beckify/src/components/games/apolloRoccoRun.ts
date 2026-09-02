@@ -113,6 +113,10 @@ export function runSpeed(elapsed: number, difficulty: Difficulty) {
   return Math.min(tuning.maxSpeed, tuning.startSpeed + Math.max(0, elapsed) * tuning.accel);
 }
 
+export function runPoints(distance: number, treats: number) {
+  return Math.max(0, Math.floor(distance) + Math.max(0, Math.floor(treats)) * 5);
+}
+
 export function spawnGap(difficulty: Difficulty, random: () => number) {
   const tuning = TUNING[difficulty];
   return tuning.minGap + random() * (tuning.maxGap - tuning.minGap);

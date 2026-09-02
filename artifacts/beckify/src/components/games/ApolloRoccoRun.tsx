@@ -13,6 +13,7 @@ import {
   loadBest,
   poseFromTimers,
   playIntent,
+  runPoints,
   runSpeed,
   saveBest,
   shiftLane,
@@ -236,9 +237,11 @@ export function ApolloRoccoRun() {
     };
 
     const finish = () => {
-      let nextBest = Math.max(bestRef.current, Math.floor(distance));
+      const points = runPoints(distance, treats);
+      setScore(points);
+      let nextBest = Math.max(bestRef.current, points);
       try {
-        nextBest = saveBest(localStorage, Math.floor(distance));
+        nextBest = saveBest(localStorage, points);
       } catch {
         /* Local scores are optional. */
       }
@@ -350,7 +353,7 @@ export function ApolloRoccoRun() {
         spark.life -= dt;
       });
       for (let i = sparks.length - 1; i >= 0; i -= 1) if (sparks[i].life <= 0) sparks.splice(i, 1);
-      setScore(Math.floor(distance) + treats * 5);
+      setScore(runPoints(distance, treats));
     };
 
     const drawTree = (seed: number, side: -1 | 1, z: number) => {
@@ -552,10 +555,14 @@ export function ApolloRoccoRun() {
 
   const onCanvasPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     swipe.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
-  const onCanvasPointerUp = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+  const endSwipe = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const start = swipe.current;
     swipe.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     if (!start || start.id !== event.pointerId) return;
     const action = swipeAction(event.clientX - start.x, event.clientY - start.y);
     if (action) actRef.current(action);
@@ -597,8 +604,8 @@ export function ApolloRoccoRun() {
           className="block h-auto w-full touch-none select-none"
           aria-label="Apollo and Rocco Run three-lane endless runner"
           onPointerDown={onCanvasPointerDown}
-          onPointerUp={onCanvasPointerUp}
-          onPointerCancel={() => { swipe.current = null; }}
+          onPointerUp={endSwipe}
+          onPointerCancel={endSwipe}
         />
         {immersive ? <button type="button" className="absolute right-4 top-4 z-20 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
 
