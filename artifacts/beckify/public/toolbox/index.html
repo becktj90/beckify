@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https: blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#8b7bff">
   <link rel="canonical" href="https://beckify.com/toolbox/">
@@ -248,6 +248,10 @@
       <button class="nav-btn" data-target="sec-ebus-budget" data-keywords="ebus e-bus rack current budget beckhoff el9410 coupler remaining milliamp reserve">E-bus / Rack Current</button>
       <button class="nav-btn" data-target="sec-modbus-address" data-keywords="modbus address converter holding coil 40001 400001 function code pdu offset">Modbus Address Converter</button>
       <button class="nav-btn" data-target="sec-plc-timer-preset" data-keywords="plc timer preset ton tof rto timebase milliseconds scan counts">PLC Timer Preset</button>
+      <button class="nav-btn" data-target="sec-pitch-hum" data-keywords="pitch hum frequency identifier 60 hz 50 hz 120 hz mains ripple transformer buzz autocorrelation microphone field">Pitch / Hum Identifier</button>
+      <button class="nav-btn" data-target="sec-audio-spectrum" data-keywords="fft audio spectrum analyzer harmonics transformer buzz motor noise microphone hann">FFT / Audio Spectrum</button>
+      <button class="nav-btn" data-target="sec-sound-level" data-keywords="sound level meter spl dbfs a-weighting leq equipment room noise microphone relative db">Sound Level Meter</button>
+      <button class="nav-btn" data-target="sec-lux-meter" data-keywords="lux light level meter camera photometer led retrofit flicker luminance relative">Lux / Light Meter</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">06 · References &amp; workspace</div>
@@ -283,7 +287,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">63 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">67 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -344,6 +348,10 @@
             <li><a class="home-tool-link" href="#sec-ebus-budget">E-bus / Rack Current Budget</a></li>
             <li><a class="home-tool-link" href="#sec-modbus-address">Modbus Address Converter</a></li>
             <li><a class="home-tool-link" href="#sec-plc-timer-preset">PLC Timer Preset</a></li>
+            <li><a class="home-tool-link" href="#sec-pitch-hum">Pitch / Hum Identifier</a></li>
+            <li><a class="home-tool-link" href="#sec-audio-spectrum">FFT / Audio Spectrum</a></li>
+            <li><a class="home-tool-link" href="#sec-sound-level">Sound Level Meter</a></li>
+            <li><a class="home-tool-link" href="#sec-lux-meter">Lux / Light Meter</a></li>
             <li><a class="home-tool-link" href="#sec-motor-nameplate">Motor Nameplate Analyzer</a></li>
           </ul>
         </div>
@@ -446,6 +454,10 @@
             <li><a class="home-tool-link" href="#sec-base-converter">Number-Base Converter (Hex/Dec/Oct/Bin)</a></li>
             <li><a class="home-tool-link" href="#sec-cm">Circular Mils</a></li>
             <li><a class="home-tool-link" href="#sec-photometrics">Photometrics</a></li>
+            <li><a class="home-tool-link" href="#sec-lux-meter">Lux / Light Meter</a></li>
+            <li><a class="home-tool-link" href="#sec-pitch-hum">Pitch / Hum Identifier</a></li>
+            <li><a class="home-tool-link" href="#sec-audio-spectrum">FFT / Audio Spectrum</a></li>
+            <li><a class="home-tool-link" href="#sec-sound-level">Sound Level Meter</a></li>
             <li><a class="home-tool-link" href="#sec-signal-scaling">Process Value / Signal Scaling</a></li>
             <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
             <li><a class="home-tool-link" href="#sec-panel-power-study">Panel Schedule Power Study</a></li>
@@ -7477,6 +7489,327 @@
     </section><!-- end sec-plc-timer-preset -->
 
     <!-- ════════════════════════════════════════
+         PHONE SENSOR FIELD TOOLS
+         Pitch / hum, FFT spectrum, sound level, lux
+         Shared mic engine + Hann FFT. Nothing auto-starts.
+         ════════════════════════════════════════ -->
+
+    <section id="sec-pitch-hum" class="section">
+      <div class="section-header">
+        <h2>Pitch / Hum Frequency Identifier</h2>
+        <p>Electrical diagnostic helper — not a music tuner. Dominant frequency of an audible hum or whine, plus what that frequency commonly indicates. Associations only; never a confirmed cause.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Pitch / Hum Identifier</summary>
+          <div class="section-info-body">
+            The fundamental is extracted with <strong>autocorrelation</strong> on the live microphone buffer (more robust than grabbing the raw FFT peak for a single tone). A Hann-windowed FFT is shown only as a spectrum helper.<br><br>
+            <strong>Typical associations (worth investigating, not a diagnosis):</strong>
+            <ul>
+              <li>50 Hz / 60 Hz — mains-frequency hum, often grounding or induction</li>
+              <li>100 Hz / 120 Hz — consistent with full-wave-rectified ripple (2× mains)</li>
+              <li>150 Hz / 180 Hz — 3rd harmonic; transformer magnetostriction or mechanical buzz</li>
+              <li>300 Hz / 360 Hz — higher rectifier harmonics on 50/60 Hz systems</li>
+            </ul>
+            Phone mics roll off and distort. Use this to compare “before vs after” or to decide whether a calibrated meter is worth pulling out.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone microphones are not calibrated instruments; sensitivity varies device to device. This is a relative field check and rough diagnostic — not a substitute for a calibrated sound-level meter or frequency counter, and not for compliance, code-acceptance, or safety-certification measurements.</p>
+        <p class="note note-privacy">Audio is processed live, on this device, for display only. Nothing is recorded, stored, or transmitted.</p>
+      </div>
+
+      <div class="feynman-lesson">
+        <div class="feynman-lesson-title">Show the work — why autocorrelation, not FFT-peak?</div>
+        <p class="feynman-formula">f<sub>0</sub> = f<sub>s</sub> / τ<sub>peak</sub></p>
+        <p class="feynman-lesson-body">A 60 Hz hum is rarely a clean sine. Harmonics make the FFT’s tallest bin a multiple of the fundamental. Autocorrelation looks for the lag where the waveform repeats; that lag is the period. The FFT is still useful for a spectrum — it is just the wrong first answer for “what is the hum?”</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Microphone</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool listens through your phone mic to estimate a hum frequency. It does not record or upload audio. The browser will ask for microphone permission after you tap Start — not before.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="hum_start">Start listening</button>
+                <button type="button" class="btn btn-secondary" id="hum_stop">Stop</button>
+                <button type="button" class="btn btn-secondary" id="hum_hold" aria-pressed="false">Hold / peak-lock</button>
+              </div>
+              <p class="sensor-status" id="hum_status">Idle. Sensors stay off until you tap Start.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Dominant frequency</div>
+          <div class="card-body">
+            <div class="sensor-readout" id="hum_hz" aria-live="polite">—</div>
+            <span class="sensor-readout-unit">Hz (autocorrelation)</span>
+            <p class="note" id="hum_conf">Waiting for Start.</p>
+            <p class="note" id="hum_note">Start listening, then hold the phone near the source — not a diagnosis.</p>
+            <p class="tool-note" id="hum_spec">Spectrum helper appears once the mic is live. Hann window, documented bin Hz.</p>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Common frequencies — typical associations</div>
+          <div class="card-body">
+            <p class="note">Language is “worth investigating,” never a confirmed cause. Include 50 Hz regions for completeness.</p>
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead>
+                  <tr><th>Hz</th><th>Typical association — not a diagnosis</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>50</td><td>Mains-frequency hum in 50 Hz regions (grounding or induction). Worth investigating.</td></tr>
+                  <tr><td>60</td><td>Mains-frequency hum in 60 Hz regions (grounding or induction). Worth investigating.</td></tr>
+                  <tr><td>100</td><td>Consistent with full-wave-rectified ripple on 50 Hz mains (2×). Worth investigating.</td></tr>
+                  <tr><td>120</td><td>Consistent with full-wave-rectified ripple on 60 Hz mains (2×). Worth investigating.</td></tr>
+                  <tr><td>150 / 180</td><td>3rd harmonic of 50/60 Hz — transformer magnetostriction or mechanical buzz is a common association.</td></tr>
+                  <tr><td>300 / 360</td><td>Higher rectifier harmonics on 50/60 Hz systems. Worth investigating.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-pitch-hum -->
+
+    <section id="sec-audio-spectrum" class="section">
+      <div class="section-header">
+        <h2>FFT / Audio Spectrum Analyzer</h2>
+        <p>General-purpose real-time spectrum for transformer buzz, motor harmonics, and noise characterization. Shared Hann FFT with the pitch and lux tools.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Audio Spectrum</summary>
+          <div class="section-info-body">
+            Time-domain samples come from the shared microphone engine (one stream for pitch, spectrum, and sound level). The spectrum is a Hann-windowed radix-2 FFT. Bin width = sampleRate / FFT size (default N = 2048).<br><br>
+            Linear vs log frequency axis, exponential averaging, and a peak-hold overlay are display controls — they do not change the underlying FFT. Export is a PNG of the canvas and/or CSV of bin magnitudes. No raw audio leaves the device.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone microphones are not calibrated instruments; sensitivity varies device to device. This is a relative field check and rough diagnostic — not a substitute for a calibrated analyzer, and not for compliance, code-acceptance, or safety-certification measurements.</p>
+        <p class="note note-privacy">Audio is processed live, on this device, for display only. Nothing is recorded, stored, or transmitted. PNG/CSV exports are the drawn spectrum and numeric bins — never raw audio.</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Microphone and display</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool uses the microphone to draw a live spectrum. It does not record or upload audio. Permission is requested only after Start.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="fft_start">Start analyzer</button>
+                <button type="button" class="btn btn-secondary" id="fft_stop">Stop</button>
+              </div>
+              <p class="sensor-status" id="fft_status">Idle. Sensors stay off until you tap Start.</p>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="fft_axis">Frequency axis</label>
+                <select id="fft_axis">
+                  <option value="log" selected>Log</option>
+                  <option value="linear">Linear</option>
+                </select>
+              </div>
+              <div>
+                <label for="fft_smooth">Averaging (0 = none, 0.95 = heavy)</label>
+                <input id="fft_smooth" type="number" min="0" max="0.95" step="0.05" value="0.6">
+              </div>
+            </div>
+            <label class="sensor-check"><input type="checkbox" id="fft_peakhold" checked> Peak-hold overlay</label>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="fft_reset_peak">Reset peak hold</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="fft_png">Download PNG</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="fft_csv">Download CSV bins</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Live spectrum</div>
+          <div class="card-body">
+            <canvas id="fft_canvas" class="sensor-canvas" width="640" height="220" aria-label="Audio spectrum canvas"></canvas>
+            <p class="note" id="fft_readout">Hann window · N = 2048 · bin Hz = sampleRate / N. Start to plot.</p>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-audio-spectrum -->
+
+    <section id="sec-sound-level" class="section">
+      <div class="section-header">
+        <h2>Sound Level Meter</h2>
+        <p>Relative dB meter for equipment-room noise and before/after checks. Not a calibrated SPL meter unless you supply a one-point reference.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Sound Level Meter</summary>
+          <div class="section-info-body">
+            RMS is taken from the shared microphone’s time-domain buffer and converted to dBFS (full-scale float = 1.0). Optional A-weighting is an IEC 61672-shaped <strong>approximation applied to the FFT bins</strong> — not a certified analog filter, not dB(A) you can write on a report.<br><br>
+            One-point calibration: hold a known meter next to the phone, enter that dB, and this device stores an offset in localStorage. Without it, the unit stays clearly relative (dBFS / rel dB). Logged CSV rows are location, timestamp, and the numeric reading — never raw audio.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone microphones are not calibrated instruments; sensitivity varies device to device. This is a relative field check and rough diagnostic — not a substitute for a calibrated sound-level meter, and not for compliance, code-acceptance, OSHA, or safety-certification measurements.</p>
+        <p class="note note-privacy">Audio is processed live, on this device, for display only. Nothing is recorded, stored, or transmitted. CSV export is numeric readings only.</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Microphone</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool estimates a relative level from the microphone. It does not record or upload audio. The browser asks for permission only after Start.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="spl_start">Start meter</button>
+                <button type="button" class="btn btn-secondary" id="spl_stop">Stop</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="spl_reset">Reset peak / Leq</button>
+              </div>
+              <p class="sensor-status" id="spl_status">Idle. Sensors stay off until you tap Start.</p>
+            </div>
+            <label class="sensor-check"><input type="checkbox" id="spl_aweight"> A-weighting approximation (not a certified filter)</label>
+            <div class="input-group">
+              <div>
+                <label for="spl_leq_s">Leq-style interval (seconds)</label>
+                <input id="spl_leq_s" type="number" min="1" max="120" step="1" value="10">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Level</div>
+          <div class="card-body">
+            <div class="sensor-readout" id="spl_inst" aria-live="polite">—</div>
+            <span class="sensor-readout-unit" id="spl_unit">dBFS</span>
+            <div class="sensor-level" aria-hidden="true"><span id="spl_bar_fill"></span></div>
+            <div class="sensor-stats">
+              <div class="sensor-stat"><span class="sensor-stat-label">Running peak</span><span class="sensor-stat-val" id="spl_peak">—</span></div>
+              <div class="sensor-stat"><span class="sensor-stat-label">Leq-style</span><span class="sensor-stat-val" id="spl_leq">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">One-point calibration</div>
+          <div class="card-body">
+            <p class="note">Enter a known dB from a reference meter under the current conditions. Offset is stored per-device in localStorage. Without it, this display stays a relative unit — not dB(A).</p>
+            <div class="input-group">
+              <div>
+                <label for="spl_known">Known level (dB from reference meter)</label>
+                <input id="spl_known" type="number" step="0.1" placeholder="e.g. 72">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="spl_calibrate">Save offset</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="spl_clear_cal">Clear calibration</button>
+            </div>
+            <p class="tool-note" id="spl_cal_hint">Uncalibrated: showing dBFS-relative, not unearned-precision dB(A).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Logged readings</div>
+          <div class="card-body">
+            <div class="input-group single">
+              <div>
+                <label for="spl_note">Location / note</label>
+                <input id="spl_note" type="text" maxlength="80" placeholder="AHU-1 room, 3 ft from panel">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="spl_log">Log current reading</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="spl_csv">Export CSV</button>
+            </div>
+            <div id="spl_log_host"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-sound-level -->
+
+    <section id="sec-lux-meter" class="section">
+      <div class="section-header">
+        <h2>Lux / Light Level Meter</h2>
+        <p>Camera-based relative light-level estimate. Useful for before/after LED retrofit at the same fixture position — not certified photometry.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Lux / Light Meter</summary>
+          <div class="section-info-body">
+            The rear camera (when available) is sampled over a <strong>center-weighted</strong> region, not the full frame. Readings are averaged over ~1/60 s+ of frames so LED PWM flicker is not a single glowing instant.<br><br>
+            Without calibration the unit is a clearly labeled relative/arbitrary scale — never implied to be lux. One-point calibration: enter a known lux from a meter, stored per-device in localStorage.<br><br>
+            Flicker frequency runs the brightness time series through the <strong>same Hann FFT</strong> as the audio tools. It is camera-frame-rate limited (Nyquist ≈ fps/2). Do not photograph the sun or stare into high-intensity sources. Point the camera at the lighted task surface or luminaire housing, not at the lamp arc.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone cameras are not calibrated photometers; sensitivity varies device to device. This is a relative, comparative field check — not a substitute for a calibrated lux meter, and not for compliance, code-acceptance, or safety-certification measurements. Do not look at the sun or stare into high-intensity sources.</p>
+        <p class="note note-privacy">Camera frames are processed live, on this device, for display only. Nothing is recorded, stored, or transmitted. CSV export is position, timestamp, and the numeric reading — never raw frames.</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Camera</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool uses the camera on lighting only — a task surface or fixture, not the sun and not a stare into a high-intensity source. Permission is requested only after Start. Nothing is uploaded.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="lux_start">Start camera</button>
+                <button type="button" class="btn btn-secondary" id="lux_stop">Stop</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="lux_reset">Reset min / max</button>
+              </div>
+              <p class="sensor-status" id="lux_status">Idle. The camera stays off until you tap Start.</p>
+            </div>
+            <div class="sensor-preview">
+              <video id="lux_video" playsinline muted></video>
+              <div class="sensor-preview-reticle" aria-hidden="true"></div>
+            </div>
+            <canvas id="lux_sample" class="sensor-hidden-canvas" width="160" height="120" aria-hidden="true"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Reading</div>
+          <div class="card-body">
+            <div class="sensor-readout" id="lux_inst" aria-live="polite">—</div>
+            <span class="sensor-readout-unit" id="lux_unit">rel (not lux)</span>
+            <p class="note" id="lux_mode">Relative mode — these numbers are not lux until you calibrate.</p>
+            <div class="sensor-stats">
+              <div class="sensor-stat"><span class="sensor-stat-label">Min</span><span class="sensor-stat-val" id="lux_min">—</span></div>
+              <div class="sensor-stat"><span class="sensor-stat-label">Max</span><span class="sensor-stat-val" id="lux_max">—</span></div>
+              <div class="sensor-stat"><span class="sensor-stat-label">Average</span><span class="sensor-stat-val" id="lux_avg">—</span></div>
+            </div>
+            <p class="tool-note" id="lux_flicker">Flicker check runs after Start. Camera-frame-rate limited estimate.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">One-point calibration</div>
+          <div class="card-body">
+            <p class="note">Same fixture position, known lux from a meter. Scale factor stays on this device in localStorage. Without it, the big number stays a relative unit.</p>
+            <div class="input-group">
+              <div>
+                <label for="lux_known">Known lux (from a meter)</label>
+                <input id="lux_known" type="number" min="0" step="1" placeholder="e.g. 320">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="lux_calibrate">Save scale</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lux_clear_cal">Clear calibration</button>
+            </div>
+            <p class="tool-note" id="lux_cal_hint">Uncalibrated: relative/arbitrary units only.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Logged readings</div>
+          <div class="card-body">
+            <div class="input-group single">
+              <div>
+                <label for="lux_note">Position / location note</label>
+                <input id="lux_note" type="text" maxlength="80" placeholder="Desk, 30 in under 2×4 troffer">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="lux_log">Log current reading</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lux_csv">Export CSV</button>
+            </div>
+            <div id="lux_log_host"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-lux-meter -->
+
+    <!-- ════════════════════════════════════════
          NEC CODE TABLES
          ════════════════════════════════════════ -->
     <section id="sec-nec-tables" class="section">
@@ -10410,6 +10743,9 @@
 <script src="js/ebus-budget.js"></script>
 <script src="js/modbus-address.js"></script>
 <script src="js/plc-timer-preset.js"></script>
+<script src="js/sensor-fft.js"></script>
+<script src="js/sensor-engine.js"></script>
+<script src="js/sensor-tools.js"></script>
 <script src="js/math-explanations.js"></script>
 <script src="js/result-visuals.js"></script>
 <script src="js/icons.js"></script>

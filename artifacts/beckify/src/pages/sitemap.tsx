@@ -93,7 +93,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: [
       t("Voltage Drop", "sec-vdrop"),
       t("Conductor Length by Resistance", "sec-conductor-length"),
-                      t("Motor Calculations", "sec-motor"),
+      t("Motor Calculations", "sec-motor"),
       t("Cable Schedule Generator", "sec-cable-schedule"),
       t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
       t("Transformer", "sec-xfmr"),
@@ -157,6 +157,15 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     ],
   },
   {
+    label: "Phone sensors", hue: HUES.yellow, anchor: "sec-lux-meter",
+    tools: [
+      t("Pitch / Hum Identifier", "sec-pitch-hum"),
+      t("FFT / Audio Spectrum", "sec-audio-spectrum"),
+      t("Sound Level Meter", "sec-sound-level"),
+      t("Lux / Light Meter", "sec-lux-meter"),
+    ],
+  },
+  {
     label: "Tools", hue: HUES.orange, anchor: "sec-convert",
     tools: [
       t("555 Timer", "sec-555"),
@@ -173,6 +182,10 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("E-bus / Rack Current Budget", "sec-ebus-budget"),
       t("Modbus Address Converter", "sec-modbus-address"),
       t("PLC Timer Preset", "sec-plc-timer-preset"),
+      t("Pitch / Hum Identifier", "sec-pitch-hum"),
+      t("FFT / Audio Spectrum", "sec-audio-spectrum"),
+      t("Sound Level Meter", "sec-sound-level"),
+      t("Lux / Light Meter", "sec-lux-meter"),
       t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
       t("Panel Schedule Power Study", "sec-panel-power-study"),
     ],

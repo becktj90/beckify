@@ -67,6 +67,10 @@ export const TOOLS = [
   ["ebus-budget", "E-bus / Rack Current Budget", "Running remaining rack or E-bus current: signed module milliamps, power-refresh reset, and flags when remaining is negative or below a reserve. Beckhoff seed figures; other brands enter datasheet mA.", "sec-ebus-budget"],
   ["modbus-address", "Modbus Address Converter", "Convert Modbus coils and registers among function code, 0-based PDU offset, 1-based number, 5-digit 40001 addressing, and 6-digit 400001 long addressing. Shows wire/PDU bytes. Not a slave simulator.", "sec-modbus-address"],
   ["plc-timer-preset", "PLC Timer Preset", "TON/TOF/RTO preset counts from a desired time at 1 ms, 10 ms, 100 ms, 1 s, custom, or scan-time timebases — and the reverse. Visible math. Not a timing-chart IDE.", "sec-plc-timer-preset"],
+  ["pitch-hum-identifier", "Pitch / Hum Frequency Identifier", "Electrical diagnostic helper (not a music tuner): autocorrelation fundamental of an audible hum plus 50/60/100/120 Hz associations. Worth investigating — never a confirmed cause. Phone mic, on-device only.", "sec-pitch-hum"],
+  ["audio-spectrum-analyzer", "FFT / Audio Spectrum Analyzer", "Real-time Hann-windowed audio spectrum for transformer buzz, motor harmonics, and noise characterization. Linear/log axis, averaging, peak-hold, PNG/CSV export of bins. No raw audio leaves the device.", "sec-audio-spectrum"],
+  ["sound-level-meter", "Sound Level Meter", "Relative dBFS meter with optional A-weighting approximation, running peak, Leq-style average, and one-point calibration. Not a calibrated SPL meter. On-device audio only.", "sec-sound-level"],
+  ["lux-light-meter", "Lux / Light Level Meter", "Camera-based relative light-level estimate with center-weighted sampling, PWM smoothing, optional one-point lux calibration, and a frame-rate-limited flicker FFT. Not a photometer. On-device camera only.", "sec-lux-meter"],
   ["555-timer", "555 Timer Calculator", "Calculate astable frequency, duty cycle, monostable pulse width, and timing values.", "sec-555"],
   ["unit-conversions", "Electrical Unit Conversions", "Convert common electrical engineering units quickly in the field.", "sec-convert"],
   ["circular-mils", "Circular Mils Calculator", "Calculate conductor area and compare circular-mil values for electrical sizing work.", "sec-cm"],
@@ -114,7 +118,7 @@ export const CATEGORIES = [
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],
-  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel-directory OCR, motor nameplates, cable schedules, Megger TDR, PLC I/O lists, scaling, Modbus addressing, and timer presets.", "sec-tdr"],
+  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel-directory OCR, motor nameplates, cable schedules, Megger TDR, PLC I/O lists, scaling, Modbus addressing, timer presets, and phone-sensor meters (lux, hum, spectrum, sound level).", "sec-tdr"],
   ["reference-tables", "Electrical Reference Tables", "Browse conductor, motor, conduit, enclosure, IP rating, and NEC reference information.", "sec-wire-ref"],
 ];
 
