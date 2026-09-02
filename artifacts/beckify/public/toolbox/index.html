@@ -183,6 +183,7 @@
       <button class="nav-btn" data-target="sec-power-dc" data-keywords="#Electronics #Calculators dc power watts">DC Power</button>
       <button class="nav-btn" data-target="sec-power-wizard" data-keywords="#Electronics #Calculators power current converter ac dc single phase three phase kva kw kvar power factor sine wave">Power Wizard</button>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
+      <button class="nav-btn" data-target="sec-base-converter" data-keywords="hex hexadecimal decimal octal binary number base converter radix two's complement bit field nibble place value">Number-Base Converter</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
     </div>
     <div class="sidebar-section">
@@ -251,6 +252,7 @@
       <button class="nav-btn" data-target="sec-ebike-tools" data-keywords="ebike e-bike torque rpm sprocket chainring gear ratio wheel speed range battery wh per mile">E-Bike Drivetrain Tools</button>
       <button class="nav-btn" data-target="sec-battery-build" data-keywords="18650 battery pack nickel strip ampacity series parallel C rate honeycomb grid cell layout lithium ion battery design">Battery Build Designer</button>
       <button class="nav-btn" data-target="sec-stem-tools" data-keywords="differential equations ODE trig trigonometry linear algebra matrix chemistry calculus optics quantum physics linear programming LP STEM math">STEM Toolkit</button>
+      <button class="nav-btn" data-target="sec-lp-optimizer" data-keywords="linear programming LP simplex optimizer maximize minimize feasible region blending product mix resource allocation operations research tableau">LP Optimizer</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
     </div>
   </nav>
@@ -264,7 +266,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">47 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">49 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -391,6 +393,7 @@
             <li><a class="home-tool-link" href="#sec-stem-tools">Linear Algebra</a></li>
             <li><a class="home-tool-link" href="#sec-stem-tools">Chemistry, Calculus, Optics</a></li>
             <li><a class="home-tool-link" href="#sec-stem-tools">Quantum Physics &amp; LP</a></li>
+            <li><a class="home-tool-link" href="#sec-lp-optimizer">Linear Programming Optimizer</a></li>
           </ul>
         </div>
 
@@ -407,6 +410,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">🔧</span><span class="home-cat-name">Tools</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-convert">Unit Conversions</a></li>
+            <li><a class="home-tool-link" href="#sec-base-converter">Number-Base Converter (Hex/Dec/Oct/Bin)</a></li>
             <li><a class="home-tool-link" href="#sec-cm">Circular Mils</a></li>
             <li><a class="home-tool-link" href="#sec-photometrics">Photometrics</a></li>
             <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
@@ -5431,6 +5435,108 @@
     </section><!-- end sec-stem-tools -->
 
     <!-- ════════════════════════════════════════
+         LINEAR PROGRAMMING OPTIMIZER
+         ════════════════════════════════════════ -->
+    <section id="sec-lp-optimizer" class="section">
+      <div class="section-header">
+        <h2>📊 Linear Programming Optimizer</h2>
+        <p>Find the best feasible solution of a small linear program: maximize or minimize c·x subject to Ax ≤ / ≥ / = b, with x ≥ 0 and optional upper bounds. Educational operations research — not related to EMP sources or shielding.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Linear Programming Optimizer</summary>
+          <div class="section-info-body">
+            A linear program is an ordinary optimization model: a linear objective over a polyhedron defined by linear inequalities. This tool uses a <strong>two-phase simplex</strong> method in plain JavaScript (Bland’s rule, no WASM).
+            <ul>
+              <li><strong>Phase I</strong> drives artificial variables to zero. If they cannot reach zero, the program is <em>infeasible</em>.</li>
+              <li><strong>Phase II</strong> optimizes the original objective. If a variable can enter with no leaving row, the program is <em>unbounded</em>.</li>
+              <li><strong>Two variables:</strong> the feasible region is drawn (constraint lines, vertices, objective through the optimum).</li>
+              <li><strong>n variables:</strong> labelled status, z*, primal x*, and slack / surplus — not a wall of unlabeled numbers.</li>
+            </ul>
+            Presets cover product mix, a cheapest kW source-mix blend, and a textbook 2-variable graphical example. Units are shown next to the values they belong to.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Program</div>
+          <div class="card-body">
+            <div class="formula-box">
+              max / min &nbsp; c · x &nbsp;|&nbsp; A x { ≤, ≥, = } b &nbsp;|&nbsp; x ≥ 0
+            </div>
+            <div class="orlp-presets">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="orlpLoadPreset('mix')">Product mix</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="orlpLoadPreset('blend')">Blending / kW sources</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="orlpLoadPreset('graph')">Graphical 2-var</button>
+            </div>
+            <p class="note" id="orlp_preset_note"></p>
+            <div class="input-group triple">
+              <div>
+                <label for="orlp_sense">Sense</label>
+                <select id="orlp_sense">
+                  <option value="max">Maximize</option>
+                  <option value="min">Minimize</option>
+                </select>
+              </div>
+              <div>
+                <label for="orlp_nvars">Variables (n)</label>
+                <select id="orlp_nvars">
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                </select>
+              </div>
+              <div>
+                <label for="orlp_ncons">Constraints (m)</label>
+                <select id="orlp_ncons">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label for="orlp_objunit">Objective unit (optional)</label>
+                <input type="text" id="orlp_objunit" placeholder="e.g. $ / h" maxlength="24">
+              </div>
+            </div>
+            <div id="orlp_var_host" class="orlp-var-host"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Formulation</div>
+          <div class="card-body">
+            <pre class="orlp-formulation" id="orlp_formulation" aria-live="polite"></pre>
+            <p class="note">The statement updates as you edit. Share the page URL to send this program; it live-recomputes on every change.</p>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Constraints  A x  {≤, ≥, =}  b</div>
+          <div class="card-body">
+            <div id="orlp_cons_host" class="orlp-cons-host"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Solution</div>
+          <div class="card-body">
+            <div id="orlp_result" class="result"></div>
+            <div id="orlp_visual" class="orlp-visual"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-lp-optimizer -->
+
+    <!-- ════════════════════════════════════════
          NEC CODE TABLES
          ════════════════════════════════════════ -->
     <section id="sec-nec-tables" class="section">
@@ -6132,6 +6238,88 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         NUMBER-BASE CONVERTER
+         ════════════════════════════════════════ -->
+    <section id="sec-base-converter" class="section">
+      <div class="section-header">
+        <h2>🔢 Number-Base Converter</h2>
+        <p>Convert among hexadecimal, decimal, octal, and binary. Typing in any base updates the others, with an 8 / 16 / 32 / 64-bit wrap and optional two’s-complement signed decimal.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Number-Base Converter</summary>
+          <div class="section-info-body">
+            Every integer is a weighted sum of digits: <strong>n = Σ d<sub>i</sub> · b<sup>i</sup></strong> for base b ∈ {2, 8, 10, 16}. The bit-width selector wraps the unsigned value to 0 … 2<sup>w</sup>−1. When two’s-complement signed decimal is on, the same bit pattern is read with the high bit as sign: if n ≥ 2<sup>w−1</sup> then the signed value is n − 2<sup>w</sup>.
+            <ul>
+              <li><strong>Hex</strong> groups by nibble (one hex digit = 4 bits). <strong>Binary</strong> groups by 4 and 8.</li>
+              <li>Click a bit in the bit field to flip it. Bits that just changed are highlighted.</li>
+              <li>64-bit values use exact integer arithmetic, so numbers past 2<sup>53</sup>−1 stay precise.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Bases</div>
+          <div class="card-body">
+            <div class="formula-box">
+              n = Σ d<sub>i</sub> · b<sup>i</sup> &nbsp;|&nbsp; wrap at 2<sup>w</sup> &nbsp;|&nbsp; signed: n ≥ 2<sup>w−1</sup> → n − 2<sup>w</sup>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="nbc_width">Bit width</label>
+                <select id="nbc_width">
+                  <option value="8" selected>8-bit</option>
+                  <option value="16">16-bit</option>
+                  <option value="32">32-bit</option>
+                  <option value="64">64-bit</option>
+                </select>
+              </div>
+              <div>
+                <label for="nbc_signed">Decimal interpretation</label>
+                <label class="nbc-check">
+                  <input type="checkbox" id="nbc_signed">
+                  Two’s-complement signed
+                </label>
+              </div>
+            </div>
+            <p class="note" id="nbc_range">8-bit unsigned range: 0 … 255</p>
+            <div class="input-group">
+              <div>
+                <label for="nbc_hex">Hexadecimal (base 16)</label>
+                <input type="text" id="nbc_hex" value="00" spellcheck="false" inputmode="text" autocomplete="off" autocapitalize="characters">
+              </div>
+              <div>
+                <label for="nbc_dec">Decimal (base 10)</label>
+                <input type="text" id="nbc_dec" value="0" spellcheck="false" inputmode="numeric" autocomplete="off">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="nbc_oct">Octal (base 8)</label>
+                <input type="text" id="nbc_oct" value="0" spellcheck="false" inputmode="numeric" autocomplete="off">
+              </div>
+              <div>
+                <label for="nbc_bin">Binary (base 2)</label>
+                <input type="text" id="nbc_bin" value="00000000" spellcheck="false" inputmode="numeric" autocomplete="off">
+              </div>
+            </div>
+            <div class="formula-box" id="nbc_identity">n = 0</div>
+            <div id="nbc_status" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Place values &amp; bit field</div>
+          <div class="card-body">
+            <p class="note">Place-value chips follow the field you last edited. The bit field is grouped by nibble and byte — click a bit to flip it. Newly changed bits glow.</p>
+            <div id="nbc_chips" class="nbc-chips"></div>
+            <div id="nbc_bits" class="nbc-bits"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -8217,6 +8405,8 @@
 <script src="js/smith-chart.js"></script>
 <script src="js/emp-emc.js"></script>
 <script src="js/stem-tools.js"></script>
+<script src="js/lp-optimizer.js"></script>
+<script src="js/base-converter.js"></script>
 <script src="js/math-explanations.js"></script>
 <script src="js/result-visuals.js"></script>
 <script src="js/icons.js"></script>

@@ -46,11 +46,11 @@ ok("Daly BMS row is linked to manufacturer", vespaSrc.includes("dalybms.com"));
 ok("eBay-only rows stay Not linked rather than guessed ASINs", vespaSrc.includes("25mm three-wire twist throttle") && vespaSrc.includes("LED headlight") && !/name: "25mm three-wire twist throttle"[\s\S]{0,180}href:/.test(vespaSrc));
 
 console.log("\n--- Counts ---");
-ok("calculator count constant is 47", /PUBLIC_CALCULATOR_COUNT = 47/.test(siteStats));
+ok("calculator count constant is 49", /PUBLIC_CALCULATOR_COUNT = 49/.test(siteStats));
 ok("game count constant is 7", /PUBLIC_GAME_COUNT = 7/.test(siteStats));
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser games"));
-ok("toolbox header uses 47", toolboxHtml.includes("47 calculators plus reference tables"));
+ok("toolbox header uses 49", toolboxHtml.includes("49 calculators plus reference tables"));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
 ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
 const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Pup Planet", "HexGL"].includes(name));

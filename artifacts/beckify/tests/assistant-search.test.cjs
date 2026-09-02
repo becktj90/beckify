@@ -71,6 +71,12 @@ for (const [query, expectedId] of [['transformer sizing', 'transformer-sizing'],
   ok(`"${query}" still finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
 }
 
+console.log('\n--- Assistant search: new educational tools ---');
+for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['simplex', 'lp-optimizer'], ['hexadecimal', 'number-base-converter'], ["two's complement", 'number-base-converter']]) {
+  const results = searchAssistant(query, 6);
+  ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
+}
+
 console.log('\n--- Assistant search: no duplicate ids, every href is real ---');
 {
   const ids = ASSISTANT_DOCUMENTS.map((d) => d.id);
