@@ -303,3 +303,48 @@ final class WireAmpacityTests: XCTestCase {
         XCTAssertEqual(NECTables.nextStandardOCPD(10.1), 15)
     }
 }
+
+final class SensorMathTests: XCTestCase {
+    func testFaceUpLevelIsZeroWhenGravityIsMinusZ() {
+        let t = LevelMath.faceUpTiltDegrees(gravityX: 0, gravityY: 0, gravityZ: -1)
+        XCTAssertEqual(t.x, 0, accuracy: 1e-9)
+        XCTAssertEqual(t.y, 0, accuracy: 1e-9)
+    }
+
+    func testFaceUpRollFortyFive() {
+        let t = LevelMath.faceUpTiltDegrees(gravityX: 0.70710678118, gravityY: 0, gravityZ: -0.70710678118)
+        XCTAssertEqual(t.x, 45, accuracy: 0.01)
+        XCTAssertEqual(t.y, 0, accuracy: 0.01)
+    }
+
+    func testPortraitPlumb() {
+        XCTAssertEqual(LevelMath.portraitPlumbDeviationDegrees(gravityX: 0, gravityY: -1, gravityZ: 0), 0, accuracy: 1e-9)
+        XCTAssertEqual(LevelMath.portraitPlumbDeviationDegrees(gravityX: 0, gravityY: -0.70710678118, gravityZ: -0.70710678118), 45, accuracy: 0.05)
+    }
+
+    func testMagneticMagnitudeAndHeading() {
+        XCTAssertEqual(MagneticMath.magnitudeMicrotesla(x: 3, y: 4, z: 12), 13, accuracy: 1e-9)
+        XCTAssertEqual(MagneticMath.headingDegrees(x: 0, y: 1), 0, accuracy: 1e-9)
+        XCTAssertEqual(MagneticMath.headingDegrees(x: 1, y: 0), 90, accuracy: 1e-9)
+        XCTAssertEqual(MagneticMath.gauss(fromMicrotesla: 50), 0.5, accuracy: 1e-9)
+    }
+
+    func testSoundDBFS() {
+        XCTAssertEqual(SoundLevel.dbfs(rms: 1), 0, accuracy: 1e-9)
+        XCTAssertEqual(SoundLevel.dbfs(rms: 0.1), -20, accuracy: 1e-9)
+        XCTAssertEqual(SoundLevel.dbfs(rms: 0), SoundLevel.silenceFloorDBFS, accuracy: 1e-9)
+        XCTAssertEqual(SoundLevel.dbfs(rms: -1), SoundLevel.silenceFloorDBFS, accuracy: 1e-9)
+    }
+
+    func testAccelerationGToMS2() {
+        XCTAssertEqual(MotionMath.magnitudeG(x: 0, y: 0, z: -1), 1, accuracy: 1e-9)
+        XCTAssertEqual(MotionMath.metersPerSecondSquared(fromG: 1), 9.80665, accuracy: 1e-9)
+    }
+
+    func testHaversineOneDegreeLatitude() {
+        let meters = GeoMath.haversineMeters(lat1: 0, lon1: 0, lat2: 1, lon2: 0)
+        XCTAssertEqual(meters, GeoMath.earthRadiusMeters * .pi / 180, accuracy: 1e-6)
+        XCTAssertEqual(GeoMath.initialBearingDegrees(lat1: 0, lon1: 0, lat2: 1, lon2: 0), 0, accuracy: 1e-6)
+        XCTAssertEqual(GeoMath.initialBearingDegrees(lat1: 0, lon1: 0, lat2: 0, lon2: 1), 90, accuracy: 1e-6)
+    }
+}

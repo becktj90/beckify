@@ -17,12 +17,12 @@ struct AboutView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Beckify")
                                 .font(.title.weight(.bold))
-                            Text("Field EE calculator")
+                            Text("Field EE toolbox")
                                 .foregroundStyle(Theme.muted)
                         }
                     }
 
-                    Text("Professional electrical calculators for field and facilities work. Native SwiftUI — not a website wrapper.")
+                    Text("Professional electrical calculators and public-API sensors for field work and homework. Native SwiftUI — not a website wrapper, not a project gallery.")
                         .foregroundStyle(Theme.foreground)
 
                     ResultCard(title: "Author") {
@@ -46,7 +46,7 @@ struct AboutView: View {
                     DisclaimerBanner()
 
                     ResultCard(title: "Privacy") {
-                        Text("No ads, no analytics, no tracking, no account. Saved jobs stay in local storage on this device. This app does not load beckify.com in a web view.")
+                        Text("No ads, no analytics, no tracking, no account. Microphone, Bluetooth, and location are used only inside those tools, on this device. Saved jobs are local notes (calculator or sensor snapshots). This app does not load beckify.com in a web view.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.muted)
                     }

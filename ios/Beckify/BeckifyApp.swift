@@ -19,7 +19,7 @@ struct RootView: View {
             ToolboxView()
                 .tabItem { Label("Toolbox", systemImage: "wrench.and.screwdriver.fill") }
             JobsView()
-                .tabItem { Label("Jobs", systemImage: "folder.fill") }
+                .tabItem { Label("Jobs", systemImage: "note.text") }
             AboutView()
                 .tabItem { Label("About", systemImage: "info.circle.fill") }
         }

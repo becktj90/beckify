@@ -5,7 +5,7 @@
 **Contact:** trevorjohnbeck@gmail.com  
 **Status:** Draft for App Store Connect. This file is not published on https://beckify.com.
 
-Apple’s App Privacy nutrition label for this app is **Data Not Collected**.
+Apple’s App Privacy nutrition label for this app is **Data Not Collected**. Sensor readings and Saved Jobs stay on the device. This repository has not submitted the app, signed a build, enrolled Apple Developer, or uploaded TestFlight.
 
 ## What the app does not collect
 
@@ -16,12 +16,27 @@ Beckify does not collect, sell, share, or transmit personal data for advertising
 - No user accounts, sign-in, or cloud sync
 - No ads, store checkout, or Amazon links
 - The app does not wrap or load beckify.com in a web view
+- The app is a toolbox of calculators and sensors. It is not a website project gallery.
 
 Optional links the user may tap (https://beckify.com and `mailto:trevorjohnbeck@gmail.com`) open in the system browser or mail app. Those destinations are not part of in-app data collection.
 
+## Sensors and permissions (on-device only)
+
+Permissions are requested only when the related tool is used, not at launch (except iOS may show the system sheet the first time that tool starts).
+
+| Permission | Tools | What happens |
+| --- | --- | --- |
+| Microphone | Noise Meter | Relative dBFS from live audio. Not recorded, not uploaded, not a calibrated SLM. |
+| Bluetooth | BLE Scanner | Nearby BLE advertisements (name, identifier, RSSI, advertised service UUIDs). Not uploaded. |
+| Location (When In Use) | Position; Wi-Fi Path only if you tap Request SSID | Coordinates / speed / altitude, or current SSID via public `NEHotspotNetwork.fetchCurrent`. Not used at launch. Not uploaded. |
+
+CoreMotion (level, magnetometer, barometer, g-force) does not use those permission strings. Battery and thermal state are local diagnostics.
+
+iOS does **not** give third-party apps Wi-Fi RSSI through public APIs. The Wi-Fi Path tool does not invent a signal-bar number.
+
 ## What stays on the device
 
-Named **Saved Jobs** (calculator inputs and results the user chooses to save) are stored locally on the device using Apple’s `UserDefaults`. They are not uploaded. Deleting the app removes them, subject to the user’s device backup settings.
+Named **Saved Jobs** are lightweight on-device notes (homework or field snapshots of calculator inputs/results or sensor numbers the user chooses to save). They use Apple’s `UserDefaults`. They are not a project gallery and are not uploaded. Deleting the app removes them, subject to the user’s device backup settings.
 
 ## Children’s privacy
 

@@ -1,24 +1,24 @@
 # App Store scaffolding — Beckify
 
-Draft only. Nothing in this repository has been submitted to Apple. Uploading a build requires Trevor's Apple Developer Program account ($99/year) on a Mac with Xcode.
+Draft only. Nothing in this repository has been submitted to Apple. Uploading a build requires Trevor's Apple Developer Program account ($99/year) on a Mac with Xcode. This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, enrolled a team, or uploaded TestFlight.
 
 ## Listing copy (draft)
 
 **Name:** Beckify  
-**Subtitle:** Field EE calculator  
+**Subtitle:** Field EE toolbox  
 **Category:** Productivity  
 **Secondary (optional):** Utilities  
 **Age rating:** 4+ (no user-generated content, no unrestricted web, no violence)  
 **Price:** Free, no in-app purchases, no ads
 
 **Promotional text (170 characters, optional):**
-Native electrical calculators for field work — voltage drop, conduit fill, ampacity, transformer protection, and more. Design aid, not a PE stamp.
+Native field-EE calculators plus public-API sensors for homework and jobsite notes. Design aid — not a PE stamp or calibrated instrument.
 
 **Description:**
 
-Beckify is a professional field electrical calculator for engineers and technicians. It is a native iPhone and iPad app, not a website wrapper.
+Beckify is a professional field electrical toolbox for engineers, technicians, and students. It is a native iPhone and iPad app, not a website wrapper and not a project gallery.
 
-Calculate and check common jobsite numbers with units, formulas, and live results:
+Calculate common jobsite numbers with units, formulas, and live results:
 
 • Ohm's Law
 • DC and AC power
@@ -30,15 +30,27 @@ Calculate and check common jobsite numbers with units, formulas, and live result
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Wire size from NEC Table 310.16, 75 °C column
 
-Search the toolbox (try “ampacity”). Save named jobs on device. No account, no ads, no analytics, no tracking.
+Measure with public Apple APIs (not private APIs):
 
-This app is a design aid. It is not a PE stamp, permit, inspection, or a substitute for the National Electrical Code or a qualified engineer.
+• Wi-Fi path (Network.framework): interface, expensive/constrained. iOS does not expose Wi-Fi RSSI to third-party apps; this tool will not invent a signal bar. Current SSID is optional and needs location plus, on a signed team, Access Wi-Fi Information.
+• BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
+• Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
+• Bubble level / plumb (CoreMotion)
+• Magnetometer: heading and |B| in µT
+• Barometer / relative altitude
+• g-force snapshot
+• Position (GPS) when that tool is opened — not at launch
+• Device battery and thermal diagnostics
+
+Search the toolbox (try “ampacity”, “wifi”, “ble”, “level”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+
+This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,voltage drop,ampacity,conduit fill,transformer,calculator,electrician,ohms
+electrical,NEC,voltage drop,ampacity,wifi,bluetooth,noise,level,compass
 
 **What's New (1.0):**
-First release. Native field EE toolbox with local saved jobs.
+First toolbox: field EE calculators plus public-API sensors and local saved notes.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -46,6 +58,10 @@ First release. Native field EE toolbox with local saved jobs.
 **Contact:** trevorjohnbeck@gmail.com
 
 **Privacy Policy URL (intended, once hosted):** App Store Connect requires a public HTTPS privacy-policy URL. The draft is [`ios/docs/PRIVACY.md`](PRIVACY.md) (“Data Not Collected”). It is **not** hosted on https://beckify.com in this PR. After this file is on `main`, a typical stand-in until a dedicated page exists is the GitHub blob URL for that path (for example `https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md`). Do not treat the live site as hosting this policy.
+
+## Wi-Fi App Store limitation (honest)
+
+Public iOS APIs do **not** provide Wi-Fi RSSI, noise, or a signal-bar value to third-party apps. `NWPathMonitor` reports path status (Wi-Fi / cellular / wired, expensive, constrained, interface names). `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID after the user grants location in that tool; it still does not return RSSI. Do not add private APIs to fake a meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
 
 ## App privacy (nutrition label)
 
@@ -56,11 +72,14 @@ Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
 - No advertising identifier
 - No account
 - Saved jobs use on-device storage only (`UserDefaults`)
+- Microphone, Bluetooth, and location are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
 
 Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
 - `NSPrivacyTracking` = false  
 - No collected data types  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs)
+
+Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use — see the Beckify target build settings.
 
 ## Export compliance
 
@@ -84,9 +103,9 @@ Take 3–8 screens per size. Suggested shots:
 1. Toolbox search / tool list (dark premium home)
 2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
 3. Voltage drop with 3% / 5% notes and ampacity row
-4. Conduit fill pass/fail
-5. Transformer 450.3(B) result
-6. Saved Jobs list
+4. Wi-Fi Path showing path status and the RSSI limitation copy
+5. BLE scanner or bubble level
+6. Saved Jobs list (on-device notes)
 7. About (Trevor Beck, EE, beckify.com, email — no phone number)
 
 Use dark appearance. Do not show ads, Amazon, games, or a phone number.
@@ -99,11 +118,12 @@ Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/
 
 1. Enroll or renew **Apple Developer Program** ($99 USD/year) at https://developer.apple.com as Trevor Beck.
 2. In Xcode → Signing & Capabilities, set **Team** on the Beckify target. Bundle ID `com.beckify.toolbox` must be registered to that team.
-3. Run on a physical device at least once (capability / provisioning check).
-4. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): Productivity, 4+, privacy “Data Not Collected”, English listing copy above.
-5. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
-6. Upload the build (Organizer or Transporter). Wait for processing.
-7. Attach screenshots, review the encryption and content-rights questions, submit for review.
-8. Answer App Review if they ask about NEC table transcription or “design aid” disclaimer.
+3. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device.
+4. Run on a physical device at least once (capability / provisioning / sensor check). This Linux CI job does not do that.
+5. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): Productivity, 4+, privacy “Data Not Collected”, English listing copy above.
+6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
+7. Upload the build (Organizer or Transporter). Wait for processing.
+8. Attach screenshots, review the encryption and content-rights questions, submit for review.
+9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
 
 Until those steps are done, the app exists only in this repository. It is **not** on the App Store.

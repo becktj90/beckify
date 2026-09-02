@@ -11,37 +11,58 @@ struct ToolboxView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: $selected) {
-                Section {
-                    ForEach(filtered) { tool in
-                        NavigationLink(value: tool.id) {
-                            ToolRow(tool: tool)
+                if !calcs.isEmpty {
+                    Section {
+                        ForEach(calcs) { tool in
+                            NavigationLink(value: tool.id) {
+                                ToolRow(tool: tool)
+                            }
+                            .tag(tool.id)
                         }
-                        .tag(tool.id)
+                    } header: {
+                        Text("Field calculators")
+                    } footer: {
+                        if query.localizedCaseInsensitiveContains("ampacity") {
+                            Text("Ampacity is used by Voltage Drop (cross-check) and Wire Size & Ampacity (310.16).")
+                        }
                     }
-                } header: {
-                    Text("Field calculators")
-                } footer: {
-                    if query.localizedCaseInsensitiveContains("ampacity") {
-                        Text("Ampacity is used by Voltage Drop (cross-check) and Wire Size & Ampacity (310.16).")
+                }
+                if !sensors.isEmpty {
+                    Section {
+                        ForEach(sensors) { tool in
+                            NavigationLink(value: tool.id) {
+                                ToolRow(tool: tool)
+                            }
+                            .tag(tool.id)
+                        }
+                    } header: {
+                        Text("Sensors")
+                    } footer: {
+                        if query.localizedCaseInsensitiveContains("rssi") || query.localizedCaseInsensitiveContains("wifi") {
+                            Text("Wi-Fi RSSI is not available through public iOS APIs. The Wi-Fi Path tool shows path status and will not invent a signal bar.")
+                        }
                     }
                 }
             }
             .navigationTitle("Beckify")
-            .searchable(text: $query, prompt: "Ohm, ampacity, 555, conduit…")
+            .searchable(text: $query, prompt: "Ohm, ampacity, wifi, ble, level…")
             .background(Theme.background)
         } detail: {
             if let selected {
                 CalculatorHostView(toolID: selected)
             } else {
                 ContentUnavailableView(
-                    "Choose a calculator",
+                    "Choose a tool",
                     systemImage: "wrench.and.screwdriver",
-                    description: Text("Search the toolbox or pick a tool. Live results update as you type.")
+                    description: Text("Search the toolbox or pick a calculator or sensor. Saved Jobs are on-device notes, not a project gallery.")
                 )
             }
         }
         .navigationSplitViewStyle(.balanced)
     }
+
+    private var calcs: [ToolDefinition] { filtered.filter { $0.kind == .calculator } }
+    private var sensors: [ToolDefinition] { filtered.filter { $0.kind == .sensor } }
 }
 
 struct ToolRow: View {
@@ -83,6 +104,15 @@ struct CalculatorHostView: View {
             case .timer555: Timer555View()
             case .motorFLA: MotorFLAView()
             case .wireAmpacity: WireAmpacityView()
+            case .wifiStatus: WiFiStatusView()
+            case .bluetoothScan: BluetoothScannerView()
+            case .noiseMeter: NoiseMeterView()
+            case .bubbleLevel: BubbleLevelView()
+            case .magnetometer: MagnetometerView()
+            case .barometer: BarometerView()
+            case .motionSnapshot: MotionSnapshotView()
+            case .fieldPosition: FieldPositionView()
+            case .deviceHealth: DeviceHealthView()
             }
         }
         .background(Theme.background.ignoresSafeArea())

@@ -15,6 +15,7 @@ enum Theme {
     static let bad = Color(red: 251 / 255, green: 113 / 255, blue: 133 / 255)
 
     static let disclaimer = "Design aid only — not a PE stamp, permit, or substitute for the NEC or a qualified engineer."
+    static let sensorDisclaimer = "Not a calibrated instrument. Not a legal sound-level meter, survey, compass, or PE stamp. For field notes and homework only. Readings stay on this device unless you save a numeric snapshot."
 }
 
 enum Format {
@@ -36,6 +37,10 @@ enum Format {
     static func volts(_ value: Double) -> String { "\(number(value, digits: 2)) V" }
     static func watts(_ value: Double) -> String { "\(number(value, digits: 2)) W" }
     static func percent(_ value: Double) -> String { "\(number(value, digits: 2)) %" }
+    static func degrees(_ value: Double) -> String { "\(number(value, digits: 2)) °" }
+    static func microtesla(_ value: Double) -> String { "\(number(value, digits: 2)) µT" }
+    static func dbfs(_ value: Double) -> String { "\(number(value, digits: 1)) dBFS" }
+    static func meters(_ value: Double) -> String { "\(number(value, digits: 2)) m" }
 
     static func time(_ seconds: Double) -> String {
         guard seconds.isFinite, seconds > 0 else { return "—" }

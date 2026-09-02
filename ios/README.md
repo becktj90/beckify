@@ -1,15 +1,15 @@
 # Beckify iOS
 
-Native SwiftUI field EE calculator for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
+Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-This is not a website wrapper. There is no `WKWebView` of beckify.com. Calculator math lives in a pure Swift package so it can be tested on Linux without Xcode.
+This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode.
 
 ## Layout
 
 ```text
 ios/
   Beckify.xcodeproj/     Xcode 15+ project (open this on a Mac)
-  Beckify/               SwiftUI app
+  Beckify/               SwiftUI app (Calculators + Sensors)
   BeckifyMath/           Pure-Swift math + NEC tables + XCTest
   docs/APP_STORE.md      Listing copy and App Store Connect checklist
 ```
@@ -26,7 +26,19 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Wire Size & Ampacity (310.16 75 °C)
 
-Local **Saved Jobs**. Disclaimer on every tool: design aid, not a PE stamp. No ads, analytics, tracking, games, store, or phone number.
+## Sensors (public APIs only)
+
+- Wi-Fi Path (`NWPathMonitor`; optional SSID). **No Wi-Fi RSSI** — iOS does not expose it to third-party apps.
+- BLE Scanner (CoreBluetooth)
+- Noise Meter (microphone dBFS, uncalibrated)
+- Bubble Level / plumb (CoreMotion)
+- Magnetometer (heading, µT)
+- Barometer / relative altitude
+- g-Force snapshot
+- Position (location requested in-tool, not at launch)
+- Device battery / thermal diagnostics
+
+Local **Saved Jobs** are on-device homework / field notes, not a projects product. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number.
 
 ## Linux (this repo)
 
@@ -37,7 +49,7 @@ cd ios/BeckifyMath
 swift test
 ```
 
-You cannot build or run the app UI on Linux. Simulator, signing, archive, and App Store upload require a Mac.
+You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth on Linux. Simulator, signing, archive, and App Store upload require a Mac. This repository does not claim those happened.
 
 ## Mac — open and run
 

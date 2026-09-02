@@ -120,11 +120,13 @@ struct FormulaCard: View {
 }
 
 struct DisclaimerBanner: View {
+    var text: String = Theme.disclaimer
+
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(Theme.warn)
-            Text(Theme.disclaimer)
+            Text(text)
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
         }
@@ -136,22 +138,31 @@ struct DisclaimerBanner: View {
 
 struct SaveJobBar: View {
     @Binding var jobName: String
+    var notes: Binding<String>? = nil
     var canSave: Bool
     var action: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SAVE TO JOBS")
+            Text("SAVE A NOTE")
                 .font(.caption.weight(.semibold))
                 .tracking(0.8)
                 .foregroundStyle(Theme.muted)
+            Text("On-device homework / field snapshot. Not a project gallery.")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
             HStack {
-                TextField("Job name — e.g. AHU-3 feeder", text: $jobName)
+                TextField("Name — e.g. lab 3, AHU-3 feeder", text: $jobName)
                     .textInputAutocapitalization(.words)
                 Button("Save", action: action)
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.accent)
                     .disabled(!canSave || jobName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if let notes {
+                TextField("Optional note", text: notes)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.foreground)
             }
         }
         .padding(14)

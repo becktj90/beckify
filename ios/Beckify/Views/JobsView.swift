@@ -9,8 +9,8 @@ struct JobsView: View {
                 if jobs.jobs.isEmpty {
                     ContentUnavailableView(
                         "No saved jobs",
-                        systemImage: "folder",
-                        description: Text("Save a calculation from any tool. Jobs stay on this device — nothing is uploaded.")
+                        systemImage: "note.text",
+                        description: Text("Save a calculator result or a sensor snapshot as a lightweight on-device note for homework or field work. This is not a project gallery and nothing is uploaded.")
                     )
                 } else {
                     List {
