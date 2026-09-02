@@ -3,9 +3,11 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import {
+  ackermannShowWork,
   computeKalmanGain,
   computeLQR,
   formatComplex,
+  formatPolynomial,
   placePolesAckermann,
   simulateStepResponse,
   type Matrix,
@@ -62,7 +64,24 @@ export function LQRStudio({
   const v = useMemo(() => diagonalFromText(vText), [vText]);
   const lqr = useMemo(() => computeLQR(system.A, system.B, q, r), [system, q, r]);
   const kalman = useMemo(() => computeKalmanGain(system.A, system.C, w, v), [system, w, v]);
-  const polePlacement = useMemo(() => placePolesAckermann(system.A, system.B, poleText.split(/[\s,]+/).map(Number).filter(Number.isFinite)), [system, poleText]);
+  const desiredPoles = useMemo(
+    () => poleText.split(/[\s,]+/).map(Number).filter(Number.isFinite),
+    [poleText],
+  );
+  const polePlacement = useMemo(() => {
+    try {
+      return placePolesAckermann(system.A, system.B, desiredPoles);
+    } catch {
+      return [[0]];
+    }
+  }, [system, desiredPoles]);
+  const ackermann = useMemo(() => {
+    try {
+      return ackermannShowWork(system.A, system.B, desiredPoles);
+    } catch {
+      return null;
+    }
+  }, [system, desiredPoles]);
   const closedLoop = useMemo(() => simulateStepResponse(system, { duration: 8, dt: 0.02, feedbackGain: lqr.K }), [system, lqr]);
 
   return (
@@ -153,7 +172,13 @@ export function LQRStudio({
         <div className="rounded-2xl border border-[var(--border)] bg-black/15 p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Ackermann feedback</p>
           <pre className="mt-3 overflow-auto text-xs leading-6 text-slate-200">{matrixToText(polePlacement)}</pre>
-          <p className="mt-3 text-xs text-[var(--muted)]">Use desired poles to compare pole-placement aggressiveness against the Riccati solution.</p>
+          <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
+            {ackermann?.formula} Desired φ(s) = {ackermann ? formatPolynomial(ackermann.desired) : "—"}. Open-loop χ(s) ={" "}
+            {ackermann ? formatPolynomial(ackermann.openLoop) : "—"}.
+            {ackermann?.companion
+              ? " Companion 2nd/nth order: K is just the coefficient difference β − a, so the numbers above should match that subtraction."
+              : " This realisation is not controllable companion, so K comes from the full Ackermann formula rather than β − a."}
+          </p>
         </div>
       </div>
     </section>

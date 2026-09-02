@@ -21,6 +21,9 @@
  * plain `node`, not through Vite/tsc, so this file has to be valid there too.
  *
  * Each tuple is [slug, title, description, sectionAnchor].
+ *
+ * Control-theory workbench lives at /control-systems (React page), not as
+ * toolbox calculator slugs. Do not add pid / bode / locus TOOLS ids here.
  * ============================================================================
  */
 
@@ -72,7 +75,7 @@ export const TOOLS = [
   ["fiber-link", "Fiber Link / NA", "Numerical aperture NA = √(n1² − n2²), acceptance angle, and a first-order optical link budget (source dBm minus fiber, connector, and splice loss versus receiver sensitivity).", "sec-fiber-link"],
   ["gaussian-beam", "Gaussian Beam", "TEM00 envelope: Rayleigh range zR = π w0² / λ, spot w(z), curvature R(z), and confocal parameter b = 2 zR.", "sec-gaussian-beam"],
   ["digital-logic-workbench", "Digital Logic Workbench", "Build combinational logic diagrams, simulate gate outputs, generate truth tables, and convert Boolean expressions to and from gate diagrams.", "sec-digital"],
-  ["analog-design-workbench", "Analog Design Workbench", "Calculate common op-amp stages and design RC, RLC, Sallen-Key, state-variable, notch, band-pass, and all-pass filters with a live response plot.", "sec-analog-design"],
+  ["analog-design-workbench", "Analog Design Workbench", "Calculate common op-amp stages, a generic analog-computer lead network Gc=(Ts+1)/(αTs+1) from R/C, and design RC, RLC, Sallen-Key, state-variable, notch, band-pass, and all-pass filters with a live response plot.", "sec-analog-design"],
   ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],
   ["panel-schedule-load-analyzer", "Panel Schedule Load Analyzer", "Extract an editable panel schedule from a photo and estimate circuit demand, panel current, diversity, and capacity.", "sec-panel-schedule"],

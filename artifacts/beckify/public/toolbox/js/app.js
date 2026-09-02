@@ -79,14 +79,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
   navSearch.addEventListener('input', () => {
     const q = navSearch.value.toLowerCase().trim();
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.nav-btn, a.nav-ext').forEach(btn => {
       if (btn.classList.contains('home-btn')) { btn.style.display = ''; return; }
       const text = (btn.textContent + ' ' + (btn.dataset.keywords || '')).toLowerCase();
       btn.style.display = (!q || text.includes(q)) ? '' : 'none';
     });
     document.querySelectorAll('.sidebar-section').forEach(sec => {
       if (!q) { sec.style.display = ''; return; }
-      const hasVisible = [...sec.querySelectorAll('.nav-btn')].some(b => b.style.display !== 'none');
+      const hasVisible = [...sec.querySelectorAll('.nav-btn, a.nav-ext')].some(b => b.style.display !== 'none');
       sec.style.display = hasVisible ? '' : 'none';
     });
   });

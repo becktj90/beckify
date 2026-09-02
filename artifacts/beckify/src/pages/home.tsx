@@ -258,7 +258,7 @@ export default function Home() {
                     <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Interactive design</p>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Control System Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Model plants, inspect Bode and root-locus behavior, and compare PID, LQR, and MPC workflows.
+                      Model plants, compare open- vs closed-loop P control, sketch a root locus, design a lead, tune PID with Ziegler–Nichols and anti-windup, and read Bode GM/PM/ωb.
                     </p>
                   </div>
                 </div>

@@ -102,7 +102,7 @@ export const HOME_NAV_CARDS: HubCard[] = [
   },
   {
     title: "Control System Toolbox",
-    description: "Model plants, tune loops, and compare LQR, PID, and MPC workflows.",
+    description: "Model plants, compare open- vs closed-loop P, design lead and PID, and read Bode GM/PM/ωb.",
     href: "/control-systems",
     icon: Zap,
   },
