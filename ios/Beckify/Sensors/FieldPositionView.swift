@@ -77,7 +77,7 @@ final class FieldPositionModel: NSObject, ObservableObject, CLLocationManagerDel
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let loc = locations.last else { return }
+        guard let loc = locations.last, loc.horizontalAccuracy >= 0 else { return }
         Task { @MainActor in
             latitude = loc.coordinate.latitude
             longitude = loc.coordinate.longitude

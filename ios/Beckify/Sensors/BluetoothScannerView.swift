@@ -19,6 +19,9 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
 
     private var central: CBCentralManager?
     private var seen: [UUID: BLESighting] = [:]
+    private var publishTask: Task<Void, Never>?
+    private let retention: TimeInterval = 30
+    private let publishNanos: UInt64 = 250_000_000
 
     func start() {
         if central == nil {
@@ -31,6 +34,7 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
     func stop() {
         scanning = false
         central?.stopScan()
+        stopPublishLoop()
     }
 
     func clear() {
@@ -65,7 +69,6 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
                 serviceIDs: services,
                 lastSeen: Date()
             )
-            sightings = seen.values.sorted { $0.rssi > $1.rssi }
         }
     }
 
@@ -75,24 +78,52 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
         case .poweredOn:
             stateText = "Scanning for BLE peripherals"
             scanning = true
+            startPublishLoop()
             central?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         case .poweredOff:
             scanning = false
+            stopPublishLoop()
             stateText = "Bluetooth is off"
         case .unauthorized:
             unauthorized = true
             scanning = false
+            stopPublishLoop()
             stateText = "Bluetooth permission denied"
         case .unsupported:
             scanning = false
+            stopPublishLoop()
             stateText = "This device does not support Bluetooth Low Energy"
         case .resetting:
             scanning = false
+            stopPublishLoop()
             stateText = "Bluetooth resetting…"
         default:
             scanning = false
+            stopPublishLoop()
             stateText = "Waiting for Bluetooth…"
         }
+    }
+
+    private func startPublishLoop() {
+        guard publishTask == nil else { return }
+        publishTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: self?.publishNanos ?? 250_000_000)
+                guard !Task.isCancelled else { break }
+                await self?.flushSightings()
+            }
+        }
+    }
+
+    private func stopPublishLoop() {
+        publishTask?.cancel()
+        publishTask = nil
+    }
+
+    private func flushSightings() {
+        let cutoff = Date().addingTimeInterval(-retention)
+        seen = seen.filter { $0.value.lastSeen >= cutoff }
+        sightings = seen.values.sorted { $0.rssi > $1.rssi }
     }
 }
 

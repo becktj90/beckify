@@ -34,7 +34,7 @@ final class NoiseMeterModel: ObservableObject {
     }
 
     private func requestThenRun() {
-        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] granted in
+        AVAudioApplication.requestRecordPermission { [weak self] granted in
             Task { @MainActor in
                 guard let self else { return }
                 if granted {

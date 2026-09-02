@@ -59,6 +59,11 @@ struct ToolboxView: View {
             .navigationTitle("Beckify")
             .searchable(text: $query, prompt: "Ohm, divider, color code, LED, wifi…")
             .background(Theme.background)
+            .overlay {
+                if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && filtered.isEmpty {
+                    ContentUnavailableView.search(text: query)
+                }
+            }
         } detail: {
             if let selected {
                 CalculatorHostView(toolID: selected)

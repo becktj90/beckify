@@ -8,10 +8,14 @@ final class LevelModel: ObservableObject {
     @Published var roll = 0.0
     @Published var pitch = 0.0
     @Published var plumb = 0.0
-    @Published var available = CMMotionManager().isDeviceMotionAvailable
+    @Published var available = false
     @Published var status = "Waiting for motion…"
 
     private let motion = CMMotionManager()
+
+    init() {
+        available = motion.isDeviceMotionAvailable
+    }
 
     func start() {
         guard motion.isDeviceMotionAvailable else {
@@ -45,7 +49,7 @@ struct BubbleLevelView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 FormulaCard(
-                    text: "roll = atan2(gx, −gz)    pitch = atan2(gy, −gz)",
+                    text: "roll = atan2(gx, hypot(gy, gz))    pitch = atan2(gy, hypot(gx, gz))",
                     citation: "Face-up bubble for a surface. Plumb is the angle from portrait −Y (panel / conduit)."
                 )
                 bubble

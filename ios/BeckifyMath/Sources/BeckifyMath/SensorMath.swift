@@ -5,8 +5,8 @@ import Foundation
 public enum LevelMath {
     /// Face-up bubble: (0, 0) when gravity is (0, 0, −1). `x` is left/right, `y` is toward the top.
     public static func faceUpTiltDegrees(gravityX: Double, gravityY: Double, gravityZ: Double) -> (x: Double, y: Double) {
-        let x = atan2(gravityX, -gravityZ) * 180 / .pi
-        let y = atan2(gravityY, -gravityZ) * 180 / .pi
+        let x = atan2(gravityX, hypot(gravityY, gravityZ)) * 180 / .pi
+        let y = atan2(gravityY, hypot(gravityX, gravityZ)) * 180 / .pi
         return (x, y)
     }
 

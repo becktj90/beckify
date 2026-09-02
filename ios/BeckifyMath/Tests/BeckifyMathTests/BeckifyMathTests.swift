@@ -348,6 +348,12 @@ final class SensorMathTests: XCTestCase {
         XCTAssertEqual(t.y, 0, accuracy: 0.01)
     }
 
+    func testFaceUpDiagonalTiltUsesFullProjection() {
+        let t = LevelMath.faceUpTiltDegrees(gravityX: 0.5, gravityY: 0.5, gravityZ: -0.70710678118)
+        XCTAssertEqual(t.x, 30, accuracy: 0.05)
+        XCTAssertEqual(t.y, 30, accuracy: 0.05)
+    }
+
     func testPortraitPlumb() {
         XCTAssertEqual(LevelMath.portraitPlumbDeviationDegrees(gravityX: 0, gravityY: -1, gravityZ: 0), 0, accuracy: 1e-9)
         XCTAssertEqual(LevelMath.portraitPlumbDeviationDegrees(gravityX: 0, gravityY: -0.70710678118, gravityZ: -0.70710678118), 45, accuracy: 0.05)

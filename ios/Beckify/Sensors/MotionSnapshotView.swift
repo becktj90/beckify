@@ -15,10 +15,14 @@ final class MotionSnapshotModel: ObservableObject {
     @Published var uy = 0.0
     @Published var uz = 0.0
     @Published var peakUserG = 0.0
-    @Published var available = CMMotionManager().isDeviceMotionAvailable
+    @Published var available = false
     @Published var status = "Waiting for device motion…"
 
     private let motion = CMMotionManager()
+
+    init() {
+        available = motion.isDeviceMotionAvailable
+    }
 
     func start() {
         guard motion.isDeviceMotionAvailable else {

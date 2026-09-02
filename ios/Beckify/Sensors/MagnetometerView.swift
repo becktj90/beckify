@@ -10,15 +10,21 @@ final class MagnetometerModel: ObservableObject {
     @Published var z = 0.0
     @Published var magnitude = 0.0
     @Published var heading = 0.0
-    @Published var available = CMMotionManager().isDeviceMotionAvailable
+    @Published var available = false
     @Published var status = "Waiting for magnetometer…"
 
     private let motion = CMMotionManager()
 
+    init() {
+        available = motion.isDeviceMotionAvailable
+            && CMMotionManager.availableAttitudeReferenceFrames.contains(.xMagneticNorthZVertical)
+    }
+
     func start() {
-        guard motion.isDeviceMotionAvailable else {
+        guard motion.isDeviceMotionAvailable,
+              CMMotionManager.availableAttitudeReferenceFrames.contains(.xMagneticNorthZVertical) else {
             available = false
-            status = "Device motion / magnetometer not available."
+            status = "Magnetic-north device motion is not available on this hardware."
             return
         }
         motion.deviceMotionUpdateInterval = 1.0 / 20.0

@@ -28,6 +28,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     }
 
     func start() {
+        monitor?.cancel()
         let monitor = NWPathMonitor()
         self.monitor = monitor
         monitor.pathUpdateHandler = { [weak self] path in
