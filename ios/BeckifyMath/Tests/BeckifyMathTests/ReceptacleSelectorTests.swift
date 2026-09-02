@@ -150,6 +150,42 @@ final class ReceptacleSelectorTests: XCTestCase {
         )
     }
 
+    func testFractionalLoadKeepsDecimalInReasons() throws {
+        XCTAssertEqual(FormatAmps.amps(15), "15A")
+        XCTAssertEqual(FormatAmps.amps(12.5), "12.5A")
+        XCTAssertNotEqual(FormatAmps.amps(12.5), "13A")
+        XCTAssertNotEqual(FormatAmps.amps(12.5), "12A")
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 12.5, family: .straight)
+        )
+        XCTAssertEqual(matches[0].config.code, "5-15R")
+        XCTAssertTrue(matches[0].reasons.contains { $0.contains("12.5A") })
+        XCTAssertFalse(matches[0].reasons.contains { $0.contains("13A") })
+    }
+
+    func testCurrentAboveTableLimitUsesMatchingGuard() {
+        XCTAssertThrowsError(
+            try ReceptacleSelector.select(
+                ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 150)
+            )
+        ) { error in
+            XCTAssertEqual(
+                error as? CalcError,
+                .outOfRange("This selector’s tables stop at 125 A. Confirm current catalog above that.")
+            )
+        }
+        XCTAssertNoThrow(
+            try ReceptacleSelector.select(
+                ReceptacleQuery(
+                    volts: 120,
+                    phase: .singlePhase2Wire,
+                    amps: 125,
+                    family: .iecPinSleeve
+                )
+            )
+        )
+    }
+
     func testIECFacePutsEarthOnRequestedHour() {
         let face = ReceptacleFaces.iec(poles: .threePlusE, hour: 7)
         XCTAssertEqual(face.earthHour, 7)

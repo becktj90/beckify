@@ -231,8 +231,9 @@ struct ReceptacleSelectorView: View {
                             .foregroundStyle(Theme.muted)
                     }
                     if let url = URL(string: part.sourceURL), !part.sourceURL.isEmpty {
-                        Link("Public catalog page", destination: url)
+                        Link("\(part.partNumber) catalog", destination: url)
                             .font(.caption2)
+                            .accessibilityLabel("Public catalog page for \(part.maker) \(part.partNumber)")
                     }
                 }
                 .padding(.vertical, 6)

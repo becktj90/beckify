@@ -321,11 +321,21 @@ public struct ReceptacleMatch: Equatable, Sendable, Identifiable {
 
 /// Locale-free amp formatting for match copy (BeckifyMath has no UI Format helper).
 enum FormatAmps {
+    /// Whole amps as `15A`; fractional custom loads keep up to two decimals (`12.5A`).
     static func amps(_ value: Double) -> String {
-        if value == value.rounded() {
-            return "\(Int(value))A"
+        guard value.isFinite else { return "—" }
+        let nearest = value.rounded()
+        if abs(value - nearest) < 1e-9 {
+            return "\(Int(nearest))A"
         }
-        return String(format: "%.0fA", value)
+        var formatted = String(format: "%.2f", value)
+        while formatted.hasSuffix("0") {
+            formatted.removeLast()
+        }
+        if formatted.hasSuffix(".") {
+            formatted.removeLast()
+        }
+        return "\(formatted)A"
     }
 }
 
@@ -393,8 +403,8 @@ public enum ReceptacleSelector {
         guard volts <= 1000 else {
             throw CalcError.outOfRange("This selector covers utilization voltages through 600 V class, not medium voltage.")
         }
-        guard amps <= 200 else {
-            throw CalcError.outOfRange("This selector’s tables stop at 125 A IEC / 100 A NEMA pin-and-sleeve. Confirm current catalog above that.")
+        guard amps <= 125 else {
+            throw CalcError.outOfRange("This selector’s tables stop at 125 A. Confirm current catalog above that.")
         }
 
         var matches: [ReceptacleMatch] = []
