@@ -45,10 +45,21 @@ assert.equal(parsed.fields.phase, '3');
 assert.equal(parsed.fields.frame, '215T');
 assert.equal(parsed.fields.sf, '1.15');
 assert.equal(parsed.fields.design, 'B');
+assert.equal(parsed.fields.insulation, 'F');
 assert.equal(parsed.fields.code, 'G');
+assert.equal(parsed.fields.riseC, '40');
+
+const noHz = api.parseMotorNameplate('AC MOTOR 10 HP 460V 14 FLA');
+assert.equal(noHz.fields.hz, '60');
+assert.equal(noHz.filled, 3);
 
 assert.equal(api.looksLikeOpenPanelInterior('Lighting 20A ckt 1'), false);
+assert.equal(api.looksLikeOpenPanelInterior('voltage stabilizer on circuit 4'), false);
+assert.equal(api.looksLikeOpenPanelInterior('breaker stabs on the bus'), true);
 assert.equal(api.looksLikeOpenPanelInterior('live parts behind the dead front near the bus bar'), true);
+assert.equal(api.meanWordConfidence(null), 0);
+assert.equal(api.meanWordConfidence({}), 0);
+assert.equal(api.meanWordConfidence({ confidence: 81, words: [] }), 81);
 
 const vendorDir = path.join(root, 'vendor', 'tesseract');
 for (const file of ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-lstm.wasm.js', 'eng.traineddata.gz']) {

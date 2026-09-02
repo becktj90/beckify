@@ -38,7 +38,7 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "ebus-budget": ["ebus", "e-bus", "rack current", "el9410", "milliamp budget", "coupler current"],
   "modbus-address": ["modbus", "40001", "400001", "holding register", "function code", "coil address", "pdu"],
   "plc-timer-preset": ["ton", "tof", "rto", "timer preset", "timebase", "plc timer"],
-  "nema-wiring": ["nema 5-15", "nema 5-20", "nema 6-20", "l5-30", "l14-30", "twist lock", "color code", "200.6", "250.119", "receptacle"],
+  "nema-wiring": ["nema 5-15", "5-15", "nema 5-20", "nema 6-20", "l5-30", "l14-30", "twist lock", "color code", "200.6", "250.119", "receptacle"],
   "cable-schedule": ["cable schedule", "cable id", "tray", "conductor count", "xlsx"],
   "battery-bank": ["battery bank", "depth of discharge", "lfp", "lifepo4", "agm", "series parallel", "backup duration", "c-rate"],
   "motor-nameplate": ["motor nameplate", "430.32", "430.52", "fla", "locked rotor", "service factor", "ocr"],
@@ -65,7 +65,7 @@ const REFERENCE_DOCUMENTS: AssistantDocument[] = REFERENCE_TABLES.map(([slug, ti
   title,
   description,
   href: `/toolbox/#${anchor}`,
-  tags: significantWords(title),
+  tags: Array.from(new Set([...significantWords(title), ...(EXTRA_TAGS[slug] ?? [])])),
   concepts: significantWords(description).slice(0, 8),
   kind: "reference" as const,
 }));

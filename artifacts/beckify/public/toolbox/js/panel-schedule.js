@@ -671,21 +671,37 @@ function phaseLegFromCircuit(circuit, phase) {
   return 'C';
 }
 
+function occupiedLegsForRow(row, phase) {
+  const start = firstCircuitNumber(row && row.circuit);
+  if (!Number.isFinite(start) || start < 1 || start === Number.MAX_SAFE_INTEGER) return [];
+  const poles = Math.max(1, Number(row && row.poles) || 1);
+  /* 1φ: consecutive spaces (odd L1, even L2) so a 2-pole 240 V breaker
+     lands on both legs. 3φ uses the pair layout (1–2 A, 3–4 B, 5–6 C),
+     so a multi-pole breaker steps by 2 spaces to reach the next phase. */
+  const stride = Number(phase) === 1 ? 1 : 2;
+  const legs = [];
+  for (let i = 0; i < poles; i += 1) {
+    const leg = phaseLegFromCircuit(String(start + i * stride), phase);
+    if (leg && legs.indexOf(leg) === -1) legs.push(leg);
+  }
+  return legs;
+}
+
 function phaseBalance(rows, phase) {
   const legs = {};
   (rows || []).forEach(row => {
     if (isSpareOrOpen(row)) return;
-    const leg = phaseLegFromCircuit(row.circuit, phase);
-    if (!leg) return;
     const amps = tripAmpsFromRow(row);
     if (!(amps > 0)) return;
-    legs[leg] = (legs[leg] || 0) + amps;
+    occupiedLegsForRow(row, phase).forEach(leg => {
+      legs[leg] = (legs[leg] || 0) + amps;
+    });
   });
   return {
     legs,
     assumption: Number(phase) === 1
-      ? 'Assumption: odd/even 1φ panelboard numbering — odd circuits on L1, even circuits on L2. Inference from numbering, not a measurement.'
-      : 'Assumption: odd-even 3φ layout, circuits 1–2 phase A, 3–4 B, 5–6 C, repeating. Inference from numbering, not a measurement.',
+      ? 'Assumption: odd/even 1φ panelboard numbering — odd circuits on L1, even circuits on L2. A 2-pole breaker counts trip amps on both legs. Inference from numbering, not a measurement.'
+      : 'Assumption: odd-even 3φ layout, circuits 1–2 phase A, 3–4 B, 5–6 C, repeating. A 3-pole breaker at circuit 1 occupies A, B, and C. Inference from numbering, not a measurement.',
   };
 }
 
@@ -921,6 +937,7 @@ function resetApp() {
 }
 
 function handleParseText() {
+  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
   parseAndApplyText(elements.rawText.value, false);
 }
 
@@ -1003,6 +1020,7 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     connectedBreakerSum,
     spareStats,
     phaseLegFromCircuit,
+    occupiedLegsForRow,
     phaseBalance,
     computeDirectoryMetrics
   };

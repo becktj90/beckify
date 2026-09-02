@@ -91,6 +91,7 @@ for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['sim
 console.log('\n--- Assistant search: five new toolbox tools ---');
 for (const [query, expectedId] of [
   ['nema 5-15', 'nema-wiring'],
+  ['5-15', 'nema-wiring'],
   ['cable schedule', 'cable-schedule'],
   ['battery bank', 'battery-bank'],
   ['motor nameplate', 'motor-nameplate'],

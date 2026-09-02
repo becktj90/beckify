@@ -39,6 +39,14 @@ ok(
     !/cdn\.jsdelivr\.net\/npm\/tesseract/.test(panelSchedule),
 );
 const ocrHelper = read(root, "public", "toolbox", "js", "ocr-helper.js");
+const crypto = require("crypto");
+const tessBytes = fs.readFileSync(path.join(root, "public", "toolbox", "js", "vendor", "tesseract", "tesseract.min.js"));
+const tessSha384 = crypto.createHash("sha384").update(tessBytes).digest("base64");
+const ocrSri = (ocrHelper.match(/integrity = 'sha384-([^']+)'/) || [])[1];
+ok(
+  "OCR helper SRI matches vendored tesseract.min.js SHA-384",
+  ocrSri === tessSha384 && /js\/vendor\/tesseract\//.test(ocrHelper),
+);
 ok(
   "OCR helper pins Tesseract 5.1.1 integrity hash",
   /sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR\/D3A991F/.test(ocrHelper) &&
@@ -63,7 +71,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after five-tool rebase", /CACHE_VERSION = 'v18'/.test(sw));
+ok("Toolbox SW cache version bumped after five-tool rebase", /CACHE_VERSION = 'v19'/.test(sw));
 ok("Toolbox SW allow-lists CDN hosts", /RUNTIME_HOST_ALLOWLIST/.test(sw) && /cdn\.jsdelivr\.net/.test(sw));
 
 const deploy = read(repo, ".github", "workflows", "deploy.yml");

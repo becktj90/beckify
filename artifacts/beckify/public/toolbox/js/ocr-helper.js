@@ -45,7 +45,7 @@
   function meanWordConfidence(data) {
     var words = (data && data.words) || [];
     var scored = words.filter(function (w) { return typeof w.confidence === 'number'; });
-    if (!scored.length) return typeof data.confidence === 'number' ? data.confidence : 0;
+    if (!scored.length) return (data && typeof data.confidence === 'number') ? data.confidence : 0;
     var sum = 0;
     for (var i = 0; i < scored.length; i++) sum += scored[i].confidence;
     return sum / scored.length;
@@ -58,9 +58,11 @@
   function looksLikeOpenPanelInterior(text) {
     var t = String(text || '').toLowerCase();
     var hits = 0;
-    ['bus bar', 'busbar', 'live parts', 'dead front', 'branch breaker body', 'panel interior', 'line lugs', 'stab', 'insulated bus'].forEach(function (k) {
+    var phrases = ['bus bar', 'busbar', 'live parts', 'dead front', 'branch breaker body', 'panel interior', 'line lugs', 'insulated bus'];
+    phrases.forEach(function (k) {
       if (t.indexOf(k) !== -1) hits += 1;
     });
+    if (/\bstabs?\b/.test(t)) hits += 1;
     return hits >= 1;
   }
 
@@ -140,7 +142,10 @@
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
       code: code, riseC: rise,
     };
-    var filled = Object.keys(fields).filter(function (k) { return fields[k]; }).length;
+    var counted = { hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz,
+      phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
+      code: code, riseC: rise };
+    var filled = Object.keys(counted).filter(function (k) { return counted[k]; }).length;
     return { fields: fields, filled: filled };
   }
 

@@ -392,6 +392,7 @@
       if (!catalog[i] || !field) return;
       if (field === 'count') catalog[i].count = Math.max(1, Math.floor(Number(t.value) || 1));
       else catalog[i][field] = t.value;
+      renderCart();
       return;
     }
     if (t.getAttribute('data-cab-cell') !== null) {

@@ -76,7 +76,9 @@
 
   /**
    * Forward: energy the inverter must deliver, then batteries after DoD and η.
-   * loadWatts is continuous AC watts OR derived from daily kWh / hours.
+   * Continuous watts, if given, is the load. Daily kWh is always a 24 h
+   * average (never divided by backup hours — that would size a 4 h bank
+   * as if the whole day's energy had to fit in those 4 hours).
    */
   function sizeForward(input) {
     var dod = clampPct(input.dod, NaN);
@@ -86,14 +88,10 @@
     var hours = num(input.hours);
     var loadW = num(input.watts);
     var dailyKwh = num(input.dailyKwh);
-    if (!pos(loadW) && pos(dailyKwh) && pos(hours)) {
-      loadW = (dailyKwh * 1000) / hours;
-    }
-    if (!pos(loadW) && pos(dailyKwh) && !pos(hours)) {
-      /* Daily kWh with no duration: treat as 24 h average load. */
-      hours = 24;
+    if (!pos(loadW) && pos(dailyKwh)) {
       loadW = (dailyKwh * 1000) / 24;
     }
+    if (!pos(hours) && pos(dailyKwh)) hours = 24;
     if (!pos(loadW)) return { error: 'Enter continuous watts or daily kWh.' };
     if (!pos(hours)) return { error: 'Enter backup duration in hours.' };
 

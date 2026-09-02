@@ -66,6 +66,22 @@ assert.match(metrics.phaseBalance.assumption, /odd circuits on L1/i);
 assert.equal(metrics.phaseBalance.legs.L1, 20);
 assert.equal(metrics.phaseBalance.legs.L2, 35);
 
+const twoPole = panel.phaseBalance(
+  [{ circuit: '1', description: 'Range', trip: '30A', poles: '2' }],
+  1,
+);
+assert.equal(twoPole.legs.L1, 30);
+assert.equal(twoPole.legs.L2, 30);
+
+const threePole = panel.phaseBalance(
+  [{ circuit: '1', description: 'AHU', trip: '40A', poles: '3' }],
+  3,
+);
+assert.equal(threePole.legs.A, 40);
+assert.equal(threePole.legs.B, 40);
+assert.equal(threePole.legs.C, 40);
+assert.match(threePole.assumption, /3-pole breaker/i);
+
 const floatPct = panel.computeDirectoryMetrics(
   [{ circuit: '1', description: 'Lights', trip: '11A', poles: '1' }],
   { phase: 1, mainAmps: 20, slotCount: 1 }

@@ -667,7 +667,7 @@ window.BeckifyWireMath = {
       var size = WIRE_SIZE_ORDER[i];
       var row = AMPACITY[mat] && AMPACITY[mat][size];
       if (row && row[TEMP_COLUMN_INDEX[75]] >= need) {
-        return { size: size, ampacity: row[TEMP_COLUMN_INDEX[75]], required: need, article: 'NEC 430.22' };
+        return { size: size, ampacity: row[TEMP_COLUMN_INDEX[75]], required: need, article: 'NEC 430.22', material: mat };
       }
     }
     return null;

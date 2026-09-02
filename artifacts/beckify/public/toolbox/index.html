@@ -2180,6 +2180,7 @@
             <div class="input-group single">
               <div><label for="bb_hours">Desired backup duration (h)</label><input id="bb_hours" type="number" min="0" step="any" value="4"></div>
             </div>
+            <p class="note">Daily kWh is a 24-hour total. Backup hours is how long the bank must run — not the window that produced that daily energy.</p>
             <button class="btn" type="button" id="bb_run_forward">Size the bank</button>
             <div id="bb_forward_result" class="result" aria-live="polite"></div>
           </div>
@@ -2864,11 +2865,11 @@
               <div>
                 <label for="mnp_type">Motor type (Table 430.52 row)</label>
                 <select id="mnp_type">
-                  <option value="sc-bde" selected>Squirrel-cage Design B, D, E</option>
-                  <option value="sc-ee">Squirrel-cage Design B or E energy efficient</option>
+                  <option value="sc-bde" selected>Squirrel-cage other than Design B energy-efficient</option>
+                  <option value="sc-ee">Squirrel-cage Design B energy-efficient</option>
                   <option value="1ph">Single-phase AC</option>
                   <option value="sync">Synchronous (FV / resistor / reactor)</option>
-                  <option value="sync-pw">Synchronous (part-winding)</option>
+                  <option value="sync-pw">Synchronous part-winding (older Table 430.52)</option>
                   <option value="wound">Wound-rotor</option>
                   <option value="dc">DC (constant voltage)</option>
                 </select>
@@ -9955,6 +9956,10 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Common NEMA configurations</div>
           <div class="card-body">
+            <label class="iol-file" for="nema_id">Selected NEMA configuration</label>
+            <select id="nema_id" class="iol-file" aria-label="Selected NEMA configuration">
+              <option value="5-15" selected>NEMA 5-15</option>
+            </select>
             <div id="nema_picker" class="nema-picker" role="listbox" aria-label="NEMA configurations"></div>
           </div>
         </div>

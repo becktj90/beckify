@@ -82,23 +82,23 @@
         { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'u-ground', x: 50, y: 70 },
       ] },
     { id: 'L5-20', name: 'NEMA L5-20', volts: 125, amps: 20, phase: '1φ', poles: 2, wires: 3, locking: true, family: 'locking',
-      summary: 'Twist-lock 125 V. Ground is the unique keyed pin.',
-      blades: lockBlades125() },
+      summary: 'Twist-lock 125 V 20 A. Ground is the unique keyed pin. Not interchangeable with L5-30.',
+      blades: lockBlades125(20) },
     { id: 'L5-30', name: 'NEMA L5-30', volts: 125, amps: 30, phase: '1φ', poles: 2, wires: 3, locking: true, family: 'locking',
-      summary: 'Twist-lock 125 V 30 A. Same pin roles as L5-20, larger shell.',
-      blades: lockBlades125() },
+      summary: 'Twist-lock 125 V 30 A. Same pin roles as L5-20, different clocking and pin size so the 20 A plug will not mate.',
+      blades: lockBlades125(30) },
     { id: 'L6-20', name: 'NEMA L6-20', volts: 250, amps: 20, phase: '1φ', poles: 2, wires: 3, locking: true, family: 'locking',
-      summary: 'Twist-lock 250 V. Two hots + ground, no neutral.',
-      blades: lockBlades250() },
+      summary: 'Twist-lock 250 V 20 A. Two hots + ground, no neutral. Not interchangeable with L6-30.',
+      blades: lockBlades250(20) },
     { id: 'L6-30', name: 'NEMA L6-30', volts: 250, amps: 30, phase: '1φ', poles: 2, wires: 3, locking: true, family: 'locking',
-      summary: 'Twist-lock 250 V 30 A. Common for 240 V tools.',
-      blades: lockBlades250() },
+      summary: 'Twist-lock 250 V 30 A. Common for 240 V tools. Different clocking and pin size from L6-20.',
+      blades: lockBlades250(30) },
     { id: 'L14-20', name: 'NEMA L14-20', volts: '125/250', amps: 20, phase: '1φ', poles: 3, wires: 4, locking: true, family: 'locking',
-      summary: 'Twist-lock 4-wire 125/250 V. Two hots, neutral, ground.',
-      blades: lockBlades125250() },
+      summary: 'Twist-lock 4-wire 125/250 V 20 A. Two hots, neutral, ground. Not interchangeable with L14-30.',
+      blades: lockBlades125250(20) },
     { id: 'L14-30', name: 'NEMA L14-30', volts: '125/250', amps: 30, phase: '1φ', poles: 3, wires: 4, locking: true, family: 'locking',
-      summary: 'Generator / transfer 30 A locking 4-wire. Same X-Y-W-G as L14-20.',
-      blades: lockBlades125250() },
+      summary: 'Generator / transfer 30 A locking 4-wire. Same X-Y-W-G roles as L14-20, different clocking so the 20 A plug will not mate.',
+      blades: lockBlades125250(30) },
     { id: 'L15-30', name: 'NEMA L15-30', volts: 250, amps: 30, phase: '3φ', poles: 3, wires: 4, locking: true, family: 'locking',
       summary: 'Three-phase 250 V locking. Three hots + ground, no neutral.',
       blades: lockBlades3ph() },
@@ -107,26 +107,29 @@
       blades: lockBlades3phWye() },
   ];
 
-  function lockBlades125() {
+  function lockBlades125(amp) {
+    var a30 = Number(amp) >= 30;
     return [
-      { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'pin-key', angle: -90, r: 22 },
-      { id: 'N', role: 'Neutral (grounded)', color: 'White or gray', code: 'NEC 200.6', kind: 'neu', shape: 'pin', angle: 150, r: 22 },
-      { id: 'H', role: 'Hot (ungrounded)', color: 'Black (convention)', code: 'convention', kind: 'hot', shape: 'pin', angle: 30, r: 22 },
+      { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'pin-key', angle: a30 ? -60 : -90, r: a30 ? 24 : 20, pinSize: a30 ? 7.4 : 6.2 },
+      { id: 'N', role: 'Neutral (grounded)', color: 'White or gray', code: 'NEC 200.6', kind: 'neu', shape: 'pin', angle: a30 ? 165 : 150, r: a30 ? 24 : 20, pinSize: a30 ? 5.8 : 5 },
+      { id: 'H', role: 'Hot (ungrounded)', color: 'Black (convention)', code: 'convention', kind: 'hot', shape: 'pin', angle: a30 ? 45 : 30, r: a30 ? 24 : 20, pinSize: a30 ? 5.8 : 5 },
     ];
   }
-  function lockBlades250() {
+  function lockBlades250(amp) {
+    var a30 = Number(amp) >= 30;
     return [
-      { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'pin-key', angle: -90, r: 22 },
-      { id: 'X', role: 'Hot X (ungrounded)', color: 'Black (convention)', code: 'convention', kind: 'hot', shape: 'pin', angle: 150, r: 22 },
-      { id: 'Y', role: 'Hot Y (ungrounded)', color: 'Red (convention)', code: 'convention', kind: 'hot2', shape: 'pin', angle: 30, r: 22 },
+      { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'pin-key', angle: a30 ? -60 : -90, r: a30 ? 24 : 20, pinSize: a30 ? 7.4 : 6.2 },
+      { id: 'X', role: 'Hot X (ungrounded)', color: 'Black (convention)', code: 'convention', kind: 'hot', shape: 'pin', angle: a30 ? 165 : 150, r: a30 ? 24 : 20, pinSize: a30 ? 5.8 : 5 },
+      { id: 'Y', role: 'Hot Y (ungrounded)', color: 'Red (convention)', code: 'convention', kind: 'hot2', shape: 'pin', angle: a30 ? 45 : 30, r: a30 ? 24 : 20, pinSize: a30 ? 5.8 : 5 },
     ];
   }
-  function lockBlades125250() {
+  function lockBlades125250(amp) {
+    var a30 = Number(amp) >= 30;
     return [
-      { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'pin-key', angle: -90, r: 24 },
-      { id: 'W', role: 'Neutral (grounded)', color: 'White or gray', code: 'NEC 200.6', kind: 'neu', shape: 'pin', angle: 90, r: 24 },
-      { id: 'X', role: 'Hot X (ungrounded)', color: 'Black (convention)', code: 'convention', kind: 'hot', shape: 'pin', angle: 180, r: 24 },
-      { id: 'Y', role: 'Hot Y (ungrounded)', color: 'Red (convention)', code: 'convention', kind: 'hot2', shape: 'pin', angle: 0, r: 24 },
+      { id: 'G', role: 'Equipment grounding', color: 'Green / green-yellow / bare', code: 'NEC 250.119', kind: 'gnd', shape: 'pin-key', angle: a30 ? -70 : -90, r: a30 ? 26 : 22, pinSize: a30 ? 7.2 : 6.4 },
+      { id: 'W', role: 'Neutral (grounded)', color: 'White or gray', code: 'NEC 200.6', kind: 'neu', shape: 'pin', angle: a30 ? 110 : 90, r: a30 ? 26 : 22, pinSize: a30 ? 5.8 : 5 },
+      { id: 'X', role: 'Hot X (ungrounded)', color: 'Black (convention)', code: 'convention', kind: 'hot', shape: 'pin', angle: a30 ? 200 : 180, r: a30 ? 26 : 22, pinSize: a30 ? 5.8 : 5 },
+      { id: 'Y', role: 'Hot Y (ungrounded)', color: 'Red (convention)', code: 'convention', kind: 'hot2', shape: 'pin', angle: a30 ? 20 : 0, r: a30 ? 26 : 22, pinSize: a30 ? 5.8 : 5 },
     ];
   }
   function lockBlades3ph() {
@@ -241,7 +244,7 @@
         '<circle cx="' + b.x + '" cy="' + (b.y + 2) + '" r="3.4" fill="' + fill + '"/>';
     }
     var p = polar(50, 50, b.r || 22, b.angle || 0);
-    var r = b.shape === 'pin-key' ? 6.4 : 5;
+    var r = b.pinSize || (b.shape === 'pin-key' ? 6.4 : 5);
     return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="#05060f" stroke-width="1.4"/>' +
       '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 3.2).toFixed(1) + '" text-anchor="middle" font-size="7" font-weight="700" fill="#05060f">' + b.id + '</text>';
   }
@@ -258,7 +261,8 @@
     var face = cfg.locking
       ? '<circle cx="50" cy="50" r="38" fill="' + C.body + '" stroke="' + C.rim + '" stroke-width="2.4"/>' +
         '<circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3 3"/>' +
-        '<path d="M 50 12 L 53 18 L 47 18 Z" fill="' + C.rim + '"/>'
+        '<path d="M 50 12 L 53 18 L 47 18 Z" fill="' + C.rim + '"/>' +
+        '<text x="50" y="54" text-anchor="middle" font-size="7" font-weight="700" fill="' + C.muted + '">' + cfg.amps + 'A</text>'
       : '<rect x="14" y="10" width="72" height="80" rx="10" fill="' + C.body + '" stroke="' + C.rim + '" stroke-width="2.2"/>';
     var blades = cfg.blades.map(function (b) { return bladeShape(b) + bladeLabel(b); }).join('');
     var title = cfg.name + ' receptacle, facing the device';
@@ -325,16 +329,41 @@
     }).join('');
   }
 
+  function fillIdSelect() {
+    var sel = document.getElementById('nema_id');
+    if (!sel) return;
+    sel.innerHTML = CONFIGS.map(function (c) {
+      return '<option value="' + escapeHtml(c.id) + '">' + escapeHtml(c.name) + '</option>';
+    }).join('');
+  }
+
+  var showing = false;
   function show(id) {
+    if (showing) return;
+    showing = true;
     var cfg = configById(id);
+    var sel = document.getElementById('nema_id');
+    if (sel && sel.value !== cfg.id) sel.value = cfg.id;
     renderPicker(cfg.id);
     renderDetail(cfg);
+    if (sel) {
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    showing = false;
   }
 
   function init() {
     if (!document.getElementById('sec-nema-wiring')) return;
+    fillIdSelect();
     renderColors();
-    show('5-15');
+    if (typeof registerUrlState === 'function') {
+      registerUrlState('sec-nema-wiring', 'nema-wiring', null);
+    }
+    if (typeof bindLastUsed === 'function') bindLastUsed('sec-nema-wiring', 'nema-wiring');
+    var sel = document.getElementById('nema_id');
+    var startId = (sel && sel.value) || '5-15';
+    show(startId);
     var picker = document.getElementById('nema_picker');
     if (picker) {
       picker.addEventListener('click', function (ev) {
@@ -342,10 +371,9 @@
         if (btn) show(btn.getAttribute('data-nema-id'));
       });
     }
-    if (typeof registerUrlState === 'function') {
-      registerUrlState('sec-nema-wiring', 'nema-wiring', null);
+    if (sel) {
+      sel.addEventListener('change', function () { show(sel.value); });
     }
-    if (typeof bindLastUsed === 'function') bindLastUsed('sec-nema-wiring', 'nema-wiring');
   }
 
   if (typeof document !== 'undefined') {

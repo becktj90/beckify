@@ -54,4 +54,12 @@ const flag = api.crateFlag(over);
 assert.ok(flag);
 assert.equal(flag.ok, false);
 
+const daily = api.sizeForward({
+  dailyKwh: 12, hours: 4, v: 12.8, ah: 100, dod: 90, eta: 95,
+});
+assert.ok(!daily.error, daily.error);
+assert.ok(daily.acWh < 12000, 'daily kWh must not be treated as backup-window energy');
+assert.ok(Math.abs(daily.loadW - 500) < 0.01);
+assert.ok(Math.abs(daily.acWh - 2000) < 0.01);
+
 console.log('Battery bank series/parallel and sizing math passed');

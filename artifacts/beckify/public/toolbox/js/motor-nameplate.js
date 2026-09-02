@@ -34,13 +34,18 @@
 
   /* NEC Table 430.52 — maximum rating or setting as % of motor FLA.
      Columns: nontime-delay fuse, dual-element time-delay fuse,
-     instantaneous-trip breaker, inverse-time breaker. */
+     instantaneous-trip breaker, inverse-time breaker.
+     Labels follow current Table 430.52 squirrel-cage rows (other than
+     Design B energy-efficient vs Design B energy-efficient). Design D/E
+     are not listed as that 800% row. Part-winding percentages are kept
+     only as an older-cycle Table 430.52 row — they are not claimed as
+     current 430.52(C)(1). */
   var TABLE_430_52 = {
     '1ph': { label: 'Single-phase AC, all types', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
-    'sc-bde': { label: 'AC squirrel-cage other than 1φ: Design B, D, E', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
-    'sc-ee': { label: 'AC squirrel-cage: Design B or E energy efficient', ntd: 300, td: 175, inst: 1100, inv: 250, article: 'NEC Table 430.52' },
+    'sc-bde': { label: 'AC squirrel-cage other than Design B energy-efficient', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
+    'sc-ee': { label: 'AC squirrel-cage Design B energy-efficient', ntd: 300, td: 175, inst: 1100, inv: 250, article: 'NEC Table 430.52' },
     'sync': { label: 'AC synchronous (full-voltage, resistor or reactor start)', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
-    'sync-pw': { label: 'AC synchronous (part-winding)', ntd: 150, td: 150, inst: 800, inv: 200, article: 'NEC Table 430.52' },
+    'sync-pw': { label: 'AC synchronous (part-winding, older Table 430.52)', ntd: 150, td: 150, inst: 800, inv: 200, article: 'older NEC Table 430.52 (part-winding)' },
     'wound': { label: 'AC wound-rotor', ntd: 150, td: 150, inst: 800, inv: 150, article: 'NEC Table 430.52' },
     'dc': { label: 'DC (constant voltage)', ntd: 150, td: 150, inst: 250, inv: 150, article: 'NEC Table 430.52' },
   };
@@ -51,7 +56,9 @@
 
   function scpdFromFla(fla, motorType, device) {
     var row = table43052Row(motorType);
-    var pct = row[device] || row.inv;
+    var allowed = { ntd: 'ntd', td: 'td', inst: 'inst', inv: 'inv' };
+    var key = allowed[device] || 'inv';
+    var pct = row[key];
     var raw = Number(fla) * (pct / 100);
     var next = (typeof nextStandardOCPD === 'function') ? nextStandardOCPD(raw) : null;
     return {
@@ -60,7 +67,7 @@
       next: next,
       article: row.article,
       label: row.label,
-      device: device,
+      device: key,
     };
   }
 
@@ -138,7 +145,7 @@
         'Overload setting ≤ ' + ol.pct + '% × FLA = ' + ol.pct + '% × ' + fla + ' A = ' + (fla * ol.pct / 100).toFixed(1) + ' A  (' + ol.article + ', ' + ol.reason + ')',
         'If that will not start the motor, NEC 430.32(C) allows the next higher size not exceeding ' + olNext.pct + '% = ' + (fla * olNext.pct / 100).toFixed(1) + ' A',
         'SCPD maximum = ' + scpd.pct + '% × ' + fla + ' A = ' + scpd.raw.toFixed(1) + ' A  (' + scpd.article + ', ' + scpd.label + ')',
-        cond ? 'Conductor ampacity ≥ 125% × FLA = 1.25 × ' + fla + ' A = ' + cond.required.toFixed(1) + ' A → ' + cond.size + ' Cu 75°C lists ' + cond.ampacity + ' A (NEC 430.22, Table 310.16)' : 'Conductor size needs BeckifyWireMath (NEC Table 310.16).',
+        cond ? 'Conductor ampacity ≥ 125% × FLA = 1.25 × ' + fla + ' A = ' + cond.required.toFixed(1) + ' A → ' + cond.size + ' ' + (cond.material === 'al' ? 'Al' : 'Cu') + ' 75°C lists ' + cond.ampacity + ' A (NEC 430.22, Table 310.16)' : 'Conductor size needs BeckifyWireMath (NEC Table 310.16).',
       ],
     };
   }
@@ -173,7 +180,17 @@
     };
   }
 
+  var PARSED_FIELD_IDS = ['mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise'];
+
+  function clearParsedFields() {
+    for (var i = 0; i < PARSED_FIELD_IDS.length; i++) {
+      var n = el(PARSED_FIELD_IDS[i]);
+      if (n) n.value = '';
+    }
+  }
+
   function applyFields(fields) {
+    clearParsedFields();
     setVal('mnp_hp', fields.hp);
     setVal('mnp_kw', fields.kw);
     setVal('mnp_volts', fields.volts);
@@ -214,7 +231,10 @@
     row('Overload (NEC 430.32(A)(1))', '≤ ' + result.overload.pct + '% of FLA = ' + fmt(result.overloadAmps) + ' A — ' + result.overload.reason);
     row('If starting needs more (430.32(C))', 'next size not exceeding ' + result.overloadNext.pct + '% = ' + fmt(result.overloadNextAmps) + ' A');
     row('Branch-circuit SCPD (Table 430.52)', result.scpd.pct + '% × FLA = ' + fmt(result.scpd.raw) + ' A max; next standard ' + (result.scpd.next || '—') + ' A (' + result.scpd.label + ')');
-    if (result.conductor) row('Suggested conductor (NEC 430.22)', result.conductor.size + ' Cu @ 75°C lists ' + result.conductor.ampacity + ' A; need ≥ ' + fmt(result.conductor.required) + ' A');
+    if (result.conductor) {
+      var matLabel = result.conductor.material === 'al' ? 'Al' : 'Cu';
+      row('Suggested conductor (NEC 430.22)', result.conductor.size + ' ' + matLabel + ' @ 75°C lists ' + result.conductor.ampacity + ' A; need ≥ ' + fmt(result.conductor.required) + ' A');
+    }
     if (result.voltageDrop) row('Voltage drop note', fmt(result.voltageDrop.pct, 2) + '% over ' + result.voltageDrop.lengthFt + ' ft (Ch.9 Tables 8/9)');
     if (result.lockedRotor && !result.lockedRotor.error) {
       var max = result.lockedRotor.ampsMax === undefined || result.lockedRotor.ampsMax === null ? 'and up' : fmt(result.lockedRotor.ampsMax) + ' A';
@@ -318,6 +338,9 @@
       if (img) { img.removeAttribute('src'); img.hidden = true; }
       if (el('mnp_raw')) el('mnp_raw').value = '';
       if (el('mnp_reviewed')) el('mnp_reviewed').checked = false;
+      clearParsedFields();
+      if (el('mnp_hz')) el('mnp_hz').value = '60';
+      if (el('mnp_phase')) el('mnp_phase').value = '3';
       setStatus('Cleared. The photo was not saved.');
     });
     window.addEventListener('pagehide', revokePhoto);

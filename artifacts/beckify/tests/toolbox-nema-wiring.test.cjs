@@ -57,4 +57,16 @@ const svg = api.renderDiagram(five15);
 assert.match(svg, /<svg/);
 assert.match(svg, /receptacle/i);
 
+const l5_20 = api.renderDiagram(api.configById('L5-20'));
+const l5_30 = api.renderDiagram(api.configById('L5-30'));
+const l6_20 = api.renderDiagram(api.configById('L6-20'));
+const l6_30 = api.renderDiagram(api.configById('L6-30'));
+const l14_20 = api.renderDiagram(api.configById('L14-20'));
+const l14_30 = api.renderDiagram(api.configById('L14-30'));
+assert.notEqual(l5_20, l5_30);
+assert.notEqual(l6_20, l6_30);
+assert.notEqual(l14_20, l14_30);
+assert.match(l5_20, /20A/);
+assert.match(l5_30, /30A/);
+
 console.log('NEMA wiring reference accuracy checks passed');

@@ -61,6 +61,20 @@ assert.match(lra.note, /table range/i);
 const ampsMin = (5.0 * 10 * 1000) / (Math.sqrt(3) * 460);
 assert.ok(Math.abs(lra.ampsMin - ampsMin) < 0.02);
 
+const openEnded = api.lockedRotorRange('V', 10, 460, 3);
+assert.equal(openEnded.kvaMin, 22.4);
+assert.equal(openEnded.kvaMax, null);
+assert.equal(openEnded.ampsMax, null);
+assert.ok(Number.isFinite(openEnded.ampsMin));
+
+const junkDevice = api.scpdFromFla(14, 'sc-bde', 'label');
+assert.equal(junkDevice.device, 'inv');
+assert.equal(junkDevice.pct, 250);
+
+assert.match(api.TABLE_430_52['sc-bde'].label, /other than Design B energy-efficient/i);
+assert.match(api.TABLE_430_52['sc-ee'].label, /Design B energy-efficient/i);
+assert.match(api.TABLE_430_52['sync-pw'].article, /older NEC Table 430\.52/);
+
 const src = fs.readFileSync(path.join(root, 'motor-nameplate.js'), 'utf8');
 assert.equal((src.match(/NEC 999/g) || []).length, 0);
 assert.match(src, /NEC 430\.32/);
