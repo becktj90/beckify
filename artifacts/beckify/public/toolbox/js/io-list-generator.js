@@ -1765,19 +1765,31 @@
     if (applyToff) applyToff.addEventListener('click', function () {
       let idx = stations.findIndex(isGenericStation);
       if (idx < 0) {
-        stationSeq += 1;
-        const st = emptyStation(stationSeq);
-        st.brand = 'generic';
-        st.mode = 'generic';
+        const unused = stations.findIndex(function (st) {
+          return st && !isGenericStation(st) && !(st.modules || []).length;
+        });
         const p = defaultPrefixes('generic');
-        st.couplerPrefix = p.coupler;
-        st.ioPrefix = p.io;
-        st.powerPrefix = p.power;
-        st.genericCounts = applyTakeoffCounts(st.genericCounts, takeoffRows);
-        stations.push(st);
-        renderStations();
-        setStatus('Added a generic station from takeoff counts (DI/DO/AI/AO). Generate to expand the list.');
-        return;
+        if (unused >= 0) {
+          stations[unused].brand = 'generic';
+          stations[unused].mode = 'generic';
+          stations[unused].couplerPrefix = p.coupler;
+          stations[unused].ioPrefix = p.io;
+          stations[unused].powerPrefix = p.power;
+          idx = unused;
+        } else {
+          stationSeq += 1;
+          const st = emptyStation(stationSeq);
+          st.brand = 'generic';
+          st.mode = 'generic';
+          st.couplerPrefix = p.coupler;
+          st.ioPrefix = p.io;
+          st.powerPrefix = p.power;
+          st.genericCounts = applyTakeoffCounts(st.genericCounts, takeoffRows);
+          stations.push(st);
+          renderStations();
+          setStatus('Added a generic station from takeoff counts (DI/DO/AI/AO). Generate to expand the list.');
+          return;
+        }
       }
       stations[idx].genericCounts = applyTakeoffCounts(stations[idx].genericCounts, takeoffRows);
       renderStations();
