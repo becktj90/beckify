@@ -90,6 +90,8 @@ assert.equal(run.swipeAction(80, 8), 'right');
 assert.equal(run.swipeAction(2, -80), 'jump');
 assert.equal(run.swipeAction(2, 80), 'slide');
 assert.equal(run.swipeAction(4, 4), null);
+assert.equal(run.swipeAction(27, 0), null, 'below the kid swipe threshold is ignored');
+assert.equal(run.swipeAction(28, 0), 'right');
 
 const store = {
   data: {},
