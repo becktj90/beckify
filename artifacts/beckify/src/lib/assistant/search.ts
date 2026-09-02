@@ -1,14 +1,58 @@
+import { TOOLS, REFERENCE_TABLES } from "@/data/toolbox-tools.mjs";
+
 export type AssistantDocument = { id: string; title: string; description: string; href: string; tags: string[]; concepts: string[]; kind: "tool" | "page" | "reference" };
 export type SearchResult = AssistantDocument & { score: number; matched: string[] };
 
-export const ASSISTANT_DOCUMENTS: AssistantDocument[] = [
-  { id: "ohms-law", title: "Ohm's Law", description: "Solve voltage, current, resistance, and power relationships.", href: "/toolbox/#sec-ohm", tags: ["ohms law", "voltage", "current", "resistance", "power", "v i r"], concepts: ["circuit", "fundamentals", "electrical"], kind: "tool" },
-  { id: "voltage-drop", title: "Voltage Drop", description: "Check voltage drop for branch circuits, feeders, and long runs.", href: "/toolbox/#sec-vdrop", tags: ["voltage drop", "feeder", "branch", "wire", "awg", "distance"], concepts: ["conductor sizing", "loss", "circuit"], kind: "tool" },
-  { id: "conduit-fill", title: "Conduit Fill", description: "Calculate raceway fill for conductors and conduit types.", href: "/toolbox/#sec-conduit", tags: ["conduit fill", "emt", "raceway", "conductors", "chapter 9", "40 percent"], concepts: ["installation", "conduit", "nec"], kind: "tool" },
-  { id: "wire-size", title: "Wire Size & Ampacity", description: "Select conductors using ampacity, derating, termination temperature, and voltage drop.", href: "/toolbox/#sec-wire-select", tags: ["wire size", "ampacity", "awg", "derating", "310.16", "termination"], concepts: ["conductor sizing", "safety", "nec"], kind: "tool" },
-  { id: "transformer", title: "Transformer Sizing", description: "Select transformer size, primary and secondary protection, and conductor options.", href: "/toolbox/#sec-xfmr-size", tags: ["transformer", "kva", "primary", "secondary", "450.3"], concepts: ["power systems", "distribution", "protection"], kind: "tool" },
-  { id: "tdr", title: "Megger TDR Trace Analyzer", description: "Analyze TDR screen values and locate open or short cable faults.", href: "/toolbox/#sec-tdr", tags: ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"], concepts: ["field test", "fault locating", "reflection"], kind: "tool" },
-  { id: "panel-power-study", title: "Panel Schedule Power Study", description: "OCR a panel schedule image, review metadata and circuits, and calculate demand, diversity, and expansion room.", href: "/toolbox/#sec-panel-power-study", tags: ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"], concepts: ["power study", "panel analysis", "load planning"], kind: "tool" },
+const STOPWORDS = new Set(["the", "and", "for", "with", "using", "from", "use", "a", "an", "to", "of", "in", "on", "or", "is", "are", "this", "that", "into", "per"]);
+const significantWords = (text: string) =>
+  Array.from(new Set(text.toLowerCase().split(/[^a-z0-9.]+/).filter((word) => word.length > 2 && !STOPWORDS.has(word))));
+
+/**
+ * A handful of the busiest tools get hand-picked synonyms — abbreviations,
+ * code references, and field jargon a title/description won't naturally
+ * contain (e.g. "310.16" for the ampacity table, "awg" for wire sizing).
+ * Everything else is still fully searchable on its title and description
+ * alone; this only adds extra ways to find the few tools people search for
+ * by a name other than their own.
+ */
+const EXTRA_TAGS: Record<string, string[]> = {
+  "ohms-law": ["ohms law", "v i r"],
+  "voltage-drop": ["feeder", "branch", "wire", "awg", "distance"],
+  "conduit-fill": ["emt", "raceway", "chapter 9", "40 percent"],
+  "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],
+  "transformer-sizing": ["kva", "primary", "secondary", "450.3"],
+  "megger-tdr-analyzer": ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"],
+  "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
+};
+
+/**
+ * The toolbox tool/reference registry (scripts/generate-sitemap.mjs's source
+ * of truth) drives this list directly, so a tool can never again exist on
+ * the site without being searchable — previously this file hand-maintained
+ * its own copy that drifted to 8 of 44 real tools.
+ */
+const TOOL_DOCUMENTS: AssistantDocument[] = TOOLS.map(([slug, title, description, anchor]) => ({
+  id: slug,
+  title,
+  description,
+  href: `/toolbox/#${anchor}`,
+  tags: [...significantWords(title), ...(EXTRA_TAGS[slug] ?? [])],
+  concepts: significantWords(description).slice(0, 8),
+  kind: "tool" as const,
+}));
+
+const REFERENCE_DOCUMENTS: AssistantDocument[] = REFERENCE_TABLES.map(([slug, title, description, anchor]) => ({
+  id: slug,
+  title,
+  description,
+  href: `/toolbox/#${anchor}`,
+  tags: significantWords(title),
+  concepts: significantWords(description).slice(0, 8),
+  kind: "reference" as const,
+}));
+
+/** Pages outside the toolbox registry: the rest of the Beckify site. */
+const PAGE_DOCUMENTS: AssistantDocument[] = [
   { id: "control-systems", title: "Control System Toolbox", description: "Interactive system modeling, Bode plots, root locus, PID tuning, LQR/LQG design, and MPC visualizers.", href: "/control-systems", tags: ["control systems", "bode", "root locus", "pid", "lqr", "kalman", "mpc", "state space"], concepts: ["feedback", "dynamics", "stability", "optimal control"], kind: "page" },
   { id: "projects", title: "Projects & Build Logs", description: "Hands-on engineering builds, including the Vespa P200E EV conversion.", href: "/projects", tags: ["build", "project", "vespa", "electric vehicle", "battery"], concepts: ["fabrication", "prototype", "engineering"], kind: "page" },
   { id: "vespa", title: "Vespa P200E EV Conversion", description: "A 72 V 20S10P electric Vespa build with a custom swingarm and hub motor.", href: "/projects/vespa-p200e", tags: ["vespa", "p200e", "72v", "20s10p", "hub motor", "swingarm"], concepts: ["electric vehicle", "battery", "fabrication"], kind: "page" },
@@ -19,6 +63,8 @@ export const ASSISTANT_DOCUMENTS: AssistantDocument[] = [
   { id: "hexgl", title: "HexGL", description: "Futuristic WebGL racing game by Thibaut Despoulain (BKcore), MIT licensed.", href: "/games/hexgl", tags: ["hexgl", "racing", "webgl", "bkcore", "racer"], concepts: ["racing", "webgl", "play"], kind: "page" },
   { id: "gear", title: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, multimeters, clamp meters, insulation testers, oscilloscopes, cable testers, RF gear, and budget picks.", href: "/gear", tags: ["gear", "electrical test equipment", "hand tools", "multimeter", "clamp meter", "insulation tester", "oscilloscope", "rf analyzer", "budget tools"], concepts: ["tools", "field work", "bench work", "measurement"], kind: "reference" },
 ];
+
+export const ASSISTANT_DOCUMENTS: AssistantDocument[] = [...TOOL_DOCUMENTS, ...REFERENCE_DOCUMENTS, ...PAGE_DOCUMENTS];
 
 const tokenize = (value: string) => value.toLowerCase().split(/[^a-z0-9.]+/).filter(Boolean);
 const vector = (value: string) => new Set(tokenize(value));
