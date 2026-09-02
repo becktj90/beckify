@@ -410,6 +410,8 @@ final class SensorMathTests: XCTestCase {
         let b = WiFiAmplitudeSample(east: 10, north: 0, strength: 0)
         XCTAssertEqual(WiFiCoverageMath.idw(east: 0, north: 0, samples: [a, b]), 1, accuracy: 1e-9)
         XCTAssertEqual(WiFiCoverageMath.idw(east: 5, north: 0, samples: [a, b]), 0.5, accuracy: 1e-9)
+        XCTAssertTrue(WiFiCoverageMath.idw(east: 5, north: 0, samples: [a, b], power: .infinity).isNaN)
+        XCTAssertTrue(WiFiCoverageMath.idw(east: 5, north: 0, samples: [a, b], power: .nan).isNaN)
         XCTAssertNil(WiFiCoverageMath.bounds([]))
         let box = try XCTUnwrap(WiFiCoverageMath.bounds([a, b], padding: 0))
         XCTAssertEqual(box.minE, 0, accuracy: 1e-9)

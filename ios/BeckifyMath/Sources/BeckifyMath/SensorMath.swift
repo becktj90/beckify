@@ -137,7 +137,7 @@ public enum WiFiCoverageMath {
 
     /// Inverse-distance weighting. `power` is typically 2.
     public static func idw(east: Double, north: Double, samples: [WiFiAmplitudeSample], power: Double = 2) -> Double {
-        guard !samples.isEmpty, power > 0, east.isFinite, north.isFinite else { return .nan }
+        guard !samples.isEmpty, power.isFinite, power > 0, east.isFinite, north.isFinite else { return .nan }
         var num = 0.0
         var den = 0.0
         for sample in samples {
