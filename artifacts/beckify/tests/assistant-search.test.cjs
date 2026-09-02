@@ -63,6 +63,12 @@ const expectResult = [
   ['transient rlc', 'transient-circuits'],
   ['phasor diagram', 'phasor-diagram'],
   ['delta wye', 'phasor-diagram'],
+  ['shockley', 'semiconductor-iv'],
+  ['mosfet', 'semiconductor-iv'],
+  ['numerical aperture', 'fiber-link'],
+  ['link budget', 'fiber-link'],
+  ['gaussian beam', 'gaussian-beam'],
+  ['rayleigh range', 'gaussian-beam'],
 ];
 for (const [query, expectedId] of expectResult) {
   const results = searchAssistant(query, 6);

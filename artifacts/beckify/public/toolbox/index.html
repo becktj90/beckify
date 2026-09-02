@@ -198,6 +198,7 @@
       <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
       <button class="nav-btn" data-target="sec-digital" data-keywords="digital logic gates boolean expression truth table circuit simulator AND OR NOT XOR NAND NOR">Digital Logic Workbench</button>
       <button class="nav-btn" data-target="sec-analog-design" data-keywords="op amp operational amplifier gain inverting non-inverting differential summing integrator differentiator comparator schmitt transimpedance instrumentation filter designer low pass high pass band pass notch all pass sallen key rlc">Analog Design Workbench</button>
+      <button class="nav-btn" data-target="sec-semiconductor-iv" data-keywords="semiconductor diode shockley BJT MOSFET NMOS I-V ebers moll square law Q-point device physics homework">Semiconductor I-V</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">03 · Power distribution</div>
@@ -256,6 +257,8 @@
       <button class="nav-btn" data-target="sec-battery-build" data-keywords="18650 battery pack nickel strip ampacity series parallel C rate honeycomb grid cell layout lithium ion battery design">Battery Build Designer</button>
       <button class="nav-btn" data-target="sec-stem-tools" data-keywords="differential equations ODE trig trigonometry linear algebra matrix chemistry calculus optics quantum physics linear programming LP STEM math">STEM Toolkit</button>
       <button class="nav-btn" data-target="sec-lp-optimizer" data-keywords="linear programming LP simplex optimizer maximize minimize feasible region blending product mix resource allocation operations research tableau">LP Optimizer</button>
+      <button class="nav-btn" data-target="sec-fiber-link" data-keywords="fiber optic numerical aperture NA acceptance angle link budget attenuation dB Palais photonics homework">Fiber Link / NA</button>
+      <button class="nav-btn" data-target="sec-gaussian-beam" data-keywords="gaussian beam waist rayleigh range confocal spot size curvature TEM00 Saleh Teich photonics homework">Gaussian Beam</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
     </div>
   </nav>
@@ -269,7 +272,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">49 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">55 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -296,6 +299,7 @@
             <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
             <li><a class="home-tool-link" href="#sec-digital">Digital Logic Workbench</a></li>
             <li><a class="home-tool-link" href="#sec-analog-design">Analog Design Workbench</a></li>
+            <li><a class="home-tool-link" href="#sec-semiconductor-iv">Semiconductor Device I-V</a></li>
           </ul>
         </div>
 
@@ -400,6 +404,8 @@
             <li><a class="home-tool-link" href="#sec-stem-tools">Chemistry, Calculus, Optics</a></li>
             <li><a class="home-tool-link" href="#sec-stem-tools">Quantum Physics &amp; LP</a></li>
             <li><a class="home-tool-link" href="#sec-lp-optimizer">Linear Programming Optimizer</a></li>
+            <li><a class="home-tool-link" href="#sec-fiber-link">Fiber Link / NA</a></li>
+            <li><a class="home-tool-link" href="#sec-gaussian-beam">Gaussian Beam</a></li>
           </ul>
         </div>
 
@@ -1153,6 +1159,267 @@
         <div class="card analog-response-card"><div class="card-title">Magnitude &amp; phase response <span id="af_plot_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_plot" class="analog-plot" role="img" aria-label="Filter magnitude and phase response plot"></div></div></div>
       </div>
     </section>
+
+    <!-- ════════════════════════════════════════
+         SEMICONDUCTOR DEVICE I-V
+         ════════════════════════════════════════ -->
+    <section id="sec-semiconductor-iv" class="section">
+      <div class="section-header">
+        <h2>Semiconductor Device I-V</h2>
+        <p>Shockley diode (optional series Rs), npn β-forced Q-point, and long-channel NMOS cutoff / triode / sat. Homework device curves — not the op-amp / filter workbench.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Device I-V</summary>
+          <div class="section-info-body">
+            Three first-pass models on one page. None of them is a SPICE deck.<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>Diode: I = Is (e<sup>vD/(η VT)</sup> − 1), VT = kT/q. Optional Rs is solved so V = vD + I Rs</li>
+              <li>BJT: Ib = (Vcc − Vbe,on)/Rb, Ic = β Ib until Vce would fall below Vce,sat (then the collector resistor sets Ic)</li>
+              <li>NMOS: kn = μCox W/L. Cutoff Vgs &lt; Vt; triode Vds &lt; Vov; sat Id = (1/2) kn Vov². Optional λ multiplies by (1 + λ Vds)</li>
+            </ul>
+            <strong>Honest limits:</strong> no reverse breakdown, no charge storage, no Gummel-Poon, no short-channel or subthreshold. Saturation on the BJT tab is a Vce,sat clamp, not a full Ebers-Moll pair.<br><br>
+            <strong>Citations:</strong> standard device-physics identities (Shockley, long-channel square law, β-forced Q-point). Cal Poly semiconductor-device course topics used only to pick this device set — notes are not reproduced. This is not a foundry process-recipe tool.
+          </div>
+        </details>
+      </div>
+
+      <div class="tabs analog-tabs" role="tablist" aria-label="Semiconductor device">
+        <button class="tab-btn active" id="sd_tab_diode" type="button">Diode</button>
+        <button class="tab-btn" id="sd_tab_bjt" type="button">BJT Q-point</button>
+        <button class="tab-btn" id="sd_tab_mosfet" type="button">NMOS</button>
+      </div>
+      <input type="hidden" id="sd_device" value="diode">
+
+      <div class="card-grid emp-diagram-grid">
+        <div class="card">
+          <div class="card-title">Device</div>
+          <div class="card-body">
+            <div class="emp-diagram" id="sd_glyph" role="img" aria-label="Original semiconductor device glyph."></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">I-V</div>
+          <div class="card-body">
+            <div class="emp-diagram" id="sd_plot" role="img" aria-label="Device current versus voltage."></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sd_panel_diode" class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Shockley diode</div>
+          <div class="card-body">
+            <div class="formula-box">I = Is (e<sup>vD/(η VT)</sup> − 1) &nbsp;|&nbsp; VT = kT/q &nbsp;|&nbsp; V = vD + I Rs</div>
+            <div class="input-group">
+              <div>
+                <label for="sd_d_is">Is</label>
+                <input id="sd_d_is" type="number" value="1" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_d_is_u">Is unit</label>
+                <select id="sd_d_is_u">
+                  <option value="nA" selected>nA</option>
+                  <option value="pA">pA</option>
+                  <option value="uA">µA</option>
+                  <option value="mA">mA</option>
+                  <option value="A">A</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_d_n">η (ideality)</label>
+                <input id="sd_d_n" type="number" value="1" min="0.5" step="any">
+              </div>
+              <div>
+                <label for="sd_d_t">T (K)</label>
+                <input id="sd_d_t" type="number" value="300" min="1" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_d_rs">Series Rs</label>
+                <input id="sd_d_rs" type="number" value="0" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_d_rs_u">Rs unit</label>
+                <select id="sd_d_rs_u">
+                  <option value="ohm" selected>Ω</option>
+                  <option value="k">kΩ</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_d_v">Applied V</label>
+                <input id="sd_d_v" type="number" value="0.65" step="any">
+              </div>
+              <div>
+                <label for="sd_d_v_u">V unit</label>
+                <select id="sd_d_v_u">
+                  <option value="V" selected>V</option>
+                  <option value="mV">mV</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_d_vmax">Plot Vmax</label>
+                <input id="sd_d_vmax" type="number" value="0.8" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_d_vmax_u">Unit</label>
+                <select id="sd_d_vmax_u">
+                  <option value="V" selected>V</option>
+                  <option value="mV">mV</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sd_panel_bjt" class="card-grid two-col" hidden>
+        <div class="card">
+          <div class="card-title">npn Q-point</div>
+          <div class="card-body">
+            <div class="formula-box">Ib = (Vcc − Vbe,on)/Rb &nbsp;|&nbsp; Ic = β Ib &nbsp;|&nbsp; Vce = Vcc − Ic Rc</div>
+            <div class="input-group">
+              <div>
+                <label for="sd_b_vcc">Vcc (V)</label>
+                <input id="sd_b_vcc" type="number" value="5" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_b_beta">β</label>
+                <input id="sd_b_beta" type="number" value="100" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_b_rc">Rc</label>
+                <input id="sd_b_rc" type="number" value="1" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_b_rc_u">Rc unit</label>
+                <select id="sd_b_rc_u">
+                  <option value="ohm">Ω</option>
+                  <option value="k" selected>kΩ</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_b_rb">Rb</label>
+                <input id="sd_b_rb" type="number" value="100" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_b_rb_u">Rb unit</label>
+                <select id="sd_b_rb_u">
+                  <option value="ohm">Ω</option>
+                  <option value="k" selected>kΩ</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_b_vbe">Vbe,on (V)</label>
+                <input id="sd_b_vbe" type="number" value="0.7" step="any">
+              </div>
+              <div>
+                <label for="sd_b_vcesat">Vce,sat (V)</label>
+                <input id="sd_b_vcesat" type="number" value="0.2" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label for="sd_b_va">Early Va (V) — 0 to skip</label>
+                <input id="sd_b_va" type="number" value="50" min="0" step="any">
+              </div>
+            </div>
+            <div class="note">The I-V card draws an Ic–Vce family at 0.5×, 1×, and 1.5× the Q-point Ib.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sd_panel_mosfet" class="card-grid two-col" hidden>
+        <div class="card">
+          <div class="card-title">Long-channel NMOS</div>
+          <div class="card-body">
+            <div class="formula-box">kn = μCox W/L &nbsp;|&nbsp; cutoff / triode / sat &nbsp;|&nbsp; optional (1 + λ Vds)</div>
+            <div class="input-group">
+              <div>
+                <label for="sd_m_k">μCox (µA/V²)</label>
+                <input id="sd_m_k" type="number" value="200" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_m_vt">Vt (V)</label>
+                <input id="sd_m_vt" type="number" value="0.7" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_m_w">W</label>
+                <input id="sd_m_w" type="number" value="10" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_m_w_u">W unit</label>
+                <select id="sd_m_w_u">
+                  <option value="um" selected>µm</option>
+                  <option value="nm">nm</option>
+                  <option value="m">m</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_m_l">L</label>
+                <input id="sd_m_l" type="number" value="1" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_m_l_u">L unit</label>
+                <select id="sd_m_l_u">
+                  <option value="um" selected>µm</option>
+                  <option value="nm">nm</option>
+                  <option value="m">m</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_m_vgs">Vgs (V)</label>
+                <input id="sd_m_vgs" type="number" value="2" step="any">
+              </div>
+              <div>
+                <label for="sd_m_vds">Vds (V)</label>
+                <input id="sd_m_vds" type="number" value="3" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="sd_m_lam">λ (1/V) — 0 to skip</label>
+                <input id="sd_m_lam" type="number" value="0" min="0" step="any">
+              </div>
+              <div>
+                <label for="sd_m_vdsmax">Plot Vds max (V)</label>
+                <input id="sd_m_vdsmax" type="number" value="5" min="0" step="any">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Results</div>
+          <div class="card-body">
+            <div id="sd_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-semiconductor-iv -->
 
     <!-- ════════════════════════════════════════
          MAGNETIC CIRCUIT WORKBENCH
@@ -6108,6 +6375,220 @@
     </section><!-- end sec-stem-tools -->
 
     <!-- ════════════════════════════════════════
+         FIBER LINK / NA
+         ════════════════════════════════════════ -->
+    <section id="sec-fiber-link" class="section">
+      <div class="section-header">
+        <h2>Fiber Link / NA</h2>
+        <p>Numerical aperture, acceptance angle, and a first-order optical power budget. Not photometrics and not a TDR.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Fiber NA and budget</summary>
+          <div class="section-info-body">
+            A step-index fiber guides rays that hit the core-cladding boundary steeper than the critical angle. From the air side that cone is the numerical aperture.<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>NA = √(n1² − n2²)</li>
+              <li>Δ = (n1 − n2)/n1. Weakly guiding: NA ≈ n1 √(2Δ)</li>
+              <li>Acceptance half-angle in air: θa = arcsin(NA) when NA ≤ 1</li>
+              <li>Path loss (dB) = α L + Nconn Lconn + Nsplice Lsplice. Pout = Pin − that sum</li>
+            </ul>
+            Dispersion, BER, and modal noise are out of scope.<br><br>
+            <strong>Citations:</strong> Joseph C. Palais, Fiber Optic Communications, 4th ed., Prentice Hall, 1998 (NA / link-budget topics — identities only, not a copy source).
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid emp-diagram-grid">
+        <div class="card">
+          <div class="card-title">Step-index fiber</div>
+          <div class="card-body">
+            <div class="emp-diagram" id="fl_diagram" role="img" aria-label="Original step-index fiber with core, cladding, and acceptance cone."></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Indices and length</div>
+          <div class="card-body">
+            <div class="formula-box">
+              NA = √(n1² − n2²) ≈ n1 √(2Δ)<br>
+              θa = arcsin(NA) &nbsp;|&nbsp; Pout = Pin − αL − connectors − splices
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="fl_n1">Core n1</label>
+                <input id="fl_n1" type="number" value="1.48" min="1" step="any">
+              </div>
+              <div>
+                <label for="fl_n2">Cladding n2</label>
+                <input id="fl_n2" type="number" value="1.46" min="1" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="fl_len">Length</label>
+                <input id="fl_len" type="number" value="2" min="0" step="any">
+              </div>
+              <div>
+                <label for="fl_len_u">Length unit</label>
+                <select id="fl_len_u">
+                  <option value="km" selected>km</option>
+                  <option value="m">m</option>
+                  <option value="ft">ft</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label for="fl_alpha">Attenuation α (dB/km)</label>
+                <input id="fl_alpha" type="number" value="0.3" min="0" step="any">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Link budget</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="fl_pin">Source Pin (dBm)</label>
+                <input id="fl_pin" type="number" value="0" step="any">
+              </div>
+              <div>
+                <label for="fl_sens">Rx sensitivity (dBm)</label>
+                <input id="fl_sens" type="number" value="-20" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="fl_nconn">Connectors</label>
+                <input id="fl_nconn" type="number" value="2" min="0" step="1">
+              </div>
+              <div>
+                <label for="fl_lconn">Loss each (dB)</label>
+                <input id="fl_lconn" type="number" value="0.3" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="fl_nspl">Splices</label>
+                <input id="fl_nspl" type="number" value="1" min="0" step="1">
+              </div>
+              <div>
+                <label for="fl_lspl">Loss each (dB)</label>
+                <input id="fl_lspl" type="number" value="0.1" min="0" step="any">
+              </div>
+            </div>
+            <div class="note">Margin ≥ 0 dB means the first-order budget closes. Real plants add extra dB for aging, bends, and temperature.</div>
+          </div>
+        </div>
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Results</div>
+          <div class="card-body">
+            <div id="fl_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-fiber-link -->
+
+    <!-- ════════════════════════════════════════
+         GAUSSIAN BEAM
+         ════════════════════════════════════════ -->
+    <section id="sec-gaussian-beam" class="section">
+      <div class="section-header">
+        <h2>Gaussian Beam</h2>
+        <p>TEM00 envelope: w(z), Rayleigh range, curvature, confocal parameter. Not a thin-lens imager and not a double-slit.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Gaussian beams</summary>
+          <div class="section-info-body">
+            A TEM00 beam has a 1/e² intensity radius that is smallest at the waist and grows as a hyperbola along z.<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>zR = π w0² / λ</li>
+              <li>w(z) = w0 √(1 + (z/zR)²)</li>
+              <li>R(z) = z (1 + (zR/z)²), infinite at the waist</li>
+              <li>Confocal parameter b = 2 zR. Far-field half-angle θ = λ / (π w0)</li>
+            </ul>
+            Cavities, ABCD matrices, and lens focusing are out of scope — the STEM toolkit already has a thin-lens solver.<br><br>
+            <strong>Citations:</strong> Bahaa E. A. Saleh and Malvin Carl Teich, Fundamentals of Photonics (Wiley). No edition is claimed here. zR, w(z), R(z), and b = 2 zR are standard identities.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid emp-diagram-grid">
+        <div class="card">
+          <div class="card-title">Beam envelope</div>
+          <div class="card-body">
+            <div class="emp-diagram" id="gb_diagram" role="img" aria-label="Original Gaussian beam envelope with waist and Rayleigh marks."></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Waist and wavelength</div>
+          <div class="card-body">
+            <div class="formula-box">
+              zR = π w0² / λ &nbsp;|&nbsp; w(z) = w0 √(1 + (z/zR)²)<br>
+              R(z) = z (1 + (zR/z)²) &nbsp;|&nbsp; b = 2 zR
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="gb_lam">Wavelength λ</label>
+                <input id="gb_lam" type="number" value="633" min="0" step="any">
+              </div>
+              <div>
+                <label for="gb_lam_u">λ unit</label>
+                <select id="gb_lam_u">
+                  <option value="nm" selected>nm</option>
+                  <option value="um">µm</option>
+                  <option value="m">m</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="gb_w0">Waist w0</label>
+                <input id="gb_w0" type="number" value="50" min="0" step="any">
+              </div>
+              <div>
+                <label for="gb_w0_u">w0 unit</label>
+                <select id="gb_w0_u">
+                  <option value="um" selected>µm</option>
+                  <option value="mm">mm</option>
+                  <option value="nm">nm</option>
+                  <option value="m">m</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="gb_z">Observation z</label>
+                <input id="gb_z" type="number" value="10" step="any">
+              </div>
+              <div>
+                <label for="gb_z_u">z unit</label>
+                <select id="gb_z_u">
+                  <option value="mm" selected>mm</option>
+                  <option value="m">m</option>
+                  <option value="um">µm</option>
+                  <option value="nm">nm</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Results</div>
+          <div class="card-body">
+            <div id="gb_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-gaussian-beam -->
+
+    <!-- ════════════════════════════════════════
          LINEAR PROGRAMMING OPTIMIZER
          ════════════════════════════════════════ -->
     <section id="sec-lp-optimizer" class="section">
@@ -9080,6 +9561,9 @@
 <script src="js/magnetic-circuit.js"></script>
 <script src="js/transient-circuits.js"></script>
 <script src="js/phasor-diagram.js"></script>
+<script src="js/semiconductor-iv.js"></script>
+<script src="js/fiber-link.js"></script>
+<script src="js/gaussian-beam.js"></script>
 <script src="js/stem-tools.js"></script>
 <script src="js/lp-optimizer.js"></script>
 <script src="js/base-converter.js"></script>

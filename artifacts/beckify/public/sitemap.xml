@@ -326,12 +326,27 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/fiber-link/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/gaussian-beam/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/digital-logic-workbench/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://beckify.com/toolbox/analog-design-workbench/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/semiconductor-iv/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

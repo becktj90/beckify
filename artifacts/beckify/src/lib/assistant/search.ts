@@ -28,6 +28,9 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
   "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
+  "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
+  "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],
+  "gaussian-beam": ["gaussian beam", "rayleigh range", "beam waist", "confocal", "saleh teich"],
   "lp-optimizer": ["linear programming", "simplex", "feasible region", "blending", "product mix", "operations research"],
   "number-base-converter": ["hex", "hexadecimal", "decimal", "octal", "binary", "radix", "two's complement", "bit field", "nibble"],
 };

@@ -7,6 +7,9 @@
     'sec-magnetic-circuit': ['Flux is current for magnetics', '\\Phi = \\frac{NI}{R} \\quad R = \\frac{\\ell}{\\mu A}', 'Ampere’s loop is an MMF budget: turns times amps have to cover every H·ℓ drop. Reluctance is the magnetic analog of resistance, and an air gap usually dominates the sum.'],
     'sec-transient-circuits': ['Energy storage makes time', '\\tau = RC \\quad \\text{or} \\quad L/R', 'A capacitor cannot jump voltage and an inductor cannot jump current. First-order circuits forget exponentially; add the second storage element and you get over, critical, or underdamped ringing.'],
     'sec-phasor-diagram': ['Sine waves become arrows', 'Z = R + j\\omega L + 1/(j\\omega C)', 'In steady-state AC every derivative is a ninety-degree rotation. Draw the arrows, read θ off the diagram, and power factor is just cos θ.'],
+    'sec-semiconductor-iv': ['A junction is an exponential valve', 'I = I_s(e^{v/\\eta V_T}-1)', 'A diode barely conducts until the exponential wakes up. MOSFETs switch by inverting a channel; BJTs set collector current from a much smaller base current.'],
+    'sec-fiber-link': ['A fiber is a light pipe with a cone', 'NA = \\sqrt{n_1^2-n_2^2}', 'Rays steeper than the core-cladding critical angle leak. From air, that cone is the numerical aperture. Loss in dB just adds.'],
+    'sec-gaussian-beam': ['A laser beam has a waist', 'z_R = \\pi w_0^2/\\lambda', 'The 1/e² radius is smallest at the waist and flares as a hyperbola. One Rayleigh range later the spot is √2 wider and the wavefronts are most curved.'],
     'sec-stem-tools': ['STEM tools are stories about change', "y' = \\frac{dy}{dt} \\quad \\text{and} \\quad \\Delta x \\approx v\\,\\Delta t", 'A derivative is a speedometer for a quantity. Each solver takes a small step, asks what the world is doing right now, and uses that local answer to predict the next step.'],
     'sec-circuit-sim': ['Kirchhoff is the traffic rule', '\\sum I_{in} = \\sum I_{out}', 'Charge cannot pile up at an ordinary node. The solver adjusts node voltages until every junction has balanced traffic.'],
     'sec-555': ['A capacitor is a bucket for charge', 'I = C\\frac{dV}{dt}', 'A capacitor resists sudden voltage changes because its stored charge must arrive through a finite current. That is why RC circuits make time.'],
@@ -159,6 +162,36 @@
       ],
       examples: ['Series: 60 Hz, R = 10 Ω, L = 10 mH, C = 100 µF, Vs = 120 V RMS', 'Z = R + jωL + 1/(jωC)', 'S = Vrms Irms*', 'Balanced Δ-Y: ZΔ = 3 Zy'],
       button: { label: 'Load Example Values', action: 'loadPhasorExample' }
+    },
+    'sec-semiconductor-iv': {
+      overview: 'Homework device curves: Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / sat. Not the op-amp / filter workbench and not a SPICE deck.',
+      steps: [
+        'Pick Diode, BJT, or NMOS. Enter Is, η, T and optional Rs — or Vcc/Rc/Rb/β — or μCox, W/L, Vt.',
+        'The I-V SVG redraws as you type. Read the operating point and the region name.',
+        'Treat saturation, Early voltage, and λ as first-order sketches, not a process card.'
+      ],
+      examples: ['Diode: Is = 1 nA, η = 1, T = 300 K, V = 0.65 V', 'BJT: Vcc = 5 V, Rc = 1 kΩ, Rb = 100 kΩ, β = 100', 'NMOS: μCox = 200 µA/V², W/L = 10, Vt = 0.7 V'],
+      button: { label: 'Load Example Values', action: 'loadSemiconductorExample' }
+    },
+    'sec-fiber-link': {
+      overview: 'Step-index NA, acceptance angle, and a first-order optical power budget. Not photometrics and not a TDR.',
+      steps: [
+        'Enter core n1 and cladding n2 (n1 > n2). Read NA, Δ, and θa.',
+        'Set length, α in dB/km, source dBm, connector/splice lumps, and receiver sensitivity.',
+        'Margin ≥ 0 dB means the first-order budget closes.'
+      ],
+      examples: ['n1 = 1.48, n2 = 1.46', '2 km at 0.3 dB/km', 'Pin = 0 dBm, two 0.3 dB connectors, one 0.1 dB splice', 'Sensitivity −20 dBm'],
+      button: { label: 'Load Example Values', action: 'loadFiberExample' }
+    },
+    'sec-gaussian-beam': {
+      overview: 'TEM00 free-space envelope: Rayleigh range, spot, curvature, confocal parameter. Not a thin-lens imager and not a double-slit.',
+      steps: [
+        'Enter λ and waist w0 with SI prefixes, then the observation z.',
+        'Read zR = π w0² / λ, w(z), R(z), b = 2 zR, and the far-field half-angle.',
+        'The SVG is an original envelope with waist and ±zR marks — not a traced publisher figure.'
+      ],
+      examples: ['HeNe-ish: λ = 633 nm, w0 = 50 µm', 'z = 10 mm', 'zR = π w0² / λ'],
+      button: { label: 'Load Example Values', action: 'loadGaussianExample' }
     }
   };
 
