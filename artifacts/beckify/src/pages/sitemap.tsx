@@ -175,8 +175,6 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("PLC Timer Preset", "sec-plc-timer-preset"),
       t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
       t("Panel Schedule Power Study", "sec-panel-power-study"),
-      t("Cable Schedule Generator", "sec-cable-schedule"),
-      t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
     ],
   },
   {
