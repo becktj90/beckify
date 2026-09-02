@@ -36,7 +36,7 @@ const COLUMNS = [
   'Insulation', 'Voltage Rating', 'Length', 'Routing / Tray', 'Ampacity',
   'Voltage Drop', 'System', 'Termination From', 'Termination To', 'Comments',
 ];
-assert.deepEqual(api.COLUMNS, COLUMNS);
+assert.equal(api.COLUMNS.join('|'), COLUMNS.join('|'));
 
 assert.equal(api.nextCableId('C-', 1, 0, 3), 'C-001');
 assert.equal(api.nextCableId('C-', 1, 1, 3), 'C-002');

@@ -110,16 +110,17 @@
       var m = compact.match(re) || raw.match(re);
       return m ? String(m[g == null ? 1 : g]).trim() : '';
     }
-    var hp = pick(/\b(?:HP|H\.P\.|HORSEPOWER)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i) ||
-      pick(/\b([0-9]+(?:\.[0-9]+)?)\s*(?:HP|H\.P\.)\b/i);
+    var hp = pick(/\b([0-9]+(?:\.[0-9]+)?)\s*(?:HP|H\.P\.)\b/i) ||
+      pick(/\b(?:HP|H\.P\.|HORSEPOWER)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i);
     var kw = pick(/\b(?:kW|KW)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i) ||
       pick(/\b([0-9]+(?:\.[0-9]+)?)\s*kW\b/i);
-    var volts = pick(/\b(?:VOLTS?|V)\s*[:#]?\s*([0-9]{2,4}(?:\/[0-9]{2,4})?)/i) ||
-      pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*V(?:OLTS?)?\b/i);
-    var fla = pick(/\b(?:FLA|FL AMPS?|AMP(?:S|ERES)?|A)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i) ||
-      pick(/\b([0-9]+(?:\.[0-9]+)?)\s*(?:FLA|AMPS?)\b/i);
-    var rpm = pick(/\b(?:RPM|R\.P\.M\.)\s*[:#]?\s*([0-9]{3,5})/i) ||
-      pick(/\b([0-9]{3,5})\s*RPM\b/i);
+    var volts = pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*V(?:OLTS?)?\b/i) ||
+      pick(/\b(?:VOLTS?|V)\s*[:#]?\s*([0-9]{2,4}(?:\/[0-9]{2,4})?)/i);
+    var fla = pick(/\b([0-9]+(?:\.[0-9]+)?)\s*(?:FLA|FL\s*AMPS?)\b/i) ||
+      pick(/\b(?:FLA|FL\s*AMPS?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i) ||
+      pick(/\bAMP(?:S|ERES)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    var rpm = pick(/\b([0-9]{3,5})\s*RPM\b/i) ||
+      pick(/\b(?:RPM|R\.P\.M\.)\s*[:#]?\s*([0-9]{3,5})/i);
     var hz = pick(/\b(?:HZ|HERTZ|FREQ)\s*[:#]?\s*([0-9]{2,3})/i) ||
       pick(/\b([0-9]{2,3})\s*Hz\b/i);
     var phase = pick(/\b(?:PH|PHASE)\s*[:#]?\s*([13])\b/i);

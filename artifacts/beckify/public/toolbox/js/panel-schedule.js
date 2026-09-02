@@ -695,7 +695,7 @@ function computeDirectoryMetrics(rows, opts) {
   return {
     connectedBreakerAmps: connected,
     mainAmps: Number.isFinite(mainAmps) && mainAmps > 0 ? mainAmps : null,
-    connectedToMainPct: ratio != null ? ratio * 100 : null,
+    connectedToMainPct: ratio != null ? Math.round(ratio * 10000) / 100 : null,
     connectedNote: 'Rough loading indicator only — not an NEC Article 220 demand-load calculation. Panels are routinely designed with connected breaker totals well above the main rating. Over 100% connected does not mean the panel is unsafe.',
     spareCount: spare.spare,
     sparePct: spare.pct,
