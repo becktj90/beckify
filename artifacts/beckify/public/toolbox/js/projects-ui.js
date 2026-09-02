@@ -28,6 +28,20 @@ function collectRun(sectionId, resultId) {
   };
 }
 
+/** Same-origin /toolbox paths only — never javascript:, data:, or a third-party host. */
+function safeJobHref(raw) {
+  if (typeof raw !== 'string' || !raw) return null;
+  try {
+    const u = new URL(raw, location.href);
+    if (u.origin !== location.origin) return null;
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (u.pathname.indexOf('/toolbox') !== 0) return null;
+    return u.pathname + u.search + u.hash;
+  } catch (_) {
+    return null;
+  }
+}
+
 function openSaveDialog(sectionId, resultId) {
   const modal = buildSaveModal();
   const run = collectRun(sectionId, resultId);
@@ -306,7 +320,10 @@ function refreshProjectsPanel() {
         open.type = 'button';
         open.className = 'btn btn-secondary proj-btn';
         open.textContent = 'Open';
-        open.onclick = function () { location.href = run.url; };
+        open.onclick = function () {
+          const href = safeJobHref(run.url);
+          if (href) location.assign(href);
+        };
         const rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'btn btn-secondary proj-btn proj-danger';

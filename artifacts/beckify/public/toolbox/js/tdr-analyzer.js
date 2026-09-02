@@ -65,7 +65,16 @@ function tdrApiUrl(path) {
   const configured = document.querySelector('meta[name="beckify-api-base-url"]')?.getAttribute('content')
     || window.BECKIFY_API_BASE_URL
     || '';
-  return `${String(configured).replace(/\/$/, '')}${path}`;
+  const suffix = path.charAt(0) === '/' ? path : `/${path}`;
+  const base = String(configured).trim().replace(/\/$/, '');
+  if (!base) return suffix;
+  try {
+    const u = new URL(base);
+    if (u.protocol !== 'https:') return suffix;
+    return `${u.origin}${u.pathname.replace(/\/$/, '')}${suffix}`;
+  } catch (_) {
+    return suffix;
+  }
 }
 
 function tdrResetProgress() {

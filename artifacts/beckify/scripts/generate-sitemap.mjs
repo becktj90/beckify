@@ -34,7 +34,7 @@ const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrica
   ];
   const subject = kind === "tool" ? "calculator" : "tool collection";
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${escapeXml(`${title} | Beckify`)}</title><meta name="description" content="${escapeXml(description)}"><meta name="robots" content="index,follow">
 <link rel="canonical" href="${canonicalUrl}"><meta property="og:title" content="${escapeXml(`${title} | Beckify`)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:type" content="website"><meta property="og:site_name" content="Beckify"><meta property="og:url" content="${canonicalUrl}"><meta property="og:image" content="${siteUrl}/opengraph.jpg"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeXml(`${title} | Beckify`)}"><meta name="twitter:description" content="${escapeXml(description)}"><meta name="twitter:image" content="${siteUrl}/opengraph.jpg">
 ${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5333275222472637" crossorigin="anonymous"></script>` : ""}
