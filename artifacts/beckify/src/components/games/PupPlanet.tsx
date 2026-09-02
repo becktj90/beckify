@@ -22,6 +22,10 @@ const PLAYER_R = 0.28;
 const PLAYER_H = 1.72;
 const EYE = 1.58;
 
+function prefersTouch() {
+  return window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 768px)").matches;
+}
+
 const BLOCK = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, SNOW: 5, WOOD: 6, LEAVES: 7, PLANK: 8, BRICK: 9, GLASS: 10 } as const;
 type BlockId = (typeof BLOCK)[keyof typeof BLOCK];
 
@@ -161,6 +165,9 @@ export function PupPlanet() {
   const mutedRef = useRef(false);
   const flyingRef = useRef(false);
   const startedRef = useRef(false);
+  const stickRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef(false);
+  const stickInput = useRef({ x: 0, z: 0 });
 
   const [selected, setSelected] = useState<BlockId>(BLOCK.GRASS);
   const [muted, setMuted] = useState(false);
@@ -181,8 +188,50 @@ export function PupPlanet() {
   // Touch capability, not screen width: a full-size iPad is plenty wide
   // enough to fail a "narrow phone" breakpoint check while still being a
   // touchscreen with no mouse, which used to hide the on-screen controls
-  // entirely and leave nothing to move or mine/place with.
-  useEffect(() => { setTouch(window.matchMedia("(pointer: coarse)").matches); }, []);
+  // entirely and leave nothing to move or mine/place with. Also show the
+  // pads on narrow viewports so a phone that reports a fine pointer still
+  // has Mine/Place.
+  useEffect(() => {
+    const update = () => {
+      const next = prefersTouch();
+      touchRef.current = next;
+      setTouch(next);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    const stickEl = stickRef.current;
+    if (!stickEl) return;
+    const onStick = (event: PointerEvent) => {
+      const rect = stickEl.getBoundingClientRect();
+      const dx = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+      const dy = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+      stickInput.current.x = Math.max(-1, Math.min(1, dx));
+      stickInput.current.z = Math.max(-1, Math.min(1, dy));
+    };
+    const stickEnd = () => { stickInput.current.x = 0; stickInput.current.z = 0; };
+    const down = (event: PointerEvent) => {
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+      onStick(event);
+    };
+    const move = (event: PointerEvent) => {
+      if (stickInput.current.x || stickInput.current.z || event.buttons) onStick(event);
+    };
+    stickEl.addEventListener("pointerdown", down);
+    stickEl.addEventListener("pointermove", move);
+    stickEl.addEventListener("pointerup", stickEnd);
+    stickEl.addEventListener("pointercancel", stickEnd);
+    return () => {
+      stickEl.removeEventListener("pointerdown", down);
+      stickEl.removeEventListener("pointermove", move);
+      stickEl.removeEventListener("pointerup", stickEnd);
+      stickEl.removeEventListener("pointercancel", stickEnd);
+      stickEnd();
+    };
+  }, [touch, started]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -433,8 +482,6 @@ export function PupPlanet() {
 
     const keys = new Set<string>();
     const lookDrag = { active: false, lx: 0, ly: 0 };
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    let stickX = 0, stickZ = 0;
 
     const blocked = (px: number, py: number, pz: number) => {
       const minX = Math.floor(px - PLAYER_R), maxX = Math.floor(px + PLAYER_R);
@@ -518,7 +565,7 @@ export function PupPlanet() {
     const enter = async () => {
       startedRef.current = true;
       setStarted(true);
-      if (!coarse) {
+      if (!touchRef.current) {
         try { await canvas.requestPointerLock(); } catch { /* iPad / denied */ }
       }
       audio?.resume().catch(() => {});
@@ -527,7 +574,7 @@ export function PupPlanet() {
     const pointerDown = (event: PointerEvent) => {
       event.preventDefault();
       if (!startedRef.current) { void enter(); return; }
-      if (coarse) {
+      if (touchRef.current) {
         lookDrag.active = true; lookDrag.lx = event.clientX; lookDrag.ly = event.clientY;
         canvas.setPointerCapture(event.pointerId);
         return;
@@ -561,21 +608,6 @@ export function PupPlanet() {
     };
     const keyUp = (event: KeyboardEvent) => { keys.delete(event.code); };
 
-    const stickEl = stage.querySelector("[data-stick]") as HTMLElement | null;
-    const onStick = (event: PointerEvent) => {
-      if (!stickEl) return;
-      const rect = stickEl.getBoundingClientRect();
-      const dx = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
-      const dy = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
-      stickX = Math.max(-1, Math.min(1, dx));
-      stickZ = Math.max(-1, Math.min(1, dy));
-    };
-    const stickEnd = () => { stickX = 0; stickZ = 0; };
-    stickEl?.addEventListener("pointerdown", (e) => { (e.target as HTMLElement).setPointerCapture((e as PointerEvent).pointerId); onStick(e as PointerEvent); });
-    stickEl?.addEventListener("pointermove", (e) => { if (stickX || stickZ || (e as PointerEvent).buttons) onStick(e as PointerEvent); });
-    stickEl?.addEventListener("pointerup", stickEnd);
-    stickEl?.addEventListener("pointercancel", stickEnd);
-
     let last = performance.now(), raf = 0;
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
@@ -586,8 +618,8 @@ export function PupPlanet() {
 
       const sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
       const speed = flyingRef.current ? 11 : sprint ? 7.2 : 4.4;
-      let ix = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0) + stickX;
-      let iz = (keys.has("KeyS") ? 1 : 0) - (keys.has("KeyW") ? 1 : 0) + stickZ;
+      let ix = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0) + stickInput.current.x;
+      let iz = (keys.has("KeyS") ? 1 : 0) - (keys.has("KeyW") ? 1 : 0) + stickInput.current.z;
       const len = Math.hypot(ix, iz) || 1;
       ix /= len; iz /= len;
       const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
@@ -679,7 +711,6 @@ export function PupPlanet() {
       canvas.removeEventListener("contextmenu", contextMenu);
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
-      stickEl?.removeEventListener("pointerup", stickEnd);
       meshes.forEach((mesh) => { scene.remove(mesh.solid, mesh.glass); mesh.solid.geometry.dispose(); mesh.glass.geometry.dispose(); });
       matOpaque.dispose(); matGlass.dispose(); atlas.dispose();
       renderer.dispose();
@@ -704,7 +735,7 @@ export function PupPlanet() {
         </div>
       </div>
 
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7fb6ea] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "aspect-[4/3] sm:aspect-[16/10] min-h-[480px] md:min-h-[640px] max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}>
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7fb6ea] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/10] max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}>
         <canvas ref={canvasRef} className="block h-full w-full touch-none" aria-label="Pup Planet first-person voxel world" />
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2">
           <span className="absolute left-1/2 top-0 h-4 w-px -translate-x-1/2 bg-white/90" />
@@ -712,12 +743,12 @@ export function PupPlanet() {
         </div>
         <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/35 px-2 py-1 text-[11px] tracking-wide text-white/90">{hint}</p>
         {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
-        {touch ? (
+        {touch && started ? (
           <>
-            <div data-stick className="absolute bottom-5 left-5 z-10 h-32 w-32 rounded-full border-2 border-white/40 bg-black/25" aria-label="Move" />
-            <div className="absolute bottom-5 right-5 z-10 flex gap-3">
-              <button type="button" className="rounded-full border-2 border-white/40 bg-black/50 px-6 py-4 text-sm font-bold uppercase tracking-wide text-white active:scale-95" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
-              <button type="button" className="rounded-full border-2 border-white/40 px-6 py-4 text-sm font-bold uppercase tracking-wide active:scale-95" style={{ background: pup.accent, color: pup.ink }} onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
+            <div ref={stickRef} data-stick className="absolute bottom-3 left-3 z-10 h-24 w-24 rounded-full border-2 border-white/40 bg-black/25 sm:bottom-5 sm:left-5 sm:h-32 sm:w-32" aria-label="Move" />
+            <div className="absolute bottom-3 right-3 z-10 flex gap-2 sm:bottom-5 sm:right-5 sm:gap-3">
+              <button type="button" className="min-h-11 min-w-11 rounded-full border-2 border-white/40 bg-black/50 px-4 py-3 text-sm font-bold uppercase tracking-wide text-white active:scale-95 sm:px-6 sm:py-4" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
+              <button type="button" className="min-h-11 min-w-11 rounded-full border-2 border-white/40 px-4 py-3 text-sm font-bold uppercase tracking-wide active:scale-95 sm:px-6 sm:py-4" style={{ background: pup.accent, color: pup.ink }} onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
             </div>
           </>
         ) : null}

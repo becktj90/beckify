@@ -30,12 +30,12 @@ export function NewGlennRunner() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "min-h-[640px] max-w-[520px] rounded-2xl border border-[#2e5d86]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 min-h-[min(640px,80dvh)] max-w-[520px] rounded-2xl border border-[#2e5d86]"}`}
       >
         <iframe
           src={RUNNER_SRC}
           title="New Glenn Runner"
-          className="block h-full min-h-[640px] w-full border-0 bg-black"
+          className="block h-full min-h-[min(640px,80dvh)] w-full border-0 bg-black"
           allow="fullscreen; gamepad; autoplay"
         />
         {immersive ? (

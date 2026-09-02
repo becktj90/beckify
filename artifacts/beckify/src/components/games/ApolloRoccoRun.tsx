@@ -539,10 +539,15 @@ export function ApolloRoccoRun() {
     };
 
     window.addEventListener("keydown", keyDown);
+    const visibility = () => {
+      if (document.hidden && statusRef.current === "running") setGameStatus("paused");
+    };
+    document.addEventListener("visibilitychange", visibility);
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", keyDown);
+      document.removeEventListener("visibilitychange", visibility);
       audio?.close().catch(() => {});
     };
   }, []);
@@ -595,7 +600,7 @@ export function ApolloRoccoRun() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#071018] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "max-w-[540px] rounded-2xl border border-[#2e5d86]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#071018] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[540px] rounded-2xl border border-[#2e5d86]"}`}
       >
         <canvas
           ref={canvasRef}
@@ -630,7 +635,7 @@ export function ApolloRoccoRun() {
                   ? `You ran ${score}. Local best ${best}. This device only.`
                   : status === "paused"
                     ? "Pause keeps this run. Resume when you are ready."
-                    : "Original Beckify game featuring Apollo and Rocco. KID is the default — wide gaps, slow ramp, three hits."}
+                    : "Original Beckify game featuring Apollo and Rocco. KID is the default — wide gaps, slow ramp, four hits."}
               </p>
               {status !== "paused" ? (
                 <>
@@ -657,24 +662,24 @@ export function ApolloRoccoRun() {
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-3 p-3" aria-label="On-canvas runner controls">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-2 p-2 sm:gap-3 sm:p-3" aria-label="On-canvas runner controls">
           <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move left" {...hold("left")}>
-              <ArrowLeft size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move left" {...hold("left")}>
+              <ArrowLeft size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Left</span>
             </button>
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move right" {...hold("right")}>
-              <ArrowRight size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move right" {...hold("right")}>
+              <ArrowRight size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Right</span>
             </button>
           </div>
           <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Jump" {...hold("jump")}>
-              <ArrowUp size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Jump" {...hold("jump")}>
+              <ArrowUp size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Jump</span>
             </button>
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Slide" {...hold("slide")}>
-              <ArrowDown size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Slide" {...hold("slide")}>
+              <ArrowDown size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Slide</span>
             </button>
           </div>

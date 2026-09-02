@@ -53,6 +53,22 @@ assert.equal(cadet.applyHeart(3), 4);
 assert.equal(cadet.pickPowerUp(true, () => 0.99), null);
 assert.equal(cadet.pickPowerUp(true, () => 0), 'heart');
 
+assert.ok(cadet.spawnInterval(1) > cadet.spawnInterval(8), 'later waves spawn a bit faster');
+assert.ok(cadet.spawnInterval(1) >= 1.4, 'wave 1 leaves room to aim');
+assert.ok(cadet.spawnInterval(20) >= 0.75, 'spawn rate floors before becoming a bullet hell');
+assert.ok(cadet.enemyFallSpeed(1) < cadet.enemyFallSpeed(8));
+assert.ok(cadet.enemyFallSpeed(12) === cadet.enemyFallSpeed(20), 'fall speed plateaus so late waves stay flyable');
+assert.equal(cadet.enemyHp(1, () => 0.99), 1, 'early waves never use two-hit rocks');
+assert.equal(cadet.enemyHp(4, () => 0.9), 2);
+assert.equal(cadet.enemyLeaked(900), true);
+assert.equal(cadet.enemyLeaked(100), false);
+assert.equal(cadet.shipHitsEnemy(0, 0, 20, 0), true);
+assert.equal(cadet.shipHitsEnemy(0, 0, 40, 0), false, 'old 43px ship radius would still count this as a hit');
+assert.ok(cadet.SHIP_HIT_RADIUS < 43);
+assert.ok(cadet.START_GUARD > 2);
+assert.ok(cadet.HIT_IFRAMES > 1.4);
+assert.ok(cadet.PICKUP_RADIUS > cadet.SHIP_HIT_RADIUS);
+
 assert.equal(cadet.hudChanged({ score: 0, wave: 1, hull: 5 }, { score: 100, wave: 1, hull: 5 }), true);
 assert.equal(cadet.hudChanged({ score: 100, wave: 2, hull: 5 }, { score: 100, wave: 2, hull: 5 }), false);
 
