@@ -666,9 +666,9 @@ export function KidsSpaceShooter() {
         <aside className="cosmic-side">
           <div>
             <h2>QUICK TIPS</h2>
-            <p><Shield /><span><b>Protect your hull</b>Rocks that fly past do not hurt. Blink means you are safe.</span></p>
-            <p><Zap /><span><b>Catch glowing stars</b>Shield, spray shots, or turbo blast.</span></p>
-            <p><Crosshair /><span><b>Drag to fly</b>Or mash the FLY pad with a thumb.</span></p>
+            <p><Shield /><span><b>Protect your hull</b> Rocks that fly past do not hurt. Blink means you are safe.</span></p>
+            <p><Zap /><span><b>Catch glowing stars</b> Shield, spray shots, or turbo blast.</span></p>
+            <p><Crosshair /><span><b>Drag to fly</b> Or mash the FLY pad with a thumb.</span></p>
           </div>
           <div className="cosmic-best">
             <span>BEST FLIGHTS</span>
