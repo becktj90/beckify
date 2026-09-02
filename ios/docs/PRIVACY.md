@@ -28,11 +28,11 @@ Permissions are requested only when the related tool is used, not at launch (exc
 | --- | --- | --- |
 | Microphone | Noise Meter | Relative dBFS from live audio. Not recorded, not uploaded, not a calibrated SLM. |
 | Bluetooth | BLE Scanner | Nearby BLE advertisements (name, identifier, RSSI, advertised service UUIDs). Not uploaded. |
-| Location (When In Use) | Position; Wi-Fi Path only if you tap Request SSID | Coordinates / speed / altitude, or current SSID via public `NEHotspotNetwork.fetchCurrent`. Not used at launch. Not uploaded. |
+| Location (When In Use) | Position; Wi-Fi Path (SSID / 0…1 amplitude / optional GPS coverage sketch) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples. Not used at launch. Not uploaded. |
 
 CoreMotion (level, magnetometer, barometer, g-force) does not use those permission strings. Battery and thermal state are local diagnostics.
 
-iOS does **not** give third-party apps Wi-Fi RSSI through public APIs. The Wi-Fi Path tool does not invent a signal-bar number.
+iOS does **not** give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool shows Apple’s public 0…1 `signalStrength` (percent and bars) and an on-device coverage sketch. It does not invent dBm.
 
 ## What stays on the device
 

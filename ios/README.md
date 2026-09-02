@@ -37,7 +37,7 @@ ios/
 
 ## Sensors (public APIs only)
 
-- Wi-Fi Path (`NWPathMonitor`; optional SSID). **No Wi-Fi RSSI** — iOS does not expose it to third-party apps.
+- Wi-Fi Path (`NWPathMonitor` + `NEHotspotNetwork.signalStrength` 0…1 heatmap). **No Wi-Fi dBm** — iOS does not expose RSSI to third-party apps.
 - BLE Scanner (CoreBluetooth)
 - Noise Meter (microphone dBFS, uncalibrated)
 - Bubble Level / plumb (CoreMotion)
