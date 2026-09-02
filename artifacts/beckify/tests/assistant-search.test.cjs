@@ -66,7 +66,7 @@ for (const [query, expectedId] of expectResult) {
 }
 
 console.log('\n--- Assistant search: previously-working queries still work ---');
-for (const [query, expectedId] of [['transformer sizing', 'transformer-sizing'], ['voltage drop', 'voltage-drop'], ['conduit fill', 'conduit-fill'], ['megger tdr', 'megger-tdr-analyzer']]) {
+for (const [query, expectedId] of [['transformer sizing', 'transformer-sizing'], ['voltage drop', 'voltage-drop'], ['conduit fill', 'conduit-fill'], ['megger tdr', 'megger-tdr-analyzer'], ['faraday shielding', 'emp-emc-shielding']]) {
   const results = searchAssistant(query, 6);
   ok(`"${query}" still finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
 }

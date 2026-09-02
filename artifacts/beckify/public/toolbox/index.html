@@ -229,6 +229,7 @@
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
+      <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
       <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule photo OCR load analyzer FLA demand diversity capacity circuit directory">Panel Schedule Load Analyzer</button>
       <button class="nav-btn" data-target="sec-panel-power-study" data-keywords="panel schedule power study OCR breaker sizes series poles circuit class positions main rating demand factor diversity expansion">Panel Schedule Power Study</button>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
@@ -378,6 +379,7 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-circuit-sim">Circuit Simulator (MNA)</a></li>
             <li><a class="home-tool-link" href="#sec-smith-chart">Smith Chart</a></li>
+            <li><a class="home-tool-link" href="#sec-emp-emc">EMP / EMC Shielding</a></li>
           </ul>
         </div>
 
@@ -4428,6 +4430,510 @@
     </section><!-- end sec-smith-chart -->
 
     <!-- ════════════════════════════════════════
+         EMP / EMC SHIELDING (protection education)
+         ════════════════════════════════════════ -->
+    <section id="sec-emp-emc" class="section">
+      <div class="section-header">
+        <h2>EMP / EMC Shielding</h2>
+        <p>Protection-side Faraday-loop, aperture, and skin-depth estimates for cages, seams, and cable entries. Educational design aid — not a TEMPEST or MIL-STD test lab, not a PE stamp, not a weapon.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Shielding and victim-circuit coupling</summary>
+          <div class="section-info-body">
+            <strong>What this tool is:</strong> a physics and EMC education aid for people who need to <em>protect</em> a circuit or enclosure. It applies Faraday’s law to a victim loop, estimates how a slot leaks, and shows a simple sheet shielding-effectiveness bound.<br><br>
+            <strong>What this tool is not:</strong> a pulse-source designer, a field-generation procedure, or a substitute for IEEE 299 / IEC 61000 chamber data. Source-side design content does not belong here.<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>Induced voltage: <code>V = −N dΦ/dt</code>, with <code>Φ = B A</code> for a uniform field normal to the loop. Magnitude used here: <code>|V| = N A |dB/dt|</code>.</li>
+              <li>Rise time to bandwidth: <code>f ≈ 0.35 / t<sub>r</sub></code> (10–90% rule of thumb).</li>
+              <li>Aperture term: <code>SE ≈ 20 log<sub>10</sub>((λ/2) / ℓ)</code> for a single slot shorter than λ/2; 0 dB at or above half-wave. Optional depth uses a waveguide-below-cutoff extra term.</li>
+              <li>Skin depth: <code>δ = 1 / √(π f μ σ)</code>. Sheet estimate <code>SE ≈ A + R + B</code> (Schelkunoff), with limits called out in the result.</li>
+            </ul>
+            <strong>Citations (environments a shield or SPD is specified against):</strong> IEC 61000-4-2 (ESD), IEC 61000-4-5 (combination-wave surge), IEC 62305 (lightning protection), IEC 61000-2-9 / 61000-4-25 (HEMP waveform <em>taxonomy</em>, open summaries), NERC TPL-007 (GMD planning order-of-magnitude). Enclosure bonding and SPDs: NEC 250.4 / 250.96, NEC 285. Cable shields and entry: IEEE 1100 (Emerald Book) practice, not a code calculator.
+          </div>
+        </details>
+      </div>
+
+      <div class="note" style="margin-bottom:16px">This calculator describes <strong>incident environments</strong> and <strong>victim circuits</strong> so you can shrink loop area, close slots, bond the enclosure, and filter cable entries. It does not tell anyone how to produce those fields.</div>
+
+      <div class="card-grid emp-diagram-grid">
+        <div class="card">
+          <div class="card-title">Victim loop in a changing B field</div>
+          <div class="card-body">
+            <div class="emp-diagram" role="img" aria-label="Rectangular victim loop in a uniform changing magnetic field, with induced voltage labeled around the loop.">
+              <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+                <rect x="1" y="1" width="318" height="178" fill="#0d1117" stroke="#30304a"/>
+                <text x="160" y="18" fill="#9497b8" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Φ = B · A    V = −N dΦ/dt</text>
+                <rect x="86" y="48" width="148" height="88" fill="none" stroke="#8b7bff" stroke-width="2.5"/>
+                <circle cx="234" cy="92" r="5" fill="none" stroke="#6ee7b7" stroke-width="1.6"/>
+                <text x="248" y="96" fill="#6ee7b7" font-size="11" font-family="ui-monospace,monospace">V</text>
+                <line x1="40" y1="70" x2="40" y2="130" stroke="#60a5fa" stroke-width="2"/>
+                <line x1="58" y1="70" x2="58" y2="130" stroke="#60a5fa" stroke-width="2"/>
+                <line x1="262" y1="70" x2="262" y2="130" stroke="#60a5fa" stroke-width="2"/>
+                <line x1="280" y1="70" x2="280" y2="130" stroke="#60a5fa" stroke-width="2"/>
+                <polygon points="36,128 40,138 44,128" fill="#60a5fa"/>
+                <polygon points="54,128 58,138 62,128" fill="#60a5fa"/>
+                <polygon points="258,128 262,138 266,128" fill="#60a5fa"/>
+                <polygon points="276,128 280,138 284,128" fill="#60a5fa"/>
+                <text x="48" y="62" fill="#60a5fa" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">B(t)</text>
+                <text x="160" y="96" fill="#eef0fa" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">victim loop</text>
+                <text x="160" y="168" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Existing cable or PCB loop — shrink A to cut V</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cage with a slot</div>
+          <div class="card-body">
+            <div class="emp-diagram" role="img" aria-label="Conducting enclosure with a long slot in one wall. Leakage is marked through the opening.">
+              <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+                <rect x="1" y="1" width="318" height="178" fill="#0d1117" stroke="#30304a"/>
+                <rect x="70" y="36" width="180" height="110" fill="none" stroke="#8b7bff" stroke-width="3"/>
+                <rect x="248" y="78" width="8" height="36" fill="#0d1117" stroke="#f5c451" stroke-width="2"/>
+                <path d="M262 84 C 286 70, 300 88, 308 80" fill="none" stroke="#ff8a8a" stroke-width="1.6"/>
+                <path d="M262 96 C 284 96, 298 104, 310 98" fill="none" stroke="#ff8a8a" stroke-width="1.6"/>
+                <path d="M262 108 C 286 118, 300 106, 308 114" fill="none" stroke="#ff8a8a" stroke-width="1.6"/>
+                <text x="160" y="92" fill="#eef0fa" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">shielded volume</text>
+                <text x="252" y="70" fill="#f5c451" font-size="10" text-anchor="end" font-family="ui-monospace,monospace">slot ℓ</text>
+                <text x="314" y="64" fill="#ff8a8a" font-size="9" text-anchor="end" font-family="ui-sans-serif,sans-serif">leakage</text>
+                <text x="160" y="168" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Worst dimension vs λ/2 sets the opening penalty</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Protected cable entry</div>
+          <div class="card-body">
+            <div class="emp-diagram" role="img" aria-label="Shielded enclosure wall with a 360-degree cable gland, filter or SPD block, and protected equipment inside.">
+              <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+                <rect x="1" y="1" width="318" height="178" fill="#0d1117" stroke="#30304a"/>
+                <line x1="150" y1="28" x2="150" y2="152" stroke="#8b7bff" stroke-width="4"/>
+                <text x="86" y="24" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">outside</text>
+                <text x="232" y="24" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">inside cage</text>
+                <line x1="24" y1="90" x2="138" y2="90" stroke="#60a5fa" stroke-width="2"/>
+                <circle cx="150" cy="90" r="10" fill="#0d1117" stroke="#6ee7b7" stroke-width="2.4"/>
+                <line x1="160" y1="90" x2="198" y2="90" stroke="#60a5fa" stroke-width="2"/>
+                <rect x="198" y="74" width="44" height="32" rx="4" fill="#111326" stroke="#f5c451" stroke-width="1.6"/>
+                <text x="220" y="94" fill="#f5c451" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">filter</text>
+                <rect x="256" y="70" width="40" height="40" rx="3" fill="none" stroke="#eef0fa" stroke-width="1.4"/>
+                <text x="276" y="94" fill="#eef0fa" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">load</text>
+                <text x="150" y="122" fill="#6ee7b7" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">360° gland</text>
+                <text x="160" y="168" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Bond the shield at the wall; filter or SPD the conductors</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn active" type="button" data-tab="tab-emp-loop">Induced voltage</button>
+          <button class="tab-btn" type="button" data-tab="tab-emp-aperture">Aperture leakage</button>
+          <button class="tab-btn" type="button" data-tab="tab-emp-skin">Skin depth / barrier</button>
+          <button class="tab-btn" type="button" data-tab="tab-emp-env">Published environments</button>
+        </div>
+
+        <div id="tab-emp-loop" class="tab-pane active">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Victim loop</div>
+              <div class="card-body">
+                <div class="formula-box">|V| = N × A × |dB/dt|<br>dB/dt ≈ ΔB / t<sub>r</sub> when a change and rise time are given<br>I ≈ V / R only if R is entered (loop inductance ignored)</div>
+                <div class="input-group">
+                  <div>
+                    <label for="emp_loop_shape">Loop geometry</label>
+                    <select id="emp_loop_shape">
+                      <option value="rect" selected>Rectangle (W × H)</option>
+                      <option value="circle">Circle (radius)</option>
+                      <option value="area">Direct area</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="emp_loop_n">Turns — N</label>
+                    <input id="emp_loop_n" type="number" value="1" min="1" step="1">
+                  </div>
+                </div>
+                <div class="input-group">
+                  <div>
+                    <label id="emp_loop_a_label" for="emp_loop_a">Width</label>
+                    <input id="emp_loop_a" type="number" value="10" min="0" step="any">
+                  </div>
+                  <div id="emp_loop_dim2_wrap">
+                    <label for="emp_loop_b">Height</label>
+                    <input id="emp_loop_b" type="number" value="10" min="0" step="any">
+                  </div>
+                </div>
+                <div class="input-group">
+                  <div id="emp_loop_len_unit_wrap">
+                    <label for="emp_loop_len_unit">Length unit</label>
+                    <select id="emp_loop_len_unit">
+                      <option value="cm" selected>cm</option>
+                      <option value="mm">mm</option>
+                      <option value="m">m</option>
+                      <option value="in">in</option>
+                      <option value="ft">ft</option>
+                    </select>
+                  </div>
+                  <div id="emp_loop_area_unit_wrap" hidden>
+                    <label for="emp_loop_area_unit">Area unit</label>
+                    <select id="emp_loop_area_unit">
+                      <option value="m2">m²</option>
+                      <option value="cm2" selected>cm²</option>
+                      <option value="mm2">mm²</option>
+                      <option value="in2">in²</option>
+                      <option value="ft2">ft²</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label for="emp_loop_mode">Magnetic change</label>
+                    <select id="emp_loop_mode">
+                      <option value="deltab" selected>ΔB and rise time</option>
+                      <option value="dbdt">Direct dB/dt</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="emp_loop_deltab_fields">
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_loop_db">|ΔB|</label>
+                      <input id="emp_loop_db" type="number" value="1" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_loop_db_unit">B unit</label>
+                      <select id="emp_loop_db_unit">
+                        <option value="mT" selected>mT</option>
+                        <option value="T">T</option>
+                        <option value="uT">µT</option>
+                        <option value="nT">nT</option>
+                        <option value="G">G</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_loop_tr">Rise time t<sub>r</sub></label>
+                      <input id="emp_loop_tr" type="number" value="1" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_loop_tr_unit">Time unit</label>
+                      <select id="emp_loop_tr_unit">
+                        <option value="us" selected>µs</option>
+                        <option value="ns">ns</option>
+                        <option value="ms">ms</option>
+                        <option value="s">s</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div id="emp_loop_dbdt_fields" hidden>
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_loop_dbdt">|dB/dt|</label>
+                      <input id="emp_loop_dbdt" type="number" value="100" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_loop_dbdt_unit">dB/dt unit</label>
+                      <select id="emp_loop_dbdt_unit">
+                        <option value="T/s" selected>T/s</option>
+                        <option value="T/ms">T/ms</option>
+                        <option value="T/us">T/µs</option>
+                        <option value="mT/us">mT/µs</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label for="emp_loop_r">Loop resistance R (Ω), optional</label>
+                    <input id="emp_loop_r" type="number" value="" min="0" step="any" placeholder="leave blank for voltage only">
+                  </div>
+                </div>
+                <button class="btn" type="button" onclick="calcEmpLoop()">Calculate induced voltage</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Result</div>
+              <div class="card-body">
+                <div id="emp_loop_result" class="result" aria-live="polite"></div>
+                <div class="note">Default example: a 10 cm × 10 cm single-turn loop, 1 mT in 1 µs → |V| = 10 V. Shrink the loop, twist pairs, and keep cables against a bonded surface to cut A.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-emp-aperture" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Longest slot or seam</div>
+              <div class="card-body">
+                <div class="formula-box">SE<sub>slot</sub> ≈ 20 log<sub>10</sub>((λ/2) / ℓ) &nbsp; for ℓ &lt; λ/2<br>SE<sub>slot</sub> ≈ 0 dB when ℓ ≥ λ/2<br>λ = c / f &nbsp;|&nbsp; f ≈ 0.35 / t<sub>r</sub> from a rise time<br>Optional depth: extra ≈ 27.3 (t/ℓ) √(1 − (f/f<sub>c</sub>)²), f<sub>c</sub> = c/(2ℓ)</div>
+                <div class="input-group">
+                  <div>
+                    <label for="emp_ap_len">Longest opening ℓ</label>
+                    <input id="emp_ap_len" type="number" value="10" min="0" step="any">
+                  </div>
+                  <div>
+                    <label for="emp_ap_len_unit">Length unit</label>
+                    <select id="emp_ap_len_unit">
+                      <option value="cm" selected>cm</option>
+                      <option value="mm">mm</option>
+                      <option value="m">m</option>
+                      <option value="in">in</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label for="emp_ap_mode">Spectral content</label>
+                    <select id="emp_ap_mode">
+                      <option value="freq" selected>Frequency</option>
+                      <option value="rise">Rise time (f ≈ 0.35 / t<sub>r</sub>)</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="emp_ap_freq_fields">
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_ap_freq">Frequency</label>
+                      <input id="emp_ap_freq" type="number" value="100" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_ap_freq_unit">Frequency unit</label>
+                      <select id="emp_ap_freq_unit">
+                        <option value="MHz" selected>MHz</option>
+                        <option value="kHz">kHz</option>
+                        <option value="Hz">Hz</option>
+                        <option value="GHz">GHz</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div id="emp_ap_rise_fields" hidden>
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_ap_tr">Rise time t<sub>r</sub></label>
+                      <input id="emp_ap_tr" type="number" value="2.5" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_ap_tr_unit">Time unit</label>
+                      <select id="emp_ap_tr_unit">
+                        <option value="ns" selected>ns</option>
+                        <option value="us">µs</option>
+                        <option value="ms">ms</option>
+                        <option value="s">s</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <div>
+                    <label for="emp_ap_thick">Slot depth t (optional)</label>
+                    <input id="emp_ap_thick" type="number" value="" min="0" step="any" placeholder="wall thickness">
+                  </div>
+                  <div>
+                    <label for="emp_ap_thick_unit">Depth unit</label>
+                    <select id="emp_ap_thick_unit">
+                      <option value="mm" selected>mm</option>
+                      <option value="cm">cm</option>
+                      <option value="m">m</option>
+                      <option value="in">in</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn" type="button" onclick="calcEmpAperture()">Calculate aperture term</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Result</div>
+              <div class="card-body">
+                <div id="emp_ap_result" class="result" aria-live="polite"></div>
+                <div class="note">Gaskets, overlapping seams, and honeycomb vents are how real cages keep ℓ electrically small. A painted joint or a display window is often the whole enclosure.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-emp-skin" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Barrier</div>
+              <div class="card-body">
+                <div class="formula-box">δ = 1 / √(π f μ σ)<br>A ≈ 8.686 (t / δ) dB<br>R ≈ 168.2 + 10 log<sub>10</sub>(σ<sub>r</sub> / (μ<sub>r</sub> f)) dB &nbsp;(far-field, σ<sub>r</sub> relative to Cu)<br>B ≈ 20 log<sub>10</sub>(1 − e<sup>−2t/δ</sup>) when t &lt; δ<br>SE ≈ A + R + B</div>
+                <div class="input-group">
+                  <div>
+                    <label for="emp_sk_mat">Material</label>
+                    <select id="emp_sk_mat">
+                      <option value="cu" selected>Copper</option>
+                      <option value="al">Aluminum</option>
+                      <option value="steel-lf">Mild steel (low-frequency μr ≈ 200)</option>
+                      <option value="steel-rf">Mild steel (RF, μr collapsed ≈ 1)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="emp_sk_mode">Spectral content</label>
+                    <select id="emp_sk_mode">
+                      <option value="freq" selected>Frequency</option>
+                      <option value="rise">Rise time (f ≈ 0.35 / t<sub>r</sub>)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <div>
+                    <label for="emp_sk_t">Thickness t</label>
+                    <input id="emp_sk_t" type="number" value="1" min="0" step="any">
+                  </div>
+                  <div>
+                    <label for="emp_sk_t_unit">Thickness unit</label>
+                    <select id="emp_sk_t_unit">
+                      <option value="mm" selected>mm</option>
+                      <option value="mil">mil</option>
+                      <option value="cm">cm</option>
+                      <option value="in">in</option>
+                      <option value="m">m</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="emp_sk_freq_fields">
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_sk_freq">Frequency</label>
+                      <input id="emp_sk_freq" type="number" value="1" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_sk_freq_unit">Frequency unit</label>
+                      <select id="emp_sk_freq_unit">
+                        <option value="MHz" selected>MHz</option>
+                        <option value="kHz">kHz</option>
+                        <option value="Hz">Hz</option>
+                        <option value="GHz">GHz</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div id="emp_sk_rise_fields" hidden>
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_sk_tr">Rise time t<sub>r</sub></label>
+                      <input id="emp_sk_tr" type="number" value="2.5" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_sk_tr_unit">Time unit</label>
+                      <select id="emp_sk_tr_unit">
+                        <option value="ns" selected>ns</option>
+                        <option value="us">µs</option>
+                        <option value="ms">ms</option>
+                        <option value="s">s</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn" type="button" onclick="calcEmpSkin()">Calculate skin depth</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Result</div>
+              <div class="card-body">
+                <div id="emp_sk_result" class="result" aria-live="polite"></div>
+                <div class="note">A seamless copper sheet at RF can look like &gt;100 dB on paper. Real cabinets are aperture- and cable-limited. Bond seams; do not trust paint as a contact. Magnetic fields at 50/60 Hz need thickness, permeability, or distance — foil cages do little.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-emp-env" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Incident environment to design against</div>
+              <div class="card-body">
+                <div class="formula-box">Pick a published waveform <em>family</em> used to specify shields and SPDs.<br>Where a victim-loop estimate is valid, Faraday’s law is applied to <em>your</em> loop — never as a source-design step.</div>
+                <div class="input-group single">
+                  <div>
+                    <label for="emp_env_id">Published environment</label>
+                    <select id="emp_env_id">
+                      <option value="hemp_e1">HEMP E1 — IEC 61000-2-9 early-time (50 kV/m, 2.5/23 ns)</option>
+                      <option value="hemp_e2">HEMP E2 — IEC 61000-2-9 intermediate (lightning-like family)</option>
+                      <option value="lightning">Lightning first stroke — IEC 62305 LPL I (100 kA, 10/350 μs)</option>
+                      <option value="lightning_sub">Lightning subsequent stroke — IEC 62305 (50 kA, 0.25/100 μs)</option>
+                      <option value="surge">Combination-wave surge — IEC 61000-4-5 (SPD test)</option>
+                      <option value="esd">ESD contact — IEC 61000-4-2 Level 4 (8 kV, ~30 A, 0.8 ns)</option>
+                      <option value="solar">Solar GMD / E3-like geoelectric — NERC TPL-007 order-of-magnitude</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="emp_env_loop_wrap">
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_env_area">Victim loop area (optional)</label>
+                      <input id="emp_env_area" type="number" value="100" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_env_area_unit">Area unit</label>
+                      <select id="emp_env_area_unit">
+                        <option value="cm2" selected>cm²</option>
+                        <option value="m2">m²</option>
+                        <option value="in2">in²</option>
+                        <option value="ft2">ft²</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="input-group single">
+                    <div>
+                      <label for="emp_env_n">Turns — N</label>
+                      <input id="emp_env_n" type="number" value="1" min="1" step="1">
+                    </div>
+                  </div>
+                </div>
+                <div id="emp_env_dist_wrap" hidden>
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_env_dist">Loop-to-downconductor distance</label>
+                      <input id="emp_env_dist" type="number" value="1" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_env_dist_unit">Distance unit</label>
+                      <select id="emp_env_dist_unit">
+                        <option value="m" selected>m</option>
+                        <option value="cm">cm</option>
+                        <option value="ft">ft</option>
+                        <option value="in">in</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="note">Distance is a bonding/layout input for a loop already next to a downconductor. It is not a targeting range.</div>
+                </div>
+                <div id="emp_env_line_wrap" hidden>
+                  <div class="input-group">
+                    <div>
+                      <label for="emp_env_line">Long-conductor length</label>
+                      <input id="emp_env_line" type="number" value="10" min="0" step="any">
+                    </div>
+                    <div>
+                      <label for="emp_env_line_unit">Length unit</label>
+                      <select id="emp_env_line_unit">
+                        <option value="km" selected>km</option>
+                        <option value="m">m</option>
+                        <option value="ft">ft</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn" type="button" onclick="calcEmpEnv()">Apply Faraday check</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Result</div>
+              <div class="card-body">
+                <div id="emp_env_result" class="result" aria-live="polite"></div>
+                <div class="note">NEC 285 covers SPD installation; NEC 250.4 and 250.96 cover bonding metal enclosures and raceways. Those articles do not define HEMP test levels — they tell you how to land a shield and a surge device once you have chosen a protection scheme.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-emp-emc -->
+
+    <!-- ════════════════════════════════════════
          STEM TOOLS
          ════════════════════════════════════════ -->
     <section id="sec-stem-tools" class="section">
@@ -7784,6 +8290,7 @@
 <script src="js/heater-wizard.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
+<script src="js/emp-emc.js"></script>
 <script src="js/stem-tools.js"></script>
 <script src="js/math-explanations.js"></script>
 <script src="js/result-visuals.js"></script>
