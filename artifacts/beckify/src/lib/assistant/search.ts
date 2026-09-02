@@ -22,6 +22,7 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],
   "transformer-sizing": ["kva", "primary", "secondary", "450.3"],
   "megger-tdr-analyzer": ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"],
+  "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
   "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
 };

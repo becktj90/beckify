@@ -259,6 +259,17 @@
     text(svg, 320, 145, 'entity parameters must close the loop', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
   }
 
+  function empCage(svg) {
+    text(svg, 320, 20, 'VICTIM LOOP AND CAGE', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    svg.appendChild(svgElement('rect', { x: 70, y: 40, width: 220, height: 100, fill: 'none', stroke: PALETTE.accent, 'stroke-width': 3 }));
+    svg.appendChild(svgElement('rect', { x: 286, y: 78, width: 10, height: 28, fill: '#05060f', stroke: PALETTE.yellow, 'stroke-width': 2 }));
+    svg.appendChild(svgElement('rect', { x: 370, y: 58, width: 160, height: 64, fill: 'none', stroke: PALETTE.blue, 'stroke-width': 2 }));
+    text(svg, 180, 94, 'cage', { fill: PALETTE.accent, 'font-size': 12, 'text-anchor': 'middle', 'font-weight': 700 });
+    text(svg, 450, 94, 'victim loop', { fill: PALETTE.blue, 'font-size': 11, 'text-anchor': 'middle' });
+    text(svg, 291, 72, 'slot', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 162, 'Close slots, shrink loop area, filter the cable entry', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+  }
+
   function lightRays(svg) {
     text(svg, 320, 23, 'ILLUMINATION GEOMETRY', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
     svg.appendChild(svgElement('circle', { cx: 320, cy: 72, r: 10, fill: PALETTE.yellow }));
@@ -404,6 +415,7 @@
     if (id === 'sec-ebike-tools') return drivetrain(shell(result, 'E-bike drivetrain gear ratio relationship'));
     if (id === 'sec-nec') return faultPath(shell(result, 'Branch circuit source, protection, conductors, and load path'));
     if (id === 'sec-isloop') return safetyLoop(shell(result, 'Intrinsic-safety barrier and field-device loop'));
+    if (id === 'sec-emp-emc') return empCage(shell(result, 'Shielded volume with a slot and a victim loop outside the opening'));
     if (id === 'sec-lighting-opt' || id === 'sec-photometrics') return lightRays(shell(result, 'Lighting geometry and illumination spread'));
     if (id === 'sec-tap') return tapLadder(shell(result, 'Transformer tap positions around nominal voltage'));
     if (id === 'sec-cm') return conductorCrossSection(shell(result, 'Conductor diameter and circular-mil area relationship'));
