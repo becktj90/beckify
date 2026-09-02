@@ -60,4 +60,11 @@ assert.match(metrics.connectedNote, /not an NEC Article 220/i);
 assert.match(metrics.connectedNote, /does not mean the panel is unsafe/i);
 assert.ok(metrics.flags.some((f) => /blank labels found: 1/.test(f)));
 
+const panelSrc = fs.readFileSync(path.join(root, 'panel-schedule.js'), 'utf8');
+assert.match(panelSrc, /DOMContentLoaded/);
+assert.match(panelSrc, /bootPanelSchedule/);
+assert.match(panelSrc, /pagehide/);
+assert.match(panelSrc, /cacheElements\(\)/);
+assert.match(panelSrc, /bindEvents\(\)/);
+
 console.log('Panel load analyzer helpers passed');

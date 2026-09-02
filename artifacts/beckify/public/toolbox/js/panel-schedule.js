@@ -11,13 +11,27 @@ const state = {
 
 const elements = {};
 
-  window.addEventListener('pagehide', () => {
-    if (state.imageUrl) {
-      URL.revokeObjectURL(state.imageUrl);
-      state.imageUrl = '';
-    }
-    state.file = null;
-  });
+window.addEventListener('pagehide', () => {
+  if (state.imageUrl) {
+    URL.revokeObjectURL(state.imageUrl);
+    state.imageUrl = '';
+  }
+  state.file = null;
+});
+
+function bootPanelSchedule() {
+  if (!document.getElementById || !document.getElementById('fillSlotsButton')) return;
+  cacheElements();
+  bindEvents();
+  seedRows(MAX_CIRCUIT_SLOTS);
+  renderAll();
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', bootPanelSchedule);
+} else {
+  bootPanelSchedule();
+}
 
 function cacheElements() {
   elements.imageInput = document.getElementById('imageInput');
