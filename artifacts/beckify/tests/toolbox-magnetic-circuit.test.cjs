@@ -114,6 +114,47 @@ console.log('\n--- Parallel steel, shared series gap ---');
   void mmfSum;
 }
 
+console.log('\n--- Bsat warning uses every steel leg, not only drops[0] ---');
+{
+  const smallA = A / 4;
+  const R1 = L / (mu * A);
+  const R2 = L / (mu * smallA);
+  const Rtot = R1 + R2;
+  const Bwide = 0.8;
+  const flux = Bwide * A;
+  const F = flux * Rtot;
+  const sol = M.solveMagneticCircuit({
+    network: 'series',
+    steel: [
+      { on: true, label: 'Wide', lengthM: L, areaM2: A, muMode: 'ur', ur: UR },
+      { on: true, label: 'Narrow', lengthM: L, areaM2: smallA, muMode: 'ur', ur: UR }
+    ],
+    gap: { on: false, lengthM: 0, areaM2: A, fringing: false, k: 1 },
+    turns: 1,
+    amps: F,
+    bsat: 1.5
+  });
+  okTrue('no error', !sol.error, sol.error);
+  ok('wide-leg B is below Bsat', sol.drops[0].B, Bwide, 1e-12);
+  okTrue('wide leg is not flagged', sol.drops[0].saturated === false);
+  ok('narrow-leg B is 4× wide B', sol.drops[1].B, 3.2, 1e-12);
+  okTrue('narrow leg is flagged', sol.drops[1].saturated === true);
+  okTrue('top-level saturated follows the worst steel B', sol.saturated === true);
+  ok('coreB is the max steel |B|', sol.coreB, 3.2, 1e-12);
+}
+{
+  const sol = M.solveMagneticCircuit({
+    network: 'series',
+    steel: [{ on: true, label: 'Core', lengthM: L, areaM2: A, muMode: 'ur', ur: UR }],
+    gap: { on: true, lengthM: 0.001, areaM2: A, fringing: false, k: 1 },
+    turns: 200,
+    amps: 2,
+    bsat: 1.5
+  });
+  okTrue('gapped single core stays unsaturated at this NI', sol.saturated === false && sol.drops[0].saturated === false, 'B=' + sol.coreB);
+  okTrue('gap drop does not drive the warning', sol.drops.some((d) => d.kind === 'gap' && d.saturated === false));
+}
+
 console.log('\n--- Fringing reduces gap reluctance ---');
 {
   const plain = M.solveMagneticCircuit({

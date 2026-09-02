@@ -47,7 +47,7 @@ ${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/
 const urls = [
   ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/games/cosmic-cadet", "monthly", "0.7"], ["/games/booty-butt-scooter", "monthly", "0.7"], ["/games/finger-runner", "monthly", "0.7"], ["/games/toot-troopers", "monthly", "0.7"], ["/games/apollo-rocco-run", "monthly", "0.7"], ["/games/pup-planet", "monthly", "0.7"], ["/games/hexgl", "monthly", "0.7"], ["/games/new-glenn-runner", "monthly", "0.7"], ["/projects", "weekly", "0.8"], ["/projects/vespa-p200e", "monthly", "0.8"], ["/projects/honda-xr650r", "monthly", "0.8"], ["/gear", "weekly", "0.9"], ["/made-in-america", "weekly", "0.9"], ["/control-systems", "weekly", "0.9"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
   ...categories.map(([slug], index) => [`/toolbox/category/${slug}/`, index === 5 ? "weekly" : "monthly", "0.8"]),
-  ...tools.map(([slug], index) => [`/toolbox/${slug}/`, index === 36 ? "weekly" : "monthly", index === 36 ? "0.9" : "0.8"]),
+  ...tools.map(([slug]) => [`/toolbox/${slug}/`, slug === "digital-logic-workbench" ? "weekly" : "monthly", slug === "digital-logic-workbench" ? "0.9" : "0.8"]),
 ];
 const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([path, changefreq, priority]) => `  <url>\n    <loc>${escapeXml(`${siteUrl}${path}`)}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`).join("\n")}\n</urlset>\n`;
 await writeFile(resolve(root, "public/sitemap.xml"), xml);

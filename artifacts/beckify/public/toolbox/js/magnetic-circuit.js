@@ -176,7 +176,15 @@
       }));
     }
 
-    const coreB = Math.abs(drops[0].B);
+    let coreB = 0;
+    let saturated = false;
+    for (let i = 0; i < drops.length; i++) {
+      const drop = drops[i];
+      if (drop.kind !== 'steel') continue;
+      const absB = Math.abs(drop.B);
+      if (absB > coreB) coreB = absB;
+      if (drop.saturated) saturated = true;
+    }
     return {
       network: net,
       mu0: MU0,
@@ -190,7 +198,7 @@
       drops: drops,
       bsat: bsat,
       coreB: coreB,
-      saturated: coreB > bsat,
+      saturated: saturated,
       steelCount: steelLegs.length
     };
   }
