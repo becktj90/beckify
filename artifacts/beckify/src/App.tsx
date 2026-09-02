@@ -22,7 +22,6 @@ const FingerRunnerPage = lazy(() => import("@/pages/finger-runner"));
 const TootTroopersPage = lazy(() => import("@/pages/toot-troopers"));
 const ApolloRoccoRunPage = lazy(() => import("@/pages/apollo-rocco-run"));
 const PupPlanetPage = lazy(() => import("@/pages/pup-planet"));
-const HexGLPage = lazy(() => import("@/pages/hexgl"));
 const NewGlennRunnerPage = lazy(() => import("@/pages/new-glenn-runner"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const HondaXR650RPage = lazy(() => import("@/pages/honda-xr650r"));
@@ -72,7 +71,6 @@ function Router() {
         <Route path="/games/apollo-rocco-run" component={ApolloRoccoRunPage} />
         <Route path="/games/apollo-rocco-run/" component={ApolloRoccoRunPage} />
         <Route path="/games/pup-planet" component={PupPlanetPage} />
-        <Route path="/games/hexgl" component={HexGLPage} />
         <Route path="/games/new-glenn-runner" component={NewGlennRunnerPage} />
         <Route path="/sitemap" component={SiteMapPage} />
         <Route component={NotFound} />

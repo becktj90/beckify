@@ -94,8 +94,7 @@ environment variable to load its Vite config. The deploy workflow builds only
 | `/control-systems` | **0** | 6 | clean | Sliders are 16 px tall |
 | `/games` | **0** | 5 | clean | |
 | `/games/cosmic-cadet` … `/toot-troopers` | 1 | 2–3 | clean | |
-| `/games/pup-planet` | 1 | 3 | WebGL only | Stage fixed at 640 px |
-| `/games/hexgl` | 1 | 3 | WebGL only | Stage fixed at 853 px |
+| `/games/pup-planet` | 1 | 3 | WebGL only | Stage now shrinks |
 | `/sitemap` | **0** | 5 | clean | 7 contrast nodes |
 | 404 (any unknown path) | 1 | 3 | clean | Returns 200 with `robots: index, follow` |
 | `/toolbox/` | **0** | 1 | clean | Strongest page on the site |
@@ -224,10 +223,8 @@ narrower than icon-only pills below that, two of which (Toolbox and Control
 Systems) shared the same icon and were unlabeled. **Fixed in Stage 1**
 (`Nav.tsx` rewrite): the full link row is now `hidden lg:flex`, replaced below
 that breakpoint by a real hamburger menu (`Sheet`) listing every nav item with
-its own distinct icon and a label. `/games/pup-planet` and `/games/hexgl`
-still overflow at narrow widths because their `.game-stage` is a fixed-pixel
-canvas — unchanged, tracked as a game-area item out of this audit's scope
-(concurrent work in progress there).
+its own distinct icon and a label. Game stages now shrink with the viewport
+(see the later games overhaul); HexGL was removed from the site.
 
 ### Mobile/desktop content-parity audit
 
@@ -341,10 +338,8 @@ Clean. Recorded so it does not get re-audited from scratch later.
 ## Game findings
 
 Games are cleanly separated under `/games` and do not intrude on the engineering
-identity. Two have real mobile defects: `pup-planet` and `hexgl` have game
-stages fixed at 640 px and 853 px that do not shrink, forcing horizontal scroll
-on every phone. WebGL console warnings on both are sandbox artefacts (software
-rendering), not product defects.
+identity. HexGL was removed. Remaining titles use shrinking `.game-stage`
+surfaces; Pup Planet no longer forces a 640 px minimum width.
 
 ---
 
@@ -383,7 +378,7 @@ regions and 20 px-tall journal-nav links noted above.
 | P1-7 | Contrast failures: footer "About Me" (11 pages), `/gear` (72), `/sitemap` (7) |
 | P1-8 | No CI gate before deploy |
 | P1-9 | Homepage communicates nothing in the first screen |
-| P1-10 | `pup-planet` / `hexgl` stages do not shrink on mobile |
+| P1-10 | Game stages that do not shrink on mobile (HexGL removed; remaining titles use `w-full min-w-0`) |
 | P1-11 | Assistant "Inspect a photo" is a non-functional stub shipped to users |
 | P1-12 | Single 1.66 MB bundle, no code splitting |
 

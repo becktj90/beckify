@@ -14,9 +14,10 @@ import {
   Wind,
 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
+import { KIDS, drawKidPortrait, drawScooterBody, kidSrc, type KidId } from "./characterArt";
 
 type Status = "ready" | "running" | "paused" | "gameover";
-type Character = "apollo" | "rocco";
+type Character = KidId;
 type RowKind = "grass" | "road";
 type MoveKind = "hop" | "fart";
 
@@ -60,11 +61,9 @@ const BOARD_TOP = 56;
 const VISIBLE_ROWS = 10;
 const PLAYER_HOME_ROW = 4;
 const PLAYER_HOME_COL = 3;
-const PLAYER_SPRITE_SIZE = 156;
 const PLAYER_BOX_WIDTH = 64;
 const PLAYER_BOX_HEIGHT = 78;
 const BEST_KEY = "booty-butt-scooter-best";
-const SPRITE_SRC = "/games/booty-butt-scooter/scooter-sprites.png";
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const lerp = (start: number, end: number, amount: number) => start + (end - start) * amount;
@@ -182,17 +181,13 @@ function drawCharacterSprite(
   scale: number,
   tilt: number,
 ) {
-  const frameX = farting ? 1 : 0;
-  const frameY = character === "apollo" ? 0 : 1;
-  const sx = frameX * 512;
-  const sy = frameY * 512;
-  const dw = PLAYER_SPRITE_SIZE * scale;
-  const dh = PLAYER_SPRITE_SIZE * scale;
-
+  const accent = KIDS[character].accent;
   context.save();
   context.translate(x, y);
   context.rotate(tilt);
-  context.drawImage(image, sx, sy, 512, 512, -dw / 2, -dh / 2, dw, dh);
+  context.scale(scale, scale);
+  drawScooterBody(context, accent, 1, farting);
+  drawKidPortrait(context, image, 4, -38, 72, { ring: accent, squash: 1 });
   context.restore();
 }
 
@@ -247,6 +242,7 @@ export function BootyButtScooter() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const spriteRef = useRef<HTMLImageElement | null>(null);
+  const portraitsRef = useRef<{ apollo: HTMLImageElement; rocco: HTMLImageElement } | null>(null);
   const statusRef = useRef<Status>("ready");
   const bestRef = useRef(0);
   const scoreRef = useRef(0);
@@ -283,13 +279,16 @@ export function BootyButtScooter() {
   }, [sound]);
 
   useEffect(() => {
-    const image = new Image();
-    image.src = SPRITE_SRC;
-    image.onload = () => {
-      spriteRef.current = image;
-    };
+    const apollo = new Image();
+    const rocco = new Image();
+    const base = import.meta.env.BASE_URL;
+    apollo.src = kidSrc("apollo", base);
+    rocco.src = kidSrc("rocco", base);
+    portraitsRef.current = { apollo, rocco };
+    spriteRef.current = apollo;
     return () => {
       spriteRef.current = null;
+      portraitsRef.current = null;
     };
   }, []);
 
@@ -530,9 +529,9 @@ export function BootyButtScooter() {
     const draw = () => {
       const cameraRow = player.renderRow - PLAYER_HOME_ROW;
       const sky = context.createLinearGradient(0, 0, 0, HEIGHT);
-      sky.addColorStop(0, "#091120");
-      sky.addColorStop(0.55, "#0e1730");
-      sky.addColorStop(1, "#06101f");
+      sky.addColorStop(0, "#7ec8ff");
+      sky.addColorStop(0.42, "#c5e8ff");
+      sky.addColorStop(1, "#9ad37a");
       context.fillStyle = sky;
       context.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -580,12 +579,13 @@ export function BootyButtScooter() {
 
       puffsRef.current.forEach(drawPuff);
 
-      const sprite = spriteRef.current;
+      const portraits = portraitsRef.current;
+      const sprite = portraits?.[riderRef.current] ?? spriteRef.current;
       if (sprite) {
         const x = tileCenterX(player.renderCol);
         const y = tileCenterY(player.renderRow, cameraRow) + player.bob;
         const tilt = clamp((player.move?.toCol ?? player.col) - player.renderCol, -1, 1) * 0.12;
-        drawCharacterSprite(context, sprite, riderRef.current, fartFlashRef.current > 0, x, y, 0.6, tilt);
+        drawCharacterSprite(context, sprite, riderRef.current, fartFlashRef.current > 0, x, y, 0.92, tilt);
 
         if (fartFlashRef.current > 0) {
           context.save();
@@ -600,28 +600,6 @@ export function BootyButtScooter() {
           context.restore();
         }
       }
-
-      const hudY = 28;
-      context.fillStyle = "#eef0fa";
-      context.font = "700 18px Space Grotesk, sans-serif";
-      context.fillText(`ROW ${String(scoreRef.current).padStart(3, "0")}`, 20, hudY);
-      context.font = "500 12px JetBrains Mono, monospace";
-      context.fillStyle = "#8fa6c5";
-      context.fillText("TAP / ARROWS TO HOP", 20, hudY + 24);
-      context.fillText("SPACE OR F TO FART-BOOST", 20, hudY + 42);
-
-      context.save();
-      context.textAlign = "right";
-      context.fillStyle = "#6df0df";
-      context.font = "700 12px JetBrains Mono, monospace";
-      context.fillText(`BEST ${String(bestRef.current).padStart(3, "0")}`, WIDTH - 20, hudY);
-      context.fillStyle = fartCooldownRef.current <= 0 ? "#74f5a0" : "#ffcb75";
-      context.fillText(fartCooldownRef.current <= 0 ? "FART READY" : `FART ${fartCooldownRef.current.toFixed(1)}s`, WIDTH - 20, hudY + 20);
-      context.fillStyle = "#8fa6c5";
-      context.fillText(`RIDER ${riderRef.current === "apollo" ? "APOLLO" : "ROCCO"}`, WIDTH - 20, hudY + 40);
-      context.fillStyle = "#74f5a0";
-      context.fillText("SPACE / F = FART", WIDTH - 20, hudY + 60);
-      context.restore();
     };
 
     let previous = performance.now();
@@ -662,7 +640,8 @@ export function BootyButtScooter() {
       }
       if (event.code === "KeyP" || event.code === "Escape") {
         event.preventDefault();
-        setGameStatus(statusRef.current === "paused" ? "running" : "paused");
+        if (statusRef.current === "running") setGameStatus("paused");
+        else if (statusRef.current === "paused") setGameStatus("running");
       }
       if (event.code === "Enter" && statusRef.current !== "running") {
         startRun();
@@ -756,7 +735,7 @@ export function BootyButtScooter() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[960px] rounded-3xl border border-[#29446c]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[960px] rounded-3xl border border-[#7ec8ff]"}`}
       >
         <canvas
           ref={canvasRef}
@@ -765,41 +744,77 @@ export function BootyButtScooter() {
           className="block h-auto w-full touch-none select-none"
           aria-label="Booty Butt Scooter crossy road game"
         />
-        {immersive ? <button type="button" className="absolute right-4 top-4 z-20 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
+        {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
+
+        <div className="kid-hud">
+          <div className="kid-chip" style={{ color: KIDS[character].accent }}>
+            <img src={kidSrc(character, import.meta.env.BASE_URL)} alt="" width={32} height={32} />
+            <div>
+              <span>{KIDS[character].label}</span>
+              <strong>ROW {score.toString().padStart(3, "0")}</strong>
+            </div>
+          </div>
+          <div className="kid-chip">
+            <div>
+              <span>Best</span>
+              <b>{best.toString().padStart(3, "0")}</b>
+            </div>
+            <div className="kid-stage-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  if (status === "running") setStatusRef.current?.("paused");
+                  else if (status === "paused") setStatusRef.current?.("running");
+                }}
+                aria-label={status === "paused" ? "Resume run" : "Pause run"}
+              >
+                {status === "paused" ? <Play size={16} /> : <Pause size={16} />}
+              </button>
+            </div>
+          </div>
+        </div>
 
         {status !== "running" ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#06101f]/76 p-6 text-center backdrop-blur-[2px]">
-            <div className="max-w-sm">
+          <div
+            className="kid-overlay"
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("button")) return;
+              if (status === "paused") setStatusRef.current?.("running");
+              else startRef.current?.();
+            }}
+          >
+            <div className="kid-overlay-card">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6df0df]">
                 {status === "gameover" ? "Run ended" : status === "paused" ? "Course paused" : "Ready to ride"}
               </p>
-              <h2 className="mt-2 font-display text-3xl font-bold text-white">
+              <h2 className="font-display font-bold">
                 {status === "gameover" ? "Try the next crossing." : status === "paused" ? "Hold your lane." : "Choose your rider."}
               </h2>
-              <p className="mt-3 text-sm leading-6 text-[#b9c8dc]">
+              <p>
                 {status === "gameover"
                   ? `You made it to row ${score}. Best ${best}.`
                   : "Arrow keys or taps hop one tile. Space or F gives a fart boost and a little invulnerability."}
               </p>
-              <div className="mt-5 flex justify-center gap-2">
-                <button
-                  type="button"
-                  className={`game-control rounded-full border px-3 py-2 text-sm font-semibold ${character === "apollo" ? "border-[#6df0df] bg-[#6df0df] text-[#06101f]" : "border-[var(--border)] text-white"}`}
-                  onClick={() => changeCharacter("apollo")}
-                >
-                  Apollo
-                </button>
-                <button
-                  type="button"
-                  className={`game-control rounded-full border px-3 py-2 text-sm font-semibold ${character === "rocco" ? "border-[#ffcb75] bg-[#ffcb75] text-[#06101f]" : "border-[var(--border)] text-white"}`}
-                  onClick={() => changeCharacter("rocco")}
-                >
-                  Rocco
-                </button>
-              </div>
+              {status !== "paused" ? (
+                <div className="kid-pick">
+                  {(["apollo", "rocco"] as Character[]).map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={character === id ? "is-on" : ""}
+                      style={character === id ? { borderColor: KIDS[id].accent, background: KIDS[id].accent, color: KIDS[id].ink } : undefined}
+                      onClick={() => changeCharacter(id)}
+                    >
+                      <img src={kidSrc(id, import.meta.env.BASE_URL)} alt="" width={72} height={72} />
+                      {KIDS[id].label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <button
                 type="button"
-                className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#6df0df] px-5 py-3 text-sm font-semibold text-[#06101f]"
+                className="kid-play"
+                style={{ background: KIDS[character].accent, color: KIDS[character].ink }}
                 onClick={() => (status === "paused" ? setStatusRef.current?.("running") : startRef.current?.())}
               >
                 <Play size={16} />
@@ -818,7 +833,10 @@ export function BootyButtScooter() {
           <button
             type="button"
             className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2"
-            onClick={() => setStatusRef.current?.(status === "paused" ? "running" : "paused")}
+            onClick={() => {
+              if (status === "running") setStatusRef.current?.("paused");
+              else if (status === "paused") setStatusRef.current?.("running");
+            }}
           >
             <Pause size={14} />
             {status === "paused" ? "Resume" : "Pause"}

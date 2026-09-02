@@ -51,11 +51,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://beckify.com/games/hexgl</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://beckify.com/games/new-glenn-runner</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

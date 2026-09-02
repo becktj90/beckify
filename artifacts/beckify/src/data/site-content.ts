@@ -96,7 +96,7 @@ export const HOME_NAV_CARDS: HubCard[] = [
   },
   {
     title: "Games",
-    description: "A couple of games to mess around with.",
+    description: "Seven original browser games starring Apollo and Rocco — no ads.",
     href: "/games",
     icon: Gamepad2,
   },
@@ -233,7 +233,7 @@ export const GAMES: Game[] = [
   {
     name: "Booty Butt Scooter",
     description:
-      "Crossy-style scooter hopper starring Apollo and Rocco, with fart boosts, traffic dodges, and score persistence.",
+      "Crossy-style scooter hopper starring Apollo (orange balloon) and Rocco (pink balloon), with fart boosts, traffic dodges, and score persistence.",
     url: "/games/booty-butt-scooter",
   },
   {
@@ -254,18 +254,13 @@ export const GAMES: Game[] = [
   },
   {
     name: "Apollo & Rocco Run",
-    description: "Original Beckify game featuring Apollo and Rocco. Three-lane endless-runner genre trail with jump, slide, KID difficulty, and a local best on this device.",
+    description: "Backyard water-balloon run starring Apollo (orange balloon) and Rocco (pink balloon). Three-lane trail, jump, slide, KID difficulty, and a local best on this device.",
     url: "/games/apollo-rocco-run",
   },
   {
     name: "Pup Planet",
-    description: "Play as Apollo or Rocco, the space pups, mining and building on their own seeded little planet in this first-person WebGL sandbox.",
+    description: "Play as Apollo or Rocco, mining and building on their own seeded little planet in this first-person WebGL sandbox.",
     url: "/games/pup-planet",
-  },
-  {
-    name: "HexGL",
-    description: "A full WebGL futuristic racer by Thibaut Despoulain (BKcore), hosted here under the MIT License.",
-    url: "/games/hexgl",
   },
 ];
 

@@ -56,8 +56,8 @@ export const TUNING = {
 } as const;
 
 export const RIDERS: Record<Rider, { label: string; accent: string; ink: string }> = {
-  apollo: { label: "Apollo", accent: "#6df0df", ink: "#0a0f24" },
-  rocco: { label: "Rocco", accent: "#ffcb75", ink: "#0a0f24" },
+  apollo: { label: "Apollo", accent: "#ff7a2d", ink: "#1a140c" },
+  rocco: { label: "Rocco", accent: "#ff5ea8", ink: "#1a140c" },
 };
 
 export function clamp(value: number, min: number, max: number) {

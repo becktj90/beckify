@@ -54,7 +54,7 @@ const excludedNav = new Set([
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
 ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));
-ok("game count constant is 8", /PUBLIC_GAME_COUNT = 8/.test(siteStats));
+ok("game count constant is 7", /PUBLIC_GAME_COUNT = 7/.test(siteStats));
 ok("calculator count matches live toolbox nav", PUBLIC_CALCULATOR_COUNT === liveCalculatorCount, `${PUBLIC_CALCULATOR_COUNT} vs nav ${liveCalculatorCount}`);
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home names EMP/EMC, homework EE, LP, and number-base", /EMP\/EMC/.test(homeSrc) && /homework EE/.test(homeSrc) && /linear-programming optimizer/.test(homeSrc) && /number-base converter/.test(homeSrc));
@@ -85,8 +85,9 @@ ok("sitemap lists the homework EE set", [
   't("Fiber Link / NA", "sec-fiber-link")',
   't("Gaussian Beam", "sec-gaussian-beam")',
 ].every((entry) => sitemapSrc.includes(entry)));
-const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet", "HexGL"].includes(name));
-ok("site-content lists 8 games", gameNames.length === 8, gameNames.join(", "));
+const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet"].includes(name));
+ok("site-content lists 7 games", gameNames.length === 7, gameNames.join(", "));
+ok("HexGL is not listed", !/name: "HexGL"/.test(siteContent));
 
 console.log("\n--- New Glenn route ---");
 ok("hub Play Now points at /games/new-glenn-runner", /name: "New Glenn Runner"[\s\S]{0,400}url: "\/games\/new-glenn-runner"/.test(siteContent));
