@@ -83,7 +83,7 @@ for (const [query, expectedId] of [['transformer sizing', 'transformer-sizing'],
 }
 
 console.log('\n--- Assistant search: new educational tools ---');
-for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['simplex', 'lp-optimizer'], ['hexadecimal', 'number-base-converter'], ["two's complement", 'number-base-converter']]) {
+for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['simplex', 'lp-optimizer'], ['hexadecimal', 'number-base-converter'], ["two's complement", 'number-base-converter'], ['io list', 'io-list-generator'], ['ethercat', 'io-list-generator'], ['4-20ma', 'signal-scaling'], ['live zero', 'signal-scaling'], ['40001', 'modbus-address'], ['ton', 'plc-timer-preset']]) {
   const results = searchAssistant(query, 6);
   ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
 }

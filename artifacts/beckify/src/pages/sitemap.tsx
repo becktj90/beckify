@@ -146,6 +146,11 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: [
       t("Hazardous Area Lookup", "sec-haz"),
       t("IS Loop Verifier", "sec-isloop"),
+      t("I/O List Generator", "sec-io-list-generator"),
+      t("Process Value / Signal Scaling", "sec-signal-scaling"),
+      t("E-bus / Rack Current Budget", "sec-ebus-budget"),
+      t("Modbus Address Converter", "sec-modbus-address"),
+      t("PLC Timer Preset", "sec-plc-timer-preset"),
     ],
   },
   {
@@ -160,6 +165,11 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Fiber Link / NA", "sec-fiber-link"),
       t("Gaussian Beam", "sec-gaussian-beam"),
       t("Linear Programming Optimizer", "sec-lp-optimizer"),
+      t("I/O List Generator", "sec-io-list-generator"),
+      t("Process Value / Signal Scaling", "sec-signal-scaling"),
+      t("E-bus / Rack Current Budget", "sec-ebus-budget"),
+      t("Modbus Address Converter", "sec-modbus-address"),
+      t("PLC Timer Preset", "sec-plc-timer-preset"),
       t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
       t("Panel Schedule Power Study", "sec-panel-power-study"),
     ],

@@ -58,7 +58,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after hardening", /CACHE_VERSION = 'v14'/.test(sw));
+ok("Toolbox SW cache version bumped after hardening", /CACHE_VERSION = 'v16'/.test(sw));
 ok("Toolbox SW allow-lists CDN hosts", /RUNTIME_HOST_ALLOWLIST/.test(sw) && /cdn\.jsdelivr\.net/.test(sw));
 
 const deploy = read(repo, ".github", "workflows", "deploy.yml");
