@@ -17,6 +17,9 @@ const significantWords = (text: string) =>
  */
 const EXTRA_TAGS: Record<string, string[]> = {
   "ohms-law": ["ohms law", "v i r"],
+  "magnetic-circuit": ["reluctance", "mmf", "flux", "air gap", "fringing", "magnetostatics", "ampere", "magnetic circuit"],
+  "transient-circuits": ["rc transient", "rl transient", "rlc transient", "overdamped", "underdamped", "time constant", "source free"],
+  "phasor-diagram": ["phasor", "voltage triangle", "current triangle", "polar", "delta wye", "lead lag", "power factor"],
   "voltage-drop": ["feeder", "branch", "wire", "awg", "distance"],
   "conduit-fill": ["emt", "raceway", "chapter 9", "40 percent"],
   "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],

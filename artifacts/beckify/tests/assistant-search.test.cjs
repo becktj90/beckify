@@ -58,6 +58,11 @@ const expectResult = [
   ['resonance', 'resonance'],
   ['generator', 'generator-sizing'],
   ['ups sizing', 'ups-sizing'],
+  ['magnetic circuit', 'magnetic-circuit'],
+  ['reluctance', 'magnetic-circuit'],
+  ['transient rlc', 'transient-circuits'],
+  ['phasor diagram', 'phasor-diagram'],
+  ['delta wye', 'phasor-diagram'],
 ];
 for (const [query, expectedId] of expectResult) {
   const results = searchAssistant(query, 6);

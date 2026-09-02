@@ -29,6 +29,9 @@ export const TOOLS = [
   ["transformer-sizing", "Transformer Sizing Calculator", "Select transformer size, primary and secondary protection, and practical conductor options for electrical loads.", "sec-xfmr-size"],
   ["conductor-length-resistance", "Conductor Length by Resistance", "Estimate conductor length from measured resistance with copper and aluminum temperature compensation.", "sec-conductor-length"],
   ["ohms-law", "Ohm's Law Calculator", "Solve voltage, current, resistance, and power relationships for DC and resistive AC circuits.", "sec-ohm"],
+  ["magnetic-circuit", "Magnetic Circuit Workbench", "Homework magnetostatics: series or parallel reluctance, optional air-gap fringing, flux Φ = NI / Rtot, B, H, and MMF drops around the Ampere loop.", "sec-magnetic-circuit"],
+  ["transient-circuits", "Transient Circuit Lab", "Closed-form first-order RC/RL and second-order series or parallel RLC transients for source-step and source-free cases, with a live waveform.", "sec-transient-circuits"],
+  ["phasor-diagram", "Phasor Diagram Workbench", "Interactive series or parallel R-L-C phasors with a live voltage or current triangle, polar RMS, power factor, and balanced Δ-Y impedance conversion.", "sec-phasor-diagram"],
   ["dc-power", "DC Power Calculator", "Calculate voltage, current, resistance, and watts for a direct-current electrical circuit.", "sec-power-dc"],
   ["power-wizard", "AC and DC Power Wizard", "Solve real power, reactive power, apparent power, current, and motor horsepower for DC, single-phase, and three-phase systems.", "sec-power-wizard"],
   ["reactance-impedance", "Reactance and Impedance Calculator", "Calculate capacitive reactance, inductive reactance, and impedance for AC circuits.", "sec-reactance"],
@@ -76,8 +79,8 @@ export const TOOLS = [
 ];
 
 export const CATEGORIES = [
-  ["fundamentals", "Electrical Fundamentals", "Start with voltage, current, power, resistance, and core circuit relationships.", "sec-ohm"],
-  ["ac-circuits", "AC Circuits", "Analyze reactance, impedance, resonance, and power factor in AC networks.", "sec-reactance"],
+  ["fundamentals", "Electrical Fundamentals", "Start with voltage, current, power, resistance, magnetic circuits, and core circuit relationships.", "sec-ohm"],
+  ["ac-circuits", "AC Circuits", "Analyze reactance, impedance, resonance, transients, phasors, and power factor in AC networks.", "sec-reactance"],
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],

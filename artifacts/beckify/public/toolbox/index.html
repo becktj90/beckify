@@ -180,6 +180,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">01 · Core calculations</div>
       <button class="nav-btn" data-target="sec-ohm" data-keywords="#Electronics #Calculators ohms law voltage current resistance">Ohm's Law</button>
+      <button class="nav-btn" data-target="sec-magnetic-circuit" data-keywords="magnetic circuit reluctance flux mmf ampere faraday core air gap fringing B H NI magnetostatics homework">Magnetic Circuit</button>
       <button class="nav-btn" data-target="sec-power-dc" data-keywords="#Electronics #Calculators dc power watts">DC Power</button>
       <button class="nav-btn" data-target="sec-power-wizard" data-keywords="#Electronics #Calculators power current converter ac dc single phase three phase kva kw kvar power factor sine wave">Power Wizard</button>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
@@ -190,6 +191,8 @@
       <div class="sidebar-section-title">02 · Electronics &amp; digital design</div>
       <button class="nav-btn" data-target="sec-reactance" data-keywords="#Electronics #Calculators reactance impedance capacitive inductive">Reactance &amp; Impedance</button>
       <button class="nav-btn" data-target="sec-resonance" data-keywords="#Electronics #Calculators resonance lc tank frequency">Resonance</button>
+      <button class="nav-btn" data-target="sec-phasor-diagram" data-keywords="phasor diagram series parallel RLC voltage triangle current triangle power factor polar RMS lead lag delta wye impedance homework">Phasor Diagram</button>
+      <button class="nav-btn" data-target="sec-transient-circuits" data-keywords="transient circuit RC RL RLC overdamped underdamped critically damped time constant waveform source step source free homework">Transient Circuits</button>
       <button class="nav-btn" data-target="sec-pfc">Power Factor Correction</button>
       <button class="nav-btn" data-target="sec-sp" data-keywords="#Electronics #Calculators series parallel resistance capacitance inductance">Resistance, C, L</button>
       <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
@@ -275,6 +278,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">⚡</span><span class="home-cat-name">Fundamentals</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-ohm">Ohm's Law</a></li>
+            <li><a class="home-tool-link" href="#sec-magnetic-circuit">Magnetic Circuit Workbench</a></li>
             <li><a class="home-tool-link" href="#sec-power-dc">DC Power</a></li>
             <li><a class="home-tool-link" href="#sec-power-wizard">Power Wizard (DC, 1Ø &amp; 3Ø AC)</a></li>
           </ul>
@@ -285,6 +289,8 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-reactance">Reactance &amp; Impedance</a></li>
             <li><a class="home-tool-link" href="#sec-resonance">Resonance</a></li>
+            <li><a class="home-tool-link" href="#sec-phasor-diagram">Phasor Diagram Workbench</a></li>
+            <li><a class="home-tool-link" href="#sec-transient-circuits">Transient Circuit Lab</a></li>
             <li><a class="home-tool-link" href="#sec-pfc">Power Factor Correction</a></li>
             <li><a class="home-tool-link" href="#sec-sp">R, C, L Networks</a></li>
             <li><a class="home-tool-link" href="#sec-555">555 Timer</a></li>
@@ -1147,6 +1153,673 @@
         <div class="card analog-response-card"><div class="card-title">Magnitude &amp; phase response <span id="af_plot_label" class="analog-plot-label"></span></div><div class="card-body"><div id="af_plot" class="analog-plot" role="img" aria-label="Filter magnitude and phase response plot"></div></div></div>
       </div>
     </section>
+
+    <!-- ════════════════════════════════════════
+         MAGNETIC CIRCUIT WORKBENCH
+         ════════════════════════════════════════ -->
+    <section id="sec-magnetic-circuit" class="section">
+      <div class="section-header">
+        <h2>🧲 Magnetic Circuit Workbench</h2>
+        <p>Homework magnetostatics: series or parallel reluctance, optional air gap, Φ = NI / Rtot, B, H, and MMF drops. Not a transformer kVA sizer.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Magnetic circuits</summary>
+          <div class="section-info-body">
+            A magnetic circuit is the Ampere-loop analog of Ohm’s law. MMF F = N I plays the role of voltage, flux Φ plays the role of current, and reluctance R = ℓ / (μ A) plays the role of resistance.<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>R = ℓ / (μ A), with μ = μr μ0 and μ0 = 4π × 10<sup>−7</sup> H/m</li>
+              <li>Series steel: Rsteel = Σ Ri. Parallel steel: 1/Rsteel = Σ 1/Ri</li>
+              <li>Optional air gap sits in series with the steel network: Rtot = Rsteel + Rgap</li>
+              <li>Φ = F / Rtot, B = Φ / A, H = B / μ. Ampere: the MMF drops sum to N I</li>
+              <li>Gap fringing (optional, editable): A_eff = (√A + k ℓ_g)². k = 1 is the square-equivalent first-order start; change k if you have a published geometry factor</li>
+            </ul>
+            <strong>Honest limits:</strong> this tool is linear. Saturation is a Bsat warning, not a B–H curve. Leakage flux, 3-D end effects, and eddy-current heating are out of scope.<br><br>
+            <strong>Citations:</strong> Magdy F. Iskander, Electromagnetic Fields and Waves, 2nd ed., Waveland Press, 2013 (magnetic circuits discussion). Ampere ∮ H · dℓ = N I, Faraday v = N dΦ/dt, and R = ℓ / (μ A) are standard identities. Gap-fringing area growth is generic EE machines-course practice, not a traced publisher figure.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid emp-diagram-grid">
+        <div class="card">
+          <div class="card-title">Laminated core and gap</div>
+          <div class="card-body">
+            <div class="emp-diagram" id="mc_diagram" role="img" aria-label="Laminated magnetic core with air gap and flux loop labeled N I."></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">B vs N I (linear)</div>
+          <div class="card-body">
+            <div class="emp-diagram" id="mc_plot" role="img" aria-label="Flux density versus ampere-turns. Linear because saturation is not modeled."></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Core and network</div>
+          <div class="card-body">
+            <div class="formula-box">
+              R = ℓ / (μ A) &nbsp;|&nbsp; Φ = N I / Rtot &nbsp;|&nbsp; B = Φ / A &nbsp;|&nbsp; H = B / μ<br>
+              Ampere: ∮ H · dℓ = N I
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mc_net">Steel-path network</label>
+                <select id="mc_net">
+                  <option value="series" selected>Series (one flux)</option>
+                  <option value="parallel">Parallel (shared MMF, flux splits)</option>
+                </select>
+              </div>
+              <div>
+                <label for="mc_bsat">Bsat warning (T)</label>
+                <input id="mc_bsat" type="number" value="1.5" min="0" step="any">
+              </div>
+            </div>
+            <div class="note">The air gap, if enabled, is always in series with that steel network — the usual gapped-core model.</div>
+            <div class="input-group">
+              <div>
+                <label for="mc_core_l">Core length ℓ</label>
+                <input id="mc_core_l" type="number" value="20" min="0" step="any">
+              </div>
+              <div>
+                <label for="mc_core_l_u">Length unit</label>
+                <select id="mc_core_l_u">
+                  <option value="cm" selected>cm</option>
+                  <option value="mm">mm</option>
+                  <option value="m">m</option>
+                  <option value="in">in</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mc_core_a">Core area A</label>
+                <input id="mc_core_a" type="number" value="4" min="0" step="any">
+              </div>
+              <div>
+                <label for="mc_core_a_u">Area unit</label>
+                <select id="mc_core_a_u">
+                  <option value="cm2" selected>cm²</option>
+                  <option value="mm2">mm²</option>
+                  <option value="m2">m²</option>
+                  <option value="in2">in²</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mc_core_mu_mode">Permeability entry</label>
+                <select id="mc_core_mu_mode">
+                  <option value="ur" selected>μr (relative)</option>
+                  <option value="mu">μ (H/m)</option>
+                </select>
+              </div>
+              <div id="mc_core_ur_wrap">
+                <label for="mc_core_ur">μr</label>
+                <input id="mc_core_ur" type="number" value="4000" min="0" step="any">
+              </div>
+              <div id="mc_core_mu_wrap" hidden>
+                <label for="mc_core_mu">μ (H/m)</label>
+                <input id="mc_core_mu" type="number" value="0.0050265" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mc_n">Turns N</label>
+                <input id="mc_n" type="number" value="200" min="0" step="any">
+              </div>
+              <div>
+                <label for="mc_i">Current I (A)</label>
+                <input id="mc_i" type="number" value="2" step="any">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Air gap and extra paths</div>
+          <div class="card-body">
+            <div class="cfa-check">
+              <input type="checkbox" id="mc_gap_on" checked>
+              <label for="mc_gap_on" style="margin:0">Include air gap (μ = μ0, series with the steel network)</label>
+            </div>
+            <div id="mc_gap_fields">
+              <div class="input-group">
+                <div>
+                  <label for="mc_gap_l">Gap length ℓg</label>
+                  <input id="mc_gap_l" type="number" value="1" min="0" step="any">
+                </div>
+                <div>
+                  <label for="mc_gap_l_u">Gap length unit</label>
+                  <select id="mc_gap_l_u">
+                    <option value="mm" selected>mm</option>
+                    <option value="cm">cm</option>
+                    <option value="m">m</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cfa-check">
+                <input type="checkbox" id="mc_gap_same_a" checked>
+                <label for="mc_gap_same_a" style="margin:0">Gap geometric area = core area</label>
+              </div>
+              <div class="input-group" id="mc_gap_area_wrap" hidden>
+                <div>
+                  <label for="mc_gap_a">Gap geometric area</label>
+                  <input id="mc_gap_a" type="number" value="4" min="0" step="any">
+                </div>
+                <div>
+                  <label for="mc_gap_a_u">Gap area unit</label>
+                  <select id="mc_gap_a_u">
+                    <option value="cm2" selected>cm²</option>
+                    <option value="mm2">mm²</option>
+                    <option value="m2">m²</option>
+                    <option value="in2">in²</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cfa-check">
+                <input type="checkbox" id="mc_gap_fringe" checked>
+                <label for="mc_gap_fringe" style="margin:0">Fringing correction A_eff = (√A + k ℓg)²</label>
+              </div>
+              <div class="input-group single" id="mc_gap_k_wrap">
+                <div>
+                  <label for="mc_gap_k">Fringing factor k (1 = square-equivalent first order)</label>
+                  <input id="mc_gap_k" type="number" value="1" min="0" step="any">
+                </div>
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="mc_x1_on">
+              <label for="mc_x1_on" style="margin:0">Extra steel path 1</label>
+            </div>
+            <div id="mc_x1_fields" hidden>
+              <div class="input-group">
+                <div>
+                  <label for="mc_x1_l">Path 1 length</label>
+                  <input id="mc_x1_l" type="number" value="20" min="0" step="any">
+                </div>
+                <div>
+                  <label for="mc_x1_l_u">Unit</label>
+                  <select id="mc_x1_l_u">
+                    <option value="cm" selected>cm</option>
+                    <option value="mm">mm</option>
+                    <option value="m">m</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group">
+                <div>
+                  <label for="mc_x1_a">Path 1 area</label>
+                  <input id="mc_x1_a" type="number" value="4" min="0" step="any">
+                </div>
+                <div>
+                  <label for="mc_x1_a_u">Unit</label>
+                  <select id="mc_x1_a_u">
+                    <option value="cm2" selected>cm²</option>
+                    <option value="mm2">mm²</option>
+                    <option value="m2">m²</option>
+                    <option value="in2">in²</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group">
+                <div>
+                  <label for="mc_x1_mu_mode">Path 1 μ</label>
+                  <select id="mc_x1_mu_mode">
+                    <option value="ur" selected>μr</option>
+                    <option value="mu">μ (H/m)</option>
+                  </select>
+                </div>
+                <div id="mc_x1_ur_wrap">
+                  <label for="mc_x1_ur">μr</label>
+                  <input id="mc_x1_ur" type="number" value="4000" min="0" step="any">
+                </div>
+                <div id="mc_x1_mu_wrap" hidden>
+                  <label for="mc_x1_mu">μ (H/m)</label>
+                  <input id="mc_x1_mu" type="number" value="0.005" min="0" step="any">
+                </div>
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="mc_x2_on">
+              <label for="mc_x2_on" style="margin:0">Extra steel path 2</label>
+            </div>
+            <div id="mc_x2_fields" hidden>
+              <div class="input-group">
+                <div>
+                  <label for="mc_x2_l">Path 2 length</label>
+                  <input id="mc_x2_l" type="number" value="20" min="0" step="any">
+                </div>
+                <div>
+                  <label for="mc_x2_l_u">Unit</label>
+                  <select id="mc_x2_l_u">
+                    <option value="cm" selected>cm</option>
+                    <option value="mm">mm</option>
+                    <option value="m">m</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group">
+                <div>
+                  <label for="mc_x2_a">Path 2 area</label>
+                  <input id="mc_x2_a" type="number" value="4" min="0" step="any">
+                </div>
+                <div>
+                  <label for="mc_x2_a_u">Unit</label>
+                  <select id="mc_x2_a_u">
+                    <option value="cm2" selected>cm²</option>
+                    <option value="mm2">mm²</option>
+                    <option value="m2">m²</option>
+                    <option value="in2">in²</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group">
+                <div>
+                  <label for="mc_x2_mu_mode">Path 2 μ</label>
+                  <select id="mc_x2_mu_mode">
+                    <option value="ur" selected>μr</option>
+                    <option value="mu">μ (H/m)</option>
+                  </select>
+                </div>
+                <div id="mc_x2_ur_wrap">
+                  <label for="mc_x2_ur">μr</label>
+                  <input id="mc_x2_ur" type="number" value="4000" min="0" step="any">
+                </div>
+                <div id="mc_x2_mu_wrap" hidden>
+                  <label for="mc_x2_mu">μ (H/m)</label>
+                  <input id="mc_x2_mu" type="number" value="0.005" min="0" step="any">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Results</div>
+          <div class="card-body">
+            <div id="mc_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-magnetic-circuit -->
+
+    <!-- ════════════════════════════════════════
+         TRANSIENT CIRCUIT LAB
+         ════════════════════════════════════════ -->
+    <section id="sec-transient-circuits" class="section">
+      <div class="section-header">
+        <h2>📉 Transient Circuit Lab</h2>
+        <p>Closed-form first-order RC/RL and second-order series or parallel RLC. Source-step or source-free. Time-domain homework — not the resonance calculator, not the MNA simulator.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Lumped transients</summary>
+          <div class="section-info-body">
+            One energy-storage element gives a first-order exponential. Two (L and C) give a second-order characteristic equation s² + 2αs + ω0² = 0.<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>RC: τ = RC, vC(t) = Vf + (vC(0) − Vf) e<sup>−t/τ</sup></li>
+              <li>RL: τ = L/R, iL(t) = If + (iL(0) − If) e<sup>−t/τ</sup></li>
+              <li>Series RLC: α = R/(2L), ω0 = 1/√(LC). Parallel RLC: α = 1/(2RC), same ω0</li>
+              <li>Overdamped α &gt; ω0, critical α = ω0, underdamped α &lt; ω0 with ωd = √(ω0² − α²)</li>
+            </ul>
+            Source-step applies a DC Vs (or Is for parallel) at t = 0 with the entered initial conditions. Source-free dumps stored energy with the forced response set to zero.<br><br>
+            <strong>Citations:</strong> standard lumped circuit-theory identities (Faraday on the inductor, Ampere/KCL on the capacitor node, the RLC characteristic equation). This is not a transmission-line tool; Iskander’s wave chapters are out of scope here.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Circuit and drive</div>
+          <div class="card-body">
+            <div class="formula-box">
+              RC: τ = RC &nbsp;|&nbsp; RL: τ = L/R<br>
+              series: α = R/(2L) &nbsp;|&nbsp; parallel: α = 1/(2RC) &nbsp;|&nbsp; ω0 = 1/√(LC)
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="tc_type">Circuit</label>
+                <select id="tc_type">
+                  <option value="rc">First-order RC</option>
+                  <option value="rl">First-order RL</option>
+                  <option value="series" selected>Series RLC</option>
+                  <option value="parallel">Parallel RLC</option>
+                </select>
+              </div>
+              <div>
+                <label for="tc_drive">Drive</label>
+                <select id="tc_drive">
+                  <option value="step" selected>Source step at t = 0</option>
+                  <option value="free">Source-free (initial conditions only)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" id="tc_r_wrap">
+              <div>
+                <label for="tc_r">R</label>
+                <input id="tc_r" type="number" value="10" min="0" step="any">
+              </div>
+              <div>
+                <label for="tc_r_u">R unit</label>
+                <select id="tc_r_u">
+                  <option value="ohm" selected>Ω</option>
+                  <option value="k">kΩ</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" id="tc_l_wrap">
+              <div>
+                <label for="tc_l">L</label>
+                <input id="tc_l" type="number" value="10" min="0" step="any">
+              </div>
+              <div>
+                <label for="tc_l_u">L unit</label>
+                <select id="tc_l_u">
+                  <option value="mH" selected>mH</option>
+                  <option value="H">H</option>
+                  <option value="uH">µH</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" id="tc_c_wrap">
+              <div>
+                <label for="tc_c">C</label>
+                <input id="tc_c" type="number" value="1" min="0" step="any">
+              </div>
+              <div>
+                <label for="tc_c_u">C unit</label>
+                <select id="tc_c_u">
+                  <option value="uF" selected>µF</option>
+                  <option value="nF">nF</option>
+                  <option value="pF">pF</option>
+                  <option value="F">F</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" id="tc_src_wrap">
+              <div>
+                <label for="tc_src" id="tc_src_label">Voltage step Vs (V)</label>
+                <input id="tc_src" type="number" value="10" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div id="tc_v0_wrap">
+                <label for="tc_v0">vC(0) (V)</label>
+                <input id="tc_v0" type="number" value="0" step="any">
+              </div>
+              <div id="tc_i0_wrap">
+                <label for="tc_i0">iL(0) (A)</label>
+                <input id="tc_i0" type="number" value="0" step="any">
+              </div>
+            </div>
+            <div class="input-group triple">
+              <div>
+                <label for="tc_t0">t start</label>
+                <input id="tc_t0" type="number" value="0" step="any">
+              </div>
+              <div>
+                <label for="tc_t1">t end</label>
+                <input id="tc_t1" type="number" value="2" min="0" step="any">
+              </div>
+              <div>
+                <label for="tc_t_u">Time unit</label>
+                <select id="tc_t_u">
+                  <option value="ms" selected>ms</option>
+                  <option value="s">s</option>
+                  <option value="us">µs</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Waveform</div>
+          <div class="card-body">
+            <div id="tc_wave" class="emp-diagram" role="img" aria-label="Transient waveform versus time."></div>
+            <p style="margin-top:10px;font-size:0.78rem;line-height:1.6;color:var(--fg-muted)">
+              Original SVG — not a lab screenshot. Blue dashed lines mark 10% and 90% of the step; amber is the ~2% settling estimate.
+            </p>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Closed form</div>
+          <div class="card-body">
+            <div id="tc_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-transient-circuits -->
+
+    <!-- ════════════════════════════════════════
+         PHASOR DIAGRAM WORKBENCH
+         ════════════════════════════════════════ -->
+    <section id="sec-phasor-diagram" class="section">
+      <div class="section-header">
+        <h2>∠ Phasor Diagram Workbench</h2>
+        <p>Interactive RMS phasors for a series or parallel R-L-C plus a source. Voltage or current triangle, θ, PF, and S/P/Q. Balanced Δ-Y conversion sits in the side panel — not a 3-phase kVA sizer.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Phasors</summary>
+          <div class="section-info-body">
+            In sinusoidal steady state every derivative becomes a jω multiply. Impedances add in series; admittances add in parallel. The source phasor sits on the real axis so θ is simply arg(I).<br><br>
+            <strong>Formulas:</strong>
+            <ul>
+              <li>Series: Z = R + jωL + 1/(jωC), I = Vs / Z, VR = I R, VL = I jωL, VC = I /(jωC)</li>
+              <li>Parallel: I_R = Vs/R, I_L = Vs/(jωL), I_C = Vs jωC, I = sum</li>
+              <li>S = Vrms Irms*, P = Re(S), Q = Im(S), PF = cos θ</li>
+              <li>Q &gt; 0 lagging (inductive); Q &lt; 0 leading (capacitive)</li>
+              <li>Balanced Δ-Y: ZΔ = 3 Zy</li>
+            </ul>
+            Toggle RMS vs peak on the source; results are reported as RMS and polar. Peak = RMS × √2.<br><br>
+            <strong>Citations:</strong> standard EE phasor analysis. Optional secondary: Magdy F. Iskander, Electromagnetic Fields and Waves, 2nd ed., Waveland Press, 2013 (time-harmonic / phasor-fields chapter) — identities only, not a copy source. This panel does not rebuild the three-phase power wizard.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">R-L-C and source</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Z = R + jωL + 1/(jωC) &nbsp;|&nbsp; I = Vs / Z<br>
+              S = V I* &nbsp;|&nbsp; PF = cos θ &nbsp;|&nbsp; ZΔ = 3 Zy
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="pd_top">Topology</label>
+                <select id="pd_top">
+                  <option value="series" selected>Series</option>
+                  <option value="parallel">Parallel</option>
+                </select>
+              </div>
+              <div>
+                <label for="pd_vs_mode">Source entry</label>
+                <select id="pd_vs_mode">
+                  <option value="rms" selected>Vs RMS</option>
+                  <option value="peak">Vs peak</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="pd_f">Frequency</label>
+                <input id="pd_f" type="number" value="60" min="0" step="any">
+              </div>
+              <div>
+                <label for="pd_f_u">f unit</label>
+                <select id="pd_f_u">
+                  <option value="Hz" selected>Hz</option>
+                  <option value="kHz">kHz</option>
+                  <option value="MHz">MHz</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="pd_vs">Source voltage</label>
+                <input id="pd_vs" type="number" value="120" min="0" step="any">
+              </div>
+              <div>
+                <label for="pd_r">R</label>
+                <input id="pd_r" type="number" value="10" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="pd_r_u">R unit</label>
+                <select id="pd_r_u">
+                  <option value="ohm" selected>Ω</option>
+                  <option value="k">kΩ</option>
+                  <option value="M">MΩ</option>
+                </select>
+              </div>
+              <div>
+                <label for="pd_l">L</label>
+                <input id="pd_l" type="number" value="10" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="pd_l_u">L unit</label>
+                <select id="pd_l_u">
+                  <option value="mH" selected>mH</option>
+                  <option value="H">H</option>
+                  <option value="uH">µH</option>
+                </select>
+              </div>
+              <div>
+                <label for="pd_c">C</label>
+                <input id="pd_c" type="number" value="100" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label for="pd_c_u">C unit</label>
+                <select id="pd_c_u">
+                  <option value="uF" selected>µF</option>
+                  <option value="nF">nF</option>
+                  <option value="pF">pF</option>
+                  <option value="F">F</option>
+                </select>
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="pd_extra_on">
+              <label for="pd_extra_on" style="margin:0">Optional extra branch (series add-on, or extra parallel leg)</label>
+            </div>
+            <div id="pd_extra_fields" hidden>
+              <div class="input-group">
+                <div>
+                  <label for="pd_extra_kind">Extra element</label>
+                  <select id="pd_extra_kind">
+                    <option value="R" selected>Resistor</option>
+                    <option value="L">Inductor</option>
+                    <option value="C">Capacitor</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group" id="pd_extra_r_wrap">
+                <div>
+                  <label for="pd_extra_r">Extra R</label>
+                  <input id="pd_extra_r" type="number" value="5" min="0" step="any">
+                </div>
+                <div>
+                  <label for="pd_extra_r_u">Unit</label>
+                  <select id="pd_extra_r_u">
+                    <option value="ohm" selected>Ω</option>
+                    <option value="k">kΩ</option>
+                    <option value="M">MΩ</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group" id="pd_extra_l_wrap" hidden>
+                <div>
+                  <label for="pd_extra_l">Extra L</label>
+                  <input id="pd_extra_l" type="number" value="5" min="0" step="any">
+                </div>
+                <div>
+                  <label for="pd_extra_l_u">Unit</label>
+                  <select id="pd_extra_l_u">
+                    <option value="mH" selected>mH</option>
+                    <option value="H">H</option>
+                    <option value="uH">µH</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group" id="pd_extra_c_wrap" hidden>
+                <div>
+                  <label for="pd_extra_c">Extra C</label>
+                  <input id="pd_extra_c" type="number" value="10" min="0" step="any">
+                </div>
+                <div>
+                  <label for="pd_extra_c_u">Unit</label>
+                  <select id="pd_extra_c_u">
+                    <option value="uF" selected>µF</option>
+                    <option value="nF">nF</option>
+                    <option value="pF">pF</option>
+                    <option value="F">F</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Phasor diagram</div>
+          <div class="card-body">
+            <div id="pd_diagram" class="emp-diagram" role="img" aria-label="Live SVG phasor diagram."></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Phasor results</div>
+          <div class="card-body">
+            <div id="pd_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid two-col" style="margin-top:18px">
+        <div class="card">
+          <div class="card-title">Balanced Δ-Y impedance</div>
+          <div class="card-body">
+            <div class="formula-box">ZΔ = 3 Zy &nbsp;|&nbsp; Zy = ZΔ / 3 &nbsp;(balanced only)</div>
+            <div class="input-group">
+              <div>
+                <label for="pd_dy_dir">Convert</label>
+                <select id="pd_dy_dir">
+                  <option value="wye-to-delta" selected>Wye → Delta (× 3)</option>
+                  <option value="delta-to-wye">Delta → Wye (÷ 3)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="pd_dy_re">Real part (Ω)</label>
+                <input id="pd_dy_re" type="number" value="10" step="any">
+              </div>
+              <div>
+                <label for="pd_dy_im">Imag part (Ω)</label>
+                <input id="pd_dy_im" type="number" value="4" step="any">
+              </div>
+            </div>
+            <div id="pd_dy_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Δ and Y sketch</div>
+          <div class="card-body">
+            <div id="pd_dy_diagram" class="emp-diagram" role="img" aria-label="Original sketch of a balanced delta mesh and a wye star."></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-phasor-diagram -->
 
     <!-- ════════════════════════════════════════
          BATTERY BUILD DESIGNER
@@ -8404,6 +9077,9 @@
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
 <script src="js/emp-emc.js"></script>
+<script src="js/magnetic-circuit.js"></script>
+<script src="js/transient-circuits.js"></script>
+<script src="js/phasor-diagram.js"></script>
 <script src="js/stem-tools.js"></script>
 <script src="js/lp-optimizer.js"></script>
 <script src="js/base-converter.js"></script>

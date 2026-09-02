@@ -4,6 +4,9 @@
 
   const LESSONS = {
     'sec-ohm': ['Think of a circuit as a water slide', 'V = I R', 'Voltage is the push, resistance is the narrowness of the slide, and current is how much charge gets through each second. Change any one and the other two have to balance.'],
+    'sec-magnetic-circuit': ['Flux is current for magnetics', '\\Phi = \\frac{NI}{R} \\quad R = \\frac{\\ell}{\\mu A}', 'Ampere’s loop is an MMF budget: turns times amps have to cover every H·ℓ drop. Reluctance is the magnetic analog of resistance, and an air gap usually dominates the sum.'],
+    'sec-transient-circuits': ['Energy storage makes time', '\\tau = RC \\quad \\text{or} \\quad L/R', 'A capacitor cannot jump voltage and an inductor cannot jump current. First-order circuits forget exponentially; add the second storage element and you get over, critical, or underdamped ringing.'],
+    'sec-phasor-diagram': ['Sine waves become arrows', 'Z = R + j\\omega L + 1/(j\\omega C)', 'In steady-state AC every derivative is a ninety-degree rotation. Draw the arrows, read θ off the diagram, and power factor is just cos θ.'],
     'sec-stem-tools': ['STEM tools are stories about change', "y' = \\frac{dy}{dt} \\quad \\text{and} \\quad \\Delta x \\approx v\\,\\Delta t", 'A derivative is a speedometer for a quantity. Each solver takes a small step, asks what the world is doing right now, and uses that local answer to predict the next step.'],
     'sec-circuit-sim': ['Kirchhoff is the traffic rule', '\\sum I_{in} = \\sum I_{out}', 'Charge cannot pile up at an ordinary node. The solver adjusts node voltages until every junction has balanced traffic.'],
     'sec-555': ['A capacitor is a bucket for charge', 'I = C\\frac{dV}{dt}', 'A capacitor resists sudden voltage changes because its stored charge must arrive through a finite current. That is why RC circuits make time.'],
@@ -123,6 +126,39 @@
       ],
       examples: ['8-bit two’s complement', 'Hex FF', 'Unsigned decimal 255', 'Signed decimal −1', 'Binary 1111 1111'],
       button: { label: 'Load Signed Example (FF = −1)', action: 'loadBaseConverterExample' }
+    },
+    'sec-magnetic-circuit': {
+      overview: 'A magnetic circuit turns Ampere’s loop into an Ohm’s-law analog: MMF F = N I, flux Φ, and reluctance R = ℓ / (μ A). This workbench is homework magnetostatics for a gapped laminated core — not a transformer kVA sizer.',
+      steps: [
+        'Enter the core length, area, and μr (or μ). Pick series or parallel for extra steel paths.',
+        'Optionally enable the air gap. Fringing uses A_eff = (√A + k ℓg)² with k yours to edit.',
+        'Set turns N and winding current I. Read Rtot, Φ = NI / Rtot, B, H, and the MMF drop on each leg.',
+        'Check that the MMF drops sum to N I (Ampere). Treat Bsat as a warning — saturation is not modeled.'
+      ],
+      examples: ['Core: ℓ = 20 cm, A = 4 cm², μr = 4000', 'Gap: 1 mm, same area, fringing k = 1', 'N = 200, I = 2 A', 'Φ = NI / (Rsteel + Rgap), B = Φ / A'],
+      button: { label: 'Load Example Values', action: 'loadMagneticCircuitExample' }
+    },
+    'sec-transient-circuits': {
+      overview: 'Lumped first-order RC/RL and second-order RLC transients in closed form. Source-step or source-free. This is time-domain homework, not the resonance (f0/Q/BW) calculator and not the MNA circuit simulator.',
+      steps: [
+        'Pick RC, RL, series RLC, or parallel RLC, then source-step or source-free.',
+        'Enter R, L, C with SI prefixes, the source value, and vC(0) / iL(0).',
+        'Read τ or α, ω0, ωd, the damping case, and the closed-form v(t) or i(t).',
+        'Use the waveform markers for 10–90% rise and ~2% settling. Change the t range to zoom.'
+      ],
+      examples: ['Series RLC step: R = 10 Ω, L = 10 mH, C = 1 µF, Vs = 10 V', 'vC(0) = 0, iL(0) = 0', 'α = R/(2L) = 500 /s, ω0 = 10 krad/s → underdamped', 'Waveform drawn from the closed form, not a captured scope shot'],
+      button: { label: 'Load Example Values', action: 'loadTransientExample' }
+    },
+    'sec-phasor-diagram': {
+      overview: 'Steady-state AC phasors for a series or parallel R-L-C plus a source. Live voltage or current triangle, polar RMS, θ, PF, and S = V I*. A balanced Δ-Y panel converts ZΔ ↔ Zy with ZΔ = 3 Zy.',
+      steps: [
+        'Choose series or parallel. Enter frequency, R, L, C, and Vs as RMS or peak.',
+        'Read I, VR, VL, VC in RMS polar, then θ, PF, and S/P/Q. Lead vs lag follows the sign of Q.',
+        'The SVG diagram keeps Vs on the real axis so the triangle is the homework sketch.',
+        'Use the Δ-Y panel for balanced impedance conversion only — not the three-phase kVA wizard.'
+      ],
+      examples: ['Series: 60 Hz, R = 10 Ω, L = 10 mH, C = 100 µF, Vs = 120 V RMS', 'Z = R + jωL + 1/(jωC)', 'S = Vrms Irms*', 'Balanced Δ-Y: ZΔ = 3 Zy'],
+      button: { label: 'Load Example Values', action: 'loadPhasorExample' }
     }
   };
 
