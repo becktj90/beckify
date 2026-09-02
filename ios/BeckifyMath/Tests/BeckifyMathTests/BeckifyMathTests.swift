@@ -125,6 +125,15 @@ final class ACPowerTests: XCTestCase {
             )
         }
     }
+
+    func testFromVIRejectsZeroCurrent() {
+        XCTAssertThrowsError(try DCPower.fromVI(voltage: 120, current: 0)) { error in
+            XCTAssertEqual(
+                error as? CalcError,
+                .outOfRange("Current must not be zero when deriving resistance.")
+            )
+        }
+    }
 }
 
 final class VoltageDropTests: XCTestCase {
@@ -172,6 +181,9 @@ final class ConduitFillTests: XCTestCase {
             XCTAssertEqual(error as? CalcError, .outOfRange("Conductor quantity must be a whole number."))
         }
         XCTAssertEqual(try WholeCount.parse(3, name: "Conductor quantity"), 3)
+        XCTAssertThrowsError(try WholeCount.parse(1e20, name: "Conductor quantity")) { error in
+            XCTAssertEqual(error as? CalcError, .outOfRange("Conductor quantity is out of range."))
+        }
         // Truncating 2.9 → 2 would silently use the 2-wire 31% Table 1 row.
         let twoWire = try ConduitFill.calculate(quantity: 2, size: "12", tradeSize: "1/2")
         XCTAssertEqual(twoWire.maxFillPercent, 31)
@@ -243,12 +255,31 @@ final class NumericParseTests: XCTestCase {
         XCTAssertNil(NumericParse.parse("2.9 conductors", locale: us))
         XCTAssertNil(NumericParse.parse("", locale: us))
         XCTAssertNil(NumericParse.parse("   ", locale: us))
+        XCTAssertNil(NumericParse.parse("12.5.6", locale: us))
+        XCTAssertNil(NumericParse.parse("1e2e3", locale: us))
+        XCTAssertNil(NumericParse.parse("1,,2", locale: us))
     }
 
     func testLocaleDecimalSeparator() {
         let fr = Locale(identifier: "fr_FR")
         XCTAssertEqual(NumericParse.parse("12,5", locale: fr), 12.5)
         XCTAssertNil(NumericParse.parse("12,5abc", locale: fr))
+    }
+
+    func testPersianMinusSignRoundTrip() {
+        let fa = Locale(identifier: "fa_IR")
+        let formatter = NumberFormatter()
+        formatter.locale = fa
+        formatter.numberStyle = .decimal
+        formatter.isLenient = false
+        guard let formatted = formatter.string(from: NSNumber(value: -3.25)) else {
+            XCTFail("fa_IR formatter could not format -3.25")
+            return
+        }
+        XCTAssertEqual(NumericParse.parse(formatted, locale: fa) ?? .nan, -3.25, accuracy: 1e-9)
+        if (formatter.minusSign ?? "").unicodeScalars.contains("\u{2212}") {
+            XCTAssertTrue(formatted.unicodeScalars.contains("\u{2212}"))
+        }
     }
 }
 

@@ -19,8 +19,11 @@ public struct DCPowerResult: Equatable, Sendable {
 public enum DCPower {
     public static func fromVI(voltage: Double, current: Double) throws -> DCPowerResult {
         guard voltage.isFinite, current.isFinite else { throw CalcError.missing("Voltage and current") }
+        guard current != 0 else {
+            throw CalcError.outOfRange("Current must not be zero when deriving resistance.")
+        }
         let p = voltage * current
-        let r = current != 0 ? voltage / current : Double.nan
+        let r = voltage / current
         return DCPowerResult(power: p, voltage: voltage, current: current, resistance: r, formula: "P = V × I")
     }
 

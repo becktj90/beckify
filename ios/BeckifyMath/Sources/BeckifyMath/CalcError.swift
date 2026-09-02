@@ -83,6 +83,9 @@ public enum WholeCount {
         guard value == whole else {
             throw CalcError.outOfRange("\(name) must be a whole number.")
         }
-        return Int(whole)
+        guard let count = Int(exactly: whole) else {
+            throw CalcError.outOfRange("\(name) is out of range.")
+        }
+        return count
     }
 }

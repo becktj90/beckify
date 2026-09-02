@@ -23,7 +23,9 @@ struct TransformerView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 FormulaCard(
-                    text: "I = kVA × 1000 ÷ (√3 × V)    OCPD per 450.3(B)",
+                    text: system == .threePhase
+                        ? "I = kVA × 1000 ÷ (√3 × V)    OCPD per 450.3(B)"
+                        : "I = kVA × 1000 ÷ V    OCPD per 450.3(B)",
                     citation: "Note 1 allows the next standard size up only on 125% rows. 167% and 300% are ceilings."
                 )
                 Picker("System", selection: $system) {
