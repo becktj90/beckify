@@ -195,9 +195,13 @@ export function KidsSpaceShooter() {
       beep(95, 0.18, 0.05, "sawtooth");
       paintHud();
       if (currentHull <= 0) {
-        const recorded = recordRun(localStorage, points, currentWave);
-        setBest(recorded.best);
-        setBoard(recorded.board);
+        try {
+          const recorded = recordRun(localStorage, points, currentWave);
+          setBest(recorded.best);
+          setBoard(recorded.board);
+        } catch {
+          setBest((current) => Math.max(current, points));
+        }
         gameStatus("gameover");
         input.current = emptyInput();
       }
@@ -614,9 +618,8 @@ export function KidsSpaceShooter() {
             {status !== "playing" && (
               <div
                 className="cosmic-ready"
-                onPointerDown={(event) => {
+                onClick={(event) => {
                   if ((event.target as HTMLElement).closest("button")) return;
-                  event.preventDefault();
                   overlayAction();
                 }}
               >

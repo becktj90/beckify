@@ -74,4 +74,11 @@ assert.equal(board.length, 5, 'local board keeps a short kid-friendly top five')
 assert.equal(board[0].score, 1500);
 assert.ok(board.every((entry) => entry.score !== 50), 'low scores fall off the board');
 
+const blocked = {
+  getItem() { throw new Error('blocked'); },
+  setItem() { throw new Error('blocked'); },
+};
+assert.deepEqual(cadet.loadScores(blocked), { best: 0, board: [] });
+assert.doesNotThrow(() => cadet.recordRun(blocked, 100, 1, 1));
+
 console.log('Cosmic Cadet kid-play helpers passed');

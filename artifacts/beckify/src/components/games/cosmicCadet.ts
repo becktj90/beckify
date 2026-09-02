@@ -83,11 +83,15 @@ function parseBoard(raw: string | null): BoardEntry[] {
 }
 
 export function loadScores(storage: StorageLike): { best: number; board: BoardEntry[] } {
-  const storedBest = Number(storage.getItem(BEST_KEY) || 0);
-  const best = Number.isFinite(storedBest) && storedBest >= 0 ? storedBest : 0;
-  let board = parseBoard(storage.getItem(BOARD_KEY));
-  if (board.length === 0 && best > 0) board = [{ score: best, wave: 1, at: 0 }];
-  return { best: Math.max(best, board[0]?.score ?? 0), board };
+  try {
+    const storedBest = Number(storage.getItem(BEST_KEY) || 0);
+    const best = Number.isFinite(storedBest) && storedBest >= 0 ? storedBest : 0;
+    let board = parseBoard(storage.getItem(BOARD_KEY));
+    if (board.length === 0 && best > 0) board = [{ score: best, wave: 1, at: 0 }];
+    return { best: Math.max(best, board[0]?.score ?? 0), board };
+  } catch {
+    return { best: 0, board: [] };
+  }
 }
 
 export function recordRun(storage: StorageLike, score: number, wave: number, at = Date.now()) {
