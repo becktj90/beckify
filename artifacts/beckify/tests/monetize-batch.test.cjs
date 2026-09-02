@@ -50,7 +50,7 @@ const { PUBLIC_CALCULATOR_COUNT } = require(path.join(root, "src/data/toolbox-to
 const navTargets = [...toolboxHtml.matchAll(/<button class="nav-btn"[^>]*data-target="([^"]+)"/g)].map((m) => m[1]);
 const excludedNav = new Set([
   "sec-wire-ref", "sec-motor-ref", "sec-conduit-ref", "sec-conduit-guide",
-  "sec-ip-rating", "sec-nema-class", "sec-nec-tables", "sec-projects",
+  "sec-ip-rating", "sec-nema-class", "sec-nema-wiring", "sec-nec-tables", "sec-projects",
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
 ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));
@@ -76,7 +76,10 @@ ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATO
 ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
 ok("sitemap lists EMP/EMC with a working hash link", sitemapSrc.includes('t("EMP / EMC Shielding", "sec-emp-emc")'));
 ok("sitemap lists LP optimizer with a working hash link", sitemapSrc.includes('t("Linear Programming Optimizer", "sec-lp-optimizer")'));
-ok("sitemap lists number-base converter with a working hash link", sitemapSrc.includes('t("Number-Base Converter", "sec-base-converter")'));
+ok("sitemap lists cable schedule with a working hash link", sitemapSrc.includes('t("Cable Schedule Generator", "sec-cable-schedule")'));
+ok("sitemap lists battery bank with a working hash link", sitemapSrc.includes('t("Battery Bank Calculator", "sec-battery-bank")'));
+ok("sitemap lists motor nameplate with a working hash link", sitemapSrc.includes('t("Motor Nameplate Analyzer", "sec-motor-nameplate")'));
+ok("sitemap lists NEMA wiring with a working hash link", sitemapSrc.includes('t("NEMA Wiring & Color Codes", "sec-nema-wiring")'));
 ok("sitemap lists the homework EE set", [
   't("Magnetic Circuit Workbench", "sec-magnetic-circuit")',
   't("Phasor Diagram Workbench", "sec-phasor-diagram")',
