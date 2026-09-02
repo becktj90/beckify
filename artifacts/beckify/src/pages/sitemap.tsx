@@ -102,6 +102,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Wire Size & Ampacity", "sec-wire-select"),
       t("Short Circuit", "sec-sc"),
       t("Load Factors & Capacity", "sec-load-factors"),
+      t("Torque Lookup", "sec-torque-lookup"),
     ],
   },
   {
@@ -128,7 +129,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     label: "NEC Specialized", hue: HUES.violet, anchor: "sec-lighting-opt",
     tools: [
       t("Lighting VD Optimizer", "sec-lighting-opt"),
-      t("Building Load Calculator", "sec-bldg-load"),
+      t("Load Calculation Worksheet", "sec-bldg-load"),
     ],
   },
   {
@@ -182,6 +183,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Conduit Fill Tables", "sec-conduit-ref"),
       t("IP Rating Chart", "sec-ip-rating"),
       t("NEMA Enclosures", "sec-nema-class"),
+      t("Wire colors (NEC / UL 508A)", "sec-wire-colors"),
       t("NEC Code Tables", "sec-nec-tables"),
     ],
   },

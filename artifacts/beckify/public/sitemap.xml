@@ -271,7 +271,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/load-calculation-worksheet/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/load-factors-capacity/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/torque-lookup/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

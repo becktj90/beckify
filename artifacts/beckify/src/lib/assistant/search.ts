@@ -38,6 +38,10 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "ebus-budget": ["ebus", "e-bus", "rack current", "el9410", "milliamp budget", "coupler current"],
   "modbus-address": ["modbus", "40001", "400001", "holding register", "function code", "coil address", "pdu"],
   "plc-timer-preset": ["ton", "tof", "rto", "timer preset", "timebase", "plc timer"],
+  "building-load": ["load calculation", "nec 220", "220.42", "demand factor", "feeder load", "service load", "worksheet"],
+  "load-calculation-worksheet": ["load calculation", "nec 220", "220.42", "220.82", "demand factor", "worksheet"],
+  "torque-lookup": ["torque", "lug", "terminal", "ul 486", "in-lb", "tightening torque", "split bolt"],
+  "wire-colors": ["wire color", "nec 200.6", "250.119", "110.15", "high-leg", "ul 508a", "yellow interlock", "control panel"],
 };
 
 /**
@@ -61,7 +65,7 @@ const REFERENCE_DOCUMENTS: AssistantDocument[] = REFERENCE_TABLES.map(([slug, ti
   title,
   description,
   href: `/toolbox/#${anchor}`,
-  tags: significantWords(title),
+  tags: [...significantWords(title), ...(EXTRA_TAGS[slug] ?? [])],
   concepts: significantWords(description).slice(0, 8),
   kind: "reference" as const,
 }));

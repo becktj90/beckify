@@ -216,8 +216,9 @@
       <button class="nav-btn" data-target="sec-sc" data-keywords="#PowerDistribution #NEC #Calculators short circuit fault current interrupting rating">Short Circuit</button>
       <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
       <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
-      <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
+      <button class="nav-btn" data-target="sec-bldg-load" data-keywords="load calculation worksheet nec 220 demand factor lighting receptacle kitchen hvac feeder service building load">Load Calculation Worksheet</button>
       <button class="nav-btn" data-target="sec-load-factors" data-keywords="demand factor diversity factor coincidence factor load factor projected growth capacity factor connected load maximum demand kva">Demand, Diversity &amp; Growth</button>
+      <button class="nav-btn" data-target="sec-torque-lookup" data-keywords="torque lookup lug terminal tightening ul 486a 486b in-lb newton meter fastener sae grade metric class">Torque Lookup</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">04 · System planning</div>
@@ -255,6 +256,7 @@
       <button class="nav-btn" data-target="sec-conduit-guide" data-keywords="conduit fittings guide EMT IMC RMC PVC FMC LFMC ENT HDPE type selection NEC AFSPCMAN 91-710 NASA AF space force">Conduit &amp; Fittings Guide</button>
       <button class="nav-btn" data-target="sec-ip-rating">IP Rating Chart</button>
       <button class="nav-btn" data-target="sec-nema-class">NEMA Enclosures</button>
+      <button class="nav-btn" data-target="sec-wire-colors" data-keywords="wire color nec ul 508a grounded white gray egc green high-leg orange 200.6 250.119 110.15 control panel yellow interlock">Wire colors (NEC / UL 508A)</button>
       <button class="nav-btn" data-target="sec-nec-tables">NEC Code Tables</button>
       <button class="nav-btn" data-target="sec-projects" data-keywords="saved jobs projects history save load offline storage preferences units imperial metric game statistics high scores">Saved Jobs &amp; Settings</button>
     </div>
@@ -279,7 +281,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">60 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">61 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -324,6 +326,7 @@
             <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing &amp; Protection</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
             <li><a class="home-tool-link" href="#sec-load-factors">Demand, Diversity &amp; Growth</a></li>
+            <li><a class="home-tool-link" href="#sec-torque-lookup">Torque Lookup</a></li>
           </ul>
         </div>
 
@@ -376,6 +379,7 @@
             <li><a class="home-tool-link" href="#sec-conduit-guide">Conduit &amp; Fittings Guide</a></li>
             <li><a class="home-tool-link" href="#sec-ip-rating">IP Rating Chart</a></li>
             <li><a class="home-tool-link" href="#sec-nema-class">NEMA Enclosures</a></li>
+            <li><a class="home-tool-link" href="#sec-wire-colors">Wire colors (NEC / UL 508A)</a></li>
             <li><a class="home-tool-link" href="#sec-nec-tables">NEC Code Tables</a></li>
           </ul>
         </div>
@@ -426,7 +430,7 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-nec">NEC Circuit Calc</a></li>
             <li><a class="home-tool-link" href="#sec-lighting-opt">Lighting VD Optimizer</a></li>
-            <li><a class="home-tool-link" href="#sec-bldg-load">Building Load Calc</a></li>
+            <li><a class="home-tool-link" href="#sec-bldg-load">Load Calculation Worksheet</a></li>
           </ul>
         </div>
 
@@ -9172,53 +9176,108 @@
     </section>
 
     <!-- ════════════════════════════════════════
-         BUILDING SERVICE LOAD CALCULATOR (NEC 220)
+         LOAD CALCULATION WORKSHEET (NEC 220)
          ════════════════════════════════════════ -->
     <section id="sec-bldg-load" class="section">
       <div class="section-header">
-        <h2>&#127970; Building Service Load Calculator (NEC Art. 220)</h2>
-        <p>Calculate general lighting load and receptacle demand load per NEC Article 220 for service and feeder sizing.</p>
+        <h2>Load Calculation Worksheet</h2>
+        <p>Row-based feeder / service worksheet. Connected VA, 220-style demand you can see and edit, phase amps, unbalance, and a spare/future adder. Design aid — not a PE service calculation. Old slugs <code>building-load</code> and this page are the same job.</p>
         <details class="section-info">
-          <summary>ℹ More Info — NEC 220 Building Load</summary>
+          <summary>ℹ More Info — articles actually coded</summary>
           <div class="section-info-body">
-            <strong>NEC Article 220</strong> provides the standard method for calculating branch-circuit, feeder, and service loads in buildings.<br><br>
-            <strong>General Lighting Load (NEC 220.12):</strong><ul>
-              <li>Industrial: 1.0 VA per sq ft (NEC Table 220.12)</li>
-              <li>Office: 3.5 VA per sq ft (NEC Table 220.12)</li>
-              <li>Continuous lighting: apply 125% multiplier for OCPD sizing (NEC 210.20)</li>
+            Only these NEC 220 pieces are implemented — nothing else is implied:<ul>
+              <li><strong>220.42</strong> — general lighting demand-factor table (dwelling / hospital / hotel / warehouse / all others). Factors are shown and each row can override them.</li>
+              <li><strong>220.52</strong> — dwelling standard method: kitchen / small-appliance and receptacle rows ride with lighting through 220.42.</li>
+              <li><strong>220.53</strong> — dwelling: 75% on four or more other / appliance rows.</li>
+              <li><strong>220.54</strong> — dryer rows use the VA you enter (enter the larger of 5 kW or nameplate).</li>
+              <li><strong>220.82</strong> — optional dwelling: 100% of the first 10 kVA of general loads + 40% of the remainder; HVAC stays at 100% of entered VA.</li>
             </ul>
-            <strong>Receptacle Load (NEC 220.14(I)):</strong><ul>
-              <li>Each outlet = 180 VA per NEC 220.14(I)</li>
-              <li>First 10 kVA of receptacle load: 100% demand factor</li>
-              <li>Remainder above 10 kVA: 50% demand factor (NEC Table 220.44)</li>
-            </ul>
-            <strong>Result:</strong> Total calculated load is used to size service entrance conductors, main breaker, and feeders.
+            Continuous-type rows apply a 125% sizing check so you can see it. Demand / diversity / growth from measured kVA still lives on <a href="#sec-load-factors">Demand, Diversity &amp; Growth</a> — this is not a third peer calculator. Last sheet is stored in localStorage on this device. No customer workbook rows are preloaded.
           </div>
         </details>
       </div>
       <div class="card-grid">
-
-        <div class="card">
-          <div class="card-title">Facility Parameters</div>
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Sheet settings</div>
           <div class="card-body">
-            <div class="formula-box">
-              Lighting VA = sq ft &times; VA/sq ft<br>
-              Receptacle VA = outlets &times; 180 VA<br>
-              Demand: first 10 kVA @ 100%, remainder @ 50%
+            <div class="input-group">
+              <div>
+                <label for="lw_method">Method</label>
+                <select id="lw_method">
+                  <option value="commercial">Commercial / general — 220.42 on lighting</option>
+                  <option value="dwelling">Dwelling standard — 220.42 / 220.52 / 220.53 / 220.54</option>
+                  <option value="dwelling-optional">Optional dwelling — 220.82</option>
+                </select>
+              </div>
+              <div>
+                <label for="lw_occupancy">220.42 occupancy table</label>
+                <select id="lw_occupancy">
+                  <option value="other">All others (100%)</option>
+                  <option value="dwelling">Dwelling units</option>
+                  <option value="hospital">Hospitals</option>
+                  <option value="hotel">Hotels / motels</option>
+                  <option value="warehouse">Warehouses (storage)</option>
+                </select>
+              </div>
             </div>
             <div class="input-group">
               <div>
-                <label>Facility Square Footage</label>
+                <label for="lw_voltage">Feeder / service voltage (V)</label>
+                <input id="lw_voltage" type="number" min="1" step="any" value="208">
+              </div>
+              <div>
+                <label for="lw_system">System</label>
+                <select id="lw_system">
+                  <option value="3ph" selected>3Ø</option>
+                  <option value="1ph">1Ø</option>
+                </select>
+              </div>
+              <div>
+                <label for="lw_spare">Spare / future adder (%)</label>
+                <input id="lw_spare" type="number" min="0" step="any" value="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Load rows</div>
+          <div class="card-body">
+            <p class="note">Description, type, qty, VA / W / A, phase (A/B/C or 1Ø/3Ø), optional demand-factor override (enter 0.35 or 35). DF override wins over the coded 220 factor for that row.</p>
+            <div class="ref-table-wrap" id="lw_rows"></div>
+            <div class="lw-actions">
+              <button type="button" class="btn btn-sm" id="lw_add">Add row</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lw_clear">Clear sheet</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lw_export_csv">Export CSV</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lw_export_xlsx">Export xlsx</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Results and math</div>
+          <div class="card-body">
+            <div id="lw_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Optional VA/ft² seed (does not replace the sheet)</div>
+          <div class="card-body">
+            <p class="note">Adds lighting and receptacle rows from area and outlet count. Not a 220.12 / 220.14 service calculation by itself.</p>
+            <div class="input-group">
+              <div>
+                <label for="bl_sqft">Area (ft²)</label>
                 <input type="number" id="bl_sqft" placeholder="e.g. 5000" step="any" min="1">
               </div>
               <div>
-                <label>Receptacle (Outlet) Count</label>
+                <label for="bl_outlets">Receptacle count</label>
                 <input type="number" id="bl_outlets" placeholder="e.g. 80" step="1" min="0">
               </div>
             </div>
-            <div class="input-group single">
+            <div class="input-group">
               <div>
-                <label>Occupancy Type</label>
+                <label for="bl_occupancy">VA/ft² occupancy (seed only)</label>
                 <select id="bl_occupancy">
                   <option value="industrial">Industrial (1.0 VA/sq ft)</option>
                   <option value="office">Office / Commercial (3.5 VA/sq ft)</option>
@@ -9231,47 +9290,26 @@
             </div>
             <div class="input-group">
               <div>
-                <label>Service Voltage (V, L-L)</label>
+                <label for="bl_voltage">Legacy voltage field</label>
                 <select id="bl_voltage">
-                  <option value="208">208 V (120/208Y)</option>
-                  <option value="480" selected>480 V (277/480Y)</option>
-                  <option value="240">240 V (1&#8709; or 3&#8709; delta)</option>
+                  <option value="208">208 V</option>
+                  <option value="480" selected>480 V</option>
+                  <option value="240">240 V</option>
                 </select>
               </div>
               <div>
-                <label>Phases</label>
+                <label for="bl_phases">Legacy phases field</label>
                 <select id="bl_phases">
                   <option value="3" selected>3-Phase</option>
                   <option value="1">1-Phase</option>
                 </select>
               </div>
             </div>
-            <button class="btn btn-accent" onclick="calcBuildingLoad()">&#9654; Calculate Load</button>
+            <button type="button" class="btn btn-sm" id="lw_seed_sqft">Add seed rows to sheet</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="calcBuildingLoad()">Legacy lighting + receptacle box</button>
             <div id="bl_result" class="result"></div>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-title">NEC 220 Reference</div>
-          <div class="card-body">
-            <div class="formula-box">
-              <strong>NEC Table 220.12 — Lighting Loads (VA/sq ft):</strong><br>
-              Industrial:    1.0 &nbsp;|&nbsp; Warehouse: 0.25<br>
-              Office/Banks:  3.5 &nbsp;|&nbsp; Retail:    3.0<br>
-              School:        3.0 &nbsp;|&nbsp; Hospital:  2.0<br>
-              Residential:   3.0<br><br>
-              <strong>NEC 220.14(I) — Receptacles:</strong><br>
-              180 VA per outlet (duplex counts as one)<br><br>
-              <strong>NEC Table 220.44 — Receptacle Demand:</strong><br>
-              First 10 kVA: 100%<br>
-              Over 10 kVA: 50%<br><br>
-              <strong>Service Amps (3&#8709;):</strong><br>
-              I = Total VA / (1.732 &times; V<sub>L-L</sub>)
-            </div>
-            <div class="note">&#9432; This calculation covers general lighting and receptacle loads only. Add HVAC, motor, and special loads separately per NEC 220.50–220.60 before sizing the service.</div>
-          </div>
-        </div>
-
       </div>
     </section>
 
@@ -9281,7 +9319,7 @@
     <section id="sec-load-factors" class="section">
       <div class="section-header">
         <h2>📊 Demand, Diversity &amp; Growth Planner</h2>
-        <p>Turn connected load, measured demand, and an explicit growth assumption into transparent planning factors and a capacity forecast.</p>
+        <p>Turn connected load, measured demand, and an explicit growth assumption into transparent planning factors and a capacity forecast. For a row-based NEC 220 sheet, use the <a href="#sec-bldg-load">Load Calculation Worksheet</a> — this is the same job family, not a third peer.</p>
         <details class="section-info">
           <summary>ℹ Definitions and what to enter</summary>
           <div class="section-info-body">
@@ -9605,6 +9643,152 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TORQUE LOOKUP
+         ════════════════════════════════════════ -->
+    <section id="sec-torque-lookup" class="section">
+      <div class="section-header">
+        <h2>Torque Lookup</h2>
+        <p>Panel-shop and field lookup: typical terminal / lug tightening torque from published UL 486A-B tables, plus a SAE / metric fastener chart. Manufacturer marking on the device wins. Not a calibrated torque-tool substitute.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — sources and limits</summary>
+          <div class="section-info-body">
+            <strong>Terminal / lug:</strong> typical values vs conductor size and screw type reprinted from <strong>UL 486A-B</strong> (the same tables appear as NEC Informative Annex I). Column B–style pocket-ref numbers when the lug is unmarked. in·lb and N·m.<br><br>
+            <strong>Fastener:</strong> typical handbook SAE grade / metric class vs size, dry vs lubricated (lubed shown at 75% of dry). A lookup, not a clamp-load study or FEA.<br><br>
+            If the device, lug, or joint spec is marked, use that value.
+          </div>
+        </details>
+      </div>
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-tq-lug">Terminal / lug</button>
+          <button class="tab-btn" data-tab="tab-tq-fastener">Fastener</button>
+        </div>
+        <div id="tab-tq-lug" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Look up a conductor</div>
+              <div class="card-body">
+                <div class="input-group">
+                  <div>
+                    <label for="tq_size">Conductor size</label>
+                    <input id="tq_size" type="text" placeholder="e.g. 8 AWG or 4/0" list="tq_size_list">
+                    <datalist id="tq_size_list">
+                      <option value="10 AWG"></option>
+                      <option value="8 AWG"></option>
+                      <option value="6 AWG"></option>
+                      <option value="4 AWG"></option>
+                      <option value="2 AWG"></option>
+                      <option value="1/0"></option>
+                      <option value="4/0"></option>
+                      <option value="250 kcmil"></option>
+                      <option value="500 kcmil"></option>
+                    </datalist>
+                  </div>
+                  <div>
+                    <label for="tq_screw">Screw / connector</label>
+                    <select id="tq_screw">
+                      <option value="slotNarrow">Slot, narrow</option>
+                      <option value="slotWide">Slot, wide</option>
+                      <option value="hex">Hex / socket</option>
+                      <option value="splitBolt">Split-bolt</option>
+                      <option value="other">Other connector</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="lw-actions">
+                  <button type="button" class="btn" id="tq_lookup">Look up</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="tq_print">Print table</button>
+                </div>
+                <div id="tq_lug_result" class="result" aria-live="polite"></div>
+                <p class="note">Cite UL 486A-B. Manufacturer marking on the device wins. These are typical when the lug is unmarked.</p>
+              </div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">UL 486A-B typical table (search)</div>
+              <div class="card-body">
+                <div class="input-group single">
+                  <div>
+                    <label for="tq_search">Filter by AWG / kcmil</label>
+                    <input id="tq_search" type="search" placeholder="8, 4/0, 250…">
+                  </div>
+                </div>
+                <div class="ref-table-wrap" id="tq_lug_table"></div>
+                <p class="note">Narrow slot = #10 and larger, slot ≤ 0.047 in wide and ≤ 0.25 in long. Wide slot = larger slot. Hex / split-bolt / other follow the published typical columns.</p>
+              </div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">Hex socket by size (UL 486A-B connecting hardware)</div>
+              <div class="card-body">
+                <div class="ref-table-wrap" id="tq_hex_table"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="tab-tq-fastener" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">SAE and metric typicals</div>
+              <div class="card-body">
+                <label><input type="checkbox" id="tq_lube"> Lubricated (75% of dry)</label>
+                <p class="note">Typical handbook values. Not a calibrated torque-tool substitute and not a FEA or clamp-load calculation.</p>
+                <h3 class="wc-system-title">SAE coarse (ft·lb)</h3>
+                <div class="ref-table-wrap" id="tq_sae_table"></div>
+                <h3 class="wc-system-title">Metric coarse (N·m)</h3>
+                <div class="ref-table-wrap" id="tq_metric_table"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         WIRE COLORS — NEC / UL 508A
+         ════════════════════════════════════════ -->
+    <section id="sec-wire-colors" class="section">
+      <div class="section-header">
+        <h2>Wire colors (NEC / UL 508A)</h2>
+        <p>Phone-friendly color reference. CODE rows cite NEC identification rules. Hot colors are industry convention unless a row says otherwise. UL 508A is industrial control panel practice — not NEC-mandated hot colors, and not a substitute for the standard.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — code vs convention</summary>
+          <div class="section-info-body">
+            <strong>CODE:</strong> white / gray grounded (200.6); green / green-yellow / bare EGC (250.119); orange high-leg (110.15); 210.5(C) identification of ungrounded conductors where more than one nominal voltage system is present.<br><br>
+            <strong>CONVENTION, not code:</strong> black / red / blue on 208Y/120; brown / orange / yellow on 480Y/277; and other “typical” hot colors. The NEC does not assign those hot colors.
+          </div>
+        </details>
+      </div>
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-wc-nec">NEC</button>
+          <button class="tab-btn" data-tab="tab-wc-ul">UL 508A</button>
+        </div>
+        <div id="tab-wc-nec" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">Articles actually cited</div>
+              <div class="card-body" id="wc_nec_notes"></div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">System color charts</div>
+              <div class="card-body" id="wc_nec_systems"></div>
+            </div>
+          </div>
+        </div>
+        <div id="tab-wc-ul" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">UL 508A industrial control panel — internal wiring</div>
+              <div class="card-body">
+                <p class="note">UL 508A 3rd Edition, sections <strong>66.5</strong> (power circuits) and <strong>66.9</strong> (control circuits), including the April 2020 color-coding revision. Yellow / orange foreign-voltage identification is a safety callout: that circuit may be live when the disconnect is off. This is <strong>not</strong> NEC-mandated hot colors and is <strong>not</strong> a substitute for the standard.</p>
+                <div class="wc-swatch-grid" id="wc_ul_grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -10029,6 +10213,9 @@
 <script src="js/ebus-budget.js"></script>
 <script src="js/modbus-address.js"></script>
 <script src="js/plc-timer-preset.js"></script>
+<script src="js/torque-lookup.js"></script>
+<script src="js/load-worksheet.js"></script>
+<script src="js/wire-colors.js"></script>
 <script src="js/math-explanations.js"></script>
 <script src="js/result-visuals.js"></script>
 <script src="js/icons.js"></script>

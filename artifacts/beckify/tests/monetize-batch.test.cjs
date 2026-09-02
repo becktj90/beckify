@@ -51,6 +51,7 @@ const navTargets = [...toolboxHtml.matchAll(/<button class="nav-btn"[^>]*data-ta
 const excludedNav = new Set([
   "sec-wire-ref", "sec-motor-ref", "sec-conduit-ref", "sec-conduit-guide",
   "sec-ip-rating", "sec-nema-class", "sec-nec-tables", "sec-projects",
+  "sec-wire-colors",
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
 ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));

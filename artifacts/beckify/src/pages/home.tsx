@@ -154,6 +154,9 @@ export default function Home() {
                     { href: "/toolbox/#sec-ebus-budget", label: "E-bus budget" },
                     { href: "/toolbox/#sec-modbus-address", label: "Modbus address" },
                     { href: "/toolbox/#sec-plc-timer-preset", label: "PLC timer" },
+                    { href: "/toolbox/#sec-torque-lookup", label: "Torque lookup" },
+                    { href: "/toolbox/#sec-bldg-load", label: "Load worksheet" },
+                    { href: "/toolbox/#sec-wire-colors", label: "Wire colors" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}

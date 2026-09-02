@@ -33,7 +33,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v17';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -89,6 +89,9 @@ const SHELL = [
   './js/ebus-budget.js',
   './js/modbus-address.js',
   './js/plc-timer-preset.js',
+  './js/torque-lookup.js',
+  './js/load-worksheet.js',
+  './js/wire-colors.js',
   './js/math-explanations.js',
   './js/analog-schematics.js',
   './js/analog-tools.js',
