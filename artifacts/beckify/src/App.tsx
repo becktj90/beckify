@@ -1,22 +1,40 @@
+import { Suspense, lazy } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
-import AboutPage from "@/pages/about";
-import ProjectsPage from "@/pages/projects";
-import GamesPage from "@/pages/games";
-import SiteMapPage from "@/pages/sitemap";
-import CosmicCadetPage from "@/pages/cosmic-cadet";
-import BootyButtScooterPage from "@/pages/booty-butt-scooter";
-import FingerRunnerPage from "@/pages/finger-runner";
-import TootTroopersPage from "@/pages/toot-troopers";
-import PupPlanetPage from "@/pages/pup-planet";
-import HexGLPage from "@/pages/hexgl";
-import VespaP200EPage from "@/pages/vespa-p200e";
-import GearPage from "@/pages/gear";
-import ControlSystemsPage from "@/pages/control-systems";
+
+/**
+ * Every route besides Home is code-split: without this, visiting the
+ * voltage-drop calculator (or any single page) downloaded every game engine,
+ * three.js, recharts, and the control-systems simulator in one 1.7MB chunk.
+ * Home stays a static import — it's the most common entry point, and lazy-
+ * loading it would add a chunk fetch to the very first paint for no benefit.
+ */
+const NotFound = lazy(() => import("@/pages/not-found"));
+const AboutPage = lazy(() => import("@/pages/about"));
+const ProjectsPage = lazy(() => import("@/pages/projects"));
+const GamesPage = lazy(() => import("@/pages/games"));
+const SiteMapPage = lazy(() => import("@/pages/sitemap"));
+const CosmicCadetPage = lazy(() => import("@/pages/cosmic-cadet"));
+const BootyButtScooterPage = lazy(() => import("@/pages/booty-butt-scooter"));
+const FingerRunnerPage = lazy(() => import("@/pages/finger-runner"));
+const TootTroopersPage = lazy(() => import("@/pages/toot-troopers"));
+const PupPlanetPage = lazy(() => import("@/pages/pup-planet"));
+const HexGLPage = lazy(() => import("@/pages/hexgl"));
+const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
+const GearPage = lazy(() => import("@/pages/gear"));
+const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
 
 const queryClient = new QueryClient();
+
+/** Minimal, on-brand loading state for the moment a route chunk is fetching. */
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Loading page">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] motion-reduce:animate-none" />
+    </div>
+  );
+}
 
 /**
  * Site is multi-page, not a single scroll. The home page is a hub with a
@@ -29,23 +47,25 @@ const queryClient = new QueryClient();
  */
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/about" component={AboutPage} />
-      <Route path="/projects" component={ProjectsPage} />
-      <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
-      <Route path="/gear" component={GearPage} />
-      <Route path="/control-systems" component={ControlSystemsPage} />
-      <Route path="/games" component={GamesPage} />
-      <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
-      <Route path="/games/booty-butt-scooter" component={BootyButtScooterPage} />
-      <Route path="/games/finger-runner" component={FingerRunnerPage} />
-      <Route path="/games/toot-troopers" component={TootTroopersPage} />
-      <Route path="/games/pup-planet" component={PupPlanetPage} />
-      <Route path="/games/hexgl" component={HexGLPage} />
-      <Route path="/sitemap" component={SiteMapPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<RouteFallback />}>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/projects" component={ProjectsPage} />
+        <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
+        <Route path="/gear" component={GearPage} />
+        <Route path="/control-systems" component={ControlSystemsPage} />
+        <Route path="/games" component={GamesPage} />
+        <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
+        <Route path="/games/booty-butt-scooter" component={BootyButtScooterPage} />
+        <Route path="/games/finger-runner" component={FingerRunnerPage} />
+        <Route path="/games/toot-troopers" component={TootTroopersPage} />
+        <Route path="/games/pup-planet" component={PupPlanetPage} />
+        <Route path="/games/hexgl" component={HexGLPage} />
+        <Route path="/sitemap" component={SiteMapPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
