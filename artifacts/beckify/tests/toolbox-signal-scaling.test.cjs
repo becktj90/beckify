@@ -113,6 +113,25 @@ function almost(a, b, tol) {
   almost(r.value, 2048 * 100 / 4095, 1e-9);
 }
 
+/* 16-bit 4–20 mA counts 6554–32767 → 0–100 at live-zero. */
+{
+  const z = api.scaleForward(6554, 6554, 32767, 0, 100);
+  almost(z.value, 0);
+  const hi = api.scaleForward(32767, 6554, 32767, 0, 100);
+  almost(hi.value, 100);
+}
+
+/* Square-root / DP flow: 12 mA on 4–20 → 0–100% flow is 70.710678… */
+{
+  const r = api.scaleForward(12, 4, 20, 0, 100, 'sqrt');
+  assert.equal(r.ok, true);
+  almost(r.value, 100 * Math.sqrt((12 - 4) / (20 - 4)), 1e-9);
+  const back = api.scaleReverse(r.value, 4, 20, 0, 100, 'sqrt');
+  almost(back.value, 12, 1e-6);
+  const lin = api.scaleForward(12, 4, 20, 0, 100, 'linear');
+  almost(lin.value, 50);
+}
+
 /* Formula text plugs in the actual numbers. */
 {
   const text = api.pluggedFormula(14.2, 4, 20, 0, 500, 318.75, 'raw', 'eng', 'mA', 'psi');

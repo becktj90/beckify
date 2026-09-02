@@ -23,6 +23,7 @@
     '1-5V': { label: '1–5 V', rawMin: 1, rawMax: 5, rawUnit: 'V', liveZero: false },
     'adc-12u': { label: 'ADC 12-bit unsigned', rawMin: 0, rawMax: 4095, rawUnit: 'counts', liveZero: false },
     'adc-16u': { label: 'ADC 16-bit unsigned', rawMin: 0, rawMax: 65535, rawUnit: 'counts', liveZero: false },
+    'adc-16-420': { label: '16-bit 4–20 mA counts (6554–32767)', rawMin: 6554, rawMax: 32767, rawUnit: 'counts', liveZero: false },
     'adc-12s': { label: 'ADC 12-bit signed', rawMin: -2048, rawMax: 2047, rawUnit: 'counts', liveZero: false },
     'adc-16s': { label: 'ADC 16-bit signed', rawMin: -32768, rawMax: 32767, rawUnit: 'counts', liveZero: false },
     'rtd-pt100': { label: 'RTD Pt100 (resistance Ω, linear)', rawMin: 100, rawMax: 138.51, rawUnit: 'Ω', liveZero: false },
@@ -106,12 +107,28 @@
     return { ok: true, value: y0 + (x - x0) * (y1 - y0) / dx };
   }
 
-  function scaleForward(raw, rawMin, rawMax, engMin, engMax) {
-    return linearMap(raw, rawMin, rawMax, engMin, engMax);
+  function scaleForward(raw, rawMin, rawMax, engMin, engMax, law) {
+    if (law !== 'sqrt') return linearMap(raw, rawMin, rawMax, engMin, engMax);
+    const dx = rawMax - rawMin;
+    if (!isFinite(raw) || !isFinite(rawMin) || !isFinite(rawMax) || !isFinite(engMin) || !isFinite(engMax)) {
+      return { ok: false, error: 'All ranges and the input must be finite numbers.' };
+    }
+    if (dx === 0) return { ok: false, error: 'Signal range span is zero — pick distinct raw min and max.' };
+    const t = (raw - rawMin) / dx;
+    if (t < 0) return { ok: false, error: 'Square-root scale is not real below the raw minimum.' };
+    return { ok: true, value: engMin + (engMax - engMin) * Math.sqrt(t) };
   }
 
-  function scaleReverse(eng, rawMin, rawMax, engMin, engMax) {
-    return linearMap(eng, engMin, engMax, rawMin, rawMax);
+  function scaleReverse(eng, rawMin, rawMax, engMin, engMax, law) {
+    if (law !== 'sqrt') return linearMap(eng, engMin, engMax, rawMin, rawMax);
+    const dy = engMax - engMin;
+    if (!isFinite(eng) || !isFinite(rawMin) || !isFinite(rawMax) || !isFinite(engMin) || !isFinite(engMax)) {
+      return { ok: false, error: 'All ranges and the input must be finite numbers.' };
+    }
+    if (dy === 0) return { ok: false, error: 'Engineering range span is zero — pick distinct eng min and max.' };
+    const t = (eng - engMin) / dy;
+    if (t < 0) return { ok: false, error: 'Square-root reverse is not real below the engineering minimum.' };
+    return { ok: true, value: rawMin + (rawMax - rawMin) * (t * t) };
   }
 
   function formatNum(n, digits) {
@@ -121,7 +138,15 @@
     return String(Number(s));
   }
 
-  function pluggedFormula(x, x0, x1, y0, y1, y, xName, yName, xUnit, yUnit) {
+  function pluggedFormula(x, x0, x1, y0, y1, y, xName, yName, xUnit, yUnit, law) {
+    if (law === 'sqrt') {
+      const t = (x - x0) / (x1 - x0);
+      return yName + ' = ' + formatNum(y0) + ' + (' + formatNum(y1) + ' − ' + formatNum(y0) + ') × √((' +
+        formatNum(x) + ' − ' + formatNum(x0) + ') / (' + formatNum(x1) + ' − ' + formatNum(x0) + '))\n' +
+        '    = ' + formatNum(y0) + ' + (' + formatNum(y1 - y0) + ') × √(' + formatNum(t) + ')\n' +
+        '    = ' + formatNum(y) + ' ' + yUnit +
+        '\nwhere ' + xName + ' = ' + formatNum(x) + ' ' + xUnit + ' (DP / square-root flow)';
+    }
     const spanY = y1 - y0;
     const spanX = x1 - x0;
     return yName + ' = ' + formatNum(y0) + ' + (' + formatNum(x) + ' − ' + formatNum(x0) + ') × (' +
@@ -275,6 +300,7 @@
       unit: u.unit,
       custom: u.custom,
       unitLabel: u.label,
+      law: (el('ssc_law') && el('ssc_law').value) || 'linear',
     };
   }
 
@@ -318,10 +344,11 @@
     updateSliderBounds(st);
     const spec = SIGNAL_TYPES[st.signalType] || SIGNAL_TYPES['4-20mA'];
 
+    const law = st.law || 'linear';
     let raw = st.raw;
     let eng = st.eng;
     if (source === 'eng') {
-      const rev = scaleReverse(st.eng, st.rawMin, st.rawMax, st.engMin, st.engMax);
+      const rev = scaleReverse(st.eng, st.rawMin, st.rawMax, st.engMin, st.engMax, law);
       if (rev.ok) {
         raw = rev.value;
         applying = true;
@@ -331,7 +358,7 @@
         applying = false;
       }
     } else {
-      const fwd = scaleForward(st.raw, st.rawMin, st.rawMax, st.engMin, st.engMax);
+      const fwd = scaleForward(st.raw, st.rawMin, st.rawMax, st.engMin, st.engMax, law);
       if (fwd.ok) {
         eng = fwd.value;
         applying = true;
@@ -340,8 +367,8 @@
       }
     }
 
-    const fwd = scaleForward(raw, st.rawMin, st.rawMax, st.engMin, st.engMax);
-    const rev = scaleReverse(eng, st.rawMin, st.rawMax, st.engMin, st.engMax);
+    const fwd = scaleForward(raw, st.rawMin, st.rawMax, st.engMin, st.engMax, law);
+    const rev = scaleReverse(eng, st.rawMin, st.rawMax, st.engMin, st.engMax, law);
     const flags = rangeFlags(st.signalType, raw, st.rawMin, st.rawMax);
 
     const fwdHost = el('ssc_fwd_formula');
@@ -349,7 +376,7 @@
       if (fwd.ok) {
         fwdHost.textContent = pluggedFormula(
           raw, st.rawMin, st.rawMax, st.engMin, st.engMax, fwd.value,
-          'raw', 'eng', spec.rawUnit, st.unitLabel
+          'raw', 'eng', spec.rawUnit, st.unitLabel, law
         );
       } else {
         fwdHost.textContent = fwd.error;
@@ -358,10 +385,19 @@
     const revHost = el('ssc_rev_formula');
     if (revHost) {
       if (rev.ok) {
-        revHost.textContent = pluggedFormula(
-          eng, st.engMin, st.engMax, st.rawMin, st.rawMax, rev.value,
-          'eng', 'raw', st.unitLabel, spec.rawUnit
-        );
+        if (law === 'sqrt') {
+          const t = (eng - st.engMin) / (st.engMax - st.engMin);
+          revHost.textContent = 'raw = ' + formatNum(st.rawMin) + ' + (' + formatNum(st.rawMax) + ' − ' + formatNum(st.rawMin) +
+            ') × ((' + formatNum(eng) + ' − ' + formatNum(st.engMin) + ') / (' + formatNum(st.engMax) + ' − ' + formatNum(st.engMin) + '))²\n' +
+            '    = ' + formatNum(st.rawMin) + ' + (' + formatNum(st.rawMax - st.rawMin) + ') × (' + formatNum(t) + ')²\n' +
+            '    = ' + formatNum(rev.value) + ' ' + spec.rawUnit +
+            '\nwhere eng = ' + formatNum(eng) + ' ' + st.unitLabel + ' (DP / square-root flow)';
+        } else {
+          revHost.textContent = pluggedFormula(
+            eng, st.engMin, st.engMax, st.rawMin, st.rawMax, rev.value,
+            'eng', 'raw', st.unitLabel, spec.rawUnit, law
+          );
+        }
       } else {
         revHost.textContent = rev.error;
       }
@@ -445,6 +481,7 @@
     fillUnitSelect(p.family || 'pressure', p.unit);
     setVal('ssc_unit', p.unit);
     if (p.custom) setVal('ssc_custom', p.custom);
+    if (el('ssc_law')) el('ssc_law').value = p.law || 'linear';
     lastFamily = p.family || 'pressure';
     lastUnit = p.unit;
     applying = false;
@@ -488,6 +525,7 @@
         render('raw');
       } else if (id === 'ssc_family') onFamilyChange();
       else if (id === 'ssc_unit') onUnitChange();
+      else if (id === 'ssc_law') render('raw');
     });
     section.addEventListener('click', function (ev) {
       const t = ev.target;
@@ -526,6 +564,7 @@
         family: st.family,
         unit: st.unit,
         custom: st.custom,
+        law: st.law,
       });
       savePresets(list);
       renderPresets();

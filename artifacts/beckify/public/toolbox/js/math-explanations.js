@@ -17,8 +17,11 @@
     'sec-emp-emc': ['A changing field writes a voltage on a loop', 'V = -N\\,d\\Phi/dt', 'Faraday’s law is why a cable loop inside a changing B field picks up a transient. Shrink the loop, close the slots, bond the cage, and filter the cable entry. This tool sizes protection — it does not design a source.'],
     'sec-lp-optimizer': ['A linear program is a hill inside a fence', '\\max\\, c\\cdot x \\quad \\text{s.t.} \\quad Ax \\le b,\\, x \\ge 0', 'Each inequality is a fence. The simplex method walks the corners of the fenced yard until the objective cannot climb any further — or reports that the yard is empty or has no highest point.'],
     'sec-base-converter': ['Every integer is a weighted pile of digits', 'n = \\sum d_i b^i', 'Hex, decimal, octal, and binary are the same integer written with different digit alphabets. Two’s complement just rereads the high bit as a minus sign.'],
-    'sec-io-list-generator': ['A card is a slot, a channel is a row', 'slot, then 1\\ldots N', 'Number the modules in the order you add them. Couplers and power-refresh cards still take a slot even with zero channels. Analog raw min/max come from the catalog, not a guess.'],
-    'sec-signal-scaling': ['Live-zero means 4 mA is empty', 'y = y_0 + (x-x_0)\\frac{y_1-y_0}{x_1-x_0}', 'A 4–20 mA loop does not start at 0 mA. Below 4 mA is a live-zero fault. The same line run backwards is the raw you inject on the bench.']
+    'sec-io-list-generator': ['A card is a slot, a channel is a row', 'slot, then 1\\ldots N', 'Pick a brand or generic counts. Couplers and power-refresh cards still take a slot even with zero channels. Analog raw min/max come from the catalog, not a guess. Card names pad as prefix+(100+seq).'],
+    'sec-signal-scaling': ['Live-zero means 4 mA is empty', 'y = y_0 + (x-x_0)\\frac{y_1-y_0}{x_1-x_0}', 'A 4–20 mA loop does not start at 0 mA. Below 4 mA is a live-zero fault. Square-root mode maps the same span through √ for DP flow. The same line run backwards is the raw you inject on the bench.'],
+    'sec-ebus-budget': ['Supply is positive, terminals draw', 'I_{k}=I_{k-1}+i_k', 'Start remaining at 0. A coupler adds supply current. Each terminal subtracts its E-bus draw. A power-refresh card starts a new segment.'],
+    'sec-modbus-address': ['40001 is holding offset 0', 'PDU\\ address = n-1', 'Modicon 5-digit 40001 is the first holding register. The wire uses a 0-based 16-bit address. 400001 is the same register in 6-digit long addressing.'],
+    'sec-plc-timer-preset': ['Preset is time over timebase', 'N = t / T_{base}', 'TON, TOF, and RTO share the same count math. Round to the nearest integer count; the residual is the time you cannot hit exactly.']
   };
 
   const DOCS = {
@@ -133,14 +136,14 @@
       button: { label: 'Load Signed Example (FF = −1)', action: 'loadBaseConverterExample' }
     },
     'sec-io-list-generator': {
-      overview: 'An I/O list is a table of every channel on every card in a PLC station. This generator scaffolds that table from a parts cart: pick catalog part numbers, stack them in add order, and expand to one row per channel. Couplers and E-bus power cards have zero channels but still consume a slot and still get a documentation row. Analog raw min/max are copied from the catalog entry — they are not inferred at generate time. Project columns (wire number, PLC tag, description, …) stay blank for you to fill. Design aid only; not a PE stamp or a wiring schedule.',
+      overview: 'An I/O list is a table of every channel on every card in a PLC station. This generator scaffolds that table from a brand catalog or from generic channel counts. Pick Beckhoff, Rockwell, Siemens, WAGO, and other public families, or No brand / generic. Couplers and power cards have zero channels but still consume a slot. Analog raw min/max are copied from the catalog. Design aid only; not a PE stamp or a wiring schedule.',
       steps: [
-        'Edit the catalog if your part numbers, channel counts, or analog raw ranges differ from the seed Beckhoff-style list.',
-        'Name the controller and station. Set a card-name prefix (any string — C, AI-, RackA-).',
-        'Add modules to the cart with a quantity. Slots number in add order, including 0-channel couplers and power cards.',
-        'Generate, edit any cell, then export .xlsx (I/O List + Summary sheets) or .csv. Save/Load JSON stores the build list, not the expanded grid.'
+        'Select a PLC brand per station, or No brand / generic counts. A station stays one brand unless you allow mixed catalogs.',
+        'In brand mode, add modules from the filtered catalog. In generic mode, enter channel points and density (DI 16, DO 8, …).',
+        'Set coupler / I/O / power card-name prefixes (Beckhoff defaults KFD / KEC / XDC). Generate to expand one row per channel.',
+        'Edit any cell, then export .xlsx (Ebus Current, IO List, Scaling, Summary) or .csv. Save/Load JSON stores brand, mode, catalog, and the build list.'
       ],
-      examples: ['Station: MCC-A, controller PLC-1, prefix C', 'Cart: EK1100, EL1819, EL9410, EL3048', 'Slots: 1 coupler, 2 DI (16 ch), 3 power, 4 AI (8 ch, raw 0–4095)', 'Export columns start Controller … Comments in the documented order'],
+      examples: ['Station: MCC-A, controller PLC-1, brand Beckhoff EtherCAT', 'Cart: EK1100, EL1819, EL9410, EL3048', 'Names: KFD0101 coupler, KEC0101 DI (16 ch), XDC0101 power, KEC0102 AI (8 ch, raw 0–4095)', 'Generic: 32 DI at 16 ch/card → two Generic DI cards'],
       button: { label: 'Generate from the parts cart', action: 'iolGenerateExample' }
     },
     'sec-signal-scaling': {
@@ -151,8 +154,39 @@
         'Type a desired engineering value to see the raw to inject. Drag the slider across the signal span.',
         'Save a named preset (for example PT-204 0–500 psi 4–20mA) in this browser’s localStorage.'
       ],
-      examples: ['4–20 mA, 0–500 psi, raw = 14.2 mA', 'eng = 0 + (14.2 − 4) × 500 / 16 = 318.75 psi', 'Reverse 250 psi → 12.0 mA to inject', '3.5 mA flags live-zero fault'],
+      examples: ['4–20 mA, 0–500 psi, raw = 14.2 mA', 'eng = 0 + (14.2 − 4) × 500 / 16 = 318.75 psi', 'Reverse 250 psi → 12.0 mA to inject', 'Square-root: 12 mA on 4–20 / 0–100% flow → 70.71%'],
       button: { label: 'Load 14.2 mA / 0–500 psi', action: 'loadSignalScalingExample' }
+    },
+    'sec-ebus-budget': {
+      overview: 'An E-bus or rack current budget walks remaining milliamps down the module order. Coupler supply is a positive contribution; terminals draw (negative). A power-refresh module resets remaining to its own supply. Flag when remaining is negative or below a reserve. Beckhoff seed figures are typical published E-bus numbers; other brands enter datasheet mA.',
+      steps: [
+        'Set a reserve (default 200 mA). Add a coupler first so remaining becomes the supply current.',
+        'Add terminals from the Beckhoff seed or a Custom row with milliamps from the datasheet (signed).',
+        'Check the remaining column and Flag. Optional width mm sums along the rack.',
+        'The I/O List Generator xlsx also writes an Ebus Current sheet from that tool’s build list.'
+      ],
+      examples: ['EK1100 +2000 mA, then EL1819 −100 mA → remaining 1900 mA', 'EL9410 resets remaining to +2000 mA', 'Reserve 200 mA flags LOW RESERVE when remaining drops below that'],
+      button: { label: 'Review the rack table', action: '' }
+    },
+    'sec-modbus-address': {
+      overview: 'Modbus data-model addresses come in several dialects: function code 01/02/03/04, 0-based PDU offset, 1-based number, 5-digit 40001, and 6-digit 400001 long addressing. 40001 is holding register offset 0. This converter shows the wire/PDU bytes. It does not simulate a slave.',
+      steps: [
+        'Pick coils, discrete inputs, input registers, or holding registers.',
+        'Type any of: 0-based offset, 1-based number, 5-digit address, or 6-digit long address.',
+        'Read the other representations and the PDU start (function code + 16-bit big-endian address).'
+      ],
+      examples: ['40001 = holding FC 03, 1-based 1, 0-based offset 0', '400001 long addressing is the same first holding register', 'PDU start hex: 03 00 00'],
+      button: { label: 'Convert 40001', action: '' }
+    },
+    'sec-plc-timer-preset': {
+      overview: 'PLC timer presets are counts at a timebase. TON, TOF, and RTO share the same arithmetic: counts = round(desired time / timebase). Reverse: time = counts × timebase. Custom millisecond and scan-time bases are included. Not a timing-chart IDE.',
+      steps: [
+        'Pick TON, TOF, or RTO (documentation only — the math is the same).',
+        'Choose 1 ms, 10 ms, 100 ms, 1 s, a custom millisecond timebase, or scan-time.',
+        'Enter desired seconds or milliseconds — preset counts update live. Type counts to reverse.'
+      ],
+      examples: ['1.5 s at 10 ms timebase → 150 counts', '150 × 10 ms = 1.5 s', 'Scan-time 8 ms, 40 scans → 320 ms'],
+      button: { label: 'Compute the preset', action: '' }
     },
     'sec-magnetic-circuit': {
       overview: 'A magnetic circuit turns Ampere’s loop into an Ohm’s-law analog: MMF F = N I, flux Φ, and reluctance R = ℓ / (μ A). This workbench is homework magnetostatics for a gapped laminated core — not a transformer kVA sizer.',

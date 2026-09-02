@@ -241,8 +241,11 @@
       <button class="nav-btn" data-target="sec-panel-power-study" data-keywords="panel schedule power study OCR breaker sizes series poles circuit class positions main rating demand factor diversity expansion">Panel Schedule Power Study</button>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
-      <button class="nav-btn" data-target="sec-io-list-generator" data-keywords="io list i/o list ethercat beckhoff plc channel slot coupler analog raw el1819 io-link">I/O List Generator</button>
-      <button class="nav-btn" data-target="sec-signal-scaling" data-keywords="signal scaling process value 4-20ma 4-20 mA 0-10v transmitter engineering units live zero pt100 rtd adc counts">Signal Scaling</button>
+      <button class="nav-btn" data-target="sec-io-list-generator" data-keywords="io list i/o list ethercat beckhoff rockwell siemens wago plc channel slot coupler analog raw el1819 io-link generic counts controllogix compactlogix">I/O List Generator</button>
+      <button class="nav-btn" data-target="sec-signal-scaling" data-keywords="signal scaling process value 4-20ma 4-20 mA 0-10v transmitter engineering units live zero pt100 rtd adc counts square root dp flow">Signal Scaling</button>
+      <button class="nav-btn" data-target="sec-ebus-budget" data-keywords="ebus e-bus rack current budget beckhoff el9410 coupler remaining milliamp reserve">E-bus / Rack Current</button>
+      <button class="nav-btn" data-target="sec-modbus-address" data-keywords="modbus address converter holding coil 40001 400001 function code pdu offset">Modbus Address Converter</button>
+      <button class="nav-btn" data-target="sec-plc-timer-preset" data-keywords="plc timer preset ton tof rto timebase milliseconds scan counts">PLC Timer Preset</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">06 · References &amp; workspace</div>
@@ -276,7 +279,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">57 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">60 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -332,6 +335,9 @@
             <li><a class="home-tool-link" href="#sec-panel-power-study">Panel Schedule Power Study</a></li>
             <li><a class="home-tool-link" href="#sec-io-list-generator">I/O List Generator</a></li>
             <li><a class="home-tool-link" href="#sec-signal-scaling">Process Value / Signal Scaling</a></li>
+            <li><a class="home-tool-link" href="#sec-ebus-budget">E-bus / Rack Current Budget</a></li>
+            <li><a class="home-tool-link" href="#sec-modbus-address">Modbus Address Converter</a></li>
+            <li><a class="home-tool-link" href="#sec-plc-timer-preset">PLC Timer Preset</a></li>
           </ul>
         </div>
 
@@ -6703,30 +6709,37 @@
     <section id="sec-io-list-generator" class="section">
       <div class="section-header">
         <h2>I/O List Generator</h2>
-        <p>Scaffold a PLC I/O list from a parts cart. Couplers and power-refresh cards consume a slot and still get one documentation row. Analog raw min/max come from the catalog — they are not guessed at generate time. Design aid only; not a PE stamp, wiring schedule, or submittal.</p>
+        <p>Scaffold a PLC I/O list from a brand catalog or from generic channel counts. Pick a platform per station (Beckhoff, Rockwell, Siemens, WAGO, … or No brand). Couplers and power-refresh cards consume a slot and still get one documentation row. Analog raw min/max come from the catalog. Design aid only; not a PE stamp, wiring schedule, or submittal.</p>
         <details class="section-info">
           <summary>ℹ More Info — I/O List Generator</summary>
           <div class="section-info-body">
-            Name a controller and station, pick catalog part numbers, and add quantities. Slots number in add order. Channels on each module run 1…N. Generate expands to one spreadsheet row per channel (zero-channel modules still emit one row).
+            Each station is one brand unless you explicitly allow mixed catalogs. A project can mix brand stations with generic-count stations. Slots number in add order. Channels on each module run 1…N. Generate expands to one spreadsheet row per channel (zero-channel modules still emit one row).
             <ul>
-              <li><strong>Auto-filled:</strong> Controller, Card Part Number, Station Name, Slot Number, Channel Number, Wire Terminal (= channel number), Signal Type. Card Name is prefix + slot and stays editable in the grid.</li>
-              <li><strong>Left blank:</strong> Wire Number, Linked PLC Variable Name, Description, System, Device Category, Min, Max, Units, Field Device, Intermediate Device, Comments.</li>
-              <li><strong>AI / AO / RTD / TC:</strong> Raw Min and Raw Max copy from that catalog entry.</li>
-              <li><strong>Save / Load</strong> downloads or uploads JSON of the station/module <em>build list</em>, not the expanded table.</li>
-              <li><strong>Export</strong> writes .xlsx (I/O List + Summary sheets) via a vendored SheetJS copy, or .csv of the grid.</li>
+              <li><strong>Brand mode:</strong> picker is filtered to that platform. Add/edit/remove catalog rows (PN, description, channels, signal type, raw min/max, optional width and signed E-bus mA) so any family can be extended in-browser.</li>
+              <li><strong>No brand / generic:</strong> enter channel points and density (defaults DI 16, DO 8, AI 8, AO 4, RTD 4, TC 8). Part numbers become “Generic DI” etc. Card names still use the editable prefixes.</li>
+              <li><strong>Card Name:</strong> independent coupler / I/O / power prefixes, padded as prefix + (100+seq) → KEC0101. Beckhoff defaults KFD / KEC / XDC; other brands ship different defaults; all are editable.</li>
+              <li><strong>26-column IO List:</strong> Controller … Comments, including Page, EPLAN Updated, Electrical Check Complete, Scaling Verified, T&amp;LO V&amp;V. DO rows seed Min/Max 0/1, Units BOOL, Raw 0/1. Coupler channel and wire terminal stay blank.</li>
+              <li><strong>Export</strong> writes .xlsx sheets Ebus Current, IO List, Scaling, and Summary (type-colored fills) via a vendored SheetJS copy, or .csv of the grid. Save/Load JSON stores brand, mode, catalog, and the build list — not the expanded table.</li>
             </ul>
-            Seed catalog is Beckhoff-style EtherCAT (EK/EL) and is fully editable. Verify channel counts and analog process-image ranges against the manufacturer’s datasheet before using the file in a project.
+            Seed catalogs are short public part-number lists, not a vendor price book. Verify channel counts and analog process-image ranges against the manufacturer’s datasheet. No proprietary project tags are included.
           </div>
         </details>
       </div>
 
       <datalist id="iol_signal_types">
         <option value="Coupler"></option>
+        <option value="Adapter"></option>
+        <option value="Interface"></option>
+        <option value="CPU"></option>
         <option value="Power"></option>
+        <option value="License"></option>
         <option value="DI"></option>
         <option value="DO"></option>
         <option value="AI"></option>
+        <option value="AI (4-20mA)"></option>
+        <option value="AI (0-10V)"></option>
         <option value="AO"></option>
+        <option value="AO (4-20mA)"></option>
         <option value="RTD"></option>
         <option value="TC"></option>
         <option value="IO-Link"></option>
@@ -6736,7 +6749,13 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Module catalog</div>
           <div class="card-body">
-            <p class="note" id="iol_pfx_hint">Add, edit, or remove part numbers. Channel count 0 still consumes a slot. Raw min/max are used only for AI, AO, RTD, and TC families.</p>
+            <p class="note" id="iol_pfx_hint">Public seed PNs per brand — not a price book. Add, edit, or remove rows. Channel count 0 still consumes a slot. E-bus mA is signed (coupler supply positive, terminals negative). Raw min/max apply to AI, AO, RTD, and TC.</p>
+            <div class="input-group">
+              <div>
+                <label for="iol_catalog_brand_filter">Filter catalog by brand</label>
+                <select id="iol_catalog_brand_filter"><option value="">All brands</option></select>
+              </div>
+            </div>
             <div id="iol_catalog_host"></div>
             <button type="button" class="btn btn-secondary btn-sm" id="iol_add_catalog">Add catalog part</button>
           </div>
@@ -6745,7 +6764,7 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Stations and parts cart</div>
           <div class="card-body">
-            <p class="note">Repeatable stations. Card Name = prefix + slot number (edit the prefix, then edit any name in the grid).</p>
+            <p class="note">One brand per station (or No brand / generic counts). Card-name prefixes are per family and stay editable. Multiple stations in one project may be different brands.</p>
             <div id="iol_stations_host"></div>
             <div class="iol-actions">
               <button type="button" class="btn btn-secondary btn-sm" id="iol_add_station">Add station</button>
@@ -6758,7 +6777,7 @@
           <div class="card-title">Summary</div>
           <div class="card-body">
             <div id="iol_summary" class="result" aria-live="polite"></div>
-            <p class="note">Totals count generated or edited grid rows. Coupler count is documentation rows with Signal Type Coupler.</p>
+            <p class="note">Totals count generated or edited grid rows. Analog Inputs includes RTD and TC. Spare = channel rows with blank Description and blank Linked PLC Variable Name.</p>
           </div>
         </div>
 
@@ -6772,7 +6791,7 @@
               <button type="button" class="btn btn-secondary btn-sm" id="iol_load">Load build JSON</button>
               <input type="file" id="iol_load_file" class="iol-file" accept="application/json,.json" aria-label="Upload I/O build JSON">
             </div>
-            <p class="note" id="iol_status">JSON is the station/module cart. Spreadsheet export is the editable grid. SheetJS is loaded from this site, not a CDN.</p>
+            <p class="note" id="iol_status">JSON stores brand, generic vs catalog mode, catalog, and the station cart. Spreadsheet export is the editable grid plus Ebus Current / Scaling / Summary. SheetJS is loaded from this site, not a CDN.</p>
           </div>
         </div>
 
@@ -6794,13 +6813,14 @@
     <section id="sec-signal-scaling" class="section">
       <div class="section-header">
         <h2>Process Value / Signal Scaling</h2>
-        <p>Linear scaling between a raw instrument signal and engineering units. Live, both directions, with the actual numbers plugged into the formula. Design aid only — not a transmitter download, loop check sheet, or PE stamp.</p>
+        <p>Linear or square-root (DP flow) scaling between a raw instrument signal and engineering units. Live, both directions, with the actual numbers plugged into the formula. Design aid only — not a transmitter download, loop check sheet, or PE stamp.</p>
         <details class="section-info">
           <summary>ℹ More Info — Signal Scaling</summary>
           <div class="section-info-body">
             <strong>Forward:</strong> raw (for example 14.2 mA) + signal range + engineering range → process value.<br>
             <strong>Reverse:</strong> desired engineering value → raw to inject on the bench.<br><br>
-            A 4–20 mA loop is live-zero: 4 mA is 0% of span, not 0 mA. Values below 4 mA are flagged as a live-zero fault / under-range; values above 20 mA are over-range. Other signal types flag when raw is outside the configured min/max. Pt100 resistance mode still uses a linear Ω span for the scale; an IEC 60751 temperature is shown as a reference only.
+            A 4–20 mA loop is live-zero: 4 mA is 0% of span, not 0 mA. Values below 4 mA are flagged as a live-zero fault / under-range; values above 20 mA are over-range. Other signal types flag when raw is outside the configured min/max. Pt100 resistance mode still uses a linear Ω span for the scale; an IEC 60751 temperature is shown as a reference only.<br><br>
+            <strong>Square-root / DP flow:</strong> flow = engMin + (engMax − engMin) × √((raw − rawMin)/(rawMax − rawMin)). Reverse squares the normalized engineering value. Same 4–20 live-zero flags apply to the raw mA.
           </div>
         </details>
       </div>
@@ -6810,8 +6830,8 @@
           <div class="card-title">Signal and ranges</div>
           <div class="card-body">
             <div class="formula-box">
-              eng = engMin + (raw − rawMin) × (engMax − engMin) / (rawMax − rawMin)<br>
-              raw = rawMin + (eng − engMin) × (rawMax − rawMin) / (engMax − engMin)
+              Linear: eng = engMin + (raw − rawMin) × (engMax − engMin) / (rawMax − rawMin)<br>
+              Square-root: eng = engMin + (engMax − engMin) × √((raw − rawMin)/(rawMax − rawMin))
             </div>
             <div class="input-group">
               <div>
@@ -6823,12 +6843,22 @@
                   <option value="1-5V">1–5 V</option>
                   <option value="adc-12u">ADC 12-bit unsigned (0–4095)</option>
                   <option value="adc-16u">ADC 16-bit unsigned (0–65535)</option>
+                  <option value="adc-16-420">16-bit 4–20 mA counts (6554–32767)</option>
                   <option value="adc-12s">ADC 12-bit signed (−2048–2047)</option>
                   <option value="adc-16s">ADC 16-bit signed (−32768–32767)</option>
                   <option value="rtd-pt100">RTD Pt100 (resistance Ω, linear)</option>
                   <option value="rtd-counts">RTD / skip to linear counts</option>
                 </select>
               </div>
+              <div>
+                <label for="ssc_law">Scale law</label>
+                <select id="ssc_law">
+                  <option value="linear" selected>Linear</option>
+                  <option value="sqrt">Square-root / DP flow</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
               <div>
                 <label for="ssc_family">Engineering family</label>
                 <select id="ssc_family">
@@ -6928,6 +6958,194 @@
         </div>
       </div>
     </section><!-- end sec-signal-scaling -->
+
+    <!-- ════════════════════════════════════════
+         E-BUS / RACK CURRENT BUDGET
+         ════════════════════════════════════════ -->
+    <section id="sec-ebus-budget" class="section">
+      <div class="section-header">
+        <h2>E-bus / Rack Current Budget</h2>
+        <p>Running remaining current down a rack. Coupler supply is positive mA; terminals draw (negative). A power-refresh module resets remaining to its own supply. Flag when remaining goes negative or below a reserve. Design aid only — not a thermal study or PE stamp.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — E-bus / Rack Current</summary>
+          <div class="section-info-body">
+            Beckhoff seed figures are typical published E-bus consumption and a 2000 mA coupler/EL9410 supply. Other brands: type the milliamps from the datasheet (signed). Width mm is optional. The I/O List Generator export also writes an Ebus Current sheet from that tool’s build list.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Rack modules</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="ebus_reserve">Reserve (mA)</label>
+                <input type="number" id="ebus_reserve" value="200" step="1" min="0">
+              </div>
+              <div>
+                <label for="ebus_add_pn">Add from Beckhoff seed / custom</label>
+                <select id="ebus_add_pn"></select>
+              </div>
+              <div class="iol-add-wrap">
+                <button type="button" class="btn btn-sm" id="ebus_add">Add module</button>
+              </div>
+            </div>
+            <div id="ebus_rows"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Budget</div>
+          <div class="card-body">
+            <div id="ebus_summary" class="result" aria-live="polite"></div>
+            <p class="note">Remaining starts at 0 until a coupler or refresh supplies current. Check the Flag column when it drops below the reserve or goes negative.</p>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-ebus-budget -->
+
+    <!-- ════════════════════════════════════════
+         MODBUS ADDRESS CONVERTER
+         ════════════════════════════════════════ -->
+    <section id="sec-modbus-address" class="section">
+      <div class="section-header">
+        <h2>Modbus Address Converter</h2>
+        <p>Function codes 01/02/03/04, 0-based PDU offset vs 1-based number, 5-digit 00001/10001/30001/40001 and 6-digit 400001 long addressing. Not a slave simulator.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Modbus Address</summary>
+          <div class="section-info-body">
+            Holding register 40001 is 1-based number 1 and 0-based offset 0 (the first holding register on the wire). Long addressing uses six digits (400001). The PDU carries a 16-bit big-endian starting address that is always 0-based; this tool does not send frames.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Address</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="mb_space">Data space</label>
+                <select id="mb_space">
+                  <option value="coil">Coils (FC 01) 0x</option>
+                  <option value="discrete">Discrete inputs (FC 02) 1x</option>
+                  <option value="input">Input registers (FC 04) 3x</option>
+                  <option value="holding" selected>Holding registers (FC 03) 4x</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mb_off">0-based offset</label>
+                <input type="number" id="mb_off" value="0" min="0" max="65535" step="1">
+              </div>
+              <div>
+                <label for="mb_one">1-based number</label>
+                <input type="number" id="mb_one" value="1" min="1" max="65536" step="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mb_addr5">5-digit (40001)</label>
+                <input type="text" id="mb_addr5" value="40001" inputmode="numeric">
+              </div>
+              <div>
+                <label for="mb_addr6">6-digit long (400001)</label>
+                <input type="text" id="mb_addr6" value="400001" inputmode="numeric">
+              </div>
+            </div>
+            <p class="note" id="mb_status"></p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Wire format</div>
+          <div class="card-body">
+            <div id="mb_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-modbus-address -->
+
+    <!-- ════════════════════════════════════════
+         PLC TIMER PRESET
+         ════════════════════════════════════════ -->
+    <section id="sec-plc-timer-preset" class="section">
+      <div class="section-header">
+        <h2>PLC Timer Preset</h2>
+        <p>TON / TOF / RTO: desired seconds or milliseconds → preset counts at a timebase (1 ms, 10 ms, 100 ms, 1 s, custom, or scan-time). Reverse too. Not a timing-chart IDE.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — PLC Timer Preset</summary>
+          <div class="section-info-body">
+            The instruction type does not change the count math: preset = round(desired time / timebase). Scan-time mode uses your entered scan as the timebase so a “counts = number of scans” timer is honest. Rounding residual is shown when the timebase cannot hit the desired time exactly.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Time and timebase</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="tmr_kind">Instruction</label>
+                <select id="tmr_kind">
+                  <option value="TON" selected>TON (on-delay)</option>
+                  <option value="TOF">TOF (off-delay)</option>
+                  <option value="RTO">RTO (retentive)</option>
+                </select>
+              </div>
+              <div>
+                <label for="tmr_base">Timebase</label>
+                <select id="tmr_base">
+                  <option value="1ms">1 ms</option>
+                  <option value="10ms" selected>10 ms</option>
+                  <option value="100ms">100 ms</option>
+                  <option value="1s">1 s</option>
+                  <option value="custom">Custom (ms)</option>
+                  <option value="scan">Scan-time based</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" id="tmr_custom_wrap" hidden>
+              <div>
+                <label for="tmr_custom">Custom timebase (ms)</label>
+                <input type="number" id="tmr_custom" value="5" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group" id="tmr_scan_wrap" hidden>
+              <div>
+                <label for="tmr_scan">Scan time (ms)</label>
+                <input type="number" id="tmr_scan" value="10" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="tmr_desired">Desired time</label>
+                <input type="number" id="tmr_desired" value="1.5" min="0" step="any">
+              </div>
+              <div>
+                <label for="tmr_unit">Unit</label>
+                <select id="tmr_unit">
+                  <option value="s" selected>seconds</option>
+                  <option value="ms">milliseconds</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="tmr_counts">Preset counts</label>
+                <input type="number" id="tmr_counts" value="150" min="0" step="1">
+              </div>
+            </div>
+            <p class="note" id="tmr_status"></p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Result</div>
+          <div class="card-body">
+            <div id="tmr_result" class="result" aria-live="polite"></div>
+            <pre class="ssc-formula" id="tmr_math" aria-live="polite"></pre>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-plc-timer-preset -->
 
     <!-- ════════════════════════════════════════
          NEC CODE TABLES
@@ -9808,6 +10026,9 @@
 <script src="js/base-converter.js"></script>
 <script src="js/io-list-generator.js"></script>
 <script src="js/signal-scaling.js"></script>
+<script src="js/ebus-budget.js"></script>
+<script src="js/modbus-address.js"></script>
+<script src="js/plc-timer-preset.js"></script>
 <script src="js/math-explanations.js"></script>
 <script src="js/result-visuals.js"></script>
 <script src="js/icons.js"></script>

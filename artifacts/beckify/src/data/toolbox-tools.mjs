@@ -60,8 +60,11 @@ export const TOOLS = [
   ["harmonics", "Harmonics Tool", "Review harmonic distortion and practical electrical power-quality relationships.", "sec-harmonics"],
   ["hazardous-area", "Hazardous Area Lookup", "Reference hazardous-area classifications and equipment selection concepts for electrical work.", "sec-haz"],
   ["intrinsically-safe-loop", "Intrinsic Safety Loop Verifier", "Check intrinsic-safety loop inputs and identify common instrumentation constraints.", "sec-isloop"],
-  ["io-list-generator", "I/O List Generator", "Scaffold a PLC I/O list from EtherCAT module counts: numbered slots, channels, card metadata, and analog raw ranges from an editable catalog. Design aid — not a PE stamp.", "sec-io-list-generator"],
-  ["signal-scaling", "Process Value / Signal Scaling Calculator", "Linear scaling between raw instrument signals (4–20 mA, 0–10 V, ADC counts, Pt100) and engineering units, both directions, with a live formula. Design aid — not a transmitter download.", "sec-signal-scaling"],
+  ["io-list-generator", "I/O List Generator", "Scaffold a PLC I/O list from a brand catalog (Beckhoff, Rockwell, Siemens, WAGO, and others) or from generic channel counts: numbered slots, 26-column workbook, type colors, and analog raw ranges. Design aid — not a PE stamp.", "sec-io-list-generator"],
+  ["signal-scaling", "Process Value / Signal Scaling Calculator", "Linear or square-root (DP flow) scaling between raw instrument signals (4–20 mA, 0–10 V, ADC counts, Pt100) and engineering units, both directions, with a live formula. Design aid — not a transmitter download.", "sec-signal-scaling"],
+  ["ebus-budget", "E-bus / Rack Current Budget", "Running remaining rack or E-bus current: signed module milliamps, power-refresh reset, and flags when remaining is negative or below a reserve. Beckhoff seed figures; other brands enter datasheet mA.", "sec-ebus-budget"],
+  ["modbus-address", "Modbus Address Converter", "Convert Modbus coils and registers among function code, 0-based PDU offset, 1-based number, 5-digit 40001 addressing, and 6-digit 400001 long addressing. Shows wire/PDU bytes. Not a slave simulator.", "sec-modbus-address"],
+  ["plc-timer-preset", "PLC Timer Preset", "TON/TOF/RTO preset counts from a desired time at 1 ms, 10 ms, 100 ms, 1 s, custom, or scan-time timebases — and the reverse. Visible math. Not a timing-chart IDE.", "sec-plc-timer-preset"],
   ["555-timer", "555 Timer Calculator", "Calculate astable frequency, duty cycle, monostable pulse width, and timing values.", "sec-555"],
   ["unit-conversions", "Electrical Unit Conversions", "Convert common electrical engineering units quickly in the field.", "sec-convert"],
   ["circular-mils", "Circular Mils Calculator", "Calculate conductor area and compare circular-mil values for electrical sizing work.", "sec-cm"],
@@ -108,7 +111,7 @@ export const CATEGORIES = [
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],
-  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel OCR and Megger TDR cable fault locating.", "sec-tdr"],
+  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel OCR, Megger TDR, PLC I/O lists, scaling, Modbus addressing, and timer presets.", "sec-tdr"],
   ["reference-tables", "Electrical Reference Tables", "Browse conductor, motor, conduit, enclosure, IP rating, and NEC reference information.", "sec-wire-ref"],
 ];
 
