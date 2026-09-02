@@ -13,12 +13,15 @@ final class NoiseMeterModel: ObservableObject {
 
     private let engine = AVAudioEngine()
     private var installed = false
+    private var wantsRunning = false
 
     func start() {
+        wantsRunning = true
         requestThenRun()
     }
 
     func stop() {
+        wantsRunning = false
         running = false
         status = "Microphone idle"
         if installed {
@@ -36,7 +39,7 @@ final class NoiseMeterModel: ObservableObject {
     private func requestThenRun() {
         AVAudioApplication.requestRecordPermission { [weak self] granted in
             Task { @MainActor in
-                guard let self else { return }
+                guard let self, self.wantsRunning else { return }
                 if granted {
                     self.permissionDenied = false
                     self.beginEngine()
@@ -49,6 +52,7 @@ final class NoiseMeterModel: ObservableObject {
     }
 
     private func beginEngine() {
+        guard wantsRunning else { return }
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: [.mixWithOthers])

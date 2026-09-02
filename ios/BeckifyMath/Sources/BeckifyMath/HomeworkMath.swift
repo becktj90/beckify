@@ -227,6 +227,9 @@ public enum ResistorColorCode {
             multiplier /= 10
         }
         var rounded = mag.rounded()
+        guard rounded >= 1 else {
+            throw CalcError.outOfRange("Resistance is too small for this color code.")
+        }
         if rounded >= pow(10, Double(digits)) {
             rounded /= 10
             multiplier *= 10
@@ -455,7 +458,8 @@ public enum LEDResistor {
         let exp = floor(log10(ohms))
         let scale = pow(10, exp)
         let mant = ohms / scale
-        let best = e24.min(by: { abs($0 - mant) < abs($1 - mant) }) ?? mant
+        let candidates = e24 + [10.0]
+        let best = candidates.min(by: { abs($0 - mant) < abs($1 - mant) }) ?? mant
         return best * scale
     }
 }

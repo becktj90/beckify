@@ -20,8 +20,16 @@ struct SeriesParallelView: View {
     private var unit: String { part == .resistors ? "Ω" : "F" }
 
     var result: Result<Double, CalcError> {
-        let values = [v1, v2, v3, v4].compactMap(\.parsedDouble)
         do {
+            var values: [Double] = []
+            for (i, raw) in [v1, v2, v3, v4].enumerated() {
+                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty { continue }
+                guard let n = trimmed.parsedDouble else {
+                    throw CalcError.outOfRange("Value \(i + 1) is not a number.")
+                }
+                values.append(n)
+            }
             if part == .resistors {
                 return .success(try SeriesParallel.resistors(values, kind: kind))
             }
