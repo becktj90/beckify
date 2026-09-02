@@ -318,10 +318,10 @@
     svg.appendChild(svgEl('rect', { x: 1, y: 1, width: W - 2, height: H - 2, fill: '#0d1117', stroke: '#30304a' }));
     svg.appendChild(svgEl('line', { x1: 24, y1: cy, x2: W - 24, y2: cy, stroke: '#334155' }));
     svg.appendChild(svgEl('line', { x1: cx, y1: 24, x2: cx, y2: H - 24, stroke: '#334155' }));
-    const xLab = svgEl('text', { x: W - 28, y: cy - 6, fill: '#9497b8', 'font-size': '10', 'text-anchor': 'end', 'font-family': 'ui-monospace,monospace' });
+    const xLab = svgEl('text', { x: W - 18, y: cy + 16, fill: '#9497b8', 'font-size': '10', 'text-anchor': 'end', 'font-family': 'ui-monospace,monospace' });
     xLab.textContent = 'Re';
     svg.appendChild(xLab);
-    const yLab = svgEl('text', { x: cx + 6, y: 22, fill: '#9497b8', 'font-size': '10', 'font-family': 'ui-monospace,monospace' });
+    const yLab = svgEl('text', { x: cx + 8, y: 20, fill: '#9497b8', 'font-size': '10', 'font-family': 'ui-monospace,monospace' });
     yLab.textContent = 'Im';
     svg.appendChild(yLab);
 
@@ -346,7 +346,9 @@
       const x1 = cx + v.z.re * scale;
       const y1 = cy - v.z.im * scale;
       if (cmag(v.z) < maxMag * 0.02) return;
-      arrow(svg, cx, cy, x1, y1, v.color, v.label, x1 + 6, y1 - 6);
+      const lx = x1 + (Math.abs(v.z.im) < maxMag * 0.08 ? 8 : 6);
+      const ly = y1 + (Math.abs(v.z.im) < maxMag * 0.08 ? 16 : -6);
+      arrow(svg, cx, cy, x1, y1, v.color, v.label, lx, ly);
     });
     const cap = svgEl('text', {
       x: cx, y: H - 12, fill: '#9497b8', 'font-size': '10', 'text-anchor': 'middle',
