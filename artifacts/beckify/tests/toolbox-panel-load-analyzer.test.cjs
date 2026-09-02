@@ -38,9 +38,11 @@ assert.equal(panel.normalizeDemandFactor('0.8'), '0.8');
 assert.equal(factors.factorPercent(0.7), '70%');
 
 assert.equal(panel.phaseLegFromCircuit('1', 1), 'L1');
-assert.equal(panel.phaseLegFromCircuit('2', 1), 'L1');
-assert.equal(panel.phaseLegFromCircuit('3', 1), 'L2');
+assert.equal(panel.phaseLegFromCircuit('2', 1), 'L2');
+assert.equal(panel.phaseLegFromCircuit('3', 1), 'L1');
+assert.equal(panel.phaseLegFromCircuit('4', 1), 'L2');
 assert.equal(panel.phaseLegFromCircuit('1', 3), 'A');
+assert.equal(panel.phaseLegFromCircuit('2', 3), 'A');
 assert.equal(panel.phaseLegFromCircuit('3', 3), 'B');
 assert.equal(panel.phaseLegFromCircuit('5', 3), 'C');
 assert.equal(panel.isSpareOrOpen({ description: 'SPARE', trip: '' }), true);
@@ -54,11 +56,22 @@ const metrics = panel.computeDirectoryMetrics([
 ], { phase: 1, mainAmps: 100, slotCount: 4 });
 assert.equal(metrics.connectedBreakerAmps, 55);
 assert.equal(metrics.connectedToMainPct, 55);
+assert.equal(String(metrics.connectedToMainPct), '55');
 assert.equal(metrics.spareCount, 1);
 assert.equal(metrics.unlabeledCount, 1);
 assert.match(metrics.connectedNote, /not an NEC Article 220/i);
 assert.match(metrics.connectedNote, /does not mean the panel is unsafe/i);
 assert.ok(metrics.flags.some((f) => /blank labels found: 1/.test(f)));
+assert.match(metrics.phaseBalance.assumption, /odd circuits on L1/i);
+assert.equal(metrics.phaseBalance.legs.L1, 20);
+assert.equal(metrics.phaseBalance.legs.L2, 35);
+
+const floatPct = panel.computeDirectoryMetrics(
+  [{ circuit: '1', description: 'Lights', trip: '11A', poles: '1' }],
+  { phase: 1, mainAmps: 20, slotCount: 1 }
+);
+assert.equal(floatPct.connectedToMainPct, 55);
+assert.equal(String(floatPct.connectedToMainPct), '55');
 
 const panelSrc = fs.readFileSync(path.join(root, 'panel-schedule.js'), 'utf8');
 assert.match(panelSrc, /DOMContentLoaded/);

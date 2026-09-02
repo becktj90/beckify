@@ -662,8 +662,8 @@ function phaseLegFromCircuit(circuit, phase) {
   const n = firstCircuitNumber(circuit);
   if (!Number.isFinite(n) || n < 1 || n === Number.MAX_SAFE_INTEGER) return null;
   if (Number(phase) === 1) {
-    const pair = Math.ceil(n / 2);
-    return pair % 2 === 1 ? 'L1' : 'L2';
+    /* Typical split-phase panelboard: odd spaces on L1, even spaces on L2. */
+    return n % 2 === 1 ? 'L1' : 'L2';
   }
   const g = (n - 1) % 6;
   if (g <= 1) return 'A';
@@ -684,7 +684,7 @@ function phaseBalance(rows, phase) {
   return {
     legs,
     assumption: Number(phase) === 1
-      ? 'Assumption: odd-even 1φ layout, circuits 1–2 on L1, 3–4 on L2, repeating. Inference from numbering, not a measurement.'
+      ? 'Assumption: odd/even 1φ panelboard numbering — odd circuits on L1, even circuits on L2. Inference from numbering, not a measurement.'
       : 'Assumption: odd-even 3φ layout, circuits 1–2 phase A, 3–4 B, 5–6 C, repeating. Inference from numbering, not a measurement.',
   };
 }
