@@ -21,7 +21,11 @@
     'sec-signal-scaling': ['Live-zero means 4 mA is empty', 'y = y_0 + (x-x_0)\\frac{y_1-y_0}{x_1-x_0}', 'A 4–20 mA loop does not start at 0 mA. Below 4 mA is a live-zero fault. Square-root mode maps the same span through √ for DP flow. The same line run backwards is the raw you inject on the bench.'],
     'sec-ebus-budget': ['Supply is positive, terminals draw', 'I_{k}=I_{k-1}+i_k', 'Start remaining at 0. A coupler adds supply current. Each terminal subtracts its E-bus draw. A power-refresh card starts a new segment.'],
     'sec-modbus-address': ['40001 is holding offset 0', 'PDU\\ address = n-1', 'Modicon 5-digit 40001 is the first holding register. The wire uses a 0-based 16-bit address. 400001 is the same register in 6-digit long addressing.'],
-    'sec-plc-timer-preset': ['Preset is time over timebase', 'N = t / T_{base}', 'TON, TOF, and RTO share the same count math. Round to the nearest integer count; the residual is the time you cannot hit exactly.']
+    'sec-plc-timer-preset': ['Preset is time over timebase', 'N = t / T_{base}', 'TON, TOF, and RTO share the same count math. Round to the nearest integer count; the residual is the time you cannot hit exactly.'],
+    'sec-pitch-hum': ['The hum’s period is the lag that matches', 'f_0 = f_s / \\tau', 'A 60 Hz hum is rarely a clean sine, so the FFT’s tallest bin can be a harmonic. Autocorrelation asks when the waveform repeats. 60 Hz and 120 Hz notes are associations, not diagnoses.'],
+    'sec-audio-spectrum': ['A spectrum is energy by frequency', 'X[k]=\\sum x[n]e^{-j2\\pi kn/N}', 'Hann window, then an FFT. Bin width is sampleRate / N. Log axis and peak-hold are display, not a different transform.'],
+    'sec-sound-level': ['Level is RMS, then a log', 'L = 20\\log_{10}(\\mathrm{rms})', 'dBFS is relative to digital full scale. A-weighting here is an FFT-bin approximation, not a certified SLM filter. Calibrate against a real meter or keep the unit relative.'],
+    'sec-lux-meter': ['Brightness is a center-weighted mean', 'Y = 0.299R+0.587G+0.114B', 'The camera is not a photometer. Without a one-point scale the number is relative, not lux. Flicker FFT is limited by camera frame rate.']
   };
 
   const DOCS = {

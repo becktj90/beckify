@@ -59,6 +59,13 @@ ok('#33 motor nameplate stays first-class', registry.TOOLS.some((t) => t[0] === 
 ok('#33 battery bank stays first-class', registry.TOOLS.some((t) => t[0] === 'battery-bank' && t[3] === 'sec-battery-bank'));
 ok('new field tools are not swallowed into families', ['cable-schedule', 'motor-nameplate', 'battery-bank']
   .every((slug) => !registry.TOOL_ALIASES.some((a) => a[0] === slug)));
+ok('#34 phone sensors stay first-class', [
+  ['pitch-hum-identifier', 'sec-pitch-hum'],
+  ['audio-spectrum-analyzer', 'sec-audio-spectrum'],
+  ['sound-level-meter', 'sec-sound-level'],
+  ['lux-light-meter', 'sec-lux-meter'],
+].every(([slug, anchor]) => registry.TOOLS.some((t) => t[0] === slug && t[3] === anchor)
+  && !registry.TOOL_ALIASES.some((a) => a[0] === slug)));
 const iosCat = fs.readFileSync(path.join(root, '../../ios/Beckify/Models/ToolboxCatalog.swift'), 'utf8');
 ok('iOS keeps powerWizard as a hidden lookup', iosCat.includes('hiddenTools') && /id: \.powerWizard/.test(iosCat));
 ok('iOS toolbox list does not show a second Power Wizard',
