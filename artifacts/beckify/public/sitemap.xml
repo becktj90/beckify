@@ -306,6 +306,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/io-list-generator/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/signal-scaling/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/555-timer/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

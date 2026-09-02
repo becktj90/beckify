@@ -20,7 +20,7 @@
 
 const URL_TOOLS = {};
 /** Prefixes stripped from element ids to keep parameter names readable. */
-const URL_PREFIXES = ['xe_', 'ws_', 'cfa_', 'cf_', 't555_', 'pc_', 'xs_', 'sc_', 'nec_', 'bl_', 'tdr_', 'emp_', 'hw_', 'orlp_', 'nbc_', 'mc_', 'tc_', 'pd_', 'sd_', 'fl_', 'gb_'];
+const URL_PREFIXES = ['xe_', 'ws_', 'cfa_', 'cf_', 't555_', 'pc_', 'xs_', 'sc_', 'nec_', 'bl_', 'tdr_', 'emp_', 'hw_', 'orlp_', 'nbc_', 'mc_', 'tc_', 'pd_', 'sd_', 'fl_', 'gb_', 'iol_', 'ssc_'];
 const URL_WRITE_DELAY = 250;
 
 let urlWriteTimer = null;

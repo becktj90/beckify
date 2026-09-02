@@ -16,7 +16,9 @@
     'sec-tdr': ['A TDR is radar for copper', 'd = \\frac{VF\\,c\\,t}{2}', 'The pulse travels out, notices a change in the cable, and returns. The divide-by-two matters because the measured time includes both trips.'],
     'sec-emp-emc': ['A changing field writes a voltage on a loop', 'V = -N\\,d\\Phi/dt', 'Faraday’s law is why a cable loop inside a changing B field picks up a transient. Shrink the loop, close the slots, bond the cage, and filter the cable entry. This tool sizes protection — it does not design a source.'],
     'sec-lp-optimizer': ['A linear program is a hill inside a fence', '\\max\\, c\\cdot x \\quad \\text{s.t.} \\quad Ax \\le b,\\, x \\ge 0', 'Each inequality is a fence. The simplex method walks the corners of the fenced yard until the objective cannot climb any further — or reports that the yard is empty or has no highest point.'],
-    'sec-base-converter': ['Every integer is a weighted pile of digits', 'n = \\sum d_i b^i', 'Hex, decimal, octal, and binary are the same integer written with different digit alphabets. Two’s complement just rereads the high bit as a minus sign.']
+    'sec-base-converter': ['Every integer is a weighted pile of digits', 'n = \\sum d_i b^i', 'Hex, decimal, octal, and binary are the same integer written with different digit alphabets. Two’s complement just rereads the high bit as a minus sign.'],
+    'sec-io-list-generator': ['A card is a slot, a channel is a row', 'slot, then 1\\ldots N', 'Number the modules in the order you add them. Couplers and power-refresh cards still take a slot even with zero channels. Analog raw min/max come from the catalog, not a guess.'],
+    'sec-signal-scaling': ['Live-zero means 4 mA is empty', 'y = y_0 + (x-x_0)\\frac{y_1-y_0}{x_1-x_0}', 'A 4–20 mA loop does not start at 0 mA. Below 4 mA is a live-zero fault. The same line run backwards is the raw you inject on the bench.']
   };
 
   const DOCS = {
@@ -129,6 +131,28 @@
       ],
       examples: ['8-bit two’s complement', 'Hex FF', 'Unsigned decimal 255', 'Signed decimal −1', 'Binary 1111 1111'],
       button: { label: 'Load Signed Example (FF = −1)', action: 'loadBaseConverterExample' }
+    },
+    'sec-io-list-generator': {
+      overview: 'An I/O list is a table of every channel on every card in a PLC station. This generator scaffolds that table from a parts cart: pick catalog part numbers, stack them in add order, and expand to one row per channel. Couplers and E-bus power cards have zero channels but still consume a slot and still get a documentation row. Analog raw min/max are copied from the catalog entry — they are not inferred at generate time. Project columns (wire number, PLC tag, description, …) stay blank for you to fill. Design aid only; not a PE stamp or a wiring schedule.',
+      steps: [
+        'Edit the catalog if your part numbers, channel counts, or analog raw ranges differ from the seed Beckhoff-style list.',
+        'Name the controller and station. Set a card-name prefix (any string — C, AI-, RackA-).',
+        'Add modules to the cart with a quantity. Slots number in add order, including 0-channel couplers and power cards.',
+        'Generate, edit any cell, then export .xlsx (I/O List + Summary sheets) or .csv. Save/Load JSON stores the build list, not the expanded grid.'
+      ],
+      examples: ['Station: MCC-A, controller PLC-1, prefix C', 'Cart: EK1100, EL1819, EL9410, EL3048', 'Slots: 1 coupler, 2 DI (16 ch), 3 power, 4 AI (8 ch, raw 0–4095)', 'Export columns start Controller … Comments in the documented order'],
+      button: { label: 'Generate from the parts cart', action: 'iolGenerateExample' }
+    },
+    'sec-signal-scaling': {
+      overview: 'Linear scaling maps a raw instrument signal onto engineering units with the same line run in both directions. Forward: a measured mA, volt, or count becomes a process value. Reverse: a desired engineering value becomes the raw you inject for a bench test. 4–20 mA flags below 4 mA as a live-zero fault (0% is 4 mA, not 0 mA) and above 20 mA as over-range. Design aid only — not a transmitter configuration download or a PE stamp.',
+      steps: [
+        'Pick a signal type (4–20 mA, 0–20 mA, 0–10 V, 1–5 V, 12/16-bit ADC, or Pt100 resistance / linear counts).',
+        'Set the engineering range and unit family. Type a raw value — the engineering result and the plugged-in formula update live.',
+        'Type a desired engineering value to see the raw to inject. Drag the slider across the signal span.',
+        'Save a named preset (for example PT-204 0–500 psi 4–20mA) in this browser’s localStorage.'
+      ],
+      examples: ['4–20 mA, 0–500 psi, raw = 14.2 mA', 'eng = 0 + (14.2 − 4) × 500 / 16 = 318.75 psi', 'Reverse 250 psi → 12.0 mA to inject', '3.5 mA flags live-zero fault'],
+      button: { label: 'Load 14.2 mA / 0–500 psi', action: 'loadSignalScalingExample' }
     },
     'sec-magnetic-circuit': {
       overview: 'A magnetic circuit turns Ampere’s loop into an Ohm’s-law analog: MMF F = N I, flux Φ, and reluctance R = ℓ / (μ A). This workbench is homework magnetostatics for a gapped laminated core — not a transformer kVA sizer.',

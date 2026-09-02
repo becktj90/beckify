@@ -149,6 +149,8 @@ export default function Home() {
                     { href: "/toolbox/#sec-gaussian-beam", label: "Gaussian beam" },
                     { href: "/toolbox/#sec-lp-optimizer", label: "LP optimizer" },
                     { href: "/toolbox/#sec-base-converter", label: "Number-base" },
+                    { href: "/toolbox/#sec-io-list-generator", label: "I/O list" },
+                    { href: "/toolbox/#sec-signal-scaling", label: "Signal scaling" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}

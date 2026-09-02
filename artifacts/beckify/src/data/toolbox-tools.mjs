@@ -60,6 +60,8 @@ export const TOOLS = [
   ["harmonics", "Harmonics Tool", "Review harmonic distortion and practical electrical power-quality relationships.", "sec-harmonics"],
   ["hazardous-area", "Hazardous Area Lookup", "Reference hazardous-area classifications and equipment selection concepts for electrical work.", "sec-haz"],
   ["intrinsically-safe-loop", "Intrinsic Safety Loop Verifier", "Check intrinsic-safety loop inputs and identify common instrumentation constraints.", "sec-isloop"],
+  ["io-list-generator", "I/O List Generator", "Scaffold a PLC I/O list from EtherCAT module counts: numbered slots, channels, card metadata, and analog raw ranges from an editable catalog. Design aid — not a PE stamp.", "sec-io-list-generator"],
+  ["signal-scaling", "Process Value / Signal Scaling Calculator", "Linear scaling between raw instrument signals (4–20 mA, 0–10 V, ADC counts, Pt100) and engineering units, both directions, with a live formula. Design aid — not a transmitter download.", "sec-signal-scaling"],
   ["555-timer", "555 Timer Calculator", "Calculate astable frequency, duty cycle, monostable pulse width, and timing values.", "sec-555"],
   ["unit-conversions", "Electrical Unit Conversions", "Convert common electrical engineering units quickly in the field.", "sec-convert"],
   ["circular-mils", "Circular Mils Calculator", "Calculate conductor area and compare circular-mil values for electrical sizing work.", "sec-cm"],

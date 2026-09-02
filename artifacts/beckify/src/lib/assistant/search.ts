@@ -33,6 +33,8 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "gaussian-beam": ["gaussian beam", "rayleigh range", "beam waist", "confocal", "saleh teich"],
   "lp-optimizer": ["linear programming", "simplex", "feasible region", "blending", "product mix", "operations research"],
   "number-base-converter": ["hex", "hexadecimal", "decimal", "octal", "binary", "radix", "two's complement", "bit field", "nibble"],
+  "io-list-generator": ["io list", "i/o list", "ethercat", "beckhoff", "el1819", "plc io", "channel list", "card slot", "io-link"],
+  "signal-scaling": ["4-20ma", "4-20 mA", "signal scaling", "process value", "transmitter", "engineering units", "live zero", "pt100", "raw counts", "4 to 20"],
 };
 
 /**
