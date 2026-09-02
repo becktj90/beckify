@@ -1,0 +1,506 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BECF00000000000000000002 /* BeckifyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000001 /* BeckifyApp.swift */; };
+		BECF00000000000000000004 /* ConduitFillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000003 /* ConduitFillView.swift */; };
+		BECF00000000000000000006 /* MotorFLAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000005 /* MotorFLAView.swift */; };
+		BECF00000000000000000008 /* OhmsLawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000007 /* OhmsLawView.swift */; };
+		BECF0000000000000000000A /* PowerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000009 /* PowerView.swift */; };
+		BECF0000000000000000000C /* PowerWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000000B /* PowerWizardView.swift */; };
+		BECF0000000000000000000E /* Timer555View.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000000D /* Timer555View.swift */; };
+		BECF00000000000000000010 /* TransformerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000000F /* TransformerView.swift */; };
+		BECF00000000000000000012 /* VoltageDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000011 /* VoltageDropView.swift */; };
+		BECF00000000000000000014 /* WireAmpacityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000013 /* WireAmpacityView.swift */; };
+		BECF00000000000000000016 /* JobStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000015 /* JobStore.swift */; };
+		BECF00000000000000000018 /* ToolboxCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000017 /* ToolboxCatalog.swift */; };
+		BECF0000000000000000001A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000019 /* Theme.swift */; };
+		BECF0000000000000000001C /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000001B /* AboutView.swift */; };
+		BECF0000000000000000001E /* FormControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000001D /* FormControls.swift */; };
+		BECF00000000000000000020 /* JobsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000001F /* JobsView.swift */; };
+		BECF00000000000000000022 /* ToolboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000021 /* ToolboxView.swift */; };
+		BECF00000000000000000024 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000023 /* Assets.xcassets */; };
+		BECF00000000000000000026 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000025 /* PrivacyInfo.xcprivacy */; };
+		BECF00000000000000000029 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = BECF00000000000000000028 /* BeckifyMath */; };
+		BECF00000000000000000042 /* WiFiStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000041 /* WiFiStatusView.swift */; };
+		BECF00000000000000000044 /* BluetoothScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000043 /* BluetoothScannerView.swift */; };
+		BECF00000000000000000046 /* NoiseMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000045 /* NoiseMeterView.swift */; };
+		BECF00000000000000000048 /* BubbleLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000047 /* BubbleLevelView.swift */; };
+		BECF0000000000000000004A /* MagnetometerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000049 /* MagnetometerView.swift */; };
+		BECF0000000000000000004C /* BarometerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000004B /* BarometerView.swift */; };
+		BECF0000000000000000004E /* MotionSnapshotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000004D /* MotionSnapshotView.swift */; };
+		BECF00000000000000000050 /* FieldPositionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000004F /* FieldPositionView.swift */; };
+		BECF00000000000000000052 /* DeviceHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000051 /* DeviceHealthView.swift */; };
+		BECF00000000000000000054 /* SensorSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000053 /* SensorSupport.swift */; };
+		BECF00000000000000000056 /* VoltageDividerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000055 /* VoltageDividerView.swift */; };
+		BECF00000000000000000058 /* SeriesParallelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000057 /* SeriesParallelView.swift */; };
+		BECF0000000000000000005A /* ResistorColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000059 /* ResistorColorView.swift */; };
+		BECF0000000000000000005C /* UnitConverterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005B /* UnitConverterView.swift */; };
+		BECF0000000000000000005E /* FrequencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005D /* FrequencyView.swift */; };
+		BECF00000000000000000060 /* LEDRCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005F /* LEDRCView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BECF00000000000000000001 /* BeckifyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyApp.swift; sourceTree = "<group>"; };
+		BECF00000000000000000003 /* ConduitFillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConduitFillView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000005 /* MotorFLAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorFLAView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000007 /* OhmsLawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OhmsLawView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000009 /* PowerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000000B /* PowerWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerWizardView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000000D /* Timer555View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timer555View.swift; sourceTree = "<group>"; };
+		BECF0000000000000000000F /* TransformerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000011 /* VoltageDropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoltageDropView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000013 /* WireAmpacityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireAmpacityView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000015 /* JobStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStore.swift; sourceTree = "<group>"; };
+		BECF00000000000000000017 /* ToolboxCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolboxCatalog.swift; sourceTree = "<group>"; };
+		BECF00000000000000000019 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		BECF0000000000000000001B /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000001D /* FormControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormControls.swift; sourceTree = "<group>"; };
+		BECF0000000000000000001F /* JobsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobsView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000021 /* ToolboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolboxView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000023 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BECF00000000000000000025 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BECF00000000000000000027 /* Beckify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Beckify.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BECF00000000000000000041 /* WiFiStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiStatusView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000043 /* BluetoothScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothScannerView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000045 /* NoiseMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoiseMeterView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000047 /* BubbleLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BubbleLevelView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000049 /* MagnetometerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagnetometerView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000004B /* BarometerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarometerView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000004D /* MotionSnapshotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSnapshotView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000004F /* FieldPositionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldPositionView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000051 /* DeviceHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceHealthView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000053 /* SensorSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorSupport.swift; sourceTree = "<group>"; };
+		BECF00000000000000000055 /* VoltageDividerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoltageDividerView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000057 /* SeriesParallelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesParallelView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000059 /* ResistorColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResistorColorView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000005B /* UnitConverterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConverterView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000005D /* FrequencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000005F /* LEDRCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDRCView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BECF00000000000000000036 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BECF00000000000000000029 /* BeckifyMath in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BECF0000000000000000002B = {
+			isa = PBXGroup;
+			children = (
+				BECF0000000000000000002D /* Beckify */,
+				BECF0000000000000000002C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BECF0000000000000000002C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BECF00000000000000000027 /* Beckify.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BECF0000000000000000002D /* Beckify */ = {
+			isa = PBXGroup;
+			children = (
+				BECF00000000000000000001 /* BeckifyApp.swift */,
+				BECF0000000000000000002E /* Theme */,
+				BECF0000000000000000002F /* Models */,
+				BECF00000000000000000030 /* Views */,
+				BECF00000000000000000032 /* Calculators */,
+				BECF00000000000000000040 /* Sensors */,
+				BECF00000000000000000023 /* Assets.xcassets */,
+				BECF00000000000000000025 /* PrivacyInfo.xcprivacy */,
+			);
+			path = Beckify;
+			sourceTree = "<group>";
+		};
+		BECF0000000000000000002E /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				BECF00000000000000000019 /* Theme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		BECF0000000000000000002F /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BECF00000000000000000015 /* JobStore.swift */,
+				BECF00000000000000000017 /* ToolboxCatalog.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		BECF00000000000000000031 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				BECF0000000000000000001D /* FormControls.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		BECF00000000000000000030 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BECF0000000000000000001B /* AboutView.swift */,
+				BECF0000000000000000001F /* JobsView.swift */,
+				BECF00000000000000000021 /* ToolboxView.swift */,
+				BECF00000000000000000031 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BECF00000000000000000032 /* Calculators */ = {
+			isa = PBXGroup;
+			children = (
+				BECF00000000000000000003 /* ConduitFillView.swift */,
+				BECF00000000000000000005 /* MotorFLAView.swift */,
+				BECF00000000000000000007 /* OhmsLawView.swift */,
+				BECF00000000000000000009 /* PowerView.swift */,
+				BECF0000000000000000000B /* PowerWizardView.swift */,
+				BECF0000000000000000000D /* Timer555View.swift */,
+				BECF0000000000000000000F /* TransformerView.swift */,
+				BECF00000000000000000011 /* VoltageDropView.swift */,
+				BECF00000000000000000013 /* WireAmpacityView.swift */,
+				BECF00000000000000000055 /* VoltageDividerView.swift */,
+				BECF00000000000000000057 /* SeriesParallelView.swift */,
+				BECF00000000000000000059 /* ResistorColorView.swift */,
+				BECF0000000000000000005B /* UnitConverterView.swift */,
+				BECF0000000000000000005D /* FrequencyView.swift */,
+				BECF0000000000000000005F /* LEDRCView.swift */,
+			);
+			path = Calculators;
+			sourceTree = "<group>";
+		};
+		BECF00000000000000000040 /* Sensors */ = {
+			isa = PBXGroup;
+			children = (
+				BECF00000000000000000041 /* WiFiStatusView.swift */,
+				BECF00000000000000000043 /* BluetoothScannerView.swift */,
+				BECF00000000000000000045 /* NoiseMeterView.swift */,
+				BECF00000000000000000047 /* BubbleLevelView.swift */,
+				BECF00000000000000000049 /* MagnetometerView.swift */,
+				BECF0000000000000000004B /* BarometerView.swift */,
+				BECF0000000000000000004D /* MotionSnapshotView.swift */,
+				BECF0000000000000000004F /* FieldPositionView.swift */,
+				BECF00000000000000000051 /* DeviceHealthView.swift */,
+				BECF00000000000000000053 /* SensorSupport.swift */,
+			);
+			path = Sensors;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BECF00000000000000000033 /* Beckify */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BECF00000000000000000039 /* Build configuration list for PBXNativeTarget "Beckify" */;
+			buildPhases = (
+				BECF00000000000000000035 /* Sources */,
+				BECF00000000000000000036 /* Frameworks */,
+				BECF00000000000000000037 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Beckify;
+			packageProductDependencies = (
+				BECF00000000000000000028 /* BeckifyMath */,
+			);
+			productName = Beckify;
+			productReference = BECF00000000000000000027 /* Beckify.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BECF00000000000000000034 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					BECF00000000000000000033 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = BECF00000000000000000038 /* Build configuration list for PBXProject "Beckify" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BECF0000000000000000002B;
+			packageReferences = (
+				BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */,
+			);
+			productRefGroup = BECF0000000000000000002C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BECF00000000000000000033 /* Beckify */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BECF00000000000000000037 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BECF00000000000000000024 /* Assets.xcassets in Resources */,
+				BECF00000000000000000026 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BECF00000000000000000035 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BECF00000000000000000002 /* BeckifyApp.swift in Sources */,
+				BECF00000000000000000004 /* ConduitFillView.swift in Sources */,
+				BECF00000000000000000006 /* MotorFLAView.swift in Sources */,
+				BECF00000000000000000008 /* OhmsLawView.swift in Sources */,
+				BECF0000000000000000000A /* PowerView.swift in Sources */,
+				BECF0000000000000000000C /* PowerWizardView.swift in Sources */,
+				BECF0000000000000000000E /* Timer555View.swift in Sources */,
+				BECF00000000000000000010 /* TransformerView.swift in Sources */,
+				BECF00000000000000000012 /* VoltageDropView.swift in Sources */,
+				BECF00000000000000000014 /* WireAmpacityView.swift in Sources */,
+				BECF00000000000000000016 /* JobStore.swift in Sources */,
+				BECF00000000000000000018 /* ToolboxCatalog.swift in Sources */,
+				BECF0000000000000000001A /* Theme.swift in Sources */,
+				BECF0000000000000000001C /* AboutView.swift in Sources */,
+				BECF0000000000000000001E /* FormControls.swift in Sources */,
+				BECF00000000000000000020 /* JobsView.swift in Sources */,
+				BECF00000000000000000022 /* ToolboxView.swift in Sources */,
+				BECF00000000000000000042 /* WiFiStatusView.swift in Sources */,
+				BECF00000000000000000044 /* BluetoothScannerView.swift in Sources */,
+				BECF00000000000000000046 /* NoiseMeterView.swift in Sources */,
+				BECF00000000000000000048 /* BubbleLevelView.swift in Sources */,
+				BECF0000000000000000004A /* MagnetometerView.swift in Sources */,
+				BECF0000000000000000004C /* BarometerView.swift in Sources */,
+				BECF0000000000000000004E /* MotionSnapshotView.swift in Sources */,
+				BECF00000000000000000050 /* FieldPositionView.swift in Sources */,
+				BECF00000000000000000052 /* DeviceHealthView.swift in Sources */,
+				BECF00000000000000000054 /* SensorSupport.swift in Sources */,
+				BECF00000000000000000056 /* VoltageDividerView.swift in Sources */,
+				BECF00000000000000000058 /* SeriesParallelView.swift in Sources */,
+				BECF0000000000000000005A /* ResistorColorView.swift in Sources */,
+				BECF0000000000000000005C /* UnitConverterView.swift in Sources */,
+				BECF0000000000000000005E /* FrequencyView.swift in Sources */,
+				BECF00000000000000000060 /* LEDRCView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BECF0000000000000000003A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+
+			};
+			name = Debug;
+		};
+		BECF0000000000000000003B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+
+			};
+			name = Release;
+		};
+		BECF0000000000000000003C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Beckify;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location only in the Position tool (coordinates, speed, homework distance) and, if you tap Request SSID, in Wi-Fi Path to read the current network name. Location is not used at launch and is not uploaded.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.toolbox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+
+			};
+			name = Debug;
+		};
+		BECF0000000000000000003D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Beckify;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location only in the Position tool (coordinates, speed, homework distance) and, if you tap Request SSID, in Wi-Fi Path to read the current network name. Location is not used at launch and is not uploaded.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.toolbox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BECF00000000000000000038 /* Build configuration list for PBXProject "Beckify" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BECF0000000000000000003A /* Debug */,
+				BECF0000000000000000003B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BECF00000000000000000039 /* Build configuration list for PBXNativeTarget "Beckify" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BECF0000000000000000003C /* Debug */,
+				BECF0000000000000000003D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = BeckifyMath;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BECF00000000000000000028 /* BeckifyMath */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */;
+			productName = BeckifyMath;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = BECF00000000000000000034 /* Project object */;
+}

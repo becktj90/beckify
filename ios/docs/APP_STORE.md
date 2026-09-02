@@ -1,0 +1,138 @@
+# App Store scaffolding — Beckify
+
+Draft only. Nothing in this repository has been submitted to Apple. Uploading a build requires Trevor's Apple Developer Program account ($99/year) on a Mac with Xcode. This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, enrolled a team, or uploaded TestFlight.
+
+## Listing copy (draft)
+
+**Name:** Beckify  
+**Subtitle:** Field EE toolbox  
+**Category:** Productivity  
+**Secondary (optional):** Utilities  
+**Age rating:** 4+ (no user-generated content, no unrestricted web, no violence)  
+**Price:** Free, no in-app purchases, no ads
+
+**Promotional text (170 characters, optional):**
+Native field-EE calculators plus public-API sensors for homework and jobsite notes. Design aid — not a PE stamp or calibrated instrument.
+
+**Description:**
+
+Beckify is a professional field electrical toolbox for engineers, technicians, and students. It is a native iPhone and iPad app, not a website wrapper and not a project gallery.
+
+Calculate common jobsite numbers with units, formulas, and live results:
+
+• Ohm's Law
+• DC and AC power
+• Power Wizard for DC, single-phase, and three-phase (amps, kW, kVA, HP)
+• Voltage drop with 3% / 5% informational checks and a 310.16 ampacity cross-check
+• Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
+• Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
+• 555 timer (astable and monostable)
+• Motor full-load current from NEC Tables 430.248 and 430.250
+• Wire size from NEC Table 310.16, 75 °C column
+
+Homework calculators:
+
+• Voltage divider (Vout, or solve R1 / R2)
+• Series / parallel resistors and capacitors
+• Resistor color code (4-band and 5-band, decode and encode)
+• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
+• Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC))
+• LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
+
+Measure with public Apple APIs (not private APIs):
+
+• Wi-Fi path (Network.framework): interface, expensive/constrained. iOS does not expose Wi-Fi RSSI to third-party apps; this tool will not invent a signal bar. Current SSID is optional and needs location plus, on a signed team, Access Wi-Fi Information.
+• BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
+• Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
+• Bubble level / plumb (CoreMotion)
+• Magnetometer: heading and |B| in µT
+• Barometer / relative altitude
+• g-force snapshot
+• Position (GPS) when that tool is opened — not at launch
+• Device battery and thermal diagnostics
+
+Search the toolbox (try “ampacity”, “divider”, “color code”, “LED”, “wifi”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+
+This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
+
+**Keywords (100 characters max, comma-separated draft):**
+electrical,NEC,resistor,divider,LED,ampacity,wifi,ohm
+
+**What's New (1.0):**
+First toolbox: field EE calculators plus public-API sensors and local saved notes.
+
+**Support URL:** https://beckify.com  
+**Marketing URL:** https://beckify.com  
+**Copyright:** 2026 Trevor Beck  
+**Contact:** trevorjohnbeck@gmail.com
+
+**Privacy Policy URL (intended, once hosted):** App Store Connect requires a public HTTPS privacy-policy URL. The draft is [`ios/docs/PRIVACY.md`](PRIVACY.md) (“Data Not Collected”). It is **not** hosted on https://beckify.com in this PR. After this file is on `main`, a typical stand-in until a dedicated page exists is the GitHub blob URL for that path (for example `https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md`). Do not treat the live site as hosting this policy.
+
+## Wi-Fi App Store limitation (honest)
+
+Public iOS APIs do **not** provide Wi-Fi RSSI, noise, or a signal-bar value to third-party apps. `NWPathMonitor` reports path status (Wi-Fi / cellular / wired, expensive, constrained, interface names). `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID after the user grants location in that tool; it still does not return RSSI. Do not add private APIs to fake a meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
+
+## App privacy (nutrition label)
+
+Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
+
+- No analytics
+- No tracking
+- No advertising identifier
+- No account
+- Saved jobs use on-device storage only (`UserDefaults`)
+- Microphone, Bluetooth, and location are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
+
+Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
+- `NSPrivacyTracking` = false  
+- No collected data types  
+- UserDefaults accessed with reason CA92.1 (app functionality: saved jobs)
+
+Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use — see the Beckify target build settings.
+
+## Export compliance
+
+The app uses only HTTPS for optional links the user taps (beckify.com, mailto). It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
+
+## Screenshots (required sizes)
+
+Not captured in this repository. This repo has not run an iOS Simulator UI build, signed the app, enrolled an Apple Developer team, uploaded TestFlight, or submitted to the App Store. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
+
+Apple's current required screenshot classes for an iPhone + iPad app (verify in App Store Connect before upload):
+
+| Device class | Role | Common simulator | Typical pixel size |
+| --- | --- | --- | --- |
+| 6.9" iPhone | Required (or 6.5" set) | iPhone 16 Pro Max | 1320 × 2868 |
+| 6.5" iPhone | Alternate required iPhone set | iPhone 14 Plus / 11 Pro Max | 1284 × 2778 |
+| 13" iPad | Required for iPad | iPad Pro 13-inch | 2064 × 2752 |
+| 12.9" iPad | Fallback only (scales to 13" if 13" is missing) | iPad Pro 12.9-inch | 2048 × 2732 |
+
+Take 3–8 screens per size. Suggested shots:
+
+1. Toolbox search / tool list (dark premium home)
+2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
+3. Voltage drop with 3% / 5% notes and ampacity row
+4. Wi-Fi Path showing path status and the RSSI limitation copy
+5. BLE scanner or bubble level
+6. Saved Jobs list (on-device notes)
+7. About (Trevor Beck, EE, beckify.com, email — no phone number)
+
+Use dark appearance. Do not show ads, Amazon, games, or a phone number.
+
+## App icon
+
+Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (1024×1024). Replace with a final design before submission if desired. Do not use a photograph of a real person.
+
+## Remaining steps that require Apple Developer login
+
+1. Enroll or renew **Apple Developer Program** ($99 USD/year) at https://developer.apple.com as Trevor Beck.
+2. In Xcode → Signing & Capabilities, set **Team** on the Beckify target. Bundle ID `com.beckify.toolbox` must be registered to that team.
+3. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device.
+4. Run on a physical device at least once (capability / provisioning / sensor check). This Linux CI job does not do that.
+5. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): Productivity, 4+, privacy “Data Not Collected”, English listing copy above.
+6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
+7. Upload the build (Organizer or Transporter). Wait for processing.
+8. Attach screenshots, review the encryption and content-rights questions, submit for review.
+9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
+
+Until those steps are done, the app exists only in this repository. It is **not** on the App Store.
