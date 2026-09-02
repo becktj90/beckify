@@ -22,7 +22,7 @@ ok('canonical transformer slug exists', registry.TOOLS.some((t) => t[0] === 'tra
 ok('tap-changer stays first-class', registry.TOOLS.some((t) => t[0] === 'tap-changer' && t[3] === 'sec-tap'));
 ok('old xfmr slugs are aliases, not TOOLS', ['transformer-sizing', 'transformer-engine', 'transformer-design']
   .every((slug) => registry.TOOL_ALIASES.some((a) => a[0] === slug) && !registry.TOOLS.some((t) => t[0] === slug)));
-ok('basics alias of transformer slug still resolves to sec-xfmr', registry.resolveToolSlug('transformer').anchor === 'sec-xfmr-size');
+ok('canonical transformer slug resolves to sec-xfmr-size', registry.resolveToolSlug('transformer').anchor === 'sec-xfmr-size');
 ok('/#sec-xfmr is a transformer family mode', registry.TOOL_FAMILIES
   .find((f) => f.id === 'transformer').modes.some((m) => m.anchor === 'sec-xfmr' && m.id === 'basics'));
 ok('tap-changer is not a transformer mode', !registry.TOOL_FAMILIES
@@ -54,6 +54,10 @@ ok('LV construction is a Conductors option', html.includes('id="ws_construction"
 ok('generator starter is an on-site option', html.includes('id="gen_starter"') && html.includes('Wye-delta'));
 ok('did not import third-party panel/gen worksheets', !html.includes('Jignesh') && !html.includes('electrical-engineering-portal'));
 ok('did not add a second 24 VDC module-current tool', (html.match(/id="sec-ebus-budget"/g) || []).length === 1);
+const iosCat = fs.readFileSync(path.join(root, '../../ios/Beckify/Models/ToolboxCatalog.swift'), 'utf8');
+ok('iOS keeps powerWizard as a hidden lookup', iosCat.includes('hiddenTools') && /id: \.powerWizard/.test(iosCat));
+ok('iOS toolbox list does not show a second Power Wizard',
+  !/static let tools[\s\S]*id: \.powerWizard[\s\S]*static let hiddenTools/.test(iosCat));
 
 console.log('\n--- I²R + MV ---');
 const dir = path.join(root, 'public/toolbox/js') + '/';
