@@ -34,7 +34,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v23';
+const CACHE_VERSION = 'v25';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -57,6 +57,7 @@ const SHELL = [
   './js/vendor/solver.js',
   './js/nec-data.js',
   './js/app.js',
+  './js/toolbox-families.js',
   './js/wire-tools.js',
   './js/power-tools.js',
   './js/factor-tools.js',
@@ -73,6 +74,7 @@ const SHELL = [
   './js/panel-power-study.js',
   './js/conduit-guide.js',
   './js/xfmr-wizard.js',
+  './js/mv-cable.js',
   './js/circuit-sim.js',
   './js/smith-chart.js',
   './js/emp-emc.js',
@@ -90,6 +92,9 @@ const SHELL = [
   './js/ebus-budget.js',
   './js/modbus-address.js',
   './js/plc-timer-preset.js',
+  './js/sensor-fft.js',
+  './js/sensor-engine.js',
+  './js/sensor-tools.js',
   './js/field-persist.js',
   './js/nema-wiring.js',
   './js/battery-bank.js',

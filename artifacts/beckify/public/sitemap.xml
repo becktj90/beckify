@@ -201,6 +201,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/cable-schedule/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/motor-nameplate/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/transformer/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -331,6 +341,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/pitch-hum-identifier/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/audio-spectrum-analyzer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/sound-level-meter/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/lux-light-meter/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/555-timer/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -377,6 +407,11 @@
   </url>
   <url>
     <loc>https://beckify.com/toolbox/battery-build-designer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/battery-bank/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

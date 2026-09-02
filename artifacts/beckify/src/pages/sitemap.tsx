@@ -69,16 +69,13 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: [
       t("Ohm's Law", "sec-ohm"),
       t("Magnetic Circuit Workbench", "sec-magnetic-circuit"),
-      t("DC Power", "sec-power-dc"),
-      t("Power & Current Converter", "sec-power-wizard"),
-      t("AC Power", "sec-power-wizard"),
+      t("Power", "sec-power-wizard"),
     ],
   },
   {
     label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance",
     tools: [
-      t("Reactance & Impedance", "sec-reactance"),
-      t("Resonance", "sec-resonance"),
+      t("Reactance & Resonance", "sec-reactance"),
       t("Phasor Diagram Workbench", "sec-phasor-diagram"),
       t("Transient Circuit Lab", "sec-transient-circuits"),
       t("Power Factor Correction", "sec-pfc"),
@@ -91,17 +88,13 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
-      t("Voltage Drop", "sec-vdrop"),
-      t("Conductor Length by Resistance", "sec-conductor-length"),
-                      t("Motor Calculations", "sec-motor"),
+      t("Conductors", "sec-wire-select"),
       t("Cable Schedule Generator", "sec-cable-schedule"),
+      t("Motor", "sec-motor-ref"),
       t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
-      t("Transformer", "sec-xfmr"),
-      t("Transformer Engine", "sec-xfmr-engine"),
-      t("Transformer Sizing", "sec-xfmr-size"),
+      t("Transformer", "sec-xfmr-size"),
+      t("Tap-Changer Calc", "sec-tap"),
       t("Conduit Fill", "sec-conduit"),
-      t("Conduit Fill (Mixed)", "sec-conduit-adv"),
-      t("Wire Size & Ampacity", "sec-wire-select"),
       t("Short Circuit", "sec-sc"),
       t("Load Factors & Capacity", "sec-load-factors"),
     ],
@@ -109,9 +102,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
     tools: [
-      t("UPS Sizing", "sec-ups"),
-      t("Generator Sizing", "sec-gen"),
-      t("Hybrid Generator", "sec-hybrid"),
+      t("On-site Power", "sec-ups"),
       t("Battery Bank Calculator", "sec-battery-bank"),
     ],
   },
@@ -130,7 +121,6 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "NEC Specialized", hue: HUES.violet, anchor: "sec-lighting-opt",
     tools: [
-      t("Lighting VD Optimizer", "sec-lighting-opt"),
       t("Building Load Calculator", "sec-bldg-load"),
     ],
   },
@@ -138,7 +128,6 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     label: "Advanced", hue: HUES.blue, anchor: "sec-lsi",
     tools: [
       t("LSI Breaker Visualizer", "sec-lsi"),
-      t("BESS Peak-Shave", "sec-bess"),
       t("Tap-Changer Calc", "sec-tap"),
       t("Harmonics Tool", "sec-harmonics"),
       t("EMP / EMC Shielding", "sec-emp-emc"),
@@ -154,6 +143,15 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("E-bus / Rack Current Budget", "sec-ebus-budget"),
       t("Modbus Address Converter", "sec-modbus-address"),
       t("PLC Timer Preset", "sec-plc-timer-preset"),
+    ],
+  },
+  {
+    label: "Phone sensors", hue: HUES.yellow, anchor: "sec-lux-meter",
+    tools: [
+      t("Pitch / Hum Identifier", "sec-pitch-hum"),
+      t("FFT / Audio Spectrum", "sec-audio-spectrum"),
+      t("Sound Level Meter", "sec-sound-level"),
+      t("Lux / Light Meter", "sec-lux-meter"),
     ],
   },
   {
@@ -173,15 +171,18 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("E-bus / Rack Current Budget", "sec-ebus-budget"),
       t("Modbus Address Converter", "sec-modbus-address"),
       t("PLC Timer Preset", "sec-plc-timer-preset"),
-      t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
-      t("Panel Schedule Power Study", "sec-panel-power-study"),
+      t("Pitch / Hum Identifier", "sec-pitch-hum"),
+      t("FFT / Audio Spectrum", "sec-audio-spectrum"),
+      t("Sound Level Meter", "sec-sound-level"),
+      t("Lux / Light Meter", "sec-lux-meter"),
+      t("Panel Schedule", "sec-panel-schedule"),
     ],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",
     tools: [
       t("Conductor Reference", "sec-wire-ref"),
-      t("Motor FLA Tables", "sec-motor-ref"),
+      t("Motor FLA Tables (Motor tool)", "sec-motor-ref"),
       t("Conduit Fill Tables", "sec-conduit-ref"),
       t("IP Rating Chart", "sec-ip-rating"),
       t("NEMA Enclosures", "sec-nema-class"),

@@ -29,6 +29,7 @@ ok(
   "Toolbox has a CSP meta with object-src none",
   /http-equiv="Content-Security-Policy"/.test(toolboxHtml) && /object-src 'none'/.test(toolboxHtml),
 );
+ok("Toolbox CSP allows media blob for getUserMedia", /media-src 'self' blob:/.test(toolboxHtml));
 ok("Toolbox doc links include noreferrer", /rel="noopener noreferrer"/.test(toolboxHtml));
 
 const panelSchedule = read(root, "public", "toolbox", "panel-schedule.html");
@@ -71,7 +72,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after control-systems merge", /CACHE_VERSION = 'v23'/.test(sw));
+ok("Toolbox SW cache version bumped after control-systems merge", /CACHE_VERSION = 'v25'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),
