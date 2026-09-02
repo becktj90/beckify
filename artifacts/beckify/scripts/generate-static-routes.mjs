@@ -10,6 +10,7 @@ const staticRoutes = [
   ["about", "About Trevor Beck | Beckify", "Electrical engineering background, hands-on builds, and the purpose behind Beckify's practical engineering resources."],
   ["projects", "Engineering Projects and Build Logs | Beckify", "Engineering projects, conversion build logs, prototypes, and practical maker work from Beckify."],
   ["projects/vespa-p200e", "Vespa P200E EV Conversion | Beckify", "An engineering case study of a 1979 Vespa P200E electric conversion: 20S10P battery, protection, motor control, hub motor and custom swingarm."],
+  ["projects/honda-xr650r", "Honda XR650R Electric Conversion | Beckify", "A public workshop journal for a Honda XR650R electric motorcycle conversion — 76 V pack, QS 4 kW V3 mid-drive, Votol EM-200/2. Build in progress."],
   ["gear", "Recommended Electrical Tools, Supplies & Field Gear | Beckify", "Direct model links for industry-standard tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices."],
   ["made-in-america", "American-Made Electrical Tools & Supplies | Made in America | Beckify", "Find verified American-made electrical tools — Klein strippers, CHANNELLOCK pliers, Daniels crimp frames, and 3M tape. Exact models, manufacturer links, and sourcing notes for electricians."],
   ["control-systems", "Control System Toolbox | Beckify", "Model plants, inspect Bode and root-locus behavior, and compare PID, LQR, and MPC control workflows in an interactive browser toolbox."],

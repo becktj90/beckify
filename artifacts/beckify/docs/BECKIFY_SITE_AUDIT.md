@@ -583,6 +583,65 @@ resistance-wire element designer. Added as `sec-heater-wizard`
   pre-existing sitewide contrast issue on every calculator's copy button —
   out of scope for this feature, not fixed here.
 
+### New project page — Honda XR650R Electric Conversion
+
+Integrated a handoff package (page component, assets, integration docs)
+for a second EV-conversion build log at `/projects/honda-xr650r`, alongside
+the existing Vespa page. Followed the handoff's own instructions
+(`CLAUDE.md`/`INTEGRATION.md`/`ASSETS.md` in the package) rather than
+improvising the wiring:
+
+- Page, CAD files, and staged photos copied into `src/pages/` and
+  `public/projects/honda-xr650r/`; route added to `App.tsx`; project card
+  added to `site-content.ts`; sitemap entries added to both
+  `generate-sitemap.mjs` *and* `generate-static-routes.mjs` — the handoff's
+  own checklist only named the former, so the static per-route SEO shell
+  (title/description/canonical/OG/JSON-LD, the same pattern every other
+  route uses) would have been silently missing without the second edit.
+- The handoff flagged 6 image slots the page code referenced but had no
+  file for (`initial-bike`, `stripped-chassis`, `original-swingarm`,
+  `rear-sprocket`, `spare-wheel`, `bodywork`), pointing at a Google Drive
+  folder of ~30 unsorted UUID-named workshop photos to source them from.
+  Downloaded and visually reviewed 16 of them (some large files exceeded a
+  single-transfer size limit and were skipped), matched 5 real, distinct
+  photos to 5 of the 6 slots, and produced the 6th (`spare-wheel`) as a
+  second, differently-cropped use of the same swingarm photo rather than
+  either inventing a photo that doesn't exist or shipping two visually
+  identical images in adjacent slots. One candidate photo showed a
+  "ZN Lithium 78V/25.2Ah" battery label — a different pack than the page's
+  own text describes ("Electro & Company 76V/24Ah, Apr 2023") — so it and
+  its sibling shots were excluded rather than used to illustrate a battery
+  the page doesn't claim. Every alt text and figure caption for a
+  substituted image was rewritten to describe what the photo actually
+  shows (e.g. dropped "removed... stored for restoration" for a photo that
+  shows the bodywork still mounted). The two Drive-flagged receipt/PII
+  screenshots were never fetched.
+- Converted the sourced JPEGs to `.webp` (matching what the page code
+  already expected) sized to how each one actually displays — 36–258 KB
+  each, versus the 3–10 MB Drive originals.
+- The handoff's own inner `<main>` wrapper would have duplicated `Layout`'s
+  `<main>` landmark — the identical bug already found and fixed on the
+  Vespa page earlier in this audit. Fixed the same way here (`<main>` →
+  `<div>`) before it ever shipped, rather than reintroducing a known issue.
+- An axe-core scan (full page, all `FadeIn` scroll-reveal sections settled
+  to their final opacity before scanning — an earlier pass mid-transition
+  produced inconsistent, partly-fictitious readings, the same class of
+  false positive already documented in the Mobile findings section)
+  surfaced a real, measured contrast failure: the page's `--xr-red` accent
+  (`#e02b24`) was 4.36:1 against the site's `#05060f` background, just
+  under the 4.5:1 AA threshold, and further short (2.6:1) against the
+  lighter `~#3f3f50` card backgrounds a few components render on. Fixed
+  with Python sRGB/relative-luminance math (the same method used
+  throughout this audit) rather than eyeballing a replacement: `--xr-red`
+  moved to `#f43f38` (5.4:1 on the page background, with headroom for
+  antialiasing sampling variance observed during verification), and the
+  handful of card-scoped labels/body text given their own verified-passing
+  shades against the measured card background. Zero violations and zero
+  console errors on a fully-settled re-scan at both 1280px and 390px, no
+  horizontal overflow at 390px, and `/projects/vespa-p200e` and
+  `/toolbox/` confirmed still loading (200) per the handoff's own
+  checklist. `npm test`/`tsc`/`biome`/build all clean.
+
 ## Deferred improvements
 
 - Restyling the Windows 95 panel-tool skin — flagged for the author's decision
