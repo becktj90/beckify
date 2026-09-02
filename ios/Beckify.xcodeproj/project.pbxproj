@@ -43,6 +43,7 @@
 		BECF0000000000000000005C /* UnitConverterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005B /* UnitConverterView.swift */; };
 		BECF0000000000000000005E /* FrequencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005D /* FrequencyView.swift */; };
 		BECF00000000000000000060 /* LEDRCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005F /* LEDRCView.swift */; };
+		BECF00000000000000000062 /* ReceptacleSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000061 /* ReceptacleSelectorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -82,6 +83,7 @@
 		BECF0000000000000000005B /* UnitConverterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConverterView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000005D /* FrequencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000005F /* LEDRCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDRCView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000061 /* ReceptacleSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceptacleSelectorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +183,7 @@
 				BECF0000000000000000005B /* UnitConverterView.swift */,
 				BECF0000000000000000005D /* FrequencyView.swift */,
 				BECF0000000000000000005F /* LEDRCView.swift */,
+				BECF00000000000000000061 /* ReceptacleSelectorView.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -311,6 +314,7 @@
 				BECF0000000000000000005C /* UnitConverterView.swift in Sources */,
 				BECF0000000000000000005E /* FrequencyView.swift in Sources */,
 				BECF00000000000000000060 /* LEDRCView.swift in Sources */,
+				BECF00000000000000000062 /* ReceptacleSelectorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
