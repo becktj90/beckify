@@ -1504,6 +1504,9 @@ body.report-open { overflow: hidden; }
 .analog-diagram-grid { margin-top: 16px; }
 .analog-schematic { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 4px; }
 .analog-schematic svg { display: block; width: 100%; min-width: 460px; height: auto; }
+.emp-diagram { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.emp-diagram svg { display: block; width: 100%; height: auto; }
+.card-grid.emp-diagram-grid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
 .analog-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; color: #e2e8f0; background: #0d1117; border: 1px solid var(--border); border-left: 3px solid #8b7bff; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; overflow-x: auto; }
 .analog-formula-sub { border-left-color: #5ed7ff; color: #cbd5f5; font-size: 0.85rem; }
 .analog-formula-note { color: var(--fg-muted); font-size: 0.82rem; line-height: 1.55; margin: 0; }

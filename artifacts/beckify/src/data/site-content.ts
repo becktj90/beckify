@@ -230,7 +230,7 @@ export interface Game {
 export const GAMES: Game[] = [
   {
     name: "Cosmic Cadet",
-    description: "A focused space-defense shooter with responsive aim, escalating waves, hull damage, pause, fullscreen play, and a local best score.",
+    description: "A kid-friendly space blaster with auto-fire, touch steering, power-up stars, live score and wave, pause, and local best flights.",
     url: "/games/cosmic-cadet",
   },
   {

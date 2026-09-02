@@ -68,6 +68,7 @@ export const TOOLS = [
   ["panel-power-study", "Panel Schedule Power Study", "Read a panel schedule image, review breaker sizes, poles, and circuit classes, then calculate connected load, demand and diversity factors, panel FLA, and remaining expansion capacity.", "sec-panel-power-study"],
   ["megger-tdr-analyzer", "Megger TDR Trace Analyzer", "Analyze a Megger TDR500 screen image for velocity factor, range, impedance, and cable fault reflections.", "sec-tdr"],
   ["smith-chart", "Smith Chart Tool", "Explore transmission-line impedance matching, reflection coefficient, VSWR, and return loss.", "sec-smith-chart"],
+  ["emp-emc-shielding", "EMP / EMC Shielding Calculator", "Educational Faraday-loop, aperture-leakage, and skin-depth estimates for cages, seams, and cable-entry protection. Protection-side physics only — not a pulse-source designer.", "sec-emp-emc"],
   ["transformer-design", "Transformer Design Wizard", "Work through transformer type, kVA, winding, protection, and conductor design choices.", "sec-xfmr-wizard"],
   ["heater-wizard", "Heater Design Wizard", "Size industrial resistive heaters across voltage, phase, and wye or delta wiring, and design custom Nichrome or Kanthal heating elements by wire gauge and length.", "sec-heater-wizard"],
 ];

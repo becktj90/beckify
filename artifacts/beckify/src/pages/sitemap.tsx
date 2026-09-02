@@ -34,6 +34,7 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/projects/honda-xr650r", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },
   { href: "/gear", label: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, electrical testers, bench instruments, RF gear, and budget picks.", icon: Wrench, hue: HUES.aqua },
+  { href: "/made-in-america", label: "American-Made Electrical Tools", description: "Verified U.S.-made hand tools and supplies with exact model numbers and sourcing notes.", icon: Wrench, hue: HUES.green },
   { href: "/games", label: "Games", description: "Cosmic Cadet, Pup Planet, HexGL, Finger Runner, Booty Butt Scooter, and New Glenn Runner.", icon: Gamepad2, hue: HUES.magenta },
 ];
 

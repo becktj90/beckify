@@ -22,6 +22,7 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],
   "transformer-sizing": ["kva", "primary", "secondary", "450.3"],
   "megger-tdr-analyzer": ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"],
+  "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
   "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
 };
@@ -63,6 +64,7 @@ const PAGE_DOCUMENTS: AssistantDocument[] = [
   { id: "pup-planet", title: "Pup Planet", description: "Play as Apollo or Rocco, the space pups, mining and building on a seeded planet in this first-person WebGL sandbox.", href: "/games/pup-planet", tags: ["pup planet", "apollo", "rocco", "voxel", "sandbox", "build", "mine", "block", "webgl", "first person", "ipad"], concepts: ["sandbox", "building", "play", "webgl"], kind: "page" },
   { id: "hexgl", title: "HexGL", description: "Futuristic WebGL racing game by Thibaut Despoulain (BKcore), MIT licensed.", href: "/games/hexgl", tags: ["hexgl", "racing", "webgl", "bkcore", "racer"], concepts: ["racing", "webgl", "play"], kind: "page" },
   { id: "gear", title: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, multimeters, clamp meters, insulation testers, oscilloscopes, cable testers, RF gear, and budget picks.", href: "/gear", tags: ["gear", "electrical test equipment", "hand tools", "multimeter", "clamp meter", "insulation tester", "oscilloscope", "rf analyzer", "budget tools"], concepts: ["tools", "field work", "bench work", "measurement"], kind: "reference" },
+  { id: "made-in-america", title: "American-Made Electrical Tools & Supplies", description: "Verified made-in-America electrical hand tools — Klein strippers, CHANNELLOCK pliers, Daniels crimp frames, and 3M Scotch tape with exact model numbers and sourcing notes.", href: "/made-in-america", tags: ["made in america", "american made", "usa made", "usa-made", "domestic", "klein tools", "channellock", "american manufacturing", "buy american"], concepts: ["sourcing", "hand tools", "field work", "domestic manufacturing"], kind: "reference" },
 ];
 
 export const ASSISTANT_DOCUMENTS: AssistantDocument[] = [...TOOL_DOCUMENTS, ...REFERENCE_DOCUMENTS, ...PAGE_DOCUMENTS];
