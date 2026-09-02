@@ -181,8 +181,17 @@ export function PupPlanet() {
   // Touch capability, not screen width: a full-size iPad is plenty wide
   // enough to fail a "narrow phone" breakpoint check while still being a
   // touchscreen with no mouse, which used to hide the on-screen controls
-  // entirely and leave nothing to move or mine/place with.
-  useEffect(() => { setTouch(window.matchMedia("(pointer: coarse)").matches); }, []);
+  // entirely and leave nothing to move or mine/place with. Also show the
+  // pads on narrow viewports so a phone that reports a fine pointer still
+  // has Mine/Place.
+  useEffect(() => {
+    const update = () => {
+      setTouch(window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 768px)").matches);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -433,7 +442,7 @@ export function PupPlanet() {
 
     const keys = new Set<string>();
     const lookDrag = { active: false, lx: 0, ly: 0 };
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 768px)").matches;
     let stickX = 0, stickZ = 0;
 
     const blocked = (px: number, py: number, pz: number) => {
@@ -712,7 +721,7 @@ export function PupPlanet() {
         </div>
         <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/35 px-2 py-1 text-[11px] tracking-wide text-white/90">{hint}</p>
         {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
-        {touch ? (
+        {touch && started ? (
           <>
             <div data-stick className="absolute bottom-3 left-3 z-10 h-24 w-24 rounded-full border-2 border-white/40 bg-black/25 sm:bottom-5 sm:left-5 sm:h-32 sm:w-32" aria-label="Move" />
             <div className="absolute bottom-3 right-3 z-10 flex gap-2 sm:bottom-5 sm:right-5 sm:gap-3">
