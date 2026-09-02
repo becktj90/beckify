@@ -19,6 +19,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     @Published var ssidMessage = "SSID is not requested until you tap below."
 
     private var monitor: NWPathMonitor?
+    private var pathGeneration = 0
     private let location = CLLocationManager()
     private var waitingForSSID = false
 
@@ -29,17 +30,21 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
 
     func start() {
         monitor?.cancel()
+        pathGeneration += 1
+        let generation = pathGeneration
         let monitor = NWPathMonitor()
         self.monitor = monitor
         monitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor in
-                self?.apply(path)
+                guard let self, self.pathGeneration == generation else { return }
+                self.apply(path)
             }
         }
         monitor.start(queue: DispatchQueue(label: "com.beckify.toolbox.nwpath"))
     }
 
     func stop() {
+        pathGeneration += 1
         monitor?.cancel()
         monitor = nil
     }
