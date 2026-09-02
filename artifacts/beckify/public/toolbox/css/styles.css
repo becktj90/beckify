@@ -1544,6 +1544,12 @@ body.report-open { overflow: hidden; }
   grid-template-columns: 1.3fr 1fr 1.2fr 0.8fr;
   gap: 8px;
 }
+.orlp-var-row[hidden],
+.orlp-cons-row[hidden],
+.orlp-cons-head [hidden],
+.orlp-cons-row [hidden] {
+  display: none !important;
+}
 .orlp-cons-host { overflow-x: auto; }
 .orlp-cons-table { min-width: 640px; display: grid; gap: 6px; }
 .orlp-cons-row {
