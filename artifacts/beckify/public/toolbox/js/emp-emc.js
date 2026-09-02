@@ -235,11 +235,12 @@
     return MU0 * iA / (2 * Math.PI * rM);
   }
 
-  function fmtEng(n, digits) {
+  function fmtEng(n, digits, unit) {
     if (!isFinite(n)) return '—';
     const d = digits == null ? 3 : digits;
     const abs = Math.abs(n);
-    if (abs === 0) return '0';
+    const u = unit || '';
+    if (abs === 0) return u ? '0 ' + u : '0';
     const prefixes = [
       [1e-12, 'p'], [1e-9, 'n'], [1e-6, 'µ'], [1e-3, 'm'],
       [1, ''], [1e3, 'k'], [1e6, 'M'], [1e9, 'G']
@@ -255,7 +256,16 @@
     }
     const scaled = n / scale;
     const text = Math.abs(scaled) >= 100 ? scaled.toFixed(1) : Math.abs(scaled) >= 10 ? scaled.toFixed(2) : scaled.toFixed(d);
-    return parseFloat(text).toString() + (prefix ? ' ' + prefix : '');
+    const body = parseFloat(text).toString();
+    if (!prefix) return u ? body + ' ' + u : body;
+    return u ? body + ' ' + prefix + u : body + ' ' + prefix;
+  }
+
+  function fmtArea(m2) {
+    if (!isFinite(m2)) return '—';
+    if (Math.abs(m2) >= 0.01) return parseFloat(m2.toFixed(4)).toString() + ' m²';
+    if (Math.abs(m2) >= 1e-6) return parseFloat((m2 * 1e4).toFixed(3)).toString() + ' cm²';
+    return m2.toExponential(3) + ' m²';
   }
 
   function fmtDb(n) {
@@ -290,6 +300,7 @@
     bFromEPlaneWave: bFromEPlaneWave,
     bFromLineCurrent: bFromLineCurrent,
     fmtEng: fmtEng,
+    fmtArea: fmtArea,
     fmtDb: fmtDb
   };
 
@@ -407,21 +418,21 @@
     const volts = inducedVoltage(turns, area, dBdt);
     const rLoop = num('emp_loop_r');
     const rows = [
-      ['Victim loop area', fmtEng(area, 3) + ' m²'],
-      ['|dB/dt|', fmtEng(dBdt, 3) + ' T/s'],
-      ['Induced |V| = N A |dB/dt|', fmtEng(volts, 3) + ' V']
+      ['Victim loop area', fmtArea(area)],
+      ['|dB/dt|', fmtEng(dBdt, 3, 'T/s')],
+      ['Induced |V| = N A |dB/dt|', fmtEng(volts, 3, 'V')]
     ];
     if (mode === 'deltab') {
-      rows.splice(1, 0, ['|ΔB|', fmtEng(deltaB, 3) + ' T']);
-      rows.splice(2, 0, ['Rise time', fmtEng(rise, 3) + ' s']);
-      rows.splice(3, 0, ['Equivalent bandwidth ≈ 0.35 / t_r', fmtEng(equivFreqFromRise(rise), 3) + ' Hz']);
+      rows.splice(1, 0, ['|ΔB|', fmtEng(deltaB, 3, 'T')]);
+      rows.splice(2, 0, ['Rise time', fmtEng(rise, 3, 's')]);
+      rows.splice(3, 0, ['Equivalent bandwidth ≈ 0.35 / t_r', fmtEng(equivFreqFromRise(rise), 3, 'Hz')]);
     }
     const notes = [
       'Faraday’s law for a uniform field normal to the loop: V = −N dΦ/dt, Φ = B A. Sign is omitted; the magnitude is what a protection check uses.',
       'This is a victim-circuit estimate for an existing loop. It does not design a pulsed source.'
     ];
     if (rLoop > 0) {
-      rows.push(['Resistive |I| ≈ V / R (L ignored)', fmtEng(volts / rLoop, 3) + ' A']);
+      rows.push(['Resistive |I| ≈ V / R (L ignored)', fmtEng(volts / rLoop, 3, 'A')]);
       notes.push('Current ignores loop inductance. For a fast front, L di/dt usually limits the current; V/R is only a long-pulse / DC upper bound.');
     } else {
       notes.push('Optional loop resistance yields a rough I = V/R. Leave it blank if you only need induced voltage.');
@@ -443,17 +454,17 @@
     if (!(freq > 0)) return showError('emp_ap_result', 'Enter a frequency or a positive rise time.');
     const result = apertureSE(slot, freq, isFinite(depth) && depth > 0 ? depth : 0);
     const rows = [
-      ['Longest opening ℓ', fmtEng(slot, 3) + ' m'],
-      ['Frequency used', fmtEng(freq, 3) + ' Hz'],
-      ['Wavelength λ = c / f', fmtEng(result.lambda, 3) + ' m'],
-      ['Half-wave length λ/2', fmtEng(result.halfWave, 3) + ' m'],
+      ['Longest opening ℓ', fmtEng(slot, 3, 'm')],
+      ['Frequency used', fmtEng(freq, 3, 'Hz')],
+      ['Wavelength λ = c / f', fmtEng(result.lambda, 3, 'm')],
+      ['Half-wave length λ/2', fmtEng(result.halfWave, 3, 'm')],
       ['ℓ / (λ/2)', (slot / result.halfWave).toFixed(3)],
       ['Slot term 20 log₁₀((λ/2)/ℓ)', result.SE <= 0 ? '0 dB (at or above half-wave)' : fmtDb(result.SE)]
     ];
     if (result.extraDb > 0) {
       rows.push(['Waveguide-below-cutoff extra (depth)', fmtDb(result.extraDb)]);
       rows.push(['Combined opening estimate', fmtDb(result.totalDb)]);
-      rows.push(['Cutoff f_c ≈ c / (2ℓ)', fmtEng(result.fc, 3) + ' Hz']);
+      rows.push(['Cutoff f_c ≈ c / (2ℓ)', fmtEng(result.fc, 3, 'Hz')]);
     }
     showNotes('emp_ap_result', rows, [
       result.regime + '.',
@@ -477,10 +488,10 @@
     const est = shieldEstimate(mat.sigma, mat.muR, thick, freq);
     const rows = [
       ['Material', mat.name],
-      ['σ', fmtEng(mat.sigma, 3) + ' S/m'],
+      ['σ', fmtEng(mat.sigma, 3, 'S/m')],
       ['μr', String(mat.muR)],
-      ['Frequency', fmtEng(freq, 3) + ' Hz'],
-      ['Skin depth δ = 1 / √(π f μ σ)', fmtEng(est.delta, 3) + ' m'],
+      ['Frequency', fmtEng(freq, 3, 'Hz')],
+      ['Skin depth δ = 1 / √(π f μ σ)', fmtEng(est.delta, 3, 'm')],
       ['t / δ', est.tOver.toFixed(3)],
       ['Absorption A ≈ 8.686 t/δ', fmtDb(est.A)],
       ['Plane-wave reflection R (far-field)', fmtDb(est.R)],
@@ -504,24 +515,24 @@
       ['Citation', env.citation]
     ];
     if (env.kind === 'efield') {
-      rows.push(['Published peak E (incident)', fmtEng(env.peakE, 3) + ' V/m']);
-      rows.push(['Far-field B = E / c', fmtEng(bFromEPlaneWave(env.peakE), 3) + ' T']);
+      rows.push(['Published peak E (incident)', fmtEng(env.peakE, 3, 'V/m')]);
+      rows.push(['Far-field B = E / c', fmtEng(bFromEPlaneWave(env.peakE), 3, 'T')]);
     }
     if (env.kind === 'current') {
-      rows.push(['Published peak current', fmtEng(env.peakI, 3) + ' A']);
+      rows.push(['Published peak current', fmtEng(env.peakI, 3, 'A')]);
     }
     if (env.kind === 'surge') {
       rows.push(['Open-circuit voltage front / tail', '1.2 / 50 μs']);
       rows.push(['Short-circuit current front / tail', '8 / 20 μs']);
     }
     if (env.kind === 'geoelectric') {
-      rows.push(['Representative geoelectric E', fmtEng(env.peakE, 3) + ' V/m (' + fmtEng(env.peakE * 1000, 3) + ' V/km)']);
+      rows.push(['Representative geoelectric E', fmtEng(env.peakE, 3, 'V/m') + ' (' + fmtEng(env.peakE * 1000, 3, 'V/km') + ')']);
     }
-    rows.push(['Characteristic rise time', fmtEng(env.riseS, 3) + ' s']);
-    if (env.durationS) rows.push(['Characteristic duration', fmtEng(env.durationS, 3) + ' s']);
-    rows.push(['Equivalent bandwidth ≈ 0.35 / t_r', fmtEng(freq, 3) + ' Hz']);
+    rows.push(['Characteristic rise time', fmtEng(env.riseS, 3, 's')]);
+    if (env.durationS) rows.push(['Characteristic duration', fmtEng(env.durationS, 3, 's')]);
+    rows.push(['Equivalent bandwidth ≈ 0.35 / t_r', fmtEng(freq, 3, 'Hz')]);
     const cuDelta = skinDepth(MATERIALS.cu.sigma, 1, freq);
-    if (cuDelta > 0) rows.push(['Copper skin depth at that f', fmtEng(cuDelta, 3) + ' m']);
+    if (cuDelta > 0) rows.push(['Copper skin depth at that f', fmtEng(cuDelta, 3, 'm')]);
 
     const notes = [
       env.note,
@@ -535,9 +546,9 @@
         const B = bFromEPlaneWave(env.peakE);
         const dBdt = dBdtFromDeltaB(B, env.riseS);
         const volts = inducedVoltage(turns, area, dBdt);
-        rows.push(['Victim loop area', fmtEng(area, 3) + ' m²']);
-        rows.push(['|dB/dt| ≈ B / t_r', fmtEng(dBdt, 3) + ' T/s']);
-        rows.push(['Unshielded loop |V|', fmtEng(volts, 3) + ' V']);
+        rows.push(['Victim loop area', fmtArea(area)]);
+        rows.push(['|dB/dt| ≈ B / t_r', fmtEng(dBdt, 3, 'T/s')]);
+        rows.push(['Unshielded loop |V|', fmtEng(volts, 3, 'V')]);
         notes.push('Plane-wave conversion B = E/c assumes a far-field TEM wave in free space, uniform over the loop, and no enclosure. Use it to size loop area and decide whether a cage / filter is required — not to design a source.');
       }
     } else if (env.coupling === 'line') {
@@ -548,10 +559,10 @@
         const B = bFromLineCurrent(env.peakI, dist);
         const dBdt = dBdtFromDeltaB(B, env.riseS);
         const volts = inducedVoltage(turns, area, dBdt);
-        rows.push(['Loop-to-downconductor distance', fmtEng(dist, 3) + ' m']);
-        rows.push(['Quasi-static |B| = μ₀ I / (2π r)', fmtEng(B, 3) + ' T']);
-        rows.push(['|dB/dt| ≈ B / t_r', fmtEng(dBdt, 3) + ' T/s']);
-        rows.push(['Victim loop |V|', fmtEng(volts, 3) + ' V']);
+        rows.push(['Loop-to-downconductor distance', fmtEng(dist, 3, 'm')]);
+        rows.push(['Quasi-static |B| = μ₀ I / (2π r)', fmtEng(B, 3, 'T')]);
+        rows.push(['|dB/dt| ≈ B / t_r', fmtEng(dBdt, 3, 'T/s')]);
+        rows.push(['Victim loop |V|', fmtEng(volts, 3, 'V')]);
         notes.push('Valid only while the loop is electrically small and r is not so small that the wire radius or channel physics matter. IEC 62305-4 uses this class of estimate to keep bonding loops small near downconductors.');
       } else {
         notes.push('Enter a victim-loop area and the distance from the loop to the downconductor to estimate induced voltage. Distance is a bonding/layout input, not a targeting range.');
@@ -559,8 +570,8 @@
     } else if (env.coupling === 'line-e') {
       const length = convert(num('emp_env_line'), LEN, sel('emp_env_line_unit'));
       if (length > 0) {
-        rows.push(['Long-conductor length', fmtEng(length, 3) + ' m']);
-        rows.push(['Induced |V| ≈ E × length', fmtEng(env.peakE * length, 3) + ' V']);
+        rows.push(['Long-conductor length', fmtEng(length, 3, 'm')]);
+        rows.push(['Induced |V| ≈ E × length', fmtEng(env.peakE * length, 3, 'V')]);
         notes.push('This is a long-line geoelectric product, not a small Faraday loop. A room-size cage does not remove GICs from a grounded utility path that leaves the building.');
       }
     }

@@ -46,6 +46,10 @@ function okTrue(name, condition, detail) {
 }
 
 console.log('\n--- Faraday loop: V = N A |dB/dt| ---');
+okTrue('fmtEng glues prefix to unit: 50 kV/m', E.fmtEng(50e3, 3, 'V/m') === '50 kV/m', E.fmtEng(50e3, 3, 'V/m'));
+okTrue('fmtEng skin depth 66 µm', /66\.?\d* µm/.test(E.fmtEng(6.6085e-5, 3, 'm')), E.fmtEng(6.6085e-5, 3, 'm'));
+okTrue('fmtArea 0.01 m² stays in m² or 100 cm²', E.fmtArea(0.01) === '0.01 m²' || E.fmtArea(0.01) === '100 cm²', E.fmtArea(0.01));
+okTrue('fmtArea 100 cm² for 0.01 if below 0.01 threshold uses cm²', E.fmtArea(1e-4) === '1 cm²', E.fmtArea(1e-4));
 ok('1 turn, 10 cm square, 1 mT in 1 µs → 10 V', E.inducedVoltage(1, E.loopAreaM2('rect', 0.1, 0.1), E.dBdtFromDeltaB(1e-3, 1e-6)), 10, 1e-9);
 ok('1 turn, 0.1 m², 1 mT in 1 µs → 100 V', E.inducedVoltage(1, 0.1, E.dBdtFromDeltaB(1e-3, 1e-6)), 100, 1e-9);
 ok('1 turn, 0.01 m², 100 T/s → 1 V', E.inducedVoltage(1, 0.01, 100), 1, 1e-12);
