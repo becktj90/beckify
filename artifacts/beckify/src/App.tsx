@@ -23,6 +23,7 @@ const PupPlanetPage = lazy(() => import("@/pages/pup-planet"));
 const HexGLPage = lazy(() => import("@/pages/hexgl"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const GearPage = lazy(() => import("@/pages/gear"));
+const MadeInAmericaPage = lazy(() => import("@/pages/made-in-america"));
 const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ function Router() {
         <Route path="/projects" component={ProjectsPage} />
         <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
         <Route path="/gear" component={GearPage} />
+        <Route path="/made-in-america" component={MadeInAmericaPage} />
         <Route path="/control-systems" component={ControlSystemsPage} />
         <Route path="/games" component={GamesPage} />
         <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
