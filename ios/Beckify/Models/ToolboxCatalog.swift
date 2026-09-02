@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 
 enum ToolID: String, Codable, CaseIterable, Identifiable {
     case ohmsLaw

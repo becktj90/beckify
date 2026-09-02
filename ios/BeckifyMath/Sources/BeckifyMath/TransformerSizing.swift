@@ -77,6 +77,9 @@ public enum TransformerSizing {
         guard system != .dc else { throw CalcError.outOfRange("Transformer sizing is for AC systems.") }
         let vp = try Positive.require(primaryVolts, name: "Primary voltage")
         let vs = try Positive.require(secondaryVolts, name: "Secondary voltage")
+        guard vp <= 1000, vs <= 1000 else {
+            throw CalcError.outOfRange("This calculator implements NEC Table 450.3(B) for transformers rated 1000 V or less.")
+        }
         let mult = system.phaseMultiplier
 
         let loadKVA: Double

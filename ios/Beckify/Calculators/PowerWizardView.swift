@@ -98,10 +98,18 @@ struct PowerWizardView: View {
     }
 
     private func save(_ r: PowerWizardResult) {
+        var inputs: [String: String] = [
+            "system": system.displayName,
+            "known": known.rawValue,
+            "value": value,
+            "V": voltage,
+        ]
+        if system != .dc { inputs["PF"] = pf }
+        if known == .hp { inputs["eff"] = eff }
         jobs.save(SavedJob(
             name: jobName,
             toolID: .powerWizard,
-            inputs: ["system": system.displayName, "known": known.rawValue, "value": value, "V": voltage, "PF": pf],
+            inputs: inputs,
             outputs: ["I": Format.amps(r.amps), "kW": Format.number(r.kW), "kVA": Format.number(r.kVA)]
         ))
     }

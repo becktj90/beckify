@@ -77,7 +77,7 @@ struct VoltageDropView: View {
                         jobs.save(SavedJob(
                             name: jobName,
                             toolID: .voltageDrop,
-                            inputs: ["sys": system.displayName, "V": voltage, "I": current, "L": length, "size": size],
+                            inputs: ["sys": system.displayName, "V": voltage, "I": current, "L": length, "size": size, "material": material.displayName],
                             outputs: ["VD": Format.volts(r.dropVolts), "%": Format.percent(r.dropPercent)]
                         ))
                     }

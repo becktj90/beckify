@@ -27,7 +27,7 @@ public enum OhmsLaw {
         var i = hasI
         var r = hasR
         let known = [v, i, r].compactMap { $0 }.count
-        guard known >= 2 else { throw CalcError.needTwoOfThree }
+        guard known == 2 else { throw CalcError.needTwoOfThree }
 
         if v == nil, let i, let r {
             v = i * r

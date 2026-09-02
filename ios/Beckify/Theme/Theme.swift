@@ -53,9 +53,15 @@ enum Format {
 }
 
 extension String {
+    /// Parses a decimal using the active locale and rejects leftover text.
     var parsedDouble: Double? {
-        let t = trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: "")
+        let t = trimmingCharacters(in: .whitespacesAndNewlines)
         if t.isEmpty { return nil }
-        return Double(t)
+        let formatter = NumberFormatter()
+        formatter.locale = .current
+        formatter.numberStyle = .decimal
+        formatter.isLenient = false
+        guard let number = formatter.number(from: t) else { return nil }
+        return number.doubleValue
     }
 }

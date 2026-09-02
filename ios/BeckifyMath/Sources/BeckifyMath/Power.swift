@@ -59,6 +59,9 @@ public struct ACPowerResult: Equatable, Sendable {
 
 public enum ACPower {
     public static func solve(system: ElectricalSystem, voltage: Double, current: Double, powerFactor: Double) throws -> ACPowerResult {
+        guard system != .dc else {
+            throw CalcError.outOfRange("AC power is for 1Ø or 3Ø. Use DC power or Power Wizard for DC.")
+        }
         let v = try Positive.require(voltage, name: "Voltage")
         let i = try Positive.require(current, name: "Current")
         guard powerFactor.isFinite, powerFactor > 0, powerFactor <= 1 else {
@@ -138,15 +141,10 @@ public enum PowerWizard {
                 throw CalcError.outOfRange("Power factor must be between 0 and 1 (exclusive of 0).")
             }
         }
-        let eff = efficiency
-        let needsEff: Bool
-        if case .horsepower = known { needsEff = true } else { needsEff = false }
-        if needsEff {
-            guard eff.isFinite, eff > 0, eff <= 1 else {
-                throw CalcError.outOfRange("Efficiency must be between 0 and 1 (exclusive of 0).")
-            }
+        guard efficiency.isFinite, efficiency > 0, efficiency <= 1 else {
+            throw CalcError.outOfRange("Efficiency must be between 0 and 1 (exclusive of 0).")
         }
-        let safeEff = (eff.isFinite && eff > 0 && eff <= 1) ? eff : 1.0
+        let safeEff = efficiency
         let mult = system.phaseMultiplier
         let multText = system == .threePhase ? "√3 × " : ""
 

@@ -71,7 +71,7 @@ struct ConduitFillView: View {
 
     private var calc: Result<ConduitFillResult, CalcError> {
         do {
-            let n = Int(qty.parsedDouble ?? 0)
+            let n = try WholeCount.parse(qty.parsedDouble ?? .nan, name: "Conductor quantity")
             return .success(try ConduitFill.calculate(quantity: n, size: size, tradeSize: trade))
         } catch let error as CalcError {
             return .failure(error)

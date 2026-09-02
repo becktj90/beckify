@@ -30,7 +30,7 @@ public enum NECTables: Sendable {
         "600": 600000, "700": 700000, "750": 750000, "800": 800000, "900": 900000, "1000": 1000000,
     ]
 
-    /// NEC Table 310.16 — allowable ampacity, ≤3 CCC, 30 °C ambient.
+    /// NEC Table 310.16 — allowable ampacity, ≤3 CCC, 30 °C ambient (NEC 2023).
     /// Indexed [60 °C, 75 °C, 90 °C]. `nil` means the size is not listed.
     public static let ampacityCopper: [String: [Int]] = [
         "14": [15, 20, 25], "12": [20, 25, 30], "10": [30, 35, 40], "8": [40, 50, 55],
@@ -90,9 +90,10 @@ public enum NECTables: Sendable {
         }
     }
 
-    /// NEC 240.6(A) standard overcurrent device ratings (A).
+    /// NEC 2023 Table 240.6(A) standard overcurrent device ratings (A).
+    /// 10 A was added in NEC 2023 for inverse-time breakers.
     public static let standardOCPD: [Int] = [
-        15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200,
+        10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200,
         225, 250, 300, 350, 400, 450, 500, 600, 700, 800, 1000, 1200, 1600, 2000,
         2500, 3000, 4000, 5000, 6000,
     ]

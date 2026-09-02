@@ -74,3 +74,15 @@ public enum Positive {
         return value
     }
 }
+
+public enum WholeCount {
+    /// Positive integer with no fractional part (e.g. conductor count).
+    public static func parse(_ value: Double, name: String) throws -> Int {
+        guard value.isFinite, value >= 1 else { throw CalcError.nonPositive(name) }
+        let whole = value.rounded(.towardZero)
+        guard value == whole else {
+            throw CalcError.outOfRange("\(name) must be a whole number.")
+        }
+        return Int(whole)
+    }
+}

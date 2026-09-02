@@ -21,6 +21,12 @@ final class OhmsLawTests: XCTestCase {
     func testNeedsTwoValues() {
         XCTAssertThrowsError(try OhmsLaw.solve(voltage: 12, current: nil, resistance: nil))
     }
+
+    func testRejectsInconsistentThreeValues() {
+        XCTAssertThrowsError(try OhmsLaw.solve(voltage: 120, current: 10, resistance: 20)) { error in
+            XCTAssertEqual(error as? CalcError, .needTwoOfThree)
+        }
+    }
 }
 
 final class PowerWizardTests: XCTestCase {
@@ -63,6 +69,18 @@ final class PowerWizardTests: XCTestCase {
         XCTAssertEqual(r.amps, 50, accuracy: 1e-9)
         XCTAssertEqual(r.kW, 9.6, accuracy: 1e-9)
     }
+
+    func testInvalidEfficiencyOnKilowattsThrows() {
+        XCTAssertThrowsError(
+            try PowerWizard.solve(
+                system: .threePhase,
+                known: .kilowatts(50),
+                voltage: 480,
+                powerFactor: 0.9,
+                efficiency: 0
+            )
+        )
+    }
 }
 
 final class ACPowerTests: XCTestCase {
@@ -75,6 +93,10 @@ final class ACPowerTests: XCTestCase {
         let r = try DCPower.fromIR(current: 10, resistance: 4)
         XCTAssertEqual(r.power, 400, accuracy: 1e-9)
         XCTAssertEqual(r.voltage, 40, accuracy: 1e-9)
+    }
+
+    func testRejectsDCSystem() {
+        XCTAssertThrowsError(try ACPower.solve(system: .dc, voltage: 48, current: 10, powerFactor: 0.9))
     }
 }
 
@@ -117,6 +139,13 @@ final class ConduitFillTests: XCTestCase {
         let r = try ConduitFill.calculate(quantity: 2, size: "12", tradeSize: "1/2")
         XCTAssertEqual(r.maxFillPercent, 31)
     }
+
+    func testFractionalConductorCountIsRejected() {
+        XCTAssertThrowsError(try WholeCount.parse(2.9, name: "Conductor quantity")) { error in
+            XCTAssertEqual(error as? CalcError, .outOfRange("Conductor quantity must be a whole number."))
+        }
+        XCTAssertEqual(try WholeCount.parse(3, name: "Conductor quantity"), 3)
+    }
 }
 
 final class TransformerSizingTests: XCTestCase {
@@ -149,6 +178,18 @@ final class TransformerSizingTests: XCTestCase {
         // 1 kVA / 480 V ≈ 2.08 A → 167 % row, no Note 1 round-up
         XCTAssertEqual(r.primaryOnly.percent, 167)
         XCTAssertFalse(r.primaryOnly.roundsUp)
+    }
+
+    func testRejectsOver1000V() {
+        XCTAssertThrowsError(
+            try TransformerSizing.size(
+                system: .threePhase,
+                load: .kVA(500),
+                primaryVolts: 13800,
+                secondaryVolts: 480,
+                continuous: false
+            )
+        )
     }
 }
 
@@ -195,5 +236,11 @@ final class WireAmpacityTests: XCTestCase {
     func testAluminumSkips14AWG() {
         XCTAssertNil(NECTables.ampacity75C(size: "14", material: .aluminum))
         XCTAssertEqual(NECTables.ampacity75C(size: "12", material: .aluminum), 20)
+    }
+
+    func testNextStandardOCPDIncludes10A() {
+        XCTAssertEqual(NECTables.nextStandardOCPD(9.5), 10)
+        XCTAssertEqual(NECTables.nextStandardOCPD(10), 10)
+        XCTAssertEqual(NECTables.nextStandardOCPD(10.1), 15)
     }
 }

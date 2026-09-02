@@ -114,7 +114,15 @@ struct Timer555View: View {
                 jobs.save(SavedJob(
                     name: jobName,
                     toolID: .timer555,
-                    inputs: ["R1": r1, "R2": r2, "C": c],
+                    inputs: [
+                        "mode": "astable",
+                        "R1": r1,
+                        "R2": r2,
+                        "C": c,
+                        "R unit": rUnit.rawValue,
+                        "C unit": cUnit.rawValue,
+                        "diode": diode ? "yes" : "no",
+                    ],
                     outputs: ["f": Format.frequency(r.frequency), "D": Format.percent(r.dutyPercent)]
                 ))
             }
@@ -135,7 +143,13 @@ struct Timer555View: View {
                 jobs.save(SavedJob(
                     name: jobName,
                     toolID: .timer555,
-                    inputs: ["R": r1, "C": c],
+                    inputs: [
+                        "mode": "monostable",
+                        "R": r1,
+                        "C": c,
+                        "R unit": rUnit.rawValue,
+                        "C unit": cUnit.rawValue,
+                    ],
                     outputs: ["t": Format.time(r.pulseWidth)]
                 ))
             }

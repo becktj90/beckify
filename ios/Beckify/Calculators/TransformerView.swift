@@ -70,7 +70,15 @@ struct TransformerView: View {
                         jobs.save(SavedJob(
                             name: jobName,
                             toolID: .transformer,
-                            inputs: ["load": load, "vp": vp, "vs": vs],
+                            inputs: [
+                                "system": system.displayName,
+                                "loadKind": loadKind.rawValue,
+                                "load": load,
+                                "pf": pf,
+                                "vp": vp,
+                                "vs": vs,
+                                "continuous": continuous ? "yes" : "no",
+                            ],
                             outputs: ["kVA": "\(r.selectedKVA)", "Ip": Format.amps(r.primaryFLA), "Is": Format.amps(r.secondaryFLA)]
                         ))
                     }

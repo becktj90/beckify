@@ -6,7 +6,7 @@ This is not a website wrapper. There is no `WKWebView` of beckify.com. Calculato
 
 ## Layout
 
-```
+```text
 ios/
   Beckify.xcodeproj/     Xcode 15+ project (open this on a Mac)
   Beckify/               SwiftUI app

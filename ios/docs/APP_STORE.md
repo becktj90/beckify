@@ -70,13 +70,14 @@ The app uses only HTTPS for optional links the user taps (beckify.com, mailto). 
 
 Not captured in this repository. This repo has not run an iOS Simulator UI build, signed the app, enrolled an Apple Developer team, uploaded TestFlight, or submitted to the App Store. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
 
-Apple's current required sets typically include:
+Apple's current required screenshot classes for an iPhone + iPad app (verify in App Store Connect before upload):
 
-| Device | Logical size (points) | Common simulator |
-| --- | --- | --- |
-| 6.7" iPhone | 1290 × 2796 px (or 1320 × 2868 on newest) | iPhone 15 Pro Max / 16 Pro Max |
-| 6.5" iPhone (if still asked) | 1284 × 2778 px | iPhone 11 Pro Max / 14 Plus |
-| 12.9" iPad | 2048 × 2732 px | iPad Pro (12.9-inch) |
+| Device class | Role | Common simulator | Typical pixel size |
+| --- | --- | --- | --- |
+| 6.9" iPhone | Required (or 6.5" set) | iPhone 16 Pro Max | 1320 × 2868 |
+| 6.5" iPhone | Alternate required iPhone set | iPhone 14 Plus / 11 Pro Max | 1284 × 2778 |
+| 13" iPad | Required for iPad | iPad Pro 13-inch | 2064 × 2752 |
+| 12.9" iPad | Fallback only (scales to 13" if 13" is missing) | iPad Pro 12.9-inch | 2048 × 2732 |
 
 Take 3–8 screens per size. Suggested shots:
 
