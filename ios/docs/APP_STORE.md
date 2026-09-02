@@ -1,12 +1,18 @@
 # App Store scaffolding — Beckify
 
-Listing copy for App Store Connect. Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. Uploading a build still needs that account on a Mac with Xcode. This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, set a signing Team, created an App Store Connect record, archived, or submitted.
+Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists** (status **Prepare for Submission**). No binary has been uploaded. This is **not** TestFlight and **not** an App Store submit.
+
+This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
 ## Listing copy
 
 **Name:** Beckify  
 **Subtitle:** Field EE toolbox  
+**App ID (Apple ID):** `6807908745`  
 **Bundle ID:** `com.beckify.toolbox`  
+**SKU:** `beckify-toolbox`  
+**Connect status:** Prepare for Submission (no binary uploaded)  
+**Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M` (Apple auto-filled at identifier registration; set on the Beckify target Debug and Release in `ios/Beckify.xcodeproj`)  
 **Devices:** iPhone and iPad (Xcode `TARGETED_DEVICE_FAMILY` 1,2)  
 **Category:** Productivity  
 **Secondary (optional):** Utilities  
@@ -68,7 +74,7 @@ First toolbox with field EE calculators, homework tools, and public-API sensors,
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
-**Privacy Policy URL:** https://beckify.com/privacy (also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md) (“Data Not Collected”). After this change is on `main` and GitHub Pages deploys, use https://beckify.com/privacy in the app record.
+**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md) (“Data Not Collected”).
 
 ## Wi-Fi App Store limitation (honest)
 
@@ -129,15 +135,30 @@ Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 
-Still Mac-only:
+**App Store Connect record (exists — recorded Connect facts only; do not invent more):**
 
-1. In Xcode → Signing & Capabilities, set **Team** on the Beckify target. Bundle ID `com.beckify.toolbox` must be registered to that team.
-2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device.
-3. Run on a physical device at least once (capability / provisioning / sensor check). This Linux CI job does not do that.
-4. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): name Beckify, Productivity, iPhone + iPad, 4+, Free (no IAP, no ads), privacy “Data Not Collected”, Privacy Policy URL https://beckify.com/privacy, Support/Marketing https://beckify.com, English listing copy above.
-5. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
-6. Upload the build (Organizer or Transporter). Wait for processing.
-7. Attach screenshots, review the encryption and content-rights questions, submit for review.
-8. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
+| Field | Value |
+| --- | --- |
+| Status | Prepare for Submission |
+| Binary | None uploaded |
+| App ID (Apple ID) | `6807908745` |
+| Bundle ID | `com.beckify.toolbox` |
+| SKU | `beckify-toolbox` |
+| Privacy Policy URL | https://beckify.com/privacy (live) |
+| Team prefix | `9TR6R5LV8M` |
 
-Until those steps are done, the app exists only in this repository. It is **not** on the App Store.
+The app is native SwiftUI, iPhone + iPad, Free, no IAP, no ads. This repository does **not** claim TestFlight or App Store submit.
+
+Still needed (Mac + Trevor; not done in this Linux environment):
+
+1. On a Mac, open `ios/Beckify.xcodeproj` and confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
+2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Apple’s public 0–1 `signalStrength`, not dBm.
+3. Run on a physical device at least once if not already done (capability / provisioning / sensor check). This Linux CI job does not do that.
+4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
+5. Capture screenshots at the sizes below. Do **not** ship website screenshots.
+6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled (`DEVELOPMENT_TEAM` `9TR6R5LV8M`).
+7. Upload the signed archive (Organizer or Transporter). Wait for processing. Upload is still outstanding; that is not TestFlight distribution and not App Store submit.
+8. Attach screenshots, review the encryption and content-rights questions, then submit for review (not done).
+9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
+
+Until those steps are done, there is **no** uploaded binary. The app is **not** on TestFlight and **not** on the App Store.
