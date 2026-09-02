@@ -29,6 +29,7 @@ ok(
   "Toolbox has a CSP meta with object-src none",
   /http-equiv="Content-Security-Policy"/.test(toolboxHtml) && /object-src 'none'/.test(toolboxHtml),
 );
+ok("Toolbox CSP allows media blob for getUserMedia", /media-src 'self' blob:/.test(toolboxHtml));
 ok("Toolbox doc links include noreferrer", /rel="noopener noreferrer"/.test(toolboxHtml));
 
 const panelSchedule = read(root, "public", "toolbox", "panel-schedule.html");
@@ -58,7 +59,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after hardening", /CACHE_VERSION = 'v16'/.test(sw));
+ok("Toolbox SW cache version bumped after hardening", /CACHE_VERSION = 'v17'/.test(sw));
 ok("Toolbox SW allow-lists CDN hosts", /RUNTIME_HOST_ALLOWLIST/.test(sw) && /cdn\.jsdelivr\.net/.test(sw));
 
 const deploy = read(repo, ".github", "workflows", "deploy.yml");

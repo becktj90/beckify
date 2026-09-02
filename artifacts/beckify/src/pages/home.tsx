@@ -154,6 +154,10 @@ export default function Home() {
                     { href: "/toolbox/#sec-ebus-budget", label: "E-bus budget" },
                     { href: "/toolbox/#sec-modbus-address", label: "Modbus address" },
                     { href: "/toolbox/#sec-plc-timer-preset", label: "PLC timer" },
+                    { href: "/toolbox/#sec-pitch-hum", label: "Pitch / hum" },
+                    { href: "/toolbox/#sec-audio-spectrum", label: "Audio spectrum" },
+                    { href: "/toolbox/#sec-sound-level", label: "Sound level" },
+                    { href: "/toolbox/#sec-lux-meter", label: "Lux meter" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}

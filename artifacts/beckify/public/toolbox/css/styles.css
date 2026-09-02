@@ -1805,3 +1805,157 @@ body.report-open { overflow: hidden; }
   .iol-station-head { flex-wrap: wrap; }
 }
 
+/* ── Phone-sensor field tools (lux, pitch/hum, spectrum, sound level) ── */
+.note-warn {
+  background: rgba(245, 196, 81, 0.08);
+  border-color: rgba(245, 196, 81, 0.38);
+  color: var(--fg);
+}
+.note-warn::before { content: '⚠ '; color: var(--yellow); }
+.note-privacy {
+  background: rgba(74, 222, 128, 0.06);
+  border-color: rgba(74, 222, 128, 0.28);
+}
+.note-privacy::before { content: '🔒 '; color: var(--green-ok); }
+.note-prominent {
+  font-size: 0.82rem;
+  padding: 12px 14px;
+  margin: 0 0 16px;
+  line-height: 1.55;
+}
+.sensor-gate {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+}
+.sensor-gate p { margin: 0; color: var(--fg-muted); font-size: 0.8rem; line-height: 1.55; }
+.sensor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.sensor-actions .btn { margin-top: 0; }
+.sensor-status {
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+.sensor-status.is-live { color: var(--green-ok); }
+.sensor-status.is-error { color: var(--red); }
+.sensor-status.is-busy { color: var(--yellow); }
+.sensor-readout {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 7vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--fg);
+}
+.sensor-readout-unit {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-main);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.sensor-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.sensor-stat {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+}
+.sensor-stat-label {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-bottom: 4px;
+}
+.sensor-stat-val {
+  font-family: var(--font-main);
+  font-size: 1.05rem;
+  color: var(--fg);
+}
+.sensor-canvas {
+  display: block;
+  width: 100%;
+  height: 220px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d1117;
+}
+.sensor-preview {
+  position: relative;
+  width: 100%;
+  max-height: 280px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0d1117;
+}
+.sensor-preview video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  object-fit: cover;
+  background: #000;
+}
+.sensor-preview-reticle {
+  position: absolute;
+  inset: 22%;
+  border: 2px dashed rgba(139, 123, 255, 0.7);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.sensor-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.82rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.sensor-check input {
+  width: auto;
+  accent-color: var(--violet);
+}
+.sensor-level {
+  height: 10px;
+  margin: 10px 0 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.sensor-level span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--violet);
+  border-radius: 99px;
+}
+.btn.is-on {
+  background: rgba(139, 123, 255, 0.28);
+  border-color: var(--violet);
+  color: #fff;
+}
+.sensor-hidden-canvas { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
