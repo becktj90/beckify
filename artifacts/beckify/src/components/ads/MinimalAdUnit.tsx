@@ -112,7 +112,11 @@ export function MinimalAdUnit({ placement = "toolbox-sidebar", type = "ethicalad
         >
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">On Beckify</p>
-            <h4 className="mt-1 text-sm font-bold text-[var(--foreground)]">{houseAd.title}</h4>
+            {/* Not a heading: this card can render on any page regardless of
+                that page's own heading structure, and it already has its
+                own "Beckify feature" landmark, so a real heading here would
+                either skip levels or need to guess the surrounding outline. */}
+            <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{houseAd.title}</p>
             <p className="mt-1 text-xs leading-snug text-[var(--muted)]">{houseAd.description}</p>
           </div>
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] group-hover:text-[var(--accent-2)]">

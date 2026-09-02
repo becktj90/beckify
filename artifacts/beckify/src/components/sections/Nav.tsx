@@ -44,7 +44,7 @@ function NavLink({
         aria-current={active ? "page" : undefined}
         className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors ${
           active
-            ? "text-white bg-[var(--accent)]"
+            ? "text-[var(--accent-foreground)] bg-[var(--accent)]"
             : "text-[var(--foreground)] hover:bg-white/08"
         }`}
       >
@@ -60,7 +60,7 @@ function NavLink({
       title={label}
       className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
         active
-          ? "text-white bg-[var(--accent)] shadow-[0_0_12px_rgba(139,123,255,0.45)]"
+          ? "text-[var(--accent-foreground)] bg-[var(--accent)] shadow-[0_0_12px_rgba(139,123,255,0.45)]"
           : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/08"
       }`}
     >

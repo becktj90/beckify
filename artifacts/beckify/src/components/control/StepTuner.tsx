@@ -295,7 +295,7 @@ export function StepTuner({ plant }: { plant: Plant }) {
                   step={step}
                   value={Math.min(gains[key], max)}
                   onChange={(event) => setGains((current) => ({ ...current, [key]: Number(event.target.value) }))}
-                  className="mt-3 w-full accent-[var(--accent)]"
+                  className="mt-3 h-6 w-full cursor-pointer accent-[var(--accent)]"
                   aria-label={`${label} slider`}
                 />
               </div>

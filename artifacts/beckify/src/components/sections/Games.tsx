@@ -23,6 +23,7 @@ export const Games = () => (
     <FadeIn>
       <SectionHeader
         title="Games"
+        level="h1"
         subtitle="Browser games with readable controls — including a first-person voxel world and a full WebGL racer."
         icon={(props: { className?: string }) => <BeckifyIcon name="games" {...props} />}
       />
@@ -51,9 +52,9 @@ export const Games = () => (
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                  <h2 className="text-lg font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
                     {game.name}
-                  </h3>
+                  </h2>
                 </div>
                 <BeckifyIcon name="games" className="w-5 h-5 shrink-0" style={{ color: GAME_DETAILS[game.name]?.accent ?? "var(--accent)" }} />
               </div>

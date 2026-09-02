@@ -13,11 +13,11 @@ export const Layout = ({ children, showAds = true, className = "" }: { children:
     <Starfield />
     <div className="relative z-10">
       <Nav />
-      <div className="max-w-5xl mx-auto px-6 py-10 md:py-14 space-y-14">
+      <main className="max-w-5xl mx-auto px-6 py-10 md:py-14 space-y-14">
         {children}
         {showAds ? <MinimalAdUnit type="adsense" placement="toolbox-sidebar" /> : null}
         <Footer />
-      </div>
+      </main>
     </div>
   </div>
 );

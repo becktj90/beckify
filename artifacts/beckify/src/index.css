@@ -57,7 +57,11 @@
   /* Accent — nebula violet -> blue */
   --accent: #8b7bff;
   --accent-2: #4f8bff;
-  --accent-foreground: #ffffff;
+  /* White text on either accent measured 3.25-3.29:1 — below the 4.5:1
+     WCAG AA minimum for normal-size text. The page background color reused
+     as text gives 6.1-6.2:1 on both, comfortably clearing AA, without
+     changing the accent colors themselves. */
+  --accent-foreground: var(--background);
   --accent-soft: rgba(139, 123, 255, 0.14);
   --accent-ring: rgba(139, 123, 255, 0.4);
 

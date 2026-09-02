@@ -17,7 +17,10 @@ const HUES = {
   aqua: "#199e70",
   yellow: "#c98500",
   magenta: "#d55181",
-  green: "#008300",
+  // #008300 measured 3.69:1 against its own badge background — below the
+  // 4.5:1 WCAG AA small-text minimum. This is brighter but still reads
+  // clearly as "green" next to the palette's other hues.
+  green: "#2ea043",
   violet: "#9085e9",
   red: "#e66767",
 } as const;
@@ -125,12 +128,16 @@ export default function SiteMapPage() {
       <FadeIn>
         <SectionHeader
           title="Site Map"
+          level="h1"
           subtitle="Every page and every calculator on Beckify, in one place."
           icon={MapIcon}
         />
       </FadeIn>
 
       <FadeIn delay={0.05}>
+        <h2 className="font-display text-xl font-bold tracking-tight text-[var(--foreground)] mb-4">
+          All pages
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {PAGES.map(({ href, label, description, icon: Icon, hue }) => (
             <Link

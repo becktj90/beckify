@@ -30,7 +30,7 @@ export default function NotFound() {
         <nav aria-label="Suggested pages" className="flex flex-wrap justify-center gap-3">
           <Link
             href="/"
-            className="rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition-opacity hover:opacity-90"
           >
             Go home
           </Link>

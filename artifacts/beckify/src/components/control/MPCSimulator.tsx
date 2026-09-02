@@ -133,7 +133,7 @@ export function MPCSimulator({
         {sliderConfigs.map(({ label, value, setter, min, max, step }) => (
           <label key={label} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4 text-sm text-[var(--muted)]">
             <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</span>
-            <input className="mt-3 w-full" type="range" min={min} max={max} step={step} value={value} onChange={(event) => setter(Number(event.target.value))} />
+            <input className="mt-3 h-6 w-full cursor-pointer" type="range" min={min} max={max} step={step} value={value} onChange={(event) => setter(Number(event.target.value))} />
             <span className="mt-2 block text-lg font-semibold text-[var(--foreground)]">{value.toFixed(step < 1 ? 2 : 0)}</span>
           </label>
         ))}

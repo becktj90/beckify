@@ -495,7 +495,9 @@ export function VespaPartsCatalog() {
             </button>
           ))}
         </div>
-        <div className="parts-table-wrap">
+        {/* Scrolls horizontally on narrow screens, so it needs to be a real
+            keyboard stop rather than only mouse/touch scrollable. */}
+        <div className="parts-table-wrap" tabIndex={0} role="region" aria-label="Bill of materials table">
           <table>
             <thead>
               <tr>

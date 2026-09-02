@@ -62,6 +62,7 @@ export default function ControlSystemsPage() {
       <FadeIn>
         <SectionHeader
           title="Control System Toolbox"
+          level="h1"
           subtitle="Choose a plant, close a loop around it, and see what the controller actually does to the step response."
           icon={SlidersHorizontal}
         />

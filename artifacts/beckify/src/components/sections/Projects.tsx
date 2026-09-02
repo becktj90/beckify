@@ -11,7 +11,7 @@ import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 export const Projects = () => (
   <section id="projects" className="space-y-8 scroll-mt-24">
     <FadeIn>
-      <SectionHeader title="Projects" icon={(props: { className?: string }) => <BeckifyIcon name="projects" {...props} />} />
+      <SectionHeader title="Projects" level="h1" icon={(props: { className?: string }) => <BeckifyIcon name="projects" {...props} />} />
     </FadeIn>
 
     <FadeIn delay={0.1}>
@@ -26,10 +26,10 @@ export const Projects = () => (
             className="card-surface group block p-8 relative overflow-hidden"
           >
             <div className="flex justify-between items-start mb-6 relative z-10">
-              <h3 className="font-display text-xl font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors flex items-center gap-3">
+              <h2 className="font-display text-xl font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors flex items-center gap-3">
                 <project.icon className="w-5 h-5 text-[var(--accent)]" />
                 {project.name}
-              </h3>
+              </h2>
               <ExternalLink className="w-5 h-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <p className="text-sm text-[var(--muted)] leading-relaxed relative z-10">
