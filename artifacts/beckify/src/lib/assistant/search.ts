@@ -23,6 +23,7 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "transformer-sizing": ["kva", "primary", "secondary", "450.3"],
   "megger-tdr-analyzer": ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
+  "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
 };
 
 /**

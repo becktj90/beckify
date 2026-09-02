@@ -218,6 +218,7 @@
       <button class="nav-btn" data-target="sec-gen">Generator Sizing</button>
       <button class="nav-btn" data-target="sec-hybrid">Hybrid Generator</button>
       <button class="nav-btn" data-target="sec-xfmr-wizard" data-keywords="transformer wizard design kva sizing type dry liquid oil winding delta wye conductor protection ocpd disconnect single line diagram SLD NEC 450">Transformer | Design Wizard</button>
+      <button class="nav-btn" data-target="sec-heater-wizard" data-keywords="heater wizard industrial resistive element design nichrome kanthal wire gauge awg wye delta three phase single phase duct immersion coil resistance alloy">Heater | Design Wizard</button>
       <button class="nav-btn" data-target="sec-lsi">LSI Breaker Visualizer</button>
       <button class="nav-btn" data-target="sec-bess">BESS Peak-Shave</button>
       <button class="nav-btn" data-target="sec-tap">Tap-Changer Calc</button>
@@ -361,6 +362,14 @@
             <li><a class="home-tool-link" href="#sec-xfmr-wizard">Type &amp; Winding Selection</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-wizard">Conductor Optimization</a></li>
             <li><a class="home-tool-link" href="#sec-xfmr-wizard">Single-Line Diagram</a></li>
+          </ul>
+        </div>
+
+        <div class="home-cat-card" style="--cat-color:#ef4444">
+          <div class="home-cat-header"><span class="home-cat-icon">🔥</span><span class="home-cat-name">Heater Wizard</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="#sec-heater-wizard">Electrical Sizing (Wye/Delta)</a></li>
+            <li><a class="home-tool-link" href="#sec-heater-wizard">Custom Nichrome/Kanthal Element</a></li>
           </ul>
         </div>
 
@@ -4095,6 +4104,219 @@
     </section><!-- end sec-xfmr-wizard -->
 
     <!-- ════════════════════════════════════════
+         HEATER DESIGN WIZARD
+         ════════════════════════════════════════ -->
+    <section id="sec-heater-wizard" class="section">
+      <div class="section-header">
+        <h2>🔥 Heater Design Wizard</h2>
+        <p>Size industrial resistive heaters across voltage, phase and wye/delta wiring, then design a custom Nichrome or Kanthal heating element by wire gauge and length.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Heater Design Wizard</summary>
+          <div class="section-info-body">
+            <strong>Electrical sizing</strong> treats the heater as a balanced resistive load (power factor ≈ 1.0). Wye and delta connections carry the same line current for the same total power and line voltage — they only differ in the voltage and current each individual leg or element sees, which is why a delta-connected element needs three times the resistance of a wye-connected element for the same job.
+            <ul>
+              <li><strong>Wye:</strong> R_leg = V_LL² / P_total, each leg sees V_LL/√3 to the star point.</li>
+              <li><strong>Delta:</strong> R_leg = 3 × V_LL² / P_total, each leg sees the full V_LL.</li>
+              <li><strong>Line current</strong> is P_total / (√3 × V_LL) either way.</li>
+              <li><strong>Branch circuit</strong> conductor and OCPD use the general 125%-continuous-load practice (NEC 210.19(A)(1)/210.20(A), 422.10(A)). If this heater is specifically classified as fixed electric space-heating equipment, also check NEC Article 424 Part III, which has its own branch-circuit and overcurrent provisions.</li>
+            </ul>
+            <strong>Element design</strong> uses the AWG standard's own diameter formula (exact for any gauge) together with an alloy resistivity you can edit. Nichrome and Kanthal resistivity, maximum element temperature, and any surface-power-density guidance shown here are <em>typical published reference figures, not a specific spool's measured properties</em> — confirm against your wire supplier's own datasheet before fabricating an element, particularly for safety-critical or high-power work.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Electrical System</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Wye: R = V_LL² / P &nbsp;|&nbsp; Delta: R = 3 × V_LL² / P &nbsp;|&nbsp; I_line = P / (√3 × V_LL)
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="hw_phase">Phase</label>
+                <select id="hw_phase" onchange="hwOnPhaseChange()">
+                  <option value="3ph" selected>Three-Phase (3Ø)</option>
+                  <option value="1ph">Single-Phase (1Ø)</option>
+                </select>
+              </div>
+              <div id="hw_conn_wrap">
+                <label for="hw_conn">Wiring</label>
+                <select id="hw_conn">
+                  <option value="wye" selected>Wye (Star)</option>
+                  <option value="delta">Delta</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="hw_volts">Line Voltage (V)</label>
+                <input type="number" id="hw_volts" value="480" min="1" step="any" list="hw_volts_list">
+                <datalist id="hw_volts_list">
+                  <option value="600"></option><option value="480"></option>
+                  <option value="240"></option><option value="208"></option><option value="120"></option>
+                </datalist>
+              </div>
+              <div>
+                <label for="hw_power_kw">Total Heater Power (kW)</label>
+                <input type="number" id="hw_power_kw" value="30" min="0" step="any">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="hw_elements">Elements per Leg</label>
+                <input type="number" id="hw_elements" value="1" min="1" step="1">
+              </div>
+              <div>
+                <label for="hw_arrangement">Arrangement</label>
+                <select id="hw_arrangement">
+                  <option value="series" selected>Series</option>
+                  <option value="parallel">Parallel</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Branch Circuit Conditions</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="hw_material">Conductor Material</label>
+                <select id="hw_material">
+                  <option value="cu">Copper</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+              <div>
+                <label for="hw_insulation">Insulation</label>
+                <select id="hw_insulation">
+                  <option value="THHN" selected>THHN / THWN-2 (90°C)</option>
+                  <option value="XHHW">XHHW-2 (90°C)</option>
+                  <option value="RHW">RHH / RHW-2 (90°C)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group triple">
+              <div>
+                <label for="hw_ambient">Ambient (°C)</label>
+                <input type="number" id="hw_ambient" value="30" min="-10" max="90" step="1">
+              </div>
+              <div>
+                <label for="hw_ccc">CCC in raceway</label>
+                <input type="number" id="hw_ccc" value="3" min="1" max="60" step="1">
+              </div>
+              <div>
+                <label for="hw_term">Termination Rating</label>
+                <select id="hw_term">
+                  <option value="75" selected>75°C</option>
+                  <option value="60">60°C</option>
+                  <option value="90">90°C</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-body">
+            <button class="btn" onclick="calcHeaterElectrical()">Calculate Electrical Sizing</button>
+            <div id="hw_elec_result" class="result"></div>
+            <button type="button" class="btn btn-secondary" id="hw_elec_proof_btn"
+                    aria-expanded="false" aria-controls="hw_elec_proof"
+                    onclick="toggleHwElecProof()" style="margin-top:10px">▸ Show step-by-step proof</button>
+            <div id="hw_elec_proof" class="xe-proof" hidden>
+              <div id="hw_elec_proof_body"></div>
+            </div>
+            <div style="margin-top:12px">
+              <button class="btn btn-secondary" onclick="hwUseElectricalForElement()">Use this element's R &amp; P in the Element Designer ↓</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid two-col" id="hw_element_card" style="margin-top:18px">
+        <div class="card">
+          <div class="card-title">Element Alloy &amp; Target</div>
+          <div class="card-body">
+            <div class="formula-box">
+              d = 0.005 × 92^((36−AWG)/39) in &nbsp;|&nbsp; R' = ρ / A &nbsp;|&nbsp; L = R / R' &nbsp;|&nbsp; I = √(P / R)
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="hw_alloy">Alloy</label>
+                <select id="hw_alloy" onchange="hwOnAlloyChange()">
+                  <option value="nichrome80" selected>Nichrome 80 (80Ni-20Cr)</option>
+                  <option value="nichrome60">Nichrome 60 (60Ni-16Cr-24Fe)</option>
+                  <option value="kanthalA1">Kanthal A-1 (FeCrAl)</option>
+                  <option value="kanthalD">Kanthal D (FeCrAl)</option>
+                  <option value="custom">Custom…</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="hw_resistivity">Resistivity (Ω·mm²/m)</label>
+                <input type="number" id="hw_resistivity" value="1.09" min="0" step="any">
+              </div>
+              <div>
+                <label for="hw_maxtemp">Max Element Temp (°C, reference)</label>
+                <input type="number" id="hw_maxtemp" value="1150" min="0" step="any">
+              </div>
+            </div>
+            <div class="note">Resistivity and max temperature are typical published values, not a specific spool's measured properties — both are editable, so confirm against your wire supplier's datasheet.</div>
+            <div class="input-group">
+              <div>
+                <label for="hw_target_r">Target Resistance (Ω)</label>
+                <input type="number" id="hw_target_r" value="2.56" min="0" step="any">
+              </div>
+              <div>
+                <label for="hw_target_p">Target Power (W)</label>
+                <input type="number" id="hw_target_p" value="3333" min="0" step="any">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Wire Gauge &amp; Coil</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="hw_awg">Wire Gauge (AWG)</label>
+                <input type="number" id="hw_awg" value="18" min="-3" max="42" step="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="hw_mandrel">Coil Mandrel Diameter (mm, optional)</label>
+                <input type="number" id="hw_mandrel" placeholder="e.g. 10" min="0" step="any">
+              </div>
+              <div>
+                <label for="hw_pitch_mm">Coil Pitch (mm, optional — blank = close-wound)</label>
+                <input type="number" id="hw_pitch_mm" placeholder="close-wound" min="0" step="any">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-body">
+            <button class="btn" onclick="calcHeaterElement()">Design the Element</button>
+            <div id="hw_elem_result" class="result"></div>
+            <button type="button" class="btn btn-secondary" id="hw_elem_proof_btn"
+                    aria-expanded="false" aria-controls="hw_elem_proof"
+                    onclick="toggleHwElemProof()" style="margin-top:10px">▸ Show step-by-step proof</button>
+            <div id="hw_elem_proof" class="xe-proof" hidden>
+              <div id="hw_elem_proof_body"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-heater-wizard -->
+
+    <!-- ════════════════════════════════════════
          CIRCUIT SIMULATOR
          ════════════════════════════════════════ -->
     <section id="sec-circuit-sim" class="section">
@@ -7559,6 +7781,7 @@
 <script src="js/arcade.js"></script>
 <script src="js/conduit-guide.js"></script>
 <script src="js/xfmr-wizard.js"></script>
+<script src="js/heater-wizard.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
 <script src="js/stem-tools.js"></script>
