@@ -39,6 +39,7 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • 555 timer (astable and monostable)
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Wire size from NEC Table 310.16, 75 °C column
+• Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
 
 Homework calculators:
 
@@ -61,15 +62,15 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “divider”, “color code”, “LED”, “wifi”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “receptacle”, “divider”, “color code”, “LED”, “wifi”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,resistor,divider,LED,ampacity,wifi,ohm
+electrical,NEC,NEMA,receptacle,outlet,IEC,ampacity,wifi,ohm
 
 **What's New (1.0):**
-First toolbox with field EE calculators, homework tools, and public-API sensors, plus local saved notes.
+First toolbox with field EE calculators (including Receptacle Selector), homework tools, and public-API sensors, plus local saved notes.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -122,10 +123,11 @@ Take 3–8 screens per size. Suggested shots:
 1. Toolbox search / tool list (dark premium home)
 2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
 3. Voltage drop with 3% / 5% notes and ampacity row
-4. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
-5. BLE scanner or bubble level
-6. Saved Jobs list (on-device notes)
-7. About (Trevor Beck, EE, beckify.com, email — no phone number)
+4. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
+5. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
+6. BLE scanner or bubble level
+7. Saved Jobs list (on-device notes)
+8. About (Trevor Beck, EE, beckify.com, email — no phone number)
 
 Use dark appearance. Do not show ads, Amazon, games, or a phone number.
 

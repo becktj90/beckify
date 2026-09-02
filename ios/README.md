@@ -25,6 +25,7 @@ ios/
 - 555 Timer (astable / monostable)
 - Motor FLA (430.248 / 430.250)
 - Wire Size & Ampacity (310.16 75 °C)
+- Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
 
 ## Homework calculators
 

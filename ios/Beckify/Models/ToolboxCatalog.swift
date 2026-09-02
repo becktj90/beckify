@@ -25,6 +25,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case motionSnapshot
     case fieldPosition
     case deviceHealth
+    case receptacleSelector
 
     var id: String { rawValue }
 }
@@ -121,6 +122,14 @@ enum ToolboxCatalog {
             subtitle: "NEC Table 310.16, 75 °C column.",
             symbol: "cable.connector.horizontal",
             synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor"]
+        ),
+        ToolDefinition(
+            id: .receptacleSelector,
+            kind: .calculator,
+            title: "Receptacle Selector",
+            subtitle: "NEMA / IEC 60309 best-fit faces, pinout, public PNs.",
+            symbol: "poweroutlet.type.b",
+            synonyms: ["receptacle", "outlet", "NEMA", "L5-30", "pin and sleeve", "Meltric", "Hubbell", "twist lock", "IEC 60309"]
         ),
         ToolDefinition(
             id: .voltageDivider,

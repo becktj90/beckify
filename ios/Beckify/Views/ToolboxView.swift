@@ -57,7 +57,7 @@ struct ToolboxView: View {
                 }
             }
             .navigationTitle("Beckify")
-            .searchable(text: $query, prompt: "Ohm, divider, color code, LED, wifi…")
+            .searchable(text: $query, prompt: "Ohm, receptacle, NEMA, LED, wifi…")
             .background(Theme.background)
             .overlay {
                 if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && filtered.isEmpty {
@@ -122,6 +122,7 @@ struct CalculatorHostView: View {
             case .timer555: Timer555View()
             case .motorFLA: MotorFLAView()
             case .wireAmpacity: WireAmpacityView()
+            case .receptacleSelector: ReceptacleSelectorView()
             case .voltageDivider: VoltageDividerView()
             case .seriesParallel: SeriesParallelView()
             case .resistorColor: ResistorColorView()
