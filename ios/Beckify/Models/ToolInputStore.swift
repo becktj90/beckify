@@ -86,19 +86,16 @@ struct StoredChoice<Value: RawRepresentable>: DynamicProperty where Value.RawVal
 
     init(_ tool: ToolID, _ field: String, default defaultValue: Value) {
         fallback = defaultValue
-        _raw = AppStorage(wrappedValue: defaultValue.rawValue, ToolInputStore.key(tool, field))
+        let key = ToolInputStore.key(tool, field)
+        if let stored = UserDefaults.standard.string(forKey: key),
+           Value(rawValue: stored) == nil {
+            UserDefaults.standard.set(defaultValue.rawValue, forKey: key)
+        }
+        _raw = AppStorage(wrappedValue: defaultValue.rawValue, key)
     }
 
     var wrappedValue: Value {
-        get {
-            if let value = Value(rawValue: raw) {
-                return value
-            }
-            if raw != fallback.rawValue {
-                raw = fallback.rawValue
-            }
-            return fallback
-        }
+        get { Value(rawValue: raw) ?? fallback }
         nonmutating set { raw = newValue.rawValue }
     }
 

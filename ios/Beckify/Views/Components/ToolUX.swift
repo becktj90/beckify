@@ -82,11 +82,13 @@ struct StickyAnswerBar: View {
                     .font(.caption2.weight(.semibold))
                     .tracking(0.6)
                     .foregroundStyle(Theme.muted)
+                    .accessibilityHidden(true)
                 Text(answer)
                     .font(.body.monospacedDigit().weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .lineLimit(3)
                     .minimumScaleFactor(0.8)
+                    .accessibilityLabel("Answer \(answer)")
             }
             Spacer(minLength: 8)
             if let copyText, !copyText.isEmpty {
@@ -103,8 +105,6 @@ struct StickyAnswerBar: View {
                 .fill(Theme.border)
                 .frame(height: 1)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Answer \(answer)")
     }
 }
 
@@ -144,6 +144,7 @@ struct CopyResultButton: View {
         .accessibilityValue(text)
         .onDisappear {
             resetTask?.cancel()
+            copied = false
         }
     }
 }
