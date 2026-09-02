@@ -88,6 +88,18 @@ for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['sim
   ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
 }
 
+console.log('\n--- Assistant search: five new toolbox tools ---');
+for (const [query, expectedId] of [
+  ['nema 5-15', 'nema-wiring'],
+  ['cable schedule', 'cable-schedule'],
+  ['battery bank', 'battery-bank'],
+  ['motor nameplate', 'motor-nameplate'],
+  ['lfp backup', 'battery-bank'],
+]) {
+  const results = searchAssistant(query, 6);
+  ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
+}
+
 console.log('\n--- Assistant search: no duplicate ids, every href is real ---');
 {
   const ids = ASSISTANT_DOCUMENTS.map((d) => d.id);

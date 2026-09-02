@@ -646,3 +646,30 @@ document.addEventListener('DOMContentLoaded', function () {
     window.setWirePriceMode();
   }
 });
+
+/* Callable ampacity / voltage-drop helpers for other toolbox pages.
+   Reuses NEC Table 310.16 and Ch.9 Tables 8–9 from nec-data.js — do not
+   copy those tables elsewhere. */
+window.BeckifyWireMath = {
+  ampacity75: function (size, material) {
+    var key = String(size || '').replace(/\s*(AWG|kcmil)\s*/ig, '').trim();
+    var row = AMPACITY[material || 'cu'] && AMPACITY[material || 'cu'][key];
+    if (!row) return null;
+    return row[TEMP_COLUMN_INDEX[75]];
+  },
+  deratedAmpacity: deratedAmpacity,
+  voltageDropVolts: voltageDropVolts,
+  suggestSizeForFla: function (fla, material) {
+    var need = Number(fla) * 1.25;
+    if (!Number.isFinite(need) || need <= 0) return null;
+    var mat = material || 'cu';
+    for (var i = 0; i < WIRE_SIZE_ORDER.length; i++) {
+      var size = WIRE_SIZE_ORDER[i];
+      var row = AMPACITY[mat] && AMPACITY[mat][size];
+      if (row && row[TEMP_COLUMN_INDEX[75]] >= need) {
+        return { size: size, ampacity: row[TEMP_COLUMN_INDEX[75]], required: need, article: 'NEC 430.22' };
+      }
+    }
+    return null;
+  },
+};

@@ -33,7 +33,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v18';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -89,6 +89,18 @@ const SHELL = [
   './js/ebus-budget.js',
   './js/modbus-address.js',
   './js/plc-timer-preset.js',
+  './js/field-persist.js',
+  './js/nema-wiring.js',
+  './js/battery-bank.js',
+  './js/cable-schedule.js',
+  './js/ocr-helper.js',
+  './js/motor-nameplate.js',
+  './js/vendor/xlsx.full.min.js',
+  './js/vendor/tesseract/tesseract.min.js',
+  './js/vendor/tesseract/worker.min.js',
+  './js/vendor/tesseract/tesseract-core-simd-lstm.wasm.js',
+  './js/vendor/tesseract/tesseract-core-simd-lstm.wasm',
+  './js/vendor/tesseract/eng.traineddata.gz',
   './js/math-explanations.js',
   './js/analog-schematics.js',
   './js/analog-tools.js',

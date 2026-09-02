@@ -93,7 +93,9 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: [
       t("Voltage Drop", "sec-vdrop"),
       t("Conductor Length by Resistance", "sec-conductor-length"),
-      t("Motor Calculations", "sec-motor"),
+                      t("Motor Calculations", "sec-motor"),
+      t("Cable Schedule Generator", "sec-cable-schedule"),
+      t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
       t("Transformer", "sec-xfmr"),
       t("Transformer Engine", "sec-xfmr-engine"),
       t("Transformer Sizing", "sec-xfmr-size"),
@@ -110,6 +112,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("UPS Sizing", "sec-ups"),
       t("Generator Sizing", "sec-gen"),
       t("Hybrid Generator", "sec-hybrid"),
+      t("Battery Bank Calculator", "sec-battery-bank"),
     ],
   },
   {
@@ -172,6 +175,8 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("PLC Timer Preset", "sec-plc-timer-preset"),
       t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
       t("Panel Schedule Power Study", "sec-panel-power-study"),
+      t("Cable Schedule Generator", "sec-cable-schedule"),
+      t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
     ],
   },
   {
@@ -182,6 +187,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Conduit Fill Tables", "sec-conduit-ref"),
       t("IP Rating Chart", "sec-ip-rating"),
       t("NEMA Enclosures", "sec-nema-class"),
+      t("NEMA Wiring & Color Codes", "sec-nema-wiring"),
       t("NEC Code Tables", "sec-nec-tables"),
     ],
   },
