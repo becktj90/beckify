@@ -79,7 +79,29 @@ final class PowerWizardTests: XCTestCase {
                 powerFactor: 0.9,
                 efficiency: 0
             )
-        )
+        ) { error in
+            XCTAssertEqual(
+                error as? CalcError,
+                .outOfRange("Efficiency must be between 0 and 1 (exclusive of 0).")
+            )
+        }
+    }
+
+    func testInvalidEfficiencyOnAmpsThrows() {
+        XCTAssertThrowsError(
+            try PowerWizard.solve(
+                system: .dc,
+                known: .amps(10),
+                voltage: 48,
+                powerFactor: 1,
+                efficiency: .nan
+            )
+        ) { error in
+            XCTAssertEqual(
+                error as? CalcError,
+                .outOfRange("Efficiency must be between 0 and 1 (exclusive of 0).")
+            )
+        }
     }
 }
 
@@ -96,7 +118,12 @@ final class ACPowerTests: XCTestCase {
     }
 
     func testRejectsDCSystem() {
-        XCTAssertThrowsError(try ACPower.solve(system: .dc, voltage: 48, current: 10, powerFactor: 0.9))
+        XCTAssertThrowsError(try ACPower.solve(system: .dc, voltage: 48, current: 10, powerFactor: 0.9)) { error in
+            XCTAssertEqual(
+                error as? CalcError,
+                .outOfRange("AC power is for 1Ø or 3Ø. Use DC power or Power Wizard for DC.")
+            )
+        }
     }
 }
 
@@ -140,11 +167,14 @@ final class ConduitFillTests: XCTestCase {
         XCTAssertEqual(r.maxFillPercent, 31)
     }
 
-    func testFractionalConductorCountIsRejected() {
+    func testFractionalConductorCountIsRejected() throws {
         XCTAssertThrowsError(try WholeCount.parse(2.9, name: "Conductor quantity")) { error in
             XCTAssertEqual(error as? CalcError, .outOfRange("Conductor quantity must be a whole number."))
         }
         XCTAssertEqual(try WholeCount.parse(3, name: "Conductor quantity"), 3)
+        // Truncating 2.9 → 2 would silently use the 2-wire 31% Table 1 row.
+        let twoWire = try ConduitFill.calculate(quantity: 2, size: "12", tradeSize: "1/2")
+        XCTAssertEqual(twoWire.maxFillPercent, 31)
     }
 }
 
@@ -189,7 +219,36 @@ final class TransformerSizingTests: XCTestCase {
                 secondaryVolts: 480,
                 continuous: false
             )
-        )
+        ) { error in
+            XCTAssertEqual(
+                error as? CalcError,
+                .outOfRange("This calculator implements NEC Table 450.3(B) for transformers rated 1000 V or less.")
+            )
+        }
+    }
+}
+
+final class NumericParseTests: XCTestCase {
+    func testUSParsesWholeString() {
+        let us = Locale(identifier: "en_US_POSIX")
+        XCTAssertEqual(NumericParse.parse("12.5", locale: us), 12.5)
+        XCTAssertEqual(NumericParse.parse("  66.8  ", locale: us), 66.8)
+        XCTAssertEqual(NumericParse.parse("-3.25", locale: us), -3.25)
+    }
+
+    func testRejectsTrailingJunk() {
+        let us = Locale(identifier: "en_US_POSIX")
+        XCTAssertNil(NumericParse.parse("12.5abc", locale: us))
+        XCTAssertNil(NumericParse.parse("1.9 extra", locale: us))
+        XCTAssertNil(NumericParse.parse("2.9 conductors", locale: us))
+        XCTAssertNil(NumericParse.parse("", locale: us))
+        XCTAssertNil(NumericParse.parse("   ", locale: us))
+    }
+
+    func testLocaleDecimalSeparator() {
+        let fr = Locale(identifier: "fr_FR")
+        XCTAssertEqual(NumericParse.parse("12,5", locale: fr), 12.5)
+        XCTAssertNil(NumericParse.parse("12,5abc", locale: fr))
     }
 }
 

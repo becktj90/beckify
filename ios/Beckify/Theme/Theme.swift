@@ -1,4 +1,5 @@
 import SwiftUI
+import BeckifyMath
 
 enum Theme {
     static let background = Color(red: 5 / 255, green: 6 / 255, blue: 15 / 255)
@@ -53,15 +54,8 @@ enum Format {
 }
 
 extension String {
-    /// Parses a decimal using the active locale and rejects leftover text.
+    /// Locale-aware full-string parse; trailing junk is rejected (see `NumericParse`).
     var parsedDouble: Double? {
-        let t = trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.isEmpty { return nil }
-        let formatter = NumberFormatter()
-        formatter.locale = .current
-        formatter.numberStyle = .decimal
-        formatter.isLenient = false
-        guard let number = formatter.number(from: t) else { return nil }
-        return number.doubleValue
+        NumericParse.parse(self)
     }
 }

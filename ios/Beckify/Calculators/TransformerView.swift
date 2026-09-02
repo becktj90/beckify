@@ -67,18 +67,19 @@ struct TransformerView: View {
                         ResultRow(label: "Secondary 125%", value: Format.amps(r.secondaryConductorMinAmps))
                     }
                     SaveJobBar(jobName: $jobName, canSave: true) {
+                        var inputs: [String: String] = [
+                            "system": system.displayName,
+                            "loadKind": loadKind.rawValue,
+                            "load": load,
+                            "vp": vp,
+                            "vs": vs,
+                            "continuous": continuous ? "yes" : "no",
+                        ]
+                        if loadKind == .kw { inputs["pf"] = pf }
                         jobs.save(SavedJob(
                             name: jobName,
                             toolID: .transformer,
-                            inputs: [
-                                "system": system.displayName,
-                                "loadKind": loadKind.rawValue,
-                                "load": load,
-                                "pf": pf,
-                                "vp": vp,
-                                "vs": vs,
-                                "continuous": continuous ? "yes" : "no",
-                            ],
+                            inputs: inputs,
                             outputs: ["kVA": "\(r.selectedKVA)", "Ip": Format.amps(r.primaryFLA), "Is": Format.amps(r.secondaryFLA)]
                         ))
                     }
