@@ -369,7 +369,7 @@ function mvSelect(opts) {
     suggestedClass: suggestedClass,
     classLow: classLow,
     ranked: ranked,
-    selected: ranked[0] || null,
+    selected: ranked.find(function (row) { return row.vd; }) || ranked[0] || null,
   };
 }
 

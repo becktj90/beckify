@@ -155,7 +155,7 @@ The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, 
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
-1. On a Mac, open `ios/Beckify.xcodeproj` and confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
+1. Create the app record — already done (see table). On a Mac, open `ios/Beckify.xcodeproj` and set **Team** / confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
 2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Apple’s public 0–1 `signalStrength`, not dBm.
 3. Run on a physical device at least once if not already done (capability / provisioning / sensor check). This Linux CI job does not do that.
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
