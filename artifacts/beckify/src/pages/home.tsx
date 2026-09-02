@@ -107,15 +107,17 @@ export default function Home() {
 
             {/* ── EE TOOLBOX ──────────────────────────────────────────── */}
             <FadeIn delay={0.08} className="bento-cell">
-              {/* Real navigation — the toolbox is a standalone app, not a React route. */}
-              <a href="/toolbox/" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              {/* Real navigation — the toolbox is a standalone app, not a React route.
+                  The card title still opens /toolbox/; named chips deep-link so
+                  visitors do not have to hunt the toolbox sidebar. */}
+              <div className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
                     background: "radial-gradient(ellipse at 80% 20%, rgba(139,123,255,0.12) 0%, transparent 60%)",
                   }}
                 />
-                <div className="relative z-10 flex flex-col h-full">
+                <a href="/toolbox/" className="relative z-10 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -132,11 +134,32 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, and TDR fault locating — all NEC-referenced.
+                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, and number-base converter.
                     </p>
                   </div>
+                </a>
+                <div className="relative z-10 mt-3 flex flex-wrap gap-1.5">
+                  {[
+                    { href: "/toolbox/#sec-emp-emc", label: "EMP / EMC" },
+                    { href: "/toolbox/#sec-magnetic-circuit", label: "Magnetic circuit" },
+                    { href: "/toolbox/#sec-transient-circuits", label: "Transients" },
+                    { href: "/toolbox/#sec-phasor-diagram", label: "Phasors" },
+                    { href: "/toolbox/#sec-semiconductor-iv", label: "Semiconductor I-V" },
+                    { href: "/toolbox/#sec-fiber-link", label: "Fiber / NA" },
+                    { href: "/toolbox/#sec-gaussian-beam", label: "Gaussian beam" },
+                    { href: "/toolbox/#sec-lp-optimizer", label: "LP optimizer" },
+                    { href: "/toolbox/#sec-base-converter", label: "Number-base" },
+                  ].map(({ href, label }) => (
+                    <a
+                      key={href}
+                      href={href}
+                      className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]"
+                    >
+                      {label}
+                    </a>
+                  ))}
                 </div>
-              </a>
+              </div>
             </FadeIn>
 
             {/* ── PROJECTS ──────────────────────────────────────────────── */}
