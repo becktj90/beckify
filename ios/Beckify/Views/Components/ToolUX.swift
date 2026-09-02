@@ -86,8 +86,8 @@ struct StickyAnswerBar: View {
                 Text(answer)
                     .font(.body.monospacedDigit().weight(.semibold))
                     .foregroundStyle(Theme.foreground)
-                    .lineLimit(3)
                     .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityLabel("Answer \(answer)")
             }
             Spacer(minLength: 8)
