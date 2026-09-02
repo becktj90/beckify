@@ -21,19 +21,29 @@
                       update lands on the next visit without ever leaving the
                       user offline-broken in between.
 
-     cross-origin     cache-first, network fallback, opaque responses kept.
-                      jsPDF and Tesseract are lazy-loaded from a CDN; caching
-                      them on first use means PDF export and OCR keep working
-                      offline afterwards. They are never precached — that would
-                      make install fail whenever a CDN is unreachable.
+     cross-origin     cache-first, network fallback, opaque responses kept,
+                      but only for an allow-list of CDNs (jsDelivr, Google
+                      Fonts, GA). jsPDF and Tesseract are lazy-loaded from a
+                      CDN; caching them on first use means PDF export and OCR
+                      keep working offline afterwards. They are never precached
+                      — that would make install fail whenever a CDN is
+                      unreachable. Unknown hosts are not intercepted.
 
    CACHE_VERSION must be bumped whenever a precached file changes, otherwise
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v14';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
+const RUNTIME_HOST_ALLOWLIST = [
+  'cdn.jsdelivr.net',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
+  'www.googletagmanager.com',
+  'www.google-analytics.com',
+  'region1.google-analytics.com',
+];
 
 const SHELL = [
   './',
@@ -182,7 +192,9 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Fonts and lazy-loaded libraries.
+  if (RUNTIME_HOST_ALLOWLIST.indexOf(url.hostname) === -1) return;
+
+  // Fonts and lazy-loaded libraries from known CDNs only.
   event.respondWith(cacheFirst(request, RUNTIME_CACHE).catch(function () {
     return caches.match(request);
   }));

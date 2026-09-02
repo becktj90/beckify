@@ -102,6 +102,10 @@ function handleFileSelection(file) {
     setStatus('Please choose a valid image file.');
     return;
   }
+  if (file.size > 12 * 1024 * 1024) {
+    setStatus('Please choose an image smaller than 12 MB.');
+    return;
+  }
 
   if (state.imageUrl) {
     URL.revokeObjectURL(state.imageUrl);

@@ -128,6 +128,16 @@ function GearBadges({ item, featured = false }: { item: Gear; featured?: boolean
   );
 }
 
+function httpUrl(raw: string): string | undefined {
+  try {
+    const url = new URL(raw);
+    if (url.protocol === "https:" || url.protocol === "http:") return url.href;
+  } catch {
+    /* ignore malformed */
+  }
+  return undefined;
+}
+
 export function GearCard({
   item,
   featured = false,
@@ -140,6 +150,8 @@ export function GearCard({
   const [expanded, setExpanded] = useState(false);
   const Icon = getGearIcon(item.category);
   const detailsId = `${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-details`;
+  const amazonHref = httpUrl(item.amazonUrl);
+  const manufacturerHref = httpUrl(item.manufacturerUrl);
 
   return (
     <article
@@ -203,23 +215,27 @@ export function GearCard({
         </div>
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold">
-        <a
-          href={item.amazonUrl}
-          target="_blank"
-          rel="sponsored noopener noreferrer"
-          aria-label={`View the exact ${item.name} model on Amazon (paid link)`}
-          className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[var(--accent-foreground)] transition hover:bg-[var(--accent-2)]"
-        >
-          <ShoppingBag className="h-4 w-4" /> View exact model on Amazon <ExternalLink className="h-3.5 w-3.5" />
-        </a>
-        <a
-          href={item.manufacturerUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-1 py-2 text-[var(--muted)] transition hover:text-[var(--accent)] hover:underline"
-        >
-          Manufacturer specs <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        {amazonHref ? (
+          <a
+            href={amazonHref}
+            target="_blank"
+            rel="sponsored noopener noreferrer"
+            aria-label={`View the exact ${item.name} model on Amazon (paid link)`}
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[var(--accent-foreground)] transition hover:bg-[var(--accent-2)]"
+          >
+            <ShoppingBag className="h-4 w-4" /> View exact model on Amazon <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
+        {manufacturerHref ? (
+          <a
+            href={manufacturerHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-1 py-2 text-[var(--muted)] transition hover:text-[var(--accent)] hover:underline"
+          >
+            Manufacturer specs <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
       </div>
     </article>
   );
