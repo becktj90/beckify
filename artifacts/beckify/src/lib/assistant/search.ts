@@ -17,6 +17,9 @@ const significantWords = (text: string) =>
  */
 const EXTRA_TAGS: Record<string, string[]> = {
   "ohms-law": ["ohms law", "v i r"],
+  "magnetic-circuit": ["reluctance", "mmf", "flux", "air gap", "fringing", "magnetostatics", "ampere", "magnetic circuit"],
+  "transient-circuits": ["rc transient", "rl transient", "rlc transient", "overdamped", "underdamped", "time constant", "source free"],
+  "phasor-diagram": ["phasor", "voltage triangle", "current triangle", "polar", "delta wye", "lead lag", "power factor"],
   "voltage-drop": ["feeder", "branch", "wire", "awg", "distance"],
   "conduit-fill": ["emt", "raceway", "chapter 9", "40 percent"],
   "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],
@@ -25,6 +28,9 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
   "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
+  "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
+  "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],
+  "gaussian-beam": ["gaussian beam", "rayleigh range", "beam waist", "confocal", "saleh teich"],
   "lp-optimizer": ["linear programming", "simplex", "feasible region", "blending", "product mix", "operations research"],
   "number-base-converter": ["hex", "hexadecimal", "decimal", "octal", "binary", "radix", "two's complement", "bit field", "nibble"],
 };

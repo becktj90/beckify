@@ -57,11 +57,11 @@ interface ToolboxCategory {
 const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Fundamentals", hue: HUES.blue, anchor: "sec-ohm",
-    tools: ["Ohm's Law", "DC Power", "Power & Current Converter", "AC Power"],
+    tools: ["Ohm's Law", "Magnetic Circuit Workbench", "DC Power", "Power & Current Converter", "AC Power"],
   },
   {
     label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance",
-    tools: ["Reactance & Impedance", "Resonance", "Power Factor Correction"],
+    tools: ["Reactance & Impedance", "Resonance", "Phasor Diagram Workbench", "Transient Circuit Lab", "Power Factor Correction"],
   },
   {
     label: "Series / Parallel", hue: HUES.violet, anchor: "sec-sp",
@@ -102,7 +102,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   },
   {
     label: "Tools", hue: HUES.orange, anchor: "sec-convert",
-    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Panel Schedule Load Analyzer", "Panel Schedule Power Study"],
+    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Semiconductor Device I-V", "Fiber Link / NA", "Gaussian Beam", "Panel Schedule Load Analyzer", "Panel Schedule Power Study"],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",

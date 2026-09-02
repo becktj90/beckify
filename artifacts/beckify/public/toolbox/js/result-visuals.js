@@ -402,6 +402,8 @@
     if (id === 'sec-conduit' || id === 'sec-conduit-adv') return conduitSection(shell(result, 'Conduit cross-section and conductor fill envelope'));
     if (id === 'sec-power-dc') return energyBars(shell(result, 'DC power load and capacity relationship'), 'DC POWER BALANCE');
     if (id === 'sec-power-wizard') return;
+    if (id === 'sec-magnetic-circuit' || id === 'sec-transient-circuits' || id === 'sec-phasor-diagram') return;
+    if (id === 'sec-semiconductor-iv' || id === 'sec-fiber-link' || id === 'sec-gaussian-beam') return;
     if (id === 'sec-reactance') return reactancePlot(shell(result, 'Inductive reactance rises while capacitive reactance falls with frequency'));
     if (id === 'sec-resonance') return resonancePlot(shell(result, 'Resonance response with a marked resonant frequency'));
     if (id === 'sec-harmonics') return harmonicSpectrum(shell(result, 'Harmonic spectrum by order'));

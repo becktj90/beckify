@@ -29,6 +29,9 @@ export const TOOLS = [
   ["transformer-sizing", "Transformer Sizing Calculator", "Select transformer size, primary and secondary protection, and practical conductor options for electrical loads.", "sec-xfmr-size"],
   ["conductor-length-resistance", "Conductor Length by Resistance", "Estimate conductor length from measured resistance with copper and aluminum temperature compensation.", "sec-conductor-length"],
   ["ohms-law", "Ohm's Law Calculator", "Solve voltage, current, resistance, and power relationships for DC and resistive AC circuits.", "sec-ohm"],
+  ["magnetic-circuit", "Magnetic Circuit Workbench", "Homework magnetostatics: series or parallel reluctance, optional air-gap fringing, flux Φ = NI / Rtot, B, H, and MMF drops around the Ampere loop.", "sec-magnetic-circuit"],
+  ["transient-circuits", "Transient Circuit Lab", "Closed-form first-order RC/RL and second-order series or parallel RLC transients for source-step and source-free cases, with a live waveform.", "sec-transient-circuits"],
+  ["phasor-diagram", "Phasor Diagram Workbench", "Interactive series or parallel R-L-C phasors with a live voltage or current triangle, polar RMS, power factor, and balanced Δ-Y impedance conversion.", "sec-phasor-diagram"],
   ["dc-power", "DC Power Calculator", "Calculate voltage, current, resistance, and watts for a direct-current electrical circuit.", "sec-power-dc"],
   ["power-wizard", "AC and DC Power Wizard", "Solve real power, reactive power, apparent power, current, and motor horsepower for DC, single-phase, and three-phase systems.", "sec-power-wizard"],
   ["reactance-impedance", "Reactance and Impedance Calculator", "Calculate capacitive reactance, inductive reactance, and impedance for AC circuits.", "sec-reactance"],
@@ -61,8 +64,11 @@ export const TOOLS = [
   ["unit-conversions", "Electrical Unit Conversions", "Convert common electrical engineering units quickly in the field.", "sec-convert"],
   ["circular-mils", "Circular Mils Calculator", "Calculate conductor area and compare circular-mil values for electrical sizing work.", "sec-cm"],
   ["photometrics", "Photometrics Calculator", "Estimate lighting levels and photometric relationships for practical design checks.", "sec-photometrics"],
+  ["fiber-link", "Fiber Link / NA", "Numerical aperture NA = √(n1² − n2²), acceptance angle, and a first-order optical link budget (source dBm minus fiber, connector, and splice loss versus receiver sensitivity).", "sec-fiber-link"],
+  ["gaussian-beam", "Gaussian Beam", "TEM00 envelope: Rayleigh range zR = π w0² / λ, spot w(z), curvature R(z), and confocal parameter b = 2 zR.", "sec-gaussian-beam"],
   ["digital-logic-workbench", "Digital Logic Workbench", "Build combinational logic diagrams, simulate gate outputs, generate truth tables, and convert Boolean expressions to and from gate diagrams.", "sec-digital"],
   ["analog-design-workbench", "Analog Design Workbench", "Calculate common op-amp stages and design RC, RLC, Sallen-Key, state-variable, notch, band-pass, and all-pass filters with a live response plot.", "sec-analog-design"],
+  ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],
   ["panel-schedule-load-analyzer", "Panel Schedule Load Analyzer", "Extract an editable panel schedule from a photo and estimate circuit demand, panel current, diversity, and capacity.", "sec-panel-schedule"],
   ["panel-power-study", "Panel Schedule Power Study", "Read a panel schedule image, review breaker sizes, poles, and circuit classes, then calculate connected load, demand and diversity factors, panel FLA, and remaining expansion capacity.", "sec-panel-power-study"],
@@ -76,8 +82,8 @@ export const TOOLS = [
 ];
 
 export const CATEGORIES = [
-  ["fundamentals", "Electrical Fundamentals", "Start with voltage, current, power, resistance, and core circuit relationships.", "sec-ohm"],
-  ["ac-circuits", "AC Circuits", "Analyze reactance, impedance, resonance, and power factor in AC networks.", "sec-reactance"],
+  ["fundamentals", "Electrical Fundamentals", "Start with voltage, current, power, resistance, magnetic circuits, and core circuit relationships.", "sec-ohm"],
+  ["ac-circuits", "AC Circuits", "Analyze reactance, impedance, resonance, transients, phasors, and power factor in AC networks.", "sec-reactance"],
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],

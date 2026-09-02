@@ -31,7 +31,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v13';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 
@@ -65,6 +65,12 @@ const SHELL = [
   './js/circuit-sim.js',
   './js/smith-chart.js',
   './js/emp-emc.js',
+  './js/magnetic-circuit.js',
+  './js/transient-circuits.js',
+  './js/phasor-diagram.js',
+  './js/semiconductor-iv.js',
+  './js/fiber-link.js',
+  './js/gaussian-beam.js',
   './js/stem-tools.js',
   './js/lp-optimizer.js',
   './js/base-converter.js',
