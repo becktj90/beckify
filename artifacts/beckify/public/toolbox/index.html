@@ -3558,6 +3558,16 @@
                 </select>
               </div>
               <div>
+                <label>Construction</label>
+                <select id="ws_construction">
+                  <option value="2c+e">2C+E</option>
+                  <option value="3c+e">3C+E</option>
+                  <option value="4c+e" selected>4C+E</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
                 <label>Insulation Rating</label>
                 <select id="ws_insul">
                   <option value="90" selected>90°C (THHN/XHHW-2)</option>
@@ -8290,7 +8300,7 @@
           <summary>ℹ More Info — Generator Sizing</summary>
           <div class="section-info-body">
             <strong>Generator Sizing</strong> uses the load inventory method to total all connected loads with demand factors, then applies a safety margin.<br><br>
-            <ul><li><strong>Design kW:</strong> Σ(kW × qty × DF%) for each load category</li><li><strong>Design kVA:</strong> Design kW / PF — size the generator to this kVA rating</li><li><strong>Safety margin:</strong> IEEE 446 recommends ≥25% headroom for motor starting transients and future growth</li><li><strong>Motor starting:</strong> Locked-rotor current is 6–8× FLA; the generator must supply this without excessive voltage dip (&lt;15%)</li></ul>
+            <ul><li><strong>Design kW:</strong> Σ(kW × qty × DF%) for each load category</li><li><strong>Design kVA:</strong> Design kW / PF — size the generator to this kVA rating</li><li><strong>Safety margin:</strong> IEEE 446 recommends ≥25% headroom for motor starting transients and future growth</li><li><strong>Motor starting:</strong> Optional starter type scales starting kVA vs FLA kVA (DOL ≈ 6×, wye-delta ≈ 2×, autotransformer 65/80% taps ≈ 2.1× / 3.2×). Inventory check only — not a voltage-dip study.</li></ul>
             <strong>NFPA 110 Level 1:</strong> Transfer in ≤10 seconds; minimum 96-hour fuel supply. Used for life-safety loads (exit lighting, fire pumps, hospital critical branches).
           </div>
         </details>
@@ -8311,6 +8321,17 @@
               <div><label>Motor kW (per unit)</label><input type="number" id="gen_motor_kw" placeholder="kW" step="any" min="0"></div>
               <div><label>Quantity</label><input type="number" id="gen_motor_qty" placeholder="units" value="1" step="1" min="1"></div>
               <div><label>Demand Factor (%)</label><input type="number" id="gen_motor_df" placeholder="e.g. 80" value="80" step="any" min="0" max="100"></div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Starter (affects starting kVA)</label>
+                <select id="gen_starter">
+                  <option value="dol" selected>DOL / across-the-line (6×)</option>
+                  <option value="yd">Wye-delta (2×)</option>
+                  <option value="at65">Autotransformer 65% tap (2.1×)</option>
+                  <option value="at80">Autotransformer 80% tap (3.2×)</option>
+                </select>
+              </div>
             </div>
 
             <div style="margin-bottom:6px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">&#9658; Lighting / Receptacle Loads</div>

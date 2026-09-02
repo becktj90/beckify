@@ -99,6 +99,13 @@ function xeConduit(type, conductorCount, phaseSize, egcSize, insulation) {
   };
 }
 
+/** 2C+E / 3C+E / 4C+E from phase and winding. High-leg is a 4-wire secondary. */
+function xeConstructionCode(phase, connection) {
+  if (phase === '1ph' || connection === 'single') return '2c+e';
+  if (connection === 'wye' || connection === 'highleg') return '4c+e';
+  return '3c+e';
+}
+
 /** Conductors carried per run: ungrounded + neutral, EGC counted separately. */
 function xeConductorsPerRun(phase, connection) {
   if (phase === '1ph') return 2;                 // 2 ungrounded, or line + neutral
@@ -273,6 +280,13 @@ window.calcXfmrEngine = function () {
     ['Full load amps', fmt(pri.fla, 1) + ' A', fmt(sec.fla, 1) + ' A'],
     ['Conductor @125%', fmt(pri.required, 1) + ' A', fmt(sec.required, 1) + ' A'],
     ['OCPD', priOcpd + ' A', secOcpd ? secOcpd + ' A' : 'none (primary only)'],
+    ['Type string',
+      (typeof lvCableTypeString === 'function'
+        ? lvCableTypeString({ construction: xeConstructionCode(priPhase, priConn), runs: pri.runs, size: pri.conductor.size, material: material, insulation: insulation })
+        : (pri.runs > 1 ? pri.runs + ' × ' : '') + wireSizeLabel(pri.conductor.size) + ' ' + matLabel),
+      (typeof lvCableTypeString === 'function'
+        ? lvCableTypeString({ construction: xeConstructionCode(secPhase, secConn), runs: sec.runs, size: sec.conductor.size, material: material, insulation: insulation })
+        : (sec.runs > 1 ? sec.runs + ' × ' : '') + wireSizeLabel(sec.conductor.size) + ' ' + matLabel)],
     ['Phase conductor', (pri.runs > 1 ? pri.runs + ' × ' : '') + wireSizeLabel(pri.conductor.size) + ' ' + matLabel,
       (sec.runs > 1 ? sec.runs + ' × ' : '') + wireSizeLabel(sec.conductor.size) + ' ' + matLabel],
     ['Usable ampacity', fmt(pri.conductor.usable, 1) + ' A', fmt(sec.conductor.usable, 1) + ' A'],

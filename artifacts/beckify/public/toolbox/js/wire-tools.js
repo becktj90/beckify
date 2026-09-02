@@ -476,6 +476,34 @@ window.conductorI2RWatts = conductorI2RWatts;
 window.annualI2RCost = annualI2RCost;
 window.pvOfAnnuity = pvOfAnnuity;
 
+/** Insulated cores in a 2C+E / 3C+E / 4C+E construction. Earth is extra. */
+function lvConstructionCores(code) {
+  const key = String(code || '').toLowerCase();
+  if (key === '2c+e' || key === '2c') return 2;
+  if (key === '3c+e' || key === '3c') return 3;
+  return 4;
+}
+
+/**
+ * Written LV type string, same job as the MV type string: construction +
+ * parallels + size + metal. Example: "2 × 4C+E 4/0 AWG Cu THHN".
+ */
+function lvCableTypeString(opts) {
+  const cores = lvConstructionCores(opts && opts.construction);
+  const tag = cores + 'C+E';
+  const mat = String((opts && opts.material) || 'cu').toLowerCase() === 'al' ? 'Al' : 'Cu';
+  const size = (typeof wireSizeLabel === 'function')
+    ? wireSizeLabel(opts && opts.size)
+    : String((opts && opts.size) || '');
+  const insul = opts && opts.insulation ? String(opts.insulation) : '';
+  const runs = Math.max(1, parseInt(opts && opts.runs, 10) || 1);
+  const prefix = runs > 1 ? (runs + ' × ') : '';
+  return (prefix + tag + ' ' + size + ' ' + mat + (insul ? ' ' + insul : '')).replace(/\s+/g, ' ').trim();
+}
+
+window.lvConstructionCores = lvConstructionCores;
+window.lvCableTypeString = lvCableTypeString;
+
 function voltageDropVolts(size, material, phase, current, lengthFt, powerFactor, runs) {
   const z = effectiveImpedance(size, material, powerFactor);
   if (z === null) return null;
@@ -570,8 +598,12 @@ window.calcWireSelection = function () {
       const vdPct = (vd / voltage) * 100;
       if (vdPct > maxVdPct) continue;
 
-      /* Conduit sized for this run: phase conductors + neutral + EGC, THHN. */
-      const perRunConductors = phase === '3ph' ? 4 : phase === '1ph' ? 3 : 2;
+      /* Construction is a written option (2C+E / 3C+E / 4C+E). Fill counts
+         insulated cores plus a same-size EGC. CCC stays the user field. */
+      const construction = (document.getElementById('ws_construction') || {}).value
+        || (phase === '1ph' ? '3c+e' : '4c+e');
+      const insulatedCores = lvConstructionCores(construction);
+      const perRunConductors = insulatedCores + 1;
       const condArea = INSULATION_TYPES.THHN.areas[size];
       const bundleArea = condArea * perRunConductors;
       const emt = CONDUIT_TYPES.EMT;
@@ -589,7 +621,7 @@ window.calcWireSelection = function () {
         ? userConduit
         : (tradeSize ? CONDUIT_PRICE_PER_FT[tradeSize] : null);
 
-      const conductorCost = wirePrice * lengthFt * perRunConductors * runs * (userKft > 0 ? 1 : priceBook.multiplier);
+      const conductorCost = wirePrice * lengthFt * insulatedCores * runs * (userKft > 0 ? 1 : priceBook.multiplier);
       const conduitCost = conduitPrice ? conduitPrice * lengthFt * runs * (userConduit > 0 ? 1 : priceBook.multiplier) : 0;
 
       options.push({
@@ -601,6 +633,15 @@ window.calcWireSelection = function () {
         vdPct: vdPct,
         tradeSize: tradeSize,
         perRunConductors: perRunConductors,
+        insulatedCores: insulatedCores,
+        construction: construction,
+        typeString: lvCableTypeString({
+          construction: construction,
+          runs: runs,
+          size: size,
+          material: material,
+          insulation: insulTemp === 90 ? 'THHN' : (insulTemp === 75 ? 'THWN' : 'TW'),
+        }),
         conductorCost: conductorCost,
         conduitCost: conduitCost,
         totalCost: conductorCost + conduitCost,
@@ -647,9 +688,9 @@ window.calcWireSelection = function () {
   /* ---- Recommendation ---- */
   wtHeading(el, 'Lowest modeled material cost');
   el.lastElementChild.classList.add('cost-optimum');
+  wtRow(el, 'Type string', recommended.typeString, { bold: true, color: PASS_COLOR });
   wtRow(el, 'Conductor', recommended.runs + ' run' + (recommended.runs > 1 ? 's' : '') +
-    ' × ' + wireSizeLabel(recommended.size) + ' ' + (material === 'cu' ? 'Cu' : 'Al'),
-    { bold: true, color: PASS_COLOR });
+    ' × ' + wireSizeLabel(recommended.size) + ' ' + (material === 'cu' ? 'Cu' : 'Al'));
   wtRow(el, 'Usable ampacity per run', fmt(refAmp.usable, 1) + ' A' +
     '  (need ' + fmt(recommended.perRunCurrent, 1) + ' A)');
   wtRow(el, 'Voltage drop', fmt(recommended.vd, 2) + ' V  (' + fmt(recommended.vdPct, 2) + ' %)');

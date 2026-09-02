@@ -1172,6 +1172,16 @@ window.calcUPS = function () {
 /* ============================================================
    17. GENERATOR SIZING (IEEE 446 / NFPA 110)
    ============================================================ */
+/** Typical starting-kVA multiples vs FLA kVA. Inventory check, not a dip study. */
+function generatorStartMultiple(starter) {
+  const key = String(starter || 'dol');
+  if (key === 'yd') return { mult: 2.0, label: 'Wye-delta ≈ 2× FLA kVA' };
+  if (key === 'at65') return { mult: 2.1, label: 'Autotransformer 65% tap ≈ 2.1× FLA kVA' };
+  if (key === 'at80') return { mult: 3.2, label: 'Autotransformer 80% tap ≈ 3.2× FLA kVA' };
+  return { mult: 6.0, label: 'DOL / across-the-line ≈ 6× FLA kVA' };
+}
+window.generatorStartMultiple = generatorStartMultiple;
+
 window.calcGenerator = function () {
   const pf     = val('gen_pf') / 100;
   const margin = val('gen_margin') / 100;
@@ -1205,7 +1215,10 @@ window.calcGenerator = function () {
                     250, 300, 350, 400, 500, 600, 750, 1000];
   const recSize = genSizes.find(s => s >= designKW) || Math.ceil(designKW / 100) * 100;
 
-  showResult('gen_result', [
+  const starterEl = document.getElementById('gen_starter');
+  const starter = starterEl ? starterEl.value : 'dol';
+  const startInfo = generatorStartMultiple(starter);
+  const rows = [
     ['Motor Loads',             fmt(motorLoad, 1) + ' kW'],
     ['Lighting / Receptacle',   fmt(lightLoad, 1) + ' kW'],
     ['HVAC Loads',              fmt(hvacLoad,  1) + ' kW'],
@@ -1213,7 +1226,25 @@ window.calcGenerator = function () {
     ['Total Connected Load',    fmt(totalKW, 1) + ' kW / ' + fmt(totalKVA, 1) + ' kVA'],
     ['Design Load (x' + fmt(safetyMult, 2) + ')', fmt(designKW, 1) + ' kW / ' + fmt(designKVA, 1) + ' kVA'],
     ['Recommended Generator',   recSize + ' kW (next standard size)']
-  ]);
+  ];
+
+  if (isPos(motorKW)) {
+    const largestFlaKva = motorKW / pf;
+    const startKva = largestFlaKva * startInfo.mult;
+    const remainingKw = Math.max(0, totalKW - motorKW);
+    const remainingKva = remainingKw / pf;
+    const peakStartKva = remainingKva + startKva;
+    rows.push(['Starter', startInfo.label]);
+    rows.push(['Largest motor FLA kVA', fmt(largestFlaKva, 1) + ' kVA  (' + fmt(motorKW, 1) + ' kW ÷ PF)']);
+    rows.push(['Starting kVA (one motor)', fmt(startKva, 1) + ' kVA']);
+    rows.push(['Peak kVA while starting', fmt(peakStartKva, 1) + ' kVA  (other running + start)']);
+    rows.push(['Start check',
+      peakStartKva <= designKVA
+        ? 'Design kVA covers this start multiple'
+        : 'Peak start kVA exceeds running design kVA — raise margin or use a softer starter']);
+  }
+
+  showResult('gen_result', rows);
 };
 
 /* ============================================================

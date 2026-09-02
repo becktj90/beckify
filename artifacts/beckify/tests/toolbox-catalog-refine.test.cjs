@@ -50,6 +50,10 @@ ok('calcXfmr no longer emits flat 125% OCPD', !appSrc.includes("Primary OCPD (�
 ok('sizing UI exposes method + Note 1 + continuous', html.includes('id="xs_method"') && html.includes('id="xs_note1"') && html.includes('id="xs_continuous"'));
 ok('engine UI exposes pri+sec + Note 1 + continuous + parallels', html.includes('id="xe_sec_protected"') && html.includes('id="xe_note1"') && html.includes('id="xe_pri_runs"') && html.includes('id="xe_sec_runs"'));
 ok('wizard dropped the second price book', !wizardSrc.includes('WIRE_COST_CU') && wizardSrc.includes('PLANNING_CONDUCTOR_PRICE_PER_FT'));
+ok('LV construction is a Conductors option', html.includes('id="ws_construction"') && html.includes('4C+E'));
+ok('generator starter is an on-site option', html.includes('id="gen_starter"') && html.includes('Wye-delta'));
+ok('did not import third-party panel/gen worksheets', !html.includes('Jignesh') && !html.includes('electrical-engineering-portal'));
+ok('did not add a second 24 VDC module-current tool', (html.match(/id="sec-ebus-budget"/g) || []).length === 1);
 
 console.log('\n--- I²R + MV ---');
 const dir = path.join(root, 'public/toolbox/js') + '/';
@@ -64,9 +68,12 @@ vm.createContext(sandbox);
 for (const f of ['nec-data.js', 'wire-tools.js', 'mv-cable.js']) {
   vm.runInContext(fs.readFileSync(dir + f, 'utf8'), sandbox, { filename: f });
 }
+const startFn = appSrc.match(/function generatorStartMultiple\([\s\S]*?\n\}/);
+if (startFn) vm.runInContext(startFn[0], sandbox);
 const G = vm.runInContext(`({
   conductorI2RWatts, annualI2RCost, pvOfAnnuity, DC_RESISTANCE,
   PLANNING_CONDUCTOR_PRICE_PER_FT: (typeof PLANNING_CONDUCTOR_PRICE_PER_FT !== 'undefined' ? PLANNING_CONDUCTOR_PRICE_PER_FT : window.PLANNING_CONDUCTOR_PRICE_PER_FT),
+  lvCableTypeString, lvConstructionCores, generatorStartMultiple,
   mvLoadAmps, mvSuggestedClassKv, mvTypeString, mvSelect, mvVoltageDrop
 })`, sandbox);
 
@@ -79,6 +86,15 @@ ok('annual = (W/1000) × $/kWh × hours', Math.abs(annual - (watts / 1000) * 0.1
 const watts1 = G.conductorI2RWatts(100, '4/0', 'cu', 200, 1, '1ph');
 ok('1Ø I²R uses 2 × I² × R_one_way', Math.abs(watts1 - (2 * 100 * 100 * rOneWay)) < 1e-9);
 ok('shared planning book is exposed', G.PLANNING_CONDUCTOR_PRICE_PER_FT && G.PLANNING_CONDUCTOR_PRICE_PER_FT.cu['4/0'] === 5.75);
+ok('4C+E type string includes parallels', G.lvCableTypeString({
+  construction: '4c+e', runs: 2, size: '4/0', material: 'cu', insulation: 'THHN',
+}) === '2 × 4C+E 4/0 AWG Cu THHN');
+ok('3C+E type string', G.lvCableTypeString({
+  construction: '3c+e', runs: 1, size: '2', material: 'al', insulation: 'THHN',
+}) === '3C+E 2 AWG Al THHN');
+ok('DOL starting multiple is 6×', G.generatorStartMultiple('dol').mult === 6);
+ok('wye-delta starting multiple is 2×', G.generatorStartMultiple('yd').mult === 2);
+ok('10 kW motor PF 0.85 DOL start kVA', Math.abs((10 / 0.85) * G.generatorStartMultiple('dol').mult - 70.588) < 0.02);
 
 const load = G.mvLoadAmps({ phase: '3ph', loadUnit: 'kva', loadValue: 4000, systemKv: 23.2, powerFactor: 0.9 });
 ok('4000 kVA / 23.2 kV → ≈ 99.56 A', Math.abs(load.amps - 99.56) < 0.02, String(load.amps));
