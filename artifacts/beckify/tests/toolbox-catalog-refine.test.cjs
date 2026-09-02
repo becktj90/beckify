@@ -54,6 +54,11 @@ ok('LV construction is a Conductors option', html.includes('id="ws_construction"
 ok('generator starter is an on-site option', html.includes('id="gen_starter"') && html.includes('Wye-delta'));
 ok('did not import third-party panel/gen worksheets', !html.includes('Jignesh') && !html.includes('electrical-engineering-portal'));
 ok('did not add a second 24 VDC module-current tool', (html.match(/id="sec-ebus-budget"/g) || []).length === 1);
+ok('#33 cable schedule stays first-class', registry.TOOLS.some((t) => t[0] === 'cable-schedule' && t[3] === 'sec-cable-schedule'));
+ok('#33 motor nameplate stays first-class', registry.TOOLS.some((t) => t[0] === 'motor-nameplate' && t[3] === 'sec-motor-nameplate'));
+ok('#33 battery bank stays first-class', registry.TOOLS.some((t) => t[0] === 'battery-bank' && t[3] === 'sec-battery-bank'));
+ok('new field tools are not swallowed into families', ['cable-schedule', 'motor-nameplate', 'battery-bank']
+  .every((slug) => !registry.TOOL_ALIASES.some((a) => a[0] === slug)));
 const iosCat = fs.readFileSync(path.join(root, '../../ios/Beckify/Models/ToolboxCatalog.swift'), 'utf8');
 ok('iOS keeps powerWizard as a hidden lookup', iosCat.includes('hiddenTools') && /id: \.powerWizard/.test(iosCat));
 ok('iOS toolbox list does not show a second Power Wizard',

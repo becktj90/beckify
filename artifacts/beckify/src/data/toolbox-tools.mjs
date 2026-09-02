@@ -130,8 +130,10 @@ export const TOOLS = [
   ["transformer", "Transformer", "One transformer job: ratio and current, NEC Table 450.3(B) sizing (primary-only or primary+secondary, Note 1, continuous 125%), conductors/OCPD/VD/EGC/GEC, and type/winding/SLD. Tap-changer is a separate tool.", "sec-xfmr-size"],
   ["tap-changer", "Tap-Changer Calculator", "De-energized tap changer for common MV/LV pairs (23 kV/480 V and others). Not a general transformer sizer.", "sec-tap"],
   ["conductors", "Conductors", "Select LV conductors for ampacity, voltage drop, and modeled material plus I²R energy cost; size a lighting run; estimate length from measured resistance; or select MV cable (Art. 311 / 310.60 series) with a written wire-type string.", "sec-wire-select"],
+  ["cable-schedule", "Cable Schedule Generator", "Build a power, control, instrumentation, and communication cable schedule from a type catalog, quantity cart, and sequential Cable IDs, then export CSV, XLSX, or JSON.", "sec-cable-schedule"],
   ["conduit-fill", "Conduit Fill Calculator", "Check raceway fill for one size or mixed conductor sizes using Chapter 9 areas and Table 1 limits.", "sec-conduit"],
   ["motor", "Motor", "NEC Tables 430.248 and 430.250 full-load current (the field table values) plus a formula HP/kW/amps mode. 430.6(A)(1) requires the table, not a calculated current, for conductor and OCPD sizing.", "sec-motor-ref"],
+  ["motor-nameplate", "Motor Nameplate Analyzer", "Read a motor nameplate photo on this device, review HP, FLA, and code letter, then estimate overload, branch-circuit SCPD, and conductor size from NEC 430.32, Table 430.52, and 430.22.", "sec-motor-nameplate"],
   ["short-circuit", "Short-Circuit Current Calculator", "Estimate available fault current from user-entered transformer kVA, voltage, and %Z. Not a %Z calculator and not an inrush tool.", "sec-sc"],
   ["on-site-power", "On-site Power", "Size UPS, generator, hybrid generator-and-battery, or BESS peak-shave from connected loads. One family — four modes.", "sec-ups"],
   ["ebike-drivetrain", "E-Bike Drivetrain Calculator", "Calculate e-bike torque, RPM, sprocket ratios, wheel speed, and drivetrain performance.", "sec-ebike-tools"],
@@ -157,6 +159,7 @@ export const TOOLS = [
   ["analog-design-workbench", "Analog Design Workbench", "Calculate common op-amp stages and design RC, RLC, Sallen-Key, state-variable, notch, band-pass, and all-pass filters with a live response plot.", "sec-analog-design"],
   ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],
+  ["battery-bank", "Battery Bank Calculator", "Size a battery bank from load and backup duration, or reverse-solve runtime from series/parallel strings, with chemistry presets and a continuous C-rate flag.", "sec-battery-bank"],
   ["panel-schedule", "Panel Schedule", "Read a panel schedule image and estimate circuit demand, breaker layout, diversity, panel FLA, and remaining expansion capacity. Load-analyzer and power-study modes.", "sec-panel-schedule"],
   ["megger-tdr-analyzer", "Megger TDR Trace Analyzer", "Analyze a Megger TDR500 screen image for velocity factor, range, impedance, and cable fault reflections.", "sec-tdr"],
   ["smith-chart", "Smith Chart Tool", "Explore transmission-line impedance matching, reflection coefficient, VSWR, and return loss.", "sec-smith-chart"],
@@ -229,7 +232,7 @@ export const CATEGORIES = [
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],
-  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel OCR, Megger TDR, PLC I/O lists, scaling, Modbus addressing, and timer presets.", "sec-tdr"],
+  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel-directory OCR, motor nameplates, cable schedules, Megger TDR, PLC I/O lists, scaling, Modbus addressing, and timer presets.", "sec-tdr"],
   ["reference-tables", "Electrical Reference Tables", "Browse conductor, motor, conduit, enclosure, IP rating, and NEC reference information.", "sec-wire-ref"],
 ];
 
@@ -249,4 +252,5 @@ export const REFERENCE_TABLES = [
   ["nec-tables", "NEC Code Tables", "Key National Electrical Code reference tables for conductor sizing, derating, protection, and conduit fill.", "sec-nec-tables"],
   ["ip-rating", "IP Rating Chart (IEC 60529)", "Ingress Protection ratings for electrical enclosures covering solid-particle and liquid protection.", "sec-ip-rating"],
   ["nema-class", "NEMA Enclosure Types (NEMA 250)", "NEMA enclosure ratings for electrical equipment environmental and safety protection levels.", "sec-nema-class"],
+  ["nema-wiring", "NEMA Wiring Configurations & Color Code Reference", "SVG receptacle-face diagrams for common NEMA straight-blade and locking devices, plus US color-code notes. Neutral and EGC colors cite NEC 200.6 and 250.119; hot colors are industry convention.", "sec-nema-wiring"],
 ];

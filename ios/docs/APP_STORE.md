@@ -132,7 +132,7 @@ The app follows the system light or dark appearance; it does not force dark. Sys
 
 ## App icon
 
-Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (1024×1024). Replace with a final design before submission if desired. Do not use a photograph of a real person.
+App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 1024×1024 RGB, single catalog slot). Original stacked-rings mark: nested white circles sharing a bottom tangent (tunnel), the whole shape centered on a black square. Full-bleed square — do not pre-round corners or add alpha; Apple applies the squircle. Do not use a photograph of a real person.
 
 ## Remaining steps (Mac + App Store Connect)
 

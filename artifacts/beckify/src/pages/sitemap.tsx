@@ -89,7 +89,9 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
       t("Conductors", "sec-wire-select"),
+      t("Cable Schedule Generator", "sec-cable-schedule"),
       t("Motor", "sec-motor-ref"),
+      t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
       t("Transformer", "sec-xfmr-size"),
       t("Tap-Changer Calc", "sec-tap"),
       t("Conduit Fill", "sec-conduit"),
@@ -101,6 +103,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
     tools: [
       t("On-site Power", "sec-ups"),
+      t("Battery Bank Calculator", "sec-battery-bank"),
     ],
   },
   {
@@ -170,6 +173,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Conduit Fill Tables", "sec-conduit-ref"),
       t("IP Rating Chart", "sec-ip-rating"),
       t("NEMA Enclosures", "sec-nema-class"),
+      t("NEMA Wiring & Color Codes", "sec-nema-wiring"),
       t("NEC Code Tables", "sec-nec-tables"),
     ],
   },

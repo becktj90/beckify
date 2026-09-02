@@ -134,7 +134,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, and number-base converter.
+                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, number-base converter, I/O list, signal scaling, cable schedule, battery bank, and motor nameplate tools.
                     </p>
                   </div>
                 </a>
@@ -154,6 +154,10 @@ export default function Home() {
                     { href: "/toolbox/#sec-ebus-budget", label: "E-bus budget" },
                     { href: "/toolbox/#sec-modbus-address", label: "Modbus address" },
                     { href: "/toolbox/#sec-plc-timer-preset", label: "PLC timer" },
+                    { href: "/toolbox/#sec-cable-schedule", label: "Cable schedule" },
+                    { href: "/toolbox/#sec-nema-wiring", label: "NEMA wiring" },
+                    { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
+                    { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}

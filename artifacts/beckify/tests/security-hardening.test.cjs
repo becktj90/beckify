@@ -34,10 +34,23 @@ ok("Toolbox doc links include noreferrer", /rel="noopener noreferrer"/.test(tool
 const panelSchedule = read(root, "public", "toolbox", "panel-schedule.html");
 const panelPower = read(root, "public", "toolbox", "panel-power-study.html");
 ok(
-  "Panel schedule pins Tesseract 5.1.1 with integrity",
-  /tesseract\.js@5\.1\.1\/dist\/tesseract\.min\.js/.test(panelSchedule) &&
-    /integrity="sha384-/.test(panelSchedule) &&
-    /crossorigin="anonymous"/.test(panelSchedule),
+  "Panel schedule uses local Tesseract helper with SRI pin",
+  /js\/ocr-helper\.js/.test(panelSchedule) &&
+    !/cdn\.jsdelivr\.net\/npm\/tesseract/.test(panelSchedule),
+);
+const ocrHelper = read(root, "public", "toolbox", "js", "ocr-helper.js");
+const crypto = require("crypto");
+const tessBytes = fs.readFileSync(path.join(root, "public", "toolbox", "js", "vendor", "tesseract", "tesseract.min.js"));
+const tessSha384 = crypto.createHash("sha384").update(tessBytes).digest("base64");
+const ocrSri = (ocrHelper.match(/integrity = 'sha384-([^']+)'/) || [])[1];
+ok(
+  "OCR helper SRI matches vendored tesseract.min.js SHA-384",
+  ocrSri === tessSha384 && /js\/vendor\/tesseract\//.test(ocrHelper),
+);
+ok(
+  "OCR helper pins Tesseract 5.1.1 integrity hash",
+  /sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR\/D3A991F/.test(ocrHelper) &&
+    /js\/vendor\/tesseract\//.test(ocrHelper),
 );
 ok(
   "Panel power study pins Tesseract 5.1.1 with integrity",
@@ -58,7 +71,15 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after hardening", /CACHE_VERSION = 'v17'/.test(sw));
+ok("Toolbox SW cache version bumped after main rebase", /CACHE_VERSION = 'v23'/.test(sw));
+ok(
+  "Toolbox SW does not precache Tesseract at install",
+  !/const SHELL = \[[^\]]*tesseract/s.test(sw),
+);
+ok(
+  "Toolbox SW runtime-caches Tesseract on first OCR use",
+  /isTesseractAsset/.test(sw) && /vendor\/tesseract\//.test(sw),
+);
 ok("Toolbox SW allow-lists CDN hosts", /RUNTIME_HOST_ALLOWLIST/.test(sw) && /cdn\.jsdelivr\.net/.test(sw));
 
 const deploy = read(repo, ".github", "workflows", "deploy.yml");
