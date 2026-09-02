@@ -5,4 +5,4 @@
  *  - Games: GAMES in site-content.ts.
  */
 export const PUBLIC_CALCULATOR_COUNT = 49;
-export const PUBLIC_GAME_COUNT = 7;
+export const PUBLIC_GAME_COUNT = 8;
