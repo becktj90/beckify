@@ -180,6 +180,13 @@ export const PROJECTS: Project[] = [
     icon: Zap,
   },
   {
+    name: "Honda XR650R Electric Conversion",
+    description:
+      "Build in progress — 76 V Electro & Company pack, QS 4 kW V3 mid-drive, and Votol EM-200/2 on the XR650R chassis. Public workshop journal.",
+    url: "/projects/honda-xr650r",
+    icon: Zap,
+  },
+  {
     name: "Sniffmaster",
     description: "An experimental web project. Enter at your own risk.",
     url: "https://sniffmaster-web.vercel.app",
