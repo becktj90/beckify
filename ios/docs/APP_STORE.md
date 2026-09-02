@@ -59,7 +59,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,resistor,divider,LED,ampacity,wifi,ohm
 
 **What's New (1.0):**
-First toolbox: field EE calculators plus public-API sensors and local saved notes.
+First toolbox with field EE calculators, homework tools, and public-API sensors, plus local saved notes.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
