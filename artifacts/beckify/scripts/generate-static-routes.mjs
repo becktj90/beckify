@@ -8,6 +8,7 @@ const shell = resolve(dist, "index.html");
 const escapeHtml = (value) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 const staticRoutes = [
   ["about", "About Trevor Beck | Beckify", "Electrical engineering background, hands-on builds, and the purpose behind Beckify's practical engineering resources."],
+  ["privacy", "Privacy Policy | Beckify iOS", "Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Data Not Collected. Sensor readings and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts."],
   ["projects", "Engineering Projects and Build Logs | Beckify", "Engineering projects, conversion build logs, prototypes, and practical maker work from Beckify."],
   ["projects/vespa-p200e", "Vespa P200E EV Conversion | Beckify", "An engineering case study of a 1979 Vespa P200E electric conversion: 20S10P battery, protection, motor control, hub motor and custom swingarm."],
   ["projects/honda-xr650r", "Honda XR650R Electric Conversion | Beckify", "A public workshop journal for a Honda XR650R electric motorcycle conversion — 76 V pack, QS 4 kW V3 mid-drive, Votol EM-200/2. Build in progress."],
@@ -61,3 +62,12 @@ await Promise.all(staticRoutes.map(async ([route, title, description]) => {
   await mkdir(directory, { recursive: true });
   await writeFile(resolve(directory, "index.html"), routeShell(appShell, route, title, description));
 }));
+
+// App Store Connect needs a public HTTPS policy that is readable even if a
+// crawler does not execute JavaScript. Inject the markdown source as a
+// noscript fallback on the privacy route only.
+const privacyHtmlPath = resolve(dist, "privacy", "index.html");
+const privacySource = await readFile(resolve(root, "../../ios/docs/PRIVACY.md"), "utf8");
+const privacyHtml = await readFile(privacyHtmlPath, "utf8");
+const privacyFallback = `<noscript><article id="privacy-policy" style="max-width:48rem;margin:2rem auto;padding:1.25rem;color:#eef0fa;font:16px/1.6 system-ui,sans-serif;white-space:pre-wrap">${escapeHtml(privacySource)}</article></noscript>`;
+await writeFile(privacyHtmlPath, privacyHtml.replace("</body>", `${privacyFallback}</body>`));

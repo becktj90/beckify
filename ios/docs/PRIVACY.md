@@ -1,11 +1,15 @@
 # Privacy Policy — Beckify iOS
 
 **Product:** Beckify (bundle ID `com.beckify.toolbox`)  
+**Platforms:** iPhone and iPad  
 **Developer:** Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com  
-**Status:** Draft for App Store Connect. This file is not published on https://beckify.com.
+**Public URL:** https://beckify.com/privacy  
+**Last updated:** 2 September 2026
 
-Apple’s App Privacy nutrition label for this app is **Data Not Collected**. Sensor readings and Saved Jobs stay on the device. This repository has not submitted the app, signed a build, enrolled Apple Developer, or uploaded TestFlight.
+This is the privacy policy for the native Beckify iOS and iPadOS app. It is hosted at https://beckify.com/privacy (and https://beckify.com/privacy/). It describes the app, not the beckify.com website.
+
+Apple’s App Privacy nutrition label for this app is **Data Not Collected**. Sensor readings and Saved Jobs stay on the device.
 
 ## What the app does not collect
 
@@ -44,7 +48,7 @@ The app is rated 4+ and does not collect data from anyone, including children.
 
 ## Changes
 
-If this policy changes, the updated text will replace this draft. This document is not an App Store submission and does not mean the app is listed, signed, or in TestFlight.
+If this policy changes, the updated text will be published at https://beckify.com/privacy.
 
 ## Contact
 

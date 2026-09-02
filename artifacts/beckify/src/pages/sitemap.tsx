@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowUpRight, Gamepad2, MapIcon, Orbit, Rocket, Terminal, Wrench, Zap } from "lucide-react";
+import { ArrowUpRight, Gamepad2, MapIcon, Orbit, Rocket, Shield, Terminal, Wrench, Zap } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -29,6 +29,7 @@ const HUES = {
 const PAGES: { href: string; label: string; description: string; icon: typeof Terminal; hue: string }[] = [
   { href: "/", label: "Home", description: "Hub page — hero and links to everything below.", icon: Orbit, hue: HUES.blue },
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
+  { href: "/privacy", label: "Privacy", description: "Privacy policy for the Beckify iOS and iPadOS app.", icon: Shield, hue: HUES.violet },
   { href: "/toolbox/", label: "Toolbox", description: `${PUBLIC_CALCULATOR_COUNT} native EE calculators, organized by category.`, icon: Wrench, hue: HUES.aqua },
   { href: "/control-systems", label: "Control System Toolbox", description: "Interactive modeling, Bode plots, PID tuning, LQR/LQG, and MPC visualizers.", icon: Zap, hue: HUES.violet },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },

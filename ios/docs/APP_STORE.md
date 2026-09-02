@@ -1,11 +1,13 @@
 # App Store scaffolding — Beckify
 
-Draft only. Nothing in this repository has been submitted to Apple. Uploading a build requires Trevor's Apple Developer Program account ($99/year) on a Mac with Xcode. This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, enrolled a team, or uploaded TestFlight.
+Listing copy for App Store Connect. Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. Uploading a build still needs that account on a Mac with Xcode. This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, set a signing Team, created an App Store Connect record, archived, or submitted.
 
-## Listing copy (draft)
+## Listing copy
 
 **Name:** Beckify  
 **Subtitle:** Field EE toolbox  
+**Bundle ID:** `com.beckify.toolbox`  
+**Devices:** iPhone and iPad (Xcode `TARGETED_DEVICE_FAMILY` 1,2)  
 **Category:** Productivity  
 **Secondary (optional):** Utilities  
 **Age rating:** 4+ (no user-generated content, no unrestricted web, no violence)  
@@ -66,7 +68,7 @@ First toolbox with field EE calculators, homework tools, and public-API sensors,
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
-**Privacy Policy URL (intended, once hosted):** App Store Connect requires a public HTTPS privacy-policy URL. The draft is [`ios/docs/PRIVACY.md`](PRIVACY.md) (“Data Not Collected”). It is **not** hosted on https://beckify.com in this PR. After this file is on `main`, a typical stand-in until a dedicated page exists is the GitHub blob URL for that path (for example `https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md`). Do not treat the live site as hosting this policy.
+**Privacy Policy URL:** https://beckify.com/privacy (also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md) (“Data Not Collected”). After this change is on `main` and GitHub Pages deploys, use https://beckify.com/privacy in the app record.
 
 ## Wi-Fi App Store limitation (honest)
 
@@ -96,7 +98,7 @@ The app uses only HTTPS for optional links the user taps (beckify.com, mailto). 
 
 ## Screenshots (required sizes)
 
-Not captured in this repository. This repo has not run an iOS Simulator UI build, signed the app, enrolled an Apple Developer team, uploaded TestFlight, or submitted to the App Store. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
+Not captured in this repository. This repo has not run an iOS Simulator UI build, signed the app, uploaded TestFlight, or submitted to the App Store. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
 
 Apple's current required screenshot classes for an iPhone + iPad app (verify in App Store Connect before upload):
 
@@ -123,16 +125,19 @@ Use dark appearance. Do not show ads, Amazon, games, or a phone number.
 
 Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (1024×1024). Replace with a final design before submission if desired. Do not use a photograph of a real person.
 
-## Remaining steps that require Apple Developer login
+## Remaining steps (Mac + App Store Connect)
 
-1. Enroll or renew **Apple Developer Program** ($99 USD/year) at https://developer.apple.com as Trevor Beck.
-2. In Xcode → Signing & Capabilities, set **Team** on the Beckify target. Bundle ID `com.beckify.toolbox` must be registered to that team.
-3. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device.
-4. Run on a physical device at least once (capability / provisioning / sensor check). This Linux CI job does not do that.
-5. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): Productivity, 4+, privacy “Data Not Collected”, English listing copy above.
-6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
-7. Upload the build (Organizer or Transporter). Wait for processing.
-8. Attach screenshots, review the encryption and content-rights questions, submit for review.
-9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
+**Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
+
+Still Mac-only:
+
+1. In Xcode → Signing & Capabilities, set **Team** on the Beckify target. Bundle ID `com.beckify.toolbox` must be registered to that team.
+2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device.
+3. Run on a physical device at least once (capability / provisioning / sensor check). This Linux CI job does not do that.
+4. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): name Beckify, Productivity, iPhone + iPad, 4+, Free (no IAP, no ads), privacy “Data Not Collected”, Privacy Policy URL https://beckify.com/privacy, Support/Marketing https://beckify.com, English listing copy above.
+5. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
+6. Upload the build (Organizer or Transporter). Wait for processing.
+7. Attach screenshots, review the encryption and content-rights questions, submit for review.
+8. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
 
 Until those steps are done, the app exists only in this repository. It is **not** on the App Store.
