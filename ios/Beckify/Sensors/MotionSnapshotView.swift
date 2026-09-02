@@ -16,6 +16,7 @@ final class MotionSnapshotModel: ObservableObject {
     @Published var uz = 0.0
     @Published var peakUserG = 0.0
     @Published var available = false
+    @Published var hasReading = false
     @Published var status = "Waiting for device motion…"
 
     private let motion = CMMotionManager()
@@ -45,6 +46,7 @@ final class MotionSnapshotModel: ObservableObject {
             self.userG = MotionMath.magnitudeG(x: u.x, y: u.y, z: u.z)
             self.totalG = MotionMath.magnitudeG(x: g.x + u.x, y: g.y + u.y, z: g.z + u.z)
             self.peakUserG = max(self.peakUserG, self.userG)
+            self.hasReading = true
             self.status = "CoreMotion device motion"
         }
     }
@@ -92,16 +94,17 @@ struct MotionSnapshotView: View {
                 .buttonStyle(.bordered)
                 .tint(Theme.accent)
                 .frame(minHeight: Theme.touchTarget)
-            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
 
-    private var sticky: String {
-        "user \(Format.number(model.userG, digits: 3)) g  ·  peak \(Format.number(model.peakUserG, digits: 3)) g"
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return "user \(Format.number(model.userG, digits: 3)) g  ·  peak \(Format.number(model.peakUserG, digits: 3)) g"
     }
-    private var copyText: String { sticky }
+    private var copyText: String? { sticky }
 
     private func save() {
         jobs.save(SavedJob(

@@ -9,6 +9,7 @@ final class LevelModel: ObservableObject {
     @Published var pitch = 0.0
     @Published var plumb = 0.0
     @Published var available = false
+    @Published var hasReading = false
     @Published var status = "Waiting for motion…"
 
     private let motion = CMMotionManager()
@@ -30,6 +31,7 @@ final class LevelModel: ObservableObject {
             self.roll = tilt.x
             self.pitch = tilt.y
             self.plumb = LevelMath.portraitPlumbDeviationDegrees(gravityX: g.x, gravityY: g.y, gravityZ: g.z)
+            self.hasReading = true
             self.status = "CoreMotion gravity"
         }
     }
@@ -72,16 +74,17 @@ struct BubbleLevelView: View {
                 ResultRow(label: "Plumb deviation", value: Format.degrees(model.plumb), tone: Theme.warn)
                 ResultRow(label: "Source", value: model.status)
             }
-            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
 
-    private var sticky: String {
-        "roll \(Format.degrees(model.roll))  ·  pitch \(Format.degrees(model.pitch))"
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return "roll \(Format.degrees(model.roll))  ·  pitch \(Format.degrees(model.pitch))"
     }
-    private var copyText: String { sticky }
+    private var copyText: String? { sticky }
 
     private var bubble: some View {
         GeometryReader { geo in

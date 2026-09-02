@@ -90,7 +90,15 @@ struct StoredChoice<Value: RawRepresentable>: DynamicProperty where Value.RawVal
     }
 
     var wrappedValue: Value {
-        get { Value(rawValue: raw) ?? fallback }
+        get {
+            if let value = Value(rawValue: raw) {
+                return value
+            }
+            if raw != fallback.rawValue {
+                raw = fallback.rawValue
+            }
+            return fallback
+        }
         nonmutating set { raw = newValue.rawValue }
     }
 

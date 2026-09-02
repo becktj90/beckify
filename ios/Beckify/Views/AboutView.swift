@@ -50,7 +50,7 @@ struct AboutView: View {
                     DisclaimerBanner()
 
                     ResultCard(title: "Privacy") {
-                        Text("No ads, no analytics, no tracking, no account. Microphone, Bluetooth, and location are used only inside those tools, on this device. Saved jobs and last-used calculator inputs stay on this device. This app does not load beckify.com in a web view.")
+                        Text("No ads, no analytics, no tracking, no account. Microphone, Bluetooth, and location are used only inside those tools, on this device. Saved jobs and last-used tool inputs stay on this device. This app does not load beckify.com in a web view.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.muted)
                     }

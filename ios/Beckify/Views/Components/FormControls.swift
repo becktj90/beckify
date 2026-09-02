@@ -82,7 +82,7 @@ struct ResultCard<Content: View>: View {
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
                 if let copyText, !copyText.isEmpty {
-                    CopyResultButton(text: copyText, compact: true)
+                    CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy \(title) results")
                 }
             }
             VStack(alignment: .leading, spacing: 2) {

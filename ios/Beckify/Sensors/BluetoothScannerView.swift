@@ -178,7 +178,10 @@ struct BluetoothScannerView: View {
                         }
                         .padding(.vertical, 4)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(item.name), \(item.rssi) dBm, identifier \(item.id.uuidString)")
+                        .accessibilityLabel(
+                            "\(item.name), \(item.rssi) dBm, identifier \(item.id.uuidString)"
+                                + (item.serviceIDs.isEmpty ? "" : ", services \(item.serviceIDs.joined(separator: ", "))")
+                        )
                     }
                 }
             }

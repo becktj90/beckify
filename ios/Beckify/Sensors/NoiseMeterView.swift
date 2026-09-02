@@ -9,6 +9,7 @@ final class NoiseMeterModel: ObservableObject {
     @Published var peak: Double = SoundLevel.silenceFloorDBFS
     @Published var permissionDenied = false
     @Published var running = false
+    @Published var hasReading = false
     @Published var status = "Microphone idle"
 
     private let engine = AVAudioEngine()
@@ -68,6 +69,7 @@ final class NoiseMeterModel: ObservableObject {
                 let db = SoundLevel.dbfs(rms: rms)
                 Task { @MainActor in
                     self?.dbfs = db
+                    self?.hasReading = true
                     if db > (self?.peak ?? SoundLevel.silenceFloorDBFS) {
                         self?.peak = db
                     }
@@ -133,14 +135,20 @@ struct NoiseMeterView: View {
                 .buttonStyle(.bordered)
                 .tint(Theme.accent)
                 .frame(minHeight: Theme.touchTarget)
-            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.running || model.dbfs > SoundLevel.silenceFloorDBFS) { save() }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
 
-    private var sticky: String { Format.dbfs(model.dbfs) }
-    private var copyText: String { "Now \(Format.dbfs(model.dbfs)), peak \(Format.dbfs(model.peak))" }
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return Format.dbfs(model.dbfs)
+    }
+    private var copyText: String? {
+        guard model.hasReading else { return nil }
+        return "Now \(Format.dbfs(model.dbfs)), peak \(Format.dbfs(model.peak))"
+    }
 
     private var levelBar: some View {
         let clamped = min(0, max(SoundLevel.silenceFloorDBFS, model.dbfs))

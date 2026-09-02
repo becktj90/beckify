@@ -1,6 +1,5 @@
 import SwiftUI
 import UIKit
-import BeckifyMath
 
 private struct OpenRelatedToolKey: EnvironmentKey {
     static let defaultValue: (ToolID) -> Void = { _ in }
@@ -51,7 +50,7 @@ struct ToolScaffold<Content: View>: View {
         .toolbar {
             if let copyText, !copyText.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
-                    CopyResultButton(text: copyText, compact: true)
+                    CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy result from toolbar")
                 }
             }
         }
@@ -91,7 +90,7 @@ struct StickyAnswerBar: View {
             }
             Spacer(minLength: 8)
             if let copyText, !copyText.isEmpty {
-                CopyResultButton(text: copyText, compact: true)
+                CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy answer from the bottom bar")
             }
         }
         .padding(.horizontal, 16)
@@ -112,13 +111,18 @@ struct StickyAnswerBar: View {
 struct CopyResultButton: View {
     let text: String
     var compact: Bool = false
+    var accessibilityName: String = "Copy result"
     @State private var copied = false
+    @State private var resetTask: Task<Void, Never>?
 
     var body: some View {
         Button {
             UIPasteboard.general.string = text
             copied = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            resetTask?.cancel()
+            resetTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                guard !Task.isCancelled else { return }
                 copied = false
             }
         } label: {
@@ -136,8 +140,11 @@ struct CopyResultButton: View {
         .buttonStyle(.bordered)
         .tint(Theme.accent)
         .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        .accessibilityLabel(copied ? "Copied result" : "Copy result")
+        .accessibilityLabel(copied ? "Copied. \(accessibilityName)" : accessibilityName)
         .accessibilityValue(text)
+        .onDisappear {
+            resetTask?.cancel()
+        }
     }
 }
 

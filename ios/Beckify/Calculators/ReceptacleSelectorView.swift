@@ -178,6 +178,8 @@ struct ReceptacleSelectorView: View {
         .onChange(of: ampPreset) { _, _ in selectedID = nil }
         .onChange(of: family) { _, _ in selectedID = nil }
         .onChange(of: environment) { _, _ in selectedID = nil }
+        .onChange(of: isolatedGround) { _, _ in selectedID = nil }
+        .onChange(of: preferGFCI) { _, _ in selectedID = nil }
         .onChange(of: neutral) { _, _ in selectedID = nil }
         .onChange(of: frequencyHz) { _, _ in selectedID = nil }
     }

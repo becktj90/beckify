@@ -11,6 +11,7 @@ final class MagnetometerModel: ObservableObject {
     @Published var magnitude = 0.0
     @Published var heading = 0.0
     @Published var available = false
+    @Published var hasReading = false
     @Published var status = "Waiting for magnetometer…"
 
     private let motion = CMMotionManager()
@@ -45,6 +46,7 @@ final class MagnetometerModel: ObservableObject {
             } else {
                 self.heading = MagneticMath.headingDegrees(x: f.x, y: f.y)
             }
+            self.hasReading = true
             self.status = "CMDeviceMotion magnetic field (µT), heading vs magnetic north"
         }
     }
@@ -85,16 +87,17 @@ struct MagnetometerView: View {
                 ResultRow(label: "Bz", value: Format.microtesla(model.z))
                 ResultRow(label: "Source", value: model.status)
             }
-            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
 
-    private var sticky: String {
-        "\(Format.microtesla(model.magnitude))  ·  \(Format.degrees(model.heading))"
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return "\(Format.microtesla(model.magnitude))  ·  \(Format.degrees(model.heading))"
     }
-    private var copyText: String { sticky }
+    private var copyText: String? { sticky }
 
     private func save() {
         jobs.save(SavedJob(

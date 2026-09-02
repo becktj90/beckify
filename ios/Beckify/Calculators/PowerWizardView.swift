@@ -73,9 +73,20 @@ struct PowerWizardView: View {
     }
 
     private var symbolic: String {
-        if system == .threePhase { return "I = kW × 1000 ÷ (√3 × V × PF)" }
-        if system == .dc { return "I = P ÷ V     (PF = 1)" }
-        return "I = kW × 1000 ÷ (V × PF)"
+        let root3 = system == .threePhase ? "√3 × " : ""
+        switch known {
+        case .amps:
+            return system == .threePhase ? "kVA = √3 × V × I ÷ 1000" : "kVA = V × I ÷ 1000"
+        case .kva:
+            return "I = kVA × 1000 ÷ (\(root3)V)"
+        case .hp:
+            if system == .dc { return "I = HP × 746 ÷ (V × Eff)" }
+            return "I = HP × 746 ÷ (\(root3)V × PF × Eff)"
+        case .kw:
+            if system == .dc { return "I = P ÷ V     (PF = 1)" }
+            if system == .threePhase { return "I = kW × 1000 ÷ (√3 × V × PF)" }
+            return "I = kW × 1000 ÷ (V × PF)"
+        }
     }
 
     private var substituted: String? {

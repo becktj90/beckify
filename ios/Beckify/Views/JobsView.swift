@@ -72,7 +72,7 @@ struct JobDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                CopyResultButton(text: copyBlob, compact: true)
+                CopyResultButton(text: copyBlob, compact: true, accessibilityName: "Copy saved note")
             }
         }
     }
