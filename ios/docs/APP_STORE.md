@@ -67,7 +67,7 @@ First toolbox with field EE calculators, homework tools, and public-API sensors,
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
-**Privacy Policy URL:** App Store Connect requires a public HTTPS privacy-policy URL. The intended listing URL is **https://beckify.com/privacy** once that path returns HTTP 200. A separate site agent is hosting it; as of 2026-09-02 the live site still returns 404 for `/privacy`. Do **not** treat https://beckify.com as already hosting this policy. Until that URL is live, the only public HTTPS copy is the GitHub blob: https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md. The source draft is [`ios/docs/PRIVACY.md`](PRIVACY.md) (“Data Not Collected”).
+**Privacy Policy URL:** App Store Connect requires a public HTTPS privacy-policy URL. The intended listing URL is **https://beckify.com/privacy** once that URL returns HTTP 200. As of this PR, https://beckify.com/privacy returns 404; do not treat the live site as already hosting this policy. Until it returns 200, the only live public HTTPS copy is https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md. The source draft is [`ios/docs/PRIVACY.md`](PRIVACY.md) (“Data Not Collected”).
 
 ## Wi-Fi App Store limitation (honest)
 
@@ -136,7 +136,7 @@ Still required on a Mac with Xcode / App Store Connect:
 3. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device.
 4. Run on a physical device at least once (capability / provisioning / sensor check). This Linux environment does not do that.
 5. Capture screenshots at the sizes above (iPhone + iPad; the target is `TARGETED_DEVICE_FAMILY` `1,2`).
-6. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): iPhone + iPad, Productivity, 4+, privacy “Data Not Collected”, no ads, English listing copy above. Privacy Policy URL: **https://beckify.com/privacy** once that URL returns 200; until then use the GitHub blob URL above.
+6. Create the app record in [App Store Connect](https://appstoreconnect.apple.com): iPhone + iPad, Productivity, 4+, privacy “Data Not Collected”, no ads, English listing copy above. Privacy Policy URL: **https://beckify.com/privacy** once that URL returns HTTP 200. Until then, the only live public HTTPS copy is the GitHub blob URL above.
 7. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled.
 8. Upload the build (Organizer or Transporter). Wait for processing.
 9. Attach screenshots, review the encryption and content-rights questions, submit for review.
