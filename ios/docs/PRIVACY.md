@@ -3,9 +3,9 @@
 **Product:** Beckify (bundle ID `com.beckify.toolbox`)  
 **Developer:** Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com  
-**Status:** Draft for App Store Connect. This file is not published on https://beckify.com.
+**Status:** Draft for App Store Connect. The intended public URL is https://beckify.com/privacy once that path returns HTTP 200. As of 2026-09-02 that live site path still returns 404; a separate site agent is hosting it. Until then, the only live HTTPS copy is https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md.
 
-Apple’s App Privacy nutrition label for this app is **Data Not Collected**. Sensor readings and Saved Jobs stay on the device. This repository has not submitted the app, signed a build, enrolled Apple Developer, or uploaded TestFlight.
+Apple’s App Privacy nutrition label for this app is **Data Not Collected**. Sensor readings and Saved Jobs stay on the device. This repository has not signed a build, uploaded TestFlight, or submitted to the App Store. Developer Program enrollment is reported by Trevor, not verified here. Do not treat this file as a shipping binary or a live beckify.com page.
 
 ## What the app does not collect
 
@@ -44,7 +44,7 @@ The app is rated 4+ and does not collect data from anyone, including children.
 
 ## Changes
 
-If this policy changes, the updated text will replace this draft. This document is not an App Store submission and does not mean the app is listed, signed, or in TestFlight.
+If this policy changes, the updated text will replace this draft. This document is not an App Store submission and does not mean the app is listed, signed, or in TestFlight. When https://beckify.com/privacy returns 200, App Store Connect should use that URL.
 
 ## Contact
 
