@@ -119,7 +119,7 @@
       var phase = Number(input.phase) === 1 ? '1ph' : '3ph';
       if (Number.isFinite(volts) && volts > 0) {
         var drop = global.BeckifyWireMath.voltageDropVolts(cond.size, input.material || 'cu', phase, fla, length, 1, 1);
-        if (drop != null) vd = { volts: drop, pct: (drop / volts) * 100, lengthFt: length, article: 'NEC Ch.9 Tables 8 and 9 (DC resistance / reactance)' };
+        if (drop !== undefined && drop !== null) vd = { volts: drop, pct: (drop / volts) * 100, lengthFt: length, article: 'NEC Ch.9 Tables 8 and 9 (DC resistance / reactance)' };
       }
     }
     var lra = lockedRotorRange(input.code, hp, input.volts, input.phase);
@@ -145,8 +145,8 @@
 
   function el(id) { return document.getElementById(id); }
   function val(id) { return el(id) ? el(id).value : ''; }
-  function setVal(id, v) { if (el(id) && v != null && v !== '') el(id).value = v; }
-  function fmt(x, d) { return Number.isFinite(x) ? Number(x).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d }) : '—'; }
+  function setVal(id, v) { if (el(id) && v !== undefined && v !== null && v !== '') el(id).value = v; }
+  function fmt(x, d) { return Number.isFinite(x) ? Number(x).toLocaleString('en-US', { maximumFractionDigits: d === undefined || d === null ? 1 : d }) : '—'; }
 
   var photoUrl = '';
   var reviewed = false;
@@ -217,7 +217,7 @@
     if (result.conductor) row('Suggested conductor (NEC 430.22)', result.conductor.size + ' Cu @ 75°C lists ' + result.conductor.ampacity + ' A; need ≥ ' + fmt(result.conductor.required) + ' A');
     if (result.voltageDrop) row('Voltage drop note', fmt(result.voltageDrop.pct, 2) + '% over ' + result.voltageDrop.lengthFt + ' ft (Ch.9 Tables 8/9)');
     if (result.lockedRotor && !result.lockedRotor.error) {
-      var max = result.lockedRotor.ampsMax == null ? 'and up' : fmt(result.lockedRotor.ampsMax) + ' A';
+      var max = result.lockedRotor.ampsMax === undefined || result.lockedRotor.ampsMax === null ? 'and up' : fmt(result.lockedRotor.ampsMax) + ' A';
       row('Locked-rotor current (code letter ' + result.lockedRotor.letter + ')', fmt(result.lockedRotor.ampsMin) + ' A to ' + max);
       var n = document.createElement('p'); n.className = 'note'; n.textContent = result.lockedRotor.note + ' ' + result.lockedRotor.article + '.';
       host.appendChild(n);

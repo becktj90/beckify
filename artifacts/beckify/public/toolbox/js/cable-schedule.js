@@ -93,7 +93,7 @@
     if (!math || typeof math.ampacity75 !== 'function') return '';
     if (use === 'communication' || use === 'instrumentation') return '';
     var cu = math.ampacity75(size, 'cu');
-    if (cu == null) return '';
+    if (cu === undefined || cu === null) return '';
     return cu + ' A Cu 75°C (NEC Table 310.16, ≤3 CCC)';
   }
 
@@ -113,7 +113,7 @@
     if (!Number.isFinite(I) || I <= 0 || !Number.isFinite(V) || V <= 0) return '';
     var ph = phase === '3ph' ? '3ph' : '1ph';
     var vd = math.voltageDropVolts(size, 'cu', ph, I, L, 1, 1);
-    if (vd == null) return '';
+    if (vd === undefined || vd === null) return '';
     var pct = (vd / V) * 100;
     var flag = pct > 5 ? ' over 5%' : pct > 3 ? ' over 3% note' : '';
     return pct.toFixed(2) + '% at ' + I.toFixed(1) + ' A assumed' + flag;
@@ -181,7 +181,7 @@
       var line = [];
       for (var c = 0; c < COLUMNS.length; c++) {
         var val = list[i][COLUMNS[c]];
-        line.push(val == null ? '' : String(val));
+        line.push(val === undefined || val === null ? '' : String(val));
       }
       aoa.push(line);
     }
@@ -189,7 +189,7 @@
   }
 
   function csvEscape(value) {
-    var s = value == null ? '' : String(value);
+    var s = value === undefined || value === null ? '' : String(value);
     if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
@@ -277,7 +277,7 @@
   }
   function el(id) { return document.getElementById(id); }
   function escapeHtml(s) {
-    return String(s == null ? '' : s)
+    return String(s === undefined || s === null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
@@ -337,13 +337,13 @@
       return;
     }
     var html = '<div class="ref-table-wrap iol-grid-wrap"><table class="ref-table iol-grid" aria-label="Editable cable schedule"><thead><tr>';
-    for (var c = 0; c < COLUMNS.length; c++) html += '<th scope="col">' + escapeHtml(COLUMNS[c]) + '</th>';
+    for (var col = 0; col < COLUMNS.length; col++) html += '<th scope="col">' + escapeHtml(COLUMNS[col]) + '</th>';
     html += '<th scope="col"> </th></tr></thead><tbody>';
     for (var r = 0; r < gridRows.length; r++) {
       html += '<tr>';
       for (var c = 0; c < COLUMNS.length; c++) {
         var key = COLUMNS[c];
-        var val = gridRows[r][key] == null ? '' : String(gridRows[r][key]);
+        var val = gridRows[r][key] === undefined || gridRows[r][key] === null ? '' : String(gridRows[r][key]);
         html += '<td><input type="text" data-cab-cell="' + r + ':' + c + '" value="' + escapeHtml(val) + '" aria-label="' + escapeHtml(key + ' row ' + (r + 1)) + '"></td>';
       }
       html += '<td><button type="button" class="btn-remove" data-cab-del-row="' + r + '" aria-label="Remove row">×</button></td></tr>';

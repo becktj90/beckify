@@ -108,7 +108,7 @@
     var compact = raw.replace(/\s+/g, ' ');
     function pick(re, g) {
       var m = compact.match(re) || raw.match(re);
-      return m ? String(m[g == null ? 1 : g]).trim() : '';
+      return m ? String(m[g === undefined || g === null ? 1 : g]).trim() : '';
     }
     var hp = pick(/\b([0-9]+(?:\.[0-9]+)?)\s*(?:HP|H\.P\.)\b/i) ||
       pick(/\b(?:HP|H\.P\.|HORSEPOWER)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i);

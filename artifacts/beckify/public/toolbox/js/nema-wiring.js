@@ -246,12 +246,11 @@
       '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 3.2).toFixed(1) + '" text-anchor="middle" font-size="7" font-weight="700" fill="#05060f">' + b.id + '</text>';
   }
 
-  function bladeLabel(b, i) {
+  function bladeLabel(b) {
     if (b.shape === 'pin' || b.shape === 'pin-key') {
       var p = polar(50, 50, (b.r || 22) + 14, b.angle || 0);
       return '<text x="' + p.x.toFixed(1) + '" y="' + p.y.toFixed(1) + '" text-anchor="middle" font-size="6.5" fill="' + fillFor(b.kind) + '" font-weight="700">' + b.id + '</text>';
     }
-    var ly = 12 + i * 0; /* labels live in the table, not stacked on the face */
     return '<text x="' + b.x + '" y="' + (b.y - 18) + '" text-anchor="middle" font-size="7" fill="' + fillFor(b.kind) + '" font-weight="700">' + b.id + '</text>';
   }
 
@@ -261,7 +260,7 @@
         '<circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3 3"/>' +
         '<path d="M 50 12 L 53 18 L 47 18 Z" fill="' + C.rim + '"/>'
       : '<rect x="14" y="10" width="72" height="80" rx="10" fill="' + C.body + '" stroke="' + C.rim + '" stroke-width="2.2"/>';
-    var blades = cfg.blades.map(function (b, i) { return bladeShape(b) + bladeLabel(b, i); }).join('');
+    var blades = cfg.blades.map(function (b) { return bladeShape(b) + bladeLabel(b); }).join('');
     var title = cfg.name + ' receptacle, facing the device';
     return '<svg viewBox="0 0 100 100" role="img" aria-label="' + escapeAttr(title) + '">' + face + blades + '</svg>';
   }
@@ -270,7 +269,7 @@
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
   function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function configById(id) {

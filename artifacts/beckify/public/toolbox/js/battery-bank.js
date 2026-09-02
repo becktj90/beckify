@@ -30,7 +30,7 @@
   }
   function fmt(x, d) {
     if (!Number.isFinite(x)) return '—';
-    return Number(x).toLocaleString('en-US', { maximumFractionDigits: d == null ? 2 : d });
+    return Number(x).toLocaleString('en-US', { maximumFractionDigits: d === undefined || d === null ? 2 : d });
   }
   function ceilUnits(x) { return Math.max(1, Math.ceil(x - 1e-9)); }
 
@@ -279,16 +279,15 @@
     row(host, 'Usable bank energy', fmt(result.totalUsableWh / 1000, 2) + ' kWh');
     if (pos(result.packV)) row(host, 'Pack voltage', fmt(result.packV, 1) + ' V');
     if (pos(result.totalAh)) row(host, 'Pack capacity', fmt(result.totalAh, 1) + ' Ah');
+    var crateNote = crateFlag(result);
     if (pos(result.crate)) {
-      var flag = crateFlag(result);
-      row(host, 'Continuous C-rate', fmt(result.crate, 2) + ' C', flag && flag.ok);
+      row(host, 'Continuous C-rate', fmt(result.crate, 2) + ' C', crateNote && crateNote.ok);
     }
-    var flag = crateFlag(result);
-    if (flag) {
+    if (crateNote) {
       var p = document.createElement('p');
       p.className = 'note';
       p.style.marginTop = '10px';
-      p.textContent = flag.text;
+      p.textContent = crateNote.text;
       host.appendChild(p);
     }
     var disc = document.createElement('p');
