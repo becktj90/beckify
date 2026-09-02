@@ -1,0 +1,10 @@
+# Swift / Xcode
+.build/
+.swiftpm/
+Package.resolved
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.xcarchive
+ExportOptions.plist
