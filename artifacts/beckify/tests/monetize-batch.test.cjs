@@ -47,14 +47,14 @@ ok("eBay-only rows stay Not linked rather than guessed ASINs", vespaSrc.includes
 
 console.log("\n--- Counts ---");
 ok("calculator count constant is 49", /PUBLIC_CALCULATOR_COUNT = 49/.test(siteStats));
-ok("game count constant is 7", /PUBLIC_GAME_COUNT = 7/.test(siteStats));
+ok("game count constant is 8", /PUBLIC_GAME_COUNT = 8/.test(siteStats));
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser games"));
 ok("toolbox header uses 49", toolboxHtml.includes("49 calculators plus reference tables"));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
 ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
-const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Pup Planet", "HexGL"].includes(name));
-ok("site-content lists 7 games", gameNames.length === 7, gameNames.join(", "));
+const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet", "HexGL"].includes(name));
+ok("site-content lists 8 games", gameNames.length === 8, gameNames.join(", "));
 
 console.log("\n--- New Glenn route ---");
 ok("hub Play Now points at /games/new-glenn-runner", /name: "New Glenn Runner"[\s\S]{0,400}url: "\/games\/new-glenn-runner"/.test(siteContent));

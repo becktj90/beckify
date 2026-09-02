@@ -253,6 +253,11 @@ export const GAMES: Game[] = [
     url: "/games/toot-troopers",
   },
   {
+    name: "Apollo & Rocco Run",
+    description: "Original Beckify game featuring Apollo and Rocco. Three-lane endless-runner genre trail with jump, slide, KID difficulty, and a local best on this device.",
+    url: "/games/apollo-rocco-run",
+  },
+  {
     name: "Pup Planet",
     description: "Play as Apollo or Rocco, the space pups, mining and building on their own seeded little planet in this first-person WebGL sandbox.",
     url: "/games/pup-planet",
