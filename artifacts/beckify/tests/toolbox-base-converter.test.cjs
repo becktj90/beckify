@@ -85,6 +85,29 @@ assert.ok(api && typeof api.roundTrip === 'function', 'test API exported');
   assert.equal(api.toSigned(0x8000n, 16), -32768n);
 }
 
+/* ── Signed decimal positive overflow is rejected, not silently wrapped ── */
+{
+  assert.throws(
+    () => api.parseBase('200', 10, 8, true),
+    /outside/,
+    '200 is outside 8-bit signed range'
+  );
+  assert.throws(
+    () => api.parseBase('128', 10, 8, true),
+    /outside/,
+    '128 is outside 8-bit signed range (−128 … 127)'
+  );
+  assert.throws(
+    () => api.parseBase('+128', 10, 8, true),
+    /outside/
+  );
+  assert.equal(api.parseBase('127', 10, 8, true), 127n);
+  assert.equal(api.parseBase('-128', 10, 8, true), 0x80n);
+  // Unsigned still wraps at width; signed decimal of the same magnitude is rejected.
+  assert.equal(api.parseBase('256', 10, 8, false), 0n);
+  assert.throws(() => api.parseBase('256', 10, 8, true), /outside/);
+}
+
 /* ── 64-bit stays exact (beyond Number.MAX_SAFE_INTEGER) ── */
 {
   const r = api.roundTrip('FFFFFFFFFFFFFFFF', 16, 64, false);
