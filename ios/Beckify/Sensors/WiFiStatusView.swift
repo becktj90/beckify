@@ -84,14 +84,23 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     }
 
     func startSurvey() {
-        surveying = true
         if surveyMode == .gps {
+            switch location.authorizationStatus {
+            case .denied, .restricted:
+                denied = true
+                ssidMessage = "Location permission is off. iOS will not return SSID or signalStrength. dBm is never available."
+                return
+            default:
+                break
+            }
+            surveying = true
             ensureLocationThen {
                 self.location.startUpdatingLocation()
                 self.fetchNetwork()
                 self.startPolling()
             }
         } else {
+            surveying = true
             requestNetworkInfo()
         }
     }
@@ -125,7 +134,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     }
 
     func dropTapSample(east: Double, north: Double) {
-        let strength = signalStrength ?? 0
+        guard let strength = signalStrength else { return }
         appendSample(east: east, north: north, strength: strength)
     }
 
@@ -147,6 +156,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
         default:
             waitingForAuth = false
             denied = true
+            surveying = false
             ssidMessage = "Location permission is off. iOS will not return SSID or signalStrength. dBm is never available."
         }
     }
@@ -166,6 +176,8 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
             case .denied, .restricted:
                 waitingForAuth = false
                 denied = true
+                surveying = false
+                location.stopUpdatingLocation()
                 ssidMessage = "Location permission was denied. Path status still works. Strength and SSID stay hidden."
             default:
                 break
@@ -340,6 +352,7 @@ struct WiFiStatusView: View {
                 mode: model.surveyMode,
                 roomWidth: model.roomWidth,
                 roomDepth: model.roomDepth,
+                amplitudeReady: model.signalStrength != nil,
                 onTap: { east, north in
                     guard model.surveyMode == .tap else { return }
                     if !model.surveying { model.startSurvey() }
@@ -478,7 +491,10 @@ struct WiFiHeatmapCanvas: View {
     var mode: WiFiSurveyMode
     var roomWidth: Double
     var roomDepth: Double
+    var amplitudeReady: Bool
     var onTap: (Double, Double) -> Void
+
+    private typealias CoverageBox = (minE: Double, maxE: Double, minN: Double, maxN: Double)
 
     var body: some View {
         GeometryReader { geo in
@@ -487,11 +503,12 @@ struct WiFiHeatmapCanvas: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { location in
-                let (east, north) = world(from: location, size: geo.size)
+                let box = coverageBox()
+                let (east, north) = world(from: location, size: geo.size, box: box)
                 onTap(east, north)
             }
             .overlay(alignment: .topLeading) {
-                Text(mode == .tap ? "Tap to sample" : "GPS east / north")
+                Text(overlayCaption)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Theme.foreground.opacity(0.8))
                     .padding(8)
@@ -504,23 +521,35 @@ struct WiFiHeatmapCanvas: View {
         )
     }
 
+    private var overlayCaption: String {
+        if mode == .tap, !amplitudeReady {
+            return "Read SSID + amplitude first"
+        }
+        return mode == .tap ? "Tap to sample" : "GPS east / north"
+    }
+
+    private func coverageBox() -> CoverageBox? {
+        mode == .tap ? nil : WiFiCoverageMath.bounds(samples, padding: 1.5)
+    }
+
     private func drawHeat(context: inout GraphicsContext, size: CGSize) {
         let cols = 22
         let rows = 16
         let cw = size.width / CGFloat(cols)
         let rh = size.height / CGFloat(rows)
+        let box = coverageBox()
         for r in 0..<rows {
             for c in 0..<cols {
                 let x = (CGFloat(c) + 0.5) * cw
                 let y = (CGFloat(r) + 0.5) * rh
-                let (east, north) = world(from: CGPoint(x: x, y: y), size: size)
+                let (east, north) = world(from: CGPoint(x: x, y: y), size: size, box: box)
                 let strength = samples.isEmpty ? 0 : WiFiCoverageMath.idw(east: east, north: north, samples: samples)
                 let rect = CGRect(x: CGFloat(c) * cw, y: CGFloat(r) * rh, width: cw + 0.5, height: rh + 0.5)
                 context.fill(Path(rect), with: .color(heatColor(strength).opacity(samples.isEmpty ? 0.12 : 0.85)))
             }
         }
         for sample in samples {
-            let p = point(east: sample.east, north: sample.north, size: size)
+            let p = point(east: sample.east, north: sample.north, size: size, box: box)
             let rad: CGFloat = 6
             let dot = Path(ellipseIn: CGRect(x: p.x - rad, y: p.y - rad, width: rad * 2, height: rad * 2))
             context.fill(dot, with: .color(heatColor(sample.strength)))
@@ -550,13 +579,13 @@ struct WiFiHeatmapCanvas: View {
         )
     }
 
-    private func world(from point: CGPoint, size: CGSize) -> (Double, Double) {
+    private func world(from point: CGPoint, size: CGSize, box: CoverageBox?) -> (Double, Double) {
         let nx = size.width == 0 ? 0 : Double(point.x / size.width)
         let ny = size.height == 0 ? 0 : Double(1 - point.y / size.height)
         if mode == .tap {
             return (nx * roomWidth, ny * roomDepth)
         }
-        guard let box = WiFiCoverageMath.bounds(samples, padding: 1.5) else {
+        guard let box else {
             return (nx * 10, ny * 10)
         }
         let east = box.minE + nx * (box.maxE - box.minE)
@@ -564,13 +593,13 @@ struct WiFiHeatmapCanvas: View {
         return (east, north)
     }
 
-    private func point(east: Double, north: Double, size: CGSize) -> CGPoint {
+    private func point(east: Double, north: Double, size: CGSize, box: CoverageBox?) -> CGPoint {
         if mode == .tap {
             let x = roomWidth == 0 ? 0 : east / roomWidth
             let y = roomDepth == 0 ? 0 : north / roomDepth
             return CGPoint(x: x * size.width, y: (1 - y) * size.height)
         }
-        guard let box = WiFiCoverageMath.bounds(samples, padding: 1.5) else {
+        guard let box else {
             return CGPoint(x: size.width / 2, y: size.height / 2)
         }
         let nx = (east - box.minE) / max(box.maxE - box.minE, 1e-9)
