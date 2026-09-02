@@ -37,11 +37,13 @@ function xeFla(kva, volts, phase) {
  * Smallest conductor whose derated ampacity carries `required` amps.
  * Returns the size plus every factor that shaped the decision.
  */
-function xePickConductor(required, material, insulTemp, terminationTemp, ambientC, ccc) {
+function xePickConductor(required, material, insulTemp, terminationTemp, ambientC, ccc, runs) {
   material = String(material || 'cu').toLowerCase();
   const ambient = ambientCorrectionFactor(ambientC, insulTemp);
   const bundle = cccAdjustmentFactor(ccc);
+  const runCount = Math.max(1, parseInt(runs, 10) || 1);
   for (const size of WIRE_SIZE_ORDER) {
+    if (runCount > 1 && WIRE_CMIL[size] < MIN_PARALLEL_SIZE_CMIL) continue;
     const row = AMPACITY[material] && AMPACITY[material][size];
     if (!row) continue;
     const base = row[TEMP_COLUMN_INDEX[insulTemp]];
@@ -109,12 +111,16 @@ function xeConductorsPerRun(phase, connection) {
  */
 function xeDesignSide(opts) {
   const fla = xeFla(opts.kva, opts.volts, opts.phase);
-  const required = fla * 1.25; // 215.2(A)(1) — 125% of the continuous load
-  const cond = xePickConductor(required, opts.material, opts.insulTemp,
-    opts.terminationTemp, opts.ambientC, opts.ccc);
-  if (!cond) return { fla: fla, required: required, error: 'No conductor up to 1000 kcmil carries ' + fmt(required, 1) + ' A under these conditions.' };
+  const runs = Math.max(1, parseInt(opts.runs, 10) || 1);
+  const continuousMult = opts.continuous === false ? 1 : 1.25;
+  const required = fla * continuousMult; // 215.2(A)(1) when continuous
+  const perRunRequired = required / runs;
+  const cond = xePickConductor(perRunRequired, opts.material, opts.insulTemp,
+    opts.terminationTemp, opts.ambientC, opts.ccc, runs);
+  if (!cond) return { fla: fla, required: required, error: 'No conductor up to 1000 kcmil carries ' + fmt(perRunRequired, 1) + ' A per run under these conditions.' };
 
-  const vd = xeVoltageDrop(cond.size, opts.material, opts.phase, fla, opts.lengthFt, opts.pf, opts.volts);
+  const vdSingle = xeVoltageDrop(cond.size, opts.material, opts.phase, fla, opts.lengthFt, opts.pf, opts.volts);
+  const vd = vdSingle ? { z: vdSingle.z, volts: vdSingle.volts / runs, percent: vdSingle.percent / runs } : null;
   const egc = egcForOCPD(opts.ocpd, opts.material);
   const perRun = xeConductorsPerRun(opts.phase, opts.connection);
   const conduit = egc ? xeConduit(opts.conduitType, perRun, cond.size, egc.size, opts.insulation) : null;
@@ -122,6 +128,7 @@ function xeDesignSide(opts) {
   return {
     fla: fla,
     required: required,
+    runs: runs,
     conductor: cond,
     vd: vd,
     egc: egc,
@@ -161,6 +168,12 @@ window.calcXfmrEngine = function () {
   const insulTemp = INSULATION_TYPES[insulation] ? INSULATION_TYPES[insulation].tempRating : 90;
   const terminationTemp = parseInt(document.getElementById('xe_term').value, 10);
   const secondaryProtected = document.getElementById('xe_sec_protected').checked;
+  const note1El = document.getElementById('xe_note1');
+  const note1 = note1El ? note1El.checked : true;
+  const continuousEl = document.getElementById('xe_continuous');
+  const continuous = continuousEl ? continuousEl.checked : true;
+  const priRuns = Math.max(1, parseInt((document.getElementById('xe_pri_runs') || {}).value, 10) || 1);
+  const secRuns = Math.max(1, parseInt((document.getElementById('xe_sec_runs') || {}).value, 10) || 1);
 
   if (!isPos(kva)) return showError('xe_result', 'Enter a transformer kVA greater than zero.');
   if (!isPos(priVolts)) return showError('xe_result', 'Enter a primary voltage greater than zero.');
@@ -186,21 +199,27 @@ window.calcXfmrEngine = function () {
   } else {
     priTier = xfmrPrimaryOnlyLimit(priFla);
     priCeiling = priFla * (priTier.pct / 100);
-    priOcpd = priTier.roundUp
-      ? nextStandardOCPD(priCeiling)
-      : (STD_OCPD_RATINGS.filter((r) => r <= priCeiling).pop() || null);
-    priRounding = priTier.roundUp
+    priOcpd = (typeof xfmrDeviceForCeiling === 'function')
+      ? xfmrDeviceForCeiling(priCeiling, priTier.roundUp && note1)
+      : (priTier.roundUp && note1
+        ? nextStandardOCPD(priCeiling)
+        : (STD_OCPD_RATINGS.filter((r) => r <= priCeiling).pop() || null));
+    priRounding = (priTier.roundUp && note1)
       ? 'Next standard size up permitted — 450.3(B) Note 1'
-      : 'Ceiling, no round-up at this tier';
+      : priTier.roundUp
+        ? 'Note 1 off — stay at or below the 125% ceiling'
+        : 'Ceiling, no round-up at this tier';
   }
 
   let secTier = null, secCeiling = null, secOcpd = null;
   if (secondaryProtected) {
     secTier = xfmrSecondaryLimit(secFla);
     secCeiling = secFla * (secTier.pct / 100);
-    secOcpd = secTier.roundUp
-      ? nextStandardOCPD(secCeiling)
-      : (STD_OCPD_RATINGS.filter((r) => r <= secCeiling).pop() || null);
+    secOcpd = (typeof xfmrDeviceForCeiling === 'function')
+      ? xfmrDeviceForCeiling(secCeiling, secTier.roundUp && note1)
+      : (secTier.roundUp && note1
+        ? nextStandardOCPD(secCeiling)
+        : (STD_OCPD_RATINGS.filter((r) => r <= secCeiling).pop() || null));
   }
 
   if (!priOcpd) {
@@ -222,11 +241,11 @@ window.calcXfmrEngine = function () {
 
   const pri = xeDesignSide(Object.assign({}, common, {
     volts: priVolts, phase: priPhase, connection: priConn,
-    lengthFt: priLen, ocpd: priOcpd,
+    lengthFt: priLen, ocpd: priOcpd, runs: priRuns, continuous: continuous,
   }));
   const sec = xeDesignSide(Object.assign({}, common, {
     volts: secVolts, phase: secPhase, connection: secConn,
-    lengthFt: secLen, ocpd: secProtectiveDevice,
+    lengthFt: secLen, ocpd: secProtectiveDevice, runs: secRuns, continuous: continuous,
   }));
 
   if (pri.error) return showError('xe_result', 'Primary: ' + pri.error);
@@ -254,8 +273,8 @@ window.calcXfmrEngine = function () {
     ['Full load amps', fmt(pri.fla, 1) + ' A', fmt(sec.fla, 1) + ' A'],
     ['Conductor @125%', fmt(pri.required, 1) + ' A', fmt(sec.required, 1) + ' A'],
     ['OCPD', priOcpd + ' A', secOcpd ? secOcpd + ' A' : 'none (primary only)'],
-    ['Phase conductor', wireSizeLabel(pri.conductor.size) + ' ' + matLabel,
-      wireSizeLabel(sec.conductor.size) + ' ' + matLabel],
+    ['Phase conductor', (pri.runs > 1 ? pri.runs + ' × ' : '') + wireSizeLabel(pri.conductor.size) + ' ' + matLabel,
+      (sec.runs > 1 ? sec.runs + ' × ' : '') + wireSizeLabel(sec.conductor.size) + ' ' + matLabel],
     ['Usable ampacity', fmt(pri.conductor.usable, 1) + ' A', fmt(sec.conductor.usable, 1) + ' A'],
     ['EGC (250.122)', pri.egc ? wireSizeLabel(pri.egc.size) + ' ' + matLabel : '—',
       sec.egc ? wireSizeLabel(sec.egc.size) + ' ' + matLabel : '—'],

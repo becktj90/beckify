@@ -62,18 +62,10 @@ enum ToolboxCatalog {
         ToolDefinition(
             id: .power,
             kind: .calculator,
-            title: "DC / AC Power",
-            subtitle: "P = VI, 1Ø and 3Ø kVA / kW / kVAR.",
+            title: "Power",
+            subtitle: "DC identities (P=VI, I²R, V²/R) plus 1Ø / 3Ø kVA, kW, kVAR.",
             symbol: "bolt.fill",
-            synonyms: ["dc power", "ac power", "watts", "kvar", "apparent", "true power", "reactive"]
-        ),
-        ToolDefinition(
-            id: .powerWizard,
-            kind: .calculator,
-            title: "Power Wizard",
-            subtitle: "DC, 1Ø, and 3Ø — amps, kW, kVA, or HP.",
-            symbol: "wand.and.stars",
-            synonyms: ["power wizard", "kva", "kw", "horsepower", "three phase", "3 phase", "single phase", "fla estimate"]
+            synonyms: ["dc power", "ac power", "watts", "kvar", "apparent", "true power", "reactive", "power wizard", "kva", "kw", "horsepower", "three phase", "3 phase", "single phase"]
         ),
         ToolDefinition(
             id: .voltageDrop,
@@ -157,7 +149,7 @@ enum ToolboxCatalog {
         ),
         ToolDefinition(
             id: .unitConverter,
-            kind: .homework,
+            kind: .calculator,
             title: "Unit Converter",
             subtitle: "SI prefixes, dB, °C/°F, m/ft, mils/mm.",
             symbol: "arrow.left.arrow.right",
@@ -272,13 +264,13 @@ enum ToolboxCatalog {
 
     private static let relatedIDs: [ToolID: [ToolID]] = [
         .ohmsLaw: [.power, .voltageDivider, .ledRC],
-        .power: [.powerWizard, .ohmsLaw, .transformer],
+        .power: [.ohmsLaw, .transformer, .motorFLA],
         .powerWizard: [.power, .motorFLA, .transformer],
-        .voltageDrop: [.wireAmpacity, .conduitFill, .powerWizard],
+        .voltageDrop: [.wireAmpacity, .conduitFill, .power],
         .conduitFill: [.wireAmpacity, .voltageDrop],
-        .transformer: [.powerWizard, .wireAmpacity, .motorFLA],
+        .transformer: [.power, .wireAmpacity, .motorFLA],
         .timer555: [.ledRC, .frequencyWave],
-        .motorFLA: [.wireAmpacity, .powerWizard, .transformer],
+        .motorFLA: [.wireAmpacity, .power, .transformer],
         .wireAmpacity: [.voltageDrop, .conduitFill, .motorFLA],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],

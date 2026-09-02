@@ -271,6 +271,48 @@ header .subtitle {
   font-weight: 500;
 }
 
+.family-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin: 0 0 1.1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(139, 123, 255, 0.28);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(139, 123, 255, 0.08), rgba(79, 139, 255, 0.04));
+}
+.family-tabs-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.family-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.family-tab {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.family-tab:hover { color: var(--fg); border-color: rgba(139, 123, 255, 0.4); }
+.family-tab.active {
+  background: var(--violet-soft);
+  color: var(--violet);
+  border-color: var(--violet-ring);
+  font-weight: 600;
+}
+
 /* ── Main content ── */
 .main {
   flex: 1;

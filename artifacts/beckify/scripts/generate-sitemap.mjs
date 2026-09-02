@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { TOOLS as tools, CATEGORIES as categories } from "../src/data/toolbox-tools.mjs";
+import { TOOLS as tools, CATEGORIES as categories, TOOL_ALIASES as aliases } from "../src/data/toolbox-tools.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const siteUrl = "https://beckify.com";
@@ -48,6 +48,7 @@ const urls = [
   ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/privacy", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/games/cosmic-cadet", "monthly", "0.7"], ["/games/booty-butt-scooter", "monthly", "0.7"], ["/games/finger-runner", "monthly", "0.7"], ["/games/toot-troopers", "monthly", "0.7"], ["/games/apollo-rocco-run", "monthly", "0.7"], ["/games/pup-planet", "monthly", "0.7"], ["/games/new-glenn-runner", "monthly", "0.7"], ["/projects", "weekly", "0.8"], ["/projects/vespa-p200e", "monthly", "0.8"], ["/projects/honda-xr650r", "monthly", "0.8"], ["/gear", "weekly", "0.9"], ["/made-in-america", "weekly", "0.9"], ["/control-systems", "weekly", "0.9"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
   ...categories.map(([slug], index) => [`/toolbox/category/${slug}/`, index === 5 ? "weekly" : "monthly", "0.8"]),
   ...tools.map(([slug]) => [`/toolbox/${slug}/`, slug === "digital-logic-workbench" ? "weekly" : "monthly", slug === "digital-logic-workbench" ? "0.9" : "0.8"]),
+  ...aliases.map(([slug]) => [`/toolbox/${slug}/`, "monthly", "0.5"]),
 ];
 const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([path, changefreq, priority]) => `  <url>\n    <loc>${escapeXml(`${siteUrl}${path}`)}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`).join("\n")}\n</urlset>\n`;
 await writeFile(resolve(root, "public/sitemap.xml"), xml);
@@ -55,7 +56,7 @@ await writeFile(resolve(root, "public/sitemap.xml"), xml);
 if (process.argv.includes("--dist")) {
   const output = resolve(root, "dist/public");
   await writeFile(resolve(output, "sitemap.xml"), xml);
-  for (const [slug, title, description, anchor] of tools) {
+  for (const [slug, title, description, anchor] of [...tools, ...aliases]) {
     const directory = resolve(output, "toolbox", slug);
     await mkdir(directory, { recursive: true });
     await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/${slug}/`, toolPath: `/toolbox/#${anchor}`, showAds: !["smith-chart", "lsi-breaker"].includes(slug) }));

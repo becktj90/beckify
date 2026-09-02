@@ -31,8 +31,7 @@ Beckify is a professional field electrical toolbox for engineers, technicians, a
 Calculate common jobsite numbers with units, formulas, and live results:
 
 • Ohm's Law
-• DC and AC power
-• Power Wizard for DC, single-phase, and three-phase (amps, kW, kVA, HP)
+• Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
 • Voltage drop with 3% / 5% informational checks and a 310.16 ampacity cross-check
 • Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
@@ -40,13 +39,13 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Wire size from NEC Table 310.16, 75 °C column
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
+• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 
 Homework calculators:
 
 • Voltage divider (Vout, or solve R1 / R2)
 • Series / parallel resistors and capacitors
 • Resistor color code (4-band and 5-band, decode and encode)
-• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 • Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC))
 • LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
 
@@ -121,7 +120,7 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 Take 3–8 screens per size. Suggested shots:
 
 1. Toolbox search / tool list (system appearance)
-2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
+2. Power with the 480 V 3Ø 66.8 A / PF 90% identities result
 3. Voltage drop with 3% / 5% notes and ampacity row
 4. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
 5. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap

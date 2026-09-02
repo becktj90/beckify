@@ -656,15 +656,8 @@ window.calcXfmr = function () {
   const Is = kVA * 1000 / (Vs * phaseMult);
   const turnRatio = Vp / Vs;
 
-  /* Next standard kVA size */
+  /* Next standard kVA size — rating only. Protection is Table 450.3(B) on Sizing. */
   const stdKVA = XFMR_STD_KVA.find(s => s >= kVA) || kVA;
-
-  /* Secondary conductor + conduit sizing */
-  const cond = selectConductorAndConduit(Is);
-
-  /* NEC 450.3(B) OCP — next standard OCPD ≥ 125% of FLA */
-  const pOCPD = nextStdOCPD(Ip * 1.25);
-  const sOCPD = nextStdOCPD(Is * 1.25);
 
   /* Topology label and notes */
   const topoLabels = {
@@ -681,14 +674,9 @@ window.calcXfmr = function () {
     ['Turns Ratio (Np:Ns)', fmt(turnRatio, 4) + ' : 1'],
     ['─── Standard Size ───', ''],
     ['Next Standard kVA', stdKVA + ' kVA (ANSI/NEMA)'],
-    ['─── Secondary Conductors (Cu THHN 75°C) ───', ''],
-    ['Conductor Size (per run)', cond.size],
-    ['Parallel Runs Required', cond.runs + (cond.runs > 1 ? ' sets (1/0 AWG min per NEC 310.10(C))' : '')],
-    ['Conduit per Run (3 ckts)', cond.conduit],
-    ['Conductor Ampacity', cond.ampsEach > 0 ? (cond.ampsEach * cond.runs) + ' A total (' + cond.ampsEach + ' A × ' + cond.runs + ')' : '—'],
-    ['─── NEC 450.3(B) OCP Recommendations ───', ''],
-    ['Primary OCPD (≤125% of Ip)', pOCPD + ' A'],
-    ['Secondary OCPD (≤125% of Is)', sOCPD + ' A'],
+    ['─── Protection ───', ''],
+    ['450.3(B)', 'Use Sizing & 450.3 — real 125/167/300 and 250/125/167 tiers, not flat 125%'],
+    ['Conductors / VD', 'Use Conductors / OCPD / VD for Cu/Al, parallels, EGC/GEC, conduit'],
   ];
 
   if (topology === 'highleg') {
@@ -2141,7 +2129,7 @@ window.calcLightingOptimizer = function () {
     const actualPct = (actualVd / voltage) * 100;
     note = 'WARNING: No standard size meets ' + vdPct + '% VD. Largest size (' + chosen.awg + ' AWG) gives ' + fmt(actualPct, 2) + '% VD. Consider splitting the circuit.';
   } else {
-    /* LP objective: minimize cost — the passing array is already sorted by ascending CM (ascending cost) */
+    /* Smallest CM that meets the K-factor VD target. This is not a cost optimizer. */
     chosen = passing[0];
     note = null;
   }
