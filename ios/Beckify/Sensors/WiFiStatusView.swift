@@ -269,53 +269,91 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
 struct WiFiStatusView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = WiFiPathModel()
-    @State private var jobName = "Wi-Fi coverage"
+    @StoredInput(.wifiStatus, "jobName", default: "Wi-Fi coverage") private var jobName
+    @StoredChoice(.wifiStatus, "surveyMode", default: .gps) private var surveyMode
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "A = NEHotspotNetwork.signalStrength ∈ [0, 1]    heatmap = IDW(A, east, north)",
-                    citation: "Suitable public unit is Apple’s 0…1 amplitude, shown as % and bars. Wi-Fi dBm / RSSI is not given to third-party iOS apps. This sketch is not a site survey."
-                )
-                WiFiStrengthGauge(strength: model.signalStrength, onWiFi: model.usesWiFi)
-                ResultCard(title: "Path") {
-                    ResultRow(label: "Status", value: model.status, emphasis: true)
-                    ResultRow(label: "Wi-Fi interface", value: model.usesWiFi ? "yes" : "no", tone: model.usesWiFi ? Theme.good : Theme.muted)
-                    ResultRow(label: "Cellular", value: model.usesCellular ? "yes" : "no")
-                    ResultRow(label: "Expensive / constrained", value: "\(model.isExpensive ? "yes" : "no") / \(model.isConstrained ? "yes" : "no")")
-                    ResultRow(label: "Interfaces", value: model.interfaces.isEmpty ? "—" : model.interfaces.joined(separator: ", "))
-                }
-                ResultCard(title: "Associated network") {
-                    ResultRow(label: "SSID", value: model.ssid ?? "—", emphasis: true)
-                    ResultRow(label: "BSSID", value: model.bssid ?? "—")
-                    ResultRow(
-                        label: "Amplitude",
-                        value: amplitudeText,
-                        emphasis: true,
-                        tone: amplitudeTone
-                    )
-                    ResultRow(label: "dBm / RSSI", value: "not provided by iOS", tone: Theme.warn)
-                    Text(model.ssidMessage)
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                    Button("Read SSID + amplitude") { model.requestNetworkInfo() }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.accent)
-                        .padding(.top, 6)
-                }
-                if model.denied { SettingsLinkButton() }
-                coverageSection
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
-                SensorDisclaimer(extra: "Walk or tap to drop samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works.")
+        ToolScaffold(
+            toolID: .wifiStatus,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: "Walk or tap to drop samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works.")
+        ) {
+            ShowWorkCard(
+                toolID: .wifiStatus,
+                symbolic: "A = NEHotspotNetwork.signalStrength ∈ [0, 1]    heatmap = IDW(A, east, north)",
+                substituted: substituted,
+                meaning: "Suitable public unit is Apple’s 0…1 amplitude, shown as % and bars. Wi-Fi dBm / RSSI is not given to third-party iOS apps. This sketch is not a site survey."
+            )
+            WiFiStrengthGauge(strength: model.signalStrength, onWiFi: model.usesWiFi)
+            ResultCard(title: "Path") {
+                ResultRow(label: "Status", value: model.status, emphasis: true)
+                ResultRow(label: "Wi-Fi interface", value: model.usesWiFi ? "yes" : "no", tone: model.usesWiFi ? Theme.good : Theme.muted)
+                ResultRow(label: "Cellular", value: model.usesCellular ? "yes" : "no")
+                ResultRow(label: "Expensive / constrained", value: "\(model.isExpensive ? "yes" : "no") / \(model.isConstrained ? "yes" : "no")")
+                ResultRow(label: "Interfaces", value: model.interfaces.isEmpty ? "—" : model.interfaces.joined(separator: ", "))
             }
-            .padding(20)
+            ResultCard(title: "Associated network", copyText: copyText) {
+                ResultRow(label: "SSID", value: model.ssid ?? "—", emphasis: true)
+                ResultRow(label: "BSSID", value: model.bssid ?? "—")
+                ResultRow(
+                    label: "Amplitude",
+                    value: amplitudeText,
+                    emphasis: true,
+                    tone: amplitudeTone
+                )
+                ResultRow(label: "dBm / RSSI", value: "not provided by iOS", tone: Theme.warn)
+                Text(model.ssidMessage)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                Button("Read SSID + amplitude") { model.requestNetworkInfo() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
+                    .frame(minHeight: Theme.touchTarget)
+                    .padding(.top, 6)
+                    .accessibilityLabel("Read SSID and amplitude")
+                    .accessibilityHint("Uses location in this tool only. Does not invent Wi-Fi dBm.")
+            }
+            if model.denied {
+                ToolEmptyState(
+                    title: "Location is needed for SSID",
+                    detail: "iOS will not hand a third-party app the current SSID or Apple’s 0…1 amplitude without When In Use location. dBm is never available.",
+                    systemImage: "wifi.slash",
+                    showsSettings: true
+                )
+            }
+            coverageSection
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
         }
-        .navigationTitle("Wi-Fi Path")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear { model.start() }
+        .onAppear {
+            model.surveyMode = surveyMode
+            model.start()
+        }
         .onDisappear { model.stop() }
+        .onChange(of: surveyMode) { _, new in
+            model.surveyMode = new
+        }
+    }
+
+    private var substituted: String? {
+        guard let s = model.signalStrength else {
+            return "Read SSID + amplitude to plug Apple’s 0…1 value into the gauge. This will not become dBm."
+        }
+        return "A = \(Format.number(s, digits: 2))  →  \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) %  ·  \(WiFiCoverageMath.bars(s))/4 bars"
+    }
+
+    private var sticky: String? {
+        guard model.signalStrength != nil else { return model.usesWiFi ? "Wi-Fi path, no amplitude yet" : nil }
+        return amplitudeText
+    }
+
+    private var copyText: String? {
+        let ssid = model.ssid ?? "SSID —"
+        if model.signalStrength != nil {
+            return "\(ssid), \(amplitudeText), dBm not provided by iOS"
+        }
+        return nil
     }
 
     private var amplitudeText: String {
@@ -337,46 +375,50 @@ struct WiFiStatusView: View {
                 .font(.caption.weight(.semibold))
                 .tracking(0.8)
                 .foregroundStyle(Theme.muted)
-            Picker("Survey", selection: $model.surveyMode) {
+            Picker("Survey", selection: $surveyMode) {
                 ForEach(WiFiSurveyMode.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             .disabled(model.surveying)
-            Text(model.surveyMode == .gps
+            Text(surveyMode == .gps
                  ? "Walk the space. Samples drop every ~1.5 m from GPS plus Apple’s 0…1 amplitude."
                  : "Tap the floor plan to drop a sample at that spot using the current amplitude.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
             WiFiHeatmapCanvas(
                 samples: model.samples,
-                mode: model.surveyMode,
+                mode: surveyMode,
                 roomWidth: model.roomWidth,
                 roomDepth: model.roomDepth,
                 amplitudeReady: model.signalStrength != nil,
                 onTap: { east, north in
-                    guard model.surveyMode == .tap else { return }
+                    guard surveyMode == .tap else { return }
                     if !model.surveying { model.startSurvey() }
                     model.dropTapSample(east: east, north: north)
                 }
             )
             .frame(height: 280)
             WiFiHeatLegend()
-            HStack {
+            ThumbButtonRow {
                 if model.surveying {
                     Button("Stop survey") { model.stopSurvey() }
                         .buttonStyle(.bordered)
+                        .frame(minHeight: Theme.touchTarget)
                 } else {
                     Button("Start survey") { model.startSurvey() }
                         .buttonStyle(.borderedProminent)
                         .tint(Theme.accent)
+                        .frame(minHeight: Theme.touchTarget)
                 }
-                if model.surveyMode == .gps {
+                if surveyMode == .gps {
                     Button("Drop here") { model.dropGPSSample() }
                         .buttonStyle(.bordered)
+                        .frame(minHeight: Theme.touchTarget)
                         .disabled(model.signalStrength == nil || model.latitude == nil)
                 }
                 Button("Clear") { model.clearSamples() }
                     .buttonStyle(.bordered)
+                    .frame(minHeight: Theme.touchTarget)
             }
             ResultRow(label: "Samples", value: "\(model.samples.count)")
             if let lat = model.latitude, let lon = model.longitude {
@@ -410,7 +452,7 @@ struct WiFiStatusView: View {
             notes: notes,
             inputs: [
                 "API": "NWPathMonitor + NEHotspotNetwork.signalStrength",
-                "mode": model.surveyMode.rawValue,
+                "mode": surveyMode.rawValue,
             ],
             outputs: outputs
         ))
@@ -420,6 +462,7 @@ struct WiFiStatusView: View {
 struct WiFiStrengthGauge: View {
     var strength: Double?
     var onWiFi: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let s = strength ?? 0
@@ -435,9 +478,10 @@ struct WiFiStrengthGauge: View {
                         style: StrokeStyle(lineWidth: 14, lineCap: .round)
                     )
                     .rotationEffect(.degrees(225))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: s)
                 VStack(spacing: 4) {
                     Text(strength == nil ? "—" : "\(Format.number(WiFiCoverageMath.percent(s), digits: 0))")
-                        .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
+                        .font(.largeTitle.weight(.semibold).monospacedDigit())
                         .foregroundStyle(Theme.foreground)
                     Text(strength == nil ? "no amplitude" : "%  ·  Apple 0…1")
                         .font(.caption.weight(.medium))
@@ -445,6 +489,8 @@ struct WiFiStrengthGauge: View {
                 }
             }
             .frame(width: 200, height: 200)
+            .accessibilityElement()
+            .accessibilityLabel(strength == nil ? "No Wi-Fi amplitude" : "Apple amplitude \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) percent, \(bars) of 4 bars. Not dBm.")
             HStack(alignment: .bottom, spacing: 7) {
                 ForEach(1...4, id: \.self) { i in
                     RoundedRectangle(cornerRadius: 4, style: .continuous)

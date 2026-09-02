@@ -42,33 +42,46 @@ final class LevelModel: ObservableObject {
 struct BubbleLevelView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = LevelModel()
-    @State private var jobName = "Level snapshot"
+    @StoredInput(.bubbleLevel, "jobName", default: "Level snapshot") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "roll = atan2(gx, hypot(gy, gz))    pitch = atan2(gy, hypot(gx, gz))",
-                    citation: "Face-up bubble for a surface. Plumb is the angle from portrait −Y (panel / conduit)."
+        ToolScaffold(
+            toolID: .bubbleLevel,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: "Homework: these angles are from the phone IMU, not a machinist level.")
+        ) {
+            ShowWorkCard(
+                toolID: .bubbleLevel,
+                symbolic: "roll = atan2(gx, hypot(gy, gz))    pitch = atan2(gy, hypot(gx, gz))",
+                substituted: sticky,
+                meaning: "Face-up bubble for a surface. Plumb is the angle from portrait −Y (panel / conduit)."
+            )
+            if !model.available {
+                ToolEmptyState(
+                    title: "No motion hardware",
+                    detail: model.status,
+                    systemImage: "level"
                 )
-                bubble
-                ResultCard(title: "Angles") {
-                    ResultRow(label: "Roll (face-up)", value: Format.degrees(model.roll), emphasis: true)
-                    ResultRow(label: "Pitch (face-up)", value: Format.degrees(model.pitch), emphasis: true)
-                    ResultRow(label: "Plumb deviation", value: Format.degrees(model.plumb), tone: Theme.warn)
-                    ResultRow(label: "Source", value: model.status)
-                }
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
-                SensorDisclaimer(extra: "Homework: these angles are from the phone IMU, not a machinist level.")
             }
-            .padding(20)
+            bubble
+            ResultCard(title: "Angles", copyText: copyText) {
+                ResultRow(label: "Roll (face-up)", value: Format.degrees(model.roll), emphasis: true)
+                ResultRow(label: "Pitch (face-up)", value: Format.degrees(model.pitch), emphasis: true)
+                ResultRow(label: "Plumb deviation", value: Format.degrees(model.plumb), tone: Theme.warn)
+                ResultRow(label: "Source", value: model.status)
+            }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
         }
-        .navigationTitle("Bubble Level")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
+
+    private var sticky: String {
+        "roll \(Format.degrees(model.roll))  ·  pitch \(Format.degrees(model.pitch))"
+    }
+    private var copyText: String { sticky }
 
     private var bubble: some View {
         GeometryReader { geo in
@@ -87,8 +100,12 @@ struct BubbleLevelView: View {
                     .fill(Theme.accent)
                     .frame(width: 22, height: 22)
                     .offset(x: dx, y: dy)
+                    .animation(nil, value: model.roll)
+                    .animation(nil, value: model.pitch)
             }
             .frame(maxWidth: .infinity)
+            .accessibilityElement()
+            .accessibilityLabel("Bubble level. Roll \(Format.degrees(model.roll)), pitch \(Format.degrees(model.pitch)), plumb \(Format.degrees(model.plumb)).")
         }
         .frame(height: 230)
     }

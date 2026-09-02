@@ -28,12 +28,16 @@ struct NumberField: View {
                     .foregroundStyle(Theme.foreground)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .accessibilityLabel(title)
+                    .accessibilityHint(optional ? "Optional. Unit \(unit)." : "Unit \(unit).")
                 Text(unit)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.accent)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
+            .frame(minHeight: Theme.touchTarget)
             .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -66,14 +70,21 @@ struct ResultRow: View {
 
 struct ResultCard<Content: View>: View {
     var title: String = "Results"
+    var copyText: String? = nil
     @ViewBuilder var content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .tracking(0.8)
-                .foregroundStyle(Theme.muted)
+            HStack {
+                Text(title.uppercased())
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.muted)
+                Spacer(minLength: 8)
+                if let copyText, !copyText.isEmpty {
+                    CopyResultButton(text: copyText, compact: true)
+                }
+            }
             VStack(alignment: .leading, spacing: 2) {
                 content
             }
@@ -152,12 +163,14 @@ struct SaveJobBar: View {
             Text("On-device homework / field snapshot. Not a project gallery.")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
-            HStack {
+            HStack(alignment: .center, spacing: 10) {
                 TextField("Name — e.g. lab 3, AHU-3 feeder", text: $jobName)
                     .textInputAutocapitalization(.words)
+                    .frame(minHeight: Theme.touchTarget)
                 Button("Save", action: action)
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.accent)
+                    .frame(minHeight: Theme.touchTarget)
                     .disabled(!canSave || jobName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             if let notes {
@@ -174,11 +187,18 @@ struct SaveJobBar: View {
 struct ErrorText: View {
     let message: String
     var body: some View {
-        Text(message)
-            .font(.subheadline)
-            .foregroundStyle(Theme.bad)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.bad.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Can’t calculate")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.bad)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(Theme.foreground)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.bad.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Can’t calculate. \(message)")
     }
 }

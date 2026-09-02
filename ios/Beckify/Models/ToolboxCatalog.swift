@@ -262,4 +262,39 @@ enum ToolboxCatalog {
     static func tool(_ id: ToolID) -> ToolDefinition {
         tools.first { $0.id == id } ?? tools[0]
     }
+
+    /// Nearby tools on a tool screen. Titles stay the catalog titles — not a second list of products.
+    static func related(to id: ToolID) -> [ToolDefinition] {
+        (relatedIDs[id] ?? []).compactMap { relatedID in
+            tools.first { $0.id == relatedID }
+        }
+    }
+
+    private static let relatedIDs: [ToolID: [ToolID]] = [
+        .ohmsLaw: [.power, .voltageDivider, .ledRC],
+        .power: [.powerWizard, .ohmsLaw, .transformer],
+        .powerWizard: [.power, .motorFLA, .transformer],
+        .voltageDrop: [.wireAmpacity, .conduitFill, .powerWizard],
+        .conduitFill: [.wireAmpacity, .voltageDrop],
+        .transformer: [.powerWizard, .wireAmpacity, .motorFLA],
+        .timer555: [.ledRC, .frequencyWave],
+        .motorFLA: [.wireAmpacity, .powerWizard, .transformer],
+        .wireAmpacity: [.voltageDrop, .conduitFill, .motorFLA],
+        .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
+        .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
+        .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
+        .resistorColor: [.seriesParallel, .ledRC, .unitConverter],
+        .unitConverter: [.frequencyWave, .voltageDrop, .wireAmpacity],
+        .frequencyWave: [.timer555, .ledRC, .unitConverter],
+        .ledRC: [.ohmsLaw, .timer555, .resistorColor],
+        .wifiStatus: [.bluetoothScan, .fieldPosition, .deviceHealth],
+        .bluetoothScan: [.wifiStatus, .deviceHealth],
+        .noiseMeter: [.deviceHealth],
+        .bubbleLevel: [.motionSnapshot, .magnetometer, .fieldPosition],
+        .magnetometer: [.bubbleLevel, .fieldPosition, .motionSnapshot],
+        .barometer: [.fieldPosition, .deviceHealth],
+        .motionSnapshot: [.bubbleLevel, .magnetometer],
+        .fieldPosition: [.magnetometer, .wifiStatus, .barometer],
+        .deviceHealth: [.wifiStatus, .noiseMeter],
+    ]
 }

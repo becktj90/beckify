@@ -44,6 +44,8 @@
 		BECF0000000000000000005E /* FrequencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005D /* FrequencyView.swift */; };
 		BECF00000000000000000060 /* LEDRCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005F /* LEDRCView.swift */; };
 		BECF00000000000000000062 /* ReceptacleSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000061 /* ReceptacleSelectorView.swift */; };
+		BECF00000000000000000064 /* ToolInputStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000063 /* ToolInputStore.swift */; };
+		BECF00000000000000000066 /* ToolUX.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000065 /* ToolUX.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,6 +86,8 @@
 		BECF0000000000000000005D /* FrequencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000005F /* LEDRCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDRCView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000061 /* ReceptacleSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceptacleSelectorView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000063 /* ToolInputStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolInputStore.swift; sourceTree = "<group>"; };
+		BECF00000000000000000065 /* ToolUX.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolUX.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +146,7 @@
 			children = (
 				BECF00000000000000000015 /* JobStore.swift */,
 				BECF00000000000000000017 /* ToolboxCatalog.swift */,
+				BECF00000000000000000063 /* ToolInputStore.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -150,6 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				BECF0000000000000000001D /* FormControls.swift */,
+				BECF00000000000000000065 /* ToolUX.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -315,6 +321,8 @@
 				BECF0000000000000000005E /* FrequencyView.swift in Sources */,
 				BECF00000000000000000060 /* LEDRCView.swift in Sources */,
 				BECF00000000000000000062 /* ReceptacleSelectorView.swift in Sources */,
+				BECF00000000000000000064 /* ToolInputStore.swift in Sources */,
+				BECF00000000000000000066 /* ToolUX.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

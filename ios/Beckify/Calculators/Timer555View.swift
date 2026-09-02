@@ -34,47 +34,65 @@ struct Timer555View: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @State private var mode: Mode = .astable
-    @State private var r1 = "10"
-    @State private var r2 = "47"
-    @State private var c = "0.1"
-    @State private var rUnit: RUnit = .k
-    @State private var cUnit: CUnit = .uF
-    @State private var diode = false
-    @State private var jobName = "555 timer"
+    @StoredChoice(.timer555, "mode", default: .astable) private var mode
+    @StoredInput(.timer555, "r1", default: "10") private var r1
+    @StoredInput(.timer555, "r2", default: "47") private var r2
+    @StoredInput(.timer555, "c", default: "0.1") private var c
+    @StoredChoice(.timer555, "rUnit", default: .k) private var rUnit
+    @StoredChoice(.timer555, "cUnit", default: .uF) private var cUnit
+    @StoredToggle(.timer555, "diode", default: false) private var diode
+    @StoredInput(.timer555, "jobName", default: "555 timer") private var jobName
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Picker("Mode", selection: $mode) {
-                    Text("Astable").tag(Mode.astable)
-                    Text("Monostable").tag(Mode.monostable)
-                }
-                .pickerStyle(.segmented)
-
-                if mode == .astable {
-                    FormulaCard(
-                        text: diode ? "t1 = ln(2)·R1·C    t2 = ln(2)·R2·C" : "t1 = ln(2)·(R1+R2)·C    t2 = ln(2)·R2·C",
-                        citation: "Standard bipolar 555 duty cycle stays above 50% unless R2 is diode-steered."
-                    )
-                    unitField("R1", text: $r1)
-                    unitField("R2", text: $r2)
-                    capField()
-                    Toggle("Diode across R2 (sub-50% duty)", isOn: $diode)
-                        .tint(Theme.accent)
-                    astableResults
-                } else {
-                    FormulaCard(text: "t = ln(3) × R × C ≈ 1.1 RC", citation: "Capacitor charges 0 → 2/3 Vcc.")
-                    unitField("R", text: $r1)
-                    capField()
-                    monostableResults
-                }
-                DisclaimerBanner()
+        ToolScaffold(toolID: .timer555, stickyAnswer: sticky, copyText: copyText) {
+            Picker("Mode", selection: $mode) {
+                Text("Astable").tag(Mode.astable)
+                Text("Monostable").tag(Mode.monostable)
             }
-            .padding(20)
+            .pickerStyle(.segmented)
+
+            if mode == .astable {
+                ShowWorkCard(
+                    toolID: .timer555,
+                    symbolic: diode ? "t1 = ln(2)·R1·C    t2 = ln(2)·R2·C" : "t1 = ln(2)·(R1+R2)·C    t2 = ln(2)·R2·C",
+                    substituted: substituted,
+                    meaning: "Standard bipolar 555 duty cycle stays above 50% unless R2 is diode-steered. Frequency is 1 / (t1 + t2)."
+                )
+                TryExampleButton(title: "10 kΩ / 47 kΩ / 0.1 µF astable") {
+                    mode = .astable
+                    r1 = "10"
+                    r2 = "47"
+                    c = "0.1"
+                    rUnit = .k
+                    cUnit = .uF
+                    diode = false
+                }
+                unitField("R1", text: $r1)
+                unitField("R2", text: $r2)
+                capField()
+                Toggle("Diode across R2 (sub-50% duty)", isOn: $diode)
+                    .tint(Theme.accent)
+                    .frame(minHeight: Theme.touchTarget)
+                astableResults
+            } else {
+                ShowWorkCard(
+                    toolID: .timer555,
+                    symbolic: "t = ln(3) × R × C ≈ 1.1 RC",
+                    substituted: substituted,
+                    meaning: "Monostable pulse width while the capacitor charges from 0 to 2/3 Vcc."
+                )
+                TryExampleButton(title: "10 kΩ / 0.1 µF one-shot") {
+                    mode = .monostable
+                    r1 = "10"
+                    c = "0.1"
+                    rUnit = .k
+                    cUnit = .uF
+                }
+                unitField("R", text: $r1)
+                capField()
+                monostableResults
+            }
         }
-        .navigationTitle("555 Timer")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func unitField(_ title: String, text: Binding<String>) -> some View {
@@ -84,7 +102,9 @@ struct Timer555View: View {
                 ForEach(RUnit.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.menu)
-            .padding(.bottom, 8)
+            .frame(minHeight: Theme.touchTarget)
+            .padding(.bottom, 4)
+            .accessibilityLabel("Resistance unit")
         }
     }
 
@@ -95,7 +115,9 @@ struct Timer555View: View {
                 ForEach(CUnit.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.menu)
-            .padding(.bottom, 8)
+            .frame(minHeight: Theme.touchTarget)
+            .padding(.bottom, 4)
+            .accessibilityLabel("Capacitance unit")
         }
     }
 
@@ -103,7 +125,7 @@ struct Timer555View: View {
     private var astableResults: some View {
         switch astable {
         case .success(let r):
-            ResultCard {
+            ResultCard(copyText: copyText) {
                 ResultRow(label: "t high", value: Format.time(r.timeHigh), emphasis: true, tone: Theme.good)
                 ResultRow(label: "t low", value: Format.time(r.timeLow), emphasis: true, tone: Theme.warn)
                 ResultRow(label: "Period", value: Format.time(r.period))
@@ -135,7 +157,7 @@ struct Timer555View: View {
     private var monostableResults: some View {
         switch mono {
         case .success(let r):
-            ResultCard {
+            ResultCard(copyText: copyText) {
                 ResultRow(label: "Pulse width", value: Format.time(r.pulseWidth), emphasis: true, tone: Theme.good)
                 ResultRow(label: "Max retrigger", value: Format.frequency(r.maxRetriggerHz))
             }
@@ -163,18 +185,32 @@ struct Timer555View: View {
     private var farads: Double { (c.parsedDouble ?? .nan) * cUnit.factor }
 
     private var astable: Result<Astable555Result, CalcError> {
-        Result { try Timer555.astable(r1: ohms1, r2: ohms2, capacitance: farads, diodeSteering: diode) }
+        CalcCatch.run { try Timer555.astable(r1: ohms1, r2: ohms2, capacitance: farads, diodeSteering: diode) }
     }
 
     private var mono: Result<Monostable555Result, CalcError> {
-        Result { try Timer555.monostable(resistance: ohms1, capacitance: farads) }
+        CalcCatch.run { try Timer555.monostable(resistance: ohms1, capacitance: farads) }
     }
-}
 
-private extension Result where Failure == CalcError {
-    init(_ body: () throws -> Success) {
-        do { self = .success(try body()) }
-        catch let e as CalcError { self = .failure(e) }
-        catch { self = .failure(.missing("values")) }
+    private var substituted: String? {
+        if mode == .astable, case .success(let r) = astable {
+            return "\(r.formula)  →  f = \(Format.frequency(r.frequency)), duty \(Format.percent(r.dutyPercent))"
+        }
+        if mode == .monostable, case .success(let r) = mono {
+            return "\(r.formula)  →  t = \(Format.time(r.pulseWidth))"
+        }
+        return nil
     }
+
+    private var sticky: String? {
+        if mode == .astable, case .success(let r) = astable {
+            return "\(Format.frequency(r.frequency))  ·  \(Format.percent(r.dutyPercent)) duty"
+        }
+        if mode == .monostable, case .success(let r) = mono {
+            return Format.time(r.pulseWidth)
+        }
+        return nil
+    }
+
+    private var copyText: String? { sticky }
 }

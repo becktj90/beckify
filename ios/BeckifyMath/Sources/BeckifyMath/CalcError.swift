@@ -11,13 +11,13 @@ public enum CalcError: Error, Equatable, Sendable {
     public var message: String {
         switch self {
         case .missing(let name):
-            return "Enter \(name)."
+            return "Need \(name). Type a number — this tool will not guess a blank."
         case .nonPositive(let name):
-            return "\(name) must be greater than zero."
+            return "\(name) must be greater than zero. Zero, negatives, and empty are not usable here."
         case .outOfRange(let detail):
             return detail
         case .needTwoOfThree:
-            return "Enter any two of voltage, current, or resistance."
+            return "Enter any two of voltage, current, or resistance. Leave the one you want solved blank."
         case .notListed(let detail):
             return detail
         }

@@ -28,6 +28,7 @@ struct JobsView: View {
                                         .foregroundStyle(Theme.muted)
                                 }
                             }
+                            .accessibilityLabel("Saved note \(job.name), \(ToolboxCatalog.tool(job.toolID).title)")
                         }
                         .onDelete(perform: jobs.delete)
                     }
@@ -69,5 +70,33 @@ struct JobDetailView: View {
         }
         .navigationTitle(job.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                CopyResultButton(text: copyBlob, compact: true)
+            }
+        }
+    }
+
+    private var copyBlob: String {
+        var lines = [
+            job.name,
+            ToolboxCatalog.tool(job.toolID).title,
+        ]
+        if !job.inputs.isEmpty {
+            lines.append("Inputs")
+            for key in job.inputs.keys.sorted() {
+                lines.append("\(key): \(job.inputs[key] ?? "")")
+            }
+        }
+        if !job.outputs.isEmpty {
+            lines.append("Results")
+            for key in job.outputs.keys.sorted() {
+                lines.append("\(key): \(job.outputs[key] ?? "")")
+            }
+        }
+        if !job.notes.isEmpty {
+            lines.append("Notes: \(job.notes)")
+        }
+        return lines.joined(separator: "\n")
     }
 }

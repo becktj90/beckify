@@ -11,66 +11,90 @@ struct FrequencyView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @State private var mode: Mode = .freq
-    @State private var frequency = "1000000"
-    @State private var period = "1e-6"
-    @State private var wavelength = "300"
-    @State private var inductance = "0.0001"
-    @State private var capacitance = "1e-10"
-    @State private var jobName = "Frequency"
+    @StoredChoice(.frequencyWave, "mode", default: .freq) private var mode
+    @StoredInput(.frequencyWave, "frequency", default: "1000000") private var frequency
+    @StoredInput(.frequencyWave, "period", default: "1e-6") private var period
+    @StoredInput(.frequencyWave, "wavelength", default: "300") private var wavelength
+    @StoredInput(.frequencyWave, "inductance", default: "0.0001") private var inductance
+    @StoredInput(.frequencyWave, "capacitance", default: "1e-10") private var capacitance
+    @StoredInput(.frequencyWave, "jobName", default: "Frequency") private var jobName
 
     var result: Result<FrequencyResult, CalcError> {
-        do {
+        CalcCatch.run {
             switch mode {
-            case .freq: return .success(try Wave.fromFrequency(frequency.parsedDouble ?? .nan))
-            case .period: return .success(try Wave.fromPeriod(period.parsedDouble ?? .nan))
-            case .wavelength: return .success(try Wave.fromWavelength(wavelength.parsedDouble ?? .nan))
-            case .lc: return .success(try Wave.lcResonance(inductance: inductance.parsedDouble ?? .nan, capacitance: capacitance.parsedDouble ?? .nan))
+            case .freq: return try Wave.fromFrequency(frequency.parsedDouble ?? .nan)
+            case .period: return try Wave.fromPeriod(period.parsedDouble ?? .nan)
+            case .wavelength: return try Wave.fromWavelength(wavelength.parsedDouble ?? .nan)
+            case .lc: return try Wave.lcResonance(inductance: inductance.parsedDouble ?? .nan, capacitance: capacitance.parsedDouble ?? .nan)
             }
-        } catch let error as CalcError {
-            return .failure(error)
-        } catch {
-            return .failure(.missing("values"))
         }
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: mode == .lc ? "f = 1 / (2π √(LC))" : "T = 1/f    λ = c/f    c = 2.99792458×10⁸ m/s",
-                    citation: "Free-space wavelength. Not a transmission-line velocity factor."
-                )
-                Picker("Known", selection: $mode) {
-                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                switch mode {
-                case .freq: NumberField(title: "Frequency", unit: "Hz", text: $frequency, allowsScientific: true)
-                case .period: NumberField(title: "Period", unit: "s", text: $period, allowsScientific: true)
-                case .wavelength: NumberField(title: "Wavelength", unit: "m", text: $wavelength, allowsScientific: true)
-                case .lc:
-                    NumberField(title: "L", unit: "H", text: $inductance, allowsScientific: true)
-                    NumberField(title: "C", unit: "F", text: $capacitance, allowsScientific: true)
-                }
-                switch result {
-                case .success(let r):
-                    ResultCard {
-                        ResultRow(label: "Frequency", value: Format.frequency(r.frequency), emphasis: true, tone: Theme.good)
-                        ResultRow(label: "Period", value: Format.time(r.period), emphasis: true)
-                        ResultRow(label: "Wavelength", value: Format.meters(r.wavelength))
-                    }
-                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-                case .failure(let err):
-                    ErrorText(message: err.message)
-                }
-                DisclaimerBanner()
+        ToolScaffold(toolID: .frequencyWave, stickyAnswer: sticky, copyText: copyText) {
+            ShowWorkCard(
+                toolID: .frequencyWave,
+                symbolic: mode == .lc ? "f = 1 / (2π √(LC))" : "T = 1/f    λ = c/f    c = 2.99792458×10⁸ m/s",
+                substituted: substituted,
+                meaning: "Free-space wavelength. Not a transmission-line velocity factor. LC is lossless resonance."
+            )
+            TryExampleButton(title: mode == .lc ? "100 µH · 100 pF resonance" : "1 MHz → T and λ") {
+                applyExample()
             }
-            .padding(20)
+            Picker("Known", selection: $mode) {
+                ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            switch mode {
+            case .freq: NumberField(title: "Frequency", unit: "Hz", text: $frequency, allowsScientific: true)
+            case .period: NumberField(title: "Period", unit: "s", text: $period, allowsScientific: true)
+            case .wavelength: NumberField(title: "Wavelength", unit: "m", text: $wavelength, allowsScientific: true)
+            case .lc:
+                NumberField(title: "L", unit: "H", text: $inductance, allowsScientific: true)
+                NumberField(title: "C", unit: "F", text: $capacitance, allowsScientific: true)
+            }
+            switch result {
+            case .success(let r):
+                ResultCard(copyText: copyText) {
+                    ResultRow(label: "Frequency", value: Format.frequency(r.frequency), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Period", value: Format.time(r.period), emphasis: true)
+                    ResultRow(label: "Wavelength", value: Format.meters(r.wavelength))
+                }
+                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+            case .failure(let err):
+                ErrorText(message: err.message)
+            }
         }
-        .navigationTitle("Frequency / LC")
-        .navigationBarTitleDisplayMode(.inline)
     }
+
+    private func applyExample() {
+        switch mode {
+        case .freq:
+            frequency = "1000000"
+        case .period:
+            period = "1e-6"
+        case .wavelength:
+            wavelength = "300"
+        case .lc:
+            inductance = "0.0001"
+            capacitance = "1e-10"
+        }
+    }
+
+    private var substituted: String? {
+        guard case .success(let r) = result else { return nil }
+        if mode == .lc {
+            return "f = 1 / (2π √(\(inductance) × \(capacitance))) = \(Format.frequency(r.frequency))"
+        }
+        return "T = 1 / \(Format.frequency(r.frequency)) = \(Format.time(r.period))    λ = c / f = \(Format.meters(r.wavelength))"
+    }
+
+    private var sticky: String? {
+        guard case .success(let r) = result else { return nil }
+        return "\(Format.frequency(r.frequency))  ·  \(Format.time(r.period))"
+    }
+
+    private var copyText: String? { sticky }
 
     private func save(_ r: FrequencyResult) {
         jobs.save(SavedJob(

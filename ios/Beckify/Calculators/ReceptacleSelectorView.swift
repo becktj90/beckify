@@ -4,19 +4,19 @@ import BeckifyMath
 struct ReceptacleSelectorView: View {
     @EnvironmentObject private var jobs: JobStore
 
-    @State private var voltagePreset: ReceptacleVoltagePreset = .v120
-    @State private var customVolts = "120"
-    @State private var phase: ReceptaclePhaseKind = .singlePhase2Wire
-    @State private var ampPreset: ReceptacleAmpPreset = .a15
-    @State private var customAmps = "15"
-    @State private var environment: ReceptacleEnvironment = .indoorDry
-    @State private var family: ReceptacleFamilyFilter = .any
-    @State private var neutral: NeutralChoice = .auto
-    @State private var isolatedGround = false
-    @State private var preferGFCI = false
-    @State private var frequencyHz: Double = 60
+    @StoredChoice(.receptacleSelector, "voltagePreset", default: .v120) private var voltagePreset
+    @StoredInput(.receptacleSelector, "customVolts", default: "120") private var customVolts
+    @StoredChoice(.receptacleSelector, "phase", default: .singlePhase2Wire) private var phase
+    @StoredChoice(.receptacleSelector, "ampPreset", default: .a15) private var ampPreset
+    @StoredInput(.receptacleSelector, "customAmps", default: "15") private var customAmps
+    @StoredChoice(.receptacleSelector, "environment", default: .indoorDry) private var environment
+    @StoredChoice(.receptacleSelector, "family", default: .any) private var family
+    @StoredChoice(.receptacleSelector, "neutral", default: .auto) private var neutral
+    @StoredToggle(.receptacleSelector, "isolatedGround", default: false) private var isolatedGround
+    @StoredToggle(.receptacleSelector, "preferGFCI", default: false) private var preferGFCI
+    @StoredNumber(.receptacleSelector, "frequencyHz", default: 60) private var frequencyHz
     @State private var selectedID: String?
-    @State private var jobName = "Receptacle"
+    @StoredInput(.receptacleSelector, "jobName", default: "Receptacle") private var jobName
 
     private var volts: Double? {
         voltagePreset == .custom ? customVolts.parsedDouble : voltagePreset.volts
@@ -53,115 +53,126 @@ struct ReceptacleSelectorView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "Match V · Ø · A · poles/wires to a NEMA or IEC 60309 face",
-                    citation: "Design aid. Not a PE stamp, UL listing, or distributor. Hazardous is a flag only — not a classified-area stamp."
-                )
+        ToolScaffold(
+            toolID: .receptacleSelector,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .designAidExtra("Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install.")
+        ) {
+            ShowWorkCard(
+                toolID: .receptacleSelector,
+                symbolic: "Match V · Ø · A · poles/wires to a NEMA or IEC 60309 face",
+                substituted: substituted,
+                meaning: "Best-fit is a configuration match, not a listing. Hazardous is a flag only — not a classified-area stamp. Isolated ground and GFCI are callouts, not a different face."
+            )
+            TryExampleButton(title: "120 V 1Ø 15 A indoor") {
+                voltagePreset = .v120
+                phase = .singlePhase2Wire
+                ampPreset = .a15
+                environment = .indoorDry
+                family = .any
+                neutral = .auto
+                isolatedGround = false
+                preferGFCI = false
+                frequencyHz = 60
+            }
 
-                menu("Voltage", selection: $voltagePreset, options: ReceptacleVoltagePreset.allCases) {
-                    $0 == .custom ? "Custom" : "\($0.rawValue) V"
-                }
-                if voltagePreset == .custom {
-                    NumberField(title: "Custom voltage", unit: "V", text: $customVolts)
-                }
+            MenuField(title: "Voltage", selection: $voltagePreset, options: ReceptacleVoltagePreset.allCases) {
+                $0 == .custom ? "Custom" : "\($0.rawValue) V"
+            }
+            if voltagePreset == .custom {
+                NumberField(title: "Custom voltage", unit: "V", text: $customVolts)
+            }
 
-                Picker("Phase", selection: $phase) {
-                    ForEach(ReceptaclePhaseKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            Picker("Phase", selection: $phase) {
+                ForEach(ReceptaclePhaseKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            MenuField(title: "Current / ampacity", selection: $ampPreset, options: ReceptacleAmpPreset.allCases) {
+                $0 == .custom ? "Custom" : "\($0.rawValue) A"
+            }
+            if ampPreset == .custom {
+                NumberField(title: "Custom current", unit: "A", text: $customAmps)
+            }
+
+            MenuField(title: "Location / environment", selection: $environment, options: ReceptacleEnvironment.allCases) { $0.displayName }
+            if environment == .hazardous {
+                Text("See listing / not a classified-area stamp. This tool will not pick a Class/Division or Zone fitting.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.warn)
+            }
+
+            MenuField(title: "Device family", selection: $family, options: ReceptacleFamilyFilter.allCases) { $0.displayName }
+
+            Picker("Neutral", selection: $neutral) {
+                ForEach(NeutralChoice.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Toggle("Isolated ground", isOn: $isolatedGround)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            Toggle("Call out GFCI where it applies", isOn: $preferGFCI)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("FREQUENCY")
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(Theme.muted)
+                Picker("Hz", selection: $frequencyHz) {
+                    Text("60 Hz").tag(60.0)
+                    Text("50 Hz").tag(50.0)
                 }
                 .pickerStyle(.segmented)
+                Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA faces do not change.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+            }
 
-                menu("Current / ampacity", selection: $ampPreset, options: ReceptacleAmpPreset.allCases) {
-                    $0 == .custom ? "Custom" : "\($0.rawValue) A"
-                }
-                if ampPreset == .custom {
-                    NumberField(title: "Custom current", unit: "A", text: $customAmps)
-                }
-
-                menu("Location / environment", selection: $environment, options: ReceptacleEnvironment.allCases) { $0.displayName }
-                if environment == .hazardous {
-                    Text("See listing / not a classified-area stamp. This tool will not pick a Class/Division or Zone fitting.")
-                        .font(.caption)
-                        .foregroundStyle(Theme.warn)
-                }
-
-                menu("Device family", selection: $family, options: ReceptacleFamilyFilter.allCases) { $0.displayName }
-
-                Picker("Neutral", selection: $neutral) {
-                    ForEach(NeutralChoice.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                }
-                .pickerStyle(.segmented)
-
-                Toggle("Isolated ground", isOn: $isolatedGround)
-                    .tint(Theme.accent)
-                Toggle("Call out GFCI where it applies", isOn: $preferGFCI)
-                    .tint(Theme.accent)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("FREQUENCY")
-                        .font(.caption.weight(.semibold))
-                        .tracking(0.6)
-                        .foregroundStyle(Theme.muted)
-                    Picker("Hz", selection: $frequencyHz) {
-                        Text("60 Hz").tag(60.0)
-                        Text("50 Hz").tag(50.0)
+            switch matches {
+            case .success(let list):
+                let shown = selected(from: list)
+                ReceptacleFaceCard(match: shown)
+                ResultCard(title: "Best fit", copyText: copyText) {
+                    ResultRow(label: "Configuration", value: shown.config.code, emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Family", value: shown.config.family.displayName)
+                    ResultRow(label: "Voltage window", value: shown.config.voltageLabel)
+                    ResultRow(label: "Poles / wires", value: shown.config.polesWiresLabel)
+                    ResultRow(label: "Device rating", value: Format.amps(shown.config.amps))
+                    if let hour = shown.config.iecEarthHour {
+                        ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
                     }
-                    .pickerStyle(.segmented)
-                    Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA faces do not change.")
-                        .font(.caption2)
-                        .foregroundStyle(Theme.muted)
                 }
-
-                switch matches {
-                case .success(let list):
-                    let shown = selected(from: list)
-                    ReceptacleFaceCard(match: shown)
-                    ResultCard(title: "Best fit") {
-                        ResultRow(label: "Configuration", value: shown.config.code, emphasis: true, tone: Theme.good)
-                        ResultRow(label: "Family", value: shown.config.family.displayName)
-                        ResultRow(label: "Voltage window", value: shown.config.voltageLabel)
-                        ResultRow(label: "Poles / wires", value: shown.config.polesWiresLabel)
-                        ResultRow(label: "Device rating", value: Format.amps(shown.config.amps))
-                        if let hour = shown.config.iecEarthHour {
-                            ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
-                        }
+                ResultCard(title: "Why it fits") {
+                    ForEach(shown.reasons, id: \.self) { reason in
+                        Text("• \(reason)")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.foreground)
+                            .padding(.vertical, 2)
                     }
-                    ResultCard(title: "Why it fits") {
-                        ForEach(shown.reasons, id: \.self) { reason in
-                            Text("• \(reason)")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.foreground)
+                }
+                if !shown.caveats.isEmpty {
+                    ResultCard(title: "Notes") {
+                        ForEach(shown.caveats, id: \.self) { note in
+                            Text("• \(note)")
+                                .font(.caption)
+                                .foregroundStyle(Theme.warn)
                                 .padding(.vertical, 2)
                         }
                     }
-                    if !shown.caveats.isEmpty {
-                        ResultCard(title: "Notes") {
-                            ForEach(shown.caveats, id: \.self) { note in
-                                Text("• \(note)")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.warn)
-                                    .padding(.vertical, 2)
-                            }
-                        }
-                    }
-                    catalogCard(shown)
-                    rankedList(list)
-                    SaveJobBar(jobName: $jobName, canSave: true) {
-                        save(list)
-                    }
-                case .failure(let err):
-                    ErrorText(message: err.message)
                 }
-
-                DisclaimerBanner(
-                    text: Theme.disclaimer + " Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install."
-                )
+                catalogCard(shown)
+                rankedList(list)
+                SaveJobBar(jobName: $jobName, canSave: true) {
+                    save(list)
+                }
+            case .failure(let err):
+                ErrorText(message: err.message)
             }
-            .padding(20)
         }
-        .navigationTitle("Receptacle Selector")
-        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: voltagePreset) { _, _ in selectedID = nil }
         .onChange(of: phase) { _, _ in selectedID = nil }
         .onChange(of: ampPreset) { _, _ in selectedID = nil }
@@ -170,6 +181,22 @@ struct ReceptacleSelectorView: View {
         .onChange(of: neutral) { _, _ in selectedID = nil }
         .onChange(of: frequencyHz) { _, _ in selectedID = nil }
     }
+
+    private var substituted: String? {
+        guard case .success(let list) = matches else { return nil }
+        let shown = selected(from: list)
+        let v = volts.map { Format.number($0, digits: 0) } ?? "?"
+        let a = amps.map { Format.number($0, digits: 0) } ?? "?"
+        return "\(v) V · \(phase.displayName) · \(a) A → \(shown.config.code) (\(shown.config.family.displayName))"
+    }
+
+    private var sticky: String? {
+        guard case .success(let list) = matches else { return nil }
+        let shown = selected(from: list)
+        return "\(shown.config.code)  ·  \(Format.amps(shown.config.amps))"
+    }
+
+    private var copyText: String? { sticky }
 
     private func selected(from list: [ReceptacleMatch]) -> ReceptacleMatch {
         if let selectedID, let hit = list.first(where: { $0.id == selectedID }) {
@@ -200,8 +227,13 @@ struct ReceptacleSelectorView: View {
                         Spacer()
                     }
                     .padding(.vertical, 4)
+                    .frame(minHeight: Theme.touchTarget)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Select configuration \(match.config.code)")
+                .accessibilityHint("\(match.config.family.displayName), \(match.config.voltageLabel), \(Format.amps(match.config.amps))")
+                .accessibilityAddTraits(selected(from: list).id == match.id ? .isSelected : [])
             }
         }
     }
@@ -241,27 +273,6 @@ struct ReceptacleSelectorView: View {
             Text("PNs are well-known public catalog numbers, not a live stock check. Confirm current catalog. This app is not a distributor.")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
-        }
-    }
-
-    private func menu<T: Hashable>(
-        _ title: String,
-        selection: Binding<T>,
-        options: [T],
-        label: @escaping (T) -> String
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .tracking(0.6)
-                .foregroundStyle(Theme.muted)
-            Picker(title, selection: selection) {
-                ForEach(options, id: \.self) { Text(label($0)).tag($0) }
-            }
-            .pickerStyle(.menu)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 

@@ -38,39 +38,52 @@ final class BarometerModel: ObservableObject {
 struct BarometerView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = BarometerModel()
-    @State private var jobName = "Barometer"
+    @StoredInput(.barometer, "jobName", default: "Barometer") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "CMAltimeter pressure (kPa) and relative altitude (m)",
-                    citation: "Relative altitude is from the start of this session, not sea-level elevation."
-                )
-                ResultCard(title: "Atmosphere") {
-                    ResultRow(
-                        label: "Pressure",
-                        value: model.kPa.map { "\(Format.number($0, digits: 3)) kPa" } ?? "—",
-                        emphasis: true
-                    )
-                    ResultRow(
-                        label: "Relative Δh",
-                        value: model.relativeMeters.map { Format.meters($0) } ?? "—",
-                        emphasis: true,
-                        tone: Theme.good
-                    )
-                    ResultRow(label: "Source", value: model.status)
-                }
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
-                SensorDisclaimer()
+        ToolScaffold(
+            toolID: .barometer,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: nil)
+        ) {
+            ShowWorkCard(
+                toolID: .barometer,
+                symbolic: "CMAltimeter pressure (kPa) and relative altitude (m)",
+                substituted: sticky,
+                meaning: "Relative altitude is from the start of this session, not sea-level elevation."
+            )
+            if !model.available {
+                ToolEmptyState(title: "No barometer", detail: model.status, systemImage: "barometer")
             }
-            .padding(20)
+            ResultCard(title: "Atmosphere", copyText: copyText) {
+                ResultRow(
+                    label: "Pressure",
+                    value: model.kPa.map { "\(Format.number($0, digits: 3)) kPa" } ?? "—",
+                    emphasis: true
+                )
+                ResultRow(
+                    label: "Relative Δh",
+                    value: model.relativeMeters.map { Format.meters($0) } ?? "—",
+                    emphasis: true,
+                    tone: Theme.good
+                )
+                ResultRow(label: "Source", value: model.status)
+            }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
         }
-        .navigationTitle("Barometer")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+    }
+
+    private var sticky: String? {
+        model.kPa.map { "\(Format.number($0, digits: 3)) kPa" }
+    }
+    private var copyText: String? {
+        guard let kPa = model.kPa else { return nil }
+        let height = model.relativeMeters.map { Format.meters($0) } ?? "—"
+        return "\(Format.number(kPa, digits: 3)) kPa, Δh \(height)"
     }
 
     private func save() {

@@ -11,70 +11,87 @@ struct PowerWizardView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @State private var system: ElectricalSystem = .threePhase
-    @State private var known: Known = .kw
-    @State private var value = "50"
-    @State private var voltage = "480"
-    @State private var pf = "90"
-    @State private var eff = "100"
-    @State private var jobName = "Power Wizard"
+    @StoredChoice(.powerWizard, "system", default: .threePhase) private var system
+    @StoredChoice(.powerWizard, "known", default: .kw) private var known
+    @StoredInput(.powerWizard, "value", default: "50") private var value
+    @StoredInput(.powerWizard, "voltage", default: "480") private var voltage
+    @StoredInput(.powerWizard, "pf", default: "90") private var pf
+    @StoredInput(.powerWizard, "eff", default: "100") private var eff
+    @StoredInput(.powerWizard, "jobName", default: "Power Wizard") private var jobName
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: system == .threePhase
-                        ? "I = kW × 1000 ÷ (√3 × V × PF)"
-                        : (system == .dc ? "I = P ÷ V     (PF = 1)" : "I = kW × 1000 ÷ (V × PF)"),
-                    citation: "Spot check: 480 V 3Ø 50 kW PF 0.90 → 66.8 A"
-                )
-                Picker("System", selection: $system) {
-                    ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                Picker("Known", selection: $known) {
-                    ForEach(Known.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-
-                NumberField(title: "Known value", unit: known.rawValue, text: $value)
-                NumberField(title: system == .threePhase ? "Line-to-line voltage" : "Voltage", unit: "V", text: $voltage)
-                if system != .dc {
-                    NumberField(title: "Power factor", unit: "%", text: $pf)
-                }
-                if known == .hp {
-                    NumberField(title: "Efficiency", unit: "%", text: $eff)
-                }
-
-                switch wizard {
-                case .success(let r):
-                    ResultCard {
-                        ResultRow(label: "Current", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
-                        ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA")
-                        ResultRow(label: "Real", value: "\(Format.number(r.kW, digits: 3)) kW")
-                        if system != .dc {
-                            ResultRow(label: "Reactive", value: "\(Format.number(r.kVAR, digits: 3)) kVAR")
-                            ResultRow(label: "θ", value: "\(Format.number(r.phaseAngleDegrees, digits: 1)) °")
-                        }
-                        ResultRow(label: "Shaft HP", value: "\(Format.number(r.horsepower, digits: 2)) HP")
-                    }
-                    Text(r.formula)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(Theme.muted)
-                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-                case .failure(let err):
-                    ErrorText(message: err.message)
-                }
-                DisclaimerBanner()
+        ToolScaffold(toolID: .powerWizard, stickyAnswer: sticky, copyText: copyText) {
+            ShowWorkCard(
+                toolID: .powerWizard,
+                symbolic: symbolic,
+                substituted: substituted,
+                meaning: "Current from known kW, kVA, amps, or HP. PF is a decimal after the % field (90 → 0.90). Efficiency only matters on the HP path."
+            )
+            TryExampleButton(title: "480 V 3Ø 50 kW PF 0.90 → 66.8 A") {
+                system = .threePhase
+                known = .kw
+                value = "50"
+                voltage = "480"
+                pf = "90"
+                eff = "100"
             }
-            .padding(20)
+            Picker("System", selection: $system) {
+                ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Picker("Known", selection: $known) {
+                ForEach(Known.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            NumberField(title: "Known value", unit: known.rawValue, text: $value)
+            NumberField(title: system == .threePhase ? "Line-to-line voltage" : "Voltage", unit: "V", text: $voltage)
+            if system != .dc {
+                NumberField(title: "Power factor", unit: "%", text: $pf)
+            }
+            if known == .hp {
+                NumberField(title: "Efficiency", unit: "%", text: $eff)
+            }
+
+            switch wizard {
+            case .success(let r):
+                ResultCard(copyText: copyText) {
+                    ResultRow(label: "Current", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA")
+                    ResultRow(label: "Real", value: "\(Format.number(r.kW, digits: 3)) kW")
+                    if system != .dc {
+                        ResultRow(label: "Reactive", value: "\(Format.number(r.kVAR, digits: 3)) kVAR")
+                        ResultRow(label: "θ", value: "\(Format.number(r.phaseAngleDegrees, digits: 1)) °")
+                    }
+                    ResultRow(label: "Shaft HP", value: "\(Format.number(r.horsepower, digits: 2)) HP")
+                }
+                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+            case .failure(let err):
+                ErrorText(message: err.message)
+            }
         }
-        .navigationTitle("Power Wizard")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var symbolic: String {
+        if system == .threePhase { return "I = kW × 1000 ÷ (√3 × V × PF)" }
+        if system == .dc { return "I = P ÷ V     (PF = 1)" }
+        return "I = kW × 1000 ÷ (V × PF)"
+    }
+
+    private var substituted: String? {
+        guard case .success(let r) = wizard else { return nil }
+        return "\(r.formula)  →  \(Format.amps(r.amps))"
+    }
+
+    private var sticky: String? {
+        guard case .success(let r) = wizard else { return nil }
+        return "\(Format.amps(r.amps))  ·  \(Format.number(r.kW, digits: 3)) kW  ·  \(Format.number(r.kVA, digits: 3)) kVA"
+    }
+
+    private var copyText: String? { sticky }
+
     private var wizard: Result<PowerWizardResult, CalcError> {
-        do {
+        CalcCatch.run {
             let knownValue = value.parsedDouble ?? .nan
             let knownEnum: PowerWizardKnown
             switch known {
@@ -83,17 +100,13 @@ struct PowerWizardView: View {
             case .kva: knownEnum = .kilovoltAmps(knownValue)
             case .hp: knownEnum = .horsepower(knownValue)
             }
-            return .success(try PowerWizard.solve(
+            return try PowerWizard.solve(
                 system: system,
                 known: knownEnum,
                 voltage: voltage.parsedDouble ?? .nan,
                 powerFactor: (pf.parsedDouble ?? .nan) / 100,
                 efficiency: (eff.parsedDouble ?? .nan) / 100
-            ))
-        } catch let error as CalcError {
-            return .failure(error)
-        } catch {
-            return .failure(.missing("values"))
+            )
         }
     }
 

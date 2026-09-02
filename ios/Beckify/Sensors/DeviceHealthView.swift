@@ -3,31 +3,32 @@ import UIKit
 
 struct DeviceHealthView: View {
     @EnvironmentObject private var jobs: JobStore
-    @State private var jobName = "Device health"
+    @StoredInput(.deviceHealth, "jobName", default: "Device health") private var jobName
     @State private var notes = ""
     @State private var batteryLevel: Float = UIDevice.current.batteryLevel
     @State private var batteryState = UIDevice.current.batteryState
     @State private var thermal = ProcessInfo.processInfo.thermalState
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "UIDevice battery + ProcessInfo.thermalState",
-                    citation: "Diagnostics row for field notes. Not a game, charger tester, or health claim."
-                )
-                ResultCard(title: "Phone") {
-                    ResultRow(label: "Battery", value: batteryText, emphasis: true)
-                    ResultRow(label: "Charge state", value: chargeText)
-                    ResultRow(label: "Thermal", value: thermalText, tone: thermalTone)
-                }
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
-                SensorDisclaimer()
+        ToolScaffold(
+            toolID: .deviceHealth,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: nil)
+        ) {
+            ShowWorkCard(
+                toolID: .deviceHealth,
+                symbolic: "UIDevice battery + ProcessInfo.thermalState",
+                substituted: sticky,
+                meaning: "Diagnostics row for field notes. Not a game, charger tester, or health claim."
+            )
+            ResultCard(title: "Phone", copyText: copyText) {
+                ResultRow(label: "Battery", value: batteryText, emphasis: true)
+                ResultRow(label: "Charge state", value: chargeText)
+                ResultRow(label: "Thermal", value: thermalText, tone: thermalTone)
             }
-            .padding(20)
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
         }
-        .navigationTitle("Device Health")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             UIDevice.current.isBatteryMonitoringEnabled = true
             refresh()
@@ -40,6 +41,9 @@ struct DeviceHealthView: View {
     private var batteryText: String {
         batteryLevel < 0 ? "—" : Format.percent(Double(batteryLevel) * 100)
     }
+
+    private var sticky: String { "\(batteryText)  ·  \(thermalText)" }
+    private var copyText: String { "Battery \(batteryText), \(chargeText), thermal \(thermalText)" }
 
     private var chargeText: String {
         switch batteryState {

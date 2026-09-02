@@ -35,9 +35,13 @@ struct AboutView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         if let url = URL(string: "https://beckify.com") {
                             Link("beckify.com", destination: url)
+                                .frame(minHeight: Theme.touchTarget, alignment: .leading)
+                                .accessibilityLabel("Beckify website")
                         }
                         if let mail = URL(string: "mailto:trevorjohnbeck@gmail.com") {
                             Link("trevorjohnbeck@gmail.com", destination: mail)
+                                .frame(minHeight: Theme.touchTarget, alignment: .leading)
+                                .accessibilityLabel("Email Trevor Beck")
                         }
                     }
                     .font(.headline)
@@ -46,7 +50,7 @@ struct AboutView: View {
                     DisclaimerBanner()
 
                     ResultCard(title: "Privacy") {
-                        Text("No ads, no analytics, no tracking, no account. Microphone, Bluetooth, and location are used only inside those tools, on this device. Saved jobs are local notes (calculator or sensor snapshots). This app does not load beckify.com in a web view.")
+                        Text("No ads, no analytics, no tracking, no account. Microphone, Bluetooth, and location are used only inside those tools, on this device. Saved jobs and last-used calculator inputs stay on this device. This app does not load beckify.com in a web view.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.muted)
                     }

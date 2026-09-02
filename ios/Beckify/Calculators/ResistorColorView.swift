@@ -10,99 +10,94 @@ struct ResistorColorView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @State private var mode: Mode = .decode4
-    @State private var d1: ResistorBand = .yellow
-    @State private var d2: ResistorBand = .violet
-    @State private var d3: ResistorBand = .black
-    @State private var multiplier: ResistorBand = .red
-    @State private var tolerance: ResistorBand = .gold
-    @State private var ohms = "4700"
-    @State private var encodeBands = 4
-    @State private var jobName = "Color code"
+    @StoredChoice(.resistorColor, "mode", default: .decode4) private var mode
+    @StoredChoice(.resistorColor, "d1", default: .yellow) private var d1
+    @StoredChoice(.resistorColor, "d2", default: .violet) private var d2
+    @StoredChoice(.resistorColor, "d3", default: .black) private var d3
+    @StoredChoice(.resistorColor, "multiplier", default: .red) private var multiplier
+    @StoredChoice(.resistorColor, "tolerance", default: .gold) private var tolerance
+    @StoredInput(.resistorColor, "ohms", default: "4700") private var ohms
+    @StoredCount(.resistorColor, "encodeBands", default: 4) private var encodeBands
+    @StoredInput(.resistorColor, "jobName", default: "Color code") private var jobName
 
     private var digitBands: [ResistorBand] { ResistorBand.allCases.filter { $0.digit != nil } }
     private var multiplierBands: [ResistorBand] { ResistorBand.allCases.filter { $0.multiplier != nil } }
     private var toleranceBands: [ResistorBand] { ResistorBand.allCases.filter { $0.tolerancePercent != nil } }
 
     var result: Result<ColorCodeResult, CalcError> {
-        do {
+        CalcCatch.run {
             switch mode {
             case .decode4:
-                return .success(try ResistorColorCode.decode4(d1: d1, d2: d2, multiplier: multiplier, tolerance: tolerance))
+                return try ResistorColorCode.decode4(d1: d1, d2: d2, multiplier: multiplier, tolerance: tolerance)
             case .decode5:
-                return .success(try ResistorColorCode.decode5(d1: d1, d2: d2, d3: d3, multiplier: multiplier, tolerance: tolerance))
+                return try ResistorColorCode.decode5(d1: d1, d2: d2, d3: d3, multiplier: multiplier, tolerance: tolerance)
             case .encode:
-                return .success(try ResistorColorCode.encode(ohms: ohms.parsedDouble ?? .nan, bands: encodeBands, tolerance: tolerance))
+                return try ResistorColorCode.encode(ohms: ohms.parsedDouble ?? .nan, bands: encodeBands, tolerance: tolerance)
             }
-        } catch let error as CalcError {
-            return .failure(error)
-        } catch {
-            return .failure(.missing("values"))
         }
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "4-band: (10×d1 + d2) × 10^n    5-band: (100×d1 + 10×d2 + d3) × 10^n",
-                    citation: "IEC 60062 colors. Encode rounds the significand to integer digits."
-                )
-                Picker("Mode", selection: $mode) {
-                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+        ToolScaffold(toolID: .resistorColor, stickyAnswer: sticky, copyText: copyText) {
+            ShowWorkCard(
+                toolID: .resistorColor,
+                symbolic: "4-band: (10×d1 + d2) × 10^n    5-band: (100×d1 + 10×d2 + d3) × 10^n",
+                substituted: substituted,
+                meaning: "IEC 60062 colors. Encode rounds the significand to integer digits. Yellow-violet-red-gold is the classic 4.7 kΩ 5%."
+            )
+            TryExampleButton(title: "Yellow · violet · red · gold = 4.7 kΩ") {
+                mode = .decode4
+                d1 = .yellow
+                d2 = .violet
+                multiplier = .red
+                tolerance = .gold
+            }
+            Picker("Mode", selection: $mode) {
+                ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            if mode == .encode {
+                NumberField(title: "Resistance", unit: "Ω", text: $ohms)
+                Picker("Bands", selection: $encodeBands) {
+                    Text("4").tag(4)
+                    Text("5").tag(5)
                 }
                 .pickerStyle(.segmented)
-                if mode == .encode {
-                    NumberField(title: "Resistance", unit: "Ω", text: $ohms)
-                    Picker("Bands", selection: $encodeBands) {
-                        Text("4").tag(4)
-                        Text("5").tag(5)
-                    }
-                    .pickerStyle(.segmented)
-                    bandPicker("Tolerance", selection: $tolerance, options: toleranceBands)
-                } else {
-                    bandPicker("Digit 1", selection: $d1, options: digitBands)
-                    bandPicker("Digit 2", selection: $d2, options: digitBands)
-                    if mode == .decode5 {
-                        bandPicker("Digit 3", selection: $d3, options: digitBands)
-                    }
-                    bandPicker("Multiplier", selection: $multiplier, options: multiplierBands)
-                    bandPicker("Tolerance", selection: $tolerance, options: toleranceBands)
+                MenuField(title: "Tolerance", selection: $tolerance, options: toleranceBands) { $0.displayName }
+            } else {
+                MenuField(title: "Digit 1", selection: $d1, options: digitBands) { $0.displayName }
+                MenuField(title: "Digit 2", selection: $d2, options: digitBands) { $0.displayName }
+                if mode == .decode5 {
+                    MenuField(title: "Digit 3", selection: $d3, options: digitBands) { $0.displayName }
                 }
-                switch result {
-                case .success(let r):
-                    ResultCard {
-                        ResultRow(label: "Resistance", value: "\(Format.number(r.ohms, digits: 4)) Ω", emphasis: true, tone: Theme.good)
-                        ResultRow(label: "Tolerance", value: "± \(Format.number(r.tolerancePercent, digits: 2)) %")
-                        ResultRow(label: "Bands", value: r.bands.map(\.displayName).joined(separator: " · "))
-                    }
-                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-                case .failure(let err):
-                    ErrorText(message: err.message)
-                }
-                DisclaimerBanner()
+                MenuField(title: "Multiplier", selection: $multiplier, options: multiplierBands) { $0.displayName }
+                MenuField(title: "Tolerance", selection: $tolerance, options: toleranceBands) { $0.displayName }
             }
-            .padding(20)
+            switch result {
+            case .success(let r):
+                ResultCard(copyText: copyText) {
+                    ResultRow(label: "Resistance", value: "\(Format.number(r.ohms, digits: 4)) Ω", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Tolerance", value: "± \(Format.number(r.tolerancePercent, digits: 2)) %")
+                    ResultRow(label: "Bands", value: r.bands.map(\.displayName).joined(separator: " · "))
+                }
+                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+            case .failure(let err):
+                ErrorText(message: err.message)
+            }
         }
-        .navigationTitle("Resistor Color Code")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func bandPicker(_ title: String, selection: Binding<ResistorBand>, options: [ResistorBand]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .tracking(0.6)
-                .foregroundStyle(Theme.muted)
-            Picker(title, selection: selection) {
-                ForEach(options) { Text($0.displayName).tag($0) }
-            }
-            .pickerStyle(.menu)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
+    private var substituted: String? {
+        guard case .success(let r) = result else { return nil }
+        return "\(r.formula)  →  \(Format.number(r.ohms, digits: 4)) Ω ± \(Format.number(r.tolerancePercent, digits: 2)) %"
     }
+
+    private var sticky: String? {
+        guard case .success(let r) = result else { return nil }
+        return "\(Format.number(r.ohms, digits: 4)) Ω  ± \(Format.number(r.tolerancePercent, digits: 2)) %"
+    }
+
+    private var copyText: String? { sticky }
 
     private func save(_ r: ColorCodeResult) {
         jobs.save(SavedJob(
