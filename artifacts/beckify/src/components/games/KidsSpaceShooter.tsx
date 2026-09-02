@@ -357,7 +357,7 @@ export function KidsSpaceShooter() {
       if (statusRef.current === "playing") {
         stars.forEach((star) => { star.y = (star.y + star.speed * dt) % H; });
         shipX = clamp(shipX + (Number(input.current.right) - Number(input.current.left)) * 7.2 * dt, 38, W - 38);
-        shipY = clamp(shipY + (Number(input.current.down) - Number(input.current.up)) * 6 * dt, 118, H - 148);
+        shipY = clamp(shipY + (Number(input.current.down) - Number(input.current.up)) * 6 * dt, 118, H - 176);
         spawn -= dt / 60;
         fireCooldown -= dt / 60;
         iframe = Math.max(0, iframe - dt / 60);
@@ -450,7 +450,7 @@ export function KidsSpaceShooter() {
     const move = (event: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
       shipX = clamp((event.clientX - rect.left) / rect.width * W, 38, W - 38);
-      shipY = clamp((event.clientY - rect.top) / rect.height * H, 118, H - 148);
+      shipY = clamp((event.clientY - rect.top) / rect.height * H, 118, H - 176);
     };
 
     const fromOverlay = (event: Event) => (event.target as HTMLElement | null)?.closest(".cosmic-controls, .cosmic-canvas-actions, .cosmic-ready, .cosmic-exit");
@@ -609,11 +609,17 @@ export function KidsSpaceShooter() {
               <button type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Turn sound on" : "Mute game"}>{muted ? <VolumeX size={17} /> : <Volume2 size={17} />}</button>
               <button type="button" onClick={() => pauseRef.current()} aria-label={status === "paused" ? "Resume game" : "Pause game"}>{status === "paused" ? <Play size={17} /> : <Pause size={17} />}</button>
               <button type="button" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={17} /> : <Expand size={17} />}</button>
-              <button type="button" onClick={() => resetRef.current()} aria-label="Reset run"><RotateCcw size={16} /></button>
             </div>
             {immersive && <button type="button" className="cosmic-exit" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={19} /></button>}
             {status !== "playing" && (
-              <div className="cosmic-ready" onPointerDown={(event) => { event.preventDefault(); overlayAction(); }}>
+              <div
+                className="cosmic-ready"
+                onPointerDown={(event) => {
+                  if ((event.target as HTMLElement).closest("button")) return;
+                  event.preventDefault();
+                  overlayAction();
+                }}
+              >
                 <span>{status === "gameover" ? `MISSION OVER · ${score.toLocaleString()} POINTS` : status === "paused" ? "SYSTEMS PAUSED" : "READY FOR LAUNCH"}</span>
                 {status === "gameover" && board.length > 0 && (
                   <ol className="cosmic-board">
@@ -622,10 +628,15 @@ export function KidsSpaceShooter() {
                     ))}
                   </ol>
                 )}
-                <button type="button">
+                <button type="button" onClick={overlayAction}>
                   <Play size={17} />
                   {status === "gameover" ? "FLY AGAIN" : status === "paused" ? "RESUME" : "TAP TO PLAY"}
                 </button>
+                {status === "paused" && (
+                  <button type="button" className="cosmic-ghost" onClick={() => resetRef.current()}>
+                    <RotateCcw size={16} /> START OVER
+                  </button>
+                )}
               </div>
             )}
             <div className="cosmic-controls" aria-label="Touch controls">
