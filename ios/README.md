@@ -47,7 +47,7 @@ ios/
 - Position (location requested in-tool, not at launch)
 - Device battery / thermal diagnostics
 
-Local **Saved Jobs** are on-device homework / field notes, not a projects product. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number.
+Local **Saved Jobs** are on-device homework / field notes, not a projects product. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
 
 ## Linux (this repo)
 
@@ -104,7 +104,7 @@ xcodebuild \
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, status **Prepare for Submission**, privacy URL https://beckify.com/privacy (live). No binary is uploaded. This is not TestFlight and not an App Store submit.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, status **Prepare for Submission**, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). No binary is uploaded. This is not TestFlight, not a signed archive, and not an App Store submit.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac

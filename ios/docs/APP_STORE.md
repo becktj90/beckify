@@ -19,6 +19,8 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 **Age rating:** 4+ (no user-generated content, no unrestricted web, no violence)  
 **Price:** Free, no in-app purchases, no ads
 
+Trevor decided App Store v1 is **free** ($0): no IAP. Do not add a paid price or in-app purchases to listing copy or the Xcode project. There is no StoreKit target.
+
 **Promotional text (170 characters, optional):**
 Native field-EE calculators plus public-API sensors for homework and jobsite notes. Design aid — not a PE stamp or calibrated instrument.
 
@@ -146,8 +148,9 @@ Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/
 | SKU | `beckify-toolbox` |
 | Privacy Policy URL | https://beckify.com/privacy (live) |
 | Team prefix | `9TR6R5LV8M` |
+| Price | Free ($0), no IAP, no ads (Trevor’s v1 decision) |
 
-The app is native SwiftUI, iPhone + iPad, Free, no IAP, no ads. This repository does **not** claim TestFlight or App Store submit.
+The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. This repository does **not** claim TestFlight, a signed archive, or App Store submit.
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
