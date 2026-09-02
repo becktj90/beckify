@@ -5,20 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Glenn Runner</title>
   <meta name="robots" content="noindex">
-  <link rel="stylesheet" href="/toolbox/css/styles.css">
   <style>
+    :root {
+      --violet: #b7abff;
+      --fg: #eef0fa;
+      --fg-muted: #9aa3c7;
+      --font-main: "Space Grotesk", "Inter", system-ui, sans-serif;
+    }
     html, body {
       margin: 0;
       min-height: 100%;
-      background: #05060f;
-      color: var(--fg, #eef0fa);
+      background: radial-gradient(circle at 20% 0%, #1b1638, #05060f 55%);
+      color: var(--fg);
+      font-family: var(--font-main);
     }
-    body {
-      padding: 12px 12px 20px;
+    body { padding: 10px 10px 16px; }
+    .cabinet {
+      max-width: 460px;
+      margin: 0 auto;
     }
-    .section { display: block; }
-    html.arcade-immersive-open,
-    html.arcade-immersive-open body { overflow: hidden; }
+    #arcade-fs-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.15rem;
+      border: 1px solid rgba(183, 171, 255, 0.45);
+      background: #05050d;
+      box-shadow: 0 18px 50px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+    #arcadeCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      cursor: pointer;
+      background: #05050d;
+    }
+    .hud-btns {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      display: flex;
+      gap: 6px;
+    }
+    .hud-btns button {
+      min-width: 44px;
+      min-height: 36px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(183,171,255,.7);
+      background: rgba(8,8,24,.82);
+      color: var(--violet);
+      font: 700 0.72rem/1 var(--font-main);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    #arcade-touch-btns {
+      display: flex;
+      gap: 8px;
+      margin: 10px auto 0;
+      max-width: 420px;
+      user-select: none;
+    }
+    #arcade-touch-btns button {
+      flex: 1;
+      min-height: 52px;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(183,171,255,.65);
+      background: rgba(16,12,40,.9);
+      color: var(--violet);
+      font: 800 0.82rem/1 var(--font-main);
+      cursor: pointer;
+      touch-action: none;
+    }
+    #atb-boost { flex: 2; border-width: 2px; }
+    .help {
+      margin: 10px 2px 0;
+      color: var(--fg-muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .record {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(183,171,255,.28);
+      background: rgba(12,10,28,.72);
+    }
+    .record-title { font-size: 0.7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
+    #arcade-hi-score { margin-top: 6px; font-size: 1.25rem; color: var(--violet); }
+    .btn {
+      margin-top: 8px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(183,171,255,.45);
+      background: transparent;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    html.arcade-immersive-open, html.arcade-immersive-open body { overflow: hidden; }
     #arcade-fs-wrapper.arcade-immersive {
       position: fixed !important;
       inset: 0;
@@ -29,6 +115,7 @@
       width: auto !important;
       padding: 12px;
       background: #05050d;
+      border-radius: 0;
     }
     #arcade-fs-wrapper.arcade-immersive #arcadeCanvas {
       max-width: 100%;
@@ -38,42 +125,26 @@
   </style>
 </head>
 <body data-arcade-standalone="true">
-  <section id="sec-arcade" class="section active">
-    <div class="card-grid">
-      <div class="card" style="grid-column:1/-1">
-        <div class="card-title">New Glenn Runner — LC-36 Flight Mission</div>
-        <div class="card-body" style="text-align:center">
-          <div id="arcade-fs-wrapper" style="position:relative;display:inline-block;width:100%">
-            <canvas id="arcadeCanvas" width="420" height="640" style="display:block;margin:0 auto;border:2px solid var(--violet);box-shadow:0 4px 16px rgba(139,123,255,0.15);cursor:pointer;max-width:100%"></canvas>
-            <div style="position:absolute;top:4px;right:4px;display:flex;gap:4px;z-index:10">
-              <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">🔊</button>
-              <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">⏸</button>
-              <button onclick="arcadeToggleSettings()" title="Mission settings" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">⚙</button>
-              <button id="arcade-fullscreen-btn" onclick="arcadeFullscreen()" title="Play fullscreen" aria-label="Play fullscreen" style="background:rgba(0,0,0,0.75);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);font-size:0.68rem;padding:2px 7px;cursor:pointer">⛶ FS</button>
-            </div>
-          </div>
-          <div id="arcade-touch-btns" style="display:flex;gap:6px;margin:8px auto;max-width:420px;user-select:none">
-            <button id="atb-left" aria-label="Steer left" style="flex:1;font-size:1.1rem;padding:14px 0;background:rgba(10,10,30,0.85);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);cursor:pointer;border-radius:3px;touch-action:none">◀ STEER</button>
-            <button id="atb-boost" aria-label="Hold boost to climb" style="flex:2;font-size:1rem;padding:14px 0;background:rgba(20,10,50,0.9);color:var(--violet);border:2px solid var(--violet);font-family:var(--font-main);cursor:pointer;border-radius:3px;touch-action:none;font-weight:bold">🚀 HOLD TO CLIMB</button>
-            <button id="atb-right" aria-label="Steer right" style="flex:1;font-size:1.1rem;padding:14px 0;background:rgba(10,10,30,0.85);color:var(--violet);border:1px solid var(--violet);font-family:var(--font-main);cursor:pointer;border-radius:3px;touch-action:none">STEER ▶</button>
-          </div>
-          <div style="margin-top:4px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">
-            1. Hold BOOST during countdown to charge liftoff<br>
-            2. Hold BOOST to climb, release briefly to settle<br>
-            3. Steer around hazards; tap the highlighted mission prompt when it appears
-          </div>
-          <div class="note" style="text-align:left">
-            A full launch is compressed into a quick arcade mission. Clear hazards to build a CLEAR SKY streak, keep Max-Q stress low, then complete stage sep, orbit guidance, and payload deployment. Start-screen difficulty stays KID / CADET / PAD RAT.
-          </div>
-        </div>
+  <section id="sec-arcade" class="cabinet">
+    <div id="arcade-fs-wrapper">
+      <canvas id="arcadeCanvas" width="420" height="640"></canvas>
+      <div class="hud-btns">
+        <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" aria-label="Toggle mute">🔊</button>
+        <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" aria-label="Pause mission">⏸</button>
+        <button onclick="arcadeToggleSettings()" title="Mission settings" aria-label="Mission settings">⚙</button>
+        <button id="arcade-fullscreen-btn" onclick="arcadeFullscreen()" title="Play fullscreen" aria-label="Play fullscreen">⛶</button>
       </div>
-      <div class="card">
-        <div class="card-title">Mission Record</div>
-        <div class="card-body">
-          <div id="arcade-hi-score" style="font-family:var(--font-main);font-size:1.5rem;color:var(--violet);text-shadow:0 0 8px rgba(139,123,255,0.5), 0 0 20px rgba(139,123,255,0.2)">NO MISSIONS FLOWN</div>
-          <button class="btn btn-sm" onclick="arcadeReset()" style="margin-top:8px">RESET MISSION RECORD</button>
-        </div>
-      </div>
+    </div>
+    <div id="arcade-touch-btns">
+      <button id="atb-left" aria-label="Steer left">◀</button>
+      <button id="atb-boost" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
+      <button id="atb-right" aria-label="Steer right">▶</button>
+    </div>
+    <p class="help">Hold BOOST during countdown, steer around hazards, tap the highlighted mission prompt. Start-screen difficulty stays KID / CADET / PAD RAT.</p>
+    <div class="record">
+      <div class="record-title">Mission record</div>
+      <div id="arcade-hi-score">NO MISSIONS FLOWN</div>
+      <button class="btn" onclick="arcadeReset()">Reset mission record</button>
     </div>
   </section>
   <script>

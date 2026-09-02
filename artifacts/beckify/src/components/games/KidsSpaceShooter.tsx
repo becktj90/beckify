@@ -109,6 +109,7 @@ export function KidsSpaceShooter() {
       if (mutedRef.current) return;
       try {
         audio ??= new AudioContext();
+        if (audio.state === "suspended") void audio.resume().catch(() => {});
         const osc = audio.createOscillator();
         const gain = audio.createGain();
         osc.type = type;

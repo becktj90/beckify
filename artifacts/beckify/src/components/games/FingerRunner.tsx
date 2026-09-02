@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
+import { KIDS, drawKidPortrait, kidSrc } from "./characterArt";
 
 type Status = "ready" | "running" | "paused" | "gameover";
 type Obstacle = { x: number; width: number; height: number; hue: string; kind: "gate" | "crate" | "beacon" };
@@ -16,6 +17,7 @@ export function FingerRunner() {
   const stageRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<Status>("ready");
   const restartRef = useRef<(() => void) | null>(null);
+  const resetWorldRef = useRef<(() => void) | null>(null);
   const jumpRef = useRef<(() => void) | null>(null);
   const soundRef = useRef(true);
   const [status, setStatus] = useState<Status>("ready");
@@ -39,11 +41,16 @@ export function FingerRunner() {
     let audio: AudioContext | null = null;
     const bleep = (frequency: number, duration: number, endFrequency = frequency, type: OscillatorType = "triangle", volume = 0.03) => {
       if (!soundRef.current) return;
-      audio ??= new AudioContext();
-      const oscillator = audio.createOscillator(); const gain = audio.createGain();
-      oscillator.type = type; oscillator.frequency.setValueAtTime(frequency, audio.currentTime); oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, endFrequency), audio.currentTime + duration);
-      gain.gain.setValueAtTime(volume, audio.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
-      oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration);
+      try {
+        audio ??= new AudioContext();
+        if (audio.state === "suspended") void audio.resume().catch(() => {});
+        const oscillator = audio.createOscillator(); const gain = audio.createGain();
+        oscillator.type = type; oscillator.frequency.setValueAtTime(frequency, audio.currentTime); oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, endFrequency), audio.currentTime + duration);
+        gain.gain.setValueAtTime(volume, audio.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+        oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration);
+      } catch {
+        /* Audio is optional. */
+      }
     };
     const player = { x: 88, y: GROUND - 42, width: 28, height: 42, velocityY: 0 };
     const obstacles: Obstacle[] = [];
@@ -56,6 +63,8 @@ export function FingerRunner() {
     let jumpBuffer = 0;
     let previous = performance.now();
     let animationFrame = 0;
+    const runner = new Image();
+    runner.src = kidSrc("apollo", import.meta.env.BASE_URL);
 
     const resetWorld = () => {
       player.y = GROUND - player.height;
@@ -139,29 +148,24 @@ export function FingerRunner() {
 
     const draw = () => {
       const gradient = context.createLinearGradient(0, 0, 0, HEIGHT);
-      gradient.addColorStop(0, "#101a3b");
-      gradient.addColorStop(1, "#06101f");
+      gradient.addColorStop(0, "#7ec8ff");
+      gradient.addColorStop(0.55, "#cfe9ff");
+      gradient.addColorStop(1, "#8ecf7a");
       context.fillStyle = gradient;
       context.fillRect(0, 0, WIDTH, HEIGHT);
-      context.fillStyle = "rgba(139, 123, 255, 0.16)";
-      context.fillRect(0, GROUND, WIDTH, 2);
-      context.fillStyle = "rgba(112, 144, 255, 0.13)";
+      context.fillStyle = "#5aa85a";
+      context.fillRect(0, GROUND, WIDTH, HEIGHT - GROUND);
+      context.fillStyle = "rgba(255,255,255,0.7)";
+      for (let x = 26; x < WIDTH; x += 90) {
+        const y = 28 + (x * 17) % 70;
+        context.beginPath();
+        context.ellipse(x, y, 22, 10, 0, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.fillStyle = "rgba(46, 92, 48, 0.45)";
       for (let x = -20; x < WIDTH + 80; x += 64) {
-        const building = 26 + (x * 13 + 91) % 52;
-        context.fillRect(x, GROUND - 32 - building, 42, building);
-        context.fillStyle = "rgba(85, 230, 203, 0.32)";
-        for (let windowY = GROUND - 25 - building; windowY < GROUND - 38; windowY += 13) context.fillRect(x + 9, windowY, 4, 3);
-        context.fillStyle = "rgba(112, 144, 255, 0.13)";
-      }
-      context.fillStyle = "rgba(142, 233, 255, 0.45)";
-      for (let x = 26; x < WIDTH; x += 57) {
-        const y = 36 + (x * 17) % 120;
-        context.fillRect(x, y, 2, 2);
-      }
-      context.strokeStyle = "rgba(139, 123, 255, 0.16)";
-      context.lineWidth = 1;
-      for (let x = -40; x < WIDTH; x += 40) {
-        context.beginPath(); context.moveTo(x, GROUND + 16); context.lineTo(x + 28, HEIGHT); context.stroke();
+        const building = 18 + (x * 13 + 91) % 36;
+        context.fillRect(x, GROUND - building, 42, building);
       }
       obstacles.forEach((obstacle) => {
         context.save();
@@ -188,33 +192,9 @@ export function FingerRunner() {
       });
       context.globalAlpha = 1;
       context.save();
-      context.translate(player.x, player.y);
-      context.fillStyle = "#55e6cb";
-      context.shadowColor = "#55e6cb";
-      context.shadowBlur = 18;
-      context.beginPath();
-      context.roundRect(0, 10, player.width, player.height - 10, 7);
-      context.fill();
-      context.fillStyle = "#10213b";
-      context.fillRect(5, 14, player.width - 10, 9);
-      context.fillStyle = "#eef0fa";
-      context.fillRect(18, 17, 5, 5);
-      context.fillStyle = "#ffb84a";
-      context.fillRect(7, 17, 5, 3);
-      context.fillStyle = "#ffb84a";
-      context.fillRect(5, player.height - 2, 7, 5);
-      context.fillRect(18, player.height - 2, 7, 5);
+      context.translate(player.x + player.width / 2, player.y + player.height / 2);
+      drawKidPortrait(context, runner, 0, 0, 52, { ring: KIDS.apollo.accent });
       context.restore();
-      context.fillStyle = "#eef0fa";
-      context.font = "600 15px Space Grotesk, sans-serif";
-      context.fillText(`DISTANCE ${Math.floor(runScore).toString().padStart(4, "0")}`, 18, 28);
-      context.fillStyle = "#8fa6c5";
-      context.font = "12px JetBrains Mono, monospace";
-      context.fillText("JUMP THE SIGNAL GATES", 18, 48);
-      context.textAlign = "right";
-      context.fillStyle = "#8fa6c5";
-      context.fillText(`SPEED ${Math.round(speed)} · SECTOR 03`, WIDTH - 18, 28);
-      context.textAlign = "left";
     };
 
     const frame = (now: number) => {
@@ -230,18 +210,31 @@ export function FingerRunner() {
 
     const keyDown = (event: KeyboardEvent) => {
       if (event.code === "Space" || event.code === "ArrowUp") { event.preventDefault(); jump(); }
-      if (event.code === "KeyP" || event.code === "Escape") setGameStatus(statusRef.current === "paused" ? "running" : "paused");
+      if (event.code === "KeyP" || event.code === "Escape") {
+        event.preventDefault();
+        if (statusRef.current === "running") setGameStatus("paused");
+        else if (statusRef.current === "paused") setGameStatus("running");
+      }
     };
     const pointerDown = (event: PointerEvent) => { event.preventDefault(); jump(); };
     canvas.addEventListener("pointerdown", pointerDown);
     window.addEventListener("keydown", keyDown);
     restartRef.current = start;
+    resetWorldRef.current = resetWorld;
     jumpRef.current = jump;
     animationFrame = requestAnimationFrame(frame);
-    return () => { cancelAnimationFrame(animationFrame); restartRef.current = null; jumpRef.current = null; audio?.close(); canvas.removeEventListener("pointerdown", pointerDown); window.removeEventListener("keydown", keyDown); };
+    return () => { cancelAnimationFrame(animationFrame); restartRef.current = null; resetWorldRef.current = null; jumpRef.current = null; audio?.close(); canvas.removeEventListener("pointerdown", pointerDown); window.removeEventListener("keydown", keyDown); };
   }, [best]);
 
-  const reset = () => { restartRef.current?.(); setGameStatus("ready"); };
+  const overlayAction = () => {
+    if (status === "paused") setGameStatus("running");
+    else restartRef.current?.();
+  };
+
+  const reset = () => {
+    resetWorldRef.current?.();
+    setGameStatus("ready");
+  };
 
   return (
     <section className="space-y-6" aria-labelledby="finger-runner-title">
@@ -249,7 +242,7 @@ export function FingerRunner() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Arcade / Reflex course</p>
           <h1 id="finger-runner-title" className="font-display text-3xl font-bold tracking-tight">Finger Runner</h1>
-          <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">A one-button runner built for short sessions: read the rhythm, clear the gates, and chase a longer distance.</p>
+          <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">A one-button runner built for short sessions: read the rhythm, clear the gates, and chase a longer distance. Apollo (orange balloon) leads the dash.</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
           <span>BEST {best.toString().padStart(4, "0")}</span>
@@ -257,12 +250,33 @@ export function FingerRunner() {
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
         </div>
       </div>
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[640px] rounded-2xl border border-[#2e5d86]"}`}>
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "is-immersive" : "w-full min-w-0 max-w-[640px] rounded-2xl border border-[#7ec8ff]"}`}>
+        <div className="game-playfield">
         <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="block h-auto w-full touch-none" aria-label="Finger Runner endless runner" />
-        {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
-        {status !== "running" ? <div className="absolute inset-0 flex items-center justify-center bg-[#06101f]/80 p-6 text-center backdrop-blur-[2px]"><div className="max-w-xs"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#55e6cb]">{status === "gameover" ? "Run complete" : status === "paused" ? "Course paused" : "Ready to run"}</p><h2 className="mt-2 font-display text-3xl font-bold text-white">{status === "gameover" ? "Beat your line." : status === "paused" ? "Hold position." : "Find the rhythm."}</h2><p className="mt-3 text-sm leading-6 text-[#b9c8dc]">{status === "gameover" ? `Distance ${score}. Best ${best}.` : "Tap, click, Space, or Arrow Up to jump. Press P or Escape to pause."}</p><button type="button" className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#55e6cb] px-5 py-3 text-sm font-semibold text-[#06101f]" onClick={() => status === "paused" ? setGameStatus("running") : restartRef.current?.()}><Play size={16} />{status === "paused" ? "Resume" : status === "gameover" ? "Run again" : "Start run"}</button></div></div> : null}
+        {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
+        <div className="kid-hud">
+          <div className="kid-chip" style={{ color: KIDS.apollo.accent }}>
+            <img src={kidSrc("apollo", import.meta.env.BASE_URL)} alt="" width={32} height={32} />
+            <div><span>Apollo</span><strong>{score.toString().padStart(4, "0")}</strong></div>
+          </div>
+          <div className="kid-chip"><div><span>Best</span><b>{best.toString().padStart(4, "0")}</b></div></div>
+        </div>
+        {status !== "running" ? (
+          <div className="kid-overlay" onClick={(event) => { if ((event.target as HTMLElement).closest("button")) return; overlayAction(); }}>
+            <div className="kid-overlay-card">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ff7a2d]">{status === "gameover" ? "Run complete" : status === "paused" ? "Course paused" : "Ready to run"}</p>
+              <h2 className="font-display font-bold">{status === "gameover" ? "Beat your line." : status === "paused" ? "Hold position." : "Find the rhythm."}</h2>
+              <p className="mt-3">{status === "gameover" ? `Distance ${score}. Best ${best}.` : "Tap, click, Space, or Arrow Up to jump. Press P or Escape to pause."}</p>
+              <button type="button" className="kid-play" style={{ background: KIDS.apollo.accent, color: KIDS.apollo.ink }} onClick={overlayAction}>
+                <Play size={16} />
+                {status === "paused" ? "Resume" : status === "gameover" ? "Run again" : "Start run"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+        </div>
       </div>
-      <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]"><span aria-live="polite">Distance {score} · Best {best}</span><div className="flex gap-2" aria-label="Runner controls"><button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => setGameStatus(status === "paused" ? "running" : "paused")}><Pause size={14} />{status === "paused" ? "Resume" : "Pause"}</button><button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={reset}><RotateCcw size={14} />Reset</button><button type="button" className="game-control rounded-md border border-[var(--border)] px-3 py-2" onClick={() => jumpRef.current?.()}>Jump</button></div></div>
+      <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]"><span aria-live="polite">Distance {score} · Best {best}</span><div className="flex gap-2" aria-label="Runner controls"><button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => { if (status === "running") setGameStatus("paused"); else if (status === "paused") setGameStatus("running"); }}><Pause size={14} />{status === "paused" ? "Resume" : "Pause"}</button><button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={reset}><RotateCcw size={14} />Reset</button><button type="button" className="game-control rounded-md border border-[var(--border)] px-3 py-2" onClick={() => jumpRef.current?.()}>Jump</button></div></div>
     </section>
   );
 }

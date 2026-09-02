@@ -548,22 +548,61 @@ html {
   width: 100vw;
   max-width: none !important;
   height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   padding: 0.75rem;
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #06101f;
+  background: #082018;
 }
 
-.game-stage:fullscreen canvas {
+.game-stage:fullscreen canvas,
+.game-stage.is-immersive canvas {
   width: auto;
   max-width: 100%;
   height: auto;
   max-height: 100%;
   object-fit: contain;
+}
+
+.game-stage.is-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  max-width: none !important;
+  height: 100dvh;
+  padding: 0.75rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #082018;
+}
+
+.game-playfield {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.game-stage.is-immersive .game-playfield,
+.game-stage:fullscreen .game-playfield {
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 1.5rem);
+  display: flex;
+  justify-content: center;
+}
+
+.game-stage.is-immersive .game-playfield canvas,
+.game-stage:fullscreen .game-playfield canvas {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 1.5rem);
 }
 
 /* Game surfaces use cabinet-like edge lighting without adding permanent UI
@@ -661,3 +700,197 @@ html {
 .cosmic-powerbar span::after { display: none; }
 .cosmic-ready::before { content: "◈"; color: var(--cosmic-violet); font-size: 1.8rem; text-shadow: 0 0 18px var(--cosmic-violet); }.cosmic-ready { padding-bottom: 1.5rem; }
 @media (max-width: 560px) { .cosmic-game-stage::before { left: .7rem; top: 4.2rem; font-size: .43rem; } }
+
+/* Shared kid-game cabinet: HUD, overlays, and pads that actually hit on phones. */
+.game-card-art {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 7.5rem;
+  padding: 0.85rem 1rem 0;
+  overflow: hidden;
+}
+.game-card-art img {
+  width: 4.75rem;
+  height: 4.75rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,.55);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  background: #1a2438;
+}
+.game-card-glyph {
+  font-size: 3rem;
+  line-height: 1;
+  color: rgba(255,255,255,.82);
+  text-shadow: 0 0 18px currentColor;
+}
+
+.kid-hud {
+  pointer-events: none;
+  position: absolute;
+  z-index: 12;
+  inset: 0 auto auto 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.6rem;
+}
+.kid-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.28rem 0.7rem 0.28rem 0.3rem;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px;
+  background: rgba(10, 18, 16, .72);
+  color: #f7fff8;
+  box-shadow: 0 8px 22px rgba(0,0,0,.28);
+}
+.kid-chip img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid currentColor;
+}
+.kid-chip b, .kid-chip strong {
+  font-size: 0.92rem;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+}
+.kid-chip span {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: .78;
+}
+.kid-hearts { display: flex; gap: 0.28rem; align-items: center; }
+.kid-hearts i {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: #ff6b8a;
+  box-shadow: 0 0 8px #ff6b8a;
+}
+.kid-hearts i.is-empty { opacity: .22; box-shadow: none; }
+
+.kid-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  align-content: safe center;
+  padding: 1rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: linear-gradient(180deg, rgba(8, 22, 18, .55), rgba(8, 18, 28, .82));
+  text-align: center;
+}
+.kid-overlay-card {
+  width: min(100%, 22rem);
+  max-height: 100%;
+  padding: 1.1rem 1rem 1.15rem;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 1.25rem;
+  background: rgba(8, 16, 22, .86);
+  box-shadow: 0 18px 50px rgba(0,0,0,.4);
+}
+.kid-overlay-card h2 {
+  margin: 0.35rem 0 0;
+  color: white;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+}
+.kid-overlay-card p { margin: 0.65rem 0 0; color: #d5e4dc; font-size: 0.92rem; line-height: 1.5; }
+.kid-pick { display: flex; justify-content: center; gap: 0.55rem; margin-top: 1rem; }
+.kid-pick button {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  min-width: 6.4rem;
+  padding: 0.55rem;
+  border-radius: 1rem;
+  border: 2px solid rgba(255,255,255,.22);
+  color: white;
+  background: rgba(255,255,255,.06);
+  font-weight: 800;
+}
+.kid-pick button.is-on { color: #142018; }
+.kid-pick img { width: 4.4rem; height: 4.4rem; border-radius: 999px; object-fit: cover; background: #1a2438; }
+.kid-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 3.15rem;
+  margin-top: 1rem;
+  padding: 0.7rem 1.35rem;
+  border-radius: 999px;
+  border: 0;
+  font-weight: 800;
+  letter-spacing: .04em;
+  cursor: pointer;
+}
+.kid-pads {
+  pointer-events: none;
+  position: absolute;
+  z-index: 14;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem 0.6rem;
+  background: linear-gradient(transparent, rgba(6, 16, 14, .55));
+}
+.kid-pads > div { pointer-events: auto; display: flex; gap: 0.4rem; }
+.kid-pad {
+  display: grid;
+  place-items: center;
+  width: clamp(3.1rem, 18vw, 5.4rem);
+  height: clamp(3.1rem, 18vw, 5.4rem);
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.45);
+  color: white;
+  background: rgba(8, 18, 16, .78);
+  box-shadow: 0 8px 18px rgba(0,0,0,.28);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  touch-action: manipulation;
+}
+.kid-pad span { font-size: 0.58rem; }
+.kid-stage-actions {
+  pointer-events: auto;
+  display: flex;
+  gap: 0.35rem;
+}
+.kid-stage-actions button {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.3);
+  color: white;
+  background: rgba(8, 16, 22, .82);
+}
+
+@media (max-width: 420px) {
+  .kid-chip { padding-right: 0.5rem; }
+  .kid-chip b, .kid-chip strong { font-size: 0.8rem; }
+  .kid-pick button { min-width: 5.4rem; padding: 0.4rem; }
+  .kid-pick img { width: 3.4rem; height: 3.4rem; }
+  .kid-overlay { padding: 0.5rem; }
+  .kid-overlay-card { padding: 0.8rem 0.7rem 0.9rem; }
+  .kid-overlay-card h2 { font-size: 1.35rem; }
+  .kid-pads { padding: 0.3rem 0.4rem 0.45rem; }
+}

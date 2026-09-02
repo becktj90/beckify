@@ -13,17 +13,16 @@ const nonImmersiveStage = (source) => {
 };
 
 const pup = nonImmersiveStage(fs.readFileSync(path.join(gamesDir, 'PupPlanet.tsx'), 'utf8'));
-const hex = nonImmersiveStage(fs.readFileSync(path.join(gamesDir, 'HexGL.tsx'), 'utf8'));
+const glenn = nonImmersiveStage(fs.readFileSync(path.join(gamesDir, 'NewGlennRunner.tsx'), 'utf8'));
 
 assert.match(pup, /\bw-full\b/);
 assert.match(pup, /\bmin-w-0\b/);
 assert.doesNotMatch(pup, /min-h-\[480px\]/, 'Pup Planet min-height + aspect-ratio forced a 640px stage');
 assert.doesNotMatch(pup, /min-h-\[640px\]/);
 
-assert.match(hex, /\bw-full\b/);
-assert.match(hex, /\bmin-w-0\b/);
-assert.doesNotMatch(hex, /min-h-\[480px\]/, 'HexGL min-height + 16/9 aspect forced an 853px stage');
-assert.doesNotMatch(hex, /min-h-\[620px\]/);
+assert.match(glenn, /\bw-full\b/);
+assert.match(glenn, /\bmin-w-0\b/);
+assert.doesNotMatch(glenn, /min-h-\[480px\]/);
 
 assert.match(css, /\.game-stage \{[^}]*min-width:\s*0/s);
 assert.match(css, /\.cosmic-canvas-actions button[^}]*min-width:\s*44px/s);
@@ -33,6 +32,5 @@ assert.doesNotMatch(css, /minmax\(360px,\s*550px\)/);
 
 const widthFromMinHeight = (minHeight, ratioW, ratioH) => minHeight * (ratioW / ratioH);
 assert.ok(widthFromMinHeight(480, 4, 3) === 640, 'documents the old Pup Planet overflow math');
-assert.ok(Math.abs(widthFromMinHeight(480, 16, 9) - 853.333) < 0.01, 'documents the old HexGL overflow math');
 
 console.log('Game-stage mobile overflow guards passed');

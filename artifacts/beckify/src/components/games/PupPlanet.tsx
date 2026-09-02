@@ -4,7 +4,7 @@ import { Maximize2, Minimize2, RefreshCw, Volume2, VolumeX } from "lucide-react"
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
 // First-person WebGL voxel sandbox, starring Apollo and Rocco as playable
-// space-pup astronauts. Chunked storage, seeded terrain, and raycast
+// kids. Chunked storage, seeded terrain, and raycast
 // mine/place follow the architecture of fogleman/Craft (MIT,
 // https://github.com/fogleman/Craft). Original TypeScript + three.js — no
 // Craft source, shaders, textures, or assets are reused.
@@ -44,13 +44,13 @@ const PALETTE: Record<number, { name: string; color: string; top?: number; side?
 
 const HOTBAR: BlockId[] = [BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.SAND, BLOCK.SNOW, BLOCK.WOOD, BLOCK.PLANK, BLOCK.BRICK, BLOCK.GLASS];
 
-// Same astronaut pups and colors already established in Booty Butt Scooter
-// and Toot Troopers — Apollo's teal spacesuit, Rocco's gold one — so picking
-// a pup here feels like the same character, not a reskin special to this game.
+// Same kids and accent colors as Booty Butt Scooter and Toot Troopers —
+// Apollo's orange balloon, Rocco's pink balloon — so picking a rider here
+// feels like the same character, not a reskin special to this game.
 type Character = "apollo" | "rocco";
 const CHARACTERS: Record<Character, { label: string; accent: string; ink: string; portrait: string }> = {
-  apollo: { label: "Apollo", accent: "#6df0df", ink: "#0a0f24", portrait: "games/toot-troopers/apollo.png" },
-  rocco: { label: "Rocco", accent: "#ffcb75", ink: "#0a0f24", portrait: "games/toot-troopers/rocco.png" },
+  apollo: { label: "Apollo", accent: "#ff7a2d", ink: "#1a140c", portrait: "games/kids/apollo.png" },
+  rocco: { label: "Rocco", accent: "#ff5ea8", ink: "#1a140c", portrait: "games/kids/rocco.png" },
 };
 const loadCharacter = (): Character => {
   try {
@@ -725,7 +725,7 @@ export function PupPlanet() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Sandbox / First-person building</p>
           <h1 id="pup-planet-title" className="font-display text-3xl font-bold tracking-tight">Pup Planet</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">Play as Apollo or Rocco, the space pups, mining and building on their own seeded little planet. Made big and simple for iPad.</p>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">Play as Apollo (orange balloon) or Rocco (pink balloon), mining and building on their own seeded little planet. Made big and simple for iPad.</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
           <img src={`${import.meta.env.BASE_URL}${pup.portrait}`} alt="" width={36} height={36} className="h-9 w-9 rounded-full border-2 object-cover" style={{ borderColor: pup.accent }} />
@@ -742,7 +742,7 @@ export function PupPlanet() {
           <span className="absolute left-0 top-1/2 h-px w-4 -translate-y-1/2 bg-white/90" />
         </div>
         <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/35 px-2 py-1 text-[11px] tracking-wide text-white/90">{hint}</p>
-        {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
+        {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
         {touch && started ? (
           <>
             <div ref={stickRef} data-stick className="absolute bottom-3 left-3 z-10 h-24 w-24 rounded-full border-2 border-white/40 bg-black/25 sm:bottom-5 sm:left-5 sm:h-32 sm:w-32" aria-label="Move" />
@@ -755,8 +755,8 @@ export function PupPlanet() {
         {!started ? (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#08203a]/55 p-6 text-center backdrop-blur-[2px]">
             <div className="max-w-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Space-pup sandbox</p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-white">Pick your pup and land!</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Backyard-kid sandbox</p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-white">Pick a kid and land!</h2>
               <div className="pointer-events-auto mt-4 flex justify-center gap-3">
                 {(Object.keys(CHARACTERS) as Character[]).map((id) => (
                   <button
@@ -781,7 +781,7 @@ export function PupPlanet() {
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
         <span aria-live="polite">{hint}</span>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1.5" aria-label="Choose your pup">
+          <div className="flex gap-1.5" aria-label="Choose Apollo or Rocco">
             {(Object.keys(CHARACTERS) as Character[]).map((id) => (
               <button
                 key={id}

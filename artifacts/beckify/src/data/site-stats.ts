@@ -7,4 +7,4 @@
  *  - Games: GAMES in site-content.ts.
  */
 export { PUBLIC_CALCULATOR_COUNT } from "./toolbox-tools.mjs";
-export const PUBLIC_GAME_COUNT = 8;
+export const PUBLIC_GAME_COUNT = 7;

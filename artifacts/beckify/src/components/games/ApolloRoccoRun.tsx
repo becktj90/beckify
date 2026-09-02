@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
+import { KIDS, drawKidPortrait, kidSrc } from "./characterArt";
 import {
   FAR_Z,
   PLAYER_Z,
@@ -48,73 +49,13 @@ const safeBest = () => {
 function project(lane: number, z: number, lift = 0) {
   const depth = Math.max(0, Math.min(1, z / FAR_Z));
   const ease = depth * depth;
-  const horizon = 108;
+  const horizon = 168;
   const ground = HEIGHT - 28;
   const y = horizon + (ground - horizon) * (1 - ease);
   const half = 26 + 198 * (1 - ease);
   const x = WIDTH / 2 + (lane - 1) * (half * 0.72);
   const scale = 0.18 + 0.82 * (1 - ease);
   return { x, y: y - lift * 86 * scale, scale, half };
-}
-
-function drawPup(
-  ctx: CanvasRenderingContext2D,
-  rider: Rider,
-  pose: ReturnType<typeof poseFromTimers>,
-  bob: number,
-  blink: boolean,
-) {
-  const accent = RIDERS[rider].accent;
-  const sliding = pose === "slide";
-  ctx.save();
-  ctx.scale(sliding ? 1.18 : 1, sliding ? 0.62 : 1);
-  ctx.translate(0, sliding ? 18 : 0);
-  ctx.rotate(pose === "jump" ? -0.12 : bob * 0.08);
-  ctx.fillStyle = accent;
-  ctx.shadowColor = accent;
-  ctx.shadowBlur = 18;
-  ctx.beginPath();
-  ctx.ellipse(0, 8, 26, 30, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = rider === "rocco" ? "#ffe7a8" : "#c8fff6";
-  ctx.beginPath();
-  ctx.ellipse(0, -18, 22, 20, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = accent;
-  ctx.beginPath();
-  ctx.ellipse(-18, -30, 8, 14, -0.4, 0, Math.PI * 2);
-  ctx.ellipse(18, -30, 8, 14, 0.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#142038";
-  ctx.beginPath();
-  ctx.ellipse(-8, -20, 4.5, blink ? 1.2 : 5.2, 0, 0, Math.PI * 2);
-  ctx.ellipse(8, -20, 4.5, blink ? 1.2 : 5.2, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#0a1020";
-  ctx.beginPath();
-  ctx.ellipse(0, -12, 4, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#f4fbff";
-  ctx.beginPath();
-  ctx.arc(-7, -22, 1.4, 0, Math.PI * 2);
-  ctx.arc(9, -22, 1.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = accent;
-  ctx.beginPath();
-  ctx.ellipse(24, 10, 10, 6, 0.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#10182c";
-  if (pose === "jump") {
-    ctx.fillRect(-16, 34, 10, 8);
-    ctx.fillRect(6, 34, 10, 8);
-  } else {
-    ctx.fillRect(-18, 32, 12, 10);
-    ctx.fillRect(6, 32, 12, 10);
-  }
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fillRect(-16, -6, 18, 8);
-  ctx.restore();
 }
 
 export function ApolloRoccoRun() {
@@ -138,6 +79,7 @@ export function ApolloRoccoRun() {
   const [sound, setSound] = useState(true);
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
   const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
+  const assetBase = import.meta.env.BASE_URL;
 
   const setGameStatus = (next: GameStatus) => {
     statusRef.current = next;
@@ -178,9 +120,8 @@ export function ApolloRoccoRun() {
       apollo: new Image(),
       rocco: new Image(),
     };
-    const assetBase = import.meta.env.BASE_URL;
-    portraits.apollo.src = `${assetBase}games/toot-troopers/apollo.png`;
-    portraits.rocco.src = `${assetBase}games/toot-troopers/rocco.png`;
+    portraits.apollo.src = kidSrc("apollo", assetBase);
+    portraits.rocco.src = kidSrc("rocco", assetBase);
 
     const tone = (hz: number, seconds: number, volume = 0.03, type: OscillatorType = "triangle") => {
       if (!soundRef.current) return;
@@ -356,39 +297,52 @@ export function ApolloRoccoRun() {
       setScore(runPoints(distance, treats));
     };
 
-    const drawTree = (seed: number, side: -1 | 1, z: number) => {
+    const drawFence = (z: number) => {
+      const point = project(1, z, 0);
+      ctx.fillStyle = "#c4b49a";
+      ctx.fillRect(0, point.y - 46 * point.scale, WIDTH, 8 * point.scale);
+      for (let i = 0; i < 9; i += 1) {
+        const x = 18 + i * 62;
+        ctx.fillStyle = i % 2 ? "#b89a74" : "#d2c0a2";
+        ctx.fillRect(x, point.y - 78 * point.scale, 10 * point.scale, 78 * point.scale);
+      }
+    };
+
+    const drawShrub = (seed: number, side: -1 | 1, z: number) => {
       const point = project(side === -1 ? 0 : 2, z, 0);
-      const x = point.x + side * (point.half + 36 * point.scale);
-      const h = 70 * point.scale;
-      ctx.fillStyle = "#10221c";
-      ctx.fillRect(x - 4 * point.scale, point.y - h, 8 * point.scale, h);
-      ctx.fillStyle = seed % 2 === 0 ? "#1d4a3a" : "#16382e";
+      const x = point.x + side * (point.half + 40 * point.scale);
+      ctx.fillStyle = seed % 2 === 0 ? "#2f7a3c" : "#246433";
       ctx.beginPath();
-      ctx.ellipse(x, point.y - h, 22 * point.scale, 28 * point.scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, point.y - 18 * point.scale, 26 * point.scale, 22 * point.scale, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "rgba(109,240,223,0.18)";
+      ctx.fillStyle = "#86f7a9";
       ctx.beginPath();
-      ctx.arc(x + 6 * point.scale, point.y - h - 4, 6 * point.scale, 0, Math.PI * 2);
+      ctx.arc(x + 8 * point.scale, point.y - 24 * point.scale, 6 * point.scale, 0, Math.PI * 2);
       ctx.fill();
     };
 
     const draw = () => {
       const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-      sky.addColorStop(0, "#0b1230");
-      sky.addColorStop(0.45, "#12203a");
-      sky.addColorStop(1, "#071018");
+      sky.addColorStop(0, "#7ec8ff");
+      sky.addColorStop(0.42, "#b7e4ff");
+      sky.addColorStop(0.62, "#d8f3c9");
+      sky.addColorStop(1, "#6fbf6a");
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-      ctx.fillStyle = "rgba(238,240,250,0.55)";
-      for (let i = 0; i < 42; i += 1) {
-        const x = (i * 97 + elapsed * 8) % WIDTH;
-        const y = 18 + (i * 37) % 120;
-        ctx.fillRect(x, y, i % 5 === 0 ? 2 : 1, i % 5 === 0 ? 2 : 1);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      for (let i = 0; i < 5; i += 1) {
+        const x = (i * 140 + elapsed * 12) % (WIDTH + 80) - 40;
+        const y = 36 + (i * 17) % 48;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 34, 16, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 22, y + 4, 26, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       const near = project(1, PLAYER_Z, 0);
       const far = project(1, FAR_Z, 0);
+      drawFence(FAR_Z - 2);
       ctx.beginPath();
       ctx.moveTo(near.x - near.half, near.y + 18);
       ctx.lineTo(far.x - far.half, far.y);
@@ -396,18 +350,18 @@ export function ApolloRoccoRun() {
       ctx.lineTo(near.x + near.half, near.y + 18);
       ctx.closePath();
       const pathFill = ctx.createLinearGradient(0, far.y, 0, near.y);
-      pathFill.addColorStop(0, "#163028");
-      pathFill.addColorStop(1, "#1f4638");
+      pathFill.addColorStop(0, "#d7b07a");
+      pathFill.addColorStop(1, "#c8944e");
       ctx.fillStyle = pathFill;
       ctx.fill();
-      ctx.strokeStyle = "rgba(109,240,223,0.22)";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       for (const laneIndex of [0.5, 1.5] as const) {
         const a = project(laneIndex, PLAYER_Z, 0);
         const b = project(laneIndex, FAR_Z, 0);
-        ctx.strokeStyle = "rgba(255,255,255,0.16)";
+        ctx.strokeStyle = "rgba(255,255,255,0.45)";
         ctx.setLineDash([14, 16]);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y + 8);
@@ -419,8 +373,8 @@ export function ApolloRoccoRun() {
       const scroll = elapsed * 9;
       for (let i = 0; i < 10; i += 1) {
         const z = ((i * 5 + scroll) % FAR_Z);
-        drawTree(i, -1, z);
-        drawTree(i + 3, 1, z + 1.4);
+        drawShrub(i, -1, z);
+        drawShrub(i + 3, 1, z + 1.4);
       }
 
       const ordered = [...hazards, ...snacks.filter((item) => !item.taken)].sort((a, b) => b.z - a.z);
@@ -432,25 +386,29 @@ export function ApolloRoccoRun() {
           ctx.translate(point.x, point.y);
           ctx.scale(point.scale, point.scale);
           if (item.kind === "low") {
-            ctx.fillStyle = "#6b3e24";
+            ctx.fillStyle = "#2f6fbf";
             ctx.beginPath();
-            ctx.ellipse(0, -4, 30, 12, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, -8, 34, 16, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = "#86f7a9";
-            ctx.fillRect(-20, -12, 16, 5);
+            ctx.fillStyle = "#7ec8ff";
+            ctx.beginPath();
+            ctx.ellipse(0, -16, 22, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#f4d35e";
+            ctx.fillRect(-8, -6, 16, 8);
           } else {
-            ctx.strokeStyle = "#6df0df";
-            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#55c1ff";
+            ctx.lineWidth = 5;
             ctx.beginPath();
-            ctx.moveTo(-18, -70);
-            ctx.quadraticCurveTo(0, -10, 16, 8);
+            ctx.moveTo(-22, -78);
+            ctx.quadraticCurveTo(8, -20, 18, 6);
             ctx.stroke();
-            ctx.fillStyle = "#ffcb75";
+            ctx.fillStyle = "#ff7a2d";
             ctx.beginPath();
-            ctx.arc(16, 8, 7, 0, Math.PI * 2);
+            ctx.arc(18, 8, 9, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = "rgba(109,240,223,0.35)";
-            ctx.fillRect(-26, -78, 52, 10);
+            ctx.fillStyle = "rgba(126, 200, 255, 0.45)";
+            ctx.fillRect(-28, -86, 56, 12);
           }
           ctx.restore();
         } else {
@@ -458,11 +416,11 @@ export function ApolloRoccoRun() {
           ctx.save();
           ctx.translate(point.x, point.y);
           ctx.scale(point.scale, point.scale);
-          ctx.fillStyle = "#ffcb75";
-          ctx.shadowColor = "#ffcb75";
+          ctx.fillStyle = riderRef.current === "rocco" ? "#ff5ea8" : "#ff7a2d";
+          ctx.shadowColor = ctx.fillStyle;
           ctx.shadowBlur = 16;
           ctx.beginPath();
-          ctx.arc(0, 0, 10, 0, Math.PI * 2);
+          ctx.arc(0, 0, 11, 0, Math.PI * 2);
           ctx.fill();
           ctx.restore();
         }
@@ -481,37 +439,19 @@ export function ApolloRoccoRun() {
       ctx.save();
       ctx.translate(player.x, player.y - 18);
       ctx.scale(player.scale * 1.15, player.scale * 1.15);
-      if (iframes > 0 && Math.floor(elapsed * 16) % 2 === 0) ctx.globalAlpha = 0.45;
-      const portrait = portraits[riderRef.current];
-      if (portrait.complete && portrait.naturalWidth > 0 && pose !== "slide") {
-        ctx.save();
-        ctx.translate(0, pose === "jump" ? -8 : Math.sin(bob) * 3);
-        ctx.drawImage(portrait, -42, -58, 84, 84);
-        ctx.restore();
-      } else {
-        drawPup(ctx, riderRef.current, pose, Math.sin(bob), Math.floor(elapsed * 2) % 9 === 0);
-      }
+      const hidden = iframes > 0 && Math.floor(elapsed * 16) % 2 === 0;
+      drawKidPortrait(ctx, portraits[riderRef.current], 0, pose === "jump" ? -10 : Math.sin(bob) * 3, 92, {
+        ring: RIDERS[riderRef.current].accent,
+        squash: pose === "slide" ? 0.62 : 1,
+        alpha: hidden ? 0.45 : 1,
+        tilt: pose === "jump" ? -0.1 : 0,
+      });
       ctx.restore();
 
       if (flash > 0) {
         ctx.fillStyle = `rgba(255,80,110,${flash})`;
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
       }
-
-      ctx.fillStyle = "#eef0fa";
-      ctx.font = "700 16px Space Grotesk, sans-serif";
-      ctx.fillText(`${RIDERS[riderRef.current].label.toUpperCase()}  ${Math.floor(distance).toString().padStart(4, "0")}m`, 18, 28);
-      ctx.fillStyle = "#8fa6c5";
-      ctx.font = "12px JetBrains Mono, monospace";
-      ctx.fillText(`${difficultyRef.current.toUpperCase()} · SNACKS ${treats} · BEST ${bestRef.current}`, 18, 48);
-      ctx.fillStyle = "#ff6b8a";
-      for (let i = 0; i < TUNING[difficultyRef.current].hits; i += 1) {
-        ctx.globalAlpha = i < hitsLeft ? 1 : 0.22;
-        ctx.beginPath();
-        ctx.arc(WIDTH - 22 - i * 18, 24, 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
     };
 
     const frame = (now: number) => {
@@ -550,7 +490,7 @@ export function ApolloRoccoRun() {
       document.removeEventListener("visibilitychange", visibility);
       audio?.close().catch(() => {});
     };
-  }, []);
+  }, [assetBase]);
 
   const overlayAction = () => {
     const intent = playIntent(status);
@@ -581,14 +521,17 @@ export function ApolloRoccoRun() {
     },
   });
 
+  const activeKid = KIDS[rider];
+  const maxHits = TUNING[difficulty].hits;
+
   return (
     <section className="space-y-5" aria-labelledby="apollo-rocco-run-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#6df0df]">Arcade / endless-runner genre</p>
+          <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: activeKid.accent }}>Backyard water-balloon run</p>
           <h1 id="apollo-rocco-run-title" className="font-display text-3xl font-bold">Apollo &amp; Rocco Run</h1>
           <p className="mt-1 max-w-xl text-sm text-[var(--muted)]">
-            Original Beckify game featuring Apollo and Rocco. Keep running the star-moss trail, hop the logs, and slide under the glow-vines.
+            Apollo holds the orange balloon. Rocco brings the pink balloon and water gun. Hop the kiddie pools, slide under the sprinklers, grab snacks.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
@@ -600,56 +543,82 @@ export function ApolloRoccoRun() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#071018] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[540px] rounded-2xl border border-[#2e5d86]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "is-immersive" : "w-full min-w-0 max-w-[540px] rounded-2xl border border-[#7ec8ff]"}`}
       >
+        <div className="game-playfield">
         <canvas
           ref={canvasRef}
           width={WIDTH}
           height={HEIGHT}
           className="block h-auto w-full touch-none select-none"
-          aria-label="Apollo and Rocco Run three-lane endless runner"
+          aria-label="Apollo and Rocco Run three-lane backyard runner"
           onPointerDown={onCanvasPointerDown}
           onPointerUp={endSwipe}
           onPointerCancel={endSwipe}
         />
-        {immersive ? <button type="button" className="absolute right-4 top-4 z-20 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
+        {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
 
-        <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-end px-3">
-          <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-[#06101f]/80 text-white" onClick={() => pauseRef.current()} aria-label={status === "paused" ? "Resume run" : "Pause run"}>{status === "paused" ? <Play size={16} /> : <Pause size={16} />}</button>
-            <button type="button" className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-[#06101f]/80 text-white" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
+        <div className="kid-hud">
+          <div className="kid-chip" style={{ color: activeKid.accent }}>
+            <img src={kidSrc(rider, assetBase)} alt="" width={32} height={32} />
+            <div>
+              <span>{activeKid.label}</span>
+              <strong>{score.toString().padStart(4, "0")}</strong>
+            </div>
+          </div>
+          <div className="kid-chip">
+            <div>
+              <span>{difficulty.toUpperCase()}</span>
+              <div className="kid-hearts" aria-label={`${hits} hearts left`}>
+                {Array.from({ length: maxHits }, (_, index) => <i key={index} className={index < hits ? "" : "is-empty"} />)}
+              </div>
+            </div>
+            <div className="kid-stage-actions">
+              <button type="button" onClick={() => pauseRef.current()} aria-label={status === "paused" ? "Resume run" : "Pause run"}>{status === "paused" ? <Play size={16} /> : <Pause size={16} />}</button>
+              <button type="button" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
+            </div>
           </div>
         </div>
 
         {status !== "running" ? (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#06101f]/78 p-5 text-center backdrop-blur-[2px]" onClick={(event) => { if ((event.target as HTMLElement).closest("button")) return; overlayAction(); }}>
-            <div className="max-w-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6df0df]">
-                {status === "gameover" ? "Trail ended" : status === "paused" ? "Run paused" : "Star-moss trail"}
+          <div className="kid-overlay" onClick={(event) => { if ((event.target as HTMLElement).closest("button")) return; overlayAction(); }}>
+            <div className="kid-overlay-card">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: activeKid.accent }}>
+                {status === "gameover" ? "Splash out" : status === "paused" ? "Timeout" : "Pick a kid"}
               </p>
-              <h2 className="mt-2 font-display text-3xl font-bold text-white">
-                {status === "gameover" ? "Try another lap." : status === "paused" ? "Still on the path." : "Pick a pup."}
+              <h2 className="font-display font-bold">
+                {status === "gameover" ? "Try another lap." : status === "paused" ? "Still on the path." : "Water balloon run."}
               </h2>
-              <p className="mt-3 text-sm leading-6 text-[#b9c8dc]">
+              <p>
                 {status === "gameover"
-                  ? `You ran ${score}. Local best ${best}. This device only.`
+                  ? `You scored ${score}. Local best ${best}. This device only.`
                   : status === "paused"
                     ? "Pause keeps this run. Resume when you are ready."
-                    : "Original Beckify game featuring Apollo and Rocco. KID is the default — wide gaps, slow ramp, four hits."}
+                    : "Apollo is the orange balloon kid. Rocco is the pink balloon / water gun kid. KID is the default — wide gaps, slow ramp, four hits."}
               </p>
               {status !== "paused" ? (
                 <>
-                  <div className="mt-5 flex justify-center gap-2">
-                    <button type="button" className={`game-control rounded-full border px-4 py-2 text-sm font-semibold ${rider === "apollo" ? "border-[#6df0df] bg-[#6df0df] text-[#06101f]" : "border-white/20 text-white"}`} onClick={() => setRider("apollo")}>Apollo</button>
-                    <button type="button" className={`game-control rounded-full border px-4 py-2 text-sm font-semibold ${rider === "rocco" ? "border-[#ffcb75] bg-[#ffcb75] text-[#06101f]" : "border-white/20 text-white"}`} onClick={() => setRider("rocco")}>Rocco</button>
+                  <div className="kid-pick">
+                    {(["apollo", "rocco"] as Rider[]).map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={rider === id ? "is-on" : ""}
+                        style={rider === id ? { borderColor: KIDS[id].accent, background: KIDS[id].accent, color: KIDS[id].ink } : undefined}
+                        onClick={() => setRider(id)}
+                      >
+                        <img src={kidSrc(id, assetBase)} alt="" width={72} height={72} />
+                        {KIDS[id].label}
+                      </button>
+                    ))}
                   </div>
                   <div className="mt-3 flex justify-center gap-2">
-                    <button type="button" className={`game-control rounded-full border px-4 py-2 text-sm font-semibold ${difficulty === "kid" ? "border-[#6df0df] bg-[#6df0df] text-[#06101f]" : "border-white/20 text-white"}`} onClick={() => setDifficulty("kid")}>KID</button>
-                    <button type="button" className={`game-control rounded-full border px-4 py-2 text-sm font-semibold ${difficulty === "cadet" ? "border-[#ffcb75] bg-[#ffcb75] text-[#06101f]" : "border-white/20 text-white"}`} onClick={() => setDifficulty("cadet")}>CADET</button>
+                    <button type="button" className={`game-control rounded-full border px-4 py-2 text-sm font-semibold ${difficulty === "kid" ? "border-[#ff7a2d] bg-[#ff7a2d] text-[#1a140c]" : "border-white/20 text-white"}`} onClick={() => setDifficulty("kid")}>KID</button>
+                    <button type="button" className={`game-control rounded-full border px-4 py-2 text-sm font-semibold ${difficulty === "cadet" ? "border-[#ffcb75] bg-[#ffcb75] text-[#1a140c]" : "border-white/20 text-white"}`} onClick={() => setDifficulty("cadet")}>CADET</button>
                   </div>
                 </>
               ) : null}
-              <button type="button" className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#6df0df] px-5 py-3 text-sm font-semibold text-[#06101f]" onClick={overlayAction}>
+              <button type="button" className="kid-play" style={{ background: activeKid.accent, color: activeKid.ink }} onClick={overlayAction}>
                 <Play size={16} />
                 {status === "paused" ? "Resume" : status === "gameover" ? "Run again" : "Start run"}
               </button>
@@ -662,27 +631,28 @@ export function ApolloRoccoRun() {
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-2 p-2 sm:gap-3 sm:p-3" aria-label="On-canvas runner controls">
-          <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move left" {...hold("left")}>
-              <ArrowLeft size={28} />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Left</span>
+        <div className="kid-pads" aria-label="On-canvas runner controls">
+          <div>
+            <button type="button" className="kid-pad" style={{ borderColor: activeKid.accent }} aria-label="Move left" {...hold("left")}>
+              <ArrowLeft size={26} />
+              <span>Left</span>
             </button>
-            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move right" {...hold("right")}>
-              <ArrowRight size={28} />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Right</span>
-            </button>
-          </div>
-          <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Jump" {...hold("jump")}>
-              <ArrowUp size={28} />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Jump</span>
-            </button>
-            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Slide" {...hold("slide")}>
-              <ArrowDown size={28} />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Slide</span>
+            <button type="button" className="kid-pad" style={{ borderColor: activeKid.accent }} aria-label="Move right" {...hold("right")}>
+              <ArrowRight size={26} />
+              <span>Right</span>
             </button>
           </div>
+          <div>
+            <button type="button" className="kid-pad" style={{ borderColor: "#ffcb75" }} aria-label="Jump" {...hold("jump")}>
+              <ArrowUp size={26} />
+              <span>Jump</span>
+            </button>
+            <button type="button" className="kid-pad" style={{ borderColor: "#ffcb75" }} aria-label="Slide" {...hold("slide")}>
+              <ArrowDown size={26} />
+              <span>Slide</span>
+            </button>
+          </div>
+        </div>
         </div>
       </div>
 
