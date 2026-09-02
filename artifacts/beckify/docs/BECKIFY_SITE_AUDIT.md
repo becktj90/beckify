@@ -468,6 +468,24 @@ All five P0 findings are fixed and verified. Stage 1 is complete.
 Remaining P1 items (homepage value proposition, P2/P3 backlog) are listed
 above under Prioritised findings and not yet started.
 
+### Merged and deployed
+
+All of Stage 1 (P0) and Stage 2 (P1) above merged to `main` (`0ecbe1f`) and
+deployed via GitHub Actions run
+[#112](https://github.com/becktj90/beckify/actions/runs/33577585149) (build
+succeeded through Test on the first real run of the new CI gate) —
+**caught a real, previously-invisible bug**: `node --test "./tests/*.test.cjs"`
+relies on Node's own glob resolution for the quoted pattern, which resolved
+fine on this session's Node 22 but matched zero files on the CI runner's
+pinned Node 20.20.2, since nothing had ever actually run `npm test` in CI
+before this gate existed. Fixed in `dafcdd2` by dropping the quotes so bash
+expands the glob before Node ever sees it — portable across Node versions
+by construction, no longer dependent on Node's own glob-handling version.
+Redeployed via run
+[#113](https://github.com/becktj90/beckify/actions/runs/33577857128),
+succeeded. Verified live: `curl https://beckify.com/` serves the corrected
+viewport meta (no `maximum-scale=1`).
+
 ## Deferred improvements
 
 - Restyling the Windows 95 panel-tool skin — flagged for the author's decision
