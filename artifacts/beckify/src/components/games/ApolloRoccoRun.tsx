@@ -543,8 +543,9 @@ export function ApolloRoccoRun() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[540px] rounded-2xl border border-[#7ec8ff]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "is-immersive" : "w-full min-w-0 max-w-[540px] rounded-2xl border border-[#7ec8ff]"}`}
       >
+        <div className="game-playfield">
         <canvas
           ref={canvasRef}
           width={WIDTH}
@@ -651,6 +652,7 @@ export function ApolloRoccoRun() {
               <span>Slide</span>
             </button>
           </div>
+        </div>
         </div>
       </div>
 

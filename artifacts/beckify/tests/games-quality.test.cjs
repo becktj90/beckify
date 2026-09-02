@@ -61,5 +61,7 @@ assert.match(gameSources, /games\/kids\/apollo\.png/);
 assert.match(gameSources, /games\/kids\/rocco\.png/);
 assert.doesNotMatch(gameSources, /temple run/i);
 assert.doesNotMatch(gameSources, /imangi/i);
+assert.match(fs.readFileSync(path.join(gamesDir, 'ApolloRoccoRun.tsx'), 'utf8'), /game-playfield/);
+assert.match(fs.readFileSync(path.join(root, 'src/index.css'), 'utf8'), /\.game-stage\.is-immersive/);
 
 console.log('HexGL removal and kid portrait helpers passed');

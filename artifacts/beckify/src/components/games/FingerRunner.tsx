@@ -250,7 +250,8 @@ export function FingerRunner() {
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
         </div>
       </div>
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[640px] rounded-2xl border border-[#7ec8ff]"}`}>
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "is-immersive" : "w-full min-w-0 max-w-[640px] rounded-2xl border border-[#7ec8ff]"}`}>
+        <div className="game-playfield">
         <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="block h-auto w-full touch-none" aria-label="Finger Runner endless runner" />
         {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
         <div className="kid-hud">
@@ -273,6 +274,7 @@ export function FingerRunner() {
             </div>
           </div>
         ) : null}
+        </div>
       </div>
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]"><span aria-live="polite">Distance {score} · Best {best}</span><div className="flex gap-2" aria-label="Runner controls"><button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={() => { if (status === "running") setGameStatus("paused"); else if (status === "paused") setGameStatus("running"); }}><Pause size={14} />{status === "paused" ? "Resume" : "Pause"}</button><button type="button" className="game-control inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2" onClick={reset}><RotateCcw size={14} />Reset</button><button type="button" className="game-control rounded-md border border-[var(--border)] px-3 py-2" onClick={() => jumpRef.current?.()}>Jump</button></div></div>
     </section>

@@ -119,7 +119,7 @@ export function TootTroopers() {
     };
     const reset = (running: boolean) => {
       y = H / 2;
-      velocity = 0;
+      velocity = running ? -7.1 : 0;
       elapsed = 0;
       scoreValue = 0;
       gates = [{ x: W + 80, gapY: 250, scored: false }, { x: W + 330, gapY: 390, scored: false }];
@@ -251,7 +251,8 @@ export function TootTroopers() {
           <button type="button" className="game-control rounded-md border border-[var(--border)] p-2" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
         </div>
       </div>
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none p-3" : "w-full min-w-0 max-w-[480px] rounded-2xl border border-[#7ec8ff]"}`}>
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] ${immersive ? "is-immersive" : "w-full min-w-0 max-w-[480px] rounded-2xl border border-[#7ec8ff]"}`}>
+        <div className="game-playfield">
         <canvas ref={canvasRef} width={W} height={H} className="block h-auto w-full touch-none" aria-label="Toot Troopers fart-powered side-scrolling game" />
         {immersive && <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#11133d] p-3 text-white" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={16} /></button>}
         <div className="kid-hud">
@@ -288,6 +289,7 @@ export function TootTroopers() {
             </div>
           </div>
         )}
+        </div>
       </div>
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-sm">
         <span aria-live="polite">Toots {score} · Local best {best}</span>

@@ -735,8 +735,9 @@ export function BootyButtScooter() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[960px] rounded-3xl border border-[#7ec8ff]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#7ec8ff] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "is-immersive" : "w-full min-w-0 max-w-[960px] rounded-3xl border border-[#7ec8ff]"}`}
       >
+        <div className="game-playfield">
         <canvas
           ref={canvasRef}
           width={WIDTH}
@@ -823,6 +824,7 @@ export function BootyButtScooter() {
             </div>
           </div>
         ) : null}
+        </div>
       </div>
 
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">

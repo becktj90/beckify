@@ -548,22 +548,61 @@ html {
   width: 100vw;
   max-width: none !important;
   height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   padding: 0.75rem;
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #06101f;
+  background: #082018;
 }
 
-.game-stage:fullscreen canvas {
+.game-stage:fullscreen canvas,
+.game-stage.is-immersive canvas {
   width: auto;
   max-width: 100%;
   height: auto;
   max-height: 100%;
   object-fit: contain;
+}
+
+.game-stage.is-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  max-width: none !important;
+  height: 100dvh;
+  padding: 0.75rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #082018;
+}
+
+.game-playfield {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.game-stage.is-immersive .game-playfield,
+.game-stage:fullscreen .game-playfield {
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 1.5rem);
+  display: flex;
+  justify-content: center;
+}
+
+.game-stage.is-immersive .game-playfield canvas,
+.game-stage:fullscreen .game-playfield canvas {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 1.5rem);
 }
 
 /* Game surfaces use cabinet-like edge lighting without adding permanent UI
