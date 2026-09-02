@@ -11,6 +11,7 @@ final class MagnetometerModel: ObservableObject {
     @Published var magnitude = 0.0
     @Published var heading = 0.0
     @Published var available = false
+    @Published var hasReading = false
     @Published var status = "Waiting for magnetometer…"
 
     private let motion = CMMotionManager()
@@ -45,6 +46,7 @@ final class MagnetometerModel: ObservableObject {
             } else {
                 self.heading = MagneticMath.headingDegrees(x: f.x, y: f.y)
             }
+            self.hasReading = true
             self.status = "CMDeviceMotion magnetic field (µT), heading vs magnetic north"
         }
     }
@@ -57,35 +59,45 @@ final class MagnetometerModel: ObservableObject {
 struct MagnetometerView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = MagnetometerModel()
-    @State private var jobName = "Magnetic field"
+    @StoredInput(.magnetometer, "jobName", default: "Magnetic field") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "|B| = √(x² + y² + z²) µT    heading from xMagneticNorthZVertical",
-                    citation: "Earth’s field is roughly 25–65 µT. This is not a survey compass or EMI probe."
-                )
-                ResultCard(title: "Field") {
-                    ResultRow(label: "Magnitude", value: Format.microtesla(model.magnitude), emphasis: true, tone: Theme.good)
-                    ResultRow(label: "Gauss", value: "\(Format.number(MagneticMath.gauss(fromMicrotesla: model.magnitude), digits: 3)) G")
-                    ResultRow(label: "Heading", value: Format.degrees(model.heading), emphasis: true)
-                    ResultRow(label: "Bx", value: Format.microtesla(model.x))
-                    ResultRow(label: "By", value: Format.microtesla(model.y))
-                    ResultRow(label: "Bz", value: Format.microtesla(model.z))
-                    ResultRow(label: "Source", value: model.status)
-                }
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
-                SensorDisclaimer(extra: "Homework: compare |B| outdoors vs near a transformer, and note it is the phone’s magnetometer, not a lab probe.")
+        ToolScaffold(
+            toolID: .magnetometer,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: "Homework: compare |B| outdoors vs near a transformer, and note it is the phone’s magnetometer, not a lab probe.")
+        ) {
+            ShowWorkCard(
+                toolID: .magnetometer,
+                symbolic: "|B| = √(x² + y² + z²) µT    heading from xMagneticNorthZVertical",
+                substituted: sticky,
+                meaning: "Earth’s field is roughly 25–65 µT. This is not a survey compass or EMI probe."
+            )
+            if !model.available {
+                ToolEmptyState(title: "No magnetometer", detail: model.status, systemImage: "location.north.circle")
             }
-            .padding(20)
+            ResultCard(title: "Field", copyText: copyText) {
+                ResultRow(label: "Magnitude", value: Format.microtesla(model.magnitude), emphasis: true, tone: Theme.good)
+                ResultRow(label: "Gauss", value: "\(Format.number(MagneticMath.gauss(fromMicrotesla: model.magnitude), digits: 3)) G")
+                ResultRow(label: "Heading", value: Format.degrees(model.heading), emphasis: true)
+                ResultRow(label: "Bx", value: Format.microtesla(model.x))
+                ResultRow(label: "By", value: Format.microtesla(model.y))
+                ResultRow(label: "Bz", value: Format.microtesla(model.z))
+                ResultRow(label: "Source", value: model.status)
+            }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
-        .navigationTitle("Magnetometer")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
+
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return "\(Format.microtesla(model.magnitude))  ·  \(Format.degrees(model.heading))"
+    }
+    private var copyText: String? { sticky }
 
     private func save() {
         jobs.save(SavedJob(

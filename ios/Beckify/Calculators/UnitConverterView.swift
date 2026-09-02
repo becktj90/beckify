@@ -57,79 +57,77 @@ struct UnitConverterView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @State private var category: Category = .si
-    @State private var siKind: SIKind = .volts
-    @State private var fromP: SIPrefix = .kilo
-    @State private var toP: SIPrefix = .none
-    @State private var value = "4.7"
-    @State private var dbKind: DBKind = .voltage
-    @State private var dbModeRatio = true
-    @State private var tempDir: TempDir = .cToF
-    @State private var lengthDir: LengthDir = .ftToM
-    @State private var jobName = "Unit convert"
+    @StoredChoice(.unitConverter, "category", default: .si) private var category
+    @StoredChoice(.unitConverter, "siKind", default: .volts) private var siKind
+    @StoredChoice(.unitConverter, "fromP", default: .kilo) private var fromP
+    @StoredChoice(.unitConverter, "toP", default: SIPrefix.none) private var toP
+    @StoredInput(.unitConverter, "value", default: "4.7") private var value
+    @StoredChoice(.unitConverter, "dbKind", default: .voltage) private var dbKind
+    @StoredToggle(.unitConverter, "dbModeRatio", default: true) private var dbModeRatio
+    @StoredChoice(.unitConverter, "tempDir", default: .cToF) private var tempDir
+    @StoredChoice(.unitConverter, "lengthDir", default: .ftToM) private var lengthDir
+    @StoredInput(.unitConverter, "jobName", default: "Unit convert") private var jobName
 
     var resultText: Result<String, CalcError> {
-        do {
+        CalcCatch.run {
             switch category {
             case .si:
                 let out = try UnitConvert.si(value: value.parsedDouble ?? .nan, from: fromP, to: toP)
-                return .success("\(Format.number(out, digits: 6)) \(toP.rawValue)\(siKind.rawValue)")
+                return "\(Format.number(out, digits: 6)) \(toP.rawValue)\(siKind.rawValue)"
             case .db:
                 let x = value.parsedDouble ?? .nan
                 if dbModeRatio {
                     let db = dbKind == .voltage ? try UnitConvert.voltageDB(ratio: x) : try UnitConvert.powerDB(ratio: x)
-                    return .success("\(Format.number(db, digits: 4)) dB")
+                    return "\(Format.number(db, digits: 4)) dB"
                 }
                 let ratio = dbKind == .voltage ? try UnitConvert.voltageRatio(fromDB: x) : try UnitConvert.powerRatio(fromDB: x)
-                return .success("ratio \(Format.number(ratio, digits: 6))")
+                return "ratio \(Format.number(ratio, digits: 6))"
             case .temp:
                 let x = value.parsedDouble ?? .nan
                 switch tempDir {
                 case .cToF:
-                    return .success("\(Format.number(try UnitConvert.fahrenheit(fromCelsius: x), digits: 3)) °F")
+                    return "\(Format.number(try UnitConvert.fahrenheit(fromCelsius: x), digits: 3)) °F"
                 case .fToC:
-                    return .success("\(Format.number(try UnitConvert.celsius(fromFahrenheit: x), digits: 3)) °C")
+                    return "\(Format.number(try UnitConvert.celsius(fromFahrenheit: x), digits: 3)) °C"
                 }
             case .length:
                 let x = value.parsedDouble ?? .nan
                 switch lengthDir {
-                case .ftToM: return .success("\(Format.number(try UnitConvert.meters(fromFeet: x), digits: 4)) m")
-                case .mToFt: return .success("\(Format.number(try UnitConvert.feet(fromMeters: x), digits: 4)) ft")
-                case .milToMm: return .success("\(Format.number(try UnitConvert.mm(fromMils: x), digits: 4)) mm")
-                case .mmToMil: return .success("\(Format.number(try UnitConvert.mils(fromMM: x), digits: 4)) mil")
+                case .ftToM: return "\(Format.number(try UnitConvert.meters(fromFeet: x), digits: 4)) m"
+                case .mToFt: return "\(Format.number(try UnitConvert.feet(fromMeters: x), digits: 4)) ft"
+                case .milToMm: return "\(Format.number(try UnitConvert.mm(fromMils: x), digits: 4)) mm"
+                case .mmToMil: return "\(Format.number(try UnitConvert.mils(fromMM: x), digits: 4)) mil"
                 }
             }
-        } catch let error as CalcError {
-            return .failure(error)
-        } catch {
-            return .failure(.missing("value"))
         }
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(text: formula, citation: "Homework conversions. dB uses 20 log10 for voltage/current ratios and 10 log10 for power.")
-                Picker("Category", selection: $category) {
-                    ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                categoryFields
-                switch resultText {
-                case .success(let text):
-                    ResultCard {
-                        ResultRow(label: "Result", value: text, emphasis: true, tone: Theme.good)
-                    }
-                    SaveJobBar(jobName: $jobName, canSave: true) { save(text) }
-                case .failure(let err):
-                    ErrorText(message: err.message)
-                }
-                DisclaimerBanner()
+        ToolScaffold(toolID: .unitConverter, stickyAnswer: sticky, copyText: copyText) {
+            ShowWorkCard(
+                toolID: .unitConverter,
+                symbolic: formula,
+                substituted: substituted,
+                meaning: "Homework conversions. dB uses 20 log10 for voltage/current ratios and 10 log10 for power."
+            )
+            TryExampleButton(title: exampleTitle) {
+                applyExample()
             }
-            .padding(20)
+            Picker("Category", selection: $category) {
+                ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            categoryFields
+            switch resultText {
+            case .success(let text):
+                ResultCard(copyText: text) {
+                    ResultRow(label: "Result", value: text, emphasis: true, tone: Theme.good)
+                }
+                SaveJobBar(jobName: $jobName, canSave: true) { save(text) }
+            case .failure(let err):
+                ErrorText(message: err.message)
+            }
         }
-        .navigationTitle("Unit Converter")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var formula: String {
@@ -138,6 +136,47 @@ struct UnitConverterView: View {
         case .db: return dbKind == .voltage ? "dB = 20 log₁₀(V₂/V₁)" : "dB = 10 log₁₀(P₂/P₁)"
         case .temp: return "°F = °C × 9/5 + 32"
         case .length: return "1 ft = 0.3048 m    1 mil = 0.0254 mm"
+        }
+    }
+
+    private var substituted: String? {
+        guard case .success(let text) = resultText else { return nil }
+        return "\(value)  →  \(text)"
+    }
+
+    private var sticky: String? {
+        guard case .success(let text) = resultText else { return nil }
+        return text
+    }
+
+    private var copyText: String? { sticky }
+
+    private var exampleTitle: String {
+        switch category {
+        case .si: return "4.7 kV → V"
+        case .db: return "Voltage ratio 2 → dB"
+        case .temp: return "20 °C → °F"
+        case .length: return "10 ft → m"
+        }
+    }
+
+    private func applyExample() {
+        switch category {
+        case .si:
+            siKind = .volts
+            fromP = .kilo
+            toP = SIPrefix.none
+            value = "4.7"
+        case .db:
+            dbKind = .voltage
+            dbModeRatio = true
+            value = "2"
+        case .temp:
+            tempDir = .cToF
+            value = "20"
+        case .length:
+            lengthDir = .ftToM
+            value = "10"
         }
     }
 
@@ -150,8 +189,8 @@ struct UnitConverterView: View {
             }
             .pickerStyle(.segmented)
             NumberField(title: "Value", unit: fromP.rawValue + siKind.rawValue, text: $value, allowsScientific: true)
-            prefixPicker("From", selection: $fromP)
-            prefixPicker("To", selection: $toP)
+            MenuField(title: "From", selection: $fromP, options: Array(SIPrefix.allCases)) { $0.label }
+            MenuField(title: "To", selection: $toP, options: Array(SIPrefix.allCases)) { $0.label }
         case .db:
             Picker("Kind", selection: $dbKind) {
                 ForEach(DBKind.allCases) { Text($0.rawValue).tag($0) }
@@ -175,22 +214,6 @@ struct UnitConverterView: View {
             }
             .pickerStyle(.segmented)
             NumberField(title: "Length", unit: lengthDir.unit, text: $value)
-        }
-    }
-
-    private func prefixPicker(_ title: String, selection: Binding<SIPrefix>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .tracking(0.6)
-                .foregroundStyle(Theme.muted)
-            Picker(title, selection: selection) {
-                ForEach(SIPrefix.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.menu)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 

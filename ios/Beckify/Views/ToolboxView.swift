@@ -76,6 +76,9 @@ struct ToolboxView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .environment(\.openRelatedTool, { id in
+            selected = id
+        })
     }
 
     private var calcs: [ToolDefinition] { filtered.filter { $0.kind == .calculator } }
@@ -104,6 +107,9 @@ struct ToolRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tool.title)
+        .accessibilityHint(tool.subtitle)
     }
 }
 
@@ -140,6 +146,5 @@ struct CalculatorHostView: View {
             case .deviceHealth: DeviceHealthView()
             }
         }
-        .background(Theme.background.ignoresSafeArea())
     }
 }

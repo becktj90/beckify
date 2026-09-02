@@ -42,6 +42,8 @@ iOS does **not** give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool sh
 
 Named **Saved Jobs** are lightweight on-device notes (homework or field snapshots of calculator inputs/results or sensor numbers the user chooses to save). They use Apple’s `UserDefaults`. They are not a project gallery and are not uploaded. Deleting the app removes them, subject to the user’s device backup settings.
 
+Last-used calculator and sensor form values (the numbers and picker choices in each tool) also stay in on-device `UserDefaults` so a tool reopens where you left it. They are not uploaded and are not a projects product.
+
 ## Children’s privacy
 
 The app is rated 4+ and does not collect data from anyone, including children.

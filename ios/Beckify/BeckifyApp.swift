@@ -8,7 +8,6 @@ struct BeckifyApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(jobs)
-                .preferredColorScheme(.dark)
         }
     }
 }

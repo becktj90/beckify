@@ -24,6 +24,9 @@ struct SettingsLinkButton: View {
         }
         .buttonStyle(.bordered)
         .tint(Theme.accent)
+        .frame(minHeight: Theme.touchTarget)
+        .accessibilityLabel("Open Settings")
+        .accessibilityHint("Opens iOS Settings so you can allow this tool’s permission.")
     }
 }
 

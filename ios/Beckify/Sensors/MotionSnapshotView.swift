@@ -16,6 +16,7 @@ final class MotionSnapshotModel: ObservableObject {
     @Published var uz = 0.0
     @Published var peakUserG = 0.0
     @Published var available = false
+    @Published var hasReading = false
     @Published var status = "Waiting for device motion…"
 
     private let motion = CMMotionManager()
@@ -45,6 +46,7 @@ final class MotionSnapshotModel: ObservableObject {
             self.userG = MotionMath.magnitudeG(x: u.x, y: u.y, z: u.z)
             self.totalG = MotionMath.magnitudeG(x: g.x + u.x, y: g.y + u.y, z: g.z + u.z)
             self.peakUserG = max(self.peakUserG, self.userG)
+            self.hasReading = true
             self.status = "CoreMotion device motion"
         }
     }
@@ -61,37 +63,48 @@ final class MotionSnapshotModel: ObservableObject {
 struct MotionSnapshotView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = MotionSnapshotModel()
-    @State private var jobName = "g-force snapshot"
+    @StoredInput(.motionSnapshot, "jobName", default: "g-force snapshot") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "|a| = √(x² + y² + z²)    1 g = 9.80665 m/s²",
-                    citation: "User acceleration is motion with gravity removed. Peak hold is a snapshot, not a vibration logger."
-                )
-                ResultCard(title: "Acceleration") {
-                    ResultRow(label: "|gravity|", value: "\(Format.number(model.gravityG, digits: 3)) g", emphasis: true)
-                    ResultRow(label: "|user|", value: "\(Format.number(model.userG, digits: 3)) g", emphasis: true, tone: Theme.warn)
-                    ResultRow(label: "|total|", value: "\(Format.number(model.totalG, digits: 3)) g")
-                    ResultRow(label: "Peak |user|", value: "\(Format.number(model.peakUserG, digits: 3)) g")
-                    ResultRow(label: "|user| m/s²", value: "\(Format.number(MotionMath.metersPerSecondSquared(fromG: model.userG), digits: 2)) m/s²")
-                    ResultRow(label: "Source", value: model.status)
-                }
-                Button("Reset peak") { model.resetPeak() }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.accent)
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
-                SensorDisclaimer()
+        ToolScaffold(
+            toolID: .motionSnapshot,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: nil)
+        ) {
+            ShowWorkCard(
+                toolID: .motionSnapshot,
+                symbolic: "|a| = √(x² + y² + z²)    1 g = 9.80665 m/s²",
+                substituted: sticky,
+                meaning: "User acceleration is motion with gravity removed. Peak hold is a snapshot, not a vibration logger."
+            )
+            if !model.available {
+                ToolEmptyState(title: "No device motion", detail: model.status, systemImage: "gyroscope")
             }
-            .padding(20)
+            ResultCard(title: "Acceleration", copyText: copyText) {
+                ResultRow(label: "|gravity|", value: "\(Format.number(model.gravityG, digits: 3)) g", emphasis: true)
+                ResultRow(label: "|user|", value: "\(Format.number(model.userG, digits: 3)) g", emphasis: true, tone: Theme.warn)
+                ResultRow(label: "|total|", value: "\(Format.number(model.totalG, digits: 3)) g")
+                ResultRow(label: "Peak |user|", value: "\(Format.number(model.peakUserG, digits: 3)) g")
+                ResultRow(label: "|user| m/s²", value: "\(Format.number(MotionMath.metersPerSecondSquared(fromG: model.userG), digits: 2)) m/s²")
+                ResultRow(label: "Source", value: model.status)
+            }
+            Button("Reset peak") { model.resetPeak() }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
-        .navigationTitle("g-Force Snapshot")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
+
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return "user \(Format.number(model.userG, digits: 3)) g  ·  peak \(Format.number(model.peakUserG, digits: 3)) g"
+    }
+    private var copyText: String? { sticky }
 
     private func save() {
         jobs.save(SavedJob(

@@ -493,3 +493,33 @@ final class HomeworkMathTests: XCTestCase {
         XCTAssertThrowsError(try LEDResistor.size(supply: 2, forward: 2, current: 0.01))
     }
 }
+
+final class CalcErrorCopyTests: XCTestCase {
+    func testMissingSaysHowToFix() {
+        XCTAssertEqual(
+            CalcError.missing("Vin").message,
+            "Need Vin. Type a number — this tool will not guess a blank."
+        )
+    }
+
+    func testNonPositiveSaysHowToFix() {
+        XCTAssertEqual(
+            CalcError.nonPositive("Current").message,
+            "Current must be greater than zero. Zero, negatives, and empty are not usable here."
+        )
+    }
+
+    func testNeedTwoOfThreeTellsYouToLeaveTheUnknownBlank() {
+        XCTAssertEqual(
+            CalcError.needTwoOfThree.message,
+            "Enter any two of voltage, current, or resistance. Leave the one you want solved blank."
+        )
+    }
+
+    func testOutOfRangeKeepsTheStoredDetail() {
+        XCTAssertEqual(
+            CalcError.outOfRange("Conductor quantity must be a whole number.").message,
+            "Conductor quantity must be a whole number."
+        )
+    }
+}

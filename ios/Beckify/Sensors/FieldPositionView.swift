@@ -97,48 +97,74 @@ final class FieldPositionModel: NSObject, ObservableObject, CLLocationManagerDel
 struct FieldPositionView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = FieldPositionModel()
-    @State private var jobName = "Position snapshot"
+    @StoredInput(.fieldPosition, "jobName", default: "Position snapshot") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "d = 2R atan2(sqrt(a), sqrt(1-a))    haversine, R = 6371 km",
-                    citation: "Location is requested when this tool opens, not at app launch. Homework distance uses two saved points."
+        ToolScaffold(
+            toolID: .fieldPosition,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: "Saving stores the numbers you see, not a track log.")
+        ) {
+            ShowWorkCard(
+                toolID: .fieldPosition,
+                symbolic: "d = 2R atan2(sqrt(a), sqrt(1-a))    haversine, R = 6371 km",
+                substituted: distanceWork,
+                meaning: "Location is requested when this tool opens, not at app launch. Homework distance uses two saved points on this device."
+            )
+            if model.denied {
+                ToolEmptyState(
+                    title: "Location is off",
+                    detail: "Coordinates stay hidden until When In Use location is allowed. Nothing is uploaded.",
+                    systemImage: "location.slash",
+                    showsSettings: true
                 )
-                ResultCard(title: "Fix") {
-                    ResultRow(label: "Latitude", value: model.latitude.map { formatCoordinate($0) } ?? "—", emphasis: true)
-                    ResultRow(label: "Longitude", value: model.longitude.map { formatCoordinate($0) } ?? "—", emphasis: true)
-                    ResultRow(label: "Altitude", value: model.altitude.map { Format.meters($0) } ?? "—")
-                    ResultRow(label: "Speed", value: speedText)
-                    ResultRow(label: "H. accuracy", value: model.accuracy.map { Format.meters($0) } ?? "—")
-                    ResultRow(label: "Status", value: model.status)
-                }
-                if model.denied { SettingsLinkButton() }
-                HStack {
-                    Button("Mark A") { model.markA() }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.accent)
-                    Button("Mark B") { model.markB() }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.accent2)
-                }
-                ResultCard(title: "A → B") {
-                    ResultRow(label: "Point A", value: pointText(model.pointA))
-                    ResultRow(label: "Point B", value: pointText(model.pointB))
-                    ResultRow(label: "Distance", value: model.distanceMeters.map { Format.meters($0) } ?? "—", emphasis: true, tone: Theme.good)
-                    ResultRow(label: "Bearing", value: model.bearingDegrees.map { Format.degrees($0) } ?? "—")
-                }
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.latitude != nil) { save() }
-                SensorDisclaimer(extra: "Saving stores the numbers you see, not a track log.")
             }
-            .padding(20)
+            ResultCard(title: "Fix", copyText: copyText) {
+                ResultRow(label: "Latitude", value: model.latitude.map { formatCoordinate($0) } ?? "—", emphasis: true)
+                ResultRow(label: "Longitude", value: model.longitude.map { formatCoordinate($0) } ?? "—", emphasis: true)
+                ResultRow(label: "Altitude", value: model.altitude.map { Format.meters($0) } ?? "—")
+                ResultRow(label: "Speed", value: speedText)
+                ResultRow(label: "H. accuracy", value: model.accuracy.map { Format.meters($0) } ?? "—")
+                ResultRow(label: "Status", value: model.status)
+            }
+            ThumbButtonRow {
+                Button("Mark A") { model.markA() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
+                    .frame(minHeight: Theme.touchTarget)
+                    .accessibilityLabel("Mark point A")
+                Button("Mark B") { model.markB() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent2)
+                    .frame(minHeight: Theme.touchTarget)
+                    .accessibilityLabel("Mark point B")
+            }
+            ResultCard(title: "A → B") {
+                ResultRow(label: "Point A", value: pointText(model.pointA))
+                ResultRow(label: "Point B", value: pointText(model.pointB))
+                ResultRow(label: "Distance", value: model.distanceMeters.map { Format.meters($0) } ?? "—", emphasis: true, tone: Theme.good)
+                ResultRow(label: "Bearing", value: model.bearingDegrees.map { Format.degrees($0) } ?? "—")
+            }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.latitude != nil) { save() }
         }
-        .navigationTitle("Position")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+    }
+
+    private var sticky: String? {
+        guard let lat = model.latitude, let lon = model.longitude else { return nil }
+        return "\(formatCoordinate(lat)), \(formatCoordinate(lon))"
+    }
+
+    private var copyText: String? { sticky }
+
+    private var distanceWork: String? {
+        guard let d = model.distanceMeters else {
+            return "Mark A and B to plug two points into the haversine."
+        }
+        return "A → B = \(Format.meters(d))"
     }
 
     private var speedText: String {

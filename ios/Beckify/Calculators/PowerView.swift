@@ -12,72 +12,130 @@ struct PowerView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @State private var mode: Mode = .ac3
-    @State private var v = "480"
-    @State private var i = "66.8"
-    @State private var r = "10"
-    @State private var pf = "90"
-    @State private var jobName = "AC Power"
+    @StoredChoice(.power, "mode", default: .ac3) private var mode
+    @StoredInput(.power, "v", default: "480") private var v
+    @StoredInput(.power, "i", default: "66.8") private var i
+    @StoredInput(.power, "r", default: "10") private var r
+    @StoredInput(.power, "pf", default: "90") private var pf
+    @StoredInput(.power, "jobName", default: "AC Power") private var jobName
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Picker("Mode", selection: $mode) {
-                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-
-                switch mode {
-                case .dcVI:
-                    FormulaCard(text: "P = V × I")
-                    NumberField(title: "Voltage", unit: "V", text: $v)
-                    NumberField(title: "Current", unit: "A", text: $i)
-                    dcResult { try DCPower.fromVI(voltage: $0, current: $1) }
-                case .dcIR:
-                    FormulaCard(text: "P = I² × R")
-                    NumberField(title: "Current", unit: "A", text: $i)
-                    NumberField(title: "Resistance", unit: "Ω", text: $r)
-                    dcFrom { try DCPower.fromIR(current: i.parsedDouble ?? .nan, resistance: r.parsedDouble ?? .nan) }
-                case .dcVR:
-                    FormulaCard(text: "P = V² / R")
-                    NumberField(title: "Voltage", unit: "V", text: $v)
-                    NumberField(title: "Resistance", unit: "Ω", text: $r)
-                    dcFrom { try DCPower.fromVR(voltage: v.parsedDouble ?? .nan, resistance: r.parsedDouble ?? .nan) }
-                case .ac1, .ac3:
-                    FormulaCard(
-                        text: mode == .ac3 ? "kVA = √3 × V_L-L × I_L / 1000\nkW = kVA × PF" : "kVA = V × I / 1000\nkW = kVA × PF",
-                        citation: mode == .ac3 ? "Three-phase voltage is line-to-line." : "Single-phase."
-                    )
-                    NumberField(title: "Voltage", unit: "V", text: $v)
-                    NumberField(title: "Current", unit: "A", text: $i)
-                    NumberField(title: "Power factor", unit: "%", text: $pf)
-                    acResult
-                }
-                DisclaimerBanner()
+        ToolScaffold(toolID: .power, stickyAnswer: sticky, copyText: copyText) {
+            ShowWorkCard(
+                toolID: .power,
+                symbolic: symbolic,
+                substituted: substituted,
+                meaning: meaning
+            )
+            TryExampleButton(title: "480 V 3Ø, 66.8 A, PF 90%") {
+                mode = .ac3
+                v = "480"
+                i = "66.8"
+                pf = "90"
             }
-            .padding(20)
+            MenuField(title: "Mode", selection: $mode, options: Mode.allCases) { $0.rawValue }
+            switch mode {
+            case .dcVI:
+                NumberField(title: "Voltage", unit: "V", text: $v)
+                NumberField(title: "Current", unit: "A", text: $i)
+                dcFrom { try DCPower.fromVI(voltage: v.parsedDouble ?? .nan, current: i.parsedDouble ?? .nan) }
+            case .dcIR:
+                NumberField(title: "Current", unit: "A", text: $i)
+                NumberField(title: "Resistance", unit: "Ω", text: $r)
+                dcFrom { try DCPower.fromIR(current: i.parsedDouble ?? .nan, resistance: r.parsedDouble ?? .nan) }
+            case .dcVR:
+                NumberField(title: "Voltage", unit: "V", text: $v)
+                NumberField(title: "Resistance", unit: "Ω", text: $r)
+                dcFrom { try DCPower.fromVR(voltage: v.parsedDouble ?? .nan, resistance: r.parsedDouble ?? .nan) }
+            case .ac1, .ac3:
+                NumberField(title: "Voltage", unit: "V", text: $v)
+                NumberField(title: "Current", unit: "A", text: $i)
+                NumberField(title: "Power factor", unit: "%", text: $pf)
+                acResult
+            }
         }
-        .navigationTitle("DC / AC Power")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    @ViewBuilder
-    private func dcResult(_ compute: (Double, Double) throws -> DCPowerResult) -> some View {
-        dcFrom {
-            try compute(v.parsedDouble ?? .nan, i.parsedDouble ?? .nan)
+    private var symbolic: String {
+        switch mode {
+        case .dcVI: return "P = V × I"
+        case .dcIR: return "P = I² × R"
+        case .dcVR: return "P = V² / R"
+        case .ac1: return "kVA = V × I / 1000\nkW = kVA × PF"
+        case .ac3: return "kVA = √3 × V_L-L × I_L / 1000\nkW = kVA × PF"
+        }
+    }
+
+    private var meaning: String {
+        switch mode {
+        case .dcVI, .dcIR, .dcVR:
+            return "DC watts from the two quantities you know. Resistance is V/I when both are known."
+        case .ac1:
+            return "Single-phase apparent power is volts times amps. Real power is that times power factor."
+        case .ac3:
+            return "Three-phase voltage is line-to-line. The √3 is the three-phase multiplier, not a fudge factor."
+        }
+    }
+
+    private var substituted: String? {
+        switch mode {
+        case .dcVI, .dcIR, .dcVR:
+            if case .success(let r) = dcBoxed { return "\(r.formula) = \(Format.watts(r.power))" }
+            return nil
+        case .ac1, .ac3:
+            if case .success(let r) = acBoxed {
+                let pfText = Format.number((pf.parsedDouble ?? .nan) / 100, digits: 2)
+                if mode == .ac3 {
+                    return "kVA = √3 × \(Format.number(v.parsedDouble ?? .nan, digits: 2)) × \(Format.number(i.parsedDouble ?? .nan, digits: 2)) / 1000 = \(Format.number(r.kVA, digits: 3)) kVA    kW = kVA × \(pfText) = \(Format.number(r.kW, digits: 3)) kW"
+                }
+                return "kVA = \(Format.number(v.parsedDouble ?? .nan, digits: 2)) × \(Format.number(i.parsedDouble ?? .nan, digits: 2)) / 1000 = \(Format.number(r.kVA, digits: 3)) kVA    kW = kVA × \(pfText) = \(Format.number(r.kW, digits: 3)) kW"
+            }
+            return nil
+        }
+    }
+
+    private var sticky: String? {
+        switch mode {
+        case .dcVI, .dcIR, .dcVR:
+            if case .success(let r) = dcBoxed { return Format.watts(r.power) }
+            return nil
+        case .ac1, .ac3:
+            if case .success(let r) = acBoxed {
+                return "\(Format.number(r.kW, digits: 3)) kW  ·  \(Format.number(r.kVA, digits: 3)) kVA"
+            }
+            return nil
+        }
+    }
+
+    private var copyText: String? { sticky }
+
+    private var dcBoxed: Result<DCPowerResult, CalcError> {
+        CalcCatch.run {
+            switch mode {
+            case .dcVI: return try DCPower.fromVI(voltage: v.parsedDouble ?? .nan, current: i.parsedDouble ?? .nan)
+            case .dcIR: return try DCPower.fromIR(current: i.parsedDouble ?? .nan, resistance: r.parsedDouble ?? .nan)
+            case .dcVR: return try DCPower.fromVR(voltage: v.parsedDouble ?? .nan, resistance: r.parsedDouble ?? .nan)
+            default: throw CalcError.missing("values")
+            }
+        }
+    }
+
+    private var acBoxed: Result<ACPowerResult, CalcError> {
+        CalcCatch.run {
+            try ACPower.solve(
+                system: mode == .ac3 ? .threePhase : .singlePhase,
+                voltage: v.parsedDouble ?? .nan,
+                current: i.parsedDouble ?? .nan,
+                powerFactor: (pf.parsedDouble ?? .nan) / 100
+            )
         }
     }
 
     @ViewBuilder
     private func dcFrom(_ compute: () throws -> DCPowerResult) -> some View {
-        let boxed: Result<DCPowerResult, CalcError> = {
-            do { return .success(try compute()) }
-            catch let e as CalcError { return .failure(e) }
-            catch { return .failure(.missing("values")) }
-        }()
-        switch boxed {
+        switch CalcCatch.run(compute) {
         case .success(let r):
-            ResultCard {
+            ResultCard(copyText: Format.watts(r.power)) {
                 ResultRow(label: "Power", value: Format.watts(r.power), emphasis: true, tone: Theme.good)
                 ResultRow(label: "Voltage", value: Format.volts(r.voltage))
                 ResultRow(label: "Current", value: Format.amps(r.current))
@@ -93,23 +151,9 @@ struct PowerView: View {
 
     @ViewBuilder
     private var acResult: some View {
-        let boxed: Result<ACPowerResult, CalcError> = {
-            do {
-                return .success(try ACPower.solve(
-                    system: mode == .ac3 ? .threePhase : .singlePhase,
-                    voltage: v.parsedDouble ?? .nan,
-                    current: i.parsedDouble ?? .nan,
-                    powerFactor: (pf.parsedDouble ?? .nan) / 100
-                ))
-            } catch let e as CalcError {
-                return .failure(e)
-            } catch {
-                return .failure(.missing("values"))
-            }
-        }()
-        switch boxed {
+        switch acBoxed {
         case .success(let r):
-            ResultCard {
+            ResultCard(copyText: "\(Format.number(r.kW, digits: 3)) kW, \(Format.number(r.kVA, digits: 3)) kVA") {
                 ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA", emphasis: true)
                 ResultRow(label: "Real", value: "\(Format.number(r.kW, digits: 3)) kW", emphasis: true, tone: Theme.good)
                 ResultRow(label: "Reactive", value: "\(Format.number(r.kVAR, digits: 3)) kVAR")

@@ -9,6 +9,7 @@ final class NoiseMeterModel: ObservableObject {
     @Published var peak: Double = SoundLevel.silenceFloorDBFS
     @Published var permissionDenied = false
     @Published var running = false
+    @Published var hasReading = false
     @Published var status = "Microphone idle"
 
     private let engine = AVAudioEngine()
@@ -68,6 +69,7 @@ final class NoiseMeterModel: ObservableObject {
                 let db = SoundLevel.dbfs(rms: rms)
                 Task { @MainActor in
                     self?.dbfs = db
+                    self?.hasReading = true
                     if db > (self?.peak ?? SoundLevel.silenceFloorDBFS) {
                         self?.peak = db
                     }
@@ -99,39 +101,53 @@ final class NoiseMeterModel: ObservableObject {
 struct NoiseMeterView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = NoiseMeterModel()
-    @State private var jobName = "Noise snapshot"
+    @StoredInput(.noiseMeter, "jobName", default: "Noise snapshot") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "dBFS = 20 × log₁₀(RMS)",
-                    citation: "Relative to full-scale digital. Not dB SPL, not A-weighted, not OSHA, not a calibrated SLM."
+        ToolScaffold(
+            toolID: .noiseMeter,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: "Saving stores the numeric dBFS snapshot only — not a recording.")
+        ) {
+            ShowWorkCard(
+                toolID: .noiseMeter,
+                symbolic: "dBFS = 20 × log₁₀(RMS)",
+                substituted: sticky,
+                meaning: "Relative to full-scale digital. Not dB SPL, not A-weighted, not OSHA, not a calibrated SLM."
+            )
+            if model.permissionDenied {
+                ToolEmptyState(
+                    title: "Microphone is off",
+                    detail: "This meter needs the microphone permission for uncalibrated dBFS. Nothing is recorded or uploaded.",
+                    systemImage: "mic.slash",
+                    showsSettings: true
                 )
-                ResultCard(title: "Level") {
-                    ResultRow(label: "Now", value: Format.dbfs(model.dbfs), emphasis: true, tone: Theme.good)
-                    ResultRow(label: "Peak hold", value: Format.dbfs(model.peak), tone: Theme.warn)
-                    ResultRow(label: "Engine", value: model.status)
-                    levelBar
-                }
-                if model.permissionDenied {
-                    SettingsLinkButton()
-                }
-                HStack {
-                    Button("Reset peak") { model.resetPeak() }
-                        .buttonStyle(.bordered)
-                        .tint(Theme.accent)
-                }
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.running || model.dbfs > SoundLevel.silenceFloorDBFS) { save() }
-                SensorDisclaimer(extra: "Saving stores the numeric dBFS snapshot only — not a recording.")
             }
-            .padding(20)
+            ResultCard(title: "Level", copyText: copyText) {
+                ResultRow(label: "Now", value: Format.dbfs(model.dbfs), emphasis: true, tone: Theme.good)
+                ResultRow(label: "Peak hold", value: Format.dbfs(model.peak), tone: Theme.warn)
+                ResultRow(label: "Engine", value: model.status)
+                levelBar
+            }
+            Button("Reset peak") { model.resetPeak() }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
-        .navigationTitle("Noise Meter")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+    }
+
+    private var sticky: String? {
+        guard model.hasReading else { return nil }
+        return Format.dbfs(model.dbfs)
+    }
+    private var copyText: String? {
+        guard model.hasReading else { return nil }
+        return "Now \(Format.dbfs(model.dbfs)), peak \(Format.dbfs(model.peak))"
     }
 
     private var levelBar: some View {

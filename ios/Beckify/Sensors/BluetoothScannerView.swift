@@ -130,57 +130,79 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
 struct BluetoothScannerView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = BLEScannerModel()
-    @State private var jobName = "BLE scan"
+    @StoredInput(.bluetoothScan, "jobName", default: "BLE scan") private var jobName
     @State private var notes = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                FormulaCard(
-                    text: "CoreBluetooth central scan",
-                    citation: "Public BLE only. No classic-Bluetooth sniffing. RSSI here is the BLE advertisement RSSI, not Wi-Fi."
+        ToolScaffold(
+            toolID: .bluetoothScan,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            disclaimer: .sensor(extra: nil)
+        ) {
+            ShowWorkCard(
+                toolID: .bluetoothScan,
+                symbolic: "CoreBluetooth central scan",
+                substituted: sticky,
+                meaning: "Public BLE only. No classic-Bluetooth sniffing. RSSI here is the BLE advertisement RSSI, not Wi-Fi."
+            )
+            ResultCard(title: "Radio", copyText: copyText) {
+                ResultRow(label: "State", value: model.stateText, emphasis: true)
+                ResultRow(label: "Devices", value: "\(model.sightings.count)")
+            }
+            if model.unauthorized {
+                ToolEmptyState(
+                    title: "Bluetooth permission denied",
+                    detail: "The scanner needs Bluetooth permission to list nearby BLE advertisements. Names, identifiers, and RSSI stay on this device.",
+                    systemImage: "antenna.radiowaves.left.and.right.slash",
+                    showsSettings: true
                 )
-                ResultCard(title: "Radio") {
-                    ResultRow(label: "State", value: model.stateText, emphasis: true)
-                    ResultRow(label: "Devices", value: "\(model.sightings.count)")
-                }
-                if model.unauthorized {
-                    SettingsLinkButton()
-                }
-                ResultCard(title: "Peripherals") {
-                    if model.sightings.isEmpty {
-                        Text(model.scanning ? "Listening for advertisements…" : "No scan running.")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.muted)
-                    } else {
-                        ForEach(model.sightings.prefix(40)) { item in
-                            VStack(alignment: .leading, spacing: 4) {
-                                ResultRow(label: item.name, value: "\(item.rssi) dBm", emphasis: true)
-                                Text(item.id.uuidString)
+            }
+            ResultCard(title: "Peripherals") {
+                if model.sightings.isEmpty {
+                    Text(model.scanning ? "Listening for advertisements…" : "No scan running. Turn Bluetooth on, or allow the permission, then come back.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
+                } else {
+                    ForEach(model.sightings.prefix(40)) { item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            ResultRow(label: item.name, value: "\(item.rssi) dBm", emphasis: true)
+                            Text(item.id.uuidString)
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(Theme.muted)
+                            if !item.serviceIDs.isEmpty {
+                                Text(item.serviceIDs.joined(separator: ", "))
                                     .font(.caption2.monospaced())
-                                    .foregroundStyle(Theme.muted)
-                                if !item.serviceIDs.isEmpty {
-                                    Text(item.serviceIDs.joined(separator: ", "))
-                                        .font(.caption2.monospaced())
-                                        .foregroundStyle(Theme.accent)
-                                }
+                                    .foregroundStyle(Theme.accent)
                             }
-                            .padding(.vertical, 4)
                         }
+                        .padding(.vertical, 4)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(
+                            "\(item.name), \(item.rssi) dBm, identifier \(item.id.uuidString)"
+                                + (item.serviceIDs.isEmpty ? "" : ", services \(item.serviceIDs.joined(separator: ", "))")
+                        )
                     }
                 }
-                Button("Clear list") { model.clear() }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.accent)
-                SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
-                SensorDisclaimer()
             }
-            .padding(20)
+            Button("Clear list") { model.clear() }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
         }
-        .navigationTitle("BLE Scanner")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+    }
+
+    private var sticky: String {
+        "\(model.sightings.count) device" + (model.sightings.count == 1 ? "" : "s")
+    }
+    private var copyText: String {
+        if let top = model.sightings.first {
+            return "\(top.name) \(top.rssi) dBm"
+        }
+        return model.stateText
     }
 
     private func save() {

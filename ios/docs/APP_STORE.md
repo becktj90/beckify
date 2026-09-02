@@ -62,7 +62,7 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “receptacle”, “divider”, “color code”, “LED”, “wifi”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “receptacle”, “divider”, “color code”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -70,7 +70,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,NEMA,receptacle,outlet,IEC,ampacity,wifi,ohm
 
 **What's New (1.0):**
-First toolbox with field EE calculators (including Receptacle Selector), homework tools, and public-API sensors, plus local saved notes.
+First toolbox with field EE calculators (including Receptacle Selector), homework tools, and public-API sensors. On those existing tools: last-used inputs stay on device, copy result, show-work with your numbers in the formula, and related tools. Local saved notes. Not a new product. No binary uploaded; not TestFlight.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -91,13 +91,13 @@ Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
 - No tracking
 - No advertising identifier
 - No account
-- Saved jobs use on-device storage only (`UserDefaults`)
+- Saved jobs and last-used tool inputs use on-device storage only (`UserDefaults`)
 - Microphone, Bluetooth, and location are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
 
 Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
 - `NSPrivacyTracking` = false  
 - No collected data types  
-- UserDefaults accessed with reason CA92.1 (app functionality: saved jobs)
+- UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
 Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use — see the Beckify target build settings.
 
@@ -120,7 +120,7 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 
 Take 3–8 screens per size. Suggested shots:
 
-1. Toolbox search / tool list (dark premium home)
+1. Toolbox search / tool list (system appearance)
 2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
 3. Voltage drop with 3% / 5% notes and ampacity row
 4. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
@@ -129,7 +129,7 @@ Take 3–8 screens per size. Suggested shots:
 7. Saved Jobs list (on-device notes)
 8. About (Trevor Beck, EE, beckify.com, email — no phone number)
 
-Use dark appearance. Do not show ads, Amazon, games, or a phone number.
+The app follows the system light or dark appearance; it does not force dark. System appearance shots are fine — do not require dark-only screenshots. Do not claim outdoor/high-contrast beyond what Settings actually does. Do not show ads, Amazon, games, or a phone number.
 
 ## App icon
 
