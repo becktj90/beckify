@@ -30,7 +30,7 @@ export function HexGL() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "aspect-video min-h-[480px] md:min-h-[620px] max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-[4/3] sm:aspect-video max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}
       >
         <iframe
           src={HEXGL_SRC}

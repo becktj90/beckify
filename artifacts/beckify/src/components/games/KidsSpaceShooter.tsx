@@ -2,19 +2,27 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { Crosshair, Expand, Minimize2, Pause, Play, RotateCcw, Shield, Volume2, VolumeX, Zap } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 import {
+  ENEMY_BOLT_RADIUS,
   HIT_IFRAMES,
   MAX_HULL,
+  PICKUP_RADIUS,
   PLAYFIELD,
   POWER_DURATION,
+  START_GUARD,
   applyHeart,
   applyKill,
   clamp,
+  enemyFallSpeed,
+  enemyHp,
+  enemyLeaked,
   fireInterval,
   hudChanged,
   loadScores,
   pickPowerUp,
   playIntent,
   recordRun,
+  shipHitsEnemy,
+  spawnInterval,
   togglePause,
   type BoardEntry,
   type GameStatus,
@@ -147,7 +155,7 @@ export function KidsSpaceShooter() {
       spawn = 0;
       fireCooldown = 0;
       iframe = 0;
-      guard = 0;
+      guard = START_GUARD;
       track = 0;
       burst = 0;
       waveFlash = 0;
@@ -370,13 +378,13 @@ export function KidsSpaceShooter() {
         burst = Math.max(0, burst - dt / 60);
         waveFlash = Math.max(0, waveFlash - dt / 60);
         if (spawn <= 0) {
-          spawn = Math.max(0.42, 1.12 - currentWave * 0.04);
-          enemies.push({ x: 55 + Math.random() * (W - 110), y: -35, hp: Math.random() > 0.73 ? 2 : 1, gold: Math.random() > 0.73, phase: Math.random() * 7 });
+          spawn = spawnInterval(currentWave);
+          enemies.push({ x: 55 + Math.random() * (W - 110), y: -35, hp: enemyHp(currentWave, Math.random), gold: Math.random() > 0.78, phase: Math.random() * 7 });
         }
         fire();
         enemies.forEach((enemy) => {
-          enemy.y += (1.05 + currentWave * 0.09) * dt;
-          enemy.x += Math.sin(frame * 0.045 + enemy.phase) * 1.1 * dt;
+          enemy.y += enemyFallSpeed(currentWave) * dt;
+          enemy.x += Math.sin(frame * 0.045 + enemy.phase) * 0.85 * dt;
         });
         bolts.forEach((bolt) => { bolt.x += bolt.vx * dt; bolt.y += bolt.vy * dt; });
         sparks.forEach((spark) => { spark.x += spark.vx * dt; spark.y += spark.vy * dt; spark.life -= 0.025 * dt; });
@@ -386,7 +394,7 @@ export function KidsSpaceShooter() {
           if (bolt.y < -20 || bolt.x < -20 || bolt.x > W + 20) { bolts.splice(i, 1); continue; }
           for (let j = enemies.length - 1; j >= 0; j--) {
             const enemy = enemies[j];
-            if (Math.hypot(bolt.x - enemy.x, bolt.y - enemy.y) < 31) {
+            if (Math.hypot(bolt.x - enemy.x, bolt.y - enemy.y) < ENEMY_BOLT_RADIUS) {
               bolts.splice(i, 1);
               enemy.hp -= 1;
               if (enemy.hp <= 0) {
@@ -407,7 +415,11 @@ export function KidsSpaceShooter() {
         }
         for (let i = enemies.length - 1; i >= 0; i--) {
           const enemy = enemies[i];
-          if (enemy.y > H + 35 || Math.hypot(enemy.x - shipX, enemy.y - shipY) < 43) {
+          if (enemyLeaked(enemy.y, H)) {
+            enemies.splice(i, 1);
+            continue;
+          }
+          if (shipHitsEnemy(shipX, shipY, enemy.x, enemy.y)) {
             enemies.splice(i, 1);
             damage();
           }
@@ -415,7 +427,7 @@ export function KidsSpaceShooter() {
         for (let i = pickups.length - 1; i >= 0; i--) {
           const item = pickups[i];
           if (item.y > H + 20) { pickups.splice(i, 1); continue; }
-          if (Math.hypot(item.x - shipX, item.y - shipY) < 46) {
+          if (Math.hypot(item.x - shipX, item.y - shipY) < PICKUP_RADIUS) {
             collect(item.kind);
             pickups.splice(i, 1);
             paintHud();
@@ -654,7 +666,7 @@ export function KidsSpaceShooter() {
         <aside className="cosmic-side">
           <div>
             <h2>QUICK TIPS</h2>
-            <p><Shield /><span><b>Protect your hull</b>Blink means you are safe for a second.</span></p>
+            <p><Shield /><span><b>Protect your hull</b>Rocks that fly past do not hurt. Blink means you are safe.</span></p>
             <p><Zap /><span><b>Catch glowing stars</b>Shield, spray shots, or turbo blast.</span></p>
             <p><Crosshair /><span><b>Drag to fly</b>Or mash the FLY pad with a thumb.</span></p>
           </div>

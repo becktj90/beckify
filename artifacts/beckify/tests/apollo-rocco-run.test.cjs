@@ -42,24 +42,27 @@ assert.equal(run.inHitWindow(run.PLAYER_Z, 1.7), true);
 assert.equal(run.inHitWindow(run.PLAYER_Z + 1.69, 1.7), true);
 assert.equal(run.inHitWindow(20, 1.7), false);
 
-const first = run.applyHit(3, 0, 2.2);
-assert.equal(first.hitsLeft, 2);
+const first = run.applyHit(4, 0, 2.6);
+assert.equal(first.hitsLeft, 3);
 assert.equal(first.dead, false);
-assert.equal(first.iframes, 2.2);
-const ignored = run.applyHit(2, 1.5, 2.2);
-assert.equal(ignored.hitsLeft, 2, 'i-frames swallow extra hits');
+assert.equal(first.iframes, 2.6);
+const ignored = run.applyHit(3, 1.5, 2.6);
+assert.equal(ignored.hitsLeft, 3, 'i-frames swallow extra hits');
 assert.equal(ignored.ignored, true);
-const second = run.applyHit(2, 0, 2.2);
-const last = run.applyHit(1, 0, 2.2);
+run.applyHit(3, 0, 2.6);
+run.applyHit(2, 0, 2.6);
+const last = run.applyHit(1, 0, 2.6);
 assert.equal(last.hitsLeft, 0);
-assert.equal(last.dead, true, 'KID dies on the third real hit, not the first bump');
+assert.equal(last.dead, true, 'KID dies on the fourth real hit, not the first bump');
 
-assert.equal(run.TUNING.kid.hits, 3);
+assert.equal(run.TUNING.kid.hits, 4);
 assert.equal(run.TUNING.cadet.hits, 2);
 assert.ok(run.TUNING.kid.iframes > run.TUNING.cadet.iframes);
 assert.ok(run.TUNING.kid.minGap > run.TUNING.cadet.minGap, 'KID keeps wider gaps');
 assert.ok(run.TUNING.kid.startSpeed < run.TUNING.cadet.startSpeed);
 assert.ok(run.TUNING.kid.accel < run.TUNING.cadet.accel, 'KID speed ramp stays gentle');
+assert.ok(run.TUNING.kid.maxSpeed < 11, 'KID top speed stays under a sprint');
+assert.ok(run.TUNING.kid.jumpTime > run.TUNING.cadet.jumpTime);
 assert.ok(run.runSpeed(40, 'kid') < run.runSpeed(40, 'cadet'));
 assert.ok(run.runSpeed(400, 'kid') <= run.TUNING.kid.maxSpeed);
 

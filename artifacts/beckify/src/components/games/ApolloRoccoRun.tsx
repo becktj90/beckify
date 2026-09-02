@@ -539,10 +539,15 @@ export function ApolloRoccoRun() {
     };
 
     window.addEventListener("keydown", keyDown);
+    const visibility = () => {
+      if (document.hidden && statusRef.current === "running") setGameStatus("paused");
+    };
+    document.addEventListener("visibilitychange", visibility);
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", keyDown);
+      document.removeEventListener("visibilitychange", visibility);
       audio?.close().catch(() => {});
     };
   }, []);
@@ -595,7 +600,7 @@ export function ApolloRoccoRun() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#071018] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "max-w-[540px] rounded-2xl border border-[#2e5d86]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#071018] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[540px] rounded-2xl border border-[#2e5d86]"}`}
       >
         <canvas
           ref={canvasRef}
@@ -630,7 +635,7 @@ export function ApolloRoccoRun() {
                   ? `You ran ${score}. Local best ${best}. This device only.`
                   : status === "paused"
                     ? "Pause keeps this run. Resume when you are ready."
-                    : "Original Beckify game featuring Apollo and Rocco. KID is the default — wide gaps, slow ramp, three hits."}
+                    : "Original Beckify game featuring Apollo and Rocco. KID is the default — wide gaps, slow ramp, four hits."}
               </p>
               {status !== "paused" ? (
                 <>

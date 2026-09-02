@@ -704,7 +704,7 @@ export function PupPlanet() {
         </div>
       </div>
 
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7fb6ea] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "aspect-[4/3] sm:aspect-[16/10] min-h-[480px] md:min-h-[640px] max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}>
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#7fb6ea] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/10] max-w-[1180px] rounded-2xl border border-[#2e5d86]"}`}>
         <canvas ref={canvasRef} className="block h-full w-full touch-none" aria-label="Pup Planet first-person voxel world" />
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2">
           <span className="absolute left-1/2 top-0 h-4 w-px -translate-x-1/2 bg-white/90" />

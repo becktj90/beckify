@@ -63,7 +63,7 @@ export function FingerRunner() {
       obstacles.length = 0;
       dust.length = 0;
       runScore = 0;
-      speed = 260;
+      speed = 220;
       spawnIn = 1.1;
       accumulator = 0;
       coyoteTime = 0;
@@ -99,8 +99,8 @@ export function FingerRunner() {
     };
 
     const intersects = (obstacle: Obstacle) =>
-      player.x + player.width - 5 > obstacle.x &&
-      player.x + 5 < obstacle.x + obstacle.width &&
+      player.x + player.width - 8 > obstacle.x &&
+      player.x + 8 < obstacle.x + obstacle.width &&
       player.y + player.height > GROUND - obstacle.height &&
       player.y < GROUND;
 
@@ -110,7 +110,7 @@ export function FingerRunner() {
       player.velocityY += 1750 * dt;
       player.y = Math.min(GROUND - player.height, player.y + player.velocityY * dt);
       if (player.y >= GROUND - player.height - 0.5) {
-        coyoteTime = 0.1;
+        coyoteTime = 0.18;
         if (jumpBuffer > 0) {
           player.velocityY = -690;
           coyoteTime = 0;
@@ -119,15 +119,15 @@ export function FingerRunner() {
           bleep(520, 0.1, 820, "square", 0.02);
         }
       }
-      speed = Math.min(520, 260 + runScore * 3.2);
+      speed = Math.min(440, 220 + runScore * 2.1);
       runScore += dt * (speed / 70);
       spawnIn -= dt;
       if (spawnIn <= 0) {
-        const height = 28 + Math.random() * 34;
+        const height = 22 + Math.random() * 26;
         const roll = Math.random();
         const kind: Obstacle["kind"] = roll < 0.45 ? "gate" : roll < 0.75 ? "crate" : "beacon";
-        obstacles.push({ x: WIDTH + 20, width: kind === "gate" ? 22 + Math.random() * 14 : 18 + Math.random() * 16, height: kind === "beacon" ? 44 + Math.random() * 20 : height, hue: kind === "beacon" ? "#8b7bff" : Math.random() > 0.5 ? "#ffb84a" : "#ff6b8a", kind });
-        spawnIn = Math.max(0.58, 1.15 - runScore / 900) + Math.random() * 0.45;
+        obstacles.push({ x: WIDTH + 20, width: kind === "gate" ? 22 + Math.random() * 14 : 18 + Math.random() * 16, height: kind === "beacon" ? 38 + Math.random() * 16 : height, hue: kind === "beacon" ? "#8b7bff" : Math.random() > 0.5 ? "#ffb84a" : "#ff6b8a", kind });
+        spawnIn = Math.max(0.72, 1.32 - runScore / 1100) + Math.random() * 0.5;
       }
       obstacles.forEach((obstacle) => { obstacle.x -= speed * dt; });
       while (obstacles[0] && obstacles[0].x + obstacles[0].width < -20) obstacles.shift();
@@ -257,7 +257,7 @@ export function FingerRunner() {
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
         </div>
       </div>
-      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "max-w-[640px] rounded-2xl border border-[#2e5d86]"}`}>
+      <div ref={stageRef} className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[640px] rounded-2xl border border-[#2e5d86]"}`}>
         <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="block h-auto w-full touch-none" aria-label="Finger Runner endless runner" />
         {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
         {status !== "running" ? <div className="absolute inset-0 flex items-center justify-center bg-[#06101f]/80 p-6 text-center backdrop-blur-[2px]"><div className="max-w-xs"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#55e6cb]">{status === "gameover" ? "Run complete" : status === "paused" ? "Course paused" : "Ready to run"}</p><h2 className="mt-2 font-display text-3xl font-bold text-white">{status === "gameover" ? "Beat your line." : status === "paused" ? "Hold position." : "Find the rhythm."}</h2><p className="mt-3 text-sm leading-6 text-[#b9c8dc]">{status === "gameover" ? `Distance ${score}. Best ${best}.` : "Tap, click, Space, or Arrow Up to jump. Press P or Escape to pause."}</p><button type="button" className="game-control pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-[#55e6cb] px-5 py-3 text-sm font-semibold text-[#06101f]" onClick={() => status === "paused" ? setGameStatus("running") : restartRef.current?.()}><Play size={16} />{status === "paused" ? "Resume" : status === "gameover" ? "Run again" : "Start run"}</button></div></div> : null}

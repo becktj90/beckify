@@ -9,8 +9,13 @@ export const BOARD_KEY = "cosmic-cadet-board";
 export const BOARD_SIZE = 5;
 export const MAX_HULL = 5;
 export const KILLS_PER_WAVE = 8;
-export const HIT_IFRAMES = 1.1;
-export const POWER_DURATION = { guard: 6, track: 7, burst: 7 } as const;
+export const HIT_IFRAMES = 1.75;
+export const START_GUARD = 3.2;
+export const SHIP_HIT_RADIUS = 28;
+export const ENEMY_BOLT_RADIUS = 34;
+export const PICKUP_RADIUS = 58;
+export const LEAK_MARGIN = 40;
+export const POWER_DURATION = { guard: 7, track: 8, burst: 8 } as const;
 
 type StorageLike = { getItem(key: string): string | null; setItem(key: string, value: string): void };
 
@@ -51,12 +56,32 @@ export function applyHeart(hull: number) {
 }
 
 export function pickPowerUp(gold: boolean, random: () => number): PowerUpKind | null {
-  if (random() > (gold ? 0.62 : 0.22)) return null;
+  if (random() > (gold ? 0.74 : 0.36)) return null;
   const roll = random();
-  if (roll < 0.28) return "heart";
-  if (roll < 0.52) return "guard";
-  if (roll < 0.76) return "burst";
+  if (roll < 0.32) return "heart";
+  if (roll < 0.56) return "guard";
+  if (roll < 0.78) return "burst";
   return "track";
+}
+
+export function spawnInterval(wave: number) {
+  return Math.max(0.78, 1.48 - Math.max(0, wave - 1) * 0.028);
+}
+
+export function enemyFallSpeed(wave: number) {
+  return 0.72 + Math.min(Math.max(1, wave), 12) * 0.048;
+}
+
+export function enemyHp(wave: number, random: () => number) {
+  return wave >= 4 && random() > 0.82 ? 2 : 1;
+}
+
+export function enemyLeaked(y: number, fieldHeight = PLAYFIELD.height, margin = LEAK_MARGIN) {
+  return y > fieldHeight + margin;
+}
+
+export function shipHitsEnemy(shipX: number, shipY: number, enemyX: number, enemyY: number, radius = SHIP_HIT_RADIUS) {
+  return Math.hypot(enemyX - shipX, enemyY - shipY) < radius;
 }
 
 export function hudChanged(previous: HudSnapshot, next: HudSnapshot) {

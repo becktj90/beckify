@@ -756,7 +756,7 @@ export function BootyButtScooter() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "max-w-[960px] rounded-3xl border border-[#29446c]"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#06101f] shadow-[0_24px_80px_rgba(0,0,0,.42)] ${immersive ? "fixed inset-0 z-[70] flex max-w-none items-center rounded-none border-0 p-3" : "w-full min-w-0 max-w-[960px] rounded-3xl border border-[#29446c]"}`}
       >
         <canvas
           ref={canvasRef}

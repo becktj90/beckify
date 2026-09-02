@@ -28,16 +28,16 @@ export const BEST_KEY = "apollo-rocco-run-best";
 
 export const TUNING = {
   kid: {
-    startSpeed: 6.2,
-    maxSpeed: 11.5,
-    accel: 0.18,
-    minGap: 16,
-    maxGap: 24,
-    hits: 3,
-    iframes: 2.2,
-    jumpTime: 0.9,
-    slideTime: 0.64,
-    hitDepth: 1.7,
+    startSpeed: 5.2,
+    maxSpeed: 9.8,
+    accel: 0.11,
+    minGap: 18,
+    maxGap: 28,
+    hits: 4,
+    iframes: 2.6,
+    jumpTime: 1.05,
+    slideTime: 0.78,
+    hitDepth: 2.0,
     maxBlockedLanes: 1,
   },
   cadet: {
@@ -166,7 +166,7 @@ export function saveBest(storage: StorageLike, score: number) {
   return best;
 }
 
-export function swipeAction(dx: number, dy: number, threshold = 36): "left" | "right" | "jump" | "slide" | null {
+export function swipeAction(dx: number, dy: number, threshold = 28): "left" | "right" | "jump" | "slide" | null {
   if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return null;
   if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? "left" : "right";
   return dy < 0 ? "jump" : "slide";
