@@ -8,7 +8,9 @@
     'sec-circuit-sim': ['Kirchhoff is the traffic rule', '\\sum I_{in} = \\sum I_{out}', 'Charge cannot pile up at an ordinary node. The solver adjusts node voltages until every junction has balanced traffic.'],
     'sec-555': ['A capacitor is a bucket for charge', 'I = C\\frac{dV}{dt}', 'A capacitor resists sudden voltage changes because its stored charge must arrive through a finite current. That is why RC circuits make time.'],
     'sec-tdr': ['A TDR is radar for copper', 'd = \\frac{VF\\,c\\,t}{2}', 'The pulse travels out, notices a change in the cable, and returns. The divide-by-two matters because the measured time includes both trips.'],
-    'sec-emp-emc': ['A changing field writes a voltage on a loop', 'V = -N\\,d\\Phi/dt', 'Faraday’s law is why a cable loop inside a changing B field picks up a transient. Shrink the loop, close the slots, bond the cage, and filter the cable entry. This tool sizes protection — it does not design a source.']
+    'sec-emp-emc': ['A changing field writes a voltage on a loop', 'V = -N\\,d\\Phi/dt', 'Faraday’s law is why a cable loop inside a changing B field picks up a transient. Shrink the loop, close the slots, bond the cage, and filter the cable entry. This tool sizes protection — it does not design a source.'],
+    'sec-lp-optimizer': ['A linear program is a hill inside a fence', '\\max\\, c\\cdot x \\quad \\text{s.t.} \\quad Ax \\le b,\\, x \\ge 0', 'Each inequality is a fence. The simplex method walks the corners of the fenced yard until the objective cannot climb any further — or reports that the yard is empty or has no highest point.'],
+    'sec-base-converter': ['Every integer is a weighted pile of digits', 'n = \\sum d_i b^i', 'Hex, decimal, octal, and binary are the same integer written with different digit alphabets. Two’s complement just rereads the high bit as a minus sign.']
   };
 
   const DOCS = {
@@ -99,6 +101,28 @@
       ],
       examples: ['Victim loop: 10 cm × 10 cm, 1 turn', 'ΔB = 1 mT, rise time = 1 µs', 'Induced |V| = 10 V', 'Optional R = 10 Ω → long-pulse |I| ≈ 1 A (inductance ignored)'],
       button: { label: 'Load Example Values', action: 'loadEmpEmcExample' }
+    },
+    'sec-lp-optimizer': {
+      overview: 'Linear programming finds the best feasible point of a linear objective over linear constraints. This educational optimizer uses two-phase simplex on ordinary operations-research models (product mix, blending, graphical 2-variable LPs). It is not related to EMP sources or shielding.',
+      steps: [
+        'Choose Maximize or Minimize and set the number of variables and constraints.',
+        'Enter objective coefficients, optional upper bounds, and each constraint row A_i x {≤, ≥, =} b.',
+        'Watch the formulation statement update as you type — the solver recomputes live.',
+        'For two variables, read the feasible-region plot (vertices, constraint lines, optimum). For n variables, read the labelled status, z*, x*, and slack.'
+      ],
+      examples: ['Maximize 5 x1 + 4 x2', '6 x1 + 4 x2 ≤ 24', 'x1 + 2 x2 ≤ 6', 'x1, x2 ≥ 0', 'Optimum (3, 1.5), z* = 21'],
+      button: { label: 'Load Graphical Example', action: 'loadLpOptimizerExample' }
+    },
+    'sec-base-converter': {
+      overview: 'Hexadecimal, decimal, octal, and binary are the same integer in four alphabets. Place-value chips show n = Σ d_i b^i, and the bit field groups bits into nibbles and bytes. Optional two’s-complement signed decimal rereads the high bit as sign.',
+      steps: [
+        'Pick a bit width (8, 16, 32, or 64) and optionally enable two’s-complement signed decimal.',
+        'Type a value in any base — the other three fields update immediately, wrapping at 2^w.',
+        'Read the identity line and the place-value chips for the base you last edited.',
+        'Use the bit field to flip individual bits; changed bits are highlighted.'
+      ],
+      examples: ['8-bit two’s complement', 'Hex FF', 'Unsigned decimal 255', 'Signed decimal −1', 'Binary 1111 1111'],
+      button: { label: 'Load Signed Example (FF = −1)', action: 'loadBaseConverterExample' }
     }
   };
 

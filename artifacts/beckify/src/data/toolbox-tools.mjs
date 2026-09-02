@@ -71,6 +71,8 @@ export const TOOLS = [
   ["emp-emc-shielding", "EMP / EMC Shielding Calculator", "Educational Faraday-loop, aperture-leakage, and skin-depth estimates for cages, seams, and cable-entry protection. Protection-side physics only — not a pulse-source designer.", "sec-emp-emc"],
   ["transformer-design", "Transformer Design Wizard", "Work through transformer type, kVA, winding, protection, and conductor design choices.", "sec-xfmr-wizard"],
   ["heater-wizard", "Heater Design Wizard", "Size industrial resistive heaters across voltage, phase, and wye or delta wiring, and design custom Nichrome or Kanthal heating elements by wire gauge and length.", "sec-heater-wizard"],
+  ["lp-optimizer", "Linear Programming Optimizer", "Solve a small linear program: maximize or minimize c·x subject to Ax ≤ / ≥ / = b with x ≥ 0, using two-phase simplex, a 2-variable feasible-region plot, and labelled slack.", "sec-lp-optimizer"],
+  ["number-base-converter", "Number-Base Converter", "Convert among hexadecimal, decimal, octal, and binary with 8/16/32/64-bit wrap, optional two’s-complement signed decimal, place-value chips, and a grouped bit field.", "sec-base-converter"],
 ];
 
 export const CATEGORIES = [

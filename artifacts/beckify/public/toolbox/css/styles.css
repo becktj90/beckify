@@ -37,6 +37,7 @@
   --red:          #ef4444;
   --red-dim:      rgba(239,68,68,0.15);
   --green-ok:     #4ade80;
+  --yellow:       #f5c451;
 
   --radius:       10px;
   --sidebar-w:    248px;
@@ -1519,3 +1520,104 @@ body.report-open { overflow: hidden; }
 .battery-layout svg { display: block; min-width: 420px; width: 100%; height: auto; }
 @media (max-width: 620px) { .logic-gate-row { grid-template-columns: 34px 1fr 1fr auto; } .logic-gate-row select:nth-of-type(3) { grid-column: 2 / span 2; } }
 @media (max-width: 620px) { .manual-price-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── Linear programming optimizer ── */
+.orlp-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.orlp-presets .btn { margin-top: 0; }
+.orlp-formulation {
+  margin: 0;
+  padding: 12px 14px;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--violet);
+  border-radius: 8px;
+  font-family: var(--font-main);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--fg);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.orlp-var-host { display: grid; gap: 10px; }
+.orlp-var-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1.2fr 0.8fr;
+  gap: 8px;
+}
+.orlp-cons-host { overflow-x: auto; }
+.orlp-cons-table { min-width: 640px; display: grid; gap: 6px; }
+.orlp-cons-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.2fr) repeat(6, minmax(64px, 0.8fr)) 72px minmax(72px, 0.9fr);
+  gap: 6px;
+  align-items: center;
+}
+.orlp-cons-head { color: var(--fg-muted); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.orlp-visual { margin-top: 14px; }
+.orlp-visual svg { display: block; width: 100%; max-width: 640px; height: auto; border-radius: 8px; }
+.orlp-visual-caption { color: var(--fg-muted); font-size: 0.78rem; line-height: 1.5; margin-bottom: 10px; }
+.orlp-vertex-table { width: 100%; max-width: 640px; border-collapse: collapse; font-size: 0.78rem; margin-top: 10px; }
+.orlp-vertex-table th, .orlp-vertex-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; font-family: var(--font-main); }
+.orlp-vertex-table th { color: var(--violet); text-align: left; }
+.orlp-vertex-table td:first-child, .orlp-vertex-table th:first-child { text-align: left; }
+.orlp-opt-row { color: var(--green-ok); font-weight: 700; }
+.orlp-n-summary { display: grid; gap: 8px; margin-top: 8px; }
+.orlp-bar-row { display: grid; grid-template-columns: minmax(80px, 140px) 1fr minmax(80px, auto); gap: 8px; align-items: center; font-size: 0.8rem; }
+.orlp-bar-track { height: 10px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+.orlp-bar-fill { display: block; height: 100%; background: var(--violet); border-radius: 99px; }
+.result.orlp-status-infeasible, .result.orlp-status-unbounded { border-left-color: var(--yellow, #f5c451); }
+
+/* ── Number-base converter ── */
+.nbc-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.82rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.nbc-check input { width: auto; accent-color: var(--violet); }
+.nbc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.nbc-chip {
+  min-width: 72px;
+  padding: 8px 10px;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.nbc-chip-zero { opacity: 0.45; }
+.nbc-chip-digit { font-size: 1.05rem; font-weight: 700; color: var(--violet); font-family: var(--font-main); }
+.nbc-chip-place { font-size: 0.68rem; color: var(--fg-muted); }
+.nbc-chip-val { font-size: 0.72rem; color: var(--fg); font-family: var(--font-main); }
+.nbc-bits { overflow-x: auto; margin-top: 12px; }
+.nbc-bit-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end; }
+.nbc-byte-gap { width: 10px; flex: 0 0 10px; }
+.nbc-bit {
+  width: 34px;
+  padding: 4px 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1117;
+  color: var(--fg-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-main);
+}
+.nbc-bit-idx { font-size: 0.58rem; color: var(--fg-dim); }
+.nbc-bit-val { font-size: 0.95rem; font-weight: 700; }
+.nbc-bit-on { border-color: rgba(139,123,255,0.55); color: var(--fg); background: var(--violet-soft); }
+.nbc-bit-changed { box-shadow: 0 0 0 2px var(--yellow, #f5c451); }
+@media (max-width: 720px) {
+  .orlp-var-row { grid-template-columns: 1fr 1fr; }
+  .nbc-bit { width: 28px; }
+}
+
