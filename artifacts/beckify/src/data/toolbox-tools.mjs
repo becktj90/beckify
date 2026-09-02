@@ -81,6 +81,25 @@ export const TOOLS = [
   ["number-base-converter", "Number-Base Converter", "Convert among hexadecimal, decimal, octal, and binary with 8/16/32/64-bit wrap, optional two’s-complement signed decimal, place-value chips, and a grouped bit field.", "sec-base-converter"],
 ];
 
+/**
+ * Live sidebar calculators that exist in public/toolbox/index.html but are
+ * not first-class TOOLS SEO entries (no /toolbox/<slug>/ route yet).
+ * Counted in the visitor-facing total so homepage/sitemap stay honest.
+ */
+const LIVE_NAV_CALCULATORS_OUTSIDE_REGISTRY = ["sec-circuit-sim", "sec-stem-tools"];
+
+/**
+ * Public calculator count: unique TOOLS section anchors plus the live-nav
+ * extras above. Wire-size and conductor-cost share sec-wire-select, so this
+ * is a Set of anchors, not TOOLS.length. Keep in step with the toolbox
+ * sidebar (nav-btn targets excluding reference tables, the fittings guide,
+ * and Saved Jobs).
+ */
+export const PUBLIC_CALCULATOR_COUNT = new Set([
+  ...TOOLS.map((tool) => tool[3]),
+  ...LIVE_NAV_CALCULATORS_OUTSIDE_REGISTRY,
+]).size;
+
 export const CATEGORIES = [
   ["fundamentals", "Electrical Fundamentals", "Start with voltage, current, power, resistance, magnetic circuits, and core circuit relationships.", "sec-ohm"],
   ["ac-circuits", "AC Circuits", "Analyze reactance, impedance, resonance, transients, phasors, and power factor in AC networks.", "sec-reactance"],

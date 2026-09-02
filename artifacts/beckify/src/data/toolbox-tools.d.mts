@@ -8,3 +8,4 @@ export type ToolTuple = readonly [slug: string, title: string, description: stri
 export const TOOLS: ToolTuple[];
 export const CATEGORIES: ToolTuple[];
 export const REFERENCE_TABLES: ToolTuple[];
+export const PUBLIC_CALCULATOR_COUNT: number;
