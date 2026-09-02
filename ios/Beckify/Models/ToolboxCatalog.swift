@@ -174,9 +174,9 @@ enum ToolboxCatalog {
             id: .wifiStatus,
             kind: .sensor,
             title: "Wi-Fi Path",
-            subtitle: "Public Network path only — no invented RSSI.",
+            subtitle: "Path + Apple 0…1 amplitude map. Not Wi-Fi dBm.",
             symbol: "wifi",
-            synonyms: ["wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path"]
+            synonyms: ["wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path", "heatmap", "coverage", "dbm"]
         ),
         ToolDefinition(
             id: .bluetoothScan,

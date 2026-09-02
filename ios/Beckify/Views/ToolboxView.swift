@@ -50,8 +50,8 @@ struct ToolboxView: View {
                     } header: {
                         Text("Sensors")
                     } footer: {
-                        if query.localizedCaseInsensitiveContains("rssi") || query.localizedCaseInsensitiveContains("wifi") {
-                            Text("Wi-Fi RSSI is not available through public iOS APIs. The Wi-Fi Path tool shows path status and will not invent a signal bar.")
+                        if query.localizedCaseInsensitiveContains("rssi") || query.localizedCaseInsensitiveContains("wifi") || query.localizedCaseInsensitiveContains("dbm") {
+                            Text("Wi-Fi dBm/RSSI is not a public iOS API. Wi-Fi Path maps Apple’s 0…1 signalStrength (percent/bars) with a location heatmap — it will not invent dBm.")
                         }
                     }
                 }

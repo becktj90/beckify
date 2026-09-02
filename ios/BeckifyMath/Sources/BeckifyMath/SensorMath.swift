@@ -91,4 +91,89 @@ public enum GeoMath {
         if deg < 0 { deg += 360 }
         return deg
     }
+
+    /// Local east/north meters from an origin using an equirectangular approximation.
+    public static func eastNorthMeters(originLat: Double, originLon: Double, lat: Double, lon: Double) -> (east: Double, north: Double) {
+        let φ = originLat * .pi / 180
+        let north = (lat - originLat) * .pi / 180 * earthRadiusMeters
+        let east = (lon - originLon) * .pi / 180 * earthRadiusMeters * cos(φ)
+        return (east, north)
+    }
+}
+
+/// Coverage-sketch math for Apple's public `NEHotspotNetwork.signalStrength` (0…1).
+/// This is not RSSI and not dBm — iOS does not give third-party apps those values.
+public struct WiFiAmplitudeSample: Equatable, Sendable {
+    public var east: Double
+    public var north: Double
+    public var strength: Double
+
+    public init(east: Double, north: Double, strength: Double) {
+        self.east = east
+        self.north = north
+        self.strength = strength
+    }
+}
+
+public enum WiFiCoverageMath {
+    public static func clampStrength(_ value: Double) -> Double {
+        guard value.isFinite else { return .nan }
+        return min(1, max(0, value))
+    }
+
+    public static func percent(_ strength: Double) -> Double {
+        clampStrength(strength) * 100
+    }
+
+    /// 0…4 bars from Apple's 0…1 scale. Not a carrier signal-bar algorithm.
+    public static func bars(_ strength: Double) -> Int {
+        let s = clampStrength(strength)
+        guard s.isFinite else { return 0 }
+        if s <= 0 { return 0 }
+        if s < 0.25 { return 1 }
+        if s < 0.5 { return 2 }
+        if s < 0.75 { return 3 }
+        return 4
+    }
+
+    /// Inverse-distance weighting. `power` is typically 2.
+    public static func idw(east: Double, north: Double, samples: [WiFiAmplitudeSample], power: Double = 2) -> Double {
+        guard !samples.isEmpty, power > 0, east.isFinite, north.isFinite else { return .nan }
+        var num = 0.0
+        var den = 0.0
+        for sample in samples {
+            let s = clampStrength(sample.strength)
+            guard s.isFinite else { continue }
+            let dx = east - sample.east
+            let dy = north - sample.north
+            let d2 = dx * dx + dy * dy
+            if d2 < 1e-12 { return s }
+            let w = 1.0 / pow(sqrt(d2), power)
+            num += w * s
+            den += w
+        }
+        guard den > 0 else { return .nan }
+        return num / den
+    }
+
+    public static func bounds(_ samples: [WiFiAmplitudeSample], padding: Double = 1) -> (minE: Double, maxE: Double, minN: Double, maxN: Double)? {
+        guard let first = samples.first else { return nil }
+        var minE = first.east, maxE = first.east, minN = first.north, maxN = first.north
+        for s in samples.dropFirst() {
+            minE = min(minE, s.east)
+            maxE = max(maxE, s.east)
+            minN = min(minN, s.north)
+            maxN = max(maxN, s.north)
+        }
+        let pad = max(0, padding)
+        if abs(maxE - minE) < 1e-9 {
+            minE -= 1
+            maxE += 1
+        }
+        if abs(maxN - minN) < 1e-9 {
+            minN -= 1
+            maxN += 1
+        }
+        return (minE - pad, maxE + pad, minN - pad, maxN + pad)
+    }
 }

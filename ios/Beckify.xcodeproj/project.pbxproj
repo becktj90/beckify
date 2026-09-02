@@ -400,7 +400,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location only in the Position tool (coordinates, speed, homework distance) and, if you tap Request SSID, in Wi-Fi Path to read the current network name. Location is not used at launch and is not uploaded.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool and in Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch). Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -440,7 +440,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location only in the Position tool (coordinates, speed, homework distance) and, if you tap Request SSID, in Wi-Fi Path to read the current network name. Location is not used at launch and is not uploaded.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool and in Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch). Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

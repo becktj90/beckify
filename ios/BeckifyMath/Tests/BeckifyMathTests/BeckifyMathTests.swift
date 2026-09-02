@@ -384,6 +384,32 @@ final class SensorMathTests: XCTestCase {
         XCTAssertEqual(GeoMath.initialBearingDegrees(lat1: 0, lon1: 0, lat2: 1, lon2: 0), 0, accuracy: 1e-6)
         XCTAssertEqual(GeoMath.initialBearingDegrees(lat1: 0, lon1: 0, lat2: 0, lon2: 1), 90, accuracy: 1e-6)
     }
+
+    func testEastNorthMetersAtEquator() {
+        let en = GeoMath.eastNorthMeters(originLat: 0, originLon: 0, lat: 0, lon: 1)
+        XCTAssertEqual(en.north, 0, accuracy: 1e-6)
+        XCTAssertEqual(en.east, GeoMath.earthRadiusMeters * .pi / 180, accuracy: 1e-3)
+        let n = GeoMath.eastNorthMeters(originLat: 0, originLon: 0, lat: 1, lon: 0)
+        XCTAssertEqual(n.east, 0, accuracy: 1e-6)
+        XCTAssertEqual(n.north, GeoMath.earthRadiusMeters * .pi / 180, accuracy: 1e-3)
+    }
+
+    func testWiFiCoverageIDWAndBars() throws {
+        XCTAssertEqual(WiFiCoverageMath.percent(0.73), 73, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.bars(0), 0)
+        XCTAssertEqual(WiFiCoverageMath.bars(0.1), 1)
+        XCTAssertEqual(WiFiCoverageMath.bars(0.4), 2)
+        XCTAssertEqual(WiFiCoverageMath.bars(0.6), 3)
+        XCTAssertEqual(WiFiCoverageMath.bars(0.9), 4)
+        let a = WiFiAmplitudeSample(east: 0, north: 0, strength: 1)
+        let b = WiFiAmplitudeSample(east: 10, north: 0, strength: 0)
+        XCTAssertEqual(WiFiCoverageMath.idw(east: 0, north: 0, samples: [a, b]), 1, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.idw(east: 5, north: 0, samples: [a, b]), 0.5, accuracy: 1e-9)
+        XCTAssertNil(WiFiCoverageMath.bounds([]))
+        let box = try XCTUnwrap(WiFiCoverageMath.bounds([a, b], padding: 0))
+        XCTAssertEqual(box.minE, 0, accuracy: 1e-9)
+        XCTAssertEqual(box.maxE, 10, accuracy: 1e-9)
+    }
 }
 
 final class HomeworkMathTests: XCTestCase {

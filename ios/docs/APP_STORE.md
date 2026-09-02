@@ -41,7 +41,7 @@ Homework calculators:
 
 Measure with public Apple APIs (not private APIs):
 
-• Wi-Fi path (Network.framework): interface, expensive/constrained. iOS does not expose Wi-Fi RSSI to third-party apps; this tool will not invent a signal bar. Current SSID is optional and needs location plus, on a signed team, Access Wi-Fi Information.
+• Wi-Fi path (Network.framework) plus Apple’s public 0…1 `signalStrength` shown as percent/bars and an on-device coverage heatmap (GPS walk or tap-on-floor). iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. Current SSID needs location plus, on a signed team, Access Wi-Fi Information.
 • BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
@@ -70,7 +70,7 @@ First toolbox: field EE calculators plus public-API sensors and local saved note
 
 ## Wi-Fi App Store limitation (honest)
 
-Public iOS APIs do **not** provide Wi-Fi RSSI, noise, or a signal-bar value to third-party apps. `NWPathMonitor` reports path status (Wi-Fi / cellular / wired, expensive, constrained, interface names). `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID after the user grants location in that tool; it still does not return RSSI. Do not add private APIs to fake a meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
+Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple DTS). `NWPathMonitor` reports path status. `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID and a **0.0–1.0** `signalStrength` after location (and Access Wi-Fi Information on a signed team). That 0–1 value is often 0.0; it is not calibrated dBm. The in-app heatmap sketches Apple’s 0–1 amplitude versus GPS or a tapped floor plan. Do not add private APIs to fake a dBm meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
 
 ## App privacy (nutrition label)
 
@@ -112,7 +112,7 @@ Take 3–8 screens per size. Suggested shots:
 1. Toolbox search / tool list (dark premium home)
 2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
 3. Voltage drop with 3% / 5% notes and ampacity row
-4. Wi-Fi Path showing path status and the RSSI limitation copy
+4. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
 5. BLE scanner or bubble level
 6. Saved Jobs list (on-device notes)
 7. About (Trevor Beck, EE, beckify.com, email — no phone number)
