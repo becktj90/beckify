@@ -11,12 +11,27 @@ const state = {
 
 const elements = {};
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('pagehide', () => {
+  if (state.imageUrl) {
+    URL.revokeObjectURL(state.imageUrl);
+    state.imageUrl = '';
+  }
+  state.file = null;
+});
+
+function bootPanelSchedule() {
+  if (!document.getElementById || !document.getElementById('fillSlotsButton')) return;
   cacheElements();
   bindEvents();
   seedRows(MAX_CIRCUIT_SLOTS);
   renderAll();
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', bootPanelSchedule);
+} else {
+  bootPanelSchedule();
+}
 
 function cacheElements() {
   elements.imageInput = document.getElementById('imageInput');
@@ -42,6 +57,10 @@ function cacheElements() {
   elements.addRowButton = document.getElementById('addRowButton');
   elements.fillSlotsButton = document.getElementById('fillSlotsButton');
   elements.editorTableBody = document.getElementById('editorTableBody');
+  elements.reviewedSchedule = document.getElementById('reviewedSchedule');
+  elements.openPanelCaution = document.getElementById('openPanelCaution');
+  elements.directoryGrid = document.getElementById('directoryGrid');
+  elements.directoryGuidance = document.getElementById('directoryGuidance');
   elements.printButton = document.getElementById('printButton');
   elements.sheetPanelName = document.getElementById('sheetPanelName');
   elements.sheetVoltage = document.getElementById('sheetVoltage');
@@ -57,6 +76,13 @@ function bindEvents() {
     const [file] = event.target.files || [];
     handleFileSelection(file);
   });
+  const capture = document.getElementById('imageCapture');
+  if (capture) {
+    capture.addEventListener('change', event => {
+      const [file] = event.target.files || [];
+      handleFileSelection(file);
+    });
+  }
 
   ['dragenter', 'dragover'].forEach(eventName => {
     elements.dropZone.addEventListener(eventName, event => {
@@ -95,6 +121,9 @@ function bindEvents() {
     input.addEventListener('input', renderAll);
     input.addEventListener('change', renderAll);
   });
+  if (elements.reviewedSchedule) {
+    elements.reviewedSchedule.addEventListener('change', renderAll);
+  }
 }
 
 function handleFileSelection(file) {
@@ -123,41 +152,52 @@ function handleFileSelection(file) {
 
 async function runOcr() {
   if (!state.file) {
-    setStatus('Upload an image before starting OCR.');
+    setStatus('Choose a directory photo, or fill the table manually — you are not blocked.');
     return;
   }
 
-  if (!window.Tesseract) {
-    setStatus('Tesseract.js failed to load. Check your network connection and try again.');
+  if (!window.BeckifyOcr) {
+    setStatus('On-device OCR helper did not load. Fill the table manually — you are not blocked.');
     return;
   }
 
   elements.processButton.disabled = true;
-  updateProgress(0, 'Starting OCR…');
+  updateProgress(0, 'Starting on-device OCR…');
 
-  let worker;
   try {
-    worker = await Tesseract.createWorker('eng', 1, {
-      logger: message => {
-        const ratio = typeof message.progress === 'number' ? message.progress : 0;
-        updateProgress(ratio, humanizeStatus(message.status));
+    const out = await window.BeckifyOcr.recognize(state.file, {
+      logger: undefined,
+      onProgress: (ratio, status) => {
+        updateProgress(ratio, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
       }
     });
-
-    const result = await worker.recognize(state.file);
-    const text = result?.data?.text || '';
+    const text = out.text || '';
     state.rawText = text;
     elements.rawText.value = text;
+    if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+    if (elements.openPanelCaution) {
+      elements.openPanelCaution.hidden = !out.looksLikeOpenPanel;
+    }
+    if (out.looksLikeOpenPanel) {
+      setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
+    }
+    if (out.failed) {
+      setStatus('OCR found no usable text. Fill the table manually — you are not blocked.');
+      updateProgress(0, 'OCR found no text');
+      renderAll();
+      return;
+    }
     parseAndApplyText(text, true);
-    updateProgress(1, 'OCR complete. Review the preview grid before printing.');
+    if (out.lowConfidence) {
+      setStatus(`OCR confidence is low (${out.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
+    } else if (!out.looksLikeOpenPanel) {
+      updateProgress(1, 'OCR complete. Review the preview grid before using the estimates.');
+    }
   } catch (error) {
     console.error(error);
-    setStatus('OCR failed. Try a sharper image or edit the text manually.');
+    setStatus((error && error.message ? `${error.message} ` : '') + 'OCR failed. Fill the table manually — you are not blocked.');
     updateProgress(0, 'OCR failed');
   } finally {
-    if (worker) {
-      await worker.terminate();
-    }
     elements.processButton.disabled = false;
   }
 }
@@ -470,6 +510,7 @@ function renderAll() {
   renderEditorTable();
   renderPrintSheet();
   renderLoadAnalysis();
+  renderDirectoryMetrics();
 }
 
 function renderEditorTable() {
@@ -538,6 +579,7 @@ function handleRowEdit(event) {
 
   renderPrintSheet();
   renderLoadAnalysis();
+  renderDirectoryMetrics();
 }
 
 function panelVoltageInfo(value) {
@@ -565,6 +607,182 @@ function panelNumber(value, fallback = NaN) {
 
 function summaryMetric(label, value, detail = '') {
   return `<article class="analysis-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</article>`;
+}
+
+function tripAmpsFromRow(row) {
+  return tripAmps(row && row.trip);
+}
+
+function isSpareOrOpen(row) {
+  const desc = String(row && row.description || '').trim();
+  const lower = desc.toLowerCase();
+  const amps = tripAmpsFromRow(row);
+  if (!desc && !(amps > 0)) return true;
+  if (row && row.loadType === 'Spare') return true;
+  return /^(spare|space|blank|future|open)(\b|$)/i.test(desc) || (/\b(spare|space|future)\b/.test(lower) && desc.length < 24);
+}
+
+function isUnlabeled(row) {
+  if (isSpareOrOpen(row)) return false;
+  const desc = String(row && row.description || '').trim();
+  const amps = tripAmpsFromRow(row);
+  return amps > 0 && (!desc || /^(ckt|circuit|\d+)$/i.test(desc));
+}
+
+function isVague(row) {
+  if (isSpareOrOpen(row) || isUnlabeled(row)) return false;
+  const desc = String(row && row.description || '').trim();
+  if (!desc) return false;
+  return desc.length < 3 || /^(load|tbd|n\/a|na|-|\.|x|misc)$/i.test(desc);
+}
+
+function looksDoubledUp(row) {
+  return /tandem|cheater|double.?stuff|half.?size|duplex breaker|wafer/i.test(String(row && row.description || ''));
+}
+
+function connectedBreakerSum(rows) {
+  let sum = 0;
+  (rows || []).forEach(row => {
+    if (isSpareOrOpen(row)) return;
+    const amps = tripAmpsFromRow(row);
+    if (amps > 0) sum += amps;
+  });
+  return sum;
+}
+
+function rowSlotCount(row) {
+  return Math.max(1, Number(row && row.poles) || 1);
+}
+
+function spareStats(rows, slotCount) {
+  const list = Array.isArray(rows) ? rows : [];
+  let spare = 0;
+  let fromRows = 0;
+  list.forEach(row => {
+    const slots = rowSlotCount(row);
+    fromRows += slots;
+    if (isSpareOrOpen(row)) spare += slots;
+  });
+  const total = slotCount > 0 ? slotCount : fromRows;
+  return { spare, total, pct: total ? (spare / total) * 100 : 0 };
+}
+
+function phaseLegFromCircuit(circuit, phase) {
+  const n = firstCircuitNumber(circuit);
+  if (!Number.isFinite(n) || n < 1 || n === Number.MAX_SAFE_INTEGER) return null;
+  if (Number(phase) === 1) {
+    /* Typical split-phase panelboard: odd spaces on L1, even spaces on L2. */
+    return n % 2 === 1 ? 'L1' : 'L2';
+  }
+  const g = (n - 1) % 6;
+  if (g <= 1) return 'A';
+  if (g <= 3) return 'B';
+  return 'C';
+}
+
+function occupiedLegsForRow(row, phase) {
+  const start = firstCircuitNumber(row && row.circuit);
+  if (!Number.isFinite(start) || start < 1 || start === Number.MAX_SAFE_INTEGER) return [];
+  const poles = Math.max(1, Number(row && row.poles) || 1);
+  /* 1φ: consecutive spaces (odd L1, even L2) so a 2-pole 240 V breaker
+     lands on both legs. 3φ uses the pair layout (1–2 A, 3–4 B, 5–6 C),
+     so a multi-pole breaker steps by 2 spaces to reach the next phase. */
+  const stride = Number(phase) === 1 ? 1 : 2;
+  const legs = [];
+  for (let i = 0; i < poles; i += 1) {
+    const leg = phaseLegFromCircuit(String(start + i * stride), phase);
+    if (leg && legs.indexOf(leg) === -1) legs.push(leg);
+  }
+  return legs;
+}
+
+function phaseBalance(rows, phase) {
+  const legs = {};
+  (rows || []).forEach(row => {
+    if (isSpareOrOpen(row)) return;
+    const amps = tripAmpsFromRow(row);
+    if (!(amps > 0)) return;
+    occupiedLegsForRow(row, phase).forEach(leg => {
+      legs[leg] = (legs[leg] || 0) + amps;
+    });
+  });
+  return {
+    legs,
+    assumption: Number(phase) === 1
+      ? 'Assumption: odd/even 1φ panelboard numbering — odd circuits on L1, even circuits on L2. A 2-pole breaker counts trip amps on both legs. Inference from numbering, not a measurement.'
+      : 'Assumption: odd-even 3φ layout, circuits 1–2 phase A, 3–4 B, 5–6 C, repeating. A 3-pole breaker at circuit 1 occupies A, B, and C. Inference from numbering, not a measurement.',
+  };
+}
+
+function computeDirectoryMetrics(rows, opts) {
+  opts = opts || {};
+  const phase = Number(opts.phase) === 1 ? 1 : 3;
+  const mainAmps = Number(opts.mainAmps);
+  const list = Array.isArray(rows) ? rows : [];
+  const fromRows = list.reduce((n, row) => n + rowSlotCount(row), 0);
+  const slotCount = Number(opts.slotCount) || fromRows;
+  const connected = connectedBreakerSum(list);
+  const spare = spareStats(list, slotCount);
+  const unlabeled = list.filter(isUnlabeled);
+  const vague = list.filter(isVague);
+  const doubled = list.filter(looksDoubledUp);
+  const balance = phaseBalance(list, phase);
+  const ratio = Number.isFinite(mainAmps) && mainAmps > 0 ? connected / mainAmps : null;
+  const flags = [];
+  if (unlabeled.length) flags.push('blank labels found: ' + unlabeled.length);
+  if (vague.length) flags.push('vague labels found: ' + vague.length);
+  if (doubled.length) flags.push('apparent doubled-up / tandem wording on ' + doubled.length + ' row(s)');
+  return {
+    connectedBreakerAmps: connected,
+    mainAmps: Number.isFinite(mainAmps) && mainAmps > 0 ? mainAmps : null,
+    connectedToMainPct: ratio != null ? Math.round(ratio * 10000) / 100 : null,
+    connectedNote: 'Rough loading indicator only — not an NEC Article 220 demand-load calculation. Panels are routinely designed with connected breaker totals well above the main rating. Over 100% connected does not mean the panel is unsafe.',
+    spareCount: spare.spare,
+    spareTotal: spare.total,
+    sparePct: spare.pct,
+    unlabeledCount: unlabeled.length,
+    vagueCount: vague.length,
+    doubledCount: doubled.length,
+    flags,
+    phaseBalance: balance,
+  };
+}
+
+function renderDirectoryMetrics() {
+  if (!elements.directoryGrid || !elements.directoryGuidance) return;
+  const reviewed = elements.reviewedSchedule && elements.reviewedSchedule.checked;
+  if (!reviewed) {
+    elements.directoryGrid.innerHTML = summaryMetric('Waiting for review', 'Check the box', 'OCR is a draft. Directory metrics stay hidden until you confirm the table.');
+    elements.directoryGuidance.innerHTML = '<p>Check “I reviewed every circuit row” after correcting the table. You can still type every field by hand with no photo.</p>';
+    return;
+  }
+  const rows = normalizeRows(state.rows);
+  const metrics = computeDirectoryMetrics(rows, {
+    phase: elements.panelPhase ? elements.panelPhase.value : 3,
+    mainAmps: elements.panelCapacityAmps ? elements.panelCapacityAmps.value : '',
+    slotCount: rows.reduce((n, row) => n + rowSlotCount(row), 0) || MAX_CIRCUIT_SLOTS,
+  });
+  const mainLabel = metrics.mainAmps
+    ? `${formatNumber(metrics.connectedBreakerAmps)} A vs ${formatNumber(metrics.mainAmps)} A main (${formatNumber(metrics.connectedToMainPct)}% connected)`
+    : `${formatNumber(metrics.connectedBreakerAmps)} A connected (enter main size)`;
+  const legs = metrics.phaseBalance.legs;
+  const legText = Object.keys(legs).length
+    ? Object.entries(legs).map(([leg, amps]) => `${leg} ${formatNumber(amps)} A`).join(' · ')
+    : 'Not enough numbered circuits to infer legs';
+  elements.directoryGrid.innerHTML = [
+    summaryMetric('Main vs connected branch breakers', mainLabel, 'Sum of trip ratings on non-spare rows. Rough indicator only.'),
+    summaryMetric('Rough phase balance', legText, metrics.phaseBalance.assumption),
+    summaryMetric('Spare / open slots', `${metrics.spareCount} of ${metrics.spareTotal} (${formatNumber(metrics.sparePct)}%)`, 'Physical slots from pole count on spare/blank/open wording.'),
+    summaryMetric('Worth asking an electrician', metrics.flags.length ? metrics.flags.join('; ') : 'No extra flags from labels', 'Flags are not diagnosed defects.'),
+  ].join('');
+  const notes = [
+    metrics.connectedNote,
+    'Informational estimate from a photo or typed directory, not an electrical inspection. Any safety concern goes to a licensed electrician.',
+  ];
+  if (metrics.flags.length) {
+    notes.push('Worth asking an electrician about: ' + metrics.flags.join('; ') + '.');
+  }
+  elements.directoryGuidance.innerHTML = notes.map(note => `<p>${escapeHtml(note)}</p>`).join('');
 }
 
 function renderLoadAnalysis() {
@@ -722,12 +940,15 @@ function resetApp() {
   elements.previewFrame.classList.remove('has-image');
   elements.fileName.textContent = 'No file selected';
   elements.processButton.disabled = true;
+  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+  if (elements.openPanelCaution) elements.openPanelCaution.hidden = true;
   resetProgress();
   setStatus('Reset complete. Upload a new schedule image to begin again.');
   renderAll();
 }
 
 function handleParseText() {
+  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
   parseAndApplyText(elements.rawText.value, false);
 }
 
@@ -802,6 +1023,17 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     panelVoltageInfo,
     rowLoadVa,
     normalizeLoadAmps,
-    normalizeDemandFactor
+    normalizeDemandFactor,
+    isSpareOrOpen,
+    isUnlabeled,
+    isVague,
+    looksDoubledUp,
+    connectedBreakerSum,
+    spareStats,
+    rowSlotCount,
+    phaseLegFromCircuit,
+    occupiedLegsForRow,
+    phaseBalance,
+    computeDirectoryMetrics
   };
 }

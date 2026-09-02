@@ -201,6 +201,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/cable-schedule/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/motor-nameplate/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/transformer/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -397,6 +407,11 @@
   </url>
   <url>
     <loc>https://beckify.com/toolbox/battery-build-designer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/battery-bank/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

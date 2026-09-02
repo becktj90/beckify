@@ -23,17 +23,18 @@
 
      cross-origin     cache-first, network fallback, opaque responses kept,
                       but only for an allow-list of CDNs (jsDelivr, Google
-                      Fonts, GA). jsPDF and Tesseract are lazy-loaded from a
-                      CDN; caching them on first use means PDF export and OCR
-                      keep working offline afterwards. They are never precached
-                      — that would make install fail whenever a CDN is
-                      unreachable. Unknown hosts are not intercepted.
+                      Fonts, GA). jsPDF is still lazy-loaded from a CDN on
+                      first use. Local Tesseract OCR files (~18 MB) are also
+                      runtime-cached on first Read-nameplate / panel-photo
+                      use — they are not in the install SHELL, so visitors
+                      who never run OCR do not download them at install.
+                      Unknown hosts are not intercepted.
 
    CACHE_VERSION must be bumped whenever a precached file changes, otherwise
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v17';
+const CACHE_VERSION = 'v23';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -92,6 +93,13 @@ const SHELL = [
   './js/sensor-fft.js',
   './js/sensor-engine.js',
   './js/sensor-tools.js',
+  './js/field-persist.js',
+  './js/nema-wiring.js',
+  './js/battery-bank.js',
+  './js/cable-schedule.js',
+  './js/ocr-helper.js',
+  './js/motor-nameplate.js',
+  './js/vendor/xlsx.full.min.js',
   './js/math-explanations.js',
   './js/analog-schematics.js',
   './js/analog-tools.js',
@@ -179,6 +187,10 @@ function cacheFirst(request, cacheName) {
   });
 }
 
+function isTesseractAsset(url) {
+  return url.pathname.indexOf('/toolbox/js/vendor/tesseract/') !== -1;
+}
+
 self.addEventListener('fetch', function (event) {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -192,6 +204,13 @@ self.addEventListener('fetch', function (event) {
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
+    return;
+  }
+
+  if (isSameOrigin(url) && isTesseractAsset(url)) {
+    event.respondWith(cacheFirst(request, RUNTIME_CACHE).catch(function () {
+      return caches.match(request);
+    }));
     return;
   }
 

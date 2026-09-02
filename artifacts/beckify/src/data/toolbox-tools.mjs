@@ -39,6 +39,8 @@ export const TOOLS = [
   ["power-factor-correction", "Power Factor Correction Calculator", "Estimate correction capacitance and improved power factor for AC loads.", "sec-pfc"],
   ["series-parallel", "Series and Parallel Calculator", "Combine resistance, capacitance, or inductance values in series and parallel networks.", "sec-sp"],
   ["motor-calculations", "Motor Calculations", "Estimate motor current, horsepower, efficiency, and power relationships for field calculations.", "sec-motor"],
+  ["cable-schedule", "Cable Schedule Generator", "Build a power, control, instrumentation, and communication cable schedule from a type catalog, quantity cart, and sequential Cable IDs, then export CSV, XLSX, or JSON.", "sec-cable-schedule"],
+  ["motor-nameplate", "Motor Nameplate Analyzer", "Read a motor nameplate photo on this device, review HP, FLA, and code letter, then estimate overload, branch-circuit SCPD, and conductor size from NEC 430.32, Table 430.52, and 430.22.", "sec-motor-nameplate"],
   ["transformer", "Transformer Calculator", "Calculate transformer current, turns ratio, and voltage relationships for common configurations.", "sec-xfmr"],
   ["transformer-engine", "Transformer Conductor Selection Engine", "Work through transformer conductors, OCPD, grounding, voltage drop, and conduit selection.", "sec-xfmr-engine"],
   ["conduit-fill", "Conduit Fill Calculator", "Check conductor count and raceway fill using electrical conductor and conduit areas.", "sec-conduit"],
@@ -79,7 +81,8 @@ export const TOOLS = [
   ["analog-design-workbench", "Analog Design Workbench", "Calculate common op-amp stages and design RC, RLC, Sallen-Key, state-variable, notch, band-pass, and all-pass filters with a live response plot.", "sec-analog-design"],
   ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],
-  ["panel-schedule-load-analyzer", "Panel Schedule Load Analyzer", "Extract an editable panel schedule from a photo and estimate circuit demand, panel current, diversity, and capacity.", "sec-panel-schedule"],
+  ["battery-bank", "Battery Bank Calculator", "Size a battery bank from load and backup duration, or reverse-solve runtime from series/parallel strings, with chemistry presets and a continuous C-rate flag.", "sec-battery-bank"],
+  ["panel-schedule-load-analyzer", "Panel Schedule Load Analyzer", "Photograph a panel directory or printed circuit card (door closed), review OCR on this device, and estimate connected-breaker loading, spare slots, and a rough phase balance.", "sec-panel-schedule"],
   ["panel-power-study", "Panel Schedule Power Study", "Read a panel schedule image, review breaker sizes, poles, and circuit classes, then calculate connected load, demand and diversity factors, panel FLA, and remaining expansion capacity.", "sec-panel-power-study"],
   ["megger-tdr-analyzer", "Megger TDR Trace Analyzer", "Analyze a Megger TDR500 screen image for velocity factor, range, impedance, and cable fault reflections.", "sec-tdr"],
   ["smith-chart", "Smith Chart Tool", "Explore transmission-line impedance matching, reflection coefficient, VSWR, and return loss.", "sec-smith-chart"],
@@ -115,7 +118,7 @@ export const CATEGORIES = [
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],
-  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel OCR, Megger TDR, PLC I/O lists, scaling, Modbus addressing, timer presets, and phone-sensor meters (lux, hum, spectrum, sound level).", "sec-tdr"],
+  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel-directory OCR, motor nameplates, cable schedules, Megger TDR, PLC I/O lists, scaling, Modbus addressing, timer presets, and phone-sensor meters (lux, hum, spectrum, sound level).", "sec-tdr"],
   ["reference-tables", "Electrical Reference Tables", "Browse conductor, motor, conduit, enclosure, IP rating, and NEC reference information.", "sec-wire-ref"],
 ];
 
@@ -132,4 +135,5 @@ export const REFERENCE_TABLES = [
   ["nec-tables", "NEC Code Tables", "Key National Electrical Code reference tables for conductor sizing, derating, protection, and conduit fill.", "sec-nec-tables"],
   ["ip-rating", "IP Rating Chart (IEC 60529)", "Ingress Protection ratings for electrical enclosures covering solid-particle and liquid protection.", "sec-ip-rating"],
   ["nema-class", "NEMA Enclosure Types (NEMA 250)", "NEMA enclosure ratings for electrical equipment environmental and safety protection levels.", "sec-nema-class"],
+  ["nema-wiring", "NEMA Wiring Configurations & Color Code Reference", "SVG receptacle-face diagrams for common NEMA straight-blade and locking devices, plus US color-code notes. Neutral and EGC colors cite NEC 200.6 and 250.119; hot colors are industry convention.", "sec-nema-wiring"],
 ];
