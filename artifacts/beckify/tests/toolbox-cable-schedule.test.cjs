@@ -82,4 +82,17 @@ const roundTrip = api.parseProject(JSON.stringify(api.serializeProject(
 assert.equal(roundTrip.numbering.prefix, 'C-');
 assert.equal(roundTrip.cart[0].qty, 2);
 
+const renamed = api.retargetCartTypeIds(
+  [{ typeId: 'PWR-4C-12', qty: 2 }, { typeId: 'CTL-8C-14', qty: 1 }],
+  'PWR-4C-12',
+  'PWR-4C-10',
+);
+assert.equal(renamed[0].typeId, 'PWR-4C-10');
+assert.equal(renamed[1].typeId, 'CTL-8C-14');
+const generated = api.expandBuildList(renamed, catalog.map((c) => (
+  c.id === 'PWR-4C-12' ? Object.assign({}, c, { id: 'PWR-4C-10' }) : c
+)), { prefix: 'C-', start: 1, width: 3 });
+assert.equal(generated[0]['Cable Type'], 'PWR-4C-10');
+assert.equal(generated[0]['Conductor Size'], '12 AWG');
+
 console.log('Cable schedule numbering and export helpers passed');

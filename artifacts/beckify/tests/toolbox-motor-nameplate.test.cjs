@@ -72,7 +72,11 @@ assert.equal(junkDevice.device, 'inv');
 assert.equal(junkDevice.pct, 250);
 
 assert.match(api.TABLE_430_52['sc-bde'].label, /other than Design B energy-efficient/i);
+assert.match(api.TABLE_430_52['sc-bde'].label, /premium-efficiency/i);
 assert.match(api.TABLE_430_52['sc-ee'].label, /Design B energy-efficient/i);
+assert.match(api.TABLE_430_52['sc-ee'].label, /premium-efficiency/i);
+assert.equal(api.TABLE_430_52['sc-bde'].inst, 800);
+assert.equal(api.TABLE_430_52['sc-ee'].inst, 1100);
 assert.match(api.TABLE_430_52['sync-pw'].article, /older NEC Table 430\.52/);
 
 const src = fs.readFileSync(path.join(root, 'motor-nameplate.js'), 'utf8');

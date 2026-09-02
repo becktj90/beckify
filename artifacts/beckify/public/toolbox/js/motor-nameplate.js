@@ -36,14 +36,15 @@
      Columns: nontime-delay fuse, dual-element time-delay fuse,
      instantaneous-trip breaker, inverse-time breaker.
      Labels follow current Table 430.52 squirrel-cage rows (other than
-     Design B energy-efficient vs Design B energy-efficient). Design D/E
-     are not listed as that 800% row. Part-winding percentages are kept
-     only as an older-cycle Table 430.52 row — they are not claimed as
-     current 430.52(C)(1). */
+     Design B energy-efficient / premium-efficiency vs that Design B
+     energy-efficient and premium-efficiency row). Design D/E are not
+     listed as the 800% row. Percentages are unchanged. Part-winding
+     percentages are kept only as an older-cycle Table 430.52 row — they
+     are not claimed as current 430.52(C)(1). */
   var TABLE_430_52 = {
     '1ph': { label: 'Single-phase AC, all types', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
-    'sc-bde': { label: 'AC squirrel-cage other than Design B energy-efficient', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
-    'sc-ee': { label: 'AC squirrel-cage Design B energy-efficient', ntd: 300, td: 175, inst: 1100, inv: 250, article: 'NEC Table 430.52' },
+    'sc-bde': { label: 'AC squirrel-cage other than Design B energy-efficient / premium-efficiency', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
+    'sc-ee': { label: 'AC squirrel-cage Design B energy-efficient or premium-efficiency', ntd: 300, td: 175, inst: 1100, inv: 250, article: 'NEC Table 430.52' },
     'sync': { label: 'AC synchronous (full-voltage, resistor or reactor start)', ntd: 300, td: 175, inst: 800, inv: 250, article: 'NEC Table 430.52' },
     'sync-pw': { label: 'AC synchronous (part-winding, older Table 430.52)', ntd: 150, td: 150, inst: 800, inv: 200, article: 'older NEC Table 430.52 (part-winding)' },
     'wound': { label: 'AC wound-rotor', ntd: 150, td: 150, inst: 800, inv: 150, article: 'NEC Table 430.52' },
@@ -180,7 +181,7 @@
     };
   }
 
-  var PARSED_FIELD_IDS = ['mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise'];
+  var PARSED_FIELD_IDS = ['mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_hz', 'mnp_phase', 'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise'];
 
   function clearParsedFields() {
     for (var i = 0; i < PARSED_FIELD_IDS.length; i++) {
@@ -198,6 +199,7 @@
     setVal('mnp_rpm', fields.rpm);
     setVal('mnp_hz', fields.hz);
     if (fields.phase === '1' || fields.phase === '3') setVal('mnp_phase', fields.phase);
+    else if (el('mnp_phase')) el('mnp_phase').value = '3';
     setVal('mnp_frame', fields.frame);
     setVal('mnp_sf', fields.sf);
     setVal('mnp_design', fields.design);

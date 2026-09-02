@@ -58,6 +58,13 @@ assert.equal(metrics.connectedBreakerAmps, 55);
 assert.equal(metrics.connectedToMainPct, 55);
 assert.equal(String(metrics.connectedToMainPct), '55');
 assert.equal(metrics.spareCount, 1);
+
+const twoPoleSpare = panel.computeDirectoryMetrics([
+  { circuit: '1', description: 'Lights', trip: '20A', poles: '1' },
+  { circuit: '3', description: 'SPARE', trip: '', poles: '2' },
+], { phase: 1, mainAmps: 100 });
+assert.equal(twoPoleSpare.spareCount, 2);
+assert.equal(twoPoleSpare.spareTotal, 3);
 assert.equal(metrics.unlabeledCount, 1);
 assert.match(metrics.connectedNote, /not an NEC Article 220/i);
 assert.match(metrics.connectedNote, /does not mean the panel is unsafe/i);

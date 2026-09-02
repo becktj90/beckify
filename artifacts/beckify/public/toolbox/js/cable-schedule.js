@@ -59,6 +59,17 @@
     return null;
   }
 
+  function retargetCartTypeIds(cartList, previousId, nextId) {
+    var from = String(previousId || '');
+    var to = String(nextId || '');
+    if (!from || from === to) return cartList;
+    var items = Array.isArray(cartList) ? cartList : [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i] && items[i].typeId === from) items[i].typeId = to;
+    }
+    return items;
+  }
+
   function padNumber(n, width) {
     var s = String(Math.max(0, Math.floor(n)));
     var w = Math.max(1, Math.floor(Number(width) || 3));
@@ -390,8 +401,10 @@
       var i = Number(t.getAttribute('data-i'));
       var field = t.getAttribute('data-cab-cat');
       if (!catalog[i] || !field) return;
+      var previousId = catalog[i].id;
       if (field === 'count') catalog[i].count = Math.max(1, Math.floor(Number(t.value) || 1));
       else catalog[i][field] = t.value;
+      if (field === 'id') retargetCartTypeIds(cart, previousId, catalog[i].id);
       renderCart();
       return;
     }
@@ -510,6 +523,7 @@
     BLANK_ON_GENERATE: BLANK_ON_GENERATE,
     SEED_CATALOG: cloneCatalog(SEED_CATALOG),
     catalogById: catalogById,
+    retargetCartTypeIds: retargetCartTypeIds,
     nextCableId: nextCableId,
     padNumber: padNumber,
     formatConductorSize: formatConductorSize,

@@ -650,11 +650,20 @@ function connectedBreakerSum(rows) {
   return sum;
 }
 
+function rowSlotCount(row) {
+  return Math.max(1, Number(row && row.poles) || 1);
+}
+
 function spareStats(rows, slotCount) {
   const list = Array.isArray(rows) ? rows : [];
-  const total = slotCount > 0 ? slotCount : list.length;
   let spare = 0;
-  list.forEach(row => { if (isSpareOrOpen(row)) spare += 1; });
+  let fromRows = 0;
+  list.forEach(row => {
+    const slots = rowSlotCount(row);
+    fromRows += slots;
+    if (isSpareOrOpen(row)) spare += slots;
+  });
+  const total = slotCount > 0 ? slotCount : fromRows;
   return { spare, total, pct: total ? (spare / total) * 100 : 0 };
 }
 
@@ -710,7 +719,8 @@ function computeDirectoryMetrics(rows, opts) {
   const phase = Number(opts.phase) === 1 ? 1 : 3;
   const mainAmps = Number(opts.mainAmps);
   const list = Array.isArray(rows) ? rows : [];
-  const slotCount = Number(opts.slotCount) || list.length;
+  const fromRows = list.reduce((n, row) => n + rowSlotCount(row), 0);
+  const slotCount = Number(opts.slotCount) || fromRows;
   const connected = connectedBreakerSum(list);
   const spare = spareStats(list, slotCount);
   const unlabeled = list.filter(isUnlabeled);
@@ -728,6 +738,7 @@ function computeDirectoryMetrics(rows, opts) {
     connectedToMainPct: ratio != null ? Math.round(ratio * 10000) / 100 : null,
     connectedNote: 'Rough loading indicator only — not an NEC Article 220 demand-load calculation. Panels are routinely designed with connected breaker totals well above the main rating. Over 100% connected does not mean the panel is unsafe.',
     spareCount: spare.spare,
+    spareTotal: spare.total,
     sparePct: spare.pct,
     unlabeledCount: unlabeled.length,
     vagueCount: vague.length,
@@ -749,7 +760,7 @@ function renderDirectoryMetrics() {
   const metrics = computeDirectoryMetrics(rows, {
     phase: elements.panelPhase ? elements.panelPhase.value : 3,
     mainAmps: elements.panelCapacityAmps ? elements.panelCapacityAmps.value : '',
-    slotCount: rows.length || MAX_CIRCUIT_SLOTS,
+    slotCount: rows.reduce((n, row) => n + rowSlotCount(row), 0) || MAX_CIRCUIT_SLOTS,
   });
   const mainLabel = metrics.mainAmps
     ? `${formatNumber(metrics.connectedBreakerAmps)} A vs ${formatNumber(metrics.mainAmps)} A main (${formatNumber(metrics.connectedToMainPct)}% connected)`
@@ -761,7 +772,7 @@ function renderDirectoryMetrics() {
   elements.directoryGrid.innerHTML = [
     summaryMetric('Main vs connected branch breakers', mainLabel, 'Sum of trip ratings on non-spare rows. Rough indicator only.'),
     summaryMetric('Rough phase balance', legText, metrics.phaseBalance.assumption),
-    summaryMetric('Spare / open slots', `${metrics.spareCount} of ${rows.length || MAX_CIRCUIT_SLOTS} (${formatNumber(metrics.sparePct)}%)`, 'Room to add a circuit, from spare/blank/open wording.'),
+    summaryMetric('Spare / open slots', `${metrics.spareCount} of ${metrics.spareTotal} (${formatNumber(metrics.sparePct)}%)`, 'Physical slots from pole count on spare/blank/open wording.'),
     summaryMetric('Worth asking an electrician', metrics.flags.length ? metrics.flags.join('; ') : 'No extra flags from labels', 'Flags are not diagnosed defects.'),
   ].join('');
   const notes = [
@@ -1019,6 +1030,7 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     looksDoubledUp,
     connectedBreakerSum,
     spareStats,
+    rowSlotCount,
     phaseLegFromCircuit,
     occupiedLegsForRow,
     phaseBalance,
