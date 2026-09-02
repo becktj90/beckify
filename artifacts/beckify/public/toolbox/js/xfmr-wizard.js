@@ -130,20 +130,13 @@
     },
   ];
 
-  /* ── Wire cost for parallel run optimizer (approx $/ft Cu THHN installed) ── */
-  const WIRE_COST_CU = {
-    '14': 0.15, '12': 0.20, '10': 0.30, '8': 0.50, '6': 0.70,
-    '4': 1.00, '3': 1.20, '2': 1.45, '1': 1.75, '1/0': 2.10,
-    '2/0': 2.55, '3/0': 3.10, '4/0': 3.80, '250': 4.50, '300': 5.40,
-    '350': 6.40, '400': 7.30, '500': 9.10, '600': 10.80, '700': 12.50,
-    '750': 13.40, '1000': 17.80,
-  };
-  const WIRE_COST_AL = {
-    '12': 0.10, '10': 0.14, '8': 0.20, '6': 0.28, '4': 0.38,
-    '3': 0.45, '2': 0.55, '1': 0.65, '1/0': 0.80, '2/0': 0.98,
-    '3/0': 1.20, '4/0': 1.45, '250': 1.70, '300': 2.05, '350': 2.40,
-    '400': 2.75, '500': 3.40, '600': 4.05, '700': 4.70, '750': 5.05, '1000': 6.70,
-  };
+  /* Shared planning-allowance book from wire-tools.js. No second price table. */
+  function wzPriceBook(materialKey) {
+    const book = (typeof PLANNING_CONDUCTOR_PRICE_PER_FT !== 'undefined' && PLANNING_CONDUCTOR_PRICE_PER_FT)
+      || (typeof window !== 'undefined' && window.PLANNING_CONDUCTOR_PRICE_PER_FT)
+      || null;
+    return (book && book[materialKey]) || {};
+  }
 
   /* ── State ── */
   let WZ = {
@@ -192,7 +185,7 @@
   /* ── Parallel run cost optimizer ── */
   function parallelRunOptions(requiredAmps, material, _insulation, ambientC, ccc, terminationTemp, phase, connection) {
     const materialKey = wzMaterialKey(material);
-    const costs = materialKey === 'cu' ? WIRE_COST_CU : WIRE_COST_AL;
+    const costs = wzPriceBook(materialKey);
     const results = [];
     for (let runs = 1; runs <= 6; runs++) {
       const ampsPerRun = requiredAmps / runs;

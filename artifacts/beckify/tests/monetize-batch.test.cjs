@@ -49,7 +49,7 @@ console.log("\n--- Counts ---");
 const { PUBLIC_CALCULATOR_COUNT } = require(path.join(root, "src/data/toolbox-tools.mjs"));
 const navTargets = [...toolboxHtml.matchAll(/<button class="nav-btn"[^>]*data-target="([^"]+)"/g)].map((m) => m[1]);
 const excludedNav = new Set([
-  "sec-wire-ref", "sec-motor-ref", "sec-conduit-ref", "sec-conduit-guide",
+  "sec-wire-ref", "sec-conduit-ref", "sec-conduit-guide",
   "sec-ip-rating", "sec-nema-class", "sec-nema-wiring", "sec-nec-tables", "sec-projects",
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;

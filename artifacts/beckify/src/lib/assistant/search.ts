@@ -1,4 +1,4 @@
-import { TOOLS, REFERENCE_TABLES } from "@/data/toolbox-tools.mjs";
+import { TOOLS, TOOL_ALIASES, REFERENCE_TABLES } from "@/data/toolbox-tools.mjs";
 
 export type AssistantDocument = { id: string; title: string; description: string; href: string; tags: string[]; concepts: string[]; kind: "tool" | "page" | "reference" };
 export type SearchResult = AssistantDocument & { score: number; matched: string[] };
@@ -23,7 +23,11 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "voltage-drop": ["feeder", "branch", "wire", "awg", "distance"],
   "conduit-fill": ["emt", "raceway", "chapter 9", "40 percent"],
   "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],
+  "transformer": ["kva", "primary", "secondary", "450.3", "transformer sizing", "xfmr", "note 1"],
   "transformer-sizing": ["kva", "primary", "secondary", "450.3"],
+  "conductors": ["voltage drop", "ampacity", "awg", "310.16", "mv cable", "lighting"],
+  "motor": ["fla", "430.248", "430.250", "horsepower"],
+  "on-site-power": ["ups", "generator", "hybrid", "bess"],
   "megger-tdr-analyzer": ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"],
   "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
@@ -54,15 +58,26 @@ const EXTRA_TAGS: Record<string, string[]> = {
  * the site without being searchable — previously this file hand-maintained
  * its own copy that drifted to 8 of 44 real tools.
  */
-const TOOL_DOCUMENTS: AssistantDocument[] = TOOLS.map(([slug, title, description, anchor]) => ({
-  id: slug,
-  title,
-  description,
-  href: `/toolbox/#${anchor}`,
-  tags: [...significantWords(title), ...(EXTRA_TAGS[slug] ?? [])],
-  concepts: significantWords(description).slice(0, 8),
-  kind: "tool" as const,
-}));
+const TOOL_DOCUMENTS: AssistantDocument[] = [
+  ...TOOLS.map(([slug, title, description, anchor]) => ({
+    id: slug,
+    title,
+    description,
+    href: `/toolbox/#${anchor}`,
+    tags: [...significantWords(title), ...(EXTRA_TAGS[slug] ?? [])],
+    concepts: significantWords(description).slice(0, 8),
+    kind: "tool" as const,
+  })),
+  ...TOOL_ALIASES.map(([slug, title, description, anchor]) => ({
+    id: slug,
+    title,
+    description,
+    href: `/toolbox/#${anchor}`,
+    tags: [...significantWords(title), ...(EXTRA_TAGS[slug] ?? [])],
+    concepts: significantWords(description).slice(0, 8),
+    kind: "tool" as const,
+  })),
+];
 
 const REFERENCE_DOCUMENTS: AssistantDocument[] = REFERENCE_TABLES.map(([slug, title, description, anchor]) => ({
   id: slug,
