@@ -1,0 +1,31 @@
+# iOS math (Linux)
+
+# Runs the pure-Swift BeckifyMath package on Ubuntu.
+# This is not an iOS Simulator, Xcode, or SwiftUI UI build.
+
+name: iOS math (Linux)
+
+on:
+  pull_request:
+    paths:
+      - "ios/BeckifyMath/**"
+      - ".github/workflows/ios-math.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "ios/BeckifyMath/**"
+      - ".github/workflows/ios-math.yml"
+  workflow_dispatch:
+
+jobs:
+  swift-test:
+    name: swift test (Ubuntu, BeckifyMath only)
+    runs-on: ubuntu-latest
+    container: swift:6.1.2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run BeckifyMath tests
+        run: cd ios/BeckifyMath && swift test

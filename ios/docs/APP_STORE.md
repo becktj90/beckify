@@ -45,9 +45,11 @@ First release. Native field EE toolbox with local saved jobs.
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
+**Privacy Policy URL (intended, once hosted):** App Store Connect requires a public HTTPS privacy-policy URL. The draft is [`ios/docs/PRIVACY.md`](PRIVACY.md) (“Data Not Collected”). It is **not** hosted on https://beckify.com in this PR. After this file is on `main`, a typical stand-in until a dedicated page exists is the GitHub blob URL for that path (for example `https://github.com/becktj90/beckify/blob/main/ios/docs/PRIVACY.md`). Do not treat the live site as hosting this policy.
+
 ## App privacy (nutrition label)
 
-Data collection: **none**.
+Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
 
 - No analytics
 - No tracking
@@ -66,7 +68,7 @@ The app uses only HTTPS for optional links the user taps (beckify.com, mailto). 
 
 ## Screenshots (required sizes)
 
-Capture on a Mac with Simulator after the UI is signed and running. Do **not** ship website screenshots.
+Not captured in this repository. This repo has not run an iOS Simulator UI build, signed the app, enrolled an Apple Developer team, uploaded TestFlight, or submitted to the App Store. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
 
 Apple's current required sets typically include:
 
