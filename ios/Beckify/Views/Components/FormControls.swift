@@ -6,6 +6,7 @@ struct NumberField: View {
     @Binding var text: String
     var placeholder: String = "0"
     var optional: Bool = false
+    var allowsScientific: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -22,7 +23,7 @@ struct NumberField: View {
             }
             HStack(alignment: .firstTextBaseline) {
                 TextField(placeholder, text: $text)
-                    .keyboardType(.decimalPad)
+                    .keyboardType(allowsScientific ? .numbersAndPunctuation : .decimalPad)
                     .font(.title3.monospacedDigit().weight(.medium))
                     .foregroundStyle(Theme.foreground)
                     .textInputAutocapitalization(.never)

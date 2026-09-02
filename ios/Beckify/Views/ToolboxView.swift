@@ -27,6 +27,18 @@ struct ToolboxView: View {
                         }
                     }
                 }
+                if !homework.isEmpty {
+                    Section {
+                        ForEach(homework) { tool in
+                            NavigationLink(value: tool.id) {
+                                ToolRow(tool: tool)
+                            }
+                            .tag(tool.id)
+                        }
+                    } header: {
+                        Text("Homework")
+                    }
+                }
                 if !sensors.isEmpty {
                     Section {
                         ForEach(sensors) { tool in
@@ -45,7 +57,7 @@ struct ToolboxView: View {
                 }
             }
             .navigationTitle("Beckify")
-            .searchable(text: $query, prompt: "Ohm, ampacity, wifi, ble, level…")
+            .searchable(text: $query, prompt: "Ohm, divider, color code, LED, wifi…")
             .background(Theme.background)
         } detail: {
             if let selected {
@@ -62,6 +74,7 @@ struct ToolboxView: View {
     }
 
     private var calcs: [ToolDefinition] { filtered.filter { $0.kind == .calculator } }
+    private var homework: [ToolDefinition] { filtered.filter { $0.kind == .homework } }
     private var sensors: [ToolDefinition] { filtered.filter { $0.kind == .sensor } }
 }
 
@@ -104,6 +117,12 @@ struct CalculatorHostView: View {
             case .timer555: Timer555View()
             case .motorFLA: MotorFLAView()
             case .wireAmpacity: WireAmpacityView()
+            case .voltageDivider: VoltageDividerView()
+            case .seriesParallel: SeriesParallelView()
+            case .resistorColor: ResistorColorView()
+            case .unitConverter: UnitConverterView()
+            case .frequencyWave: FrequencyView()
+            case .ledRC: LEDRCView()
             case .wifiStatus: WiFiStatusView()
             case .bluetoothScan: BluetoothScannerView()
             case .noiseMeter: NoiseMeterView()

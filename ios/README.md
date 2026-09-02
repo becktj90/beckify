@@ -26,6 +26,15 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Wire Size & Ampacity (310.16 75 °C)
 
+## Homework calculators
+
+- Voltage Divider (Vout, or solve R1/R2)
+- Series / Parallel R and C
+- Resistor Color Code (4-band and 5-band, decode + encode)
+- Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
+- Frequency / period / wavelength and LC resonance
+- LED current-limit R and RC τ (555 astable/monostable stays in 555 Timer)
+
 ## Sensors (public APIs only)
 
 - Wi-Fi Path (`NWPathMonitor`; optional SSID). **No Wi-Fi RSSI** — iOS does not expose it to third-party apps.

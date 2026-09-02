@@ -16,7 +16,7 @@ Beckify does not collect, sell, share, or transmit personal data for advertising
 - No user accounts, sign-in, or cloud sync
 - No ads, store checkout, or Amazon links
 - The app does not wrap or load beckify.com in a web view
-- The app is a toolbox of calculators and sensors. It is not a website project gallery.
+- The app is a toolbox of field calculators, homework calculators, and sensors. It is not a website project gallery.
 
 Optional links the user may tap (https://beckify.com and `mailto:trevorjohnbeck@gmail.com`) open in the system browser or mail app. Those destinations are not part of in-app data collection.
 

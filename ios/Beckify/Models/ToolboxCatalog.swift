@@ -10,6 +10,12 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case timer555
     case motorFLA
     case wireAmpacity
+    case voltageDivider
+    case seriesParallel
+    case resistorColor
+    case unitConverter
+    case frequencyWave
+    case ledRC
     case wifiStatus
     case bluetoothScan
     case noiseMeter
@@ -25,6 +31,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
 
 enum ToolKind: String, Codable {
     case calculator
+    case homework
     case sensor
 }
 
@@ -114,6 +121,54 @@ enum ToolboxCatalog {
             subtitle: "NEC Table 310.16, 75 °C column.",
             symbol: "cable.connector.horizontal",
             synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor"]
+        ),
+        ToolDefinition(
+            id: .voltageDivider,
+            kind: .homework,
+            title: "Voltage Divider",
+            subtitle: "Vout from Vin, R1, R2 — or solve a resistor.",
+            symbol: "slider.horizontal.3",
+            synonyms: ["divider", "voltage divider", "potentiometer", "r1 r2", "vout"]
+        ),
+        ToolDefinition(
+            id: .seriesParallel,
+            kind: .homework,
+            title: "Series / Parallel",
+            subtitle: "Resistors and capacitors, series or parallel.",
+            symbol: "point.3.connected.trianglepath.dotted",
+            synonyms: ["series", "parallel", "equivalent", "network", "capacitor", "resistor combo"]
+        ),
+        ToolDefinition(
+            id: .resistorColor,
+            kind: .homework,
+            title: "Resistor Color Code",
+            subtitle: "4-band and 5-band decode + encode.",
+            symbol: "circle.lefthalf.filled",
+            synonyms: ["color code", "colour code", "bands", "tolerance", "gold", "silver"]
+        ),
+        ToolDefinition(
+            id: .unitConverter,
+            kind: .homework,
+            title: "Unit Converter",
+            subtitle: "SI prefixes, dB, °C/°F, m/ft, mils/mm.",
+            symbol: "arrow.left.arrow.right",
+            synonyms: ["unit", "prefix", "db", "decibel", "celsius", "fahrenheit", "feet", "mils", "mm"]
+        ),
+        ToolDefinition(
+            id: .frequencyWave,
+            kind: .homework,
+            title: "Frequency / LC",
+            subtitle: "f, T, λ = c/f, and f = 1/(2π√(LC)).",
+            symbol: "waveform",
+            synonyms: ["frequency", "period", "wavelength", "lc", "resonance", "hertz"]
+        ),
+        ToolDefinition(
+            id: .ledRC,
+            kind: .homework,
+            title: "LED / RC",
+            subtitle: "LED current-limit R and τ = RC.",
+            symbol: "lightbulb.fill",
+            synonyms: ["led", "current limit", "tau", "time constant", "rc", "e24"]
         ),
         ToolDefinition(
             id: .wifiStatus,

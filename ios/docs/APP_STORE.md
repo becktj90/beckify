@@ -30,6 +30,15 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Wire size from NEC Table 310.16, 75 °C column
 
+Homework calculators:
+
+• Voltage divider (Vout, or solve R1 / R2)
+• Series / parallel resistors and capacitors
+• Resistor color code (4-band and 5-band, decode and encode)
+• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
+• Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC))
+• LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
+
 Measure with public Apple APIs (not private APIs):
 
 • Wi-Fi path (Network.framework): interface, expensive/constrained. iOS does not expose Wi-Fi RSSI to third-party apps; this tool will not invent a signal bar. Current SSID is optional and needs location plus, on a signed team, Access Wi-Fi Information.
@@ -42,12 +51,12 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “wifi”, “ble”, “level”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “divider”, “color code”, “LED”, “wifi”). Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,voltage drop,ampacity,wifi,bluetooth,noise,level,compass
+electrical,NEC,resistor,divider,LED,ampacity,wifi,ohm
 
 **What's New (1.0):**
 First toolbox: field EE calculators plus public-API sensors and local saved notes.

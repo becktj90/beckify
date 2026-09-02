@@ -37,6 +37,12 @@
 		BECF00000000000000000050 /* FieldPositionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000004F /* FieldPositionView.swift */; };
 		BECF00000000000000000052 /* DeviceHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000051 /* DeviceHealthView.swift */; };
 		BECF00000000000000000054 /* SensorSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000053 /* SensorSupport.swift */; };
+		BECF00000000000000000056 /* VoltageDividerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000055 /* VoltageDividerView.swift */; };
+		BECF00000000000000000058 /* SeriesParallelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000057 /* SeriesParallelView.swift */; };
+		BECF0000000000000000005A /* ResistorColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000059 /* ResistorColorView.swift */; };
+		BECF0000000000000000005C /* UnitConverterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005B /* UnitConverterView.swift */; };
+		BECF0000000000000000005E /* FrequencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005D /* FrequencyView.swift */; };
+		BECF00000000000000000060 /* LEDRCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005F /* LEDRCView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +76,12 @@
 		BECF0000000000000000004F /* FieldPositionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldPositionView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000051 /* DeviceHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceHealthView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000053 /* SensorSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorSupport.swift; sourceTree = "<group>"; };
+		BECF00000000000000000055 /* VoltageDividerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoltageDividerView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000057 /* SeriesParallelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesParallelView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000059 /* ResistorColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResistorColorView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000005B /* UnitConverterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConverterView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000005D /* FrequencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000005F /* LEDRCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDRCView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +175,12 @@
 				BECF0000000000000000000F /* TransformerView.swift */,
 				BECF00000000000000000011 /* VoltageDropView.swift */,
 				BECF00000000000000000013 /* WireAmpacityView.swift */,
+				BECF00000000000000000055 /* VoltageDividerView.swift */,
+				BECF00000000000000000057 /* SeriesParallelView.swift */,
+				BECF00000000000000000059 /* ResistorColorView.swift */,
+				BECF0000000000000000005B /* UnitConverterView.swift */,
+				BECF0000000000000000005D /* FrequencyView.swift */,
+				BECF0000000000000000005F /* LEDRCView.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -287,6 +305,12 @@
 				BECF00000000000000000050 /* FieldPositionView.swift in Sources */,
 				BECF00000000000000000052 /* DeviceHealthView.swift in Sources */,
 				BECF00000000000000000054 /* SensorSupport.swift in Sources */,
+				BECF00000000000000000056 /* VoltageDividerView.swift in Sources */,
+				BECF00000000000000000058 /* SeriesParallelView.swift in Sources */,
+				BECF0000000000000000005A /* ResistorColorView.swift in Sources */,
+				BECF0000000000000000005C /* UnitConverterView.swift in Sources */,
+				BECF0000000000000000005E /* FrequencyView.swift in Sources */,
+				BECF00000000000000000060 /* LEDRCView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

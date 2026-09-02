@@ -379,3 +379,76 @@ final class SensorMathTests: XCTestCase {
         XCTAssertEqual(GeoMath.initialBearingDegrees(lat1: 0, lon1: 0, lat2: 0, lon2: 1), 90, accuracy: 1e-6)
     }
 }
+
+final class HomeworkMathTests: XCTestCase {
+    func testVoltageDividerVoutAndSolveR() throws {
+        let r = try VoltageDivider.fromResistors(vin: 12, r1: 10_000, r2: 10_000)
+        XCTAssertEqual(r.vout, 6, accuracy: 1e-9)
+        XCTAssertEqual(r.current, 12 / 20_000, accuracy: 1e-12)
+        let r2 = try VoltageDivider.solveR2(vin: 12, vout: 6, r1: 10_000)
+        XCTAssertEqual(r2.r2, 10_000, accuracy: 1e-6)
+        let r1 = try VoltageDivider.solveR1(vin: 12, vout: 6, r2: 10_000)
+        XCTAssertEqual(r1.r1, 10_000, accuracy: 1e-6)
+        XCTAssertThrowsError(try VoltageDivider.solveR2(vin: 5, vout: 5, r1: 1000))
+    }
+
+    func testSeriesParallelRAndC() throws {
+        XCTAssertEqual(try SeriesParallel.resistors([10, 20], kind: .series), 30, accuracy: 1e-9)
+        XCTAssertEqual(try SeriesParallel.resistors([100, 100], kind: .parallel), 50, accuracy: 1e-9)
+        XCTAssertEqual(try SeriesParallel.capacitors([10e-6, 10e-6], kind: .parallel), 20e-6, accuracy: 1e-15)
+        XCTAssertEqual(try SeriesParallel.capacitors([10e-6, 10e-6], kind: .series), 5e-6, accuracy: 1e-15)
+        XCTAssertThrowsError(try SeriesParallel.resistors([10], kind: .series))
+    }
+
+    func testResistorColorDecodeEncode() throws {
+        let four = try ResistorColorCode.decode4(d1: .yellow, d2: .violet, multiplier: .red, tolerance: .gold)
+        XCTAssertEqual(four.ohms, 4700, accuracy: 1e-9)
+        XCTAssertEqual(four.tolerancePercent, 5, accuracy: 1e-9)
+        let encoded = try ResistorColorCode.encode(ohms: 4700, bands: 4, tolerance: .gold)
+        XCTAssertEqual(encoded.bands, [.yellow, .violet, .red, .gold])
+        let five = try ResistorColorCode.decode5(d1: .brown, d2: .black, d3: .black, multiplier: .brown, tolerance: .brown)
+        XCTAssertEqual(five.ohms, 1_000, accuracy: 1e-9)
+        XCTAssertEqual(try ResistorColorCode.encode(ohms: 10_000, bands: 4).bands.prefix(3).map(\.rawValue), ["brown", "black", "orange"])
+        let rounded = try ResistorColorCode.encode(ohms: 99.6, bands: 4, tolerance: .gold)
+        XCTAssertEqual(rounded.bands.prefix(3).map(\.rawValue), ["brown", "black", "brown"])
+        XCTAssertEqual(rounded.ohms, 100, accuracy: 1e-9)
+        XCTAssertThrowsError(try ResistorColorCode.decode4(d1: .gold, d2: .violet, multiplier: .red, tolerance: .gold))
+    }
+
+    func testUnitConvert() throws {
+        XCTAssertEqual(try UnitConvert.si(value: 4.7, from: .kilo, to: .none), 4700, accuracy: 1e-9)
+        XCTAssertEqual(try UnitConvert.voltageDB(ratio: 2), 20 * log10(2.0), accuracy: 1e-9)
+        XCTAssertEqual(try UnitConvert.voltageRatio(fromDB: 6), pow(10, 6.0 / 20.0), accuracy: 1e-9)
+        XCTAssertEqual(try UnitConvert.powerDB(ratio: 2), 10 * log10(2.0), accuracy: 1e-9)
+        XCTAssertEqual(try UnitConvert.fahrenheit(fromCelsius: 0), 32, accuracy: 1e-9)
+        XCTAssertEqual(try UnitConvert.celsius(fromFahrenheit: 32), 0, accuracy: 1e-9)
+        XCTAssertEqual(try UnitConvert.meters(fromFeet: 1), 0.3048, accuracy: 1e-12)
+        XCTAssertEqual(try UnitConvert.mm(fromMils: 1000), 25.4, accuracy: 1e-12)
+        XCTAssertEqual(try UnitConvert.feet(fromMeters: 0.3048), 1, accuracy: 1e-12)
+        XCTAssertEqual(try UnitConvert.mils(fromMM: 25.4), 1000, accuracy: 1e-12)
+        XCTAssertEqual(try UnitConvert.powerRatio(fromDB: 3), pow(10, 0.3), accuracy: 1e-9)
+    }
+
+    func testFrequencyPeriodWavelengthAndLC() throws {
+        let w = try Wave.fromFrequency(1e6)
+        XCTAssertEqual(w.period, 1e-6, accuracy: 1e-18)
+        XCTAssertEqual(w.wavelength, Wave.speedOfLight / 1e6, accuracy: 1e-6)
+        let back = try Wave.fromPeriod(1e-6)
+        XCTAssertEqual(back.frequency, 1e6, accuracy: 1e-3)
+        let lc = try Wave.lcResonance(inductance: 100e-6, capacitance: 100e-12)
+        let expected = 1 / (2 * Double.pi * sqrt(100e-6 * 100e-12))
+        XCTAssertEqual(lc.frequency, expected, accuracy: 1e-3)
+    }
+
+    func testLEDAndRC() throws {
+        let led = try LEDResistor.size(supply: 5, forward: 2, current: 0.01)
+        XCTAssertEqual(led.resistance, 300, accuracy: 1e-9)
+        XCTAssertEqual(led.power, 0.03, accuracy: 1e-9)
+        XCTAssertEqual(LEDResistor.nearestE24(300), 300, accuracy: 1e-9)
+        XCTAssertEqual(LEDResistor.nearestE24(310), 300, accuracy: 1e-9)
+        let rc = try RCTime.tau(resistance: 10_000, capacitance: 100e-6)
+        XCTAssertEqual(rc.tau, 1, accuracy: 1e-9)
+        XCTAssertEqual(rc.fiveTau, 5, accuracy: 1e-9)
+        XCTAssertThrowsError(try LEDResistor.size(supply: 2, forward: 2, current: 0.01))
+    }
+}
