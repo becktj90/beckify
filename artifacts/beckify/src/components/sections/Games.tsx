@@ -2,6 +2,7 @@ import { Play } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GAMES } from "@/data/site-content";
+import { PUBLIC_GAME_COUNT } from "@/data/site-stats";
 import { Button } from "@/components/ui/button";
 import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 
@@ -36,7 +37,7 @@ export const Games = () => (
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Quick arcade loops plus two WebGL worlds. Local scores and saves stay in this browser.</p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">
-          {[{ label: "Games", value: "07", width: "100%" }, { label: "Input", value: "3", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => <div key={stat.label} className="min-w-20"><p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p><div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} /></div><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p></div>)}
+          {[{ label: "Games", value: String(PUBLIC_GAME_COUNT).padStart(2, "0"), width: "100%" }, { label: "Input", value: "3", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => <div key={stat.label} className="min-w-20"><p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p><div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} /></div><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p></div>)}
         </div>
       </div>
     </FadeIn>

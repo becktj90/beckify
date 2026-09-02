@@ -2600,7 +2600,7 @@ function setupSplash() {
   };
   window.splashEnterGame = () => {
     dismiss();
-    location.hash = '#sec-arcade';
+    location.href = '/games/new-glenn-runner/';
   };
 
   modal.hidden = false;

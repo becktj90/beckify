@@ -1,0 +1,56 @@
+import { useRef } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
+import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
+
+const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/new-glenn-runner/index.html`.replace(/([^:]\/)\/+/g, "$1");
+
+export function NewGlennRunner() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
+
+  return (
+    <section className="space-y-6" aria-labelledby="new-glenn-title">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
+          <h1 id="new-glenn-title" className="font-display text-3xl font-bold tracking-tight">New Glenn Runner</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
+            A compressed LC-36 flight: charge liftoff, steer the corridor, and hit the mission prompts. Difficulty picker stays on the start screen — KID, CADET, or PAD RAT.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="game-icon-button rounded-md border border-[var(--border)] p-2"
+          onClick={() => toggleFullscreen(stageRef.current)}
+          aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}
+        >
+          {immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
+      </div>
+
+      <div
+        ref={stageRef}
+        className={`game-stage relative mx-auto overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "min-h-[640px] max-w-[520px] rounded-2xl border border-[#2e5d86]"}`}
+      >
+        <iframe
+          src={RUNNER_SRC}
+          title="New Glenn Runner"
+          className="block h-full min-h-[640px] w-full border-0 bg-black"
+          allow="fullscreen; gamepad; autoplay"
+        />
+        {immersive ? (
+          <button
+            type="button"
+            className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg"
+            onClick={exitFullscreen}
+            aria-label="Exit fullscreen"
+          >
+            <Minimize2 size={18} />
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export default NewGlennRunner;

@@ -19,6 +19,7 @@ const staticRoutes = [
   ["games/toot-troopers", "Toot Troopers Browser Game | Beckify", "Play Toot Troopers, an original fart-powered flight game starring Apollo and Rocco."],
   ["games/pup-planet", "Pup Planet Browser Game | Beckify", "Play Pup Planet: pick Apollo or Rocco, the space pups, and mine and build on a seeded little planet in this first-person WebGL sandbox. Built big and simple for iPad."],
   ["games/hexgl", "HexGL Browser Game | Beckify", "Play HexGL, a futuristic WebGL racing game by Thibaut Despoulain (BKcore), hosted on Beckify under the MIT License."],
+  ["games/new-glenn-runner", "New Glenn Runner Browser Game | Beckify", "Play New Glenn Runner, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];
 

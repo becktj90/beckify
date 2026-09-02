@@ -38,6 +38,7 @@ const catalog: readonly CatalogPart[] = [
     quantity: 1,
     image: `${project}/journal/hub-motor.jpg`,
     alt: "QS hub motor fitted to the Vespa wheel",
+    href: "https://www.qs-motor.com/product/10inch-4000w-v3-type-e-scooter-hub-motor/",
     caption: "Direct-drive motor used in the conversion.",
   },
   {
@@ -48,6 +49,7 @@ const catalog: readonly CatalogPart[] = [
     quantity: 1,
     image: `${project}/studio/controller-install.jpg`,
     alt: "VOTOL controller installed in the Vespa rear bay",
+    href: "https://www.qsmotor.com/product/votol-controller-em-100/",
     caption: "Controller installed with protected cable routing.",
   },
   {
@@ -86,7 +88,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 2,
-    href: "https://www.amazon.com/gp/product/B08CT3XXY6/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B08CT3XXY6?tag=beckify-20",
     image: `${project}/cell-layout.jpg`,
     alt: "Black cell spacers laid out for an 18650 battery pack",
     caption: "Spacers maintain cell position and working clearance.",
@@ -97,7 +99,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$8.88",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B07H6TF58L/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B07H6TF58L?tag=beckify-20",
     caption: "Positive-terminal insulation is a small but essential detail.",
   },
   {
@@ -106,7 +108,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$17.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B07P3ZCJXT/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B07P3ZCJXT?tag=beckify-20",
     image: `${project}/journal/nickel-busbars.jpg`,
     alt: "Nickel strip busbars spot welded across battery cells",
     caption: "0.2 × 8mm pure nickel interconnects the cell groups.",
@@ -117,7 +119,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$58.00",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B07R33QHD4/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B07R33QHD4?tag=beckify-20",
     caption:
       "A 20S charger must terminate at the pack's chemistry-correct voltage.",
   },
@@ -127,7 +129,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$25.29",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B07QWWPXLZ/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B07QWWPXLZ?tag=beckify-20",
     caption: "A serviceable breaker makes isolation and troubleshooting safer.",
   },
   {
@@ -136,7 +138,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$32.69",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B08JB5NQ4B/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B08JB5NQ4B?tag=beckify-20",
     caption: "Use a meter to observe pack voltage and current during testing.",
   },
   {
@@ -145,7 +147,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B01KHQR0K4/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B01KHQR0K4?tag=beckify-20",
     caption:
       "The main connector provides a positive, serviceable pack disconnect.",
   },
@@ -155,7 +157,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$8.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B074T77LPQ/ref=ppx_yo_dt_b_asin_title_o08_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B074T77LPQ?tag=beckify-20",
     caption:
       "Relay logic keeps accessory switching separate from high-voltage power.",
   },
@@ -165,7 +167,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$68.90",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B01N9I5TL9/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B01N9I5TL9?tag=beckify-20",
     image: `${project}/studio/rear-hub-detail.jpg`,
     alt: "Rear wheel and tire fitted around the hub motor and disc brake",
     caption: "Street tire fitted to the motorized rear wheel.",
@@ -195,6 +197,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "QS Motor",
     price: "$8.00",
     quantity: 1,
+    href: "https://www.qsmotor.com/product/dc-dc-convertor/",
     caption:
       "Steps the high-voltage pack down to run 12V lighting and accessories.",
   },
@@ -220,6 +223,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "eBay",
     price: "$60.00",
     quantity: 1,
+    href: "https://www.dalybms.com/",
     caption: "Monitors series groups and protects the 20S pack.",
   },
   {
@@ -237,7 +241,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$14.28",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B01N760BZN/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B01N760BZN?tag=beckify-20",
     caption:
       "Pairs of compliant bushings used in the rear-wheel mounting work.",
   },
@@ -247,7 +251,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$7.88",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B081RPF2G3/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B081RPF2G3?tag=beckify-20",
     caption: "Re-wrap material for individual cylindrical cells.",
   },
   {
@@ -256,7 +260,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$5.79",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B08CXN9Q83/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B08CXN9Q83?tag=beckify-20",
     caption:
       "Angled valves make pressure checks practical on the 10-inch wheel.",
   },
@@ -266,7 +270,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$7.88",
     quantity: 1,
-    href: "https://www.amazon.com/18650-Battery-300Pcs-Shrink-Tubing/dp/B081RNT8M2",
+    href: "https://www.amazon.com/dp/B081RNT8M2?tag=beckify-20",
     caption: "Additional wrap material for repaired or protected cells.",
   },
   {
@@ -275,7 +279,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$32.65",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B007WLWPM6/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B007WLWPM6?tag=beckify-20",
     caption: "Structural stock for the fabricated rear swingarm.",
   },
   {
@@ -284,7 +288,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$34.98",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B007WLWQDE/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B007WLWQDE?tag=beckify-20",
     caption: "Secondary structural stock for the rear mounting structure.",
   },
   {
@@ -293,7 +297,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$28.00",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B08PT3PXSB/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B08PT3PXSB?tag=beckify-20",
     caption:
       "Distributes and individually protects low-voltage accessory circuits.",
   },
@@ -303,7 +307,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$58.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B091BY3L6L/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B091BY3L6L?tag=beckify-20",
     caption:
       "Joins nickel strip to cell terminals without heating the cell body like soldering.",
   },
@@ -313,7 +317,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$18.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B07FXWMQJP/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B07FXWMQJP?tag=beckify-20",
     caption:
       "Final outer insulation and abrasion layer for the completed pack.",
   },
@@ -323,7 +327,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B01MY4T4BU/ref=ppx_od_dt_b_asin_title_s01?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B01MY4T4BU?tag=beckify-20",
     caption: "Red LED replacement lamps for the rear running and brake light.",
   },
   {
@@ -332,7 +336,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B0739RCR3J/ref=ppx_od_dt_b_asin_title_s01?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B0739RCR3J?tag=beckify-20",
     caption: "Amber LED replacements for the turn signals.",
   },
   {
@@ -341,7 +345,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$13.04",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B00JXLHE8S/ref=ppx_od_dt_b_asin_title_s01?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B00JXLHE8S?tag=beckify-20",
     caption:
       "Keeps indicator cadence correct after the LED lighting conversion.",
   },
@@ -351,7 +355,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$8.99",
     quantity: 1,
-    href: "https://www.amazon.com/gp/product/B072QBNTSM/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&psc=1",
+    href: "https://www.amazon.com/dp/B072QBNTSM?tag=beckify-20",
     caption: "Provides a compact 12V audible warning device.",
   },
   {
@@ -360,6 +364,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$52.41",
     quantity: 1,
+    href: "https://www.scooterwest.com/complete-center-stand-hardware-kit-p-series-vespa.html",
     caption: "Restores the mounting hardware for the reinforced center stand.",
   },
   {
@@ -368,6 +373,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$45.95",
     quantity: 1,
+    href: "https://www.scooterwest.com/px-reinforced-center-stand-stella-176160r.html",
     caption:
       "Supports the finished scooter with the conversion's altered rear mass.",
   },
@@ -377,6 +383,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$7.95",
     quantity: 2,
+    href: "https://www.scooterwest.com/vintage-mirror-bracket-flat-zinc-plated-mr-07.html",
     caption: "Mounting brackets for the replacement mirrors.",
   },
   {
@@ -385,6 +392,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$49.95",
     quantity: 1,
+    href: "https://www.scooterwest.com/px-stella-floor-strip-set-fs-p.html",
     caption: "Restores the classic aluminum floor-rail finish.",
   },
   {
@@ -393,6 +401,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$45.95",
     quantity: 1,
+    href: "https://www.scooterwest.com/mirror-pair-chrome-long-stems-mr-01.html",
     caption: "Restores rearward visibility and the period silhouette.",
   },
   {
@@ -401,6 +410,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$10.95",
     quantity: 1,
+    href: "https://www.scooterwest.com/p200e-metal-cowl-badge-emblem-181328.html",
     caption: "Replacement badge for the spare-wheel cowl.",
   },
   {
@@ -409,6 +419,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$39.95",
     quantity: 1,
+    href: "https://www.scooterwest.com/vintage-vespa-steering-glove-box-lock-set-139188.html",
     caption:
       "Refreshes the mechanical locks while retaining the original bodywork.",
   },
@@ -418,6 +429,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "ScooterWest",
     price: "$22.95",
     quantity: 1,
+    href: "https://www.scooterwest.com/front-r-h-turn-signal-assembly-amber-vespa-px-162818.html",
     caption: "Replacement front amber signal assembly.",
   },
   {
@@ -426,6 +438,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "JEGS",
     price: "$20.99",
     quantity: 1,
+    href: "https://ridetech.com/product/3-sided-upper-shock-bracket/",
     caption:
       "Provides an adaptable starting point for the revised rear shock location.",
   },
@@ -480,8 +493,9 @@ export function VespaPartsCatalog() {
           </p>
         </div>
         <p className="affiliate-note">
-          Affiliate disclosure: some outbound product links may earn Beckify a
-          commission if you make a qualifying purchase, at no extra cost to you.
+          As an Amazon Associate I earn from qualifying purchases. Some vendor
+          buttons are paid Amazon links; others go to the parts supplier
+          directly.
         </p>
         <div className="part-filter" aria-label="Filter parts by system">
           {categories.map((category) => (
@@ -525,7 +539,7 @@ export function VespaPartsCatalog() {
                       <a
                         href={part.href}
                         target="_blank"
-                        rel="sponsored noopener noreferrer"
+                        rel={part.href.includes("amazon.com") ? "sponsored noopener noreferrer" : "noopener noreferrer"}
                       >
                         View{" "}
                         <ExternalLink size={14} aria-hidden="true" />

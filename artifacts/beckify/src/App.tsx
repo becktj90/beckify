@@ -21,6 +21,7 @@ const FingerRunnerPage = lazy(() => import("@/pages/finger-runner"));
 const TootTroopersPage = lazy(() => import("@/pages/toot-troopers"));
 const PupPlanetPage = lazy(() => import("@/pages/pup-planet"));
 const HexGLPage = lazy(() => import("@/pages/hexgl"));
+const NewGlennRunnerPage = lazy(() => import("@/pages/new-glenn-runner"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const GearPage = lazy(() => import("@/pages/gear"));
 const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/games/toot-troopers" component={TootTroopersPage} />
         <Route path="/games/pup-planet" component={PupPlanetPage} />
         <Route path="/games/hexgl" component={HexGLPage} />
+        <Route path="/games/new-glenn-runner" component={NewGlennRunnerPage} />
         <Route path="/sitemap" component={SiteMapPage} />
         <Route component={NotFound} />
       </Switch>
