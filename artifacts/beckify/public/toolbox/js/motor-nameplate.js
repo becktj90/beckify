@@ -109,9 +109,17 @@
 
   function hpFromKw(kw) { return Number(kw) / 0.746; }
 
+  function parsePhase(value) {
+    var n = Number(value);
+    if (n === 1 || n === 3) return n;
+    return null;
+  }
+
   function analyze(input) {
     var fla = Number(input.fla);
     if (!Number.isFinite(fla) || fla <= 0) return { error: 'Enter a positive nameplate FLA after you review the fields.' };
+    var ph = parsePhase(input.phase);
+    if (!ph) return { error: 'Select 1-phase or 3-phase before calculating. OCR leaves phase blank when it cannot read it.' };
     var hp = Number(input.hp);
     if ((!Number.isFinite(hp) || hp <= 0) && Number(input.kw) > 0) hp = hpFromKw(input.kw);
     var ol = overloadPercent(input.sf, input.riseC);
@@ -124,13 +132,13 @@
     var length = Number(input.lengthFt);
     if (cond && Number.isFinite(length) && length > 0 && global.BeckifyWireMath && global.BeckifyWireMath.voltageDropVolts) {
       var volts = Number(String(input.volts || '').split('/')[0]);
-      var phase = Number(input.phase) === 1 ? '1ph' : '3ph';
+      var phaseKey = ph === 1 ? '1ph' : '3ph';
       if (Number.isFinite(volts) && volts > 0) {
-        var drop = global.BeckifyWireMath.voltageDropVolts(cond.size, input.material || 'cu', phase, fla, length, 1, 1);
+        var drop = global.BeckifyWireMath.voltageDropVolts(cond.size, input.material || 'cu', phaseKey, fla, length, 1, 1);
         if (drop !== undefined && drop !== null) vd = { volts: drop, pct: (drop / volts) * 100, lengthFt: length, article: 'NEC Ch.9 Tables 8 and 9 (DC resistance / reactance)' };
       }
     }
-    var lra = lockedRotorRange(input.code, hp, input.volts, input.phase);
+    var lra = lockedRotorRange(input.code, hp, input.volts, ph);
     return {
       fla: fla,
       hp: hp,
@@ -199,7 +207,6 @@
     setVal('mnp_rpm', fields.rpm);
     setVal('mnp_hz', fields.hz);
     if (fields.phase === '1' || fields.phase === '3') setVal('mnp_phase', fields.phase);
-    else if (el('mnp_phase')) el('mnp_phase').value = '3';
     setVal('mnp_frame', fields.frame);
     setVal('mnp_sf', fields.sf);
     setVal('mnp_design', fields.design);
@@ -361,6 +368,7 @@
     TABLE_430_52: TABLE_430_52,
     scpdFromFla: scpdFromFla,
     lockedRotorRange: lockedRotorRange,
+    parsePhase: parsePhase,
     CODE_LETTER: CODE_LETTER,
     analyze: analyze,
   };

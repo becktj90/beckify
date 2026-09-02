@@ -90,4 +90,11 @@ assert.ok(!analyzed.error);
 assert.equal(analyzed.overload.pct, 125);
 assert.equal(analyzed.scpd.pct, 250);
 
+assert.equal(api.parsePhase(''), null);
+assert.equal(api.parsePhase('2'), null);
+assert.equal(api.parsePhase('1'), 1);
+assert.equal(api.parsePhase('3'), 3);
+assert.match(api.analyze({ fla: 14, hp: 10, volts: 460, sf: 1.15 }).error, /phase/i);
+assert.match(api.analyze({ fla: 14, hp: 10, volts: 460, phase: '2', sf: 1.15 }).error, /phase/i);
+
 console.log('Motor nameplate NEC percentage tables passed');
