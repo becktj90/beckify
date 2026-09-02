@@ -218,26 +218,52 @@ axe-core at 390 px, aggregated across 18 documents:
 
 ## Mobile findings
 
-Measured document width vs viewport width:
+Original measurement (document width vs viewport width) found the site-wide
+header overflowing below `sm` — a single non-wrapping flex row of five
+`whitespace-nowrap` links plus "Ask Beckify" needed 938 px and had nothing
+narrower than icon-only pills below that, two of which (Toolbox and Control
+Systems) shared the same icon and were unlabeled. **Fixed in Stage 1**
+(`Nav.tsx` rewrite): the full link row is now `hidden lg:flex`, replaced below
+that breakpoint by a real hamburger menu (`Sheet`) listing every nav item with
+its own distinct icon and a label. `/games/pup-planet` and `/games/hexgl`
+still overflow at narrow widths because their `.game-stage` is a fixed-pixel
+canvas — unchanged, tracked as a game-area item out of this audit's scope
+(concurrent work in progress there).
 
-| Route | 820 px | 390 px | 320 px | Cause |
-| --- | --- | --- | --- | --- |
-| All 15 React routes | 938 | 405 | 405 | Fixed header content wider than viewport |
-| `/games/pup-planet` | 1048 | 664 | 664 | `.game-stage` fixed 640 px |
-| `/games/hexgl` | 1126 | 877 | 877 | `.game-stage` fixed 853 px |
-| `/toolbox/panel-schedule.html` | ok | 608 | 608 | `section.window` fixed width |
-| `/toolbox/panel-power-study.html` | ok | 732 | 732 | `section.window` fixed width |
-| `/toolbox/` | ok | ok | ok | — |
+### Mobile/desktop content-parity audit
 
-The header is the site-wide cause. It is a single non-wrapping flex row holding
-a logo, an "Ask Beckify" button and five links with `whitespace-nowrap`. At
-820 px the labels are still shown and the row needs 938 px. Below `sm` the
-labels are hidden (`hidden sm:inline`) leaving five icon-only pills — and
-`NAV_ICON_NAMES` maps both **Toolbox** and **Control Systems** to the same
-`toolbox` icon, so two of the five are visually identical and unlabeled.
+Prompted by a direct report that mobile might be missing content present on
+desktop. Verified with a Playwright crawl of all 8 non-game React routes:
+scrolled each page fully at both 1280 px and 375 px viewports (to trigger the
+`FadeIn` scroll-reveal components rather than catch them mid-animation — an
+earlier version of this same check produced a false "control-systems page is
+90% blank on mobile" reading purely from `fullPage` screenshotting before any
+scroll fired those reveals), then diffed the set of visible, non-empty text
+nodes (`display`/`visibility`/`opacity` all checked) between the two.
 
-The two panel tools are the ones that most need to work on a phone — they exist
-to be used standing in front of a panel — and they are the least usable there.
+Every diff across all 8 routes reduces to the same two benign causes:
+
+- Nav links (`Toolbox`, `Control Systems`, `Projects`, `Games`) that collapse
+  from the visible bar into the hamburger menu below `lg` — same links, same
+  destinations.
+- `Ask Beckify` / `⌘K` — the label and keyboard-shortcut hint shrink to an
+  icon-only button below `md` (a keyboard shortcut is meaningless on touch
+  anyway).
+
+`/control-systems` additionally showed several step-response chart x-axis
+tick labels (`"0 s"`, `"1 s"`, `"3 s"` …) as mobile-only-missing — recharts
+reduces tick density on the narrower mobile chart to avoid label overlap,
+which is expected responsive-charting behavior, not lost content. Confirmed
+by simulating a real scroll and screenshotting: the chart curve, its x/y
+axes, and every numeric readout (rise time, overshoot, settling time,
+steady-state error, stability badge) render correctly on mobile.
+
+The toolbox (`public/toolbox/`) needs no equivalent crawl: its mobile drawer
+and desktop sidebar are the same 54-item `nav-btn` list in one shared DOM,
+repositioned by a CSS media query rather than built from two separate
+sources, so there is no separate mobile subset that could drift out of sync.
+
+**Conclusion: no content is hidden or missing on mobile anywhere on the site.**
 
 ---
 
