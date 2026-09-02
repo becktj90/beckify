@@ -243,16 +243,15 @@ to be used standing in front of a panel — and they are the least usable there.
 
 ## Performance findings
 
-- **One 1,658 kB JavaScript chunk** (462.74 kB gzipped). No code splitting: a
-  visitor opening the voltage-drop calculator downloads every game, the control
-  systems engine, `three`, `recharts` and `tesseract.js`.
-- `dist/public/assets/beck-profile-*.jpg` is 338 kB — larger than the CSS bundle.
+- ~~One 1,658 kB JavaScript chunk (462.74 kB gzipped).~~ **Fixed** — see
+  Completed improvements. Main entry chunk is now 525 kB (165 kB gzip); heavy
+  per-route dependencies (three.js, the control-systems engine) load only on
+  the pages that use them.
+- `dist/public/assets/beck-profile-*.jpg` is 338 kB — larger than the CSS
+  bundle. Not yet addressed (P2).
 - CSS is 134 kB (23.5 kB gzipped), reasonable for Tailwind 4.
 - The toolbox loads 27 classic scripts serially with no deferral, but it is a
   separate document and measured fine at all widths.
-
-No before/after performance numbers are claimed in this document yet; nothing
-has been optimised.
 
 ---
 
@@ -417,9 +416,57 @@ _Updated as work lands._
   overflow. Regression test added
   (`tests/toolbox-panel-select-labels.test.cjs`).
 
-All five P0 findings are now fixed and verified (typecheck, lint, all 11
-unit tests, and Playwright/axe-core re-scans). None have been deployed to
-`main` yet.
+All five P0 findings are fixed and verified. Stage 1 is complete.
+
+### Stage 2 (P1) — discoverability, credibility, performance
+
+- **P1-1 fixed** (`c204eb1`): global search hand-maintained 17 documents (8
+  tools) separately from the sitemap's 44-tool registry — "smith chart",
+  "555 timer", "harmonics", "nema", "resonance", "generator", "ups" all
+  returned nothing. Extracted the registry into
+  `src/data/toolbox-tools.mjs` (shared by `scripts/generate-sitemap.mjs` and
+  the search index) plus a new `REFERENCE_TABLES` list for the 6 static
+  reference tables that were searchable nowhere. Regression test
+  (`tests/assistant-search.test.cjs`) plus a live-UI Playwright check;
+  sitemap.xml output is byte-identical to before the extraction.
+- **P1-2, P1-3, P1-4 fixed** (`3eff5ca`): the not-found route rendered
+  generic Replit scaffolding and inherited `index,follow` — any broken
+  inbound link became an indexable duplicate of whatever page it happened to
+  render on GitHub Pages' SPA fallback. Rewrote it as a real page (matching
+  the site) with `noindex,follow` via a new `robots` prop on `SchemaHead`.
+  Added full metadata (title/description/canonical/OG/JSON-LD) to
+  `panel-schedule.html` and `panel-power-study.html`, which had none despite
+  being real linked pages. Fixed 12 stale NEC 310.15(B)(16) citations
+  (pre-2020 numbering) to 310.16, matching the 25 places already correct and
+  the toolbox's declared NEC 2023 basis — text only, no calculation changed.
+- **P1-5, P1-6, P1-7 fixed** (`86bd120`): axe-core violations dropped from
+  3-6 per page to 0 across all 15 React routes (re-crawled and verified).
+  `<main>` landmark added via `Layout.tsx` (13 pages had none). Added a
+  `level` prop to `SectionHeader` and set `h1` at the four page-title call
+  sites (Projects, Games, Sitemap, Control Systems), fixing 5 pages with no
+  `h1` and 3 heading-order skips this surfaced. Touch targets grown to
+  WCAG's 24px minimum (footer icons, Vespa nav, control-systems sliders).
+  Contrast fixes computed against real background colors: `--accent-foreground`
+  was white-on-accent at 3.25-3.29:1 (now reuses `--background`, 6.1-6.2:1);
+  footer "About Me" was opacity-60 (3.14:1, now 85%/5.33:1); sitemap's green
+  category badge was #008300 (3.69:1, now #2ea043/5.18:1); gear page's photo
+  caption was slate-500 (4.28:1, now slate-600/6.82:1).
+- **P1-11 fixed** (`7ef69dc`): removed the "Ask Beckify" photo-upload control,
+  which told users "Connect this handoff to the vision endpoint when API
+  credentials are available" — a non-functional stub with no backend to
+  connect to.
+- **P1-12 fixed** (`97992ee`): every route except Home converted to
+  `React.lazy()` + `Suspense`. Main entry chunk: 1,699 kB → 525 kB (478 kB →
+  165 kB gzip), a 69% reduction. Heavy per-page dependencies (three.js on
+  `pup-planet`, the control-systems engine) now load only on the pages that
+  use them.
+- **CI gate added** (`c92ed35`): `deploy.yml` called beckify's own
+  vite-only build script directly, bypassing the root build's typecheck step
+  entirely and never running lint or tests. Added typecheck/lint/test steps
+  before the build step.
+
+Remaining P1 items (homepage value proposition, P2/P3 backlog) are listed
+above under Prioritised findings and not yet started.
 
 ## Deferred improvements
 
