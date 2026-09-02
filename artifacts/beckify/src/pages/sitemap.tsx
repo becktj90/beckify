@@ -46,74 +46,137 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
  * nothing to import. Keep it in step with the sidebar in
  * public/toolbox/index.html.
  */
+interface ToolboxTool {
+  name: string;
+  /** Section id in the toolbox app, linked as /toolbox/#<anchor>. */
+  anchor: string;
+}
+
 interface ToolboxCategory {
   label: string;
   hue: string;
   /** Section id in the toolbox app, linked as /toolbox/#<anchor>. */
   anchor: string;
-  tools: string[];
+  tools: ToolboxTool[];
 }
+
+const t = (name: string, anchor: string): ToolboxTool => ({ name, anchor });
 
 const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Fundamentals", hue: HUES.blue, anchor: "sec-ohm",
-    tools: ["Ohm's Law", "Magnetic Circuit Workbench", "DC Power", "Power & Current Converter", "AC Power"],
+    tools: [
+      t("Ohm's Law", "sec-ohm"),
+      t("Magnetic Circuit Workbench", "sec-magnetic-circuit"),
+      t("DC Power", "sec-power-dc"),
+      t("Power & Current Converter", "sec-power-wizard"),
+      t("AC Power", "sec-power-wizard"),
+    ],
   },
   {
     label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance",
-    tools: ["Reactance & Impedance", "Resonance", "Phasor Diagram Workbench", "Transient Circuit Lab", "Power Factor Correction"],
+    tools: [
+      t("Reactance & Impedance", "sec-reactance"),
+      t("Resonance", "sec-resonance"),
+      t("Phasor Diagram Workbench", "sec-phasor-diagram"),
+      t("Transient Circuit Lab", "sec-transient-circuits"),
+      t("Power Factor Correction", "sec-pfc"),
+    ],
   },
   {
     label: "Series / Parallel", hue: HUES.violet, anchor: "sec-sp",
-    tools: ["Resistance, C, L"],
+    tools: [t("Resistance, C, L", "sec-sp")],
   },
   {
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
-      "Voltage Drop", "Conductor Length by Resistance", "Motor Calculations", "Transformer", "Transformer Engine",
-      "Transformer Sizing", "Conduit Fill", "Conduit Fill (Mixed)",
-      "Wire Size & Ampacity", "Short Circuit",
-      "Load Factors & Capacity",
+      t("Voltage Drop", "sec-vdrop"),
+      t("Conductor Length by Resistance", "sec-conductor-length"),
+      t("Motor Calculations", "sec-motor"),
+      t("Transformer", "sec-xfmr"),
+      t("Transformer Engine", "sec-xfmr-engine"),
+      t("Transformer Sizing", "sec-xfmr-size"),
+      t("Conduit Fill", "sec-conduit"),
+      t("Conduit Fill (Mixed)", "sec-conduit-adv"),
+      t("Wire Size & Ampacity", "sec-wire-select"),
+      t("Short Circuit", "sec-sc"),
+      t("Load Factors & Capacity", "sec-load-factors"),
     ],
   },
   {
     label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
-    tools: ["UPS Sizing", "Generator Sizing", "Hybrid Generator"],
+    tools: [
+      t("UPS Sizing", "sec-ups"),
+      t("Generator Sizing", "sec-gen"),
+      t("Hybrid Generator", "sec-hybrid"),
+    ],
   },
   {
     label: "E-Bike Build", hue: HUES.green, anchor: "sec-ebike-tools",
-    tools: ["Torque/RPM Calculator", "Sprocket Ratio Calculator", "E-Bike Range Planner"],
+    tools: [
+      t("Torque/RPM Calculator", "sec-ebike-tools"),
+      t("Sprocket Ratio Calculator", "sec-ebike-tools"),
+      t("E-Bike Range Planner", "sec-ebike-tools"),
+    ],
   },
   {
     label: "NEC Calculations", hue: HUES.magenta, anchor: "sec-nec",
-    tools: ["NEC Circuit Calculator"],
+    tools: [t("NEC Circuit Calculator", "sec-nec")],
   },
   {
     label: "NEC Specialized", hue: HUES.violet, anchor: "sec-lighting-opt",
-    tools: ["Lighting VD Optimizer", "Building Load Calculator"],
+    tools: [
+      t("Lighting VD Optimizer", "sec-lighting-opt"),
+      t("Building Load Calculator", "sec-bldg-load"),
+    ],
   },
   {
     label: "Advanced", hue: HUES.blue, anchor: "sec-lsi",
-    tools: ["LSI Breaker Visualizer", "BESS Peak-Shave", "Tap-Changer Calc", "Harmonics Tool"],
+    tools: [
+      t("LSI Breaker Visualizer", "sec-lsi"),
+      t("BESS Peak-Shave", "sec-bess"),
+      t("Tap-Changer Calc", "sec-tap"),
+      t("Harmonics Tool", "sec-harmonics"),
+      t("EMP / EMC Shielding", "sec-emp-emc"),
+    ],
   },
   {
     label: "Hazardous & Safety", hue: HUES.red, anchor: "sec-haz",
-    tools: ["Hazardous Area Lookup", "IS Loop Verifier"],
+    tools: [
+      t("Hazardous Area Lookup", "sec-haz"),
+      t("IS Loop Verifier", "sec-isloop"),
+    ],
   },
   {
     label: "Tools", hue: HUES.orange, anchor: "sec-convert",
-    tools: ["555 Timer", "Unit Conversions", "Circular Mils", "Photometrics", "Semiconductor Device I-V", "Fiber Link / NA", "Gaussian Beam", "Panel Schedule Load Analyzer", "Panel Schedule Power Study"],
+    tools: [
+      t("555 Timer", "sec-555"),
+      t("Unit Conversions", "sec-convert"),
+      t("Number-Base Converter", "sec-base-converter"),
+      t("Circular Mils", "sec-cm"),
+      t("Photometrics", "sec-photometrics"),
+      t("Semiconductor Device I-V", "sec-semiconductor-iv"),
+      t("Fiber Link / NA", "sec-fiber-link"),
+      t("Gaussian Beam", "sec-gaussian-beam"),
+      t("Linear Programming Optimizer", "sec-lp-optimizer"),
+      t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
+      t("Panel Schedule Power Study", "sec-panel-power-study"),
+    ],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",
     tools: [
-      "Conductor Reference", "Motor FLA Tables", "Conduit Fill Tables",
-      "IP Rating Chart", "NEMA Enclosures", "NEC Code Tables",
+      t("Conductor Reference", "sec-wire-ref"),
+      t("Motor FLA Tables", "sec-motor-ref"),
+      t("Conduit Fill Tables", "sec-conduit-ref"),
+      t("IP Rating Chart", "sec-ip-rating"),
+      t("NEMA Enclosures", "sec-nema-class"),
+      t("NEC Code Tables", "sec-nec-tables"),
     ],
   },
   {
     label: "Workspace", hue: HUES.aqua, anchor: "sec-projects",
-    tools: ["Saved Jobs & Settings"],
+    tools: [t("Saved Jobs & Settings", "sec-projects")],
   },
 ];
 
@@ -183,12 +246,12 @@ export default function SiteMapPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {TOOLBOX_CATEGORIES.map(({ label, hue, anchor, tools }) => (
-            /* The toolbox is a separate app, so this is a real navigation
-               rather than a client-side route. */
-            <a
+            /* The toolbox is a separate app, so these are real navigations
+               rather than client-side routes. The card is not a single link
+               so each calculator can deep-link without nested anchors. */
+            <div
               key={label}
-              href={`/toolbox/#${anchor}`}
-              className="card-surface group p-5 rounded-2xl relative overflow-hidden block"
+              className="card-surface group p-5 rounded-2xl relative overflow-hidden"
               style={{ borderColor: `color-mix(in srgb, ${hue} 30%, var(--border))` }}
             >
               <div
@@ -196,10 +259,10 @@ export default function SiteMapPage() {
                 style={{ background: `radial-gradient(ellipse at 90% 0%, ${hue}1a 0%, transparent 60%)` }}
               />
               <div className="relative z-10 flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: hue }} />
+                <a href={`/toolbox/#${anchor}`} className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: hue }} />
                   <h3 className="font-display text-sm font-semibold text-[var(--foreground)]">{label}</h3>
-                </div>
+                </a>
                 <span
                   className="text-[10px] font-semibold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full"
                   style={{ background: `${hue}26`, color: hue }}
@@ -209,15 +272,16 @@ export default function SiteMapPage() {
               </div>
               <div className="relative z-10 flex flex-wrap gap-1.5">
                 {tools.map((tool) => (
-                  <span
-                    key={tool}
-                    className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)]"
+                  <a
+                    key={`${tool.anchor}-${tool.name}`}
+                    href={`/toolbox/#${tool.anchor}`}
+                    className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]"
                   >
-                    {tool}
-                  </span>
+                    {tool.name}
+                  </a>
                 ))}
               </div>
-            </a>
+            </div>
           ))}
         </div>
       </FadeIn>
