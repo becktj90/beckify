@@ -714,10 +714,10 @@ export function PupPlanet() {
         {immersive ? <button type="button" className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#0a0f24]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
         {touch ? (
           <>
-            <div data-stick className="absolute bottom-5 left-5 z-10 h-32 w-32 rounded-full border-2 border-white/40 bg-black/25" aria-label="Move" />
-            <div className="absolute bottom-5 right-5 z-10 flex gap-3">
-              <button type="button" className="rounded-full border-2 border-white/40 bg-black/50 px-6 py-4 text-sm font-bold uppercase tracking-wide text-white active:scale-95" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
-              <button type="button" className="rounded-full border-2 border-white/40 px-6 py-4 text-sm font-bold uppercase tracking-wide active:scale-95" style={{ background: pup.accent, color: pup.ink }} onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
+            <div data-stick className="absolute bottom-3 left-3 z-10 h-24 w-24 rounded-full border-2 border-white/40 bg-black/25 sm:bottom-5 sm:left-5 sm:h-32 sm:w-32" aria-label="Move" />
+            <div className="absolute bottom-3 right-3 z-10 flex gap-2 sm:bottom-5 sm:right-5 sm:gap-3">
+              <button type="button" className="min-h-11 min-w-11 rounded-full border-2 border-white/40 bg-black/50 px-4 py-3 text-sm font-bold uppercase tracking-wide text-white active:scale-95 sm:px-6 sm:py-4" onClick={() => (stageRef.current as HTMLElement & { __mine?: () => void })?.__mine?.()}>Mine</button>
+              <button type="button" className="min-h-11 min-w-11 rounded-full border-2 border-white/40 px-4 py-3 text-sm font-bold uppercase tracking-wide active:scale-95 sm:px-6 sm:py-4" style={{ background: pup.accent, color: pup.ink }} onClick={() => (stageRef.current as HTMLElement & { __place?: () => void })?.__place?.()}>Place</button>
             </div>
           </>
         ) : null}

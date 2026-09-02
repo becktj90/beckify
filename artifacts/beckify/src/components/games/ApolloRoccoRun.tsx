@@ -662,24 +662,24 @@ export function ApolloRoccoRun() {
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-3 p-3" aria-label="On-canvas runner controls">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-2 p-2 sm:gap-3 sm:p-3" aria-label="On-canvas runner controls">
           <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move left" {...hold("left")}>
-              <ArrowLeft size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move left" {...hold("left")}>
+              <ArrowLeft size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Left</span>
             </button>
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move right" {...hold("right")}>
-              <ArrowRight size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#6df0df]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(109,240,223,.25)]" aria-label="Move right" {...hold("right")}>
+              <ArrowRight size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Right</span>
             </button>
           </div>
           <div className="pointer-events-auto flex gap-2">
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Jump" {...hold("jump")}>
-              <ArrowUp size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Jump" {...hold("jump")}>
+              <ArrowUp size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Jump</span>
             </button>
-            <button type="button" className="grid h-[5.6rem] w-[5.6rem] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Slide" {...hold("slide")}>
-              <ArrowDown size={32} />
+            <button type="button" className="grid h-[clamp(2.75rem,16vw,5.6rem)] w-[clamp(2.75rem,16vw,5.6rem)] place-items-center rounded-full border border-[#ffcb75]/70 bg-[#06101f]/75 text-white shadow-[0_0_18px_rgba(255,203,117,.22)]" aria-label="Slide" {...hold("slide")}>
+              <ArrowDown size={28} />
               <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Slide</span>
             </button>
           </div>
