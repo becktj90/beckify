@@ -141,4 +141,50 @@ function almost(a, b, tol) {
   almost(r.objective, 660);
 }
 
-console.log('LP optimizer verified: 2-var optimum (3, 1.5, z=21), product mix, kW blending, infeasible, unbounded');
+/* ── Bounds-only 2-var: max 3x+2y, x≤4, y≤3, x,y≥0. No DOM rows — upper bounds are the constraints. ── */
+{
+  const problem = {
+    sense: 'max',
+    names: ['x1', 'x2'],
+    c: [3, 2],
+    constraints: [],
+    bounds: [{ lo: 0, hi: 4 }, { lo: 0, hi: 3 }],
+  };
+  const expanded = api.expandConstraintSet(problem);
+  assert.ok(expanded.constraints.length >= 2, 'upper bounds become constraint rows');
+  assert.ok(expanded.constraints.some((row) => row.op === '<=' && row.a[0] === 1 && row.a[1] === 0 && row.b === 4), 'x1 ≤ 4 row');
+  assert.ok(expanded.constraints.some((row) => row.op === '<=' && row.a[0] === 0 && row.a[1] === 1 && row.b === 3), 'x2 ≤ 3 row');
+
+  const text = api.formulationText(problem);
+  assert.match(text, /x1 max/);
+  assert.match(text, /x2 max/);
+  assert.match(text, /4/);
+  assert.match(text, /3/);
+
+  const r = api.solveLP(problem);
+  assert.equal(r.status, 'optimal', r.message);
+  almost(r.x[0], 4);
+  almost(r.x[1], 3);
+  almost(r.objective, 18);
+  assert.ok(r.constraints.some((row) => row.label === 'x1 max' && row.b === 4));
+  assert.ok(r.constraints.some((row) => row.label === 'x2 max' && row.b === 3));
+
+  const g = api.feasibleRegion2D(problem);
+  assert.ok(g.ok, 'feasible region from bound rows only');
+  assert.ok(g.constraints.length >= 2, 'plot uses expanded bound constraints');
+  assert.ok(g.vertices.some((p) => Math.abs(p.x - 4) < 1e-5 && Math.abs(p.y - 3) < 1e-5), 'vertex (4, 3) present');
+  assert.ok(g.vertices.some((p) => Math.abs(p.x) < 1e-5 && Math.abs(p.y) < 1e-5), 'origin present');
+  almost(g.optimal.x, 4, 1e-5);
+  almost(g.optimal.y, 3, 1e-5);
+}
+
+/* ── Unbounded 2-var keeps a region but does not label a fake optimum ── */
+{
+  const cap = api.visualCaption('unbounded', true);
+  assert.ok(!/simplex optimum/i.test(cap), 'unbounded caption must not claim an optimum vertex');
+  assert.match(cap, /not marked/);
+  const optCap = api.visualCaption('optimal', true);
+  assert.match(optCap, /simplex optimum vertex/);
+}
+
+console.log('LP optimizer verified: 2-var optimum (3, 1.5, z=21), product mix, kW blending, infeasible, unbounded, bound-only plot');

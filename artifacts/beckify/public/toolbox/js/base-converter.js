@@ -64,8 +64,8 @@
     if (raw === '' || raw === '+' || raw === '-') {
       throw new Error('Enter a value.');
     }
-    if (base === 10 && signedDec && raw.charAt(0) === '-') {
-      if (!/^-?[0-9]+$/.test(raw)) throw new Error('Decimal must be an integer.');
+    if (base === 10 && signedDec) {
+      if (!/^[+-]?[0-9]+$/.test(raw)) throw new Error('Decimal must be an integer.');
       const n = BigInt(raw);
       const min = -(1n << (BigInt(width) - 1n));
       const max = (1n << (BigInt(width) - 1n)) - 1n;

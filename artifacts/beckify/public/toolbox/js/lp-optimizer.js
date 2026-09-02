@@ -102,6 +102,49 @@
   }
 
   /**
+   * Turn optional finite bounds into extra inequality rows. The UI (formulation,
+   * empty-constraint check, 2-var plot) and the solver share this expansion so
+   * an upper bound is never a silent extra that the picture ignores.
+   */
+  function expandConstraintSet(problem) {
+    const n = (problem.c || []).length;
+    const names = (problem.names || []).slice();
+    while (names.length < n) names.push('x' + (names.length + 1));
+    const bounds = (problem.bounds || []).slice();
+    while (bounds.length < n) bounds.push({ lo: 0, hi: null });
+
+    const constraints = [];
+    (problem.constraints || []).forEach((row, idx) => {
+      if (!row) return;
+      const a = (row.a || []).slice(0, n);
+      while (a.length < n) a.push(0);
+      if (!a.every(isFiniteNum) || !isFiniteNum(Number(row.b))) return;
+      const op = row.op === '>=' || row.op === '=' ? row.op : '<=';
+      constraints.push({ a: a, op: op, b: Number(row.b), label: row.label || ('C' + (idx + 1)) });
+    });
+
+    for (let j = 0; j < n; j++) {
+      const lo = bounds[j] && isFiniteNum(bounds[j].lo) ? bounds[j].lo : 0;
+      const hi = bounds[j] && isFiniteNum(bounds[j].hi) ? bounds[j].hi : null;
+      if (lo < -EPS) {
+        return { error: 'This solver requires x ≥ 0. Use a lower bound of 0 or greater.', names: names, constraints: constraints };
+      }
+      if (lo > EPS) {
+        const a = zeros(n); a[j] = 1;
+        constraints.push({ a: a, op: '>=', b: lo, label: names[j] + ' min' });
+      }
+      if (hi != null) {
+        if (hi < lo - EPS) {
+          return { error: 'Upper bound of ' + names[j] + ' is below its lower bound.', names: names, constraints: constraints };
+        }
+        const a = zeros(n); a[j] = 1;
+        constraints.push({ a: a, op: '<=', b: hi, label: names[j] + ' max' });
+      }
+    }
+    return { names: names, constraints: constraints };
+  }
+
+  /**
    * Solve a small LP. Returns a plain result object; never throws for
    * infeasible / unbounded (those are statuses).
    *
@@ -119,40 +162,10 @@
     if (n < 1) return { status: 'error', message: 'Enter at least one decision variable.' };
     if (!c.every(isFiniteNum)) return { status: 'error', message: 'Objective coefficients must be finite numbers.' };
 
-    const names = (problem.names || []).slice();
-    while (names.length < n) names.push('x' + (names.length + 1));
-
-    const bounds = (problem.bounds || []).slice();
-    while (bounds.length < n) bounds.push({ lo: 0, hi: null });
-
-    const cons = [];
-    (problem.constraints || []).forEach((row, idx) => {
-      if (!row) return;
-      const a = (row.a || []).slice(0, n);
-      while (a.length < n) a.push(0);
-      if (!a.every(isFiniteNum) || !isFiniteNum(Number(row.b))) return;
-      const op = row.op === '>=' || row.op === '=' ? row.op : '<=';
-      cons.push({ a: a, op: op, b: Number(row.b), label: row.label || ('C' + (idx + 1)) });
-    });
-
-    for (let j = 0; j < n; j++) {
-      const lo = bounds[j] && isFiniteNum(bounds[j].lo) ? bounds[j].lo : 0;
-      const hi = bounds[j] && isFiniteNum(bounds[j].hi) ? bounds[j].hi : null;
-      if (lo < -EPS) {
-        return { status: 'error', message: 'This solver requires x ≥ 0. Use a lower bound of 0 or greater.' };
-      }
-      if (lo > EPS) {
-        const a = zeros(n); a[j] = 1;
-        cons.push({ a: a, op: '>=', b: lo, label: names[j] + ' min' });
-      }
-      if (hi != null) {
-        if (hi < lo - EPS) {
-          return { status: 'error', message: 'Upper bound of ' + names[j] + ' is below its lower bound.' };
-        }
-        const a = zeros(n); a[j] = 1;
-        cons.push({ a: a, op: '<=', b: hi, label: names[j] + ' max' });
-      }
-    }
+    const expanded = expandConstraintSet({ sense: sense, c: c, names: problem.names, constraints: problem.constraints, bounds: problem.bounds });
+    if (expanded.error) return { status: 'error', message: expanded.error };
+    const names = expanded.names;
+    const cons = expanded.constraints;
 
     const origCons = cons.slice();
 
@@ -421,7 +434,8 @@
   function feasibleRegion2D(problem) {
     const c0 = problem.c[0] || 0;
     const c1 = problem.c[1] || 0;
-    const cons = (problem.constraints || []).filter((row) => row && row.a);
+    const expanded = expandConstraintSet(problem);
+    const cons = (expanded.constraints || []).filter((row) => row && row.a);
     const lines = cons.map((row) => ({
       a: row.a[0] || 0, b: row.a[1] || 0, c: row.b, label: row.label || '',
     }));
@@ -477,7 +491,7 @@
 
   function term(coeff, name, first) {
     const c = Number(coeff) || 0;
-    if (Math.abs(c) < 1e-12) return first ? '0·' + name : '';
+    if (Math.abs(c) < 1e-12) return first ? '0' : '';
     const mag = fmtNum(Math.abs(c), 4);
     const body = mag === '1' ? name : mag + ' ' + name;
     if (first) return (c < 0 ? '−' : '') + body;
@@ -488,7 +502,7 @@
     let out = '';
     let first = true;
     for (let j = 0; j < coeffs.length; j++) {
-      if (Math.abs(coeffs[j]) < 1e-12 && !(first && j === coeffs.length - 1)) continue;
+      if (Math.abs(Number(coeffs[j]) || 0) < 1e-12) continue;
       out += term(coeffs[j], names[j] || ('x' + (j + 1)), first);
       first = false;
     }
@@ -496,16 +510,25 @@
   }
 
   function formulationText(problem) {
-    const names = problem.names;
+    const expanded = expandConstraintSet(problem);
+    const names = expanded.names;
     const verb = problem.sense === 'min' ? 'Minimize' : 'Maximize';
     const unit = problem.objUnit ? '   [' + problem.objUnit + ']' : '';
     let s = verb + '  z = ' + expr(problem.c, names) + unit + '\nsubject to\n';
-    (problem.constraints || []).forEach((row) => {
+    (expanded.constraints || []).forEach((row) => {
       const tag = row.label ? '   (' + row.label + ')' : '';
       s += '  ' + expr(row.a, names) + '  ' + row.op + '  ' + fmtNum(row.b, 4) + tag + '\n';
     });
     s += '  ' + names.join(', ') + ' ≥ 0';
     return s;
+  }
+
+  function visualCaption(status, graphOk) {
+    if (!graphOk) return 'No 2-variable region to draw.';
+    if (status === 'optimal') {
+      return 'Feasible region in the x1–x2 plane. Green = feasible polygon, blue = constraint lines, yellow dashed = objective through the vertex optimum, red = simplex optimum vertex.';
+    }
+    return 'Feasible region in the x1–x2 plane. Green = feasible polygon, blue = constraint lines. The solver status is ' + status + ', so the objective line and optimum vertex are not marked.';
   }
 
   /* -------------------------------------------------------------------------
@@ -533,9 +556,13 @@
       return svg;
     }
 
+    const plotCons = (graph.constraints && graph.constraints.length)
+      ? graph.constraints
+      : (problem.constraints || []);
+    const markOptimum = !!(graph.markOptimum && graph.optimal && isFinite(graph.optimal.z));
     let xmax = Math.max(1, ...graph.vertices.map((p) => p.x));
     let ymax = Math.max(1, ...graph.vertices.map((p) => p.y));
-    (problem.constraints || []).forEach((row) => {
+    plotCons.forEach((row) => {
       const a0 = row.a[0] || 0, a1 = row.a[1] || 0;
       if (Math.abs(a0) > EPS && row.b / a0 > 0) xmax = Math.max(xmax, row.b / a0);
       if (Math.abs(a1) > EPS && row.b / a1 > 0) ymax = Math.max(ymax, row.b / a1);
@@ -567,7 +594,7 @@
       svg.appendChild(ty);
     }
 
-    (problem.constraints || []).forEach((row, idx) => {
+    plotCons.forEach((row, idx) => {
       const a0 = row.a[0] || 0, a1 = row.a[1] || 0, b = row.b;
       const pts = [];
       // Intersections with plot-window edges x=0, x=xmax, y=0, y=ymax.
@@ -595,7 +622,7 @@
       }));
     }
 
-    if (graph.optimal && isFinite(graph.optimal.z)) {
+    if (markOptimum) {
       const z = graph.optimal.z;
       const c0 = problem.c[0] || 0;
       const c1 = problem.c[1] || 0;
@@ -617,7 +644,7 @@
     }
 
     graph.vertices.forEach((p, i) => {
-      const isOpt = p === graph.optimal;
+      const isOpt = markOptimum && p === graph.optimal;
       svg.appendChild(svgEl('circle', {
         cx: px(p.x), cy: py(p.y), r: isOpt ? 6 : 4,
         fill: isOpt ? COLORS.red : COLORS.text,
@@ -815,7 +842,9 @@
     if (!problem.c.every(isFiniteNum)) {
       return showError('Objective coefficients must be finite numbers.');
     }
-    if (!problem.constraints.length) {
+    const expanded = expandConstraintSet(problem);
+    if (expanded.error) return showError(expanded.error);
+    if (!expanded.constraints.length) {
       return showError('Enter at least one constraint (or an upper bound, which becomes a constraint).');
     }
     if (problem.constraints.some((row) => !row.a.every(isFiniteNum) || !isFiniteNum(row.b))) {
@@ -858,11 +887,12 @@
 
     if (problem.c.length === 2 && vis) {
       const graph = feasibleRegion2D(problem);
+      graph.markOptimum = result.status === 'optimal';
       const caption = document.createElement('div');
       caption.className = 'orlp-visual-caption';
       caption.textContent = graph.ok
-        ? 'Feasible region in the x1–x2 plane. Green = feasible polygon, blue = constraint lines, yellow dashed = objective through the vertex optimum, red = simplex optimum vertex.'
-        : (graph.reason || 'No 2-variable region to draw.');
+        ? visualCaption(result.status, true)
+        : (graph.reason || visualCaption(result.status, false));
       vis.appendChild(caption);
       vis.appendChild(renderFeasibleRegion(graph, problem));
       if (graph.ok) {
@@ -870,10 +900,12 @@
         table.className = 'orlp-vertex-table';
         table.innerHTML = '<thead><tr><th>Vertex</th><th>' + escapeHtml(problem.names[0]) + '</th><th>' + escapeHtml(problem.names[1]) + '</th><th>z</th></tr></thead>';
         const tb = document.createElement('tbody');
+        const mark = result.status === 'optimal';
         graph.vertices.forEach((p, i) => {
           const tr = document.createElement('tr');
-          if (p === graph.optimal) tr.className = 'orlp-opt-row';
-          tr.innerHTML = '<td>V' + (i + 1) + (p === graph.optimal ? ' ★' : '') + '</td><td>' +
+          const isOpt = mark && p === graph.optimal;
+          if (isOpt) tr.className = 'orlp-opt-row';
+          tr.innerHTML = '<td>V' + (i + 1) + (isOpt ? ' ★' : '') + '</td><td>' +
             fmtNum(p.x, 6) + '</td><td>' + fmtNum(p.y, 6) + '</td><td>' + fmtNum(p.z, 6) + '</td>';
           tb.appendChild(tr);
         });
@@ -985,6 +1017,8 @@
     solveLP: solveLP,
     feasibleRegion2D: feasibleRegion2D,
     formulationText: formulationText,
+    expandConstraintSet: expandConstraintSet,
+    visualCaption: visualCaption,
     PRESETS: PRESETS,
     EPS: EPS,
   };

@@ -134,6 +134,10 @@
     html = html.replace(/\\quad/g, '<span class="tex-space"></span>');
     html = html.replace(/\\,/g, '<span class="tex-thin-space"></span>');
     html = html.replace(/\\Delta/g, '&Delta;').replace(/\\sum/g, '&sum;');
+    html = html.replace(/\\max/g, 'max');
+    html = html.replace(/\\cdot/g, '&middot;');
+    html = html.replace(/\\le/g, '&le;');
+    html = html.replace(/\\ge/g, '&ge;');
     return html;
   }
 
