@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://cdn.jsdelivr.net blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
   <title>Panel Schedule Load Analyzer | Beckify</title>
   <meta name="description" content="Extract an editable panel schedule from a photo and estimate circuit demand, panel current, diversity, and capacity.">
   <meta name="robots" content="index,follow">
@@ -49,7 +49,7 @@
         <div>
           <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
           <h1>Panel Schedule Load Analyzer</h1>
-          <p class="hero-copy">Drop in a panel schedule photo, extract circuits with Tesseract.js, correct the OCR, then review estimated load, demand, diversity, and capacity before printing.</p>
+          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Manual entry still works with no photo. Informational estimate — not an electrical inspection.</p>
         </div>
         <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
       </div>
@@ -61,17 +61,29 @@
           <span class="title-bar-text" id="upload-title">Image Intake</span>
         </div>
         <div class="window-body stack-lg">
+          <div class="callout callout-privacy">
+            <strong>Privacy before you pick a photo.</strong> The photo stays on this device. It is never uploaded to Beckify or any server. On-device Tesseract.js reads it in the browser. The image is not saved after you leave or reset.
+          </div>
+          <div class="callout callout-safety">
+            <strong>Photograph the directory / label only.</strong> This tool reads the printed circuit directory or schedule card on the panel door — not the live interior of an open panel. Keep the door closed if you can. Never open a panel or touch anything inside it to get this photo. Square the card to the camera, fill the frame, use even light, and avoid glare.
+          </div>
+          <div id="openPanelCaution" class="callout callout-caution" hidden>
+            <strong>This photo looks like an open panel interior.</strong> Do not work inside a live panel. OCR will still try to help with whatever text it can read, but that is not the intended use. Photograph the directory with the door closed if you can. Any safety concern goes to a licensed electrician.
+          </div>
+
           <div class="toolbar">
-            <label class="btn" for="imageInput">Upload Image</label>
+            <label class="btn" for="imageInput">Choose file</label>
             <input id="imageInput" type="file" accept="image/*" hidden>
+            <label class="btn" for="imageCapture">Take photo</label>
+            <input id="imageCapture" type="file" accept="image/*" capture="environment" hidden>
             <button id="processButton" class="btn btn-primary" type="button" disabled>Read Schedule</button>
             <button id="resetButton" class="btn" type="button">Reset</button>
           </div>
 
           <label id="dropZone" class="drop-zone" for="imageInput">
             <span class="drop-zone-icon">📂</span>
-            <strong>Drag &amp; drop a panel schedule here</strong>
-            <span>PNG, JPG, WEBP, or scanned photos work best when the schedule is square to the camera and high contrast.</span>
+            <strong>Drag &amp; drop a directory photo here</strong>
+            <span>PNG, JPG, or WEBP of the printed schedule/label. Framing: fill the frame, even light, avoid glare. You can skip the photo and type rows by hand.</span>
           </label>
 
           <div class="status-strip" role="status" aria-live="polite">
@@ -161,6 +173,22 @@
               <tbody id="editorTableBody"></tbody>
             </table>
           </div>
+          <label class="review-check">
+            <input id="reviewedSchedule" type="checkbox">
+            I reviewed every circuit row. OCR is a draft, not verified input. Directory metrics below wait for this check.
+          </label>
+        </div>
+      </section>
+
+      <section class="window screen-only" aria-labelledby="directory-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="directory-title">Directory metrics (from the reviewed table)</span>
+        </div>
+        <div class="window-body stack-lg">
+          <p class="field-help">Written for someone who is not an electrician. These numbers come from the table above after you review it. They are a photo-based estimate, not a measurement and not an inspection.</p>
+          <div class="analysis-grid" id="directoryGrid" aria-live="polite"></div>
+          <div id="directoryGuidance" class="analysis-guidance"></div>
+          <p class="field-help">Persistent disclaimer: informational estimate from a photo or typed directory, not an electrical inspection. Any safety concern goes to a licensed electrician.</p>
         </div>
       </section>
 
@@ -171,7 +199,7 @@
         <div class="window-body stack-lg">
           <div class="analysis-grid" id="analysisGrid" aria-live="polite"></div>
           <div id="analysisGuidance" class="analysis-guidance"></div>
-          <p class="field-help">“Est. Load A” begins as the OCR breaker-trip value only to make review faster. Replace it with measured/scheduled current or documented FLA. This is a planning estimate—not an NEC Article 220 load calculation, an equipment rating, or a protection setting.</p>
+          <p class="field-help">“Est. Load A” begins as the OCR breaker-trip value only to make review faster. Replace it with measured/scheduled current or documented FLA. This is a planning estimate—not an NEC Article 220 load calculation, an equipment rating, or a protection setting. Informational only; any safety concern goes to a licensed electrician.</p>
         </div>
       </section>
 
@@ -226,7 +254,7 @@
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous"></script>
+  <script src="js/ocr-helper.js"></script>
   <script src="js/panel-schedule.js"></script>
 </body>
 </html>
