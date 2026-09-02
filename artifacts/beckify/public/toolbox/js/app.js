@@ -406,7 +406,7 @@ const WIRE_CM = {
   '4/0': 211600, '250': 250000, '300': 300000, '350': 350000,
   '400': 400000, '500': 500000
 };
-/* NEC Table 310.15(B)(16) 75°C ampacity lookup keyed to WIRE_SIZES keys */
+/* NEC Table 310.16 75°C ampacity lookup keyed to WIRE_SIZES keys */
 const WIRE_AMP_CU75 = {
   '14': 20, '12': 25, '10': 35, '8': 50, '6': 65, '4': 85, '3': 100,
   '2': 115, '1': 130, '1/0': 150, '2/0': 175, '3/0': 200, '4/0': 230,
@@ -442,7 +442,7 @@ window.calcVDrop = function (phase) {
   const ampTable = mat === 'CU' ? WIRE_AMP_CU75 : WIRE_AMP_AL75;
   const baseAmp = ampTable[awg];
   const ampNote = baseAmp !== undefined
-    ? baseAmp + ' A (NEC 310.15(B)(16) 75\u00b0C)' + (baseAmp >= I ? ' \u2714' : ' \u2718 undersized for ' + fmt(I, 1) + ' A')
+    ? baseAmp + ' A (NEC 310.16 75\u00b0C)' + (baseAmp >= I ? ' \u2714' : ' \u2718 undersized for ' + fmt(I, 1) + ' A')
     : '\u2014';
   showResult('vd_result_' + phase, [
     ['Voltage Drop (VD)', fmt(VD, 2) + ' V'],
@@ -470,7 +470,7 @@ window.calcMinWire = function (phase) {
     ? chosen + (KCMIL_SIZES.has(chosen) ? ' kcmil' : ' AWG')
     : '> 500 kcmil (consult engineer)';
 
-  // NEC ampacity lookup from NEC Table 310.15(B)(16) 75°C column
+  // NEC ampacity lookup from NEC Table 310.16 75°C column
   const ampTable = mat === 'CU' ? WIRE_AMP_CU75 : WIRE_AMP_AL75;
   let ampacityNote = '';
   if (chosen) {
@@ -487,7 +487,7 @@ window.calcMinWire = function (phase) {
     ['Minimum CM Required (VD)', fmt(minCM, 0) + ' CM'],
     ['Wire Size for VD Compliance', chosenLabel],
     ['Actual CM', chosen ? WIRE_CM[chosen].toLocaleString() + ' CM' : '\u2014'],
-    ['NEC 310.15(B)(16) Ampacity (75\u00b0C)', ampacityNote || '\u2014'],
+    ['NEC 310.16 Ampacity (75\u00b0C)', ampacityNote || '\u2014'],
     ['Formula', phase === '1p' ? 'CM = 2\u00d7K\u00d7I\u00d7L / VD' : 'CM = \u221a3\u00d7K\u00d7I\u00d7L / VD']
   ];
   showResult('vdm_result_' + phase, rows);
@@ -1416,7 +1416,7 @@ window.calcEbRange = function () {
    20. NEC CIRCUIT CALCULATOR
    ============================================================ */
 
-/* NEC 310.15(B)(16) — 75°C column
+/* NEC 310.16 — 75°C column
    [label, Cu ampacity, Al ampacity (null = not listed), circular mils, THHN area in²] */
 const NEC_CONDUCTORS = [
   { label: '14 AWG', cu: 15,  al: null, cm: 4110,    area: 0.0097 },
@@ -1628,7 +1628,7 @@ window.calcNEC = function () {
     ['Conduit Fill Derating',                        '\u00d7' + cccDF.toFixed(2) + ' (NEC 310.15(B)(3)(a))'],
     ['Total Derating Factor',                        '\u00d7' + fmt(totalDerating, 3)],
     ['Selected Conductor',                           conductor.label + ' ' + (material === 'cu' ? 'Cu' : 'Al') + ' THHN'],
-    ['Base Ampacity (NEC 310.15(B)(16) 75\u00b0C)',  baseAmp + ' A'],
+    ['Base Ampacity (NEC 310.16 75\u00b0C)',  baseAmp + ' A'],
     ['Derated Ampacity',                             fmt(deratedAmp, 1) + ' A (must be \u2265 ' + fmt(designI, 1) + ' A)'],
     ['Voltage Drop',                                 fmt(vdPct, 2) + '% (' + fmt(vdVolts, 2) + ' V)' + vdFlag],
     ['Conduit Size (40% fill, ' + condType + ' ref)', conduitStr + ' (' + condCount + ' cond. incl. EGC)'],

@@ -10,6 +10,13 @@ export interface SeoProps {
   image?: string;
   type?: "website" | "article";
   schema?: Record<string, unknown> | Record<string, unknown>[];
+  /**
+   * Defaults to indexable. Pages that exist to catch a bad URL rather than
+   * to be found — the not-found route, most obviously — should pass
+   * "noindex,follow" so a broken inbound link doesn't get indexed as a
+   * duplicate of whatever content this route happens to render.
+   */
+  robots?: string;
 }
 
 const upsertMeta = (selector: string, attributes: Record<string, string>, content: string) => {
@@ -23,7 +30,7 @@ const upsertMeta = (selector: string, attributes: Record<string, string>, conten
   element.setAttribute("content", content);
 };
 
-export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMAGE, type = "website", schema }: SeoProps) {
+export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMAGE, type = "website", schema, robots = "index,follow,max-image-preview:large" }: SeoProps) {
   useEffect(() => {
     const canonicalUrl = new URL(path, SITE_URL).toString();
     document.title = title;
@@ -47,7 +54,7 @@ export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMA
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, title);
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description" }, description);
     upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, image);
-    upsertMeta('meta[name="robots"]', { name: "robots" }, "index,follow,max-image-preview:large");
+    upsertMeta('meta[name="robots"]', { name: "robots" }, robots);
 
     document.head.querySelectorAll('script[data-beckify-schema="true"]').forEach((node) => node.remove());
     const schemas = [
@@ -73,7 +80,7 @@ export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMA
       document.head.querySelectorAll('meta[data-beckify-seo="true"]').forEach((node) => node.remove());
       document.head.querySelectorAll('script[data-beckify-schema="true"]').forEach((node) => node.remove());
     };
-  }, [description, image, path, schema, title, type]);
+  }, [description, image, path, robots, schema, title, type]);
 
   return null;
 }

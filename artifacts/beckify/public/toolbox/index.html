@@ -4714,7 +4714,7 @@
           <div class="section-info-body">
             <strong>National Electrical Code (NEC)</strong> reference tables used in everyday electrical design. All values are from the 2023 NEC unless noted.<br><br>
             <ul>
-              <li><strong>Table 310.15(B)(16):</strong> Allowable ampacity for conductors in raceways and cables at 30°C ambient, ≤3 current-carrying conductors.</li>
+              <li><strong>Table 310.16:</strong> Allowable ampacity for conductors in raceways and cables at 30°C ambient, ≤3 current-carrying conductors.</li>
               <li><strong>Table 310.15(C)(1):</strong> Adjustment factors when more than 3 current-carrying conductors are bundled in a conduit or cable.</li>
               <li><strong>Table 310.15(B)(2)(a):</strong> Ambient temperature correction factors applied to ampacity values.</li>
               <li><strong>Table 240.6(A):</strong> Standard ampere ratings for fuses and inverse-time circuit breakers.</li>
@@ -4743,9 +4743,9 @@
         <div id="tab-nec-amp" class="tab-pane active">
           <div class="card-grid">
             <div class="card" style="grid-column:1/-1">
-              <div class="card-title">NEC Table 310.15(B)(16) — Allowable Ampacity, 30°C Ambient, ≤3 Current-Carrying Conductors in Raceway</div>
+              <div class="card-title">NEC Table 310.16 — Allowable Ampacity, 30°C Ambient, ≤3 Current-Carrying Conductors in Raceway</div>
               <div class="card-body">
-                <div class="note">&#9432; Use 75°C column for terminals rated 75°C (most equipment). Use 90°C column only as the starting point for derating calculations — final ampacity is limited to the terminal rating. 14 AWG aluminum not listed for service conductors. Based on NEC 2023 Table 310.15(B)(16).</div>
+                <div class="note">&#9432; Use 75°C column for terminals rated 75°C (most equipment). Use 90°C column only as the starting point for derating calculations — final ampacity is limited to the terminal rating. 14 AWG aluminum not listed for service conductors. Based on NEC 2023 Table 310.16.</div>
                 <div class="ref-table-wrap" style="margin-top:10px">
                   <table class="ref-table">
                     <thead>
@@ -5865,7 +5865,7 @@
           <summary>ℹ More Info — NEC Circuit Calculator</summary>
           <div class="section-info-body">
             <strong>NEC Circuit Calculator</strong> performs comprehensive circuit design per the National Electrical Code for a single circuit.<br><br>
-            <strong>What it calculates:</strong><ul><li><strong>Design Current:</strong> Applies NEC multiplier (×1.25 for motors/lighting, ×1.0 for others)</li><li><strong>Conductor Size:</strong> Minimum AWG/kcmil from NEC 310.15(B)(16) 75°C column, derated for ambient temp and conductor count</li><li><strong>OCPD:</strong> Minimum and maximum breaker/fuse ratings per NEC 240.4 and 430.52</li><li><strong>Voltage Drop:</strong> Calculated at design current for the given run length</li><li><strong>Conduit:</strong> Minimum EMT trade size for the conductors at 40% fill</li><li><strong>EGC:</strong> Equipment grounding conductor size per NEC 250.122</li></ul>
+            <strong>What it calculates:</strong><ul><li><strong>Design Current:</strong> Applies NEC multiplier (×1.25 for motors/lighting, ×1.0 for others)</li><li><strong>Conductor Size:</strong> Minimum AWG/kcmil from NEC 310.16 75°C column, derated for ambient temp and conductor count</li><li><strong>OCPD:</strong> Minimum and maximum breaker/fuse ratings per NEC 240.4 and 430.52</li><li><strong>Voltage Drop:</strong> Calculated at design current for the given run length</li><li><strong>Conduit:</strong> Minimum EMT trade size for the conductors at 40% fill</li><li><strong>EGC:</strong> Equipment grounding conductor size per NEC 250.122</li></ul>
             Enter FLA directly or enter kW/kVA and PF to calculate FLA automatically.
           </div>
         </details>
@@ -5876,7 +5876,7 @@
           <div class="card-title">Circuit Parameters</div>
           <div class="card-body">
             <div class="formula-box">
-              Design I = FLA &times; NEC Multiplier &nbsp;|&nbsp; Conductor: NEC 310.15(B)(16) 75&deg;C col per NEC 110.14(C)<br>
+              Design I = FLA &times; NEC Multiplier &nbsp;|&nbsp; Conductor: NEC 310.16 75&deg;C col per NEC 110.14(C)<br>
               VD% = (K &times; I &times; L &times; Phase<sub>factor</sub>) / (CM &times; V) &times; 100 &nbsp;&mdash;&nbsp; K = 12.9 Cu | 21.2 Al<br>
               Conduit: 40% fill, NEC Ch.9 Table 1 &nbsp;|&nbsp; OCPD: NEC 240.4 &amp; 430.52 &nbsp;|&nbsp; EGC: NEC 250.122
             </div>
@@ -5988,7 +5988,7 @@
         </div>
 
         <div class="card" style="grid-column:1/-1">
-          <div class="card-title">NEC 310.15(B)(16) &#8212; Ampacity Reference (75&deg;C Column, Copper &amp; Aluminum)</div>
+          <div class="card-title">NEC 310.16 &#8212; Ampacity Reference (75&deg;C Column, Copper &amp; Aluminum)</div>
           <div class="card-body">
             <div class="note">&#9432; 75&deg;C column used per NEC 110.14(C). Conductors in conduit in free air, not more than 3 CCC, 30&deg;C ambient. Apply temperature correction (NEC 310.15(B)(2)(a)) and conduit fill derating (NEC 310.15(B)(3)(a)) as needed.</div>
             <div class="ref-table-wrap" style="margin-top:10px">
