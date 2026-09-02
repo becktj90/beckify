@@ -364,8 +364,12 @@ regions and 20 px-tall journal-nav links noted above.
 
 ### P2 — valuable
 
-Three visual identities; untested math modules; no root manifest/service worker;
-`/gear` 338 kB profile image; root `pnpm build` broken by `mockup-sandbox`.
+Three visual identities (deferred, see below); untested math modules (need
+domain-expert formula review, not just more tests — see "Requires
+engineering review" above); root `pnpm build` broken by the unrelated
+`mockup-sandbox` workspace package (out of scope for beckify). Root
+manifest/service worker and the oversized profile image are done — see
+Stage 3 below.
 
 ### P3 — future
 
@@ -485,6 +489,28 @@ Redeployed via run
 [#113](https://github.com/becktj90/beckify/actions/runs/33577857128),
 succeeded. Verified live: `curl https://beckify.com/` serves the corrected
 viewport meta (no `maximum-scale=1`).
+
+### Stage 3 (P2) — image budget and installability
+
+- **Profile photo shrunk 338 kB → 17 kB** (`33b40ed`): source was a
+  1170×2532 full-res phone photo rendering at a max of 144×144 CSS px in
+  `About.tsx`. Cropped to 432×432 (3x for retina) and re-encoded as mozjpeg
+  q82.
+- **Root PWA manifest and service worker added**: the toolbox already had
+  its own install/offline story scoped to `/toolbox/`; the React shell had
+  none. Added `public/manifest.json` (icons generated from the existing
+  `favicon-512.png` mark, no new artwork), linked it plus a `theme-color`
+  meta tag from `index.html`, and registered `public/sw.js` from
+  `main.tsx`. The service worker network-first's navigations (so a
+  returning visitor is never stuck on a stale shell) and
+  stale-while-revalidates same-origin GETs — no build-time asset list is
+  needed since Vite content-hashes every chunk, so each hashed file is
+  immutable once fetched. It explicitly bails out on `/toolbox/`,
+  `/games/`, `/projects/` and `/demos/` so it never competes with the
+  toolbox's own service worker or caches content that changes
+  independently of this app's deploys. Verified via Playwright: the worker
+  registers and activates with zero console errors, `manifest.json`/`sw.js`
+  /icons all serve 200 from a production build.
 
 ## Deferred improvements
 
