@@ -46,13 +46,45 @@ ok("Daly BMS row is linked to manufacturer", vespaSrc.includes("dalybms.com"));
 ok("eBay-only rows stay Not linked rather than guessed ASINs", vespaSrc.includes("25mm three-wire twist throttle") && vespaSrc.includes("LED headlight") && !/name: "25mm three-wire twist throttle"[\s\S]{0,180}href:/.test(vespaSrc));
 
 console.log("\n--- Counts ---");
-ok("calculator count constant is 55", /PUBLIC_CALCULATOR_COUNT = 55/.test(siteStats));
+const { PUBLIC_CALCULATOR_COUNT } = require(path.join(root, "src/data/toolbox-tools.mjs"));
+const navTargets = [...toolboxHtml.matchAll(/<button class="nav-btn"[^>]*data-target="([^"]+)"/g)].map((m) => m[1]);
+const excludedNav = new Set([
+  "sec-wire-ref", "sec-motor-ref", "sec-conduit-ref", "sec-conduit-guide",
+  "sec-ip-rating", "sec-nema-class", "sec-nec-tables", "sec-projects",
+]);
+const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
+ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));
 ok("game count constant is 8", /PUBLIC_GAME_COUNT = 8/.test(siteStats));
+ok("calculator count matches live toolbox nav", PUBLIC_CALCULATOR_COUNT === liveCalculatorCount, `${PUBLIC_CALCULATOR_COUNT} vs nav ${liveCalculatorCount}`);
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
+ok("home names EMP/EMC, homework EE, LP, and number-base", /EMP\/EMC/.test(homeSrc) && /homework EE/.test(homeSrc) && /linear-programming optimizer/.test(homeSrc) && /number-base converter/.test(homeSrc));
+ok("home deep-links EMP, homework EE, LP, and number-base", [
+  "/toolbox/#sec-emp-emc",
+  "/toolbox/#sec-magnetic-circuit",
+  "/toolbox/#sec-transient-circuits",
+  "/toolbox/#sec-phasor-diagram",
+  "/toolbox/#sec-semiconductor-iv",
+  "/toolbox/#sec-fiber-link",
+  "/toolbox/#sec-gaussian-beam",
+  "/toolbox/#sec-lp-optimizer",
+  "/toolbox/#sec-base-converter",
+].every((href) => homeSrc.includes(`href: "${href}"`)));
+ok("sitemap chips deep-link via /toolbox/#", sitemapSrc.includes("href={`/toolbox/#${tool.anchor}`}"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser games"));
-ok("toolbox header uses 55", toolboxHtml.includes("55 calculators plus reference tables"));
+ok("toolbox header uses the shared calculator count", toolboxHtml.includes(`${PUBLIC_CALCULATOR_COUNT} calculators plus reference tables`));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
 ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
+ok("sitemap lists EMP/EMC with a working hash link", sitemapSrc.includes('t("EMP / EMC Shielding", "sec-emp-emc")'));
+ok("sitemap lists LP optimizer with a working hash link", sitemapSrc.includes('t("Linear Programming Optimizer", "sec-lp-optimizer")'));
+ok("sitemap lists number-base converter with a working hash link", sitemapSrc.includes('t("Number-Base Converter", "sec-base-converter")'));
+ok("sitemap lists the homework EE set", [
+  't("Magnetic Circuit Workbench", "sec-magnetic-circuit")',
+  't("Phasor Diagram Workbench", "sec-phasor-diagram")',
+  't("Transient Circuit Lab", "sec-transient-circuits")',
+  't("Semiconductor Device I-V", "sec-semiconductor-iv")',
+  't("Fiber Link / NA", "sec-fiber-link")',
+  't("Gaussian Beam", "sec-gaussian-beam")',
+].every((entry) => sitemapSrc.includes(entry)));
 const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet", "HexGL"].includes(name));
 ok("site-content lists 8 games", gameNames.length === 8, gameNames.join(", "));
 
