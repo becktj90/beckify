@@ -62,6 +62,40 @@
     'Comments',
   ];
 
+  /* Optional workbook columns. Off by default so the 26-column template
+     still exports. These are generic field-list headings — not a project
+     tag library, fluid list, or commodity book. */
+  const EXTENDED_COLUMNS = [
+    'Control Zone',
+    'Sample Rate',
+    'Data Type',
+    'Location',
+    'Serial Number',
+    'Find #',
+    'Signal Suffix',
+    'Wire Color From',
+    'Wire Color To',
+  ];
+
+  const DATA_TYPES = ['BOOL', 'INT', 'UINT', 'DINT', 'REAL', 'STRING'];
+  const SAMPLE_RATES = ['Slow', 'Fast', 'Event'];
+  const LOCATION_HINTS = ['pendant', 'skid', 'panel', 'field'];
+  const TAKEOFF_SIGNALS = ['DI', 'DO', 'AI', 'AO'];
+  const ELECTRICAL_TYPES = ['BOOL', '4-20', 'mV/V'];
+
+  /* ISA-style signal suffixes only (status, pressure, temp, …).
+     User-editable. Not a fluid, commodity, or Find-Number library. */
+  const DEFAULT_SUFFIX_CATALOG = [
+    { suffix: '.YS', meaning: 'status' },
+    { suffix: '.PT', meaning: 'pressure' },
+    { suffix: '.TE', meaning: 'temp' },
+    { suffix: '.FT', meaning: 'flow' },
+    { suffix: '.ZT', meaning: 'position' },
+    { suffix: '.FV', meaning: 'cmd' },
+    { suffix: '.ZS1', meaning: 'limit' },
+    { suffix: '.ZS2', meaning: 'limit' },
+  ];
+
   const GENERIC_TYPES = [
     { key: 'DI', label: 'Generic DI', signalType: 'DI', density: 16 },
     { key: 'DO', label: 'Generic DO', signalType: 'DO', density: 8 },
@@ -237,6 +271,10 @@
   let stationSeq = 1;
   let moduleSeq = 1;
   let catalogBrandFilter = '';
+  let extendedColumns = false;
+  let suffixCatalog = cloneSuffixCatalog(DEFAULT_SUFFIX_CATALOG);
+  let takeoffRows = [];
+  let takeoffSeq = 1;
 
   function brandById(id) {
     const key = String(id || '');
@@ -311,9 +349,159 @@
       couplerPrefix: p.coupler,
       ioPrefix: p.io,
       powerPrefix: p.power,
+      controlZone: '',
+      location: '',
       modules: [],
       genericCounts: defaultGenericCounts(),
     };
+  }
+
+  function cloneSuffixCatalog(list) {
+    const src = Array.isArray(list) && list.length ? list : DEFAULT_SUFFIX_CATALOG;
+    return src.map(function (item) {
+      return {
+        suffix: String((item && item.suffix) || ''),
+        meaning: String((item && item.meaning) || ''),
+      };
+    });
+  }
+
+  function defaultSuffixCatalog() {
+    return cloneSuffixCatalog(DEFAULT_SUFFIX_CATALOG);
+  }
+
+  function emptyTakeoffRow() {
+    return { id: 'toff-' + (takeoffSeq++), device: '', qty: 1, signal: 'DI', electrical: 'BOOL' };
+  }
+
+  function cloneTakeoff(list) {
+    return (Array.isArray(list) ? list : []).map(function (item, i) {
+      return {
+        id: String((item && item.id) || ('toff-' + (i + 1))),
+        device: String((item && item.device) || ''),
+        qty: Math.max(0, Math.floor(Number(item && item.qty) || 0)),
+        signal: String((item && item.signal) || 'DI'),
+        electrical: String((item && item.electrical) || 'BOOL'),
+      };
+    });
+  }
+
+  function activeColumns(extended) {
+    const on = extended === undefined ? extendedColumns : !!extended;
+    return on ? COLUMNS.concat(EXTENDED_COLUMNS) : COLUMNS.slice();
+  }
+
+  /**
+   * Symbolic / Linked PLC Variable = {stem}{suffix}. Concatenate as typed.
+   * Empty stem and empty suffix yield an empty string.
+   */
+  function buildLinkedVariable(stem, suffix) {
+    const a = String(stem === undefined || stem === null ? '' : stem).trim();
+    const b = String(suffix === undefined || suffix === null ? '' : suffix).trim();
+    if (!a && !b) return '';
+    return a + b;
+  }
+
+  function electricalToDataType(electrical) {
+    const s = String(electrical || '').trim();
+    const u = s.toUpperCase();
+    if (DATA_TYPES.indexOf(s) !== -1) return s;
+    if (u === 'BOOL' || u === 'BOOLEAN') return 'BOOL';
+    if (u === '4-20' || u === '4–20' || u.indexOf('4-20') === 0 || u.indexOf('4–20') === 0) return 'REAL';
+    if (u === 'MV/V' || u === 'MV' || u === 'V' || u.indexOf('MV') === 0) return 'REAL';
+    return '';
+  }
+
+  /**
+   * Sum takeoff qty into generic channel-point counts. Device names are
+   * whatever the user typed — nothing is preloaded.
+   */
+  function takeoffToCounts(takeoffList, baseCounts) {
+    const counts = cloneGenericCounts(baseCounts);
+    for (let i = 0; i < GENERIC_TYPES.length; i++) {
+      counts[GENERIC_TYPES[i].key].points = 0;
+    }
+    const list = Array.isArray(takeoffList) ? takeoffList : [];
+    for (let t = 0; t < list.length; t++) {
+      const row = list[t] || {};
+      const family = signalFamily(row.signal);
+      const qty = Math.max(0, Math.floor(Number(row.qty) || 0));
+      if (!qty) continue;
+      if (counts[family] && typeof counts[family] === 'object' && counts[family].points !== undefined) {
+        counts[family].points += qty;
+      }
+    }
+    return counts;
+  }
+
+  function applyTakeoffCounts(genericCounts, takeoffList) {
+    const summed = takeoffToCounts(takeoffList);
+    const next = cloneGenericCounts(genericCounts);
+    for (let i = 0; i < GENERIC_TYPES.length; i++) {
+      const key = GENERIC_TYPES[i].key;
+      next[key].points = summed[key].points;
+    }
+    return next;
+  }
+
+  function takeoffHasItems(list) {
+    const rows = Array.isArray(list) ? list : [];
+    for (let i = 0; i < rows.length; i++) {
+      if (Math.max(0, Math.floor(Number(rows[i] && rows[i].qty) || 0)) > 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Stamp user takeoff items onto spare channel rows of the matching
+   * signal family (blank Description and blank Linked PLC Variable).
+   * Field Device gets the typed device name. Data Type comes from the
+   * electrical column (BOOL / 4–20 / mV/V).
+   */
+  function applyTakeoffToRows(ioRows, takeoffList) {
+    const rows = (Array.isArray(ioRows) ? ioRows : []).map(function (r) {
+      const copy = {};
+      const keys = Object.keys(r || {});
+      for (let k = 0; k < keys.length; k++) copy[keys[k]] = r[keys[k]];
+      return copy;
+    });
+    const items = Array.isArray(takeoffList) ? takeoffList : [];
+    const used = {};
+    for (let t = 0; t < items.length; t++) {
+      const item = items[t] || {};
+      const family = signalFamily(item.signal);
+      let left = Math.max(0, Math.floor(Number(item.qty) || 0));
+      const device = String(item.device || '');
+      const dataType = electricalToDataType(item.electrical);
+      if (!left || !isChannelFamily(item.signal)) continue;
+      for (let r = 0; r < rows.length && left > 0; r++) {
+        if (used[r]) continue;
+        const row = rows[r];
+        if (signalFamily(row['Signal Type']) !== family) continue;
+        if (!row['Channel Number']) continue;
+        const desc = String(row.Description || '').trim();
+        const tag = String(row['Linked PLC Variable Name'] || '').trim();
+        if (desc || tag) continue;
+        row['Field Device'] = device;
+        row.Description = device;
+        if (dataType) row['Data Type'] = dataType;
+        used[r] = true;
+        left -= 1;
+      }
+    }
+    return rows;
+  }
+
+  function cloneIoRow(row) {
+    const out = blankRow();
+    const src = row || {};
+    const keys = Object.keys(src);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (key.charAt(0) === '_') continue;
+      out[key] = src[key] === undefined || src[key] === null ? '' : String(src[key]);
+    }
+    return out;
   }
 
   function isGenericStation(station) {
@@ -479,7 +667,8 @@
 
   function blankRow() {
     const row = {};
-    for (let i = 0; i < COLUMNS.length; i++) row[COLUMNS[i]] = '';
+    const cols = COLUMNS.concat(EXTENDED_COLUMNS);
+    for (let i = 0; i < cols.length; i++) row[cols[i]] = '';
     return row;
   }
 
@@ -494,10 +683,13 @@
     row['Channel Number'] = opts.channel === '' || opts.channel === undefined || opts.channel === null ? '' : String(opts.channel);
     row['Wire Terminal'] = row['Channel Number'];
     row['Signal Type'] = opts.signalType;
+    row['Control Zone'] = opts.controlZone ? String(opts.controlZone) : '';
+    row.Location = opts.location ? String(opts.location) : '';
     if (family === 'DO') {
       row.Min = '0';
       row.Max = '1';
       row.Units = 'BOOL';
+      row['Data Type'] = 'BOOL';
       row['Raw Min'] = '0';
       row['Raw Max'] = '1';
     } else if (isAnalogFamily(opts.signalType)) {
@@ -521,6 +713,8 @@
       const station = stationsIn[s] || {};
       const controller = String(station.controller || '');
       const stationName = String(station.stationName || '');
+      const controlZone = String(station.controlZone || '');
+      const location = String(station.location || '');
       const pfx = stationPrefixes(station);
       const modules = stationModuleList(station, cat);
       let slot = 0;
@@ -556,6 +750,8 @@
               cardName: cardName,
               partNumber: partNumber,
               stationName: stationName,
+              controlZone: controlZone,
+              location: location,
               slot: slot,
               channel: '',
               signalType: signalType,
@@ -569,6 +765,8 @@
                 cardName: cardName,
                 partNumber: partNumber,
                 stationName: stationName,
+                controlZone: controlZone,
+                location: location,
                 slot: slot,
                 channel: ch,
                 signalType: signalType,
@@ -764,9 +962,17 @@
     ];
   }
 
-  function serializeProject(stationList, catalogList) {
-    return {
-      version: 2,
+  function serializeProject(stationList, catalogList, extras) {
+    const ext = extras || {};
+    const useExtended = ext.extendedColumns !== undefined ? !!ext.extendedColumns : extendedColumns;
+    const suffixes = ext.suffixCatalog !== undefined ? ext.suffixCatalog : suffixCatalog;
+    const takeoff = ext.takeoff !== undefined ? ext.takeoff : takeoffRows;
+    const persistRows = ext.rows !== undefined ? ext.rows : (useExtended && gridRows.length ? gridRows : null);
+    const hasTakeoff = takeoffHasItems(takeoff);
+    const hasCustomSuffix = JSON.stringify(cloneSuffixCatalog(suffixes)) !== JSON.stringify(defaultSuffixCatalog());
+    const useV3 = useExtended || hasTakeoff || hasCustomSuffix || (persistRows && persistRows.length);
+    const payload = {
+      version: useV3 ? 3 : 2,
       kind: 'io-list-build',
       catalog: cloneCatalog(catalogList || catalog),
       stations: (stationList || stations).map(function (st) {
@@ -780,6 +986,8 @@
           couplerPrefix: st.couplerPrefix,
           ioPrefix: st.ioPrefix,
           powerPrefix: st.powerPrefix,
+          controlZone: st.controlZone || '',
+          location: st.location || '',
           genericCounts: cloneGenericCounts(st.genericCounts),
           modules: (st.modules || []).map(function (m) {
             return { pn: m.pn, qty: m.qty };
@@ -787,6 +995,15 @@
         };
       }),
     };
+    if (useV3) {
+      payload.extendedColumns = useExtended;
+      payload.suffixCatalog = cloneSuffixCatalog(suffixes);
+      payload.takeoff = cloneTakeoff(takeoff);
+      if (persistRows && persistRows.length) {
+        payload.rows = persistRows.map(cloneIoRow);
+      }
+    }
+    return payload;
   }
 
   function parseProject(raw) {
@@ -814,6 +1031,8 @@
           couplerPrefix: st.couplerPrefix !== undefined && st.couplerPrefix !== null ? String(st.couplerPrefix) : (cardPrefix || d.coupler),
           ioPrefix: st.ioPrefix !== undefined && st.ioPrefix !== null ? String(st.ioPrefix) : (cardPrefix || d.io),
           powerPrefix: st.powerPrefix !== undefined && st.powerPrefix !== null ? String(st.powerPrefix) : (cardPrefix || d.power),
+          controlZone: st.controlZone !== undefined && st.controlZone !== null ? String(st.controlZone) : '',
+          location: st.location !== undefined && st.location !== null ? String(st.location) : '',
           genericCounts: cloneGenericCounts(st.genericCounts),
           modules: Array.isArray(st.modules) ? st.modules.map(function (m) {
             return { pn: String(m.pn || ''), qty: Math.max(1, Math.floor(Number(m.qty) || 1)) };
@@ -821,7 +1040,19 @@
         };
       })
       : [emptyStation(1)];
-    return { catalog: nextCatalog, stations: nextStations };
+    const nextSuffix = Array.isArray(data.suffixCatalog)
+      ? cloneSuffixCatalog(data.suffixCatalog)
+      : defaultSuffixCatalog();
+    const nextTakeoff = Array.isArray(data.takeoff) ? cloneTakeoff(data.takeoff) : [];
+    const nextRows = Array.isArray(data.rows) ? data.rows.map(cloneIoRow) : [];
+    return {
+      catalog: nextCatalog,
+      stations: nextStations,
+      extendedColumns: !!data.extendedColumns,
+      suffixCatalog: nextSuffix,
+      takeoff: nextTakeoff,
+      rows: nextRows,
+    };
   }
 
   function xlsxCellStyle(fill, font) {
@@ -1005,6 +1236,10 @@
       html += '<div><label for="iol_ctrl_' + s + '">Controller</label><input type="text" id="iol_ctrl_' + s + '" data-iol-st="controller" data-s="' + s + '" value="' + escapeHtml(st.controller) + '"></div>';
       html += '<div><label for="iol_name_' + s + '">Station name</label><input type="text" id="iol_name_' + s + '" data-iol-st="stationName" data-s="' + s + '" value="' + escapeHtml(st.stationName) + '"></div>';
       html += '</div>';
+      html += '<div class="input-group">';
+      html += '<div><label for="iol_zone_' + s + '">Control zone</label><input type="text" id="iol_zone_' + s + '" data-iol-st="controlZone" data-s="' + s + '" value="' + escapeHtml(st.controlZone || '') + '" placeholder="optional area grouping"></div>';
+      html += '<div><label for="iol_loc_' + s + '">Location</label><input type="text" list="iol_locations" id="iol_loc_' + s + '" data-iol-st="location" data-s="' + s + '" value="' + escapeHtml(st.location || '') + '" placeholder="pendant, skid, panel, field"></div>';
+      html += '</div>';
       html += '<div class="input-group triple">';
       html += '<div><label for="iol_cpl_' + s + '">Coupler prefix</label><input type="text" id="iol_cpl_' + s + '" data-iol-st="couplerPrefix" data-s="' + s + '" value="' + escapeHtml(st.couplerPrefix) + '"></div>';
       html += '<div><label for="iol_io_' + s + '">I/O prefix</label><input type="text" id="iol_io_' + s + '" data-iol-st="ioPrefix" data-s="' + s + '" value="' + escapeHtml(st.ioPrefix) + '"></div>';
@@ -1064,11 +1299,21 @@
     host.classList.add('show');
   }
 
+  function cellListAttr(key) {
+    if (key === 'Sample Rate') return ' list="iol_sample_rates"';
+    if (key === 'Data Type') return ' list="iol_data_types"';
+    if (key === 'Location') return ' list="iol_locations"';
+    if (key === 'Signal Suffix') return ' list="iol_suffix_list"';
+    if (key === 'Signal Type') return ' list="iol_signal_types"';
+    return '';
+  }
+
   function renderGrid() {
     const host = el('iol_grid_host');
     if (!host) return;
+    const cols = activeColumns();
     if (!gridRows.length) {
-      host.innerHTML = '<p class="note">Generate a list from the parts cart or generic counts, or add a blank row.</p>';
+      host.innerHTML = '<p class="note">Generate a list from the parts cart, generic counts, or instrument takeoff, or add a blank row.</p>';
       return;
     }
     let html = '<div class="iol-legend" aria-hidden="true">';
@@ -1076,21 +1321,75 @@
     html += '</div>';
     html += '<div class="ref-table-wrap iol-grid-wrap"><table class="ref-table iol-grid" aria-label="Editable I/O list">';
     html += '<thead><tr>';
-    for (let c = 0; c < COLUMNS.length; c++) {
-      html += '<th scope="col">' + escapeHtml(COLUMNS[c]) + '</th>';
+    for (let c = 0; c < cols.length; c++) {
+      html += '<th scope="col">' + escapeHtml(cols[c]) + '</th>';
     }
     html += '<th scope="col"> </th></tr></thead><tbody>';
     for (let r = 0; r < gridRows.length; r++) {
       html += '<tr class="' + escapeHtml(typeColor(gridRows[r]['Signal Type']).html) + '">';
-      for (let c = 0; c < COLUMNS.length; c++) {
-        const key = COLUMNS[c];
+      for (let c = 0; c < cols.length; c++) {
+        const key = cols[c];
         const val = gridRows[r][key] === undefined || gridRows[r][key] === null ? '' : String(gridRows[r][key]);
-        html += '<td><input type="text" data-iol-cell="' + r + ':' + c + '" value="' + escapeHtml(val) + '" aria-label="' + escapeHtml(key + ' row ' + (r + 1)) + '"></td>';
+        html += '<td><input type="text"' + cellListAttr(key) + ' data-iol-cell="' + r + ':' + c + '" value="' + escapeHtml(val) + '" aria-label="' + escapeHtml(key + ' row ' + (r + 1)) + '"></td>';
       }
       html += '<td><button type="button" class="btn-remove" data-iol-del-row="' + r + '" aria-label="Remove row ' + (r + 1) + '">×</button></td>';
       html += '</tr>';
     }
     html += '</tbody></table></div>';
+    host.innerHTML = html;
+  }
+
+  function suffixOptionsHtml() {
+    return suffixCatalog.map(function (item) {
+      const label = item.suffix + (item.meaning ? ' — ' + item.meaning : '');
+      return '<option value="' + escapeHtml(item.suffix) + '">' + escapeHtml(label) + '</option>';
+    }).join('');
+  }
+
+  function renderSuffixDatalist() {
+    const host = el('iol_suffix_list');
+    if (host) host.innerHTML = suffixOptionsHtml();
+  }
+
+  function renderSuffixCatalog() {
+    const host = el('iol_suffix_host');
+    if (!host) return;
+    renderSuffixDatalist();
+    let html = '<div class="ref-table-wrap iol-table-wrap"><table class="ref-table iol-table" aria-label="Signal suffix catalog">';
+    html += '<thead><tr><th scope="col">Suffix</th><th scope="col">Meaning</th><th scope="col"> </th></tr></thead><tbody>';
+    for (let i = 0; i < suffixCatalog.length; i++) {
+      const item = suffixCatalog[i];
+      html += '<tr>';
+      html += '<td><input type="text" data-iol-sfx="suffix" data-i="' + i + '" value="' + escapeHtml(item.suffix) + '" aria-label="Suffix ' + (i + 1) + '"></td>';
+      html += '<td><input type="text" data-iol-sfx="meaning" data-i="' + i + '" value="' + escapeHtml(item.meaning) + '" aria-label="Suffix meaning ' + (i + 1) + '"></td>';
+      html += '<td><button type="button" class="btn-remove" data-iol-sfx-remove="' + i + '" aria-label="Remove suffix ' + escapeHtml(item.suffix) + '">×</button></td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    host.innerHTML = html;
+  }
+
+  function renderTakeoff() {
+    const host = el('iol_takeoff_host');
+    if (!host) return;
+    let html = '<div class="ref-table-wrap iol-table-wrap"><table class="ref-table iol-table" aria-label="Instrumentation takeoff">';
+    html += '<thead><tr><th scope="col">Device</th><th scope="col">Qty</th><th scope="col">Signal</th><th scope="col">Electrical type</th><th scope="col"> </th></tr></thead><tbody>';
+    if (!takeoffRows.length) {
+      html += '<tr><td colspan="5" class="iol-cart-empty">No takeoff rows. Add a device, quantity, signal, and electrical type. Nothing is preloaded.</td></tr>';
+    }
+    for (let i = 0; i < takeoffRows.length; i++) {
+      const row = takeoffRows[i];
+      html += '<tr class="' + escapeHtml(typeColor(row.signal).html) + '">';
+      html += '<td><input type="text" data-iol-toff="device" data-i="' + i + '" value="' + escapeHtml(row.device) + '" placeholder="your device" aria-label="Takeoff device ' + (i + 1) + '"></td>';
+      html += '<td><input type="number" min="0" step="1" data-iol-toff="qty" data-i="' + i + '" value="' + escapeHtml(row.qty) + '" aria-label="Takeoff qty ' + (i + 1) + '"></td>';
+      html += '<td><input type="text" list="iol_takeoff_signals" data-iol-toff="signal" data-i="' + i + '" value="' + escapeHtml(row.signal) + '" aria-label="Takeoff signal ' + (i + 1) + '"></td>';
+      html += '<td><input type="text" list="iol_electrical_types" data-iol-toff="electrical" data-i="' + i + '" value="' + escapeHtml(row.electrical) + '" aria-label="Takeoff electrical type ' + (i + 1) + '"></td>';
+      html += '<td><button type="button" class="btn-remove" data-iol-toff-remove="' + i + '" aria-label="Remove takeoff row ' + (i + 1) + '">×</button></td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    const preview = takeoffToCounts(takeoffRows);
+    html += '<p class="note iol-takeoff-sum">Sum: DI ' + preview.DI.points + ' · DO ' + preview.DO.points + ' · AI ' + preview.AI.points + ' · AO ' + preview.AO.points + '</p>';
     host.innerHTML = html;
   }
 
@@ -1104,7 +1403,14 @@
   }
 
   function generateFromCart() {
-    gridRows = expandBuildList(stations, catalog);
+    if (takeoffHasItems(takeoffRows)) {
+      const idx = stations.findIndex(isGenericStation);
+      if (idx >= 0) {
+        stations[idx].genericCounts = applyTakeoffCounts(stations[idx].genericCounts, takeoffRows);
+        renderStations();
+      }
+    }
+    gridRows = applyTakeoffToRows(expandBuildList(stations, catalog), takeoffRows);
     renderGrid();
     renderSummary();
   }
@@ -1124,7 +1430,7 @@
 
   function exportCsv() {
     if (!gridRows.length) generateFromCart();
-    downloadText(stampProjectName() + '-io-list.csv', rowsToCsv(gridRows, COLUMNS), 'text/csv;charset=utf-8');
+    downloadText(stampProjectName() + '-io-list.csv', rowsToCsv(gridRows, activeColumns()), 'text/csv;charset=utf-8');
   }
 
   function exportXlsx() {
@@ -1137,7 +1443,7 @@
     loadXlsx().then(function (XLSXlib) {
       const wb = XLSXlib.utils.book_new();
       const ebusAoa = rowsToAoa(ebus, ebusCols);
-      const ioAoa = rowsToAoa(gridRows, COLUMNS);
+      const ioAoa = rowsToAoa(gridRows, activeColumns());
       const scaleAoa = rowsToAoa(scaling, scaleCols);
       const sumAoa = summarySheetAoa(summary);
       const ebusSheet = XLSXlib.utils.aoa_to_sheet(ebusAoa);
@@ -1171,9 +1477,19 @@
     catalog = parsed.catalog;
     stations = parsed.stations;
     stationSeq = stations.length;
-    gridRows = [];
+    extendedColumns = !!parsed.extendedColumns;
+    suffixCatalog = parsed.suffixCatalog && parsed.suffixCatalog.length
+      ? cloneSuffixCatalog(parsed.suffixCatalog)
+      : defaultSuffixCatalog();
+    takeoffRows = Array.isArray(parsed.takeoff) ? cloneTakeoff(parsed.takeoff) : [];
+    takeoffSeq = takeoffRows.length + 1;
+    gridRows = Array.isArray(parsed.rows) && parsed.rows.length ? parsed.rows.map(cloneIoRow) : [];
+    const toggle = el('iol_extended');
+    if (toggle) toggle.checked = extendedColumns;
     renderCatalog();
     renderStations();
+    renderSuffixCatalog();
+    renderTakeoff();
     renderGrid();
     renderSummary();
   }
@@ -1241,7 +1557,36 @@
       gridRows.splice(r, 1);
       renderGrid();
       renderSummary();
+      return;
     }
+    if (t.getAttribute('data-iol-sfx-remove') !== null) {
+      const i = Number(t.getAttribute('data-iol-sfx-remove'));
+      suffixCatalog.splice(i, 1);
+      renderSuffixCatalog();
+      return;
+    }
+    if (t.getAttribute('data-iol-toff-remove') !== null) {
+      const i = Number(t.getAttribute('data-iol-toff-remove'));
+      takeoffRows.splice(i, 1);
+      renderTakeoff();
+    }
+  }
+
+  function maybeAutoLink(row, changedKey, previousValue) {
+    const stem = String(row['Find #'] || '');
+    const suffix = String(row['Signal Suffix'] || '');
+    let prevStem = stem;
+    let prevSuffix = suffix;
+    if (changedKey === 'Find #') prevStem = previousValue;
+    if (changedKey === 'Signal Suffix') prevSuffix = previousValue;
+    const prevAuto = buildLinkedVariable(prevStem, prevSuffix);
+    const nextAuto = buildLinkedVariable(stem, suffix);
+    const current = String(row['Linked PLC Variable Name'] || '');
+    if (current === '' || current === prevAuto) {
+      row['Linked PLC Variable Name'] = nextAuto;
+      return true;
+    }
+    return false;
   }
 
   function onSectionInput(ev) {
@@ -1299,13 +1644,58 @@
       stations[s][field] = t.value;
       return;
     }
+    if (t.id === 'iol_extended') {
+      extendedColumns = !!t.checked;
+      renderGrid();
+      return;
+    }
+    if (t.getAttribute('data-iol-sfx') !== null) {
+      const i = Number(t.getAttribute('data-i'));
+      const field = t.getAttribute('data-iol-sfx');
+      if (suffixCatalog[i] && field) {
+        suffixCatalog[i][field] = t.value;
+        renderSuffixDatalist();
+      }
+      return;
+    }
+    if (t.getAttribute('data-iol-toff') !== null) {
+      const i = Number(t.getAttribute('data-i'));
+      const field = t.getAttribute('data-iol-toff');
+      if (!takeoffRows[i] || !field) return;
+      if (field === 'qty') takeoffRows[i].qty = Math.max(0, Math.floor(Number(t.value) || 0));
+      else takeoffRows[i][field] = t.value;
+      if (field === 'signal') {
+        renderTakeoff();
+        return;
+      }
+      const sum = el('iol_takeoff_host') && el('iol_takeoff_host').querySelector('.iol-takeoff-sum');
+      if (sum) {
+        const preview = takeoffToCounts(takeoffRows);
+        sum.textContent = 'Sum: DI ' + preview.DI.points + ' · DO ' + preview.DO.points + ' · AI ' + preview.AI.points + ' · AO ' + preview.AO.points;
+      }
+      return;
+    }
     if (t.getAttribute('data-iol-cell') !== null) {
       const parts = t.getAttribute('data-iol-cell').split(':');
       const r = Number(parts[0]);
       const c = Number(parts[1]);
-      if (gridRows[r] && COLUMNS[c]) {
-        gridRows[r][COLUMNS[c]] = t.value;
-        if (COLUMNS[c] === 'Signal Type' || COLUMNS[c] === 'Channel Number' || COLUMNS[c] === 'Description' || COLUMNS[c] === 'Linked PLC Variable Name') {
+      const cols = activeColumns();
+      if (gridRows[r] && cols[c]) {
+        const key = cols[c];
+        const previous = gridRows[r][key];
+        gridRows[r][key] = t.value;
+        if (key === 'Find #' || key === 'Signal Suffix') {
+          if (maybeAutoLink(gridRows[r], key, previous)) {
+            const linkIdx = cols.indexOf('Linked PLC Variable Name');
+            const section = el('sec-io-list-generator');
+            const linkInput = section && linkIdx >= 0
+              ? section.querySelector('[data-iol-cell="' + r + ':' + linkIdx + '"]')
+              : null;
+            if (linkInput) linkInput.value = gridRows[r]['Linked PLC Variable Name'];
+            renderSummary();
+          }
+        }
+        if (key === 'Signal Type' || key === 'Channel Number' || key === 'Description' || key === 'Linked PLC Variable Name') {
           renderSummary();
         }
       }
@@ -1318,8 +1708,14 @@
     if (filterSel) {
       filterSel.innerHTML = '<option value="">All brands</option>' + brandOptionsHtml('');
     }
+    const extToggle = el('iol_extended');
+    if (extToggle) {
+      extToggle.checked = extendedColumns;
+    }
     renderCatalog();
     renderStations();
+    renderSuffixCatalog();
+    renderTakeoff();
     renderSummary();
     renderGrid();
 
@@ -1354,6 +1750,38 @@
       }
       stations.push(st);
       renderStations();
+    });
+    const addSfx = el('iol_add_suffix');
+    if (addSfx) addSfx.addEventListener('click', function () {
+      suffixCatalog.push({ suffix: '', meaning: '' });
+      renderSuffixCatalog();
+    });
+    const addToff = el('iol_add_takeoff');
+    if (addToff) addToff.addEventListener('click', function () {
+      takeoffRows.push(emptyTakeoffRow());
+      renderTakeoff();
+    });
+    const applyToff = el('iol_apply_takeoff');
+    if (applyToff) applyToff.addEventListener('click', function () {
+      let idx = stations.findIndex(isGenericStation);
+      if (idx < 0) {
+        stationSeq += 1;
+        const st = emptyStation(stationSeq);
+        st.brand = 'generic';
+        st.mode = 'generic';
+        const p = defaultPrefixes('generic');
+        st.couplerPrefix = p.coupler;
+        st.ioPrefix = p.io;
+        st.powerPrefix = p.power;
+        st.genericCounts = applyTakeoffCounts(st.genericCounts, takeoffRows);
+        stations.push(st);
+        renderStations();
+        setStatus('Added a generic station from takeoff counts (DI/DO/AI/AO). Generate to expand the list.');
+        return;
+      }
+      stations[idx].genericCounts = applyTakeoffCounts(stations[idx].genericCounts, takeoffRows);
+      renderStations();
+      setStatus('Takeoff summed into generic counts (DI/DO/AI/AO). Generate to expand the list.');
     });
     const gen = el('iol_generate');
     if (gen) gen.addEventListener('click', generateFromCart);
@@ -1390,11 +1818,18 @@
 
   global.__ioListGeneratorTestApi = {
     COLUMNS: COLUMNS,
+    EXTENDED_COLUMNS: EXTENDED_COLUMNS,
     BLANK_ON_GENERATE: BLANK_ON_GENERATE,
     BRANDS: BRANDS,
     SEED_CATALOG: cloneCatalog(SEED_CATALOG),
     TYPE_COLORS: TYPE_COLORS,
     GENERIC_TYPES: GENERIC_TYPES,
+    DATA_TYPES: DATA_TYPES,
+    SAMPLE_RATES: SAMPLE_RATES,
+    LOCATION_HINTS: LOCATION_HINTS,
+    TAKEOFF_SIGNALS: TAKEOFF_SIGNALS,
+    ELECTRICAL_TYPES: ELECTRICAL_TYPES,
+    DEFAULT_SUFFIX_CATALOG: defaultSuffixCatalog(),
     expandBuildList: expandBuildList,
     summarizeRows: summarizeRows,
     rowsToCsv: rowsToCsv,
@@ -1413,5 +1848,13 @@
     defaultGenericCounts: defaultGenericCounts,
     isGenericStation: isGenericStation,
     stationPrefixes: stationPrefixes,
+    activeColumns: activeColumns,
+    buildLinkedVariable: buildLinkedVariable,
+    takeoffToCounts: takeoffToCounts,
+    applyTakeoffCounts: applyTakeoffCounts,
+    applyTakeoffToRows: applyTakeoffToRows,
+    electricalToDataType: electricalToDataType,
+    defaultSuffixCatalog: defaultSuffixCatalog,
+    cloneSuffixCatalog: cloneSuffixCatalog,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
