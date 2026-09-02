@@ -234,9 +234,12 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
                     self.ssid = network.ssid
                     self.bssid = network.bssid
                     let raw = network.signalStrength
-                    self.signalStrength = WiFiCoverageMath.clampStrength(raw)
-                    if raw <= 0 {
-                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength is \(Format.number(raw, digits: 2)) on Apple’s 0…1 scale — often 0. This is not RSSI and not dBm."
+                    let clamped = WiFiCoverageMath.clampStrength(raw)
+                    self.signalStrength = clamped
+                    if !raw.isFinite {
+                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength was non-finite, so amplitude is shown as 0 on Apple’s 0…1 scale. This is not RSSI and not dBm."
+                    } else if clamped <= 0 {
+                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength is \(Format.number(clamped, digits: 2)) on Apple’s 0…1 scale — often 0. This is not RSSI and not dBm."
                     } else {
                         self.ssidMessage = "Relative amplitude from NEHotspotNetwork.signalStrength (0…1). Public iOS APIs do not expose Wi-Fi dBm."
                     }

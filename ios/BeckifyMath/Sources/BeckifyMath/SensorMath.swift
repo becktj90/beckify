@@ -117,7 +117,7 @@ public struct WiFiAmplitudeSample: Equatable, Sendable {
 
 public enum WiFiCoverageMath {
     public static func clampStrength(_ value: Double) -> Double {
-        guard value.isFinite else { return .nan }
+        guard value.isFinite else { return 0 }
         return min(1, max(0, value))
     }
 
@@ -128,7 +128,6 @@ public enum WiFiCoverageMath {
     /// 0…4 bars from Apple's 0…1 scale. Not a carrier signal-bar algorithm.
     public static func bars(_ strength: Double) -> Int {
         let s = clampStrength(strength)
-        guard s.isFinite else { return 0 }
         if s <= 0 { return 0 }
         if s < 0.25 { return 1 }
         if s < 0.5 { return 2 }

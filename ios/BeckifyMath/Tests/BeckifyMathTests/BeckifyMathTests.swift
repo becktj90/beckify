@@ -396,6 +396,11 @@ final class SensorMathTests: XCTestCase {
 
     func testWiFiCoverageIDWAndBars() throws {
         XCTAssertEqual(WiFiCoverageMath.percent(0.73), 73, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.clampStrength(.nan), 0, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.clampStrength(.infinity), 0, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.clampStrength(-0.2), 0, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.clampStrength(1.4), 1, accuracy: 1e-9)
+        XCTAssertEqual(WiFiCoverageMath.bars(.nan), 0)
         XCTAssertEqual(WiFiCoverageMath.bars(0), 0)
         XCTAssertEqual(WiFiCoverageMath.bars(0.1), 1)
         XCTAssertEqual(WiFiCoverageMath.bars(0.4), 2)
