@@ -479,11 +479,11 @@
     setVal('sd_device', 'diode');
     setVal('sd_d_is', '1');
     setVal('sd_d_is_u', 'nA');
-    setVal('sd_d_n', '1');
+    setVal('sd_d_n', '1.8');
     setVal('sd_d_t', '300');
     setVal('sd_d_rs', '0');
-    setVal('sd_d_v', '0.65');
-    setVal('sd_d_vmax', '0.8');
+    setVal('sd_d_v', '0.60');
+    setVal('sd_d_vmax', '0.75');
     setVal('sd_b_vcc', '5');
     setVal('sd_b_rc', '1');
     setVal('sd_b_rc_u', 'k');

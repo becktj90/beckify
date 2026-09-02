@@ -170,7 +170,7 @@
         'The I-V SVG redraws as you type. Read the operating point and the region name.',
         'Treat saturation, Early voltage, and λ as first-order sketches, not a process card.'
       ],
-      examples: ['Diode: Is = 1 nA, η = 1, T = 300 K, V = 0.65 V', 'BJT: Vcc = 5 V, Rc = 1 kΩ, Rb = 100 kΩ, β = 100', 'NMOS: μCox = 200 µA/V², W/L = 10, Vt = 0.7 V'],
+      examples: ['Diode: Is = 1 nA, η = 1.8, T = 300 K, V = 0.60 V', 'BJT: Vcc = 5 V, Rc = 1 kΩ, Rb = 100 kΩ, β = 100', 'NMOS: μCox = 200 µA/V², W/L = 10, Vt = 0.7 V'],
       button: { label: 'Load Example Values', action: 'loadSemiconductorExample' }
     },
     'sec-fiber-link': {
