@@ -7,7 +7,8 @@
     'sec-stem-tools': ['STEM tools are stories about change', "y' = \\frac{dy}{dt} \\quad \\text{and} \\quad \\Delta x \\approx v\\,\\Delta t", 'A derivative is a speedometer for a quantity. Each solver takes a small step, asks what the world is doing right now, and uses that local answer to predict the next step.'],
     'sec-circuit-sim': ['Kirchhoff is the traffic rule', '\\sum I_{in} = \\sum I_{out}', 'Charge cannot pile up at an ordinary node. The solver adjusts node voltages until every junction has balanced traffic.'],
     'sec-555': ['A capacitor is a bucket for charge', 'I = C\\frac{dV}{dt}', 'A capacitor resists sudden voltage changes because its stored charge must arrive through a finite current. That is why RC circuits make time.'],
-    'sec-tdr': ['A TDR is radar for copper', 'd = \\frac{VF\\,c\\,t}{2}', 'The pulse travels out, notices a change in the cable, and returns. The divide-by-two matters because the measured time includes both trips.']
+    'sec-tdr': ['A TDR is radar for copper', 'd = \\frac{VF\\,c\\,t}{2}', 'The pulse travels out, notices a change in the cable, and returns. The divide-by-two matters because the measured time includes both trips.'],
+    'sec-emp-emc': ['A changing field writes a voltage on a loop', 'V = -N\\,d\\Phi/dt', 'Faraday’s law is why a cable loop inside a changing B field picks up a transient. Shrink the loop, close the slots, bond the cage, and filter the cable entry. This tool sizes protection — it does not design a source.']
   };
 
   const DOCS = {
@@ -87,6 +88,17 @@
       ],
       examples: ['Astable example: R1 = 10 kΩ', 'R2 = 47 kΩ', 'C1 = 0.1 µF', 'Calculated output: f ≈ 138.4 Hz, duty cycle ≈ 54.8%'],
       button: { label: 'Load Example Values', action: 'load555DocExample' }
+    },
+    'sec-emp-emc': {
+      overview: 'A changing magnetic field through any existing loop of wire writes an induced voltage. Enclosures leak at their longest slot, and a metal wall only looks thick compared with skin depth at the frequencies that matter. This calculator is a protection-side teaching aid: Faraday’s law for a victim loop, a worst-dimension aperture term, a Schelkunoff sheet estimate, and published incident environments (ESD, surge, lightning, solar GMD, HEMP E1/E2/E3 taxonomy) used to specify cages and SPDs.',
+      steps: [
+        'Start with Induced voltage. Enter the victim-loop area, turns, and either ΔB with rise time or dB/dt. Read |V| = N A |dB/dt|.',
+        'Use Aperture leakage to compare the longest slot with λ/2. If the slot is half-wave or longer at the frequency of interest, treat that wall as open.',
+        'Use Skin depth / barrier for a seamless-sheet upper bound. Real cabinets are almost always aperture- and cable-limited.',
+        'Optionally pick a published environment name to see the incident-field or current a shield or SPD is designed against, then apply Faraday’s law to your loop where that model is valid.'
+      ],
+      examples: ['Victim loop: 10 cm × 10 cm, 1 turn', 'ΔB = 1 mT, rise time = 1 µs', 'Induced |V| = 10 V', 'Optional R = 10 Ω → long-pulse |I| ≈ 1 A (inductance ignored)'],
+      button: { label: 'Load Example Values', action: 'loadEmpEmcExample' }
     }
   };
 

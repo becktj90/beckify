@@ -31,7 +31,7 @@ const HOUSE_ADS = [
     title: "USA-made gear picks",
     description: "Recommended electrical tools and test equipment, filtered to manufacturer-verified American-made options.",
     linkText: "See the picks",
-    href: "/gear?filter=usa-made",
+    href: "/made-in-america",
   },
   {
     title: "Beckify is open source",

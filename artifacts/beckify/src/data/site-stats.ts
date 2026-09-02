@@ -4,5 +4,5 @@
  *    the fittings guide, and Saved Jobs.
  *  - Games: GAMES in site-content.ts.
  */
-export const PUBLIC_CALCULATOR_COUNT = 45;
+export const PUBLIC_CALCULATOR_COUNT = 47;
 export const PUBLIC_GAME_COUNT = 7;

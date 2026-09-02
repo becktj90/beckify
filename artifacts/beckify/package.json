@@ -82,7 +82,8 @@
     "vaul": "^1.1.2",
     "vite": "catalog:",
     "wouter": "^3.3.5",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "typescript": "~5.9.3"
   },
   "dependencies": {
     "tesseract.js": "^7.0.0",

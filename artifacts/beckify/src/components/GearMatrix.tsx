@@ -1,61 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BadgeCheck, BatteryCharging, Cable, ChevronDown, ChevronRight, ExternalLink, Factory, Flag, Gauge, RadioTower, ShieldCheck, ShoppingBag, Sparkles, Wrench } from "lucide-react";
+import { Link } from "wouter";
+import {
+  BatteryCharging,
+  Cable,
+  ChevronRight,
+  Factory,
+  Gauge,
+  ShieldCheck,
+  Wrench,
+} from "lucide-react";
+import { GearCard } from "@/components/gear/GearCard";
+import { GEAR_RECOMMENDATIONS } from "@/data/gear-recommendations";
+import type { GearCategory } from "@/data/gear-recommendations";
 
-type GearCategory = "Tools and supplies" | "Test equipment" | "Cable and fault location" | "Job comfort and power";
+export { GEAR_RECOMMENDATIONS } from "@/data/gear-recommendations";
+
 type GearFilter = "All" | GearCategory | "USA made";
-
-type Gear = {
-  category: GearCategory;
-  name: string;
-  model: string;
-  bestFor: string;
-  note: string;
-  amazonUrl: string;
-  manufacturerUrl: string;
-  imageUrl?: string;
-  imagePlaceholder?: boolean;
-  budget?: boolean;
-  usaMade?: boolean;
-  certification?: string;
-};
-
-export const GEAR_RECOMMENDATIONS: Gear[] = [
-  { category: "Tools and supplies", name: "Daniels Manufacturing AF8", model: "M22520/1-01 crimp frame", bestFor: "Qualified machined-contact crimping with the approved turret or positioner.", note: "Match the contact family, setting, locator, and work instruction.", amazonUrl: "https://www.amazon.com/dp/B09CV54JPN?tag=beckify-20", manufacturerUrl: "https://dmctools.com/af8-af8", imageUrl: "/images/gear/daniels-af8.jpg", usaMade: true },
-  { category: "Tools and supplies", name: "KNIPEX EvoStrip", model: "Automatic wire stripper", bestFor: "Repeatable conductor preparation in its specified range.", note: "Confirm conductor size, insulation type, and strip length first.", amazonUrl: "https://www.amazon.com/dp/B000R895YM?tag=beckify-20", manufacturerUrl: "https://www.knipex.com/evostrip", imageUrl: "/images/gear/knipex-evostrip.jpg", imagePlaceholder: true },
-  { category: "Tools and supplies", name: "Klein Tools 11055", model: "Wire stripper and cutter", bestFor: "Everyday copper-conductor stripping and cutting.", note: "A practical general wiring tool, not qualified contact-crimp tooling.", amazonUrl: "https://www.amazon.com/dp/B00080DPNQ?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/wire-strippers-cutters-and-crimpers/wire-stripper-and-cutter-self-opening", imageUrl: "/images/gear/klein-11055.jpg", budget: true, usaMade: true },
-  { category: "Tools and supplies", name: "Klein Tools 63050", model: "High-leverage cable cutter", bestFor: "Clean copper, aluminum, and communications-cable cuts before termination.", note: "Verify capacity; never use on energized cable.", amazonUrl: "https://www.amazon.com/dp/B0000302X1?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/standard-cable-cutters/cable-cutter", imageUrl: "/images/gear/klein-63050.jpg", usaMade: true },
-  { category: "Tools and supplies", name: "Wiha TorqueVario-S 28506", model: "Adjustable 10-50 in-lb torque driver", bestFor: "Controlled low-torque fastening on terminals and electronics hardware.", note: "Set torque from approved assembly data.", amazonUrl: "https://www.amazon.com/dp/B002QV0FCY?tag=beckify-20", manufacturerUrl: "https://www.wihatools.com/products/adjustable-torquevario-10-50-in-lbs", imageUrl: "/images/gear/wiha-28506.jpg" },
-  { category: "Tools and supplies", name: "Scotch Super 33+", model: "3/4 in x 66 ft vinyl electrical tape", bestFor: "A durable general-purpose tape for electrical insulation and harness finishing.", note: "Use the approved splice or termination method; tape is not a substitute for it.", amazonUrl: "https://www.amazon.com/dp/B01N3D2AFK?tag=beckify-20", manufacturerUrl: "https://www.scotchbrand.com/3M/en_US/p/d/b10014694/", imageUrl: "/images/gear/scotch-33-plus.jpg", usaMade: true },
-  { category: "Tools and supplies", name: "CHANNELLOCK 338CB", model: "8 in high-leverage diagonal cutting pliers", bestFor: "General cutting where durable, comfortable hand pliers are needed.", note: "Not an insulated tool or a substitute for an approved cable cutter.", amazonUrl: "https://www.amazon.com/dp/B00004SBDD?tag=beckify-20", manufacturerUrl: "https://www.channellock.com/product/338cb/", imageUrl: "/images/gear/channellock-338cb.jpg", usaMade: true },
-  { category: "Test equipment", name: "Fluke 87V", model: "True-RMS industrial multimeter", bestFor: "Primary voltage, resistance, continuity, and frequency troubleshooting.", note: "Prove the meter on a known source before and after a critical test.", amazonUrl: "https://www.amazon.com/dp/B0002YFD1K?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/digital-multimeters/fluke-87v", imageUrl: "/images/gear/fluke-87v.jpg" },
-  { category: "Test equipment", name: "Fluke 117", model: "Electrician's True-RMS multimeter", bestFor: "Routine building electrical measurements where LoZ helps reduce ghost voltages.", note: "Use leads and the meter only within their marked category and voltage rating.", amazonUrl: "https://www.amazon.com/dp/B000O3LUEI?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/digital-multimeters/fluke-117", imageUrl: "/images/gear/fluke-117.jpg" },
-  { category: "Test equipment", name: "Klein Tools MM400", model: "Auto-ranging 600 V digital multimeter", bestFor: "Cost-conscious general electrical measurement in its marked CAT III 600 V scope.", note: "Check supplied leads, fuses, category rating, and procedure before use.", amazonUrl: "https://www.amazon.com/dp/B018EXZO8M?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/multimeters/digital-multimeter-auto-ranging-600v", imageUrl: "/images/gear/klein-mm400.jpg", budget: true },
-  { category: "Test equipment", name: "Fluke T6-1000", model: "FieldSense electrical tester", bestFor: "Fast AC voltage and current checks at distribution equipment.", note: "Use it within the approved test process, not as a substitute for procedure.", amazonUrl: "https://www.amazon.com/dp/B076DYBHCW?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/basic-testers/fluke-t6-1000", imageUrl: "/images/gear/fluke-t6-1000.jpg" },
-  { category: "Test equipment", name: "Fluke 2AC Alert", model: "90-1000 V AC non-contact voltage tester", bestFor: "A preliminary indication of AC voltage presence.", note: "A non-contact tester cannot establish absence of voltage on its own.", amazonUrl: "https://www.amazon.com/dp/B004I9J4DI?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/basic-testers/fluke-2ac", imageUrl: "/images/gear/fluke-2ac.jpg" },
-  { category: "Test equipment", name: "Klein Tools NCVT2P", model: "Dual-range non-contact voltage tester", bestFor: "Quick AC presence checks before a complete test.", note: "Verify operation on a known live source first.", amazonUrl: "https://www.amazon.com/dp/B07L5N8ZWS?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/electrical-testers/non-contact-voltage-tester-pen-dual-range-12-1000v-ac-or-48-1000v-ac", imageUrl: "/images/gear/klein-ncvt2p.jpg" },
-  { category: "Test equipment", name: "Klein Tools ET310", model: "Circuit-breaker finder with GFCI tester", bestFor: "Locating a 90-120 V branch-circuit breaker and checking a grounded receptacle.", note: "It is not a switchgear fault-investigation instrument.", amazonUrl: "https://www.amazon.com/dp/B07QNMCVWP?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/electrical-testers/digital-circuit-breaker-finder-gfci-outlet-tester", imageUrl: "/images/gear/klein-et310.jpg", budget: true },
-  { category: "Test equipment", name: "Fluke 62 MAX+", model: "Dual-laser IR thermometer", bestFor: "Screening energized equipment for abnormal temperature.", note: "Emissivity, distance, loading, and follow-up measurement determine whether a finding matters.", amazonUrl: "https://www.amazon.com/dp/B0089N2ZH6?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/temperature-measurement/ir-thermometers/fluke-62-max-plus", imageUrl: "/images/gear/fluke-62-max-plus.jpg" },
-  { category: "Test equipment", name: "FLIR C5", model: "160 x 120 compact thermal camera", bestFor: "Documenting thermal anomalies on panels, terminations, motors, and equipment under load.", note: "A thermal image identifies a condition to investigate, not the root cause.", amazonUrl: "https://www.amazon.com/dp/B0892MZZT1?tag=beckify-20", manufacturerUrl: "https://www.flir.com/products/c5/", imageUrl: "/images/gear/flir-c5.jpg" },
-  { category: "Test equipment", name: "Fluke 1507", model: "50 V to 1000 V insulation resistance tester", bestFor: "Specified insulation-resistance workflows on wiring and electrical equipment.", note: "Test voltage, isolation, discharge, and acceptance criteria come from the procedure.", amazonUrl: "https://www.amazon.com/dp/B000X4O9WI?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/insulation-testers/fluke-1507", imageUrl: "/images/gear/fluke-1507.jpg" },
-  { category: "Test equipment", name: "Klein Tools ET600", model: "1000 V insulation resistance tester", bestFor: "Insulation, continuity, and voltage measurements in electrical maintenance.", note: "Never insulation-test an energized circuit.", amazonUrl: "https://www.amazon.com/dp/B07ZZX5TK8?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/multimeters/insulation-resistance-tester", imageUrl: "/images/gear/klein-et600.jpg" },
-  { category: "Test equipment", name: "Fluke 376 FC", model: "True-RMS AC/DC clamp meter with iFlex", bestFor: "Current checks around conductors where a fixed jaw cannot reach.", note: "Confirm conductor placement and method before interpreting the result.", amazonUrl: "https://www.amazon.com/dp/B017OVC2QM?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/clamp-meters/fluke-376-fc", imageUrl: "/images/gear/fluke-376-fc.jpg" },
-  { category: "Test equipment", name: "Klein Tools CL120", model: "400 A AC auto-ranging clamp meter", bestFor: "Cost-conscious AC-current, voltage, resistance, and continuity checks.", note: "This clamp measures AC current only; confirm the function before use.", amazonUrl: "https://www.amazon.com/dp/B08CP6GL49?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/clamp-meters/digital-clamp-meter-ac-auto-ranging-400-amp", imageUrl: "/images/gear/klein-cl120.jpg", budget: true },
-  { category: "Test equipment", name: "Fluke 323", model: "True-RMS 400 A AC clamp meter", bestFor: "Basic AC-current, voltage, and resistance checks.", note: "It measures AC current, not DC current.", amazonUrl: "https://www.amazon.com/dp/B00AQKIEXY?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/clamp-meters/fluke-323", imageUrl: "/images/gear/fluke-323.jpg" },
-  { category: "Test equipment", name: "Fluke 771", model: "Milliamp process clamp meter", bestFor: "Measuring 4-20 mA process signals without opening the loop.", note: "Confirm loop configuration and access requirements before clamping.", amazonUrl: "https://www.amazon.com/dp/B000R81ARM?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/calibration-tools/ma-loop-calibrators/fluke-771", imageUrl: "/images/gear/fluke-771.jpg" },
-  { category: "Test equipment", name: "RIGOL DHO804", model: "Four-channel 70 MHz digital oscilloscope", bestFor: "Bench diagnostics for power rails, clocks, data, and control signals.", note: "Probe selection and grounding still matter.", amazonUrl: "https://www.amazon.com/dp/B0CGHQHQN7?tag=beckify-20", manufacturerUrl: "https://mall.rigol.com/shiboqi/dho804.html", imageUrl: "/images/gear/rigol-dho804.jpg" },
-  { category: "Test equipment", name: "RIGOL DS1054Z", model: "Four-channel 50 MHz digital oscilloscope", bestFor: "General embedded, control, and low-to-mid-speed waveform troubleshooting.", note: "Never create a fault path with a grounded probe.", amazonUrl: "https://www.amazon.com/dp/B012938E76?tag=beckify-20", manufacturerUrl: "https://www.rigolna.com/products/digital-oscilloscopes/ds1000z/", imageUrl: "/images/gear/rigol-ds1054z.jpg", budget: true },
-  { category: "Test equipment", name: "SIGLENT SDS1104X-E", model: "Four-channel 100 MHz digital oscilloscope", bestFor: "Electronics work that benefits from more bandwidth and signal comparison.", note: "Verify probe compensation, attenuation, and ground reference first.", amazonUrl: "https://www.amazon.com/dp/B0771N1ZF9?tag=beckify-20", manufacturerUrl: "https://siglentna.com/product/sds1104x-e-100-mhz/", imageUrl: "/images/gear/siglent-sds1104x-e.jpg" },
-  { category: "Test equipment", name: "Fluke 289", model: "True-RMS logging multimeter with TrendCapture", bestFor: "Finding intermittent behavior through logged measurements.", note: "Use logs to support a diagnostic plan, not to replace required calibration.", amazonUrl: "https://www.amazon.com/dp/B0012B51HI?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/electrical-testing/digital-multimeters/fluke-289", imageUrl: "/images/gear/fluke-289.jpg" },
-  { category: "Cable and fault location", name: "Megger TDR500/3", model: "Handheld cable fault locator", bestFor: "Locating opens, shorts, and distance-to-fault on de-energized metallic cable.", note: "Isolate and de-energize the cable before connecting a TDR.", amazonUrl: "https://www.amazon.com/dp/B00EPLIEJO?tag=beckify-20", manufacturerUrl: "https://www.megger.com/", imageUrl: "/images/gear/megger-tdr500-3.jpg", imagePlaceholder: true },
-  { category: "Cable and fault location", name: "Klein Tools Scout Pro 3", model: "VDV501-851 cable tester kit", bestFor: "Identifying and mapping Ethernet, telephone, and coaxial cable runs.", note: "It is a verifier, not a certification instrument.", amazonUrl: "https://www.amazon.com/dp/B085LPN71C?tag=beckify-20", manufacturerUrl: "https://www.kleintools.com/catalog/cable-length-measurement/ethernet-cable-tester-kit-scout-pro-3-tester-remotes-and-adapter", imageUrl: "/images/gear/klein-scout-pro-3.jpg" },
-  { category: "Cable and fault location", name: "Fluke Networks MicroScanner PoE", model: "MS-POE copper cable verifier", bestFor: "PoE, wiremap, length, switch capability, and distance-to-fault checks.", note: "For supported copper Ethernet systems only.", amazonUrl: "https://www.amazon.com/dp/B07NJMKG9L?tag=beckify-20", manufacturerUrl: "https://www.fluke.com/en-us/product/network-cable-testers/copper/ms-poe", imageUrl: "/images/gear/fluke-microscanner-poe.jpg" },
-  { category: "Cable and fault location", name: "AURSINC NanoVNA-H4", model: "9 kHz to 1.5 GHz portable vector network analyzer", bestFor: "Antenna, coax, impedance, and return-loss investigation.", note: "Not a calibrated replacement where traceability is required.", amazonUrl: "https://www.amazon.com/dp/B07T6LXNTV?tag=beckify-20", manufacturerUrl: "https://nanovna.com/", imageUrl: "/images/gear/aursinc-nanovna-h4.jpg", budget: true },
-  { category: "Job comfort and power", name: "EcoFlow DELTA Pro 3", model: "4096 Wh portable power station", bestFor: "Quiet jobsite, outage, and remote-work power where portable 120/240 V capacity is appropriate.", note: "EcoFlow describes this model as UL 9540 certified. Verify the current label, configuration, and local requirements before installation.", amazonUrl: "https://www.amazon.com/dp/B0D14FMFZD?tag=beckify-20", manufacturerUrl: "https://us.ecoflow.com/products/delta-pro-3-portable-power-station", imageUrl: "/images/gear/ecoflow-delta-pro-3.jpg", certification: "UL 9540 certified" },
-  { category: "Job comfort and power", name: "SeeDevil 150 W Balloon Light Kit", model: "150 W, 19,500 lm portable area light", bestFor: "Glare-reduced, wide-area task lighting for night work and temporary sites.", note: "Plan the 120 V feed, tripod placement, and required site lighting controls.", amazonUrl: "https://www.amazon.com/dp/B081277RB5?tag=beckify-20", manufacturerUrl: "https://seedevil.com/products/g3-150-watt-balloon-light-kit", imageUrl: "/images/gear/seedevil-150w.jpg" },
-  { category: "Job comfort and power", name: "BougeRV 23 Quart Portable Fridge", model: "12 V compressor cooler", bestFor: "Keeping food, drinks, or permitted temperature-sensitive supplies cold on long field days.", note: "Use the supplied power arrangement and protect the vehicle battery.", amazonUrl: "https://www.amazon.com/dp/B08G1BBBQW?tag=beckify-20", manufacturerUrl: "https://www.bougerv.com/products/12v-23-quart-portable-refrigerator-for-travel", imageUrl: "/images/gear/bougerv-23qt.jpg" },
-  { category: "Job comfort and power", name: "HOTLIGH Magnetic Flashlight", model: "ZF6771 rechargeable magnetic work light", bestFor: "Close-up, hands-free light at panels, cabinets, and service points.", note: "This is convenience lighting, not a hazardous-location light.", amazonUrl: "https://www.amazon.com/dp/B0D66SHL2C?tag=beckify-20", manufacturerUrl: "https://hotligh.com/products/rechargeable-flashlight-zf6771", imageUrl: "/images/gear/hotligh-zf6771.jpg" },
-  { category: "Job comfort and power", name: "TORRAS COOLiFY 2S", model: "Wearable neck air conditioner", bestFor: "Personal cooling during hot outdoor, rooftop, and vehicle work.", note: "Treat it as comfort gear; maintain heat-stress breaks, hydration, and the site plan.", amazonUrl: "https://www.amazon.com/dp/B0BY9271YQ?tag=beckify-20", manufacturerUrl: "https://coolify.torraslife.com/collections/all-products", imageUrl: "/images/gear/torras-coolify-2s.jpg" },
-];
 
 const categoryGuides: { filter: GearFilter; label: string; description: string; icon: typeof Wrench }[] = [
   { filter: "All", label: "All gear", description: "Every recommendation", icon: Wrench },
@@ -66,64 +26,23 @@ const categoryGuides: { filter: GearFilter; label: string; description: string; 
   { filter: "USA made", label: "USA made", description: "Manufacturer-identified U.S. products", icon: ShieldCheck },
 ];
 
-function getGearIcon(category: GearCategory) {
-  if (category === "Tools and supplies") return Wrench;
-  if (category === "Test equipment") return Gauge;
-  if (category === "Cable and fault location") return RadioTower;
-  return BatteryCharging;
-}
-
 function initialFilterFromUrl(): GearFilter {
   if (typeof window === "undefined") return "All";
   return new URLSearchParams(window.location.search).get("filter") === "usa-made" ? "USA made" : "All";
-}
-
-function ProductVisual({ item }: { item: Gear }) {
-  const Icon = getGearIcon(item.category);
-
-  if (item.imageUrl) {
-    return <figure className={`mt-4 overflow-hidden rounded-xl border border-[var(--border)] ${item.imagePlaceholder ? "bg-[#07101c]" : "bg-white/95"}`}><div className="h-36 p-3"><img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-contain" /></div><figcaption className={`border-t border-[var(--border)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${item.imagePlaceholder ? "text-cyan-200/70" : "text-slate-600"}`}>{item.imagePlaceholder ? "Product reference" : "Official product photo"}</figcaption></figure>;
-  }
-
-  return <div className="relative mt-4 flex h-36 items-center overflow-hidden rounded-xl border border-cyan-300/15 bg-[#07101c] p-5" role="img" aria-label={`${item.name} product reference`}><div className="absolute inset-0 opacity-40" style={{ backgroundImage: "linear-gradient(rgba(88,142,185,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(88,142,185,.18) 1px, transparent 1px)", backgroundSize: "20px 20px" }} /><svg viewBox="0 0 480 144" className="absolute inset-0 h-full w-full" aria-hidden="true"><path d="M0 104h88l24-25h72l24 25h88l25-25h159" fill="none" stroke="#5ed7ff" strokeOpacity=".42" strokeWidth="2" /><path d="M8 42h76l18 18h66l18-35h84l18 35h70l20-18h112" fill="none" stroke="#9d7cff" strokeOpacity=".38" strokeWidth="2" /></svg><div className="relative flex items-center gap-4"><span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-200/30 bg-[#0a1b2c]"><Icon className="h-7 w-7 text-cyan-200" aria-hidden="true" /></span><span><span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200/70">Product reference</span><span className="mt-1 block font-mono text-sm font-semibold leading-5 text-slate-100">{item.model}</span></span></div></div>;
-}
-
-function gearHighlights(item: Gear) {
-  const highlights = [item.model, item.bestFor];
-  if (item.usaMade) highlights.push("American-made focus for sourcing and field durability");
-  if (item.certification) highlights.push(item.certification);
-  if (item.budget) highlights.push("Budget-friendly option without losing core utility");
-  return highlights.slice(0, 3);
-}
-
-function whyBest(item: Gear) {
-  if (item.category === "Test equipment") return `${item.name} stands out when repeatable measurements and dependable field troubleshooting matter more than gadget count. The recommendation prioritizes instruments that are trusted for day-to-day diagnostics and that reward disciplined test procedure.`;
-  if (item.category === "Cable and fault location") return `${item.name} earns its spot because it reduces time spent guessing about cable paths, faults, or impedance behavior. In practice, that means faster isolation, clearer verification, and fewer unnecessary terminations or pulls.`;
-  if (item.category === "Job comfort and power") return `${item.name} is a best-choice support tool because it improves endurance and work quality when the environment is the constraint. Better lighting, portable power, or heat management usually turns into fewer mistakes and more consistent output on long jobs.`;
-  return `${item.name} is favored because it solves a core field task with durable, purpose-built hardware instead of a compromise tool. That matters when repeatability, tool life, and confidence at the bench or in the field outweigh novelty.`;
-}
-
-function practicalApplication(item: Gear) {
-  return `Use it when ${item.bestFor.charAt(0).toLowerCase()}${item.bestFor.slice(1)} In real work, the practical value comes from pairing that strength with the caution that ${item.note.charAt(0).toLowerCase()}${item.note.slice(1)}`;
-}
-
-function GearBadges({ item, featured = false }: { item: Gear; featured?: boolean }) {
-  return <span className="flex flex-wrap justify-end gap-1.5 text-right text-[10px] font-bold uppercase tracking-[0.12em]"><span className="text-[var(--muted)]">{item.category}</span>{item.usaMade && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${featured ? "bg-blue-300/20 text-blue-100" : "bg-blue-300/10 text-blue-200"}`}><Flag className="h-3 w-3" /> USA made</span>}{item.budget && <span className="rounded-full bg-amber-300/10 px-2 py-1 text-amber-200">Budget pick</span>}{item.certification && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-300/10 px-2 py-1 text-emerald-200"><BadgeCheck className="h-3 w-3" /> {item.certification}</span>}</span>;
-}
-
-function GearCard({ item, featured = false }: { item: Gear; featured?: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-  const Icon = getGearIcon(item.category);
-  const detailsId = `${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-details`;
-
-  return <article className={`card-surface flex flex-col p-5 ${featured ? "border-[var(--accent)]/40 bg-[linear-gradient(180deg,rgba(79,139,255,0.11),rgba(255,255,255,0.03))]" : ""}`}><div className="flex items-start justify-between gap-4"><span className="rounded-xl bg-[var(--accent-soft)] p-3"><Icon className="h-5 w-5 text-[var(--accent)]" aria-hidden="true" /></span><GearBadges item={item} featured={featured} /></div><ProductVisual item={item} /><div className="mt-4"><h3 className="font-display text-xl font-bold">{item.name}</h3><p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{item.model}</p></div><p className="mt-4 text-sm font-semibold leading-6">{item.bestFor}</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.note}</p><button type="button" aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded((value) => !value)} className="mt-4 inline-flex items-center justify-between rounded-2xl border border-[var(--border)] bg-black/15 px-4 py-3 text-left text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/60"><span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-[var(--accent)]" /> Expand analysis</span><ChevronDown className={`h-4 w-4 transition ${expanded ? "rotate-180" : ""}`} /></button><div id={detailsId} hidden={!expanded} className="mt-4 rounded-2xl border border-[var(--border)] bg-black/15 p-4"><div className="grid gap-4 lg:grid-cols-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Highlights</p><ul className="mt-3 space-y-2 text-sm leading-6 text-[var(--muted)]">{gearHighlights(item).map((highlight) => <li key={highlight} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" aria-hidden="true" /> <span>{highlight}</span></li>)}</ul></div><div><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Why it’s the best choice</p><p className="mt-3 text-sm leading-6 text-[var(--muted)]">{whyBest(item)}</p></div><div><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Pros & practical application</p><p className="mt-3 text-sm leading-6 text-[var(--muted)]">{practicalApplication(item)}</p></div></div></div><div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold"><a href={item.amazonUrl} target="_blank" rel="sponsored noopener noreferrer" aria-label={`View the exact ${item.name} model on Amazon (paid link)`} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[var(--accent-foreground)] transition hover:bg-[var(--accent-2)]"><ShoppingBag className="h-4 w-4" /> View exact model on Amazon <ExternalLink className="h-3.5 w-3.5" /></a><a href={item.manufacturerUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-1 py-2 text-[var(--muted)] transition hover:text-[var(--accent)] hover:underline">Manufacturer specs <ExternalLink className="h-3.5 w-3.5" /></a></div></article>;
 }
 
 export function GearMatrix() {
   const [filter, setFilter] = useState<GearFilter>(initialFilterFromUrl);
   const catalogRef = useRef<HTMLDivElement>(null);
   const featuredUsaMade = useMemo(() => GEAR_RECOMMENDATIONS.filter((item) => item.usaMade), []);
-  const visible = useMemo(() => GEAR_RECOMMENDATIONS.filter((item) => filter === "All" || (filter === "USA made" ? item.usaMade : item.category === filter)).sort((left, right) => Number(Boolean(right.usaMade)) - Number(Boolean(left.usaMade))), [filter]);
+  const visible = useMemo(
+    () =>
+      GEAR_RECOMMENDATIONS.filter(
+        (item) =>
+          filter === "All" || (filter === "USA made" ? item.usaMade : item.category === filter),
+      ).sort((left, right) => Number(Boolean(right.usaMade)) - Number(Boolean(left.usaMade))),
+    [filter],
+  );
 
   useEffect(() => {
     if (initialFilterFromUrl() === "USA made") catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -134,17 +53,125 @@ export function GearMatrix() {
     requestAnimationFrame(() => catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
-  const countFor = (nextFilter: GearFilter) => GEAR_RECOMMENDATIONS.filter((item) => nextFilter === "All" || (nextFilter === "USA made" ? item.usaMade : item.category === nextFilter)).length;
+  const countFor = (nextFilter: GearFilter) =>
+    GEAR_RECOMMENDATIONS.filter(
+      (item) => nextFilter === "All" || (nextFilter === "USA made" ? item.usaMade : item.category === nextFilter),
+    ).length;
   const title = filter === "All" ? "All recommended gear" : filter;
 
-  return <section className="space-y-7" aria-labelledby="gear-title"><header className="border-b border-[var(--border)] pb-7"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Recommended gear</p><h1 id="gear-title" className="mt-2 max-w-3xl font-display text-4xl font-bold md:text-5xl">Tools, supplies, and field gear worth buying.</h1><p className="mt-4 max-w-2xl text-[var(--muted)]">Industry-standard picks for electrical work, cable troubleshooting, field power, and job comfort. American-made favorites are featured first, and every card expands with practical field context.</p><p className="mt-4 max-w-2xl text-xs leading-6 text-[var(--muted)]">As an Amazon Associate I earn from qualifying purchases. Amazon buttons are paid links.</p></header>
+  return (
+    <section className="space-y-7" aria-labelledby="gear-title">
+      <header className="border-b border-[var(--border)] pb-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Recommended gear</p>
+        <h1 id="gear-title" className="mt-2 max-w-3xl font-display text-4xl font-bold md:text-5xl">
+          Tools, supplies, and field gear worth buying.
+        </h1>
+        <p className="mt-4 max-w-2xl text-[var(--muted)]">
+          Industry-standard picks for electrical work, cable troubleshooting, field power, and job comfort.
+          American-made favorites are featured first, and every card expands with practical field context.
+        </p>
+        <p className="mt-4 max-w-2xl text-xs leading-6 text-[var(--muted)]">
+          As an Amazon Associate I earn from qualifying purchases. Amazon buttons are paid links.
+        </p>
+      </header>
 
-    <section aria-labelledby="usa-made-title" className="rounded-3xl border border-[var(--accent)]/30 bg-[linear-gradient(180deg,rgba(79,139,255,0.12),rgba(255,255,255,0.03))] p-5 md:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">Featured first</p><h2 id="usa-made-title" className="mt-1 font-display text-2xl font-bold text-[var(--foreground)]">American-made gear worth prioritizing</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">These picks rise to the top for domestic sourcing, proven craftsmanship, and dependable day-to-day use in the field and on the bench.</p></div><button type="button" onClick={() => selectCategory("USA made")} className="inline-flex items-center gap-2 rounded-full border border-blue-300/30 px-4 py-2 text-sm font-semibold text-blue-100 transition hover:border-blue-200 hover:text-white"><Factory className="h-4 w-4" /> View all USA-made picks</button></div><div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{featuredUsaMade.map((item) => <GearCard key={`featured-${item.name}`} item={item} featured />)}</div></section>
+      <section
+        aria-labelledby="usa-made-title"
+        className="rounded-3xl border border-[var(--accent)]/30 bg-[linear-gradient(180deg,rgba(79,139,255,0.12),rgba(255,255,255,0.03))] p-5 md:p-6"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">Featured first</p>
+            <h2 id="usa-made-title" className="mt-1 font-display text-2xl font-bold text-[var(--foreground)]">
+              American-made gear worth prioritizing
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+              These picks rise to the top for domestic sourcing, proven craftsmanship, and dependable day-to-day use
+              in the field and on the bench.
+            </p>
+          </div>
+          <Link
+            href="/made-in-america"
+            className="inline-flex items-center gap-2 rounded-full border border-blue-300/30 px-4 py-2 text-sm font-semibold text-blue-100 transition hover:border-blue-200 hover:text-white"
+          >
+            <Factory className="h-4 w-4" /> View made-in-America guide
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {featuredUsaMade.map((item) => (
+            <GearCard key={`featured-${item.name}`} item={item} featured />
+          ))}
+        </div>
+      </section>
 
-    <section aria-labelledby="category-map-title"><div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Shop by category</p><h2 id="category-map-title" className="mt-1 font-display text-2xl font-bold">Choose what you need.</h2></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{categoryGuides.map((guide) => { const Icon = guide.icon; const active = filter === guide.filter; return <button key={guide.filter} type="button" aria-pressed={active} onClick={() => selectCategory(guide.filter)} className={`group flex items-center gap-3 rounded-xl border p-4 text-left transition ${active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/60 hover:bg-white/[0.025]"}`}><span className="rounded-lg bg-[var(--accent-soft)] p-2"><Icon className="h-5 w-5 text-[var(--accent)]" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block font-display text-base font-bold text-[var(--foreground)]">{guide.label}</span><span className="mt-0.5 block text-xs text-[var(--muted)]">{guide.description} · {countFor(guide.filter)}</span></span><ChevronRight className="h-4 w-4 shrink-0 text-[var(--accent)] transition group-hover:translate-x-0.5" aria-hidden="true" /></button>; })}</div></section>
+      <section aria-labelledby="category-map-title">
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Shop by category</p>
+          <h2 id="category-map-title" className="mt-1 font-display text-2xl font-bold">
+            Choose what you need.
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {categoryGuides.map((guide) => {
+            const Icon = guide.icon;
+            const active = filter === guide.filter;
+            return (
+              <button
+                key={guide.filter}
+                type="button"
+                aria-pressed={active}
+                onClick={() => selectCategory(guide.filter)}
+                className={`group flex items-center gap-3 rounded-xl border p-4 text-left transition ${active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/60 hover:bg-white/[0.025]"}`}
+              >
+                <span className="rounded-lg bg-[var(--accent-soft)] p-2">
+                  <Icon className="h-5 w-5 text-[var(--accent)]" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-base font-bold text-[var(--foreground)]">{guide.label}</span>
+                  <span className="mt-0.5 block text-xs text-[var(--muted)]">
+                    {guide.description} · {countFor(guide.filter)}
+                  </span>
+                </span>
+                <ChevronRight
+                  className="h-4 w-4 shrink-0 text-[var(--accent)] transition group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-    <div className="flex gap-3 border-l-2 border-amber-400/70 bg-amber-400/5 px-4 py-3 text-sm leading-6 text-[var(--muted)]"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true" /><p className="m-0">Use approved procedures, ratings, and calibration requirements. These recommendations support the work; they do not replace them.</p></div>
+      <div className="flex gap-3 border-l-2 border-amber-400/70 bg-amber-400/5 px-4 py-3 text-sm leading-6 text-[var(--muted)]">
+        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true" />
+        <p className="m-0">
+          Use approved procedures, ratings, and calibration requirements. These recommendations support the work; they
+          do not replace them.
+        </p>
+      </div>
 
-    <div ref={catalogRef} className="scroll-mt-6"><div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Product list</p><h2 className="mt-1 font-display text-2xl font-bold">{title}</h2></div>{filter !== "All" && <button type="button" onClick={() => setFilter("All")} className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">Show all {GEAR_RECOMMENDATIONS.length} products</button>}</div><div className="grid gap-4 md:grid-cols-2">{visible.map((item) => <GearCard key={item.name} item={item} />)}</div></div>
-  </section>;
+      <div ref={catalogRef} className="scroll-mt-6">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Product list</p>
+            <h2 className="mt-1 font-display text-2xl font-bold">{title}</h2>
+          </div>
+          {filter !== "All" && (
+            <button
+              type="button"
+              onClick={() => setFilter("All")}
+              className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              Show all {GEAR_RECOMMENDATIONS.length} products
+            </button>
+          )}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {visible.map((item) => (
+            <GearCard key={item.name} item={item} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }

@@ -3,7 +3,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.join(__dirname, "..");
-const gearSrc = fs.readFileSync(path.join(root, "src/components/GearMatrix.tsx"), "utf8");
+const gearSrc = fs.readFileSync(path.join(root, "src/data/gear-recommendations.ts"), "utf8");
+const gearMatrix = fs.readFileSync(path.join(root, "src/components/GearMatrix.tsx"), "utf8");
+const gearCard = fs.readFileSync(path.join(root, "src/components/gear/GearCard.tsx"), "utf8");
 const vespaSrc = fs.readFileSync(path.join(root, "src/components/VespaPartsCatalog.tsx"), "utf8");
 const siteContent = fs.readFileSync(path.join(root, "src/data/site-content.ts"), "utf8");
 const siteStats = fs.readFileSync(path.join(root, "src/data/site-stats.ts"), "utf8");
@@ -26,9 +28,9 @@ ok("gear images are same-origin", imageUrls.every((url) => url.startsWith("/imag
 ok("no third-party hotlinks remain in gear data", !/imageUrl:\s*"https?:\/\//.test(gearSrc));
 const missingFiles = imageUrls.filter((url) => !fs.existsSync(path.join(root, "public", url)));
 ok("every gear image file exists", missingFiles.length === 0, missingFiles.join(", "));
-ok("affiliate disclosure appears before featured USA-made cards", gearSrc.indexOf("As an Amazon Associate") < gearSrc.indexOf("American-made gear worth prioritizing"));
+ok("affiliate disclosure appears before featured USA-made cards", gearMatrix.indexOf("As an Amazon Associate") < gearMatrix.indexOf("American-made gear worth prioritizing"));
 ok("amazon affiliate tag kept", /tag=beckify-20/.test(gearSrc));
-ok("amazon buttons stay rel=sponsored", /rel="sponsored noopener noreferrer"/.test(gearSrc));
+ok("amazon buttons stay rel=sponsored", /rel="sponsored noopener noreferrer"/.test(gearCard));
 
 console.log("\n--- Vespa BOM ---");
 const amazonHrefs = [...vespaSrc.matchAll(/href:\s*"(https:\/\/www\.amazon\.com[^"]+)"/g)].map((m) => m[1]);
@@ -44,11 +46,11 @@ ok("Daly BMS row is linked to manufacturer", vespaSrc.includes("dalybms.com"));
 ok("eBay-only rows stay Not linked rather than guessed ASINs", vespaSrc.includes("25mm three-wire twist throttle") && vespaSrc.includes("LED headlight") && !/name: "25mm three-wire twist throttle"[\s\S]{0,180}href:/.test(vespaSrc));
 
 console.log("\n--- Counts ---");
-ok("calculator count constant is 45", /PUBLIC_CALCULATOR_COUNT = 45/.test(siteStats));
+ok("calculator count constant is 47", /PUBLIC_CALCULATOR_COUNT = 47/.test(siteStats));
 ok("game count constant is 7", /PUBLIC_GAME_COUNT = 7/.test(siteStats));
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser games"));
-ok("toolbox header uses 45", toolboxHtml.includes("45 calculators plus reference tables"));
+ok("toolbox header uses 47", toolboxHtml.includes("47 calculators plus reference tables"));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
 ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
 const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Pup Planet", "HexGL"].includes(name));

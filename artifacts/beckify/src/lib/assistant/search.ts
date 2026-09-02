@@ -22,7 +22,9 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "wire-size-ampacity": ["wire size", "ampacity", "awg", "derating", "310.16", "termination"],
   "transformer-sizing": ["kva", "primary", "secondary", "450.3"],
   "megger-tdr-analyzer": ["megger", "tdr", "cable", "open", "short", "fault locating", "velocity factor"],
+  "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
+  "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
 };
 
 /**
@@ -63,6 +65,7 @@ const PAGE_DOCUMENTS: AssistantDocument[] = [
   { id: "hexgl", title: "HexGL", description: "Futuristic WebGL racing game by Thibaut Despoulain (BKcore), MIT licensed.", href: "/games/hexgl", tags: ["hexgl", "racing", "webgl", "bkcore", "racer"], concepts: ["racing", "webgl", "play"], kind: "page" },
   { id: "new-glenn-runner", title: "New Glenn Runner", description: "A stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring.", href: "/games/new-glenn-runner", tags: ["new glenn", "runner", "arcade", "launch", "kid", "cadet", "pad rat"], concepts: ["arcade", "runner", "play"], kind: "page" },
   { id: "gear", title: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, multimeters, clamp meters, insulation testers, oscilloscopes, cable testers, RF gear, and budget picks.", href: "/gear", tags: ["gear", "electrical test equipment", "hand tools", "multimeter", "clamp meter", "insulation tester", "oscilloscope", "rf analyzer", "budget tools"], concepts: ["tools", "field work", "bench work", "measurement"], kind: "reference" },
+  { id: "made-in-america", title: "American-Made Electrical Tools & Supplies", description: "Verified made-in-America electrical hand tools — Klein strippers, CHANNELLOCK pliers, Daniels crimp frames, and 3M Scotch tape with exact model numbers and sourcing notes.", href: "/made-in-america", tags: ["made in america", "american made", "usa made", "usa-made", "domestic", "klein tools", "channellock", "american manufacturing", "buy american"], concepts: ["sourcing", "hand tools", "field work", "domestic manufacturing"], kind: "reference" },
 ];
 
 export const ASSISTANT_DOCUMENTS: AssistantDocument[] = [...TOOL_DOCUMENTS, ...REFERENCE_DOCUMENTS, ...PAGE_DOCUMENTS];

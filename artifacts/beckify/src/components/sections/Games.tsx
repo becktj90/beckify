@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 
 const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string }> = {
-  "Cosmic Cadet": { mode: "Wave shooter", input: "Keyboard + touch", accent: "#55e6cb" },
+  "Cosmic Cadet": { mode: "Wave shooter", input: "Drag + BLAST pad", accent: "#55e6cb" },
   "Booty Butt Scooter": { mode: "Crossy hopper", input: "Tap + keyboard", accent: "#ffb84a" },
   "New Glenn Runner": { mode: "Launch arcade", input: "Keyboard + drag", accent: "#8b7bff" },
   "Finger Runner": { mode: "One-button runner", input: "Tap + Space", accent: "#ff6b8a" },

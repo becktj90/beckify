@@ -265,10 +265,10 @@ export default function Home() {
                   </div>
                 </Link>
                 <Link
-                  href="/gear?filter=usa-made"
+                  href="/made-in-america"
                   className="relative z-10 mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--border)] px-3 py-1.5 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent-2)] hover:text-[var(--accent-2)]"
                 >
-                  <span aria-hidden="true">🇺🇸</span> USA-made picks
+                  <span aria-hidden="true">🇺🇸</span> Made in America
                 </Link>
               </div>
             </FadeIn>
