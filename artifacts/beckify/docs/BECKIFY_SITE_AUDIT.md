@@ -109,14 +109,13 @@ description, canonical, OG image, `twitter:card` and JSON-LD.
 
 ## Tool inventory
 
-56 `section[id^="sec-"]` elements in `public/toolbox/index.html`, grouped by the
-toolbox's own category cards. 44 of them are registered with slug, title and
-description in `scripts/generate-sitemap.mjs`, which emits 52 per-tool static
-routes plus 7 category routes into the sitemap (68 URLs total).
-
-The site-wide command palette (`src/lib/assistant/search.ts`) indexes **17
-documents, of which 8 are tools**. The gap between those two registries is the
-single highest-leverage discoverability fix available.
+57 `section[id^="sec-"]` elements in `public/toolbox/index.html`, grouped by the
+toolbox's own category cards. 45 of them are registered with slug, title and
+description in `src/data/toolbox-tools.mjs`, the single source of truth
+consumed by both `scripts/generate-sitemap.mjs` (per-tool static SEO routes)
+and `src/lib/assistant/search.ts` (the "Ask Beckify" search index) — since the
+P1 fix below, these two can no longer drift apart the way the search index
+once did (8 of 44 real tools indexed).
 
 ---
 
@@ -537,6 +536,52 @@ viewport meta (no `maximum-scale=1`).
   independently of this app's deploys. Verified via Playwright: the worker
   registers and activates with zero console errors, `manifest.json`/`sw.js`
   /icons all serve 200 from a production build.
+
+### New tool — Heater Design Wizard
+
+Requested directly: an industrial heater electrical sizing tool plus a custom
+resistance-wire element designer. Added as `sec-heater-wizard`
+(`public/toolbox/js/heater-wizard.js`), following the existing
+`xfmr-wizard`/`xfmr-engine` conventions (shared `wt*` render helpers,
+`xePickConductor`/`nextStandardOCPD` for the branch-circuit recommendation,
+`registerUrlState`/`registerReport` wiring, a step-by-step proof drawer).
+
+- **Electrical sizing**: given total power, line voltage, phase and wye/delta
+  wiring, derives leg/phase/element voltage, current, resistance and power
+  for a balanced resistive load, plus a 125%-continuous-load branch-circuit
+  conductor and OCPD recommendation. All three-phase relations (`R_leg =
+  V_LL²/P` wye, `3×V_LL²/P` delta, `I_line = P/(√3×V_LL)`) were hand-verified
+  self-consistent (each connection's three legs independently sum back to
+  the same total power and line current) before shipping.
+- **Element design**: given a target resistance and power (with a one-click
+  pass-through from the electrical sizing result), computes bare
+  resistance-wire length, current density and surface power density for a
+  chosen alloy and AWG gauge, plus optional coil turns/length for a given
+  mandrel diameter. The AWG diameter formula (`d = 0.005 × 92^((36−n)/39)`
+  inches) is the wire gauge standard's own definition — verified against the
+  well-known reference points AWG 36 = 0.0050 in, AWG 20 = 0.0320 in, AWG 10 =
+  0.1019 in, and AWG 1/0 = 0.3249 in, all exact.
+- **What is not asserted as fact**: alloy resistivity, maximum element
+  temperature and any surface-power-density guidance for Nichrome/Kanthal are
+  typical published reference figures the tool cannot verify against a
+  specific spool — every one is an editable input with a visible caution to
+  confirm against the wire supplier's datasheet before fabricating an
+  element, rather than a hidden constant presented as measured fact.
+- 29 new hand-verified assertions in `tests/toolbox-heater-wizard.test.cjs`
+  covering the AWG formula, both wye and delta self-consistency, the
+  series/parallel per-element split, the element-design formulas, and coil
+  geometry. `npm test` 13/13, clean `tsc`/`biome`/build.
+- An axe-core scan of the new section (both calculators run, coil path
+  included) found zero new violations. It initially found unassociated
+  `<label>`s and unnamed `<select>` elements — but the same scan against the
+  pre-existing Transformer Design Wizard this tool was modeled on shows the
+  identical issue, confirming it as a pre-existing sitewide `<label>`/`for`
+  pattern rather than something newly introduced. Fixed it in this new
+  section anyway (added `for`/id pairing to every label) rather than
+  propagate a known issue into new code. The one remaining flagged node
+  (`.btn-copy`, the shared copy-result button from `app.js`) is the same
+  pre-existing sitewide contrast issue on every calculator's copy button —
+  out of scope for this feature, not fixed here.
 
 ## Deferred improvements
 
