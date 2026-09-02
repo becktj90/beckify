@@ -18,6 +18,9 @@ on:
       - ".github/workflows/ios-math.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   swift-test:
     name: swift test (Ubuntu, BeckifyMath only)
@@ -26,6 +29,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Run BeckifyMath tests
         run: cd ios/BeckifyMath && swift test
