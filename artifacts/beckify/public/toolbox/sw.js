@@ -31,7 +31,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 
@@ -50,6 +50,7 @@ const SHELL = [
   './js/power-tools.js',
   './js/factor-tools.js',
   './js/xfmr-engine.js',
+  './js/heater-wizard.js',
   './js/timer555.js',
   './js/report-export.js',
   './js/url-state.js',
