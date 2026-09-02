@@ -36,6 +36,9 @@ export function AmericanMadeShowcase() {
               Every pick links to the exact model and includes how we confirmed U.S. manufacturing — no vague
               &ldquo;assembled in America&rdquo; claims.
             </p>
+            <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+              As an Amazon Associate I earn from qualifying purchases. Amazon buttons are paid links.
+            </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href="#verified-picks"
@@ -207,9 +210,6 @@ export function AmericanMadeShowcase() {
           do not replace them.
         </p>
       </div>
-      <p className="text-xs text-[var(--muted)]">
-        Disclosure: As an Amazon Associate I earn from qualifying purchases. Amazon buttons are paid links.
-      </p>
     </section>
   );
 }

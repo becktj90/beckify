@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SchemaHead } from "@/components/seo/SchemaHead";
+import { PUBLIC_CALCULATOR_COUNT } from "@/data/site-stats";
 
 /**
  * Fixed-order categorical palette (validated for CVD-safety + contrast on
@@ -28,14 +29,14 @@ const HUES = {
 const PAGES: { href: string; label: string; description: string; icon: typeof Terminal; hue: string }[] = [
   { href: "/", label: "Home", description: "Hub page — hero and links to everything below.", icon: Orbit, hue: HUES.blue },
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
-  { href: "/toolbox/", label: "Toolbox", description: "40+ native EE calculators, organized by category.", icon: Wrench, hue: HUES.aqua },
+  { href: "/toolbox/", label: "Toolbox", description: `${PUBLIC_CALCULATOR_COUNT} native EE calculators, organized by category.`, icon: Wrench, hue: HUES.aqua },
   { href: "/control-systems", label: "Control System Toolbox", description: "Interactive modeling, Bode plots, PID tuning, LQR/LQG, and MPC visualizers.", icon: Zap, hue: HUES.violet },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
   { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/projects/honda-xr650r", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },
   { href: "/gear", label: "Recommended Electrical Test Equipment", description: "Model-specific hand tools, electrical testers, bench instruments, RF gear, and budget picks.", icon: Wrench, hue: HUES.aqua },
   { href: "/made-in-america", label: "American-Made Electrical Tools", description: "Verified U.S.-made hand tools and supplies with exact model numbers and sourcing notes.", icon: Wrench, hue: HUES.green },
-  { href: "/games", label: "Games", description: "Cosmic Cadet, Pup Planet, HexGL, Finger Runner, Booty Butt Scooter, and New Glenn Runner.", icon: Gamepad2, hue: HUES.magenta },
+  { href: "/games", label: "Games", description: "Cosmic Cadet, Pup Planet, HexGL, Finger Runner, Toot Troopers, Booty Butt Scooter, and New Glenn Runner.", icon: Gamepad2, hue: HUES.magenta },
 ];
 
 /**
@@ -116,7 +117,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   },
 ];
 
-const TOOLBOX_TOOL_COUNT = TOOLBOX_CATEGORIES.reduce((n, c) => n + c.tools.length, 0);
+const TOOLBOX_TOOL_COUNT = PUBLIC_CALCULATOR_COUNT;
 
 export default function SiteMapPage() {
 
@@ -176,7 +177,7 @@ export default function SiteMapPage() {
             Toolbox categories
           </h2>
           <p className="text-sm text-[var(--muted)]">
-            {TOOLBOX_TOOL_COUNT} calculators across {TOOLBOX_CATEGORIES.length} categories — open any group directly.
+            {TOOLBOX_TOOL_COUNT} calculators in the public toolbox — open any group directly.
           </p>
         </div>
 

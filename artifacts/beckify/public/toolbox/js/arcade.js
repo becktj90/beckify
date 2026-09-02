@@ -872,7 +872,9 @@
 
   function isSectionActive() {
     const sec = document.getElementById('sec-arcade');
-    return !!(sec && sec.classList.contains('active'));
+    if (!sec) return false;
+    if (document.body.dataset.arcadeStandalone === 'true') return true;
+    return sec.classList.contains('active');
   }
 
   function resetMissionRecord() {

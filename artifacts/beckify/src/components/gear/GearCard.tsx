@@ -47,12 +47,16 @@ export function ProductVisual({ item }: { item: Gear }) {
 
   if (item.imageUrl) {
     return (
-      <figure className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-white/95">
+      <figure
+        className={`mt-4 overflow-hidden rounded-xl border border-[var(--border)] ${item.imagePlaceholder ? "bg-[#07101c]" : "bg-white/95"}`}
+      >
         <div className="h-36 p-3">
           <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-contain" />
         </div>
-        <figcaption className="border-t border-[var(--border)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-          Official product photo
+        <figcaption
+          className={`border-t border-[var(--border)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${item.imagePlaceholder ? "text-cyan-200/70" : "text-slate-600"}`}
+        >
+          {item.imagePlaceholder ? "Product reference" : "Official product photo"}
         </figcaption>
       </figure>
     );

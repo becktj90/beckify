@@ -70,6 +70,9 @@ export function GearMatrix() {
           Industry-standard picks for electrical work, cable troubleshooting, field power, and job comfort.
           American-made favorites are featured first, and every card expands with practical field context.
         </p>
+        <p className="mt-4 max-w-2xl text-xs leading-6 text-[var(--muted)]">
+          As an Amazon Associate I earn from qualifying purchases. Amazon buttons are paid links.
+        </p>
       </header>
 
       <section
@@ -146,9 +149,6 @@ export function GearMatrix() {
           do not replace them.
         </p>
       </div>
-      <p className="text-xs text-[var(--muted)]">
-        Disclosure: As an Amazon Associate I earn from qualifying purchases. Amazon buttons are paid links.
-      </p>
 
       <div ref={catalogRef} className="scroll-mt-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

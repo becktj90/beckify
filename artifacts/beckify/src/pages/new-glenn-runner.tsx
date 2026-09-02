@@ -1,0 +1,16 @@
+import { Layout } from "@/components/Layout";
+import { NewGlennRunner } from "@/components/games/NewGlennRunner";
+import { SchemaHead } from "@/components/seo/SchemaHead";
+
+export default function NewGlennRunnerPage() {
+  return (
+    <Layout showAds={false}>
+      <SchemaHead
+        title="New Glenn Runner | Beckify Games"
+        description="Play New Glenn Runner, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty, local scoring, and fullscreen play."
+        path="/games/new-glenn-runner"
+      />
+      <NewGlennRunner />
+    </Layout>
+  );
+}

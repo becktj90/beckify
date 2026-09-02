@@ -8,6 +8,7 @@ import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 import { Nav } from "@/components/sections/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
+import { PUBLIC_CALCULATOR_COUNT, PUBLIC_GAME_COUNT } from "@/data/site-stats";
 import beckifyMark from "@/assets/beckify-mark-white.png";
 import { SchemaHead } from "@/components/seo/SchemaHead";
 import { MinimalAdUnit } from "@/components/ads/MinimalAdUnit";
@@ -131,7 +132,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      40 calculators and reference tables. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, and TDR fault locating — all NEC-referenced.
+                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, and TDR fault locating — all NEC-referenced.
                     </p>
                   </div>
                 </div>
@@ -199,7 +200,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Games</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Four arcade loops across shooters, runners, and launch simulation — no install, just play.
+                      {PUBLIC_GAME_COUNT} browser games across shooters, runners, and launch simulation — no install, just play.
                     </p>
                   </div>
                 </div>

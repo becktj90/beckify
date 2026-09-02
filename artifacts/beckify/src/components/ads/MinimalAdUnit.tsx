@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { PUBLIC_CALCULATOR_COUNT } from "@/data/site-stats";
 
 interface AdProps {
   placement?: "toolbox-sidebar" | "build-footer";
@@ -16,7 +17,7 @@ const ADSENSE_CLIENT_ID = "ca-pub-5333275222472637";
 const HOUSE_ADS = [
   {
     title: "EE Toolbox",
-    description: "40+ NEC-referenced calculators — voltage drop, conduit fill, ampacity, transformer sizing, and more.",
+    description: `${PUBLIC_CALCULATOR_COUNT} NEC-referenced calculators — voltage drop, conduit fill, ampacity, transformer sizing, and more.`,
     linkText: "Open the toolbox",
     href: "/toolbox/",
   },

@@ -213,11 +213,8 @@ export const TOOLBOX = {
 /** ------------------------------------------------------------------------
  * GAMES
  *
- * Three homes, so `url` varies in shape:
- *  - play.beckify.com — the games hub built from the Finger-Runner repo.
- *  - /toolbox/#sec-… — games embedded in the standalone toolbox app. It
- *    routes on the initial hash, so these deep-link straight to the game.
- * Set `external` for anything off beckify.com so it opens in a new tab.
+ * Playable titles live under /games/<slug>, matching the hub Play Now
+ * links. Set `external` for anything off beckify.com so it opens in a new tab.
  * -------------------------------------------------------------------- */
 export interface Game {
   name: string;
@@ -243,7 +240,7 @@ export const GAMES: Game[] = [
     name: "New Glenn Runner",
     description:
       "A stylized vertical launch arcade mission with parallax backgrounds, quick decisions, and local mission scoring.",
-    url: "/toolbox/index.html#sec-arcade",
+    url: "/games/new-glenn-runner",
   },
   {
     name: "Finger Runner",
