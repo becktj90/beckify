@@ -35,6 +35,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck
+        run: pnpm --filter @workspace/beckify run typecheck
+
+      - name: Lint
+        run: pnpm --filter @workspace/beckify run lint
+
+      - name: Test
+        run: pnpm --filter @workspace/beckify run test
+
       - name: Build beckify
         run: pnpm --filter @workspace/beckify run build
         env:
