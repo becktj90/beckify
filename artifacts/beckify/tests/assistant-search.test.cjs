@@ -96,6 +96,8 @@ for (const [query, expectedId] of [
   ['battery bank', 'battery-bank'],
   ['motor nameplate', 'motor-nameplate'],
   ['lfp backup', 'battery-bank'],
+  ['battery designer', 'battery-designer'],
+  ['e-bike pack', 'battery-designer'],
 ]) {
   const results = searchAssistant(query, 6);
   ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
