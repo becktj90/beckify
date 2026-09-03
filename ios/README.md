@@ -47,7 +47,7 @@ ios/
 - Position (location requested in-tool, not at launch)
 - Device battery / thermal diagnostics
 
-Local **Saved Jobs** are on-device homework / field notes, not a projects product. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, and can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups). Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
+Local **Saved Jobs** are on-device homework / field notes, not a projects product. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, and can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups). Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
 
 ## Linux (this repo)
 

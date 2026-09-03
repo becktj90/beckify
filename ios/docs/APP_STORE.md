@@ -126,7 +126,7 @@ Take 3–8 screens per size. Suggested shots:
 5. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
 6. BLE scanner or bubble level
 7. Saved Jobs list (on-device notes)
-8. About (Trevor Beck, EE, beckify.com, email — no phone number)
+8. Favorites list (starred tools pinned for one-tap access)
 
 The app follows the system light or dark appearance; it does not force dark. System appearance shots are fine — do not require dark-only screenshots. Do not claim outdoor/high-contrast beyond what Settings actually does. Do not show ads, Amazon, games, or a phone number.
 

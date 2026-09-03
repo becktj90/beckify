@@ -128,6 +128,7 @@ struct FormulaCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Theme.accent.opacity(0.25), lineWidth: 1)
         )
+        .brandGlow()
     }
 }
 

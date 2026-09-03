@@ -27,6 +27,7 @@ struct ToolScaffold<Content: View>: View {
     var disclaimer: ToolDisclaimer = .designAid
     @ViewBuilder var content: Content
 
+    @EnvironmentObject private var favorites: FavoritesStore
     private var tool: ToolDefinition { ToolboxCatalog.tool(toolID) }
 
     var body: some View {
@@ -48,6 +49,11 @@ struct ToolScaffold<Content: View>: View {
             }
         }
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
+                    favorites.toggle(toolID)
+                }
+            }
             if let copyText, !copyText.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy result from toolbar")
@@ -146,6 +152,26 @@ struct CopyResultButton: View {
             resetTask?.cancel()
             copied = false
         }
+    }
+}
+
+/// Star toggle for pinning a tool to the Favorites tab. Used in tool rows and the tool toolbar.
+struct FavoriteToggleButton: View {
+    var isOn: Bool
+    var name: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: isOn ? "star.fill" : "star")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(isOn ? Theme.accent2 : Theme.muted.opacity(0.7))
+                .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isOn ? "Remove \(name) from favorites" : "Add \(name) to favorites")
+        .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }
 
@@ -293,6 +319,7 @@ struct ShowWorkCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Theme.accent.opacity(0.25), lineWidth: 1)
         )
+        .brandGlow()
     }
 }
 
