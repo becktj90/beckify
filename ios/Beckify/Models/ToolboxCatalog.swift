@@ -1,4 +1,5 @@
 import Foundation
+import BeckifyMath
 
 enum ToolID: String, Codable, CaseIterable, Identifiable {
     case ohmsLaw
@@ -66,6 +67,11 @@ struct ToolDefinition: Identifiable {
 
     var searchBlob: String {
         ([title, subtitle] + synonyms).joined(separator: " ").lowercased()
+    }
+
+    /// Single source of truth for live vs Calculate interaction.
+    var calculationMode: CalculationMode {
+        ToolCalculationPolicy.mode(for: id.rawValue)
     }
 }
 

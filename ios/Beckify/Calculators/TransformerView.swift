@@ -18,9 +18,31 @@ struct TransformerView: View {
     @StoredInput(.transformer, "vs", default: "208") private var vs
     @StoredToggle(.transformer, "continuous", default: true) private var continuous
     @StoredInput(.transformer, "jobName", default: "Transformer") private var jobName
+    @State private var session = ExplicitCalculationSession<TransformerSizingResult>()
+    @State private var successTick = 0
+
+    private var fingerprint: String {
+        "\(system.rawValue)|\(loadKind.rawValue)|\(load)|\(pf)|\(vp)|\(vs)|\(continuous)"
+    }
+    private var display: ExplicitCalculationSession<TransformerSizingResult>.Display {
+        session.display(for: fingerprint)
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .transformer, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .transformer,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .transformer,
                 symbolic: system == .threePhase
@@ -59,8 +81,8 @@ struct TransformerView: View {
                 .tint(Theme.accent)
                 .frame(minHeight: Theme.touchTarget)
 
-            switch calc {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(title: "Transformer", copyText: copyText) {
                     ResultRow(label: "Connected", value: "\(Format.number(r.loadKVA, digits: 2)) kVA")
                     ResultRow(label: "Design", value: "\(Format.number(r.designKVA, digits: 2)) kVA")
@@ -97,13 +119,56 @@ struct TransformerView: View {
                         outputs: ["kVA": "\(r.selectedKVA)", "Ip": Format.amps(r.primaryFLA), "Is": Format.amps(r.secondaryFLA)]
                     ))
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter transformer load",
+                    detail: "Set load, voltages, and continuous flag, then Calculate.",
+                    systemImage: "bolt.horizontal.fill"
+                )
+            case .failed:
+                EmptyView()
             }
         }
         .onAppear {
             if system == .dc { system = .threePhase }
         }
+    }
+
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            let kind: TransformerLoad
+            switch loadKind {
+            case .kva: kind = .kVA(load.parsedDouble ?? .nan)
+            case .kw: kind = .kW(load.parsedDouble ?? .nan, powerFactor: (pf.parsedDouble ?? .nan) / 100)
+            case .amps: kind = .amps(load.parsedDouble ?? .nan)
+            }
+            return try TransformerSizing.size(
+                system: system == .dc ? .threePhase : system,
+                load: kind,
+                primaryVolts: vp.parsedDouble ?? .nan,
+                secondaryVolts: vs.parsedDouble ?? .nan,
+                continuous: continuous
+            )
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        system = .threePhase
+        loadKind = .kw
+        load = "38"
+        pf = "90"
+        vp = "480"
+        vs = "208"
+        continuous = true
     }
 
     @ViewBuilder
@@ -119,7 +184,7 @@ struct TransformerView: View {
     }
 
     private var substituted: String? {
-        guard case .success(let r) = calc else { return nil }
+        guard case .current(let r) = display else { return nil }
         let v = Format.number(vp.parsedDouble ?? .nan, digits: 1)
         if system == .threePhase {
             return "Ip = \(Format.number(r.selectedKVA, digits: 1)) × 1000 ÷ (√3 × \(v)) = \(Format.amps(r.primaryFLA))"
@@ -128,27 +193,13 @@ struct TransformerView: View {
     }
 
     private var sticky: String? {
-        guard case .success(let r) = calc else { return nil }
-        return "\(Format.number(r.selectedKVA, digits: 1)) kVA  ·  Ip \(Format.amps(r.primaryFLA))  ·  Is \(Format.amps(r.secondaryFLA))"
+        switch display {
+        case .current(let r), .stale(let r):
+            return "\(Format.number(r.selectedKVA, digits: 1)) kVA  ·  Ip \(Format.amps(r.primaryFLA))  ·  Is \(Format.amps(r.secondaryFLA))"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }
-
-    private var calc: Result<TransformerSizingResult, CalcError> {
-        CalcCatch.run {
-            let kind: TransformerLoad
-            switch loadKind {
-            case .kva: kind = .kVA(load.parsedDouble ?? .nan)
-            case .kw: kind = .kW(load.parsedDouble ?? .nan, powerFactor: (pf.parsedDouble ?? .nan) / 100)
-            case .amps: kind = .amps(load.parsedDouble ?? .nan)
-            }
-            return try TransformerSizing.size(
-                system: system == .dc ? .threePhase : system,
-                load: kind,
-                primaryVolts: vp.parsedDouble ?? .nan,
-                secondaryVolts: vs.parsedDouble ?? .nan,
-                continuous: continuous
-            )
-        }
-    }
 }

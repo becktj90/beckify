@@ -16,22 +16,29 @@ struct VoltageDividerView: View {
     @StoredInput(.voltageDivider, "r1", default: "10000") private var r1
     @StoredInput(.voltageDivider, "r2", default: "10000") private var r2
     @StoredInput(.voltageDivider, "jobName", default: "Voltage divider") private var jobName
+    @State private var session = ExplicitCalculationSession<VoltageDividerResult>()
+    @State private var successTick = 0
 
-    var result: Result<VoltageDividerResult, CalcError> {
-        CalcCatch.run {
-            switch solve {
-            case .vout:
-                return try VoltageDivider.fromResistors(vin: vin.parsedDouble ?? .nan, r1: r1.parsedDouble ?? .nan, r2: r2.parsedDouble ?? .nan)
-            case .r1:
-                return try VoltageDivider.solveR1(vin: vin.parsedDouble ?? .nan, vout: vout.parsedDouble ?? .nan, r2: r2.parsedDouble ?? .nan)
-            case .r2:
-                return try VoltageDivider.solveR2(vin: vin.parsedDouble ?? .nan, vout: vout.parsedDouble ?? .nan, r1: r1.parsedDouble ?? .nan)
-            }
-        }
+    private var fingerprint: String { "\(solve.rawValue)|\(vin)|\(vout)|\(r1)|\(r2)" }
+    private var display: ExplicitCalculationSession<VoltageDividerResult>.Display {
+        session.display(for: fingerprint)
     }
 
     var body: some View {
-        ToolScaffold(toolID: .voltageDivider, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .voltageDivider,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .voltageDivider,
                 symbolic: "Vout = Vin × R2 / (R1 + R2)",
@@ -52,8 +59,8 @@ struct VoltageDividerView: View {
             if solve != .vout { NumberField(title: "Vout", unit: "V", text: $vout) }
             if solve != .r1 { NumberField(title: "R1 (top)", unit: "Ω", text: $r1) }
             if solve != .r2 { NumberField(title: "R2 (to GND)", unit: "Ω", text: $r2) }
-            switch result {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Vin", value: Format.volts(r.vin))
                     ResultRow(label: "Vout", value: Format.volts(r.vout), emphasis: true, tone: Theme.good)
@@ -62,20 +69,60 @@ struct VoltageDividerView: View {
                     ResultRow(label: "I", value: Format.amps(r.current))
                 }
                 SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter divider values",
+                    detail: "Fill known fields for Vout, R1, or R2, then Calculate.",
+                    systemImage: "slider.horizontal.3"
+                )
+            case .failed:
+                EmptyView()
             }
         }
     }
 
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            switch solve {
+            case .vout:
+                return try VoltageDivider.fromResistors(vin: vin.parsedDouble ?? .nan, r1: r1.parsedDouble ?? .nan, r2: r2.parsedDouble ?? .nan)
+            case .r1:
+                return try VoltageDivider.solveR1(vin: vin.parsedDouble ?? .nan, vout: vout.parsedDouble ?? .nan, r2: r2.parsedDouble ?? .nan)
+            case .r2:
+                return try VoltageDivider.solveR2(vin: vin.parsedDouble ?? .nan, vout: vout.parsedDouble ?? .nan, r1: r1.parsedDouble ?? .nan)
+            }
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        solve = .vout
+        vin = "12"
+        vout = "6"
+        r1 = "10000"
+        r2 = "10000"
+    }
+
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard case .current(let r) = display else { return nil }
         return "\(Format.volts(r.vout)) = \(Format.volts(r.vin)) × \(Format.number(r.r2, digits: 3)) / (\(Format.number(r.r1, digits: 3)) + \(Format.number(r.r2, digits: 3)))"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
-        return "Vout \(Format.volts(r.vout))  ·  R1 \(Format.number(r.r1, digits: 3)) Ω  ·  R2 \(Format.number(r.r2, digits: 3)) Ω"
+        switch display {
+        case .current(let r), .stale(let r):
+            return "Vout \(Format.volts(r.vout))  ·  R1 \(Format.number(r.r1, digits: 3)) Ω  ·  R2 \(Format.number(r.r2, digits: 3)) Ω"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }

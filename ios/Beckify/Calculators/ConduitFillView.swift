@@ -7,12 +7,32 @@ struct ConduitFillView: View {
     @StoredInput(.conduitFill, "size", default: "12") private var size
     @StoredInput(.conduitFill, "trade", default: "3/4") private var trade
     @StoredInput(.conduitFill, "jobName", default: "Conduit fill") private var jobName
+    @State private var session = ExplicitCalculationSession<ConduitFillResult>()
+    @State private var successTick = 0
 
     private var sizes: [String] { NECTables.wireSizeOrder.filter { NECTables.thhnArea[$0] != nil } }
     private var trades: [String] { NECTables.emtArea.map(\.trade) }
 
+    private var fingerprint: String { "\(qty)|\(size)|\(trade)" }
+    private var display: ExplicitCalculationSession<ConduitFillResult>.Display {
+        session.display(for: fingerprint)
+    }
+
     var body: some View {
-        ToolScaffold(toolID: .conduitFill, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .conduitFill,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .conduitFill,
                 symbolic: "1 wire → 53%    2 wires → 31%    3+ → 40%",
@@ -29,8 +49,8 @@ struct ConduitFillView: View {
             MenuField(title: "THHN size", selection: $size, options: sizes, label: NECTables.wireLabel)
             MenuField(title: "EMT trade size", selection: $trade, options: trades, label: { "\($0)\"" })
 
-            switch calc {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Wire area", value: "\(Format.number(r.totalWireArea, digits: 4)) in²")
                     ResultRow(label: "EMT area", value: "\(Format.number(r.conduitArea, digits: 3)) in²")
@@ -49,28 +69,53 @@ struct ConduitFillView: View {
                         outputs: ["fill": Format.percent(r.actualFillPercent), "ok": r.passes ? "PASS" : "FAIL"]
                     ))
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter conductors and EMT",
+                    detail: "Set quantity, wire size, and trade size, then Calculate.",
+                    systemImage: "cylinder.split.1x2"
+                )
+            case .failed:
+                EmptyView()
             }
         }
     }
 
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            let n = try WholeCount.parse(qty.parsedDouble ?? .nan, name: "Conductor quantity")
+            return try ConduitFill.calculate(quantity: n, size: size, tradeSize: trade)
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        qty = "4"
+        size = "12"
+        trade = "3/4"
+    }
+
     private var substituted: String? {
-        guard case .success(let r) = calc else { return nil }
+        guard case .current(let r) = display else { return nil }
         return "Fill % = (\(qty) × conductor area) / raceway area × 100 = \(Format.percent(r.actualFillPercent))  (limit \(Format.percent(r.maxFillPercent)))"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = calc else { return nil }
-        return "\(Format.percent(r.actualFillPercent))  ·  \(r.passes ? "PASS" : "FAIL")"
+        switch display {
+        case .current(let r), .stale(let r):
+            return "\(Format.percent(r.actualFillPercent))  ·  \(r.passes ? "PASS" : "FAIL")"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }
-
-    private var calc: Result<ConduitFillResult, CalcError> {
-        CalcCatch.run {
-            let n = try WholeCount.parse(qty.parsedDouble ?? .nan, name: "Conductor quantity")
-            return try ConduitFill.calculate(quantity: n, size: size, tradeSize: trade)
-        }
-    }
 }

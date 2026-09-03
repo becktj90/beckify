@@ -18,9 +18,31 @@ struct PowerWizardView: View {
     @StoredInput(.powerWizard, "pf", default: "90") private var pf
     @StoredInput(.powerWizard, "eff", default: "100") private var eff
     @StoredInput(.powerWizard, "jobName", default: "Power Wizard") private var jobName
+    @State private var session = ExplicitCalculationSession<PowerWizardResult>()
+    @State private var successTick = 0
+
+    private var fingerprint: String {
+        "\(system.rawValue)|\(known.rawValue)|\(value)|\(voltage)|\(pf)|\(eff)"
+    }
+    private var display: ExplicitCalculationSession<PowerWizardResult>.Display {
+        session.display(for: fingerprint)
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .powerWizard, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .powerWizard,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .powerWizard,
                 symbolic: symbolic,
@@ -53,8 +75,8 @@ struct PowerWizardView: View {
                 NumberField(title: "Efficiency", unit: "%", text: $eff)
             }
 
-            switch wizard {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Current", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA")
@@ -66,10 +88,54 @@ struct PowerWizardView: View {
                     ResultRow(label: "Shaft HP", value: "\(Format.number(r.horsepower, digits: 2)) HP")
                 }
                 SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter known power values",
+                    detail: "Choose system and known quantity, then Calculate.",
+                    systemImage: "wand.and.stars"
+                )
+            case .failed:
+                EmptyView()
             }
         }
+    }
+
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            let knownValue = value.parsedDouble ?? .nan
+            let knownEnum: PowerWizardKnown
+            switch known {
+            case .amps: knownEnum = .amps(knownValue)
+            case .kw: knownEnum = .kilowatts(knownValue)
+            case .kva: knownEnum = .kilovoltAmps(knownValue)
+            case .hp: knownEnum = .horsepower(knownValue)
+            }
+            return try PowerWizard.solve(
+                system: system,
+                known: knownEnum,
+                voltage: voltage.parsedDouble ?? .nan,
+                powerFactor: (pf.parsedDouble ?? .nan) / 100,
+                efficiency: (eff.parsedDouble ?? .nan) / 100
+            )
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        system = .threePhase
+        known = .kw
+        value = "50"
+        voltage = "480"
+        pf = "90"
+        eff = "100"
     }
 
     private var symbolic: String {
@@ -90,36 +156,20 @@ struct PowerWizardView: View {
     }
 
     private var substituted: String? {
-        guard case .success(let r) = wizard else { return nil }
+        guard case .current(let r) = display else { return nil }
         return "\(r.formula)  →  \(Format.amps(r.amps))"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = wizard else { return nil }
-        return "\(Format.amps(r.amps))  ·  \(Format.number(r.kW, digits: 3)) kW  ·  \(Format.number(r.kVA, digits: 3)) kVA"
+        switch display {
+        case .current(let r), .stale(let r):
+            return "\(Format.amps(r.amps))  ·  \(Format.number(r.kW, digits: 3)) kW  ·  \(Format.number(r.kVA, digits: 3)) kVA"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }
-
-    private var wizard: Result<PowerWizardResult, CalcError> {
-        CalcCatch.run {
-            let knownValue = value.parsedDouble ?? .nan
-            let knownEnum: PowerWizardKnown
-            switch known {
-            case .amps: knownEnum = .amps(knownValue)
-            case .kw: knownEnum = .kilowatts(knownValue)
-            case .kva: knownEnum = .kilovoltAmps(knownValue)
-            case .hp: knownEnum = .horsepower(knownValue)
-            }
-            return try PowerWizard.solve(
-                system: system,
-                known: knownEnum,
-                voltage: voltage.parsedDouble ?? .nan,
-                powerFactor: (pf.parsedDouble ?? .nan) / 100,
-                efficiency: (eff.parsedDouble ?? .nan) / 100
-            )
-        }
-    }
 
     private func save(_ r: PowerWizardResult) {
         var inputs: [String: String] = [

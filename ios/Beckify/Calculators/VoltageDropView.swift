@@ -10,13 +10,35 @@ struct VoltageDropView: View {
     @StoredChoice(.voltageDrop, "material", default: ConductorMaterial.copper) private var material
     @StoredInput(.voltageDrop, "size", default: "4") private var size
     @StoredInput(.voltageDrop, "jobName", default: "Voltage drop") private var jobName
+    @State private var session = ExplicitCalculationSession<VoltageDropResult>()
+    @State private var successTick = 0
 
     private var sizes: [String] {
         NECTables.wireSizeOrder.filter { NECTables.circularMils[$0] != nil }
     }
 
+    private var fingerprint: String {
+        "\(system.rawValue)|\(voltage)|\(current)|\(length)|\(material.rawValue)|\(size)"
+    }
+    private var display: ExplicitCalculationSession<VoltageDropResult>.Display {
+        session.display(for: fingerprint)
+    }
+
     var body: some View {
-        ToolScaffold(toolID: .voltageDrop, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .voltageDrop,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .voltageDrop,
                 symbolic: "VD = (M × K × I × L) / CM",
@@ -47,8 +69,8 @@ struct VoltageDropView: View {
             NumberField(title: "One-way length", unit: "ft", text: $length)
             MenuField(title: "Conductor", selection: $size, options: sizes, label: NECTables.wireLabel)
 
-            switch calc {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Voltage drop", value: Format.volts(r.dropVolts), emphasis: true)
                     ResultRow(label: "Drop", value: Format.percent(r.dropPercent), emphasis: true)
@@ -71,6 +93,9 @@ struct VoltageDropView: View {
                         )
                     }
                 }
+                if let source = voltage.parsedDouble {
+                    VoltageDropRunView(sourceVolts: source, loadVolts: r.receivingVolts)
+                }
                 SaveJobBar(jobName: $jobName, canSave: true) {
                     jobs.save(SavedJob(
                         name: jobName,
@@ -79,31 +104,25 @@ struct VoltageDropView: View {
                         outputs: ["VD": Format.volts(r.dropVolts), "%": Format.percent(r.dropPercent)]
                     ))
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter run and conductor",
+                    detail: "Set voltage, current, length, and size, then Calculate.",
+                    systemImage: "arrow.left.arrow.right"
+                )
+            case .failed:
+                EmptyView()
             }
         }
     }
 
-    private var substituted: String? {
-        guard case .success(let r) = calc else { return nil }
-        let m = system == .threePhase ? "√3" : "2"
-        let k = Format.number(material.resistivityK, digits: 1)
-        let i = Format.number(current.parsedDouble ?? .nan, digits: 2)
-        let l = Format.number(length.parsedDouble ?? .nan, digits: 1)
-        let cm = NECTables.circularMils[size].map { Format.number($0, digits: 0) } ?? size
-        return "VD = (\(m) × \(k) × \(i) × \(l)) / \(cm) = \(Format.volts(r.dropVolts))  (\(Format.percent(r.dropPercent)))"
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
     }
 
-    private var sticky: String? {
-        guard case .success(let r) = calc else { return nil }
-        return "\(Format.volts(r.dropVolts))  ·  \(Format.percent(r.dropPercent))"
-    }
-
-    private var copyText: String? { sticky }
-
-    private var calc: Result<VoltageDropResult, CalcError> {
-        CalcCatch.run {
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
             try VoltageDrop.calculate(
                 system: system,
                 current: current.parsedDouble ?? .nan,
@@ -113,5 +132,39 @@ struct VoltageDropView: View {
                 material: material
             )
         }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
     }
+
+    private func reset() {
+        session.reset()
+        system = .threePhase
+        voltage = "480"
+        current = "45"
+        length = "250"
+        material = .copper
+        size = "4"
+    }
+
+    private var substituted: String? {
+        guard case .current(let r) = display else { return nil }
+        let m = system == .threePhase ? "√3" : "2"
+        let k = Format.number(material.resistivityK, digits: 1)
+        let i = Format.number(current.parsedDouble ?? .nan, digits: 2)
+        let l = Format.number(length.parsedDouble ?? .nan, digits: 1)
+        let cm = NECTables.circularMils[size].map { Format.number($0, digits: 0) } ?? size
+        return "VD = (\(m) × \(k) × \(i) × \(l)) / \(cm) = \(Format.volts(r.dropVolts))  (\(Format.percent(r.dropPercent)))"
+    }
+
+    private var sticky: String? {
+        switch display {
+        case .current(let r), .stale(let r):
+            return "\(Format.volts(r.dropVolts))  ·  \(Format.percent(r.dropPercent))"
+        default:
+            return nil
+        }
+    }
+
+    private var copyText: String? { sticky }
 }

@@ -17,6 +17,8 @@ struct ReceptacleSelectorView: View {
     @StoredNumber(.receptacleSelector, "frequencyHz", default: 60) private var frequencyHz
     @State private var selectedID: String?
     @StoredInput(.receptacleSelector, "jobName", default: "Receptacle") private var jobName
+    @State private var session = ExplicitCalculationSession<[ReceptacleMatch]>()
+    @State private var successTick = 0
 
     private var volts: Double? {
         voltagePreset == .custom ? customVolts.parsedDouble : voltagePreset.volts
@@ -26,30 +28,11 @@ struct ReceptacleSelectorView: View {
         ampPreset == .custom ? customAmps.parsedDouble : ampPreset.amps
     }
 
-    private var query: ReceptacleQuery? {
-        guard let volts, let amps else { return nil }
-        return ReceptacleQuery(
-            volts: volts,
-            phase: phase,
-            amps: amps,
-            environment: environment,
-            family: family,
-            isolatedGround: isolatedGround,
-            preferGFCI: preferGFCI,
-            frequencyHz: frequencyHz,
-            neutral: neutral
-        )
+    private var fingerprint: String {
+        "\(voltagePreset.rawValue)|\(customVolts)|\(phase.rawValue)|\(ampPreset.rawValue)|\(customAmps)|\(environment.rawValue)|\(family.rawValue)|\(neutral.rawValue)|\(isolatedGround)|\(preferGFCI)|\(frequencyHz)"
     }
-
-    private var matches: Result<[ReceptacleMatch], CalcError> {
-        guard let query else { return .failure(.missing("voltage and current")) }
-        do {
-            return .success(try ReceptacleSelector.select(query))
-        } catch let error as CalcError {
-            return .failure(error)
-        } catch {
-            return .failure(.missing("values"))
-        }
+    private var display: ExplicitCalculationSession<[ReceptacleMatch]>.Display {
+        session.display(for: fingerprint)
     }
 
     var body: some View {
@@ -57,7 +40,16 @@ struct ReceptacleSelectorView: View {
             toolID: .receptacleSelector,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .designAidExtra("Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install.")
+            disclaimer: .designAidExtra("Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install."),
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
         ) {
             ShowWorkCard(
                 toolID: .receptacleSelector,
@@ -132,8 +124,8 @@ struct ReceptacleSelectorView: View {
                     .foregroundStyle(Theme.muted)
             }
 
-            switch matches {
-            case .success(let list):
+            switch display {
+            case .current(let list), .stale(let list):
                 let shown = selected(from: list)
                 ReceptacleFaceCard(match: shown)
                 ResultCard(title: "Best fit", copyText: copyText) {
@@ -169,8 +161,14 @@ struct ReceptacleSelectorView: View {
                 SaveJobBar(jobName: $jobName, canSave: true) {
                     save(list)
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Set voltage and current",
+                    detail: "Choose V, phase, amps, and filters, then Calculate.",
+                    systemImage: "poweroutlet.type.b"
+                )
+            case .failed:
+                EmptyView()
             }
         }
         .onChange(of: voltagePreset) { _, _ in selectedID = nil }
@@ -182,10 +180,56 @@ struct ReceptacleSelectorView: View {
         .onChange(of: preferGFCI) { _, _ in selectedID = nil }
         .onChange(of: neutral) { _, _ in selectedID = nil }
         .onChange(of: frequencyHz) { _, _ in selectedID = nil }
+        .onChange(of: customVolts) { _, _ in selectedID = nil }
+        .onChange(of: customAmps) { _, _ in selectedID = nil }
+    }
+
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            guard let volts, let amps else {
+                throw CalcError.missing("voltage and current")
+            }
+            let query = ReceptacleQuery(
+                volts: volts,
+                phase: phase,
+                amps: amps,
+                environment: environment,
+                family: family,
+                isolatedGround: isolatedGround,
+                preferGFCI: preferGFCI,
+                frequencyHz: frequencyHz,
+                neutral: neutral
+            )
+            return try ReceptacleSelector.select(query)
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        selectedID = nil
+        voltagePreset = .v120
+        customVolts = "120"
+        phase = .singlePhase2Wire
+        ampPreset = .a15
+        customAmps = "15"
+        environment = .indoorDry
+        family = .any
+        neutral = .auto
+        isolatedGround = false
+        preferGFCI = false
+        frequencyHz = 60
     }
 
     private var substituted: String? {
-        guard case .success(let list) = matches else { return nil }
+        guard case .current(let list) = display else { return nil }
         let shown = selected(from: list)
         let v = volts.map { Format.number($0, digits: 0) } ?? "?"
         let a = amps.map { Format.number($0, digits: 0) } ?? "?"
@@ -193,9 +237,13 @@ struct ReceptacleSelectorView: View {
     }
 
     private var sticky: String? {
-        guard case .success(let list) = matches else { return nil }
-        let shown = selected(from: list)
-        return "\(shown.config.code)  ·  \(Format.amps(shown.config.amps))"
+        switch display {
+        case .current(let list), .stale(let list):
+            let shown = selected(from: list)
+            return "\(shown.config.code)  ·  \(Format.amps(shown.config.amps))"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }

@@ -28,26 +28,34 @@ extension GlyphKind {
     /// Schematic symbol that reads as the job, not a literal picture of it.
     static func forTool(_ id: ToolID) -> GlyphKind {
         switch id {
-        case .ohmsLaw, .voltageDivider, .seriesParallel: return .resistor
-        case .resistorColor: return .ruler
+        case .ohmsLaw: return .resistor
+        case .voltageDivider: return .divider
+        case .seriesParallel: return .network
+        case .resistorColor: return .colorBands
         case .power, .powerWizard: return .sine
         case .transformer: return .transformer
-        case .reactance, .frequencyWave: return .inductor
-        case .powerFactor: return .opAmp
-        case .ledRC, .unitConverter: return .capacitor
-        case .timer555, .plcTimer: return .timer
+        case .reactance: return .phasor
+        case .frequencyWave: return .inductor
+        case .powerFactor: return .powerTriangle
+        case .ledRC: return .capacitor
+        case .unitConverter: return .ruler
+        case .timer555: return .timerIC
+        case .plcTimer: return .timer
         case .motorFLA: return .motor
         case .conduitFill: return .conduit
         case .receptacleSelector: return .receptacle
-        case .wireAmpacity, .circularMils: return .ruler
-        case .voltageDrop: return .battery
+        case .wireAmpacity: return .ampacity
+        case .circularMils: return .crossSection
+        case .voltageDrop: return .voltageDrop
         case .shortCircuit: return .breaker
         case .loadFactors: return .meter
         case .signalScaling: return .signal
-        case .modbusAddress: return .network
+        case .modbusAddress: return .modbus
         case .panelDirectory: return .panel
-        case .wifiStatus, .bluetoothScan: return .network
-        case .noiseMeter, .motionSnapshot: return .waveform
+        case .wifiStatus: return .network
+        case .bluetoothScan: return .network
+        case .noiseMeter: return .waveform
+        case .motionSnapshot: return .waveform
         case .bubbleLevel, .magnetometer, .barometer, .fieldPosition: return .meter
         case .deviceHealth: return .battery
         }
@@ -75,6 +83,15 @@ enum GlyphKind {
     case signal
     case network
     case ruler
+    case divider
+    case colorBands
+    case phasor
+    case powerTriangle
+    case timerIC
+    case ampacity
+    case crossSection
+    case voltageDrop
+    case modbus
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -99,6 +116,15 @@ enum GlyphKind {
         case .signal: return Self.signal(rect)
         case .network: return Self.network(rect)
         case .ruler: return Self.ruler(rect)
+        case .divider: return Self.divider(rect)
+        case .colorBands: return Self.colorBands(rect)
+        case .phasor: return Self.phasor(rect)
+        case .powerTriangle: return Self.powerTriangle(rect)
+        case .timerIC: return Self.timerIC(rect)
+        case .ampacity: return Self.ampacity(rect)
+        case .crossSection: return Self.crossSection(rect)
+        case .voltageDrop: return Self.voltageDrop(rect)
+        case .modbus: return Self.modbus(rect)
         }
     }
 
@@ -465,6 +491,113 @@ enum GlyphKind {
             let tick = index.isMultiple(of: 2) ? body.height * 0.55 : body.height * 0.32
             path.move(to: CGPoint(x: x, y: body.minY))
             path.addLine(to: CGPoint(x: x, y: body.minY + tick))
+        }
+        return path
+    }
+
+    private static func divider(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.2))
+        path.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.2))
+        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.2))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.maxY - r.height * 0.2))
+        path.move(to: CGPoint(x: r.midX, y: r.midY))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        let zig = resistor(CGRect(x: r.minX + r.width * 0.12, y: r.minY, width: r.width * 0.35, height: r.height * 0.4))
+        path.addPath(zig)
+        return path
+    }
+
+    private static func colorBands(_ r: CGRect) -> Path {
+        var path = Path()
+        let body = CGRect(x: r.minX + r.width * 0.08, y: r.midY - r.height * 0.22, width: r.width * 0.84, height: r.height * 0.44)
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: body.height * 0.45, height: body.height * 0.45))
+        for index in 0..<4 {
+            let x = body.minX + body.width * (0.22 + 0.14 * CGFloat(index))
+            path.move(to: CGPoint(x: x, y: body.minY + 2))
+            path.addLine(to: CGPoint(x: x, y: body.maxY - 2))
+        }
+        return path
+    }
+
+    private static func phasor(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX, y: r.midY))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        path.move(to: CGPoint(x: r.midX, y: r.maxY))
+        path.addLine(to: CGPoint(x: r.midX, y: r.minY))
+        path.move(to: CGPoint(x: r.midX, y: r.midY))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.minY + r.height * 0.22))
+        return path
+    }
+
+    private static func powerTriangle(_ r: CGRect) -> Path {
+        var path = Path()
+        let origin = CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.12)
+        let p = CGPoint(x: r.maxX - r.width * 0.12, y: origin.y)
+        let tip = CGPoint(x: p.x, y: r.minY + r.height * 0.12)
+        path.move(to: origin)
+        path.addLine(to: p)
+        path.addLine(to: tip)
+        path.closeSubpath()
+        return path
+    }
+
+    private static func timerIC(_ r: CGRect) -> Path {
+        var path = Path()
+        let body = r.insetBy(dx: r.width * 0.12, dy: r.height * 0.18)
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: 4, height: 4))
+        for index in 0..<3 {
+            let y = body.minY + body.height * (0.25 + 0.25 * CGFloat(index))
+            path.move(to: CGPoint(x: r.minX, y: y))
+            path.addLine(to: CGPoint(x: body.minX, y: y))
+            path.move(to: CGPoint(x: body.maxX, y: y))
+            path.addLine(to: CGPoint(x: r.maxX, y: y))
+        }
+        return path
+    }
+
+    private static func ampacity(_ r: CGRect) -> Path {
+        var path = Path()
+        path.addEllipse(in: r.insetBy(dx: r.width * 0.18, dy: r.height * 0.18))
+        path.addEllipse(in: r.insetBy(dx: r.width * 0.32, dy: r.height * 0.32))
+        path.move(to: CGPoint(x: r.midX, y: r.minY))
+        path.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.18))
+        return path
+    }
+
+    private static func crossSection(_ r: CGRect) -> Path {
+        var path = Path()
+        let outer = r.insetBy(dx: r.width * 0.12, dy: r.height * 0.12)
+        path.addEllipse(in: outer)
+        path.move(to: CGPoint(x: outer.minX, y: r.midY))
+        path.addLine(to: CGPoint(x: outer.maxX, y: r.midY))
+        path.move(to: CGPoint(x: outer.minX - 2, y: r.midY - 4))
+        path.addLine(to: CGPoint(x: outer.minX, y: r.midY))
+        path.addLine(to: CGPoint(x: outer.minX - 2, y: r.midY + 4))
+        path.move(to: CGPoint(x: outer.maxX + 2, y: r.midY - 4))
+        path.addLine(to: CGPoint(x: outer.maxX, y: r.midY))
+        path.addLine(to: CGPoint(x: outer.maxX + 2, y: r.midY + 4))
+        return path
+    }
+
+    private static func voltageDrop(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.25))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.maxY - r.height * 0.2))
+        path.move(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.25))
+        path.addLine(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.15))
+        path.move(to: CGPoint(x: r.maxX, y: r.maxY - r.height * 0.2))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.maxY - r.height * 0.15))
+        return path
+    }
+
+    private static func modbus(_ r: CGRect) -> Path {
+        var path = Path()
+        for index in 0..<3 {
+            let y = r.minY + r.height * (0.18 + 0.28 * CGFloat(index))
+            let box = CGRect(x: r.minX + r.width * 0.12, y: y, width: r.width * 0.76, height: r.height * 0.2)
+            path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
         }
         return path
     }

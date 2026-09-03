@@ -35,9 +35,31 @@ struct SignalScalingView: View {
     @StoredInput(.signalScaling, "euMin", default: "0") private var euMin
     @StoredInput(.signalScaling, "euMax", default: "150") private var euMax
     @StoredInput(.signalScaling, "jobName", default: "Signal scaling") private var jobName
+    @State private var session = ExplicitCalculationSession<SignalScalingResult>()
+    @State private var successTick = 0
+
+    private var fingerprint: String {
+        "\(direction.rawValue)|\(curve.rawValue)|\(detectLiveZeroFault)|\(value)|\(rawMin)|\(rawMax)|\(euMin)|\(euMax)"
+    }
+    private var display: ExplicitCalculationSession<SignalScalingResult>.Display {
+        session.display(for: fingerprint)
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .signalScaling, stickyAnswer: sticky, copyText: sticky) {
+        ToolScaffold(
+            toolID: .signalScaling,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .signalScaling,
                 symbolic: curve == .squareRoot
@@ -84,8 +106,8 @@ struct SignalScalingView: View {
             NumberField(title: "EU max", unit: "EU", text: $euMax)
             Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
 
-            switch result {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 if r.isLiveZeroFault {
                     ToolEmptyState(
                         title: "Below live zero",
@@ -98,6 +120,20 @@ struct SignalScalingView: View {
                     ResultRow(label: "Raw", value: Format.number(r.rawValue, digits: 4), emphasis: true)
                     ResultRow(label: "Percent of span", value: Format.percent(r.percentOfSpan))
                 }
+                if let rawLo = rawMin.parsedDouble,
+                   let rawHi = rawMax.parsedDouble,
+                   let engLo = euMin.parsedDouble,
+                   let engHi = euMax.parsedDouble {
+                    SignalTransferCurveView(
+                        rawMin: rawLo,
+                        rawMax: rawHi,
+                        euMin: engLo,
+                        euMax: engHi,
+                        raw: r.rawValue,
+                        engineering: r.engineeringValue,
+                        squareRoot: curve == .squareRoot
+                    )
+                }
                 SaveJobBar(jobName: $jobName, canSave: true) {
                     jobs.save(SavedJob(
                         name: jobName,
@@ -106,14 +142,25 @@ struct SignalScalingView: View {
                         outputs: ["EU": Format.number(r.engineeringValue, digits: 4), "raw": Format.number(r.rawValue, digits: 4)]
                     ))
                 }
-            case .failure(let error):
-                ErrorText(message: error.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter signal and spans",
+                    detail: "Set raw/EU ranges and the input value, then Calculate.",
+                    systemImage: "waveform.path.ecg"
+                )
+            case .failed:
+                EmptyView()
             }
         }
     }
 
-    private var result: Result<SignalScalingResult, CalcError> {
-        CalcCatch.run {
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
             if direction == .toEngineering {
                 return try SignalScaling.toEngineering(
                     raw: value.parsedDouble ?? .nan,
@@ -134,18 +181,37 @@ struct SignalScalingView: View {
                 curve: curve
             )
         }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        direction = .toEngineering
+        curve = .linear
+        detectLiveZeroFault = true
+        value = ""
+        rawMin = "4"
+        rawMax = "20"
+        euMin = "0"
+        euMax = "150"
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard case .current(let r) = display else { return nil }
         return "\(Format.number(r.rawValue, digits: 3)) raw  →  \(Format.number(r.engineeringValue, digits: 3)) EU  (\(Format.number(r.percentOfSpan, digits: 1)) %)"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
-        return direction == .toEngineering
-            ? "\(Format.number(r.engineeringValue, digits: 3)) EU"
-            : "\(Format.number(r.rawValue, digits: 3)) raw"
+        switch display {
+        case .current(let r), .stale(let r):
+            return direction == .toEngineering
+                ? "\(Format.number(r.engineeringValue, digits: 3)) EU"
+                : "\(Format.number(r.rawValue, digits: 3)) raw"
+        default:
+            return nil
+        }
     }
 }
 
@@ -164,6 +230,7 @@ struct ModbusAddressView: View {
     @StoredInput(.modbusAddress, "display", default: "40001") private var display
 
     var body: some View {
+        // LIVE tool — dock defaults to EmptyView via ToolScaffold extension.
         ToolScaffold(toolID: .modbusAddress, stickyAnswer: sticky, copyText: sticky) {
             ShowWorkCard(
                 toolID: .modbusAddress,
@@ -250,9 +317,31 @@ struct PLCTimerView: View {
     @StoredChoice(.plcTimer, "direction", default: Direction.toPreset) private var direction
     @StoredInput(.plcTimer, "seconds", default: "5") private var seconds
     @StoredInput(.plcTimer, "preset", default: "500") private var preset
+    @State private var session = ExplicitCalculationSession<TimerPresetResult>()
+    @State private var successTick = 0
+
+    private var fingerprint: String {
+        "\(base.rawValue)|\(direction.rawValue)|\(seconds)|\(preset)"
+    }
+    private var display: ExplicitCalculationSession<TimerPresetResult>.Display {
+        session.display(for: fingerprint)
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .plcTimer, stickyAnswer: sticky, copyText: sticky) {
+        ToolScaffold(
+            toolID: .plcTimer,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .plcTimer,
                 symbolic: "preset = round(time / timebase)    actual = preset × timebase",
@@ -267,8 +356,8 @@ struct PLCTimerView: View {
                 NumberField(title: "Preset", unit: "counts", text: $preset)
             }
 
-            switch result {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Preset", value: "\(r.preset)", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Actual time", value: Format.time(r.actualSeconds), emphasis: true)
@@ -279,14 +368,31 @@ struct PLCTimerView: View {
                     )
                     ResultRow(label: "Timebase", value: base.rawValue)
                 }
-            case .failure(let error):
-                ErrorText(message: error.message)
+                TimerTraceView(
+                    preset: r.preset,
+                    actualSeconds: r.actualSeconds,
+                    targetSeconds: r.actualSeconds - r.errorSeconds,
+                    timebaseSeconds: r.timebaseSeconds
+                )
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter time or preset",
+                    detail: "Pick a timebase and direction, then Calculate.",
+                    systemImage: "timer"
+                )
+            case .failed:
+                EmptyView()
             }
         }
     }
 
-    private var result: Result<TimerPresetResult, CalcError> {
-        CalcCatch.run {
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
             if direction == .toPreset {
                 return try PLCTimer.preset(
                     seconds: seconds.parsedDouble ?? .nan,
@@ -300,15 +406,30 @@ struct PLCTimerView: View {
             }
             return try PLCTimer.seconds(preset: preset, timebaseSeconds: base.seconds)
         }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        base = .tenMillisecond
+        direction = .toPreset
+        seconds = ""
+        preset = ""
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard case .current(let r) = display else { return nil }
         return "\(r.preset) × \(base.rawValue) = \(Format.time(r.actualSeconds))"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
-        return "preset \(r.preset)  ·  \(Format.time(r.actualSeconds))"
+        switch display {
+        case .current(let r), .stale(let r):
+            return "preset \(r.preset)  ·  \(Format.time(r.actualSeconds))"
+        default:
+            return nil
+        }
     }
 }

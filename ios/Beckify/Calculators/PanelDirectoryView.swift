@@ -13,10 +13,7 @@ struct PanelDirectoryView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var isRecognizing = false
     @State private var recognizeError: String?
-
-    private var circuits: [PanelCircuit] {
-        PanelDirectory.parse(text)
-    }
+    @State private var circuits: [PanelCircuit] = []
 
     private var tsv: String {
         guard !circuits.isEmpty else { return "" }
@@ -134,6 +131,12 @@ struct PanelDirectoryView: View {
                 }
             }
         }
+        .onChange(of: text) { _, newValue in
+            circuits = PanelDirectory.parse(newValue)
+        }
+        .onAppear {
+            circuits = PanelDirectory.parse(text)
+        }
     }
 
     @ViewBuilder
@@ -169,9 +172,12 @@ struct PanelDirectoryView: View {
     }
 
     private func accessibilityLabel(for row: PanelCircuit) -> String {
-        var parts = ["Circuit \(row.circuit)", row.name]
+        var parts = ["Circuit \(row.circuit)"]
+        if !row.name.isEmpty { parts.append(row.name) }
         if !row.trip.isEmpty { parts.append(row.trip) }
-        if !row.poles.isEmpty { parts.append("\(row.poles) pole") }
+        if !row.poles.isEmpty {
+            parts.append(row.poles == "1" ? "1 pole" : "\(row.poles) poles")
+        }
         return parts.joined(separator: ", ")
     }
 

@@ -2,46 +2,74 @@ import SwiftUI
 import UIKit
 import BeckifyMath
 
+/// Beckify instrument design tokens — semantic color, type, space, and motion.
+/// Light and dark appearances track the system. Calculator work surfaces stay
+/// calm; atmospheric brand treatment is reserved for home chrome and empty states.
 enum Theme {
     /// Minimum comfortable thumb target (Apple HIG).
     static let touchTarget: CGFloat = 44
 
+    // MARK: - Surfaces
+
     static let background = Color.adaptive(
-        light: UIColor(red: 244 / 255, green: 245 / 255, blue: 252 / 255, alpha: 1),
-        dark: UIColor(red: 5 / 255, green: 6 / 255, blue: 15 / 255, alpha: 1)
+        light: UIColor(red: 242 / 255, green: 244 / 255, blue: 248 / 255, alpha: 1),
+        dark: UIColor(red: 8 / 255, green: 10 / 255, blue: 16 / 255, alpha: 1)
     )
     static let surface = Color.adaptive(
         light: UIColor(red: 255 / 255, green: 255 / 255, blue: 255 / 255, alpha: 1),
-        dark: UIColor.white.withAlphaComponent(0.035)
+        dark: UIColor(red: 18 / 255, green: 20 / 255, blue: 28 / 255, alpha: 1)
     )
     static let surfaceRaised = Color.adaptive(
-        light: UIColor(red: 236 / 255, green: 237 / 255, blue: 246 / 255, alpha: 1),
-        dark: UIColor.white.withAlphaComponent(0.065)
+        light: UIColor(red: 232 / 255, green: 235 / 255, blue: 242 / 255, alpha: 1),
+        dark: UIColor(red: 28 / 255, green: 31 / 255, blue: 42 / 255, alpha: 1)
+    )
+    static let surfaceInset = Color.adaptive(
+        light: UIColor(red: 225 / 255, green: 229 / 255, blue: 238 / 255, alpha: 1),
+        dark: UIColor(red: 12 / 255, green: 14 / 255, blue: 22 / 255, alpha: 1)
     )
     static let foreground = Color.adaptive(
-        light: UIColor(red: 22 / 255, green: 24 / 255, blue: 38 / 255, alpha: 1),
-        dark: UIColor(red: 238 / 255, green: 240 / 255, blue: 250 / 255, alpha: 1)
+        light: UIColor(red: 18 / 255, green: 22 / 255, blue: 32 / 255, alpha: 1),
+        dark: UIColor(red: 236 / 255, green: 240 / 255, blue: 248 / 255, alpha: 1)
     )
     static let muted = Color.adaptive(
-        light: UIColor(red: 86 / 255, green: 88 / 255, blue: 116 / 255, alpha: 1),
-        dark: UIColor(red: 148 / 255, green: 151 / 255, blue: 184 / 255, alpha: 1)
+        light: UIColor(red: 78 / 255, green: 86 / 255, blue: 104 / 255, alpha: 1),
+        dark: UIColor(red: 148 / 255, green: 156 / 255, blue: 176 / 255, alpha: 1)
     )
     static let border = Color.adaptive(
-        light: UIColor.black.withAlphaComponent(0.12),
-        dark: UIColor.white.withAlphaComponent(0.09)
+        light: UIColor.black.withAlphaComponent(0.10),
+        dark: UIColor.white.withAlphaComponent(0.10)
     )
+    static let borderStrong = Color.adaptive(
+        light: UIColor.black.withAlphaComponent(0.18),
+        dark: UIColor.white.withAlphaComponent(0.18)
+    )
+    static let gridLine = Color.adaptive(
+        light: UIColor(red: 36 / 255, green: 94 / 255, blue: 168 / 255, alpha: 0.10),
+        dark: UIColor(red: 94 / 255, green: 168 / 255, blue: 220 / 255, alpha: 0.12)
+    )
+
+    // MARK: - Brand / status
+
+    /// Primary instrument accent — Beckify teal-blue (not template purple).
     static let accent = Color.adaptive(
-        light: UIColor(red: 92 / 255, green: 74 / 255, blue: 214 / 255, alpha: 1),
-        dark: UIColor(red: 139 / 255, green: 123 / 255, blue: 255 / 255, alpha: 1)
+        light: UIColor(red: 18 / 255, green: 112 / 255, blue: 168 / 255, alpha: 1),
+        dark: UIColor(red: 72 / 255, green: 176 / 255, blue: 232 / 255, alpha: 1)
     )
     static let accent2 = Color.adaptive(
-        light: UIColor(red: 36 / 255, green: 94 / 255, blue: 204 / 255, alpha: 1),
-        dark: UIColor(red: 79 / 255, green: 139 / 255, blue: 255 / 255, alpha: 1)
+        light: UIColor(red: 12 / 255, green: 148 / 255, blue: 136 / 255, alpha: 1),
+        dark: UIColor(red: 64 / 255, green: 212 / 255, blue: 196 / 255, alpha: 1)
     )
+    /// Copper conductor highlight for energized cues.
+    static let copper = Color.adaptive(
+        light: UIColor(red: 176 / 255, green: 104 / 255, blue: 48 / 255, alpha: 1),
+        dark: UIColor(red: 232 / 255, green: 156 / 255, blue: 88 / 255, alpha: 1)
+    )
+    static let energized = copper
     static let good = Color.adaptive(
         light: UIColor(red: 8 / 255, green: 132 / 255, blue: 94 / 255, alpha: 1),
         dark: UIColor(red: 110 / 255, green: 231 / 255, blue: 183 / 255, alpha: 1)
     )
+    static let safe = good
     static let warn = Color.adaptive(
         light: UIColor(red: 171 / 255, green: 112 / 255, blue: 8 / 255, alpha: 1),
         dark: UIColor(red: 245 / 255, green: 196 / 255, blue: 81 / 255, alpha: 1)
@@ -50,23 +78,88 @@ enum Theme {
         light: UIColor(red: 188 / 255, green: 38 / 255, blue: 64 / 255, alpha: 1),
         dark: UIColor(red: 251 / 255, green: 113 / 255, blue: 133 / 255, alpha: 1)
     )
+    static let fault = bad
 
     static let disclaimer = "Design aid only — not a PE stamp, permit, or substitute for the NEC or a qualified engineer."
     static let sensorDisclaimer = "Not a calibrated instrument. Not a legal sound-level meter, survey, compass, or PE stamp. For field notes and homework only. Readings stay on this device unless you save a numeric snapshot."
 
-    /// Nebula violet → blue, matching the beckify.com brand gradient.
     static let brandGradient = LinearGradient(
         colors: [accent, accent2],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    /// Soft tinted fill for icon badges, echoing the site's glowing accent chips.
     static let iconGradient = LinearGradient(
-        colors: [accent.opacity(0.32), accent2.opacity(0.18)],
+        colors: [accent.opacity(0.28), accent2.opacity(0.14), copper.opacity(0.10)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
+
+    static let panelGradient = LinearGradient(
+        colors: [
+            Color.adaptive(
+                light: UIColor(red: 18 / 255, green: 28 / 255, blue: 42 / 255, alpha: 1),
+                dark: UIColor(red: 10 / 255, green: 14 / 255, blue: 22 / 255, alpha: 1)
+            ),
+            Color.adaptive(
+                light: UIColor(red: 28 / 255, green: 48 / 255, blue: 68 / 255, alpha: 1),
+                dark: UIColor(red: 16 / 255, green: 24 / 255, blue: 36 / 255, alpha: 1)
+            ),
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    // MARK: - Space / radius / stroke
+
+    enum Space {
+        static let xxs: CGFloat = 4
+        static let xs: CGFloat = 8
+        static let sm: CGFloat = 12
+        static let md: CGFloat = 16
+        static let lg: CGFloat = 20
+        static let xl: CGFloat = 28
+        static let xxl: CGFloat = 36
+    }
+
+    enum Radius {
+        static let control: CGFloat = 10
+        static let card: CGFloat = 14
+        static let panel: CGFloat = 18
+        static let tile: CGFloat = 16
+    }
+
+    enum Stroke {
+        static let hairline: CGFloat = 1
+        static let emphasis: CGFloat = 1.5
+        static let diagram: CGFloat = 2
+    }
+
+    // MARK: - Type roles
+
+    enum TypeRole {
+        static let display = Font.system(.largeTitle, design: .default).weight(.bold)
+        static let title = Font.system(.title2, design: .default).weight(.semibold)
+        static let headline = Font.system(.headline, design: .default)
+        static let body = Font.system(.body, design: .default)
+        static let label = Font.system(.caption, design: .default).weight(.semibold)
+        static let help = Font.system(.caption2, design: .default)
+        static let numeric = Font.system(.title3, design: .default).monospacedDigit().weight(.semibold)
+        static let numericBody = Font.system(.body, design: .default).monospacedDigit()
+        static let formula = Font.system(.body, design: .monospaced)
+    }
+
+    // MARK: - Motion
+
+    enum Motion {
+        static let result: Animation = .snappy(duration: 0.28)
+        static let chrome: Animation = .easeInOut(duration: 0.22)
+        static let subtle: Animation = .easeOut(duration: 0.18)
+
+        static func preferred(_ animation: Animation, reduceMotion: Bool) -> Animation? {
+            reduceMotion ? nil : animation
+        }
+    }
 }
 
 extension Color {
@@ -79,10 +172,47 @@ extension Color {
 }
 
 extension View {
-    /// The site's card-hover glow — a soft violet shadow — applied statically
-    /// to brand-forward surfaces (formula/show-work cards) instead of on hover.
-    func brandGlow(radius: CGFloat = 16, opacity: Double = 0.22) -> some View {
-        shadow(color: Theme.accent.opacity(opacity), radius: radius, x: 0, y: 6)
+    /// Soft brand glow for home tiles and show-work cards — keep opacity low
+    /// so field daylight readability stays intact.
+    func brandGlow(radius: CGFloat = 14, opacity: Double = 0.16) -> some View {
+        shadow(color: Theme.accent.opacity(opacity), radius: radius, x: 0, y: 5)
+    }
+
+    func instrumentPanelBackground() -> some View {
+        background {
+            ZStack {
+                Theme.background
+                BlueprintGrid()
+                    .opacity(0.55)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .ignoresSafeArea()
+        }
+    }
+}
+
+/// Subtle drafting grid for atmospheric surfaces (home header / empty states).
+struct BlueprintGrid: View {
+    var spacing: CGFloat = 24
+
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            var x: CGFloat = 0
+            while x <= size.width {
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x, y: size.height))
+                x += spacing
+            }
+            var y: CGFloat = 0
+            while y <= size.height {
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+                y += spacing
+            }
+            context.stroke(path, with: .color(Theme.gridLine), lineWidth: 0.5)
+        }
     }
 }
 

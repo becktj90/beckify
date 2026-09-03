@@ -33,6 +33,11 @@ struct Timer555View: View {
         }
     }
 
+    private enum Output: Equatable, Sendable {
+        case astable(Astable555Result)
+        case monostable(Monostable555Result)
+    }
+
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.timer555, "mode", default: Mode.astable) private var mode
     @StoredInput(.timer555, "r1", default: "10") private var r1
@@ -42,9 +47,35 @@ struct Timer555View: View {
     @StoredChoice(.timer555, "cUnit", default: CUnit.uF) private var cUnit
     @StoredToggle(.timer555, "diode", default: false) private var diode
     @StoredInput(.timer555, "jobName", default: "555 timer") private var jobName
+    @State private var session = ExplicitCalculationSession<Output>()
+    @State private var successTick = 0
+
+    private var ohms1: Double { (r1.parsedDouble ?? .nan) * rUnit.factor }
+    private var ohms2: Double { (r2.parsedDouble ?? .nan) * rUnit.factor }
+    private var farads: Double { (c.parsedDouble ?? .nan) * cUnit.factor }
+
+    private var fingerprint: String {
+        "\(mode.rawValue)|\(r1)|\(r2)|\(c)|\(rUnit.rawValue)|\(cUnit.rawValue)|\(diode)"
+    }
+    private var display: ExplicitCalculationSession<Output>.Display {
+        session.display(for: fingerprint)
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .timer555, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .timer555,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             Picker("Mode", selection: $mode) {
                 Text("Astable").tag(Mode.astable)
                 Text("Monostable").tag(Mode.monostable)
@@ -73,7 +104,6 @@ struct Timer555View: View {
                 Toggle("Diode across R2 (sub-50% duty)", isOn: $diode)
                     .tint(Theme.accent)
                     .frame(minHeight: Theme.touchTarget)
-                astableResults
             } else {
                 ShowWorkCard(
                     toolID: .timer555,
@@ -90,9 +120,50 @@ struct Timer555View: View {
                 }
                 unitField("R", text: $r1)
                 capField()
-                monostableResults
+            }
+
+            switch display {
+            case .current(let output), .stale(let output):
+                resultCard(for: output)
+                SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter R and C",
+                    detail: "Set resistance, capacitance, and mode, then Calculate.",
+                    systemImage: "timer"
+                )
+            case .failed:
+                EmptyView()
             }
         }
+    }
+
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            if mode == .astable {
+                return .astable(try Timer555.astable(r1: ohms1, r2: ohms2, capacitance: farads, diodeSteering: diode))
+            }
+            return .monostable(try Timer555.monostable(resistance: ohms1, capacitance: farads))
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        mode = .astable
+        r1 = "10"
+        r2 = "47"
+        c = "0.1"
+        rUnit = .k
+        cUnit = .uF
+        diode = false
     }
 
     private func unitField(_ title: String, text: Binding<String>) -> some View {
@@ -122,9 +193,9 @@ struct Timer555View: View {
     }
 
     @ViewBuilder
-    private var astableResults: some View {
-        switch astable {
-        case .success(let r):
+    private func resultCard(for output: Output) -> some View {
+        switch output {
+        case .astable(let r):
             ResultCard(copyText: copyText) {
                 ResultRow(label: "t high", value: Format.time(r.timeHigh), emphasis: true, tone: Theme.good)
                 ResultRow(label: "t low", value: Format.time(r.timeLow), emphasis: true, tone: Theme.warn)
@@ -132,84 +203,69 @@ struct Timer555View: View {
                 ResultRow(label: "Frequency", value: Format.frequency(r.frequency), emphasis: true)
                 ResultRow(label: "Duty cycle", value: Format.percent(r.dutyPercent))
             }
-            SaveJobBar(jobName: $jobName, canSave: true) {
-                jobs.save(SavedJob(
-                    name: jobName,
-                    toolID: .timer555,
-                    inputs: [
-                        "mode": "astable",
-                        "R1": r1,
-                        "R2": r2,
-                        "C": c,
-                        "R unit": rUnit.rawValue,
-                        "C unit": cUnit.rawValue,
-                        "diode": diode ? "yes" : "no",
-                    ],
-                    outputs: ["f": Format.frequency(r.frequency), "D": Format.percent(r.dutyPercent)]
-                ))
-            }
-        case .failure(let err):
-            ErrorText(message: err.message)
-        }
-    }
-
-    @ViewBuilder
-    private var monostableResults: some View {
-        switch mono {
-        case .success(let r):
+        case .monostable(let r):
             ResultCard(copyText: copyText) {
                 ResultRow(label: "Pulse width", value: Format.time(r.pulseWidth), emphasis: true, tone: Theme.good)
                 ResultRow(label: "Max retrigger", value: Format.frequency(r.maxRetriggerHz))
             }
-            SaveJobBar(jobName: $jobName, canSave: true) {
-                jobs.save(SavedJob(
-                    name: jobName,
-                    toolID: .timer555,
-                    inputs: [
-                        "mode": "monostable",
-                        "R": r1,
-                        "C": c,
-                        "R unit": rUnit.rawValue,
-                        "C unit": cUnit.rawValue,
-                    ],
-                    outputs: ["t": Format.time(r.pulseWidth)]
-                ))
-            }
-        case .failure(let err):
-            ErrorText(message: err.message)
         }
     }
 
-    private var ohms1: Double { (r1.parsedDouble ?? .nan) * rUnit.factor }
-    private var ohms2: Double { (r2.parsedDouble ?? .nan) * rUnit.factor }
-    private var farads: Double { (c.parsedDouble ?? .nan) * cUnit.factor }
-
-    private var astable: Result<Astable555Result, CalcError> {
-        CalcCatch.run { try Timer555.astable(r1: ohms1, r2: ohms2, capacitance: farads, diodeSteering: diode) }
-    }
-
-    private var mono: Result<Monostable555Result, CalcError> {
-        CalcCatch.run { try Timer555.monostable(resistance: ohms1, capacitance: farads) }
+    private func save(_ output: Output) {
+        switch output {
+        case .astable(let r):
+            jobs.save(SavedJob(
+                name: jobName,
+                toolID: .timer555,
+                inputs: [
+                    "mode": "astable",
+                    "R1": r1,
+                    "R2": r2,
+                    "C": c,
+                    "R unit": rUnit.rawValue,
+                    "C unit": cUnit.rawValue,
+                    "diode": diode ? "yes" : "no",
+                ],
+                outputs: ["f": Format.frequency(r.frequency), "D": Format.percent(r.dutyPercent)]
+            ))
+        case .monostable(let r):
+            jobs.save(SavedJob(
+                name: jobName,
+                toolID: .timer555,
+                inputs: [
+                    "mode": "monostable",
+                    "R": r1,
+                    "C": c,
+                    "R unit": rUnit.rawValue,
+                    "C unit": cUnit.rawValue,
+                ],
+                outputs: ["t": Format.time(r.pulseWidth)]
+            ))
+        }
     }
 
     private var substituted: String? {
-        if mode == .astable, case .success(let r) = astable {
+        guard case .current(let output) = display else { return nil }
+        switch output {
+        case .astable(let r):
             return "\(r.formula)  →  f = \(Format.frequency(r.frequency)), duty \(Format.percent(r.dutyPercent))"
-        }
-        if mode == .monostable, case .success(let r) = mono {
+        case .monostable(let r):
             return "\(r.formula)  →  t = \(Format.time(r.pulseWidth))"
         }
-        return nil
     }
 
     private var sticky: String? {
-        if mode == .astable, case .success(let r) = astable {
-            return "\(Format.frequency(r.frequency))  ·  \(Format.percent(r.dutyPercent)) duty"
+        switch display {
+        case .current(let output), .stale(let output):
+            switch output {
+            case .astable(let r):
+                return "\(Format.frequency(r.frequency))  ·  \(Format.percent(r.dutyPercent)) duty"
+            case .monostable(let r):
+                return Format.time(r.pulseWidth)
+            }
+        default:
+            return nil
         }
-        if mode == .monostable, case .success(let r) = mono {
-            return Format.time(r.pulseWidth)
-        }
-        return nil
     }
 
     private var copyText: String? { sticky }

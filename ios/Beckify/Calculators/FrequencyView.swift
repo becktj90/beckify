@@ -18,20 +18,31 @@ struct FrequencyView: View {
     @StoredInput(.frequencyWave, "inductance", default: "0.0001") private var inductance
     @StoredInput(.frequencyWave, "capacitance", default: "1e-10") private var capacitance
     @StoredInput(.frequencyWave, "jobName", default: "Frequency") private var jobName
+    @State private var session = ExplicitCalculationSession<FrequencyResult>()
+    @State private var successTick = 0
 
-    var result: Result<FrequencyResult, CalcError> {
-        CalcCatch.run {
-            switch mode {
-            case .freq: return try Wave.fromFrequency(frequency.parsedDouble ?? .nan)
-            case .period: return try Wave.fromPeriod(period.parsedDouble ?? .nan)
-            case .wavelength: return try Wave.fromWavelength(wavelength.parsedDouble ?? .nan)
-            case .lc: return try Wave.lcResonance(inductance: inductance.parsedDouble ?? .nan, capacitance: capacitance.parsedDouble ?? .nan)
-            }
-        }
+    private var fingerprint: String {
+        "\(mode.rawValue)|\(frequency)|\(period)|\(wavelength)|\(inductance)|\(capacitance)"
+    }
+    private var display: ExplicitCalculationSession<FrequencyResult>.Display {
+        session.display(for: fingerprint)
     }
 
     var body: some View {
-        ToolScaffold(toolID: .frequencyWave, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .frequencyWave,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .frequencyWave,
                 symbolic: mode == .lc ? "f = 1 / (2π √(LC))" : "T = 1/f    λ = c/f    c = 2.99792458×10⁸ m/s",
@@ -53,18 +64,53 @@ struct FrequencyView: View {
                 NumberField(title: "L", unit: "H", text: $inductance, allowsScientific: true)
                 NumberField(title: "C", unit: "F", text: $capacitance, allowsScientific: true)
             }
-            switch result {
-            case .success(let r):
+            switch display {
+            case .current(let r), .stale(let r):
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Frequency", value: Format.frequency(r.frequency), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Period", value: Format.time(r.period), emphasis: true)
                     ResultRow(label: "Wavelength", value: Format.meters(r.wavelength))
                 }
                 SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter a known value",
+                    detail: "Choose f, T, λ, or LC, then Calculate.",
+                    systemImage: "waveform"
+                )
+            case .failed:
+                EmptyView()
             }
         }
+    }
+
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            switch mode {
+            case .freq: return try Wave.fromFrequency(frequency.parsedDouble ?? .nan)
+            case .period: return try Wave.fromPeriod(period.parsedDouble ?? .nan)
+            case .wavelength: return try Wave.fromWavelength(wavelength.parsedDouble ?? .nan)
+            case .lc: return try Wave.lcResonance(inductance: inductance.parsedDouble ?? .nan, capacitance: capacitance.parsedDouble ?? .nan)
+            }
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        mode = .freq
+        frequency = "1000000"
+        period = "1e-6"
+        wavelength = "300"
+        inductance = "0.0001"
+        capacitance = "1e-10"
     }
 
     private func applyExample() {
@@ -82,7 +128,7 @@ struct FrequencyView: View {
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard case .current(let r) = display else { return nil }
         if mode == .lc {
             return "f = 1 / (2π √(\(inductance) × \(capacitance))) = \(Format.frequency(r.frequency))"
         }
@@ -90,8 +136,12 @@ struct FrequencyView: View {
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
-        return "\(Format.frequency(r.frequency))  ·  \(Format.time(r.period))"
+        switch display {
+        case .current(let r), .stale(let r):
+            return "\(Format.frequency(r.frequency))  ·  \(Format.time(r.period))"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }

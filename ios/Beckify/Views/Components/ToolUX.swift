@@ -19,35 +19,38 @@ enum ToolDisclaimer {
     case none
 }
 
-/// Shared chrome for every calculator and sensor: scroll, 44pt sticky answer, copy, related tools.
-struct ToolScaffold<Content: View>: View {
+/// Shared chrome for every calculator and sensor: scroll, tool identity, docked
+/// answer / Calculate controls, related tools, and disclaimer.
+struct ToolScaffold<Content: View, Dock: View>: View {
     let toolID: ToolID
     var stickyAnswer: String? = nil
     var copyText: String? = nil
     var disclaimer: ToolDisclaimer = .designAid
+    @ViewBuilder var dock: () -> Dock
     @ViewBuilder var content: Content
 
     @EnvironmentObject private var favorites: FavoritesStore
+    @EnvironmentObject private var recents: RecentsStore
     private var tool: ToolDefinition { ToolboxCatalog.tool(toolID) }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: Theme.Space.md) {
+                ToolIdentityHeader(tool: tool)
                 content
                 RelatedToolsSection(current: toolID)
                 disclaimerView
             }
-            .padding(20)
+            .padding(Theme.Space.lg)
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle(tool.title)
         .navigationBarTitleDisplayMode(.inline)
-        .background(Theme.background.ignoresSafeArea())
+        .instrumentPanelBackground()
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let stickyAnswer, !stickyAnswer.isEmpty {
-                StickyAnswerBar(answer: stickyAnswer, copyText: copyText)
-            }
+            ToolDock(stickyAnswer: stickyAnswer, copyText: copyText, accessory: dock)
         }
+        .onAppear { recents.record(toolID) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
@@ -74,6 +77,67 @@ struct ToolScaffold<Content: View>: View {
         case .none:
             EmptyView()
         }
+    }
+}
+
+extension ToolScaffold where Dock == EmptyView {
+    init(
+        toolID: ToolID,
+        stickyAnswer: String? = nil,
+        copyText: String? = nil,
+        disclaimer: ToolDisclaimer = .designAid,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.toolID = toolID
+        self.stickyAnswer = stickyAnswer
+        self.copyText = copyText
+        self.disclaimer = disclaimer
+        self.dock = { EmptyView() }
+        self.content = content()
+    }
+}
+
+struct ToolIdentityHeader: View {
+    let tool: ToolDefinition
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Theme.Space.sm) {
+            ToolGlyphBadge(kind: GlyphKind.forTool(tool.id), size: 52)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(tool.title)
+                    .font(Theme.TypeRole.headline)
+                    .foregroundStyle(Theme.foreground)
+                Text(tool.subtitle)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(tool.calculationMode == .live ? "Live result" : "Calculate to commit")
+                    .font(.caption2.weight(.semibold))
+                    .tracking(0.4)
+                    .foregroundStyle(tool.calculationMode == .live ? Theme.accent2 : Theme.copper)
+                    .accessibilityLabel(tool.calculationMode == .live ? "Live calculation mode" : "Explicit calculate mode")
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct ToolGlyphBadge: View {
+    let kind: GlyphKind
+    var size: CGFloat = 44
+    var selected: Bool = true
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+            .fill(selected ? Theme.iconGradient : Theme.surfaceRaised)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                    .stroke(selected ? Theme.accent.opacity(0.35) : Theme.border, lineWidth: Theme.Stroke.hairline)
+            )
+            .overlay(ToolGlyph(kind: kind, size: size * 0.62))
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 

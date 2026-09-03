@@ -16,29 +16,31 @@ struct SeriesParallelView: View {
     @StoredInput(.seriesParallel, "v3", default: "") private var v3
     @StoredInput(.seriesParallel, "v4", default: "") private var v4
     @StoredInput(.seriesParallel, "jobName", default: "Series / parallel") private var jobName
+    @State private var session = ExplicitCalculationSession<Double>()
+    @State private var successTick = 0
 
     private var unit: String { part == .resistors ? "Ω" : "F" }
 
-    var result: Result<Double, CalcError> {
-        CalcCatch.run {
-            var values: [Double] = []
-            for (i, raw) in [v1, v2, v3, v4].enumerated() {
-                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-                if trimmed.isEmpty { continue }
-                guard let n = trimmed.parsedDouble else {
-                    throw CalcError.outOfRange("Value \(i + 1) is not a number. Use digits, a decimal, or scientific notation like 1e-6.")
-                }
-                values.append(n)
-            }
-            if part == .resistors {
-                return try SeriesParallel.resistors(values, kind: kind)
-            }
-            return try SeriesParallel.capacitors(values, kind: kind)
-        }
+    private var fingerprint: String { "\(part.rawValue)|\(kind.rawValue)|\(v1)|\(v2)|\(v3)|\(v4)" }
+    private var display: ExplicitCalculationSession<Double>.Display {
+        session.display(for: fingerprint)
     }
 
     var body: some View {
-        ToolScaffold(toolID: .seriesParallel, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .seriesParallel,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            dock: {
+                CalculateActionBar(
+                    isStale: isStale,
+                    errorMessage: session.lastError,
+                    successTick: successTick,
+                    onCalculate: calculate,
+                    onReset: reset
+                )
+            }
+        ) {
             ShowWorkCard(
                 toolID: .seriesParallel,
                 symbolic: symbolic,
@@ -61,19 +63,58 @@ struct SeriesParallelView: View {
             NumberField(title: "Value 2", unit: unit, text: $v2, allowsScientific: true)
             NumberField(title: "Value 3", unit: unit, text: $v3, optional: true, allowsScientific: true)
             NumberField(title: "Value 4", unit: unit, text: $v4, optional: true, allowsScientific: true)
-            switch result {
-            case .success(let eq):
+            switch display {
+            case .current(let eq), .stale(let eq):
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Equivalent", value: "\(Format.number(eq, digits: 4)) \(unit)", emphasis: true, tone: Theme.good)
                 }
                 SaveJobBar(jobName: $jobName, canSave: true) { save(eq) }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            case .idle:
+                ToolEmptyState(
+                    title: "Enter component values",
+                    detail: "Fill at least two values, then Calculate.",
+                    systemImage: "point.3.connected.trianglepath.dotted"
+                )
+            case .failed:
+                EmptyView()
             }
         }
         .onChange(of: part) { _, new in
             applyDefaults(for: new)
         }
+    }
+
+    private var isStale: Bool {
+        if case .stale = display { return true }
+        return false
+    }
+
+    private func calculate() {
+        session.calculate(fingerprint: fingerprint) {
+            var values: [Double] = []
+            for (i, raw) in [v1, v2, v3, v4].enumerated() {
+                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty { continue }
+                guard let n = trimmed.parsedDouble else {
+                    throw CalcError.outOfRange("Value \(i + 1) is not a number. Use digits, a decimal, or scientific notation like 1e-6.")
+                }
+                values.append(n)
+            }
+            if part == .resistors {
+                return try SeriesParallel.resistors(values, kind: kind)
+            }
+            return try SeriesParallel.capacitors(values, kind: kind)
+        }
+        if case .current = session.display(for: fingerprint) {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        session.reset()
+        part = .resistors
+        kind = .series
+        applyDefaults(for: .resistors)
     }
 
     private var symbolic: String {
@@ -84,14 +125,18 @@ struct SeriesParallelView: View {
     }
 
     private var substituted: String? {
-        guard case .success(let eq) = result else { return nil }
+        guard case .current(let eq) = display else { return nil }
         let filled = [v1, v2, v3, v4].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         return "\(filled.joined(separator: kind == .series ? " + " : " ∥ "))  →  \(Format.number(eq, digits: 4)) \(unit)"
     }
 
     private var sticky: String? {
-        guard case .success(let eq) = result else { return nil }
-        return "\(Format.number(eq, digits: 4)) \(unit)"
+        switch display {
+        case .current(let eq), .stale(let eq):
+            return "\(Format.number(eq, digits: 4)) \(unit)"
+        default:
+            return nil
+        }
     }
 
     private var copyText: String? { sticky }

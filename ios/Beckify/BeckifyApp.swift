@@ -4,12 +4,14 @@ import SwiftUI
 struct BeckifyApp: App {
     @StateObject private var jobs = JobStore()
     @StateObject private var favorites = FavoritesStore()
+    @StateObject private var recents = RecentsStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(jobs)
                 .environmentObject(favorites)
+                .environmentObject(recents)
         }
     }
 }
