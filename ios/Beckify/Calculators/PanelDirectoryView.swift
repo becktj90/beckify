@@ -209,7 +209,7 @@ struct PanelDirectoryView: View {
     /// Vision text recognition on a user-selected image. Nothing leaves the device.
     private static func recognizeText(in imageData: Data) async throws -> String {
         guard let image = UIImage(data: imageData)?.cgImage else {
-            throw CalcError.missing("a readable image")
+            throw RecognitionError.unreadableImage
         }
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -234,5 +234,9 @@ struct PanelDirectoryView: View {
                 }
             }
         }
+    }
+
+    private enum RecognitionError: Error {
+        case unreadableImage
     }
 }
