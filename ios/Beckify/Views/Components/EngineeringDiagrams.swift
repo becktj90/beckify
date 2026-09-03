@@ -121,6 +121,7 @@ struct PowerTriangleDiagram: View {
                     .stroke(Theme.accent, lineWidth: 2)
                     .background(
                         Path { path in
+                            guard hasFiniteLegs else { return }
                             path.move(to: origin)
                             path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y))
                             path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y - qLen))
