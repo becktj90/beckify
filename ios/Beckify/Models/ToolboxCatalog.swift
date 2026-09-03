@@ -114,7 +114,7 @@ enum ToolboxCatalog {
             id: .voltageDrop,
             kind: .calculator,
             title: "Voltage Drop",
-            subtitle: "K-factor VD with 3% / 5% notes and ampacity check.",
+            subtitle: "Conductor sizing with K-factor VD, parallels, and ampacity check.",
             symbol: "arrow.down.right.and.arrow.up.left",
             synonyms: ["voltage drop", "vd", "feeder", "branch", "ampacity", "awg", "circular mils", "k-factor"]
         ),
@@ -154,9 +154,9 @@ enum ToolboxCatalog {
             id: .wireAmpacity,
             kind: .calculator,
             title: "Wire Size & Ampacity",
-            subtitle: "NEC Table 310.16, 75 °C column.",
+            subtitle: "310.16 with ambient, CCC, termination cap, and continuous load.",
             symbol: "cable.connector.horizontal",
-            synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor"]
+            synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor", "derating", "310.15"]
         ),
         ToolDefinition(
             id: .receptacleSelector,
