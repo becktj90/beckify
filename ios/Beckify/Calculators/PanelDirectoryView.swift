@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftUI
 import UIKit
+import ImageIO
 import Vision
 import BeckifyMath
 
@@ -13,9 +14,14 @@ struct PanelDirectoryView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var isRecognizing = false
     @State private var recognizeError: String?
+    @State private var session = ExplicitCalculationState<[PanelCircuit]>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { text }
 
     private var circuits: [PanelCircuit] {
-        PanelDirectory.parse(text)
+        session.displayedResult ?? []
     }
 
     private var tsv: String {
@@ -32,7 +38,8 @@ struct PanelDirectoryView: View {
             toolID: .panelDirectory,
             stickyAnswer: sticky,
             copyText: circuits.isEmpty ? nil : tsv,
-            disclaimer: .designAidExtra("OCR and parsing stay on this device. Recognition noise can invent or drop circuits — verify against the sticker.")
+            disclaimer: .designAidExtra("OCR and parsing stay on this device. Recognition noise can invent or drop circuits — verify against the sticker."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .panelDirectory,
@@ -42,14 +49,6 @@ struct PanelDirectoryView: View {
                     : "\(circuits.count) circuit\(circuits.count == 1 ? "" : "s") parsed",
                 meaning: "Directory stickers often stop after the name. Trip and poles are optional. Two-up schedules put odds and evens on one line — the parser splits them."
             )
-
-            TryExampleButton(title: "two-up lighting / receptacles") {
-                text = """
-                1 LIGHTING OFFICE 20A 1P 2 RECEPTACLES 20A 1P
-                3 AHU-1 40A 2P 4 SPARE 20A 1P
-                """
-                recognizeError = nil
-            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("SCHEDULE TEXT")
@@ -87,6 +86,7 @@ struct PanelDirectoryView: View {
                     Button {
                         text = ""
                         recognizeError = nil
+                        session.reset()
                     } label: {
                         Label("Clear", systemImage: "xmark.circle")
                             .frame(minHeight: Theme.touchTarget)
@@ -103,11 +103,39 @@ struct PanelDirectoryView: View {
                 ErrorText(message: recognizeError)
             }
 
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: {
+                    text = ""
+                    recognizeError = nil
+                    session.reset()
+                },
+                onExample: {
+                    text = """
+                    1 LIGHTING OFFICE 20A 1P 2 RECEPTACLES 20A 1P
+                    3 AHU-1 40A 2P 4 SPARE 20A 1P
+                    """
+                    recognizeError = nil
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "two-up lighting / receptacles"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ToolEmptyState(
                     title: "Paste a schedule or pick a photo",
                     detail: "Type or paste OCR text, or choose a panel directory photo. Recognition stays on this device.",
                     systemImage: "list.bullet.rectangle"
+                )
+            } else if session.displayedResult == nil {
+                ToolEmptyState(
+                    title: "Tap Calculate to parse",
+                    detail: "Schedule text is ready. Calculate parses circuit rows without updating on every keystroke.",
+                    systemImage: "play.circle"
                 )
             } else if circuits.isEmpty {
                 ToolEmptyState(
@@ -121,7 +149,8 @@ struct PanelDirectoryView: View {
                         circuitRow(row)
                     }
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .panelDirectory,
@@ -133,6 +162,23 @@ struct PanelDirectoryView: View {
                     ))
                 }
             }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            let parsed = PanelDirectory.parse(text)
+            guard !parsed.isEmpty else {
+                throw CalcError.missing("circuit rows with a number and name")
+            }
+            return parsed
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
         }
     }
 
@@ -182,6 +228,7 @@ struct PanelDirectoryView: View {
 
     @MainActor
     private func recognize(from item: PhotosPickerItem) async {
+        let textBeforeRecognition = text
         isRecognizing = true
         recognizeError = nil
         defer {
@@ -191,26 +238,31 @@ struct PanelDirectoryView: View {
 
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
+                guard text == textBeforeRecognition else { return }
                 recognizeError = "Could not read that photo."
                 return
             }
             let recognized = try await Self.recognizeText(in: data)
+            guard text == textBeforeRecognition else { return }
             let trimmed = recognized.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.isEmpty {
                 recognizeError = "No text found in that photo. Try a sharper, flatter shot of the directory."
                 return
             }
             text = trimmed
+            session.markInputsChanged()
         } catch {
+            guard text == textBeforeRecognition else { return }
             recognizeError = "On-device recognition failed. Paste the text instead."
         }
     }
 
     /// Vision text recognition on a user-selected image. Nothing leaves the device.
     private static func recognizeText(in imageData: Data) async throws -> String {
-        guard let image = UIImage(data: imageData)?.cgImage else {
+        guard let uiImage = UIImage(data: imageData), let cgImage = uiImage.cgImage else {
             throw RecognitionError.unreadableImage
         }
+        let orientation = Self.cgImageOrientation(from: uiImage.imageOrientation)
 
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
@@ -225,7 +277,7 @@ struct PanelDirectoryView: View {
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = false
 
-            let handler = VNImageRequestHandler(cgImage: image, options: [:])
+            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
                     try handler.perform([request])
@@ -233,6 +285,20 @@ struct PanelDirectoryView: View {
                     continuation.resume(throwing: error)
                 }
             }
+        }
+    }
+
+    private static func cgImageOrientation(from orientation: UIImage.Orientation) -> CGImagePropertyOrientation {
+        switch orientation {
+        case .up: return .up
+        case .down: return .down
+        case .left: return .left
+        case .right: return .right
+        case .upMirrored: return .upMirrored
+        case .downMirrored: return .downMirrored
+        case .leftMirrored: return .leftMirrored
+        case .rightMirrored: return .rightMirrored
+        @unknown default: return .up
         }
     }
 

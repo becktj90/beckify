@@ -10,13 +10,25 @@ struct VoltageDropView: View {
     @StoredChoice(.voltageDrop, "material", default: ConductorMaterial.copper) private var material
     @StoredInput(.voltageDrop, "size", default: "4") private var size
     @StoredInput(.voltageDrop, "jobName", default: "Voltage drop") private var jobName
+    @State private var session = ExplicitCalculationState<VoltageDropResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var sizes: [String] {
         NECTables.wireSizeOrder.filter { NECTables.circularMils[$0] != nil }
     }
 
+    private var inputFingerprint: String {
+        "\(system)|\(voltage)|\(current)|\(length)|\(material)|\(size)"
+    }
+
     var body: some View {
-        ToolScaffold(toolID: .voltageDrop, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .voltageDrop,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .voltageDrop,
                 symbolic: "VD = (M × K × I × L) / CM",
@@ -25,14 +37,6 @@ struct VoltageDropView: View {
                 citation: "NEC Chapter 9 Table 9 K-factor. Ampacity cross-check uses Table 310.16, 75 °C.",
                 referenceTool: .wireAmpacity
             )
-            TryExampleButton(title: "480 V 3Ø, 45 A, 250 ft, 4 Cu") {
-                system = .threePhase
-                voltage = "480"
-                current = "45"
-                length = "250"
-                material = .copper
-                size = "4"
-            }
             Picker("System", selection: $system) {
                 ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
@@ -42,13 +46,35 @@ struct VoltageDropView: View {
             }
             .pickerStyle(.segmented)
 
-            NumberField(title: "Supply voltage", unit: "V", text: $voltage)
-            NumberField(title: "Load current", unit: "A", text: $current)
-            NumberField(title: "One-way length", unit: "ft", text: $length)
+            NumberField(title: "Supply voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)
+            NumberField(title: "Load current", unit: "A", text: $current, fieldID: "current", onSubmit: calculate)
+            NumberField(title: "One-way length", unit: "ft", text: $length, fieldID: "length", onSubmit: calculate)
             MenuField(title: "Conductor", selection: $size, options: sizes, label: NECTables.wireLabel)
 
-            switch calc {
-            case .success(let r):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    system = .threePhase
+                    voltage = "480"
+                    current = "45"
+                    length = "250"
+                    material = .copper
+                    size = "4"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "480 V 3Ø, 45 A, 250 ft, 4 Cu"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                if let diagram = VoltageDropDiagram.model(from: r) {
+                    diagram
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Voltage drop", value: Format.volts(r.dropVolts), emphasis: true)
                     ResultRow(label: "Drop", value: Format.percent(r.dropPercent), emphasis: true)
@@ -71,7 +97,8 @@ struct VoltageDropView: View {
                         )
                     }
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .voltageDrop,
@@ -79,31 +106,16 @@ struct VoltageDropView: View {
                         outputs: ["VD": Format.volts(r.dropVolts), "%": Format.percent(r.dropPercent)]
                     ))
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
     }
 
-    private var substituted: String? {
-        guard case .success(let r) = calc else { return nil }
-        let m = system == .threePhase ? "√3" : "2"
-        let k = Format.number(material.resistivityK, digits: 1)
-        let i = Format.number(current.parsedDouble ?? .nan, digits: 2)
-        let l = Format.number(length.parsedDouble ?? .nan, digits: 1)
-        let cm = NECTables.circularMils[size].map { Format.number($0, digits: 0) } ?? size
-        return "VD = (\(m) × \(k) × \(i) × \(l)) / \(cm) = \(Format.volts(r.dropVolts))  (\(Format.percent(r.dropPercent)))"
-    }
-
-    private var sticky: String? {
-        guard case .success(let r) = calc else { return nil }
-        return "\(Format.volts(r.dropVolts))  ·  \(Format.percent(r.dropPercent))"
-    }
-
-    private var copyText: String? { sticky }
-
-    private var calc: Result<VoltageDropResult, CalcError> {
-        CalcCatch.run {
+    private func calculate() {
+        session.calculate {
             try VoltageDrop.calculate(
                 system: system,
                 current: current.parsedDouble ?? .nan,
@@ -113,5 +125,28 @@ struct VoltageDropView: View {
                 material: material
             )
         }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
     }
+
+    private func reset() {
+        voltage = ""
+        current = ""
+        length = ""
+        size = "4"
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(r.formula)  →  \(Format.volts(r.dropVolts))  (\(Format.percent(r.dropPercent)))"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.volts(r.dropVolts))  ·  \(Format.percent(r.dropPercent))"
+    }
+
+    private var copyText: String? { sticky }
 }

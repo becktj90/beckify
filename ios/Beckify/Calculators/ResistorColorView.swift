@@ -19,22 +19,14 @@ struct ResistorColorView: View {
     @StoredInput(.resistorColor, "ohms", default: "4700") private var ohms
     @StoredCount(.resistorColor, "encodeBands", default: 4) private var encodeBands
     @StoredInput(.resistorColor, "jobName", default: "Color code") private var jobName
+    @State private var live = LiveCalculationState<ColorCodeResult>()
 
     private var digitBands: [ResistorBand] { ResistorBand.allCases.filter { $0.digit != nil } }
     private var multiplierBands: [ResistorBand] { ResistorBand.allCases.filter { $0.multiplier != nil } }
     private var toleranceBands: [ResistorBand] { ResistorBand.allCases.filter { $0.tolerancePercent != nil } }
 
-    var result: Result<ColorCodeResult, CalcError> {
-        CalcCatch.run {
-            switch mode {
-            case .decode4:
-                return try ResistorColorCode.decode4(d1: d1, d2: d2, multiplier: multiplier, tolerance: tolerance)
-            case .decode5:
-                return try ResistorColorCode.decode5(d1: d1, d2: d2, d3: d3, multiplier: multiplier, tolerance: tolerance)
-            case .encode:
-                return try ResistorColorCode.encode(ohms: ohms.parsedDouble ?? .nan, bands: encodeBands, tolerance: tolerance)
-            }
-        }
+    private var inputFingerprint: String {
+        "\(mode)|\(d1)|\(d2)|\(d3)|\(multiplier)|\(tolerance)|\(ohms)|\(encodeBands)"
     }
 
     var body: some View {
@@ -51,6 +43,7 @@ struct ResistorColorView: View {
                 d2 = .violet
                 multiplier = .red
                 tolerance = .gold
+                live.update { try computeResult() }
             }
             Picker("Mode", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
@@ -73,27 +66,44 @@ struct ResistorColorView: View {
                 MenuField(title: "Multiplier", selection: $multiplier, options: multiplierBands) { $0.displayName }
                 MenuField(title: "Tolerance", selection: $tolerance, options: toleranceBands) { $0.displayName }
             }
-            switch result {
-            case .success(let r):
+
+            if let error = live.error {
+                ErrorText(message: error.message)
+            } else if let r = live.result {
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Resistance", value: "\(Format.number(r.ohms, digits: 4)) Ω", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Tolerance", value: "± \(Format.number(r.tolerancePercent, digits: 2)) %")
                     ResultRow(label: "Bands", value: r.bands.map(\.displayName).joined(separator: " · "))
                 }
                 SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-            case .failure(let err):
-                ErrorText(message: err.message)
             }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            live.update { try computeResult() }
+        }
+        .onAppear {
+            live.update { try computeResult() }
+        }
+    }
+
+    private func computeResult() throws -> ColorCodeResult {
+        switch mode {
+        case .decode4:
+            return try ResistorColorCode.decode4(d1: d1, d2: d2, multiplier: multiplier, tolerance: tolerance)
+        case .decode5:
+            return try ResistorColorCode.decode5(d1: d1, d2: d2, d3: d3, multiplier: multiplier, tolerance: tolerance)
+        case .encode:
+            return try ResistorColorCode.encode(ohms: ohms.parsedDouble ?? .nan, bands: encodeBands, tolerance: tolerance)
         }
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = live.result else { return nil }
         return "\(r.formula)  →  \(Format.number(r.ohms, digits: 4)) Ω ± \(Format.number(r.tolerancePercent, digits: 2)) %"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = live.result else { return nil }
         return "\(Format.number(r.ohms, digits: 4)) Ω  ± \(Format.number(r.tolerancePercent, digits: 2)) %"
     }
 

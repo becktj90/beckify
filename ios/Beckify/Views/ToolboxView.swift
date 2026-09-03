@@ -93,11 +93,12 @@ struct ToolRow: View {
     var body: some View {
         HStack(spacing: 14) {
             HStack(spacing: 14) {
-                Image(systemName: tool.symbol)
-                    .font(.title3)
-                    .foregroundStyle(Theme.accent)
-                    .frame(width: 36, height: 36)
-                    .background(Theme.iconGradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                ToolGlyph(
+                    kind: .forTool(tool.id),
+                    size: 32,
+                    selected: true
+                )
+                .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(tool.title)
                         .font(.headline)
@@ -119,6 +120,7 @@ struct ToolRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityIdentifier("toolRow.\(tool.id.rawValue)")
     }
 }
 

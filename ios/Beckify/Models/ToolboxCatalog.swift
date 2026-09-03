@@ -1,4 +1,5 @@
 import Foundation
+import BeckifyMath
 
 enum ToolID: String, Codable, CaseIterable, Identifiable {
     case ohmsLaw
@@ -61,11 +62,33 @@ struct ToolDefinition: Identifiable {
     var kind: ToolKind
     var title: String
     var subtitle: String
+    /// SF Symbol used only as a fallback / related-row chevron context — primary
+    /// artwork is `ToolGlyph` / `GlyphKind.forTool`.
     var symbol: String
     var synonyms: [String]
+    /// Live converters update on valid input; explicit tools require Calculate.
+    var calculationMode: CalculationMode
 
     var searchBlob: String {
         ([title, subtitle] + synonyms).joined(separator: " ").lowercased()
+    }
+
+    init(
+        id: ToolID,
+        kind: ToolKind,
+        title: String,
+        subtitle: String,
+        symbol: String,
+        synonyms: [String],
+        calculationMode: CalculationMode? = nil
+    ) {
+        self.id = id
+        self.kind = kind
+        self.title = title
+        self.subtitle = subtitle
+        self.symbol = symbol
+        self.synonyms = synonyms
+        self.calculationMode = calculationMode ?? ToolCalculationPolicy.mode(forToolID: id.rawValue)
     }
 }
 

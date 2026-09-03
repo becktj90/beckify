@@ -7,12 +7,16 @@ struct NumberField: View {
     var placeholder: String = "0"
     var optional: Bool = false
     var allowsScientific: Bool = false
+    var errorMessage: String? = nil
+    var helpText: String? = nil
+    var fieldID: String? = nil
+    var onSubmit: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title.uppercased())
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.TypeRole.fieldLabel)
                     .tracking(0.6)
                     .foregroundStyle(Theme.muted)
                 if optional {
@@ -28,8 +32,11 @@ struct NumberField: View {
                     .foregroundStyle(Theme.foreground)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .submitLabel(onSubmit == nil ? .done : .go)
+                    .onSubmit { onSubmit?() }
                     .accessibilityLabel(title)
                     .accessibilityHint(optional ? "Optional. Unit \(unit)." : "Unit \(unit).")
+                    .accessibilityIdentifier(fieldID.map { "numberField.\($0)" } ?? "numberField.\(title)")
                 Text(unit)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.accent)
@@ -38,11 +45,19 @@ struct NumberField: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(minHeight: Theme.touchTarget)
-            .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Theme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                    .stroke(errorMessage == nil ? Theme.border : Theme.bad.opacity(0.7), lineWidth: Theme.Stroke.hairline)
             )
+            if let helpText, errorMessage == nil {
+                Text(helpText)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+            }
+            if let errorMessage {
+                FieldValidationText(message: errorMessage)
+            }
         }
     }
 }

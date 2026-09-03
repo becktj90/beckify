@@ -76,6 +76,20 @@ final class SignalScalingTests: XCTestCase {
         XCTAssertTrue(result.isLiveZeroFault)
     }
 
+    func testSquareRootLiveZeroFaultSurfacesInsteadOfDomainError() throws {
+        let result = try SignalScaling.toEngineering(
+            raw: 2,
+            rawMin: 4,
+            rawMax: 20,
+            engineeringMin: 0,
+            engineeringMax: 100,
+            curve: .squareRoot,
+            detectLiveZeroFault: true
+        )
+        XCTAssertTrue(result.isLiveZeroFault)
+        XCTAssertEqual(result.engineeringValue, 0, accuracy: 1e-9)
+    }
+
     func testPositiveRawRangeIsNotImplicitlyLiveZero() throws {
         let result = try SignalScaling.toEngineering(
             raw: 99,

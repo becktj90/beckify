@@ -2,6 +2,13 @@ import SwiftUI
 import BeckifyMath
 
 struct ReceptacleSelectorView: View {
+    private struct CommittedSelection: Equatable, Sendable {
+        var matches: [ReceptacleMatch]
+        var volts: Double
+        var amps: Double
+        var phase: ReceptaclePhaseKind
+    }
+
     @EnvironmentObject private var jobs: JobStore
 
     @StoredChoice(.receptacleSelector, "voltagePreset", default: ReceptacleVoltagePreset.v120) private var voltagePreset
@@ -17,6 +24,13 @@ struct ReceptacleSelectorView: View {
     @StoredNumber(.receptacleSelector, "frequencyHz", default: 60) private var frequencyHz
     @State private var selectedID: String?
     @StoredInput(.receptacleSelector, "jobName", default: "Receptacle") private var jobName
+    @State private var session = ExplicitCalculationState<CommittedSelection>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(voltagePreset)|\(customVolts)|\(phase)|\(ampPreset)|\(customAmps)|\(environment)|\(family)|\(neutral)|\(isolatedGround)|\(preferGFCI)|\(frequencyHz)"
+    }
 
     private var volts: Double? {
         voltagePreset == .custom ? customVolts.parsedDouble : voltagePreset.volts
@@ -41,23 +55,13 @@ struct ReceptacleSelectorView: View {
         )
     }
 
-    private var matches: Result<[ReceptacleMatch], CalcError> {
-        guard let query else { return .failure(.missing("voltage and current")) }
-        do {
-            return .success(try ReceptacleSelector.select(query))
-        } catch let error as CalcError {
-            return .failure(error)
-        } catch {
-            return .failure(.missing("values"))
-        }
-    }
-
     var body: some View {
         ToolScaffold(
             toolID: .receptacleSelector,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .designAidExtra("Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install.")
+            disclaimer: .designAidExtra("Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .receptacleSelector,
@@ -65,18 +69,6 @@ struct ReceptacleSelectorView: View {
                 substituted: substituted,
                 meaning: "Best-fit is a configuration match, not a listing. Hazardous is a flag only — not a classified-area stamp. Isolated ground and GFCI are callouts, not a different face."
             )
-            TryExampleButton(title: "120 V 1Ø 15 A indoor") {
-                voltagePreset = .v120
-                phase = .singlePhase2Wire
-                ampPreset = .a15
-                environment = .indoorDry
-                family = .any
-                neutral = .auto
-                isolatedGround = false
-                preferGFCI = false
-                frequencyHz = 60
-            }
-
             MenuField(title: "Voltage", selection: $voltagePreset, options: ReceptacleVoltagePreset.allCases) {
                 $0 == .custom ? "Custom" : "\($0.rawValue) V"
             }
@@ -132,69 +124,145 @@ struct ReceptacleSelectorView: View {
                     .foregroundStyle(Theme.muted)
             }
 
-            switch matches {
-            case .success(let list):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    voltagePreset = .v120
+                    phase = .singlePhase2Wire
+                    ampPreset = .a15
+                    environment = .indoorDry
+                    family = .any
+                    neutral = .auto
+                    isolatedGround = false
+                    preferGFCI = false
+                    frequencyHz = 60
+                    selectedID = nil
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "120 V 1Ø 15 A indoor"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let committed = session.displayedResult {
+                let list = committed.matches
                 let shown = selected(from: list)
-                ReceptacleFaceCard(match: shown)
-                ResultCard(title: "Best fit", copyText: copyText) {
-                    ResultRow(label: "Configuration", value: shown.config.code, emphasis: true, tone: Theme.good)
-                    ResultRow(label: "Family", value: shown.config.family.displayName)
-                    ResultRow(label: "Voltage window", value: shown.config.voltageLabel)
-                    ResultRow(label: "Poles / wires", value: shown.config.polesWiresLabel)
-                    ResultRow(label: "Device rating", value: Format.amps(shown.config.amps))
-                    if let hour = shown.config.iecEarthHour {
-                        ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
+                Group {
+                    ReceptacleFaceCard(match: shown)
+                    ResultCard(title: "Best fit", copyText: copyText) {
+                        ResultRow(label: "Configuration", value: shown.config.code, emphasis: true, tone: Theme.good)
+                        ResultRow(label: "Family", value: shown.config.family.displayName)
+                        ResultRow(label: "Voltage window", value: shown.config.voltageLabel)
+                        ResultRow(label: "Poles / wires", value: shown.config.polesWiresLabel)
+                        ResultRow(label: "Device rating", value: Format.amps(shown.config.amps))
+                        if let hour = shown.config.iecEarthHour {
+                            ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
+                        }
                     }
-                }
-                ResultCard(title: "Why it fits") {
-                    ForEach(shown.reasons, id: \.self) { reason in
-                        Text("• \(reason)")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.foreground)
-                            .padding(.vertical, 2)
-                    }
-                }
-                if !shown.caveats.isEmpty {
-                    ResultCard(title: "Notes") {
-                        ForEach(shown.caveats, id: \.self) { note in
-                            Text("• \(note)")
-                                .font(.caption)
-                                .foregroundStyle(Theme.warn)
+                    ResultCard(title: "Why it fits") {
+                        ForEach(shown.reasons, id: \.self) { reason in
+                            Text("• \(reason)")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.foreground)
                                 .padding(.vertical, 2)
                         }
                     }
+                    if !shown.caveats.isEmpty {
+                        ResultCard(title: "Notes") {
+                            ForEach(shown.caveats, id: \.self) { note in
+                                Text("• \(note)")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.warn)
+                                    .padding(.vertical, 2)
+                            }
+                        }
+                    }
+                    catalogCard(shown)
+                    rankedList(list)
                 }
-                catalogCard(shown)
-                rankedList(list)
-                SaveJobBar(jobName: $jobName, canSave: true) {
-                    save(list)
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
+                    save(committed)
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
             }
         }
-        .onChange(of: voltagePreset) { _, _ in selectedID = nil }
-        .onChange(of: phase) { _, _ in selectedID = nil }
-        .onChange(of: ampPreset) { _, _ in selectedID = nil }
-        .onChange(of: family) { _, _ in selectedID = nil }
-        .onChange(of: environment) { _, _ in selectedID = nil }
-        .onChange(of: isolatedGround) { _, _ in selectedID = nil }
-        .onChange(of: preferGFCI) { _, _ in selectedID = nil }
-        .onChange(of: neutral) { _, _ in selectedID = nil }
-        .onChange(of: frequencyHz) { _, _ in selectedID = nil }
+        .onChange(of: voltagePreset) { _, _ in
+            selectedID = nil
+            session.markInputsChanged()
+        }
+        .onChange(of: phase) { _, _ in
+            selectedID = nil
+            session.markInputsChanged()
+        }
+        .onChange(of: ampPreset) { _, _ in
+            selectedID = nil
+            session.markInputsChanged()
+        }
+        .onChange(of: family) { _, _ in
+            selectedID = nil
+            session.markInputsChanged()
+        }
+        .onChange(of: environment) { _, _ in
+            selectedID = nil
+            session.markInputsChanged()
+        }
+        .onChange(of: isolatedGround) { _, _ in session.markInputsChanged() }
+        .onChange(of: preferGFCI) { _, _ in session.markInputsChanged() }
+        .onChange(of: neutral) { _, _ in session.markInputsChanged() }
+        .onChange(of: frequencyHz) { _, _ in session.markInputsChanged() }
+        .onChange(of: customVolts) { _, _ in session.markInputsChanged() }
+        .onChange(of: customAmps) { _, _ in session.markInputsChanged() }
+        .onChange(of: inputFingerprint) { _, _ in session.markInputsChanged() }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            guard let query else { throw CalcError.missing("voltage and current") }
+            let matches = try ReceptacleSelector.select(query)
+            return CommittedSelection(
+                matches: matches,
+                volts: query.volts,
+                amps: query.amps,
+                phase: query.phase
+            )
+        }
+        if session.displayedResult != nil, !session.isStale {
+            selectedID = nil
+            if !reduceMotion { successTick += 1 }
+        }
+    }
+
+    private func reset() {
+        voltagePreset = .v120
+        customVolts = "120"
+        phase = .singlePhase2Wire
+        ampPreset = .a15
+        customAmps = "15"
+        environment = .indoorDry
+        family = .any
+        neutral = .auto
+        isolatedGround = false
+        preferGFCI = false
+        frequencyHz = 60
+        selectedID = nil
+        session.reset()
     }
 
     private var substituted: String? {
-        guard case .success(let list) = matches else { return nil }
-        let shown = selected(from: list)
-        let v = volts.map { Format.number($0, digits: 0) } ?? "?"
-        let a = amps.map { Format.number($0, digits: 0) } ?? "?"
-        return "\(v) V · \(phase.displayName) · \(a) A → \(shown.config.code) (\(shown.config.family.displayName))"
+        guard let committed = session.displayedResult else { return nil }
+        let shown = selected(from: committed.matches)
+        let v = Format.number(committed.volts, digits: 0)
+        let a = Format.number(committed.amps, digits: 0)
+        return "\(v) V · \(committed.phase.displayName) · \(a) A → \(shown.config.code) (\(shown.config.family.displayName))"
     }
 
     private var sticky: String? {
-        guard case .success(let list) = matches else { return nil }
-        let shown = selected(from: list)
+        guard let committed = session.displayedResult else { return nil }
+        let shown = selected(from: committed.matches)
         return "\(shown.config.code)  ·  \(Format.amps(shown.config.amps))"
     }
 
@@ -278,12 +346,13 @@ struct ReceptacleSelectorView: View {
         }
     }
 
-    private func save(_ list: [ReceptacleMatch]) {
+    private func save(_ committed: CommittedSelection) {
+        let list = committed.matches
         let top = selected(from: list)
         let inputs: [String: String] = [
-            "V": volts.map { Format.number($0, digits: 1) } ?? "",
-            "phase": phase.displayName,
-            "A": amps.map { Format.number($0, digits: 1) } ?? "",
+            "V": Format.number(committed.volts, digits: 1),
+            "phase": committed.phase.displayName,
+            "A": Format.number(committed.amps, digits: 1),
             "env": environment.displayName,
             "family": family.displayName,
             "N": neutral.displayName,
