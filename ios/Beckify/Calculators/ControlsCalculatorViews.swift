@@ -209,7 +209,14 @@ struct SignalScalingView: View {
 
     private var substituted: String? {
         guard case .current(let r) = display else { return nil }
-        return "\(Format.number(r.rawValue, digits: 3)) raw  →  \(Format.number(r.engineeringValue, digits: 3)) EU  (\(Format.number(r.percentOfSpan, digits: 1)) %)"
+        let engineering = Format.number(r.engineeringValue, digits: 3)
+        let raw = Format.number(r.rawValue, digits: 3)
+        let percent = Format.number(r.percentOfSpan, digits: 1)
+        // Fingerprint includes direction, so .current always matches the live picker.
+        let arrow = direction == .toEngineering
+            ? "\(raw) raw  →  \(engineering) EU"
+            : "\(engineering) EU  →  \(raw) raw"
+        return "\(arrow)  (\(percent) %)"
     }
 
     private var sticky: String? {
