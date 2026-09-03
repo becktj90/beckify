@@ -17,8 +17,7 @@ ios/
 ## Calculators (v1)
 
 - Ohm's Law
-- DC / AC Power
-- Power Wizard (DC / 1Ø / 3Ø) — spot check: 480 V 3Ø 50 kW PF 0.90 → 66.8 A
+- Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
 - Voltage Drop (3% / 5% informational, 310.16 ampacity cross-check)
 - Conduit Fill (THHN / EMT, Chapter 9 Table 1)
 - Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
@@ -26,13 +25,13 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Wire Size & Ampacity (310.16 75 °C)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
+- Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
 
 ## Homework calculators
 
 - Voltage Divider (Vout, or solve R1/R2)
 - Series / Parallel R and C
 - Resistor Color Code (4-band and 5-band, decode + encode)
-- Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
 - Frequency / period / wavelength and LC resonance
 - LED current-limit R and RC τ (555 astable/monostable stays in 555 Timer)
 

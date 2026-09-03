@@ -131,21 +131,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/voltage-drop/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/transformer-sizing/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/conductor-length-resistance/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://beckify.com/toolbox/ohms-law/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -166,22 +151,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/dc-power/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://beckify.com/toolbox/power-wizard/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://beckify.com/toolbox/reactance-impedance/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/resonance/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -196,17 +171,22 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/motor-calculations/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://beckify.com/toolbox/transformer/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/transformer-engine/</loc>
+    <loc>https://beckify.com/toolbox/tap-changer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/conductors/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/cable-schedule/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -216,17 +196,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/conduit-fill-mixed/</loc>
+    <loc>https://beckify.com/toolbox/motor/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/wire-size-ampacity/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/conductor-cost-optimizer/</loc>
+    <loc>https://beckify.com/toolbox/motor-nameplate/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -236,17 +211,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/ups-sizing/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/generator-sizing/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/hybrid-generator/</loc>
+    <loc>https://beckify.com/toolbox/on-site-power/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -261,17 +226,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/lighting-voltage-drop/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://beckify.com/toolbox/building-load/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/load-calculation-worksheet/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -287,16 +242,6 @@
   </url>
   <url>
     <loc>https://beckify.com/toolbox/lsi-breaker/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/bess-peak-shave/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://beckify.com/toolbox/tap-changer/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -337,6 +282,26 @@
   </url>
   <url>
     <loc>https://beckify.com/toolbox/plc-timer-preset/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/pitch-hum-identifier/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/audio-spectrum-analyzer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/sound-level-meter/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/lux-light-meter/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -391,12 +356,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/panel-schedule-load-analyzer/</loc>
+    <loc>https://beckify.com/toolbox/battery-bank/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/panel-power-study/</loc>
+    <loc>https://beckify.com/toolbox/panel-schedule/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -416,11 +381,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/toolbox/transformer-design/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://beckify.com/toolbox/heater-wizard/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -434,5 +394,105 @@
     <loc>https://beckify.com/toolbox/number-base-converter/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/transformer-sizing/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/transformer-engine/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/transformer-design/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/voltage-drop/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/wire-size-ampacity/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/conductor-cost-optimizer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/lighting-voltage-drop/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/conductor-length-resistance/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/mv-cable/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/conduit-fill-mixed/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/dc-power/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/motor-calculations/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/ups-sizing/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/generator-sizing/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/hybrid-generator/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/bess-peak-shave/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/resonance/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/panel-schedule-load-analyzer/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/panel-power-study/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/load-calculation-worksheet/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

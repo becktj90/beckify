@@ -79,14 +79,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
   navSearch.addEventListener('input', () => {
     const q = navSearch.value.toLowerCase().trim();
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.nav-btn, a.nav-ext').forEach(btn => {
       if (btn.classList.contains('home-btn')) { btn.style.display = ''; return; }
       const text = (btn.textContent + ' ' + (btn.dataset.keywords || '')).toLowerCase();
       btn.style.display = (!q || text.includes(q)) ? '' : 'none';
     });
     document.querySelectorAll('.sidebar-section').forEach(sec => {
       if (!q) { sec.style.display = ''; return; }
-      const hasVisible = [...sec.querySelectorAll('.nav-btn')].some(b => b.style.display !== 'none');
+      const hasVisible = [...sec.querySelectorAll('.nav-btn, a.nav-ext')].some(b => b.style.display !== 'none');
       sec.style.display = hasVisible ? '' : 'none';
     });
   });
@@ -656,15 +656,8 @@ window.calcXfmr = function () {
   const Is = kVA * 1000 / (Vs * phaseMult);
   const turnRatio = Vp / Vs;
 
-  /* Next standard kVA size */
+  /* Next standard kVA size — rating only. Protection is Table 450.3(B) on Sizing. */
   const stdKVA = XFMR_STD_KVA.find(s => s >= kVA) || kVA;
-
-  /* Secondary conductor + conduit sizing */
-  const cond = selectConductorAndConduit(Is);
-
-  /* NEC 450.3(B) OCP — next standard OCPD ≥ 125% of FLA */
-  const pOCPD = nextStdOCPD(Ip * 1.25);
-  const sOCPD = nextStdOCPD(Is * 1.25);
 
   /* Topology label and notes */
   const topoLabels = {
@@ -681,14 +674,9 @@ window.calcXfmr = function () {
     ['Turns Ratio (Np:Ns)', fmt(turnRatio, 4) + ' : 1'],
     ['─── Standard Size ───', ''],
     ['Next Standard kVA', stdKVA + ' kVA (ANSI/NEMA)'],
-    ['─── Secondary Conductors (Cu THHN 75°C) ───', ''],
-    ['Conductor Size (per run)', cond.size],
-    ['Parallel Runs Required', cond.runs + (cond.runs > 1 ? ' sets (1/0 AWG min per NEC 310.10(C))' : '')],
-    ['Conduit per Run (3 ckts)', cond.conduit],
-    ['Conductor Ampacity', cond.ampsEach > 0 ? (cond.ampsEach * cond.runs) + ' A total (' + cond.ampsEach + ' A × ' + cond.runs + ')' : '—'],
-    ['─── NEC 450.3(B) OCP Recommendations ───', ''],
-    ['Primary OCPD (≤125% of Ip)', pOCPD + ' A'],
-    ['Secondary OCPD (≤125% of Is)', sOCPD + ' A'],
+    ['─── Protection ───', ''],
+    ['450.3(B)', 'Use Sizing & 450.3 — real 125/167/300 and 250/125/167 tiers, not flat 125%'],
+    ['Conductors / VD', 'Use Conductors / OCPD / VD for Cu/Al, parallels, EGC/GEC, conduit'],
   ];
 
   if (topology === 'highleg') {
@@ -1184,6 +1172,16 @@ window.calcUPS = function () {
 /* ============================================================
    17. GENERATOR SIZING (IEEE 446 / NFPA 110)
    ============================================================ */
+/** Typical starting-kVA multiples vs FLA kVA. Inventory check, not a dip study. */
+function generatorStartMultiple(starter) {
+  const key = String(starter || 'dol');
+  if (key === 'yd') return { mult: 2.0, label: 'Wye-delta ≈ 2× FLA kVA' };
+  if (key === 'at65') return { mult: 2.1, label: 'Autotransformer 65% tap ≈ 2.1× FLA kVA' };
+  if (key === 'at80') return { mult: 3.2, label: 'Autotransformer 80% tap ≈ 3.2× FLA kVA' };
+  return { mult: 6.0, label: 'DOL / across-the-line ≈ 6× FLA kVA' };
+}
+window.generatorStartMultiple = generatorStartMultiple;
+
 window.calcGenerator = function () {
   const pf     = val('gen_pf') / 100;
   const margin = val('gen_margin') / 100;
@@ -1217,7 +1215,10 @@ window.calcGenerator = function () {
                     250, 300, 350, 400, 500, 600, 750, 1000];
   const recSize = genSizes.find(s => s >= designKW) || Math.ceil(designKW / 100) * 100;
 
-  showResult('gen_result', [
+  const starterEl = document.getElementById('gen_starter');
+  const starter = starterEl ? starterEl.value : 'dol';
+  const startInfo = generatorStartMultiple(starter);
+  const rows = [
     ['Motor Loads',             fmt(motorLoad, 1) + ' kW'],
     ['Lighting / Receptacle',   fmt(lightLoad, 1) + ' kW'],
     ['HVAC Loads',              fmt(hvacLoad,  1) + ' kW'],
@@ -1225,7 +1226,25 @@ window.calcGenerator = function () {
     ['Total Connected Load',    fmt(totalKW, 1) + ' kW / ' + fmt(totalKVA, 1) + ' kVA'],
     ['Design Load (x' + fmt(safetyMult, 2) + ')', fmt(designKW, 1) + ' kW / ' + fmt(designKVA, 1) + ' kVA'],
     ['Recommended Generator',   recSize + ' kW (next standard size)']
-  ]);
+  ];
+
+  if (isPos(motorKW)) {
+    const largestFlaKva = motorKW / pf;
+    const startKva = largestFlaKva * startInfo.mult;
+    const remainingKw = Math.max(0, totalKW - motorKW);
+    const remainingKva = remainingKw / pf;
+    const peakStartKva = remainingKva + startKva;
+    rows.push(['Starter', startInfo.label]);
+    rows.push(['Largest motor FLA kVA', fmt(largestFlaKva, 1) + ' kVA  (' + fmt(motorKW, 1) + ' kW ÷ PF)']);
+    rows.push(['Starting kVA (one motor)', fmt(startKva, 1) + ' kVA']);
+    rows.push(['Peak kVA while starting', fmt(peakStartKva, 1) + ' kVA  (other running + start)']);
+    rows.push(['Start check',
+      peakStartKva <= designKVA
+        ? 'Design kVA covers this start multiple'
+        : 'Peak start kVA exceeds running design kVA — raise margin or use a softer starter']);
+  }
+
+  showResult('gen_result', rows);
 };
 
 /* ============================================================
@@ -2141,7 +2160,7 @@ window.calcLightingOptimizer = function () {
     const actualPct = (actualVd / voltage) * 100;
     note = 'WARNING: No standard size meets ' + vdPct + '% VD. Largest size (' + chosen.awg + ' AWG) gives ' + fmt(actualPct, 2) + '% VD. Consider splitting the circuit.';
   } else {
-    /* LP objective: minimize cost — the passing array is already sorted by ascending CM (ascending cost) */
+    /* Smallest CM that meets the K-factor VD target. This is not a cost optimizer. */
     chosen = passing[0];
     note = null;
   }

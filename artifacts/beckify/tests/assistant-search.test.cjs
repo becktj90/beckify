@@ -83,7 +83,20 @@ for (const [query, expectedId] of [['transformer sizing', 'transformer-sizing'],
 }
 
 console.log('\n--- Assistant search: new educational tools ---');
-for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['simplex', 'lp-optimizer'], ['hexadecimal', 'number-base-converter'], ["two's complement", 'number-base-converter'], ['io list', 'io-list-generator'], ['ethercat', 'io-list-generator'], ['4-20ma', 'signal-scaling'], ['live zero', 'signal-scaling'], ['40001', 'modbus-address'], ['ton', 'plc-timer-preset'], ['tightening torque', 'torque-lookup'], ['ul 486', 'torque-lookup'], ['220.42', 'building-load'], ['high-leg', 'wire-colors'], ['ul 508a', 'wire-colors']]) {
+for (const [query, expectedId] of [['linear programming', 'lp-optimizer'], ['simplex', 'lp-optimizer'], ['hexadecimal', 'number-base-converter'], ["two's complement", 'number-base-converter'], ['io list', 'io-list-generator'], ['ethercat', 'io-list-generator'], ['4-20ma', 'signal-scaling'], ['live zero', 'signal-scaling'], ['40001', 'modbus-address'], ['ton', 'plc-timer-preset'], ['60 hz', 'pitch-hum-identifier'], ['audio spectrum', 'audio-spectrum-analyzer'], ['sound level', 'sound-level-meter'], ['lux meter', 'lux-light-meter'], ['tightening torque', 'torque-lookup'], ['ul 486', 'torque-lookup'], ['220.42', 'building-load'], ['high-leg', 'wire-colors'], ['ul 508a', 'wire-colors']]) {
+  const results = searchAssistant(query, 6);
+  ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
+}
+
+console.log('\n--- Assistant search: five new toolbox tools ---');
+for (const [query, expectedId] of [
+  ['nema 5-15', 'nema-wiring'],
+  ['5-15', 'nema-wiring'],
+  ['cable schedule', 'cable-schedule'],
+  ['battery bank', 'battery-bank'],
+  ['motor nameplate', 'motor-nameplate'],
+  ['lfp backup', 'battery-bank'],
+]) {
   const results = searchAssistant(query, 6);
   ok(`"${query}" finds ${expectedId}`, results.some((r) => r.id === expectedId), results.map((r) => r.id).join(', '));
 }

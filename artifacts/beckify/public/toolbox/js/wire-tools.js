@@ -288,9 +288,9 @@ window.loadConduitFillExample = function () {
    2. WIRE SIZE SELECTOR — ampacity + voltage drop + parallel-run cost
    ============================================================================ */
 
-/* Ballpark installed material prices. These move with the metals market, so
-   they are starting points the user is expected to override — the form exposes
-   a single multiplier so a whole estimate can be scaled at once. */
+/* Shared planning-allowance $/ft book — modeled comparison, not live market,
+   LME, EIA, or a bid. The transformer wizard reads the same table via
+   window.PLANNING_CONDUCTOR_PRICE_PER_FT. Override per size or with $/kft. */
 const CONDUCTOR_PRICE_PER_FT = {
   cu: {
     '14': 0.12, '12': 0.18, '10': 0.28, '8': 0.52, '6': 0.80, '4': 1.25,
@@ -306,6 +306,8 @@ const CONDUCTOR_PRICE_PER_FT = {
     '600': 4.05, '700': 4.70, '750': 5.00, '800': 5.30, '900': 5.90, '1000': 6.60,
   },
 };
+const PLANNING_CONDUCTOR_PRICE_PER_FT = CONDUCTOR_PRICE_PER_FT;
+window.PLANNING_CONDUCTOR_PRICE_PER_FT = PLANNING_CONDUCTOR_PRICE_PER_FT;
 
 /* Manual entries begin with the same average allowance as the automatic
    price book. They are kept separately for copper and aluminum so changing
@@ -353,14 +355,14 @@ window.setWirePriceMode = function () {
   if (manual) manual.hidden = mode !== 'manual';
   if (market) market.hidden = mode === 'manual';
   if (help) help.textContent = mode === 'manual'
-    ? 'Manual prices are used exactly as entered. EMT remains a default material allowance.'
-    : 'Average prices are a planning baseline, not a live quote. Use 1.00 for the default allowance.';
+    ? 'Manual $/ft values are used exactly as entered. EMT remains a default planning allowance unless you override conduit $/ft.'
+    : 'Planning allowance, not a live quote. Use 1.00 for the default book.';
   if (mode === 'manual') renderManualWirePrices();
 };
 
 function activeConductorPriceBook(material) {
   const mode = document.getElementById('ws_price_mode')?.value || 'average';
-  if (mode !== 'manual') return { prices: CONDUCTOR_PRICE_PER_FT[material], multiplier: val('ws_price_mult'), label: 'average material allowance' };
+  if (mode !== 'manual') return { prices: CONDUCTOR_PRICE_PER_FT[material], multiplier: val('ws_price_mult'), label: 'planning allowance book' };
   const prices = MANUAL_CONDUCTOR_PRICE_PER_FT[material];
   Object.keys(prices).forEach((size) => {
     const field = document.getElementById(wirePriceInputId(size));
@@ -415,6 +417,93 @@ function effectiveImpedance(size, material, powerFactor) {
 }
 
 /** Voltage drop in volts for one candidate. */
+/**
+ * I²R loss watts from operating current (not 125% design current).
+ * 3Ø: 3 × I² × R_one_way; 1Ø: 2 × I² × R_one_way.
+ * R_one_way = Ch.9 Table 8 Ω/kft × (lengthFt/1000) / runs.
+ */
+function conductorI2RWatts(current, size, material, lengthFt, runs, phase) {
+  const rKft = DC_RESISTANCE[material] && DC_RESISTANCE[material][size];
+  if (typeof rKft !== 'number' || !(current > 0) || !(lengthFt > 0)) return null;
+  const n = Math.max(1, runs || 1);
+  const rOneWay = rKft * (lengthFt / 1000) / n;
+  const paths = phase === '3ph' ? 3 : 2;
+  return paths * current * current * rOneWay;
+}
+
+function annualI2RCost(watts, dollarsPerKwh, hoursPerYear) {
+  if (!(watts >= 0) || !(dollarsPerKwh > 0) || !(hoursPerYear > 0)) return null;
+  return (watts / 1000) * dollarsPerKwh * hoursPerYear;
+}
+
+function pvOfAnnuity(annual, years, discountRate) {
+  if (!(annual >= 0) || !(years > 0)) return null;
+  if (!(discountRate > 0)) return annual * years;
+  return annual * (1 - Math.pow(1 + discountRate, -years)) / discountRate;
+}
+
+const WS_ENERGY_KEYS = {
+  ws_user_kft: 'beckify.ws.user_kft',
+  ws_kwh: 'beckify.ws.kwh',
+  ws_hours: 'beckify.ws.hours',
+  ws_years: 'beckify.ws.years',
+  ws_discount: 'beckify.ws.discount',
+  ws_demand_rate: 'beckify.ws.demand_rate',
+  ws_demand_kw: 'beckify.ws.demand_kw',
+  ws_conduit_user: 'beckify.ws.conduit_user',
+};
+
+function persistWsEnergyFields() {
+  try {
+    Object.keys(WS_ENERGY_KEYS).forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) localStorage.setItem(WS_ENERGY_KEYS[id], el.value);
+    });
+  } catch (_) {}
+}
+
+function restoreWsEnergyFields() {
+  try {
+    Object.keys(WS_ENERGY_KEYS).forEach(function (id) {
+      const el = document.getElementById(id);
+      const stored = localStorage.getItem(WS_ENERGY_KEYS[id]);
+      if (el && stored !== null) el.value = stored;
+    });
+  } catch (_) {}
+}
+
+window.conductorI2RWatts = conductorI2RWatts;
+window.annualI2RCost = annualI2RCost;
+window.pvOfAnnuity = pvOfAnnuity;
+
+/** Insulated cores in a 2C+E / 3C+E / 4C+E construction. Earth is extra. */
+function lvConstructionCores(code) {
+  const key = String(code || '').toLowerCase();
+  if (key === '2c+e' || key === '2c') return 2;
+  if (key === '3c+e' || key === '3c') return 3;
+  return 4;
+}
+
+/**
+ * Written LV type string, same job as the MV type string: construction +
+ * parallels + size + metal. Example: "2 × 4C+E 4/0 AWG Cu THHN".
+ */
+function lvCableTypeString(opts) {
+  const cores = lvConstructionCores(opts && opts.construction);
+  const tag = cores + 'C+E';
+  const mat = String((opts && opts.material) || 'cu').toLowerCase() === 'al' ? 'Al' : 'Cu';
+  const size = (typeof wireSizeLabel === 'function')
+    ? wireSizeLabel(opts && opts.size)
+    : String((opts && opts.size) || '');
+  const insul = opts && opts.insulation ? String(opts.insulation) : '';
+  const runs = Math.max(1, parseInt(opts && opts.runs, 10) || 1);
+  const prefix = runs > 1 ? (runs + ' × ') : '';
+  return (prefix + tag + ' ' + size + ' ' + mat + (insul ? ' ' + insul : '')).replace(/\s+/g, ' ').trim();
+}
+
+window.lvConstructionCores = lvConstructionCores;
+window.lvCableTypeString = lvCableTypeString;
+
 function voltageDropVolts(size, material, phase, current, lengthFt, powerFactor, runs) {
   const z = effectiveImpedance(size, material, powerFactor);
   if (z === null) return null;
@@ -509,8 +598,12 @@ window.calcWireSelection = function () {
       const vdPct = (vd / voltage) * 100;
       if (vdPct > maxVdPct) continue;
 
-      /* Conduit sized for this run: phase conductors + neutral + EGC, THHN. */
-      const perRunConductors = phase === '3ph' ? 4 : phase === '1ph' ? 3 : 2;
+      /* Construction is a written option (2C+E / 3C+E / 4C+E). Fill counts
+         insulated cores plus a same-size EGC. CCC stays the user field. */
+      const construction = (document.getElementById('ws_construction') || {}).value
+        || (phase === '1ph' ? '3c+e' : '4c+e');
+      const insulatedCores = lvConstructionCores(construction);
+      const perRunConductors = insulatedCores + 1;
       const condArea = INSULATION_TYPES.THHN.areas[size];
       const bundleArea = condArea * perRunConductors;
       const emt = CONDUIT_TYPES.EMT;
@@ -518,12 +611,18 @@ window.calcWireSelection = function () {
         .filter((t) => emt.areas[t] !== undefined)
         .find((t) => emt.areas[t] * 0.4 >= bundleArea);
 
-      const wirePrice = priceBook.prices[size];
+      const userKft = val('ws_user_kft');
+      const wirePrice = (userKft > 0)
+        ? userKft / 1000
+        : priceBook.prices[size];
       if (typeof wirePrice !== 'number') continue;
-      const conduitPrice = tradeSize ? CONDUIT_PRICE_PER_FT[tradeSize] : null;
+      const userConduit = val('ws_conduit_user');
+      const conduitPrice = userConduit > 0
+        ? userConduit
+        : (tradeSize ? CONDUIT_PRICE_PER_FT[tradeSize] : null);
 
-      const conductorCost = wirePrice * lengthFt * perRunConductors * runs * priceBook.multiplier;
-      const conduitCost = conduitPrice ? conduitPrice * lengthFt * runs * priceBook.multiplier : 0;
+      const conductorCost = wirePrice * lengthFt * insulatedCores * runs * (userKft > 0 ? 1 : priceBook.multiplier);
+      const conduitCost = conduitPrice ? conduitPrice * lengthFt * runs * (userConduit > 0 ? 1 : priceBook.multiplier) : 0;
 
       options.push({
         runs: runs,
@@ -534,6 +633,15 @@ window.calcWireSelection = function () {
         vdPct: vdPct,
         tradeSize: tradeSize,
         perRunConductors: perRunConductors,
+        insulatedCores: insulatedCores,
+        construction: construction,
+        typeString: lvCableTypeString({
+          construction: construction,
+          runs: runs,
+          size: size,
+          material: material,
+          insulation: insulTemp === 90 ? 'THHN' : (insulTemp === 75 ? 'THWN' : 'TW'),
+        }),
         conductorCost: conductorCost,
         conduitCost: conduitCost,
         totalCost: conductorCost + conduitCost,
@@ -580,9 +688,9 @@ window.calcWireSelection = function () {
   /* ---- Recommendation ---- */
   wtHeading(el, 'Lowest modeled material cost');
   el.lastElementChild.classList.add('cost-optimum');
+  wtRow(el, 'Type string', recommended.typeString, { bold: true, color: PASS_COLOR });
   wtRow(el, 'Conductor', recommended.runs + ' run' + (recommended.runs > 1 ? 's' : '') +
-    ' × ' + wireSizeLabel(recommended.size) + ' ' + (material === 'cu' ? 'Cu' : 'Al'),
-    { bold: true, color: PASS_COLOR });
+    ' × ' + wireSizeLabel(recommended.size) + ' ' + (material === 'cu' ? 'Cu' : 'Al'));
   wtRow(el, 'Usable ampacity per run', fmt(refAmp.usable, 1) + ' A' +
     '  (need ' + fmt(recommended.perRunCurrent, 1) + ' A)');
   wtRow(el, 'Voltage drop', fmt(recommended.vd, 2) + ' V  (' + fmt(recommended.vdPct, 2) + ' %)');
@@ -592,7 +700,40 @@ window.calcWireSelection = function () {
       recommended.perRunConductors + ' conductors)');
   }
   wtRow(el, 'Modeled material cost', '$' + recommended.totalCost.toLocaleString('en-US', { maximumFractionDigits: 0 }), { bold: true, color: PASS_COLOR });
-  wtRow(el, 'Price source', priceBook.label + (priceBook.multiplier !== 1 ? ' × ' + fmt(priceBook.multiplier, 2) : ''));
+  wtRow(el, 'Price source', (val('ws_user_kft') > 0 ? 'user $/kft' : priceBook.label) + (priceBook.multiplier !== 1 && !(val('ws_user_kft') > 0) ? ' × ' + fmt(priceBook.multiplier, 2) : ''));
+
+  const i2rWatts = conductorI2RWatts(current, recommended.size, material, lengthFt, recommended.runs, phase);
+  const kwh = val('ws_kwh');
+  const hours = val('ws_hours');
+  const years = val('ws_years');
+  const discount = val('ws_discount');
+  const demandRate = val('ws_demand_rate');
+  const demandKw = val('ws_demand_kw');
+  persistWsEnergyFields();
+  if (i2rWatts !== null) {
+    wtHeading(el, 'I²R energy (operating current)');
+    const rKft = DC_RESISTANCE[material][recommended.size];
+    const rOneWay = rKft * (lengthFt / 1000) / recommended.runs;
+    const paths = phase === '3ph' ? 3 : 2;
+    wtRow(el, 'R one-way', fmt(rOneWay, 5) + ' Ω  (Table 8 ' + fmt(rKft, 4) + ' Ω/kft × L/1000 ÷ runs)');
+    wtRow(el, 'I²R', paths + ' × ' + fmt(current, 2) + '² × ' + fmt(rOneWay, 5) + ' = ' + fmt(i2rWatts, 1) + ' W');
+    const annual = annualI2RCost(i2rWatts, kwh, hours);
+    if (annual !== null) {
+      wtRow(el, 'Annual energy', '$' + annual.toLocaleString('en-US', { maximumFractionDigits: 0 }) +
+        '  = (W/1000) × $/kWh × hours', { bold: true });
+      const pv = pvOfAnnuity(annual, years, discount);
+      if (pv !== null) {
+        wtRow(el, 'PV of energy', '$' + pv.toLocaleString('en-US', { maximumFractionDigits: 0 }) +
+          (discount > 0 ? '  over ' + fmt(years, 0) + ' yr at ' + fmt(discount * 100, 1) + '%' : '  (' + fmt(years, 0) + ' × annual)'));
+      }
+    } else {
+      wtRow(el, 'Annual energy', 'Enter $/kWh and hours/year to model I²R cost');
+    }
+    if (demandRate > 0 && demandKw > 0) {
+      wtRow(el, 'Demand charge (user)', '$' + (demandRate * demandKw).toLocaleString('en-US', { maximumFractionDigits: 0 }) +
+        '  = $/kW × kW');
+    }
+  }
 
   const ocpd = nextStandardOCPD(designCurrent);
   if (ocpd) {
@@ -625,9 +766,9 @@ window.calcWireSelection = function () {
   }
 
   wtNote(el,
-    'Costs cover conductor and EMT material only — no labour, fittings, terminations or ' +
-    'boxes — and automatic prices are averages, so treat them as a relative comparison ' +
-    'rather than a quote. Each parallel set must be the same length, size and material, ' +
+    'Modeled comparison, not a quote or PE stamp. Planning-allowance $/ft is a shared book, ' +
+    'not live market. I²R uses operating current and Chapter 9 Table 8 DC resistance — no ' +
+    'invented lb/kft table. Each parallel set must be the same length, size and material, ' +
     'and terminate identically (NEC 310.10(G)).');
 
   appendCopyBtn(el);
@@ -643,6 +784,34 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('ws_material').addEventListener('change', function () {
       if (document.getElementById('ws_price_mode').value === 'manual') renderManualWirePrices();
     });
+    restoreWsEnergyFields();
     window.setWirePriceMode();
   }
 });
+
+/* Callable ampacity / voltage-drop helpers for other toolbox pages.
+   Reuses NEC Table 310.16 and Ch.9 Tables 8–9 from nec-data.js — do not
+   copy those tables elsewhere. */
+window.BeckifyWireMath = {
+  ampacity75: function (size, material) {
+    var key = String(size || '').replace(/\s*(AWG|kcmil)\s*/ig, '').trim();
+    var row = AMPACITY[material || 'cu'] && AMPACITY[material || 'cu'][key];
+    if (!row) return null;
+    return row[TEMP_COLUMN_INDEX[75]];
+  },
+  deratedAmpacity: deratedAmpacity,
+  voltageDropVolts: voltageDropVolts,
+  suggestSizeForFla: function (fla, material) {
+    var need = Number(fla) * 1.25;
+    if (!Number.isFinite(need) || need <= 0) return null;
+    var mat = material || 'cu';
+    for (var i = 0; i < WIRE_SIZE_ORDER.length; i++) {
+      var size = WIRE_SIZE_ORDER[i];
+      var row = AMPACITY[mat] && AMPACITY[mat][size];
+      if (row && row[TEMP_COLUMN_INDEX[75]] >= need) {
+        return { size: size, ampacity: row[TEMP_COLUMN_INDEX[75]], required: need, article: 'NEC 430.22', material: mat };
+      }
+    }
+    return null;
+  },
+};

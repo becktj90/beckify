@@ -31,7 +31,7 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
   { href: "/privacy", label: "Privacy", description: "Privacy policy for the Beckify iOS and iPadOS app.", icon: Shield, hue: HUES.violet },
   { href: "/toolbox/", label: "Toolbox", description: `${PUBLIC_CALCULATOR_COUNT} native EE calculators, organized by category.`, icon: Wrench, hue: HUES.aqua },
-  { href: "/control-systems", label: "Control System Toolbox", description: "Interactive modeling, Bode plots, PID tuning, LQR/LQG, and MPC visualizers.", icon: Zap, hue: HUES.violet },
+  { href: "/control-systems", label: "Control System Toolbox", description: "Plant modeling, open- vs closed-loop P, root locus, lead, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, pole placement.", icon: Zap, hue: HUES.violet },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
   { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/projects/honda-xr650r", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },
@@ -69,16 +69,13 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: [
       t("Ohm's Law", "sec-ohm"),
       t("Magnetic Circuit Workbench", "sec-magnetic-circuit"),
-      t("DC Power", "sec-power-dc"),
-      t("Power & Current Converter", "sec-power-wizard"),
-      t("AC Power", "sec-power-wizard"),
+      t("Power", "sec-power-wizard"),
     ],
   },
   {
     label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance",
     tools: [
-      t("Reactance & Impedance", "sec-reactance"),
-      t("Resonance", "sec-resonance"),
+      t("Reactance & Resonance", "sec-reactance"),
       t("Phasor Diagram Workbench", "sec-phasor-diagram"),
       t("Transient Circuit Lab", "sec-transient-circuits"),
       t("Power Factor Correction", "sec-pfc"),
@@ -91,15 +88,13 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
     tools: [
-      t("Voltage Drop", "sec-vdrop"),
-      t("Conductor Length by Resistance", "sec-conductor-length"),
-      t("Motor Calculations", "sec-motor"),
-      t("Transformer", "sec-xfmr"),
-      t("Transformer Engine", "sec-xfmr-engine"),
-      t("Transformer Sizing", "sec-xfmr-size"),
+      t("Conductors", "sec-wire-select"),
+      t("Cable Schedule Generator", "sec-cable-schedule"),
+      t("Motor", "sec-motor-ref"),
+      t("Motor Nameplate Analyzer", "sec-motor-nameplate"),
+      t("Transformer", "sec-xfmr-size"),
+      t("Tap-Changer Calc", "sec-tap"),
       t("Conduit Fill", "sec-conduit"),
-      t("Conduit Fill (Mixed)", "sec-conduit-adv"),
-      t("Wire Size & Ampacity", "sec-wire-select"),
       t("Short Circuit", "sec-sc"),
       t("Load Factors & Capacity", "sec-load-factors"),
       t("Torque Lookup", "sec-torque-lookup"),
@@ -108,9 +103,8 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
     tools: [
-      t("UPS Sizing", "sec-ups"),
-      t("Generator Sizing", "sec-gen"),
-      t("Hybrid Generator", "sec-hybrid"),
+      t("On-site Power", "sec-ups"),
+      t("Battery Bank Calculator", "sec-battery-bank"),
     ],
   },
   {
@@ -128,7 +122,6 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
     label: "NEC Specialized", hue: HUES.violet, anchor: "sec-lighting-opt",
     tools: [
-      t("Lighting VD Optimizer", "sec-lighting-opt"),
       t("Load Calculation Worksheet", "sec-bldg-load"),
     ],
   },
@@ -136,7 +129,6 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     label: "Advanced", hue: HUES.blue, anchor: "sec-lsi",
     tools: [
       t("LSI Breaker Visualizer", "sec-lsi"),
-      t("BESS Peak-Shave", "sec-bess"),
       t("Tap-Changer Calc", "sec-tap"),
       t("Harmonics Tool", "sec-harmonics"),
       t("EMP / EMC Shielding", "sec-emp-emc"),
@@ -152,6 +144,15 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("E-bus / Rack Current Budget", "sec-ebus-budget"),
       t("Modbus Address Converter", "sec-modbus-address"),
       t("PLC Timer Preset", "sec-plc-timer-preset"),
+    ],
+  },
+  {
+    label: "Phone sensors", hue: HUES.yellow, anchor: "sec-lux-meter",
+    tools: [
+      t("Pitch / Hum Identifier", "sec-pitch-hum"),
+      t("FFT / Audio Spectrum", "sec-audio-spectrum"),
+      t("Sound Level Meter", "sec-sound-level"),
+      t("Lux / Light Meter", "sec-lux-meter"),
     ],
   },
   {
@@ -171,18 +172,22 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("E-bus / Rack Current Budget", "sec-ebus-budget"),
       t("Modbus Address Converter", "sec-modbus-address"),
       t("PLC Timer Preset", "sec-plc-timer-preset"),
-      t("Panel Schedule Load Analyzer", "sec-panel-schedule"),
-      t("Panel Schedule Power Study", "sec-panel-power-study"),
+      t("Pitch / Hum Identifier", "sec-pitch-hum"),
+      t("FFT / Audio Spectrum", "sec-audio-spectrum"),
+      t("Sound Level Meter", "sec-sound-level"),
+      t("Lux / Light Meter", "sec-lux-meter"),
+      t("Panel Schedule", "sec-panel-schedule"),
     ],
   },
   {
     label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",
     tools: [
       t("Conductor Reference", "sec-wire-ref"),
-      t("Motor FLA Tables", "sec-motor-ref"),
+      t("Motor FLA Tables (Motor tool)", "sec-motor-ref"),
       t("Conduit Fill Tables", "sec-conduit-ref"),
       t("IP Rating Chart", "sec-ip-rating"),
       t("NEMA Enclosures", "sec-nema-class"),
+      t("NEMA Wiring & Color Codes", "sec-nema-wiring"),
       t("Wire colors (NEC / UL 508A)", "sec-wire-colors"),
       t("NEC Code Tables", "sec-nec-tables"),
     ],
