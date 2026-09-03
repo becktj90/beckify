@@ -4,14 +4,14 @@ import BeckifyMath
 struct ReceptacleSelectorView: View {
     @EnvironmentObject private var jobs: JobStore
 
-    @StoredChoice(.receptacleSelector, "voltagePreset", default: .v120) private var voltagePreset
+    @StoredChoice(.receptacleSelector, "voltagePreset", default: ReceptacleVoltagePreset.v120) private var voltagePreset
     @StoredInput(.receptacleSelector, "customVolts", default: "120") private var customVolts
-    @StoredChoice(.receptacleSelector, "phase", default: .singlePhase2Wire) private var phase
-    @StoredChoice(.receptacleSelector, "ampPreset", default: .a15) private var ampPreset
+    @StoredChoice(.receptacleSelector, "phase", default: ReceptaclePhaseKind.singlePhase2Wire) private var phase
+    @StoredChoice(.receptacleSelector, "ampPreset", default: ReceptacleAmpPreset.a15) private var ampPreset
     @StoredInput(.receptacleSelector, "customAmps", default: "15") private var customAmps
-    @StoredChoice(.receptacleSelector, "environment", default: .indoorDry) private var environment
-    @StoredChoice(.receptacleSelector, "family", default: .any) private var family
-    @StoredChoice(.receptacleSelector, "neutral", default: .auto) private var neutral
+    @StoredChoice(.receptacleSelector, "environment", default: ReceptacleEnvironment.indoorDry) private var environment
+    @StoredChoice(.receptacleSelector, "family", default: ReceptacleFamilyFilter.any) private var family
+    @StoredChoice(.receptacleSelector, "neutral", default: NeutralChoice.auto) private var neutral
     @StoredToggle(.receptacleSelector, "isolatedGround", default: false) private var isolatedGround
     @StoredToggle(.receptacleSelector, "preferGFCI", default: false) private var preferGFCI
     @StoredNumber(.receptacleSelector, "frequencyHz", default: 60) private var frequencyHz

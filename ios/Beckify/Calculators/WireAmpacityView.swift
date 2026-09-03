@@ -4,7 +4,7 @@ import BeckifyMath
 struct WireAmpacityView: View {
     @EnvironmentObject private var jobs: JobStore
     @StoredInput(.wireAmpacity, "amps", default: "95") private var amps
-    @StoredChoice(.wireAmpacity, "material", default: .copper) private var material
+    @StoredChoice(.wireAmpacity, "material", default: ConductorMaterial.copper) private var material
     @StoredInput(.wireAmpacity, "jobName", default: "Wire size") private var jobName
 
     var body: some View {

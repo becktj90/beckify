@@ -11,11 +11,11 @@ struct ResistorColorView: View {
 
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.resistorColor, "mode", default: .decode4) private var mode
-    @StoredChoice(.resistorColor, "d1", default: .yellow) private var d1
-    @StoredChoice(.resistorColor, "d2", default: .violet) private var d2
-    @StoredChoice(.resistorColor, "d3", default: .black) private var d3
-    @StoredChoice(.resistorColor, "multiplier", default: .red) private var multiplier
-    @StoredChoice(.resistorColor, "tolerance", default: .gold) private var tolerance
+    @StoredChoice(.resistorColor, "d1", default: ResistorBand.yellow) private var d1
+    @StoredChoice(.resistorColor, "d2", default: ResistorBand.violet) private var d2
+    @StoredChoice(.resistorColor, "d3", default: ResistorBand.black) private var d3
+    @StoredChoice(.resistorColor, "multiplier", default: ResistorBand.red) private var multiplier
+    @StoredChoice(.resistorColor, "tolerance", default: ResistorBand.gold) private var tolerance
     @StoredInput(.resistorColor, "ohms", default: "4700") private var ohms
     @StoredCount(.resistorColor, "encodeBands", default: 4) private var encodeBands
     @StoredInput(.resistorColor, "jobName", default: "Color code") private var jobName
