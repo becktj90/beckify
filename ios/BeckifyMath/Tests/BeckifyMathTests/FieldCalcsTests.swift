@@ -45,6 +45,18 @@ final class ReactanceTests: XCTestCase {
         XCTAssertThrowsError(try Reactance.series(
             frequency: 60, resistance: .nan, inductance: 0.1, capacitance: 100e-6
         ))
+        XCTAssertThrowsError(try Reactance.series(
+            frequency: 60, resistance: 10, inductance: -0.1, capacitance: 100e-6
+        ))
+        XCTAssertThrowsError(try Reactance.series(
+            frequency: 60, resistance: 10, inductance: .infinity, capacitance: 100e-6
+        ))
+        XCTAssertThrowsError(try Reactance.series(
+            frequency: 60, resistance: 10, inductance: 0.1, capacitance: -100e-6
+        ))
+        XCTAssertThrowsError(try Reactance.series(
+            frequency: 60, resistance: 10, inductance: 0.1, capacitance: .nan
+        ))
     }
 }
 

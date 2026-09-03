@@ -116,6 +116,22 @@ final class SignalScalingTests: XCTestCase {
             engineeringMin: 0, engineeringMax: 100, curve: .squareRoot
         ))
     }
+
+    func testSquareRootLiveZeroFaultReturnsInsteadOfThrowing() throws {
+        let result = try SignalScaling.toEngineering(
+            raw: 2,
+            rawMin: 4,
+            rawMax: 20,
+            engineeringMin: 0,
+            engineeringMax: 100,
+            curve: .squareRoot,
+            detectLiveZeroFault: true
+        )
+
+        XCTAssertTrue(result.isLiveZeroFault)
+        XCTAssertEqual(result.engineeringValue, 0, accuracy: 1e-9)
+        XCTAssertEqual(result.percentOfSpan, 0, accuracy: 1e-9)
+    }
 }
 
 final class ModbusAddressTests: XCTestCase {

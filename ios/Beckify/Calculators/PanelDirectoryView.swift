@@ -188,6 +188,7 @@ struct PanelDirectoryView: View {
 
     @MainActor
     private func recognize(from item: PhotosPickerItem) async {
+        let textBeforeRecognition = text
         isRecognizing = true
         recognizeError = nil
         defer {
@@ -206,6 +207,8 @@ struct PanelDirectoryView: View {
                 recognizeError = "No text found in that photo. Try a sharper, flatter shot of the directory."
                 return
             }
+            // Preserve edits or clears made while OCR was running.
+            guard text == textBeforeRecognition else { return }
             text = trimmed
         } catch {
             recognizeError = "On-device recognition failed. Paste the text instead."
@@ -214,9 +217,10 @@ struct PanelDirectoryView: View {
 
     /// Vision text recognition on a user-selected image. Nothing leaves the device.
     private static func recognizeText(in imageData: Data) async throws -> String {
-        guard let image = UIImage(data: imageData)?.cgImage else {
+        guard let uiImage = UIImage(data: imageData), let cgImage = uiImage.cgImage else {
             throw RecognitionError.unreadableImage
         }
+        let orientation = CGImagePropertyOrientation(uiImage.imageOrientation)
 
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
@@ -231,7 +235,7 @@ struct PanelDirectoryView: View {
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = false
 
-            let handler = VNImageRequestHandler(cgImage: image, options: [:])
+            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
                     try handler.perform([request])
@@ -244,5 +248,21 @@ struct PanelDirectoryView: View {
 
     private enum RecognitionError: Error {
         case unreadableImage
+    }
+}
+
+private extension CGImagePropertyOrientation {
+    init(_ orientation: UIImage.Orientation) {
+        switch orientation {
+        case .up: self = .up
+        case .down: self = .down
+        case .left: self = .left
+        case .right: self = .right
+        case .upMirrored: self = .upMirrored
+        case .downMirrored: self = .downMirrored
+        case .leftMirrored: self = .leftMirrored
+        case .rightMirrored: self = .rightMirrored
+        @unknown default: self = .up
+        }
     }
 }

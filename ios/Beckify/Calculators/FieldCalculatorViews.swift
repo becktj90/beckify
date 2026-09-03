@@ -99,7 +99,7 @@ struct ReactanceView: View {
             if mode == .series {
                 return .series(try Reactance.series(
                     frequency: frequency.parsedDouble ?? .nan,
-                    resistance: resistance.parsedDouble ?? 0,
+                    resistance: resistance.parsedDouble ?? .nan,
                     inductance: inductance.parsedDouble ?? .nan,
                     capacitance: farads
                 ))
@@ -297,7 +297,7 @@ struct PowerFactorView: View {
                 existingPowerFactor: (existing.parsedDouble ?? .nan) / 100,
                 targetPowerFactor: (target.parsedDouble ?? .nan) / 100,
                 voltage: voltage.parsedDouble ?? .nan,
-                frequency: frequency.parsedDouble ?? 60,
+                frequency: frequency.parsedDouble ?? .nan,
                 system: system
             )
         }

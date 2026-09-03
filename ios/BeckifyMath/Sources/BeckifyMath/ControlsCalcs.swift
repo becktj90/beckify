@@ -58,7 +58,18 @@ public enum SignalScaling {
         let liveZeroFault = detectLiveZeroFault && raw < rawMin - abs(rawMax - rawMin) * 0.01
 
         if curve == .squareRoot {
-            guard fraction >= 0 else {
+            if fraction < 0 {
+                // A broken live-zero loop still needs to surface as a fault, not
+                // only as a generic square-root domain error.
+                if liveZeroFault {
+                    return SignalScalingResult(
+                        engineeringValue: engineeringMin,
+                        rawValue: raw,
+                        percentOfSpan: 0,
+                        isLiveZeroFault: true,
+                        formula: "EU = EU_min + √((raw − raw_min)/(raw_max − raw_min)) · span"
+                    )
+                }
                 throw CalcError.outOfRange("Square-root scaling requires a raw value at or above the raw minimum.")
             }
             fraction = fraction.squareRoot()

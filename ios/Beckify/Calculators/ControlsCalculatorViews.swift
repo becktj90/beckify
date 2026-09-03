@@ -73,6 +73,7 @@ struct SignalScalingView: View {
             TryExampleButton(title: "12 mA on a 0–150 PSI transmitter") {
                 direction = .toEngineering
                 curve = .linear
+                detectLiveZeroFault = true
                 value = "12"
                 rawMin = "4"
                 rawMax = "20"
