@@ -11,7 +11,7 @@ struct FrequencyView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.frequencyWave, "mode", default: .freq) private var mode
+    @StoredChoice(.frequencyWave, "mode", default: Mode.freq) private var mode
     @StoredInput(.frequencyWave, "frequency", default: "1000000") private var frequency
     @StoredInput(.frequencyWave, "period", default: "1e-6") private var period
     @StoredInput(.frequencyWave, "wavelength", default: "300") private var wavelength

@@ -9,7 +9,7 @@ struct SeriesParallelView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.seriesParallel, "part", default: .resistors) private var part
+    @StoredChoice(.seriesParallel, "part", default: Part.resistors) private var part
     @StoredChoice(.seriesParallel, "kind", default: NetworkKind.series) private var kind
     @StoredInput(.seriesParallel, "v1", default: "10") private var v1
     @StoredInput(.seriesParallel, "v2", default: "20") private var v2

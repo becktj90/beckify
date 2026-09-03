@@ -10,7 +10,7 @@ struct ResistorColorView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.resistorColor, "mode", default: .decode4) private var mode
+    @StoredChoice(.resistorColor, "mode", default: Mode.decode4) private var mode
     @StoredChoice(.resistorColor, "d1", default: ResistorBand.yellow) private var d1
     @StoredChoice(.resistorColor, "d2", default: ResistorBand.violet) private var d2
     @StoredChoice(.resistorColor, "d3", default: ResistorBand.black) private var d3

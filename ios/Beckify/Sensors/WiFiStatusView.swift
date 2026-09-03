@@ -270,7 +270,7 @@ struct WiFiStatusView: View {
     @EnvironmentObject private var jobs: JobStore
     @StateObject private var model = WiFiPathModel()
     @StoredInput(.wifiStatus, "jobName", default: "Wi-Fi coverage") private var jobName
-    @StoredChoice(.wifiStatus, "surveyMode", default: .gps) private var surveyMode
+    @StoredChoice(.wifiStatus, "surveyMode", default: WiFiSurveyMode.gps) private var surveyMode
     @State private var notes = ""
 
     var body: some View {

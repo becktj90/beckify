@@ -9,7 +9,7 @@ struct LEDRCView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.ledRC, "mode", default: .led) private var mode
+    @StoredChoice(.ledRC, "mode", default: Mode.led) private var mode
     @StoredInput(.ledRC, "supply", default: "5") private var supply
     @StoredInput(.ledRC, "vf", default: "2.0") private var vf
     @StoredInput(.ledRC, "current", default: "0.02") private var current

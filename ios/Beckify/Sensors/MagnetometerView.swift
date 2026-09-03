@@ -18,12 +18,12 @@ final class MagnetometerModel: ObservableObject {
 
     init() {
         available = motion.isDeviceMotionAvailable
-            && CMMotionManager.availableAttitudeReferenceFrames.contains(.xMagneticNorthZVertical)
+            && CMMotionManager.availableAttitudeReferenceFrames().contains(.xMagneticNorthZVertical)
     }
 
     func start() {
         guard motion.isDeviceMotionAvailable,
-              CMMotionManager.availableAttitudeReferenceFrames.contains(.xMagneticNorthZVertical) else {
+              CMMotionManager.availableAttitudeReferenceFrames().contains(.xMagneticNorthZVertical) else {
             available = false
             status = "Magnetic-north device motion is not available on this hardware."
             return

@@ -12,7 +12,7 @@ struct PowerWizardView: View {
 
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.powerWizard, "system", default: ElectricalSystem.threePhase) private var system
-    @StoredChoice(.powerWizard, "known", default: .kw) private var known
+    @StoredChoice(.powerWizard, "known", default: Known.kw) private var known
     @StoredInput(.powerWizard, "value", default: "50") private var value
     @StoredInput(.powerWizard, "voltage", default: "480") private var voltage
     @StoredInput(.powerWizard, "pf", default: "90") private var pf
