@@ -17,8 +17,8 @@ struct BeckifyApp: App {
 struct RootView: View {
     var body: some View {
         TabView {
-            ToolboxView()
-                .tabItem { Label("Toolbox", systemImage: "wrench.and.screwdriver.fill") }
+            ToolGridView()
+                .tabItem { Label("Toolbox", systemImage: "square.grid.2x2.fill") }
             FavoritesView()
                 .tabItem { Label("Favorites", systemImage: "star.fill") }
             JobsView()
