@@ -81,6 +81,10 @@ struct UnitConverterView: View {
                 substituted: substituted,
                 meaning: "Homework conversions. dB uses 20 log10 for voltage/current ratios and 10 log10 for power."
             )
+            TryExampleButton(title: exampleTitle) {
+                applyExample()
+                live.update { try computeResult() }
+            }
             Picker("Category", selection: $category) {
                 ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -153,6 +157,35 @@ struct UnitConverterView: View {
     private var sticky: String? { live.result }
 
     private var copyText: String? { sticky }
+
+    private var exampleTitle: String {
+        switch category {
+        case .si: return "4.7 kV → V"
+        case .db: return "Voltage ratio 2 → dB"
+        case .temp: return "20 °C → °F"
+        case .length: return "10 ft → m"
+        }
+    }
+
+    private func applyExample() {
+        switch category {
+        case .si:
+            siKind = .volts
+            fromP = .kilo
+            toP = .none
+            value = "4.7"
+        case .db:
+            dbKind = .voltage
+            dbModeRatio = true
+            value = "2"
+        case .temp:
+            tempDir = .cToF
+            value = "20"
+        case .length:
+            lengthDir = .ftToM
+            value = "10"
+        }
+    }
 
     @ViewBuilder
     private var categoryFields: some View {

@@ -37,6 +37,14 @@ struct ResistorColorView: View {
                 substituted: substituted,
                 meaning: "IEC 60062 colors. Encode rounds the significand to integer digits. Yellow-violet-red-gold is the classic 4.7 kΩ 5%."
             )
+            TryExampleButton(title: "Yellow · violet · red · gold = 4.7 kΩ") {
+                mode = .decode4
+                d1 = .yellow
+                d2 = .violet
+                multiplier = .red
+                tolerance = .gold
+                live.update { try computeResult() }
+            }
             Picker("Mode", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }

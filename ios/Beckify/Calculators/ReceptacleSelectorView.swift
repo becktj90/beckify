@@ -2,6 +2,13 @@ import SwiftUI
 import BeckifyMath
 
 struct ReceptacleSelectorView: View {
+    private struct CommittedSelection: Equatable, Sendable {
+        var matches: [ReceptacleMatch]
+        var volts: Double
+        var amps: Double
+        var phase: ReceptaclePhaseKind
+    }
+
     @EnvironmentObject private var jobs: JobStore
 
     @StoredChoice(.receptacleSelector, "voltagePreset", default: ReceptacleVoltagePreset.v120) private var voltagePreset
@@ -17,7 +24,7 @@ struct ReceptacleSelectorView: View {
     @StoredNumber(.receptacleSelector, "frequencyHz", default: 60) private var frequencyHz
     @State private var selectedID: String?
     @StoredInput(.receptacleSelector, "jobName", default: "Receptacle") private var jobName
-    @State private var session = ExplicitCalculationState<[ReceptacleMatch]>()
+    @State private var session = ExplicitCalculationState<CommittedSelection>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -140,7 +147,8 @@ struct ReceptacleSelectorView: View {
                 ErrorText(message: error.message)
             }
 
-            if let list = session.displayedResult {
+            if let committed = session.displayedResult {
+                let list = committed.matches
                 let shown = selected(from: list)
                 Group {
                     ReceptacleFaceCard(match: shown)
@@ -177,7 +185,7 @@ struct ReceptacleSelectorView: View {
                 }
                 .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
-                    save(list)
+                    save(committed)
                 }
             }
         }
@@ -215,7 +223,13 @@ struct ReceptacleSelectorView: View {
         session.calculate {
             guard let query else { throw CalcError.missing("voltage and current") }
             selectedID = nil
-            return try ReceptacleSelector.select(query)
+            let matches = try ReceptacleSelector.select(query)
+            return CommittedSelection(
+                matches: matches,
+                volts: query.volts,
+                amps: query.amps,
+                phase: query.phase
+            )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
             successTick += 1
@@ -239,16 +253,16 @@ struct ReceptacleSelectorView: View {
     }
 
     private var substituted: String? {
-        guard let list = session.displayedResult else { return nil }
-        let shown = selected(from: list)
-        let v = volts.map { Format.number($0, digits: 0) } ?? "?"
-        let a = amps.map { Format.number($0, digits: 0) } ?? "?"
-        return "\(v) V · \(phase.displayName) · \(a) A → \(shown.config.code) (\(shown.config.family.displayName))"
+        guard let committed = session.displayedResult else { return nil }
+        let shown = selected(from: committed.matches)
+        let v = Format.number(committed.volts, digits: 0)
+        let a = Format.number(committed.amps, digits: 0)
+        return "\(v) V · \(committed.phase.displayName) · \(a) A → \(shown.config.code) (\(shown.config.family.displayName))"
     }
 
     private var sticky: String? {
-        guard let list = session.displayedResult else { return nil }
-        let shown = selected(from: list)
+        guard let committed = session.displayedResult else { return nil }
+        let shown = selected(from: committed.matches)
         return "\(shown.config.code)  ·  \(Format.amps(shown.config.amps))"
     }
 
@@ -332,12 +346,13 @@ struct ReceptacleSelectorView: View {
         }
     }
 
-    private func save(_ list: [ReceptacleMatch]) {
+    private func save(_ committed: CommittedSelection) {
+        let list = committed.matches
         let top = selected(from: list)
         let inputs: [String: String] = [
-            "V": volts.map { Format.number($0, digits: 1) } ?? "",
-            "phase": phase.displayName,
-            "A": amps.map { Format.number($0, digits: 1) } ?? "",
+            "V": Format.number(committed.volts, digits: 1),
+            "phase": committed.phase.displayName,
+            "A": Format.number(committed.amps, digits: 1),
             "env": environment.displayName,
             "family": family.displayName,
             "N": neutral.displayName,
