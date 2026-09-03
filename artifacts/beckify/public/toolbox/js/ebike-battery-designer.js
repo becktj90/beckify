@@ -15,9 +15,9 @@
   ];
 
   const CELL_PRESETS = {
-    '18650': { v: 3.6, ah: 2.5, a: 20, d: 18.5, label: '18650 · 2.5 Ah / 20 A' },
-    '21700': { v: 3.6, ah: 4.0, a: 15, d: 21.2, label: '21700 · 4.0 Ah / 15 A' },
-    custom: { v: 3.6, ah: 3.0, a: 10, d: 18.5, label: 'Custom' },
+    '18650': { v: 3.6, ah: 2.5, a: 20, d: 18.5, l: 65.2, label: '18650 · 2.5 Ah / 20 A' },
+    '21700': { v: 3.6, ah: 4.0, a: 15, d: 21.2, l: 70.5, label: '21700 · 4.0 Ah / 15 A' },
+    custom: { v: 3.6, ah: 3.0, a: 10, d: 18.5, l: 65.0, label: 'Custom' },
   };
 
   const PACK_PRESETS = {
@@ -186,6 +186,139 @@
     return best;
   }
 
+  /** World-space upright cells for the 3D inspect view (mm). */
+  function buildPackCells(grid, opts) {
+    const diameter = Math.max(8, Number(opts.cellD) || 18.5);
+    const length = Math.max(20, Number(opts.cellL) || 65);
+    const honeycomb = !!opts.honeycomb;
+    const p = pitch(diameter, honeycomb);
+    const radius = diameter / 2;
+    const cells = [];
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+
+    for (let r = 0; r < grid.length; r += 1) {
+      for (let c = 0; c < grid[r].length; c += 1) {
+        const group = grid[r][c] | 0;
+        if (group <= 0) continue;
+        const offset = honeycomb && (r % 2) ? p.col / 2 : 0;
+        const x = c * p.col + offset;
+        const z = r * p.row;
+        cells.push({
+          x: x,
+          y: 0,
+          z: z,
+          r: radius,
+          h: length,
+          group: group,
+          hue: groupHue(group),
+        });
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+    }
+
+    const cx = cells.length ? (minX + maxX) / 2 : 0;
+    const cz = cells.length ? (minZ + maxZ) / 2 : 0;
+    const span = cells.length
+      ? Math.max(maxX - minX, maxZ - minZ, length, diameter * 4)
+      : 120;
+    return { cells: cells, center: { x: cx, y: length / 2, z: cz }, span: span };
+  }
+
+  function cameraBasis(yaw, pitch) {
+    const cy = Math.cos(yaw);
+    const sy = Math.sin(yaw);
+    const cp = Math.cos(pitch);
+    const sp = Math.sin(pitch);
+    // Camera looks toward -forward from eye.
+    const forward = { x: sy * cp, y: sp, z: cy * cp };
+    const worldUp = { x: 0, y: 1, z: 0 };
+    const right = {
+      x: forward.y * worldUp.z - forward.z * worldUp.y,
+      y: forward.z * worldUp.x - forward.x * worldUp.z,
+      z: forward.x * worldUp.y - forward.y * worldUp.x,
+    };
+    const rLen = Math.hypot(right.x, right.y, right.z) || 1;
+    right.x /= rLen; right.y /= rLen; right.z /= rLen;
+    const up = {
+      x: right.y * forward.z - right.z * forward.y,
+      y: right.z * forward.x - right.x * forward.z,
+      z: right.x * forward.y - right.y * forward.x,
+    };
+    return { forward: forward, right: right, up: up };
+  }
+
+  function projectPoint(point, eye, basis, focal, width, height) {
+    const dx = point.x - eye.x;
+    const dy = point.y - eye.y;
+    const dz = point.z - eye.z;
+    const camX = dx * basis.right.x + dy * basis.right.y + dz * basis.right.z;
+    const camY = dx * basis.up.x + dy * basis.up.y + dz * basis.up.z;
+    const camZ = dx * basis.forward.x + dy * basis.forward.y + dz * basis.forward.z;
+    if (!(camZ > 1)) return null;
+    return {
+      x: width / 2 + (focal * camX) / camZ,
+      y: height / 2 - (focal * camY) / camZ,
+      z: camZ,
+      scale: focal / camZ,
+    };
+  }
+
+  function drawCylinder(ctx, cell, eye, basis, focal, width, height) {
+    const bottom = projectPoint({ x: cell.x, y: cell.y, z: cell.z }, eye, basis, focal, width, height);
+    const top = projectPoint({ x: cell.x, y: cell.y + cell.h, z: cell.z }, eye, basis, focal, width, height);
+    if (!bottom || !top) return null;
+    const rx = Math.max(1.2, cell.r * bottom.scale);
+    const ry = Math.max(0.8, rx * 0.42);
+    const tx = Math.max(1.2, cell.r * top.scale);
+    const ty = Math.max(0.8, tx * 0.42);
+    const depth = (bottom.z + top.z) / 2;
+    return {
+      depth: depth,
+      draw: function () {
+        const body = ctx.createLinearGradient(bottom.x - rx, bottom.y, bottom.x + rx, bottom.y);
+        body.addColorStop(0, 'hsl(' + cell.hue + ' 55% 24%)');
+        body.addColorStop(0.45, 'hsl(' + cell.hue + ' 62% 42%)');
+        body.addColorStop(1, 'hsl(' + cell.hue + ' 50% 20%)');
+
+        ctx.beginPath();
+        ctx.moveTo(bottom.x - rx, bottom.y);
+        ctx.lineTo(top.x - tx, top.y);
+        ctx.lineTo(top.x + tx, top.y);
+        ctx.lineTo(bottom.x + rx, bottom.y);
+        ctx.closePath();
+        ctx.fillStyle = body;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(bottom.x, bottom.y, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'hsl(' + cell.hue + ' 45% 18%)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(top.x, top.y, tx, ty, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'hsl(' + cell.hue + ' 70% 52%)';
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(238,240,250,0.55)';
+        ctx.stroke();
+
+        if (tx >= 6) {
+          ctx.fillStyle = 'rgba(255,255,255,0.92)';
+          ctx.font = '600 ' + Math.max(8, Math.min(12, tx)) + 'px Space Grotesk, JetBrains Mono, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(cell.group), top.x, top.y);
+        }
+      },
+    };
+  }
+
   /* ── DOM wiring ─────────────────────────────────────────────────────────── */
 
   function $(id) {
@@ -201,10 +334,18 @@
     cols: 16,
     rows: 12,
     mode: 'paint',
+    view: '2d',
     activeGroup: 1,
     painting: false,
     pointerId: null,
     lastCell: null,
+    camYaw: 0.85,
+    camPitch: 0.48,
+    camDist: 420,
+    orbiting: false,
+    orbitPointerId: null,
+    orbitLastX: 0,
+    orbitLastY: 0,
   };
 
   function readOpts() {
@@ -215,6 +356,7 @@
       cellAh: num('ebd_cell_ah'),
       cellA: num('ebd_cell_a'),
       cellD: num('ebd_cell_d') || 18.5,
+      cellL: num('ebd_cell_l') || 65.2,
       loadA: num('ebd_load_a'),
       honeycomb: ($('ebd_pattern') && $('ebd_pattern').value) === 'honeycomb',
     };
@@ -387,12 +529,98 @@
     canvas._ebdOrigin = { x: originX, y: originY, diameter: diameter, honeycomb: honeycomb };
   }
 
+  function draw3D() {
+    const canvas = $('ebd_canvas_3d');
+    if (!canvas || !canvas.getContext) return;
+    const opts = readOpts();
+    const pack = buildPackCells(state.grid, opts);
+    const cssW = Math.max(480, Math.min(920, (canvas.parentElement && canvas.parentElement.clientWidth) || 720));
+    const cssH = 420;
+    const dpr = Math.min(2, global.devicePixelRatio || 1);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const bg = ctx.createLinearGradient(0, 0, 0, cssH);
+    bg.addColorStop(0, '#10162a');
+    bg.addColorStop(1, '#070a12');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, cssW, cssH);
+
+    // Floor grid
+    ctx.strokeStyle = 'rgba(148,151,184,0.12)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 9; i += 1) {
+      const y = cssH * 0.62 + i * 10;
+      ctx.beginPath();
+      ctx.moveTo(20, y);
+      ctx.lineTo(cssW - 20, y);
+      ctx.stroke();
+    }
+
+    if (!pack.cells.length) {
+      ctx.fillStyle = '#9497b8';
+      ctx.font = '500 14px Space Grotesk, JetBrains Mono, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Paint cells in the 2D view to inspect the pack in 3D.', cssW / 2, cssH / 2);
+      return;
+    }
+
+    const dist = Math.max(160, state.camDist);
+    const basis = cameraBasis(state.camYaw, state.camPitch);
+    // `forward` is the look direction; place the eye behind the pack center.
+    const eye = {
+      x: pack.center.x - basis.forward.x * dist,
+      y: pack.center.y - basis.forward.y * dist,
+      z: pack.center.z - basis.forward.z * dist,
+    };
+    const focal = Math.min(cssW, cssH) * 0.92;
+    const drawers = [];
+    for (let i = 0; i < pack.cells.length; i += 1) {
+      const item = drawCylinder(ctx, pack.cells[i], eye, basis, focal, cssW, cssH);
+      if (item) drawers.push(item);
+    }
+    drawers.sort((a, b) => b.depth - a.depth);
+    for (let i = 0; i < drawers.length; i += 1) drawers[i].draw();
+
+    ctx.fillStyle = 'rgba(148,151,184,0.85)';
+    ctx.font = '500 11px JetBrains Mono, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(pack.cells.length + ' cells · drag to orbit · scroll to zoom', 14, cssH - 14);
+  }
+
+  function setView(view) {
+    state.view = view === '3d' ? '3d' : '2d';
+    const tab2d = $('ebd_view_2d');
+    const tab3d = $('ebd_view_3d');
+    const ws2d = $('ebd_workspace_2d');
+    const ws3d = $('ebd_workspace_3d');
+    if (tab2d) {
+      tab2d.classList.toggle('active', state.view === '2d');
+      tab2d.setAttribute('aria-selected', state.view === '2d' ? 'true' : 'false');
+    }
+    if (tab3d) {
+      tab3d.classList.toggle('active', state.view === '3d');
+      tab3d.setAttribute('aria-selected', state.view === '3d' ? 'true' : 'false');
+    }
+    if (ws2d) ws2d.hidden = state.view !== '2d';
+    if (ws3d) ws3d.hidden = state.view !== '3d';
+    if (state.view === '3d') draw3D();
+    else drawCanvas();
+  }
+
   function refresh() {
     const opts = readOpts();
     syncGroupSelect(opts.targetS);
     const analysis = analyzeLayout(state.grid, opts);
     renderStats(analysis);
-    drawCanvas();
+    if (state.view === '3d') draw3D();
+    else drawCanvas();
     const status = $('ebd_status');
     if (status) {
       status.textContent = analysis.exactTarget
@@ -481,13 +709,53 @@
     if ($('ebd_cell_ah')) $('ebd_cell_ah').value = String(preset.ah);
     if ($('ebd_cell_a')) $('ebd_cell_a').value = String(preset.a);
     if ($('ebd_cell_d')) $('ebd_cell_d').value = String(preset.d);
+    if ($('ebd_cell_l')) $('ebd_cell_l').value = String(preset.l);
     refresh();
+  }
+
+  function onOrbitDown(event) {
+    const canvas = $('ebd_canvas_3d');
+    if (!canvas || event.button === 2) return;
+    event.preventDefault();
+    state.orbiting = true;
+    state.orbitPointerId = event.pointerId;
+    state.orbitLastX = event.clientX;
+    state.orbitLastY = event.clientY;
+    try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+  }
+
+  function onOrbitMove(event) {
+    if (!state.orbiting || event.pointerId !== state.orbitPointerId) return;
+    const dx = event.clientX - state.orbitLastX;
+    const dy = event.clientY - state.orbitLastY;
+    state.orbitLastX = event.clientX;
+    state.orbitLastY = event.clientY;
+    state.camYaw += dx * 0.01;
+    state.camPitch = Math.max(-0.2, Math.min(1.2, state.camPitch + dy * 0.01));
+    draw3D();
+  }
+
+  function onOrbitUp(event) {
+    if (event.pointerId !== state.orbitPointerId) return;
+    state.orbiting = false;
+    state.orbitPointerId = null;
+    const canvas = $('ebd_canvas_3d');
+    if (canvas && canvas.hasPointerCapture && canvas.hasPointerCapture(event.pointerId)) {
+      try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+    }
+  }
+
+  function onOrbitWheel(event) {
+    event.preventDefault();
+    const factor = event.deltaY > 0 ? 1.08 : 0.92;
+    state.camDist = Math.max(140, Math.min(1200, state.camDist * factor));
+    draw3D();
   }
 
   function wire() {
     if (!$('ebd_canvas')) return;
 
-    ['ebd_target_s', 'ebd_target_p', 'ebd_cell_v', 'ebd_cell_ah', 'ebd_cell_a', 'ebd_cell_d', 'ebd_load_a', 'ebd_pattern']
+    ['ebd_target_s', 'ebd_target_p', 'ebd_cell_v', 'ebd_cell_ah', 'ebd_cell_a', 'ebd_cell_d', 'ebd_cell_l', 'ebd_load_a', 'ebd_pattern']
       .forEach((id) => {
         const el = $(id);
         if (el) el.addEventListener('input', refresh);
@@ -518,6 +786,8 @@
 
     if ($('ebd_mode_paint')) $('ebd_mode_paint').addEventListener('click', () => setMode('paint'));
     if ($('ebd_mode_erase')) $('ebd_mode_erase').addEventListener('click', () => setMode('erase'));
+    if ($('ebd_view_2d')) $('ebd_view_2d').addEventListener('click', () => setView('2d'));
+    if ($('ebd_view_3d')) $('ebd_view_3d').addEventListener('click', () => setView('3d'));
 
     if ($('ebd_autofill')) {
       $('ebd_autofill').addEventListener('click', () => {
@@ -564,6 +834,20 @@
     });
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 
+    const canvas3d = $('ebd_canvas_3d');
+    if (canvas3d) {
+      canvas3d.addEventListener('pointerdown', onOrbitDown);
+      canvas3d.addEventListener('pointermove', onOrbitMove);
+      canvas3d.addEventListener('pointerup', onOrbitUp);
+      canvas3d.addEventListener('pointercancel', onOrbitUp);
+      canvas3d.addEventListener('lostpointercapture', () => {
+        state.orbiting = false;
+        state.orbitPointerId = null;
+      });
+      canvas3d.addEventListener('wheel', onOrbitWheel, { passive: false });
+      canvas3d.addEventListener('contextmenu', (event) => event.preventDefault());
+    }
+
     document.addEventListener('keydown', (event) => {
       const section = $('sec-ebike-tools');
       if (!section || !section.classList.contains('active')) return;
@@ -577,6 +861,10 @@
         setMode('paint');
         return;
       }
+      if (event.key === 'v' || event.key === 'V') {
+        setView(state.view === '3d' ? '2d' : '3d');
+        return;
+      }
       const digit = Number(event.key);
       if (digit >= 1 && digit <= 9) {
         const opts = readOpts();
@@ -584,6 +872,7 @@
           $('ebd_active_group').value = String(digit);
           state.activeGroup = digit;
           setMode('paint');
+          if (state.view !== '2d') setView('2d');
         }
       }
     });
@@ -594,6 +883,7 @@
     applyCellPreset('18650');
     applyPackPreset('52v');
     setMode('paint');
+    setView('2d');
   }
 
   global.__ebikeBatteryDesignerTestApi = {
@@ -603,6 +893,9 @@
     hitTest: hitTest,
     cellCenter: cellCenter,
     countGroups: countGroups,
+    buildPackCells: buildPackCells,
+    projectPoint: projectPoint,
+    cameraBasis: cameraBasis,
     CELL_PRESETS: CELL_PRESETS,
     PACK_PRESETS: PACK_PRESETS,
     MAX_S: MAX_S,

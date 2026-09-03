@@ -9349,7 +9349,7 @@
             <div class="formula-box">
               Assign cells to series groups · match the parallel target in every group · V<sub>pack</sub> = S × V<sub>cell</sub> · Ah<sub>pack</sub> = P × Ah<sub>cell</sub>
             </div>
-            <p class="tool-note">Paint cells into color-coded series groups until each group hits the parallel target. Drag to paint, switch groups with the selector or keys 1–9, press E to erase.</p>
+            <p class="tool-note">Paint cells into color-coded series groups until each group hits the parallel target. Drag to paint, switch groups with the selector or keys 1–9, press E to erase, V to toggle 3D inspect.</p>
 
             <div class="input-group triple">
               <div>
@@ -9386,11 +9386,12 @@
               <div><label for="ebd_rows">Canvas rows</label><input id="ebd_rows" type="number" min="4" max="28" step="1" value="12"></div>
             </div>
 
-            <div class="input-group quad">
+            <div class="input-group ebd-cell-specs">
               <div><label for="ebd_cell_v">Cell voltage (V)</label><input id="ebd_cell_v" type="number" min="0.1" step="0.01" value="3.6"></div>
               <div><label for="ebd_cell_ah">Cell capacity (Ah)</label><input id="ebd_cell_ah" type="number" min="0.1" step="0.1" value="2.5"></div>
               <div><label for="ebd_cell_a">Cell continuous (A)</label><input id="ebd_cell_a" type="number" min="0.1" step="0.1" value="20"></div>
               <div><label for="ebd_cell_d">Cell diameter (mm)</label><input id="ebd_cell_d" type="number" min="5" step="0.1" value="18.5"></div>
+              <div><label for="ebd_cell_l">Cell length (mm)</label><input id="ebd_cell_l" type="number" min="10" step="0.1" value="65.2"></div>
             </div>
 
             <div class="input-group triple">
@@ -9411,8 +9412,16 @@
             </div>
 
             <p id="ebd_status" class="ebd-status" aria-live="polite">Paint cells into series groups until each group reaches the parallel target.</p>
-            <div class="ebd-workspace">
+            <div class="ebd-view-tabs" role="tablist" aria-label="Pack visualizer mode">
+              <button type="button" class="tab-btn active" id="ebd_view_2d" role="tab" aria-selected="true">2D paint</button>
+              <button type="button" class="tab-btn" id="ebd_view_3d" role="tab" aria-selected="false">3D inspect</button>
+            </div>
+            <div class="ebd-workspace" id="ebd_workspace_2d">
               <canvas id="ebd_canvas" class="ebd-canvas" width="720" height="420" role="img" aria-label="Battery pack cell layout canvas. Drag to paint the active series group onto empty cell slots."></canvas>
+            </div>
+            <div class="ebd-workspace ebd-workspace-3d" id="ebd_workspace_3d" hidden>
+              <canvas id="ebd_canvas_3d" class="ebd-canvas ebd-canvas-3d" width="720" height="420" role="img" aria-label="Three-dimensional pack inspect view. Drag to orbit and scroll to zoom."></canvas>
+              <p class="ebd-3d-hint">Drag to orbit · scroll to zoom · series groups keep their 2D colors</p>
             </div>
             <div id="ebd_result" class="result" aria-live="polite"></div>
             <div class="note">Planning layout only. Verify the cell datasheet, BMS, fusing, nickel strip or busbar ampacity, weld quality, insulation, enclosure clearances, and charger before assembling a lithium pack. For strip current estimates, use the <a href="#sec-battery-build">18650 pack planner</a>.</div>
