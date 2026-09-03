@@ -156,6 +156,14 @@ final class ModbusAddressTests: XCTestCase {
         XCTAssertEqual(result.sixDigit, "465536")
     }
 
+    func testMaximumSixDigitDisplayAddressRoundTrips() throws {
+        let result = try ModbusAddress.fromDisplayAddress("465536", table: .holdingRegister)
+
+        XCTAssertEqual(result.entityNumber, 65_536)
+        XCTAssertEqual(result.pduOffset, 65_535)
+        XCTAssertEqual(result.sixDigit, "465536")
+    }
+
     func testFiveDigitNotationIsUnavailableWhenEntityDoesNotFit() throws {
         let result = try ModbusAddress.fromPDUOffset(9_999, table: .holdingRegister)
 
