@@ -88,28 +88,37 @@ struct ToolboxView: View {
 
 struct ToolRow: View {
     let tool: ToolDefinition
+    @EnvironmentObject private var favorites: FavoritesStore
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: tool.symbol)
-                .font(.title3)
-                .foregroundStyle(Theme.accent)
-                .frame(width: 36, height: 36)
-                .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(tool.title)
-                    .font(.headline)
-                    .foregroundStyle(Theme.foreground)
-                Text(tool.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 14) {
+                Image(systemName: tool.symbol)
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+                    .frame(width: 36, height: 36)
+                    .background(Theme.iconGradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(tool.title)
+                        .font(.headline)
+                        .foregroundStyle(Theme.foreground)
+                    Text(tool.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(tool.title)
+            .accessibilityHint(tool.subtitle)
+
+            Spacer(minLength: 8)
+
+            FavoriteToggleButton(isOn: favorites.isFavorite(tool.id), name: tool.title) {
+                favorites.toggle(tool.id)
             }
         }
         .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(tool.title)
-        .accessibilityHint(tool.subtitle)
     }
 }
 

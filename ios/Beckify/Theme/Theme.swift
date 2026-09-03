@@ -12,11 +12,11 @@ enum Theme {
     )
     static let surface = Color.adaptive(
         light: UIColor(red: 255 / 255, green: 255 / 255, blue: 255 / 255, alpha: 1),
-        dark: UIColor.white.withAlphaComponent(0.045)
+        dark: UIColor.white.withAlphaComponent(0.035)
     )
     static let surfaceRaised = Color.adaptive(
         light: UIColor(red: 236 / 255, green: 237 / 255, blue: 246 / 255, alpha: 1),
-        dark: UIColor.white.withAlphaComponent(0.07)
+        dark: UIColor.white.withAlphaComponent(0.065)
     )
     static let foreground = Color.adaptive(
         light: UIColor(red: 22 / 255, green: 24 / 255, blue: 38 / 255, alpha: 1),
@@ -28,7 +28,7 @@ enum Theme {
     )
     static let border = Color.adaptive(
         light: UIColor.black.withAlphaComponent(0.12),
-        dark: UIColor.white.withAlphaComponent(0.10)
+        dark: UIColor.white.withAlphaComponent(0.09)
     )
     static let accent = Color.adaptive(
         light: UIColor(red: 92 / 255, green: 74 / 255, blue: 214 / 255, alpha: 1),
@@ -53,6 +53,20 @@ enum Theme {
 
     static let disclaimer = "Design aid only — not a PE stamp, permit, or substitute for the NEC or a qualified engineer."
     static let sensorDisclaimer = "Not a calibrated instrument. Not a legal sound-level meter, survey, compass, or PE stamp. For field notes and homework only. Readings stay on this device unless you save a numeric snapshot."
+
+    /// Nebula violet → blue, matching the beckify.com brand gradient.
+    static let brandGradient = LinearGradient(
+        colors: [accent, accent2],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    /// Soft tinted fill for icon badges, echoing the site's glowing accent chips.
+    static let iconGradient = LinearGradient(
+        colors: [accent.opacity(0.32), accent2.opacity(0.18)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 
 extension Color {
@@ -61,6 +75,14 @@ extension Color {
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark ? dark : light
         })
+    }
+}
+
+extension View {
+    /// The site's card-hover glow — a soft violet shadow — applied statically
+    /// to brand-forward surfaces (formula/show-work cards) instead of on hover.
+    func brandGlow(radius: CGFloat = 16, opacity: Double = 0.22) -> some View {
+        shadow(color: Theme.accent.opacity(opacity), radius: radius, x: 0, y: 6)
     }
 }
 

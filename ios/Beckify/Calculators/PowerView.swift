@@ -142,7 +142,7 @@ struct PowerView: View {
                 ResultRow(label: "Resistance", value: r.resistance.isFinite ? "\(Format.number(r.resistance)) Ω" : "—")
             }
             SaveJobBar(jobName: $jobName, canSave: true) {
-                jobs.save(SavedJob(name: jobName, toolID: .power, inputs: ["mode": mode.rawValue, "V": v, "I": i, "R": r], outputs: ["P": Format.watts(r.power)]))
+                jobs.save(SavedJob(name: jobName, toolID: .power, inputs: ["mode": mode.rawValue, "V": v, "I": i, "R": Format.number(r.resistance)], outputs: ["P": Format.watts(r.power)]))
             }
         case .failure(let err):
             ErrorText(message: err.message)
