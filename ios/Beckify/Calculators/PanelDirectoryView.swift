@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftUI
 import UIKit
+import ImageIO
 import Vision
 import BeckifyMath
 
