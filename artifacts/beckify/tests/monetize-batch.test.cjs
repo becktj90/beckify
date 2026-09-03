@@ -115,6 +115,7 @@ ok("toolbox no longer loads arcade.js", !/src="js\/arcade\.js"/.test(toolboxHtml
 console.log("\n--- E-bike Battery Pack Designer ---");
 ok("e-bike home category lists Battery Pack Designer", /E-Bike Build[\s\S]{0,600}Battery Pack Designer/.test(toolboxHtml));
 ok("e-bike section has a Battery Pack Designer canvas", /id="eb-battery-designer"/.test(toolboxHtml) && /id="ebd_canvas"/.test(toolboxHtml));
+ok("pack designer includes a 3D inspect canvas", /id="ebd_canvas_3d"/.test(toolboxHtml) && /id="ebd_view_3d"/.test(toolboxHtml));
 ok("toolbox loads the pack designer script", /src="js\/ebike-battery-designer\.js"/.test(toolboxHtml));
 ok("no external batterydesigner.com launch CTA", !/href="https:\/\/batterydesigner\.com"/.test(toolboxHtml));
 ok("home chip deep-links e-bike tools", homeSrc.includes('href: "/toolbox/#sec-ebike-tools"'));
