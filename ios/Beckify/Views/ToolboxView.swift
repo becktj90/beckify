@@ -120,6 +120,7 @@ struct ToolRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityIdentifier("toolRow.\(tool.id.rawValue)")
     }
 }
 

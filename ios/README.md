@@ -4,6 +4,22 @@ Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.tool
 
 This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode.
 
+## Design system
+
+Reusable tokens live in `Beckify/Theme/Theme.swift` (surfaces, semantic accents, spacing, radius, stroke, typography, chart colors, motion). Calculator chrome — identity header, Calculate / Reset / Example, stale-result banner, diagrams — lives under `Beckify/Views/Components/`.
+
+Every primary tool has an original vector `ToolGlyph` (not a shared SF Symbol). Open **Icon Gallery** from the toolbox toolbar to review them together.
+
+### Calculation modes
+
+`ToolCalculationPolicy` / `ToolDefinition.calculationMode` is the single source of truth:
+
+- **Live** — Unit Converter, Resistor Color, Circular Mils, Modbus Address: update when inputs are valid.
+- **Explicit** — multi-input engineering tools: require **Calculate**; preserve the last success as stale while inputs change (“Inputs changed — Calculate again.”).
+- **Sensor** — continuous / permission-gated instruments.
+
+Session state (`ExplicitCalculationState`, `LiveCalculationState`) is pure Swift in BeckifyMath and covered by XCTest.
+
 ## Layout
 
 ```text
@@ -25,16 +41,11 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Wire Size & Ampacity (310.16 75 °C)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
-- Reactance & Resonance (series Z / LC Q and bandwidth)
-- Power Factor Correction (kVAR to a target PF, plus bank capacitance)
-- Short-Circuit Current (infinite-bus secondary from kVA, V, %Z)
-- Circular Mils (diameter / CM / in²)
-- Load & Demand Factors
-- Panel Directory (paste or on-device OCR of a schedule / sticker into circuit rows)
-- Signal Scaling (4–20 mA ↔ EU, linear or √)
-- Modbus Address (PDU offset, entity, 40001 / 400001, function code)
-- PLC Timer Preset (TON/TOF counts at a timebase)
 - Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
+- Reactance & Resonance, Power Factor Correction, Short-Circuit Current
+- Circular Mils, Load & Demand Factors
+- Signal Scaling, Modbus Address, PLC Timer Preset
+- Panel Directory (paste/OCR schedule text)
 
 ## Homework calculators
 
@@ -83,8 +94,8 @@ You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth o
 cd ios
 xcodebuild \
   -project Beckify.xcodeproj \
-  -scheme Beckify \
   -destination 'generic/platform=iOS Simulator' \
+  -scheme Beckify \
   -configuration Debug \
   CODE_SIGNING_ALLOWED=NO \
   build

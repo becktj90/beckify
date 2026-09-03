@@ -54,6 +54,8 @@
 		BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000073 /* PanelDirectoryView.swift */; };
 		BECF00000000000000000076 /* CalculateChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000075 /* CalculateChrome.swift */; };
 		BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000077 /* EngineeringDiagrams.swift */; };
+		BECF0000000000000000007A /* IconGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000079 /* IconGalleryView.swift */; };
+		BECF0000000000000000007C /* RecentToolsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007B /* RecentToolsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -104,6 +106,8 @@
 		BECF00000000000000000073 /* PanelDirectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDirectoryView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000075 /* CalculateChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculateChrome.swift; sourceTree = "<group>"; };
 		BECF00000000000000000077 /* EngineeringDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineeringDiagrams.swift; sourceTree = "<group>"; };
+		BECF00000000000000000079 /* IconGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconGalleryView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000007B /* RecentToolsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentToolsStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -164,6 +168,7 @@
 				BECF00000000000000000017 /* ToolboxCatalog.swift */,
 				BECF00000000000000000063 /* ToolInputStore.swift */,
 				BECF00000000000000000067 /* FavoritesStore.swift */,
+				BECF0000000000000000007B /* RecentToolsStore.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -187,6 +192,7 @@
 				BECF00000000000000000021 /* ToolboxView.swift */,
 				BECF00000000000000000069 /* FavoritesView.swift */,
 				BECF0000000000000000006D /* ToolGridView.swift */,
+				BECF00000000000000000079 /* IconGalleryView.swift */,
 				BECF00000000000000000031 /* Components */,
 			);
 			path = Views;
@@ -355,6 +361,8 @@
 				BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */,
 				BECF00000000000000000076 /* CalculateChrome.swift in Sources */,
 				BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */,
+				BECF0000000000000000007A /* IconGalleryView.swift in Sources */,
+				BECF0000000000000000007C /* RecentToolsStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

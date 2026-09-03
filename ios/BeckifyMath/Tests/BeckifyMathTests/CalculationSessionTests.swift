@@ -49,7 +49,7 @@ final class CalculationSessionTests: XCTestCase {
     // MARK: - Explicit state machine
 
     func testExplicitStartsIdle() {
-        var state = ExplicitCalculationState<Double>()
+        let state = ExplicitCalculationState<Double>()
         XCTAssertEqual(state.phase, .idle)
         XCTAssertFalse(state.isStale)
         XCTAssertNil(state.displayedResult)
@@ -170,7 +170,7 @@ final class CalculationSessionTests: XCTestCase {
     func testVisualModelAcceptsFiniteValidatedNumbers() {
         let model = ValidatedVisualModel(
             requireFinite: [120.0, 3.5],
-            payload: (drop: 3.5, receiving: 116.5),
+            payload: "drop-3.5-receiving-116.5",
             accessibilitySummary: "Drop 3.5 V, receiving 116.5 V"
         )
         XCTAssertNotNil(model)

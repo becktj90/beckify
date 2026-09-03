@@ -130,9 +130,9 @@ public struct LiveCalculationState<Result: Equatable & Sendable>: Equatable, Sen
         } catch let calc as CalcError {
             result = nil
             error = calc
-        } catch {
+        } catch let unexpected {
             result = nil
-            error = .outOfRange(error.localizedDescription)
+            error = .outOfRange(unexpected.localizedDescription)
         }
     }
 
