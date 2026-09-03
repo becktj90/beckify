@@ -130,11 +130,21 @@ final class PLCTimerTests: XCTestCase {
 
     /// A coarse timebase quantises the achievable time; the error is the point.
     func testCoarseTimebaseReportsQuantisationError() throws {
-        let result = try PLCTimer.preset(seconds: 2.5, timebaseSeconds: 1)
+        let result = try PLCTimer.preset(seconds: 2.4, timebaseSeconds: 1)
 
         XCTAssertEqual(result.preset, 2)
         XCTAssertEqual(result.actualSeconds, 2, accuracy: 1e-9)
-        XCTAssertEqual(result.errorSeconds, -0.5, accuracy: 1e-9)
+        XCTAssertEqual(result.errorSeconds, -0.4, accuracy: 1e-9)
+    }
+
+    /// An exact half rounds up, so the timer never lands short of the time that
+    /// was asked for — the safer direction for a timeout.
+    func testExactHalfRoundsUp() throws {
+        let result = try PLCTimer.preset(seconds: 2.5, timebaseSeconds: 1)
+
+        XCTAssertEqual(result.preset, 3)
+        XCTAssertEqual(result.actualSeconds, 3, accuracy: 1e-9)
+        XCTAssertEqual(result.errorSeconds, 0.5, accuracy: 1e-9)
     }
 
     func testReverseGivesTimeoutForPreset() throws {
