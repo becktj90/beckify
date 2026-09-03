@@ -209,9 +209,9 @@ struct SignalScalingView: View {
     private var sticky: String? {
         switch display {
         case .current(let r), .stale(let r):
-            return direction == .toEngineering
-                ? "\(Format.number(r.engineeringValue, digits: 3)) EU"
-                : "\(Format.number(r.rawValue, digits: 3)) raw"
+            // Both sides come from the committed result so a live direction
+            // flip cannot relabel a stale sticky answer.
+            return "\(Format.number(r.engineeringValue, digits: 3)) EU  ·  \(Format.number(r.rawValue, digits: 3)) raw"
         default:
             return nil
         }
