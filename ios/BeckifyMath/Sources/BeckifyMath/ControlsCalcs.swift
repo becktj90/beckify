@@ -57,6 +57,20 @@ public enum SignalScaling {
         // range (for example, RTD resistance) is not necessarily a current loop.
         let liveZeroFault = detectLiveZeroFault && raw < rawMin - abs(rawMax - rawMin) * 0.01
 
+        // Prefer the live-zero fault path over a generic square-root domain error so
+        // 4–20 mA DP-flow loops still surface the broken-wire warning below 4 mA.
+        if liveZeroFault {
+            return SignalScalingResult(
+                engineeringValue: engineeringMin,
+                rawValue: raw,
+                percentOfSpan: 0,
+                isLiveZeroFault: true,
+                formula: curve == .squareRoot
+                    ? "EU = EU_min + √((raw − raw_min)/(raw_max − raw_min)) · span"
+                    : "EU = EU_min + (raw − raw_min)/(raw_max − raw_min) · span"
+            )
+        }
+
         if curve == .squareRoot {
             guard fraction >= 0 else {
                 throw CalcError.outOfRange("Square-root scaling requires a raw value at or above the raw minimum.")
@@ -69,7 +83,7 @@ public enum SignalScaling {
             engineeringValue: value,
             rawValue: raw,
             percentOfSpan: fraction * 100,
-            isLiveZeroFault: liveZeroFault,
+            isLiveZeroFault: false,
             formula: curve == .squareRoot
                 ? "EU = EU_min + √((raw − raw_min)/(raw_max − raw_min)) · span"
                 : "EU = EU_min + (raw − raw_min)/(raw_max − raw_min) · span"

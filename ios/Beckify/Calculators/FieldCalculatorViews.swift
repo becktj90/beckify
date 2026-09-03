@@ -115,17 +115,25 @@ struct ReactanceView: View {
     private func calculate() {
         session.calculate {
             if mode == .series {
+                // Series R is required — do not coerce blank/garbage text to 0 Ω.
                 return .series(try Reactance.series(
                     frequency: frequency.parsedDouble ?? .nan,
-                    resistance: resistance.parsedDouble ?? 0,
+                    resistance: resistance.parsedDouble ?? .nan,
                     inductance: inductance.parsedDouble ?? .nan,
                     capacitance: farads
                 ))
             }
+            // Resonance R is optional in the UI; blank stays 0 for Q = ∞ handling upstream.
+            let resonanceR: Double
+            if resistance.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                resonanceR = 0
+            } else {
+                resonanceR = resistance.parsedDouble ?? .nan
+            }
             return .resonance(try Reactance.resonance(
                 inductance: inductance.parsedDouble ?? .nan,
                 capacitance: farads,
-                resistance: resistance.parsedDouble ?? .nan
+                resistance: resonanceR
             ))
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
@@ -277,7 +285,7 @@ struct PowerFactorView: View {
                 existingPowerFactor: (existing.parsedDouble ?? .nan) / 100,
                 targetPowerFactor: (target.parsedDouble ?? .nan) / 100,
                 voltage: voltage.parsedDouble ?? .nan,
-                frequency: frequency.parsedDouble ?? 60,
+                frequency: frequency.parsedDouble ?? .nan,
                 system: system
             )
         }

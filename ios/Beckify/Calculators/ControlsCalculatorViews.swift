@@ -101,6 +101,7 @@ struct SignalScalingView: View {
                     rawMax = "20"
                     euMin = "0"
                     euMax = "150"
+                    detectLiveZeroFault = true
                     session.prepareForNewInputs()
                 },
                 exampleTitle: "12 mA on a 0–150 PSI transmitter"
