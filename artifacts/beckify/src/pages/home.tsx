@@ -162,6 +162,9 @@ export default function Home() {
                     { href: "/toolbox/#sec-nema-wiring", label: "NEMA wiring" },
                     { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
                     { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },
+                    { href: "/toolbox/#sec-torque-lookup", label: "Torque lookup" },
+                    { href: "/toolbox/#sec-bldg-load", label: "Load worksheet" },
+                    { href: "/toolbox/#sec-wire-colors", label: "Wire colors" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}

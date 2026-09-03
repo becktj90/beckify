@@ -34,7 +34,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v26';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -102,6 +102,9 @@ const SHELL = [
   './js/ocr-helper.js',
   './js/motor-nameplate.js',
   './js/vendor/xlsx.full.min.js',
+  './js/torque-lookup.js',
+  './js/load-worksheet.js',
+  './js/wire-colors.js',
   './js/math-explanations.js',
   './js/analog-schematics.js',
   './js/analog-tools.js',

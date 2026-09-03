@@ -51,6 +51,10 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "cable-schedule": ["cable schedule", "cable id", "tray", "conductor count", "xlsx"],
   "battery-bank": ["battery bank", "depth of discharge", "lfp", "lifepo4", "agm", "series parallel", "backup duration", "c-rate"],
   "motor-nameplate": ["motor nameplate", "430.32", "430.52", "fla", "locked rotor", "service factor", "ocr"],
+  "building-load": ["load calculation", "nec 220", "220.42", "demand factor", "feeder load", "service load", "worksheet"],
+  "load-calculation-worksheet": ["load calculation", "nec 220", "220.42", "220.82", "demand factor", "worksheet"],
+  "torque-lookup": ["torque", "lug", "terminal", "ul 486", "in-lb", "tightening torque", "split bolt"],
+  "wire-colors": ["wire color", "nec 200.6", "250.119", "110.15", "high-leg", "ul 508a", "yellow interlock", "control panel"],
 };
 
 /**

@@ -141,8 +141,9 @@ export const TOOLS = [
   ["on-site-power", "On-site Power", "Size UPS, generator, hybrid generator-and-battery, or BESS peak-shave from connected loads. One family — four modes.", "sec-ups"],
   ["ebike-drivetrain", "E-Bike Drivetrain Calculator", "Calculate e-bike torque, RPM, sprocket ratios, wheel speed, and drivetrain performance.", "sec-ebike-tools"],
   ["nec-circuit", "NEC Circuit Calculator", "Size branch-circuit conductors and overcurrent protection using practical NEC-based inputs.", "sec-nec"],
-  ["building-load", "Building Load Calculator", "Estimate building electrical load from connected, continuous, and demand load inputs.", "sec-bldg-load"],
-  ["load-factors-capacity", "Load Factors and Capacity Calculator", "Calculate demand, diversity, coincidence, load, and capacity-utilization factors from known electrical load data.", "sec-load-factors"],
+  ["building-load", "Load Calculation Worksheet", "Row-based NEC 220 feeder/service worksheet: lighting, receptacle, kitchen, HVAC, motor, and other loads with visible demand factors, phase amps, and a spare adder. Design aid — not a PE service calculation.", "sec-bldg-load"],
+  ["load-factors-capacity", "Load Factors and Capacity Calculator", "Calculate demand, diversity, coincidence, load, and capacity-utilization factors from known electrical load data. Companion to the Load Calculation Worksheet — not a third peer.", "sec-load-factors"],
+  ["torque-lookup", "Torque Lookup", "Typical terminal/lug tightening torque from UL 486A-B (NEC Annex I reprint) plus SAE/metric fastener handbook values. Manufacturer marking wins. Not a calibrated torque-tool substitute.", "sec-torque-lookup"],
   ["lsi-breaker", "LSI Breaker Visualizer", "Explore long-time, short-time, and instantaneous breaker protection settings visually.", "sec-lsi"],
   ["harmonics", "Harmonics Tool", "Review harmonic distortion and practical electrical power-quality relationships.", "sec-harmonics"],
   ["hazardous-area", "Hazardous Area Lookup", "Reference hazardous-area classifications and equipment selection concepts for electrical work.", "sec-haz"],
@@ -201,6 +202,7 @@ export const TOOL_ALIASES = [
   ["resonance", "RLC Resonance Calculator", "Find resonant frequency and related values for series and parallel LC circuits.", "sec-resonance", "rlc", "resonance"],
   ["panel-schedule-load-analyzer", "Panel Schedule Load Analyzer", "Extract an editable panel schedule from a photo and estimate circuit demand, panel current, diversity, and capacity.", "sec-panel-schedule", "panel", "load"],
   ["panel-power-study", "Panel Schedule Power Study", "Read a panel schedule image, review breaker sizes, poles, and circuit classes, then calculate connected load, demand and diversity factors, panel FLA, and remaining expansion capacity.", "sec-panel-power-study", "panel", "study"],
+  ["load-calculation-worksheet", "Load Calculation Worksheet", "Alias of building-load. Row-based NEC 220 worksheet with 220.42 / 220.52 / 220.53 / 220.54 / 220.82 factors you can see and edit.", "sec-bldg-load", null, null],
 ];
 
 export function resolveToolSlug(slug) {
@@ -260,4 +262,5 @@ export const REFERENCE_TABLES = [
   ["ip-rating", "IP Rating Chart (IEC 60529)", "Ingress Protection ratings for electrical enclosures covering solid-particle and liquid protection.", "sec-ip-rating"],
   ["nema-class", "NEMA Enclosure Types (NEMA 250)", "NEMA enclosure ratings for electrical equipment environmental and safety protection levels.", "sec-nema-class"],
   ["nema-wiring", "NEMA Wiring Configurations & Color Code Reference", "SVG receptacle-face diagrams for common NEMA straight-blade and locking devices, plus US color-code notes. Neutral and EGC colors cite NEC 200.6 and 250.119; hot colors are industry convention.", "sec-nema-wiring"],
+  ["wire-colors", "Wire colors (NEC / UL 508A)", "NEC grounded/EGC/high-leg identification versus industry-convention hot colors, plus UL 508A industrial control-panel internal wiring colors (66.5 / 66.9). Not a substitute for the adopted code or standard.", "sec-wire-colors"],
 ];

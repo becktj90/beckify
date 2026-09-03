@@ -1868,6 +1868,67 @@ body.report-open { overflow: hidden; }
   .iol-station-head { flex-wrap: wrap; }
 }
 
+/* ── Field lookups: torque, load worksheet, wire colors ── */
+.tq-hero { font-size: 1.35rem; font-weight: 700; color: var(--fg); margin: 8px 0; }
+.tq-unit { color: var(--fg-muted); font-size: 0.75rem; }
+.tq-si { color: var(--fg-muted); font-size: 0.72rem; }
+.tq-table td { vertical-align: top; }
+.lw-table input, .lw-table select {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.78rem;
+}
+.lw-table { min-width: 720px; }
+.lw-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.wc-system { margin: 0 0 22px; }
+.wc-system-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0 0 10px;
+  color: var(--fg);
+}
+.wc-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 10px;
+}
+.wc-swatch {
+  border-radius: var(--radius);
+  padding: 16px 14px;
+  min-height: 168px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+.wc-swatch-name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+.wc-swatch-role { font-size: 0.82rem; margin: 6px 0 10px; opacity: 0.92; }
+.wc-swatch-cite { font-size: 0.72rem; line-height: 1.45; margin-top: 10px; opacity: 0.88; }
+.wc-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.28);
+}
+.wc-badge-code { background: #14532d; color: #bbf7d0; }
+.wc-badge-conv { background: rgba(0,0,0,0.35); }
+.wc-swatch-safety { outline: 2px solid #facc15; }
+.wc-safety {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+@media print {
+  body.tq-printing .sidebar, body.tq-printing header, body.tq-printing .nav-btn { display: none !important; }
+  body.tq-printing .section { display: none !important; }
+  body.tq-printing #sec-torque-lookup.active,
+  body.tq-printing #sec-wire-colors.active { display: block !important; }
+  .wc-swatch { break-inside: avoid; }
+}
+
 /* ── Phone-sensor field tools (lux, pitch/hum, spectrum, sound level) ── */
 .note-warn {
   background: rgba(245, 196, 81, 0.08);
