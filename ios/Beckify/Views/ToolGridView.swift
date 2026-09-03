@@ -1,13 +1,18 @@
 import SwiftUI
 
-/// Icon-grid home for the toolbox: tools grouped by the job you are doing,
-/// each tile carrying original schematic artwork on the site's nebula gradient.
+/// Premium adaptive tool launcher — identity, search, favorites, recents,
+/// and category hierarchy with original schematic icons.
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
+    @StateObject private var recents = RecentToolsStore.shared
     @State private var query = ""
     @State private var path: [ToolID] = []
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
-    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 14)]
+    private var columns: [GridItem] {
+        let minimum: CGFloat = sizeClass == .regular ? 120 : 104
+        return [GridItem(.adaptive(minimum: minimum), spacing: 14)]
+    }
 
     private var searchResults: [ToolDefinition] {
         ToolboxCatalog.matching(query)
@@ -24,27 +29,49 @@ struct ToolGridView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 18) {
-                    if isSearching {
-                        section(title: "Results", tools: searchResults)
-                    } else {
+                VStack(alignment: .leading, spacing: Theme.Space.lg) {
+                    if !isSearching {
+                        homeHeader
                         if !favoriteTools.isEmpty {
-                            section(title: "Favorites", tools: favoriteTools)
+                            horizontalStrip(title: "Favorites", tools: favoriteTools)
                         }
-                        ForEach(ToolCategory.allCases) { category in
-                            let tools = ToolboxCatalog.tools(in: category)
-                            if !tools.isEmpty {
-                                section(title: category.rawValue, tools: tools)
+                        if !recents.tools.isEmpty {
+                            horizontalStrip(title: "Recent", tools: recents.tools)
+                        }
+                    }
+
+                    LazyVGrid(columns: columns, spacing: 18) {
+                        if isSearching {
+                            section(title: "Results", tools: searchResults)
+                        } else {
+                            ForEach(ToolCategory.allCases) { category in
+                                let tools = ToolboxCatalog.tools(in: category)
+                                if !tools.isEmpty {
+                                    section(title: category.rawValue, tools: tools)
+                                }
                             }
                         }
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
+                .padding(.top, 8)
             }
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Beckify")
+            .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Ohm, receptacle, 4–20 mA, modbus…")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        IconGalleryView()
+                    } label: {
+                        Image(systemName: "square.grid.3x3.fill")
+                            .accessibilityLabel("Icon gallery")
+                    }
+                    .accessibilityIdentifier("iconGalleryButton")
+                }
+            }
             .overlay {
                 if isSearching && searchResults.isEmpty {
                     ContentUnavailableView.search(text: query)
@@ -52,12 +79,85 @@ struct ToolGridView: View {
             }
             .navigationDestination(for: ToolID.self) { id in
                 CalculatorHostView(toolID: id)
+                    .onAppear { recents.record(id) }
             }
         }
-        // "Related tools" on a tool screen pushes onto the same stack.
         .environment(\.openRelatedTool, { id in
             path.append(id)
+            recents.record(id)
         })
+    }
+
+    private var homeHeader: some View {
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
+                .fill(Theme.instrumentPanel)
+                .overlay {
+                    BlueprintGridBackground(opacity: 0.14)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous))
+                }
+                .overlay(alignment: .trailing) {
+                    ToolGlyph(kind: .forTool(.ohmsLaw), size: 88, selected: true)
+                        .opacity(0.22)
+                        .padding(.trailing, 18)
+                        .accessibilityHidden(true)
+                }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("BECKIFY")
+                    .font(.caption.weight(.bold))
+                    .tracking(2.4)
+                    .foregroundStyle(Color.white.opacity(0.72))
+                Text("Field EE Toolbox")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(Color.white)
+                Text("Calculators and sensors for the job site and the bench.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.82))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Theme.Space.md)
+        }
+        .frame(maxWidth: .infinity, minHeight: 132)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Beckify. Field EE Toolbox.")
+        .accessibilityIdentifier("homeHeader")
+    }
+
+    @ViewBuilder
+    private func horizontalStrip(title: String, tools: [ToolDefinition]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.xs) {
+            Text(title.uppercased())
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Space.sm) {
+                    ForEach(tools) { tool in
+                        NavigationLink(value: tool.id) {
+                            compactTile(tool)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private func compactTile(_ tool: ToolDefinition) -> some View {
+        HStack(spacing: 10) {
+            ToolGlyph(kind: .forTool(tool.id), size: 28, selected: true)
+            Text(tool.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: Theme.touchTarget)
+        .background(Theme.surface, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).stroke(Theme.border, lineWidth: 1))
+        .accessibilityLabel(tool.title)
+        .accessibilityHint(tool.subtitle)
     }
 
     @ViewBuilder
@@ -82,7 +182,7 @@ struct ToolGridView: View {
         } header: {
             HStack {
                 Text(title.uppercased())
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.TypeRole.sectionLabel)
                     .tracking(0.8)
                     .foregroundStyle(Theme.muted)
                 Spacer()
@@ -92,7 +192,7 @@ struct ToolGridView: View {
     }
 }
 
-/// One grid tile: original glyph over the brand gradient, name underneath.
+/// One grid tile: original glyph, title, and compact subtitle.
 struct ToolTile: View {
     let tool: ToolDefinition
     var isFavorite: Bool
@@ -100,37 +200,63 @@ struct ToolTile: View {
     var body: some View {
         VStack(spacing: 8) {
             ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
                     .fill(Theme.iconGradient)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Theme.accent.opacity(0.28), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
+                            .stroke(Theme.accent.opacity(0.22), lineWidth: 1)
                     )
                     .overlay(
-                        ToolGlyph(kind: GlyphKind.forTool(tool.id), size: 46)
+                        ToolGlyph(kind: GlyphKind.forTool(tool.id), size: 46, selected: true)
                     )
                     .aspectRatio(1, contentMode: .fit)
 
                 if isFavorite {
                     Image(systemName: "star.fill")
                         .font(.caption2)
-                        .foregroundStyle(Theme.accent2)
+                        .foregroundStyle(Theme.energized)
                         .padding(7)
+                        .accessibilityHidden(true)
                 }
             }
-            .brandGlow(radius: 10, opacity: 0.16)
 
-            Text(tool.title)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(Theme.foreground)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
+            VStack(spacing: 2) {
+                Text(tool.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(tool.subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tool.title)
         .accessibilityHint(tool.subtitle)
+        .accessibilityIdentifier("toolTile.\(tool.id.rawValue)")
     }
+}
+
+#Preview("Home — light") {
+    ToolGridView()
+        .environmentObject(FavoritesStore())
+}
+
+#Preview("Home — dark") {
+    ToolGridView()
+        .environmentObject(FavoritesStore())
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Home — large type") {
+    ToolGridView()
+        .environmentObject(FavoritesStore())
+        .environment(\.sizeCategory, .accessibilityExtraExtraLarge)
 }

@@ -52,6 +52,8 @@
 		BECF00000000000000000070 /* FieldCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000006F /* FieldCalculatorViews.swift */; };
 		BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000071 /* ControlsCalculatorViews.swift */; };
 		BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000073 /* PanelDirectoryView.swift */; };
+		BECF00000000000000000076 /* CalculateChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000075 /* CalculateChrome.swift */; };
+		BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000077 /* EngineeringDiagrams.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -100,6 +102,8 @@
 		BECF0000000000000000006F /* FieldCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF00000000000000000071 /* ControlsCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF00000000000000000073 /* PanelDirectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDirectoryView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000075 /* CalculateChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculateChrome.swift; sourceTree = "<group>"; };
+		BECF00000000000000000077 /* EngineeringDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineeringDiagrams.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,6 +174,8 @@
 				BECF0000000000000000001D /* FormControls.swift */,
 				BECF00000000000000000065 /* ToolUX.swift */,
 				BECF0000000000000000006B /* ToolGlyph.swift */,
+				BECF00000000000000000075 /* CalculateChrome.swift */,
+				BECF00000000000000000077 /* EngineeringDiagrams.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -347,6 +353,8 @@
 				BECF00000000000000000070 /* FieldCalculatorViews.swift in Sources */,
 				BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */,
 				BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */,
+				BECF00000000000000000076 /* CalculateChrome.swift in Sources */,
+				BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

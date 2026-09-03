@@ -18,23 +18,27 @@ struct PowerWizardView: View {
     @StoredInput(.powerWizard, "pf", default: "90") private var pf
     @StoredInput(.powerWizard, "eff", default: "100") private var eff
     @StoredInput(.powerWizard, "jobName", default: "Power Wizard") private var jobName
+    @State private var session = ExplicitCalculationState<PowerWizardResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(system)|\(known)|\(value)|\(voltage)|\(pf)|\(eff)"
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .powerWizard, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .powerWizard,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .powerWizard,
                 symbolic: symbolic,
                 substituted: substituted,
                 meaning: "Current from known kW, kVA, amps, or HP. PF is a decimal after the % field (90 → 0.90). Efficiency only matters on the HP path."
             )
-            TryExampleButton(title: "480 V 3Ø 50 kW PF 0.90 → 66.8 A") {
-                system = .threePhase
-                known = .kw
-                value = "50"
-                voltage = "480"
-                pf = "90"
-                eff = "100"
-            }
             Picker("System", selection: $system) {
                 ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
@@ -44,17 +48,35 @@ struct PowerWizardView: View {
             }
             .pickerStyle(.segmented)
 
-            NumberField(title: "Known value", unit: known.rawValue, text: $value)
-            NumberField(title: system == .threePhase ? "Line-to-line voltage" : "Voltage", unit: "V", text: $voltage)
+            NumberField(title: "Known value", unit: known.rawValue, text: $value, fieldID: "value", onSubmit: calculate)
+            NumberField(title: system == .threePhase ? "Line-to-line voltage" : "Voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)
             if system != .dc {
-                NumberField(title: "Power factor", unit: "%", text: $pf)
+                NumberField(title: "Power factor", unit: "%", text: $pf, fieldID: "pf", onSubmit: calculate)
             }
             if known == .hp {
-                NumberField(title: "Efficiency", unit: "%", text: $eff)
+                NumberField(title: "Efficiency", unit: "%", text: $eff, fieldID: "eff", onSubmit: calculate)
             }
 
-            switch wizard {
-            case .success(let r):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    system = .threePhase
+                    known = .kw
+                    value = "50"
+                    voltage = "480"
+                    pf = "90"
+                    eff = "100"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "480 V 3Ø 50 kW PF 0.90 → 66.8 A"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Current", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA")
@@ -65,11 +87,14 @@ struct PowerWizardView: View {
                     }
                     ResultRow(label: "Shaft HP", value: "\(Format.number(r.horsepower, digits: 2)) HP")
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
-            case .failure(let err):
-                ErrorText(message: err.message)
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
     }
 
     private var symbolic: String {
@@ -89,20 +114,8 @@ struct PowerWizardView: View {
         }
     }
 
-    private var substituted: String? {
-        guard case .success(let r) = wizard else { return nil }
-        return "\(r.formula)  →  \(Format.amps(r.amps))"
-    }
-
-    private var sticky: String? {
-        guard case .success(let r) = wizard else { return nil }
-        return "\(Format.amps(r.amps))  ·  \(Format.number(r.kW, digits: 3)) kW  ·  \(Format.number(r.kVA, digits: 3)) kVA"
-    }
-
-    private var copyText: String? { sticky }
-
-    private var wizard: Result<PowerWizardResult, CalcError> {
-        CalcCatch.run {
+    private func calculate() {
+        session.calculate {
             let knownValue = value.parsedDouble ?? .nan
             let knownEnum: PowerWizardKnown
             switch known {
@@ -119,7 +132,30 @@ struct PowerWizardView: View {
                 efficiency: (eff.parsedDouble ?? .nan) / 100
             )
         }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
     }
+
+    private func reset() {
+        value = ""
+        voltage = ""
+        pf = "90"
+        eff = "100"
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(r.formula)  →  \(Format.amps(r.amps))"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.amps(r.amps))  ·  \(Format.number(r.kW, digits: 3)) kW  ·  \(Format.number(r.kVA, digits: 3)) kVA"
+    }
+
+    private var copyText: String? { sticky }
 
     private func save(_ r: PowerWizardResult) {
         var inputs: [String: String] = [

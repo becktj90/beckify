@@ -10,6 +10,11 @@ struct ReactanceView: View {
         var id: String { rawValue }
     }
 
+    private enum Output: Equatable {
+        case series(ReactanceResult)
+        case resonance(ResonanceResult)
+    }
+
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.reactance, "mode", default: Mode.series) private var mode
     @StoredInput(.reactance, "frequency", default: "60") private var frequency
@@ -17,12 +22,24 @@ struct ReactanceView: View {
     @StoredInput(.reactance, "inductance", default: "0.1") private var inductance
     @StoredInput(.reactance, "capacitance", default: "100") private var capacitance
     @StoredInput(.reactance, "jobName", default: "Reactance") private var jobName
+    @State private var session = ExplicitCalculationState<Output>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Entered in microfarads, the unit on the part.
     private var farads: Double { (capacitance.parsedDouble ?? .nan) * 1e-6 }
 
+    private var inputFingerprint: String {
+        "\(mode)|\(frequency)|\(resistance)|\(inductance)|\(capacitance)"
+    }
+
     var body: some View {
-        ToolScaffold(toolID: .reactance, stickyAnswer: sticky, copyText: sticky) {
+        ToolScaffold(
+            toolID: .reactance,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .reactance,
                 symbolic: mode == .series
@@ -33,51 +50,50 @@ struct ReactanceView: View {
                     ? "Net reactance is inductive when X_L wins, and the angle is positive — current lags."
                     : "At resonance X_L and X_C cancel and the circuit looks resistive. Q is the sharpness of that peak."
             )
-            TryExampleButton(title: "60 Hz, 10 Ω, 100 mH, 100 µF") {
-                frequency = "60"
-                resistance = "10"
-                inductance = "0.1"
-                capacitance = "100"
-            }
             MenuField(title: "Mode", selection: $mode, options: Mode.allCases) { $0.rawValue }
             if mode == .series {
-                NumberField(title: "Frequency", unit: "Hz", text: $frequency)
+                NumberField(title: "Frequency", unit: "Hz", text: $frequency, fieldID: "frequency", onSubmit: calculate)
             }
-            NumberField(title: "Resistance", unit: "Ω", text: $resistance, optional: mode == .resonance)
-            NumberField(title: "Inductance", unit: "H", text: $inductance)
-            NumberField(title: "Capacitance", unit: "µF", text: $capacitance)
+            NumberField(title: "Resistance", unit: "Ω", text: $resistance, optional: mode == .resonance, fieldID: "resistance", onSubmit: calculate)
+            NumberField(title: "Inductance", unit: "H", text: $inductance, fieldID: "inductance", onSubmit: calculate)
+            NumberField(title: "Capacitance", unit: "µF", text: $capacitance, fieldID: "capacitance", onSubmit: calculate)
 
-            switch result {
-            case .success(let output):
-                ResultCard(copyText: sticky) { rows(for: output) }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
-            case .failure(let error):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    frequency = "60"
+                    resistance = "10"
+                    inductance = "0.1"
+                    capacitance = "100"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "60 Hz, 10 Ω, 100 mH, 100 µF"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
                 ErrorText(message: error.message)
             }
-        }
-    }
 
-    private enum Output: Equatable {
-        case series(ReactanceResult)
-        case resonance(ResonanceResult)
-    }
-
-    private var result: Result<Output, CalcError> {
-        CalcCatch.run {
-            if mode == .series {
-                return Output.series(try Reactance.series(
-                    frequency: frequency.parsedDouble ?? .nan,
-                    resistance: resistance.parsedDouble ?? 0,
-                    inductance: inductance.parsedDouble ?? .nan,
-                    capacitance: farads
-                ))
+            if let output = session.displayedResult {
+                if case .series(let r) = output, r.impedance.isFinite {
+                    ReactancePhasorDiagram(
+                        resistance: resistance.parsedDouble ?? 0,
+                        netReactance: r.netReactance,
+                        impedance: r.impedance,
+                        angleDegrees: r.phaseAngleDegrees
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
+                ResultCard(copyText: sticky) { rows(for: output) }
+                    .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(output) }
             }
-            return Output.resonance(try Reactance.resonance(
-                inductance: inductance.parsedDouble ?? .nan,
-                capacitance: farads,
-                resistance: resistance.parsedDouble ?? .nan
-            ))
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
     }
 
     @ViewBuilder
@@ -96,8 +112,37 @@ struct ReactanceView: View {
         }
     }
 
+    private func calculate() {
+        session.calculate {
+            if mode == .series {
+                return .series(try Reactance.series(
+                    frequency: frequency.parsedDouble ?? .nan,
+                    resistance: resistance.parsedDouble ?? 0,
+                    inductance: inductance.parsedDouble ?? .nan,
+                    capacitance: farads
+                ))
+            }
+            return .resonance(try Reactance.resonance(
+                inductance: inductance.parsedDouble ?? .nan,
+                capacitance: farads,
+                resistance: resistance.parsedDouble ?? .nan
+            ))
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        frequency = ""
+        resistance = ""
+        inductance = ""
+        capacitance = ""
+        session.reset()
+    }
+
     private var substituted: String? {
-        guard case .success(let output) = result else { return nil }
+        guard let output = session.displayedResult else { return nil }
         switch output {
         case .series(let r):
             return "X_L = \(Format.number(r.inductiveReactance, digits: 3)) Ω    Z = \(Format.number(r.impedance, digits: 3)) Ω ∠ \(Format.number(r.phaseAngleDegrees, digits: 2))°"
@@ -107,7 +152,7 @@ struct ReactanceView: View {
     }
 
     private var sticky: String? {
-        guard case .success(let output) = result else { return nil }
+        guard let output = session.displayedResult else { return nil }
         switch output {
         case .series(let r):
             return r.impedance.isFinite ? "Z \(Format.number(r.impedance, digits: 3)) Ω ∠ \(Format.number(r.phaseAngleDegrees, digits: 1))°" : "Open circuit"
@@ -147,30 +192,60 @@ struct PowerFactorView: View {
     @StoredInput(.powerFactor, "voltage", default: "480") private var voltage
     @StoredInput(.powerFactor, "frequency", default: "60") private var frequency
     @StoredInput(.powerFactor, "jobName", default: "PF correction") private var jobName
+    @State private var session = ExplicitCalculationState<PowerFactorResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(system)|\(kw)|\(existing)|\(target)|\(voltage)|\(frequency)"
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .powerFactor, stickyAnswer: sticky, copyText: sticky) {
+        ToolScaffold(
+            toolID: .powerFactor,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .powerFactor,
                 symbolic: "kVAR = kW·(tan θ₁ − tan θ₂)    C = Q / (2πf·V²)",
                 substituted: substituted,
                 meaning: "Capacitors supply the reactive power the load was drawing from the source, so current and losses drop while real power stays the same."
             )
-            TryExampleButton(title: "100 kW, 0.75 → 0.95 PF at 480 V") {
-                kw = "100"
-                existing = "75"
-                target = "95"
-                voltage = "480"
-            }
             MenuField(title: "System", selection: $system, options: [ElectricalSystem.singlePhase, ElectricalSystem.threePhase]) { $0.displayName }
-            NumberField(title: "Real power", unit: "kW", text: $kw)
-            NumberField(title: "Existing PF", unit: "%", text: $existing)
-            NumberField(title: "Target PF", unit: "%", text: $target)
-            NumberField(title: "Voltage", unit: "V", text: $voltage)
-            NumberField(title: "Frequency", unit: "Hz", text: $frequency)
+            NumberField(title: "Real power", unit: "kW", text: $kw, fieldID: "kw", onSubmit: calculate)
+            NumberField(title: "Existing PF", unit: "%", text: $existing, fieldID: "existing", onSubmit: calculate)
+            NumberField(title: "Target PF", unit: "%", text: $target, fieldID: "target", onSubmit: calculate)
+            NumberField(title: "Voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)
+            NumberField(title: "Frequency", unit: "Hz", text: $frequency, fieldID: "frequency", onSubmit: calculate)
 
-            switch result {
-            case .success(let r):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    kw = "100"
+                    existing = "75"
+                    target = "95"
+                    voltage = "480"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "100 kW, 0.75 → 0.95 PF at 480 V"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                let kwValue = kw.parsedDouble ?? 0
+                PowerTriangleDiagram(
+                    kw: kwValue,
+                    kvar: r.targetKVAR,
+                    kva: r.newKVA,
+                    title: "After correction"
+                )
+                .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Correction", value: "\(Format.number(r.correctionKVAR, digits: 2)) kVAR", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Existing reactive", value: "\(Format.number(r.existingKVAR, digits: 2)) kVAR")
@@ -178,7 +253,8 @@ struct PowerFactorView: View {
                     ResultRow(label: "New apparent", value: "\(Format.number(r.newKVA, digits: 2)) kVA")
                     ResultRow(label: "Bank capacitance", value: r.capacitance.isFinite ? "\(Format.number(r.capacitance * 1e6, digits: 2)) µF" : "—")
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .powerFactor,
@@ -186,14 +262,16 @@ struct PowerFactorView: View {
                         outputs: ["kVAR": Format.number(r.correctionKVAR, digits: 2), "kVA": Format.number(r.newKVA, digits: 2)]
                     ))
                 }
-            case .failure(let error):
-                ErrorText(message: error.message)
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
     }
 
-    private var result: Result<PowerFactorResult, CalcError> {
-        CalcCatch.run {
+    private func calculate() {
+        session.calculate {
             try PowerFactorCorrection.solve(
                 realPowerKW: kw.parsedDouble ?? .nan,
                 existingPowerFactor: (existing.parsedDouble ?? .nan) / 100,
@@ -203,15 +281,27 @@ struct PowerFactorView: View {
                 system: system
             )
         }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        kw = ""
+        existing = ""
+        target = ""
+        voltage = ""
+        frequency = "60"
+        session.reset()
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "kVAR = \(Format.number(kw.parsedDouble ?? .nan, digits: 1)) × (tan θ₁ − tan θ₂) = \(Format.number(r.correctionKVAR, digits: 2)) kVAR"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "\(Format.number(r.correctionKVAR, digits: 2)) kVAR  ·  \(Format.number(r.newKVA, digits: 1)) kVA"
     }
 }
@@ -225,13 +315,19 @@ struct ShortCircuitView: View {
     @StoredInput(.shortCircuit, "volts", default: "480") private var volts
     @StoredInput(.shortCircuit, "impedance", default: "5") private var impedance
     @StoredInput(.shortCircuit, "jobName", default: "Fault current") private var jobName
+    @State private var session = ExplicitCalculationState<ShortCircuitResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { "\(system)|\(kva)|\(volts)|\(impedance)" }
 
     var body: some View {
         ToolScaffold(
             toolID: .shortCircuit,
             stickyAnswer: sticky,
             copyText: sticky,
-            disclaimer: .designAidExtra("Infinite-bus estimate at the secondary terminals. A real study models source and conductor impedance, which lowers this number.")
+            disclaimer: .designAidExtra("Infinite-bus estimate at the secondary terminals. A real study models source and conductor impedance, which lowers this number."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .shortCircuit,
@@ -241,25 +337,38 @@ struct ShortCircuitView: View {
                 substituted: substituted,
                 meaning: "Assumes an infinite source behind the transformer, so this is the worst case. Equipment interrupting ratings must exceed it."
             )
-            TryExampleButton(title: "500 kVA, 480 V, 5% Z") {
-                kva = "500"
-                volts = "480"
-                impedance = "5"
-            }
             MenuField(title: "System", selection: $system, options: [ElectricalSystem.singlePhase, ElectricalSystem.threePhase]) { $0.displayName }
-            NumberField(title: "Transformer", unit: "kVA", text: $kva)
-            NumberField(title: "Secondary", unit: "V", text: $volts)
-            NumberField(title: "Impedance", unit: "%", text: $impedance)
+            NumberField(title: "Transformer", unit: "kVA", text: $kva, fieldID: "kva", onSubmit: calculate)
+            NumberField(title: "Secondary", unit: "V", text: $volts, fieldID: "volts", onSubmit: calculate)
+            NumberField(title: "Impedance", unit: "%", text: $impedance, fieldID: "impedance", onSubmit: calculate)
 
-            switch result {
-            case .success(let r):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    kva = "500"
+                    volts = "480"
+                    impedance = "5"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "500 kVA, 480 V, 5% Z"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ShortCircuitDiagram(faultAmps: r.availableFaultAmps)
+                    .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Available fault", value: "\(Format.number(r.availableFaultAmps, digits: 0)) A", emphasis: true, tone: Theme.bad)
                     ResultRow(label: "In kA", value: "\(Format.number(r.availableFaultAmps / 1000, digits: 2)) kA", emphasis: true)
                     ResultRow(label: "Secondary FLA", value: Format.amps(r.fullLoadAmps))
                     ResultRow(label: "Multiplier", value: "×\(Format.number(r.multiplier, digits: 2))")
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .shortCircuit,
@@ -267,14 +376,16 @@ struct ShortCircuitView: View {
                         outputs: ["ISC": "\(Format.number(r.availableFaultAmps, digits: 0)) A", "FLA": Format.amps(r.fullLoadAmps)]
                     ))
                 }
-            case .failure(let error):
-                ErrorText(message: error.message)
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
     }
 
-    private var result: Result<ShortCircuitResult, CalcError> {
-        CalcCatch.run {
+    private func calculate() {
+        session.calculate {
             try ShortCircuit.transformerSecondary(
                 kVA: kva.parsedDouble ?? .nan,
                 secondaryVolts: volts.parsedDouble ?? .nan,
@@ -282,20 +393,30 @@ struct ShortCircuitView: View {
                 system: system
             )
         }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        kva = ""
+        volts = ""
+        impedance = ""
+        session.reset()
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "I_FLA = \(Format.amps(r.fullLoadAmps))    I_SC = \(Format.amps(r.fullLoadAmps)) × \(Format.number(r.multiplier, digits: 2)) = \(Format.number(r.availableFaultAmps, digits: 0)) A"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "\(Format.number(r.availableFaultAmps / 1000, digits: 2)) kA available"
     }
 }
 
-// MARK: - Circular mils
+// MARK: - Circular mils (live)
 
 struct CircularMilsView: View {
     enum Mode: String, CaseIterable, Identifiable {
@@ -304,9 +425,18 @@ struct CircularMilsView: View {
         var id: String { rawValue }
     }
 
+    private struct Output: Equatable {
+        var circularMils: Double
+        var diameterMils: Double
+        var squareInches: Double
+    }
+
     @StoredChoice(.circularMils, "mode", default: Mode.fromDiameter) private var mode
     @StoredInput(.circularMils, "diameter", default: "250") private var diameter
     @StoredInput(.circularMils, "cm", default: "62500") private var cm
+    @State private var live = LiveCalculationState<Output>()
+
+    private var inputFingerprint: String { "\(mode)|\(diameter)|\(cm)" }
 
     var body: some View {
         ToolScaffold(toolID: .circularMils, stickyAnswer: sticky, copyText: sticky) {
@@ -323,8 +453,9 @@ struct CircularMilsView: View {
                 NumberField(title: "Circular mils", unit: "CM", text: $cm)
             }
 
-            switch result {
-            case .success(let value):
+            if let error = live.error {
+                ErrorText(message: error.message)
+            } else if let value = live.result {
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Circular mils", value: "\(Format.number(value.circularMils, digits: 1)) CM", emphasis: true, tone: Theme.good)
                     ResultRow(label: "kcmil", value: Format.number(value.circularMils / 1000, digits: 2))
@@ -332,41 +463,47 @@ struct CircularMilsView: View {
                     ResultRow(label: "Diameter", value: "\(Format.number(value.diameterMils / 1000, digits: 5)) in")
                     ResultRow(label: "Area", value: "\(Format.number(value.squareInches, digits: 6)) in²")
                 }
-            case .failure(let error):
-                ErrorText(message: error.message)
             }
         }
-    }
-
-    private struct Output: Equatable {
-        var circularMils: Double
-        var diameterMils: Double
-        var squareInches: Double
-    }
-
-    private var result: Result<Output, CalcError> {
-        CalcCatch.run {
-            let circular: Double
-            if mode == .fromDiameter {
-                circular = try CircularMils.fromDiameterMils(diameter.parsedDouble ?? .nan)
-            } else {
-                circular = try Positive.require(cm.parsedDouble ?? .nan, name: "Circular mils")
+        .onChange(of: inputFingerprint) { _, _ in
+            live.update {
+                let circular: Double
+                if mode == .fromDiameter {
+                    circular = try CircularMils.fromDiameterMils(diameter.parsedDouble ?? .nan)
+                } else {
+                    circular = try Positive.require(cm.parsedDouble ?? .nan, name: "Circular mils")
+                }
+                return Output(
+                    circularMils: circular,
+                    diameterMils: try CircularMils.diameterMils(fromCircularMils: circular),
+                    squareInches: try CircularMils.squareInches(fromCircularMils: circular)
+                )
             }
-            return Output(
-                circularMils: circular,
-                diameterMils: try CircularMils.diameterMils(fromCircularMils: circular),
-                squareInches: try CircularMils.squareInches(fromCircularMils: circular)
-            )
+        }
+        .onAppear {
+            live.update {
+                let circular: Double
+                if mode == .fromDiameter {
+                    circular = try CircularMils.fromDiameterMils(diameter.parsedDouble ?? .nan)
+                } else {
+                    circular = try Positive.require(cm.parsedDouble ?? .nan, name: "Circular mils")
+                }
+                return Output(
+                    circularMils: circular,
+                    diameterMils: try CircularMils.diameterMils(fromCircularMils: circular),
+                    squareInches: try CircularMils.squareInches(fromCircularMils: circular)
+                )
+            }
         }
     }
 
     private var substituted: String? {
-        guard case .success(let value) = result else { return nil }
+        guard let value = live.result else { return nil }
         return "\(Format.number(value.diameterMils, digits: 3)) mils² = \(Format.number(value.circularMils, digits: 1)) CM"
     }
 
     private var sticky: String? {
-        guard case .success(let value) = result else { return nil }
+        guard let value = live.result else { return nil }
         return "\(Format.number(value.circularMils, digits: 1)) CM  ·  \(Format.number(value.circularMils / 1000, digits: 2)) kcmil"
     }
 }
@@ -381,37 +518,67 @@ struct LoadFactorsView: View {
     @StoredInput(.loadFactors, "individual", default: "320") private var individual
     @StoredInput(.loadFactors, "capacity", default: "500") private var capacity
     @StoredInput(.loadFactors, "jobName", default: "Load factors") private var jobName
+    @State private var session = ExplicitCalculationState<LoadFactorResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(connected)|\(demand)|\(average)|\(individual)|\(capacity)"
+    }
 
     var body: some View {
-        ToolScaffold(toolID: .loadFactors, stickyAnswer: sticky, copyText: sticky) {
+        ToolScaffold(
+            toolID: .loadFactors,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .loadFactors,
                 symbolic: "DF = max demand / connected    LF = average / max demand    Diversity = Σ individual / max demand",
                 substituted: substituted,
                 meaning: "Demand factor says how much of the connected load actually shows up at once. Load factor says how steady it is. Leave a field blank and its ratio is skipped."
             )
-            TryExampleButton(title: "400 connected, 250 peak, 150 average") {
-                connected = "400"
-                demand = "250"
-                average = "150"
-                individual = "320"
-                capacity = "500"
-            }
-            NumberField(title: "Connected load", unit: "kW", text: $connected)
-            NumberField(title: "Maximum demand", unit: "kW", text: $demand)
-            NumberField(title: "Average load", unit: "kW", text: $average, optional: true)
-            NumberField(title: "Σ individual demands", unit: "kW", text: $individual, optional: true)
-            NumberField(title: "System capacity", unit: "kW", text: $capacity, optional: true)
+            NumberField(title: "Connected load", unit: "kW", text: $connected, fieldID: "connected", onSubmit: calculate)
+            NumberField(title: "Maximum demand", unit: "kW", text: $demand, fieldID: "demand", onSubmit: calculate)
+            NumberField(title: "Average load", unit: "kW", text: $average, optional: true, onSubmit: calculate)
+            NumberField(title: "Σ individual demands", unit: "kW", text: $individual, optional: true, onSubmit: calculate)
+            NumberField(title: "System capacity", unit: "kW", text: $capacity, optional: true, onSubmit: calculate)
 
-            switch result {
-            case .success(let r):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    connected = "400"
+                    demand = "250"
+                    average = "150"
+                    individual = "320"
+                    capacity = "500"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "400 connected, 250 peak, 150 average"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                let avg = average.parsedDouble ?? 0
+                let peak = demand.parsedDouble ?? 0
+                let cap = capacity.parsedDouble ?? 0
+                if avg > 0, peak > 0, cap > 0 {
+                    LoadFactorChart(average: avg, peak: peak, capacity: cap)
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Demand factor", value: Format.number(r.demandFactor, digits: 3), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Load factor", value: r.loadFactor.isFinite ? Format.number(r.loadFactor, digits: 3) : "—")
                     ResultRow(label: "Diversity factor", value: r.diversityFactor.isFinite ? Format.number(r.diversityFactor, digits: 3) : "—")
                     ResultRow(label: "Capacity used", value: r.capacityUtilization.isFinite ? Format.percent(r.capacityUtilization * 100) : "—")
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .loadFactors,
@@ -419,14 +586,16 @@ struct LoadFactorsView: View {
                         outputs: ["DF": Format.number(r.demandFactor, digits: 3)]
                     ))
                 }
-            case .failure(let error):
-                ErrorText(message: error.message)
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
     }
 
-    private var result: Result<LoadFactorResult, CalcError> {
-        CalcCatch.run {
+    private func calculate() {
+        session.calculate {
             try LoadFactors.solve(
                 connectedLoad: connected.parsedDouble ?? .nan,
                 maximumDemand: demand.parsedDouble ?? .nan,
@@ -435,15 +604,27 @@ struct LoadFactorsView: View {
                 systemCapacity: capacity.parsedDouble ?? 0
             )
         }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        connected = ""
+        demand = ""
+        average = ""
+        individual = ""
+        capacity = ""
+        session.reset()
     }
 
     private var substituted: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "DF = \(demand) / \(connected) = \(Format.number(r.demandFactor, digits: 3))"
     }
 
     private var sticky: String? {
-        guard case .success(let r) = result else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "DF \(Format.number(r.demandFactor, digits: 3))"
     }
 }

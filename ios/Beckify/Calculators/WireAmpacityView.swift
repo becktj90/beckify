@@ -6,9 +6,19 @@ struct WireAmpacityView: View {
     @StoredInput(.wireAmpacity, "amps", default: "95") private var amps
     @StoredChoice(.wireAmpacity, "material", default: ConductorMaterial.copper) private var material
     @StoredInput(.wireAmpacity, "jobName", default: "Wire size") private var jobName
+    @State private var session = ExplicitCalculationState<WireSizeResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { "\(amps)|\(material)" }
 
     var body: some View {
-        ToolScaffold(toolID: .wireAmpacity, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .wireAmpacity,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .wireAmpacity,
                 symbolic: "NEC Table 310.16 · 75 °C column",
@@ -16,23 +26,34 @@ struct WireAmpacityView: View {
                 meaning: "Smallest size whose 75 °C ampacity is at least the load. Not more than three current-carrying conductors in a raceway, 30 °C ambient. Termination temperature still applies (110.14(C)).",
                 citation: "NEC Table 310.16, 75 °C column."
             )
-            TryExampleButton(title: "95 A copper") {
-                amps = "95"
-                material = .copper
-            }
             Picker("Material", selection: $material) {
                 ForEach(ConductorMaterial.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
             .pickerStyle(.segmented)
-            NumberField(title: "Load current", unit: "A", text: $amps)
+            NumberField(title: "Load current", unit: "A", text: $amps, fieldID: "amps", onSubmit: calculate)
 
-            switch sized {
-            case .success(let r):
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    amps = "95"
+                    material = .copper
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "95 A copper"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Smallest size", value: r.label, emphasis: true, tone: Theme.good)
                     ResultRow(label: "Ampacity 75 °C", value: Format.amps(Double(r.ampacity)))
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .wireAmpacity,
@@ -40,8 +61,6 @@ struct WireAmpacityView: View {
                         outputs: ["size": r.label, "amp": "\(r.ampacity) A"]
                     ))
                 }
-            case .failure(let err):
-                ErrorText(message: err.message)
             }
 
             ResultCard(title: "310.16 75 °C") {
@@ -62,23 +81,35 @@ struct WireAmpacityView: View {
                 }
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try WireAmpacity.smallestConductor(loadAmps: amps.parsedDouble ?? .nan, material: material)
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        amps = ""
+        session.reset()
     }
 
     private var substituted: String? {
-        guard case .success(let r) = sized else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "Smallest \(material.displayName) at 75 °C with ampacity ≥ \(Format.amps(amps.parsedDouble ?? .nan)) is \(r.label) (\(r.ampacity) A)."
     }
 
     private var sticky: String? {
-        guard case .success(let r) = sized else { return nil }
+        guard let r = session.displayedResult else { return nil }
         return "\(r.label)  ·  \(r.ampacity) A @ 75 °C"
     }
 
     private var copyText: String? { sticky }
-
-    private var sized: Result<WireSizeResult, CalcError> {
-        CalcCatch.run {
-            try WireAmpacity.smallestConductor(loadAmps: amps.parsedDouble ?? .nan, material: material)
-        }
-    }
 }

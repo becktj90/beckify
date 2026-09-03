@@ -8,6 +8,11 @@ struct LEDRCView: View {
         var id: String { rawValue }
     }
 
+    private enum SessionResult: Equatable {
+        case led(LEDResistorResult)
+        case rc(RCTimeResult)
+    }
+
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.ledRC, "mode", default: Mode.led) private var mode
     @StoredInput(.ledRC, "supply", default: "5") private var supply
@@ -16,17 +21,21 @@ struct LEDRCView: View {
     @StoredInput(.ledRC, "resistance", default: "10000") private var resistance
     @StoredInput(.ledRC, "capacitance", default: "1e-6") private var capacitance
     @StoredInput(.ledRC, "jobName", default: "LED / RC") private var jobName
+    @State private var session = ExplicitCalculationState<SessionResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var ledResult: Result<LEDResistorResult, CalcError> {
-        CalcCatch.run { try LEDResistor.size(supply: supply.parsedDouble ?? .nan, forward: vf.parsedDouble ?? .nan, current: current.parsedDouble ?? .nan) }
-    }
-
-    var rcResult: Result<RCTimeResult, CalcError> {
-        CalcCatch.run { try RCTime.tau(resistance: resistance.parsedDouble ?? .nan, capacitance: capacitance.parsedDouble ?? .nan) }
+    private var inputFingerprint: String {
+        "\(mode)|\(supply)|\(vf)|\(current)|\(resistance)|\(capacitance)"
     }
 
     var body: some View {
-        ToolScaffold(toolID: .ledRC, stickyAnswer: sticky, copyText: copyText) {
+        ToolScaffold(
+            toolID: .ledRC,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            isResultStale: session.isStale
+        ) {
             ShowWorkCard(
                 toolID: .ledRC,
                 symbolic: mode == .led ? "R = (Vin − Vf) / If" : "τ = R × C    (~5τ to settle)",
@@ -35,71 +44,115 @@ struct LEDRCView: View {
                     ? "Nearest E24 is a hint, not a guaranteed stocked part. Check the LED datasheet current."
                     : "First-order RC only. 555 astable/monostable lives in the 555 Timer tool (ln 2 / ln 3)."
             )
-            TryExampleButton(title: mode == .led ? "5 V, 2.0 V LED, 20 mA" : "10 kΩ · 1 µF") {
-                if mode == .led {
-                    supply = "5"
-                    vf = "2.0"
-                    current = "0.02"
-                } else {
-                    resistance = "10000"
-                    capacitance = "1e-6"
-                }
-            }
             Picker("Mode", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             if mode == .led {
-                NumberField(title: "Supply", unit: "V", text: $supply)
-                NumberField(title: "LED Vf", unit: "V", text: $vf)
-                NumberField(title: "LED current", unit: "A", text: $current, allowsScientific: true)
-                switch ledResult {
-                case .success(let r):
+                NumberField(title: "Supply", unit: "V", text: $supply, fieldID: "supply", onSubmit: calculate)
+                NumberField(title: "LED Vf", unit: "V", text: $vf, fieldID: "vf", onSubmit: calculate)
+                NumberField(title: "LED current", unit: "A", text: $current, allowsScientific: true, fieldID: "current", onSubmit: calculate)
+            } else {
+                NumberField(title: "R", unit: "Ω", text: $resistance, fieldID: "resistance", onSubmit: calculate)
+                NumberField(title: "C", unit: "F", text: $capacitance, allowsScientific: true, fieldID: "capacitance", onSubmit: calculate)
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    if mode == .led {
+                        supply = "5"
+                        vf = "2.0"
+                        current = "0.02"
+                    } else {
+                        resistance = "10000"
+                        capacitance = "1e-6"
+                    }
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: mode == .led ? "5 V, 2.0 V LED, 20 mA" : "10 kΩ · 1 µF"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let output = session.displayedResult {
+                switch output {
+                case .led(let r):
                     ResultCard(copyText: copyText) {
                         ResultRow(label: "R exact", value: "\(Format.number(r.resistance, digits: 3)) Ω", emphasis: true, tone: Theme.good)
                         ResultRow(label: "Nearest E24", value: "\(Format.number(r.nearestE24, digits: 3)) Ω")
                         ResultRow(label: "Drop", value: Format.volts(r.drop))
                         ResultRow(label: "Resistor P", value: Format.watts(r.power))
                     }
-                    SaveJobBar(jobName: $jobName, canSave: true) { saveLED(r) }
-                case .failure(let err):
-                    ErrorText(message: err.message)
-                }
-            } else {
-                NumberField(title: "R", unit: "Ω", text: $resistance)
-                NumberField(title: "C", unit: "F", text: $capacitance, allowsScientific: true)
-                switch rcResult {
-                case .success(let r):
+                    .opacity(session.isStale ? 0.72 : 1)
+                    SaveJobBar(jobName: $jobName, canSave: !session.isStale) { saveLED(r) }
+                case .rc(let r):
                     ResultCard(copyText: copyText) {
                         ResultRow(label: "τ", value: Format.time(r.tau), emphasis: true, tone: Theme.good)
                         ResultRow(label: "5τ", value: Format.time(r.fiveTau), emphasis: true)
                     }
-                    SaveJobBar(jobName: $jobName, canSave: true) { saveRC(r) }
-                case .failure(let err):
-                    ErrorText(message: err.message)
+                    .opacity(session.isStale ? 0.72 : 1)
+                    SaveJobBar(jobName: $jobName, canSave: !session.isStale) { saveRC(r) }
                 }
             }
         }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            switch mode {
+            case .led:
+                return .led(try LEDResistor.size(
+                    supply: supply.parsedDouble ?? .nan,
+                    forward: vf.parsedDouble ?? .nan,
+                    current: current.parsedDouble ?? .nan
+                ))
+            case .rc:
+                return .rc(try RCTime.tau(
+                    resistance: resistance.parsedDouble ?? .nan,
+                    capacitance: capacitance.parsedDouble ?? .nan
+                ))
+            }
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        supply = ""
+        vf = ""
+        current = ""
+        resistance = ""
+        capacitance = ""
+        session.reset()
     }
 
     private var substituted: String? {
-        if mode == .led, case .success(let r) = ledResult {
+        guard let output = session.displayedResult else { return nil }
+        switch output {
+        case .led(let r):
             return "R = (\(supply) − \(vf)) / \(current) = \(Format.number(r.resistance, digits: 3)) Ω"
-        }
-        if mode == .rc, case .success(let r) = rcResult {
+        case .rc(let r):
             return "τ = \(resistance) × \(capacitance) = \(Format.time(r.tau))"
         }
-        return nil
     }
 
     private var sticky: String? {
-        if mode == .led, case .success(let r) = ledResult {
+        guard let output = session.displayedResult else { return nil }
+        switch output {
+        case .led(let r):
             return "\(Format.number(r.resistance, digits: 3)) Ω  ·  E24 \(Format.number(r.nearestE24, digits: 3)) Ω"
-        }
-        if mode == .rc, case .success(let r) = rcResult {
+        case .rc(let r):
             return Format.time(r.tau)
         }
-        return nil
     }
 
     private var copyText: String? { sticky }

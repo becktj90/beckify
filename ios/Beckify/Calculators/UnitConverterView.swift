@@ -67,39 +67,10 @@ struct UnitConverterView: View {
     @StoredChoice(.unitConverter, "tempDir", default: TempDir.cToF) private var tempDir
     @StoredChoice(.unitConverter, "lengthDir", default: LengthDir.ftToM) private var lengthDir
     @StoredInput(.unitConverter, "jobName", default: "Unit convert") private var jobName
+    @State private var live = LiveCalculationState<String>()
 
-    var resultText: Result<String, CalcError> {
-        CalcCatch.run {
-            switch category {
-            case .si:
-                let out = try UnitConvert.si(value: value.parsedDouble ?? .nan, from: fromP, to: toP)
-                return "\(Format.number(out, digits: 6)) \(toP.rawValue)\(siKind.rawValue)"
-            case .db:
-                let x = value.parsedDouble ?? .nan
-                if dbModeRatio {
-                    let db = dbKind == .voltage ? try UnitConvert.voltageDB(ratio: x) : try UnitConvert.powerDB(ratio: x)
-                    return "\(Format.number(db, digits: 4)) dB"
-                }
-                let ratio = dbKind == .voltage ? try UnitConvert.voltageRatio(fromDB: x) : try UnitConvert.powerRatio(fromDB: x)
-                return "ratio \(Format.number(ratio, digits: 6))"
-            case .temp:
-                let x = value.parsedDouble ?? .nan
-                switch tempDir {
-                case .cToF:
-                    return "\(Format.number(try UnitConvert.fahrenheit(fromCelsius: x), digits: 3)) °F"
-                case .fToC:
-                    return "\(Format.number(try UnitConvert.celsius(fromFahrenheit: x), digits: 3)) °C"
-                }
-            case .length:
-                let x = value.parsedDouble ?? .nan
-                switch lengthDir {
-                case .ftToM: return "\(Format.number(try UnitConvert.meters(fromFeet: x), digits: 4)) m"
-                case .mToFt: return "\(Format.number(try UnitConvert.feet(fromMeters: x), digits: 4)) ft"
-                case .milToMm: return "\(Format.number(try UnitConvert.mm(fromMils: x), digits: 4)) mm"
-                case .mmToMil: return "\(Format.number(try UnitConvert.mils(fromMM: x), digits: 4)) mil"
-                }
-            }
-        }
+    private var inputFingerprint: String {
+        "\(category)|\(siKind)|\(fromP)|\(toP)|\(value)|\(dbKind)|\(dbModeRatio)|\(tempDir)|\(lengthDir)"
     }
 
     var body: some View {
@@ -110,22 +81,57 @@ struct UnitConverterView: View {
                 substituted: substituted,
                 meaning: "Homework conversions. dB uses 20 log10 for voltage/current ratios and 10 log10 for power."
             )
-            TryExampleButton(title: exampleTitle) {
-                applyExample()
-            }
             Picker("Category", selection: $category) {
                 ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             categoryFields
-            switch resultText {
-            case .success(let text):
+
+            if let error = live.error {
+                ErrorText(message: error.message)
+            } else if let text = live.result {
                 ResultCard(copyText: text) {
                     ResultRow(label: "Result", value: text, emphasis: true, tone: Theme.good)
                 }
                 SaveJobBar(jobName: $jobName, canSave: true) { save(text) }
-            case .failure(let err):
-                ErrorText(message: err.message)
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            live.update { try computeResult() }
+        }
+        .onAppear {
+            live.update { try computeResult() }
+        }
+    }
+
+    private func computeResult() throws -> String {
+        switch category {
+        case .si:
+            let out = try UnitConvert.si(value: value.parsedDouble ?? .nan, from: fromP, to: toP)
+            return "\(Format.number(out, digits: 6)) \(toP.rawValue)\(siKind.rawValue)"
+        case .db:
+            let x = value.parsedDouble ?? .nan
+            if dbModeRatio {
+                let db = dbKind == .voltage ? try UnitConvert.voltageDB(ratio: x) : try UnitConvert.powerDB(ratio: x)
+                return "\(Format.number(db, digits: 4)) dB"
+            }
+            let ratio = dbKind == .voltage ? try UnitConvert.voltageRatio(fromDB: x) : try UnitConvert.powerRatio(fromDB: x)
+            return "ratio \(Format.number(ratio, digits: 6))"
+        case .temp:
+            let x = value.parsedDouble ?? .nan
+            switch tempDir {
+            case .cToF:
+                return "\(Format.number(try UnitConvert.fahrenheit(fromCelsius: x), digits: 3)) °F"
+            case .fToC:
+                return "\(Format.number(try UnitConvert.celsius(fromFahrenheit: x), digits: 3)) °C"
+            }
+        case .length:
+            let x = value.parsedDouble ?? .nan
+            switch lengthDir {
+            case .ftToM: return "\(Format.number(try UnitConvert.meters(fromFeet: x), digits: 4)) m"
+            case .mToFt: return "\(Format.number(try UnitConvert.feet(fromMeters: x), digits: 4)) ft"
+            case .milToMm: return "\(Format.number(try UnitConvert.mm(fromMils: x), digits: 4)) mm"
+            case .mmToMil: return "\(Format.number(try UnitConvert.mils(fromMM: x), digits: 4)) mil"
             }
         }
     }
@@ -140,45 +146,13 @@ struct UnitConverterView: View {
     }
 
     private var substituted: String? {
-        guard case .success(let text) = resultText else { return nil }
+        guard let text = live.result else { return nil }
         return "\(value)  →  \(text)"
     }
 
-    private var sticky: String? {
-        guard case .success(let text) = resultText else { return nil }
-        return text
-    }
+    private var sticky: String? { live.result }
 
     private var copyText: String? { sticky }
-
-    private var exampleTitle: String {
-        switch category {
-        case .si: return "4.7 kV → V"
-        case .db: return "Voltage ratio 2 → dB"
-        case .temp: return "20 °C → °F"
-        case .length: return "10 ft → m"
-        }
-    }
-
-    private func applyExample() {
-        switch category {
-        case .si:
-            siKind = .volts
-            fromP = .kilo
-            toP = SIPrefix.none
-            value = "4.7"
-        case .db:
-            dbKind = .voltage
-            dbModeRatio = true
-            value = "2"
-        case .temp:
-            tempDir = .cToF
-            value = "20"
-        case .length:
-            lengthDir = .ftToM
-            value = "10"
-        }
-    }
 
     @ViewBuilder
     private var categoryFields: some View {

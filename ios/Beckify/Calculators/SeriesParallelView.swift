@@ -16,11 +16,82 @@ struct SeriesParallelView: View {
     @StoredInput(.seriesParallel, "v3", default: "") private var v3
     @StoredInput(.seriesParallel, "v4", default: "") private var v4
     @StoredInput(.seriesParallel, "jobName", default: "Series / parallel") private var jobName
+    @State private var session = ExplicitCalculationState<Double>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var unit: String { part == .resistors ? "Ω" : "F" }
 
-    var result: Result<Double, CalcError> {
-        CalcCatch.run {
+    private var inputFingerprint: String { "\(part)|\(kind)|\(v1)|\(v2)|\(v3)|\(v4)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .seriesParallel,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .seriesParallel,
+                symbolic: symbolic,
+                substituted: substituted,
+                meaning: "Ideal lumped parts. Leave extra fields blank. Not temperature-derated."
+            )
+            Picker("Part", selection: $part) {
+                ForEach(Part.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Picker("Network", selection: $kind) {
+                Text("Series").tag(NetworkKind.series)
+                Text("Parallel").tag(NetworkKind.parallel)
+            }
+            .pickerStyle(.segmented)
+            NumberField(title: "Value 1", unit: unit, text: $v1, allowsScientific: true, fieldID: "v1", onSubmit: calculate)
+            NumberField(title: "Value 2", unit: unit, text: $v2, allowsScientific: true, fieldID: "v2", onSubmit: calculate)
+            NumberField(title: "Value 3", unit: unit, text: $v3, optional: true, allowsScientific: true, onSubmit: calculate)
+            NumberField(title: "Value 4", unit: unit, text: $v4, optional: true, allowsScientific: true, onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    applyExample()
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: part == .resistors ? "10 Ω + 20 Ω series" : "1 µF ∥ 2.2 µF"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let eq = session.displayedResult {
+                ResultCard(copyText: copyText) {
+                    ResultRow(label: "Equivalent", value: "\(Format.number(eq, digits: 4)) \(unit)", emphasis: true, tone: Theme.good)
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(eq) }
+            }
+        }
+        .onChange(of: part) { _, new in
+            applyDefaults(for: new)
+            session.markInputsChanged()
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private var symbolic: String {
+        if part == .resistors {
+            return kind == .series ? "Rs = R1 + R2 + …" : "1/Rp = 1/R1 + 1/R2 + …"
+        }
+        return kind == .series ? "1/Cs = 1/C1 + 1/C2 + …" : "Cp = C1 + C2 + …"
+    }
+
+    private func calculate() {
+        session.calculate {
             var values: [Double] = []
             for (i, raw) in [v1, v2, v3, v4].enumerated() {
                 let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -35,62 +106,27 @@ struct SeriesParallelView: View {
             }
             return try SeriesParallel.capacitors(values, kind: kind)
         }
-    }
-
-    var body: some View {
-        ToolScaffold(toolID: .seriesParallel, stickyAnswer: sticky, copyText: copyText) {
-            ShowWorkCard(
-                toolID: .seriesParallel,
-                symbolic: symbolic,
-                substituted: substituted,
-                meaning: "Ideal lumped parts. Leave extra fields blank. Not temperature-derated."
-            )
-            TryExampleButton(title: part == .resistors ? "10 Ω + 20 Ω series" : "1 µF ∥ 2.2 µF") {
-                applyExample()
-            }
-            Picker("Part", selection: $part) {
-                ForEach(Part.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            Picker("Network", selection: $kind) {
-                Text("Series").tag(NetworkKind.series)
-                Text("Parallel").tag(NetworkKind.parallel)
-            }
-            .pickerStyle(.segmented)
-            NumberField(title: "Value 1", unit: unit, text: $v1, allowsScientific: true)
-            NumberField(title: "Value 2", unit: unit, text: $v2, allowsScientific: true)
-            NumberField(title: "Value 3", unit: unit, text: $v3, optional: true, allowsScientific: true)
-            NumberField(title: "Value 4", unit: unit, text: $v4, optional: true, allowsScientific: true)
-            switch result {
-            case .success(let eq):
-                ResultCard(copyText: copyText) {
-                    ResultRow(label: "Equivalent", value: "\(Format.number(eq, digits: 4)) \(unit)", emphasis: true, tone: Theme.good)
-                }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(eq) }
-            case .failure(let err):
-                ErrorText(message: err.message)
-            }
-        }
-        .onChange(of: part) { _, new in
-            applyDefaults(for: new)
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
         }
     }
 
-    private var symbolic: String {
-        if part == .resistors {
-            return kind == .series ? "Rs = R1 + R2 + …" : "1/Rp = 1/R1 + 1/R2 + …"
-        }
-        return kind == .series ? "1/Cs = 1/C1 + 1/C2 + …" : "Cp = C1 + C2 + …"
+    private func reset() {
+        v1 = ""
+        v2 = ""
+        v3 = ""
+        v4 = ""
+        session.reset()
     }
 
     private var substituted: String? {
-        guard case .success(let eq) = result else { return nil }
+        guard let eq = session.displayedResult else { return nil }
         let filled = [v1, v2, v3, v4].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         return "\(filled.joined(separator: kind == .series ? " + " : " ∥ "))  →  \(Format.number(eq, digits: 4)) \(unit)"
     }
 
     private var sticky: String? {
-        guard case .success(let eq) = result else { return nil }
+        guard let eq = session.displayedResult else { return nil }
         return "\(Format.number(eq, digits: 4)) \(unit)"
     }
 

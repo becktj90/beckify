@@ -25,6 +25,8 @@ struct ToolScaffold<Content: View>: View {
     var stickyAnswer: String? = nil
     var copyText: String? = nil
     var disclaimer: ToolDisclaimer = .designAid
+    var showsIdentityHeader: Bool = true
+    var isResultStale: Bool = false
     @ViewBuilder var content: Content
 
     @EnvironmentObject private var favorites: FavoritesStore
@@ -32,12 +34,18 @@ struct ToolScaffold<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: Theme.Space.md) {
+                if showsIdentityHeader {
+                    ToolIdentityHeader(toolID: toolID)
+                }
+                if isResultStale {
+                    StaleResultBanner()
+                }
                 content
                 RelatedToolsSection(current: toolID)
                 disclaimerView
             }
-            .padding(20)
+            .padding(Theme.Space.lg)
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle(tool.title)
@@ -45,7 +53,7 @@ struct ToolScaffold<Content: View>: View {
         .background(Theme.background.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let stickyAnswer, !stickyAnswer.isEmpty {
-                StickyAnswerBar(answer: stickyAnswer, copyText: copyText)
+                StickyAnswerBar(answer: stickyAnswer, copyText: copyText, isStale: isResultStale)
             }
         }
         .toolbar {
@@ -80,21 +88,30 @@ struct ToolScaffold<Content: View>: View {
 struct StickyAnswerBar: View {
     let answer: String
     var copyText: String? = nil
+    var isStale: Bool = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("ANSWER")
-                    .font(.caption2.weight(.semibold))
-                    .tracking(0.6)
-                    .foregroundStyle(Theme.muted)
-                    .accessibilityHidden(true)
+                HStack(spacing: 6) {
+                    Text("ANSWER")
+                        .font(.caption2.weight(.semibold))
+                        .tracking(0.6)
+                        .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)
+                    if isStale {
+                        Text("STALE")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Theme.warn)
+                            .accessibilityLabel("Stale result")
+                    }
+                }
                 Text(answer)
                     .font(.body.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(Theme.foreground)
+                    .foregroundStyle(isStale ? Theme.muted : Theme.foreground)
                     .minimumScaleFactor(0.8)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel("Answer \(answer)")
+                    .accessibilityLabel(isStale ? "Stale answer \(answer). Inputs changed — Calculate again." : "Answer \(answer)")
             }
             Spacer(minLength: 8)
             if let copyText, !copyText.isEmpty {
@@ -108,9 +125,10 @@ struct StickyAnswerBar: View {
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(Theme.border)
+                .fill(isStale ? Theme.warn.opacity(0.5) : Theme.border)
                 .frame(height: 1)
         }
+        .accessibilityIdentifier("stickyAnswerBar")
     }
 }
 
@@ -344,9 +362,7 @@ struct RelatedToolsSection: View {
                             openRelated(tool.id)
                         } label: {
                             HStack(spacing: 12) {
-                                Image(systemName: tool.symbol)
-                                    .font(.body)
-                                    .foregroundStyle(Theme.accent)
+                                ToolGlyph(kind: .forTool(tool.id), size: 28, selected: true)
                                     .frame(width: 28, height: 28)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(tool.title)
@@ -369,7 +385,7 @@ struct RelatedToolsSection: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
                         .accessibilityLabel("Related tool: \(tool.title)")
                         .accessibilityHint(tool.subtitle)
                     }
