@@ -131,7 +131,15 @@ struct ToolIdentityHeader: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(tool.title). \(purpose ?? tool.subtitle)")
+        .accessibilityLabel("\(tool.title). \(purpose ?? tool.subtitle)\(modeHint.map { ". \($0)" } ?? "")")
+    }
+
+    private var modeHint: String? {
+        switch tool.calculationMode {
+        case .explicit: return "Calculate to update results"
+        case .live: return "Updates as you type"
+        default: return nil
+        }
     }
 }
 

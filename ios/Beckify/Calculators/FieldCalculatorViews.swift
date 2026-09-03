@@ -239,6 +239,7 @@ struct PowerFactorView: View {
                     existing = "75"
                     target = "95"
                     voltage = "480"
+                    frequency = "60"
                     session.prepareForNewInputs()
                 },
                 exampleTitle: "100 kW, 0.75 → 0.95 PF at 480 V"
@@ -249,7 +250,9 @@ struct PowerFactorView: View {
             }
 
             if let r = session.displayedResult {
-                if !session.isStale, let kwValue = kw.parsedDouble, kwValue > 0 {
+                if !session.isStale,
+                   let kwValue = kw.parsedDouble, kwValue > 0,
+                   r.targetKVAR.isFinite, r.newKVA.isFinite, r.newKVA > 0 {
                     PowerTriangleDiagram(
                         kw: kwValue,
                         kvar: r.targetKVAR,

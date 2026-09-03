@@ -242,7 +242,6 @@ enum BeckifyMotion {
     static let navigation = Animation.easeInOut(duration: 0.28)
     static let staleReveal = Animation.easeInOut(duration: 0.18)
 
-    @ViewBuilder
     static func withOptionalAnimation<Result>(
         _ animation: Animation?,
         reduceMotion: Bool,

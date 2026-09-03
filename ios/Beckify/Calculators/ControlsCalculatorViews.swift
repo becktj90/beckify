@@ -145,6 +145,7 @@ struct SignalScalingView: View {
                         detail: "The signal is under the bottom of its range. On a 4–20 mA loop that reads as a broken wire or a failed transmitter, not a low process value.",
                         systemImage: "exclamationmark.triangle"
                     )
+                    .opacity(session.isStale ? 0.72 : 1)
                 }
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Engineering", value: Format.number(r.engineeringValue, digits: 4), emphasis: true, tone: Theme.good)

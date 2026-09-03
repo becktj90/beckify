@@ -96,6 +96,10 @@ struct PowerTriangleDiagram: View {
         "Power triangle. True \(Format.number(kw, digits: 2)) kW, reactive \(Format.number(kvar, digits: 2)) kVAR, apparent \(Format.number(kva, digits: 2)) kVA."
     }
 
+    private var hasFiniteLegs: Bool {
+        kw.isFinite && kvar.isFinite && kva.isFinite && kva > 0
+    }
+
     var body: some View {
         DiagramCard(title: title, accessibilitySummary: summary) {
             EngineeringDiagramFrame(summary: summary) {
@@ -105,9 +109,10 @@ struct PowerTriangleDiagram: View {
                     let origin = CGPoint(x: w * 0.14, y: h * 0.82)
                     let maxLeg = min(w * 0.7, h * 0.7)
                     let scale = max(kva, 0.001)
-                    let pLen = CGFloat(kw / scale) * maxLeg
-                    let qLen = CGFloat(abs(kvar) / scale) * maxLeg
+                    let pLen = hasFiniteLegs ? CGFloat(kw / scale) * maxLeg : 0
+                    let qLen = hasFiniteLegs ? CGFloat(abs(kvar) / scale) * maxLeg : 0
                     Path { path in
+                        guard hasFiniteLegs else { return }
                         path.move(to: origin)
                         path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y))
                         path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y - qLen))

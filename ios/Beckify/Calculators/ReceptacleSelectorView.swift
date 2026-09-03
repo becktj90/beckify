@@ -222,7 +222,6 @@ struct ReceptacleSelectorView: View {
     private func calculate() {
         session.calculate {
             guard let query else { throw CalcError.missing("voltage and current") }
-            selectedID = nil
             let matches = try ReceptacleSelector.select(query)
             return CommittedSelection(
                 matches: matches,
@@ -231,8 +230,9 @@ struct ReceptacleSelectorView: View {
                 phase: query.phase
             )
         }
-        if session.displayedResult != nil, !session.isStale, !reduceMotion {
-            successTick += 1
+        if session.displayedResult != nil, !session.isStale {
+            selectedID = nil
+            if !reduceMotion { successTick += 1 }
         }
     }
 
