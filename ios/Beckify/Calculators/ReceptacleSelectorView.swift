@@ -346,7 +346,7 @@ struct ReceptacleFaceCard: View {
 
     private var legend: [(kind: ContactKind, label: String, color: Color)] {
         match.config.face.pins.map { pin in
-            (pin.kind, pin.label, ReceptacleFaceView.color(for: pin.kind))
+            (kind: pin.kind, label: pin.label, color: ReceptacleFaceView.color(for: pin.kind))
         }
         .reduce(into: []) { acc, item in
             if !acc.contains(where: { $0.kind == item.kind }) { acc.append(item) }

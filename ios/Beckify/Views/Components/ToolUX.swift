@@ -293,7 +293,7 @@ struct ShowWorkCard: View {
                 }
 
                 if let meaning, !meaning.isEmpty {
-                    DisclosureGroup("What this number means", isOn: $meaningOpen) {
+                    DisclosureGroup("What this number means", isExpanded: $meaningOpen) {
                         Text(meaning)
                             .font(.subheadline)
                             .foregroundStyle(Theme.muted)
