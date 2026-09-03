@@ -59,7 +59,7 @@ struct UnitConverterView: View {
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.unitConverter, "category", default: .si) private var category
     @StoredChoice(.unitConverter, "siKind", default: .volts) private var siKind
-    @StoredChoice(.unitConverter, "fromP", default: .kilo) private var fromP
+    @StoredChoice(.unitConverter, "fromP", default: SIPrefix.kilo) private var fromP
     @StoredChoice(.unitConverter, "toP", default: SIPrefix.none) private var toP
     @StoredInput(.unitConverter, "value", default: "4.7") private var value
     @StoredChoice(.unitConverter, "dbKind", default: .voltage) private var dbKind

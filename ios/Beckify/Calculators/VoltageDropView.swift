@@ -3,11 +3,11 @@ import BeckifyMath
 
 struct VoltageDropView: View {
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.voltageDrop, "system", default: .threePhase) private var system
+    @StoredChoice(.voltageDrop, "system", default: ElectricalSystem.threePhase) private var system
     @StoredInput(.voltageDrop, "voltage", default: "480") private var voltage
     @StoredInput(.voltageDrop, "current", default: "45") private var current
     @StoredInput(.voltageDrop, "length", default: "250") private var length
-    @StoredChoice(.voltageDrop, "material", default: .copper) private var material
+    @StoredChoice(.voltageDrop, "material", default: ConductorMaterial.copper) private var material
     @StoredInput(.voltageDrop, "size", default: "4") private var size
     @StoredInput(.voltageDrop, "jobName", default: "Voltage drop") private var jobName
 
