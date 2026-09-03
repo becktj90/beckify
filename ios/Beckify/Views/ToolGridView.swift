@@ -4,7 +4,7 @@ import SwiftUI
 /// and category hierarchy with original schematic icons.
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
-    @StateObject private var recents = RecentToolsStore.shared
+    @ObservedObject private var recents = RecentToolsStore.shared
     @State private var query = ""
     @State private var path: [ToolID] = []
     @Environment(\.horizontalSizeClass) private var sizeClass

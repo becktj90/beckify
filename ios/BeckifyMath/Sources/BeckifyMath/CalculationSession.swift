@@ -54,16 +54,16 @@ public struct ExplicitCalculationState<Result: Equatable & Sendable>: Equatable,
 
     /// Call whenever the operator edits an input that could change the answer.
     public mutating func markInputsChanged() {
+        lastValidationError = nil
+        focusField = nil
         guard case .success = phase else {
             // Clear a prior validation failure once the operator starts fixing fields.
             if case .failed = phase {
                 phase = .idle
-                focusField = nil
             }
             return
         }
         isStale = true
-        focusField = nil
     }
 
     /// Last validation error from Calculate, even when a stale success remains.

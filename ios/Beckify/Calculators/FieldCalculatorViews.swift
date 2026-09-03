@@ -76,9 +76,12 @@ struct ReactanceView: View {
             }
 
             if let output = session.displayedResult {
-                if case .series(let r) = output, r.impedance.isFinite {
+                if case .series(let r) = output, r.impedance.isFinite, r.netReactance.isFinite {
+                    // Derive R from the committed Z/X so a stale diagram cannot
+                    // drift when the text field is edited.
+                    let committedR = max(0, (r.impedance * r.impedance - r.netReactance * r.netReactance)).squareRoot()
                     ReactancePhasorDiagram(
-                        resistance: resistance.parsedDouble ?? 0,
+                        resistance: committedR,
                         netReactance: r.netReactance,
                         impedance: r.impedance,
                         angleDegrees: r.phaseAngleDegrees

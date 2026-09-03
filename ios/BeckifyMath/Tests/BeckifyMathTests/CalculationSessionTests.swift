@@ -127,8 +127,23 @@ final class CalculationSessionTests: XCTestCase {
         var state = ExplicitCalculationState<Double>()
         state.calculate { throw CalcError.missing("R") }
         XCTAssertNotNil(state.error)
+        XCTAssertNotNil(state.lastValidationError)
         state.markInputsChanged()
         XCTAssertEqual(state.phase, .idle)
+        XCTAssertNil(state.lastValidationError)
+        XCTAssertNil(state.error)
+    }
+
+    func testMarkInputsChangedClearsValidationErrorBesideStaleSuccess() {
+        var state = ExplicitCalculationState<Double>()
+        state.calculate { 10 }
+        state.markInputsChanged()
+        state.calculate { throw CalcError.missing("I") }
+        XCTAssertEqual(state.displayedResult, 10)
+        XCTAssertNotNil(state.lastValidationError)
+        state.markInputsChanged()
+        XCTAssertNil(state.lastValidationError)
+        XCTAssertTrue(state.isStale)
     }
 
     // MARK: - Live state
