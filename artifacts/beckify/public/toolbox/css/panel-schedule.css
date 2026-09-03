@@ -381,6 +381,37 @@ textarea {
   line-height: 1.45;
 }
 
+.callout {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #111;
+  background: #fff;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+.callout-privacy { background: #e8f5e9; }
+.callout-safety { background: #fff8dc; }
+.callout-caution { background: #ffe4e1; }
+.callout[hidden] { display: none !important; }
+
+.review-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+.review-check input { width: auto; margin-top: 3px; }
+
+.flag-ask {
+  margin: 8px 0 0;
+  padding-left: 1.2rem;
+}
+
 .analysis-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -587,3 +587,488 @@ export function formatComplex(value: Complex): string {
   const sign = value.im >= 0 ? "+" : "−";
   return `${real} ${sign} ${imag}j`;
 }
+
+export function formatPolynomial(coefficients: number[]): string {
+  const terms: string[] = [];
+  const last = coefficients.length - 1;
+  coefficients.forEach((value, index) => {
+    if (Math.abs(value) < EPSILON) return;
+    const power = last - index;
+    const abs = Math.abs(value);
+    const coeff =
+      power !== 0 && Math.abs(abs - 1) < 1e-9
+        ? value < 0
+          ? "−"
+          : ""
+        : `${value < 0 ? "−" : ""}${abs === Math.round(abs) ? String(abs) : abs.toPrecision(4).replace(/\.?0+$/, "")}`;
+    const mag = coeff.replace(/^[−-]/, "") || (power === 0 ? "0" : "1");
+    const signed = value < 0 ? `− ${mag}` : mag;
+    if (power === 0) terms.push(signed);
+    else if (power === 1) terms.push(`${signed === "1" ? "" : `${signed} `}s`.replace(/\s+/g, " ").trim());
+    else terms.push(`${signed === "1" ? "" : `${signed} `}s^${power}`.replace(/\s+/g, " ").trim());
+  });
+  if (!terms.length) return "0";
+  return terms
+    .map((term, index) => (index === 0 ? term.replace(/^− /, "−") : term.startsWith("−") ? term : `+ ${term}`))
+    .join(" ");
+}
+
+export function formatTransferFunction(tf: TransferFunction): string {
+  return `(${formatPolynomial(tf.numerator)}) / (${formatPolynomial(tf.denominator)})`;
+}
+
+/** G(s) = Km / (τ s + 1). */
+export function firstOrderPlant(Km: number, tau: number): TransferFunction {
+  return { numerator: [Km], denominator: [tau, 1] };
+}
+
+/** G(s) = K ωn² / (s² + 2 ζ ωn s + ωn²). Default K = 1. */
+export function secondOrderPlant(wn: number, zeta: number, gain = 1): TransferFunction {
+  const wn2 = wn * wn;
+  return { numerator: [gain * wn2], denominator: [1, 2 * zeta * wn, wn2] };
+}
+
+/** Mp = exp(−ζ π / √(1−ζ²)) as a fraction (0.16 = 16%). Valid for 0 < ζ < 1. */
+export function overshootFromZeta(zeta: number): number {
+  if (!(zeta > 0) || zeta >= 1) return zeta >= 1 ? 0 : Number.NaN;
+  return Math.exp((-zeta * Math.PI) / Math.sqrt(1 - zeta * zeta));
+}
+
+/** Invert Mp = exp(−ζ π / √(1−ζ²)). Mp as a fraction. */
+export function zetaFromOvershoot(overshootFraction: number): number {
+  if (!(overshootFraction > 0) || overshootFraction >= 1) return overshootFraction <= 0 ? 1 : Number.NaN;
+  const logMp = Math.log(overshootFraction);
+  return -logMp / Math.sqrt(Math.PI * Math.PI + logMp * logMp);
+}
+
+/** 2% settling ≈ 4 / (ζ ωn); 5% uses 3. */
+export function settlingTimeFromZetaWn(zeta: number, wn: number, band = 0.02): number {
+  const cycles = band <= 0.02 ? 4 : 3;
+  return cycles / (zeta * wn);
+}
+
+/** Underdamped 10–90% rise: tr ≈ (π − β) / (ωn √(1−ζ²)), β = arccos(ζ). */
+export function riseTimeFromZetaWn(zeta: number, wn: number): number {
+  if (!(wn > 0) || zeta >= 1) return 2.2 / Math.max(wn, EPSILON);
+  const wd = wn * Math.sqrt(Math.max(0, 1 - zeta * zeta));
+  const beta = Math.acos(Math.min(1, Math.max(-1, zeta)));
+  return (Math.PI - beta) / wd;
+}
+
+export function predictedSecondOrderMetrics(wn: number, zeta: number) {
+  const overshoot = overshootFromZeta(zeta);
+  return {
+    zeta,
+    wn,
+    overshootPercent: Number.isFinite(overshoot) ? overshoot * 100 : 0,
+    riseTime: riseTimeFromZetaWn(zeta, wn),
+    settlingTime: settlingTimeFromZetaWn(zeta, wn),
+  };
+}
+
+/**
+ * Identify ωn, ζ from a measured underdamped step: percent overshoot and 2%
+ * settling time. Textbook identities, not a curve fit.
+ */
+export function secondOrderFromOvershootSettling(overshootPercent: number, settlingTime: number, band = 0.02) {
+  const zeta = zetaFromOvershoot(overshootPercent / 100);
+  const wn = (band <= 0.02 ? 4 : 3) / (zeta * settlingTime);
+  return { ...predictedSecondOrderMetrics(wn, zeta), tf: secondOrderPlant(wn, zeta) };
+}
+
+function trailingZeroCount(coefficients: number[]): number {
+  let count = 0;
+  for (let index = coefficients.length - 1; index >= 0; index -= 1) {
+    if (Math.abs(coefficients[index]) < EPSILON) count += 1;
+    else break;
+  }
+  return count;
+}
+
+function polynomialAtZero(coefficients: number[]): number {
+  return coefficients[coefficients.length - 1] ?? 0;
+}
+
+/**
+ * System type = poles at s = 0 minus zeros at s = 0 (Ogata / Nise).
+ * Kp, Kv, Ka are the position, velocity, and acceleration error constants.
+ */
+export function loopErrorConstants(tf: TransferFunction) {
+  const type = Math.max(0, trailingZeroCount(tf.denominator) - trailingZeroCount(tf.numerator));
+  const reducedDen = tf.denominator.slice(0, tf.denominator.length - trailingZeroCount(tf.denominator));
+  const reducedNum = tf.numerator.slice(0, tf.numerator.length - trailingZeroCount(tf.numerator));
+  const residue = polynomialAtZero(reducedNum) / (polynomialAtZero(reducedDen) || EPSILON);
+  const Kp = type === 0 ? residue : type > 0 ? Number.POSITIVE_INFINITY : 0;
+  const Kv = type === 1 ? residue : type > 1 ? Number.POSITIVE_INFINITY : 0;
+  const Ka = type === 2 ? residue : type > 2 ? Number.POSITIVE_INFINITY : 0;
+  const ess = (kind: "step" | "ramp" | "parabola") => {
+    if (kind === "step") return type === 0 ? 1 / (1 + Kp) : 0;
+    if (kind === "ramp") return type === 0 ? Number.POSITIVE_INFINITY : type === 1 ? 1 / Kv : 0;
+    return type < 2 ? Number.POSITIVE_INFINITY : type === 2 ? 1 / Ka : 0;
+  };
+  return {
+    type,
+    Kp,
+    Kv,
+    Ka,
+    step: ess("step"),
+    ramp: ess("ramp"),
+    parabola: ess("parabola"),
+  };
+}
+
+/** Extra real lag pole: G_aug = G / (τ s + 1). τ = 0 leaves G unchanged. */
+export function addRealLagPole(tf: TransferFunction, tau: number): TransferFunction {
+  if (!(tau > EPSILON)) return { numerator: [...tf.numerator], denominator: [...tf.denominator] };
+  return {
+    numerator: [...tf.numerator],
+    denominator: multiplyPolynomials(tf.denominator, [tau, 1]),
+  };
+}
+
+/** Gc(s) = K (T s + 1) / (α T s + 1). Lead when 0 < α < 1. */
+export function leadCompensator(alpha: number, T: number, gain = 1): TransferFunction {
+  return { numerator: [gain * T, gain], denominator: [alpha * T, 1] };
+}
+
+/**
+ * Phase-lead placement: sin φ = (1−α)/(1+α) ⇒ α = (1−sin φ)/(1+sin φ),
+ * T = 1 / (ωm √α) so the maximum phase sits at ωm (Nise / Franklin).
+ */
+export function designLeadPhaseBump(phaseDeg: number, omega: number) {
+  const phi = (phaseDeg * Math.PI) / 180;
+  const s = Math.sin(phi);
+  const alpha = (1 - s) / (1 + s);
+  const T = 1 / (omega * Math.sqrt(alpha));
+  return { alpha, T, tf: leadCompensator(alpha, T), phaseDeg, omega };
+}
+
+/**
+ * PD-like lead: put the zero at −ζ ωn (raise bandwidth) and the pole at z/α.
+ * α < 1 keeps it a lead.
+ */
+export function designLeadRaiseWn(desiredZeta: number, desiredWn: number, alpha: number) {
+  const T = 1 / Math.max(EPSILON, desiredZeta * desiredWn);
+  return { alpha, T, tf: leadCompensator(alpha, T), zero: -1 / T, pole: -1 / (alpha * T) };
+}
+
+/**
+ * Pole-zero cancellation lead: T = 1 / |p_plant|. Cancelling a slow plant pole
+ * is fragile — a 10% plant-pole error leaves a slow residue.
+ */
+export function designLeadCancellation(plantPole: number, alpha: number) {
+  const T = 1 / Math.abs(plantPole);
+  return { alpha, T, tf: leadCompensator(alpha, T), cancelledPole: -Math.abs(plantPole), leftoverPole: -1 / (alpha * T) };
+}
+
+export function cancellationResidue(plantPole: number, assumedPole: number, alpha: number) {
+  const designed = designLeadCancellation(assumedPole, alpha);
+  const cancelled = seriesTransferFunction(designed.tf, { numerator: [1], denominator: [1, -plantPole] });
+  return { tf: cancelled, designed, mismatchPercent: (100 * (plantPole - assumedPole)) / assumedPole };
+}
+
+/** Example R/C that realize α, T on a generic inverting lead: T = R1 C1, α T = R2 C2. */
+export function leadNetworkParts(alpha: number, T: number, C1 = 1e-7) {
+  const C2 = C1;
+  const R1 = T / C1;
+  const R2 = (alpha * T) / C2;
+  return { R1, C1, R2, C2, alpha, T, dcGain: -R2 / R1 };
+}
+
+export type ZnForm = "P" | "PI" | "PID";
+export type ZnVariant = "classic" | "modified";
+
+/**
+ * Ziegler–Nichols from ultimate gain Ku and ultimate period Pu.
+ * Classic: Ziegler & Nichols 1942 (ideal/parallel form Ki = Kp/Ti, Kd = Kp Td).
+ * Modified: common reduced-overshoot table (Kp ≈ 0.33 Ku, Ti = Pu/2, Td = Pu/3 for PID).
+ */
+export function zieglerNicholsUltimate(Ku: number, Pu: number, form: ZnForm = "PID", variant: ZnVariant = "classic"): PidGains & { Ti: number; Td: number } {
+  let kp = 0;
+  let Ti = Number.POSITIVE_INFINITY;
+  let Td = 0;
+  if (variant === "classic") {
+    if (form === "P") kp = 0.5 * Ku;
+    else if (form === "PI") {
+      kp = 0.45 * Ku;
+      Ti = Pu / 1.2;
+    } else {
+      kp = 0.6 * Ku;
+      Ti = Pu / 2;
+      Td = Pu / 8;
+    }
+  } else if (form === "P") kp = 0.2 * Ku;
+  else if (form === "PI") {
+    kp = 0.28 * Ku;
+    Ti = Pu / 2;
+  } else {
+    kp = 0.33 * Ku;
+    Ti = Pu / 2;
+    Td = Pu / 3;
+  }
+  return { kp, ki: Number.isFinite(Ti) ? kp / Ti : 0, kd: kp * Td, Ti, Td };
+}
+
+/**
+ * Open-loop Ziegler–Nichols (process reaction curve) from FOPDT K, L, T.
+ * Classic: Kp = 1.2 T / (K L) etc. Modified uses a milder 0.95 T / (K L) PID.
+ */
+export function zieglerNicholsReactionCurve(K: number, L: number, T: number, form: ZnForm = "PID", variant: ZnVariant = "classic"): PidGains & { Ti: number; Td: number } {
+  const KL = K * L;
+  let kp = 0;
+  let Ti = Number.POSITIVE_INFINITY;
+  let Td = 0;
+  if (variant === "classic") {
+    if (form === "P") kp = T / KL;
+    else if (form === "PI") {
+      kp = (0.9 * T) / KL;
+      Ti = L / 0.3;
+    } else {
+      kp = (1.2 * T) / KL;
+      Ti = 2 * L;
+      Td = 0.5 * L;
+    }
+  } else if (form === "P") kp = (0.5 * T) / KL;
+  else if (form === "PI") {
+    kp = (0.6 * T) / KL;
+    Ti = 4 * L;
+  } else {
+    kp = (0.95 * T) / KL;
+    Ti = 2.4 * L;
+    Td = 0.42 * L;
+  }
+  return { kp, ki: Number.isFinite(Ti) ? kp / Ti : 0, kd: kp * Td, Ti, Td };
+}
+
+/** Fit FOPDT K, L, T from a unit-step using the 28%/63% points (no tangent construction). */
+export function fitReactionCurve(samples: StepSample[]) {
+  const y0 = samples[0]?.y ?? 0;
+  const yf = samples[samples.length - 1]?.y ?? y0;
+  const K = yf - y0;
+  const at = (frac: number) => {
+    const target = y0 + frac * K;
+    const hit = samples.find((sample) => (K >= 0 ? sample.y >= target : sample.y <= target));
+    return hit?.t ?? null;
+  };
+  const t28 = at(0.28);
+  const t63 = at(0.63);
+  if (t28 === null || t63 === null || t63 <= t28) return { K, L: Number.NaN, T: Number.NaN };
+  const T = (t63 - t28) / 0.67;
+  const L = Math.max(0, t63 - T);
+  return { K, L, T };
+}
+
+function closedLoopFromGain(tf: TransferFunction, gain: number): TransferFunction {
+  return closedLoopTransferFunction(seriesTransferFunction({ numerator: [gain], denominator: [1] }, tf));
+}
+
+/**
+ * Closed-loop bandwidth ωb: first frequency where |T(jω)| is 3 dB below DC
+ * (Franklin / Nise). T is the unity-feedback complementary sensitivity.
+ */
+export function closedLoopBandwidth(openLoop: TransferFunction, options?: { minOmega?: number; maxOmega?: number; points?: number }): number | null {
+  const closed = closedLoopTransferFunction(openLoop);
+  const dc = dcGain(closed);
+  if (!Number.isFinite(dc) || Math.abs(dc) < EPSILON) return null;
+  const thresholdDb = 20 * Math.log10(Math.max(Math.abs(dc), EPSILON)) - 3;
+  const bode = bodeResponse(closed, { minOmega: options?.minOmega ?? 0.01, maxOmega: options?.maxOmega ?? 500, points: options?.points ?? 240 });
+  for (let index = 1; index < bode.length; index += 1) {
+    const prev = bode[index - 1];
+    const next = bode[index];
+    if (prev.magnitudeDb >= thresholdDb && next.magnitudeDb <= thresholdDb) {
+      const ratio = (thresholdDb - prev.magnitudeDb) / ((next.magnitudeDb - prev.magnitudeDb) || 1);
+      return prev.omega + (next.omega - prev.omega) * ratio;
+    }
+  }
+  return null;
+}
+
+export function locusAsymptotes(tf: TransferFunction) {
+  const poles = polynomialRoots(tf.denominator);
+  const zeros = polynomialRoots(tf.numerator);
+  const n = poles.length;
+  const m = zeros.length;
+  const excess = n - m;
+  const centroid = excess > 0 ? (poles.reduce((sum, pole) => sum + pole.re, 0) - zeros.reduce((sum, zero) => sum + zero.re, 0)) / excess : 0;
+  const anglesDeg = excess > 0 ? Array.from({ length: excess }, (_, q) => ((2 * q + 1) * 180) / excess) : [];
+  return { n, m, excess, centroid, anglesDeg };
+}
+
+/**
+ * Smallest K > 0 at which a closed-loop pole reaches the imaginary axis.
+ * Returns Ku and the oscillation period Pu = 2π / ωu when a crossing exists.
+ */
+export function ultimateGain(tf: TransferFunction, kMax = 400) {
+  const probe = (gain: number) => polynomialRoots(closedLoopFromGain(tf, gain).denominator);
+  const realMax = (gain: number) => Math.max(...probe(gain).map((pole) => pole.re));
+  if (realMax(1e-6) >= 0 && realMax(kMax) >= 0) {
+    const imag = probe(1e-6).find((pole) => Math.abs(pole.re) < 0.05);
+    return { Ku: 0, Pu: imag && Math.abs(imag.im) > EPSILON ? (2 * Math.PI) / Math.abs(imag.im) : null, omega: imag ? Math.abs(imag.im) : null };
+  }
+  let lo = 1e-6;
+  let hi = kMax;
+  if (realMax(hi) < 0) return { Ku: null, Pu: null, omega: null };
+  for (let iter = 0; iter < 42; iter += 1) {
+    const mid = (lo + hi) / 2;
+    if (realMax(mid) >= 0) hi = mid;
+    else lo = mid;
+  }
+  const poles = probe(hi);
+  const imag = poles.reduce((best, pole) => (Math.abs(pole.re) < Math.abs(best.re) ? pole : best), poles[0]);
+  const omega = Math.abs(imag?.im ?? 0);
+  return { Ku: hi, Pu: omega > EPSILON ? (2 * Math.PI) / omega : null, omega: omega > EPSILON ? omega : null };
+}
+
+export type PidSimSample = { t: number; y: number; u: number; integrator: number; saturated: boolean };
+
+/**
+ * Time-domain P/PI/PID with actuator saturation. Unclamped integration keeps
+ * accumulating error while the output is pegged; anti-windup uses conditional
+ * integration (do not integrate further into the stop) plus an integrator clamp.
+ */
+export function simulatePidWithSaturation(options: {
+  plant: StateSpaceSystem;
+  kp: number;
+  ki: number;
+  kd: number;
+  duration?: number;
+  dt?: number;
+  setpoint?: number;
+  uMin?: number;
+  uMax?: number;
+  antiWindup?: boolean;
+}): PidSimSample[] {
+  const duration = options.duration ?? 8;
+  const dt = options.dt ?? 0.01;
+  const r = options.setpoint ?? 1;
+  const uMin = options.uMin ?? -1;
+  const uMax = options.uMax ?? 1;
+  const antiWindup = options.antiWindup ?? false;
+  const A = options.plant.A;
+  const B = options.plant.B;
+  const C = options.plant.C;
+  const D = options.plant.D;
+  let x = Array(A.length).fill(0);
+  let I = 0;
+  let ePrev = r;
+  const samples: PidSimSample[] = [];
+  for (let time = 0; time <= duration + EPSILON; time += dt) {
+    const y = (multiplyMatrices(C, matrixFromVector(x))[0]?.[0] ?? 0) + (D[0]?.[0] ?? 0) * 0;
+    const e = r - y;
+    const derivative = (e - ePrev) / dt;
+    const unsaturated = options.kp * e + I + options.kd * derivative;
+    const u = Math.min(uMax, Math.max(uMin, unsaturated));
+    const saturated = u !== unsaturated;
+    samples.push({ t: time, y, u, integrator: I, saturated });
+    if (antiWindup) {
+      const pushingStop = saturated && Math.sign(e) === Math.sign(unsaturated);
+      if (!pushingStop) I += options.ki * e * dt;
+      I = Math.min(uMax, Math.max(uMin, I));
+    } else {
+      I += options.ki * e * dt;
+    }
+    ePrev = e;
+    x = rk4Step(A, B, x, u, dt);
+  }
+  return samples;
+}
+
+export function unityFeedbackClosedLoop(forward: TransferFunction, feedback?: TransferFunction): TransferFunction {
+  const H = feedback ?? { numerator: [1], denominator: [1] };
+  const loop = seriesTransferFunction(forward, H);
+  return {
+    numerator: multiplyPolynomials(forward.numerator, H.denominator),
+    denominator: addPolynomials(multiplyPolynomials(forward.denominator, H.denominator), loop.numerator),
+  };
+}
+
+export function isControllableCompanion(A: Matrix, B: Matrix): boolean {
+  const n = A.length;
+  if ((B[0]?.length ?? 0) !== 1) return false;
+  for (let row = 0; row < n; row += 1) {
+    const bWant = row === n - 1 ? 1 : 0;
+    if (Math.abs((B[row]?.[0] ?? 0) - bWant) > 1e-6) return false;
+    for (let col = 0; col < n; col += 1) {
+      if (row < n - 1) {
+        const want = col === row + 1 ? 1 : 0;
+        if (Math.abs((A[row]?.[col] ?? 0) - want) > 1e-6) return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * Bass–Gura / companion-form placement: K = β − a for a monic plant
+ * s^n + a_{n-1} s^{n-1} + … + a0 and desired s^n + β_{n-1} s^{n-1} + … + β0.
+ * Returns row vector K matching u = −K x on controllable companion coordinates.
+ */
+export function companionPlacementGains(openLoopDen: number[], desiredPoles: number[]): { K: Matrix; openLoop: number[]; desired: number[] } {
+  const a = normalizePolynomial(openLoopDen);
+  const desired = companionPolynomialFromRoots(desiredPoles);
+  const padA = padPolynomial(a, desired.length);
+  const padB = padPolynomial(desired, desired.length);
+  const diffs = padB.slice(1).map((value, index) => value - (padA[index + 1] ?? 0));
+  return { K: [diffs.reverse()], openLoop: padA, desired: padB };
+}
+
+export function ackermannShowWork(A: Matrix, B: Matrix, desiredPoles: number[]) {
+  const K = placePolesAckermann(A, B, desiredPoles);
+  const desired = companionPolynomialFromRoots(desiredPoles);
+  const companion = isControllableCompanion(A, B);
+  const openLoop = characteristicPolynomial(A);
+  return {
+    K,
+    desired,
+    openLoop,
+    companion,
+    formula: companion
+      ? "Controllable companion: K = [β0 − a0,  β1 − a1, …] so A − B K has the desired characteristic polynomial."
+      : "Ackermann: K = [0 ⋯ 1] 𝒞⁻¹ φ(A), with φ the desired characteristic polynomial and 𝒞 the controllability matrix.",
+  };
+}
+
+export type NonlinearityKind = "linear" | "saturation" | "coulomb" | "backlash";
+
+/**
+ * Qualitative 2nd-order (mass–spring–damper) step with one nonlinearity.
+ * Educational, not a DAE solver: saturation clips force, Coulomb adds ±Fc on
+ * velocity, backlash holds the output until the internal state travels the gap.
+ */
+export function simulateQualitativeNonlinearity(options: {
+  wn: number;
+  zeta: number;
+  kind: NonlinearityKind;
+  duration?: number;
+  dt?: number;
+  uMax?: number;
+  friction?: number;
+  backlash?: number;
+}): { t: number; y: number }[] {
+  const dt = options.dt ?? 0.01;
+  const duration = options.duration ?? 8;
+  const wn = options.wn;
+  const zeta = options.zeta;
+  const uMax = options.uMax ?? 0.35;
+  const Fc = options.friction ?? 0.25;
+  const gap = options.backlash ?? 0.15;
+  let x = 0;
+  let v = 0;
+  let y = 0;
+  const samples: { t: number; y: number }[] = [];
+  for (let time = 0; time <= duration + EPSILON; time += dt) {
+    const r = 1;
+    let force = wn * wn * (r - x) - 2 * zeta * wn * v;
+    if (options.kind === "saturation") force = Math.min(uMax, Math.max(-uMax, force));
+    if (options.kind === "coulomb") force -= Fc * (Math.abs(v) < 1e-4 ? Math.sign(force) || 0 : Math.sign(v));
+    const a = force;
+    v += a * dt;
+    x += v * dt;
+    if (options.kind === "backlash") {
+      if (x > y + gap / 2) y = x - gap / 2;
+      else if (x < y - gap / 2) y = x + gap / 2;
+    } else y = x;
+    samples.push({ t: time, y });
+  }
+  return samples;
+}

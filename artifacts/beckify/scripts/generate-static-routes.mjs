@@ -14,7 +14,7 @@ const staticRoutes = [
   ["projects/honda-xr650r", "Honda XR650R Electric Conversion | Beckify", "A public workshop journal for a Honda XR650R electric motorcycle conversion — 76 V pack, QS 4 kW V3 mid-drive, Votol EM-200/2. Build in progress."],
   ["gear", "Recommended Electrical Tools, Supplies & Field Gear | Beckify", "Direct model links for industry-standard tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices."],
   ["made-in-america", "American-Made Electrical Tools & Supplies | Made in America | Beckify", "Find verified American-made electrical tools — Klein strippers, CHANNELLOCK pliers, Daniels crimp frames, and 3M tape. Exact models, manufacturer links, and sourcing notes for electricians."],
-  ["control-systems", "Control System Toolbox | Beckify", "Model plants, inspect Bode and root-locus behavior, and compare PID, LQR, and MPC control workflows in an interactive browser toolbox."],
+  ["control-systems", "Control System Toolbox | Beckify", "Undergraduate servo analysis: plant modeling, open- vs closed-loop P control, root locus, lead compensators, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, and state-feedback pole placement."],
   ["games", "Browser Games | Beckify", "Browser games from Beckify, including arcade loops and a first-person voxel world."],
   ["games/cosmic-cadet", "Cosmic Cadet Browser Game | Beckify", "Play Cosmic Cadet, a responsive browser space shooter with keyboard, pointer, touch, waves, hull damage, pause, and fullscreen play."],
   ["games/booty-butt-scooter", "Booty Butt Scooter Browser Game | Beckify", "Play Booty Butt Scooter, a quick browser game with responsive controls and score tracking."],

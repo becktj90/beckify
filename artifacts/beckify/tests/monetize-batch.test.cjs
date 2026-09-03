@@ -49,8 +49,8 @@ console.log("\n--- Counts ---");
 const { PUBLIC_CALCULATOR_COUNT } = require(path.join(root, "src/data/toolbox-tools.mjs"));
 const navTargets = [...toolboxHtml.matchAll(/<button class="nav-btn"[^>]*data-target="([^"]+)"/g)].map((m) => m[1]);
 const excludedNav = new Set([
-  "sec-wire-ref", "sec-motor-ref", "sec-conduit-ref", "sec-conduit-guide",
-  "sec-ip-rating", "sec-nema-class", "sec-nec-tables", "sec-projects",
+  "sec-wire-ref", "sec-conduit-ref", "sec-conduit-guide",
+  "sec-ip-rating", "sec-nema-class", "sec-nema-wiring", "sec-wire-colors", "sec-nec-tables", "sec-projects",
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
 ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));
@@ -68,6 +68,10 @@ ok("home deep-links EMP, homework EE, LP, and number-base", [
   "/toolbox/#sec-gaussian-beam",
   "/toolbox/#sec-lp-optimizer",
   "/toolbox/#sec-base-converter",
+  "/toolbox/#sec-pitch-hum",
+  "/toolbox/#sec-audio-spectrum",
+  "/toolbox/#sec-sound-level",
+  "/toolbox/#sec-lux-meter",
 ].every((href) => homeSrc.includes(`href: "${href}"`)));
 ok("sitemap chips deep-link via /toolbox/#", sitemapSrc.includes("href={`/toolbox/#${tool.anchor}`}"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser games"));
@@ -76,7 +80,16 @@ ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATO
 ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
 ok("sitemap lists EMP/EMC with a working hash link", sitemapSrc.includes('t("EMP / EMC Shielding", "sec-emp-emc")'));
 ok("sitemap lists LP optimizer with a working hash link", sitemapSrc.includes('t("Linear Programming Optimizer", "sec-lp-optimizer")'));
-ok("sitemap lists number-base converter with a working hash link", sitemapSrc.includes('t("Number-Base Converter", "sec-base-converter")'));
+ok("sitemap lists phone sensor field tools", [
+  't("Pitch / Hum Identifier", "sec-pitch-hum")',
+  't("FFT / Audio Spectrum", "sec-audio-spectrum")',
+  't("Sound Level Meter", "sec-sound-level")',
+  't("Lux / Light Meter", "sec-lux-meter")',
+].every((entry) => sitemapSrc.includes(entry)));
+ok("sitemap lists cable schedule with a working hash link", sitemapSrc.includes('t("Cable Schedule Generator", "sec-cable-schedule")'));
+ok("sitemap lists battery bank with a working hash link", sitemapSrc.includes('t("Battery Bank Calculator", "sec-battery-bank")'));
+ok("sitemap lists motor nameplate with a working hash link", sitemapSrc.includes('t("Motor Nameplate Analyzer", "sec-motor-nameplate")'));
+ok("sitemap lists NEMA wiring with a working hash link", sitemapSrc.includes('t("NEMA Wiring & Color Codes", "sec-nema-wiring")'));
 ok("sitemap lists the homework EE set", [
   't("Magnetic Circuit Workbench", "sec-magnetic-circuit")',
   't("Phasor Diagram Workbench", "sec-phasor-diagram")',

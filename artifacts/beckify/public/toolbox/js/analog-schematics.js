@@ -231,6 +231,30 @@
         txt(20, 288, 'Vout = (1 + 2R / RG) · (V₂ − V₁)', { fill: C.part, size: 13 }),
         305,
       ),
+    firstorder: () =>
+      svg(
+        term(40, NEG, 'Vin', 'end') + w(44, NEG, 90, NEG) + resH(90, NEG, 'Rin') + w(134, NEG, 210, NEG) + dot(210, NEG) +
+        feedback(resH(268, 40, 'Rf'), 268, 312) +
+        poly([[210, NEG], [210, 78]]) + w(210, 78, 268, 78) + capH(268, 78, 'Cf') + w(294, 78, 380, 78) + poly([[380, 78], [380, AY]]) +
+        w(210, NEG, AX, NEG) + amp(AX, AY) +
+        w(AX, POS, 200, POS) + gnd(200, POS) +
+        w(OUT, AY, 470, AY) + term(474, AY, 'Vout') +
+        txt(20, 232, 'H(s) = −(Rf/Rin) / (1 + s Rf Cf)', { fill: C.part, size: 13 }),
+      ),
+    lead: () =>
+      svg(
+        term(40, NEG, 'Vin', 'end') + w(44, NEG, 90, NEG) +
+        resH(90, NEG, 'R1') + w(134, NEG, 210, NEG) +
+        dot(90, NEG) + dot(134, NEG) +
+        poly([[90, NEG], [90, 72]]) + w(90, 72, 99, 72) + capH(99, 72, 'C1') + w(125, 72, 134, 72) + poly([[134, 72], [134, NEG]]) +
+        w(210, NEG, AX, NEG) + dot(210, NEG) + amp(AX, AY) +
+        feedback(resH(268, 40, 'R2'), 268, 312) +
+        poly([[210, NEG], [210, 78]]) + w(210, 78, 268, 78) + capH(268, 78, 'C2') + w(294, 78, 380, 78) + poly([[380, 78], [380, AY]]) +
+        w(AX, POS, 200, POS) + gnd(200, POS) +
+        w(OUT, AY, 470, AY) + term(474, AY, 'Vout') +
+        txt(20, 248, 'H(s) = −(R2/R1)(1 + s R1 C1)/(1 + s R2 C2)   ·   lead if R1 C1 > R2 C2', { fill: C.part, size: 12 }),
+        270,
+      ),
   };
 
   // ── filter schematics ───────────────────────────────────────────────────
@@ -384,6 +408,8 @@
     comparator: { h: 'Vout = HIGH if Vin > Vref, else LOW', note: 'No linear transfer function — the device is saturated by design.' },
     schmitt: { h: 'V_TH = β·V_HIGH,  V_TL = β·V_LOW,  β = R_bottom / (R_top + R_bottom)', note: 'Positive feedback splits the threshold into two, giving noise immunity.' },
     instrumentation: { h: 'Vout = (1 + 2R / RG)(V₂ − V₁)', note: 'A single resistor sets gain while keeping both inputs high-impedance.' },
+    firstorder: { h: 'H(s) = −(Rf/Rin) / (1 + s Rf Cf)', note: 'Inverting first-order lag. Time constant τ = Rf Cf; DC gain −Rf/Rin.' },
+    lead: { h: 'H(s) = −(R2/R1) (1 + s R1 C1) / (1 + s R2 C2)', note: 'Generic inverting lead when R1 C1 > R2 C2, i.e. α = R2 C2 / R1 C1 < 1. T = R1 C1.' },
   };
 
   const filterTransfer = {

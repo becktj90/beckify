@@ -134,7 +134,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, and number-base converter.
+                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, number-base converter, I/O list, signal scaling, cable schedule, battery bank, and motor nameplate tools.
                     </p>
                   </div>
                 </a>
@@ -154,6 +154,17 @@ export default function Home() {
                     { href: "/toolbox/#sec-ebus-budget", label: "E-bus budget" },
                     { href: "/toolbox/#sec-modbus-address", label: "Modbus address" },
                     { href: "/toolbox/#sec-plc-timer-preset", label: "PLC timer" },
+                    { href: "/toolbox/#sec-pitch-hum", label: "Pitch / hum" },
+                    { href: "/toolbox/#sec-audio-spectrum", label: "Audio spectrum" },
+                    { href: "/toolbox/#sec-sound-level", label: "Sound level" },
+                    { href: "/toolbox/#sec-lux-meter", label: "Lux meter" },
+                    { href: "/toolbox/#sec-cable-schedule", label: "Cable schedule" },
+                    { href: "/toolbox/#sec-nema-wiring", label: "NEMA wiring" },
+                    { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
+                    { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },
+                    { href: "/toolbox/#sec-torque-lookup", label: "Torque lookup" },
+                    { href: "/toolbox/#sec-bldg-load", label: "Load worksheet" },
+                    { href: "/toolbox/#sec-wire-colors", label: "Wire colors" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}
@@ -258,7 +269,7 @@ export default function Home() {
                     <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Interactive design</p>
                     <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Control System Toolbox</h2>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Model plants, inspect Bode and root-locus behavior, and compare PID, LQR, and MPC workflows.
+                      Model plants, compare open- vs closed-loop P control, sketch a root locus, design a lead, tune PID with Ziegler–Nichols and anti-windup, and read Bode GM/PM/ωb.
                     </p>
                   </div>
                 </div>

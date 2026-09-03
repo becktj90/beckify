@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https: blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#8b7bff">
   <link rel="canonical" href="https://beckify.com/toolbox/">
@@ -183,52 +183,43 @@
       <div class="sidebar-section-title">01 · Core calculations</div>
       <button class="nav-btn" data-target="sec-ohm" data-keywords="#Electronics #Calculators ohms law voltage current resistance">Ohm's Law</button>
       <button class="nav-btn" data-target="sec-magnetic-circuit" data-keywords="magnetic circuit reluctance flux mmf ampere faraday core air gap fringing B H NI magnetostatics homework">Magnetic Circuit</button>
-      <button class="nav-btn" data-target="sec-power-dc" data-keywords="#Electronics #Calculators dc power watts">DC Power</button>
-      <button class="nav-btn" data-target="sec-power-wizard" data-keywords="#Electronics #Calculators power current converter ac dc single phase three phase kva kw kvar power factor sine wave">Power Wizard</button>
+      <button class="nav-btn" data-target="sec-power-wizard" data-keywords="#Electronics #Calculators power current converter ac dc single phase three phase kva kw kvar power factor sine wave dc identities p=vi i2r">Power</button>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
       <button class="nav-btn" data-target="sec-base-converter" data-keywords="hex hexadecimal decimal octal binary number base converter radix two's complement bit field nibble place value">Number-Base Converter</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">02 · Electronics &amp; digital design</div>
-      <button class="nav-btn" data-target="sec-reactance" data-keywords="#Electronics #Calculators reactance impedance capacitive inductive">Reactance &amp; Impedance</button>
-      <button class="nav-btn" data-target="sec-resonance" data-keywords="#Electronics #Calculators resonance lc tank frequency">Resonance</button>
+      <button class="nav-btn" data-target="sec-reactance" data-keywords="#Electronics #Calculators reactance impedance capacitive inductive resonance lc tank frequency">Reactance &amp; Resonance</button>
       <button class="nav-btn" data-target="sec-phasor-diagram" data-keywords="phasor diagram series parallel RLC voltage triangle current triangle power factor polar RMS lead lag delta wye impedance homework">Phasor Diagram</button>
       <button class="nav-btn" data-target="sec-transient-circuits" data-keywords="transient circuit RC RL RLC overdamped underdamped critically damped time constant waveform source step source free homework">Transient Circuits</button>
       <button class="nav-btn" data-target="sec-pfc">Power Factor Correction</button>
       <button class="nav-btn" data-target="sec-sp" data-keywords="#Electronics #Calculators series parallel resistance capacitance inductance">Resistance, C, L</button>
       <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
       <button class="nav-btn" data-target="sec-digital" data-keywords="digital logic gates boolean expression truth table circuit simulator AND OR NOT XOR NAND NOR">Digital Logic Workbench</button>
-      <button class="nav-btn" data-target="sec-analog-design" data-keywords="op amp operational amplifier gain inverting non-inverting differential summing integrator differentiator comparator schmitt transimpedance instrumentation filter designer low pass high pass band pass notch all pass sallen key rlc">Analog Design Workbench</button>
+      <button class="nav-btn" data-target="sec-analog-design" data-keywords="op amp operational amplifier gain inverting non-inverting differential summing integrator differentiator comparator schmitt transimpedance instrumentation filter designer low pass high pass band pass notch all pass sallen key rlc lead lag compensator analog computer">Analog Design Workbench</button>
       <button class="nav-btn" data-target="sec-semiconductor-iv" data-keywords="semiconductor diode shockley BJT MOSFET NMOS I-V ebers moll square law Q-point device physics homework">Semiconductor I-V</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">03 · Power distribution</div>
-      <button class="nav-btn" data-target="sec-vdrop" data-keywords="#PowerDistribution #NEC #Calculators voltage drop feeder branch circuit">Voltage Drop</button>
-      <button class="nav-btn" data-target="sec-conductor-length" data-keywords="conductor length by resistance distance loop test one way wire length awg kcmil circular mils rho copper aluminum">Conductor Length by Resistance</button>
-      <button class="nav-btn" data-target="sec-motor" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower">Motor Calculations</button>
-      <button class="nav-btn" data-target="sec-xfmr" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio sizing protection conductor wizard">Transformer Workbench</button>
-      <button class="nav-btn" data-target="sec-xfmr-engine" data-keywords="#PowerDistribution #NEC #Calculators transformer conductor selection engine ocpd egc gec voltage drop conduit 450.3 250.122 250.66 310.16 primary secondary feeder">Transformer | Conductor Engine</button>
-      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="transformer sizing selection protection ocpd overcurrent 450.3 standard kva primary secondary">Transformer | Sizing and Protection</button>
-      <button class="nav-btn" data-target="sec-conduit" data-keywords="#PowerDistribution #NEC #Calculators conduit fill emt">Conduit Fill</button>
-      <button class="nav-btn" data-target="sec-conduit-adv" data-keywords="conduit fill mixed conductors raceway EMT IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill (Mixed)</button>
-      <button class="nav-btn" data-target="sec-wire-select" data-keywords="conductor cost optimizer wire size ampacity conductor selection voltage drop parallel runs price estimate copper aluminum derating ambient termination 310.16 110.14 continuous load">Conductor Cost Optimizer</button>
+      <button class="nav-btn" data-target="sec-wire-select" data-keywords="conductor cost optimizer wire size ampacity conductor selection voltage drop parallel runs planning allowance copper aluminum derating ambient termination 310.16 110.14 continuous load lighting run length from resistance mv cable medium voltage 311 310.60">Conductors</button>
+      <button class="nav-btn" data-target="sec-cable-schedule" data-keywords="cable schedule tray conductor ampacity voltage drop xlsx csv from to">Cable Schedule Generator</button>
+      <button class="nav-btn" data-target="sec-motor-ref" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower 430.248 430.250 430.6 table current">Motor</button>
+      <button class="nav-btn" data-target="sec-motor-nameplate" data-keywords="motor nameplate OCR FLA overload 430.32 430.52 locked rotor service factor">Motor Nameplate Analyzer</button>
+      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio sizing protection conductor wizard ocpd 450.3 primary secondary note 1 dry cast oil FR3 SLD">Transformer</button>
+      <button class="nav-btn" data-target="sec-conduit" data-keywords="#PowerDistribution #NEC #Calculators conduit fill emt mixed conductors raceway IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill</button>
       <button class="nav-btn" data-target="sec-sc" data-keywords="#PowerDistribution #NEC #Calculators short circuit fault current interrupting rating">Short Circuit</button>
       <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
-      <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
-      <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
+      <button class="nav-btn" data-target="sec-bldg-load" data-keywords="load calculation worksheet nec 220 demand factor lighting receptacle kitchen hvac feeder service building load">Load Calculation Worksheet</button>
       <button class="nav-btn" data-target="sec-load-factors" data-keywords="demand factor diversity factor coincidence factor load factor projected growth capacity factor connected load maximum demand kva">Demand, Diversity &amp; Growth</button>
+      <button class="nav-btn" data-target="sec-torque-lookup" data-keywords="torque lookup lug terminal tightening ul 486a 486b in-lb newton meter fastener sae grade metric class">Torque Lookup</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">04 · System planning</div>
-      <button class="nav-btn" data-target="sec-ups">UPS Sizing</button>
-      <button class="nav-btn" data-target="sec-gen">Generator Sizing</button>
-      <button class="nav-btn" data-target="sec-hybrid">Hybrid Generator</button>
-      <button class="nav-btn" data-target="sec-xfmr-wizard" data-keywords="transformer wizard design kva sizing type dry liquid oil winding delta wye conductor protection ocpd disconnect single line diagram SLD NEC 450">Transformer | Design Wizard</button>
+      <button class="nav-btn" data-target="sec-ups" data-keywords="ups generator hybrid bess peak shave on-site standby battery energy storage">On-site power</button>
       <button class="nav-btn" data-target="sec-heater-wizard" data-keywords="heater wizard industrial resistive element design nichrome kanthal wire gauge awg wye delta three phase single phase duct immersion coil resistance alloy">Heater | Design Wizard</button>
       <button class="nav-btn" data-target="sec-lsi">LSI Breaker Visualizer</button>
-      <button class="nav-btn" data-target="sec-bess">BESS Peak-Shave</button>
-      <button class="nav-btn" data-target="sec-tap">Tap-Changer Calc</button>
+      <button class="nav-btn" data-target="sec-tap" data-keywords="tap changer detc oltc 23kv 480v de-energized tap">Tap-Changer Calc</button>
       <button class="nav-btn" data-target="sec-harmonics">Harmonics Tool</button>
     </div>
     <div class="sidebar-section">
@@ -237,8 +228,7 @@
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
-      <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule photo OCR load analyzer FLA demand diversity capacity circuit directory">Panel Schedule Load Analyzer</button>
-      <button class="nav-btn" data-target="sec-panel-power-study" data-keywords="panel schedule power study OCR breaker sizes series poles circuit class positions main rating demand factor diversity expansion">Panel Schedule Power Study</button>
+      <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule photo OCR load analyzer FLA demand diversity capacity circuit directory power study breaker sizes series poles circuit class positions main rating expansion">Panel Schedule</button>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
       <button class="nav-btn" data-target="sec-io-list-generator" data-keywords="io list i/o list ethercat beckhoff rockwell siemens wago plc channel slot coupler analog raw el1819 io-link generic counts controllogix compactlogix instrument takeoff tag suffix control zone sample rate">I/O List Generator</button>
@@ -246,15 +236,20 @@
       <button class="nav-btn" data-target="sec-ebus-budget" data-keywords="ebus e-bus rack current budget beckhoff el9410 coupler remaining milliamp reserve">E-bus / Rack Current</button>
       <button class="nav-btn" data-target="sec-modbus-address" data-keywords="modbus address converter holding coil 40001 400001 function code pdu offset">Modbus Address Converter</button>
       <button class="nav-btn" data-target="sec-plc-timer-preset" data-keywords="plc timer preset ton tof rto timebase milliseconds scan counts">PLC Timer Preset</button>
+      <button class="nav-btn" data-target="sec-pitch-hum" data-keywords="pitch hum frequency identifier 60 hz 50 hz 120 hz mains ripple transformer buzz autocorrelation microphone field">Pitch / Hum Identifier</button>
+      <button class="nav-btn" data-target="sec-audio-spectrum" data-keywords="fft audio spectrum analyzer harmonics transformer buzz motor noise microphone hann">FFT / Audio Spectrum</button>
+      <button class="nav-btn" data-target="sec-sound-level" data-keywords="sound level meter spl dbfs a-weighting leq equipment room noise microphone relative db">Sound Level Meter</button>
+      <button class="nav-btn" data-target="sec-lux-meter" data-keywords="lux light level meter camera photometer led retrofit flicker luminance relative">Lux / Light Meter</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">06 · References &amp; workspace</div>
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
-      <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
       <button class="nav-btn" data-target="sec-conduit-guide" data-keywords="conduit fittings guide EMT IMC RMC PVC FMC LFMC ENT HDPE type selection NEC AFSPCMAN 91-710 NASA AF space force">Conduit &amp; Fittings Guide</button>
       <button class="nav-btn" data-target="sec-ip-rating">IP Rating Chart</button>
       <button class="nav-btn" data-target="sec-nema-class">NEMA Enclosures</button>
+      <button class="nav-btn" data-target="sec-nema-wiring" data-keywords="nema 5-15 5-20 6-20 L5-30 L14-30 twist lock color code 200.6 250.119 receptacle wiring">NEMA Wiring &amp; Color Codes</button>
+      <button class="nav-btn" data-target="sec-wire-colors" data-keywords="wire color nec ul 508a grounded white gray egc green high-leg orange 200.6 250.119 110.15 control panel yellow interlock">Wire colors (NEC / UL 508A)</button>
       <button class="nav-btn" data-target="sec-nec-tables">NEC Code Tables</button>
       <button class="nav-btn" data-target="sec-projects" data-keywords="saved jobs projects history save load offline storage preferences units imperial metric game statistics high scores">Saved Jobs &amp; Settings</button>
     </div>
@@ -262,11 +257,17 @@
       <div class="sidebar-section-title">07 · Specialist tools</div>
       <button class="nav-btn" data-target="sec-ebike-tools" data-keywords="ebike e-bike torque rpm sprocket chainring gear ratio wheel speed range battery wh per mile">E-Bike Drivetrain Tools</button>
       <button class="nav-btn" data-target="sec-battery-build" data-keywords="18650 battery pack nickel strip ampacity series parallel C rate honeycomb grid cell layout lithium ion battery design">Battery Build Designer</button>
+      <button class="nav-btn" data-target="sec-battery-bank" data-keywords="battery bank LFP AGM flooded depth of discharge inverter efficiency series parallel backup C-rate">Battery Bank Calculator</button>
       <button class="nav-btn" data-target="sec-stem-tools" data-keywords="differential equations ODE trig trigonometry linear algebra matrix chemistry calculus optics quantum physics linear programming LP STEM math">STEM Toolkit</button>
       <button class="nav-btn" data-target="sec-lp-optimizer" data-keywords="linear programming LP simplex optimizer maximize minimize feasible region blending product mix resource allocation operations research tableau">LP Optimizer</button>
       <button class="nav-btn" data-target="sec-fiber-link" data-keywords="fiber optic numerical aperture NA acceptance angle link budget attenuation dB Palais photonics homework">Fiber Link / NA</button>
       <button class="nav-btn" data-target="sec-gaussian-beam" data-keywords="gaussian beam waist rayleigh range confocal spot size curvature TEM00 Saleh Teich photonics homework">Gaussian Beam</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
+    </div>
+    <!-- Control theory is the React page at /control-systems, not a toolbox calculator. Additive link only. -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">08 · Control theory</div>
+      <a class="nav-ext" href="/control-systems" data-keywords="control systems pid bode root locus lead compensator ziegler nichols pole placement servo analog computer">Control System Toolbox</a>
     </div>
   </nav>
 
@@ -279,7 +280,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">60 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">55 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -289,16 +290,14 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-ohm">Ohm's Law</a></li>
             <li><a class="home-tool-link" href="#sec-magnetic-circuit">Magnetic Circuit Workbench</a></li>
-            <li><a class="home-tool-link" href="#sec-power-dc">DC Power</a></li>
-            <li><a class="home-tool-link" href="#sec-power-wizard">Power Wizard (DC, 1Ø &amp; 3Ø AC)</a></li>
+            <li><a class="home-tool-link" href="#sec-power-wizard">Power (DC, 1Ø &amp; 3Ø)</a></li>
           </ul>
         </div>
 
         <div class="home-cat-card" style="--cat-color:#4f8bff">
           <div class="home-cat-header"><span class="home-cat-icon">◈</span><span class="home-cat-name">Electronics &amp; Digital Design</span></div>
           <ul class="home-tool-list">
-            <li><a class="home-tool-link" href="#sec-reactance">Reactance &amp; Impedance</a></li>
-            <li><a class="home-tool-link" href="#sec-resonance">Resonance</a></li>
+            <li><a class="home-tool-link" href="#sec-reactance">Reactance &amp; Resonance</a></li>
             <li><a class="home-tool-link" href="#sec-phasor-diagram">Phasor Diagram Workbench</a></li>
             <li><a class="home-tool-link" href="#sec-transient-circuits">Transient Circuit Lab</a></li>
             <li><a class="home-tool-link" href="#sec-pfc">Power Factor Correction</a></li>
@@ -313,17 +312,15 @@
         <div class="home-cat-card" style="--cat-color:#4ade80">
           <div class="home-cat-header"><span class="home-cat-icon">🔌</span><span class="home-cat-name">Distribution</span></div>
           <ul class="home-tool-list">
-            <li><a class="home-tool-link" href="#sec-vdrop">Voltage Drop</a></li>
-            <li><a class="home-tool-link" href="#sec-conductor-length">Conductor Length by Resistance</a></li>
-            <li><a class="home-tool-link" href="#sec-motor">Motor Calculations</a></li>
-            <li><a class="home-tool-link" href="#sec-xfmr">Transformer Sizing</a></li>
+            <li><a class="home-tool-link" href="#sec-wire-select">Conductors</a></li>
+            <li><a class="home-tool-link" href="#sec-cable-schedule">Cable Schedule Generator</a></li>
+            <li><a class="home-tool-link" href="#sec-motor-ref">Motor</a></li>
+            <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer</a></li>
+            <li><a class="home-tool-link" href="#sec-tap">Tap-Changer Calc</a></li>
             <li><a class="home-tool-link" href="#sec-conduit">Conduit Fill</a></li>
-            <li><a class="home-tool-link" href="#sec-conduit-adv">Conduit Fill (Mixed)</a></li>
-            <li><a class="home-tool-link" href="#sec-wire-select">Conductor Cost Optimizer</a></li>
-            <li><a class="home-tool-link" href="#sec-xfmr-engine">Transformer Engine</a></li>
-            <li><a class="home-tool-link" href="#sec-xfmr-size">Transformer Sizing &amp; Protection</a></li>
             <li><a class="home-tool-link" href="#sec-sc">Short Circuit</a></li>
             <li><a class="home-tool-link" href="#sec-load-factors">Demand, Diversity &amp; Growth</a></li>
+            <li><a class="home-tool-link" href="#sec-torque-lookup">Torque Lookup</a></li>
           </ul>
         </div>
 
@@ -331,22 +328,24 @@
           <div class="home-cat-header"><span class="home-cat-icon">🧪</span><span class="home-cat-name">Field Test &amp; Fault Locating</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Analyzer</a></li>
-            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
-            <li><a class="home-tool-link" href="#sec-panel-power-study">Panel Schedule Power Study</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule</a></li>
             <li><a class="home-tool-link" href="#sec-io-list-generator">I/O List Generator</a></li>
             <li><a class="home-tool-link" href="#sec-signal-scaling">Process Value / Signal Scaling</a></li>
             <li><a class="home-tool-link" href="#sec-ebus-budget">E-bus / Rack Current Budget</a></li>
             <li><a class="home-tool-link" href="#sec-modbus-address">Modbus Address Converter</a></li>
             <li><a class="home-tool-link" href="#sec-plc-timer-preset">PLC Timer Preset</a></li>
+            <li><a class="home-tool-link" href="#sec-pitch-hum">Pitch / Hum Identifier</a></li>
+            <li><a class="home-tool-link" href="#sec-audio-spectrum">FFT / Audio Spectrum</a></li>
+            <li><a class="home-tool-link" href="#sec-sound-level">Sound Level Meter</a></li>
+            <li><a class="home-tool-link" href="#sec-lux-meter">Lux / Light Meter</a></li>
+            <li><a class="home-tool-link" href="#sec-motor-nameplate">Motor Nameplate Analyzer</a></li>
           </ul>
         </div>
 
         <div class="home-cat-card" style="--cat-color:#a78bfa">
           <div class="home-cat-header"><span class="home-cat-icon">🔋</span><span class="home-cat-name">Power Systems</span></div>
           <ul class="home-tool-list">
-            <li><a class="home-tool-link" href="#sec-ups">UPS Sizing</a></li>
-            <li><a class="home-tool-link" href="#sec-gen">Generator Sizing</a></li>
-            <li><a class="home-tool-link" href="#sec-hybrid">Hybrid Generator</a></li>
+            <li><a class="home-tool-link" href="#sec-ups">On-site power (UPS / generator / hybrid / BESS)</a></li>
           </ul>
         </div>
 
@@ -364,6 +363,7 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-battery-build">18650 Pack Designer</a></li>
             <li><a class="home-tool-link" href="#sec-battery-build">Nickel Strip Calculator</a></li>
+            <li><a class="home-tool-link" href="#sec-battery-bank">Battery Bank Calculator</a></li>
           </ul>
         </div>
 
@@ -371,22 +371,14 @@
           <div class="home-cat-header"><span class="home-cat-icon">📋</span><span class="home-cat-name">Reference Tables</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-wire-ref">Conductor Ampacity</a></li>
-            <li><a class="home-tool-link" href="#sec-motor-ref">Motor FLA Tables</a></li>
+            <li><a class="home-tool-link" href="#sec-motor-ref">Motor FLA Tables (Motor tool)</a></li>
             <li><a class="home-tool-link" href="#sec-conduit-ref">Conduit Fill Tables</a></li>
             <li><a class="home-tool-link" href="#sec-conduit-guide">Conduit &amp; Fittings Guide</a></li>
             <li><a class="home-tool-link" href="#sec-ip-rating">IP Rating Chart</a></li>
             <li><a class="home-tool-link" href="#sec-nema-class">NEMA Enclosures</a></li>
+            <li><a class="home-tool-link" href="#sec-nema-wiring">NEMA Wiring &amp; Color Codes</a></li>
+            <li><a class="home-tool-link" href="#sec-wire-colors">Wire colors (NEC / UL 508A)</a></li>
             <li><a class="home-tool-link" href="#sec-nec-tables">NEC Code Tables</a></li>
-          </ul>
-        </div>
-
-        <div class="home-cat-card" style="--cat-color:#f97316">
-          <div class="home-cat-header"><span class="home-cat-icon">🔌</span><span class="home-cat-name">Transformer Wizard</span></div>
-          <ul class="home-tool-list">
-            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Step-by-step Design</a></li>
-            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Type &amp; Winding Selection</a></li>
-            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Conductor Optimization</a></li>
-            <li><a class="home-tool-link" href="#sec-xfmr-wizard">Single-Line Diagram</a></li>
           </ul>
         </div>
 
@@ -425,8 +417,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">📐</span><span class="home-cat-name">NEC Calculations</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-nec">NEC Circuit Calc</a></li>
-            <li><a class="home-tool-link" href="#sec-lighting-opt">Lighting VD Optimizer</a></li>
-            <li><a class="home-tool-link" href="#sec-bldg-load">Building Load Calc</a></li>
+            <li><a class="home-tool-link" href="#sec-bldg-load">Load Calculation Worksheet</a></li>
           </ul>
         </div>
 
@@ -437,9 +428,12 @@
             <li><a class="home-tool-link" href="#sec-base-converter">Number-Base Converter (Hex/Dec/Oct/Bin)</a></li>
             <li><a class="home-tool-link" href="#sec-cm">Circular Mils</a></li>
             <li><a class="home-tool-link" href="#sec-photometrics">Photometrics</a></li>
+            <li><a class="home-tool-link" href="#sec-lux-meter">Lux / Light Meter</a></li>
+            <li><a class="home-tool-link" href="#sec-pitch-hum">Pitch / Hum Identifier</a></li>
+            <li><a class="home-tool-link" href="#sec-audio-spectrum">FFT / Audio Spectrum</a></li>
+            <li><a class="home-tool-link" href="#sec-sound-level">Sound Level Meter</a></li>
             <li><a class="home-tool-link" href="#sec-signal-scaling">Process Value / Signal Scaling</a></li>
-            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule Load Analyzer</a></li>
-            <li><a class="home-tool-link" href="#sec-panel-power-study">Panel Schedule Power Study</a></li>
+            <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule</a></li>
           </ul>
         </div>
 
@@ -447,7 +441,6 @@
           <div class="home-cat-header"><span class="home-cat-icon">🔬</span><span class="home-cat-name">Advanced Tools</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-lsi">LSI Breaker Visualizer</a></li>
-            <li><a class="home-tool-link" href="#sec-bess">BESS Peak-Shave</a></li>
             <li><a class="home-tool-link" href="#sec-tap">Tap-Changer Calc</a></li>
             <li><a class="home-tool-link" href="#sec-harmonics">Harmonics Tool</a></li>
           </ul>
@@ -465,6 +458,16 @@
           <div class="home-cat-header"><span class="home-cat-icon">🗂</span><span class="home-cat-name">Workspace</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-projects">Saved Jobs &amp; Settings</a></li>
+          </ul>
+        </div>
+
+        <!-- Control theory lives at /control-systems (React). Link only — not a toolbox calculator slug. -->
+        <div class="home-cat-card" style="--cat-color:#c4b5fd">
+          <div class="home-cat-header"><span class="home-cat-icon">🎛</span><span class="home-cat-name">Control theory</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="/control-systems">Control System Toolbox</a></li>
+            <li><a class="home-tool-link" href="/control-systems">Plant model, PID, Bode, locus, lead</a></li>
+            <li><a class="home-tool-link" href="/toolbox/#sec-analog-design">Analog lead network (op-amp R/C)</a></li>
           </ul>
         </div>
 
@@ -1132,7 +1135,7 @@
     <section id="sec-analog-design" class="section">
       <div class="section-header">
         <h2>Analog Design Workbench</h2>
-        <p>Size common op-amp stages and explore practical analog-filter families with a live response plot.</p>
+        <p>Size common op-amp stages and explore practical analog-filter families with a live response plot. Includes a generic analog-computer lead network Gc = (Ts+1)/(αTs+1) from R/C.</p>
         <details class="section-info"><summary>ℹ More Info — Analog design</summary><div class="section-info-body">Ideal first-pass calculations only: verify supply range, input/output swing, gain-bandwidth, slew rate, noise, stability, component tolerance, source/load impedance, and the exact topology before building hardware.</div></details>
       </div>
       <div class="tabs analog-tabs" role="tablist" aria-label="Analog design tools">
@@ -1143,7 +1146,7 @@
         <div class="card-grid two-col">
           <div class="card"><div class="card-title">Op-amp topology</div><div class="card-body">
             <label for="ao_type">Calculator</label>
-            <select id="ao_type" onchange="renderOpAmpFields()"><option value="inverting">Inverting amplifier</option><option value="noninverting">Non-inverting amplifier</option><option value="difference">Difference amplifier</option><option value="summing">Inverting summer</option><option value="transimpedance">Transimpedance amplifier</option><option value="integrator">Integrator</option><option value="differentiator">Differentiator</option><option value="comparator">Comparator / reference</option><option value="schmitt">Non-inverting Schmitt trigger</option><option value="instrumentation">3-op-amp instrumentation amplifier</option></select>
+            <select id="ao_type" onchange="renderOpAmpFields()"><option value="inverting">Inverting amplifier</option><option value="noninverting">Non-inverting amplifier</option><option value="difference">Difference amplifier</option><option value="summing">Inverting summer</option><option value="transimpedance">Transimpedance amplifier</option><option value="integrator">Integrator</option><option value="firstorder">First-order lag</option><option value="lead">Lead network (Ts+1)/(αTs+1)</option><option value="differentiator">Differentiator</option><option value="comparator">Comparator / reference</option><option value="schmitt">Non-inverting Schmitt trigger</option><option value="instrumentation">3-op-amp instrumentation amplifier</option></select>
             <div id="ao_fields" class="analog-fields"></div><button class="btn" type="button" onclick="calcOpAmp()">Calculate stage</button>
           </div></div>
           <div class="card"><div class="card-title">Result</div><div class="card-body"><div id="ao_result" class="result" aria-live="polite">Choose a topology and calculate its ideal transfer relationship.</div></div></div>
@@ -2110,6 +2113,98 @@
       <div id="battery-panel-strip" class="battery-panel"><div class="card-grid two-col"><div class="card"><div class="card-title">Nickel strip cross section</div><div class="card-body"><div class="input-group"><div><label for="ns_width">Strip width (mm)</label><input id="ns_width" type="number" value="8" min="0.1" step="0.1"></div><div><label for="ns_thickness">Thickness (mm)</label><input id="ns_thickness" type="number" value="0.15" min="0.01" step="0.01"></div></div><div class="input-group"><div><label for="ns_cont_j">Continuous density (A/mm²)</label><input id="ns_cont_j" type="number" value="5" min="0.1" step="0.1"></div><div><label for="ns_pulse_j">Short-pulse density (A/mm²)</label><input id="ns_pulse_j" type="number" value="10" min="0.1" step="0.1"></div></div><button class="btn" type="button" onclick="calcNickelStrip()">Calculate strip capacity</button></div></div><div class="card"><div class="card-title">Strip result</div><div class="card-body"><div id="ns_result" class="result" aria-live="polite"></div></div></div></div><div class="card"><div class="card-title">Common pure-nickel strip planning table</div><div class="card-body"><div id="ns_table" class="battery-table"></div></div></div></div>
       <div id="battery-panel-pack" class="battery-panel" hidden><div class="card-grid two-col"><div class="card"><div class="card-title">Design target</div><div class="card-body"><div class="input-group"><div><label for="bp_voltage">Nominal pack voltage (V)</label><input id="bp_voltage" type="number" value="36" min="1" step="any"></div><div><label for="bp_current">Continuous current (A, optional)</label><input id="bp_current" type="number" placeholder="e.g. 20" min="0" step="any"></div></div><div class="input-group"><div><label for="bp_power">Continuous power (W, optional)</label><input id="bp_power" type="number" placeholder="e.g. 750" min="0" step="any"></div><div><label for="bp_pattern">Cell pattern</label><select id="bp_pattern"><option value="honeycomb">Honeycomb</option><option value="grid">Grid</option></select></div></div><div class="input-group"><div><label for="bp_space_w">Max enclosure width (mm, optional)</label><input id="bp_space_w" type="number" placeholder="leave blank" min="0" step="any"></div><div><label for="bp_space_h">Max enclosure height (mm, optional)</label><input id="bp_space_h" type="number" placeholder="leave blank" min="0" step="any"></div></div></div></div><div class="card"><div class="card-title">Cell specification</div><div class="card-body"><div class="input-group"><div><label for="bp_cell_v">Nominal voltage (V)</label><input id="bp_cell_v" type="number" value="3.6" min="1" step="0.01"></div><div><label for="bp_cell_ah">Capacity (Ah)</label><input id="bp_cell_ah" type="number" value="3" min="0.1" step="0.1"></div></div><div class="input-group"><div><label for="bp_cell_a">Continuous current (A)</label><input id="bp_cell_a" type="number" value="10" min="0.1" step="0.1"></div><div><label for="bp_cell_d">Diameter (mm)</label><input id="bp_cell_d" type="number" value="18.5" min="1" step="0.1"></div></div><div class="input-group"><div><label for="bp_cell_l">Length (mm)</label><input id="bp_cell_l" type="number" value="65.2" min="1" step="0.1"></div><div><label for="bp_cell_m">Mass (g, optional)</label><input id="bp_cell_m" type="number" placeholder="e.g. 45" min="0" step="0.1"></div></div><button class="btn" type="button" onclick="calc18650Pack()">Design battery pack</button></div></div></div><div class="card-grid two-col battery-output-grid"><div class="card"><div class="card-title">Recommended architecture</div><div class="card-body"><div id="bp_result" class="result" aria-live="polite"></div></div></div><div class="card"><div class="card-title">Pack layout</div><div class="card-body"><div id="bp_layout" class="battery-layout" role="img" aria-label="Battery pack cell layout"></div></div></div></div></div>
     </section>
+    <!-- ════════════════════════════════════════
+         BATTERY BANK CALCULATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-battery-bank" class="section">
+      <div class="section-header">
+        <h2>Battery Bank Calculator</h2>
+        <p>Forward-size a bank from load and backup time, reverse-solve runtime from installed strings, and lay out series/parallel from module V and Ah.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Planning math, not a listing</summary>
+          <div class="section-info-body">
+            Usable energy per unit = nameplate Wh × depth of discharge. Inverter-side energy = AC watts × hours / efficiency. Unit count = ceil of that quotient.<br><br>
+            Chemistry presets seed DoD and inverter efficiency. <strong>DoD and efficiency stay editable</strong> — presets never lock them. LFP is typically ~90–95% usable; flooded and AGM lead-acid are typically ~50%.<br><br>
+            Series = round(V<sub>sys</sub> / V<sub>mod</sub>). Parallel = ceil(Ah<sub>sys</sub> / Ah<sub>mod</sub>) when a target capacity is entered.<br><br>
+            This is planning math only — not a UL listing, fire-code, ventilation, BMS, or PE review. Verify the battery datasheet, inverter continuous rating, and cable ampacity.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Shared specs</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="bb_chem">Chemistry preset</label>
+                <select id="bb_chem">
+                  <option value="lfp" selected>LiFePO₄ (LFP) ~90% DoD</option>
+                  <option value="flooded">Flooded lead-acid ~50% DoD</option>
+                  <option value="agm">AGM lead-acid ~50% DoD</option>
+                  <option value="custom">Generic / custom</option>
+                </select>
+              </div>
+              <div><label for="bb_dod">Usable depth of discharge (%)</label><input id="bb_dod" type="number" min="1" max="100" step="1" value="90"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="bb_eta">Inverter efficiency (%)</label><input id="bb_eta" type="number" min="1" max="100" step="0.1" value="95"></div>
+              <div><label for="bb_crate">Continuous C-rate planning limit</label><input id="bb_crate" type="number" min="0.05" max="5" step="0.05" value="1"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="bb_v">Module nominal voltage (V)</label><input id="bb_v" type="number" min="0" step="any" value="12"></div>
+              <div><label for="bb_ah">Module capacity (Ah)</label><input id="bb_ah" type="number" min="0" step="any" value="100"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="bb_mod_kwh">Or module energy (kWh)</label><input id="bb_mod_kwh" type="number" min="0" step="any" placeholder="optional if V and Ah are set"></div>
+              <div><label for="bb_target_v">Target system voltage (V)</label><input id="bb_target_v" type="number" min="0" step="any" placeholder="e.g. 48 for stringing"></div>
+            </div>
+            <p class="note">DoD and efficiency are never locked. Change the preset, then edit the numbers.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Forward — how many units?</div>
+          <div class="card-body">
+            <div class="formula-box">AC Wh = P × t<br>Battery Wh = AC Wh / η<br>Units = ceil(battery Wh / (nameplate × DoD))</div>
+            <div class="input-group">
+              <div><label for="bb_watts">Continuous load (W)</label><input id="bb_watts" type="number" min="0" step="any" placeholder="e.g. 800"></div>
+              <div><label for="bb_kwh_day">Or daily energy (kWh/day)</label><input id="bb_kwh_day" type="number" min="0" step="any" placeholder="optional"></div>
+            </div>
+            <div class="input-group single">
+              <div><label for="bb_hours">Desired backup duration (h)</label><input id="bb_hours" type="number" min="0" step="any" value="4"></div>
+            </div>
+            <p class="note">Daily kWh is a 24-hour total. Backup hours is how long the bank must run — not the window that produced that daily energy.</p>
+            <button class="btn" type="button" id="bb_run_forward">Size the bank</button>
+            <div id="bb_forward_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Reverse — how long will it last?</div>
+          <div class="card-body">
+            <div class="formula-box">Runtime = (units × nameplate × DoD × η) / P</div>
+            <div class="input-group">
+              <div><label for="bb_series">Series modules per string</label><input id="bb_series" type="number" min="1" step="1" value="4"></div>
+              <div><label for="bb_parallel">Parallel strings</label><input id="bb_parallel" type="number" min="1" step="1" value="2"></div>
+            </div>
+            <button class="btn" type="button" id="bb_run_reverse">Calculate runtime</button>
+            <div id="bb_reverse_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Series / parallel helper</div>
+          <div class="card-body">
+            <div class="formula-box">Series = round(V<sub>sys</sub> / V<sub>mod</sub>) &nbsp;·&nbsp; Parallel = ceil(Ah<sub>sys</sub> / Ah<sub>mod</sub>)</div>
+            <div class="input-group">
+              <div><label for="bb_target_ah">Target capacity (Ah)</label><input id="bb_target_ah" type="number" min="0" step="any" placeholder="optional"></div>
+              <div class="iol-add-wrap"><button class="btn" type="button" id="bb_run_layout">Lay out strings</button></div>
+            </div>
+            <div id="bb_layout_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ════════════════════════════════════════
          VOLTAGE DROP
@@ -2572,41 +2667,255 @@
 
       </div>
     </section>
+    <!-- ════════════════════════════════════════
+         CABLE SCHEDULE GENERATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-cable-schedule" class="section">
+      <div class="section-header">
+        <h2>Cable Schedule Generator</h2>
+        <p>Catalog of cable types, a quantity build list, sequential Cable IDs, an in-browser grid, and CSV / XLSX / JSON export. Length, routing, and comments stay blank for the field.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — How numbering and ampacity notes work</summary>
+          <div class="section-info-body">
+            Pick a project prefix (for example <code>C-</code>) and a starting number. Quantity 3 of one type becomes C-001, C-002, C-003.<br><br>
+            Ampacity notes reuse NEC Table 310.16 copper 75°C (≤3 current-carrying conductors) from the existing wire calculator — tables are not copied here. Optional length on a generated row can add a voltage-drop note from Chapter 9 Tables 8 and 9. Those notes flag size; they are not a substitute for a full feeder calculation.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Project numbering</div>
+          <div class="card-body cab-numbering">
+            <div class="input-group">
+              <div><label for="cab_prefix">Cable ID prefix</label><input id="cab_prefix" type="text" value="C-" autocomplete="off"></div>
+              <div><label for="cab_start">Start number</label><input id="cab_start" type="number" min="1" step="1" value="1"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="cab_width">Zero-pad width</label><input id="cab_width" type="number" min="1" max="6" step="1" value="3"></div>
+              <div>
+                <label for="cab_phase">System (for VD notes)</label>
+                <select id="cab_phase">
+                  <option value="1ph">Single-phase</option>
+                  <option value="3ph">Three-phase</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group single">
+              <div><label for="cab_sys_v">System voltage (V) for VD notes</label><input id="cab_sys_v" type="number" min="0" step="any" placeholder="e.g. 480"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Cable type catalog (editable)</div>
+          <div class="card-body">
+            <datalist id="cab_uses">
+              <option value="power"></option>
+              <option value="control"></option>
+              <option value="instrumentation"></option>
+              <option value="communication"></option>
+            </datalist>
+            <div id="cab_catalog_host"></div>
+            <div class="iol-actions">
+              <button class="btn btn-secondary" type="button" id="cab_add_catalog">Add cable type</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Add cables to the build list</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div><label for="cab_type">Cable type</label><select id="cab_type"></select></div>
+              <div><label for="cab_qty">Quantity</label><input id="cab_qty" type="number" min="1" step="1" value="1"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="cab_from">From (equipment tag)</label><input id="cab_from" type="text" placeholder="MCC-1" autocomplete="off"></div>
+              <div><label for="cab_to">To (equipment tag)</label><input id="cab_to" type="text" placeholder="P-101" autocomplete="off"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="cab_system">System</label><input id="cab_system" type="text" placeholder="480 V power" autocomplete="off"></div>
+              <div><label for="cab_term_from">Termination from</label><input id="cab_term_from" type="text" placeholder="optional" autocomplete="off"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="cab_term_to">Termination to</label><input id="cab_term_to" type="text" placeholder="optional" autocomplete="off"></div>
+              <div class="iol-add-wrap"><button class="btn" type="button" id="cab_add">Add to build list</button></div>
+            </div>
+            <div id="cab_cart_host"></div>
+            <div class="iol-actions">
+              <button class="btn" type="button" id="cab_generate">Generate schedule</button>
+              <button class="btn btn-secondary" type="button" id="cab_add_row">Add blank row</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Editable cable schedule</div>
+          <div class="card-body">
+            <p class="note">Columns: Cable ID, From, To, Cable Type, Conductor Size, Conductor Count, Insulation, Voltage Rating, Length, Routing / Tray, Ampacity, Voltage Drop, System, Termination From, Termination To, Comments. Length, routing, and comments start blank. Filling Length writes a voltage-drop note when system voltage is set.</p>
+            <div id="cab_grid_host"></div>
+            <div class="iol-actions">
+              <button class="btn btn-secondary" type="button" id="cab_export_csv">Export CSV</button>
+              <button class="btn btn-secondary" type="button" id="cab_export_xlsx">Export XLSX</button>
+              <button class="btn btn-secondary" type="button" id="cab_save">Save build list (JSON)</button>
+              <button class="btn btn-secondary" type="button" id="cab_load">Load build list</button>
+              <input id="cab_load_file" class="iol-file" type="file" accept="application/json,.json" data-no-persist>
+            </div>
+            <p id="cab_status" class="note" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- ════════════════════════════════════════
+         MOTOR NAMEPLATE ANALYZER
+         ════════════════════════════════════════ -->
+    <section id="sec-motor-nameplate" class="section">
+      <div class="section-header">
+        <h2>Motor Nameplate Analyzer</h2>
+        <p>Photograph a nameplate, correct the OCR draft, then estimate overload, branch-circuit SCPD, and conductor size from NEC 430.32, Table 430.52, and 430.22.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Citations and limits</summary>
+          <div class="section-info-body">
+            <strong>Overload</strong> (separate device, motors more than 1 hp): NEC 430.32(A)(1) — 125% of nameplate FLA when service factor is 1.15 or greater or temperature rise is 40°C or less; 115% for all other motors. NEC 430.32(C) allows the next higher size not exceeding 140% or 130% if needed to start.<br><br>
+            <strong>Branch-circuit short-circuit and ground-fault protection:</strong> NEC 430.52 using Table 430.52 percentages of motor FLA. The percentage used is shown with the result.<br><br>
+            <strong>Conductors:</strong> NEC 430.22 — ampacity at least 125% of FLA, using Table 310.16 75°C copper via the existing wire math helper. Optional run length adds a Chapter 9 voltage-drop note.<br><br>
+            <strong>Locked-rotor current:</strong> NEMA code letter ranges from NEC 430.7(B) / NEMA MG-1 Table 10-1. That is a table range, not a substitute for manufacturer LRA.<br><br>
+            Use nameplate FLA for overload (430.6(A)(2)). Use Tables 430.248 / 430.250 FLA for conductors and SCPD except as 430.6 allows. Informational estimate, not an inspection.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Optional nameplate photo</div>
+          <div class="card-body">
+            <div class="photo-privacy"><strong>Privacy:</strong> the photo stays on this device. It is never uploaded to Beckify or any server. On-device Tesseract.js reads it in the browser. The photo is not saved after you leave or reset.</div>
+            <div class="photo-safety"><strong>Before you pick a photo:</strong> square the nameplate to the camera, fill the frame, use even light, and avoid glare on the metal. Accuracy on messy or curved plates is weak — treat OCR as a draft you must correct. You can skip the photo and type every field by hand.</div>
+            <label id="mnp_drop" class="ocr-drop" for="mnp_file">
+              <strong>Drop a nameplate photo or tap to choose</strong>
+              <span>PNG, JPG, or WEBP. Nothing leaves this device.</span>
+            </label>
+            <input id="mnp_file" class="iol-file" type="file" accept="image/*" data-no-persist>
+            <img id="mnp_preview" class="ocr-preview" alt="Nameplate preview" hidden>
+            <div class="iol-actions">
+              <button class="btn" type="button" id="mnp_ocr">Read nameplate</button>
+              <button class="btn btn-secondary" type="button" id="mnp_reset">Clear photo</button>
+            </div>
+            <p id="mnp_status" class="note" role="status" aria-live="polite">No photo required. Fill the fields below, or choose a photo after reading the privacy note.</p>
+            <label class="field-block" style="display:block;margin-top:10px">
+              <span>Raw OCR text (editable draft)</span>
+              <textarea id="mnp_raw" rows="4" data-no-persist placeholder="OCR output appears here so you can fix it."></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Reviewed nameplate fields</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div><label for="mnp_hp">HP</label><input id="mnp_hp" type="number" min="0" step="any" placeholder="e.g. 10"></div>
+              <div><label for="mnp_kw">kW</label><input id="mnp_kw" type="number" min="0" step="any" placeholder="if HP is blank"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_volts">Voltage</label><input id="mnp_volts" type="text" placeholder="e.g. 460" autocomplete="off"></div>
+              <div><label for="mnp_fla">FLA (A)</label><input id="mnp_fla" type="number" min="0" step="any" placeholder="nameplate amps"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_rpm">RPM</label><input id="mnp_rpm" type="number" min="0" step="1" placeholder="e.g. 1750"></div>
+              <div><label for="mnp_hz">Hz</label><input id="mnp_hz" type="number" min="0" step="1" value="60"></div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mnp_phase">Phase</label>
+                <select id="mnp_phase">
+                  <option value="">Unknown — enter manually</option>
+                  <option value="3" selected>3</option>
+                  <option value="1">1</option>
+                </select>
+              </div>
+              <div><label for="mnp_frame">Frame size</label><input id="mnp_frame" type="text" placeholder="e.g. 215T" autocomplete="off"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_sf">Service factor</label><input id="mnp_sf" type="number" min="0" step="0.01" placeholder="e.g. 1.15"></div>
+              <div><label for="mnp_design">NEMA design letter</label><input id="mnp_design" type="text" maxlength="1" placeholder="B" autocomplete="off"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_insul">Insulation class</label><input id="mnp_insul" type="text" placeholder="F" autocomplete="off"></div>
+              <div><label for="mnp_code">NEMA code letter (LRA)</label><input id="mnp_code" type="text" maxlength="1" placeholder="G" autocomplete="off"></div>
+            </div>
+            <div class="input-group single">
+              <div><label for="mnp_rise">Temperature rise (°C)</label><input id="mnp_rise" type="number" min="0" step="1" placeholder="optional"></div>
+            </div>
+            <label class="review-check">
+              <input id="mnp_reviewed" type="checkbox">
+              I reviewed these values. OCR is a draft, not verified input.
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Protection options</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="mnp_type">Motor type (Table 430.52 row)</label>
+                <select id="mnp_type">
+                  <option value="sc-bde" selected>Squirrel-cage other than Design B energy-efficient / premium-efficiency</option>
+                  <option value="sc-ee">Squirrel-cage Design B energy-efficient or premium-efficiency</option>
+                  <option value="1ph">Single-phase AC</option>
+                  <option value="sync">Synchronous (FV / resistor / reactor)</option>
+                  <option value="sync-pw">Synchronous part-winding (older Table 430.52)</option>
+                  <option value="wound">Wound-rotor</option>
+                  <option value="dc">DC (constant voltage)</option>
+                </select>
+              </div>
+              <div>
+                <label for="mnp_device">SCPD device</label>
+                <select id="mnp_device">
+                  <option value="inv" selected>Inverse-time breaker</option>
+                  <option value="td">Dual-element time-delay fuse</option>
+                  <option value="ntd">Nontime-delay fuse</option>
+                  <option value="inst">Instantaneous-trip breaker</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="mnp_mat">Conductor material</label>
+                <select id="mnp_mat">
+                  <option value="cu" selected>Copper</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+              <div><label for="mnp_length">Optional run length (ft) for VD</label><input id="mnp_length" type="number" min="0" step="any" placeholder="leave blank"></div>
+            </div>
+            <button class="btn" type="button" id="mnp_calc">Calculate from reviewed fields</button>
+            <div id="mnp_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ════════════════════════════════════════
          TRANSFORMER CALCULATIONS
          ════════════════════════════════════════ -->
     <section id="sec-xfmr" class="section">
       <div class="section-header">
-        <h2>Transformer Workbench</h2>
-        <p>Currents, turns ratio, standard sizing, conductor selection, conduit, and OCP per NEC 450.3.</p>
+        <h2>Transformer — Ratio &amp; Current</h2>
+        <p>Primary/secondary current, turns ratio, and winding topology. Protection uses the real Table 450.3(B) tiers on the Sizing &amp; 450.3 view — not a flat 125%.</p>
         <details class="section-info">
-          <summary>ℹ More Info — Transformer Calculations</summary>
+          <summary>ℹ More Info — Transformer Basics</summary>
           <div class="section-info-body">
-            <strong>Transformer Calculations</strong> determine primary/secondary currents, select the next standard ANSI/NEMA kVA rating, size secondary copper conductors, and recommend overcurrent protection per NEC 450.3(B).<br><br>
+            This view is the first mode of the Transformer tool: currents and topology only.<br><br>
             <ul>
               <li><strong>Turns Ratio:</strong> a = Vp/Vs = Np/Ns = Is/Ip</li>
               <li><strong>Primary Current:</strong> Ip = kVA×1000/Vp (1Ø) or kVA×1000/(√3×Vp) (3Ø)</li>
-              <li><strong>Conductors:</strong> Cu THHN 75°C per NEC Table 310.12. Parallel runs (1/0 AWG min) when single 500 kcmil is insufficient.</li>
-              <li><strong>OCP — NEC 450.3(B):</strong> Primary ≤125% of Ip, Secondary ≤125% of Is; next standard OCPD size up.</li>
+              <li><strong>Protection:</strong> use Sizing &amp; 450.3 for primary-only vs primary+secondary, Note 1, and continuous 125%.</li>
+              <li><strong>Conductors:</strong> Cu/Al, insulation, parallels, VD, conduit, EGC/GEC live on Conductors / OCPD / VD.</li>
               <li><strong>High-Leg Delta:</strong> B-phase to neutral = V_LL × √3/2 ≈ 208V on 240V system. Tag orange per NEC 110.15.</li>
               <li><strong>Corner-Grounded Delta:</strong> One corner at ground potential — no neutral for single-phase loads.</li>
             </ul>
-            <strong>Typical %Z:</strong> Dry-type ≤15 kVA: 2–4%; 15–500 kVA: 4–6%; Liquid-filled: 5–7%.
           </div>
         </details>
-      </div>
-      <div class="card" style="margin-bottom:1rem;border-color:rgba(139,123,255,0.42);background:linear-gradient(135deg,rgba(139,123,255,0.10),rgba(96,165,250,0.05))">
-        <div class="card-title">One workflow, four views</div>
-        <div class="card-body">
-          <p style="margin-top:0;color:var(--fg-muted)">Start with the electrical relationship, then move to protection, conductor selection, or the guided design path. Each view stays available at its original address for bookmarked and indexed links.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:.5rem" aria-label="Transformer workbench views">
-            <button class="btn" data-target="sec-xfmr">Core values</button>
-            <button class="btn" data-target="sec-xfmr-size">Sizing and protection</button>
-            <button class="btn" data-target="sec-xfmr-engine">Conductor engine</button>
-            <button class="btn" data-target="sec-xfmr-wizard">Design wizard</button>
-          </div>
-        </div>
       </div>
       <div class="card-grid">
 
@@ -2617,7 +2926,7 @@
             <div class="formula-box">
               1Ø: Ip = kVA×1000/Vp &nbsp;|&nbsp; Is = kVA×1000/Vs<br>
               3Ø: Ip = kVA×1000/(√3×Vp) &nbsp;|&nbsp; Is = kVA×1000/(√3×Vs)<br>
-              Turns Ratio a = Vp/Vs &nbsp;|&nbsp; OCP ≤ 125% FLA (NEC 450.3B)
+              Turns Ratio a = Vp/Vs &nbsp;|&nbsp; 450.3(B) lives on Sizing &amp; 450.3
             </div>
             <div class="input-group single">
               <div>
@@ -2976,7 +3285,15 @@
             </div>
             <div class="cfa-check">
               <input type="checkbox" id="xe_sec_protected" checked>
-              <label for="xe_sec_protected" style="margin:0">Secondary overcurrent device fitted (allows 250% primary)</label>
+              <label for="xe_sec_protected" style="margin:0">Primary + secondary 450.3(B) — secondary OCPD fitted (primary to 250%)</label>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="xe_note1" checked>
+              <label for="xe_note1" style="margin:0">Note 1 — next standard size up on 125% rows</label>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="xe_continuous" checked>
+              <label for="xe_continuous" style="margin:0">Continuous load — conductors at 125% of FLA</label>
             </div>
           </div>
         </div>
@@ -3073,6 +3390,12 @@
                 <input type="number" id="xe_pri_len" value="120" min="1" step="1">
               </div>
             </div>
+            <div class="input-group single">
+              <div>
+                <label>Parallel runs</label>
+                <input type="number" id="xe_pri_runs" value="1" min="1" max="10" step="1">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3110,6 +3433,12 @@
               <div>
                 <label>One-Way Length (ft)</label>
                 <input type="number" id="xe_sec_len" value="80" min="1" step="1">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Parallel runs</label>
+                <input type="number" id="xe_sec_runs" value="1" min="1" max="10" step="1">
               </div>
             </div>
           </div>
@@ -3448,9 +3777,23 @@
                 <input type="number" id="xs_vs" value="208" min="1" step="1">
               </div>
             </div>
+            <div class="input-group">
+              <div>
+                <label>450.3(B) method</label>
+                <select id="xs_method">
+                  <option value="compare" selected>Show both methods</option>
+                  <option value="primary-only">Primary protection only</option>
+                  <option value="primary-secondary">Primary + secondary</option>
+                </select>
+              </div>
+            </div>
             <div class="cfa-check">
               <input type="checkbox" id="xs_continuous">
-              <label for="xs_continuous" style="margin:0">Continuous load — size at 125%</label>
+              <label for="xs_continuous" style="margin:0">Continuous load — size transformer kVA at 125%</label>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="xs_note1" checked>
+              <label for="xs_note1" style="margin:0">Note 1 — next standard size up on 125% rows</label>
             </div>
             <button class="btn" onclick="calcXfmrSizing()">Size Transformer</button>
           </div>
@@ -3493,8 +3836,8 @@
          ════════════════════════════════════════ -->
     <section id="sec-wire-select" class="section">
       <div class="section-header">
-        <h2>💸 Conductor Cost Optimizer</h2>
-        <p>Find the lowest modeled material cost across compliant conductor sizes and parallel-run counts.</p>
+        <h2>Conductors — Ampacity &amp; Cost</h2>
+        <p>Lowest modeled planning-allowance cost across compliant sizes and parallel runs, plus optional I²R energy. Not a live quote.</p>
         <details class="section-info">
           <summary>ℹ More Info — Wire Sizing</summary>
           <div class="section-info-body">
@@ -3503,7 +3846,7 @@
               <li><strong>Ampacity</strong> — NEC Table 310.16, corrected for ambient temperature (310.15(B)(1)), adjusted for more than three current-carrying conductors (310.15(C)(1)), then capped by the equipment termination rating (110.14(C)). Continuous loads are sized at 125% per 210.19(A)/215.2(A).</li>
               <li><strong>Voltage drop</strong> — not a hard NEC requirement, but 3% on a branch circuit and 5% total is the long-standing informational-note guidance (210.19(A) and 215.2(A) FPNs).</li>
             </ul>
-            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. The default price book is an average material allowance for quick comparisons; switch to manual pricing before using supplier, project, or quoted prices.
+            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. The default <strong>planning allowance</strong> ($/ft) is a modeled comparison book — not live market, LME, or a bid. Optional I²R uses NEC Chapter 9 Table 8 DC Ω/kft and the <em>operating</em> current, not the 125% design current. There is no lb/kft table in this toolbox; enter $/kft if you have a takeoff.
           </div>
         </details>
       </div>
@@ -3573,6 +3916,16 @@
                 </select>
               </div>
               <div>
+                <label>Construction</label>
+                <select id="ws_construction">
+                  <option value="2c+e">2C+E</option>
+                  <option value="3c+e">3C+E</option>
+                  <option value="4c+e" selected>4C+E</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
                 <label>Insulation Rating</label>
                 <select id="ws_insul">
                   <option value="90" selected>90°C (THHN/XHHW-2)</option>
@@ -3609,21 +3962,61 @@
               <div>
                 <label>Pricing source</label>
                 <select id="ws_price_mode" onchange="setWirePriceMode()">
-                  <option value="average">Automatic average pricing</option>
-                  <option value="manual">Manual price book</option>
+                  <option value="average">Planning allowance book</option>
+                  <option value="manual">Manual $/ft book</option>
                 </select>
               </div>
               <div id="ws_market_adjust">
-                <label>Market adjustment</label>
+                <label>Allowance multiplier</label>
                 <input type="number" id="ws_price_mult" value="1" min="0.1" max="10" step="0.05" aria-describedby="ws_price_help">
               </div>
             </div>
-            <p id="ws_price_help" class="tool-note">Average prices are a planning baseline, not a live quote. Use 1.00 for the default allowance.</p>
+            <p id="ws_price_help" class="tool-note">Planning allowance, not a live quote or PE stamp. Use 1.00 for the default book. Optional energy fields persist in this browser.</p>
             <details id="ws_manual_prices" class="manual-price-book" hidden>
               <summary>Enter manual conductor prices ($ / ft)</summary>
-              <p>Each field starts at the average allowance for the selected material. Replace it with supplier, project, or quoted material pricing.</p>
+              <p>Each field starts at the shared planning allowance for the selected material. Replace it with supplier, project, or quoted material pricing.</p>
               <div id="ws_manual_price_rows" class="manual-price-rows"></div>
             </details>
+            <div class="input-group">
+              <div>
+                <label>Optional $/kft override</label>
+                <input type="number" id="ws_user_kft" min="0" step="any" placeholder="leave blank">
+              </div>
+              <div>
+                <label>Energy ($/kWh)</label>
+                <input type="number" id="ws_kwh" min="0" step="0.01" placeholder="e.g. 0.12">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Hours / year</label>
+                <input type="number" id="ws_hours" min="0" step="1" placeholder="e.g. 8760">
+              </div>
+              <div>
+                <label>PV years (optional)</label>
+                <input type="number" id="ws_years" min="0" step="1" placeholder="e.g. 20">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Discount rate (decimal)</label>
+                <input type="number" id="ws_discount" min="0" max="1" step="0.005" placeholder="e.g. 0.06">
+              </div>
+              <div>
+                <label>Demand $/kW (optional)</label>
+                <input type="number" id="ws_demand_rate" min="0" step="0.01" placeholder="only if used">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Demand kW (optional)</label>
+                <input type="number" id="ws_demand_kw" min="0" step="0.1" placeholder="only if used">
+              </div>
+              <div>
+                <label>Optional conduit $/ft</label>
+                <input type="number" id="ws_conduit_user" min="0" step="0.01" placeholder="override EMT book">
+              </div>
+            </div>
             <button class="btn" onclick="calcWireSelection()">Optimize conductor cost</button>
           </div>
         </div>
@@ -3642,6 +4035,184 @@
       </div>
     </section>
 
+
+    <!-- ════════════════════════════════════════
+         MV CABLE (Conductors family mode)
+         ════════════════════════════════════════ -->
+    <section id="sec-mv-cable" class="section">
+      <div class="section-header">
+        <h2>MV Cable</h2>
+        <p>Medium-voltage feeder: class, 100%/133%, construction, Art. 311 / 310.60 series ampacity, and voltage drop. Distinct from LV Table 310.16.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — MV Cable</summary>
+          <div class="section-info-body">
+            Ampacity is transcribed from the published NEC 2001–35 000 V solid-dielectric tables (2020 Table 310.60(C) series; 2023 Article 311.60), via Fehr, <em>Industrial Power Distribution</em>, 2nd ed., IEEE/Wiley 2016 Appendix E, cross-checked against OmniCable’s 310.60(C)(69) reprint. R/X is Southwire SPEC 46503 (Cu 25 kV 133% 1/C, Table 2, 2024-12-31) — not Chapter 9 LV cable. Aluminum and missing sizes need a user Ω/kft. Tray needs datasheet ampacity. Design aid — not a PE stamp, pulling study, or soil-rho calculation.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Load &amp; System</div>
+          <div class="card-body">
+            <div class="formula-box">
+              3Ø: I = kVA / (√3 × kV) &nbsp;|&nbsp; example 4000 / (√3 × 23.2) ≈ 99.56 A
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Phase</label>
+                <select id="mv_phase">
+                  <option value="3ph" selected>3-Phase</option>
+                  <option value="1ph">1-Phase</option>
+                </select>
+              </div>
+              <div>
+                <label>Load units</label>
+                <select id="mv_load_unit">
+                  <option value="kva" selected>kVA</option>
+                  <option value="kw">kW</option>
+                  <option value="a">Amps</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Load value</label>
+                <input type="number" id="mv_load" value="4000" min="0" step="any">
+              </div>
+              <div>
+                <label>System kV L-L</label>
+                <input type="number" id="mv_kv" value="23.2" min="0" step="any" list="mv_kv_presets">
+                <datalist id="mv_kv_presets">
+                  <option value="4.16"></option><option value="4.8"></option>
+                  <option value="12.47"></option><option value="13.2"></option>
+                  <option value="13.8"></option><option value="23.0"></option>
+                  <option value="23.2"></option><option value="24.9"></option>
+                  <option value="34.5"></option>
+                </datalist>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>One-way length (ft)</label>
+                <input type="number" id="mv_length" value="300" min="1" step="1">
+              </div>
+              <div>
+                <label>Max VD (%)</label>
+                <input type="number" id="mv_maxvd" value="3" min="0.1" max="15" step="0.1">
+              </div>
+            </div>
+            <div class="cfa-check">
+              <input type="checkbox" id="mv_continuous" checked>
+              <label for="mv_continuous" style="margin:0">Continuous load — required ampacity ×1.25</label>
+            </div>
+            <button class="btn" type="button" onclick="loadMvTrevorExample()">Load 4000 kVA / 23.2 kV / 300 ft</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cable</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label>Voltage class (kV)</label>
+                <select id="mv_class">
+                  <option value="5">5 kV</option>
+                  <option value="8">8 kV</option>
+                  <option value="15">15 kV</option>
+                  <option value="25" selected>25 kV</option>
+                  <option value="35">35 kV</option>
+                </select>
+              </div>
+              <div>
+                <label>Insulation</label>
+                <select id="mv_insul">
+                  <option value="xlpe" selected>TR-XLPE</option>
+                  <option value="epr">EPR</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Insulation level</label>
+                <select id="mv_level">
+                  <option value="100">100% (solidly grounded wye, fault ≤ 1 min)</option>
+                  <option value="133" selected>133% (ungrounded / impedance / longer fault)</option>
+                </select>
+              </div>
+              <div>
+                <label>Material</label>
+                <select id="mv_material">
+                  <option value="cu" selected>Copper</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Construction</label>
+                <select id="mv_construction">
+                  <option value="3x1c" selected>3 × 1/C</option>
+                  <option value="3c">3/C</option>
+                </select>
+              </div>
+              <div>
+                <label>Concentric neutral</label>
+                <select id="mv_cn">
+                  <option value="1/3" selected>1/3 CN</option>
+                  <option value="1/6">1/6 CN</option>
+                  <option value="full">Full CN</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Temp rating</label>
+                <select id="mv_temp">
+                  <option value="90">MV-90</option>
+                  <option value="105" selected>MV-105</option>
+                </select>
+              </div>
+              <div>
+                <label>Installation</label>
+                <select id="mv_install">
+                  <option value="duct" selected>Duct (one circuit)</option>
+                  <option value="air">Isolated in air</option>
+                  <option value="conduit">Isolated conduit in air</option>
+                  <option value="bury">Direct bury</option>
+                  <option value="tray">Tray (datasheet ampacity)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Power factor</label>
+                <input type="number" id="mv_pf" value="0.9" min="0.1" max="1" step="0.01">
+              </div>
+              <div>
+                <label>User Ω/kft R (optional)</label>
+                <input type="number" id="mv_user_r" min="0" step="any" placeholder="Al / missing sizes">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>User Ω/kft X (optional)</label>
+                <input type="number" id="mv_user_x" min="0" step="any">
+              </div>
+              <div>
+                <label>Datasheet ampacity (tray)</label>
+                <input type="number" id="mv_manual_amp" min="0" step="any">
+              </div>
+            </div>
+            <button class="btn" onclick="calcMvCable()">Select MV cable</button>
+          </div>
+        </div>
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Result</div>
+          <div class="card-body">
+            <div id="mv_result" class="result"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ════════════════════════════════════════
          SHORT CIRCUIT
@@ -7209,6 +7780,327 @@
     </section><!-- end sec-plc-timer-preset -->
 
     <!-- ════════════════════════════════════════
+         PHONE SENSOR FIELD TOOLS
+         Pitch / hum, FFT spectrum, sound level, lux
+         Shared mic engine + Hann FFT. Nothing auto-starts.
+         ════════════════════════════════════════ -->
+
+    <section id="sec-pitch-hum" class="section">
+      <div class="section-header">
+        <h2>Pitch / Hum Frequency Identifier</h2>
+        <p>Electrical diagnostic helper — not a music tuner. Dominant frequency of an audible hum or whine, plus what that frequency commonly indicates. Associations only; never a confirmed cause.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Pitch / Hum Identifier</summary>
+          <div class="section-info-body">
+            The fundamental is extracted with <strong>autocorrelation</strong> on the live microphone buffer (more robust than grabbing the raw FFT peak for a single tone). A Hann-windowed FFT is shown only as a spectrum helper.<br><br>
+            <strong>Typical associations (worth investigating, not a diagnosis):</strong>
+            <ul>
+              <li>50 Hz / 60 Hz — mains-frequency hum, often grounding or induction</li>
+              <li>100 Hz / 120 Hz — consistent with full-wave-rectified ripple (2× mains)</li>
+              <li>150 Hz / 180 Hz — 3rd harmonic; transformer magnetostriction or mechanical buzz</li>
+              <li>300 Hz / 360 Hz — higher rectifier harmonics on 50/60 Hz systems</li>
+            </ul>
+            Phone mics roll off and distort. Use this to compare “before vs after” or to decide whether a calibrated meter is worth pulling out.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone microphones are not calibrated instruments; sensitivity varies device to device. This is a relative field check and rough diagnostic — not a substitute for a calibrated sound-level meter or frequency counter, and not for compliance, code-acceptance, or safety-certification measurements.</p>
+        <p class="note note-privacy">Audio is processed live, on this device, for display only. Nothing is recorded, stored, or transmitted.</p>
+      </div>
+
+      <div class="feynman-lesson">
+        <div class="feynman-lesson-title">Show the work — why autocorrelation, not FFT-peak?</div>
+        <p class="feynman-formula">f<sub>0</sub> = f<sub>s</sub> / τ<sub>peak</sub></p>
+        <p class="feynman-lesson-body">A 60 Hz hum is rarely a clean sine. Harmonics make the FFT’s tallest bin a multiple of the fundamental. Autocorrelation looks for the lag where the waveform repeats; that lag is the period. The FFT is still useful for a spectrum — it is just the wrong first answer for “what is the hum?”</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Microphone</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool listens through your phone mic to estimate a hum frequency. It does not record or upload audio. The browser will ask for microphone permission after you tap Start — not before.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="hum_start">Start listening</button>
+                <button type="button" class="btn btn-secondary" id="hum_stop">Stop</button>
+                <button type="button" class="btn btn-secondary" id="hum_hold" aria-pressed="false">Hold / peak-lock</button>
+              </div>
+              <p class="sensor-status" id="hum_status">Idle. Sensors stay off until you tap Start.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Dominant frequency</div>
+          <div class="card-body">
+            <div class="sensor-readout" id="hum_hz" aria-live="polite">—</div>
+            <span class="sensor-readout-unit">Hz (autocorrelation)</span>
+            <p class="note" id="hum_conf">Waiting for Start.</p>
+            <p class="note" id="hum_note">Start listening, then hold the phone near the source — not a diagnosis.</p>
+            <p class="tool-note" id="hum_spec">Spectrum helper appears once the mic is live. Hann window, documented bin Hz.</p>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Common frequencies — typical associations</div>
+          <div class="card-body">
+            <p class="note">Language is “worth investigating,” never a confirmed cause. Include 50 Hz regions for completeness.</p>
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead>
+                  <tr><th>Hz</th><th>Typical association — not a diagnosis</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>50</td><td>Mains-frequency hum in 50 Hz regions (grounding or induction). Worth investigating.</td></tr>
+                  <tr><td>60</td><td>Mains-frequency hum in 60 Hz regions (grounding or induction). Worth investigating.</td></tr>
+                  <tr><td>100</td><td>Consistent with full-wave-rectified ripple on 50 Hz mains (2×). Worth investigating.</td></tr>
+                  <tr><td>120</td><td>Consistent with full-wave-rectified ripple on 60 Hz mains (2×). Worth investigating.</td></tr>
+                  <tr><td>150 / 180</td><td>3rd harmonic of 50/60 Hz — transformer magnetostriction or mechanical buzz is a common association.</td></tr>
+                  <tr><td>300 / 360</td><td>Higher rectifier harmonics on 50/60 Hz systems. Worth investigating.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-pitch-hum -->
+
+    <section id="sec-audio-spectrum" class="section">
+      <div class="section-header">
+        <h2>FFT / Audio Spectrum Analyzer</h2>
+        <p>General-purpose real-time spectrum for transformer buzz, motor harmonics, and noise characterization. Shared Hann FFT with the pitch and lux tools.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Audio Spectrum</summary>
+          <div class="section-info-body">
+            Time-domain samples come from the shared microphone engine (one stream for pitch, spectrum, and sound level). The spectrum is a Hann-windowed radix-2 FFT. Bin width = sampleRate / FFT size (default N = 2048).<br><br>
+            Linear vs log frequency axis, exponential averaging, and a peak-hold overlay are display controls — they do not change the underlying FFT. Export is a PNG of the canvas and/or CSV of bin magnitudes. No raw audio leaves the device.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone microphones are not calibrated instruments; sensitivity varies device to device. This is a relative field check and rough diagnostic — not a substitute for a calibrated analyzer, and not for compliance, code-acceptance, or safety-certification measurements.</p>
+        <p class="note note-privacy">Audio is processed live, on this device, for display only. Nothing is recorded, stored, or transmitted. PNG/CSV exports are the drawn spectrum and numeric bins — never raw audio.</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Microphone and display</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool uses the microphone to draw a live spectrum. It does not record or upload audio. Permission is requested only after Start.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="fft_start">Start analyzer</button>
+                <button type="button" class="btn btn-secondary" id="fft_stop">Stop</button>
+              </div>
+              <p class="sensor-status" id="fft_status">Idle. Sensors stay off until you tap Start.</p>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="fft_axis">Frequency axis</label>
+                <select id="fft_axis">
+                  <option value="log" selected>Log</option>
+                  <option value="linear">Linear</option>
+                </select>
+              </div>
+              <div>
+                <label for="fft_smooth">Averaging (0 = none, 0.95 = heavy)</label>
+                <input id="fft_smooth" type="number" min="0" max="0.95" step="0.05" value="0.6">
+              </div>
+            </div>
+            <label class="sensor-check"><input type="checkbox" id="fft_peakhold" checked> Peak-hold overlay</label>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="fft_reset_peak">Reset peak hold</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="fft_png">Download PNG</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="fft_csv">Download CSV bins</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Live spectrum</div>
+          <div class="card-body">
+            <canvas id="fft_canvas" class="sensor-canvas" width="640" height="220" aria-label="Audio spectrum canvas"></canvas>
+            <p class="note" id="fft_readout">Hann window · N = 2048 · bin Hz = sampleRate / N. Start to plot.</p>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-audio-spectrum -->
+
+    <section id="sec-sound-level" class="section">
+      <div class="section-header">
+        <h2>Sound Level Meter</h2>
+        <p>Relative dB meter for equipment-room noise and before/after checks. Not a calibrated SPL meter unless you supply a one-point reference.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Sound Level Meter</summary>
+          <div class="section-info-body">
+            RMS is taken from the shared microphone’s time-domain buffer and converted to dBFS (full-scale float = 1.0). Optional A-weighting is an IEC 61672-shaped <strong>approximation applied to the FFT bins</strong> — not a certified analog filter, not dB(A) you can write on a report.<br><br>
+            One-point calibration: hold a known meter next to the phone, enter that dB, and this device stores an offset in localStorage. Without it, the unit stays clearly relative (dBFS / rel dB). Logged CSV rows are location, timestamp, and the numeric reading — never raw audio.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone microphones are not calibrated instruments; sensitivity varies device to device. This is a relative field check and rough diagnostic — not a substitute for a calibrated sound-level meter, and not for compliance, code-acceptance, OSHA, or safety-certification measurements.</p>
+        <p class="note note-privacy">Audio is processed live, on this device, for display only. Nothing is recorded, stored, or transmitted. CSV export is numeric readings only.</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Microphone</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool estimates a relative level from the microphone. It does not record or upload audio. The browser asks for permission only after Start.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="spl_start">Start meter</button>
+                <button type="button" class="btn btn-secondary" id="spl_stop">Stop</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="spl_reset">Reset peak / Leq</button>
+              </div>
+              <p class="sensor-status" id="spl_status">Idle. Sensors stay off until you tap Start.</p>
+            </div>
+            <label class="sensor-check"><input type="checkbox" id="spl_aweight"> A-weighting approximation (not a certified filter)</label>
+            <div class="input-group">
+              <div>
+                <label for="spl_leq_s">Leq-style interval (seconds)</label>
+                <input id="spl_leq_s" type="number" min="1" max="120" step="1" value="10">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Level</div>
+          <div class="card-body">
+            <div class="sensor-readout" id="spl_inst" aria-live="polite">—</div>
+            <span class="sensor-readout-unit" id="spl_unit">dBFS</span>
+            <div class="sensor-level" aria-hidden="true"><span id="spl_bar_fill"></span></div>
+            <div class="sensor-stats">
+              <div class="sensor-stat"><span class="sensor-stat-label">Running peak</span><span class="sensor-stat-val" id="spl_peak">—</span></div>
+              <div class="sensor-stat"><span class="sensor-stat-label">Leq-style</span><span class="sensor-stat-val" id="spl_leq">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">One-point calibration</div>
+          <div class="card-body">
+            <p class="note">Enter a known dB from a reference meter under the current conditions. Offset is stored per-device in localStorage. Without it, this display stays a relative unit — not dB(A).</p>
+            <div class="input-group">
+              <div>
+                <label for="spl_known">Known level (dB from reference meter)</label>
+                <input id="spl_known" type="number" step="0.1" placeholder="e.g. 72">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="spl_calibrate">Save offset</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="spl_clear_cal">Clear calibration</button>
+            </div>
+            <p class="tool-note" id="spl_cal_hint">Uncalibrated: showing dBFS-relative, not unearned-precision dB(A).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Logged readings</div>
+          <div class="card-body">
+            <div class="input-group single">
+              <div>
+                <label for="spl_note">Location / note</label>
+                <input id="spl_note" type="text" maxlength="80" placeholder="AHU-1 room, 3 ft from panel">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="spl_log">Log current reading</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="spl_csv">Export CSV</button>
+            </div>
+            <div id="spl_log_host"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-sound-level -->
+
+    <section id="sec-lux-meter" class="section">
+      <div class="section-header">
+        <h2>Lux / Light Level Meter</h2>
+        <p>Camera-based relative light-level estimate. Useful for before/after LED retrofit at the same fixture position — not certified photometry.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Lux / Light Meter</summary>
+          <div class="section-info-body">
+            The rear camera (when available) is sampled over a <strong>center-weighted</strong> region, not the full frame. Readings are averaged over ~1/60 s+ of frames so LED PWM flicker is not a single glowing instant.<br><br>
+            Without calibration the unit is a clearly labeled relative/arbitrary scale — never implied to be lux. One-point calibration: enter a known lux from a meter, stored per-device in localStorage.<br><br>
+            Flicker frequency runs the brightness time series through the <strong>same Hann FFT</strong> as the audio tools. It is camera-frame-rate limited (Nyquist ≈ fps/2). Do not photograph the sun or stare into high-intensity sources. Point the camera at the lighted task surface or luminaire housing, not at the lamp arc.
+          </div>
+        </details>
+        <p class="note note-warn note-prominent">Phone cameras are not calibrated photometers; sensitivity varies device to device. This is a relative, comparative field check — not a substitute for a calibrated lux meter, and not for compliance, code-acceptance, or safety-certification measurements. Do not look at the sun or stare into high-intensity sources.</p>
+        <p class="note note-privacy">Camera frames are processed live, on this device, for display only. Nothing is recorded, stored, or transmitted. CSV export is position, timestamp, and the numeric reading — never raw frames.</p>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">Camera</div>
+          <div class="card-body">
+            <div class="sensor-gate">
+              <p>This tool uses the camera on lighting only — a task surface or fixture, not the sun and not a stare into a high-intensity source. Permission is requested only after Start. Nothing is uploaded.</p>
+              <div class="sensor-actions">
+                <button type="button" class="btn" id="lux_start">Start camera</button>
+                <button type="button" class="btn btn-secondary" id="lux_stop">Stop</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="lux_reset">Reset min / max</button>
+              </div>
+              <p class="sensor-status" id="lux_status">Idle. The camera stays off until you tap Start.</p>
+            </div>
+            <div class="sensor-preview">
+              <video id="lux_video" playsinline muted></video>
+              <div class="sensor-preview-reticle" aria-hidden="true"></div>
+            </div>
+            <canvas id="lux_sample" class="sensor-hidden-canvas" width="160" height="120" aria-hidden="true"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Reading</div>
+          <div class="card-body">
+            <div class="sensor-readout" id="lux_inst" aria-live="polite">—</div>
+            <span class="sensor-readout-unit" id="lux_unit">rel (not lux)</span>
+            <p class="note" id="lux_mode">Relative mode — these numbers are not lux until you calibrate.</p>
+            <div class="sensor-stats">
+              <div class="sensor-stat"><span class="sensor-stat-label">Min</span><span class="sensor-stat-val" id="lux_min">—</span></div>
+              <div class="sensor-stat"><span class="sensor-stat-label">Max</span><span class="sensor-stat-val" id="lux_max">—</span></div>
+              <div class="sensor-stat"><span class="sensor-stat-label">Average</span><span class="sensor-stat-val" id="lux_avg">—</span></div>
+            </div>
+            <p class="tool-note" id="lux_flicker">Flicker check runs after Start. Camera-frame-rate limited estimate.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">One-point calibration</div>
+          <div class="card-body">
+            <p class="note">Same fixture position, known lux from a meter. Scale factor stays on this device in localStorage. Without it, the big number stays a relative unit.</p>
+            <div class="input-group">
+              <div>
+                <label for="lux_known">Known lux (from a meter)</label>
+                <input id="lux_known" type="number" min="0" step="1" placeholder="e.g. 320">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="lux_calibrate">Save scale</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lux_clear_cal">Clear calibration</button>
+            </div>
+            <p class="tool-note" id="lux_cal_hint">Uncalibrated: relative/arbitrary units only.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Logged readings</div>
+          <div class="card-body">
+            <div class="input-group single">
+              <div>
+                <label for="lux_note">Position / location note</label>
+                <input id="lux_note" type="text" maxlength="80" placeholder="Desk, 30 in under 2×4 troffer">
+              </div>
+            </div>
+            <div class="sensor-actions">
+              <button type="button" class="btn btn-sm" id="lux_log">Log current reading</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lux_csv">Export CSV</button>
+            </div>
+            <div id="lux_log_host"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-lux-meter -->
+
+    <!-- ════════════════════════════════════════
          NEC CODE TABLES
          ════════════════════════════════════════ -->
     <section id="sec-nec-tables" class="section">
@@ -8148,7 +9040,7 @@
           <summary>ℹ More Info — Generator Sizing</summary>
           <div class="section-info-body">
             <strong>Generator Sizing</strong> uses the load inventory method to total all connected loads with demand factors, then applies a safety margin.<br><br>
-            <ul><li><strong>Design kW:</strong> Σ(kW × qty × DF%) for each load category</li><li><strong>Design kVA:</strong> Design kW / PF — size the generator to this kVA rating</li><li><strong>Safety margin:</strong> IEEE 446 recommends ≥25% headroom for motor starting transients and future growth</li><li><strong>Motor starting:</strong> Locked-rotor current is 6–8× FLA; the generator must supply this without excessive voltage dip (&lt;15%)</li></ul>
+            <ul><li><strong>Design kW:</strong> Σ(kW × qty × DF%) for each load category</li><li><strong>Design kVA:</strong> Design kW / PF — size the generator to this kVA rating</li><li><strong>Safety margin:</strong> IEEE 446 recommends ≥25% headroom for motor starting transients and future growth</li><li><strong>Motor starting:</strong> Optional starter type scales starting kVA vs FLA kVA (DOL ≈ 6×, wye-delta ≈ 2×, autotransformer 65/80% taps ≈ 2.1× / 3.2×). Inventory check only — not a voltage-dip study.</li></ul>
             <strong>NFPA 110 Level 1:</strong> Transfer in ≤10 seconds; minimum 96-hour fuel supply. Used for life-safety loads (exit lighting, fire pumps, hospital critical branches).
           </div>
         </details>
@@ -8169,6 +9061,17 @@
               <div><label>Motor kW (per unit)</label><input type="number" id="gen_motor_kw" placeholder="kW" step="any" min="0"></div>
               <div><label>Quantity</label><input type="number" id="gen_motor_qty" placeholder="units" value="1" step="1" min="1"></div>
               <div><label>Demand Factor (%)</label><input type="number" id="gen_motor_df" placeholder="e.g. 80" value="80" step="any" min="0" max="100"></div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Starter (affects starting kVA)</label>
+                <select id="gen_starter">
+                  <option value="dol" selected>DOL / across-the-line (6×)</option>
+                  <option value="yd">Wye-delta (2×)</option>
+                  <option value="at65">Autotransformer 65% tap (2.1×)</option>
+                  <option value="at80">Autotransformer 80% tap (3.2×)</option>
+                </select>
+              </div>
             </div>
 
             <div style="margin-bottom:6px;font-family:var(--font-main);font-size:0.78rem;color:var(--fg-muted)">&#9658; Lighting / Receptacle Loads</div>
@@ -8629,12 +9532,12 @@
     <section id="sec-panel-schedule" class="section">
       <div class="section-header">
         <h2>🗂️ Panel Schedule Load Analyzer</h2>
-        <p>Upload a panel schedule photo, review OCR results, classify loads, and calculate estimated demand, current, diversity, and capacity.</p>
+        <p>Photograph the circuit directory or printed card with the panel door closed. Review on-device OCR, then estimate connected-breaker loading, spare slots, and a rough phase balance. Manual entry still works without a photo.</p>
         <details class="section-info">
           <summary>&#8505; More Info &mdash; Panel Schedule Load Analyzer</summary>
           <div class="section-info-body">
-            Reads a panel-schedule image with <strong>Tesseract.js</strong> in your browser &mdash; nothing is uploaded to a server &mdash; then parses circuit numbers, descriptions, and breaker sizes into an editable load table. It suggests a load type from the description; you control every amperage and demand-factor assumption before the summary is used.<br><br>
-            <strong>OCR is a starting point, not a source of truth.</strong> Breaker trip is not motor FLA or measured demand, so replace it with the best available scheduled or measured current before relying on results. Panel schedule layout and required content are governed by <strong>NEC 408.4</strong> (circuit directory marking) and the load calculation itself by <strong>NEC Article 220</strong>.
+            Photograph the <strong>printed circuit directory / schedule</strong> (panel-door label or printed card) with the door closed if possible. Never open a live panel or touch anything inside to get this photo. On-device <strong>Tesseract.js</strong> reads the image in your browser &mdash; the photo never leaves this device.<br><br>
+            OCR is a draft. Correct every circuit row before using the estimates. Connected-breaker totals above the main rating are common and are <strong>not</strong> a demand-load calculation or a finding that the panel is unsafe. Informational estimate, not an electrical inspection. Any safety concern goes to a licensed electrician. Directory marking is <strong>NEC 408.4</strong>; a real load calculation is <strong>Article 220</strong>.
           </div>
         </details>
       </div>
@@ -9233,53 +10136,108 @@
     </section>
 
     <!-- ════════════════════════════════════════
-         BUILDING SERVICE LOAD CALCULATOR (NEC 220)
+         LOAD CALCULATION WORKSHEET (NEC 220)
          ════════════════════════════════════════ -->
     <section id="sec-bldg-load" class="section">
       <div class="section-header">
-        <h2>&#127970; Building Service Load Calculator (NEC Art. 220)</h2>
-        <p>Calculate general lighting load and receptacle demand load per NEC Article 220 for service and feeder sizing.</p>
+        <h2>Load Calculation Worksheet</h2>
+        <p>Row-based feeder / service worksheet. Connected VA, 220-style demand you can see and edit, phase amps, unbalance, and a spare/future adder. Design aid — not a PE service calculation. Old slugs <code>building-load</code> and this page are the same job.</p>
         <details class="section-info">
-          <summary>ℹ More Info — NEC 220 Building Load</summary>
+          <summary>ℹ More Info — articles actually coded</summary>
           <div class="section-info-body">
-            <strong>NEC Article 220</strong> provides the standard method for calculating branch-circuit, feeder, and service loads in buildings.<br><br>
-            <strong>General Lighting Load (NEC 220.12):</strong><ul>
-              <li>Industrial: 1.0 VA per sq ft (NEC Table 220.12)</li>
-              <li>Office: 3.5 VA per sq ft (NEC Table 220.12)</li>
-              <li>Continuous lighting: apply 125% multiplier for OCPD sizing (NEC 210.20)</li>
+            Only these NEC 220 pieces are implemented — nothing else is implied:<ul>
+              <li><strong>220.42</strong> — general lighting demand-factor table (dwelling / hospital / hotel / warehouse / all others). Factors are shown and each row can override them.</li>
+              <li><strong>220.52</strong> — dwelling standard method: kitchen / small-appliance and receptacle rows ride with lighting through 220.42.</li>
+              <li><strong>220.53</strong> — dwelling: 75% on four or more other / appliance rows.</li>
+              <li><strong>220.54</strong> — dryer rows use the VA you enter (enter the larger of 5 kW or nameplate).</li>
+              <li><strong>220.82</strong> — optional dwelling: 100% of the first 10 kVA of general loads + 40% of the remainder; HVAC stays at 100% of entered VA.</li>
             </ul>
-            <strong>Receptacle Load (NEC 220.14(I)):</strong><ul>
-              <li>Each outlet = 180 VA per NEC 220.14(I)</li>
-              <li>First 10 kVA of receptacle load: 100% demand factor</li>
-              <li>Remainder above 10 kVA: 50% demand factor (NEC Table 220.44)</li>
-            </ul>
-            <strong>Result:</strong> Total calculated load is used to size service entrance conductors, main breaker, and feeders.
+            Continuous-type rows apply a 125% sizing check so you can see it. Demand / diversity / growth from measured kVA still lives on <a href="#sec-load-factors">Demand, Diversity &amp; Growth</a> — this is not a third peer calculator. Last sheet is stored in localStorage on this device. No customer workbook rows are preloaded.
           </div>
         </details>
       </div>
       <div class="card-grid">
-
-        <div class="card">
-          <div class="card-title">Facility Parameters</div>
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Sheet settings</div>
           <div class="card-body">
-            <div class="formula-box">
-              Lighting VA = sq ft &times; VA/sq ft<br>
-              Receptacle VA = outlets &times; 180 VA<br>
-              Demand: first 10 kVA @ 100%, remainder @ 50%
+            <div class="input-group">
+              <div>
+                <label for="lw_method">Method</label>
+                <select id="lw_method">
+                  <option value="commercial">Commercial / general — 220.42 on lighting</option>
+                  <option value="dwelling">Dwelling standard — 220.42 / 220.52 / 220.53 / 220.54</option>
+                  <option value="dwelling-optional">Optional dwelling — 220.82</option>
+                </select>
+              </div>
+              <div>
+                <label for="lw_occupancy">220.42 occupancy table</label>
+                <select id="lw_occupancy">
+                  <option value="other">All others (100%)</option>
+                  <option value="dwelling">Dwelling units</option>
+                  <option value="hospital">Hospitals</option>
+                  <option value="hotel">Hotels / motels</option>
+                  <option value="warehouse">Warehouses (storage)</option>
+                </select>
+              </div>
             </div>
             <div class="input-group">
               <div>
-                <label>Facility Square Footage</label>
+                <label for="lw_voltage">Feeder / service voltage (V)</label>
+                <input id="lw_voltage" type="number" min="1" step="any" value="208">
+              </div>
+              <div>
+                <label for="lw_system">System</label>
+                <select id="lw_system">
+                  <option value="3ph" selected>3Ø</option>
+                  <option value="1ph">1Ø</option>
+                </select>
+              </div>
+              <div>
+                <label for="lw_spare">Spare / future adder (%)</label>
+                <input id="lw_spare" type="number" min="0" step="any" value="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Load rows</div>
+          <div class="card-body">
+            <p class="note">Description, type, qty, VA / W / A, phase (A/B/C or 1Ø/3Ø), optional demand-factor override (enter 0.35 or 35). DF override wins over the coded 220 factor for that row.</p>
+            <div class="ref-table-wrap" id="lw_rows"></div>
+            <div class="lw-actions">
+              <button type="button" class="btn btn-sm" id="lw_add">Add row</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lw_clear">Clear sheet</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lw_export_csv">Export CSV</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="lw_export_xlsx">Export xlsx</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Results and math</div>
+          <div class="card-body">
+            <div id="lw_result" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Optional VA/ft² seed (does not replace the sheet)</div>
+          <div class="card-body">
+            <p class="note">Adds lighting and receptacle rows from area and outlet count. Not a 220.12 / 220.14 service calculation by itself.</p>
+            <div class="input-group">
+              <div>
+                <label for="bl_sqft">Area (ft²)</label>
                 <input type="number" id="bl_sqft" placeholder="e.g. 5000" step="any" min="1">
               </div>
               <div>
-                <label>Receptacle (Outlet) Count</label>
+                <label for="bl_outlets">Receptacle count</label>
                 <input type="number" id="bl_outlets" placeholder="e.g. 80" step="1" min="0">
               </div>
             </div>
-            <div class="input-group single">
+            <div class="input-group">
               <div>
-                <label>Occupancy Type</label>
+                <label for="bl_occupancy">VA/ft² occupancy (seed only)</label>
                 <select id="bl_occupancy">
                   <option value="industrial">Industrial (1.0 VA/sq ft)</option>
                   <option value="office">Office / Commercial (3.5 VA/sq ft)</option>
@@ -9292,47 +10250,26 @@
             </div>
             <div class="input-group">
               <div>
-                <label>Service Voltage (V, L-L)</label>
+                <label for="bl_voltage">Legacy voltage field</label>
                 <select id="bl_voltage">
-                  <option value="208">208 V (120/208Y)</option>
-                  <option value="480" selected>480 V (277/480Y)</option>
-                  <option value="240">240 V (1&#8709; or 3&#8709; delta)</option>
+                  <option value="208">208 V</option>
+                  <option value="480" selected>480 V</option>
+                  <option value="240">240 V</option>
                 </select>
               </div>
               <div>
-                <label>Phases</label>
+                <label for="bl_phases">Legacy phases field</label>
                 <select id="bl_phases">
                   <option value="3" selected>3-Phase</option>
                   <option value="1">1-Phase</option>
                 </select>
               </div>
             </div>
-            <button class="btn btn-accent" onclick="calcBuildingLoad()">&#9654; Calculate Load</button>
+            <button type="button" class="btn btn-sm" id="lw_seed_sqft">Add seed rows to sheet</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="calcBuildingLoad()">Legacy lighting + receptacle box</button>
             <div id="bl_result" class="result"></div>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-title">NEC 220 Reference</div>
-          <div class="card-body">
-            <div class="formula-box">
-              <strong>NEC Table 220.12 — Lighting Loads (VA/sq ft):</strong><br>
-              Industrial:    1.0 &nbsp;|&nbsp; Warehouse: 0.25<br>
-              Office/Banks:  3.5 &nbsp;|&nbsp; Retail:    3.0<br>
-              School:        3.0 &nbsp;|&nbsp; Hospital:  2.0<br>
-              Residential:   3.0<br><br>
-              <strong>NEC 220.14(I) — Receptacles:</strong><br>
-              180 VA per outlet (duplex counts as one)<br><br>
-              <strong>NEC Table 220.44 — Receptacle Demand:</strong><br>
-              First 10 kVA: 100%<br>
-              Over 10 kVA: 50%<br><br>
-              <strong>Service Amps (3&#8709;):</strong><br>
-              I = Total VA / (1.732 &times; V<sub>L-L</sub>)
-            </div>
-            <div class="note">&#9432; This calculation covers general lighting and receptacle loads only. Add HVAC, motor, and special loads separately per NEC 220.50–220.60 before sizing the service.</div>
-          </div>
-        </div>
-
       </div>
     </section>
 
@@ -9342,7 +10279,7 @@
     <section id="sec-load-factors" class="section">
       <div class="section-header">
         <h2>📊 Demand, Diversity &amp; Growth Planner</h2>
-        <p>Turn connected load, measured demand, and an explicit growth assumption into transparent planning factors and a capacity forecast.</p>
+        <p>Turn connected load, measured demand, and an explicit growth assumption into transparent planning factors and a capacity forecast. For a row-based NEC 220 sheet, use the <a href="#sec-bldg-load">Load Calculation Worksheet</a> — this is the same job family, not a third peer.</p>
         <details class="section-info">
           <summary>ℹ Definitions and what to enter</summary>
           <div class="section-info-body">
@@ -9666,6 +10603,198 @@
           </div>
         </div>
 
+      </div>
+    </section>
+    <!-- ════════════════════════════════════════
+         NEMA WIRING CONFIGURATIONS
+         ════════════════════════════════════════ -->
+    <section id="sec-nema-wiring" class="section">
+      <div class="section-header">
+        <h2>NEMA Wiring Configurations &amp; Color Codes</h2>
+        <p>Receptacle-face SVG diagrams and US color notes. Neutral and grounding colors cite the NEC. Hot colors are industry convention unless a specific article says otherwise.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Code vs convention</summary>
+          <div class="section-info-body">
+            Diagrams are the <strong>receptacle face</strong> (looking at the wall or device), not the plug. Confirm the marking on the device in the field.<br><br>
+            <strong>NEC 200.6</strong> requires a grounded (neutral) conductor to be identified white or gray. <strong>NEC 250.119</strong> requires an equipment grounding conductor to be green, green with a yellow stripe, or bare. Those two rules are code.<br><br>
+            Ungrounded (hot) colors in the tables below are <strong>industry convention, not an NEC requirement</strong>. Do not treat the whole table as code-mandated. The exception is the high-leg: <strong>NEC 110.15</strong> requires the high-leg of a 4-wire delta to be identified orange (or by other effective means).
+          </div>
+        </details>
+      </div>
+      <div class="note">Field-scan: tap a configuration once. Diagrams are large on purpose for one-handed phone use. This page is a visual reference, not a calculator.</div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Common NEMA configurations</div>
+          <div class="card-body">
+            <label class="iol-file" for="nema_id">Selected NEMA configuration</label>
+            <select id="nema_id" class="iol-file" aria-label="Selected NEMA configuration">
+              <option value="5-15" selected>NEMA 5-15</option>
+            </select>
+            <div id="nema_picker" class="nema-picker" role="group" aria-label="NEMA configurations"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Receptacle face</div>
+          <div class="card-body nema-face">
+            <div id="nema_diagram" class="nema-diagram-wrap"></div>
+            <div id="nema_meta" class="result" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Which blade is which conductor</div>
+          <div class="card-body" id="nema_blades"></div>
+        </div>
+      </div>
+      <div class="section-header" style="margin-top:22px">
+        <h2>US conductor color notes</h2>
+        <p>White/gray and green are code. Hot colors are convention except the 110.15 high-leg.</p>
+      </div>
+      <div id="nema_colors" class="card-grid nema-colors"></div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TORQUE LOOKUP
+         ════════════════════════════════════════ -->
+    <section id="sec-torque-lookup" class="section">
+      <div class="section-header">
+        <h2>Torque Lookup</h2>
+        <p>Panel-shop and field lookup: typical terminal / lug tightening torque from published UL 486A-B tables, plus a SAE / metric fastener chart. Manufacturer marking on the device wins. Not a calibrated torque-tool substitute.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — sources and limits</summary>
+          <div class="section-info-body">
+            <strong>Terminal / lug:</strong> typical values vs conductor size and screw type reprinted from <strong>UL 486A-B</strong> (the same tables appear as NEC Informative Annex I). Column B–style pocket-ref numbers when the lug is unmarked. in·lb and N·m.<br><br>
+            <strong>Fastener:</strong> typical handbook SAE grade / metric class vs size, dry vs lubricated (lubed shown at 75% of dry). A lookup, not a clamp-load study or FEA.<br><br>
+            If the device, lug, or joint spec is marked, use that value.
+          </div>
+        </details>
+      </div>
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-tq-lug">Terminal / lug</button>
+          <button class="tab-btn" data-tab="tab-tq-fastener">Fastener</button>
+        </div>
+        <div id="tab-tq-lug" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Look up a conductor</div>
+              <div class="card-body">
+                <div class="input-group">
+                  <div>
+                    <label for="tq_size">Conductor size</label>
+                    <input id="tq_size" type="text" placeholder="e.g. 8 AWG or 4/0" list="tq_size_list">
+                    <datalist id="tq_size_list">
+                      <option value="10 AWG"></option>
+                      <option value="8 AWG"></option>
+                      <option value="6 AWG"></option>
+                      <option value="4 AWG"></option>
+                      <option value="2 AWG"></option>
+                      <option value="1/0"></option>
+                      <option value="4/0"></option>
+                      <option value="250 kcmil"></option>
+                      <option value="500 kcmil"></option>
+                    </datalist>
+                  </div>
+                  <div>
+                    <label for="tq_screw">Screw / connector</label>
+                    <select id="tq_screw">
+                      <option value="slotNarrow">Slot, narrow</option>
+                      <option value="slotWide">Slot, wide</option>
+                      <option value="hex">Hex / socket</option>
+                      <option value="splitBolt">Split-bolt</option>
+                      <option value="other">Other connector</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="lw-actions">
+                  <button type="button" class="btn" id="tq_lookup">Look up</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="tq_print">Print table</button>
+                </div>
+                <div id="tq_lug_result" class="result" aria-live="polite"></div>
+                <p class="note">Cite UL 486A-B. Manufacturer marking on the device wins. These are typical when the lug is unmarked.</p>
+              </div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">UL 486A-B typical table (search)</div>
+              <div class="card-body">
+                <div class="input-group single">
+                  <div>
+                    <label for="tq_search">Filter by AWG / kcmil</label>
+                    <input id="tq_search" type="search" placeholder="8, 4/0, 250…">
+                  </div>
+                </div>
+                <div class="ref-table-wrap" id="tq_lug_table"></div>
+                <p class="note">Narrow slot = #10 and larger, slot ≤ 0.047 in wide and ≤ 0.25 in long. Wide slot = larger slot. Hex / split-bolt / other follow the published typical columns.</p>
+              </div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">Hex socket by size (UL 486A-B connecting hardware)</div>
+              <div class="card-body">
+                <div class="ref-table-wrap" id="tq_hex_table"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="tab-tq-fastener" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">SAE and metric typicals</div>
+              <div class="card-body">
+                <label><input type="checkbox" id="tq_lube"> Lubricated (75% of dry)</label>
+                <p class="note">Typical handbook values. Not a calibrated torque-tool substitute and not a FEA or clamp-load calculation.</p>
+                <h3 class="wc-system-title">SAE coarse (ft·lb)</h3>
+                <div class="ref-table-wrap" id="tq_sae_table"></div>
+                <h3 class="wc-system-title">Metric coarse (N·m)</h3>
+                <div class="ref-table-wrap" id="tq_metric_table"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         WIRE COLORS — NEC / UL 508A
+         ════════════════════════════════════════ -->
+    <section id="sec-wire-colors" class="section">
+      <div class="section-header">
+        <h2>Wire colors (NEC / UL 508A)</h2>
+        <p>Phone-friendly color reference. CODE rows cite NEC identification rules. Hot colors are industry convention unless a row says otherwise. UL 508A is industrial control panel practice — not NEC-mandated hot colors, and not a substitute for the standard.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — code vs convention</summary>
+          <div class="section-info-body">
+            <strong>CODE:</strong> white / gray grounded (200.6); green / green-yellow / bare EGC (250.119); orange high-leg (110.15); 210.5(C) identification of ungrounded conductors where more than one nominal voltage system is present.<br><br>
+            <strong>CONVENTION, not code:</strong> black / red / blue on 208Y/120; brown / orange / yellow on 480Y/277; and other “typical” hot colors. The NEC does not assign those hot colors.
+          </div>
+        </details>
+      </div>
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-wc-nec">NEC</button>
+          <button class="tab-btn" data-tab="tab-wc-ul">UL 508A</button>
+        </div>
+        <div id="tab-wc-nec" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">Articles actually cited</div>
+              <div class="card-body" id="wc_nec_notes"></div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">System color charts</div>
+              <div class="card-body" id="wc_nec_systems"></div>
+            </div>
+          </div>
+        </div>
+        <div id="tab-wc-ul" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">UL 508A industrial control panel — internal wiring</div>
+              <div class="card-body">
+                <p class="note">UL 508A 3rd Edition, sections <strong>66.5</strong> (power circuits) and <strong>66.9</strong> (control circuits), including the April 2020 color-coding revision. Yellow / orange foreign-voltage identification is a safety callout: that circuit may be live when the disconnect is off. This is <strong>not</strong> NEC-mandated hot colors and is <strong>not</strong> a substitute for the standard.</p>
+                <div class="wc-swatch-grid" id="wc_ul_grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -10056,6 +11185,7 @@
 <script src="js/vendor/solver.js"></script>
 <script src="js/nec-data.js"></script>
 <script src="js/app.js"></script>
+<script src="js/toolbox-families.js"></script>
 <script src="js/wire-tools.js"></script>
 <script src="js/power-tools.js"></script>
 <script src="js/factor-tools.js"></script>
@@ -10067,11 +11197,18 @@
 <script src="js/battery-tools.js"></script>
 <script src="js/report-export.js"></script>
 <script src="js/url-state.js"></script>
+<script src="js/field-persist.js"></script>
+<script src="js/nema-wiring.js"></script>
+<script src="js/battery-bank.js"></script>
+<script src="js/cable-schedule.js"></script>
+<script src="js/ocr-helper.js"></script>
+<script src="js/motor-nameplate.js"></script>
 <script src="js/tdr-analyzer.js"></script>
 <script src="js/local-store.js"></script>
 <script src="js/projects-ui.js"></script>
 <script src="js/conduit-guide.js"></script>
 <script src="js/xfmr-wizard.js"></script>
+<script src="js/mv-cable.js"></script>
 <script src="js/heater-wizard.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
@@ -10090,6 +11227,12 @@
 <script src="js/ebus-budget.js"></script>
 <script src="js/modbus-address.js"></script>
 <script src="js/plc-timer-preset.js"></script>
+<script src="js/sensor-fft.js"></script>
+<script src="js/sensor-engine.js"></script>
+<script src="js/sensor-tools.js"></script>
+<script src="js/torque-lookup.js"></script>
+<script src="js/load-worksheet.js"></script>
+<script src="js/wire-colors.js"></script>
 <script src="js/math-explanations.js"></script>
 <script src="js/result-visuals.js"></script>
 <script src="js/icons.js"></script>

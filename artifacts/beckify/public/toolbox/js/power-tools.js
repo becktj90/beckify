@@ -248,6 +248,12 @@ function xfmrSecondaryLimit(secondaryAmps) {
   return { pct: 167, note: 'Secondary under 9 A', roundUp: false };
 }
 
+/** Apply or withhold 450.3(B) Note 1 on a 125% row. */
+function xfmrDeviceForCeiling(ceiling, allowRoundUp) {
+  if (allowRoundUp) return nextStandardOCPD(ceiling);
+  return largestStandardAtOrBelow(ceiling);
+}
+
 /** Largest standard OCPD at or below a ceiling. */
 function largestStandardAtOrBelow(amps) {
   let best = null;
@@ -268,6 +274,10 @@ window.calcXfmrSizing = function () {
   const vp = val('xs_vp');
   const vs = val('xs_vs');
   const continuous = document.getElementById('xs_continuous').checked;
+  const methodEl = document.getElementById('xs_method');
+  const method = methodEl ? methodEl.value : 'compare';
+  const note1El = document.getElementById('xs_note1');
+  const note1 = note1El ? note1El.checked : true;
 
   if (!isPos(loadValue)) return showError('xs_result', 'Enter a load greater than zero.');
   if (!isPos(vp)) return showError('xs_result', 'Enter a primary voltage greater than zero.');
@@ -307,18 +317,14 @@ window.calcXfmrSizing = function () {
   /* Method 1 — primary protection only. */
   const p1 = xfmrPrimaryOnlyLimit(ip);
   const p1Ceiling = ip * (p1.pct / 100);
-  const p1Device = p1.roundUp
-    ? nextStandardOCPD(p1Ceiling)
-    : largestStandardAtOrBelow(p1Ceiling);
+  const p1Device = xfmrDeviceForCeiling(p1Ceiling, p1.roundUp && note1);
 
   /* Method 2 — primary and secondary protection. */
   const p2Ceiling = ip * 2.5;
   const p2Device = largestStandardAtOrBelow(p2Ceiling);
   const s2 = xfmrSecondaryLimit(is);
   const s2Ceiling = is * (s2.pct / 100);
-  const s2Device = s2.roundUp
-    ? nextStandardOCPD(s2Ceiling)
-    : largestStandardAtOrBelow(s2Ceiling);
+  const s2Device = xfmrDeviceForCeiling(s2Ceiling, s2.roundUp && note1);
 
   el.className = 'result show';
 
@@ -336,23 +342,37 @@ window.calcXfmrSizing = function () {
   wtRow(el, 'Secondary FLA', fmt(is, 2) + ' A', { bold: true });
   wtRow(el, 'Turns ratio', fmt(vp / vs, 3) + ' : 1');
 
-  wtHeading(el, 'Method 1 — primary protection only');
-  wtRow(el, 'Table 450.3(B) limit', p1.pct + ' %  (' + p1.note + ')');
-  wtRow(el, 'Calculated ceiling', fmt(p1Ceiling, 1) + ' A');
-  wtRow(el, 'Primary OCPD',
-    p1Device ? p1Device + ' A' : 'No standard rating fits',
-    { bold: true, color: p1Device ? PASS_COLOR : FAIL_COLOR });
-  wtRow(el, 'Rounding', p1.roundUp
-    ? 'Next standard size up permitted — 450.3(B) Note 1'
-    : 'Must not exceed the ceiling — no round-up at this tier');
+  const showPrimaryOnly = method !== 'primary-secondary';
+  const showPrimarySecondary = method !== 'primary-only';
 
-  wtHeading(el, 'Method 2 — primary and secondary protection');
-  wtRow(el, 'Primary limit', '250 %  →  ceiling ' + fmt(p2Ceiling, 1) + ' A');
-  wtRow(el, 'Primary OCPD', p2Device ? p2Device + ' A' : 'No standard rating fits',
-    { bold: true, color: p2Device ? PASS_COLOR : FAIL_COLOR });
-  wtRow(el, 'Secondary limit', s2.pct + ' %  (' + s2.note + ')  →  ceiling ' + fmt(s2Ceiling, 1) + ' A');
-  wtRow(el, 'Secondary OCPD', s2Device ? s2Device + ' A' : 'No standard rating fits',
-    { bold: true, color: s2Device ? PASS_COLOR : FAIL_COLOR });
+  if (showPrimaryOnly) {
+    wtHeading(el, 'Method 1 — primary protection only');
+    wtRow(el, 'Table 450.3(B) limit', p1.pct + ' %  (' + p1.note + ')');
+    wtRow(el, 'Calculated ceiling', fmt(p1Ceiling, 1) + ' A');
+    wtRow(el, 'Primary OCPD',
+      p1Device ? p1Device + ' A' : 'No standard rating fits',
+      { bold: true, color: p1Device ? PASS_COLOR : FAIL_COLOR });
+    wtRow(el, 'Rounding', (p1.roundUp && note1)
+      ? 'Next standard size up permitted — 450.3(B) Note 1'
+      : p1.roundUp
+        ? 'Note 1 off — device must stay at or below the 125% ceiling'
+        : 'Must not exceed the ceiling — no round-up at this tier');
+  }
+
+  if (showPrimarySecondary) {
+    wtHeading(el, 'Method 2 — primary and secondary protection');
+    wtRow(el, 'Primary limit', '250 %  →  ceiling ' + fmt(p2Ceiling, 1) + ' A');
+    wtRow(el, 'Primary OCPD', p2Device ? p2Device + ' A' : 'No standard rating fits',
+      { bold: true, color: p2Device ? PASS_COLOR : FAIL_COLOR });
+    wtRow(el, 'Secondary limit', s2.pct + ' %  (' + s2.note + ')  →  ceiling ' + fmt(s2Ceiling, 1) + ' A');
+    wtRow(el, 'Secondary OCPD', s2Device ? s2Device + ' A' : 'No standard rating fits',
+      { bold: true, color: s2Device ? PASS_COLOR : FAIL_COLOR });
+    wtRow(el, 'Secondary rounding', (s2.roundUp && note1)
+      ? 'Next standard size up permitted — 450.3(B) Note 1'
+      : s2.roundUp
+        ? 'Note 1 off — device must stay at or below the 125% ceiling'
+        : 'Must not exceed the ceiling — no round-up at this tier');
+  }
 
   wtHeading(el, 'Conductor minimum ampacity');
   wtRow(el, 'Primary conductors', fmt(ip * 1.25, 1) + ' A  (125 % of primary FLA)');

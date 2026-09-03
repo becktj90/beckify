@@ -31,8 +31,7 @@ Beckify is a professional field electrical toolbox for engineers, technicians, a
 Calculate common jobsite numbers with units, formulas, and live results:
 
 • Ohm's Law
-• DC and AC power
-• Power Wizard for DC, single-phase, and three-phase (amps, kW, kVA, HP)
+• Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
 • Voltage drop with 3% / 5% informational checks and a 310.16 ampacity cross-check
 • Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
@@ -40,13 +39,13 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Wire size from NEC Table 310.16, 75 °C column
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
+• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 
 Homework calculators:
 
 • Voltage divider (Vout, or solve R1 / R2)
 • Series / parallel resistors and capacitors
 • Resistor color code (4-band and 5-band, decode and encode)
-• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 • Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC))
 • LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
 
@@ -121,7 +120,7 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 Take 3–8 screens per size. Suggested shots:
 
 1. Toolbox search / tool list (system appearance)
-2. Power Wizard with the 480 V 3Ø 50 kW → 66.8 A result
+2. Power with the 480 V 3Ø 66.8 A / PF 90% identities result
 3. Voltage drop with 3% / 5% notes and ampacity row
 4. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
 5. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
@@ -133,7 +132,7 @@ The app follows the system light or dark appearance; it does not force dark. Sys
 
 ## App icon
 
-Placeholder bolt/toolbox icon is in `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (1024×1024). Replace with a final design before submission if desired. Do not use a photograph of a real person.
+App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 1024×1024 RGB, single catalog slot). Original stacked-rings mark: nested white circles sharing a bottom tangent (tunnel), the whole shape centered on a black square. Full-bleed square — do not pre-round corners or add alpha; Apple applies the squircle. Do not use a photograph of a real person.
 
 ## Remaining steps (Mac + App Store Connect)
 
@@ -156,7 +155,7 @@ The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, 
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
-1. On a Mac, open `ios/Beckify.xcodeproj` and confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
+1. Create the app record — already done (see table). On a Mac, open `ios/Beckify.xcodeproj` and set **Team** / confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
 2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Apple’s public 0–1 `signalStrength`, not dBm.
 3. Run on a physical device at least once if not already done (capability / provisioning / sensor check). This Linux CI job does not do that.
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
