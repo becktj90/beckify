@@ -8,3 +8,4 @@ DerivedData/
 build/
 *.xcarchive
 ExportOptions.plist
+build.log
