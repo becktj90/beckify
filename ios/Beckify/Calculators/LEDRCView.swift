@@ -80,7 +80,9 @@ struct LEDRCView: View {
             switch display {
             case .current(let output), .stale(let output):
                 resultCard(for: output)
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(output) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter LED or RC values",

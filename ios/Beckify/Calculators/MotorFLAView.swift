@@ -73,13 +73,15 @@ struct MotorFLAView: View {
                     ResultRow(label: "Table FLA", value: Format.amps(r.fla), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Conductor min (430.22)", value: Format.amps(MotorFLA.conductorAmps(fla: r.fla)))
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .motorFLA,
-                        inputs: ["HP": hp, "V": systemVolts, "table": threePhase ? "430.250" : "430.248"],
-                        outputs: ["FLA": Format.amps(r.fla)]
-                    ))
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .motorFLA,
+                            inputs: ["HP": hp, "V": systemVolts, "table": threePhase ? "430.250" : "430.248"],
+                            outputs: ["FLA": Format.amps(r.fla)]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(

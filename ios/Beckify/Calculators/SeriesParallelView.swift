@@ -68,7 +68,9 @@ struct SeriesParallelView: View {
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Equivalent", value: "\(Format.number(eq, digits: 4)) \(unit)", emphasis: true, tone: Theme.good)
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(eq) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(eq) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter component values",

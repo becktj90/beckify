@@ -369,7 +369,11 @@ struct PLCTimerView: View {
                         value: abs(r.errorSeconds) < 1e-9 ? "exact" : Format.time(abs(r.errorSeconds)),
                         tone: abs(r.errorSeconds) < 1e-9 ? Theme.good : Theme.warn
                     )
-                    ResultRow(label: "Timebase", value: base.rawValue)
+                    ResultRow(
+                        label: "Timebase",
+                        value: Base.allCases.first(where: { abs($0.seconds - r.timebaseSeconds) < 1e-12 })?.rawValue
+                            ?? Format.time(r.timebaseSeconds)
+                    )
                 }
                 if case .current = display {
                     TimerTraceView(

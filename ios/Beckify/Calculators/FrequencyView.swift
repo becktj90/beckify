@@ -71,7 +71,9 @@ struct FrequencyView: View {
                     ResultRow(label: "Period", value: Format.time(r.period), emphasis: true)
                     ResultRow(label: "Wavelength", value: Format.meters(r.wavelength))
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter a known value",

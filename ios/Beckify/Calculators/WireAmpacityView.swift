@@ -52,13 +52,15 @@ struct WireAmpacityView: View {
                     ResultRow(label: "Smallest size", value: r.label, emphasis: true, tone: Theme.good)
                     ResultRow(label: "Ampacity 75 °C", value: Format.amps(Double(r.ampacity)))
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .wireAmpacity,
-                        inputs: ["I": amps, "mat": material.displayName],
-                        outputs: ["size": r.label, "amp": "\(r.ampacity) A"]
-                    ))
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .wireAmpacity,
+                            inputs: ["I": amps, "mat": material.displayName],
+                            outputs: ["size": r.label, "amp": "\(r.ampacity) A"]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(

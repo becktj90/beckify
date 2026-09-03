@@ -68,17 +68,31 @@ struct ToolDock<Accessory: View>: View {
     var copyText: String?
     @ViewBuilder var accessory: () -> Accessory
 
+    private var hasSticky: Bool {
+        !(stickyAnswer ?? "").isEmpty
+    }
+
+    /// Live converters / sensors with no Calculate chrome and no sticky answer
+    /// should not paint an empty material strip over the bottom safe area.
+    private var shouldShow: Bool {
+        hasSticky || Accessory.self != EmptyView.self
+    }
+
     var body: some View {
-        VStack(spacing: Theme.Space.xs) {
-            accessory()
-            if let stickyAnswer, !stickyAnswer.isEmpty {
-                StickyAnswerBar(answer: stickyAnswer, copyText: copyText)
+        if !shouldShow {
+            EmptyView()
+        } else {
+            VStack(spacing: Theme.Space.xs) {
+                accessory()
+                if hasSticky, let stickyAnswer {
+                    StickyAnswerBar(answer: stickyAnswer, copyText: copyText)
+                }
             }
+            .padding(.horizontal, Theme.Space.md)
+            .padding(.top, Theme.Space.xs)
+            .padding(.bottom, Theme.Space.xs)
+            .background(.bar)
         }
-        .padding(.horizontal, Theme.Space.md)
-        .padding(.top, Theme.Space.xs)
-        .padding(.bottom, Theme.Space.xs)
-        .background(.bar)
     }
 }
 

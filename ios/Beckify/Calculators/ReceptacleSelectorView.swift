@@ -158,8 +158,10 @@ struct ReceptacleSelectorView: View {
                 }
                 catalogCard(shown)
                 rankedList(list)
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
-                    save(list)
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        save(list)
+                    }
                 }
             case .idle:
                 ToolEmptyState(

@@ -61,13 +61,15 @@ struct ConduitFillView: View {
                         ResultRow(label: "Minimum EMT", value: "\(sug)\"", tone: Theme.warn)
                     }
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .conduitFill,
-                        inputs: ["n": qty, "size": size, "emt": trade],
-                        outputs: ["fill": Format.percent(r.actualFillPercent), "ok": r.passes ? "PASS" : "FAIL"]
-                    ))
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .conduitFill,
+                            inputs: ["n": qty, "size": size, "emt": trade],
+                            outputs: ["fill": Format.percent(r.actualFillPercent), "ok": r.passes ? "PASS" : "FAIL"]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(

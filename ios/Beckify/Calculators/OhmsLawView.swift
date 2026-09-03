@@ -53,7 +53,9 @@ struct OhmsLawView: View {
                     ResultRow(label: "Resistance", value: "\(Format.number(r.resistance, digits: 3)) Ω", emphasis: true)
                     ResultRow(label: "Power", value: "\(Format.watts(r.power))  (\(Format.number(r.power / 1000, digits: 3)) kW)", tone: Theme.good)
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter any two values",

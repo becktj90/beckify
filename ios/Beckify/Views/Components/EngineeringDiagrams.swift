@@ -182,7 +182,10 @@ struct SignalTransferCurveView: View {
     let squareRoot: Bool
 
     var body: some View {
-        let span = max(rawMax - rawMin, 1e-9)
+        // Preserve descending raw spans (reverse-acting loops). Only collapse
+        // the zero-width case so Chart identifiers stay unique.
+        let rawSpan = rawMax - rawMin
+        let span = abs(rawSpan) < 1e-9 ? 1e-9 : rawSpan
         let samples = stride(from: 0.0, through: 1.0, by: 0.05).map { t -> (Double, Double) in
             let r = rawMin + t * span
             let fraction = squareRoot ? sqrt(t) : t

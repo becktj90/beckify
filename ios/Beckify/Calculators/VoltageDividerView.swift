@@ -68,7 +68,9 @@ struct VoltageDividerView: View {
                     ResultRow(label: "R2", value: "\(Format.number(r.r2, digits: 3)) Ω", emphasis: true)
                     ResultRow(label: "I", value: Format.amps(r.current))
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter divider values",

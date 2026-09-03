@@ -87,7 +87,9 @@ struct PowerWizardView: View {
                     }
                     ResultRow(label: "Shaft HP", value: "\(Format.number(r.horsepower, digits: 2)) HP")
                 }
-                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter known power values",
