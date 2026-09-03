@@ -51,7 +51,7 @@ public enum Reactance {
     ) throws -> ReactanceResult {
         let f = try Positive.require(frequency, name: "Frequency")
         guard resistance.isFinite, inductance.isFinite, capacitance.isFinite else {
-            throw CalcError.missing("finite R, L, and C values")
+            throw CalcError.outOfRange("Resistance, inductance, and capacitance must be finite numbers.")
         }
         guard resistance >= 0, inductance >= 0, capacitance >= 0 else {
             throw CalcError.outOfRange("Resistance, inductance, and capacitance cannot be negative.")

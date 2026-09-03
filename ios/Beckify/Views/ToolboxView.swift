@@ -161,6 +161,7 @@ struct CalculatorHostView: View {
             case .signalScaling: SignalScalingView()
             case .modbusAddress: ModbusAddressView()
             case .plcTimer: PLCTimerView()
+            case .panelDirectory: PanelDirectoryView()
             }
         }
     }
