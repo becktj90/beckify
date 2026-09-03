@@ -118,37 +118,37 @@ public struct ConduitFillResult: Equatable, Sendable {
     }
 }
 
-/// THHN in EMT using Chapter 9 Table 1 fill percentages and Tables 4 / 5 areas.
+/// Compatibility wrapper: one size of THHN in EMT.
+/// Mixed schedules, other raceways, and pull planning use `ConduitFillPlanning.design`.
 public enum ConduitFill {
     public static func calculate(quantity: Int, size: String, tradeSize: String) throws -> ConduitFillResult {
         guard quantity >= 1 else { throw CalcError.nonPositive("Conductor quantity") }
-        guard let wireArea = NECTables.thhnArea[size] else {
-            throw CalcError.notListed("No THHN area listed for \(size).")
-        }
-        guard let conduit = NECTables.emtArea.first(where: { $0.trade == tradeSize }) else {
-            throw CalcError.notListed("Unknown EMT trade size \(tradeSize).")
-        }
-        let total = Double(quantity) * wireArea
-        let maxPct = NECTables.table1FillPercent(conductorCount: quantity)
-        let maxArea = conduit.area * maxPct / 100
-        let fillPct = total / conduit.area * 100
-        let pass = total <= maxArea
-        var suggested: String?
-        if !pass {
-            suggested = NECTables.emtArea.first(where: { $0.area * maxPct / 100 >= total })?.trade
-        }
+        let group = ConductorGroup(
+            quantity: quantity,
+            size: size,
+            insulation: .thhnTHWN2,
+            material: .copper,
+            purpose: .phase,
+            countsAsCurrentCarrying: true
+        )
+        let designed = try ConduitFillPlanning.design(
+            ConduitFillInput(
+                groups: [group],
+                raceway: RacewaySelection(type: .emt, tradeSize: tradeSize)
+            )
+        )
         return ConduitFillResult(
-            conductorCount: quantity,
+            conductorCount: designed.physicalConductorCount,
             conductorSize: size,
             tradeSize: tradeSize,
-            totalWireArea: total,
-            conduitArea: conduit.area,
-            maxFillPercent: maxPct,
-            maxFillArea: maxArea,
-            actualFillPercent: fillPct,
-            passes: pass,
-            suggestedTradeSize: suggested,
-            formula: "Fill % = (n × conductor area) / raceway area × 100    NEC Ch.9 Table 1"
+            totalWireArea: designed.totalConductorArea,
+            conduitArea: designed.racewayArea,
+            maxFillPercent: designed.codeMaximumPercent,
+            maxFillArea: designed.codeMaximumArea,
+            actualFillPercent: designed.actualFillPercent,
+            passes: designed.passesCodeFill,
+            suggestedTradeSize: designed.passesCodeFill ? nil : designed.minimumCompliantRaceway?.tradeSize,
+            formula: designed.formula
         )
     }
 }

@@ -66,23 +66,25 @@ public enum NECTables: Sendable {
     }
 
     /// NEC Chapter 9 Table 4 — EMT total internal area (in²), not the 40 % column.
-    public static let emtArea: [(trade: String, area: Double)] = [
-        ("1/2", 0.304), ("3/4", 0.533), ("1", 0.864), ("1-1/4", 1.496),
-        ("1-1/2", 2.036), ("2", 3.356), ("2-1/2", 4.788), ("3", 7.393),
-        ("3-1/2", 9.893), ("4", 12.720),
-    ]
+    /// Same numbers as `RacewayType.emt` in `NECRacewayTables`.
+    public static var emtArea: [(trade: String, area: Double)] {
+        RacewayType.emt.orderedAreas
+    }
 
     /// NEC Chapter 9 Table 5 — THHN / THWN-2 conductor area including insulation (in²).
-    public static let thhnArea: [String: Double] = [
-        "14": 0.0097, "12": 0.0133, "10": 0.0211, "8": 0.0366, "6": 0.0507,
-        "4": 0.0824, "3": 0.0973, "2": 0.1158, "1": 0.1562,
-        "1/0": 0.1855, "2/0": 0.2223, "3/0": 0.2679, "4/0": 0.3237,
-        "250": 0.3970, "300": 0.4608, "350": 0.5242, "400": 0.5863, "500": 0.7073,
-        "600": 0.8676, "700": 0.9887, "750": 1.0496, "800": 1.1085, "900": 1.2311, "1000": 1.3478,
-    ]
+    /// Same numbers as `ConductorInsulation.thhnTHWN2`.
+    public static var thhnArea: [String: Double] {
+        ConductorInsulation.thhnTHWN2.listedAreas
+    }
 
-    /// NEC Chapter 9 Table 1 — maximum fill of a raceway.
+    /// NEC Chapter 9 Table 1 — maximum fill of a raceway (not the nipple note).
     public static func table1FillPercent(conductorCount: Int) -> Double {
+        table1FillPercent(conductorCount: conductorCount, qualifyingNipple: false)
+    }
+
+    /// NEC Chapter 9 Table 1, including Note 4 (60 % for a qualifying nipple ≤ 24 in).
+    public static func table1FillPercent(conductorCount: Int, qualifyingNipple: Bool) -> Double {
+        if qualifyingNipple { return 60 }
         switch conductorCount {
         case 1: return 53
         case 2: return 31
