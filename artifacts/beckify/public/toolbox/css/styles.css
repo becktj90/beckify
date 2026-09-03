@@ -451,6 +451,7 @@ a.nav-ext:hover {
 }
 .input-group.single { grid-template-columns: 1fr; }
 .input-group.triple { grid-template-columns: 1fr 1fr 1fr; }
+.input-group.quad { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 label {
   font-family: var(--font-main);
@@ -1045,6 +1046,7 @@ kbd {
   .main { padding: 16px; }
   .input-group { grid-template-columns: 1fr; }
   .input-group.triple { grid-template-columns: 1fr; }
+  .input-group.quad { grid-template-columns: 1fr 1fr; }
   .card-grid { grid-template-columns: 1fr; }
   .header-status { gap: 4px; }
   .header-readout { display: none; }
@@ -1586,6 +1588,73 @@ body.report-open { overflow: hidden; }
 .battery-table th { color: var(--violet); background: var(--violet-soft); }
 .battery-layout { min-height: 260px; overflow: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; }
 .battery-layout svg { display: block; min-width: 420px; width: 100%; height: auto; }
+
+/* ── E-bike battery pack designer ── */
+.ebd-tool-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ebd-tool-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.ebd-tool-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ebd-tool-btn { margin-top: 0; }
+.ebd-tool-btn.active {
+  background: rgba(139, 123, 255, 0.28);
+  border-color: var(--violet);
+  color: #fff;
+}
+.ebd-status {
+  margin: 4px 0 10px;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.ebd-workspace {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(139, 123, 255, 0.08), transparent 55%),
+    #070a12;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.ebd-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: crosshair;
+  border-radius: 6px;
+}
+.ebd-canvas[data-mode="erase"] { cursor: cell; }
+.ebd-group-bars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ebd-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, hsl(var(--ebd-hue) 62% 45%) 45%, var(--border));
+  background: color-mix(in srgb, hsl(var(--ebd-hue) 62% 38%) 22%, transparent);
+  font-size: 0.74rem;
+  color: var(--fg-muted);
+}
+.ebd-group-chip strong { color: var(--fg); font-weight: 700; }
+.ebd-group-chip.is-ok {
+  border-color: rgba(110, 231, 183, 0.45);
+  color: #a7f3d0;
+}
+.ebd-group-chip.is-ok strong { color: #6ee7b7; }
+@media (max-width: 720px) {
+  .ebd-tool-row .btn { flex: 1 1 calc(50% - 8px); justify-content: center; }
+}
 @media (max-width: 620px) { .logic-gate-row { grid-template-columns: 34px 1fr 1fr auto; } .logic-gate-row select:nth-of-type(3) { grid-column: 2 / span 2; } }
 @media (max-width: 620px) { .manual-price-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 

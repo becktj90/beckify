@@ -97,6 +97,7 @@ for (const [query, expectedId] of [
   ['motor nameplate', 'motor-nameplate'],
   ['lfp backup', 'battery-bank'],
   ['battery designer', 'battery-designer'],
+  ['battery pack designer', 'battery-designer'],
   ['e-bike pack', 'battery-designer'],
 ]) {
   const results = searchAssistant(query, 6);

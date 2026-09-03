@@ -88,7 +88,7 @@ ok("sitemap lists phone sensor field tools", [
 ].every((entry) => sitemapSrc.includes(entry)));
 ok("sitemap lists cable schedule with a working hash link", sitemapSrc.includes('t("Cable Schedule Generator", "sec-cable-schedule")'));
 ok("sitemap lists battery bank with a working hash link", sitemapSrc.includes('t("Battery Bank Calculator", "sec-battery-bank")'));
-ok("sitemap lists Battery Designer in the e-bike group", sitemapSrc.includes('t("Battery Designer", "sec-ebike-tools")'));
+ok("sitemap lists Battery Pack Designer in the e-bike group", sitemapSrc.includes('t("Battery Pack Designer", "sec-ebike-tools")'));
 ok("sitemap lists motor nameplate with a working hash link", sitemapSrc.includes('t("Motor Nameplate Analyzer", "sec-motor-nameplate")'));
 ok("sitemap lists NEMA wiring with a working hash link", sitemapSrc.includes('t("NEMA Wiring & Color Codes", "sec-nema-wiring")'));
 ok("sitemap lists the homework EE set", [
@@ -112,11 +112,11 @@ ok("toolbox no longer embeds the full arcade canvas", !/id="arcadeCanvas"/.test(
 ok("toolbox keeps a games-page link", toolboxHtml.includes("/games/new-glenn-runner/"));
 ok("toolbox no longer loads arcade.js", !/src="js\/arcade\.js"/.test(toolboxHtml));
 
-console.log("\n--- E-bike Battery Designer ---");
-ok("e-bike home category lists Battery Designer", /E-Bike Build[\s\S]{0,600}Battery Designer/.test(toolboxHtml));
-ok("e-bike section has a Battery Designer card", /id="eb-battery-designer"/.test(toolboxHtml) && toolboxHtml.includes("https://batterydesigner.com"));
-ok("Battery Designer opens off-site in a new tab", /href="https:\/\/batterydesigner.com"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/.test(toolboxHtml)
-  || /href="https:\/\/batterydesigner.com"[^>]*rel="noopener noreferrer"[^>]*target="_blank"/.test(toolboxHtml));
+console.log("\n--- E-bike Battery Pack Designer ---");
+ok("e-bike home category lists Battery Pack Designer", /E-Bike Build[\s\S]{0,600}Battery Pack Designer/.test(toolboxHtml));
+ok("e-bike section has a Battery Pack Designer canvas", /id="eb-battery-designer"/.test(toolboxHtml) && /id="ebd_canvas"/.test(toolboxHtml));
+ok("toolbox loads the pack designer script", /src="js\/ebike-battery-designer\.js"/.test(toolboxHtml));
+ok("no external batterydesigner.com launch CTA", !/href="https:\/\/batterydesigner\.com"/.test(toolboxHtml));
 ok("home chip deep-links e-bike tools", homeSrc.includes('href: "/toolbox/#sec-ebike-tools"'));
 
 process.exitCode = failures ? 1 : 0;
