@@ -47,6 +47,10 @@
 		BECF00000000000000000066 /* ToolUX.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000065 /* ToolUX.swift */; };
 		BECF00000000000000000068 /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000067 /* FavoritesStore.swift */; };
 		BECF0000000000000000006A /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000069 /* FavoritesView.swift */; };
+		BECF0000000000000000006C /* ToolGlyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000006B /* ToolGlyph.swift */; };
+		BECF0000000000000000006E /* ToolGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000006D /* ToolGridView.swift */; };
+		BECF00000000000000000070 /* FieldCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000006F /* FieldCalculatorViews.swift */; };
+		BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000071 /* ControlsCalculatorViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -90,6 +94,10 @@
 		BECF00000000000000000065 /* ToolUX.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolUX.swift; sourceTree = "<group>"; };
 		BECF00000000000000000067 /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
 		BECF00000000000000000069 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000006B /* ToolGlyph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolGlyph.swift; sourceTree = "<group>"; };
+		BECF0000000000000000006D /* ToolGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolGridView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000006F /* FieldCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldCalculatorViews.swift; sourceTree = "<group>"; };
+		BECF00000000000000000071 /* ControlsCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsCalculatorViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +167,7 @@
 			children = (
 				BECF0000000000000000001D /* FormControls.swift */,
 				BECF00000000000000000065 /* ToolUX.swift */,
+				BECF0000000000000000006B /* ToolGlyph.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -169,6 +178,7 @@
 				BECF0000000000000000001F /* JobsView.swift */,
 				BECF00000000000000000021 /* ToolboxView.swift */,
 				BECF00000000000000000069 /* FavoritesView.swift */,
+				BECF0000000000000000006D /* ToolGridView.swift */,
 				BECF00000000000000000031 /* Components */,
 			);
 			path = Views;
@@ -193,6 +203,8 @@
 				BECF0000000000000000005D /* FrequencyView.swift */,
 				BECF0000000000000000005F /* LEDRCView.swift */,
 				BECF00000000000000000061 /* ReceptacleSelectorView.swift */,
+				BECF0000000000000000006F /* FieldCalculatorViews.swift */,
+				BECF00000000000000000071 /* ControlsCalculatorViews.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -327,6 +339,10 @@
 				BECF00000000000000000066 /* ToolUX.swift in Sources */,
 				BECF00000000000000000068 /* FavoritesStore.swift in Sources */,
 				BECF0000000000000000006A /* FavoritesView.swift in Sources */,
+				BECF0000000000000000006C /* ToolGlyph.swift in Sources */,
+				BECF0000000000000000006E /* ToolGridView.swift in Sources */,
+				BECF00000000000000000070 /* FieldCalculatorViews.swift in Sources */,
+				BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

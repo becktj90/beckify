@@ -26,6 +26,25 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case fieldPosition
     case deviceHealth
     case receptacleSelector
+    case reactance
+    case powerFactor
+    case shortCircuit
+    case circularMils
+    case loadFactors
+    case signalScaling
+    case modbusAddress
+    case plcTimer
+
+    var id: String { rawValue }
+}
+
+/// Grid sections on the toolbox home screen.
+enum ToolCategory: String, CaseIterable, Identifiable {
+    case field = "Field"
+    case power = "Power & AC"
+    case controls = "Controls"
+    case homework = "Homework"
+    case sensors = "Sensors"
 
     var id: String { rawValue }
 }
@@ -243,7 +262,100 @@ enum ToolboxCatalog {
             symbol: "battery.100",
             synonyms: ["battery", "thermal", "diagnostics", "temperature", "charge"]
         ),
+        ToolDefinition(
+            id: .reactance,
+            kind: .calculator,
+            title: "Reactance & Resonance",
+            subtitle: "X_L, X_C, series Z and angle, plus LC resonance with Q and bandwidth.",
+            symbol: "waveform.path",
+            synonyms: ["reactance", "impedance", "resonance", "xl", "xc", "quality factor", "bandwidth", "lc"]
+        ),
+        ToolDefinition(
+            id: .powerFactor,
+            kind: .calculator,
+            title: "Power Factor Correction",
+            subtitle: "Capacitor kVAR to reach a target PF, plus bank capacitance.",
+            symbol: "arrow.triangle.2.circlepath",
+            synonyms: ["power factor", "pf", "kvar", "correction", "capacitor bank", "cos phi"]
+        ),
+        ToolDefinition(
+            id: .shortCircuit,
+            kind: .calculator,
+            title: "Short-Circuit Current",
+            subtitle: "Infinite-bus secondary fault current from kVA, volts, and %Z.",
+            symbol: "bolt.trianglebadge.exclamationmark",
+            synonyms: ["short circuit", "fault current", "aic", "sccr", "interrupting", "%z", "infinite bus"]
+        ),
+        ToolDefinition(
+            id: .circularMils,
+            kind: .calculator,
+            title: "Circular Mils",
+            subtitle: "Diameter, circular mils, and square inches for round conductors.",
+            symbol: "circle.circle",
+            synonyms: ["circular mils", "cm", "kcmil", "area", "diameter", "mils"]
+        ),
+        ToolDefinition(
+            id: .loadFactors,
+            kind: .calculator,
+            title: "Load & Demand Factors",
+            subtitle: "Demand, load, diversity, and capacity utilisation from metered data.",
+            symbol: "chart.bar.xaxis",
+            synonyms: ["demand factor", "load factor", "diversity", "coincidence", "utilization", "capacity"]
+        ),
+        ToolDefinition(
+            id: .signalScaling,
+            kind: .calculator,
+            title: "Signal Scaling",
+            subtitle: "4–20 mA to engineering units and back. Linear or √ for DP flow.",
+            symbol: "slider.horizontal.below.square.filled.and.square",
+            synonyms: ["4-20", "signal", "scaling", "process value", "transmitter", "dp flow", "square root", "live zero"]
+        ),
+        ToolDefinition(
+            id: .modbusAddress,
+            kind: .calculator,
+            title: "Modbus Address",
+            subtitle: "PDU offset, entity number, 40001/400001 forms, and function code.",
+            symbol: "number.square",
+            synonyms: ["modbus", "register", "coil", "holding", "40001", "offset", "function code", "plc"]
+        ),
+        ToolDefinition(
+            id: .plcTimer,
+            kind: .calculator,
+            title: "PLC Timer Preset",
+            subtitle: "TON/TOF preset counts at a timebase, with quantisation error.",
+            symbol: "stopwatch",
+            synonyms: ["plc", "timer", "ton", "tof", "rto", "preset", "timebase", "scan"]
+        ),
     ]
+
+    /// Grid grouping for the home screen. Order inside a section is the order
+    /// tools appear in the grid.
+    static let categories: [ToolCategory: [ToolID]] = [
+        .field: [
+            .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA,
+            .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
+        ],
+        .power: [
+            .ohmsLaw, .power, .transformer, .reactance, .powerFactor,
+        ],
+        .controls: [
+            .signalScaling, .modbusAddress, .plcTimer, .timer555,
+        ],
+        .homework: [
+            .voltageDivider, .seriesParallel, .resistorColor,
+            .frequencyWave, .ledRC, .unitConverter,
+        ],
+        .sensors: [
+            .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
+            .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
+        ],
+    ]
+
+    static func tools(in category: ToolCategory) -> [ToolDefinition] {
+        (categories[category] ?? []).compactMap { id in
+            allTools.first { $0.id == id }
+        }
+    }
 
     /// Saved-job / deep-link IDs that stay off the toolbox list.
     private static let hiddenTools: [ToolDefinition] = [

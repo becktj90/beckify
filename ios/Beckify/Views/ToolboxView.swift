@@ -153,6 +153,14 @@ struct CalculatorHostView: View {
             case .motionSnapshot: MotionSnapshotView()
             case .fieldPosition: FieldPositionView()
             case .deviceHealth: DeviceHealthView()
+            case .reactance: ReactanceView()
+            case .powerFactor: PowerFactorView()
+            case .shortCircuit: ShortCircuitView()
+            case .circularMils: CircularMilsView()
+            case .loadFactors: LoadFactorsView()
+            case .signalScaling: SignalScalingView()
+            case .modbusAddress: ModbusAddressView()
+            case .plcTimer: PLCTimerView()
             }
         }
     }
