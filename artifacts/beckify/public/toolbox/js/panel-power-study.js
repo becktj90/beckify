@@ -223,7 +223,13 @@ function parseScheduleText(text) {
       return;
     }
 
-    pushUniqueRow(parseFreeformRow(compact, meta.defaultSeries), rows, seen);
+    // OCR collapses runs of spaces, so most photographed schedules arrive as a
+    // single space-separated line. Walk the tokens instead of relying on column
+    // gaps, which also picks up directory stickers that only carry a circuit
+    // number and a name, and two-up odd/even lines.
+    splitCircuitSegments(compact).forEach(segment => {
+      pushUniqueRow(parseSegmentTokens(segment, meta.defaultSeries), rows, seen);
+    });
   });
 
   return { meta, rows: normalizeRows(rows) };
@@ -311,21 +317,96 @@ function parseColumnsToRow(columns, defaultSeries) {
   return row;
 }
 
-function parseFreeformRow(line, defaultSeries) {
-  const match = line.match(/^(\d+[A-Z]?(?:[-/,]\d+[A-Z]?)*)\s+(.+?)\s+(\d+(?:\.\d+)?)\s*(?:A|AMP|AMPS)?\s+([123])P?$/i);
-  if (!match) return null;
+// Panels top out well below this; a larger leading number is a rating or a
+// stray figure ("400A MCB"), not a circuit position.
+const MAX_DIRECTORY_CIRCUIT = 200;
 
-  return {
-    circuit: normalizeCircuit(match[1]),
-    description: match[2].trim(),
-    trip: `${match[3]}A`,
-    poles: match[4],
-    breakerSeries: defaultSeries || '',
-    circuitClass: inferCircuitClass(match[2]),
-    loadType: inferLoadType(match[2]),
-    loadAmps: '',
-    demandFactor: '1'
-  };
+// A circuit position written as bare digits. Deliberately stricter than
+// looksLikeCircuit: "20A" and "1P" are a trip and a pole count, and treating
+// either as a new circuit would chop a row in half.
+function isBareCircuitToken(token) {
+  return /^\d{1,3}(?:[-/,]\d{1,3})*$/.test(String(token).trim());
+}
+
+function startsNewCircuit(token, nextToken, previousNumber) {
+  if (!isBareCircuitToken(token)) return false;
+  if (!nextToken) return false;
+  if (looksLikeTrip(nextToken) || looksLikePoles(nextToken)) return false;
+  const value = firstCircuitNumber(token);
+  if (!Number.isFinite(value) || value < 1 || value > MAX_DIRECTORY_CIRCUIT) return false;
+  return previousNumber === null || value > previousNumber;
+}
+
+/// Break one OCR line into per-circuit token runs. Two-up directories put the
+/// odd and even columns on the same line ("1 LIGHTING 2 RECEPTACLES").
+function splitCircuitSegments(line) {
+  const tokens = String(line || '').split(/\s+/).filter(Boolean);
+  if (!tokens.length || !looksLikeCircuit(tokens[0])) return [];
+
+  const segments = [];
+  let current = [tokens[0]];
+  let previousNumber = firstCircuitNumber(tokens[0]);
+
+  for (let index = 1; index < tokens.length; index += 1) {
+    // Require a description token on the open segment before starting another,
+    // so "1 2 3" style noise stays one run instead of exploding into rows.
+    if (current.length >= 2 && startsNewCircuit(tokens[index], tokens[index + 1], previousNumber)) {
+      segments.push(current);
+      current = [tokens[index]];
+      previousNumber = firstCircuitNumber(tokens[index]);
+    } else {
+      current.push(tokens[index]);
+    }
+  }
+
+  segments.push(current);
+  return segments;
+}
+
+/// Circuit, description, then optional trip and poles. Directory stickers stop
+/// after the description, which the old poles-required regex rejected outright.
+function parseSegmentTokens(tokens, defaultSeries) {
+  if (!tokens || !tokens.length || !looksLikeCircuit(tokens[0])) return null;
+  if (firstCircuitNumber(tokens[0]) > MAX_DIRECTORY_CIRCUIT) return null;
+
+  const row = createEmptyRow();
+  row.circuit = normalizeCircuit(tokens[0]);
+  row.breakerSeries = defaultSeries || '';
+
+  const trailing = tokens.slice(1);
+  const compactMatch = trailing.length
+    ? String(trailing[trailing.length - 1]).match(/^(\d+(?:\.\d+)?)\s*(?:A|AMP|AMPS)?[/\\-]([123])P?$/i)
+    : null;
+
+  if (compactMatch) {
+    row.trip = `${compactMatch[1]}A`;
+    row.poles = compactMatch[2];
+    trailing.pop();
+  } else {
+    // Keep at least one token for the description; a lone "LIGHTING" must not
+    // be eaten as a trip or pole count.
+    if (trailing.length > 1 && looksLikePoles(trailing[trailing.length - 1])) {
+      row.poles = String(trailing.pop()).replace(/P/i, '');
+    }
+    if (trailing.length && looksLikeTrip(trailing[trailing.length - 1]) && (trailing.length > 1 || row.poles)) {
+      row.trip = normalizeTrip(trailing.pop());
+    }
+  }
+
+  row.description = trailing.join(' ').trim();
+  row.circuitClass = inferCircuitClass(row.description);
+  row.loadType = inferLoadType(row.description);
+
+  // A real row names something. Without a name, only a complete trip/pole pair
+  // is enough to keep it — otherwise it is OCR noise.
+  if (!/[A-Za-z]{2,}/.test(row.description) && !(row.trip && row.poles)) return null;
+  return row;
+}
+
+function parseFreeformRow(line, defaultSeries) {
+  const segments = splitCircuitSegments(compactLine(line));
+  if (!segments.length) return null;
+  return parseSegmentTokens(segments[0], defaultSeries);
 }
 
 function pushUniqueRow(row, rows, seen) {

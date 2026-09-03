@@ -66,4 +66,45 @@ assert.equal(parsed.meta.defaultSeries.toUpperCase(), 'QO');
 assert.equal(parsed.rows[0].breakerSeries, 'QO');
 assert.equal(parsed.rows[1].circuitClass, 'Critical');
 
+// OCR collapses runs of spaces, so a photographed schedule arrives as one
+// space-separated line rather than aligned columns. A panel directory sticker
+// also stops after the circuit name — there is no trip or pole column to find.
+// Both used to parse to zero rows, leaving the editor empty after a scan.
+const directory = panel.parseScheduleText(`1 LIGHTING OFFICE
+2 RECEPTACLES BREAK ROOM
+3 HVAC RTU-1
+4 SPARE`);
+assert.equal(directory.rows.length, 4);
+assert.equal(directory.rows[0].circuit, '1');
+assert.equal(directory.rows[0].description, 'LIGHTING OFFICE');
+assert.equal(directory.rows[2].description, 'HVAC RTU-1');
+assert.equal(directory.rows[2].circuitClass, 'HVAC');
+assert.equal(directory.rows[3].description, 'SPARE');
+
+// Two-up directories put the odd and even columns on one line.
+const twoUp = panel.parseScheduleText(`1 LIGHTING OFFICE 2 RECEPTACLES BREAK ROOM
+3 HVAC RTU-1 4 SPARE`);
+assert.equal(twoUp.rows.length, 4);
+assert.equal(twoUp.rows.map(row => row.circuit).join(','), '1,2,3,4');
+assert.equal(twoUp.rows[1].description, 'RECEPTACLES BREAK ROOM');
+
+// A trip with no pole column still yields a row.
+const tripOnly = panel.parseScheduleText('1 LIGHTING OFFICE 20A');
+assert.equal(tripOnly.rows.length, 1);
+assert.equal(tripOnly.rows[0].trip, '20A');
+assert.equal(tripOnly.rows[0].description, 'LIGHTING OFFICE');
+
+// "20A" and "1P" must not be mistaken for the next circuit position, and a
+// hyphenated equipment tag must not split a row either.
+const fullRow = panel.parseScheduleText('1 LIGHTING OFFICE 20A 1P 2 RECEPTACLES 20A 1P');
+assert.equal(fullRow.rows.length, 2);
+assert.equal(fullRow.rows[0].description, 'LIGHTING OFFICE');
+assert.equal(fullRow.rows[0].trip, '20A');
+assert.equal(fullRow.rows[0].poles, '1');
+assert.equal(fullRow.rows[1].circuit, '2');
+
+// Ratings and unnamed noise are not circuits.
+assert.equal(panel.parseScheduleText('400A MCB').rows.length, 0);
+assert.equal(panel.parseScheduleText('1 20A').rows.length, 0);
+
 console.log('Panel power study helpers passed');
