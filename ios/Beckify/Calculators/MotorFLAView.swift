@@ -3,6 +3,7 @@ import BeckifyMath
 
 struct MotorFLAView: View {
     private struct LookupResult: Equatable, Sendable {
+        var horsepower: String
         var columnVolts: String
         var fla: Double
     }
@@ -134,7 +135,7 @@ struct MotorFLAView: View {
                     "No table value for this HP / voltage combination. Pick a listed horsepower and a voltage this table actually has a column for."
                 )
             }
-            return LookupResult(columnVolts: col, fla: fla)
+            return LookupResult(horsepower: hp, columnVolts: col, fla: fla)
         }
         if case .current = session.display(for: fingerprint) {
             successTick += 1
@@ -157,7 +158,7 @@ struct MotorFLAView: View {
     private var sticky: String? {
         switch display {
         case .current(let r), .stale(let r):
-            return "\(Format.amps(r.fla))  ·  \(hp) HP @ \(r.columnVolts) V"
+            return "\(Format.amps(r.fla))  ·  \(r.horsepower) HP @ \(r.columnVolts) V"
         default:
             return nil
         }

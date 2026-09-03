@@ -6,6 +6,13 @@ struct SeriesParallelView: View {
         case resistors = "R"
         case capacitors = "C"
         var id: String { rawValue }
+
+        var unit: String { self == .resistors ? "Ω" : "F" }
+    }
+
+    private struct NetworkResult: Equatable, Sendable {
+        var value: Double
+        var unit: String
     }
 
     @EnvironmentObject private var jobs: JobStore
@@ -16,13 +23,13 @@ struct SeriesParallelView: View {
     @StoredInput(.seriesParallel, "v3", default: "") private var v3
     @StoredInput(.seriesParallel, "v4", default: "") private var v4
     @StoredInput(.seriesParallel, "jobName", default: "Series / parallel") private var jobName
-    @State private var session = ExplicitCalculationSession<Double>()
+    @State private var session = ExplicitCalculationSession<NetworkResult>()
     @State private var successTick = 0
 
-    private var unit: String { part == .resistors ? "Ω" : "F" }
+    private var unit: String { part.unit }
 
     private var fingerprint: String { "\(part.rawValue)|\(kind.rawValue)|\(v1)|\(v2)|\(v3)|\(v4)" }
-    private var display: ExplicitCalculationSession<Double>.Display {
+    private var display: ExplicitCalculationSession<NetworkResult>.Display {
         session.display(for: fingerprint)
     }
 
@@ -66,7 +73,7 @@ struct SeriesParallelView: View {
             switch display {
             case .current(let eq), .stale(let eq):
                 ResultCard(copyText: copyText) {
-                    ResultRow(label: "Equivalent", value: "\(Format.number(eq, digits: 4)) \(unit)", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Equivalent", value: "\(Format.number(eq.value, digits: 4)) \(eq.unit)", emphasis: true, tone: Theme.good)
                 }
                 if case .current = display {
                     SaveJobBar(jobName: $jobName, canSave: true) { save(eq) }
@@ -102,10 +109,13 @@ struct SeriesParallelView: View {
                 }
                 values.append(n)
             }
+            let equivalent: Double
             if part == .resistors {
-                return try SeriesParallel.resistors(values, kind: kind)
+                equivalent = try SeriesParallel.resistors(values, kind: kind)
+            } else {
+                equivalent = try SeriesParallel.capacitors(values, kind: kind)
             }
-            return try SeriesParallel.capacitors(values, kind: kind)
+            return NetworkResult(value: equivalent, unit: part.unit)
         }
         if case .current = session.display(for: fingerprint) {
             successTick += 1
@@ -129,13 +139,13 @@ struct SeriesParallelView: View {
     private var substituted: String? {
         guard case .current(let eq) = display else { return nil }
         let filled = [v1, v2, v3, v4].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-        return "\(filled.joined(separator: kind == .series ? " + " : " ∥ "))  →  \(Format.number(eq, digits: 4)) \(unit)"
+        return "\(filled.joined(separator: kind == .series ? " + " : " ∥ "))  →  \(Format.number(eq.value, digits: 4)) \(eq.unit)"
     }
 
     private var sticky: String? {
         switch display {
         case .current(let eq), .stale(let eq):
-            return "\(Format.number(eq, digits: 4)) \(unit)"
+            return "\(Format.number(eq.value, digits: 4)) \(eq.unit)"
         default:
             return nil
         }
@@ -165,12 +175,12 @@ struct SeriesParallelView: View {
         v4 = ""
     }
 
-    private func save(_ eq: Double) {
+    private func save(_ eq: NetworkResult) {
         jobs.save(SavedJob(
             name: jobName,
             toolID: .seriesParallel,
             inputs: ["part": part.rawValue, "kind": kind.rawValue, "1": v1, "2": v2, "3": v3, "4": v4],
-            outputs: ["eq": "\(Format.number(eq, digits: 4)) \(unit)"]
+            outputs: ["eq": "\(Format.number(eq.value, digits: 4)) \(eq.unit)"]
         ))
     }
 }
