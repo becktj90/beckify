@@ -28,6 +28,7 @@ struct SignalScalingView: View {
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.signalScaling, "direction", default: Direction.toEngineering) private var direction
     @StoredChoice(.signalScaling, "curve", default: SignalCurve.linear) private var curve
+    @StoredToggle(.signalScaling, "liveZero", default: true) private var detectLiveZeroFault
     @StoredInput(.signalScaling, "value", default: "12") private var value
     @StoredInput(.signalScaling, "rawMin", default: "4") private var rawMin
     @StoredInput(.signalScaling, "rawMax", default: "20") private var rawMax
@@ -62,6 +63,7 @@ struct SignalScalingView: View {
                     Button(preset.rawValue) {
                         rawMin = preset.range.min
                         rawMax = preset.range.max
+                        detectLiveZeroFault = preset == .current
                     }
                     .buttonStyle(.bordered)
                     .tint(Theme.accent)
@@ -80,6 +82,7 @@ struct SignalScalingView: View {
             NumberField(title: "Raw max", unit: "raw", text: $rawMax)
             NumberField(title: "EU min", unit: "EU", text: $euMin)
             NumberField(title: "EU max", unit: "EU", text: $euMax)
+            Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
 
             switch result {
             case .success(let r):
@@ -118,7 +121,8 @@ struct SignalScalingView: View {
                     rawMax: rawMax.parsedDouble ?? .nan,
                     engineeringMin: euMin.parsedDouble ?? .nan,
                     engineeringMax: euMax.parsedDouble ?? .nan,
-                    curve: curve
+                    curve: curve,
+                    detectLiveZeroFault: detectLiveZeroFault
                 )
             }
             return try SignalScaling.toRaw(
@@ -180,7 +184,7 @@ struct ModbusAddressView: View {
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "PDU offset (wire)", value: "\(r.pduOffset)", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Entity number", value: "\(r.entityNumber)")
-                    ResultRow(label: "5-digit", value: r.fiveDigit)
+                    ResultRow(label: "5-digit", value: r.fiveDigit ?? "—")
                     ResultRow(label: "6-digit", value: r.sixDigit)
                     ResultRow(label: "Read function", value: "FC \(r.readFunctionCode)")
                 }
@@ -195,7 +199,10 @@ struct ModbusAddressView: View {
             if entry == .offset {
                 let raw = offset.parsedDouble ?? .nan
                 guard raw.isFinite, raw >= 0 else { throw CalcError.missing("an offset") }
-                return try ModbusAddress.fromPDUOffset(Int(raw), table: table)
+                guard let offset = Int(exactly: raw) else {
+                    throw CalcError.outOfRange("Offset must be a whole number in range.")
+                }
+                return try ModbusAddress.fromPDUOffset(offset, table: table)
             }
             return try ModbusAddress.fromDisplayAddress(display, table: table)
         }
@@ -203,12 +210,13 @@ struct ModbusAddressView: View {
 
     private var substituted: String? {
         guard case .success(let r) = result else { return nil }
-        return "offset \(r.pduOffset) → entity \(r.entityNumber) → \(r.fiveDigit) / \(r.sixDigit)"
+        let display = r.fiveDigit ?? r.sixDigit
+        return "offset \(r.pduOffset) → entity \(r.entityNumber) → \(display)"
     }
 
     private var sticky: String? {
         guard case .success(let r) = result else { return nil }
-        return "offset \(r.pduOffset)  ·  \(r.fiveDigit)  ·  FC \(r.readFunctionCode)"
+        return "offset \(r.pduOffset)  ·  \(r.fiveDigit ?? r.sixDigit)  ·  FC \(r.readFunctionCode)"
     }
 }
 
@@ -287,7 +295,10 @@ struct PLCTimerView: View {
             }
             let raw = preset.parsedDouble ?? .nan
             guard raw.isFinite, raw >= 0 else { throw CalcError.missing("a preset") }
-            return try PLCTimer.seconds(preset: Int(raw), timebaseSeconds: base.seconds)
+            guard let preset = Int(exactly: raw) else {
+                throw CalcError.outOfRange("Preset must be a whole number in range.")
+            }
+            return try PLCTimer.seconds(preset: preset, timebaseSeconds: base.seconds)
         }
     }
 

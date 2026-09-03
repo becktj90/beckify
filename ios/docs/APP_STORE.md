@@ -39,6 +39,9 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Wire size from NEC Table 310.16, 75 °C column
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
+• Reactance & resonance, power-factor correction, short-circuit current, circular mils, load & demand factors
+• Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
+• Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
 • Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 
 Homework calculators:

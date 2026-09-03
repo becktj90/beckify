@@ -37,6 +37,15 @@ final class ReactanceTests: XCTestCase {
         XCTAssertThrowsError(try Reactance.series(frequency: 60, resistance: 10, inductance: 0, capacitance: 0))
         XCTAssertThrowsError(try Reactance.resonance(inductance: 0, capacitance: 1e-6, resistance: 1))
     }
+
+    func testSeriesRejectsNegativeAndNonFiniteComponents() {
+        XCTAssertThrowsError(try Reactance.series(
+            frequency: 60, resistance: -1, inductance: 0.1, capacitance: 100e-6
+        ))
+        XCTAssertThrowsError(try Reactance.series(
+            frequency: 60, resistance: .nan, inductance: 0.1, capacitance: 100e-6
+        ))
+    }
 }
 
 final class PowerFactorCorrectionTests: XCTestCase {
@@ -73,6 +82,24 @@ final class PowerFactorCorrectionTests: XCTestCase {
             voltage: 480
         ))
     }
+
+    func testVoltageAndFrequencyMustBeFiniteAndPositive() {
+        XCTAssertThrowsError(try PowerFactorCorrection.solve(
+            realPowerKW: 100, existingPowerFactor: 0.75, targetPowerFactor: 0.95,
+            voltage: 0, frequency: 60
+        ))
+        XCTAssertThrowsError(try PowerFactorCorrection.solve(
+            realPowerKW: 100, existingPowerFactor: 0.75, targetPowerFactor: 0.95,
+            voltage: 480, frequency: .infinity
+        ))
+    }
+
+    func testPowerFactorCorrectionRejectsDC() {
+        XCTAssertThrowsError(try PowerFactorCorrection.solve(
+            realPowerKW: 100, existingPowerFactor: 0.75, targetPowerFactor: 0.95,
+            voltage: 480, frequency: 60, system: .dc
+        ))
+    }
 }
 
 final class ShortCircuitTests: XCTestCase {
@@ -104,6 +131,12 @@ final class ShortCircuitTests: XCTestCase {
             kVA: 500,
             secondaryVolts: 480,
             impedancePercent: 0
+        ))
+    }
+
+    func testTransformerSecondaryRejectsDC() {
+        XCTAssertThrowsError(try ShortCircuit.transformerSecondary(
+            kVA: 500, secondaryVolts: 480, impedancePercent: 5, system: .dc
         ))
     }
 }

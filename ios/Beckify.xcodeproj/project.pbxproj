@@ -51,6 +51,7 @@
 		BECF0000000000000000006E /* ToolGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000006D /* ToolGridView.swift */; };
 		BECF00000000000000000070 /* FieldCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000006F /* FieldCalculatorViews.swift */; };
 		BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000071 /* ControlsCalculatorViews.swift */; };
+		BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000073 /* PanelDirectoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -98,6 +99,7 @@
 		BECF0000000000000000006D /* ToolGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolGridView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000006F /* FieldCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF00000000000000000071 /* ControlsCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsCalculatorViews.swift; sourceTree = "<group>"; };
+		BECF00000000000000000073 /* PanelDirectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDirectoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,6 +207,7 @@
 				BECF00000000000000000061 /* ReceptacleSelectorView.swift */,
 				BECF0000000000000000006F /* FieldCalculatorViews.swift */,
 				BECF00000000000000000071 /* ControlsCalculatorViews.swift */,
+				BECF00000000000000000073 /* PanelDirectoryView.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -343,6 +346,7 @@
 				BECF0000000000000000006E /* ToolGridView.swift in Sources */,
 				BECF00000000000000000070 /* FieldCalculatorViews.swift in Sources */,
 				BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */,
+				BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -45,6 +45,7 @@ extension GlyphKind {
         case .loadFactors: return .meter
         case .signalScaling: return .signal
         case .modbusAddress: return .network
+        case .panelDirectory: return .panel
         case .wifiStatus, .bluetoothScan: return .network
         case .noiseMeter, .motionSnapshot: return .waveform
         case .bubbleLevel, .magnetometer, .barometer, .fieldPosition: return .meter

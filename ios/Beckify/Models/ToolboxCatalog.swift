@@ -34,6 +34,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case signalScaling
     case modbusAddress
     case plcTimer
+    case panelDirectory
 
     var id: String { rawValue }
 }
@@ -307,7 +308,7 @@ enum ToolboxCatalog {
             kind: .calculator,
             title: "Signal Scaling",
             subtitle: "4–20 mA to engineering units and back. Linear or √ for DP flow.",
-            symbol: "slider.horizontal.below.square.filled.and.square",
+            symbol: "chart.line.uptrend.xyaxis",
             synonyms: ["4-20", "signal", "scaling", "process value", "transmitter", "dp flow", "square root", "live zero"]
         ),
         ToolDefinition(
@@ -326,6 +327,14 @@ enum ToolboxCatalog {
             symbol: "stopwatch",
             synonyms: ["plc", "timer", "ton", "tof", "rto", "preset", "timebase", "scan"]
         ),
+        ToolDefinition(
+            id: .panelDirectory,
+            kind: .calculator,
+            title: "Panel Directory",
+            subtitle: "Paste or OCR a panel schedule photo into circuit, name, trip, and poles.",
+            symbol: "list.bullet.rectangle",
+            synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -333,7 +342,7 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA,
-            .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
+            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
         ],
         .power: [
             .ohmsLaw, .power, .transformer, .reactance, .powerFactor,
@@ -390,20 +399,20 @@ enum ToolboxCatalog {
 
     private static let relatedIDs: [ToolID: [ToolID]] = [
         .ohmsLaw: [.power, .voltageDivider, .ledRC],
-        .power: [.ohmsLaw, .transformer, .motorFLA],
+        .power: [.ohmsLaw, .transformer, .powerFactor],
         .powerWizard: [.power, .motorFLA, .transformer],
-        .voltageDrop: [.wireAmpacity, .conduitFill, .power],
-        .conduitFill: [.wireAmpacity, .voltageDrop],
-        .transformer: [.power, .wireAmpacity, .motorFLA],
-        .timer555: [.ledRC, .frequencyWave],
-        .motorFLA: [.wireAmpacity, .power, .transformer],
-        .wireAmpacity: [.voltageDrop, .conduitFill, .motorFLA],
+        .voltageDrop: [.wireAmpacity, .conduitFill, .circularMils],
+        .conduitFill: [.wireAmpacity, .voltageDrop, .circularMils],
+        .transformer: [.power, .shortCircuit, .motorFLA],
+        .timer555: [.plcTimer, .ledRC, .frequencyWave],
+        .motorFLA: [.wireAmpacity, .panelDirectory, .transformer],
+        .wireAmpacity: [.voltageDrop, .conduitFill, .circularMils],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
         .resistorColor: [.seriesParallel, .ledRC, .unitConverter],
-        .unitConverter: [.frequencyWave, .voltageDrop, .wireAmpacity],
-        .frequencyWave: [.timer555, .ledRC, .unitConverter],
+        .unitConverter: [.circularMils, .signalScaling, .wireAmpacity],
+        .frequencyWave: [.reactance, .timer555, .ledRC],
         .ledRC: [.ohmsLaw, .timer555, .resistorColor],
         .wifiStatus: [.bluetoothScan, .fieldPosition, .deviceHealth],
         .bluetoothScan: [.wifiStatus, .deviceHealth],
@@ -414,5 +423,14 @@ enum ToolboxCatalog {
         .motionSnapshot: [.bubbleLevel, .magnetometer],
         .fieldPosition: [.magnetometer, .wifiStatus, .barometer],
         .deviceHealth: [.wifiStatus, .noiseMeter],
+        .reactance: [.powerFactor, .frequencyWave, .ohmsLaw],
+        .powerFactor: [.power, .reactance, .transformer],
+        .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],
+        .circularMils: [.wireAmpacity, .voltageDrop, .conduitFill],
+        .loadFactors: [.panelDirectory, .power, .motorFLA],
+        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter],
+        .modbusAddress: [.signalScaling, .plcTimer],
+        .plcTimer: [.timer555, .modbusAddress, .signalScaling],
+        .panelDirectory: [.loadFactors, .wireAmpacity, .motorFLA],
     ]
 }

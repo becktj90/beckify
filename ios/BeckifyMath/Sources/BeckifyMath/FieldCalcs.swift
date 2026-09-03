@@ -50,9 +50,12 @@ public enum Reactance {
         capacitance: Double
     ) throws -> ReactanceResult {
         let f = try Positive.require(frequency, name: "Frequency")
-        guard resistance.isFinite, resistance >= 0 else { throw CalcError.nonPositive("Resistance") }
-        guard inductance.isFinite, inductance >= 0 else { throw CalcError.nonPositive("Inductance") }
-        guard capacitance.isFinite, capacitance >= 0 else { throw CalcError.nonPositive("Capacitance") }
+        guard resistance.isFinite, inductance.isFinite, capacitance.isFinite else {
+            throw CalcError.outOfRange("Resistance, inductance, and capacitance must be finite numbers.")
+        }
+        guard resistance >= 0, inductance >= 0, capacitance >= 0 else {
+            throw CalcError.outOfRange("Resistance, inductance, and capacitance cannot be negative.")
+        }
         if inductance == 0 && capacitance == 0 {
             throw CalcError.missing("an inductance or a capacitance")
         }
@@ -140,6 +143,9 @@ public enum PowerFactorCorrection {
         system: ElectricalSystem = .threePhase
     ) throws -> PowerFactorResult {
         let kw = try Positive.require(realPowerKW, name: "Real power")
+        guard system != .dc else { throw CalcError.outOfRange("Power-factor correction requires an AC system.") }
+        let volts = try Positive.require(voltage, name: "Voltage")
+        let hertz = try Positive.require(frequency, name: "Frequency")
         guard existingPowerFactor > 0, existingPowerFactor <= 1 else {
             throw CalcError.outOfRange("Existing power factor must be between 0 and 1.")
         }
@@ -158,12 +164,9 @@ public enum PowerFactorCorrection {
         let newKVA = kw / targetPowerFactor
 
         // Q = V²·2πfC, with the per-phase voltage for a wye bank.
-        var capacitance = Double.nan
-        if voltage.isFinite, voltage > 0, frequency > 0 {
-            let perPhaseVolts = system == .threePhase ? voltage / 3.0.squareRoot() : voltage
-            let perPhaseVAR = correction * 1000 / (system == .threePhase ? 3 : 1)
-            capacitance = perPhaseVAR / (2 * Double.pi * frequency * perPhaseVolts * perPhaseVolts)
-        }
+        let perPhaseVolts = system == .threePhase ? volts / 3.0.squareRoot() : volts
+        let perPhaseVAR = correction * 1000 / (system == .threePhase ? 3 : 1)
+        let capacitance = perPhaseVAR / (2 * Double.pi * hertz * perPhaseVolts * perPhaseVolts)
 
         return PowerFactorResult(
             existingKVAR: existingKVAR,
@@ -204,6 +207,7 @@ public enum ShortCircuit {
         let kva = try Positive.require(kVA, name: "Transformer kVA")
         let volts = try Positive.require(secondaryVolts, name: "Secondary voltage")
         let z = try Positive.require(impedancePercent, name: "Impedance %")
+        guard system != .dc else { throw CalcError.outOfRange("Transformer secondary fault current requires an AC system.") }
 
         let fla = (kva * 1000) / (volts * system.phaseMultiplier)
         let multiplier = 100 / z

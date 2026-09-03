@@ -25,6 +25,15 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Wire Size & Ampacity (310.16 75 °C)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
+- Reactance & Resonance (series Z / LC Q and bandwidth)
+- Power Factor Correction (kVAR to a target PF, plus bank capacitance)
+- Short-Circuit Current (infinite-bus secondary from kVA, V, %Z)
+- Circular Mils (diameter / CM / in²)
+- Load & Demand Factors
+- Panel Directory (paste or on-device OCR of a schedule / sticker into circuit rows)
+- Signal Scaling (4–20 mA ↔ EU, linear or √)
+- Modbus Address (PDU offset, entity, 40001 / 400001, function code)
+- PLC Timer Preset (TON/TOF counts at a timebase)
 - Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
 
 ## Homework calculators
