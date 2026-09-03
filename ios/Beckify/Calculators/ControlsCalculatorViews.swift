@@ -4,7 +4,7 @@ import BeckifyMath
 // MARK: - Signal scaling
 
 struct SignalScalingView: View {
-    enum Direction: String, CaseIterable, Identifiable {
+    enum Direction: String, CaseIterable, Identifiable, Sendable {
         case toEngineering = "Raw → EU"
         case toRaw = "EU → raw"
         var id: String { rawValue }
@@ -25,6 +25,11 @@ struct SignalScalingView: View {
         }
     }
 
+    private struct CommittedScaling: Equatable, Sendable {
+        var result: SignalScalingResult
+        var direction: Direction
+    }
+
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.signalScaling, "direction", default: Direction.toEngineering) private var direction
     @StoredChoice(.signalScaling, "curve", default: SignalCurve.linear) private var curve
@@ -35,7 +40,7 @@ struct SignalScalingView: View {
     @StoredInput(.signalScaling, "euMin", default: "0") private var euMin
     @StoredInput(.signalScaling, "euMax", default: "150") private var euMax
     @StoredInput(.signalScaling, "jobName", default: "Signal scaling") private var jobName
-    @State private var session = ExplicitCalculationState<SignalScalingResult>()
+    @State private var session = ExplicitCalculationState<CommittedScaling>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -116,7 +121,8 @@ struct SignalScalingView: View {
                 ErrorText(message: error.message)
             }
 
-            if let r = session.displayedResult {
+            if let committed = session.displayedResult {
+                let r = committed.result
                 if !session.isStale,
                    !r.isLiveZeroFault,
                    let rawLo = rawMin.parsedDouble,
@@ -150,7 +156,7 @@ struct SignalScalingView: View {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .signalScaling,
-                        inputs: ["dir": direction.rawValue, "curve": curve.displayName, "in": value, "raw": "\(rawMin)–\(rawMax)", "EU": "\(euMin)–\(euMax)"],
+                        inputs: ["dir": committed.direction.rawValue, "curve": curve.displayName, "in": value, "raw": "\(rawMin)–\(rawMax)", "EU": "\(euMin)–\(euMax)"],
                         outputs: ["EU": Format.number(r.engineeringValue, digits: 4), "raw": Format.number(r.rawValue, digits: 4)]
                     ))
                 }
@@ -164,8 +170,9 @@ struct SignalScalingView: View {
 
     private func calculate() {
         session.calculate {
+            let result: SignalScalingResult
             if direction == .toEngineering {
-                return try SignalScaling.toEngineering(
+                result = try SignalScaling.toEngineering(
                     raw: value.parsedDouble ?? .nan,
                     rawMin: rawMin.parsedDouble ?? .nan,
                     rawMax: rawMax.parsedDouble ?? .nan,
@@ -174,15 +181,17 @@ struct SignalScalingView: View {
                     curve: curve,
                     detectLiveZeroFault: detectLiveZeroFault
                 )
+            } else {
+                result = try SignalScaling.toRaw(
+                    engineering: value.parsedDouble ?? .nan,
+                    rawMin: rawMin.parsedDouble ?? .nan,
+                    rawMax: rawMax.parsedDouble ?? .nan,
+                    engineeringMin: euMin.parsedDouble ?? .nan,
+                    engineeringMax: euMax.parsedDouble ?? .nan,
+                    curve: curve
+                )
             }
-            return try SignalScaling.toRaw(
-                engineering: value.parsedDouble ?? .nan,
-                rawMin: rawMin.parsedDouble ?? .nan,
-                rawMax: rawMax.parsedDouble ?? .nan,
-                engineeringMin: euMin.parsedDouble ?? .nan,
-                engineeringMax: euMax.parsedDouble ?? .nan,
-                curve: curve
-            )
+            return CommittedScaling(result: result, direction: direction)
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
             successTick += 1
@@ -199,12 +208,19 @@ struct SignalScalingView: View {
     }
 
     private var substituted: String? {
-        guard let r = session.displayedResult else { return nil }
-        return "\(Format.number(r.rawValue, digits: 3)) raw  →  \(Format.number(r.engineeringValue, digits: 3)) EU  (\(Format.number(r.percentOfSpan, digits: 1)) %)"
+        guard let committed = session.displayedResult else { return nil }
+        let r = committed.result
+        let engineering = Format.number(r.engineeringValue, digits: 3)
+        let raw = Format.number(r.rawValue, digits: 3)
+        let pct = Format.number(r.percentOfSpan, digits: 1)
+        let arrow = committed.direction == .toEngineering
+            ? "\(raw) raw  →  \(engineering) EU"
+            : "\(engineering) EU  →  \(raw) raw"
+        return "\(arrow)  (\(pct) %)"
     }
 
     private var sticky: String? {
-        guard let r = session.displayedResult else { return nil }
+        guard let r = session.displayedResult?.result else { return nil }
         return "\(Format.number(r.engineeringValue, digits: 3)) EU  ·  \(Format.number(r.rawValue, digits: 3)) raw"
     }
 }
