@@ -368,6 +368,10 @@ a.nav-ext:hover {
   margin-top: 5px;
   letter-spacing: 0.01em;
 }
+.section-header a,
+.note a {
+  color: var(--violet);
+}
 
 /* ── Card grid ── */
 /* min() keeps the track from ever being wider than the container, so a narrow
@@ -511,6 +515,7 @@ select option { background: #0d0e1f; color: var(--fg); }
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
+  text-decoration: none;
   transition: all 0.15s ease;
   margin-top: 4px;
 }
