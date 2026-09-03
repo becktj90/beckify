@@ -195,7 +195,7 @@ enum Format {
         let absv = abs(value)
         if absv >= 1_000_000 { return String(format: "%.2e", value) }
         if absv != 0 && absv < 0.001 { return String(format: "%.3e", value) }
-        var formatter = NumberFormatter()
+        let formatter = NumberFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 0
