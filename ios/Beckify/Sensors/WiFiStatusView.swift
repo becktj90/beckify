@@ -233,7 +233,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 guard !Task.isCancelled else { break }
-                await self?.fetchNetwork()
+                self?.fetchNetwork()
             }
         }
     }

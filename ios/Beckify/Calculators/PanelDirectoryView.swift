@@ -2,7 +2,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 import ImageIO
-import Vision
+@preconcurrency import Vision
 import BeckifyMath
 
 /// Paste or OCR a panel schedule / directory sticker into circuit rows.
@@ -265,20 +265,22 @@ struct PanelDirectoryView: View {
         let orientation = Self.cgImageOrientation(from: uiImage.imageOrientation)
 
         return try await withCheckedThrowingContinuation { continuation in
-            let request = VNRecognizeTextRequest { request, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
-                let lines = observations.compactMap { $0.topCandidates(1).first?.string }
-                continuation.resume(returning: lines.joined(separator: "\n"))
-            }
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = false
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
+            // Built inside the dispatched closure, not captured into it — Vision's
+            // request/handler types predate Swift concurrency and aren't Sendable.
             DispatchQueue.global(qos: .userInitiated).async {
+                let request = VNRecognizeTextRequest { request, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+                    let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
+                    let lines = observations.compactMap { $0.topCandidates(1).first?.string }
+                    continuation.resume(returning: lines.joined(separator: "\n"))
+                }
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection = false
+
+                let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
                 do {
                     try handler.perform([request])
                 } catch {

@@ -110,7 +110,7 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: self?.publishNanos ?? 250_000_000)
                 guard !Task.isCancelled else { break }
-                await self?.flushSightings()
+                self?.flushSightings()
             }
         }
     }
