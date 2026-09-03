@@ -40,7 +40,10 @@ struct SignalScalingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var inputFingerprint: String {
-        "\(direction)|\(curve)|\(detectLiveZeroFault)|\(value)|\(rawMin)|\(rawMax)|\(euMin)|\(euMax)"
+        // Live-zero detection only affects toEngineering; ignore it for toRaw so
+        // toggling the control does not stale an unchanged reverse result.
+        let liveZeroKey = direction == .toEngineering ? "\(detectLiveZeroFault)" : "ignored"
+        return "\(direction)|\(curve)|\(liveZeroKey)|\(value)|\(rawMin)|\(rawMax)|\(euMin)|\(euMax)"
     }
 
     var body: some View {
@@ -88,7 +91,9 @@ struct SignalScalingView: View {
             NumberField(title: "Raw max", unit: "raw", text: $rawMax, onSubmit: calculate)
             NumberField(title: "EU min", unit: "EU", text: $euMin, onSubmit: calculate)
             NumberField(title: "EU max", unit: "EU", text: $euMax, onSubmit: calculate)
-            Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
+            if direction == .toEngineering {
+                Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
+            }
 
             CalculatorActionBar(
                 onCalculate: calculate,
