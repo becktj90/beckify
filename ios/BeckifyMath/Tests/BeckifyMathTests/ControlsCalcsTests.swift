@@ -70,14 +70,50 @@ final class SignalScalingTests: XCTestCase {
             rawMin: 4,
             rawMax: 20,
             engineeringMin: 0,
-            engineeringMax: 150
+            engineeringMax: 150,
+            detectLiveZeroFault: true
         )
         XCTAssertTrue(result.isLiveZeroFault)
+    }
+
+    func testPositiveRawRangeIsNotImplicitlyLiveZero() throws {
+        let result = try SignalScaling.toEngineering(
+            raw: 99,
+            rawMin: 100,
+            rawMax: 138.51,
+            engineeringMin: 0,
+            engineeringMax: 100
+        )
+
+        XCTAssertFalse(result.isLiveZeroFault)
     }
 
     func testZeroRawSpanThrows() {
         XCTAssertThrowsError(try SignalScaling.toEngineering(
             raw: 12, rawMin: 4, rawMax: 4, engineeringMin: 0, engineeringMax: 150
+        ))
+        XCTAssertThrowsError(try SignalScaling.toRaw(
+            engineering: 75, rawMin: 4, rawMax: 4, engineeringMin: 0, engineeringMax: 150
+        ))
+    }
+
+    func testReverseScalingRejectsNonFiniteEngineeringRange() {
+        XCTAssertThrowsError(try SignalScaling.toRaw(
+            engineering: 75, rawMin: 4, rawMax: 20, engineeringMin: .nan, engineeringMax: 150
+        ))
+        XCTAssertThrowsError(try SignalScaling.toRaw(
+            engineering: 75, rawMin: 4, rawMax: 20, engineeringMin: 0, engineeringMax: .infinity
+        ))
+    }
+
+    func testSquareRootScalingRejectsValuesBelowConfiguredRange() {
+        XCTAssertThrowsError(try SignalScaling.toEngineering(
+            raw: 3, rawMin: 4, rawMax: 20,
+            engineeringMin: 0, engineeringMax: 100, curve: .squareRoot
+        ))
+        XCTAssertThrowsError(try SignalScaling.toRaw(
+            engineering: -1, rawMin: 4, rawMax: 20,
+            engineeringMin: 0, engineeringMax: 100, curve: .squareRoot
         ))
     }
 }
@@ -103,6 +139,28 @@ final class ModbusAddressTests: XCTestCase {
         let result = try ModbusAddress.fromDisplayAddress("400064", table: .holdingRegister)
         XCTAssertEqual(result.entityNumber, 64)
         XCTAssertEqual(result.pduOffset, 63)
+    }
+
+    func testDisplayAddressRequiresMatchingPrefixAndExactLength() {
+        XCTAssertThrowsError(try ModbusAddress.fromDisplayAddress("30001", table: .holdingRegister))
+        XCTAssertThrowsError(try ModbusAddress.fromDisplayAddress("4000001", table: .holdingRegister))
+        XCTAssertThrowsError(try ModbusAddress.fromDisplayAddress("1", table: .holdingRegister))
+    }
+
+    func testExplicitFiveDigitEntityNumberIsNotTruncated() throws {
+        let result = try ModbusAddress.fromEntityNumber(65_536, table: .holdingRegister)
+
+        XCTAssertEqual(result.pduOffset, 65_535)
+        XCTAssertEqual(result.entityNumber, 65_536)
+        XCTAssertNil(result.fiveDigit)
+        XCTAssertEqual(result.sixDigit, "465536")
+    }
+
+    func testFiveDigitNotationIsUnavailableWhenEntityDoesNotFit() throws {
+        let result = try ModbusAddress.fromPDUOffset(9_999, table: .holdingRegister)
+
+        XCTAssertNil(result.fiveDigit)
+        XCTAssertEqual(result.sixDigit, "410000")
     }
 
     func testCoilAndDiscreteInputFunctionCodes() throws {
@@ -156,5 +214,13 @@ final class PLCTimerTests: XCTestCase {
         XCTAssertThrowsError(try PLCTimer.preset(seconds: 0, timebaseSeconds: 0.01))
         XCTAssertThrowsError(try PLCTimer.preset(seconds: 5, timebaseSeconds: 0))
         XCTAssertThrowsError(try PLCTimer.seconds(preset: -1, timebaseSeconds: 0.1))
+    }
+
+    func testIntegerBoundaryAndDurationOverflowThrow() {
+        XCTAssertThrowsError(try PLCTimer.preset(seconds: Double(Int.max), timebaseSeconds: 1))
+        XCTAssertThrowsError(try PLCTimer.seconds(
+            preset: Int.max,
+            timebaseSeconds: Double.greatestFiniteMagnitude
+        ))
     }
 }

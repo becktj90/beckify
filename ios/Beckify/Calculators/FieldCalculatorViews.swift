@@ -235,7 +235,9 @@ struct ShortCircuitView: View {
         ) {
             ShowWorkCard(
                 toolID: .shortCircuit,
-                symbolic: "I_FLA = kVA·1000 / (√3·V)    I_SC = I_FLA × 100/%Z",
+                symbolic: system == .threePhase
+                    ? "I_FLA = kVA·1000 / (√3·V)    I_SC = I_FLA × 100/%Z"
+                    : "I_FLA = kVA·1000 / V    I_SC = I_FLA × 100/%Z",
                 substituted: substituted,
                 meaning: "Assumes an infinite source behind the transformer, so this is the worst case. Equipment interrupting ratings must exceed it."
             )

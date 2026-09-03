@@ -45,19 +45,23 @@ public enum SignalScaling {
         rawMax: Double,
         engineeringMin: Double,
         engineeringMax: Double,
-        curve: SignalCurve = .linear
+        curve: SignalCurve = .linear,
+        detectLiveZeroFault: Bool = false
     ) throws -> SignalScalingResult {
         guard raw.isFinite, rawMin.isFinite, rawMax.isFinite else { throw CalcError.missing("signal values") }
         guard engineeringMin.isFinite, engineeringMax.isFinite else { throw CalcError.missing("engineering range") }
         guard rawMax != rawMin else { throw CalcError.outOfRange("Raw span cannot be zero.") }
 
         var fraction = (raw - rawMin) / (rawMax - rawMin)
-        // A 4-20 mA loop reading meaningfully under 4 mA is a broken loop, not
-        // a negative process value.
-        let liveZeroFault = rawMin > 0 && raw < rawMin - (rawMax - rawMin) * 0.01
+        // Live-zero semantics are opt-in because an arbitrary positive raw
+        // range (for example, RTD resistance) is not necessarily a current loop.
+        let liveZeroFault = detectLiveZeroFault && raw < rawMin - abs(rawMax - rawMin) * 0.01
 
         if curve == .squareRoot {
-            fraction = fraction > 0 ? fraction.squareRoot() : 0
+            guard fraction >= 0 else {
+                throw CalcError.outOfRange("Square-root scaling requires a raw value at or above the raw minimum.")
+            }
+            fraction = fraction.squareRoot()
         }
 
         let value = engineeringMin + fraction * (engineeringMax - engineeringMin)
@@ -82,11 +86,16 @@ public enum SignalScaling {
         curve: SignalCurve = .linear
     ) throws -> SignalScalingResult {
         guard engineering.isFinite, rawMin.isFinite, rawMax.isFinite else { throw CalcError.missing("signal values") }
+        guard engineeringMin.isFinite, engineeringMax.isFinite else { throw CalcError.missing("engineering range") }
+        guard rawMax != rawMin else { throw CalcError.outOfRange("Raw span cannot be zero.") }
         guard engineeringMax != engineeringMin else { throw CalcError.outOfRange("Engineering span cannot be zero.") }
 
         var fraction = (engineering - engineeringMin) / (engineeringMax - engineeringMin)
         if curve == .squareRoot {
-            fraction = fraction > 0 ? fraction * fraction : 0
+            guard fraction >= 0 else {
+                throw CalcError.outOfRange("Square-root scaling requires an engineering value at or above the engineering minimum.")
+            }
+            fraction *= fraction
         }
 
         let raw = rawMin + fraction * (rawMax - rawMin)
@@ -143,7 +152,7 @@ public struct ModbusAddressResult: Equatable, Sendable {
     public var table: ModbusTable
     public var pduOffset: Int
     public var entityNumber: Int
-    public var fiveDigit: String
+    public var fiveDigit: String?
     public var sixDigit: String
     public var readFunctionCode: Int
 
@@ -151,7 +160,7 @@ public struct ModbusAddressResult: Equatable, Sendable {
         table: ModbusTable,
         pduOffset: Int,
         entityNumber: Int,
-        fiveDigit: String,
+        fiveDigit: String?,
         sixDigit: String,
         readFunctionCode: Int
     ) {
@@ -178,30 +187,32 @@ public enum ModbusAddress {
             table: table,
             pduOffset: offset,
             entityNumber: entity,
-            fiveDigit: "\(table.prefix)\(String(format: "%04d", entity))",
+            fiveDigit: entity <= 9_999 ? "\(table.prefix)\(String(format: "%04d", entity))" : nil,
             sixDigit: "\(table.prefix)\(String(format: "%05d", entity))",
             readFunctionCode: table.readFunctionCode
         )
     }
 
-    /// Accepts "40001", "400001", or a bare entity number.
+    /// Accepts an exact five- or six-digit display address whose prefix agrees
+    /// with `table`. Use `fromEntityNumber(_:table:)` for an unprefixed entity.
     public static func fromDisplayAddress(_ text: String, table: ModbusTable) throws -> ModbusAddressResult {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, trimmed.allSatisfy({ $0.isNumber }) else {
             throw CalcError.missing("a numeric address")
         }
-
-        var entity: Int
-        if trimmed.count >= 6, let value = Int(trimmed.dropFirst()) {
-            entity = value
-        } else if trimmed.count == 5, let value = Int(trimmed.dropFirst()) {
-            entity = value
-        } else if let value = Int(trimmed) {
-            entity = value
-        } else {
-            throw CalcError.missing("a numeric address")
+        guard trimmed.count == 5 || trimmed.count == 6 else {
+            throw CalcError.outOfRange("Display addresses must contain exactly 5 or 6 digits.")
         }
+        guard let prefix = trimmed.first?.wholeNumberValue, prefix == table.prefix else {
+            throw CalcError.outOfRange("Address prefix does not match the selected Modbus table.")
+        }
+        guard let entity = Int(trimmed.dropFirst()) else { throw CalcError.missing("a numeric address") }
 
+        return try fromEntityNumber(entity, table: table)
+    }
+
+    /// Converts an explicit, unprefixed one-based entity number.
+    public static func fromEntityNumber(_ entity: Int, table: ModbusTable) throws -> ModbusAddressResult {
         guard entity >= 1 else { throw CalcError.outOfRange("Entity numbers start at 1.") }
         return try fromPDUOffset(entity - 1, table: table)
     }
@@ -241,12 +252,12 @@ public enum PLCTimer {
 
         let exact = target / base
         let rounded = exact.rounded()
-        guard rounded.isFinite, rounded >= 0, rounded <= Double(Int.max) else {
+        guard rounded.isFinite, rounded >= 0, let preset = Int(exactly: rounded) else {
             throw CalcError.outOfRange("Preset is out of range for this timebase.")
         }
 
-        let preset = Int(rounded)
         let actual = Double(preset) * base
+        guard actual.isFinite else { throw CalcError.outOfRange("Timed duration is too large.") }
         return TimerPresetResult(
             preset: preset,
             actualSeconds: actual,
@@ -261,6 +272,7 @@ public enum PLCTimer {
         guard preset >= 0 else { throw CalcError.nonPositive("Preset") }
         let base = try Positive.require(timebaseSeconds, name: "Timebase")
         let actual = Double(preset) * base
+        guard actual.isFinite else { throw CalcError.outOfRange("Timed duration is too large.") }
         return TimerPresetResult(
             preset: preset,
             actualSeconds: actual,

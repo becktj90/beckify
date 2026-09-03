@@ -307,7 +307,7 @@ enum ToolboxCatalog {
             kind: .calculator,
             title: "Signal Scaling",
             subtitle: "4–20 mA to engineering units and back. Linear or √ for DP flow.",
-            symbol: "slider.horizontal.below.square.filled.and.square",
+            symbol: "bolt.trianglebadge.exclamationmark",
             synonyms: ["4-20", "signal", "scaling", "process value", "transmitter", "dp flow", "square root", "live zero"]
         ),
         ToolDefinition(
