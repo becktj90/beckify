@@ -112,7 +112,8 @@ struct SignalScalingView: View {
             }
 
             if let r = session.displayedResult {
-                if !r.isLiveZeroFault,
+                if !session.isStale,
+                   !r.isLiveZeroFault,
                    let rawLo = rawMin.parsedDouble,
                    let rawHi = rawMax.parsedDouble,
                    let euLo = euMin.parsedDouble,
@@ -126,7 +127,6 @@ struct SignalScalingView: View {
                         engineeringValue: r.engineeringValue,
                         curve: curve
                     )
-                    .opacity(session.isStale ? 0.72 : 1)
                 }
                 if r.isLiveZeroFault {
                     ToolEmptyState(
@@ -374,7 +374,7 @@ struct PLCTimerView: View {
                         value: abs(r.errorSeconds) < 1e-9 ? "exact" : Format.time(abs(r.errorSeconds)),
                         tone: abs(r.errorSeconds) < 1e-9 ? Theme.good : Theme.warn
                     )
-                    ResultRow(label: "Timebase", value: base.rawValue)
+                    ResultRow(label: "Timebase", value: Format.time(r.timebaseSeconds))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
             }

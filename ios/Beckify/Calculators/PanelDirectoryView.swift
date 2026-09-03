@@ -238,20 +238,21 @@ struct PanelDirectoryView: View {
 
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
+                guard text == textBeforeRecognition else { return }
                 recognizeError = "Could not read that photo."
                 return
             }
             let recognized = try await Self.recognizeText(in: data)
+            guard text == textBeforeRecognition else { return }
             let trimmed = recognized.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.isEmpty {
                 recognizeError = "No text found in that photo. Try a sharper, flatter shot of the directory."
                 return
             }
-            // Do not clobber edits or clears made while OCR was running.
-            guard text == textBeforeRecognition else { return }
             text = trimmed
             session.markInputsChanged()
         } catch {
+            guard text == textBeforeRecognition else { return }
             recognizeError = "On-device recognition failed. Paste the text instead."
         }
     }
