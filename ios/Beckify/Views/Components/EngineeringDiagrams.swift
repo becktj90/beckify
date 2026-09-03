@@ -402,6 +402,7 @@ struct ShortCircuitDiagram: View {
     }
 }
 
+<<<<<<< HEAD
 // MARK: - Motor torque-speed curve
 
 struct MotorTorqueCurveChart: View {
@@ -625,6 +626,57 @@ struct BatteryBankChart: View {
             .chartYAxisLabel("Wh")
             .frame(height: 160)
             .accessibilityHidden(true)
+=======
+// MARK: - Ampacity derating waterfall
+
+struct AmpacityWaterfallDiagram: View {
+    let steps: [CalculationTraceStep]
+
+    private var summary: String {
+        let parts = steps.map { "\($0.title) \($0.displayValue)" }
+        return "Ampacity calculation stages: " + parts.joined(separator: ", then ")
+    }
+
+    var body: some View {
+        DiagramCard(title: "Ampacity waterfall", accessibilitySummary: summary) {
+            EngineeringDiagramFrame(summary: summary) {
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                        HStack(alignment: .firstTextBaseline, spacing: Theme.Space.sm) {
+                            Text("\(index + 1)")
+                                .font(.caption.monospacedDigit().weight(.bold))
+                                .foregroundStyle(Theme.accent)
+                                .frame(width: 18, alignment: .trailing)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(step.title)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Theme.foreground)
+                                if let note = step.note {
+                                    Text(note)
+                                        .font(.caption2)
+                                        .foregroundStyle(Theme.muted)
+                                }
+                            }
+                            Spacer(minLength: 8)
+                            Text(step.displayValue)
+                                .font(.subheadline.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(index == steps.count - 1 ? Theme.good : Theme.foreground)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(step.title): \(step.displayValue). \(step.note ?? "")")
+
+                        if index < steps.count - 1 {
+                            Image(systemName: "arrow.down")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(Theme.muted)
+                                .padding(.leading, 4)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+>>>>>>> ac3740d (feat(ios): professional ampacity derating and voltage-drop sizing)
         }
     }
 }
