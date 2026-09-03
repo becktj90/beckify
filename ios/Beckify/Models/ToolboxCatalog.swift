@@ -99,9 +99,9 @@ enum ToolboxCatalog {
             id: .conduitFill,
             kind: .calculator,
             title: "Conduit Fill",
-            subtitle: "THHN in EMT per Chapter 9 Table 1.",
+            subtitle: "Mixed-conductor raceway fill with code minimums and practical pull-planning recommendations.",
             symbol: "circle.hexagongrid.fill",
-            synonyms: ["conduit", "fill", "emt", "thhn", "raceway", "chapter 9", "40 percent", "annex c"]
+            synonyms: ["conduit", "fill", "emt", "thhn", "xhhw", "rhw", "raceway", "chapter 9", "40 percent", "annex c", "imc", "rmc", "pvc", "nipple"]
         ),
         ToolDefinition(
             id: .transformer,

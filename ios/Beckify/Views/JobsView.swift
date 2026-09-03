@@ -50,8 +50,28 @@ struct JobDetailView: View {
                 Text(ToolboxCatalog.tool(job.toolID).title)
             }
             Section("Inputs") {
-                ForEach(job.inputs.keys.sorted(), id: \.self) { key in
+                ForEach(job.inputs.keys.sorted().filter { $0 != "v2" }, id: \.self) { key in
                     LabeledContent(key, value: job.inputs[key] ?? "")
+                }
+                if job.inputs["v2"] != nil {
+                    LabeledContent("schedule", value: "Full mixed-conductor snapshot stored")
+                }
+            }
+            if job.toolID == .conduitFill {
+                Section {
+                    Button("Load into Conduit Fill") {
+                        if let blob = job.inputs["v2"], !blob.isEmpty {
+                            UserDefaults.standard.set(blob, forKey: ToolInputStore.key(.conduitFill, "pendingRestore"))
+                        } else {
+                            UserDefaults.standard.set(job.inputs["n"] ?? "", forKey: ToolInputStore.key(.conduitFill, "qty"))
+                            UserDefaults.standard.set(job.inputs["size"] ?? "", forKey: ToolInputStore.key(.conduitFill, "size"))
+                            UserDefaults.standard.set(job.inputs["emt"] ?? "", forKey: ToolInputStore.key(.conduitFill, "trade"))
+                            UserDefaults.standard.removeObject(forKey: ToolInputStore.key(.conduitFill, "schedule"))
+                        }
+                    }
+                    Text("Open Conduit Fill after loading. Legacy single-size THHN/EMT notes still restore.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
                 }
             }
             Section("Results") {

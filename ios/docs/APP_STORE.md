@@ -33,7 +33,7 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Ohm's Law
 • Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
 • Voltage drop with 3% / 5% informational checks and a 310.16 ampacity cross-check
-• Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
+• Conduit fill — mixed-conductor raceway fill with code minimums and practical pull-planning recommendations (NEC 2023 Chapter 9 Tables 1, 4, and 5)
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
 • 555 timer (astable and monostable)
 • Motor full-load current from NEC Tables 430.248 and 430.250

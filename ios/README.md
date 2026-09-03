@@ -19,7 +19,7 @@ ios/
 - Ohm's Law
 - Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
 - Voltage Drop (3% / 5% informational, 310.16 ampacity cross-check)
-- Conduit Fill (THHN / EMT, Chapter 9 Table 1)
+- Conduit Fill (mixed-conductor raceway fill, code minimums, and practical pull-planning recommendations)
 - Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
 - 555 Timer (astable / monostable)
 - Motor FLA (430.248 / 430.250)
