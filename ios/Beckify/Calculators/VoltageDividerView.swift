@@ -32,7 +32,7 @@ struct VoltageDividerView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -68,7 +68,7 @@ struct VoltageDividerView: View {
                     ResultRow(label: "R2", value: "\(Format.number(r.r2, digits: 3)) Ω", emphasis: true)
                     ResultRow(label: "I", value: Format.amps(r.current))
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
             case .idle:
                 ToolEmptyState(
                     title: "Enter divider values",

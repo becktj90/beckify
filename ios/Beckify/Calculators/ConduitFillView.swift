@@ -26,7 +26,7 @@ struct ConduitFillView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -61,7 +61,7 @@ struct ConduitFillView: View {
                         ResultRow(label: "Minimum EMT", value: "\(sug)\"", tone: Theme.warn)
                     }
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .conduitFill,

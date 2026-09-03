@@ -69,7 +69,7 @@ struct Timer555View: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -125,7 +125,7 @@ struct Timer555View: View {
             switch display {
             case .current(let output), .stale(let output):
                 resultCard(for: output)
-                SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(output) }
             case .idle:
                 ToolEmptyState(
                     title: "Enter R and C",

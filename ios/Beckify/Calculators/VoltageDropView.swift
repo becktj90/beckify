@@ -32,7 +32,7 @@ struct VoltageDropView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -93,16 +93,19 @@ struct VoltageDropView: View {
                         )
                     }
                 }
-                if let source = voltage.parsedDouble {
-                    VoltageDropRunView(sourceVolts: source, loadVolts: r.receivingVolts)
-                }
-                SaveJobBar(jobName: $jobName, canSave: true) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .voltageDrop,
-                        inputs: ["sys": system.displayName, "V": voltage, "I": current, "L": length, "size": size, "material": material.displayName],
-                        outputs: ["VD": Format.volts(r.dropVolts), "%": Format.percent(r.dropPercent)]
-                    ))
+                if case .current = display {
+                    VoltageDropRunView(
+                        sourceVolts: r.receivingVolts + r.dropVolts,
+                        loadVolts: r.receivingVolts
+                    )
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .voltageDrop,
+                            inputs: ["sys": system.displayName, "V": voltage, "I": current, "L": length, "size": size, "material": material.displayName],
+                            outputs: ["VD": Format.volts(r.dropVolts), "%": Format.percent(r.dropPercent)]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(

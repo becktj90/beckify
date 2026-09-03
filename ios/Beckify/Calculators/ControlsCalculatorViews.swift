@@ -53,7 +53,7 @@ struct SignalScalingView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -121,27 +121,29 @@ struct SignalScalingView: View {
                     ResultRow(label: "Raw", value: Format.number(r.rawValue, digits: 4), emphasis: true)
                     ResultRow(label: "Percent of span", value: Format.percent(r.percentOfSpan))
                 }
-                if let rawLo = rawMin.parsedDouble,
-                   let rawHi = rawMax.parsedDouble,
-                   let engLo = euMin.parsedDouble,
-                   let engHi = euMax.parsedDouble {
-                    SignalTransferCurveView(
-                        rawMin: rawLo,
-                        rawMax: rawHi,
-                        euMin: engLo,
-                        euMax: engHi,
-                        raw: r.rawValue,
-                        engineering: r.engineeringValue,
-                        squareRoot: curve == .squareRoot
-                    )
-                }
-                SaveJobBar(jobName: $jobName, canSave: true) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .signalScaling,
-                        inputs: ["dir": direction.rawValue, "curve": curve.displayName, "in": value, "raw": "\(rawMin)–\(rawMax)", "EU": "\(euMin)–\(euMax)"],
-                        outputs: ["EU": Format.number(r.engineeringValue, digits: 4), "raw": Format.number(r.rawValue, digits: 4)]
-                    ))
+                if case .current = display {
+                    if let rawLo = rawMin.parsedDouble,
+                       let rawHi = rawMax.parsedDouble,
+                       let engLo = euMin.parsedDouble,
+                       let engHi = euMax.parsedDouble {
+                        SignalTransferCurveView(
+                            rawMin: rawLo,
+                            rawMax: rawHi,
+                            euMin: engLo,
+                            euMax: engHi,
+                            raw: r.rawValue,
+                            engineering: r.engineeringValue,
+                            squareRoot: curve == .squareRoot
+                        )
+                    }
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .signalScaling,
+                            inputs: ["dir": direction.rawValue, "curve": curve.displayName, "in": value, "raw": "\(rawMin)–\(rawMax)", "EU": "\(euMin)–\(euMax)"],
+                            outputs: ["EU": Format.number(r.engineeringValue, digits: 4), "raw": Format.number(r.rawValue, digits: 4)]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(
@@ -336,7 +338,7 @@ struct PLCTimerView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -369,12 +371,14 @@ struct PLCTimerView: View {
                     )
                     ResultRow(label: "Timebase", value: base.rawValue)
                 }
-                TimerTraceView(
-                    preset: r.preset,
-                    actualSeconds: r.actualSeconds,
-                    targetSeconds: r.actualSeconds - r.errorSeconds,
-                    timebaseSeconds: r.timebaseSeconds
-                )
+                if case .current = display {
+                    TimerTraceView(
+                        preset: r.preset,
+                        actualSeconds: r.actualSeconds,
+                        targetSeconds: r.actualSeconds - r.errorSeconds,
+                        timebaseSeconds: r.timebaseSeconds
+                    )
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter time or preset",

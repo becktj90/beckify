@@ -41,7 +41,7 @@ struct ReactanceView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -75,8 +75,10 @@ struct ReactanceView: View {
             switch display {
             case .current(let output), .stale(let output):
                 ResultCard(copyText: sticky) { rows(for: output) }
-                diagrams(for: output)
-                SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+                if case .current = display {
+                    diagrams(for: output)
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Set R, L, and C",
@@ -142,7 +144,7 @@ struct ReactanceView: View {
         switch output {
         case .series(let r):
             PhasorDiagramView(
-                resistance: max(resistance.parsedDouble ?? 0, 0),
+                resistance: Self.committedResistance(for: r),
                 netReactance: r.netReactance.isFinite ? r.netReactance : 0
             )
         case .resonance(let r):
@@ -150,6 +152,13 @@ struct ReactanceView: View {
                 ResonanceCurveView(frequency: r.frequency, bandwidth: r.bandwidth)
             }
         }
+    }
+
+    /// Resistance implied by committed Z and X — never the live R field.
+    private static func committedResistance(for r: ReactanceResult) -> Double {
+        guard r.impedance.isFinite, r.netReactance.isFinite else { return 0 }
+        let rr = r.impedance * r.impedance - r.netReactance * r.netReactance
+        return rr > 0 ? rr.squareRoot() : 0
     }
 
     private var substituted: String? {
@@ -225,7 +234,7 @@ struct PowerFactorView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: {
@@ -260,25 +269,27 @@ struct PowerFactorView: View {
                     ResultRow(label: "New apparent", value: "\(Format.number(r.newKVA, digits: 2)) kVA")
                     ResultRow(label: "Bank capacitance", value: r.capacitance.isFinite ? "\(Format.number(r.capacitance * 1e6, digits: 2)) µF" : "—")
                 }
-                PowerTriangleView(
-                    realKW: kw.parsedDouble ?? 0,
-                    reactiveKVAR: r.existingKVAR,
-                    title: "Before",
-                    summary: "Power triangle before correction. Real \(kw) kW, reactive \(Format.number(r.existingKVAR, digits: 2)) kVAR."
-                )
-                PowerTriangleView(
-                    realKW: kw.parsedDouble ?? 0,
-                    reactiveKVAR: r.targetKVAR,
-                    title: "After",
-                    summary: "Power triangle after correction. Real \(kw) kW, reactive \(Format.number(r.targetKVAR, digits: 2)) kVAR."
-                )
-                SaveJobBar(jobName: $jobName, canSave: true) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .powerFactor,
-                        inputs: ["kW": kw, "PF1 %": existing, "PF2 %": target, "V": voltage, "system": system.displayName],
-                        outputs: ["kVAR": Format.number(r.correctionKVAR, digits: 2), "kVA": Format.number(r.newKVA, digits: 2)]
-                    ))
+                if case .current = display {
+                    PowerTriangleView(
+                        realKW: kw.parsedDouble ?? 0,
+                        reactiveKVAR: r.existingKVAR,
+                        title: "Before",
+                        summary: "Power triangle before correction. Real \(kw) kW, reactive \(Format.number(r.existingKVAR, digits: 2)) kVAR."
+                    )
+                    PowerTriangleView(
+                        realKW: kw.parsedDouble ?? 0,
+                        reactiveKVAR: r.targetKVAR,
+                        title: "After",
+                        summary: "Power triangle after correction. Real \(kw) kW, reactive \(Format.number(r.targetKVAR, digits: 2)) kVAR."
+                    )
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .powerFactor,
+                            inputs: ["kW": kw, "PF1 %": existing, "PF2 %": target, "V": voltage, "system": system.displayName],
+                            outputs: ["kVAR": Format.number(r.correctionKVAR, digits: 2), "kVA": Format.number(r.newKVA, digits: 2)]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(title: "Enter load and PF targets", detail: "Press Calculate to size the capacitor bank.", systemImage: "arrow.triangle.2.circlepath")
@@ -343,7 +354,7 @@ struct ShortCircuitView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: {
                         session.calculate(fingerprint: fingerprint) {
@@ -387,13 +398,15 @@ struct ShortCircuitView: View {
                     ResultRow(label: "Secondary FLA", value: Format.amps(r.fullLoadAmps))
                     ResultRow(label: "Multiplier", value: "×\(Format.number(r.multiplier, digits: 2))")
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .shortCircuit,
-                        inputs: ["kVA": kva, "V": volts, "%Z": impedance, "system": system.displayName],
-                        outputs: ["ISC": "\(Format.number(r.availableFaultAmps, digits: 0)) A", "FLA": Format.amps(r.fullLoadAmps)]
-                    ))
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .shortCircuit,
+                            inputs: ["kVA": kva, "V": volts, "%Z": impedance, "system": system.displayName],
+                            outputs: ["ISC": "\(Format.number(r.availableFaultAmps, digits: 0)) A", "FLA": Format.amps(r.fullLoadAmps)]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(title: "Enter transformer data", detail: "Calculate for the infinite-bus secondary fault current.", systemImage: "bolt.trianglebadge.exclamationmark")
@@ -518,7 +531,7 @@ struct LoadFactorsView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: {
                         session.calculate(fingerprint: fingerprint) {
@@ -562,19 +575,21 @@ struct LoadFactorsView: View {
                     ResultRow(label: "Diversity factor", value: r.diversityFactor.isFinite ? Format.number(r.diversityFactor, digits: 3) : "—")
                     ResultRow(label: "Capacity used", value: r.capacityUtilization.isFinite ? Format.percent(r.capacityUtilization * 100) : "—")
                 }
-                LoadFactorProfileView(
-                    connected: connected.parsedDouble ?? 0,
-                    demand: demand.parsedDouble ?? 0,
-                    average: average.parsedDouble ?? 0,
-                    capacity: capacity.parsedDouble ?? 0
-                )
-                SaveJobBar(jobName: $jobName, canSave: true) {
-                    jobs.save(SavedJob(
-                        name: jobName,
-                        toolID: .loadFactors,
-                        inputs: ["connected": connected, "demand": demand, "average": average],
-                        outputs: ["DF": Format.number(r.demandFactor, digits: 3)]
-                    ))
+                if case .current = display {
+                    LoadFactorProfileView(
+                        connected: connected.parsedDouble ?? 0,
+                        demand: demand.parsedDouble ?? 0,
+                        average: average.parsedDouble ?? 0,
+                        capacity: capacity.parsedDouble ?? 0
+                    )
+                    SaveJobBar(jobName: $jobName, canSave: true) {
+                        jobs.save(SavedJob(
+                            name: jobName,
+                            toolID: .loadFactors,
+                            inputs: ["connected": connected, "demand": demand, "average": average],
+                            outputs: ["DF": Format.number(r.demandFactor, digits: 3)]
+                        ))
+                    }
                 }
             case .idle:
                 ToolEmptyState(title: "Enter metered loads", detail: "Calculate demand, load, and diversity factors.", systemImage: "chart.bar.xaxis")

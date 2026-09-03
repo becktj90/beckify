@@ -44,7 +44,7 @@ struct ReceptacleSelectorView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -158,7 +158,7 @@ struct ReceptacleSelectorView: View {
                 }
                 catalogCard(shown)
                 rankedList(list)
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
                     save(list)
                 }
             case .idle:

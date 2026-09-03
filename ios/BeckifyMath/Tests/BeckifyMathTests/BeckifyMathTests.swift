@@ -309,6 +309,8 @@ final class MotorFLATests: XCTestCase {
 
     func testTable430_250And480MapsTo460() {
         XCTAssertEqual(MotorFLA.tableVoltage(forSystemVolts: 480, threePhase: true), "460")
+        XCTAssertNil(MotorFLA.tableVoltage(forSystemVolts: .nan, threePhase: true))
+        XCTAssertNil(MotorFLA.tableVoltage(forSystemVolts: .infinity, threePhase: false))
         XCTAssertEqual(MotorFLA.lookup(horsepower: "50", voltageColumn: "460", threePhase: true), 65)
         XCTAssertEqual(MotorFLA.conductorAmps(fla: 65), 81.25, accuracy: 1e-9)
     }

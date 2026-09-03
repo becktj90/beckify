@@ -22,7 +22,7 @@ struct WireAmpacityView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -52,7 +52,7 @@ struct WireAmpacityView: View {
                     ResultRow(label: "Smallest size", value: r.label, emphasis: true, tone: Theme.good)
                     ResultRow(label: "Ampacity 75 °C", value: Format.amps(Double(r.ampacity)))
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .wireAmpacity,

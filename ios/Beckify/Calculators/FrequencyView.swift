@@ -36,7 +36,7 @@ struct FrequencyView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -71,7 +71,7 @@ struct FrequencyView: View {
                     ResultRow(label: "Period", value: Format.time(r.period), emphasis: true)
                     ResultRow(label: "Wavelength", value: Format.meters(r.wavelength))
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
             case .idle:
                 ToolEmptyState(
                     title: "Enter a known value",

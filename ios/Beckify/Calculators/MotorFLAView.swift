@@ -38,7 +38,7 @@ struct MotorFLAView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -73,7 +73,7 @@ struct MotorFLAView: View {
                     ResultRow(label: "Table FLA", value: Format.amps(r.fla), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Conductor min (430.22)", value: Format.amps(MotorFLA.conductorAmps(fla: r.fla)))
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .motorFLA,
@@ -126,7 +126,7 @@ struct MotorFLAView: View {
 
     private func calculate() {
         session.calculate(fingerprint: fingerprint) {
-            guard let col = MotorFLA.tableVoltage(forSystemVolts: systemVolts.parsedDouble ?? 0, threePhase: threePhase),
+            guard let col = MotorFLA.tableVoltage(forSystemVolts: systemVolts.parsedDouble ?? .nan, threePhase: threePhase),
                   let fla = MotorFLA.lookup(horsepower: hp, voltageColumn: col, threePhase: threePhase) else {
                 throw CalcError.outOfRange(
                     "No table value for this HP / voltage combination. Pick a listed horsepower and a voltage this table actually has a column for."

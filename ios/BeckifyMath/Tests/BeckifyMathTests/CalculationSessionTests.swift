@@ -49,6 +49,19 @@ final class ExplicitCalculationSessionTests: XCTestCase {
 
         XCTAssertEqual(session.display(for: "bad"), .stale(Sample(value: 6)))
         XCTAssertEqual(session.lastError, CalcError.missing("current").message)
+        XCTAssertEqual(session.visibleError(for: "bad"), CalcError.missing("current").message)
+    }
+
+    func testRestoringCommittedFingerprintHidesStaleError() {
+        var session = ExplicitCalculationSession<Sample>()
+        session.calculate(fingerprint: "a") { Sample(value: 1) }
+        session.calculate(fingerprint: "b") {
+            throw CalcError.outOfRange("Need a positive load.")
+        }
+
+        XCTAssertEqual(session.display(for: "a"), .current(Sample(value: 1)))
+        XCTAssertNil(session.visibleError(for: "a"))
+        XCTAssertEqual(session.visibleError(for: "b"), "Need a positive load.")
     }
 
     func testFirstFailureWithoutPriorResultIsFailed() {

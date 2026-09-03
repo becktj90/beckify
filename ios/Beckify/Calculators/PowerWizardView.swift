@@ -36,7 +36,7 @@ struct PowerWizardView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -87,7 +87,7 @@ struct PowerWizardView: View {
                     }
                     ResultRow(label: "Shaft HP", value: "\(Format.number(r.horsepower, digits: 2)) HP")
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
             case .idle:
                 ToolEmptyState(
                     title: "Enter known power values",

@@ -43,6 +43,15 @@ public struct ExplicitCalculationSession<Value: Equatable & Sendable>: Equatable
         return .stale(committed)
     }
 
+    /// Error copy for the Calculate dock. Cleared when the on-screen inputs
+    /// again match the last successful fingerprint so a restored answer is not
+    /// paired with a leftover failure message.
+    public func visibleError(for fingerprint: String) -> String? {
+        guard let lastError else { return nil }
+        if fingerprint == committedFingerprint { return nil }
+        return lastError
+    }
+
     public var hasCommittedResult: Bool { committed != nil }
 
     public mutating func calculate(fingerprint: String, _ body: () throws -> Value) {

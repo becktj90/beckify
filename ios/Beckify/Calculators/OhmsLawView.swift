@@ -23,7 +23,7 @@ struct OhmsLawView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -53,7 +53,7 @@ struct OhmsLawView: View {
                     ResultRow(label: "Resistance", value: "\(Format.number(r.resistance, digits: 3)) Ω", emphasis: true)
                     ResultRow(label: "Power", value: "\(Format.watts(r.power))  (\(Format.number(r.power / 1000, digits: 3)) kW)", tone: Theme.good)
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) { save(r) }
             case .idle:
                 ToolEmptyState(
                     title: "Enter any two values",

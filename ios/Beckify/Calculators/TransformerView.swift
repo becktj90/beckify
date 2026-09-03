@@ -36,7 +36,7 @@ struct TransformerView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -102,7 +102,7 @@ struct TransformerView: View {
                     ResultRow(label: "Primary 125%", value: Format.amps(r.primaryConductorMinAmps))
                     ResultRow(label: "Secondary 125%", value: Format.amps(r.secondaryConductorMinAmps))
                 }
-                SaveJobBar(jobName: $jobName, canSave: true) {
+                SaveJobBar(jobName: $jobName, canSave: { if case .current = display { true } else { false } }()) {
                     var inputs: [String: String] = [
                         "system": system.displayName,
                         "loadKind": loadKind.rawValue,

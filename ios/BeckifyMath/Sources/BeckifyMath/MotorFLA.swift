@@ -63,6 +63,7 @@ public enum MotorFLA {
 
     /// Map a system voltage to the NEC table column. 480 V systems use the 460 V column.
     public static func tableVoltage(forSystemVolts volts: Double, threePhase: Bool) -> String? {
+        guard volts.isFinite else { return nil }
         let columns = threePhase ? threePhaseVoltages : singlePhaseVoltages
         let numeric = columns.compactMap { col -> (String, Double)? in
             Double(col).map { (col, $0) }

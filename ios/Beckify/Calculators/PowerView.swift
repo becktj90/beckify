@@ -39,7 +39,7 @@ struct PowerView: View {
             dock: {
                 CalculateActionBar(
                     isStale: isStale,
-                    errorMessage: session.lastError,
+                    errorMessage: session.visibleError(for: fingerprint),
                     successTick: successTick,
                     onCalculate: calculate,
                     onReset: reset
@@ -78,7 +78,9 @@ struct PowerView: View {
             switch display {
             case .current(let output), .stale(let output):
                 resultCard(for: output)
-                SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+                if case .current = display {
+                    SaveJobBar(jobName: $jobName, canSave: true) { save(output) }
+                }
             case .idle:
                 ToolEmptyState(
                     title: "Enter power inputs",
