@@ -57,15 +57,15 @@ struct UnitConverterView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.unitConverter, "category", default: .si) private var category
-    @StoredChoice(.unitConverter, "siKind", default: .volts) private var siKind
+    @StoredChoice(.unitConverter, "category", default: Category.si) private var category
+    @StoredChoice(.unitConverter, "siKind", default: SIKind.volts) private var siKind
     @StoredChoice(.unitConverter, "fromP", default: SIPrefix.kilo) private var fromP
     @StoredChoice(.unitConverter, "toP", default: SIPrefix.none) private var toP
     @StoredInput(.unitConverter, "value", default: "4.7") private var value
-    @StoredChoice(.unitConverter, "dbKind", default: .voltage) private var dbKind
+    @StoredChoice(.unitConverter, "dbKind", default: DBKind.voltage) private var dbKind
     @StoredToggle(.unitConverter, "dbModeRatio", default: true) private var dbModeRatio
-    @StoredChoice(.unitConverter, "tempDir", default: .cToF) private var tempDir
-    @StoredChoice(.unitConverter, "lengthDir", default: .ftToM) private var lengthDir
+    @StoredChoice(.unitConverter, "tempDir", default: TempDir.cToF) private var tempDir
+    @StoredChoice(.unitConverter, "lengthDir", default: LengthDir.ftToM) private var lengthDir
     @StoredInput(.unitConverter, "jobName", default: "Unit convert") private var jobName
 
     var resultText: Result<String, CalcError> {

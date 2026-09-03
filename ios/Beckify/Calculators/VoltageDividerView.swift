@@ -10,7 +10,7 @@ struct VoltageDividerView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.voltageDivider, "solve", default: .vout) private var solve
+    @StoredChoice(.voltageDivider, "solve", default: Solve.vout) private var solve
     @StoredInput(.voltageDivider, "vin", default: "12") private var vin
     @StoredInput(.voltageDivider, "vout", default: "6") private var vout
     @StoredInput(.voltageDivider, "r1", default: "10000") private var r1

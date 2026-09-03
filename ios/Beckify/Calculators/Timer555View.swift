@@ -34,12 +34,12 @@ struct Timer555View: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.timer555, "mode", default: .astable) private var mode
+    @StoredChoice(.timer555, "mode", default: Mode.astable) private var mode
     @StoredInput(.timer555, "r1", default: "10") private var r1
     @StoredInput(.timer555, "r2", default: "47") private var r2
     @StoredInput(.timer555, "c", default: "0.1") private var c
-    @StoredChoice(.timer555, "rUnit", default: .k) private var rUnit
-    @StoredChoice(.timer555, "cUnit", default: .uF) private var cUnit
+    @StoredChoice(.timer555, "rUnit", default: RUnit.k) private var rUnit
+    @StoredChoice(.timer555, "cUnit", default: CUnit.uF) private var cUnit
     @StoredToggle(.timer555, "diode", default: false) private var diode
     @StoredInput(.timer555, "jobName", default: "555 timer") private var jobName
 

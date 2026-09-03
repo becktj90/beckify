@@ -11,7 +11,7 @@ struct TransformerView: View {
 
     @EnvironmentObject private var jobs: JobStore
     @StoredChoice(.transformer, "system", default: ElectricalSystem.threePhase) private var system
-    @StoredChoice(.transformer, "loadKind", default: .kw) private var loadKind
+    @StoredChoice(.transformer, "loadKind", default: LoadKind.kw) private var loadKind
     @StoredInput(.transformer, "load", default: "38") private var load
     @StoredInput(.transformer, "pf", default: "90") private var pf
     @StoredInput(.transformer, "vp", default: "480") private var vp

@@ -12,7 +12,7 @@ struct PowerView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
-    @StoredChoice(.power, "mode", default: .ac3) private var mode
+    @StoredChoice(.power, "mode", default: Mode.ac3) private var mode
     @StoredInput(.power, "v", default: "480") private var v
     @StoredInput(.power, "i", default: "66.8") private var i
     @StoredInput(.power, "r", default: "10") private var r
