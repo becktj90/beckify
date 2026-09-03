@@ -212,7 +212,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
         appendSample(east: en.east, north: en.north, strength: strength)
     }
 
-    private func apply(_ path: NWPath) {
+    private func apply(_ path: Network.NWPath) {
         switch path.status {
         case .satisfied: status = "Satisfied"
         case .unsatisfied: status = "Unsatisfied"
