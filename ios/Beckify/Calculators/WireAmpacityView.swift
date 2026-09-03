@@ -103,7 +103,7 @@ struct WireAmpacityView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        return "Smallest \(material.displayName) at 75 °C with ampacity ≥ \(Format.amps(amps.parsedDouble ?? .nan)) is \(r.label) (\(r.ampacity) A)."
+        return "Smallest \(r.material.displayName) at 75 °C with ampacity ≥ \(Format.amps(r.loadAmps)) is \(r.label) (\(r.ampacity) A)."
     }
 
     private var sticky: String? {

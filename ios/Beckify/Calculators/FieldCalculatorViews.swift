@@ -249,14 +249,14 @@ struct PowerFactorView: View {
             }
 
             if let r = session.displayedResult {
-                let kwValue = kw.parsedDouble ?? 0
-                PowerTriangleDiagram(
-                    kw: kwValue,
-                    kvar: r.targetKVAR,
-                    kva: r.newKVA,
-                    title: "After correction"
-                )
-                .opacity(session.isStale ? 0.72 : 1)
+                if !session.isStale, let kwValue = kw.parsedDouble, kwValue > 0 {
+                    PowerTriangleDiagram(
+                        kw: kwValue,
+                        kvar: r.targetKVAR,
+                        kva: r.newKVA,
+                        title: "After correction"
+                    )
+                }
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Correction", value: "\(Format.number(r.correctionKVAR, digits: 2)) kVAR", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Existing reactive", value: "\(Format.number(r.existingKVAR, digits: 2)) kVAR")
@@ -308,7 +308,7 @@ struct PowerFactorView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        return "kVAR = \(Format.number(kw.parsedDouble ?? .nan, digits: 1)) × (tan θ₁ − tan θ₂) = \(Format.number(r.correctionKVAR, digits: 2)) kVAR"
+        return "\(r.formula)  →  \(Format.number(r.correctionKVAR, digits: 2)) kVAR"
     }
 
     private var sticky: String? {
@@ -575,12 +575,11 @@ struct LoadFactorsView: View {
             }
 
             if let r = session.displayedResult {
-                let avg = average.parsedDouble ?? 0
-                let peak = demand.parsedDouble ?? 0
-                let cap = capacity.parsedDouble ?? 0
-                if avg > 0, peak > 0, cap > 0 {
+                if !session.isStale,
+                   let avg = average.parsedDouble, avg > 0,
+                   let peak = demand.parsedDouble, peak > 0,
+                   let cap = capacity.parsedDouble, cap > 0 {
                     LoadFactorChart(average: avg, peak: peak, capacity: cap)
-                        .opacity(session.isStale ? 0.72 : 1)
                 }
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Demand factor", value: Format.number(r.demandFactor, digits: 3), emphasis: true, tone: Theme.good)
@@ -631,7 +630,7 @@ struct LoadFactorsView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        return "DF = \(demand) / \(connected) = \(Format.number(r.demandFactor, digits: 3))"
+        return "\(r.formula)  →  DF \(Format.number(r.demandFactor, digits: 3))"
     }
 
     private var sticky: String? {

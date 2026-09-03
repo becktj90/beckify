@@ -139,9 +139,9 @@ struct LEDRCView: View {
         guard let output = session.displayedResult else { return nil }
         switch output {
         case .led(let r):
-            return "R = (\(supply) − \(vf)) / \(current) = \(Format.number(r.resistance, digits: 3)) Ω"
+            return "\(r.formula)  →  \(Format.number(r.resistance, digits: 3)) Ω"
         case .rc(let r):
-            return "τ = \(resistance) × \(capacitance) = \(Format.time(r.tau))"
+            return "\(r.formula)  →  \(Format.time(r.tau))"
         }
     }
 

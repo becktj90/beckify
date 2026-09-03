@@ -81,7 +81,7 @@ struct PowerWizardView: View {
                     ResultRow(label: "Current", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
                     ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA")
                     ResultRow(label: "Real", value: "\(Format.number(r.kW, digits: 3)) kW")
-                    if system != .dc {
+                    if r.system != .dc {
                         ResultRow(label: "Reactive", value: "\(Format.number(r.kVAR, digits: 3)) kVAR")
                         ResultRow(label: "θ", value: "\(Format.number(r.phaseAngleDegrees, digits: 1)) °")
                     }

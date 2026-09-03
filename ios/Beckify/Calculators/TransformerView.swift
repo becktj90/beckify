@@ -177,11 +177,7 @@ struct TransformerView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        let v = Format.number(vp.parsedDouble ?? .nan, digits: 1)
-        if system == .threePhase {
-            return "Ip = \(Format.number(r.selectedKVA, digits: 1)) × 1000 ÷ (√3 × \(v)) = \(Format.amps(r.primaryFLA))"
-        }
-        return "Ip = \(Format.number(r.selectedKVA, digits: 1)) × 1000 ÷ \(v) = \(Format.amps(r.primaryFLA))"
+        return "\(r.formula)  →  Ip \(Format.amps(r.primaryFLA))  ·  Is \(Format.amps(r.secondaryFLA))"
     }
 
     private var sticky: String? {

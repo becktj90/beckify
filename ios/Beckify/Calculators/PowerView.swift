@@ -184,17 +184,11 @@ struct PowerView: View {
 
     private var substituted: String? {
         guard let output = session.displayedResult else { return nil }
-        switch (mode, output) {
-        case (.dcVI, .dc(let r)), (.dcIR, .dc(let r)), (.dcVR, .dc(let r)):
+        switch output {
+        case .dc(let r):
             return "\(r.formula) = \(Format.watts(r.power))"
-        case (.ac1, .ac(let r)), (.ac3, .ac(let r)):
-            let pfText = Format.number((pf.parsedDouble ?? .nan) / 100, digits: 2)
-            if mode == .ac3 {
-                return "kVA = √3 × \(Format.number(v.parsedDouble ?? .nan, digits: 2)) × \(Format.number(i.parsedDouble ?? .nan, digits: 2)) / 1000 = \(Format.number(r.kVA, digits: 3)) kVA    kW = kVA × \(pfText) = \(Format.number(r.kW, digits: 3)) kW"
-            }
-            return "kVA = \(Format.number(v.parsedDouble ?? .nan, digits: 2)) × \(Format.number(i.parsedDouble ?? .nan, digits: 2)) / 1000 = \(Format.number(r.kVA, digits: 3)) kVA    kW = kVA × \(pfText) = \(Format.number(r.kW, digits: 3)) kW"
-        default:
-            return nil
+        case .ac(let r):
+            return "\(r.formula)  →  \(Format.number(r.kVA, digits: 3)) kVA  ·  \(Format.number(r.kW, digits: 3)) kW"
         }
     }
 

@@ -6,6 +6,9 @@ struct MotorFLAView: View {
         var column: String
         var fla: Double
         var horsepower: String
+        var threePhase: Bool
+
+        var article: String { threePhase ? "430.250" : "430.248" }
     }
 
     @EnvironmentObject private var jobs: JobStore
@@ -79,7 +82,7 @@ struct MotorFLAView: View {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .motorFLA,
-                        inputs: ["HP": hp, "V": systemVolts, "table": threePhase ? "430.250" : "430.248"],
+                        inputs: ["HP": r.horsepower, "V": systemVolts, "table": r.article],
                         outputs: ["FLA": Format.amps(r.fla)]
                     ))
                 }
@@ -120,11 +123,11 @@ struct MotorFLAView: View {
 
     private func calculate() {
         session.calculate {
-            guard let col = MotorFLA.tableVoltage(forSystemVolts: systemVolts.parsedDouble ?? 0, threePhase: threePhase),
+            guard let col = MotorFLA.tableVoltage(forSystemVolts: systemVolts.parsedDouble ?? .nan, threePhase: threePhase),
                   let fla = MotorFLA.lookup(horsepower: hp, voltageColumn: col, threePhase: threePhase) else {
                 throw CalcError.missing("a listed HP / voltage combination")
             }
-            return LookupResult(column: col, fla: fla, horsepower: hp)
+            return LookupResult(column: col, fla: fla, horsepower: hp, threePhase: threePhase)
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
             successTick += 1
@@ -139,8 +142,7 @@ struct MotorFLAView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        let article = threePhase ? "430.250" : "430.248"
-        return "Table \(article), \(r.horsepower) HP @ \(r.column) V column = \(Format.amps(r.fla)). Conductor min = 1.25 × FLA = \(Format.amps(MotorFLA.conductorAmps(fla: r.fla)))."
+        return "Table \(r.article), \(r.horsepower) HP @ \(r.column) V column = \(Format.amps(r.fla)). Conductor min = 1.25 × FLA = \(Format.amps(MotorFLA.conductorAmps(fla: r.fla)))."
     }
 
     private var sticky: String? {

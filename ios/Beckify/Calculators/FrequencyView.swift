@@ -121,10 +121,7 @@ struct FrequencyView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        if mode == .lc {
-            return "f = 1 / (2π √(\(inductance) × \(capacitance))) = \(Format.frequency(r.frequency))"
-        }
-        return "T = 1 / \(Format.frequency(r.frequency)) = \(Format.time(r.period))    λ = c / f = \(Format.meters(r.wavelength))"
+        return "\(r.formula)  →  \(Format.frequency(r.frequency))  ·  \(Format.time(r.period))  ·  \(Format.meters(r.wavelength))"
     }
 
     private var sticky: String? {

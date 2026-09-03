@@ -6,6 +6,17 @@ struct SeriesParallelView: View {
         case resistors = "R"
         case capacitors = "C"
         var id: String { rawValue }
+
+        var unit: String { self == .resistors ? "Ω" : "F" }
+    }
+
+    private struct NetworkResult: Equatable {
+        var equivalent: Double
+        var part: Part
+        var kind: NetworkKind
+        var filledValues: [String]
+
+        var unit: String { part.unit }
     }
 
     @EnvironmentObject private var jobs: JobStore
@@ -16,11 +27,11 @@ struct SeriesParallelView: View {
     @StoredInput(.seriesParallel, "v3", default: "") private var v3
     @StoredInput(.seriesParallel, "v4", default: "") private var v4
     @StoredInput(.seriesParallel, "jobName", default: "Series / parallel") private var jobName
-    @State private var session = ExplicitCalculationState<Double>()
+    @State private var session = ExplicitCalculationState<NetworkResult>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var unit: String { part == .resistors ? "Ω" : "F" }
+    private var unit: String { part.unit }
 
     private var inputFingerprint: String { "\(part)|\(kind)|\(v1)|\(v2)|\(v3)|\(v4)" }
 
@@ -67,7 +78,12 @@ struct SeriesParallelView: View {
 
             if let eq = session.displayedResult {
                 ResultCard(copyText: copyText) {
-                    ResultRow(label: "Equivalent", value: "\(Format.number(eq, digits: 4)) \(unit)", emphasis: true, tone: Theme.good)
+                    ResultRow(
+                        label: "Equivalent",
+                        value: "\(Format.number(eq.equivalent, digits: 4)) \(eq.unit)",
+                        emphasis: true,
+                        tone: Theme.good
+                    )
                 }
                 .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(eq) }
@@ -93,6 +109,7 @@ struct SeriesParallelView: View {
     private func calculate() {
         session.calculate {
             var values: [Double] = []
+            var filled: [String] = []
             for (i, raw) in [v1, v2, v3, v4].enumerated() {
                 let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty { continue }
@@ -100,11 +117,15 @@ struct SeriesParallelView: View {
                     throw CalcError.outOfRange("Value \(i + 1) is not a number. Use digits, a decimal, or scientific notation like 1e-6.")
                 }
                 values.append(n)
+                filled.append(trimmed)
             }
+            let equivalent: Double
             if part == .resistors {
-                return try SeriesParallel.resistors(values, kind: kind)
+                equivalent = try SeriesParallel.resistors(values, kind: kind)
+            } else {
+                equivalent = try SeriesParallel.capacitors(values, kind: kind)
             }
-            return try SeriesParallel.capacitors(values, kind: kind)
+            return NetworkResult(equivalent: equivalent, part: part, kind: kind, filledValues: filled)
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
             successTick += 1
@@ -121,13 +142,13 @@ struct SeriesParallelView: View {
 
     private var substituted: String? {
         guard let eq = session.displayedResult else { return nil }
-        let filled = [v1, v2, v3, v4].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-        return "\(filled.joined(separator: kind == .series ? " + " : " ∥ "))  →  \(Format.number(eq, digits: 4)) \(unit)"
+        let joiner = eq.kind == .series ? " + " : " ∥ "
+        return "\(eq.filledValues.joined(separator: joiner))  →  \(Format.number(eq.equivalent, digits: 4)) \(eq.unit)"
     }
 
     private var sticky: String? {
         guard let eq = session.displayedResult else { return nil }
-        return "\(Format.number(eq, digits: 4)) \(unit)"
+        return "\(Format.number(eq.equivalent, digits: 4)) \(eq.unit)"
     }
 
     private var copyText: String? { sticky }
@@ -154,12 +175,19 @@ struct SeriesParallelView: View {
         v4 = ""
     }
 
-    private func save(_ eq: Double) {
+    private func save(_ eq: NetworkResult) {
         jobs.save(SavedJob(
             name: jobName,
             toolID: .seriesParallel,
-            inputs: ["part": part.rawValue, "kind": kind.rawValue, "1": v1, "2": v2, "3": v3, "4": v4],
-            outputs: ["eq": "\(Format.number(eq, digits: 4)) \(unit)"]
+            inputs: [
+                "part": eq.part.rawValue,
+                "kind": eq.kind.rawValue,
+                "1": v1,
+                "2": v2,
+                "3": v3,
+                "4": v4,
+            ],
+            outputs: ["eq": "\(Format.number(eq.equivalent, digits: 4)) \(eq.unit)"]
         ))
     }
 }

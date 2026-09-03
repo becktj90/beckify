@@ -200,9 +200,7 @@ struct SignalScalingView: View {
 
     private var sticky: String? {
         guard let r = session.displayedResult else { return nil }
-        return direction == .toEngineering
-            ? "\(Format.number(r.engineeringValue, digits: 3)) EU"
-            : "\(Format.number(r.rawValue, digits: 3)) raw"
+        return "\(Format.number(r.engineeringValue, digits: 3)) EU  ·  \(Format.number(r.rawValue, digits: 3)) raw"
     }
 }
 
@@ -413,7 +411,8 @@ struct PLCTimerView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        return "\(r.preset) × \(base.rawValue) = \(Format.time(r.actualSeconds))"
+        let tb = Format.number(r.timebaseSeconds, digits: 3)
+        return "\(r.preset) × \(tb) s = \(Format.time(r.actualSeconds))"
     }
 
     private var sticky: String? {

@@ -140,12 +140,7 @@ struct VoltageDropView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        let m = system == .threePhase ? "√3" : "2"
-        let k = Format.number(material.resistivityK, digits: 1)
-        let i = Format.number(current.parsedDouble ?? .nan, digits: 2)
-        let l = Format.number(length.parsedDouble ?? .nan, digits: 1)
-        let cm = NECTables.circularMils[size].map { Format.number($0, digits: 0) } ?? size
-        return "VD = (\(m) × \(k) × \(i) × \(l)) / \(cm) = \(Format.volts(r.dropVolts))  (\(Format.percent(r.dropPercent)))"
+        return "\(r.formula)  →  \(Format.volts(r.dropVolts))  (\(Format.percent(r.dropPercent)))"
     }
 
     private var sticky: String? {

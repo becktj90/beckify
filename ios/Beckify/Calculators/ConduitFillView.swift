@@ -51,11 +51,10 @@ struct ConduitFillView: View {
             }
 
             if let r = session.displayedResult {
-                let count = Int(qty.parsedDouble ?? 0)
                 ConduitFillDiagram(
                     fillPercent: r.actualFillPercent,
                     limitPercent: r.maxFillPercent,
-                    conductorCount: count
+                    conductorCount: r.conductorCount
                 )
                 .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: copyText) {
@@ -104,7 +103,7 @@ struct ConduitFillView: View {
 
     private var substituted: String? {
         guard let r = session.displayedResult else { return nil }
-        return "Fill % = (\(qty) × conductor area) / raceway area × 100 = \(Format.percent(r.actualFillPercent))  (limit \(Format.percent(r.maxFillPercent)))"
+        return "\(r.formula)  →  \(Format.percent(r.actualFillPercent))  (limit \(Format.percent(r.maxFillPercent)), \(r.conductorCount) conductors)"
     }
 
     private var sticky: String? {
