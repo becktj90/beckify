@@ -32,6 +32,7 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "emp-emc-shielding": ["emp", "emc", "hemp", "faraday", "shielding", "skin depth", "aperture", "cage", "esd", "61000", "62305"],
   "panel-power-study": ["panel schedule", "ocr", "breaker", "series", "poles", "circuit class", "main rating", "positions", "demand factor", "diversity factor"],
   "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
+  "analog-design-workbench": ["op amp", "lead network", "lead compensator", "sallen key", "analog computer"],
   "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
   "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],
   "gaussian-beam": ["gaussian beam", "rayleigh range", "beam waist", "confocal", "saleh teich"],
@@ -91,7 +92,7 @@ const REFERENCE_DOCUMENTS: AssistantDocument[] = REFERENCE_TABLES.map(([slug, ti
 
 /** Pages outside the toolbox registry: the rest of the Beckify site. */
 const PAGE_DOCUMENTS: AssistantDocument[] = [
-  { id: "control-systems", title: "Control System Toolbox", description: "Interactive system modeling, Bode plots, root locus, PID tuning, LQR/LQG design, and MPC visualizers.", href: "/control-systems", tags: ["control systems", "bode", "root locus", "pid", "lqr", "kalman", "mpc", "state space"], concepts: ["feedback", "dynamics", "stability", "optimal control"], kind: "page" },
+  { id: "control-systems", title: "Control System Toolbox", description: "Undergraduate servo analysis: plant modeling, open- vs closed-loop P control, root locus, lead compensators, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, and state-feedback pole placement.", href: "/control-systems", tags: ["control systems", "bode", "root locus", "pid", "lqr", "kalman", "mpc", "state space", "lead compensator", "ziegler nichols", "anti-windup", "type number", "kv", "phase margin", "pole placement"], concepts: ["feedback", "dynamics", "stability", "optimal control", "compensator"], kind: "page" },
   { id: "projects", title: "Projects & Build Logs", description: "Hands-on engineering builds, including the Vespa P200E EV conversion.", href: "/projects", tags: ["build", "project", "vespa", "electric vehicle", "battery"], concepts: ["fabrication", "prototype", "engineering"], kind: "page" },
   { id: "vespa", title: "Vespa P200E EV Conversion", description: "A 72 V 20S10P electric Vespa build with a custom swingarm and hub motor.", href: "/projects/vespa-p200e", tags: ["vespa", "p200e", "72v", "20s10p", "hub motor", "swingarm"], concepts: ["electric vehicle", "battery", "fabrication"], kind: "page" },
   { id: "games", title: "Beckify Games", description: "Play Cosmic Cadet, Pup Planet, Finger Runner, Toot Troopers, New Glenn Runner, Apollo & Rocco Run, and other browser games.", href: "/games", tags: ["games", "cosmic cadet", "finger runner", "space shooter", "runner", "pup planet", "webgl", "toot troopers", "new glenn", "apollo rocco run"], concepts: ["arcade", "play", "webgl"], kind: "page" },

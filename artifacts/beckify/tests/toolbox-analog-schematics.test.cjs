@@ -17,7 +17,7 @@ assert.ok(A, 'AnalogSchematics is exported');
 // --- every topology and family draws a schematic and names a transfer fn ----
 const OP_AMPS = [
   'inverting', 'noninverting', 'difference', 'summing', 'transimpedance',
-  'integrator', 'differentiator', 'comparator', 'schmitt', 'instrumentation',
+  'integrator', 'firstorder', 'lead', 'differentiator', 'comparator', 'schmitt', 'instrumentation',
 ];
 const FILTERS = [
   'rc-low', 'rc-high', 'sk-low', 'sk-high', 'rlc-band', 'rlc-notch',
@@ -119,5 +119,8 @@ assert.ok(
   `sk-low substitutes ω₀² : ${skLow}`,
 );
 assert.ok(A.substituted('rc-low', 1000, 0.707, 1).includes('s'), 'first-order form is linear in s');
+
+assert.ok(A.opAmpTransfer('lead').h.includes('R1 C1'), 'lead names T = R1 C1');
+assert.ok(A.opAmpTransfer('firstorder').h.includes('Rf Cf'), 'first-order lag names Rf Cf');
 
 console.log('Analog schematics and transfer functions passed');

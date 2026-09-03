@@ -197,7 +197,7 @@
       <button class="nav-btn" data-target="sec-sp" data-keywords="#Electronics #Calculators series parallel resistance capacitance inductance">Resistance, C, L</button>
       <button class="nav-btn" data-target="sec-555" data-keywords="#Electronics #Calculators 555 timer ne555 astable monostable oscillator one shot duty cycle frequency pulse width rc">555 Timer</button>
       <button class="nav-btn" data-target="sec-digital" data-keywords="digital logic gates boolean expression truth table circuit simulator AND OR NOT XOR NAND NOR">Digital Logic Workbench</button>
-      <button class="nav-btn" data-target="sec-analog-design" data-keywords="op amp operational amplifier gain inverting non-inverting differential summing integrator differentiator comparator schmitt transimpedance instrumentation filter designer low pass high pass band pass notch all pass sallen key rlc">Analog Design Workbench</button>
+      <button class="nav-btn" data-target="sec-analog-design" data-keywords="op amp operational amplifier gain inverting non-inverting differential summing integrator differentiator comparator schmitt transimpedance instrumentation filter designer low pass high pass band pass notch all pass sallen key rlc lead lag compensator analog computer">Analog Design Workbench</button>
       <button class="nav-btn" data-target="sec-semiconductor-iv" data-keywords="semiconductor diode shockley BJT MOSFET NMOS I-V ebers moll square law Q-point device physics homework">Semiconductor I-V</button>
     </div>
     <div class="sidebar-section">
@@ -261,6 +261,11 @@
       <button class="nav-btn" data-target="sec-fiber-link" data-keywords="fiber optic numerical aperture NA acceptance angle link budget attenuation dB Palais photonics homework">Fiber Link / NA</button>
       <button class="nav-btn" data-target="sec-gaussian-beam" data-keywords="gaussian beam waist rayleigh range confocal spot size curvature TEM00 Saleh Teich photonics homework">Gaussian Beam</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
+    </div>
+    <!-- Control theory is the React page at /control-systems, not a toolbox calculator. Additive link only. -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">08 · Control theory</div>
+      <a class="nav-ext" href="/control-systems" data-keywords="control systems pid bode root locus lead compensator ziegler nichols pole placement servo analog computer">Control System Toolbox</a>
     </div>
   </nav>
 
@@ -449,6 +454,16 @@
           <div class="home-cat-header"><span class="home-cat-icon">🗂</span><span class="home-cat-name">Workspace</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-projects">Saved Jobs &amp; Settings</a></li>
+          </ul>
+        </div>
+
+        <!-- Control theory lives at /control-systems (React). Link only — not a toolbox calculator slug. -->
+        <div class="home-cat-card" style="--cat-color:#c4b5fd">
+          <div class="home-cat-header"><span class="home-cat-icon">🎛</span><span class="home-cat-name">Control theory</span></div>
+          <ul class="home-tool-list">
+            <li><a class="home-tool-link" href="/control-systems">Control System Toolbox</a></li>
+            <li><a class="home-tool-link" href="/control-systems">Plant model, PID, Bode, locus, lead</a></li>
+            <li><a class="home-tool-link" href="/toolbox/#sec-analog-design">Analog lead network (op-amp R/C)</a></li>
           </ul>
         </div>
 
@@ -1116,7 +1131,7 @@
     <section id="sec-analog-design" class="section">
       <div class="section-header">
         <h2>Analog Design Workbench</h2>
-        <p>Size common op-amp stages and explore practical analog-filter families with a live response plot.</p>
+        <p>Size common op-amp stages and explore practical analog-filter families with a live response plot. Includes a generic analog-computer lead network Gc = (Ts+1)/(αTs+1) from R/C.</p>
         <details class="section-info"><summary>ℹ More Info — Analog design</summary><div class="section-info-body">Ideal first-pass calculations only: verify supply range, input/output swing, gain-bandwidth, slew rate, noise, stability, component tolerance, source/load impedance, and the exact topology before building hardware.</div></details>
       </div>
       <div class="tabs analog-tabs" role="tablist" aria-label="Analog design tools">
@@ -1127,7 +1142,7 @@
         <div class="card-grid two-col">
           <div class="card"><div class="card-title">Op-amp topology</div><div class="card-body">
             <label for="ao_type">Calculator</label>
-            <select id="ao_type" onchange="renderOpAmpFields()"><option value="inverting">Inverting amplifier</option><option value="noninverting">Non-inverting amplifier</option><option value="difference">Difference amplifier</option><option value="summing">Inverting summer</option><option value="transimpedance">Transimpedance amplifier</option><option value="integrator">Integrator</option><option value="differentiator">Differentiator</option><option value="comparator">Comparator / reference</option><option value="schmitt">Non-inverting Schmitt trigger</option><option value="instrumentation">3-op-amp instrumentation amplifier</option></select>
+            <select id="ao_type" onchange="renderOpAmpFields()"><option value="inverting">Inverting amplifier</option><option value="noninverting">Non-inverting amplifier</option><option value="difference">Difference amplifier</option><option value="summing">Inverting summer</option><option value="transimpedance">Transimpedance amplifier</option><option value="integrator">Integrator</option><option value="firstorder">First-order lag</option><option value="lead">Lead network (Ts+1)/(αTs+1)</option><option value="differentiator">Differentiator</option><option value="comparator">Comparator / reference</option><option value="schmitt">Non-inverting Schmitt trigger</option><option value="instrumentation">3-op-amp instrumentation amplifier</option></select>
             <div id="ao_fields" class="analog-fields"></div><button class="btn" type="button" onclick="calcOpAmp()">Calculate stage</button>
           </div></div>
           <div class="card"><div class="card-title">Result</div><div class="card-body"><div id="ao_result" class="result" aria-live="polite">Choose a topology and calculate its ideal transfer relationship.</div></div></div>

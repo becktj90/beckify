@@ -31,7 +31,7 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
   { href: "/privacy", label: "Privacy", description: "Privacy policy for the Beckify iOS and iPadOS app.", icon: Shield, hue: HUES.violet },
   { href: "/toolbox/", label: "Toolbox", description: `${PUBLIC_CALCULATOR_COUNT} native EE calculators, organized by category.`, icon: Wrench, hue: HUES.aqua },
-  { href: "/control-systems", label: "Control System Toolbox", description: "Interactive modeling, Bode plots, PID tuning, LQR/LQG, and MPC visualizers.", icon: Zap, hue: HUES.violet },
+  { href: "/control-systems", label: "Control System Toolbox", description: "Plant modeling, open- vs closed-loop P, root locus, lead, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, pole placement.", icon: Zap, hue: HUES.violet },
   { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
   { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/projects/honda-xr650r", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },

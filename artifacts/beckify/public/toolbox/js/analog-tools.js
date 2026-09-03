@@ -22,6 +22,8 @@
     comparator: () => `<div class="input-group">${field('Signal input', 'ao_vin', 1, 'V')}${field('Reference threshold', 'ao_vref', 1.2, 'V')}</div>`,
     schmitt: () => `<div class="input-group">${field('High output rail', 'ao_vh', 5, 'V')}${field('Low output rail', 'ao_vl', 0, 'V')}</div><div class="input-group">${field('R top', 'ao_rf', 10000, 'Ω')}${field('R bottom', 'ao_rg', 10000, 'Ω')}</div>`,
     instrumentation: () => `<div class="input-group">${field('Differential input', 'ao_vin', 0.01, 'V')}${field('Gain resistor RG', 'ao_rg', 1000, 'Ω')}</div><div class="input-group single">${field('Internal gain constant', 'ao_k', 50000, 'Ω')}</div>`,
+    firstorder: () => `<div class="input-group">${field('Input voltage', 'ao_vin', 1, 'V')}${field('Input Rin', 'ao_rin', 10000, 'Ω')}</div><div class="input-group">${field('Feedback Rf', 'ao_rf', 10000, 'Ω')}${field('Feedback Cf', 'ao_cf', 0.0000001, 'F')}</div>`,
+    lead: () => `<div class="input-group">${field('Input R1', 'ao_rin', 20000, 'Ω')}${field('Input C1', 'ao_c1', 0.0000001, 'F')}</div><div class="input-group">${field('Feedback R2', 'ao_rf', 4700, 'Ω')}${field('Feedback C2', 'ao_c2', 0.0000001, 'F')}</div>`,
   };
   function renderOpAmpSchematic(type) {
     const host = $('ao_schematic');
@@ -42,7 +44,7 @@
   window.calcOpAmp = function () {
     const host = $('ao_result'); host.textContent = ''; const type = $('ao_type').value; const n = (id) => num(id);
     const Rf = n('ao_rf'), Rin = n('ao_rin'), Rg = n('ao_rg'), Vin = n('ao_vin');
-    const required = { inverting: [Vin, Rin, Rf], noninverting: [Vin, Rg, Rf], difference: [n('ao_v1'), n('ao_v2'), Rin, Rf], summing: [n('ao_v1'), n('ao_v2'), n('ao_r1'), n('ao_r2'), Rf], transimpedance: [n('ao_iin'), Rf, n('ao_cf')], integrator: [Vin, Rin, n('ao_cf')], differentiator: [Vin, Rf, n('ao_cf'), n('ao_freq')], comparator: [Vin, n('ao_vref')], schmitt: [n('ao_vh'), Rf, Rg], instrumentation: [Vin, Rg, n('ao_k')] };
+    const required = { inverting: [Vin, Rin, Rf], noninverting: [Vin, Rg, Rf], difference: [n('ao_v1'), n('ao_v2'), Rin, Rf], summing: [n('ao_v1'), n('ao_v2'), n('ao_r1'), n('ao_r2'), Rf], transimpedance: [n('ao_iin'), Rf, n('ao_cf')], integrator: [Vin, Rin, n('ao_cf')], differentiator: [Vin, Rf, n('ao_cf'), n('ao_freq')], comparator: [Vin, n('ao_vref')], schmitt: [n('ao_vh'), Rf, Rg], instrumentation: [Vin, Rg, n('ao_k')], firstorder: [Vin, Rin, Rf, n('ao_cf')], lead: [Rin, n('ao_c1'), Rf, n('ao_c2')] };
     if (!required[type].every(ok)) { text(host, 'Enter positive values for every active field.'); return; }
     host.className = 'result show';
     if (type === 'inverting') { const g = -Rf / Rin; row(host, 'Ideal gain', value(g) + ' V/V', true); row(host, 'Output', value(g * Vin) + ' V'); row(host, 'Relationship', 'Vout = −(Rf / Rin) Vin'); }
@@ -54,7 +56,29 @@
     else if (type === 'differentiator') { const g = 2 * Math.PI * n('ao_freq') * Rf * n('ao_cf'); row(host, 'Magnitude at frequency', value(g) + ' V/V', true); row(host, 'Output amplitude', value(g * Vin) + ' V'); row(host, 'Relationship', '|H| = 2πfRfC'); }
     else if (type === 'comparator') { row(host, 'Decision', Vin >= n('ao_vref') ? 'HIGH output state' : 'LOW output state', true); row(host, 'Threshold', value(n('ao_vref')) + ' V'); row(host, 'Note', 'Add hysteresis for noisy or slowly crossing inputs.'); }
     else if (type === 'schmitt') { const b = Rg / (Rf + Rg); row(host, 'Upper threshold', value(b * n('ao_vh')) + ' V', true); row(host, 'Lower threshold', value(b * n('ao_vl')) + ' V'); row(host, 'Hysteresis width', value(b * (n('ao_vh') - n('ao_vl'))) + ' V'); }
-    else { const gain = 1 + n('ao_k') / Rg; row(host, 'Instrumentation gain', value(gain) + ' V/V', true); row(host, 'Output differential term', value(gain * Vin) + ' V'); row(host, 'Relationship', 'Vout = (1 + 50k/RG)(V₂ − V₁) + Vref'); }
+    else if (type === 'instrumentation') { const gain = 1 + n('ao_k') / Rg; row(host, 'Instrumentation gain', value(gain) + ' V/V', true); row(host, 'Output differential term', value(gain * Vin) + ' V'); row(host, 'Relationship', 'Vout = (1 + 50k/RG)(V₂ − V₁) + Vref'); }
+    if (type === 'firstorder') {
+      const tau = Rf * n('ao_cf');
+      const g = -Rf / Rin;
+      row(host, 'DC gain', value(g) + ' V/V', true);
+      row(host, 'Time constant Rf Cf', value(tau * 1000) + ' ms');
+      row(host, 'Pole', '−1/τ = ' + value(-1 / tau) + ' rad/s');
+      row(host, 'H(s)', '−(' + value(Rf) + '/' + value(Rin) + ') / (1 + s·' + tau.toExponential(3) + ')');
+      row(host, 'Output at DC', value(g * Vin) + ' V');
+    } else if (type === 'lead') {
+      const C1 = n('ao_c1');
+      const C2 = n('ao_c2');
+      const T = Rin * C1;
+      const aT = Rf * C2;
+      const alpha = aT / T;
+      const g = -Rf / Rin;
+      row(host, 'T = R1 C1', value(T * 1000) + ' ms', true);
+      row(host, 'α = R2 C2 / R1 C1', value(alpha));
+      row(host, 'Kind', alpha < 1 ? 'Lead (zero closer to origin than the pole)' : alpha > 1 ? 'Lag (pole closer to origin)' : 'All-pass ratio');
+      row(host, 'Zero', '−1/T = ' + value(-1 / T) + ' rad/s');
+      row(host, 'Pole', '−1/(αT) = ' + value(-1 / aT) + ' rad/s');
+      row(host, 'H(s)', value(g) + ' · (1 + s·' + T.toExponential(3) + ') / (1 + s·' + aT.toExponential(3) + ')');
+    }
   };
   window.showAnalogPanel = function (name) { ['opamp', 'filter'].forEach((item) => { $('analog-panel-' + item).hidden = item !== name; $('analog-tab-' + item).classList.toggle('active', item === name); }); if (name === 'filter') window.calcAnalogFilter(); };
   function mag(type, x, q, gain) { const d = Math.sqrt((1 - x * x) ** 2 + (x / q) ** 2); if (['rc-low'].includes(type)) return gain / Math.sqrt(1 + x * x); if (['rc-high'].includes(type)) return gain * x / Math.sqrt(1 + x * x); if (['sk-low'].includes(type)) return gain / d; if (['sk-high'].includes(type)) return gain * x * x / d; if (['rlc-band', 'mfb-band', 'state-variable'].includes(type)) return gain * (x / q) / d; if (['rlc-notch', 'twin-t'].includes(type)) return gain * Math.abs(1 - x * x) / d; return gain; }
