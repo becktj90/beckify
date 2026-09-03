@@ -233,3 +233,136 @@ assert.equal(ebus[0]['Current contribution mA'], '2000');
 assert.ok(Number(ebus[1]['Running total mA']) < Number(ebus[0]['Running total mA']));
 const powerEbus = ebus.filter((r) => r['Part Type'] === 'EL9410')[0];
 assert.equal(powerEbus['Running total mA'], '2000', 'power refresh resets remaining');
+
+assert.deepEqual(Array.from(api.activeColumns(false)), COLUMNS);
+assert.equal(api.activeColumns(false).length, 26, 'extended off keeps the 26-column template');
+assert.ok(api.activeColumns(true).length > 26);
+assert.ok(api.activeColumns(true).indexOf('Control Zone') !== -1);
+assert.ok(api.activeColumns(true).indexOf('Sample Rate') !== -1);
+assert.ok(api.activeColumns(true).indexOf('Data Type') !== -1);
+assert.ok(api.activeColumns(true).indexOf('Find #') !== -1);
+assert.ok(api.activeColumns(true).indexOf('Signal Suffix') !== -1);
+assert.ok(api.activeColumns(true).indexOf('Wire Color From') !== -1);
+assert.ok(api.activeColumns(true).indexOf('Wire Color To') !== -1);
+assert.equal(api.rowsToCsv(rows, api.activeColumns(false)).split(/\r\n/)[0], COLUMNS.join(','));
+assert.ok(!api.rowsToCsv(rows, api.activeColumns(false)).split(/\r\n/)[0].includes('Control Zone'));
+assert.ok(api.rowsToAoa(rows, api.activeColumns(false))[0].length === 26);
+
+assert.equal(api.buildLinkedVariable('PIT-101', '.PT'), 'PIT-101.PT');
+assert.equal(api.buildLinkedVariable('XV-12', '.YS'), 'XV-12.YS');
+assert.equal(api.buildLinkedVariable('XV-12', '.ZS1'), 'XV-12.ZS1');
+assert.equal(api.buildLinkedVariable('', ''), '');
+assert.equal(api.buildLinkedVariable('PIT-101', ''), 'PIT-101');
+assert.ok(api.DEFAULT_SUFFIX_CATALOG.some((s) => s.suffix === '.TE' && s.meaning === 'temp'));
+assert.ok(api.DEFAULT_SUFFIX_CATALOG.some((s) => s.suffix === '.ZS2' && s.meaning === 'limit'));
+
+assert.equal(api.electricalToDataType('BOOL'), 'BOOL');
+assert.equal(api.electricalToDataType('4-20'), 'REAL');
+assert.equal(api.electricalToDataType('mV/V'), 'REAL');
+
+const takeoffCounts = api.takeoffToCounts([
+  { device: 'User digital', qty: 3, signal: 'DI', electrical: 'BOOL' },
+  { device: 'User analog', qty: 1, signal: 'AI', electrical: '4-20' },
+]);
+assert.equal(takeoffCounts.DI.points, 3);
+assert.equal(takeoffCounts.AI.points, 1);
+assert.equal(takeoffCounts.DO.points, 0);
+assert.equal(takeoffCounts.AO.points, 0);
+
+const takeoffStation = {
+  controller: 'PLC-1',
+  stationName: 'Takeoff Rack',
+  brand: 'generic',
+  mode: 'generic',
+  couplerPrefix: 'CPL',
+  ioPrefix: 'IO',
+  powerPrefix: 'PWR',
+  genericCounts: api.applyTakeoffCounts(api.defaultGenericCounts(), [
+    { device: 'User digital', qty: 3, signal: 'DI', electrical: 'BOOL' },
+    { device: 'User analog', qty: 1, signal: 'AI', electrical: '4-20' },
+  ]),
+  modules: [],
+};
+assert.equal(takeoffStation.genericCounts.DI.points, 3);
+assert.equal(takeoffStation.genericCounts.AI.points, 1);
+const takeoffRows = api.applyTakeoffToRows(api.expandBuildList([takeoffStation], catalog), [
+  { device: 'User digital', qty: 3, signal: 'DI', electrical: 'BOOL' },
+  { device: 'User analog', qty: 1, signal: 'AI', electrical: '4-20' },
+]);
+assert.equal(takeoffRows.filter((r) => r['Card Part Number'] === 'Generic DI').length, 16);
+assert.equal(takeoffRows.filter((r) => r['Field Device'] === 'User digital').length, 3);
+assert.equal(takeoffRows.filter((r) => r['Field Device'] === 'User analog').length, 1);
+assert.equal(takeoffRows.filter((r) => r['Data Type'] === 'BOOL' && r['Signal Type'] === 'DI').length, 3);
+assert.equal(takeoffRows.filter((r) => r['Data Type'] === 'REAL' && String(r['Signal Type']).indexOf('AI') === 0).length, 1);
+assert.equal(api.summarizeRows(takeoffRows).DI, 16);
+assert.equal(api.summarizeRows(takeoffRows).AI, 8);
+assert.equal(api.summarizeRows(takeoffRows).spare, 16 - 3 + 8 - 1);
+
+const extraRow = Object.assign({}, rows[0], {
+  'Control Zone': 'Zone A',
+  'Sample Rate': 'Fast',
+  'Data Type': 'BOOL',
+  Location: 'panel',
+  'Serial Number': '',
+  'Find #': 'XV-1',
+  'Signal Suffix': '.YS',
+  'Wire Color From': 'BN',
+  'Wire Color To': 'BU',
+});
+const v3payload = api.serializeProject(stations, catalog, {
+  extendedColumns: true,
+  suffixCatalog: [{ suffix: '.PT', meaning: 'pressure' }],
+  takeoff: [{ device: 'User DI', qty: 3, signal: 'DI', electrical: 'BOOL' }],
+  rows: [extraRow],
+});
+assert.equal(v3payload.version, 3);
+assert.equal(v3payload.extendedColumns, true);
+const v3 = api.parseProject(JSON.stringify(v3payload));
+assert.equal(v3.extendedColumns, true);
+assert.equal(v3.rows[0]['Control Zone'], 'Zone A');
+assert.equal(v3.rows[0]['Sample Rate'], 'Fast');
+assert.equal(v3.rows[0]['Data Type'], 'BOOL');
+assert.equal(v3.rows[0].Location, 'panel');
+assert.equal(v3.rows[0]['Find #'], 'XV-1');
+assert.equal(v3.rows[0]['Signal Suffix'], '.YS');
+assert.equal(v3.rows[0]['Wire Color From'], 'BN');
+assert.equal(v3.suffixCatalog[0].suffix, '.PT');
+assert.equal(v3.takeoff[0].qty, 3);
+assert.equal(v3.takeoff[0].device, 'User DI');
+
+const v2still = api.serializeProject(stations, catalog, { extendedColumns: false, suffixCatalog: api.defaultSuffixCatalog(), takeoff: [], rows: [] });
+assert.equal(v2still.version, 2);
+assert.equal(api.rowsToAoa(rows, api.activeColumns(v2still.extendedColumns))[0].length, 26);
+
+const doSeed = rows.filter((r) => r['Card Part Number'] === 'EL2828')[0];
+assert.equal(doSeed['Data Type'], 'BOOL');
+assert.equal(doSeed.Units, 'BOOL');
+
+const license = api.expandBuildList([{
+  controller: 'PLC-1',
+  stationName: 'Lic',
+  brand: 'beckhoff-ethercat',
+  couplerPrefix: 'KFD',
+  ioPrefix: 'KEC',
+  powerPrefix: 'XDC',
+  modules: [{ pn: 'EL6070', qty: 1 }],
+}], catalog);
+assert.equal(license.length, 1);
+assert.equal(license[0]['Slot Number'], '1');
+assert.equal(license[0]['Channel Number'], '', 'license is a slot with a blank channel');
+
+const zoned = api.expandBuildList([{
+  controller: 'PLC-1',
+  stationName: 'S',
+  controlZone: 'Area 2',
+  location: 'skid',
+  brand: 'generic',
+  mode: 'generic',
+  couplerPrefix: 'CPL',
+  ioPrefix: 'IO',
+  powerPrefix: 'PWR',
+  genericCounts: { coupler: 0, power: 0, DI: { points: 1, density: 8 } },
+  modules: [],
+}], catalog);
+assert.equal(zoned[0]['Control Zone'], 'Area 2');
+assert.equal(zoned[0].Location, 'skid');

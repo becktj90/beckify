@@ -231,7 +231,7 @@
       <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule photo OCR load analyzer FLA demand diversity capacity circuit directory power study breaker sizes series poles circuit class positions main rating expansion">Panel Schedule</button>
       <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
       <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
-      <button class="nav-btn" data-target="sec-io-list-generator" data-keywords="io list i/o list ethercat beckhoff rockwell siemens wago plc channel slot coupler analog raw el1819 io-link generic counts controllogix compactlogix">I/O List Generator</button>
+      <button class="nav-btn" data-target="sec-io-list-generator" data-keywords="io list i/o list ethercat beckhoff rockwell siemens wago plc channel slot coupler analog raw el1819 io-link generic counts controllogix compactlogix instrument takeoff tag suffix control zone sample rate">I/O List Generator</button>
       <button class="nav-btn" data-target="sec-signal-scaling" data-keywords="signal scaling process value 4-20ma 4-20 mA 0-10v transmitter engineering units live zero pt100 rtd adc counts square root dp flow">Signal Scaling</button>
       <button class="nav-btn" data-target="sec-ebus-budget" data-keywords="ebus e-bus rack current budget beckhoff el9410 coupler remaining milliamp reserve">E-bus / Rack Current</button>
       <button class="nav-btn" data-target="sec-modbus-address" data-keywords="modbus address converter holding coil 40001 400001 function code pdu offset">Modbus Address Converter</button>
@@ -7280,7 +7280,7 @@
     <section id="sec-io-list-generator" class="section">
       <div class="section-header">
         <h2>I/O List Generator</h2>
-        <p>Scaffold a PLC I/O list from a brand catalog or from generic channel counts. Pick a platform per station (Beckhoff, Rockwell, Siemens, WAGO, … or No brand). Couplers and power-refresh cards consume a slot and still get one documentation row. Analog raw min/max come from the catalog. Design aid only; not a PE stamp, wiring schedule, or submittal.</p>
+        <p>Scaffold a PLC I/O list from a brand catalog, generic channel counts, or a typed instrument takeoff. Pick a platform per station (Beckhoff, Rockwell, Siemens, WAGO, … or No brand). Couplers and license cards consume a slot with a blank channel. Optional extended columns stay off so the 26-column template still exports. Design aid only; not a PE stamp, wiring schedule, or submittal.</p>
         <details class="section-info">
           <summary>ℹ More Info — I/O List Generator</summary>
           <div class="section-info-body">
@@ -7289,8 +7289,11 @@
               <li><strong>Brand mode:</strong> picker is filtered to that platform. Add/edit/remove catalog rows (PN, description, channels, signal type, raw min/max, optional width and signed E-bus mA) so any family can be extended in-browser.</li>
               <li><strong>No brand / generic:</strong> enter channel points and density (defaults DI 16, DO 8, AI 8, AO 4, RTD 4, TC 8). Part numbers become “Generic DI” etc. Card names still use the editable prefixes.</li>
               <li><strong>Card Name:</strong> independent coupler / I/O / power prefixes, padded as prefix + (100+seq) → KEC0101. Beckhoff defaults KFD / KEC / XDC; other brands ship different defaults; all are editable.</li>
-              <li><strong>26-column IO List:</strong> Controller … Comments, including Page, EPLAN Updated, Electrical Check Complete, Scaling Verified, T&amp;LO V&amp;V. DO rows seed Min/Max 0/1, Units BOOL, Raw 0/1. Coupler channel and wire terminal stay blank.</li>
-              <li><strong>Export</strong> writes .xlsx sheets Ebus Current, IO List, Scaling, and Summary (type-colored fills) via a vendored SheetJS copy, or .csv of the grid. Save/Load JSON stores brand, mode, catalog, and the build list — not the expanded table.</li>
+              <li><strong>26-column IO List:</strong> Controller … Comments, including Page, EPLAN Updated, Electrical Check Complete, Scaling Verified, T&amp;LO V&amp;V. DO rows seed Min/Max 0/1, Units BOOL, Raw 0/1. Coupler and license rows consume a slot with a blank channel. Spare channels stay empty-description rows.</li>
+              <li><strong>Extended columns</strong> (off by default): Control Zone, Sample Rate (Slow / Fast / Event or custom), Data Type (BOOL / INT / UINT / DINT / REAL / STRING — DO still seeds BOOL), Location, Serial Number, Find # / tag stem, Signal Suffix, and Wire Color From/To. The 26-column export is unchanged until you turn this on.</li>
+              <li><strong>Tag suffixes:</strong> editable catalog of generic signal endings (status, pressure, temp, flow, position, cmd, limits). Linked PLC Variable auto-builds as stem+suffix and stays editable. Not a fluid or commodity library.</li>
+              <li><strong>Instrument takeoff:</strong> type Device, Qty, Signal (DI/DO/AI/AO), and Electrical type (BOOL, 4–20, mV/V). Rows sum into generic counts, then Generate expands the list. No project device names are preloaded.</li>
+              <li><strong>Export</strong> writes .xlsx sheets Ebus Current, IO List, Scaling, and Summary (type-colored fills) via a vendored SheetJS copy, or .csv of the grid. Extra columns appear in the spreadsheet only when enabled. Save/Load JSON v2 keeps the build list; v3 also stores extended columns, suffix catalog, takeoff, and edited extra fields.</li>
             </ul>
             Seed catalogs are short public part-number lists, not a vendor price book. Verify channel counts and analog process-image ranges against the manufacturer’s datasheet. No proprietary project tags are included.
           </div>
@@ -7315,6 +7318,37 @@
         <option value="TC"></option>
         <option value="IO-Link"></option>
       </datalist>
+      <datalist id="iol_data_types">
+        <option value="BOOL"></option>
+        <option value="INT"></option>
+        <option value="UINT"></option>
+        <option value="DINT"></option>
+        <option value="REAL"></option>
+        <option value="STRING"></option>
+      </datalist>
+      <datalist id="iol_sample_rates">
+        <option value="Slow"></option>
+        <option value="Fast"></option>
+        <option value="Event"></option>
+      </datalist>
+      <datalist id="iol_locations">
+        <option value="pendant"></option>
+        <option value="skid"></option>
+        <option value="panel"></option>
+        <option value="field"></option>
+      </datalist>
+      <datalist id="iol_takeoff_signals">
+        <option value="DI"></option>
+        <option value="DO"></option>
+        <option value="AI"></option>
+        <option value="AO"></option>
+      </datalist>
+      <datalist id="iol_electrical_types">
+        <option value="BOOL"></option>
+        <option value="4-20"></option>
+        <option value="mV/V"></option>
+      </datalist>
+      <datalist id="iol_suffix_list"></datalist>
 
       <div class="card-grid two-col">
         <div class="card" style="grid-column:1/-1">
@@ -7344,6 +7378,29 @@
           </div>
         </div>
 
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Instrumentation takeoff</div>
+          <div class="card-body">
+            <p class="note">Optional count-up from field devices you type. Each row is Device, Qty, Signal (DI/DO/AI/AO), and Electrical type (BOOL, 4–20, mV/V). Apply writes the sums into generic channel points. Generate then expands the list. No project names are preloaded.</p>
+            <div id="iol_takeoff_host"></div>
+            <div class="iol-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="iol_add_takeoff">Add takeoff row</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="iol_apply_takeoff">Apply takeoff to generic counts</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Signal suffix catalog</div>
+          <div class="card-body">
+            <p class="note">Generic tag endings only (status, pressure, temp, flow, position, cmd, limits). Edit freely. Find # (tag stem) plus a suffix auto-builds Linked PLC Variable as stem+suffix; you can still overwrite the variable. This is not a fluid or commodity list.</p>
+            <div id="iol_suffix_host"></div>
+            <div class="iol-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="iol_add_suffix">Add suffix</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title">Summary</div>
           <div class="card-body">
@@ -7362,13 +7419,17 @@
               <button type="button" class="btn btn-secondary btn-sm" id="iol_load">Load build JSON</button>
               <input type="file" id="iol_load_file" class="iol-file" accept="application/json,.json" aria-label="Upload I/O build JSON">
             </div>
-            <p class="note" id="iol_status">JSON stores brand, generic vs catalog mode, catalog, and the station cart. Spreadsheet export is the editable grid plus Ebus Current / Scaling / Summary. SheetJS is loaded from this site, not a CDN.</p>
+            <p class="note" id="iol_status">JSON v2 stores brand, mode, catalog, and the station cart. v3 also stores extended-column flag, suffix catalog, takeoff, and extra field values. Spreadsheet export is the editable grid plus Ebus Current / Scaling / Summary. Extra columns appear only when enabled. SheetJS is loaded from this site, not a CDN.</p>
           </div>
         </div>
 
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">I/O list grid</div>
           <div class="card-body">
+            <label class="iol-check">
+              <input type="checkbox" id="iol_extended">
+              Show extended columns (Control Zone, Sample Rate, Data Type, Location, Serial Number, Find #, Signal Suffix, Wire Color)
+            </label>
             <div class="iol-actions">
               <button type="button" class="btn btn-secondary btn-sm" id="iol_add_row">Add blank row</button>
             </div>

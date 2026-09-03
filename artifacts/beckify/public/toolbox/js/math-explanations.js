@@ -17,7 +17,7 @@
     'sec-emp-emc': ['A changing field writes a voltage on a loop', 'V = -N\\,d\\Phi/dt', 'Faraday’s law is why a cable loop inside a changing B field picks up a transient. Shrink the loop, close the slots, bond the cage, and filter the cable entry. This tool sizes protection — it does not design a source.'],
     'sec-lp-optimizer': ['A linear program is a hill inside a fence', '\\max\\, c\\cdot x \\quad \\text{s.t.} \\quad Ax \\le b,\\, x \\ge 0', 'Each inequality is a fence. The simplex method walks the corners of the fenced yard until the objective cannot climb any further — or reports that the yard is empty or has no highest point.'],
     'sec-base-converter': ['Every integer is a weighted pile of digits', 'n = \\sum d_i b^i', 'Hex, decimal, octal, and binary are the same integer written with different digit alphabets. Two’s complement just rereads the high bit as a minus sign.'],
-    'sec-io-list-generator': ['A card is a slot, a channel is a row', 'slot, then 1\\ldots N', 'Pick a brand or generic counts. Couplers and power-refresh cards still take a slot even with zero channels. Analog raw min/max come from the catalog, not a guess. Card names pad as prefix+(100+seq).'],
+    'sec-io-list-generator': ['A card is a slot, a channel is a row', 'slot, then 1\\ldots N', 'Pick a brand, generic counts, or an instrument takeoff. Couplers and license cards still take a slot with a blank channel. Optional columns (zone, sample rate, data type, tag suffix) stay off so the 26-column template still exports.'],
     'sec-signal-scaling': ['Live-zero means 4 mA is empty', 'y = y_0 + (x-x_0)\\frac{y_1-y_0}{x_1-x_0}', 'A 4–20 mA loop does not start at 0 mA. Below 4 mA is a live-zero fault. Square-root mode maps the same span through √ for DP flow. The same line run backwards is the raw you inject on the bench.'],
     'sec-ebus-budget': ['Supply is positive, terminals draw', 'I_{k}=I_{k-1}+i_k', 'Start remaining at 0. A coupler adds supply current. Each terminal subtracts its E-bus draw. A power-refresh card starts a new segment.'],
     'sec-modbus-address': ['40001 is holding offset 0', 'PDU\\ address = n-1', 'Modicon 5-digit 40001 is the first holding register. The wire uses a 0-based 16-bit address. 400001 is the same register in 6-digit long addressing.'],
@@ -140,14 +140,14 @@
       button: { label: 'Load Signed Example (FF = −1)', action: 'loadBaseConverterExample' }
     },
     'sec-io-list-generator': {
-      overview: 'An I/O list is a table of every channel on every card in a PLC station. This generator scaffolds that table from a brand catalog or from generic channel counts. Pick Beckhoff, Rockwell, Siemens, WAGO, and other public families, or No brand / generic. Couplers and power cards have zero channels but still consume a slot. Analog raw min/max are copied from the catalog. Design aid only; not a PE stamp or a wiring schedule.',
+      overview: 'An I/O list is a table of every channel on every card in a PLC station. This generator scaffolds that table from a brand catalog, generic channel counts, or an instrument takeoff you type. Pick Beckhoff, Rockwell, Siemens, WAGO, and other public families, or No brand / generic. Couplers, license keys, and power cards have zero channels but still consume a slot. Optional extended columns stay off so the 26-column workbook still exports. Design aid only; not a PE stamp or a wiring schedule.',
       steps: [
         'Select a PLC brand per station, or No brand / generic counts. A station stays one brand unless you allow mixed catalogs.',
-        'In brand mode, add modules from the filtered catalog. In generic mode, enter channel points and density (DI 16, DO 8, …).',
-        'Set coupler / I/O / power card-name prefixes (Beckhoff defaults KFD / KEC / XDC). Generate to expand one row per channel.',
-        'Edit any cell, then export .xlsx (Ebus Current, IO List, Scaling, Summary) or .csv. Save/Load JSON stores brand, mode, catalog, and the build list.'
+        'In brand mode, add modules from the filtered catalog. In generic mode, enter channel points and density (DI 16, DO 8, …). Or type a takeoff (Device, Qty, Signal, Electrical type) and apply it to generic counts.',
+        'Set coupler / I/O / power card-name prefixes (Beckhoff defaults KFD / KEC / XDC). Generate to expand one row per channel. Spare channels stay blank.',
+        'Optional: turn on extended columns (zone, sample rate, data type, location, serial, Find #, suffix, wire color). Tag stem + suffix auto-builds Linked PLC Variable. Export .xlsx or .csv; extra columns appear only when enabled. JSON v3 stores the new fields.'
       ],
-      examples: ['Station: MCC-A, controller PLC-1, brand Beckhoff EtherCAT', 'Cart: EK1100, EL1819, EL9410, EL3048', 'Names: KFD0101 coupler, KEC0101 DI (16 ch), XDC0101 power, KEC0102 AI (8 ch, raw 0–4095)', 'Generic: 32 DI at 16 ch/card → two Generic DI cards'],
+      examples: ['Station: MCC-A, controller PLC-1, brand Beckhoff EtherCAT', 'Cart: EK1100, EL1819, EL9410, EL3048', 'Names: KFD0101 coupler, KEC0101 DI (16 ch), XDC0101 power, KEC0102 AI (8 ch, raw 0–4095)', 'Generic: 32 DI at 16 ch/card → two Generic DI cards', 'Takeoff: 3×DI BOOL + 1×AI 4–20 → generic counts, then generate', 'Tag: stem XV-12 + suffix .YS → XV-12.YS'],
       button: { label: 'Generate from the parts cart', action: 'iolGenerateExample' }
     },
     'sec-signal-scaling': {

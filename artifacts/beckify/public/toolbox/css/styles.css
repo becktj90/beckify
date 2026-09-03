@@ -1776,6 +1776,7 @@ body.report-open { overflow: hidden; }
   border-radius: 999px;
 }
 .iol-generic { margin-top: 8px; }
+.iol-takeoff-sum { margin-top: 8px; }
 .iol-table tr.iol-sig-di td, .iol-grid tr.iol-sig-di td, .res-row.iol-sig-di,
 .iol-cart li.iol-sig-di, .iol-legend .iol-sig-di { background: rgba(59,130,246,0.28); color: #dbeafe; }
 .iol-table tr.iol-sig-do td, .iol-grid tr.iol-sig-do td, .res-row.iol-sig-do,
