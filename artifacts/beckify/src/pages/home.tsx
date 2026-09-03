@@ -161,7 +161,7 @@ export default function Home() {
                     { href: "/toolbox/#sec-cable-schedule", label: "Cable schedule" },
                     { href: "/toolbox/#sec-nema-wiring", label: "NEMA wiring" },
                     { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
-                    { href: "/toolbox/#sec-ebike-tools", label: "E-bike / Battery Designer" },
+                    { href: "/toolbox/#sec-ebike-tools", label: "Battery pack designer" },
                     { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },
                     { href: "/toolbox/#sec-torque-lookup", label: "Torque lookup" },
                     { href: "/toolbox/#sec-bldg-load", label: "Load worksheet" },

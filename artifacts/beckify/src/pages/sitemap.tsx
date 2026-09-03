@@ -113,7 +113,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Torque/RPM Calculator", "sec-ebike-tools"),
       t("Sprocket Ratio Calculator", "sec-ebike-tools"),
       t("E-Bike Range Planner", "sec-ebike-tools"),
-      t("Battery Designer", "sec-ebike-tools"),
+      t("Battery Pack Designer", "sec-ebike-tools"),
     ],
   },
   {
