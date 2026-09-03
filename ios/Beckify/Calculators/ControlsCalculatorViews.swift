@@ -39,7 +39,11 @@ struct SignalScalingView: View {
     @State private var successTick = 0
 
     private var fingerprint: String {
-        "\(direction.rawValue)|\(curve.rawValue)|\(detectLiveZeroFault)|\(value)|\(rawMin)|\(rawMax)|\(euMin)|\(euMax)"
+        // Live-zero detection only affects toEngineering; keep it out of the
+        // toRaw fingerprint so toggling a hidden/irrelevant control cannot
+        // mark an unchanged reverse scaling result stale.
+        let liveZeroKey = direction == .toEngineering ? "\(detectLiveZeroFault)" : "-"
+        return "\(direction.rawValue)|\(curve.rawValue)|\(liveZeroKey)|\(value)|\(rawMin)|\(rawMax)|\(euMin)|\(euMax)"
     }
     private var display: ExplicitCalculationSession<SignalScalingResult>.Display {
         session.display(for: fingerprint)
@@ -105,7 +109,9 @@ struct SignalScalingView: View {
             NumberField(title: "Raw max", unit: "raw", text: $rawMax)
             NumberField(title: "EU min", unit: "EU", text: $euMin)
             NumberField(title: "EU max", unit: "EU", text: $euMax)
-            Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
+            if direction == .toEngineering {
+                Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
+            }
 
             switch display {
             case .current(let r), .stale(let r):
