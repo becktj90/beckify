@@ -113,8 +113,7 @@ public enum MotorTorque {
     }
 
     /// Points for a constant-horsepower torque-vs-speed curve, for plotting.
-    /// Torque falls off as 1/RPM — sampled log-ish across the usable range so
-    /// the low-speed knee isn't lost.
+    /// Torque falls off as 1/RPM; sampled evenly in RPM across the given range.
     public static func curve(horsepower: Double, minRPM: Double, maxRPM: Double, samples: Int = 24) -> [(rpm: Double, torqueLbFt: Double)] {
         guard horsepower > 0, minRPM > 0, maxRPM > minRPM, samples > 1 else { return [] }
         return (0..<samples).map { i in

@@ -61,6 +61,13 @@ final class NumberBaseConvertTests: XCTestCase {
         XCTAssertThrowsError(try NumberBaseConvert.parse("   ", from: .decimal))
     }
 
+    func testValidCharactersDescriptionMentionsLettersOnlyForHex() {
+        XCTAssertFalse(NumberBase.binary.validCharactersDescription.contains("letters"))
+        XCTAssertFalse(NumberBase.octal.validCharactersDescription.contains("letters"))
+        XCTAssertFalse(NumberBase.decimal.validCharactersDescription.contains("letters"))
+        XCTAssertTrue(NumberBase.hexadecimal.validCharactersDescription.contains("letters"))
+    }
+
     func testGroupedBinaryPadsToNibbles() {
         XCTAssertEqual(NumberBaseConvert.groupedBinary("1010"), "1010")
         XCTAssertEqual(NumberBaseConvert.groupedBinary("101"), "0101")

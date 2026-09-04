@@ -36,6 +36,17 @@ public enum NumberBase: String, CaseIterable, Sendable, Identifiable {
         case .hexadecimal: return "0x"
         }
     }
+
+    /// What VoiceOver should say is valid to type — the accepted digit range
+    /// differs per base, and hex in particular accepts letters, not just digits.
+    public var validCharactersDescription: String {
+        switch self {
+        case .binary: return "Digits 0 and 1"
+        case .octal: return "Digits 0 through 7"
+        case .decimal: return "Digits 0 through 9"
+        case .hexadecimal: return "Digits 0 through 9 and letters A through F"
+        }
+    }
 }
 
 public struct NumberBaseResult: Equatable, Sendable {
