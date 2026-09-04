@@ -34,6 +34,8 @@ assert.equal(parsedVoltage.lineToNeutral, 120);
 assert.equal(panel.rowLoadVa({ loadAmps: '20', poles: '1' }, panel.panelVoltageInfo('208Y/120V'), 3), 2400);
 assert.ok(Math.abs(panel.rowLoadVa({ loadAmps: '10', poles: '3' }, panel.panelVoltageInfo('208Y/120V'), 3) - 3602.665) < 0.01);
 assert.equal(panel.normalizeLoadAmps('', '30A'), '30');
+assert.equal(panel.isLoadAmpsCopiedFromTrip('', '30A'), true);
+assert.equal(panel.isLoadAmpsCopiedFromTrip('14', '30A'), false);
 assert.equal(panel.normalizeDemandFactor('0.8'), '0.8');
 assert.equal(factors.factorPercent(0.7), '70%');
 
@@ -102,5 +104,17 @@ assert.match(panelSrc, /bootPanelSchedule/);
 assert.match(panelSrc, /pagehide/);
 assert.match(panelSrc, /cacheElements\(\)/);
 assert.match(panelSrc, /bindEvents\(\)/);
+assert.match(panelSrc, /copied from trip — edit me/);
+assert.equal(panelSrc.includes('aria-describedby=""'), false);
+assert.match(panelSrc, /aria-describedby="trip-copy-\$\{index\}"/);
+assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /function handlePrint[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /Breaker trip is not a reviewed load/);
+assert.equal(panel.isLikelyImageFile({ type: '', name: 'dir.JPG' }), true);
+assert.equal(panel.isLikelyImageFile({ type: '', name: 'dir.heic' }), true);
+assert.equal(panel.isLikelyImageFile({ type: 'application/pdf', name: 'dir.jpg' }), false);
+
+const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
+assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
 
 console.log('Panel load analyzer helpers passed');

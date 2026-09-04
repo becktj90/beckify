@@ -107,4 +107,27 @@ assert.equal(fullRow.rows[1].circuit, '2');
 assert.equal(panel.parseScheduleText('400A MCB').rows.length, 0);
 assert.equal(panel.parseScheduleText('1 20A').rows.length, 0);
 
+assert.equal(panel.normalizeLoadAmps('', '20A'), '20');
+assert.equal(panel.isLoadAmpsCopiedFromTrip('', '20A'), true);
+assert.equal(panel.isLoadAmpsCopiedFromTrip('12', '20A'), false);
+assert.equal(panel.isLikelyImageFile({ type: '', name: 'dir.png' }), true);
+assert.equal(panel.isLikelyImageFile({ type: '', name: 'dir.heic' }), true);
+
+const panelSrc = fs.readFileSync(path.join(root, 'panel-power-study.js'), 'utf8');
+assert.match(panelSrc, /BeckifyOcr/);
+assert.doesNotMatch(panelSrc, /window\.Tesseract/);
+assert.match(panelSrc, /copied from trip — edit me/);
+assert.equal(panelSrc.includes('aria-describedby=""'), false);
+assert.match(panelSrc, /aria-describedby="trip-copy-\$\{index\}"/);
+assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /function handlePrint[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /function saveStudyData[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /Breaker trip is not a reviewed load/);
+
+const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-power-study.html'), 'utf8');
+assert.match(panelHtml, /js\/ocr-helper\.js/);
+assert.doesNotMatch(panelHtml, /cdn\.jsdelivr\.net\/npm\/tesseract/);
+assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
+assert.match(panelHtml, /The photo stays on this device/);
+
 console.log('Panel power study helpers passed');

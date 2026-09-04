@@ -2818,7 +2818,7 @@
             </div>
             <div class="input-group">
               <div><label for="mnp_volts">Voltage</label><input id="mnp_volts" type="text" placeholder="e.g. 460" autocomplete="off"></div>
-              <div><label for="mnp_fla">FLA (A)</label><input id="mnp_fla" type="number" min="0" step="any" placeholder="nameplate amps"></div>
+              <div><label for="mnp_fla">FLA (A)</label><input id="mnp_fla" type="text" inputmode="decimal" placeholder="e.g. 14 or 28/14" autocomplete="off"></div>
             </div>
             <div class="input-group">
               <div><label for="mnp_rpm">RPM</label><input id="mnp_rpm" type="number" min="0" step="1" placeholder="e.g. 1750"></div>
@@ -2828,8 +2828,8 @@
               <div>
                 <label for="mnp_phase">Phase</label>
                 <select id="mnp_phase">
-                  <option value="">Unknown — enter manually</option>
-                  <option value="3" selected>3</option>
+                  <option value="" selected>Unknown — enter manually</option>
+                  <option value="3">3</option>
                   <option value="1">1</option>
                 </select>
               </div>
@@ -2847,7 +2847,7 @@
               <div><label for="mnp_rise">Temperature rise (°C)</label><input id="mnp_rise" type="number" min="0" step="1" placeholder="optional"></div>
             </div>
             <label class="review-check">
-              <input id="mnp_reviewed" type="checkbox">
+              <input id="mnp_reviewed" type="checkbox" data-no-persist>
               I reviewed these values. OCR is a draft, not verified input.
             </label>
           </div>

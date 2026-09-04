@@ -174,8 +174,8 @@
             </table>
           </div>
           <label class="review-check">
-            <input id="reviewedSchedule" type="checkbox">
-            I reviewed every circuit row. OCR is a draft, not verified input. Directory metrics below wait for this check.
+            <input id="reviewedSchedule" type="checkbox" data-no-persist>
+            I reviewed every circuit row. OCR is a draft, not verified input. Directory metrics, load summary, and print wait for this check.
           </label>
         </div>
       </section>
@@ -199,7 +199,7 @@
         <div class="window-body stack-lg">
           <div class="analysis-grid" id="analysisGrid" aria-live="polite"></div>
           <div id="analysisGuidance" class="analysis-guidance"></div>
-          <p class="field-help">“Est. Load A” begins as the OCR breaker-trip value only to make review faster. Replace it with measured/scheduled current or documented FLA. This is a planning estimate—not an NEC Article 220 load calculation, an equipment rating, or a protection setting. Informational only; any safety concern goes to a licensed electrician.</p>
+          <p class="field-help">“Est. Load A” may start as the breaker-trip value and is flagged “copied from trip — edit me” until you replace it with measured/scheduled current or documented FLA. Trip amps are not a reviewed load. This is a planning estimate—not an NEC Article 220 load calculation, an equipment rating, or a protection setting. Informational only; any safety concern goes to a licensed electrician.</p>
         </div>
       </section>
 

@@ -407,6 +407,18 @@ textarea {
 }
 .review-check input { width: auto; margin-top: 3px; }
 
+.trip-copy-flag {
+  display: block;
+  margin-top: 4px;
+  color: #6b3a00;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.editor-table td.is-trip-copy {
+  background: #fff3cd;
+}
+
 .flag-ask {
   margin: 8px 0 0;
   padding-left: 1.2rem;

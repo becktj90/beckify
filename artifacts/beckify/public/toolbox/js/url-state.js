@@ -41,6 +41,7 @@ function urlFields(section) {
     .filter(function (el) {
       if (!el.id) return false;
       if (el.type === 'button' || el.type === 'submit' || el.type === 'file') return false;
+      if (el.getAttribute('data-no-persist') !== null) return false;
       if (/^rpt_|search/i.test(el.id)) return false;
       if (el.closest('.result')) return false;
       return true;

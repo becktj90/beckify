@@ -86,9 +86,12 @@
     var key = String(letter || '').trim().toUpperCase();
     var range = CODE_LETTER[key];
     if (!range) return { error: 'No NEMA code letter, so locked-rotor current is not estimated from the table.' };
+    var ph = parsePhase(phase);
+    if (!ph) {
+      return { error: 'Select 1-phase or 3-phase before estimating locked-rotor current. Phase is never assumed.', letter: key, kvaMin: range[0], kvaMax: range[1] === Infinity ? null : range[1] };
+    }
     var P = Number(hp);
     var V = Number(String(volts || '').split('/')[0]);
-    var ph = Number(phase) === 1 ? 1 : 3;
     if (!Number.isFinite(P) || P <= 0 || !Number.isFinite(V) || V <= 0) {
       return { error: 'HP and voltage are needed to convert the code-letter kVA/HP range into amperes.', letter: key, kvaMin: range[0], kvaMax: range[1] };
     }
@@ -116,10 +119,14 @@
   }
 
   function analyze(input) {
-    var fla = Number(input.fla);
+    var flaRaw = String(input.fla == null ? '' : input.fla).trim();
+    if (/[\/,]/.test(flaRaw)) {
+      return { error: 'This nameplate lists dual FLA. Enter the amperes that match the voltage you are using. Do not leave a paired value for NEC 430 calculations.' };
+    }
+    var fla = Number(flaRaw);
     if (!Number.isFinite(fla) || fla <= 0) return { error: 'Enter a positive nameplate FLA after you review the fields.' };
     var ph = parsePhase(input.phase);
-    if (!ph) return { error: 'Select 1-phase or 3-phase before calculating. OCR leaves phase blank when it cannot read it.' };
+    if (!ph) return { error: 'Select 1-phase or 3-phase before calculating. OCR leaves phase blank when it cannot read it. Phase is never assumed.' };
     var hp = Number(input.hp);
     if ((!Number.isFinite(hp) || hp <= 0) && Number(input.kw) > 0) hp = hpFromKw(input.kw);
     var ol = overloadPercent(input.sf, input.riseC);
@@ -165,7 +172,6 @@
   function fmt(x, d) { return Number.isFinite(x) ? Number(x).toLocaleString('en-US', { maximumFractionDigits: d === undefined || d === null ? 1 : d }) : '—'; }
 
   var photoUrl = '';
-  var reviewed = false;
 
   function gather() {
     return {
@@ -279,14 +285,40 @@
     if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = ''; }
   }
 
+  function clearReview() {
+    var box = el('mnp_reviewed');
+    if (!box) return;
+    if (box.checked) {
+      box.checked = false;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function isLikelyImageFile(file) {
+    if (global.BeckifyOcr && typeof global.BeckifyOcr.isLikelyImageFile === 'function') {
+      return global.BeckifyOcr.isLikelyImageFile(file);
+    }
+    if (!file) return false;
+    var type = String(file.type || '');
+    if (type.indexOf('image/') === 0) return true;
+    if (type) return false;
+    return /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i.test(String(file.name || ''));
+  }
+
   function handleFile(file) {
     if (!file) return;
     if (file.size > 12 * 1024 * 1024) { setStatus('Please choose an image smaller than 12 MB.'); return; }
+    if (!isLikelyImageFile(file)) {
+      var formats = (global.BeckifyOcr && global.BeckifyOcr.ACCEPTED_IMAGE_LABEL) || 'JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF';
+      setStatus('Please choose a photo (' + formats + ').');
+      return;
+    }
     revokePhoto();
     photoUrl = URL.createObjectURL(file);
     var img = el('mnp_preview');
     if (img) { img.src = photoUrl; img.hidden = false; }
     el('mnp_file')._file = file;
+    clearReview();
     setStatus('Photo is on this device only. Click Read nameplate to run on-device OCR, then correct every field.');
   }
 
@@ -306,7 +338,7 @@
       if (el('mnp_raw')) el('mnp_raw').value = out.text || '';
       var parsed = global.BeckifyOcr.parseMotorNameplate(out.text || '');
       applyFields(parsed.fields);
-      if (el('mnp_reviewed')) el('mnp_reviewed').checked = false;
+      clearReview();
       var msg = out.failed
         ? 'OCR found no usable text. Fill the fields manually — you are not blocked.'
         : (out.lowConfidence ? 'OCR confidence is low (' + out.confidence.toFixed(0) + '%). Treat every field as a draft and correct it.' : 'OCR filled ' + parsed.filled + ' field(s) as a draft. Correct them, then check the review box.');
@@ -346,11 +378,17 @@
       var img = el('mnp_preview');
       if (img) { img.removeAttribute('src'); img.hidden = true; }
       if (el('mnp_raw')) el('mnp_raw').value = '';
-      if (el('mnp_reviewed')) el('mnp_reviewed').checked = false;
+      clearReview();
       clearParsedFields();
       if (el('mnp_hz')) el('mnp_hz').value = '60';
-      if (el('mnp_phase')) el('mnp_phase').value = '3';
+      if (el('mnp_phase')) el('mnp_phase').value = '';
       setStatus('Cleared. The photo was not saved.');
+    });
+    PARSED_FIELD_IDS.forEach(function (id) {
+      var n = el(id);
+      if (!n) return;
+      n.addEventListener('input', clearReview);
+      n.addEventListener('change', clearReview);
     });
     window.addEventListener('pagehide', revokePhoto);
     if (typeof registerUrlState === 'function') registerUrlState('sec-motor-nameplate', 'motor-nameplate', null);

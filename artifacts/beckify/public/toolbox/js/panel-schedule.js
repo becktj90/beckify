@@ -109,10 +109,12 @@ function bindEvents() {
   elements.parseTextButton.addEventListener('click', handleParseText);
   elements.addRowButton.addEventListener('click', () => {
     state.rows.push(createEmptyRow());
+    clearReview();
     renderAll();
   });
   elements.fillSlotsButton.addEventListener('click', () => {
     seedRows(MAX_CIRCUIT_SLOTS);
+    clearReview();
     renderAll();
     setStatus('Seeded 42 editable circuit rows for manual entry.');
   });
@@ -126,8 +128,27 @@ function bindEvents() {
   }
 }
 
+function isLikelyImageFile(file) {
+  if (window.BeckifyOcr && typeof window.BeckifyOcr.isLikelyImageFile === 'function') {
+    return window.BeckifyOcr.isLikelyImageFile(file);
+  }
+  if (!file) return false;
+  const type = String(file.type || '');
+  if (type.startsWith('image/')) return true;
+  if (type) return false;
+  return /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i.test(String(file.name || ''));
+}
+
+function clearReview() {
+  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+}
+
+function isScheduleReviewed() {
+  return !!(elements.reviewedSchedule && elements.reviewedSchedule.checked);
+}
+
 function handleFileSelection(file) {
-  if (!file || !file.type.startsWith('image/')) {
+  if (!file || !isLikelyImageFile(file)) {
     setStatus('Please choose a valid image file.');
     return;
   }
@@ -146,6 +167,7 @@ function handleFileSelection(file) {
   elements.previewFrame.classList.add('has-image');
   elements.fileName.textContent = file.name;
   elements.processButton.disabled = false;
+  clearReview();
   resetProgress();
   setStatus('Image ready. Click “Read Schedule” to run OCR.');
 }
@@ -174,7 +196,7 @@ async function runOcr() {
     const text = out.text || '';
     state.rawText = text;
     elements.rawText.value = text;
-    if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+    clearReview();
     if (elements.openPanelCaution) {
       elements.openPanelCaution.hidden = !out.looksLikeOpenPanel;
     }
@@ -398,6 +420,7 @@ function normalizeRows(rows) {
       poles: String(row.poles || '').replace(/P/i, '').trim(),
       loadType: LOAD_TYPES.includes(row.loadType) ? row.loadType : inferLoadType(row.description),
       loadAmps: normalizeLoadAmps(row.loadAmps, row.trip),
+      loadAmpsCopiedFromTrip: row.loadAmpsCopiedFromTrip === true || isLoadAmpsCopiedFromTrip(row.loadAmps, row.trip),
       demandFactor: normalizeDemandFactor(row.demandFactor)
     }))
     .filter(row => row.circuit || row.description || row.trip || row.poles || row.loadAmps)
@@ -442,6 +465,13 @@ function normalizeLoadAmps(value, trip) {
   if (text && Number.isFinite(number) && number >= 0) return String(number);
   const fallback = tripAmps(trip);
   return fallback > 0 ? String(fallback) : '';
+}
+
+function isLoadAmpsCopiedFromTrip(value, trip) {
+  const text = String(value ?? '').trim();
+  const number = Number(text);
+  if (text && Number.isFinite(number) && number >= 0) return false;
+  return tripAmps(trip) > 0;
 }
 
 function normalizeDemandFactor(value) {
@@ -520,6 +550,7 @@ function renderEditorTable() {
     const type = LOAD_TYPES.includes(row.loadType) ? row.loadType : inferLoadType(row.description);
     const loadAmps = normalizeLoadAmps(row.loadAmps, row.trip);
     const demandFactor = normalizeDemandFactor(row.demandFactor);
+    const copied = row.loadAmpsCopiedFromTrip === true || isLoadAmpsCopiedFromTrip(row.loadAmps, row.trip);
     return `
       <tr>
       <td><input type="text" data-field="circuit" data-index="${index}" value="${escapeHtml(row.circuit)}" placeholder="1"></td>
@@ -534,7 +565,7 @@ function renderEditorTable() {
         </select>
       </td>
       <td><select data-field="loadType" data-index="${index}" aria-label="Load type for circuit ${escapeHtml(row.circuit || String(index + 1))}">${LOAD_TYPES.map(option => `<option value="${escapeHtml(option)}" ${type === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
-      <td><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA"></td>
+      <td class="${copied ? 'is-trip-copy' : ''}"><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA"${copied ? ` aria-describedby="trip-copy-${index}"` : ''}>${copied ? `<small id="trip-copy-${index}" class="trip-copy-flag">copied from trip — edit me</small>` : ''}</td>
       <td><input type="number" min="0" step="0.01" data-field="demandFactor" data-index="${index}" value="${escapeHtml(demandFactor)}" aria-label="Demand factor for circuit ${escapeHtml(row.circuit || String(index + 1))}"></td>
       <td><button class="btn btn-row-delete" type="button" data-delete-index="${index}">Delete</button></td>
     </tr>
@@ -550,6 +581,7 @@ function renderEditorTable() {
     button.addEventListener('click', () => {
       const index = Number(button.dataset.deleteIndex);
       state.rows.splice(index, 1);
+      clearReview();
       renderAll();
     });
   });
@@ -566,9 +598,13 @@ function handleRowEdit(event) {
     state.rows[index][field] = normalizeCircuit(event.target.value);
   } else if (field === 'trip') {
     state.rows[index][field] = normalizeTrip(event.target.value);
-    if (!state.rows[index].loadAmps) state.rows[index].loadAmps = normalizeLoadAmps('', event.target.value);
+    if (!String(state.rows[index].loadAmps || '').trim() || state.rows[index].loadAmpsCopiedFromTrip) {
+      state.rows[index].loadAmps = normalizeLoadAmps('', event.target.value);
+      state.rows[index].loadAmpsCopiedFromTrip = isLoadAmpsCopiedFromTrip('', event.target.value);
+    }
   } else if (field === 'loadAmps') {
     state.rows[index][field] = normalizeLoadAmps(event.target.value, '');
+    state.rows[index].loadAmpsCopiedFromTrip = false;
   } else if (field === 'demandFactor') {
     state.rows[index][field] = normalizeDemandFactor(event.target.value);
   } else if (field === 'loadType') {
@@ -577,6 +613,7 @@ function handleRowEdit(event) {
     state.rows[index][field] = String(event.target.value || '').trim();
   }
 
+  clearReview();
   renderPrintSheet();
   renderLoadAnalysis();
   renderDirectoryMetrics();
@@ -750,7 +787,7 @@ function computeDirectoryMetrics(rows, opts) {
 
 function renderDirectoryMetrics() {
   if (!elements.directoryGrid || !elements.directoryGuidance) return;
-  const reviewed = elements.reviewedSchedule && elements.reviewedSchedule.checked;
+  const reviewed = isScheduleReviewed();
   if (!reviewed) {
     elements.directoryGrid.innerHTML = summaryMetric('Waiting for review', 'Check the box', 'OCR is a draft. Directory metrics stay hidden until you confirm the table.');
     elements.directoryGuidance.innerHTML = '<p>Check “I reviewed every circuit row” after correcting the table. You can still type every field by hand with no photo.</p>';
@@ -787,6 +824,11 @@ function renderDirectoryMetrics() {
 
 function renderLoadAnalysis() {
   if (!elements.analysisGrid || !elements.analysisGuidance) return;
+  if (!isScheduleReviewed()) {
+    elements.analysisGrid.innerHTML = summaryMetric('Waiting for review', 'Check the box', 'OCR is a draft. Load summary stays hidden until you confirm the table. Breaker trip is not a reviewed load.');
+    elements.analysisGuidance.innerHTML = '<p>Check “I reviewed every circuit row” after correcting the table. Est. Load A values copied from trip stay flagged until you edit them.</p>';
+    return;
+  }
   const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
   const voltage = panelVoltageInfo(elements.panelVoltage.value);
   const phase = Number(elements.panelPhase.value) || 3;
@@ -809,7 +851,7 @@ function renderLoadAnalysis() {
   }, {});
 
   elements.analysisGrid.innerHTML = [
-    summaryMetric('Scheduled connected load', knownVoltage ? `${formatKva(connectedVa)} kVA` : 'Needs voltage', `${rows.length} reviewed circuit${rows.length === 1 ? '' : 's'}`),
+    summaryMetric('Scheduled connected load', knownVoltage ? `${formatKva(connectedVa)} kVA` : 'Needs voltage', `${rows.length} circuit${rows.length === 1 ? '' : 's'} in the table`),
     summaryMetric('After circuit demand factors', knownVoltage ? `${formatKva(demandVa)} kVA` : 'Needs voltage', `before diversity`),
     summaryMetric('Estimated coincident demand', knownVoltage ? `${formatKva(coincidentVa)} kVA` : 'Needs voltage', `diversity ${diversity.toFixed(2)}`),
     summaryMetric('Estimated panel FLA', knownVoltage ? `${formatNumber(equivalentAmps)} A` : 'Needs voltage', phase === 3 ? `${formatNumber(voltage.lineToLine)} V 3Ø equivalent` : `${formatNumber(voltage.lineToLine)} V 1Ø equivalent`),
@@ -902,7 +944,7 @@ function createPlaceholderRow(circuit) {
 }
 
 function createEmptyRow() {
-  return { circuit: '', description: '', trip: '', poles: '', loadType: 'General', loadAmps: '', demandFactor: '1' };
+  return { circuit: '', description: '', trip: '', poles: '', loadType: 'General', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' };
 }
 
 function seedRows(count) {
@@ -914,6 +956,7 @@ function seedRows(count) {
     poles: '',
     loadType: 'General',
     loadAmps: '',
+    loadAmpsCopiedFromTrip: false,
     demandFactor: '1'
   }));
 }
@@ -940,7 +983,7 @@ function resetApp() {
   elements.previewFrame.classList.remove('has-image');
   elements.fileName.textContent = 'No file selected';
   elements.processButton.disabled = true;
-  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+  clearReview();
   if (elements.openPanelCaution) elements.openPanelCaution.hidden = true;
   resetProgress();
   setStatus('Reset complete. Upload a new schedule image to begin again.');
@@ -948,7 +991,7 @@ function resetApp() {
 }
 
 function handleParseText() {
-  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+  clearReview();
   parseAndApplyText(elements.rawText.value, false);
 }
 
@@ -985,6 +1028,10 @@ function defaultPrintDate() {
 }
 
 function handlePrint() {
+  if (!isScheduleReviewed()) {
+    setStatus('Check “I reviewed every circuit row” before printing. OCR is a draft, not a finished schedule.');
+    return;
+  }
   if (!state.rows.some(row => row.description || row.trip || row.poles)) {
     setStatus('Add or parse at least one circuit row before printing.');
     return;
@@ -1023,6 +1070,9 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     panelVoltageInfo,
     rowLoadVa,
     normalizeLoadAmps,
+    isLoadAmpsCopiedFromTrip,
+    isScheduleReviewed,
+    isLikelyImageFile,
     normalizeDemandFactor,
     isSpareOrOpen,
     isUnlabeled,

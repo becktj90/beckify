@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://cdn.jsdelivr.net blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
   <title>Panel Schedule Power Study | Beckify</title>
   <meta name="description" content="Read a panel schedule image, review breaker sizes, poles, and circuit classes, then calculate connected load, demand and diversity factors, panel FLA, and remaining expansion capacity.">
   <meta name="robots" content="index,follow">
@@ -49,7 +49,7 @@
         <div>
           <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
           <h1>Panel Schedule Power Study</h1>
-          <p class="hero-copy">Upload a clear panel schedule photo, review OCR output, correct every field, and run a full load/power study with demand, diversity, and expansion metrics before printing or saving.</p>
+          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Manual entry still works with no photo. Informational estimate — not an electrical inspection.</p>
         </div>
         <div class="toolbar toolbar-wrap" style="justify-content:flex-end">
           <button id="saveJsonButton" class="btn" type="button">Save Data (JSON)</button>
@@ -64,8 +64,18 @@
           <span class="title-bar-text" id="upload-title">Image Intake</span>
         </div>
         <div class="window-body stack-lg">
+          <div class="callout callout-privacy">
+            <strong>Privacy before you pick a photo.</strong> The photo stays on this device. It is never uploaded to Beckify or any server. On-device Tesseract.js reads it in the browser. The image is not saved after you leave or reset.
+          </div>
+          <div class="callout callout-safety">
+            <strong>Photograph the directory / label only.</strong> This tool reads the printed circuit directory or schedule card on the panel door — not the live interior of an open panel. Keep the door closed if you can. Never open a panel or touch anything inside it to get this photo. Square the card to the camera, fill the frame, use even light, and avoid glare.
+          </div>
+          <div id="openPanelCaution" class="callout callout-caution" hidden>
+            <strong>This photo looks like an open panel interior.</strong> Do not work inside a live panel. OCR will still try to help with whatever text it can read, but that is not the intended use. Photograph the directory with the door closed if you can. Any safety concern goes to a licensed electrician.
+          </div>
+
           <div class="toolbar">
-            <label class="btn" for="imageInput">Upload Image</label>
+            <label class="btn" for="imageInput">Choose file</label>
             <input id="imageInput" type="file" accept="image/*" hidden>
             <button id="processButton" class="btn btn-primary" type="button" disabled>Read Schedule</button>
             <button id="resetButton" class="btn" type="button">Reset</button>
@@ -73,8 +83,8 @@
 
           <label id="dropZone" class="drop-zone" for="imageInput">
             <span class="drop-zone-icon">📂</span>
-            <strong>Drag &amp; drop a panel schedule here</strong>
-            <span>For best OCR: square to camera, even lighting, high contrast, and all rows visible.</span>
+            <strong>Drag &amp; drop a directory photo here</strong>
+            <span>PNG, JPG, or WEBP of the printed schedule/label. Framing: fill the frame, even light, avoid glare. You can skip the photo and type rows by hand.</span>
           </label>
 
           <div class="status-strip" role="status" aria-live="polite">
@@ -181,6 +191,10 @@
               <tbody id="editorTableBody"></tbody>
             </table>
           </div>
+          <label class="review-check">
+            <input id="reviewedSchedule" type="checkbox" data-no-persist>
+            I reviewed every circuit row. OCR is a draft, not verified input. Power-study metrics, print, and JSON export wait for this check.
+          </label>
         </div>
       </section>
 
@@ -191,7 +205,7 @@
         <div class="window-body stack-lg">
           <div class="analysis-grid" id="analysisGrid" aria-live="polite"></div>
           <div id="analysisGuidance" class="analysis-guidance"></div>
-          <p class="field-help">Planning estimate only. Validate all OCR values and perform formal design checks per governing codes and engineering standards.</p>
+          <p class="field-help">“Est. Load A” may start as the breaker-trip value and is flagged “copied from trip — edit me” until you replace it. Trip amps are not a reviewed load. Planning estimate only — not an NEC Article 220 calculation. Informational only; any safety concern goes to a licensed electrician.</p>
         </div>
       </section>
 
@@ -243,7 +257,7 @@
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous"></script>
+  <script src="js/ocr-helper.js"></script>
   <script src="js/panel-power-study.js"></script>
 </body>
 </html>

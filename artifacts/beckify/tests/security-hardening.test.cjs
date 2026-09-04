@@ -54,9 +54,9 @@ ok(
     /js\/vendor\/tesseract\//.test(ocrHelper),
 );
 ok(
-  "Panel power study pins Tesseract 5.1.1 with integrity",
-  /tesseract\.js@5\.1\.1\/dist\/tesseract\.min\.js/.test(panelPower) &&
-    /integrity="sha384-/.test(panelPower),
+  "Panel power study uses local Tesseract helper, no CDN",
+  /js\/ocr-helper\.js/.test(panelPower) &&
+    !/cdn\.jsdelivr\.net\/npm\/tesseract/.test(panelPower),
 );
 ok("Panel pages have CSP metas", /Content-Security-Policy/.test(panelSchedule) && /Content-Security-Policy/.test(panelPower));
 
@@ -72,7 +72,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after I/O list merge", /CACHE_VERSION = 'v27'/.test(sw));
+ok("Toolbox SW cache version bumped after OCR review-gate fix", /CACHE_VERSION = 'v28'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),

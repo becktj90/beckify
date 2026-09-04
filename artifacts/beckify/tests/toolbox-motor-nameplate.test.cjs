@@ -96,5 +96,27 @@ assert.equal(api.parsePhase('1'), 1);
 assert.equal(api.parsePhase('3'), 3);
 assert.match(api.analyze({ fla: 14, hp: 10, volts: 460, sf: 1.15 }).error, /phase/i);
 assert.match(api.analyze({ fla: 14, hp: 10, volts: 460, phase: '2', sf: 1.15 }).error, /phase/i);
+assert.match(api.analyze({ fla: '28/14', hp: 10, volts: '230/460', phase: 3, sf: 1.15 }).error, /dual FLA/i);
+assert.match(api.lockedRotorRange('F', 10, 460, '').error, /phase/i);
+
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const phaseBlock = html.slice(html.indexOf('id="mnp_phase"'), html.indexOf('id="mnp_phase"') + 280);
+assert.match(phaseBlock, /<option value="" selected>/);
+assert.doesNotMatch(phaseBlock, /<option value="3" selected>/);
+assert.match(html, /id="mnp_reviewed"[^>]*data-no-persist/);
+assert.match(src, /el\('mnp_phase'\)\.value = ''/);
+assert.equal((src.match(/mnp_phase'\)\.value = '3'/g) || []).length, 0);
+
+vm.runInContext(fs.readFileSync(path.join(root, 'ocr-helper.js'), 'utf8'), sandbox, { filename: 'ocr-helper.js' });
+const ocr = sandbox.__ocrHelperTestApi;
+const mocp = ocr.parseMotorNameplate('MOCP 30 FLA 14.5 HP 10');
+assert.equal(mocp.fields.fla, '14.5');
+assert.notEqual(mocp.fields.fla, '30');
+const lraPlate = ocr.parseMotorNameplate('LRA 84 HP 10 VOLTS 460');
+assert.equal(lraPlate.fields.fla, '');
+assert.equal(lraPlate.fields.volts, '460');
+const dualPlate = ocr.parseMotorNameplate('230/460V 28/14 FLA');
+assert.equal(dualPlate.fields.volts, '230/460');
+assert.equal(dualPlate.fields.fla, '28/14');
 
 console.log('Motor nameplate NEC percentage tables passed');
