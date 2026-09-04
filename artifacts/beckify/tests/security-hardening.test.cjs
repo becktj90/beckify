@@ -100,7 +100,7 @@ ok("Deploy workflow keeps contents: read", /contents:\s*read/.test(deploy));
 const iosMath = read(repo, ".github", "workflows", "ios-math.yml");
 ok("iOS math checkout is SHA-pinned", /actions\/checkout@[0-9a-f]{40}/.test(iosMath));
 
-const gear = read(root, "src", "components", "gear", "GearCard.tsx");
-ok("GearCard ignores non-http(s) URLs", /function httpUrl/.test(gear));
+const vespa = read(root, "src", "components", "VespaPartsCatalog.tsx");
+ok("Vespa Amazon links stay rel=sponsored", vespa.includes('part.href.includes("amazon.com") ? "sponsored noopener noreferrer"'));
 
 process.exitCode = failures ? 1 : 0;

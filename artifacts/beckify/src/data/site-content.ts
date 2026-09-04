@@ -25,7 +25,6 @@ import {
   Github,
   Youtube,
   Phone,
-  Flag,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -74,12 +73,6 @@ export interface HubCard {
 }
 
 export const HOME_NAV_CARDS: HubCard[] = [
-  {
-    title: "Made in America",
-    description: "Verified U.S.-made electrical hand tools with exact model numbers.",
-    href: "/made-in-america",
-    icon: Flag,
-  },
   {
     title: "EE Toolbox",
     description: "Electrical calculators and quick-reference tools.",

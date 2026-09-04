@@ -28,12 +28,6 @@ const HOUSE_ADS = [
     href: "/control-systems",
   },
   {
-    title: "USA-made gear picks",
-    description: "Recommended electrical tools and test equipment, filtered to manufacturer-verified American-made options.",
-    linkText: "See the picks",
-    href: "/made-in-america",
-  },
-  {
     title: "Beckify is open source",
     description: "Browse the source for every calculator, page, and game on this site on GitHub.",
     linkText: "View the repo",
