@@ -24,7 +24,7 @@ export default function Home() {
     <div className="relative min-h-[100dvh]">
       <SchemaHead
         title="Beckify | Engineering Tools, References & Builds"
-        description="Beckify brings practical electrical engineering calculators, NEC references, field tools, hands-on builds, and browser games together in one fast resource."
+        description="Beckify brings practical electrical engineering calculators, NEC references, field tools, hands-on builds, and New Glenn Runner together in one fast resource."
         path="/"
       />
       <Starfield showPenrose={false} />
@@ -242,7 +242,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Games</h2>
                     <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
-                      {PUBLIC_GAME_COUNT} browser games across shooters, runners, and launch simulation — no install, just play.
+                      {PUBLIC_GAME_COUNT} browser game — New Glenn Runner, a launch arcade. No install, just play.
                     </p>
                   </div>
                 </div>

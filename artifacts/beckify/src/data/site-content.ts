@@ -96,7 +96,7 @@ export const HOME_NAV_CARDS: HubCard[] = [
   },
   {
     title: "Games",
-    description: "Seven original browser games with cartoon heroes — no ads.",
+    description: "New Glenn Runner — a launch arcade in the browser. No ads.",
     href: "/games",
     icon: Gamepad2,
   },
@@ -226,41 +226,10 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
-    name: "Cosmic Cadet",
-    description: "A kid-friendly space blaster with auto-fire, touch steering, power-up stars, live score and wave, pause, and local best flights.",
-    url: "/games/cosmic-cadet",
-  },
-  {
-    name: "Booty Butt Scooter",
-    description:
-      "Crossy-style scooter hopper with cartoon riders Blaze (orange balloon) and Spark (pink balloon), fart boosts, traffic dodges, and score persistence.",
-    url: "/games/booty-butt-scooter",
-  },
-  {
     name: "New Glenn Runner",
     description:
       "A stylized vertical launch arcade mission with parallax backgrounds, quick decisions, and local mission scoring.",
     url: "/games/new-glenn-runner",
-  },
-  {
-    name: "Finger Runner",
-    description: "A touch-friendly one-button runner with local high scores and fast arcade pacing.",
-    url: "/games/finger-runner",
-  },
-  {
-    name: "Toot Troopers",
-    description: "Original fart-powered flight with cartoon flyers Blaze and Spark. Toot through sky gates and beat your local best.",
-    url: "/games/toot-troopers",
-  },
-  {
-    name: "Apollo & Rocco Run",
-    description: "Backyard water-balloon run with cartoon runners Blaze (orange balloon) and Spark (pink balloon). Three-lane trail, jump, slide, KID difficulty, and a local best on this device.",
-    url: "/games/apollo-rocco-run",
-  },
-  {
-    name: "Pup Planet",
-    description: "Play as Blaze or Spark, mining and building on a seeded little planet in this first-person WebGL sandbox.",
-    url: "/games/pup-planet",
   },
 ];
 

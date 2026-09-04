@@ -54,7 +54,7 @@ const excludedNav = new Set([
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
 ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));
-ok("game count constant is 7", /PUBLIC_GAME_COUNT = 7/.test(siteStats));
+ok("game count constant is 1", /PUBLIC_GAME_COUNT = 1/.test(siteStats));
 ok("calculator count matches live toolbox nav", PUBLIC_CALCULATOR_COUNT === liveCalculatorCount, `${PUBLIC_CALCULATOR_COUNT} vs nav ${liveCalculatorCount}`);
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home names EMP/EMC, homework EE, LP, and number-base", /EMP\/EMC/.test(homeSrc) && /homework EE/.test(homeSrc) && /linear-programming optimizer/.test(homeSrc) && /number-base converter/.test(homeSrc));
@@ -74,10 +74,10 @@ ok("home deep-links EMP, homework EE, LP, and number-base", [
   "/toolbox/#sec-lux-meter",
 ].every((href) => homeSrc.includes(`href: "${href}"`)));
 ok("sitemap chips deep-link via /toolbox/#", sitemapSrc.includes("href={`/toolbox/#${tool.anchor}`}"));
-ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser games"));
+ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser game"));
 ok("toolbox header uses the shared calculator count", toolboxHtml.includes(`${PUBLIC_CALCULATOR_COUNT} calculators plus reference tables`));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
-ok("sitemap games line includes Toot Troopers", sitemapSrc.includes("Toot Troopers"));
+ok("sitemap games line includes New Glenn Runner", sitemapSrc.includes("New Glenn Runner") && !sitemapSrc.includes("Toot Troopers"));
 ok("sitemap lists EMP/EMC with a working hash link", sitemapSrc.includes('t("EMP / EMC Shielding", "sec-emp-emc")'));
 ok("sitemap lists LP optimizer with a working hash link", sitemapSrc.includes('t("Linear Programming Optimizer", "sec-lp-optimizer")'));
 ok("sitemap lists phone sensor field tools", [
@@ -100,8 +100,9 @@ ok("sitemap lists the homework EE set", [
   't("Fiber Link / NA", "sec-fiber-link")',
   't("Gaussian Beam", "sec-gaussian-beam")',
 ].every((entry) => sitemapSrc.includes(entry)));
-const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Cosmic Cadet", "Booty Butt Scooter", "New Glenn Runner", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet"].includes(name));
-ok("site-content lists 7 games", gameNames.length === 7, gameNames.join(", "));
+const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["New Glenn Runner"].includes(name));
+ok("site-content lists 1 game", gameNames.length === 1, gameNames.join(", "));
+ok("removed titles are not listed", !["Cosmic Cadet", "Booty Butt Scooter", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet"].some((name) => siteContent.includes(`name: "${name}"`)));
 ok("HexGL is not listed", !/name: "HexGL"/.test(siteContent));
 
 console.log("\n--- New Glenn route ---");

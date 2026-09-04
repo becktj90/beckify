@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Beckify — Engineering Tools & Builds",
   "short_name": "Beckify",
-  "description": "Electrical engineering calculators, NEC references, field tools, hands-on builds, and browser games.",
+  "description": "Electrical engineering calculators, NEC references, field tools, hands-on builds, and New Glenn Runner.",
   "display": "standalone",
   "orientation": "any",
   "start_url": "/",

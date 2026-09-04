@@ -5,8 +5,8 @@ import Home from "@/pages/home";
 
 /**
  * Every route besides Home is code-split: without this, visiting the
- * voltage-drop calculator (or any single page) downloaded every game engine,
- * three.js, recharts, and the control-systems simulator in one 1.7MB chunk.
+ * voltage-drop calculator (or any single page) downloaded recharts and the
+ * control-systems simulator in one oversized chunk.
  * Home stays a static import — it's the most common entry point, and lazy-
  * loading it would add a chunk fetch to the very first paint for no benefit.
  */
@@ -16,12 +16,6 @@ const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
 const GamesPage = lazy(() => import("@/pages/games"));
 const SiteMapPage = lazy(() => import("@/pages/sitemap"));
-const CosmicCadetPage = lazy(() => import("@/pages/cosmic-cadet"));
-const BootyButtScooterPage = lazy(() => import("@/pages/booty-butt-scooter"));
-const FingerRunnerPage = lazy(() => import("@/pages/finger-runner"));
-const TootTroopersPage = lazy(() => import("@/pages/toot-troopers"));
-const ApolloRoccoRunPage = lazy(() => import("@/pages/apollo-rocco-run"));
-const PupPlanetPage = lazy(() => import("@/pages/pup-planet"));
 const NewGlennRunnerPage = lazy(() => import("@/pages/new-glenn-runner"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const HondaXR650RPage = lazy(() => import("@/pages/honda-xr650r"));
@@ -64,13 +58,6 @@ function Router() {
         <Route path="/made-in-america" component={MadeInAmericaPage} />
         <Route path="/control-systems" component={ControlSystemsPage} />
         <Route path="/games" component={GamesPage} />
-        <Route path="/games/cosmic-cadet" component={CosmicCadetPage} />
-        <Route path="/games/booty-butt-scooter" component={BootyButtScooterPage} />
-        <Route path="/games/finger-runner" component={FingerRunnerPage} />
-        <Route path="/games/toot-troopers" component={TootTroopersPage} />
-        <Route path="/games/apollo-rocco-run" component={ApolloRoccoRunPage} />
-        <Route path="/games/apollo-rocco-run/" component={ApolloRoccoRunPage} />
-        <Route path="/games/pup-planet" component={PupPlanetPage} />
         <Route path="/games/new-glenn-runner" component={NewGlennRunnerPage} />
         <Route path="/sitemap" component={SiteMapPage} />
         <Route component={NotFound} />
