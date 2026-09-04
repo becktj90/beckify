@@ -401,3 +401,163 @@ struct ShortCircuitDiagram: View {
         }
     }
 }
+
+// MARK: - Motor torque-speed curve
+
+struct MotorTorqueCurveChart: View {
+    let horsepower: Double
+    let ratedRPM: Double
+    let ratedTorqueLbFt: Double
+
+    private var points: [(rpm: Double, torqueLbFt: Double)] {
+        MotorTorque.curve(horsepower: horsepower, minRPM: max(200, ratedRPM * 0.3), maxRPM: ratedRPM * 2.2)
+    }
+
+    private var summary: String {
+        "Constant \(Format.number(horsepower, digits: 1)) horsepower torque curve. Rated point \(Format.number(ratedTorqueLbFt, digits: 2)) pound-feet at \(Format.number(ratedRPM, digits: 0)) RPM."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Torque vs. speed", accessibilitySummary: summary) {
+            Chart {
+                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("RPM", point.rpm), y: .value("Torque", point.torqueLbFt))
+                        .foregroundStyle(Theme.chartPrimary)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+                PointMark(x: .value("RPM", ratedRPM), y: .value("Torque", ratedTorqueLbFt))
+                    .foregroundStyle(Theme.energized)
+                    .symbolSize(64)
+            }
+            .chartXAxisLabel("RPM")
+            .chartYAxisLabel("lb·ft")
+            .frame(height: 160)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+// MARK: - RF path loss vs. distance
+
+struct PathLossDistanceChart: View {
+    let frequencyMHz: Double
+    let currentDistance: Double
+    let currentLossDB: Double
+
+    private var points: [(distance: Double, lossDB: Double)] {
+        FreeSpacePathLoss.distanceSweep(
+            frequencyMHz: frequencyMHz,
+            minMetres: max(1, currentDistance * 0.05),
+            maxMetres: max(currentDistance * 4, 10)
+        )
+    }
+
+    private var summary: String {
+        "Free-space path loss versus distance at \(Format.number(frequencyMHz, digits: 0)) megahertz. Current point \(Format.number(currentDistance, digits: 1)) metres, \(Format.number(currentLossDB, digits: 1)) decibels."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Loss vs. distance", accessibilitySummary: summary) {
+            Chart {
+                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("Distance", point.distance), y: .value("Loss", point.lossDB))
+                        .foregroundStyle(Theme.chartPrimary)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+                PointMark(x: .value("Distance", currentDistance), y: .value("Loss", currentLossDB))
+                    .foregroundStyle(Theme.energized)
+                    .symbolSize(64)
+            }
+            .chartXScale(type: .log)
+            .chartXAxisLabel("Distance (m, log)")
+            .chartYAxisLabel("dB")
+            .frame(height: 160)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+// MARK: - Phasor plot
+
+struct PhasorPolarDiagram: View {
+    let phasors: [Phasor]
+    let resultantMagnitude: Double
+    let resultantAngleDegrees: Double
+
+    private var maxMagnitude: Double {
+        max(phasors.map(\.magnitude).max() ?? 1, resultantMagnitude, 1)
+    }
+
+    private var summary: String {
+        "Phasor diagram with \(phasors.count) inputs. Resultant \(Format.number(resultantMagnitude, digits: 2)) at \(Format.number(resultantAngleDegrees, digits: 1)) degrees."
+    }
+
+    private static let palette: [Color] = [Theme.chartPrimary, Theme.chartSecondary, Theme.chartTertiary]
+
+    var body: some View {
+        DiagramCard(title: "Phasor plot", accessibilitySummary: summary) {
+            Canvas { context, size in
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                let radius = min(size.width, size.height) / 2 * 0.82
+                let scale = radius / CGFloat(maxMagnitude)
+
+                context.stroke(
+                    Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)),
+                    with: .color(Theme.chartGrid),
+                    style: StrokeStyle(lineWidth: 1, dash: [3, 3])
+                )
+
+                for (index, phasor) in phasors.enumerated() {
+                    let rad = phasor.angleDegrees * .pi / 180
+                    let length = CGFloat(phasor.magnitude) * scale
+                    let tip = CGPoint(x: center.x + cos(rad) * length, y: center.y - sin(rad) * length)
+                    var path = Path()
+                    path.move(to: center)
+                    path.addLine(to: tip)
+                    let color = Self.palette[index % Self.palette.count]
+                    context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    context.fill(
+                        Path(ellipseIn: CGRect(x: tip.x - 3, y: tip.y - 3, width: 6, height: 6)),
+                        with: .color(color)
+                    )
+                }
+
+                guard resultantMagnitude > 0 else { return }
+                let rad = resultantAngleDegrees * .pi / 180
+                let length = CGFloat(resultantMagnitude) * scale
+                let tip = CGPoint(x: center.x + cos(rad) * length, y: center.y - sin(rad) * length)
+                var resultantPath = Path()
+                resultantPath.move(to: center)
+                resultantPath.addLine(to: tip)
+                context.stroke(resultantPath, with: .color(Theme.bad), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [5, 3]))
+            }
+            .frame(height: 180)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+// MARK: - Battery bank usable capacity
+
+struct BatteryBankChart: View {
+    let usableWattHours: Double
+    let totalWattHours: Double
+    let runtimeHours: Double
+
+    private var summary: String {
+        "Usable \(Format.number(usableWattHours, digits: 0)) watt-hours of \(Format.number(totalWattHours, digits: 0)) total. Runtime \(Format.number(runtimeHours, digits: 2)) hours."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Usable capacity", accessibilitySummary: summary) {
+            Chart {
+                BarMark(x: .value("Metric", "Total"), y: .value("Wh", totalWattHours))
+                    .foregroundStyle(Theme.chartGrid)
+                BarMark(x: .value("Metric", "Usable"), y: .value("Wh", usableWattHours))
+                    .foregroundStyle(Theme.chartPrimary)
+            }
+            .frame(height: 140)
+            .accessibilityHidden(true)
+        }
+    }
+}

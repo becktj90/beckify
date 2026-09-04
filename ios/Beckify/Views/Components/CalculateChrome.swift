@@ -106,7 +106,8 @@ struct ToolIdentityHeader: View {
             ToolGlyph(
                 kind: .forTool(toolID),
                 size: 52,
-                selected: true
+                selected: true,
+                toolID: toolID
             )
             .accessibilityHidden(true)
 

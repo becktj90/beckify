@@ -146,7 +146,7 @@ struct ToolGridView: View {
 
     private func compactTile(_ tool: ToolDefinition) -> some View {
         HStack(spacing: 10) {
-            ToolGlyph(kind: .forTool(tool.id), size: 28, selected: true)
+            ToolGlyph(kind: .forTool(tool.id), size: 28, selected: true, toolID: tool.id)
             Text(tool.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
@@ -197,19 +197,28 @@ struct ToolTile: View {
     let tool: ToolDefinition
     var isFavorite: Bool
 
+    private var category: ToolCategory? { ToolboxCatalog.category(of: tool.id) }
+    private var tileFill: LinearGradient {
+        category.map(Theme.categoryIconGradient) ?? Theme.iconGradient
+    }
+    private var borderTint: Color {
+        category.map { Theme.categoryColors($0).primary } ?? Theme.accent
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             ZStack(alignment: .topTrailing) {
                 RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                    .fill(Theme.iconGradient)
+                    .fill(tileFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                            .stroke(Theme.accent.opacity(0.22), lineWidth: 1)
+                            .stroke(borderTint.opacity(0.3), lineWidth: 1)
                     )
                     .overlay(
-                        ToolGlyph(kind: GlyphKind.forTool(tool.id), size: 46, selected: true)
+                        ToolGlyph(kind: GlyphKind.forTool(tool.id), size: 46, selected: true, toolID: tool.id)
                     )
                     .aspectRatio(1, contentMode: .fit)
+                    .shadow(color: borderTint.opacity(0.18), radius: 8, x: 0, y: 4)
 
                 if isFavorite {
                     Image(systemName: "star.fill")

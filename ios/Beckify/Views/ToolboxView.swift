@@ -164,6 +164,11 @@ struct CalculatorHostView: View {
             case .modbusAddress: ModbusAddressView()
             case .plcTimer: PLCTimerView()
             case .panelDirectory: PanelDirectoryView()
+            case .motorSpeed: MotorSpeedView()
+            case .rfLink: RFLinkView()
+            case .phasorDiagram: PhasorDiagramView()
+            case .numberBase: NumberBaseView()
+            case .batteryBank: BatteryBankView()
             }
         }
     }

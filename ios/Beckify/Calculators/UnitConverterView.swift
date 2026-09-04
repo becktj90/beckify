@@ -250,3 +250,118 @@ struct UnitConverterView: View {
         ))
     }
 }
+
+/// A `NumberField`-styled text entry that accepts hex letters — `NumberField`
+/// pins the keyboard to digits-only, which makes A–F, O, and B unreachable.
+private struct BaseValueField: View {
+    let title: String
+    let unit: String
+    @Binding var text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased())
+                .font(Theme.TypeRole.fieldLabel)
+                .tracking(0.6)
+                .foregroundStyle(Theme.muted)
+            HStack(alignment: .firstTextBaseline) {
+                TextField("0", text: $text)
+                    .keyboardType(.asciiCapable)
+                    .font(.title3.monospaced().weight(.medium))
+                    .foregroundStyle(Theme.foreground)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .accessibilityLabel(title)
+                    .accessibilityHint("Digits" + (unit.isEmpty ? "." : ", optionally prefixed \(unit)."))
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.accent)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(minHeight: Theme.touchTarget)
+            .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                    .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+            )
+        }
+    }
+}
+
+// MARK: - Number base converter
+
+struct NumberBaseView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredChoice(.numberBase, "base", default: NumberBase.decimal) private var base
+    @StoredInput(.numberBase, "value", default: "202") private var value
+    @StoredInput(.numberBase, "jobName", default: "Number base") private var jobName
+    @State private var live = LiveCalculationState<NumberBaseResult>()
+
+    private var inputFingerprint: String { "\(base)|\(value)" }
+
+    var body: some View {
+        ToolScaffold(toolID: .numberBase, stickyAnswer: sticky, copyText: sticky) {
+            ShowWorkCard(
+                toolID: .numberBase,
+                symbolic: "entity(base) → same bits → binary · octal · decimal · hex",
+                substituted: substituted,
+                meaning: "It's one bit pattern read four ways. The signed rows re-read that same pattern as two's complement at 8, 16, or 32 bits — the width your register or Modbus word actually is."
+            )
+            TryExampleButton(title: "0xCA — one byte, sign bit set") {
+                base = .hexadecimal
+                value = "CA"
+            }
+
+            MenuField(title: "Enter as", selection: $base, options: NumberBase.allCases) { $0.displayName }
+            BaseValueField(title: base.displayName, unit: base.prefix, text: $value)
+
+            if let error = live.error {
+                ErrorText(message: error.message)
+            } else if let r = live.result {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Binary", value: NumberBaseConvert.groupedBinary(r.binary), emphasis: base == .binary, tone: base == .binary ? Theme.good : Theme.foreground)
+                    ResultRow(label: "Octal", value: r.octal, emphasis: base == .octal, tone: base == .octal ? Theme.good : Theme.foreground)
+                    ResultRow(label: "Decimal", value: r.decimal, emphasis: base == .decimal, tone: base == .decimal ? Theme.good : Theme.foreground)
+                    ResultRow(label: "Hex", value: r.hexadecimal, emphasis: base == .hexadecimal, tone: base == .hexadecimal ? Theme.good : Theme.foreground)
+                }
+                ResultCard(title: "Signed (two's complement)") {
+                    ResultRow(label: "8-bit", value: "\(r.signed8)")
+                    ResultRow(label: "16-bit", value: "\(r.signed16)")
+                    ResultRow(label: "32-bit", value: "\(r.signed32)")
+                }
+                SaveJobBar(jobName: $jobName, canSave: true) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in refresh() }
+        .onAppear { refresh() }
+    }
+
+    private func refresh() {
+        live.update {
+            try NumberBaseConvert.parse(value, from: base)
+        }
+    }
+
+    private var substituted: String? {
+        guard let r = live.result else { return nil }
+        return "\(NumberBaseConvert.groupedBinary(r.binary))  ·  \(r.decimal)  ·  0x\(r.hexadecimal)"
+    }
+
+    private var sticky: String? {
+        guard let r = live.result else { return nil }
+        return "0x\(r.hexadecimal)  ·  \(r.decimal)  ·  \(NumberBaseConvert.groupedBinary(r.binary))"
+    }
+
+    private func save(_ r: NumberBaseResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .numberBase,
+            inputs: ["entered": "\(base.prefix)\(value)"],
+            outputs: ["bin": r.binary, "dec": r.decimal, "hex": r.hexadecimal]
+        ))
+    }
+}
