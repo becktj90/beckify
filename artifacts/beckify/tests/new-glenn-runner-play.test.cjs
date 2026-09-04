@@ -84,6 +84,7 @@ assert.doesNotMatch(mission, /Matter\.Engine/);
 assert.doesNotMatch(mission, /new Matter\./);
 assert.match(mission, /this\.matter\.add\.image/);
 assert.match(mission, /this\.matter\.add\.rectangle/);
+assert.match(mission, /setTexture\('booster'\)[\s\S]{0,80}bindRocketBody\(\)/);
 assert.match(mission, /this\.matter\.pause\(\)/);
 assert.match(mission, /this\.matter\.resume\(\)/);
 assert.match(mission, /syncMatterPause/);

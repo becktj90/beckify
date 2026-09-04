@@ -418,6 +418,7 @@ export default class MissionScene extends Phaser.Scene {
     this.placeRecovery();
     this.hideLandingFx();
     this.rocket.setTexture('booster');
+    this.bindRocketBody();
     this.rocket.setDepth(5);
     const side = flight.lzOffset >= 0 ? -1 : 1;
     this.session.jacklynReadyAt = this.nowSec + 0.85;
