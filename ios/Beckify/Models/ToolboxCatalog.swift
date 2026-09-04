@@ -84,7 +84,7 @@ struct ToolDefinition: Identifiable {
     var title: String
     var subtitle: String
     /// SF Symbol used only as a fallback / related-row chevron context — primary
-    /// artwork is `ToolGlyph` / `GlyphKind.forTool`.
+    /// artwork is the Beckify instrument glyph set (`IconWell` / `ToolGlyph`).
     var symbol: String
     var synonyms: [String]
     /// Live converters update on valid input; explicit tools require Calculate.

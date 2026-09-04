@@ -161,6 +161,11 @@ enum Theme {
         )
     }
 
+    /// Hairline rim for `IconWell` / category wells — category primary at low opacity.
+    static func categoryWellStroke(_ category: ToolCategory) -> Color {
+        categoryColors(category).primary.opacity(0.38)
+    }
+
     // MARK: Chart
 
     static let chartPrimary = accent
@@ -186,6 +191,8 @@ enum Theme {
         static let card: CGFloat = 14
         static let panel: CGFloat = 18
         static let tile: CGFloat = 16
+        /// Soft well behind a tool glyph (slightly tighter than tile).
+        static let well: CGFloat = 14
         static let pill: CGFloat = 999
     }
 
@@ -193,6 +200,8 @@ enum Theme {
         static let hairline: CGFloat = 1
         static let emphasis: CGFloat = 1.5
         static let icon: CGFloat = 1.8
+        /// Soft under-ink behind instrument glyphs — dual-stroke depth.
+        static let iconUnder: CGFloat = 3.2
     }
 
     // MARK: Typography roles — scientific / instrument hierarchy.

@@ -93,12 +93,7 @@ struct ToolRow: View {
     var body: some View {
         HStack(spacing: 14) {
             HStack(spacing: 14) {
-                ToolGlyph(
-                    kind: .forTool(tool.id),
-                    size: 32,
-                    selected: true
-                )
-                .accessibilityHidden(true)
+                IconWell(toolID: tool.id, size: 40, glyphSize: 24, selected: true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(tool.title)
                         .font(.headline)

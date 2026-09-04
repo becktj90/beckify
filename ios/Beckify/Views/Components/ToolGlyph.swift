@@ -1,51 +1,332 @@
 import SwiftUI
 
-/// Original schematic-style artwork for the tool grid, drawn as vector paths so
-/// it stays crisp at any size, follows the theme, and ships no image assets.
+// MARK: - Beckify Instrument Glyph Set (app-only)
+//
+// Original schematic linework for the Field EE Toolbox — vector Canvas paths,
+// no image assets, dual-stroke depth, category-colored wells.
+//
+// Units:
+//   • `ToolGlyph`     — per-tool schematic (`GlyphKind`, 1:1 with `ToolID`)
+//   • `CategoryGlyph` — shelf mark for each `ToolCategory`
+//   • `IconWell`      — pastel well + crisp glyph (grid / list / headers)
+
+/// Schematic stroke for one toolbox tool. Drawn as vector paths so it stays
+/// crisp at any size, follows the theme, and ships no image assets.
 ///
-/// Each `ToolID` maps 1:1 to a distinct `GlyphKind` drawing — no unrelated tools
-/// share the same schematic. When `toolID` is supplied the stroke is a
-/// category-colored gradient with a small per-tool hue nudge, so the grid reads
-/// as color-coded shelves instead of one flat accent everywhere; omit it for a
-/// plain monochrome glyph (used sparingly, e.g. inside an already-colored chip).
+/// Each `ToolID` maps 1:1 to a distinct `GlyphKind` — no unrelated tools share
+/// the same schematic. When `toolID` is supplied the stroke is a
+/// category-colored gradient with a small per-tool hue nudge.
 struct ToolGlyph: View {
     let kind: GlyphKind
     var size: CGFloat = 44
     var selected: Bool = false
     var toolID: ToolID? = nil
+    /// When the caller already resolved the shelf (e.g. `IconWell`), pass it
+    /// through to skip a second `ToolboxCatalog.category(of:)` lookup.
+    var category: ToolCategory? = nil
 
-    private var category: ToolCategory? {
-        toolID.flatMap(ToolboxCatalog.category(of:))
+    private var resolvedCategory: ToolCategory? {
+        category ?? toolID.flatMap(ToolboxCatalog.category(of:))
     }
 
     private var strokeColor: Color { selected ? Theme.accent : Theme.muted }
 
     private var lineWidth: CGFloat {
-        let base = max(Theme.Stroke.icon, size * 0.055)
-        return selected ? base * 1.15 : base
+        let base = max(Theme.Stroke.icon, size * 0.052)
+        return selected ? base * 1.12 : base
+    }
+
+    private var underWidth: CGFloat {
+        max(Theme.Stroke.iconUnder * (size / 44), lineWidth * 1.85)
+    }
+
+    var body: some View {
+        Canvas { context, canvasSize in
+            // Slightly tighter inset so schematics read larger at tile sizes.
+            let rect = CGRect(origin: .zero, size: canvasSize)
+                .insetBy(dx: canvasSize.width * 0.12, dy: canvasSize.height * 0.12)
+            let path = kind.path(in: rect)
+            let mainStyle = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+            let underStyle = StrokeStyle(lineWidth: underWidth, lineCap: .round, lineJoin: .round)
+
+            // Soft understroke — second ink pass for body without fill blobs.
+            context.stroke(
+                path,
+                with: .color(Color.black.opacity(selected ? 0.22 : 0.12)),
+                style: underStyle
+            )
+
+            if let resolvedCategory {
+                let colors = Theme.categoryColors(resolvedCategory)
+                let shading = GraphicsContext.Shading.linearGradient(
+                    Gradient(colors: [colors.primary, colors.secondary]),
+                    startPoint: CGPoint(x: rect.minX, y: rect.minY),
+                    endPoint: CGPoint(x: rect.maxX, y: rect.maxY)
+                )
+                context.stroke(path, with: shading, style: mainStyle)
+            } else {
+                context.stroke(path, with: .color(strokeColor), style: mainStyle)
+            }
+        }
+        .hueRotation(toolID.map(Theme.toolHueNudge) ?? .zero)
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Soft colored well that frames a `ToolGlyph` — the graphic unit of the grid
+/// and list rows (pastel container + crisp schematic).
+struct IconWell: View {
+    let toolID: ToolID
+    var size: CGFloat = 56
+    var glyphSize: CGFloat? = nil
+    var selected: Bool = true
+    var circular: Bool = false
+
+    private var category: ToolCategory? { ToolboxCatalog.category(of: toolID) }
+    private var resolvedGlyph: CGFloat { glyphSize ?? size * 0.58 }
+    private var corner: CGFloat {
+        if circular { return size / 2 }
+        // Scale the well radius with size so large grid tiles stay soft, not boxy.
+        return min(Theme.Radius.tile, max(Theme.Radius.well * 0.75, size * 0.22))
+    }
+
+    var body: some View {
+        ZStack {
+            if circular {
+                Circle()
+                    .fill(category.map(Theme.categoryIconGradient) ?? Theme.iconGradient)
+                Circle()
+                    .stroke(
+                        category.map(Theme.categoryWellStroke) ?? Theme.accent.opacity(0.35),
+                        lineWidth: Theme.Stroke.hairline
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .fill(category.map(Theme.categoryIconGradient) ?? Theme.iconGradient)
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .stroke(
+                        category.map(Theme.categoryWellStroke) ?? Theme.accent.opacity(0.35),
+                        lineWidth: Theme.Stroke.hairline
+                    )
+            }
+            ToolGlyph(
+                kind: .forTool(toolID),
+                size: resolvedGlyph,
+                selected: selected,
+                toolID: toolID,
+                category: category
+            )
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Shelf mark for a toolbox category — same dual-stroke language as tool glyphs.
+struct CategoryGlyph: View {
+    let category: ToolCategory
+    var size: CGFloat = 28
+    var selected: Bool = true
+
+    private var lineWidth: CGFloat {
+        let base = max(Theme.Stroke.icon, size * 0.06)
+        return selected ? base * 1.1 : base
+    }
+
+    private var underWidth: CGFloat {
+        max(Theme.Stroke.iconUnder * (size / 28), lineWidth * 1.7)
     }
 
     var body: some View {
         Canvas { context, canvasSize in
             let rect = CGRect(origin: .zero, size: canvasSize)
                 .insetBy(dx: canvasSize.width * 0.14, dy: canvasSize.height * 0.14)
-            let style = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
-            let path = kind.path(in: rect)
-            if let category {
-                let colors = Theme.categoryColors(category)
-                let shading = GraphicsContext.Shading.linearGradient(
-                    Gradient(colors: [colors.primary, colors.secondary]),
-                    startPoint: CGPoint(x: rect.minX, y: rect.minY),
-                    endPoint: CGPoint(x: rect.maxX, y: rect.maxY)
-                )
-                context.stroke(path, with: shading, style: style)
-            } else {
-                context.stroke(path, with: .color(strokeColor), style: style)
-            }
+            let path = CategoryGlyphKind(category).path(in: rect)
+            let colors = Theme.categoryColors(category)
+            let shading = GraphicsContext.Shading.linearGradient(
+                Gradient(colors: [colors.primary, colors.secondary]),
+                startPoint: CGPoint(x: rect.minX, y: rect.minY),
+                endPoint: CGPoint(x: rect.maxX, y: rect.maxY)
+            )
+            context.stroke(
+                path,
+                with: .color(Color.black.opacity(0.18)),
+                style: StrokeStyle(lineWidth: underWidth, lineCap: .round, lineJoin: .round)
+            )
+            context.stroke(
+                path,
+                with: shading,
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+            )
         }
-        .hueRotation(toolID.map(Theme.toolHueNudge) ?? .zero)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// Compact well + category glyph for section chrome.
+struct CategoryWell: View {
+    let category: ToolCategory
+    var size: CGFloat = 28
+
+    private var corner: CGFloat {
+        min(Theme.Radius.tile, max(Theme.Radius.well * 0.65, size * 0.22))
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .fill(Theme.categoryIconGradient(category))
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .stroke(Theme.categoryWellStroke(category), lineWidth: Theme.Stroke.hairline)
+            CategoryGlyph(category: category, size: size * 0.62, selected: true)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
+
+enum CategoryGlyphKind {
+    case field
+    case power
+    case controls
+    case homework
+    case sensors
+    case reference
+
+    init(_ category: ToolCategory) {
+        switch category {
+        case .field: self = .field
+        case .power: self = .power
+        case .controls: self = .controls
+        case .homework: self = .homework
+        case .sensors: self = .sensors
+        case .reference: self = .reference
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        switch self {
+        case .field: return Self.field(rect)
+        case .power: return Self.power(rect)
+        case .controls: return Self.controls(rect)
+        case .homework: return Self.homework(rect)
+        case .sensors: return Self.sensors(rect)
+        case .reference: return Self.reference(rect)
+        }
+    }
+
+    /// Clamp-meter / field probe silhouette.
+    private static func field(_ r: CGRect) -> Path {
+        var path = Path()
+        let jaw = r.width * 0.38
+        path.addArc(
+            center: CGPoint(x: r.midX, y: r.minY + r.height * 0.32),
+            radius: jaw,
+            startAngle: .degrees(210),
+            endAngle: .degrees(-30),
+            clockwise: false
+        )
+        path.move(to: CGPoint(x: r.midX - jaw * 0.55, y: r.minY + r.height * 0.48))
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.12, y: r.maxY - r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.12, y: r.maxY - r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.midX + jaw * 0.55, y: r.minY + r.height * 0.48))
+        path.move(to: CGPoint(x: r.midX, y: r.midY + r.height * 0.05))
+        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.2))
+        return path
+    }
+
+    /// AC sine inside a power triangle.
+    private static func power(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.06))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.1, y: r.maxY - r.height * 0.1))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.1, y: r.maxY - r.height * 0.1))
+        path.closeSubpath()
+        let waveY = r.midY + r.height * 0.12
+        path.move(to: CGPoint(x: r.minX + r.width * 0.28, y: waveY))
+        for step in 0...16 {
+            let t = CGFloat(step) / 16
+            let y = waveY - sin(t * .pi * 2) * r.height * 0.1
+            path.addLine(to: CGPoint(x: r.minX + r.width * (0.28 + 0.44 * t), y: y))
+        }
+        return path
+    }
+
+    /// Ladder-logic rung / PLC rail.
+    private static func controls(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.12))
+        path.move(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.maxY - r.height * 0.12))
+        let midY = r.midY
+        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: midY))
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.14, y: midY))
+        let box = CGRect(
+            x: r.midX - r.width * 0.14, y: midY - r.height * 0.14,
+            width: r.width * 0.28, height: r.height * 0.28
+        )
+        path.addRoundedRect(in: box, cornerSize: CGSize(width: 2, height: 2))
+        path.move(to: CGPoint(x: r.midX + r.width * 0.14, y: midY))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: midY))
+        return path
+    }
+
+    /// Open notebook with a formula stroke.
+    private static func homework(_ r: CGRect) -> Path {
+        var path = Path()
+        let page = CGRect(
+            x: r.minX + r.width * 0.18, y: r.minY + r.height * 0.1,
+            width: r.width * 0.64, height: r.height * 0.8
+        )
+        path.addRoundedRect(in: page, cornerSize: CGSize(width: 3, height: 3))
+        path.move(to: CGPoint(x: r.midX, y: page.minY))
+        path.addLine(to: CGPoint(x: r.midX, y: page.maxY))
+        path.move(to: CGPoint(x: page.minX + page.width * 0.12, y: page.minY + page.height * 0.35))
+        path.addLine(to: CGPoint(x: page.minX + page.width * 0.38, y: page.minY + page.height * 0.35))
+        path.move(to: CGPoint(x: page.minX + page.width * 0.12, y: page.minY + page.height * 0.55))
+        path.addLine(to: CGPoint(x: page.minX + page.width * 0.32, y: page.minY + page.height * 0.55))
+        path.move(to: CGPoint(x: page.maxX - page.width * 0.38, y: page.minY + page.height * 0.42))
+        path.addLine(to: CGPoint(x: page.maxX - page.width * 0.12, y: page.minY + page.height * 0.62))
+        return path
+    }
+
+    /// Concentric sensor / radar arcs.
+    private static func sensors(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.maxY - r.height * 0.18)
+        for fraction in [0.28, 0.48, 0.68] as [CGFloat] {
+            path.addArc(
+                center: center,
+                radius: min(r.width, r.height) * fraction,
+                startAngle: .degrees(210),
+                endAngle: .degrees(-30),
+                clockwise: false
+            )
+        }
+        let node = r.width * 0.06
+        path.addEllipse(in: CGRect(x: center.x - node, y: center.y - node, width: node * 2, height: node * 2))
+        return path
+    }
+
+    /// Datasheet / reference card with index ticks.
+    private static func reference(_ r: CGRect) -> Path {
+        var path = Path()
+        let card = CGRect(
+            x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.12,
+            width: r.width * 0.68, height: r.height * 0.76
+        )
+        path.addRoundedRect(in: card, cornerSize: CGSize(width: 3, height: 3))
+        for index in 0..<3 {
+            let y = card.minY + card.height * (0.28 + 0.2 * CGFloat(index))
+            path.move(to: CGPoint(x: card.minX + card.width * 0.18, y: y))
+            path.addLine(to: CGPoint(x: card.maxX - card.width * 0.18, y: y))
+        }
+        path.move(to: CGPoint(x: card.minX + card.width * 0.18, y: card.minY + card.height * 0.16))
+        path.addLine(to: CGPoint(x: card.minX + card.width * 0.42, y: card.minY + card.height * 0.16))
+        return path
     }
 }
 
