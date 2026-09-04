@@ -45,8 +45,8 @@ final class TransientCircuitTests: XCTestCase {
         let result = try TransientCircuit.step(amplitude: 10, timeConstant: 1, time: 2, charging: true, samples: 10)
 
         XCTAssertEqual(result.curve.count, 10)
-        XCTAssertEqual(result.curve.first?.time, 0, accuracy: 1e-9)
-        XCTAssertGreaterThanOrEqual(result.curve.last?.time ?? 0, 2)
+        XCTAssertEqual(try XCTUnwrap(result.curve.first?.time), 0, accuracy: 1e-9)
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(result.curve.last?.time), 2)
     }
 
     func testNonPositiveInputsThrow() {
