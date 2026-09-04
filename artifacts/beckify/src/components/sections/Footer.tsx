@@ -20,9 +20,6 @@ export const Footer = () => (
         <Link href="/privacy" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
           Privacy
         </Link>
-        <Link href="/gear" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
-          Recommended Gear
-        </Link>
         {CONTACT_LINKS.map(({ href, label, icon: Icon, external }) => (
           <a
             key={href}

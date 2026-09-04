@@ -19,8 +19,6 @@ const SiteMapPage = lazy(() => import("@/pages/sitemap"));
 const NewGlennRunnerPage = lazy(() => import("@/pages/new-glenn-runner"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const HondaXR650RPage = lazy(() => import("@/pages/honda-xr650r"));
-const GearPage = lazy(() => import("@/pages/gear"));
-const MadeInAmericaPage = lazy(() => import("@/pages/made-in-america"));
 const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
 
 const queryClient = new QueryClient();
@@ -54,8 +52,6 @@ function Router() {
         <Route path="/projects" component={ProjectsPage} />
         <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
         <Route path="/projects/honda-xr650r" component={HondaXR650RPage} />
-        <Route path="/gear" component={GearPage} />
-        <Route path="/made-in-america" component={MadeInAmericaPage} />
         <Route path="/control-systems" component={ControlSystemsPage} />
         <Route path="/games" component={GamesPage} />
         <Route path="/games/new-glenn-runner" component={NewGlennRunnerPage} />
