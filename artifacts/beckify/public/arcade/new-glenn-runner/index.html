@@ -25,8 +25,8 @@
     }
     body { padding: 10px 10px 16px; }
     .cabinet {
-      max-width: 460px;
-      margin: 0 auto;
+      max-width: 1100px;
+      margin-inline: auto;
     }
     #arcade-fs-wrapper {
       position: relative;
@@ -41,6 +41,7 @@
       width: 100%;
       height: auto;
       max-width: 100%;
+      aspect-ratio: 16 / 9;
       cursor: pointer;
       background: #05050d;
     }
@@ -68,7 +69,7 @@
       display: flex;
       gap: 8px;
       margin: 10px auto 0;
-      max-width: 420px;
+      max-width: 960px;
       user-select: none;
     }
     #arcade-touch-btns button {
@@ -146,6 +147,21 @@
       max-height: calc(100dvh - 24px);
       margin: auto;
     }
+    @media (max-width: 720px) {
+      .cabinet { max-width: 100%; }
+      #arcade-touch-btns { max-width: 100%; }
+    }
+    html.in-embed, html.in-embed body {
+      background: #05050d;
+    }
+    html.in-embed body { padding: 0; }
+    html.in-embed .cabinet { max-width: none; }
+    html.in-embed .help,
+    html.in-embed .record { display: none; }
+    html.in-embed #arcade-touch-btns {
+      max-width: none;
+      margin: 8px 10px 10px;
+    }
   </style>
 </head>
 <body data-arcade-standalone="true">
@@ -153,7 +169,7 @@
     <h1 class="visually-hidden">New Glenn Runner</h1>
     <div id="arcade-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
     <div id="arcade-fs-wrapper">
-      <canvas id="arcadeCanvas" width="420" height="640" tabindex="0" aria-label="New Glenn Runner flight canvas. Hold boost to climb, steer around hazards, then land the first stage on Jacklyn."></canvas>
+      <canvas id="arcadeCanvas" width="960" height="540" tabindex="0" aria-label="New Glenn Runner flight canvas. Hold boost to climb, steer around hazards, then land the first stage on Jacklyn."></canvas>
       <div class="hud-btns">
         <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" aria-label="Toggle mute">🔊</button>
         <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" aria-label="Pause mission">⏸</button>
@@ -173,6 +189,9 @@
       <button class="btn" onclick="arcadeReset()">Reset mission record</button>
     </div>
   </main>
+  <script>
+    if (window.self !== window.top) document.documentElement.classList.add('in-embed');
+  </script>
   <script src="/toolbox/js/local-store.js"></script>
   <script>
     window.recordGameScore = window.recordGameScore || function () { return Promise.resolve(null); };

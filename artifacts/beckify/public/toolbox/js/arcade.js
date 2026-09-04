@@ -2,6 +2,8 @@
   'use strict';
 
   // New Glenn Runner — Beckify's only arcade title (HTML/CSS/JS canvas).
+  // LC-36 pad: one Integrated Launch Tower, enclosed service platforms,
+  // launch table, short GSE — no standalone lightning-protection towers.
   // Beat: PAD charge → ascent corridor → Max-Q → MECO/sep → Karman split →
   // BOOSTER_RTLS first-stage recovery onto Jacklyn (landing barge): a short
   // steer + throttle skill check. Soft deck touchdown = recovered (legs, steam,
@@ -9,8 +11,11 @@
   // Then SECO and payload. Kids (Apollo/Rocco) stay avatars, never playable.
   // Play-feel: coyote/buffer boost, early teach window, near-miss juice, PB.
 
-  const CW = 420;
-  const CH = 640;
+  const CW = 960;
+  const CH = 540;
+  const SPLIT_TOP_H = 252;
+  const SPLIT_GAP = 8;
+  const SPLIT_BOTTOM_Y = SPLIT_TOP_H + SPLIT_GAP;
   const BASE_FPS = 60;
   // Real mission telemetry, compressed into a short arcade flight.
   const MISSION_PACE = 5;
@@ -54,7 +59,7 @@
     'NG-1 reached orbit on first try, January 16, 2025.',
     'NG-2 landed the booster on Jacklyn — reusable orbital rocket history.',
     'The fairing volume is twice that of a 5-meter class fairing.',
-    'LC-36 lightning towers are 600 feet tall.',
+    'LC-36 flies from one Integrated Launch Tower — no standalone lightning towers.',
     'Booster lands ~620 miles (1,000 km) downrange in the Atlantic.',
     'It took 10+ years from program announcement to first orbital flight.',
     'BE-4 burns methane — cleaner than kerosene and easier to reuse.'
@@ -242,17 +247,24 @@
   const PAD_SPRITE_H = 480;
   const ROCKET_SPRITE_W = 56;
   const ROCKET_SPRITE_H = 180;
+  const PAD_ILT_X = Math.round(CW * 0.70);
+  const PAD_ILT_HALF_W = 20;
+  const PAD_ILT_H = 248;
+  const PAD_ILT_MAST = 34;
+  const PAD_GSE_X = Math.round(CW * 0.13);
+  const PAD_GSE_HALF_W = 16;
+  const PAD_GSE_H = 70;
   const NEAR_MISS_LATERAL = 46;
   const NEAR_MISS_SCORE = 0.1;
-  const JACKLYN_DECK_Y = 486;
+  const JACKLYN_DECK_Y = Math.round(CH * 0.775);
   const JACKLYN_HULL_HALF = 112;
-  const JACKLYN_LANDING_GRAVITY = 0.038;
-  const JACKLYN_LANDING_THRUST = 0.072;
-  const JACKLYN_LANDING_MAX_VY = 3.4;
-  const JACKLYN_SOFT_VY = 1.55;
-  const JACKLYN_PERFECT_VY = 1.02;
+  const JACKLYN_LANDING_GRAVITY = 0.032;
+  const JACKLYN_LANDING_THRUST = 0.078;
+  const JACKLYN_LANDING_MAX_VY = 3.15;
+  const JACKLYN_SOFT_VY = 1.85;
+  const JACKLYN_PERFECT_VY = 1.15;
   const JACKLYN_SETUP_SEC = 1.15;
-  const JACKLYN_CELEBRATE_SEC = 2.55;
+  const JACKLYN_CELEBRATE_SEC = 3.8;
   const JACKLYN_MAX_FLIGHT_SEC = 14;
   const JACKLYN_RECOVERY_BONUS = 2.2;
   const SLOWMO_SCALE = 0.38;
@@ -785,7 +797,8 @@
         liveStatus: '',
         landingBanner: '',
         landingBannerSub: '',
-        landingBannerTimer: 0
+        landingBannerTimer: 0,
+        compactHud: false
       },
       session: {
         missionNo: settings.missionCount + 1,
@@ -863,6 +876,19 @@
 
   function isLandingFocus() {
     return !!(state.effects.landingFocus && state.session.phase === 'BOOSTER_RTLS');
+  }
+
+  function isCompactHud() {
+    return !!state.ui.compactHud;
+  }
+
+  function hudMono(size, weight) {
+    return `${weight || '600'} ${size}px "IBM Plex Mono", ui-monospace, monospace`;
+  }
+
+  function padDigits(value, width) {
+    const text = String(value);
+    return text.length >= width ? text : text.padStart(width, ' ');
   }
 
   function landingZoneHalf() {
@@ -1201,6 +1227,8 @@
     state.canvas.height = Math.round(cssH * dpr);
     state.canvasScale = dpr * (cssW / CW);
     state.ctx.setTransform(state.canvasScale, 0, 0, state.canvasScale, 0, 0);
+    const stageW = (wrapper && wrapper.clientWidth) || cssW || window.innerWidth;
+    state.ui.compactHud = stageW < 720;
   }
 
   function isSectionActive() {
@@ -1236,7 +1264,7 @@
 
   function freshSystems() {
     const labels = ['LOX LOAD', 'LNG LOAD', 'FTS ARMED', 'TVC NOMINAL', 'RANGE GREEN'];
-    return labels.map((label, i) => ({ label, ok: false, x: 46 + (i % 2) * 164, y: 300 + Math.floor(i / 2) * 52, w: 148, h: 36 }));
+    return labels.map((label, i) => ({ label, ok: false, x: 24 + i * 186, y: CH - 72, w: 176, h: 30 }));
   }
 
   function resetSession() {
@@ -1281,6 +1309,7 @@
     state.ui.landingBanner = '';
     state.ui.landingBannerSub = '';
     state.ui.landingBannerTimer = 0;
+    state.ui.compactHud = !!(typeof window !== 'undefined' && window.innerWidth < 720);
     state.session = {
       missionNo: state.settings.missionCount + 1,
       missionName: `NG-${state.settings.missionCount + 1}`,
@@ -2128,7 +2157,7 @@
 
   function updatePad(dt) {
     updateSky(dt, 0.18 + state.world.cameraVy * 0.2);
-    state.rocket.y = CH - 104 + Math.sin((performance.now() || 0) / 160) * 0.9;
+    state.rocket.y = CH - 88 + Math.sin((performance.now() || 0) / 160) * 0.9;
     state.rocket.x = CW / 2;
     if (Math.random() < 0.4) spawnExhaust('be4', state.rocket.x, state.rocket.y + 34, 0.45, 'main');
     state.ui.padPollTimer += dt;
@@ -2437,6 +2466,8 @@
     state.ui.landingBanner = '';
     state.ui.landingBannerSub = '';
     state.ui.landingBannerTimer = 0;
+    state.ui.levelIntroTimer = 0;
+    state.ui.levelClearTimer = 0;
     announce('Steer the booster onto Jacklyn. Hold boost to brake for a soft deck landing.');
     showOverlayMessage('JACKLYN DEAD AHEAD — STEER + HOLD BOOST TO BRAKE', 2.8);
     setRadio(RADIO.BOOSTER_RTLS, 2.6);
@@ -2497,6 +2528,7 @@
       addShake(quality === 'perfect' ? 3.2 : 2.2, 0.35);
       vibrate([36, 20, 36]);
       burstJacklynSteam(true);
+      startSlowMo(quality === 'perfect' ? SLOWMO_SCALE : 0.55, 0.55);
     } else if (quality === 'tip') {
       state.session.boosterRecovered = true;
       state.session.boosterLost = false;
@@ -2568,6 +2600,8 @@
     state.booster.vx = approach(state.booster.vx, axis * 2.35, 0.1 * step);
     state.booster.x = clamp(state.booster.x + state.booster.vx * step, 36, CW - 36);
     state.booster.vy += JACKLYN_LANDING_GRAVITY * step;
+    const overZone = Math.abs(CW / 2 - state.booster.x) <= landingZoneHalf();
+    const nearDeck = state.booster.y > JACKLYN_DECK_Y - 150;
     if (isBoosting()) {
       state.booster.landingBurnDone = true;
       state.booster.burn = Math.max(state.booster.burn, 0.18);
@@ -2576,6 +2610,9 @@
       Audio.updateRumble(0.48, state.settings);
       if (!state.settings.reducedMotion && Math.random() < 0.4) addShake(0.7, 0.06);
     } else {
+      if (state.settings.difficulty !== 'PAD_RAT' && overZone && nearDeck) {
+        state.booster.vy -= JACKLYN_LANDING_THRUST * (state.settings.difficulty === 'KID' ? 0.55 : 0.28) * step;
+      }
       Audio.updateRumble(0.18, state.settings);
     }
     state.booster.vy = clamp(state.booster.vy, 0.28, JACKLYN_LANDING_MAX_VY);
@@ -2866,84 +2903,145 @@
     }
   }
 
+  function drawOpenLattice(ctx, cx, topY, groundY, halfW, color) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.15;
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW, groundY);
+    ctx.lineTo(cx - halfW + 3, topY);
+    ctx.moveTo(cx + halfW, groundY);
+    ctx.lineTo(cx + halfW - 3, topY);
+    ctx.moveTo(cx, groundY);
+    ctx.lineTo(cx, topY);
+    ctx.stroke();
+    for (let y = groundY - 14; y > topY + 6; y -= 16) {
+      const t = clamp((groundY - y) / Math.max(1, groundY - topY), 0, 1);
+      const hw = halfW - t * 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - hw, y);
+      ctx.lineTo(cx + hw, y);
+      ctx.moveTo(cx - hw, y);
+      ctx.lineTo(cx + hw, y - 12);
+      ctx.moveTo(cx + hw, y);
+      ctx.lineTo(cx - hw, y - 12);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawEnclosedPlatform(ctx, leftX, rightX, y, h) {
+    ctx.fillStyle = '#3d4a54';
+    ctx.fillRect(leftX, y, rightX - leftX, h);
+    ctx.fillStyle = '#2a343c';
+    ctx.fillRect(leftX, y, rightX - leftX, 3);
+    ctx.fillRect(leftX, y + h - 3, rightX - leftX, 3);
+    ctx.strokeStyle = '#151b20';
+    ctx.strokeRect(leftX, y, rightX - leftX, h);
+    ctx.fillStyle = '#1a2832';
+    ctx.fillRect(leftX + 8, y + 5, rightX - leftX - 22, 7);
+    ctx.fillStyle = '#4e5c68';
+    ctx.fillRect(leftX - 10, y - 4, 20, h + 8);
+    ctx.strokeStyle = '#0f1418';
+    ctx.strokeRect(leftX - 10, y - 4, 20, h + 8);
+  }
+
+  function drawLaunchTable(ctx, cx, groundY) {
+    const top = groundY - 36;
+    ctx.fillStyle = '#2c343b';
+    ctx.fillRect(cx - 34, top, 68, 7);
+    ctx.fillStyle = '#1a2026';
+    ctx.fillRect(cx - 18, groundY - 10, 36, 10);
+    ctx.strokeStyle = '#c5ced6';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cx - 28, top + 7);
+    ctx.lineTo(cx - 24, groundY);
+    ctx.moveTo(cx + 28, top + 7);
+    ctx.lineTo(cx + 24, groundY);
+    ctx.moveTo(cx - 14, top + 7);
+    ctx.lineTo(cx - 12, groundY);
+    ctx.moveTo(cx + 14, top + 7);
+    ctx.lineTo(cx + 12, groundY);
+    ctx.moveTo(cx - 28, top + 7);
+    ctx.lineTo(cx + 24, groundY);
+    ctx.moveTo(cx + 28, top + 7);
+    ctx.lineTo(cx - 24, groundY);
+    ctx.stroke();
+    ctx.strokeStyle = '#9aa5ad';
+    ctx.strokeRect(cx - 34, top, 68, 7);
+  }
+
+  function drawIntegratedLaunchTower(ctx, groundY) {
+    const topY = groundY - PAD_ILT_H;
+    const mastTop = topY - PAD_ILT_MAST;
+    drawOpenLattice(ctx, PAD_ILT_X, topY, groundY, PAD_ILT_HALF_W, '#e8eef4');
+    ctx.strokeStyle = '#d7dee6';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(PAD_ILT_X, topY);
+    ctx.lineTo(PAD_ILT_X, mastTop);
+    ctx.stroke();
+    ctx.fillStyle = '#c5ced6';
+    ctx.fillRect(PAD_ILT_X - 3, mastTop, 6, 3);
+    const iltFace = PAD_ILT_X - PAD_ILT_HALF_W;
+    drawEnclosedPlatform(ctx, CW / 2 - 12, iltFace, groundY - 206, 24);
+    drawEnclosedPlatform(ctx, CW / 2 - 12, iltFace, groundY - 138, 24);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = 'bold 7px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('ILT', PAD_ILT_X, topY + 14);
+    ctx.font = '5px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = '#d7dee6';
+    ctx.fillText('LC-36', PAD_ILT_X, topY + 24);
+  }
+
+  function drawPropellantGse(ctx, groundY) {
+    const topY = groundY - PAD_GSE_H;
+    drawOpenLattice(ctx, PAD_GSE_X, topY, groundY, PAD_GSE_HALF_W, '#c8d2da');
+    ctx.fillStyle = '#2a343c';
+    ctx.fillRect(PAD_GSE_X - 20, groundY - 20, 40, 18);
+    ctx.fillStyle = '#3d4a54';
+    ctx.fillRect(PAD_GSE_X - 16, groundY - 36, 10, 16);
+    ctx.fillRect(PAD_GSE_X + 4, groundY - 32, 10, 12);
+    ctx.strokeStyle = '#151b20';
+    ctx.strokeRect(PAD_GSE_X - 20, groundY - 20, 40, 18);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = 'bold 6px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('GSE', PAD_GSE_X, groundY - 8);
+  }
+
   function drawPadStatic(ctx, groundY) {
-    const leftTowerX = 60;
-    const rightTowerX = CW - 60;
-    const towerTopY = groundY - 380;
-    ctx.fillStyle = '#1d2328';
+    ctx.fillStyle = '#1a4a62';
+    ctx.fillRect(0, groundY - 10, CW, 10);
+    ctx.fillStyle = '#0e3344';
+    ctx.fillRect(0, groundY - 4, CW, 4);
+
+    ctx.fillStyle = '#9aa3ab';
     ctx.fillRect(0, groundY, CW, 90);
-    ctx.fillStyle = '#2f3a42';
-    ctx.fillRect(0, groundY + 20, CW, 16);
-
-    const mastXs = [100, 150, CW - 150, CW - 100];
-    mastXs.forEach((x) => {
-      const topY = groundY - 80;
-      ctx.strokeStyle = '#d5dce2';
+    ctx.fillStyle = '#8b949c';
+    ctx.fillRect(0, groundY + 22, CW, 3);
+    ctx.fillRect(0, groundY + 48, CW, 2);
+    ctx.strokeStyle = '#6f777f';
+    ctx.lineWidth = 1;
+    for (let x = 20; x < CW; x += 48) {
       ctx.beginPath();
       ctx.moveTo(x, groundY);
-      ctx.lineTo(x, topY);
+      ctx.lineTo(x, groundY + 90);
       ctx.stroke();
-      ctx.fillStyle = '#f8fcff';
-      for (let i = -1; i <= 1; i++) ctx.fillRect(x + i * 5 - 2, topY - 3, 4, 3);
-    });
+    }
 
-    [leftTowerX, rightTowerX].forEach((x) => {
-      ctx.strokeStyle = '#edf4fa';
+    ctx.fillStyle = '#2a4a28';
+    [[8, 10], [28, 8], [CW - 22, 12], [CW - 40, 9]].forEach(([x, r]) => {
       ctx.beginPath();
-      ctx.moveTo(x - 16, groundY);
-      ctx.lineTo(x - 6, towerTopY);
-      ctx.moveTo(x, groundY);
-      ctx.lineTo(x, towerTopY);
-      ctx.moveTo(x + 16, groundY);
-      ctx.lineTo(x + 6, towerTopY);
-      ctx.stroke();
-      for (let y = groundY - 18; y > towerTopY + 10; y -= 18) {
-        ctx.beginPath();
-        ctx.moveTo(x - 12, y);
-        ctx.lineTo(x + 12, y - 12);
-        ctx.moveTo(x + 12, y);
-        ctx.lineTo(x - 12, y - 12);
-        ctx.stroke();
-      }
-      ctx.beginPath();
-      ctx.moveTo(x, towerTopY);
-      ctx.lineTo(x, towerTopY - 40);
-      ctx.stroke();
+      ctx.ellipse(x, groundY + 6, r, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
     });
 
-    ctx.strokeStyle = '#dce6ef';
-    ctx.fillStyle = 'rgba(180,196,210,0.18)';
-    ctx.fillRect(rightTowerX - 28, groundY - 150, 20, 150);
-    ctx.beginPath();
-    ctx.moveTo(rightTowerX - 28, groundY);
-    ctx.lineTo(rightTowerX - 28, groundY - 150);
-    ctx.moveTo(rightTowerX - 8, groundY);
-    ctx.lineTo(rightTowerX - 8, groundY - 150);
-    ctx.stroke();
-    [groundY - 34, groundY - 68, groundY - 102, groundY - 136].forEach((y) => {
-      ctx.fillStyle = '#9aa7b2';
-      ctx.fillRect(rightTowerX - 46, y, 38, 4);
-    });
-
-    ctx.strokeStyle = 'rgba(225,238,247,0.9)';
-    ctx.beginPath();
-    ctx.moveTo(leftTowerX, towerTopY - 42);
-    ctx.quadraticCurveTo(CW / 2, towerTopY - 2, rightTowerX, towerTopY - 42);
-    ctx.stroke();
-
-    ctx.fillStyle = '#9aa5ad';
-    ctx.fillRect(CW / 2 - 110, groundY - 16, 220, 16);
-    ctx.fillStyle = '#7e8891';
-    ctx.fillRect(CW / 2 - 80, groundY - 30, 160, 14);
-    ctx.fillStyle = '#6f7880';
-    ctx.fillRect(CW / 2 - 55, groundY - 40, 110, 10);
-    ctx.fillStyle = '#0a0d12';
-    ctx.beginPath();
-    ctx.moveTo(CW / 2 - 25, groundY - 2);
-    ctx.lineTo(CW / 2, groundY - 32);
-    ctx.lineTo(CW / 2 + 25, groundY - 2);
-    ctx.closePath();
-    ctx.fill();
+    drawPropellantGse(ctx, groundY);
+    drawLaunchTable(ctx, CW / 2, groundY);
+    drawIntegratedLaunchTower(ctx, groundY);
 
     const stacks = binBlockPositions(groundY);
     stacks.forEach(({ x, y }) => {
@@ -2956,31 +3054,36 @@
 
   function binBlockPositions(groundY) {
     const leftCluster = [
-      { x: 74, y: groundY - 20 }, { x: 94, y: groundY - 20 }, { x: 114, y: groundY - 20 },
-      { x: 84, y: groundY - 31 }, { x: 104, y: groundY - 31 }, { x: 126, y: groundY - 20 }
+      { x: 18, y: groundY - 20 }, { x: 38, y: groundY - 20 }, { x: 8, y: groundY - 20 },
+      { x: 28, y: groundY - 31 }, { x: 48, y: groundY - 31 }, { x: 14, y: groundY - 20 }
     ];
     const rightCluster = [
-      { x: 286, y: groundY - 20 }, { x: 306, y: groundY - 20 }, { x: 326, y: groundY - 20 },
-      { x: 296, y: groundY - 31 }, { x: 316, y: groundY - 31 }, { x: 338, y: groundY - 20 }
+      { x: 236, y: groundY - 20 }, { x: 256, y: groundY - 20 }, { x: 348, y: groundY - 20 },
+      { x: 246, y: groundY - 31 }, { x: 360, y: groundY - 20 }, { x: 370, y: groundY - 31 }
     ];
     const foreground = [
-      { x: 30, y: groundY - 10 }, { x: 70, y: groundY - 10 }, { x: 110, y: groundY - 10 },
-      { x: 300, y: groundY - 10 }, { x: 340, y: groundY - 10 }
+      { x: 22, y: groundY - 10 }, { x: 42, y: groundY - 10 }, { x: 118, y: groundY - 10 },
+      { x: 252, y: groundY - 10 }, { x: 382, y: groundY - 10 }
     ];
     return [...leftCluster, ...rightCluster, ...foreground];
   }
 
   function drawFloodlightCones(ctx, groundY, nowMs) {
     const pulse = 0.06 + (Math.sin(nowMs / 280) * 0.02);
-    [100, 150, CW - 150, CW - 100].forEach((x) => {
-      const topY = groundY - 80;
+    [44, CW - 22].forEach((x) => {
+      const topY = groundY - 44;
+      ctx.strokeStyle = '#c5ced6';
+      ctx.beginPath();
+      ctx.moveTo(x, groundY);
+      ctx.lineTo(x, topY);
+      ctx.stroke();
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.fillStyle = `rgba(230,245,255,${pulse.toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(x, topY);
-      ctx.lineTo(x - 32, groundY + 36);
-      ctx.lineTo(x + 32, groundY + 36);
+      ctx.lineTo(x - 26, groundY + 28);
+      ctx.lineTo(x + 26, groundY + 28);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
@@ -2988,14 +3091,12 @@
   }
 
   function drawTowerLights(ctx, groundY, nowMs) {
-    const towerTopY = groundY - 380;
+    const mastTop = groundY - PAD_ILT_H - PAD_ILT_MAST;
     const blink = Math.floor(nowMs / 500) % 2 === 0;
-    [60, CW - 60].forEach((x) => {
-      ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
-      ctx.beginPath();
-      ctx.arc(x, towerTopY - 42, 3, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
+    ctx.beginPath();
+    ctx.arc(PAD_ILT_X, mastTop - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function drawBinBlockLabels(ctx, groundY) {
@@ -3215,13 +3316,19 @@
     ctx.fillRect(-9, -62, 18, 75);
     ctx.fillStyle = 'rgba(255,240,220,0.18)';
     ctx.fillRect(-8, -62, 4, 75);
-    ctx.strokeStyle = 'rgba(70,54,40,0.4)';
-    for (let sy = -52; sy <= 8; sy += 25) {
-      ctx.beginPath();
-      ctx.moveTo(-9, sy);
-      ctx.lineTo(9, sy);
-      ctx.stroke();
-    }
+    ctx.fillStyle = '#b08a3e';
+    ctx.fillRect(-9, -50, 18, 6);
+    ctx.fillRect(-9, 5, 18, 6);
+    ctx.fillStyle = '#d4b05a';
+    ctx.fillRect(-9, -50, 18, 1.6);
+    ctx.fillRect(-9, 5, 18, 1.6);
+    ctx.fillStyle = '#1d4ed8';
+    ctx.beginPath();
+    ctx.moveTo(0, -36);
+    ctx.quadraticCurveTo(5, -28, 3, -18);
+    ctx.quadraticCurveTo(0, -22, -3, -18);
+    ctx.quadraticCurveTo(-5, -28, 0, -36);
+    ctx.fill();
     ctx.fillStyle = '#2f73d8';
     ctx.fillRect(-9, 13, 18, 8);
     ctx.fillStyle = '#33261d';
@@ -3231,7 +3338,7 @@
     ctx.textAlign = 'center';
     ctx.fillText('NG-7', 0, -66);
     ctx.save();
-    ctx.translate(0, -38);
+    ctx.translate(0, -8);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('BLUE ORIGIN', 0, 0);
     ctx.restore();
@@ -3332,7 +3439,7 @@
     const focus = !!opts.focus;
     const scale = focus ? 1 : 0.62;
     ctx.save();
-    ctx.translate(opts.x != null ? opts.x : CW / 2, (opts.y != null ? opts.y : (y0 + (focus ? 0 : 234))));
+    ctx.translate(opts.x != null ? opts.x : CW / 2, (opts.y != null ? opts.y : (y0 + (focus ? 0 : SPLIT_TOP_H - 68))));
     ctx.scale(scale, scale);
 
     const t = state.effects.seaPhase || 0;
@@ -3433,7 +3540,7 @@
       ctx.fillRect(sx, sy, 1.4, 1.4);
     }
 
-    const horizon = 300;
+    const horizon = Math.round(CH * 0.56);
     ctx.fillStyle = '#0a3a4a';
     ctx.fillRect(0, horizon, CW, CH - horizon);
     const sea = ctx.createLinearGradient(0, horizon, 0, CH);
@@ -3502,130 +3609,209 @@
 
     if (!state.booster.touchdown) {
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffcf5d';
+      const tooFast = state.booster.vy > JACKLYN_SOFT_VY && !isBoosting();
+      ctx.fillStyle = tooFast ? '#041014' : 'rgba(4,10,16,0.55)';
+      ctx.fillRect(24, CH - 36, CW - 48, 22);
+      ctx.strokeStyle = tooFast ? '#fff4c2' : '#ffcf5d';
+      ctx.strokeRect(24, CH - 36, CW - 48, 22);
+      ctx.fillStyle = tooFast ? '#fff4c2' : '#ffcf5d';
       ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
-      ctx.fillText('STEER  ◀ ▶    HOLD BOOST TO BRAKE', CW / 2, CH - 18);
+      ctx.fillText(tooFast ? 'TOO FAST — HOLD BOOST TO BRAKE' : 'STEER  ◀ ▶    HOLD BOOST TO BRAKE', CW / 2, CH - 20);
     }
   }
 
   function drawLandingBanner(ctx) {
     if (state.ui.landingBannerTimer <= 0 || !state.ui.landingBanner) return;
     ctx.save();
-    ctx.fillStyle = 'rgba(6,10,18,0.86)';
-    ctx.fillRect(18, CH / 2 - 40, CW - 36, 80);
+    ctx.fillStyle = 'rgba(6,10,18,0.9)';
+    ctx.fillRect(12, CH / 2 - 58, CW - 24, 116);
     ctx.strokeStyle = state.session.boosterLost ? '#8ce0ff' : '#ffcf5d';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(18, CH / 2 - 40, CW - 36, 80);
+    ctx.lineWidth = 3;
+    ctx.strokeRect(12, CH / 2 - 58, CW - 24, 116);
     ctx.textAlign = 'center';
     ctx.fillStyle = state.session.boosterLost ? '#8ce0ff' : '#ffcf5d';
-    ctx.font = 'bold 18px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText(state.ui.landingBanner, CW / 2, CH / 2 - 8);
+    ctx.font = 'bold 22px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(state.ui.landingBanner, CW / 2, CH / 2 - 14);
     ctx.fillStyle = '#e8eef4';
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText(state.ui.landingBannerSub || 'JACKLYN  ·  landing barge', CW / 2, CH / 2 + 16);
+    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(state.ui.landingBannerSub || 'JACKLYN  ·  landing barge', CW / 2, CH / 2 + 14);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = 'bold 10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(state.session.boosterLost ? 'SPLASH  ·  MISSION CONTINUES' : 'LANDED ON JACKLYN', CW / 2, CH / 2 + 36);
     ctx.restore();
   }
 
   function drawHud(ctx) {
-    const padRatHud = state.settings.difficulty === 'PAD_RAT';
+    const compact = isCompactHud();
+    const barH = compact ? 40 : 52;
     ctx.save();
-    ctx.fillStyle = '#8ce0ff';
-    ctx.font = padRatHud ? 'bold 15px "IBM Plex Mono", ui-monospace, monospace' : 'bold 18px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText(state.telemetry.tPlus, 10, 22);
-    ctx.fillStyle = '#ffb300';
-    ctx.font = padRatHud ? 'bold 10px "IBM Plex Mono", ui-monospace, monospace' : 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText(`${currentPhaseLabel()}  │  ${state.session.missionName}`, 10, 38);
+    ctx.fillStyle = 'rgba(5,8,16,0.78)';
+    ctx.fillRect(0, 0, CW, barH);
+    ctx.fillStyle = 'rgba(183,171,255,0.28)';
+    ctx.fillRect(0, barH - 1, CW, 1);
+
+    ctx.font = hudMono(compact ? 11 : 13, '700');
+    ctx.fillStyle = '#eef0fa';
+    ctx.textAlign = 'left';
+    ctx.fillText(state.session.missionName, 16, compact ? 16 : 20);
+    ctx.font = hudMono(compact ? 10 : 11, '600');
+    ctx.fillStyle = '#ffcf5d';
+    const cue = (currentPhaseLabel() || '').replace(/^LEVEL \d+:\s*/i, '');
+    ctx.fillText(cue, 16, compact ? 32 : 38);
+
     const phaseOrder = ['PAD', 'ASCENT', 'MAX_Q', 'SUPERSONIC', 'STAGE_SEP', 'KARMAN', 'BOOSTER_RTLS', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
     const activeIdx = phaseOrder.indexOf(state.session.phase);
     phaseOrder.forEach((p, i) => {
-      ctx.fillStyle = i <= activeIdx ? '#33ff33' : 'rgba(120,140,150,0.6)';
+      ctx.fillStyle = i <= activeIdx ? '#33ff33' : 'rgba(140,150,165,0.45)';
       ctx.beginPath();
-      ctx.arc(230 + i * 20, 16, 4, 0, Math.PI * 2);
+      ctx.arc(compact ? 200 + i * 12 : 250 + i * 16, compact ? 16 : 18, compact ? 3 : 3.5, 0, Math.PI * 2);
       ctx.fill();
     });
-    ctx.fillStyle = '#33ff33';
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    const launchPhase = state.session.phase === 'PAD' || state.session.phase === 'ASCENT';
-    const dynamicMetricLabel = launchPhase ? 'CHARGE' : 'FLOW';
-    const dynamicMetricValue = launchPhase
-      ? state.session.launchCharge * 100
-      : clamp((state.session.obstacleStreak / 15) * 100, 0, 100);
-    ctx.fillText(`ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, 10, 54);
-    ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 68);
-    ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
-    ctx.fillText(`${dynamicMetricLabel} ${dynamicMetricValue.toFixed(0)}%`, 170, 54);
-    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}`, 170, 68);
-    ctx.fillText(`BEST ${(state.settings.hiArcadeScore || 0).toLocaleString()}`, 170, 82);
-    if (state.session.phase === 'MAX_Q') ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 96);
-    if (state.session.obstacleStreak >= 2) {
-      ctx.fillStyle = state.effects.comboFlash > 0 ? '#ffcf5d' : '#9df6bf';
-      ctx.fillText(`STREAK x${state.session.obstacleStreak}`, 10, 96);
-      ctx.fillStyle = '#33ff33';
-    }
-    if ((state.session.shield || 0) > 0 || state.session.overdrive > 0 || state.session.phaseGrace > 0) {
-      ctx.fillStyle = '#8ce0ff';
-      const chips = [];
-      if (state.session.shield > 0) chips.push(`SHLD×${state.session.shield}`);
-      if (state.session.overdrive > 0) chips.push(`BE-4 ${state.session.overdrive.toFixed(1)}s`);
-      if (state.session.phaseGrace > 0) chips.push('GRACE');
-      ctx.fillText(chips.join('  ·  '), 10, 116);
-    }
+
+    ctx.textAlign = 'center';
+    ctx.font = hudMono(compact ? 16 : 20, '700');
+    ctx.fillStyle = '#8ce0ff';
+    ctx.fillText(state.telemetry.tPlus, CW / 2, compact ? 26 : 32);
+
+    ctx.textAlign = 'right';
+    ctx.font = hudMono(compact ? 10 : 11, '600');
+    ctx.fillStyle = '#9aa3c7';
+    ctx.fillText('SCORE', CW - 16, compact ? 14 : 16);
+    ctx.font = hudMono(compact ? 16 : 20, '700');
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText(state.ui.radio, 10, 132);
-    if (state.ui.overlayTimer > 0) {
-      ctx.fillStyle = '#ffcf5d';
-      ctx.fillRect(36, CH - 54, CW - 72, 22);
+    ctx.fillText(padDigits(arcadeScore().toLocaleString(), 6), CW - 16, compact ? 32 : 36);
+    if (!compact) {
+      ctx.font = hudMono(11, '600');
+      ctx.fillStyle = '#9aa3c7';
+      ctx.fillText(`BEST ${padDigits((state.settings.hiArcadeScore || 0).toLocaleString(), 6)}`, CW - 16, 50);
+    }
+
+    const launchPhase = state.session.phase === 'PAD' || state.session.phase === 'ASCENT';
+    const fuelPct = Math.round(((state.telemetry.lng || 0) + (state.telemetry.lox || 0)) / 2);
+    const thrPct = launchPhase
+      ? Math.round(clamp(state.session.launchCharge, 0, 1) * 100)
+      : Math.round(clamp(state.rocket.burn || 0, 0, 1) * 100);
+    const stgShort = {
+      PAD: 'PAD', ASCENT: 'ASCENT', MAX_Q: 'MAX-Q', SUPERSONIC: 'SUPER',
+      STAGE_SEP: 'SEP', KARMAN: 'KARMAN', BOOSTER_RTLS: 'JACKLYN',
+      ORBIT_INSERT: 'SECO', PAYLOAD_DEPLOY: 'DEPLOY', EXTENDED: 'EXT'
+    }[state.session.phase] || '—';
+    const rows = [
+      ['ALT', `${(state.telemetry.altitude / 1000).toFixed(1)} km`],
+      ['VEL', `${padDigits(Math.round(state.telemetry.velocity), 5)} m/s`],
+      ['FUEL', `${padDigits(fuelPct, 3)}%`],
+      [launchPhase ? 'CHRG' : 'THR', `${padDigits(thrPct, 3)}%`],
+      ['STG', stgShort]
+    ];
+    if (state.session.obstacleStreak >= 2) rows.push(['CMB', `x${state.session.obstacleStreak}`]);
+    if (state.session.phase === 'MAX_Q') rows.push(['Q', `${state.telemetry.q.toFixed(1)} kPa`]);
+
+    if (compact) {
+      ctx.textAlign = 'left';
+      ctx.font = hudMono(10, '600');
+      ctx.fillStyle = '#c8d0dc';
+      ctx.fillText(rows.slice(0, 3).map((r) => `${r[0]} ${r[1]}`).join('   '), 200, 34);
+    } else {
+      const panelX = CW - 196;
+      const panelY = barH + 10;
+      const panelH = 18 + rows.length * 18 + ((state.session.shield || state.session.overdrive || state.session.phaseGrace > 0) ? 20 : 0);
+      ctx.fillStyle = 'rgba(5,10,18,0.72)';
+      ctx.fillRect(panelX, panelY, 180, panelH);
+      ctx.strokeStyle = 'rgba(183,171,255,0.4)';
+      ctx.strokeRect(panelX, panelY, 180, panelH);
+      ctx.font = hudMono(10, '700');
+      ctx.fillStyle = '#b7abff';
+      ctx.textAlign = 'left';
+      ctx.fillText('TELEMETRY', panelX + 10, panelY + 14);
+      rows.forEach((row, i) => {
+        ctx.font = hudMono(11, '600');
+        ctx.fillStyle = '#9aa3c7';
+        ctx.fillText(row[0], panelX + 10, panelY + 34 + i * 18);
+        ctx.fillStyle = '#eef0fa';
+        ctx.textAlign = 'right';
+        ctx.fillText(row[1], panelX + 170, panelY + 34 + i * 18);
+        ctx.textAlign = 'left';
+      });
+      if ((state.session.shield || 0) > 0 || state.session.overdrive > 0 || state.session.phaseGrace > 0) {
+        const chips = [];
+        if (state.session.shield > 0) chips.push(`SHLD×${state.session.shield}`);
+        if (state.session.overdrive > 0) chips.push(`BE-4 ${state.session.overdrive.toFixed(1)}s`);
+        if (state.session.phaseGrace > 0) chips.push('GRACE');
+        ctx.fillStyle = '#8ce0ff';
+        ctx.font = hudMono(10, '700');
+        ctx.fillText(chips.join('  ·  '), panelX + 10, panelY + panelH - 8);
+      }
+    }
+
+    if (state.ui.radio && !compact) {
+      ctx.font = hudMono(10, '500');
+      ctx.fillStyle = 'rgba(238,240,250,0.7)';
+      ctx.textAlign = 'left';
+      ctx.fillText(state.ui.radio, 16, barH + 16);
+    }
+
+    if (state.ui.overlayTimer > 0 && state.ui.overlayMessage) {
+      ctx.fillStyle = 'rgba(255,207,93,0.94)';
+      ctx.fillRect(CW * 0.18, CH - 46, CW * 0.64, 28);
+      ctx.strokeStyle = '#041014';
+      ctx.strokeRect(CW * 0.18, CH - 46, CW * 0.64, 28);
       ctx.fillStyle = '#041014';
+      ctx.font = hudMono(12, '700');
       ctx.textAlign = 'center';
-      ctx.fillText(state.ui.overlayMessage, CW / 2, CH - 39);
+      ctx.fillText(state.ui.overlayMessage, CW / 2, CH - 27);
     }
+
     if (state.session.phase === 'MAX_Q') {
+      const bx = compact ? 16 : 16;
+      const by = barH + (compact ? 8 : 28);
       ctx.strokeStyle = '#ff5d5d';
-      ctx.strokeRect(171, 146, 120, 10);
+      ctx.strokeRect(bx, by, 140, 8);
       ctx.fillStyle = '#ff5d5d';
-      ctx.fillRect(171, 146, 120 * clamp(state.session.structuralStress, 0, 1), 10);
+      ctx.fillRect(bx, by, 140 * clamp(state.session.structuralStress, 0, 1), 8);
       ctx.fillStyle = 'rgba(255,220,90,0.45)';
-      ctx.fillRect(171 + 120 * 0.72, 146, 120 * 0.28, 10);
-      ctx.fillStyle = '#ff9d5d';
-      ctx.fillText('Throttling down — handling Max-Q nicely.', 170, 170);
+      ctx.fillRect(bx + 140 * 0.72, by, 140 * 0.28, 8);
     }
+
     if (state.session.phase === 'KARMAN' && !state.booster.touchdown) {
       const t = state.session.totalElapsed;
       if (!state.booster.reentryBurnDone && t >= 344 && t <= 364) {
-        ctx.fillStyle = 'rgba(255,207,93,0.85)';
-        ctx.fillRect(CW - 152, CH - 74, 136, 18);
+        ctx.fillStyle = 'rgba(255,207,93,0.92)';
+        ctx.fillRect(CW / 2 - 90, CH - 78, 180, 22);
         ctx.fillStyle = '#041014';
-        ctx.fillText('REENTRY BURN READY', CW - 146, CH - 61);
+        ctx.font = hudMono(11, '700');
+        ctx.textAlign = 'center';
+        ctx.fillText('REENTRY BURN READY', CW / 2, CH - 62);
       }
     }
+
     if (state.session.phase === 'ORBIT_INSERT') {
+      const ox = 16;
+      const oy = barH + (compact ? 20 : 28);
       ctx.strokeStyle = '#8ce0ff';
-      ctx.strokeRect(CW - 36, 112, 14, 120);
-      const targetY = 112 + (1 - state.upper.targetBand) * 120;
+      ctx.strokeRect(ox, oy, 12, 120);
+      const targetY = oy + (1 - state.upper.targetBand) * 120;
       ctx.fillStyle = 'rgba(140,224,255,0.25)';
-      ctx.fillRect(CW - 36, targetY - 7, 14, 14);
+      ctx.fillRect(ox, targetY - 7, 12, 14);
       ctx.fillStyle = '#ffcf5d';
-      ctx.fillRect(CW - 35, 112 + (1 - state.upper.throttle) * 120, 12, 6);
+      ctx.fillRect(ox + 1, oy + (1 - state.upper.throttle) * 120, 10, 6);
     }
+
     if (state.settings.difficulty === 'PAD_RAT' && state.settings.engineerPanel) {
       const eng = state.telemetry.engineering || {};
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(CW - 170, 120, 160, 106);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(16, barH + 24, 168, 96);
       ctx.strokeStyle = '#8ce0ff';
-      ctx.strokeRect(CW - 170, 120, 160, 106);
+      ctx.strokeRect(16, barH + 24, 168, 96);
       ctx.fillStyle = '#8ce0ff';
-      ctx.fillText(`ΔV ${(eng.deltaV || 0).toFixed(0)} m/s`, CW - 164, 136);
-      ctx.fillText(`Mach ${(eng.mach || 0).toFixed(2)}`, CW - 164, 150);
-      ctx.fillText(`ρ ${(eng.density || 0).toFixed(3)} kg/m³`, CW - 164, 164);
-      ctx.fillText(`T/W ${(eng.twr || 0).toFixed(2)}`, CW - 164, 178);
-      ctx.fillText(`q ${(eng.qKpa || 0).toFixed(1)} kPa`, CW - 164, 192);
-      ctx.strokeStyle = 'rgba(140,224,255,0.35)';
-      ctx.beginPath();
-      ctx.moveTo(CW - 164, 212);
-      ctx.lineTo(CW - 20, 212 - clamp((eng.qKpa || 0) * 0.15, 0, 36));
-      ctx.stroke();
+      ctx.font = hudMono(10, '600');
+      ctx.textAlign = 'left';
+      ctx.fillText(`ΔV ${padDigits((eng.deltaV || 0).toFixed(0), 5)} m/s`, 24, barH + 42);
+      ctx.fillText(`Mach ${(eng.mach || 0).toFixed(2)}`, 24, barH + 58);
+      ctx.fillText(`ρ ${(eng.density || 0).toFixed(3)} kg/m³`, 24, barH + 74);
+      ctx.fillText(`T/W ${(eng.twr || 0).toFixed(2)}`, 24, barH + 90);
+      ctx.fillText(`q ${(eng.qKpa || 0).toFixed(1)} kPa`, 24, barH + 106);
     }
+
     if (state.session.phaseGrace > 0 || (state.session.shield || 0) > 0) {
       const pulse = 0.45 + Math.sin((performance.now() || 0) / 150) * 0.2;
       ctx.strokeStyle = state.session.shield > 0 ? `rgba(140,224,255,${pulse})` : `rgba(120,255,170,${pulse})`;
@@ -3634,189 +3820,239 @@
       ctx.arc(state.rocket.x, state.rocket.y, 26, 0, Math.PI * 2);
       ctx.stroke();
       ctx.fillStyle = state.session.shield > 0 ? '#8ce0ff' : '#9df6bf';
-      ctx.fillText(state.session.shield > 0 ? 'SHIELD' : 'GRACE', state.rocket.x - 16, state.rocket.y - 32);
-    }
-    if (state.ui.tutorialTimer > 0 && state.session.phase === 'ASCENT') {
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(58, CH - 112, CW - 116, 32);
-      ctx.strokeStyle = '#ffcf5d';
-      ctx.strokeRect(58, CH - 112, CW - 116, 32);
-      ctx.fillStyle = '#ffcf5d';
+      ctx.font = hudMono(9, '700');
       ctx.textAlign = 'center';
-      ctx.fillText('Hold BOOST to climb. Steer around hazards. First hits are forgiven.', CW / 2, CH - 92);
-      ctx.textAlign = 'left';
+      ctx.fillText(state.session.shield > 0 ? 'SHIELD' : 'GRACE', state.rocket.x, state.rocket.y - 32);
     }
-    // Gimbal TVC angle indicator — visible during powered atmospheric flight.
+
+    if (state.ui.tutorialTimer > 0 && state.session.phase === 'ASCENT') {
+      ctx.fillStyle = 'rgba(6,10,18,0.78)';
+      ctx.fillRect(CW * 0.2, CH - 78, CW * 0.6, 28);
+      ctx.strokeStyle = '#ffcf5d';
+      ctx.strokeRect(CW * 0.2, CH - 78, CW * 0.6, 28);
+      ctx.fillStyle = '#ffcf5d';
+      ctx.font = hudMono(12, '700');
+      ctx.textAlign = 'center';
+      ctx.fillText('Hold BOOST to climb. Steer around hazards.', CW / 2, CH - 58);
+    }
+
     if (state.session.phase === 'ASCENT' || state.session.phase === 'MAX_Q' || state.session.phase === 'SUPERSONIC') {
-      const gx = CW / 2 - 44;
-      const gy = CH - 22;
-      const gw = 88;
-      const gh = 9;
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(gx - 26, gy - 2, gw + 30, gh + 4);
+      const gx = CW / 2 - 54;
+      const gy = CH - 18;
+      const gw = 108;
+      const gh = 8;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(gx - 28, gy - 2, gw + 34, gh + 4);
       ctx.strokeStyle = '#33ff33';
-      ctx.lineWidth = 1;
       ctx.strokeRect(gx, gy, gw, gh);
-      // Danger zone at extremes
       ctx.fillStyle = 'rgba(255,80,60,0.35)';
       ctx.fillRect(gx, gy, gw * 0.18, gh);
       ctx.fillRect(gx + gw * 0.82, gy, gw * 0.18, gh);
-      // Center tick
       ctx.fillStyle = '#33ff33';
       ctx.fillRect(gx + gw / 2 - 1, gy, 2, gh);
-      // Current gimbal angle marker
       const gimbalFrac = (state.rocket.gimbalAngle + MAX_GIMBAL_ANGLE) / (2 * MAX_GIMBAL_ANGLE);
-      const markerColor = Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * GIMBAL_DANGER_THRESHOLD ? '#ff5d5d' : '#ffcf5d';
-      ctx.fillStyle = markerColor;
+      ctx.fillStyle = Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * GIMBAL_DANGER_THRESHOLD ? '#ff5d5d' : '#ffcf5d';
       ctx.fillRect(gx + clamp(gimbalFrac * gw - 3, 0, gw - 6), gy, 6, gh);
       ctx.fillStyle = '#33ff33';
-      ctx.font = '8px "IBM Plex Mono", ui-monospace, monospace';
-      ctx.fillText('TVC', gx - 24, gy + gh - 1);
-    }
-    if (state.ui.phaseCaptionTimer > 0 && state.ui.phaseCaption) {
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      ctx.fillRect(24, 116, CW - 48, 28);
-      ctx.strokeStyle = '#8ce0ff';
-      ctx.strokeRect(24, 116, CW - 48, 28);
-      ctx.fillStyle = '#8ce0ff';
-      ctx.textAlign = 'center';
-      ctx.fillText(state.ui.phaseCaption, CW / 2, 134);
+      ctx.font = hudMono(8, '700');
       ctx.textAlign = 'left';
+      ctx.fillText('TVC', gx - 24, gy + gh);
+    }
+
+    if (state.ui.phaseCaptionTimer > 0 && state.ui.phaseCaption) {
+      ctx.fillStyle = 'rgba(6,10,18,0.88)';
+      ctx.fillRect(CW * 0.16, barH + 8, CW * 0.68, 32);
+      ctx.strokeStyle = '#8ce0ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(CW * 0.16, barH + 8, CW * 0.68, 32);
+      ctx.fillStyle = '#8ce0ff';
+      ctx.font = hudMono(13, '700');
+      ctx.textAlign = 'center';
+      ctx.fillText(state.ui.phaseCaption, CW / 2, barH + 30);
     }
     ctx.restore();
   }
 
   function drawSplitView(ctx) {
-    const top = { y: 0, h: 316 };
-    const bottom = { y: 324, h: CH - 324 };
+    const top = { y: 0, h: SPLIT_TOP_H };
+    const bottom = { y: SPLIT_BOTTOM_Y, h: CH - SPLIT_BOTTOM_Y };
     drawBackground(ctx, state.telemetry.altitude, top);
     ctx.save();
-    ctx.beginPath(); ctx.rect(0, 0, CW, 316); ctx.clip();
+    ctx.beginPath(); ctx.rect(0, 0, CW, SPLIT_TOP_H); ctx.clip();
     Particles.draw(ctx, 'upper');
     state.upperHazards.forEach(h => drawUpperHazard(ctx, h));
     drawRocket(ctx, state.upper.x, state.upper.y, state.rocket.tilt * 0.45, 'upper', { fairingGone: state.rocket.fairingGone });
     drawFairingSplit(ctx);
+    ctx.fillStyle = 'rgba(6,10,16,0.55)';
+    ctx.fillRect(10, SPLIT_TOP_H - 22, 168, 16);
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('UPPER STAGE — BE-3U', 12, 302);
+    ctx.font = hudMono(10, '700');
+    ctx.textAlign = 'left';
+    ctx.fillText('UPPER STAGE — BE-3U', 16, SPLIT_TOP_H - 10);
     ctx.restore();
 
     const boosterAlt = timelineValue(BOOSTER_TIMELINE, 'altitude', clamp(state.session.totalElapsed, PHASES.KARMAN.start, PHASES.BOOSTER_RTLS.end));
     drawBackground(ctx, boosterAlt, bottom);
     ctx.save();
-    ctx.beginPath(); ctx.rect(0, 324, CW, CH - 324); ctx.clip();
+    ctx.beginPath(); ctx.rect(0, SPLIT_BOTTOM_Y, CW, CH - SPLIT_BOTTOM_Y); ctx.clip();
     ctx.fillStyle = 'rgba(20,70,110,0.45)';
-    ctx.fillRect(0, 522, CW, CH - 522);
-    drawJacklyn(ctx, 324);
+    ctx.fillRect(0, CH - 48, CW, 48);
+    drawJacklyn(ctx, SPLIT_BOTTOM_Y);
     Particles.draw(ctx, 'booster');
-    if (state.booster.alive) drawRocket(ctx, state.booster.x, 324 + state.booster.y, clamp(state.booster.vx * 0.04, -0.2, 0.2), 'booster', { fairingGone: true, legs: state.booster.legs || 0 });
+    if (state.booster.alive) drawRocket(ctx, state.booster.x, SPLIT_BOTTOM_Y + state.booster.y, clamp(state.booster.vx * 0.04, -0.2, 0.2), 'booster', { fairingGone: true, legs: state.booster.legs || 0 });
+    ctx.fillStyle = 'rgba(6,10,16,0.55)';
+    ctx.fillRect(10, SPLIT_BOTTOM_Y + 8, 210, 16);
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('BOOSTER — HEADING FOR JACKLYN', 12, 624);
+    ctx.font = hudMono(10, '700');
+    ctx.textAlign = 'left';
+    ctx.fillText('BOOSTER — HEADING FOR JACKLYN', 16, SPLIT_BOTTOM_Y + 20);
     ctx.restore();
 
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(0, 316, CW, 8);
+    ctx.fillRect(0, SPLIT_TOP_H, CW, SPLIT_GAP);
   }
 
   function drawReady(ctx) {
     drawBackground(ctx, 0);
     drawLaunchPad(ctx);
-    drawRocket(ctx, CW / 2, CH - 104, 0, 'main', { fairingGone: false });
-    ctx.fillStyle = 'rgba(0,0,0,0.48)';
+    drawRocket(ctx, CW / 2, CH - 88, 0, 'main', { fairingGone: false });
+    const compact = isCompactHud();
+    ctx.fillStyle = compact ? 'rgba(4,8,14,0.52)' : 'rgba(4,8,14,0.28)';
     ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = '#33ff33';
-    ctx.textAlign = 'center';
-    ctx.font = '20px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText('NEW GLENN // FLIGHT MISSION', CW / 2, 124);
-    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
+    const cardW = compact ? CW - 32 : 428;
+    const cardH = compact ? CH - 36 : 448;
+    const cardX = compact ? 16 : 24;
+    const cardY = compact ? 18 : 46;
+    ctx.fillStyle = 'rgba(6,10,18,0.86)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
+    ctx.strokeStyle = 'rgba(183,171,255,0.45)';
+    ctx.strokeRect(cardX + 0.5, cardY + 0.5, cardW - 1, cardH - 1);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#eef0fa';
+    ctx.font = '800 22px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText('NEW GLENN RUNNER', cardX + 22, cardY + 36);
     ctx.fillStyle = '#8ce0ff';
-    ctx.fillText('FIRST NEWLY-BUILT ORBITAL PAD SINCE THE 1960s', CW / 2, 154);
-    ctx.fillText('LC-36 | Gradatim Ferociter', CW / 2, 174);
+    ctx.font = hudMono(11, '600');
+    ctx.fillText('LC-36  ·  Integrated Launch Tower', cardX + 22, cardY + 58);
+    ctx.fillText('Gradatim Ferociter', cardX + 22, cardY + 76);
     ctx.fillStyle = '#ffcf5d';
     const tip = state.ui.tip || '';
-    if (tip.length > 46) {
-      const cut = Math.max(18, tip.lastIndexOf(' ', 46));
-      ctx.fillText(tip.slice(0, cut), CW / 2, 194);
-      ctx.fillText(tip.slice(cut + 1), CW / 2, 210);
+    const tipWidth = cardW - 44;
+    ctx.font = hudMono(11, '600');
+    if (ctx.measureText(tip).width > tipWidth && tip.length > 42) {
+      const cut = Math.max(18, tip.lastIndexOf(' ', 48));
+      ctx.fillText(tip.slice(0, cut), cardX + 22, cardY + 104);
+      ctx.fillText(tip.slice(cut + 1), cardX + 22, cardY + 122);
     } else {
-      ctx.fillText(tip, CW / 2, 202);
+      ctx.fillText(tip, cardX + 22, cardY + 110);
     }
     ctx.strokeStyle = '#ffcf5d';
-    ctx.strokeRect(86, 254, CW - 172, 42);
-    ctx.font = 'bold 16px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('TAP OR PRESS SPACE TO START PREFLIGHT', CW / 2, 281);
+    ctx.strokeRect(cardX + 22, cardY + 142, cardW - 44, 40);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = hudMono(13, '700');
+    ctx.textAlign = 'center';
+    ctx.fillText('SPACE / TAP  ·  START PREFLIGHT', cardX + cardW / 2, cardY + 168);
+    const btnW = 110;
+    const gap = 10;
+    const total = 3 * btnW + 2 * gap;
+    const btnX0 = cardX + (cardW - total) / 2;
+    const btnY = cardY + 198;
     state.ui.difficultyButtons = [
-      { mode: 'KID', x: 80, y: 302, w: 78, h: 24 },
-      { mode: 'CADET', x: 171, y: 302, w: 78, h: 24 },
-      { mode: 'PAD_RAT', x: 262, y: 302, w: 78, h: 24 }
+      { mode: 'KID', x: btnX0, y: btnY, w: btnW, h: 28 },
+      { mode: 'CADET', x: btnX0 + btnW + gap, y: btnY, w: btnW, h: 28 },
+      { mode: 'PAD_RAT', x: btnX0 + 2 * (btnW + gap), y: btnY, w: btnW, h: 28 }
     ];
     state.ui.difficultyButtons.forEach((btn) => {
       const active = state.settings.difficulty === btn.mode;
       ctx.strokeStyle = active ? '#33ff33' : '#8aa2b0';
       ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
       ctx.fillStyle = active ? '#33ff33' : '#8aa2b0';
-      ctx.fillText(btn.mode === 'PAD_RAT' ? 'PAD RAT' : btn.mode, btn.x + btn.w / 2, btn.y + 16);
+      ctx.font = hudMono(11, '700');
+      ctx.fillText(btn.mode === 'PAD_RAT' ? 'PAD RAT' : btn.mode, btn.x + btn.w / 2, btn.y + 19);
     });
-    ctx.fillStyle = '#33ff33';
-    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('HOLD BOOST TO CLIMB. A/D OR ◀▶ STEER.', CW / 2, 346);
-    ctx.fillText('BRIEF BOOST GAPS ARE FORGIVEN. TAP EARLY STILL COUNTS.', CW / 2, 362);
-    ctx.fillText('CATCH SHIELD · LOX · BE-4 KICK. GOLD PROMPTS FOR BURNS.', CW / 2, 378);
-    ctx.fillText('KID = FRIENDLY | CADET = CLASSIC | PAD RAT = HARD', CW / 2, 394);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#c8d0dc';
+    ctx.font = hudMono(11, '500');
+    const lines = [
+      'Hold BOOST to climb. A/D or ◀▶ steer.',
+      'Land GS-1 on Jacklyn — the landing barge.',
+      'Catch shield · LOX · BE-4 kick.',
+      'KID friendly  ·  CADET classic  ·  PAD RAT hard'
+    ];
+    lines.forEach((line, i) => ctx.fillText(line, cardX + 22, cardY + 254 + i * 20));
     const pb = state.settings.hiArcadeScore || 0;
     const last = state.settings.lastArcadeScore || 0;
-    ctx.fillText(pb || last ? `PB ${pb.toLocaleString()}  ·  LAST ${last.toLocaleString()}` : 'NO PERSONAL BEST YET', CW / 2, 410);
-    ctx.fillText('P / ESC pause  ·  M mute  ·  SPACE / HOLD TO CLIMB', CW / 2, 426);
+    ctx.fillStyle = '#9aa3c7';
+    ctx.font = hudMono(11, '600');
+    ctx.fillText(pb || last ? `BEST ${padDigits(pb.toLocaleString(), 6)}  ·  LAST ${padDigits(last.toLocaleString(), 6)}` : 'NO PERSONAL BEST YET', cardX + 22, cardY + 344);
+    ctx.fillText('P / ESC pause  ·  M mute', cardX + 22, cardY + 366);
   }
 
   function drawPadOverlay(ctx) {
     const pollSeconds = padPollDurationSeconds().toFixed(1);
+    const compact = isCompactHud();
+    const cardW = compact ? CW - 24 : 420;
+    const cardX = compact ? 12 : 16;
+    const cardY = compact ? 48 : 64;
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    ctx.fillRect(18, 236, CW - 36, 214);
+    ctx.fillStyle = 'rgba(6,10,16,0.82)';
+    ctx.fillRect(cardX, cardY, cardW, 78);
     ctx.strokeStyle = '#33ff33';
-    ctx.strokeRect(18, 236, CW - 36, 214);
+    ctx.strokeRect(cardX, cardY, cardW, 78);
     ctx.fillStyle = '#33ff33';
-    ctx.font = '18px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText('AUTO GO / NO-GO POLL', 34, 260);
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText(`Systems auto-flip green in ${pollSeconds}s. Tap once to skip directly to liftoff.`, 34, 278);
+    ctx.font = '700 16px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('AUTO GO / NO-GO POLL', cardX + 14, cardY + 24);
+    ctx.font = hudMono(11, '600');
+    ctx.fillStyle = '#c8d0dc';
+    ctx.fillText(`Systems auto-flip green in ${pollSeconds}s. Tap to skip to liftoff.`, cardX + 14, cardY + 44);
+    ctx.fillStyle = state.ui.systems.every(s => s.ok) ? '#ffcf5d' : '#8aa2b0';
+    ctx.fillText(state.ui.countdownStarted ? `IGNITION — T-${Math.max(0, Math.ceil(state.ui.countdown))}` : 'POLL IN PROGRESS  ·  T-3 START', cardX + 14, cardY + 64);
     state.ui.systems.forEach(sys => {
       ctx.strokeStyle = sys.ok ? '#33ff33' : '#56666f';
       ctx.strokeRect(sys.x, sys.y, sys.w, sys.h);
       ctx.fillStyle = sys.ok ? '#33ff33' : '#8aa2b0';
-      ctx.fillText(`${sys.label} ${sys.ok ? '✅' : '—'}`, sys.x + 10, sys.y + 22);
+      ctx.font = hudMono(10, '700');
+      ctx.fillText(`${sys.label} ${sys.ok ? 'GO' : '—'}`, sys.x + 10, sys.y + 20);
     });
-    ctx.fillStyle = state.ui.systems.every(s => s.ok) ? '#ffcf5d' : '#8aa2b0';
-    ctx.fillText(state.ui.countdownStarted ? `IGNITION STARTED — T-${Math.max(0, Math.ceil(state.ui.countdown))}` : 'AUTOMATED POLL IN PROGRESS (T-3 START)', 34, 446);
     ctx.restore();
   }
 
   function drawStageSepCard(ctx) {
+    const cardW = Math.min(CW - 80, 520);
+    const cardH = 84;
+    const cardX = (CW - cardW) / 2;
+    const cardY = CH / 2 - 42;
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(40, 228, CW - 80, 84);
+    ctx.fillStyle = 'rgba(6,10,16,0.82)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
     ctx.strokeStyle = '#ffcf5d';
-    ctx.strokeRect(40, 228, CW - 80, 84);
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.fillStyle = '#ffcf5d';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 14px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('STAGE SEPARATION CONFIRMED', CW / 2, 262);
-    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('Gradatim Ferociter', CW / 2, 286);
+    ctx.font = hudMono(14, '700');
+    ctx.fillText('STAGE SEPARATION CONFIRMED', CW / 2, cardY + 34);
+    ctx.font = hudMono(12, '600');
+    ctx.fillText('Gradatim Ferociter', CW / 2, cardY + 58);
     ctx.restore();
   }
 
   function drawSettings(ctx) {
+    const cardW = Math.min(CW - 64, 480);
+    const cardH = 300;
+    const cardX = (CW - cardW) / 2;
+    const cardY = (CH - cardH) / 2;
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.82)';
-    ctx.fillRect(44, 140, CW - 88, 270);
+    ctx.fillStyle = 'rgba(4,8,14,0.46)';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'rgba(8,12,20,0.92)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
     ctx.strokeStyle = '#33ff33';
-    ctx.strokeRect(44, 140, CW - 88, 270);
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.fillStyle = '#33ff33';
     ctx.font = '18px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText('SETTINGS', 66, 170);
+    ctx.textAlign = 'left';
+    ctx.fillText('SETTINGS', cardX + 22, cardY + 32);
     const rows = [
       ['Sound', state.settings.sound],
       ['Music', state.settings.music],
@@ -3825,97 +4061,131 @@
       ['Haptics', state.settings.haptics],
       ['Telemetry panel', state.settings.engineerPanel]
     ];
-    state.ui.settingRows = rows.map((row, idx) => ({ x: 66, y: 194 + idx * 30, w: 288, h: 24, key: row[0] }));
+    state.ui.settingRows = rows.map((row, idx) => ({ x: cardX + 22, y: cardY + 48 + idx * 30, w: cardW - 44, h: 24, key: row[0] }));
     rows.forEach((row, idx) => {
-      const y = 212 + idx * 30;
+      const y = cardY + 66 + idx * 30;
       ctx.fillStyle = '#8ce0ff';
-      ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
-      ctx.fillText(row[0], 70, y);
+      ctx.font = hudMono(11, '600');
+      ctx.fillText(row[0], cardX + 26, y);
       ctx.fillStyle = row[1] ? '#33ff33' : '#ff5d5d';
-      ctx.fillText(row[1] ? 'ON' : 'OFF', 290, y);
+      ctx.textAlign = 'right';
+      ctx.fillText(row[1] ? 'ON' : 'OFF', cardX + cardW - 26, y);
+      ctx.textAlign = 'left';
     });
     ctx.fillStyle = '#ffcf5d';
-    ctx.fillText(`Difficulty: ${state.settings.difficulty}`, 70, 356);
-    ctx.fillText('Tap a row to toggle. RESET RECORD is in the side panel.', 70, 374);
+    ctx.fillText(`Difficulty: ${state.settings.difficulty}`, cardX + 26, cardY + cardH - 36);
+    ctx.fillText('Tap a row to toggle. RESET RECORD is below the stage.', cardX + 26, cardY + cardH - 18);
     ctx.restore();
   }
 
   function drawGameOver(ctx) {
-    ctx.fillStyle = 'rgba(0,0,0,0.68)';
+    const extra = state.ui.enteringInitials ? 120 : 0;
+    const cardW = Math.min(CW - 48, 580);
+    const cardH = 268 + extra;
+    const cardX = (CW - cardW) / 2;
+    const cardY = (CH - cardH) / 2;
+    ctx.fillStyle = 'rgba(4,8,14,0.5)';
     ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = '#ff5d5d';
+    ctx.fillStyle = 'rgba(8,12,20,0.9)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
+    ctx.strokeStyle = '#ff5d5d';
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.textAlign = 'center';
-    ctx.font = '34px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText('MISSION FAILED', CW / 2, 200);
-    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = '#ff5d5d';
+    ctx.font = '800 28px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText('MISSION FAILED', CW / 2, cardY + 42);
+    ctx.font = hudMono(12, '600');
     const map = {
-      ascent: 'ASCENT LOSS — hit a corridor hazard or dropped thrust too long.',
+      ascent: 'ASCENT LOSS — corridor hazard or dropped thrust too long.',
       maxq: 'MAX-Q BREAKUP — too much gimbal at high dynamic pressure.',
-      orbit: 'UPPER-STAGE HIT — debris or sat crossed the corridor.',
-      offorbit: 'SECO MISS — throttle left the green band. (NG-3 club.)'
+      orbit: 'UPPER-STAGE HIT — debris crossed the corridor.',
+      offorbit: 'SECO MISS — throttle left the green band.'
     };
     const failLine = map[state.effects.quickMessage] || 'VEHICLE LOST.';
-    ctx.fillText(failLine, CW / 2, 232);
+    ctx.fillStyle = '#eef0fa';
+    ctx.fillText(failLine, CW / 2, cardY + 72);
     ctx.fillStyle = '#8ce0ff';
-    ctx.fillText(`Lasted ${state.telemetry.tPlus || 'T+0'}  ·  ${currentPhaseLabel()}`, CW / 2, 250);
-    ctx.fillStyle = '#33ff33';
-    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  BEST ${(state.settings.hiArcadeScore || 0).toLocaleString()}`, CW / 2, 272);
+    ctx.fillText(`${state.telemetry.tPlus || 'T+0'}  ·  ${currentPhaseLabel()}`, CW / 2, cardY + 96);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = hudMono(16, '700');
+    ctx.fillText(`SCORE ${padDigits(arcadeScore().toLocaleString(), 6)}  ·  BEST ${padDigits((state.settings.hiArcadeScore || 0).toLocaleString(), 6)}`, CW / 2, cardY + 126);
     const jacklyn = state.session.boosterRecovered ? 'JACKLYN CATCH' : (state.session.boosterLost ? 'JACKLYN MISS' : 'JACKLYN —');
-    ctx.fillText(`Mission ${state.session.missionName}  ·  ${jacklyn}`, CW / 2, 290);
+    ctx.font = hudMono(12, '600');
+    ctx.fillStyle = '#c8d0dc';
+    ctx.fillText(`${state.session.missionName}  ·  ${jacklyn}`, CW / 2, cardY + 150);
     ctx.fillStyle = '#ffcf5d';
     if (state.status === 'CONTINUE') {
-      ctx.fillText(`CONTINUE? ${Math.max(0, state.ui.continueCountdown)}...`, CW / 2, 312);
-      ctx.fillText(`Tap to restart level (${state.session.continuesUsed}/3 used)`, CW / 2, 330);
+      ctx.fillText(`CONTINUE? ${Math.max(0, state.ui.continueCountdown)}...`, CW / 2, cardY + 182);
+      ctx.fillText(`Tap to restart level (${state.session.continuesUsed}/3 used)`, CW / 2, cardY + 204);
     } else if (state.ui.enteringInitials) {
-      ctx.fillText(`ENTER INITIALS: ${state.ui.initials}`, CW / 2, 312);
-      ctx.fillText('Type A-Z, Backspace to edit, Enter to save.', CW / 2, 330);
+      ctx.fillText(`ENTER INITIALS: ${state.ui.initials}`, CW / 2, cardY + 182);
+      ctx.fillText('Type A-Z, Backspace to edit, Enter to save.', CW / 2, cardY + 204);
       const board = (state.settings.leaderboard || []).slice(0, 5);
       ctx.textAlign = 'left';
-      ctx.fillText('TOP PILOTS', 64, 366);
-      board.forEach((row, i) => ctx.fillText(`${String(i + 1).padStart(2, '0')} ${row.initials}  ${row.score}  ${row.rank}`, 64, 386 + i * 16));
+      ctx.fillText('TOP PILOTS', cardX + 28, cardY + 232);
+      board.forEach((row, i) => ctx.fillText(`${String(i + 1).padStart(2, '0')} ${row.initials}  ${row.score}  ${row.rank}`, cardX + 28, cardY + 252 + i * 16));
     } else {
-      ctx.fillText('Tap canvas / BOOST / SPACE to fly again.', CW / 2, 312);
+      ctx.fillText('SPACE / TAP  ·  fly again', CW / 2, cardY + 196);
     }
   }
 
   function drawSummary(ctx) {
     drawBackground(ctx, state.session.maxAltitude || 200000);
-    ctx.fillStyle = 'rgba(0,0,0,0.72)';
-    ctx.fillRect(30, 58, CW - 60, CH - 116);
+    const cardW = Math.min(CW - 40, 860);
+    const cardH = Math.min(CH - 32, 476);
+    const cardX = (CW - cardW) / 2;
+    const cardY = (CH - cardH) / 2;
+    ctx.fillStyle = 'rgba(4,8,14,0.42)';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'rgba(8,12,20,0.9)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
     ctx.strokeStyle = '#33ff33';
-    ctx.strokeRect(30, 58, CW - 60, CH - 116);
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#33ff33';
-    ctx.font = '28px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText(state.session.missionName, CW / 2, 96);
-    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  PB ${(state.settings.hiArcadeScore || 0).toLocaleString()}  ·  ${missionMedal(state.session.score)}`, CW / 2, 120);
-    drawPatch(ctx, state.ui.missionPatch, CW / 2, 182);
+    ctx.font = '26px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(state.session.missionName, CW / 2, cardY + 36);
+    ctx.font = hudMono(13, '600');
+    ctx.fillText(`SCORE ${padDigits(arcadeScore().toLocaleString(), 6)}  ·  BEST ${padDigits((state.settings.hiArcadeScore || 0).toLocaleString(), 6)}  ·  ${missionMedal(state.session.score)}`, CW / 2, cardY + 60);
+    drawPatch(ctx, state.ui.missionPatch, cardX + 110, cardY + 168);
     ctx.fillStyle = '#8ce0ff';
     ctx.textAlign = 'left';
-    ctx.fillText(`Scripted mission time: ${formatMissionTime(PHASES.PAYLOAD_DEPLOY.end)}`, 60, 262);
-    ctx.fillText(`Max altitude: ${(state.session.maxAltitude / 1000).toFixed(1)} km`, 60, 282);
-    ctx.fillText(`Max velocity: ${Math.round(state.session.maxVelocity)} m/s`, 60, 302);
+    ctx.font = hudMono(12, '600');
+    const leftX = cardX + 210;
+    ctx.fillText(`Mission time  ${formatMissionTime(PHASES.PAYLOAD_DEPLOY.end)}`, leftX, cardY + 108);
+    ctx.fillText(`Max altitude  ${(state.session.maxAltitude / 1000).toFixed(1)} km`, leftX, cardY + 128);
+    ctx.fillText(`Max velocity  ${padDigits(Math.round(state.session.maxVelocity), 5)} m/s`, leftX, cardY + 148);
     const recoverLine = state.session.boosterRecovered
       ? (state.session.landingQuality === 'perfect' ? 'JACKLYN CATCH (perfect)' : state.session.landingQuality === 'tip' ? 'JACKLYN SALVAGE (tip)' : 'JACKLYN CATCH')
       : (state.session.boosterLost ? 'JACKLYN MISS (splash)' : '—');
-    ctx.fillText(`Booster recovered: ${recoverLine}`, 60, 322);
-    ctx.fillText(`Payload deployed: ${state.session.payloadDeployed ? '✅' : '❌'}`, 60, 342);
+    ctx.fillText(`Booster       ${recoverLine}`, leftX, cardY + 168);
+    ctx.fillText(`Payload       ${state.session.payloadDeployed ? 'DEPLOYED' : 'NO'}`, leftX, cardY + 188);
     const rows = ['PAD', 'ASCENT', 'MAX_Q', 'SUPERSONIC', 'STAGE_SEP', 'KARMAN', 'BOOSTER_RTLS', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
-    rows.forEach((row, idx) => ctx.fillText(`${row.replace('_', ' ')}: ${state.session.phaseRatings[row] || '—'}`, 60, 370 + idx * 18));
+    const col2 = cardX + cardW / 2 + 16;
+    rows.forEach((row, idx) => {
+      const col = idx < 5 ? leftX : col2;
+      const y = cardY + 228 + (idx % 5) * 20;
+      ctx.fillText(`${row.replace('_', ' ')}: ${state.session.phaseRatings[row] || '—'}`, col, y);
+    });
     if (state.settings.achievements.includes('Pad Rat Certified')) {
-      ctx.fillText('Achievement: 🐀🪖 Pad Rat Certified', 60, 538);
+      ctx.fillText('Achievement: Pad Rat Certified', leftX, cardY + cardH - 56);
     }
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ffcf5d';
+    const btnW = 120;
+    const gap = 16;
+    const total = 3 * btnW + 2 * gap;
+    const btnX0 = cardX + (cardW - total) / 2;
+    const btnY = cardY + cardH - 44;
     state.ui.summaryButtons = [
-      { key: 'share', x: 60, y: 544, w: 90, h: 28, label: 'Share' },
-      { key: 'replay', x: 166, y: 544, w: 90, h: 28, label: 'Replay' },
-      { key: 'extended', x: 272, y: 544, w: 90, h: 28, label: 'Extended' }
+      { key: 'share', x: btnX0, y: btnY, w: btnW, h: 28, label: 'Share' },
+      { key: 'replay', x: btnX0 + btnW + gap, y: btnY, w: btnW, h: 28, label: 'Replay' },
+      { key: 'extended', x: btnX0 + 2 * (btnW + gap), y: btnY, w: btnW, h: 28, label: 'Extended' }
     ];
     state.ui.summaryButtons.forEach(btn => {
       ctx.strokeStyle = '#ffcf5d';
       ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.font = hudMono(12, '700');
       ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + 18);
     });
   }
@@ -3940,20 +4210,28 @@
   }
 
   function drawPause(ctx) {
-    ctx.fillStyle = 'rgba(0,0,0,0.62)';
+    const cardW = Math.min(CW - 64, 480);
+    const cardH = 200;
+    const cardX = (CW - cardW) / 2;
+    const cardY = (CH - cardH) / 2;
+    ctx.fillStyle = 'rgba(4,8,14,0.48)';
     ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'rgba(8,12,20,0.9)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
+    ctx.strokeStyle = '#ffcf5d';
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.fillStyle = '#ffcf5d';
     ctx.textAlign = 'center';
-    ctx.font = '28px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText(state.status === 'PAUSED_AUTO' ? 'HOLDING' : 'PAUSED', CW / 2, CH / 2 - 52);
-    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.font = '800 26px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(state.status === 'PAUSED_AUTO' ? 'HOLDING' : 'PAUSED', CW / 2, cardY + 48);
+    ctx.font = hudMono(12, '600');
     ctx.fillStyle = '#8ce0ff';
-    ctx.fillText(currentPhaseLabel(), CW / 2, CH / 2 - 24);
-    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, CW / 2, CH / 2 - 6);
+    ctx.fillText(currentPhaseLabel(), CW / 2, cardY + 78);
+    ctx.fillText(`SCORE ${padDigits(arcadeScore().toLocaleString(), 6)}  ·  ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, CW / 2, cardY + 100);
     ctx.fillStyle = '#ffcf5d';
-    ctx.fillText('Tap, SPACE, P, or Escape to resume', CW / 2, CH / 2 + 22);
+    ctx.fillText('SPACE / P / ESC  ·  resume', CW / 2, cardY + 136);
     ctx.fillStyle = '#9aa3c7';
-    ctx.fillText('M mute  ·  O settings  ·  reduced motion honored', CW / 2, CH / 2 + 42);
+    ctx.fillText('M mute  ·  O settings', CW / 2, cardY + 160);
   }
 
   function drawLevelIntro(ctx) {
@@ -3963,40 +4241,48 @@
     const t = formatMissionTime(timelineValue(MAIN_TIMELINE, 'actual', p.start));
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.78)';
-    ctx.fillRect(0, 0, CW, 130);
-    ctx.fillRect(0, CH - 130, CW, 130);
+    ctx.fillRect(0, 0, CW, 72);
+    ctx.fillRect(0, CH - 72, CW, 72);
+    ctx.fillStyle = 'rgba(6,10,18,0.88)';
+    ctx.fillRect(CW * 0.18, CH / 2 - 70, CW * 0.64, 140);
+    ctx.strokeStyle = '#8ce0ff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(CW * 0.18, CH / 2 - 70, CW * 0.64, 140);
     ctx.fillStyle = '#e9f4ff';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 24px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText(`LEVEL ${n}`, CW / 2, CH / 2 - 44);
-    ctx.font = '14px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('═══════════', CW / 2, CH / 2 - 24);
-    ctx.fillText((p.label || '').replace(/^LEVEL \d+:\s*/i, ''), CW / 2, CH / 2 - 6);
-    ctx.fillText('═══════════', CW / 2, CH / 2 + 12);
+    ctx.font = '800 24px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(`LEVEL ${n}`, CW / 2, CH / 2 - 28);
+    ctx.font = hudMono(14, '700');
+    ctx.fillText((p.label || '').replace(/^LEVEL \d+:\s*/i, ''), CW / 2, CH / 2 + 4);
     ctx.fillStyle = '#ffcf5d';
-    ctx.fillText(t, CW / 2, CH / 2 + 34);
-    ctx.fillText(`TARGET ${((LEVEL_TARGETS[state.session.phase] || 0)).toLocaleString()}`, CW / 2, CH / 2 + 52);
+    ctx.font = hudMono(12, '600');
+    ctx.fillText(`${t}   ·   TARGET ${((LEVEL_TARGETS[state.session.phase] || 0)).toLocaleString()}`, CW / 2, CH / 2 + 36);
     ctx.restore();
   }
 
   function drawLevelClear(ctx) {
     if (state.ui.levelClearTimer <= 0 || !state.ui.levelClearPhase) return;
     const n = LEVEL_ORDER.indexOf(state.ui.levelClearPhase) + 1;
+    const pops = state.ui.scorePops || [];
+    const cardW = Math.min(CW - 80, 520);
+    const cardH = 160 + pops.length * 24;
+    const cardX = (CW - cardW) / 2;
+    const cardY = (CH - cardH) / 2;
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(36, 156, CW - 72, 270);
+    ctx.fillStyle = 'rgba(6,10,16,0.88)';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
     ctx.strokeStyle = '#ffcf5d';
-    ctx.strokeRect(36, 156, CW - 72, 270);
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = 'bold 24px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText(`LEVEL ${n} CLEARED`, CW / 2, 190);
-    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
-    state.ui.scorePops.forEach((row, i) => {
-      ctx.fillText(`${row.label.padEnd(8, ' ')} : ${row.value}`, CW / 2, 222 + i * 24);
+    ctx.font = '800 22px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(`LEVEL ${n} CLEARED`, CW / 2, cardY + 36);
+    ctx.font = hudMono(12, '600');
+    pops.forEach((row, i) => {
+      ctx.fillText(`${row.label.padEnd(8, ' ')} : ${row.value}`, CW / 2, cardY + 68 + i * 24);
     });
     const next = LEVEL_ORDER[Math.min(LEVEL_ORDER.length - 1, n)] || 'EXTENDED';
-    ctx.fillText(`NEXT: ${(PHASES[next] ? PHASES[next].label : next).replace(/^LEVEL \d+:\s*/i, '')}`, CW / 2, 338);
+    ctx.fillText(`NEXT: ${(PHASES[next] ? PHASES[next].label : next).replace(/^LEVEL \d+:\s*/i, '')}`, CW / 2, cardY + cardH - 24);
     ctx.restore();
   }
 
@@ -4064,9 +4350,11 @@
       }
       if (!isLandingFocus()) drawHud(ctx);
       drawFloatScores(ctx);
-      drawLevelClear(ctx);
-      drawLevelIntro(ctx);
-      drawKarmanBanner(ctx);
+      if (!isLandingFocus()) {
+        drawLevelClear(ctx);
+        drawLevelIntro(ctx);
+        drawKarmanBanner(ctx);
+      }
       drawLandingBanner(ctx);
       if (state.session.phase === 'PAD' || state.session.phase === 'STAGE_SEP' || state.session.phase === 'PAYLOAD_DEPLOY' || state.ui.karmanBannerTimer > 0 || state.ui.levelIntroTimer > 0 || state.ui.levelClearTimer > 0 || (state.session.phase === 'KARMAN' && !state.rocket.fairingGone) || state.session.phase === 'ORBIT_INSERT' || (state.session.phase === 'BOOSTER_RTLS' && !isLandingFocus())) {
         ctx.fillStyle = '#8ce0ff';
