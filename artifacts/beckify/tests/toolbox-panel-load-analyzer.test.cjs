@@ -117,6 +117,26 @@ assert.equal(panel.isLikelyImageFile({ type: 'application/pdf', name: 'dir.jpg' 
 const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
 assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
 assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
+assert.match(panelHtml, /id="addShotButton"/);
+assert.match(panelHtml, /id="mergeRows"/);
+assert.match(panelHtml, /Unknown — select before load math/);
+assert.doesNotMatch(panelHtml, /<option value="3" selected>/);
+assert.match(panelSrc, /mergeCircuitRows/);
+assert.match(panelSrc, /Phase is never assumed/);
+
+const mergedRows = panel.mergeCircuitRows(
+  [{ circuit: '1', description: 'Lights', trip: '20A', poles: '1', loadType: 'Lighting', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' }],
+  [{ circuit: '1', description: '', trip: '', poles: '', loadType: 'General', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' },
+   { circuit: '2', description: 'Receptacles', trip: '20A', poles: '1', loadType: 'Receptacle', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' }],
+);
+assert.equal(mergedRows.find((row) => row.circuit === '1').description, 'Lights');
+assert.equal(mergedRows.find((row) => row.circuit === '2').description, 'Receptacles');
+
+const unknownPhase = panel.computeDirectoryMetrics(
+  [{ circuit: '1', description: 'Lights', trip: '20A', poles: '1' }],
+  { mainAmps: 100, slotCount: 1 }
+);
+assert.match(unknownPhase.phaseBalance.assumption, /never assumed/i);
 
 const twoUp = panel.parseScheduleText([
   'PANEL BLT 11',

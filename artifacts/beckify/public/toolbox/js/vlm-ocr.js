@@ -255,6 +255,48 @@
     return JSON.parse(json);
   }
 
+  function safeExtractJsonObject(text) {
+    try {
+      return extractJsonObject(text);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function VisionHttpError(message, status, retryAfter) {
+    var err = new Error(message);
+    err.name = 'VisionHttpError';
+    err.status = status || 0;
+    err.retryAfter = retryAfter || 0;
+    return err;
+  }
+
+  function parseRetryAfter(response, payload) {
+    var header = 0;
+    try {
+      if (response && response.headers && typeof response.headers.get === 'function') {
+        header = Number(response.headers.get('Retry-After'));
+      }
+    } catch (_) { /* ignore */ }
+    var body = payload && (payload.retryAfter != null ? payload.retryAfter : payload.retry_after);
+    var seconds = Number(header || body || 0);
+    return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : 0;
+  }
+
+  function formatVisionError(err) {
+    if (!err) return 'Vision request failed.';
+    var status = err.status || 0;
+    if (status === 429) {
+      var wait = err.retryAfter;
+      if (wait >= 60) return 'Too many AI reads. Try again in about ' + Math.ceil(wait / 60) + ' min, or use on-device OCR.';
+      if (wait > 0) return 'Too many AI reads. Try again in ' + wait + ' s, or use on-device OCR.';
+      return 'Too many AI reads right now. Wait a few minutes, or use on-device OCR.';
+    }
+    if (status === 413) return err.message || 'The photo is too large for AI enhance (8 MB after JPEG encode).';
+    if (status === 504) return 'The vision provider timed out. On-device OCR is still available.';
+    return err.message || 'Vision request failed.';
+  }
+
   function knownTask(task) {
     if (task === TASK_PANEL || task === TASK_TDR || task === TASK_LOOK) return task;
     return TASK_NAMEPLATE;
@@ -301,17 +343,29 @@
   function postVision(url, body, token) {
     var headers = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = 'Bearer ' + token;
-    return fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body),
-    }).then(function (response) {
-      return response.json().catch(function () { return {}; }).then(function (payload) {
-        if (!response.ok) {
-          throw new Error(payload.error || ('Vision request failed with HTTP ' + response.status + '.'));
-        }
-        return payload;
+    function once() {
+      return fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body),
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (payload) {
+          if (!response.ok) {
+            throw VisionHttpError(
+              payload.error || ('Vision request failed with HTTP ' + response.status + '.'),
+              response.status,
+              parseRetryAfter(response, payload)
+            );
+          }
+          return payload;
+        });
       });
+    }
+    return once().catch(function (err) {
+      if (err && (err.status === 502 || err.status === 504)) {
+        return new Promise(function (resolve) { setTimeout(resolve, 800); }).then(once);
+      }
+      throw err;
     });
   }
 
@@ -330,10 +384,16 @@
       return Promise.reject(new Error('AI enhance is on but no HTTPS endpoint is configured. Use on-device OCR or set a VLM endpoint.'));
     }
     var url = endpointFor(config, task);
+    var lastProgress = 0;
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
-    onProgress(0.15, 'Preparing photo for optional AI enhance…');
+    function report(ratio, status) {
+      var next = Math.max(lastProgress, Math.max(0, Math.min(1, Number(ratio) || 0)));
+      lastProgress = next;
+      onProgress(next, status || '');
+    }
+    report(0.15, 'Preparing photo for optional AI enhance…');
     return prepareUploadDataUrl(file).then(function (dataUrl) {
-      onProgress(0.4, 'Uploading photo for optional AI enhance…');
+      report(0.4, 'Uploading photo for optional AI enhance…');
       var body = {
         imageBase64: dataUrl,
         mimeType: uploadMimeType(dataUrl, 'image/jpeg'),
@@ -341,10 +401,10 @@
       };
       var token = config.mode === 'custom' ? config.token : '';
       return postVision(url, body, token).then(function (payload) {
-        onProgress(0.85, 'Reading AI draft…');
+        report(0.85, 'Reading AI draft…');
         var analysis = visionDraftInput(payload);
         var draft = analyzePayload(analysis, task, 'vlm-' + config.mode, payload.raw_ocr || analysis.raw_ocr);
-        onProgress(1, 'AI draft ready. Review every field.');
+        report(1, 'AI draft ready. Review every field.');
         return {
           task: task,
           draft: draft,
@@ -353,7 +413,58 @@
           provider: payload.provider || config.mode,
           model: payload.model || '',
         };
+      }).catch(function (err) {
+        err.message = formatVisionError(err);
+        throw err;
       });
+    });
+  }
+
+  function analyzeMany(files, opts) {
+    var list = (files || []).filter(Boolean);
+    if (!list.length) return Promise.reject(new Error('Choose a photo first.'));
+    var task = knownTask(opts && opts.task);
+    if (task !== TASK_PANEL || list.length === 1) {
+      return analyze(list[0], opts);
+    }
+    var Schema = schema();
+    var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
+    var merged = null;
+    var warnings = [];
+    var rawParts = [];
+    var provider = '';
+    var model = '';
+    var chain = Promise.resolve();
+    list.forEach(function (file, index) {
+      chain = chain.then(function () {
+        onProgress(Math.min(0.95, index / list.length), 'Reading photo ' + (index + 1) + ' of ' + list.length + '…');
+        return analyze(file, Object.assign({}, opts || {}, {
+          onProgress: function (ratio, status) {
+            var start = index / list.length;
+            var span = 1 / list.length;
+            onProgress(Math.min(0.99, start + (Number(ratio) || 0) * span), status || '');
+          },
+        })).then(function (out) {
+          provider = out.provider || provider;
+          model = out.model || model;
+          if (out.rawText) rawParts.push(out.rawText);
+          if (out.warnings && out.warnings.length) warnings = warnings.concat(out.warnings);
+          merged = merged && Schema ? Schema.mergePanelDrafts(merged, out.draft) : out.draft;
+          return out;
+        });
+      });
+    });
+    return chain.then(function () {
+      onProgress(1, 'Merged AI draft ready. Review every circuit.');
+      return {
+        task: TASK_PANEL,
+        draft: merged,
+        rawText: (merged && merged.rawText) || rawParts.join('\n'),
+        warnings: warnings,
+        provider: provider,
+        model: model,
+        shotCount: list.length,
+      };
     });
   }
 
@@ -364,6 +475,7 @@
 
   function analyzePanelDirectory(file, opts) {
     var next = Object.assign({}, opts || {}, { task: TASK_PANEL });
+    if (Array.isArray(file)) return analyzeMany(file, next);
     return analyze(file, next);
   }
 
@@ -439,12 +551,16 @@
     httpsBase: httpsBase,
     shouldUpload: shouldUpload,
     analyze: analyze,
+    analyzeMany: analyzeMany,
     analyzeNameplate: analyzeNameplate,
     analyzePanelDirectory: analyzePanelDirectory,
     analyzeTdr: analyzeTdr,
     analyzeLook: analyzeLook,
     normalizeLookDraft: normalizeLookDraft,
     extractJsonObject: extractJsonObject,
+    safeExtractJsonObject: safeExtractJsonObject,
+    formatVisionError: formatVisionError,
+    VisionHttpError: VisionHttpError,
     analyzePayload: analyzePayload,
     prepareUploadDataUrl: prepareUploadDataUrl,
     uploadMimeType: uploadMimeType,

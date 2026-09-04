@@ -38,18 +38,27 @@ router.post("/analyze-panel", async (req, res) => {
   const clientKey = getClientKey(req);
   const bucket = consumeRateLimit(rateBuckets, clientKey);
   if (!bucket.allowed) {
-    res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - Date.now()) / 1000)));
-    return res.status(429).json({ error: "Too many panel analyses. Please try again later." });
+    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
+    res.setHeader("Retry-After", String(retryAfter));
+    return res.status(429).json({
+      error: "Too many panel analyses. Please try again later.",
+      retryAfter,
+    });
   }
   if (bucket.inFlight >= 2) {
-    return res.status(429).json({ error: "Too many panel analyses in progress." });
+    return res.status(429).json({
+      error: "Too many panel analyses in progress.",
+      retryAfter: 15,
+    });
   }
   bucket.inFlight += 1;
 
   const userText = [
     "Extract the printed panel directory into structured JSON.",
-    "Upright rotated phone photos first. Emit one circuit entry per odd/even number.",
+    "Upright rotated phone photos first. Emit one circuit entry per odd/even number you can actually read.",
+    "This frame may be only part of a large card — do not invent missing circuits.",
     "Prefer handwritten corrections over crossed-out print. Do not copy breaker trip into load amps.",
+    "phases is 1 or 3 only when printed. Never assume 3-phase.",
   ].join(" ");
 
   try {

@@ -27,7 +27,7 @@ assert.ok(ocr);
 
 const names = schema.FIELD_NAMES;
 for (const required of [
-  'manufacturer', 'model', 'ratedHP', 'ratedKW', 'voltage', 'fla', 'sf', 'rpm',
+  'manufacturer', 'model', 'serialNumber', 'ratedHP', 'ratedKW', 'voltage', 'fla', 'sf', 'rpm',
   'poles', 'frequencyHz', 'phases', 'enclosure', 'frame', 'designLetter',
   'codeLetter', 'nomEff', 'pf', 'mocp', 'lra', 'serviceFactorAmps', 'notes',
 ]) {
@@ -134,5 +134,57 @@ assert.equal(panel.rows[0].trip.value, 20);
 assert.equal(panel.rows[0].loadAmps.value, null);
 assert.equal(panel.rows[0].circuit.userReviewed, false);
 assert.equal(panel.panel.name.value, null);
+
+const serialDraft = schema.normalizeDraft({
+  serialNumber: { value: 'A12345', confidence: 0.8 },
+  pf: 82,
+  phases: '3Ø',
+  insulationClass: 'F',
+}, { source: 'vlm-test' });
+assert.equal(serialDraft.fields.serialNumber.value, 'A12345');
+assert.equal(serialDraft.fields.pf.value, 0.82);
+assert.equal(serialDraft.fields.phases.value, 3);
+assert.equal(serialDraft.extras.insulation, 'F');
+assert.equal(schema.toLegacyFields(serialDraft).serialNumber, 'A12345');
+assert.equal(schema.fieldLabel('fla'), 'FLA');
+assert.ok(schema.lowConfidenceLabels({
+  fields: { ratedHP: { value: 10, confidence: 0.4 }, fla: { value: 14, confidence: 0.9 } },
+}).includes('HP'));
+
+const flaNearMocp = schema.normalizeDraft({
+  fla: 30,
+}, { rawText: 'MOCP 30 FLA unreadable under glare HP 10' });
+assert.equal(flaNearMocp.fields.fla.value, null);
+
+const flaKeptWhenLabeled = schema.normalizeDraft({
+  fla: 14.5,
+  mocp: 30,
+}, { rawText: 'FLA 14.5 MOCP 30' });
+assert.equal(flaKeptWhenLabeled.fields.fla.value, 14.5);
+
+const merged = schema.mergePanelDrafts({
+  circuits: [{ circuit: '1', description: 'Lights', trip: 20 }],
+  panel: { name: 'LP-1' },
+}, {
+  circuits: [
+    { circuit: '1', description: '', trip: null, poles: 1 },
+    { circuit: '2', description: 'Receptacles', trip: 20 },
+  ],
+  panel: { voltage: '208Y/120V', phases: 3 },
+});
+assert.equal(merged.rows.find((row) => row.circuit.value === '1').description.value, 'Lights');
+assert.equal(merged.rows.find((row) => row.circuit.value === '2').description.value, 'Receptacles');
+assert.equal(merged.panel.name.value, 'LP-1');
+assert.equal(merged.panel.voltage.value, '208Y/120V');
+assert.equal(merged.panel.phases.value, 3);
+
+const panelPhaseUnknown = schema.normalizePanelDraft({
+  panel: { phases: 2, busAmps: 225 },
+});
+assert.equal(panelPhaseUnknown.panel.phases.value, null);
+assert.equal(panelPhaseUnknown.panel.mainAmps.value, 225);
+
+const reviewedAlias = schema.markReviewed(fromTess, true);
+assert.equal(reviewedAlias.fields.fla.reviewed, true);
 
 console.log('Nameplate schema + parse traps passed');

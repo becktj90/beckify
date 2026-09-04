@@ -434,6 +434,11 @@ textarea {
 .editor-table td.is-trip-copy {
   background: #fff3cd;
 }
+.ocr-low-conf,
+.editor-table input.ocr-low-conf {
+  outline: 2px solid #c9a000;
+  background: #fff8d0;
+}
 
 .flag-ask {
   margin: 8px 0 0;

@@ -198,10 +198,36 @@
   var PARSED_FIELD_IDS = [
     'mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_hz', 'mnp_phase',
     'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise',
-    'mnp_mfr', 'mnp_model', 'mnp_encl', 'mnp_poles', 'mnp_eff', 'mnp_pf',
+    'mnp_mfr', 'mnp_model', 'mnp_serial', 'mnp_encl', 'mnp_poles', 'mnp_eff', 'mnp_pf',
     'mnp_mocp', 'mnp_lra', 'mnp_sfa', 'mnp_notes',
   ];
+  var FIELD_ID_BY_NAME = {
+    ratedHP: 'mnp_hp',
+    ratedKW: 'mnp_kw',
+    voltage: 'mnp_volts',
+    fla: 'mnp_fla',
+    rpm: 'mnp_rpm',
+    frequencyHz: 'mnp_hz',
+    phases: 'mnp_phase',
+    frame: 'mnp_frame',
+    sf: 'mnp_sf',
+    designLetter: 'mnp_design',
+    insulation: 'mnp_insul',
+    codeLetter: 'mnp_code',
+    manufacturer: 'mnp_mfr',
+    model: 'mnp_model',
+    serialNumber: 'mnp_serial',
+    enclosure: 'mnp_encl',
+    poles: 'mnp_poles',
+    nomEff: 'mnp_eff',
+    pf: 'mnp_pf',
+    mocp: 'mnp_mocp',
+    lra: 'mnp_lra',
+    serviceFactorAmps: 'mnp_sfa',
+    notes: 'mnp_notes',
+  };
   var lastDraft = null;
+  var lastProgress = 0;
 
   function clearParsedFields() {
     for (var i = 0; i < PARSED_FIELD_IDS.length; i++) {
@@ -227,6 +253,7 @@
     setVal('mnp_rise', fields.riseC);
     setVal('mnp_mfr', fields.manufacturer);
     setVal('mnp_model', fields.model);
+    setVal('mnp_serial', fields.serialNumber);
     setVal('mnp_encl', fields.enclosure);
     setVal('mnp_poles', fields.poles);
     setVal('mnp_eff', fields.nomEff);
@@ -242,21 +269,119 @@
     var Schema = global.BeckifyNameplateSchema;
     var fields = Schema && draft ? Schema.toLegacyFields(draft) : (draft && draft.fields) || {};
     applyFields(fields);
+    highlightDraftFields(draft);
+    renderDualFlaChooser(draft);
     var conf = el('mnp_conf');
     if (!conf) return;
-    var lows = Schema && draft && typeof Schema.lowConfidenceFields === 'function'
-      ? Schema.lowConfidenceFields(draft, 0.6)
-      : [];
-    if (lows.length) {
+    var lows = Schema && draft && typeof Schema.lowConfidenceLabels === 'function'
+      ? Schema.lowConfidenceLabels(draft, 0.6)
+      : (Schema && draft && Schema.lowConfidenceFields ? Schema.lowConfidenceFields(draft, 0.6) : []);
+    var parts = [];
+    if (lows.length) parts.push('Low-confidence draft fields: ' + lows.join(', ') + '. Correct them before NEC math.');
+    if (draft && draft.warnings && draft.warnings.length) parts.push(draft.warnings.join(' '));
+    if (draft && draft.extras && draft.extras.dualFla) {
+      parts.push('Dual FLA ' + draft.extras.dualFla + ' — pick one ampere for the voltage you are using.');
+    }
+    if (parts.length) {
       conf.hidden = false;
-      conf.textContent = 'Low-confidence draft fields: ' + lows.join(', ') + '. Correct them before NEC math.';
-    } else if (draft && draft.warnings && draft.warnings.length) {
-      conf.hidden = false;
-      conf.textContent = draft.warnings.join(' ');
+      conf.textContent = parts.join(' ');
     } else {
       conf.hidden = true;
       conf.textContent = '';
     }
+  }
+
+  function highlightDraftFields(draft) {
+    PARSED_FIELD_IDS.forEach(function (id) {
+      var node = el(id);
+      if (node) node.classList.remove('ocr-low-conf');
+    });
+    var Schema = global.BeckifyNameplateSchema;
+    if (!Schema || !draft) return;
+    var lows = Schema.lowConfidenceFields(draft, 0.6);
+    lows.forEach(function (name) {
+      var id = FIELD_ID_BY_NAME[name];
+      if (id && el(id)) el(id).classList.add('ocr-low-conf');
+    });
+    if (draft.extras && draft.extras.dualFla && el('mnp_fla')) {
+      el('mnp_fla').classList.add('ocr-low-conf');
+    }
+    if (el('mnp_phase') && (!draft.fields || !draft.fields.phases || draft.fields.phases.value == null)) {
+      el('mnp_phase').classList.add('ocr-low-conf');
+    }
+  }
+
+  function renderDualFlaChooser(draft) {
+    var host = el('mnp_dual');
+    if (!host) return;
+    host.textContent = '';
+    var pair = draft && draft.extras && draft.extras.dualFla;
+    if (!pair) {
+      host.hidden = true;
+      return;
+    }
+    var parts = String(pair).split('/');
+    if (parts.length !== 2) {
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+    var label = document.createElement('span');
+    label.textContent = 'Dual FLA ' + pair + ' — pick the amperes that match the voltage you are using:';
+    host.appendChild(label);
+    parts.forEach(function (amp, index) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ocr-chip';
+      btn.textContent = amp + ' A' + (index === 0 ? ' (low-voltage side)' : ' (high-voltage side)');
+      btn.addEventListener('click', function () {
+        setVal('mnp_fla', amp);
+        if (el('mnp_fla')) el('mnp_fla').classList.remove('ocr-low-conf');
+        clearReview();
+        setStatus('Using ' + amp + ' A from dual FLA ' + pair + '. Confirm phase and voltage before calculating.');
+      });
+      host.appendChild(btn);
+    });
+  }
+
+  function setSource(kind, extra) {
+    var n = el('mnp_source');
+    if (!n) return;
+    if (!kind) {
+      n.hidden = true;
+      n.textContent = '';
+      return;
+    }
+    n.hidden = false;
+    if (kind === 'vlm') {
+      n.textContent = 'Source: AI draft' + (extra ? ' (' + extra + ')' : '') + '. Photos were forwarded only because Enhance with AI was on. On-device Tesseract was not used for this read.';
+    } else if (kind === 'tesseract') {
+      n.textContent = 'Source: on-device Tesseract. The photo stayed on this device.';
+    } else {
+      n.textContent = extra || '';
+    }
+  }
+
+  function setProgress(ratio, status) {
+    var fill = el('mnp_progress_fill');
+    var label = el('mnp_progress_label');
+    var shell = el('mnp_progress');
+    var next = Math.max(lastProgress, Math.max(0, Math.min(1, Number(ratio) || 0)));
+    lastProgress = next;
+    if (shell) shell.hidden = false;
+    if (fill) fill.style.width = Math.round(next * 100) + '%';
+    if (label) label.textContent = Math.round(next * 100) + '%';
+    if (status) setStatus(status);
+  }
+
+  function resetProgress() {
+    lastProgress = 0;
+    var fill = el('mnp_progress_fill');
+    var label = el('mnp_progress_label');
+    var shell = el('mnp_progress');
+    if (fill) fill.style.width = '0%';
+    if (label) label.textContent = '0%';
+    if (shell) shell.hidden = true;
   }
 
   function setStatus(msg) {
@@ -410,21 +535,48 @@
   }
 
   function applyTesseractResult(out) {
-    if (el('mnp_raw')) el('mnp_raw').value = out.text || '';
-    var draft = global.BeckifyOcr.toNameplateDraft
-      ? global.BeckifyOcr.toNameplateDraft(out.text || '', out.confidence)
-      : null;
-    if (draft && draft.fields && draft.fields.ratedHP) applyDraft(draft);
-    else {
-      var parsed = global.BeckifyOcr.parseMotorNameplate(out.text || '');
-      applyFields(parsed.fields);
+    var text = (out && out.text) || '';
+    if (el('mnp_raw')) el('mnp_raw').value = text;
+    var empty = !!(out && out.failed) || !String(text).trim();
+    var draft = global.BeckifyOcr && global.BeckifyOcr.toNameplateDraft
+      ? global.BeckifyOcr.toNameplateDraft(text, out && out.confidence)
+      : (global.BeckifyNameplateSchema
+        ? global.BeckifyNameplateSchema.fromLegacyParse({}, { source: 'tesseract', rawText: text })
+        : null);
+    if (empty) {
+      clearParsedFields();
+      lastDraft = draft;
+      highlightDraftFields(null);
+      renderDualFlaChooser(null);
+      if (el('mnp_conf')) { el('mnp_conf').hidden = true; el('mnp_conf').textContent = ''; }
+      if (el('mnp_hz')) el('mnp_hz').value = '60';
+      if (el('mnp_phase')) el('mnp_phase').value = '';
+    } else if (draft) {
+      applyDraft(draft);
     }
     clearReview();
-    var filled = draft && typeof draft.filled === 'number' ? draft.filled : (out.text ? 'some' : 0);
-    var msg = out.failed
-      ? 'OCR found no usable text. Fill the fields manually — you are not blocked.'
+    setSource('tesseract');
+    var filled = draft && typeof draft.filled === 'number' ? draft.filled : 0;
+    var msg = empty
+      ? 'OCR found no usable text. Previous draft fields were cleared. Fill the fields manually — you are not blocked.'
       : (out.lowConfidence ? 'OCR confidence is low (' + out.confidence.toFixed(0) + '%). Treat every field as a draft and correct it.' : 'On-device OCR filled ' + filled + ' field(s) as a draft. Correct them, then check the review box.');
     setStatus(msg);
+  }
+
+  function parseEditedText() {
+    var text = el('mnp_raw') ? el('mnp_raw').value : '';
+    if (!global.BeckifyOcr || !global.BeckifyOcr.toNameplateDraft) {
+      setStatus('OCR helper did not load. Fill the fields manually.');
+      return;
+    }
+    if (!String(text).trim()) {
+      applyTesseractResult({ text: '', failed: true, confidence: 0 });
+      setStatus('Raw text is empty. Draft fields were cleared. Type or paste OCR text, or fill the fields manually.');
+      return;
+    }
+    applyTesseractResult({ text: text, failed: false, lowConfidence: false, confidence: 70 });
+    setSource('tesseract', 'parsed from edited text');
+    setStatus('Parsed the edited text into a draft. Correct every field, then check the review box.');
   }
 
   function runOcr() {
@@ -438,26 +590,31 @@
     if (enhanceOn() && Vlm && !useVlm) {
       setStatus('Enhance with AI is on but no HTTPS endpoint is configured. Using on-device Tesseract instead.');
     }
+    resetProgress();
     if (useVlm) {
-      setStatus('Uploading photo for optional AI enhance…');
+      setProgress(0.1, 'Uploading photo for optional AI enhance…');
       Vlm.analyzeNameplate(file, {
         enhanceOn: true,
         onProgress: function (ratio, status) {
-          var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
-          setStatus((status || 'Enhancing…') + ' ' + pct + '%');
+          setProgress(ratio, status || 'Enhancing…');
         },
       }).then(function (out) {
         if (el('mnp_raw')) el('mnp_raw').value = out.rawText || '';
-        applyDraft(out.draft);
+        if (out.draft && out.draft.filled === 0 && !(out.rawText || '').trim()) {
+          applyTesseractResult({ text: '', failed: true, confidence: 0 });
+        } else {
+          applyDraft(out.draft);
+        }
         clearReview();
+        setSource('vlm', out.provider || '');
         var extra = (out.warnings && out.warnings.length) ? ' ' + out.warnings.join(' ') : '';
-        setStatus('AI draft filled ' + ((out.draft && out.draft.filled) || 0) + ' field(s). This is not perfect OCR and not an AI electrician. Correct every field, then check the review box.' + extra);
+        setProgress(1, 'AI draft filled ' + ((out.draft && out.draft.filled) || 0) + ' field(s). This is not perfect OCR and not an AI electrician. Correct every field, then check the review box.' + extra);
       }).catch(function (err) {
-        setStatus(((err && err.message) ? err.message : 'AI enhance failed.') + ' Falling back to on-device OCR.');
+        var formatted = (Vlm.formatVisionError && Vlm.formatVisionError(err)) || (err && err.message) || 'AI enhance failed.';
+        setStatus(formatted + ' Falling back to on-device OCR.');
         return global.BeckifyOcr.recognize(file, {
           onProgress: function (ratio, status) {
-            var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
-            setStatus((global.BeckifyOcr.humanizeStatus(status) || 'Reading…') + ' ' + pct + '%');
+            setProgress(ratio, (global.BeckifyOcr.humanizeStatus(status) || 'Reading…'));
           },
         }).then(applyTesseractResult).catch(function (fallbackErr) {
           setStatus((fallbackErr && fallbackErr.message)
@@ -467,11 +624,10 @@
       }).then(function () { if (btn) btn.disabled = false; }, function () { if (btn) btn.disabled = false; });
       return;
     }
-    setStatus('Starting on-device OCR…');
+    setProgress(0.05, 'Starting on-device OCR…');
     global.BeckifyOcr.recognize(file, {
       onProgress: function (ratio, status) {
-        var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
-        setStatus((global.BeckifyOcr.humanizeStatus(status) || 'Reading…') + ' ' + pct + '%');
+        setProgress(ratio, (global.BeckifyOcr.humanizeStatus(status) || 'Reading…'));
       },
     }).then(applyTesseractResult).catch(function (err) {
       setStatus((err && err.message) ? err.message + ' Fill the fields manually.' : 'OCR failed. Fill the fields manually — you are not blocked.');
@@ -499,6 +655,8 @@
     }
     var ocrBtn = el('mnp_ocr');
     if (ocrBtn) ocrBtn.addEventListener('click', runOcr);
+    var parseBtn = el('mnp_parse');
+    if (parseBtn) parseBtn.addEventListener('click', parseEditedText);
     var calcBtn = el('mnp_calc');
     if (calcBtn) calcBtn.addEventListener('click', runCalc);
     var enhance = el('mnp_enhance');
@@ -525,6 +683,10 @@
       if (el('mnp_raw')) el('mnp_raw').value = '';
       if (el('mnp_conf')) { el('mnp_conf').hidden = true; el('mnp_conf').textContent = ''; }
       lastDraft = null;
+      highlightDraftFields(null);
+      renderDualFlaChooser(null);
+      setSource('');
+      resetProgress();
       clearReview();
       clearParsedFields();
       if (el('mnp_hz')) el('mnp_hz').value = '60';
@@ -559,5 +721,8 @@
     analyze: analyze,
     applyDraft: applyDraft,
     applyFields: applyFields,
+    applyTesseractResult: applyTesseractResult,
+    parseEditedText: parseEditedText,
+    highlightDraftFields: highlightDraftFields,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

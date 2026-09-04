@@ -2267,6 +2267,51 @@ body.report-open { overflow: hidden; }
   border-color: rgba(248, 113, 113, 0.45);
   background: rgba(248, 113, 113, 0.08);
 }
+.ocr-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+}
+.ocr-progress-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.ocr-progress-fill {
+  width: 0;
+  height: 100%;
+  background: var(--violet, #8b7bff);
+}
+.ocr-source {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--fg-muted, #b8b4c8);
+}
+.ocr-low-conf {
+  outline: 2px solid #e6b800;
+  background: rgba(230, 184, 0, 0.12);
+}
+.ocr-dual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+.ocr-chip {
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
 
 /* ── NEMA wiring field reference ── */
 .nema-picker {

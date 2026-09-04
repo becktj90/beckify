@@ -2840,12 +2840,18 @@
             <img id="mnp_preview" class="ocr-preview" alt="Nameplate preview" hidden>
             <div class="iol-actions">
               <button class="btn" type="button" id="mnp_ocr">Read nameplate</button>
+              <button class="btn btn-secondary" type="button" id="mnp_parse">Parse edited text</button>
               <button class="btn btn-secondary" type="button" id="mnp_reset">Clear photo</button>
             </div>
+            <div id="mnp_progress" class="ocr-progress" hidden>
+              <div class="ocr-progress-bar" aria-hidden="true"><div id="mnp_progress_fill" class="ocr-progress-fill"></div></div>
+              <span id="mnp_progress_label">0%</span>
+            </div>
             <p id="mnp_status" class="note" role="status" aria-live="polite">No photo required. Fill the fields below, or choose a photo after reading the privacy note. On-device OCR is the default.</p>
+            <p id="mnp_source" class="ocr-source" hidden></p>
             <label class="field-block" style="display:block;margin-top:10px">
               <span>Raw OCR text (editable draft)</span>
-              <textarea id="mnp_raw" rows="4" data-no-persist placeholder="OCR output appears here so you can fix it."></textarea>
+              <textarea id="mnp_raw" rows="4" data-no-persist placeholder="OCR output appears here so you can fix it, then click Parse edited text."></textarea>
             </label>
           </div>
         </div>
@@ -2889,7 +2895,10 @@
               <div><label for="mnp_model">Model</label><input id="mnp_model" type="text" autocomplete="off" placeholder="catalog / model"></div>
             </div>
             <div class="input-group">
+              <div><label for="mnp_serial">Serial</label><input id="mnp_serial" type="text" autocomplete="off" placeholder="S/N if printed"></div>
               <div><label for="mnp_encl">Enclosure</label><input id="mnp_encl" type="text" autocomplete="off" placeholder="e.g. TEFC"></div>
+            </div>
+            <div class="input-group">
               <div><label for="mnp_poles">Poles</label><input id="mnp_poles" type="number" min="0" step="1" placeholder="e.g. 4"></div>
             </div>
             <div class="input-group">
@@ -2908,6 +2917,7 @@
               <span>Notes</span>
               <textarea id="mnp_notes" rows="2" placeholder="Dual FLA warnings and other OCR notes"></textarea>
             </label>
+            <div id="mnp_dual" class="ocr-dual" hidden></div>
             <p id="mnp_conf" class="note" hidden></p>
             <label class="review-check">
               <input id="mnp_reviewed" type="checkbox" data-no-persist>

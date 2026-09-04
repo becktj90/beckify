@@ -20,6 +20,7 @@
   var IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i;
   var ACCEPTED_IMAGE_LABEL = 'JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF';
   var REJECTED_AMP_LABEL = /(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|AIC|KAIC|SCCR)\s*[:#]?\s*$/i;
+  var KNOWN_MANUFACTURER = /\b(BALDOR(?:\s+RELIANCE)?|WEG|SIEMENS|ABB|MARATHON|LEESON|RELIANCE|TOSHIBA|TECO|LINCOLN|CENTURY|NORD|SEW(?:[\s-]*EURODRIVE)?|BROOK\s+CROMPTON|US\s*MOTORS|REGAL(?:\s+BELOIT)?|EMERSON|GENERAL\s+ELECTRIC)\b/i;
 
   function vendorUrl(file) {
     try { return new URL(VENDOR + file, global.location && global.location.href || 'http://local/').href; }
@@ -87,7 +88,7 @@
   }
 
   function rejectedAmpPrefix(str, index) {
-    var before = String(str || '').slice(Math.max(0, index - 16), index);
+    var before = String(str || '').slice(Math.max(0, index - 32), index);
     return REJECTED_AMP_LABEL.test(before);
   }
 
@@ -134,6 +135,7 @@
           d[i] = d[i + 1] = d[i + 2] = g;
         }
         stretchContrast(d);
+        invertIfDarkField(d);
         ctx.putImageData(imageData, 0, 0);
         return canvasToBlob(canvas).then(function (blob) { return blob || canvas; });
       } catch (_) {
@@ -183,6 +185,19 @@
       };
       img.src = url;
     });
+  }
+
+  function invertIfDarkField(data) {
+    var sum = 0;
+    var n = data.length / 4;
+    if (!n) return;
+    var i;
+    for (i = 0; i < data.length; i += 4) sum += data[i];
+    if (sum / n >= 90) return;
+    for (i = 0; i < data.length; i += 4) {
+      var v = 255 - data[i];
+      data[i] = data[i + 1] = data[i + 2] = v;
+    }
   }
 
   function stretchContrast(data) {
@@ -292,6 +307,19 @@
   function isCircuitToken(text) {
     var n = Number(String(text || '').replace(/[^\d]/g, ''));
     return Number.isFinite(n) && n >= 1 && n <= 84 && /^\d{1,2}[A-Z]?$/.test(String(text || '').trim());
+  }
+
+  function nameplateScore(text) {
+    var t = String(text || '');
+    if (!t.trim()) return 0;
+    var score = 0;
+    if (/\b(?:HP|H\.P\.|HORSEPOWER|kW)\b/i.test(t)) score += 3;
+    if (/\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD)\b/i.test(t)) score += 3;
+    if (/\b(?:VOLTS?|VOLTAGE)\b/i.test(t) || /\b[0-9]{2,4}(?:\/[0-9]{2,4})?\s*V\b/i.test(t)) score += 2;
+    if (/\b(?:RPM|R\.P\.M\.)\b/i.test(t)) score += 2;
+    if (/\b(?:PH|PHASE|3Ø|1Ø)\b/i.test(t)) score += 2;
+    if (/\b(?:FRAME|TEFC|TENV|ODP|MOCP|LRA|SF)\b/i.test(t)) score += 1;
+    return score;
   }
 
   function directoryScore(text) {
@@ -409,9 +437,16 @@
     var ratio = typeof opts.ratio === 'number' ? opts.ratio : 0;
     if (ratio < 0) ratio = 0;
     if (ratio > 1) ratio = 1;
-    if (!opts.directoryMode) return ratio;
-    if ((opts.pass || 1) <= 1) return ratio * 0.55;
-    return 0.62 + ratio * 0.38;
+    if (opts.directoryMode) {
+      if ((opts.pass || 1) <= 1) return ratio * 0.55;
+      return 0.62 + ratio * 0.38;
+    }
+    if (opts.nameplateRetry) {
+      if ((opts.pass || 1) <= 1) return ratio * 0.46;
+      if (opts.pass === 2) return 0.48 + ratio * 0.26;
+      return 0.76 + ratio * 0.24;
+    }
+    return ratio;
   }
 
   function recognize(file, opts) {
@@ -424,7 +459,7 @@
     var directoryMode = opts.mode === 'directory';
     var preprocessOpts = directoryMode ? { maxEdge: MAX_DIRECTORY_EDGE } : {};
     var lastProgress = 0;
-    var directoryPass = 1;
+    var ocrPass = 1;
     function reportProgress(ratio, status) {
       var next = Math.max(lastProgress, Math.max(0, Math.min(1, Number(ratio) || 0)));
       lastProgress = next;
@@ -442,23 +477,43 @@
             reportProgress(mapOcrProgress({
               ratio: ratio,
               directoryMode: directoryMode,
-              pass: directoryPass,
+              nameplateRetry: !directoryMode,
+              pass: ocrPass,
             }), message.status || '');
           },
         }).then(function (worker) {
           var firstPsm = directoryMode ? 4 : 3;
           return recognizeOnce(worker, source, firstPsm).then(function (first) {
             var best = packOcrResult(first);
-            if (!directoryMode || best.score >= 6) return best;
-            directoryPass = 2;
-            reportProgress(0.62, 'Trying a second pass for a rotated directory…');
-            return rotateImageSource(source, 90).then(function (rotated) {
-              return recognizeOnce(worker, rotated, 4).then(function (second) {
-                var scored = packOcrResult(second);
-                return scored.score > best.score ? scored : best;
+            if (directoryMode) {
+              if (best.score >= 6) return best;
+              ocrPass = 2;
+              reportProgress(0.62, 'Trying a second pass for a rotated directory…');
+              return rotateImageSource(source, 90).then(function (rotated) {
+                return recognizeOnce(worker, rotated, 4).then(function (second) {
+                  var scored = packOcrResult(second);
+                  return scored.score > best.score ? scored : best;
+                }, function () { return best; });
               }, function () { return best; });
-            }, function () { return best; });
+            }
+            if (nameplateScore(best.text) >= 3 && !best.failed) return best;
+            function tryAngle(degrees, pass, label) {
+              ocrPass = pass;
+              reportProgress(pass === 2 ? 0.48 : 0.76, label);
+              return rotateImageSource(source, degrees).then(function (rotated) {
+                return recognizeOnce(worker, rotated, 3).then(function (next) {
+                  var scored = packOcrResult(next);
+                  return nameplateScore(scored.text) > nameplateScore(best.text) ? scored : best;
+                }, function () { return best; });
+              }, function () { return best; });
+            }
+            return tryAngle(90, 2, 'Trying a rotated nameplate pass…').then(function (after90) {
+              best = after90;
+              if (nameplateScore(best.text) >= 3) return best;
+              return tryAngle(270, 3, 'Trying a third nameplate orientation…');
+            });
           }).then(function (packed) {
+            reportProgress(1, packed && packed.failed ? 'No usable text' : 'Reading complete');
             return worker.terminate().then(function () { return packed; }, function () { return packed; });
           }, function (err) {
             return worker.terminate().then(function () { throw err; }, function () { throw err; });
@@ -477,6 +532,18 @@
       var after = afterSlice.match(/^\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/);
       var beforeMatch = src.slice(0, m.index).match(/([0-9]+(?:\.[0-9]+)?)\s*[:#]?\s*$/);
       var afterIsVoltage = after && /^\s*[:#]?\s*[0-9]+(?:\.[0-9]+)?\s*V\b(?!OLT)/i.test(afterSlice);
+      var beforeIsModel = /\b(?:MODEL|CAT(?:ALOG)?(?:\s*NO\.?)?)\s*[:#]?\s*[A-Z0-9\-\/. ]*$/i.test(src.slice(0, m.index));
+      var gluedToCatalog = m.index > 0 && /[A-Z0-9]/i.test(src.charAt(m.index - 1));
+      var beforeTouchesCatalog = false;
+      if (beforeMatch) {
+        var beforeIndex = m.index - beforeMatch[0].length;
+        var touch = beforeIndex > 0 ? src.charAt(beforeIndex - 1) : '';
+        beforeTouchesCatalog = /[A-Za-z\-\/]/.test(touch);
+      }
+      if (beforeIsModel || gluedToCatalog || beforeTouchesCatalog) {
+        if (after && !afterIsVoltage) return after[1];
+        continue;
+      }
       var beforeIsOtherRating = beforeMatch && /\b(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|FLA|FL\s*AMPS?|AIC|KAIC)\s*[:#]?\s*[0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?\s*[:#]?\s*$/i.test(src.slice(0, m.index));
       if (beforeIsOtherRating && after && !afterIsVoltage) return after[1];
       if (beforeMatch && !beforeIsOtherRating) return beforeMatch[1];
@@ -500,6 +567,32 @@
       if (after) return after[1];
     }
     return '';
+  }
+
+  function extractPhase(str) {
+    var src = String(str || '');
+    if (/\b3[\s-]*Ø|\bTHREE[\s-]*PHASE\b|\b3[\s-]*PH(?:ASE)?\b/i.test(src)) return '3';
+    if (/\b1[\s-]*Ø|\bSINGLE[\s-]*PHASE\b|\b1[\s-]*PH(?:ASE)?\b/i.test(src)) return '1';
+    var labeled = src.match(/\b(?:PH|PHASE|Ø)\s*[:#]?\s*([13])\b/i);
+    if (labeled) return labeled[1];
+    return '';
+  }
+
+  function extractManufacturer(str) {
+    var src = String(str || '');
+    var known = src.match(KNOWN_MANUFACTURER);
+    if (known) return String(known[1]).replace(/\s+/g, ' ');
+    var labeled = src.match(/\b(?:MFG|MFR|MANUFACTURER)\s*[:#]?\s*([A-Za-z][A-Za-z0-9.& \-]{1,28})/);
+    return labeled ? String(labeled[1]).trim() : '';
+  }
+
+  function normalizePowerFactor(raw) {
+    if (!raw) return '';
+    var n = Number(String(raw).replace(/%/g, ''));
+    if (!Number.isFinite(n) || n <= 0) return '';
+    if (n > 1 && n <= 100) n = n / 100;
+    if (n > 1) return '';
+    return String(Math.round(n * 1000) / 1000);
   }
 
   function parseMotorNameplate(text) {
@@ -526,7 +619,8 @@
 
     /* Dual voltage + dual FLA must stay paired (230/460 with 28/14), never
        first-V mashed with the last lone amp figure. */
-    var dualPair = compact.match(/\b([0-9]{2,4}\/[0-9]{2,4})\s*V(?:OLTS?)?\s+([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)(?:\s*(?:FLA|FL\s*AMPS?|A(?:MPS?)?))?\b/i);
+    var dualPair = compact.match(/\b([0-9]{2,4}\/[0-9]{2,4})\s*V(?:OLTS?)?\s+([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)(?:\s*(?:FLA|FL\s*AMPS?|A(?:MPS?)?))?\b/i)
+      || compact.match(/\b(?:VOLTS?|VOLTAGE)\s*[:#]?\s*([0-9]{2,4}\/[0-9]{2,4})\s+(?:AMP(?:S|ERES)?|FLA|A)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
 
     /* Prefer VOLTS 460 over "10 VOLTS 460" (HP sitting in front of the label). */
     var volts = (dualPair && dualPair[1]) ||
@@ -534,32 +628,36 @@
       pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*V\b(?!OLT)/i) ||
       pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*VOLTS?\b(?!\s*[:#]?\s*[0-9])/i);
 
-    var fla = (dualPair && dualPair[2]) || extractLabeledFla(compact) ||
-      pickAmp(/\bAMP(?:S|ERES)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\b/i) ||
-      pickAmp(/\b([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\s*A(?:MPS?)?\b/i);
+    var labeledFla = extractLabeledFla(compact);
+    var hasFlaLabel = /\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?)\b/i.test(compact);
+    var hasRejectedAmp = /\b(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?)\b/i.test(compact);
+    var genericFla = '';
+    if (hasFlaLabel || !hasRejectedAmp) {
+      genericFla = pickAmp(/\bAMP(?:S|ERES)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\b/i) ||
+        pickAmp(/\b([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\s*A(?:MPS?)?\b/i);
+    }
+    var dualAmpOnly = compact.match(/\b(?:AMP(?:S|ERES)?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
+    var fla = (dualPair && dualPair[2]) || labeledFla || (dualAmpOnly && dualAmpOnly[1]) || genericFla;
 
     var rpm = pick(/\b([0-9]{3,5})\s*RPM\b/i) ||
       pick(/\b(?:RPM|R\.P\.M\.)\s*[:#]?\s*([0-9]{3,5})\b/i);
     var hz = pick(/\b(?:HZ|HERTZ|FREQ)\s*[:#]?\s*([0-9]{2,3})\b/i) ||
       pick(/\b([0-9]{2,3})\s*Hz\b/i);
-    var phase = pick(/\b(?:PH|PHASE)\s*[:#]?\s*([13])\b/i);
-    if (!phase) {
-      if (/\b3[\s-]*PH\b/i.test(compact) || /\bTHREE[\s-]*PHASE\b/i.test(compact)) phase = '3';
-      else if (/\b1[\s-]*PH\b/i.test(compact) || /\bSINGLE[\s-]*PHASE\b/i.test(compact)) phase = '1';
-    }
+    var phase = extractPhase(compact);
     var frame = pick(/\bFRAME\s*[:#]?\s*([A-Z0-9\-]+)\b/i);
     var sf = pick(/\b(?:S\.?F\.?|SERVICE\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
-    var design = pick(/\bDESIGN\s*[:#]?\s*([A-E])\b/i);
+    var design = pick(/\b(?:NEMA\s*)?DESIGN\s*[:#]?\s*([A-E])\b/i);
     var insul = pick(/\b(?:INS(?:ULATION)?(?:\s*CLASS)?|CLASS)\s*[:#]?\s*([A-H]|F|B|H|155|180|130)\b/i);
-    var code = pick(/\b(?:CODE|LRA\s*CODE|KVA\s*CODE)\s*[:#]?\s*([A-V])\b/i);
+    var code = pick(/\b(?:CODE(?:\s*LETTER)?|LRA\s*CODE|KVA\s*CODE)\s*[:#]?\s*([A-V])\b/i);
     var rise = pick(/\b(?:RISE|TEMP(?:ERATURE)?\s*RISE)\s*[:#]?\s*([0-9]{2,3})\s*°?\s*C?\b/i);
-    var manufacturer = pick(/\b(?:MFG|MFR|MANUFACTURER)\s*[:#]?\s*([A-Z][A-Z0-9.&-]{1,24})\b/i);
+    var manufacturer = extractManufacturer(compact);
     var model = pick(/\b(?:MODEL|CAT(?:ALOG)?(?:\s*NO\.?)?)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-\/.]{1,24})\b/i);
+    var serial = pick(/\b(?:S\/N|SER(?:IAL)?(?:\s*(?:NO\.?|NUMBER|#))?|SN)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-]{2,24})\b/i);
     var enclosure = pick(/\b(TEFC|TENV|TEAO|ODP|XP|EXP(?:LOSION)?[\s-]*PROOF|WPI|WPII)\b/i);
     var poles = pick(/\b(?:POLES?)\s*[:#]?\s*([0-9]{1,2})\b/i) ||
       pick(/\b([0-9]{1,2})\s*POLES?\b/i);
     var nomEff = pick(/\b(?:NOM(?:INAL)?\s*)?EFF(?:ICIENCY)?\s*[:#]?\s*([0-9]{2,3}(?:\.[0-9]+)?)\s*%?/i);
-    var pf = pick(/\b(?:P\.?F\.?|POWER\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
+    var pf = normalizePowerFactor(pick(/\b(?:P\.?F\.?|POWER\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\s*%?\b/i));
     var mocp = pick(/\b(?:MOCP|M\.?O\.?C\.?P\.?|MAX(?:IMUM)?\s*OCP)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
     var lra = pick(/\b(?:LRA|L\.?R\.?A\.?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i) ||
       pick(/\bLOCKED[\s-]*ROTOR(?:\s*AMPS?)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
@@ -569,8 +667,8 @@
       hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz || '60',
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
       code: code, riseC: rise, manufacturer: manufacturer, model: model,
-      enclosure: enclosure, poles: poles, nomEff: nomEff, pf: pf, mocp: mocp,
-      lra: lra, serviceFactorAmps: sfa, notes: '',
+      serialNumber: serial, enclosure: enclosure, poles: poles, nomEff: nomEff,
+      pf: pf, mocp: mocp, lra: lra, serviceFactorAmps: sfa, notes: '',
     };
     var counted = { hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz,
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
@@ -605,6 +703,9 @@
     loadScript: loadScript,
     looksLikeOpenPanelInterior: looksLikeOpenPanelInterior,
     parseMotorNameplate: parseMotorNameplate,
+    extractPhase: extractPhase,
+    extractManufacturer: extractManufacturer,
+    nameplateScore: nameplateScore,
     toNameplateDraft: toNameplateDraft,
     meanWordConfidence: meanWordConfidence,
     humanizeStatus: humanizeStatus,

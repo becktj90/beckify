@@ -2,12 +2,14 @@
    SHARED MOTOR NAMEPLATE DRAFT SCHEMA
    ============================================================================
    Website + iOS agree on these field names (string unless noted):
-     manufacturer, model, ratedHP (number), ratedKW (number), voltage, fla
-     (number), sf (number), rpm (number), poles (int), frequencyHz (number),
-     phases (1|3), enclosure, frame, designLetter, codeLetter, nomEff (number),
-     pf (number), mocp (number), lra (number), serviceFactorAmps (number), notes.
+     manufacturer, model, serialNumber, ratedHP (number), ratedKW (number),
+     voltage, fla (number), sf (number), rpm (number), poles (int),
+     frequencyHz (number), phases (1|3), enclosure, frame, designLetter,
+     codeLetter, nomEff (number), pf (number), mocp (number), lra (number),
+     serviceFactorAmps (number), notes.
 
-   Each extracted field is { value, confidence, userReviewed }.
+   Each extracted field is { value, confidence, userReviewed }. iOS JSON may
+   send `reviewed` instead of `userReviewed` — both are accepted on ingest.
    OCR / VLM output is an assistive draft. userReviewed stays false until a
    human checks the review box. NEVER copy MOCP or LRA into FLA.
    ============================================================================ */
@@ -15,32 +17,36 @@
   'use strict';
 
   var FIELD_SPECS = [
-    { name: 'manufacturer', type: 'string' },
-    { name: 'model', type: 'string' },
-    { name: 'ratedHP', type: 'number' },
-    { name: 'ratedKW', type: 'number' },
-    { name: 'voltage', type: 'string' },
-    { name: 'fla', type: 'number' },
-    { name: 'sf', type: 'number' },
-    { name: 'rpm', type: 'number' },
-    { name: 'poles', type: 'int' },
-    { name: 'frequencyHz', type: 'number' },
-    { name: 'phases', type: 'phases' },
-    { name: 'enclosure', type: 'string' },
-    { name: 'frame', type: 'string' },
-    { name: 'designLetter', type: 'string' },
-    { name: 'codeLetter', type: 'string' },
-    { name: 'nomEff', type: 'number' },
-    { name: 'pf', type: 'number' },
-    { name: 'mocp', type: 'number' },
-    { name: 'lra', type: 'number' },
-    { name: 'serviceFactorAmps', type: 'number' },
-    { name: 'notes', type: 'string' },
+    { name: 'manufacturer', type: 'string', label: 'Manufacturer' },
+    { name: 'model', type: 'string', label: 'Model' },
+    { name: 'serialNumber', type: 'string', label: 'Serial' },
+    { name: 'ratedHP', type: 'number', label: 'HP' },
+    { name: 'ratedKW', type: 'number', label: 'kW' },
+    { name: 'voltage', type: 'string', label: 'Voltage' },
+    { name: 'fla', type: 'number', label: 'FLA' },
+    { name: 'sf', type: 'number', label: 'Service factor' },
+    { name: 'rpm', type: 'number', label: 'RPM' },
+    { name: 'poles', type: 'int', label: 'Poles' },
+    { name: 'frequencyHz', type: 'number', label: 'Frequency' },
+    { name: 'phases', type: 'phases', label: 'Phase' },
+    { name: 'enclosure', type: 'string', label: 'Enclosure' },
+    { name: 'frame', type: 'string', label: 'Frame' },
+    { name: 'designLetter', type: 'string', label: 'Design letter' },
+    { name: 'codeLetter', type: 'string', label: 'Code letter' },
+    { name: 'nomEff', type: 'number', label: 'Nom. efficiency' },
+    { name: 'pf', type: 'pf', label: 'Power factor' },
+    { name: 'mocp', type: 'number', label: 'MOCP' },
+    { name: 'lra', type: 'number', label: 'LRA' },
+    { name: 'serviceFactorAmps', type: 'number', label: 'SF amps' },
+    { name: 'notes', type: 'string', label: 'Notes' },
   ];
 
   var FIELD_NAMES = FIELD_SPECS.map(function (spec) { return spec.name; });
+  var FIELD_LABELS = {};
+  FIELD_SPECS.forEach(function (spec) { FIELD_LABELS[spec.name] = spec.label; });
   var REJECTED_AMP_AS_FLA = /(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|AIC|KAIC|SCCR)/i;
   var DUAL_NUMBER = /^([0-9]+(?:\.[0-9]+)?)\/([0-9]+(?:\.[0-9]+)?)$/;
+  var FLA_NEAR_LABEL = /(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?)/i;
 
   function emptyField() {
     return { value: null, confidence: 0, userReviewed: false };
@@ -80,8 +86,25 @@
   }
 
   function asPhases(value) {
+    if (typeof value === 'string') {
+      var s = value.trim().toUpperCase();
+      if (/^(?:1|1\.0|1P|1PH|1PHASE|1Ø|SINGLE)$/.test(s)) return 1;
+      if (/^(?:3|3\.0|3P|3PH|3PHASE|3Ø|THREE)$/.test(s)) return 3;
+    }
     var n = asInt(value);
     return n === 1 || n === 3 ? n : null;
+  }
+
+  function asPowerFactor(value) {
+    var n = asNumber(value);
+    if (n === null) return null;
+    if (n > 1 && n <= 100) n = n / 100;
+    if (n <= 0 || n > 1) return null;
+    return Math.round(n * 1000) / 1000;
+  }
+
+  function fieldLabel(name) {
+    return FIELD_LABELS[name] || name;
   }
 
   function asLetter(value) {
@@ -97,6 +120,7 @@
     else if (type === 'int') value = asInt(raw);
     else if (type === 'phases') value = asPhases(raw);
     else if (type === 'letter') value = asLetter(raw);
+    else if (type === 'pf') value = asPowerFactor(raw);
     else value = asString(raw);
     return {
       value: value,
@@ -142,12 +166,30 @@
     return m ? (m[1] + '/' + m[2]) : '';
   }
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function looksLikeRejectedAmpLabel(text, number) {
     if (!text || number === null || number === undefined) return false;
     var src = String(text);
     var n = String(number);
-    var re = new RegExp('(?:MOCP|M\\.?O\\.?C\\.?P\\.?|MCA|SCA|LRA|L\\.?R\\.?A\\.?)\\s*[:#]?\\s*' + n.replace('.', '\\.') + '\\b', 'i');
-    return re.test(src);
+    var labeled = new RegExp(
+      '(?:MOCP|M\\.?O\\.?C\\.?P\\.?|MCA|SCA|LRA|L\\.?R\\.?A\\.?)\\s*[:#]?\\s*' + escapeRegExp(n) + '\\b',
+      'i'
+    );
+    if (labeled.test(src)) return true;
+    var hitRe = new RegExp(escapeRegExp(n), 'g');
+    var match;
+    var rejectedNear = false;
+    var flaNear = false;
+    while ((match = hitRe.exec(src))) {
+      var before = src.slice(Math.max(0, match.index - 28), match.index);
+      var after = src.slice(match.index + n.length, match.index + n.length + 18);
+      if (REJECTED_AMP_AS_FLA.test(before) || REJECTED_AMP_AS_FLA.test(after)) rejectedNear = true;
+      if (FLA_NEAR_LABEL.test(before) || FLA_NEAR_LABEL.test(after)) flaNear = true;
+    }
+    return rejectedNear && !flaNear;
   }
 
   /**
@@ -180,7 +222,7 @@
       draft.warnings.push('FLA was ignored because it matched LRA. LRA is not FLA.');
       return draft;
     }
-    if (looksLikeRejectedAmpLabel(draft.rawText, flaValue) && !/\bFLA\b|\bFL\s*AMPS?\b/i.test(draft.rawText)) {
+    if (looksLikeRejectedAmpLabel(draft.rawText, flaValue)) {
       fields.fla = emptyField();
       draft.warnings.push('FLA was ignored because the only nearby amp label was MOCP/LRA/MCA.');
     }
@@ -218,6 +260,9 @@
     if (payload.insulation !== undefined || envelope.insulation !== undefined) {
       draft.extras.insulation = extraFrom('insulation');
     }
+    if (!draft.extras.insulation && (payload.insulationClass !== undefined || envelope.insulationClass !== undefined)) {
+      draft.extras.insulation = extraFrom('insulationClass');
+    }
     if (payload.riseC !== undefined || envelope.riseC !== undefined) {
       draft.extras.riseC = extraFrom('riseC');
     }
@@ -239,6 +284,7 @@
     return normalizeDraft({
       manufacturer: fields.manufacturer,
       model: fields.model,
+      serialNumber: fields.serialNumber || fields.serial,
       ratedHP: fields.hp,
       ratedKW: fields.kw,
       voltage: fields.volts,
@@ -293,6 +339,7 @@
       riseC: draft.extras.riseC || '',
       manufacturer: displayValue(f.manufacturer),
       model: displayValue(f.model),
+      serialNumber: displayValue(f.serialNumber),
       enclosure: displayValue(f.enclosure),
       poles: displayValue(f.poles),
       nomEff: displayValue(f.nomEff),
@@ -317,7 +364,10 @@
       dualFla: draft.extras.dualFla || '',
     };
     FIELD_NAMES.forEach(function (name) {
-      if (next.fields[name].value !== null) next.fields[name].userReviewed = !!reviewed;
+      if (next.fields[name].value !== null) {
+        next.fields[name].userReviewed = !!reviewed;
+        next.fields[name].reviewed = !!reviewed;
+      }
     });
     return next;
   }
@@ -328,6 +378,10 @@
       var cell = draft && draft.fields && draft.fields[name];
       return cell && cell.value !== null && cell.confidence < cut;
     });
+  }
+
+  function lowConfidenceLabels(draft, threshold) {
+    return lowConfidenceFields(draft, threshold).map(fieldLabel);
   }
 
   var PANEL_ROW_FIELDS = ['circuit', 'description', 'trip', 'poles', 'loadAmps', 'notes'];
@@ -362,9 +416,12 @@
       name: fieldFrom(unwrapRaw(panelSrc.name), 'string', rawConfidence(panelSrc.name, fallbackConf)),
       voltage: fieldFrom(unwrapRaw(panelSrc.voltage), 'string', rawConfidence(panelSrc.voltage, fallbackConf)),
       mainAmps: fieldFrom(unwrapRaw(panelSrc.mainAmps), 'number', rawConfidence(panelSrc.mainAmps, fallbackConf)),
-      phases: fieldFrom(unwrapRaw(panelSrc.phases), 'int', rawConfidence(panelSrc.phases, fallbackConf)),
+      phases: fieldFrom(unwrapRaw(panelSrc.phases), 'phases', rawConfidence(panelSrc.phases, fallbackConf)),
       location: fieldFrom(unwrapRaw(panelSrc.location), 'string', rawConfidence(panelSrc.location, fallbackConf)),
     };
+    if (!panel.mainAmps.value && (panelSrc.busAmps !== undefined || panelSrc.busRating !== undefined)) {
+      panel.mainAmps = fieldFrom(unwrapRaw(panelSrc.busAmps || panelSrc.busRating), 'number', rawConfidence(panelSrc.busAmps || panelSrc.busRating, fallbackConf));
+    }
     return {
       task: 'panel',
       rows: rows,
@@ -378,9 +435,67 @@
     };
   }
 
+  function circuitKey(row) {
+    var cell = row && row.circuit;
+    var value = cell && typeof cell === 'object' ? cell.value : cell;
+    return value == null ? '' : String(value).trim().toUpperCase();
+  }
+
+  function rowHasValue(row, name) {
+    var cell = row && row[name];
+    if (!cell) return false;
+    return cell.value !== null && cell.value !== '';
+  }
+
+  function mergePanelDrafts(base, incoming) {
+    var left = normalizePanelDraft(base || {});
+    var right = normalizePanelDraft(incoming || {});
+    var byKey = {};
+    var order = [];
+    function take(row) {
+      var key = circuitKey(row);
+      if (!key) {
+        order.push(row);
+        return;
+      }
+      if (!byKey[key]) {
+        byKey[key] = row;
+        order.push(row);
+        return;
+      }
+      var dest = byKey[key];
+      PANEL_ROW_FIELDS.forEach(function (name) {
+        if (name === 'loadAmps') return;
+        if (!rowHasValue(dest, name) && rowHasValue(row, name)) dest[name] = row[name];
+      });
+    }
+    left.rows.forEach(take);
+    right.rows.forEach(take);
+    var panel = left.panel;
+    ['name', 'voltage', 'mainAmps', 'phases', 'location'].forEach(function (name) {
+      if ((!panel[name] || panel[name].value == null) && right.panel[name] && right.panel[name].value != null) {
+        panel[name] = right.panel[name];
+      }
+    });
+    var warnings = left.warnings.concat(right.warnings);
+    var rawParts = [left.rawText, right.rawText].filter(Boolean);
+    return {
+      task: 'panel',
+      rows: order.slice(0, 84),
+      panel: panel,
+      source: right.source || left.source || 'merged',
+      rawText: rawParts.join('\n'),
+      warnings: warnings,
+      filled: order.filter(function (row) {
+        return PANEL_ROW_FIELDS.some(function (name) { return rowHasValue(row, name); });
+      }).length,
+    };
+  }
+
   global.BeckifyNameplateSchema = {
     FIELD_SPECS: FIELD_SPECS,
     FIELD_NAMES: FIELD_NAMES,
+    FIELD_LABELS: FIELD_LABELS,
     PANEL_ROW_FIELDS: PANEL_ROW_FIELDS,
     REJECTED_AMP_AS_FLA: REJECTED_AMP_AS_FLA,
     emptyField: emptyField,
@@ -390,10 +505,16 @@
     toLegacyFields: toLegacyFields,
     markReviewed: markReviewed,
     lowConfidenceFields: lowConfidenceFields,
+    lowConfidenceLabels: lowConfidenceLabels,
+    fieldLabel: fieldLabel,
     normalizePanelDraft: normalizePanelDraft,
+    mergePanelDrafts: mergePanelDrafts,
     emptyPanelRow: emptyPanelRow,
     clampConfidence: clampConfidence,
     dualPair: dualPair,
+    asPowerFactor: asPowerFactor,
+    asPhases: asPhases,
+    applyFlaTraps: applyFlaTraps,
   };
   global.__nameplateSchemaTestApi = global.BeckifyNameplateSchema;
 })(typeof window !== 'undefined' ? window : globalThis);

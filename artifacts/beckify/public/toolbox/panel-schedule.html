@@ -94,20 +94,28 @@
             <input id="imageInput" type="file" accept="image/*" hidden>
             <label class="btn" for="imageCapture">Take photo</label>
             <input id="imageCapture" type="file" accept="image/*" capture="environment" hidden>
+            <input id="imageAdd" type="file" accept="image/*" hidden>
+            <button id="addShotButton" class="btn" type="button" disabled>Add another photo</button>
             <button id="processButton" class="btn btn-primary" type="button" disabled>Read Schedule</button>
             <button id="resetButton" class="btn" type="button">Reset</button>
           </div>
+          <label class="review-check" for="mergeRows">
+            <input id="mergeRows" type="checkbox" data-no-persist>
+            Merge new reads into the current table by circuit number. Leave unchecked to replace the table.
+          </label>
+          <p id="shotList" class="note"></p>
 
           <label id="dropZone" class="drop-zone" for="imageInput">
             <span class="drop-zone-icon">📂</span>
             <strong>Drag &amp; drop a directory photo here</strong>
-            <span>PNG, JPG, or WEBP of the printed schedule/label. Framing: fill the frame, even light, avoid glare. You can skip the photo and type rows by hand.</span>
+            <span>JPG, PNG, WEBP, or HEIC of the printed schedule/label. Framing: fill the frame, even light, avoid glare. For a 42- or 84-circuit card, photograph the top then add the bottom. You can skip the photo and type rows by hand.</span>
           </label>
 
           <div class="status-strip" role="status" aria-live="polite">
             <span id="statusText">Awaiting image upload.</span>
             <span id="fileName">No file selected</span>
           </div>
+          <p id="ocrSource" class="note" hidden></p>
 
           <div class="progress-shell" aria-label="OCR progress">
             <div class="progress-bar">
@@ -148,7 +156,8 @@
             <label>
               <span>System phase</span>
               <select id="panelPhase">
-                <option value="3" selected>3-phase, 4-wire</option>
+                <option value="" selected>Unknown — select before load math</option>
+                <option value="3">3-phase, 4-wire</option>
                 <option value="1">Single-phase</option>
               </select>
             </label>

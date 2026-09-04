@@ -180,6 +180,36 @@ sandbox.BECKIFY_API_BASE_URL = '';
       },
     });
   };
+  sandbox.fetch = function (_url, opts) {
+    posted = JSON.parse(opts.body);
+    return Promise.resolve({
+      ok: false,
+      status: 429,
+      headers: { get(name) { return String(name).toLowerCase() === 'retry-after' ? '120' : null; } },
+      json() {
+        return Promise.resolve({ error: 'Too many nameplate analyses. Please try again later.', retryAfter: 120 });
+      },
+    });
+  };
+  await assert.rejects(
+    () => api.analyzeNameplate({ size: 24, type: 'image/jpeg' }, { enhanceOn: true }),
+    /Too many AI reads/i,
+  );
+  assert.match(api.formatVisionError({ status: 429, retryAfter: 120 }), /2 min/i);
+
+  sandbox.fetch = function (_url, opts) {
+    posted = JSON.parse(opts.body);
+    return Promise.resolve({
+      ok: true,
+      json() {
+        return Promise.resolve({
+          fields: { ratedHP: { value: 7.5, confidence: 0.8 } },
+          raw_ocr: 'HP 7.5',
+          warnings: ['ambiguous FLA'],
+        });
+      },
+    });
+  };
   const enhanced = await api.analyzeNameplate({ size: 24, type: 'image/heic' }, { enhanceOn: true });
   assert.equal(posted.mimeType, 'image/jpeg');
   assert.match(posted.imageBase64, /^data:image\/jpeg/);
@@ -198,6 +228,9 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(motor, /shouldUpload/);
   assert.match(motor, /analyzeNameplate/);
   assert.match(motor, /BeckifyOcr\.recognize/);
+  assert.match(motor, /formatVisionError/);
+  assert.equal(typeof api.analyzeMany, 'function');
+  assert.equal(typeof api.formatVisionError, 'function');
   const panel = fs.readFileSync(path.join(root, 'panel-schedule.js'), 'utf8');
   assert.match(panel, /analyzePanelDirectory\(/);
   assert.match(panel, /shouldUpload/);

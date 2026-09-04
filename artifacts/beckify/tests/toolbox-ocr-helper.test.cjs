@@ -125,6 +125,42 @@ assert.ok(api.mapOcrProgress({ ratio: 1, directoryMode: true, pass: 2 }) >= 0.99
 assert.ok(api.mapOcrProgress({ ratio: 1, directoryMode: true, pass: 1 })
   < api.mapOcrProgress({ ratio: 0, directoryMode: true, pass: 2 }));
 
+const messyPlate = api.parseMotorNameplate([
+  'BALDOR RELIANCE',
+  'MODEL 10HP-215',
+  'HP 10',
+  'VOLTS 230/460',
+  'AMPS 25.0/12.5',
+  'RPM 1750',
+  '3Ø 60 HZ',
+  'SF 1.15',
+  'TEFC FRAME 215T',
+  'PF 82',
+  'SER A12345',
+  'MOCP 40',
+  'LRA 72',
+].join('\n'));
+assert.equal(messyPlate.fields.hp, '10');
+assert.notEqual(messyPlate.fields.hp, '215');
+assert.equal(messyPlate.fields.volts, '230/460');
+assert.equal(messyPlate.fields.fla, '25.0/12.5');
+assert.equal(messyPlate.fields.phase, '3');
+assert.equal(messyPlate.fields.pf, '0.82');
+assert.equal(messyPlate.fields.serialNumber, 'A12345');
+assert.equal(messyPlate.fields.mocp, '40');
+assert.equal(messyPlate.fields.lra, '72');
+assert.match(String(messyPlate.fields.manufacturer), /BALDOR/i);
+assert.equal(api.extractPhase('PH 3'), '3');
+assert.equal(api.extractPhase('single phase'), '1');
+assert.equal(api.extractPhase('230/460'), '');
+assert.ok(api.nameplateScore('10 HP 460V 14 FLA 1750 RPM') >= 3);
+assert.ok(api.nameplateScore('random photo') < 3);
+
+const noStealAmp = api.parseMotorNameplate('MOCP 30 LRA 84 HP 10 VOLTS 460');
+assert.equal(noStealAmp.fields.fla, '');
+assert.equal(noStealAmp.fields.mocp, '30');
+assert.equal(noStealAmp.fields.lra, '84');
+
 const vendorDir = path.join(root, 'vendor', 'tesseract');
 for (const file of ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-lstm.wasm.js', 'eng.traineddata.gz']) {
   assert.ok(fs.existsSync(path.join(vendorDir, file)), 'missing vendor file ' + file);

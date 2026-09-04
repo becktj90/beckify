@@ -3,24 +3,27 @@
    never uploaded on file pick. */
 
 const MAX_CIRCUIT_SLOTS = 42;
+const MAX_EDITOR_SLOTS = 84;
 const PRINT_ROW_PAIRS = MAX_CIRCUIT_SLOTS / 2;
 const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];
 
 const state = {
   file: null,
+  files: [],
   imageUrl: '',
+  imageUrls: [],
   rows: [],
-  rawText: ''
+  rawText: '',
+  lastProgress: 0,
+  source: ''
 };
 
 const elements = {};
 
 window.addEventListener('pagehide', () => {
-  if (state.imageUrl) {
-    URL.revokeObjectURL(state.imageUrl);
-    state.imageUrl = '';
-  }
+  revokeShotUrls();
   state.file = null;
+  state.files = [];
 });
 
 function bootPanelSchedule() {
@@ -79,6 +82,10 @@ function cacheElements() {
   elements.vlmToken = document.getElementById('panelVlmToken');
   elements.vlmConfig = document.getElementById('panelVlmConfig');
   elements.privacyBanner = document.getElementById('privacyBanner');
+  elements.addShotButton = document.getElementById('addShotButton');
+  elements.mergeRows = document.getElementById('mergeRows');
+  elements.sourceBadge = document.getElementById('ocrSource');
+  elements.shotList = document.getElementById('shotList');
 }
 
 function bindEvents() {
@@ -115,6 +122,20 @@ function bindEvents() {
 
   elements.processButton.addEventListener('click', runOcr);
   elements.resetButton.addEventListener('click', resetApp);
+  if (elements.addShotButton) {
+    elements.addShotButton.addEventListener('click', () => {
+      const extra = document.getElementById('imageAdd');
+      if (extra) extra.click();
+    });
+  }
+  const addInput = document.getElementById('imageAdd');
+  if (addInput) {
+    addInput.addEventListener('change', event => {
+      const [file] = event.target.files || [];
+      handleFileSelection(file, { append: true });
+      addInput.value = '';
+    });
+  }
   elements.printButton.addEventListener('click', handlePrint);
   elements.parseTextButton.addEventListener('click', handleParseText);
   elements.addRowButton.addEventListener('click', () => {
@@ -166,7 +187,7 @@ function isScheduleReviewed() {
   return !!(elements.reviewedSchedule && elements.reviewedSchedule.checked);
 }
 
-function handleFileSelection(file) {
+function handleFileSelection(file, opts) {
   if (!file || !isLikelyImageFile(file)) {
     setStatus('Please choose a valid image file.');
     return;
@@ -176,21 +197,111 @@ function handleFileSelection(file) {
     return;
   }
 
-  if (state.imageUrl) {
-    URL.revokeObjectURL(state.imageUrl);
+  const append = !!(opts && opts.append) && state.files.length > 0;
+  if (!append) {
+    revokeShotUrls();
+    state.files = [file];
+  } else if (state.files.length < 4) {
+    state.files.push(file);
+  } else {
+    setStatus('This read already has four photos. Reset to start a new set.');
+    return;
   }
 
-  state.file = file;
-  state.imageUrl = URL.createObjectURL(file);
-  elements.imagePreview.src = state.imageUrl;
+  state.file = state.files[state.files.length - 1];
+  const url = URL.createObjectURL(state.file);
+  state.imageUrls.push(url);
+  state.imageUrl = url;
+  elements.imagePreview.src = url;
   elements.previewFrame.classList.add('has-image');
-  elements.fileName.textContent = file.name;
+  elements.fileName.textContent = state.files.length === 1
+    ? file.name
+    : state.files.length + ' photos — last: ' + file.name;
+  if (elements.shotList) {
+    elements.shotList.textContent = state.files.map((item, i) => (i + 1) + '. ' + item.name).join(' · ');
+  }
   elements.processButton.disabled = false;
+  if (elements.addShotButton) elements.addShotButton.disabled = state.files.length >= 4;
+  if (append && elements.mergeRows) elements.mergeRows.checked = true;
   clearReview();
   resetProgress();
   setStatus(enhanceOn()
-    ? 'Photo is ready on this device. Read Schedule will upload it only because Enhance with AI is on. Correct every circuit afterward.'
-    : 'Image ready. Click “Read Schedule” to run on-device OCR.');
+    ? (append
+      ? 'Added another photo. Read Schedule will upload each shot only because Enhance with AI is on. Circuits merge by number.'
+      : 'Photo is ready on this device. Read Schedule will upload it only because Enhance with AI is on. Correct every circuit afterward.')
+    : (append
+      ? 'Added another photo. Read Schedule will OCR each shot and merge circuit rows by number.'
+      : 'Image ready. Click “Read Schedule” to run on-device OCR. Add another photo for the rest of a long directory.'));
+}
+
+function revokeShotUrls() {
+  state.imageUrls.forEach(url => {
+    try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+  });
+  state.imageUrls = [];
+  if (state.imageUrl) {
+    try { URL.revokeObjectURL(state.imageUrl); } catch (_) { /* ignore */ }
+  }
+  state.imageUrl = '';
+}
+
+function selectedPhase() {
+  const raw = elements.panelPhase ? elements.panelPhase.value : '';
+  const n = Number(raw);
+  return n === 1 || n === 3 ? n : null;
+}
+
+function tableHasUserContent(rows) {
+  return (rows || []).some(row => {
+    const desc = String(row.description || '').trim();
+    const trip = String(row.trip || '').trim();
+    const poles = String(row.poles || '').trim();
+    const load = String(row.loadAmps || '').trim();
+    return desc || trip || poles || (load && !row.loadAmpsCopiedFromTrip);
+  });
+}
+
+function mergeCircuitRows(base, incoming) {
+  const byKey = new Map();
+  const leftover = [];
+  (base || []).forEach(row => {
+    const key = String(row.circuit || '').trim().toUpperCase();
+    if (key) byKey.set(key, Object.assign({}, row));
+    else leftover.push(Object.assign({}, row));
+  });
+  (incoming || []).forEach(row => {
+    const key = String(row.circuit || '').trim().toUpperCase();
+    if (!key) {
+      leftover.push(Object.assign({}, row));
+      return;
+    }
+    const prev = byKey.get(key);
+    if (!prev || !tableHasUserContent([prev])) {
+      byKey.set(key, Object.assign({}, row));
+      return;
+    }
+    if (!prev.description && row.description) prev.description = row.description;
+    if (!prev.trip && row.trip) prev.trip = row.trip;
+    if (!prev.poles && row.poles) prev.poles = row.poles;
+    byKey.set(key, prev);
+  });
+  return normalizeRows([...byKey.values(), ...leftover]).slice(0, MAX_EDITOR_SLOTS);
+}
+
+function setSource(kind, extra) {
+  state.source = kind || '';
+  if (!elements.sourceBadge) return;
+  if (!kind) {
+    elements.sourceBadge.hidden = true;
+    elements.sourceBadge.textContent = '';
+    return;
+  }
+  elements.sourceBadge.hidden = false;
+  if (kind === 'vlm') {
+    elements.sourceBadge.textContent = 'Source: AI draft' + (extra ? ' (' + extra + ')' : '') + '. Photos were forwarded only because Enhance with AI was on.';
+  } else {
+    elements.sourceBadge.textContent = 'Source: on-device Tesseract. Photos stayed on this device.' + (extra ? ' ' + extra : '');
+  }
 }
 
 function enhanceOn() {
@@ -253,7 +364,12 @@ function applyVlmDraft(draft, warnings) {
     row.loadAmpsCopiedFromTrip = false;
     row.demandFactor = row.demandFactor || '1';
   });
-  if (rows.length) state.rows = normalizeRows(rows);
+  if (rows.length) {
+    const merge = !!(elements.mergeRows && elements.mergeRows.checked) || state.files.length > 1;
+    state.rows = merge && tableHasUserContent(state.rows)
+      ? mergeCircuitRows(state.rows, rows)
+      : normalizeRows(rows);
+  }
   const meta = Vlm && Vlm.panelMetaFromDraft ? Vlm.panelMetaFromDraft(draft) : {};
   applyMetadataIfBlank({
     panelName: meta.panelName,
@@ -273,40 +389,58 @@ function applyVlmDraft(draft, warnings) {
   if (elements.rawText) elements.rawText.value = raw;
   clearReview();
   const extra = (warnings && warnings.length) ? ` ${warnings.join(' ')}` : '';
+  setSource('vlm');
   setStatus(`AI draft filled ${rows.length} circuit row${rows.length === 1 ? '' : 's'}. This is not perfect OCR and not an AI electrician. Correct every row, then check the review box.${extra}`);
   renderAll();
 }
 
 async function runOnDeviceOcr() {
-  const out = await window.BeckifyOcr.recognize(state.file, {
-    mode: 'directory',
-    onProgress: (ratio, status) => {
-      updateProgress(ratio, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
+  const files = state.files.length ? state.files : (state.file ? [state.file] : []);
+  let combined = '';
+  let anyOpen = false;
+  let anyLow = false;
+  let lastOut = { text: '', failed: true, confidence: 0 };
+  for (let index = 0; index < files.length; index += 1) {
+    const out = await window.BeckifyOcr.recognize(files[index], {
+      mode: 'directory',
+      onProgress: (ratio, status) => {
+        const start = index / files.length;
+        const span = 1 / files.length;
+        updateProgress(start + (Number(ratio) || 0) * span, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
+      }
+    });
+    lastOut = out;
+    if (out.looksLikeOpenPanel) anyOpen = true;
+    if (out.lowConfidence) anyLow = true;
+    if (out.text) combined = combined ? `${combined}\n${out.text}` : out.text;
+    if (out.text && !out.failed) {
+      parseAndApplyText(out.text, index === 0, { merge: index > 0 || !!(elements.mergeRows && elements.mergeRows.checked) });
     }
-  });
-  const text = out.text || '';
+  }
+  const text = combined;
   state.rawText = text;
   elements.rawText.value = text;
   clearReview();
   if (elements.openPanelCaution) {
-    elements.openPanelCaution.hidden = !out.looksLikeOpenPanel;
+    elements.openPanelCaution.hidden = !anyOpen;
   }
-  if (out.looksLikeOpenPanel) {
+  if (anyOpen) {
     setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
   }
-  if (out.failed) {
-    setStatus('OCR found no usable text. Fill the table manually — you are not blocked.' + (window.BeckifyVlmOcr ? ' Enhance with AI can draft a two-up directory from a messy photo.' : ''));
-    updateProgress(0, 'OCR found no text');
+  if (!String(text).trim()) {
+    setStatus('OCR found no usable text. Existing rows were left alone. Fill the table manually — you are not blocked.' + (window.BeckifyVlmOcr ? ' Enhance with AI can draft a two-up directory from a messy photo.' : ''));
+    updateProgress(1, 'OCR found no text');
+    setSource('tesseract');
     renderAll();
-    return out;
+    return lastOut;
   }
-  parseAndApplyText(text, true);
-  if (out.lowConfidence) {
-    setStatus(`OCR confidence is low (${out.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
-  } else if (!out.looksLikeOpenPanel) {
+  setSource('tesseract', files.length > 1 ? `Merged ${files.length} photos.` : '');
+  if (anyLow) {
+    setStatus(`OCR confidence is low (${lastOut.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
+  } else if (!anyOpen) {
     updateProgress(1, 'OCR complete. Review the preview grid before using the estimates.');
   }
-  return out;
+  return lastOut;
 }
 
 async function runOcr() {
@@ -331,7 +465,7 @@ async function runOcr() {
     if (useVlm) {
       updateProgress(0.1, 'Uploading photo for optional AI enhance…');
       try {
-        const out = await Vlm.analyzePanelDirectory(state.file, {
+        const out = await Vlm.analyzePanelDirectory(state.files.length ? state.files : state.file, {
           enhanceOn: true,
           onProgress: (ratio, status) => {
             updateProgress(ratio, status || 'Enhancing…');
@@ -341,7 +475,8 @@ async function runOcr() {
         updateProgress(1, 'AI draft ready. Review every circuit.');
         return;
       } catch (error) {
-        setStatus(((error && error.message) ? error.message : 'AI enhance failed.') + ' Falling back to on-device OCR.');
+        const formatted = (Vlm.formatVisionError && Vlm.formatVisionError(error)) || (error && error.message) || 'AI enhance failed.';
+        setStatus(formatted + ' Falling back to on-device OCR.');
       }
     }
     updateProgress(0, 'Starting on-device OCR…');
@@ -355,17 +490,20 @@ async function runOcr() {
   }
 }
 
-function parseAndApplyText(text, allowMetadataFill) {
+function parseAndApplyText(text, allowMetadataFill, opts) {
   const parsed = parseScheduleText(text || '');
   if (allowMetadataFill) {
     applyMetadataIfBlank(parsed.meta);
   }
 
   if (parsed.rows.length) {
-    state.rows = parsed.rows;
+    const merge = !!(opts && opts.merge);
+    state.rows = merge && tableHasUserContent(state.rows)
+      ? mergeCircuitRows(state.rows, parsed.rows)
+      : parsed.rows;
     setStatus(`Parsed ${parsed.rows.length} circuit row${parsed.rows.length === 1 ? '' : 's'}. Correct any OCR misreads before printing.`);
   } else {
-    setStatus('No clear circuit rows were detected. Edit the OCR text or enter rows manually below.');
+    setStatus('No clear circuit rows were detected. Existing rows were left alone. Edit the OCR text or enter rows manually below.');
   }
 
   renderAll();
@@ -975,7 +1113,7 @@ function phaseBalance(rows, phase) {
 
 function computeDirectoryMetrics(rows, opts) {
   opts = opts || {};
-  const phase = Number(opts.phase) === 1 ? 1 : 3;
+  const phase = Number(opts.phase) === 1 ? 1 : Number(opts.phase) === 3 ? 3 : null;
   const mainAmps = Number(opts.mainAmps);
   const list = Array.isArray(rows) ? rows : [];
   const fromRows = list.reduce((n, row) => n + rowSlotCount(row), 0);
@@ -985,7 +1123,7 @@ function computeDirectoryMetrics(rows, opts) {
   const unlabeled = list.filter(isUnlabeled);
   const vague = list.filter(isVague);
   const doubled = list.filter(looksDoubledUp);
-  const balance = phaseBalance(list, phase);
+  const balance = phase ? phaseBalance(list, phase) : { legs: {}, assumption: 'Select 1-phase or 3-phase before treating leg balance as meaningful. Phase is never assumed.' };
   const ratio = Number.isFinite(mainAmps) && mainAmps > 0 ? connected / mainAmps : null;
   const flags = [];
   if (unlabeled.length) flags.push('blank labels found: ' + unlabeled.length);
@@ -1017,7 +1155,7 @@ function renderDirectoryMetrics() {
   }
   const rows = normalizeRows(state.rows);
   const metrics = computeDirectoryMetrics(rows, {
-    phase: elements.panelPhase ? elements.panelPhase.value : 3,
+    phase: selectedPhase(),
     mainAmps: elements.panelCapacityAmps ? elements.panelCapacityAmps.value : '',
     slotCount: rows.reduce((n, row) => n + rowSlotCount(row), 0) || MAX_CIRCUIT_SLOTS,
   });
@@ -1053,7 +1191,12 @@ function renderLoadAnalysis() {
   }
   const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
   const voltage = panelVoltageInfo(elements.panelVoltage.value);
-  const phase = Number(elements.panelPhase.value) || 3;
+  const phase = selectedPhase();
+  if (!phase) {
+    elements.analysisGrid.innerHTML = summaryMetric('Waiting for system phase', 'Select 1Ø or 3Ø', 'Load math does not assume 3-phase. Pick the system on the directory card.');
+    elements.analysisGuidance.innerHTML = '<p>Phase is never assumed. Choose 1-phase or 3-phase after you read the panel label, then review the table.</p>';
+    return;
+  }
   const diversity = Math.max(1, panelNumber(elements.panelDiversity.value, 1));
   const knownVoltage = Number.isFinite(voltage.lineToLine) && voltage.lineToLine > 0;
   const connectedVa = knownVoltage ? rows.reduce((total, row) => total + rowLoadVa(row, voltage, phase), 0) : 0;
@@ -1184,12 +1327,10 @@ function seedRows(count) {
 }
 
 function resetApp() {
-  if (state.imageUrl) {
-    URL.revokeObjectURL(state.imageUrl);
-  }
+  revokeShotUrls();
 
   state.file = null;
-  state.imageUrl = '';
+  state.files = [];
   state.rawText = '';
   seedRows(MAX_CIRCUIT_SLOTS);
   elements.imageInput.value = '';
@@ -1198,7 +1339,11 @@ function resetApp() {
   elements.panelVoltage.value = '';
   elements.panelFeed.value = '';
   elements.panelDate.value = '';
-  elements.panelPhase.value = '3';
+  if (elements.panelPhase) elements.panelPhase.value = '';
+  if (elements.shotList) elements.shotList.textContent = '';
+  if (elements.addShotButton) elements.addShotButton.disabled = true;
+  if (elements.mergeRows) elements.mergeRows.checked = false;
+  setSource('');
   elements.panelCapacityAmps.value = '';
   elements.panelDiversity.value = '1';
   elements.imagePreview.removeAttribute('src');
@@ -1214,20 +1359,24 @@ function resetApp() {
 
 function handleParseText() {
   clearReview();
-  parseAndApplyText(elements.rawText.value, false);
+  parseAndApplyText(elements.rawText.value, false, { merge: !!(elements.mergeRows && elements.mergeRows.checked) });
 }
 
 function updateProgress(value, statusMessage) {
-  const percent = Math.max(0, Math.min(100, Math.round(value * 100)));
-  elements.progressFill.style.width = `${percent}%`;
-  elements.progressLabel.textContent = `${percent}%`;
+  const next = Math.max(state.lastProgress || 0, Math.max(0, Math.min(1, Number(value) || 0)));
+  state.lastProgress = next;
+  const percent = Math.round(next * 100);
+  if (elements.progressFill) elements.progressFill.style.width = `${percent}%`;
+  if (elements.progressLabel) elements.progressLabel.textContent = `${percent}%`;
   if (statusMessage) {
     setStatus(statusMessage);
   }
 }
 
 function resetProgress() {
-  updateProgress(0);
+  state.lastProgress = 0;
+  if (elements.progressFill) elements.progressFill.style.width = '0%';
+  if (elements.progressLabel) elements.progressLabel.textContent = '0%';
 }
 
 function setStatus(message) {
@@ -1309,6 +1458,9 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     phaseLegFromCircuit,
     occupiedLegsForRow,
     phaseBalance,
-    computeDirectoryMetrics
+    computeDirectoryMetrics,
+    mergeCircuitRows,
+    tableHasUserContent,
+    selectedPhase
   };
 }
