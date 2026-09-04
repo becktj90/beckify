@@ -6,7 +6,7 @@ import BeckifyMath
 enum MotorNameplateHandoff {
     static func seed(_ fields: [NameplateFieldID: String], into tool: ToolID) {
         let phase = fields[.phases] ?? ""
-        let threePhase = phase != "1"
+        let threePhase = NameplateFieldParser.explicitThreePhase(phase)
         let hpRaw = fields[.ratedHP] ?? ""
         let voltsRaw = fields[.voltage] ?? ""
         // Hard rule: only FLA seeds Analyzer FLA. Never MOCP or LRA.
@@ -19,22 +19,34 @@ enum MotorNameplateHandoff {
 
         switch tool {
         case .motorFLA:
-            UserDefaults.standard.set(threePhase, forKey: ToolInputStore.key(.motorFLA, "threePhase"))
-            if let hpValue = MotorFLA.horsepowerValue(hpRaw),
-               let listed = MotorFLA.nearestListedHorsepower(value: hpValue, threePhase: threePhase) {
-                UserDefaults.standard.set(listed, forKey: ToolInputStore.key(.motorFLA, "hp"))
-            }
-            if !voltsRaw.isEmpty {
-                UserDefaults.standard.set(
-                    NameplateFieldParser.preferredVoltage(raw: voltsRaw, threePhase: threePhase),
-                    forKey: ToolInputStore.key(.motorFLA, "systemVolts")
-                )
+            if let threePhase {
+                UserDefaults.standard.set(threePhase, forKey: ToolInputStore.key(.motorFLA, "threePhase"))
+                if let hpValue = MotorFLA.horsepowerValue(hpRaw),
+                   let listed = MotorFLA.nearestListedHorsepower(value: hpValue, threePhase: threePhase) {
+                    UserDefaults.standard.set(listed, forKey: ToolInputStore.key(.motorFLA, "hp"))
+                }
+                if !voltsRaw.isEmpty {
+                    UserDefaults.standard.set(
+                        NameplateFieldParser.preferredVoltage(raw: voltsRaw, threePhase: threePhase),
+                        forKey: ToolInputStore.key(.motorFLA, "systemVolts")
+                    )
+                }
+            } else {
+                if !hpRaw.isEmpty {
+                    UserDefaults.standard.set(hpRaw, forKey: ToolInputStore.key(.motorFLA, "hp"))
+                }
+                if !voltsRaw.isEmpty {
+                    UserDefaults.standard.set(
+                        NameplateFieldParser.primaryToken(voltsRaw),
+                        forKey: ToolInputStore.key(.motorFLA, "systemVolts")
+                    )
+                }
             }
 
         case .motorNameplate:
             if !ampsRaw.isEmpty {
                 UserDefaults.standard.set(
-                    NameplateFieldParser.preferredAmps(raw: ampsRaw, threePhase: threePhase),
+                    NameplateFieldParser.preferredToken(raw: ampsRaw, phase: phase),
                     forKey: ToolInputStore.key(.motorNameplate, "fla")
                 )
             }
@@ -42,7 +54,10 @@ enum MotorNameplateHandoff {
                 UserDefaults.standard.set(hpRaw, forKey: ToolInputStore.key(.motorNameplate, "hp"))
             }
             if !voltsRaw.isEmpty {
-                UserDefaults.standard.set(voltsRaw, forKey: ToolInputStore.key(.motorNameplate, "volts"))
+                UserDefaults.standard.set(
+                    NameplateFieldParser.preferredToken(raw: voltsRaw, phase: phase),
+                    forKey: ToolInputStore.key(.motorNameplate, "volts")
+                )
             }
             if !sfRaw.isEmpty {
                 UserDefaults.standard.set(sfRaw, forKey: ToolInputStore.key(.motorNameplate, "sf"))

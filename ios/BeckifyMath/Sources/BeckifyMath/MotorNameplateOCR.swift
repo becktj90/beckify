@@ -146,7 +146,11 @@ public enum NameplateFieldParser {
             take(labeled(in: line, next: next, id: .mocp, labels: mocpLabels, parse: parseSingleAmps))
             take(labeled(in: line, next: next, id: .lra, labels: lraLabels, parse: parseSingleAmps))
             take(labeled(in: line, next: next, id: .serviceFactorAmps, labels: sfaLabels, parse: parseSingleAmps))
-            take(labeled(in: line, next: next, id: .fla, labels: ampLabels, parse: parseFLA))
+            // Hard rule: LOCKED ROTOR AMPS / LRA AMPS / MOCP AMPS are never FLA.
+            // Same-line `FLA 12.5 LRA 72` still records FLA from the FLA label.
+            if !shouldSkipLabeledFLA(line.text) {
+                take(labeled(in: line, next: next, id: .fla, labels: ampLabels, parse: parseFLA))
+            }
             take(labeled(in: line, next: next, id: .frequencyHz, labels: hzLabels, parse: parseFrequencyHz))
             take(labeled(in: line, next: next, id: .phases, labels: phaseLabels, parse: parsePhase))
             take(labeled(in: line, next: next, id: .sf, labels: sfLabels, parse: parseServiceFactor))
@@ -267,6 +271,34 @@ public enum NameplateFieldParser {
         threePhase ? secondaryToken(raw) : primaryToken(raw)
     }
 
+    /// Dual listings: high side for 3Ø, low side for 1Ø, first token when phase is unknown.
+    public static func preferredToken(raw: String, phase: String) -> String {
+        switch phase {
+        case "3": return secondaryToken(raw)
+        case "1": return primaryToken(raw)
+        default: return primaryToken(raw)
+        }
+    }
+
+    /// `true` / `false` only when OCR captured an explicit 3 or 1. Unknown is `nil`.
+    public static func explicitThreePhase(_ phase: String) -> Bool? {
+        switch phase {
+        case "3": return true
+        case "1": return false
+        default: return nil
+        }
+    }
+
+    /// Rebuild extractable labeled lines from saved schema keys (job restore).
+    public static func reconstructText(from fields: [NameplateFieldID: String]) -> String {
+        NameplateFieldID.allCases.compactMap { id in
+            guard let value = fields[id]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
+                return nil
+            }
+            return "\(id.parserLabel) \(value)"
+        }.joined(separator: "\n")
+    }
+
     /// Even pole count whose synchronous speed sits just above a nameplate RPM.
     public static func inferredPoles(rpm: Double, frequencyHz: Double) -> Int? {
         guard rpm > 0, frequencyHz > 0 else { return nil }
@@ -321,6 +353,15 @@ public enum NameplateFieldParser {
         return false
     }
 
+    /// Skip labeled AMPS on LRA/MOCP lines, unless the line also has FLA/FLC.
+    private static func shouldSkipLabeledFLA(_ text: String) -> Bool {
+        guard isMOCPOrLRALine(text) else { return false }
+        let upper = normalize(text)
+        if rangeOfLabel("FLA", in: upper) != nil { return false }
+        if rangeOfLabel("FLC", in: upper) != nil { return false }
+        return true
+    }
+
     private static func labeled(
         in line: NameplateOCRLine,
         next: NameplateOCRLine?,
@@ -349,6 +390,12 @@ public enum NameplateFieldParser {
         for label in labels {
             let needle = normalize(label)
             guard let range = rangeOfLabel(needle, in: upper) else { continue }
+            // Skip glued unit-inside-token matches (`MODEL 10HP-215` must not claim HP=215).
+            // Those are handled by the unit-suffix path (`10HP`).
+            if range.lowerBound > upper.startIndex {
+                let before = upper[upper.index(before: range.lowerBound)]
+                if before.isNumber { continue }
+            }
             let remainder = String(upper[range.upperBound...])
                 .trimmingCharacters(in: CharacterSet(charactersIn: " :=-–—."))
             if let parsed = parse(remainder) { return parsed }
@@ -368,6 +415,13 @@ public enum NameplateFieldParser {
         for (index, token) in tokens.enumerated() {
             let upper = normalize(token)
             guard suffixes.contains(where: { normalize($0) == upper }) else { continue }
+            // Packed `VOLTS 460 AMPS 14`: AMPS is a label, so take 14, not 460.
+            // Bare `A` / `V` stay value-then-unit so `14 A 60 HZ` is not stolen.
+            if labelBeforeValueSuffixes.contains(upper),
+               index + 1 < tokens.count,
+               let parsed = parse(tokens[index + 1]) {
+                return NameplateField(id: id, value: parsed, confidence: scaled(0.86, line.confidence))
+            }
             if index > 0, let parsed = parse(tokens[index - 1]) {
                 return NameplateField(id: id, value: parsed, confidence: scaled(0.86, line.confidence))
             }
@@ -485,14 +539,31 @@ public enum NameplateFieldParser {
         return stripTrailingZeros(token)
     }
 
+    /// Whole tokens only (`1`, `3`, `1PH`, `3PH`). Does not match a `1`/`3` substring
+    /// inside volts, amps, or frame numbers.
     private static func parsePhase(_ raw: String) -> String? {
-        let token = tokenize(raw).first.map(normalize) ?? normalize(raw)
-        if token == "3" || token == "3.0" || token.hasPrefix("3PH") || token.hasPrefix("3P") { return "3" }
-        if token == "1" || token == "1.0" || token.hasPrefix("1PH") || token.hasPrefix("1P") { return "1" }
-        if token.contains("THREE") { return "3" }
-        if token.contains("SINGLE") { return "1" }
+        let tokens = tokenize(raw).map(normalize)
+        let candidates = tokens.isEmpty ? [normalize(raw)] : tokens
+        for token in candidates {
+            if Self.threePhaseTokens.contains(token) { return "3" }
+            if Self.singlePhaseTokens.contains(token) { return "1" }
+        }
+        let joined = candidates.joined(separator: " ")
+        if joined.split(whereSeparator: { $0 == " " || $0 == "-" }).contains(where: { $0 == "THREE" }) {
+            return "3"
+        }
+        if joined.split(whereSeparator: { $0 == " " || $0 == "-" }).contains(where: { $0 == "SINGLE" }) {
+            return "1"
+        }
         return nil
     }
+
+    private static let threePhaseTokens: Set<String> = [
+        "3", "3.0", "3PH", "3P", "3PHASE", "3Ø",
+    ]
+    private static let singlePhaseTokens: Set<String> = [
+        "1", "1.0", "1PH", "1P", "1PHASE", "1Ø",
+    ]
 
     private static func parseServiceFactor(_ raw: String) -> String? {
         guard let token = firstNumericToken(raw, allowingFraction: true),
@@ -684,18 +755,25 @@ public enum NameplateFieldParser {
         return nil
     }
 
-    /// Labels that can follow a value on a packed line (`FLA 12.5 LRA 72`).
-    /// HP / RPM / V / A stay unit suffixes so `10 HP 1750 RPM` is not stolen.
+    /// Labels that can follow a value on a packed line (`FLA 12.5 LRA 72`,
+    /// `VOLTS 460 AMPS 14`). HP / RPM / V / A stay unit suffixes so
+    /// `10 HP 1750 RPM` is not stolen.
     private static let labelsAllowedAfterNumber: Set<String> = [
         "LRA", "L.R.A.", "LOCKED ROTOR", "LOCKED-ROTOR", "LR AMPS",
         "MOCP", "MAX OCP", "MAXIMUM OCP", "MAX OVERCURRENT", "MAXIMUM OVERCURRENT",
         "SFA", "SF AMPS", "SF AMP", "SERVICE FACTOR AMPS",
-        "FLA", "FLC",
+        "FLA", "FLC", "AMPS", "AMP", "AMPERES", "AMPERE",
         "SF", "S.F.", "SERVICE FACTOR",
         "PF", "P.F.", "POWER FACTOR",
         "DESIGN", "NEMA DESIGN", "CODE", "CODE LETTER",
         "CLASS", "INS CLASS",
         "SER", "SN", "S/N",
+    ]
+
+    /// Suffix tokens that may be a label before a value on a packed line.
+    private static let labelBeforeValueSuffixes: Set<String> = [
+        "AMPS", "AMP", "AMPERES", "AMPERE", "FLA", "FLC",
+        "VOLTS", "VOLT", "VOLTAGE",
     ]
 
     /// Labels must be their own token. Rejects `10HP-215` (HP glued inside a

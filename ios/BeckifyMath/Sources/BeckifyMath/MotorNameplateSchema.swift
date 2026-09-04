@@ -69,6 +69,44 @@ public enum NameplateFieldID: String, Codable, CaseIterable, Sendable, Hashable 
         }
     }
 
+    /// Display unit for a reviewed value. Efficiency shows `%` only when the
+    /// value is numeric so IEC classes like `IE3` do not render as `IE3 %`.
+    public func unit(forValue value: String) -> String {
+        guard self == .nomEff else { return unit }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "%" }
+        return Double(trimmed) != nil ? "%" : ""
+    }
+
+    /// Label the heuristic parser recognizes when reconstructing saved jobs.
+    public var parserLabel: String {
+        switch self {
+        case .manufacturer: return "MFR"
+        case .model: return "MODEL"
+        case .serialNumber: return "SER"
+        case .ratedHP: return "HP"
+        case .ratedKW: return "KW"
+        case .voltage: return "VOLTS"
+        case .fla: return "FLA"
+        case .sf: return "SF"
+        case .rpm: return "RPM"
+        case .poles: return "POLES"
+        case .frequencyHz: return "HZ"
+        case .phases: return "PH"
+        case .enclosure: return "ENCL"
+        case .frame: return "FRAME"
+        case .designLetter: return "DESIGN"
+        case .codeLetter: return "CODE"
+        case .nomEff: return "EFF"
+        case .pf: return "PF"
+        case .mocp: return "MOCP"
+        case .lra: return "LRA"
+        case .serviceFactorAmps: return "SFA"
+        case .insulationClass: return "CLASS"
+        case .notes: return "NOTES"
+        }
+    }
+
     public var isNumeric: Bool {
         switch self {
         case .ratedHP, .ratedKW, .fla, .sf, .rpm, .poles, .frequencyHz, .phases,
