@@ -83,6 +83,7 @@ assert.doesNotMatch(textures, /leftTowerX/);
 assert.doesNotMatch(textures, /rightTowerX/);
 assert.match(textures, /function drawIlt\(/);
 assert.match(textures, /function makeBooster\(/);
+assert.match(textures, /deck-pad/);
 assert.match(textures, /JACKLYN/);
 assert.match(textures, /solid black strakes/);
 assert.match(textures, /No grid fins/);

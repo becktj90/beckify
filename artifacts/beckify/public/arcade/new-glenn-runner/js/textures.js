@@ -475,4 +475,5 @@ export function installTextures(scene) {
   add('pickup-boost', makePickup('boost'));
   add('spark', makeSpark());
   add('steam', makeDot('rgba(230,240,255,0.9)', 16, 16));
+  add('deck-pad', canvas(168, 28));
 }

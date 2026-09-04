@@ -69,15 +69,15 @@ export default class MissionScene extends Phaser.Scene {
 
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.bgOcean = this.add.image(W / 2, H / 2, 'ocean').setVisible(false).setDepth(0);
-    this.jacklyn = this.matter.add.image(W / 2, 620, 'jacklyn', null, {
+    this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
+    this.deck = this.matter.add.image(-2400, 2400, 'deck-pad', null, {
       isStatic: true,
+      isSensor: true,
       label: 'deck',
     });
-    this.jacklyn.setCollisionCategory(CAT_DECK);
-    this.jacklyn.setCollidesWith(CAT_ROCKET);
-    this.jacklyn.setVisible(false);
-    this.jacklyn.setSensor(true);
-    this.jacklyn.setPosition(-2400, 2400);
+    this.deck.setVisible(false);
+    this.deck.setCollisionCategory(CAT_DECK);
+    this.deck.setCollidesWith(CAT_ROCKET);
 
     this.water = this.matter.add.rectangle(-2400, 2600, W + 200, 80, {
       isStatic: true,
@@ -312,6 +312,7 @@ export default class MissionScene extends Phaser.Scene {
       landingLock: false,
       jacklynPhase: 'slide',
       jacklynReadyAt: 0,
+      jacklynElapsed: 0,
       objectiveDone: false,
       comboReady: false,
     };
@@ -407,13 +408,14 @@ export default class MissionScene extends Phaser.Scene {
     this.placeRecovery();
     this.rocket.setTexture('booster');
     const side = flight.lzOffset >= 0 ? -1 : 1;
-    this.session.jacklynReadyAt = this.nowSec + 0.85;
-    this.rocket.setFrictionAir(0.045);
-    this.rocket.setPosition(W / 2 + side * 500, -20);
-    this.rocket.setVelocity(side * -4.6, 1.35);
-    this.rocket.setAngle(side * -22);
+    this.session.jacklynReadyAt = this.nowSec + 0.7;
+    this.session.jacklynElapsed = 0;
+    this.rocket.setFrictionAir(0.05);
+    this.rocket.setPosition(W / 2 + side * 480, 90);
+    this.rocket.setVelocity(side * -3.6, 1.6);
+    this.rocket.setAngle(side * -28);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, 0.26);
+    this.matter.world.setGravity(0, 0.34);
     this.cameras.main.stopFollow();
     this.cameras.main.setZoom(0.82);
     this.cameras.main.centerOn(W / 2, 300);
@@ -511,19 +513,21 @@ export default class MissionScene extends Phaser.Scene {
   updateJacklyn(dt) {
     if (this.session.landingLock) return;
     const mode = DIFFICULTY[this.settings.difficulty];
+    this.session.jacklynElapsed = (this.session.jacklynElapsed || 0) + dt;
     const boosting = isBoosting(this.inputState, this.nowSec);
     let axis = steerAxis(this.inputState);
     if (this.inputState.pointerX != null) {
       axis = clamp((this.inputState.pointerX - this.rocket.x) / 160, -1, 1);
     }
-    const deckX = this.jacklyn.x;
-    if (mode.assist > 0) {
+    const deckX = this.deck.x;
+    const assist = this.qaBeat === 'jacklyn' ? Math.max(mode.assist, 0.5) : mode.assist;
+    if (assist > 0) {
       const err = (deckX - this.rocket.x) / 220;
-      axis = clamp(axis + err * mode.assist, -1, 1);
+      axis = clamp(axis + err * assist, -1, 1);
     }
 
     const alt = this.jacklyn.y - 50 - this.rocket.y;
-    if (alt < 220 && this.session.jacklynPhase === 'slide') {
+    if (alt < 150 && this.session.jacklynPhase === 'slide') {
       this.session.jacklynPhase = 'straighten';
       this.emitRcs();
       setBanner('RCS — straighten for the deck', 'info', 1400);
@@ -541,16 +545,21 @@ export default class MissionScene extends Phaser.Scene {
 
     if (boosting && this.session.fuel > 0) {
       this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 18 * dt);
-      this.rocket.applyForce({ x: axis * 0.02, y: -0.088 });
+      this.rocket.applyForce({ x: axis * 0.02, y: -0.04 });
       this.session.throttle = 1;
       this.emitPlume(1);
       if (alt < 180) this.emitBloom();
+      if (alt > 110 && this.rocket.body.velocity.y < 2.4) this.rocket.setVelocityY(2.4);
+      else if (alt > 18 && this.rocket.body.velocity.y < 0.85) this.rocket.setVelocityY(0.85);
     } else {
       this.rocket.applyForce({ x: axis * 0.01, y: 0.006 });
       this.session.throttle = 0.12;
     }
+    if (this.session.jacklynElapsed < 1.6 && this.rocket.body.velocity.y > 3.6) {
+      this.rocket.setVelocityY(3.6);
+    }
     if (this.rocket.body.velocity.y > 9) this.rocket.setVelocityY(9);
-    if (this.rocket.body.velocity.y < -6) this.rocket.setVelocityY(-6);
+    if (this.rocket.body.velocity.y < -1.2) this.rocket.setVelocityY(-1.2);
     this.rocket.x = clamp(this.rocket.x, 80, W - 80);
     this.session.velocity = Math.round(this.rocket.body.velocity.y * 42);
     this.session.altitudeKm = clamp(alt / 90, 0, 8);
@@ -581,8 +590,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.landingLock = true;
     const mode = DIFFICULTY[this.settings.difficulty];
     const vy = Math.abs(this.rocket.body.velocity.y);
-    const dx = Math.abs(this.rocket.x - this.jacklyn.x);
-    const onPaint = dx <= mode.landingTol;
+    const onPaint = kind === 'deck';
     const soft = vy <= mode.landingVy;
     this.rocket.setVelocity(0, 0);
     this.rocket.setIgnoreGravity(true);
@@ -593,6 +601,7 @@ export default class MissionScene extends Phaser.Scene {
       if (this.currentFlight().objective?.id === 'recover') this.completeObjective();
       if (this.currentFlight().objective?.id === 'recover-combo' && this.session.comboReady) this.completeObjective();
       this.session.combo += 2;
+      this.session.bestCombo = Math.max(this.session.bestCombo, this.session.combo);
       this.session.radio = RADIO.RECOVERED;
       this.rocket.setPosition(this.jacklyn.x, this.jacklyn.y - 92);
       this.rocket.setAngle(0);
@@ -924,6 +933,7 @@ export default class MissionScene extends Phaser.Scene {
 
   parkRecovery() {
     this.jacklyn.setPosition(-2400, 2400);
+    this.deck.setPosition(-2400, 2400);
     this.water.position.x = -2400;
     this.water.position.y = 2600;
   }
@@ -931,6 +941,7 @@ export default class MissionScene extends Phaser.Scene {
   placeRecovery() {
     const x = W / 2 + (this.currentFlight().lzOffset || 0);
     this.jacklyn.setPosition(x, 600);
+    this.deck.setPosition(x, 588);
     this.water.position.x = W / 2;
     this.water.position.y = 780;
   }
