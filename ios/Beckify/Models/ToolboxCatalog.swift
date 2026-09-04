@@ -202,6 +202,7 @@ extension ToolboxCatalog {
 
 enum ToolKind: String, Codable {
     case calculator
+    /// Bench / homework tools. About / How it works and Show Work default open.
     case homework
     case sensor
 }
@@ -220,6 +221,11 @@ struct ToolDefinition: Identifiable {
 
     var searchBlob: String {
         ([title, subtitle] + synonyms).joined(separator: " ").lowercased()
+    }
+
+    /// Data-driven About / how-it-works copy. Nil only if the catalog ID is unknown.
+    var howItWorks: ToolHowItWorks? {
+        ToolHowItWorksCatalog.copy(forToolID: id.rawValue)
     }
 
     init(
@@ -242,6 +248,8 @@ struct ToolDefinition: Identifiable {
 }
 
 enum ToolboxCatalog {
+    /// Listed tools plus hidden deep-link IDs (Power Wizard). Every id needs
+    /// `ToolHowItWorksCatalog` copy — Linux tests fail if a new ToolID is omitted.
     static let tools: [ToolDefinition] = [
         ToolDefinition(
             id: .ohmsLaw,

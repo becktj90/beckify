@@ -8,7 +8,7 @@ This is not a website wrapper. There is no `WKWebView` of beckify.com and no web
 
 ## Design system
 
-Reusable tokens live in `Beckify/Theme/Theme.swift` (surfaces, semantic accents, spacing, radius, stroke, typography, chart colors, motion). Calculator chrome — identity header, Calculate / Reset / Example, stale-result banner, diagrams — lives under `Beckify/Views/Components/`.
+Reusable tokens live in `Beckify/Theme/Theme.swift` (surfaces, semantic accents, spacing, radius, stroke, typography, chart colors, motion). Calculator chrome — identity header, Calculate / Reset / Example, stale-result banner, diagrams, and the shared **How it works** disclosure — lives under `Beckify/Views/Components/`. About copy is data-driven in `BeckifyMath` (`ToolHowItWorksCatalog`, keyed by ToolID) so a new tool cannot forget it. Field stays collapsed / inputs-first; homework tools default open like Show Work.
 
 Every primary tool has an original vector `ToolGlyph` (not a shared SF Symbol).
 
@@ -108,7 +108,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 - Position (location requested in-tool, not at launch)
 - Device battery / thermal diagnostics
 
-Local **Saved Jobs** are on-device homework / field notes, not a projects product. Field jobs sort first. Opening a job restores matching inputs into the tool when they still map — it does not block if some fields cannot be restored. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, and can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups). Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
+Local **Saved Jobs** are on-device homework / field notes, not a projects product. Field jobs sort first. Opening a job restores matching inputs into the tool when they still map — it does not block if some fields cannot be restored. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups), and has a short **How it works** note (toolbar About / collapsed disclosure) for what it computes and its limits. Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
 
 ## Linux (this repo)
 
