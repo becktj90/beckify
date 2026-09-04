@@ -23,6 +23,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "heaterDesign", "empEmc", "necCircuit", "loadWorksheet",
             "cableSchedule", "solenoidDesign",
             "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
+            "controlSystems",
         ]
         for id in field {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
@@ -54,6 +55,11 @@ final class ToolHomeAreaTests: XCTestCase {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .bench, id)
         }
+    }
+
+    func testControlSystemsIsFieldControls() {
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "controlSystems"), .field)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "controlSystems"), .controls)
     }
 
     func testFutureJobsiteToolsDefaultField() {

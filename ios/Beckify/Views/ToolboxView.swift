@@ -233,6 +233,7 @@ struct CalculatorHostView: View {
             case .eBikeRange: EbikeRangeView()
             case .eBikePackDesigner: EbikePackDesignerView()
             case .nickelStrip: NickelStripView()
+            case .controlSystems: ControlSystemsLabView()
             }
         }
     }

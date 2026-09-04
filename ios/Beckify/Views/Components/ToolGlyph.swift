@@ -404,6 +404,7 @@ extension GlyphKind {
         case .eBikeRange: return .eBikeRange
         case .eBikePackDesigner: return .eBikePackDesigner
         case .nickelStrip: return .nickelStrip
+        case .controlSystems: return .controlSystems
         }
     }
 }
@@ -479,6 +480,7 @@ enum GlyphKind {
     case eBikeRange
     case eBikePackDesigner
     case nickelStrip
+    case controlSystems
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -553,6 +555,7 @@ enum GlyphKind {
         case .eBikeRange: return Self.eBikeRange(rect)
         case .eBikePackDesigner: return Self.eBikePackDesigner(rect)
         case .nickelStrip: return Self.nickelStrip(rect)
+        case .controlSystems: return Self.controlSystems(rect)
         }
     }
 
@@ -2012,6 +2015,41 @@ enum GlyphKind {
         path.addLine(to: CGPoint(x: strip.minX - r.width * 0.08, y: strip.maxY))
         path.move(to: CGPoint(x: strip.minX - r.width * 0.05, y: strip.minY))
         path.addLine(to: CGPoint(x: strip.minX - r.width * 0.05, y: strip.maxY))
+        return path
+    }
+
+    /// Unity-feedback loop: summing junction, plant block, forward and return paths.
+    private static func controlSystems(_ r: CGRect) -> Path {
+        var path = Path()
+        let midY = r.midY
+        let sumR = min(r.width, r.height) * 0.11
+        let sumC = CGPoint(x: r.minX + r.width * 0.22, y: midY)
+        path.addEllipse(in: CGRect(x: sumC.x - sumR, y: sumC.y - sumR, width: sumR * 2, height: sumR * 2))
+        path.move(to: CGPoint(x: sumC.x - sumR * 0.45, y: sumC.y))
+        path.addLine(to: CGPoint(x: sumC.x + sumR * 0.45, y: sumC.y))
+        path.move(to: CGPoint(x: sumC.x, y: sumC.y - sumR * 0.45))
+        path.addLine(to: CGPoint(x: sumC.x, y: sumC.y + sumR * 0.45))
+
+        let box = CGRect(
+            x: r.minX + r.width * 0.48,
+            y: r.minY + r.height * 0.28,
+            width: r.width * 0.32,
+            height: r.height * 0.32
+        )
+        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
+
+        path.move(to: CGPoint(x: r.minX, y: midY))
+        path.addLine(to: CGPoint(x: sumC.x - sumR, y: midY))
+        path.move(to: CGPoint(x: sumC.x + sumR, y: midY))
+        path.addLine(to: CGPoint(x: box.minX, y: midY))
+        path.move(to: CGPoint(x: box.maxX, y: midY))
+        path.addLine(to: CGPoint(x: r.maxX, y: midY))
+
+        let returnY = r.maxY - r.height * 0.16
+        path.move(to: CGPoint(x: r.maxX - r.width * 0.08, y: midY))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: returnY))
+        path.addLine(to: CGPoint(x: sumC.x, y: returnY))
+        path.addLine(to: CGPoint(x: sumC.x, y: sumC.y + sumR))
         return path
     }
 }

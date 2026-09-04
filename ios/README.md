@@ -64,6 +64,7 @@ ios/
 - Nickel Strip (cross-section × planning current density)
 - Solar Design Wizard (PV sizing, phone IMU/compass aim, optional storage)
 - Signal Scaling, Modbus Address, PLC Timer Preset
+- Control Systems (Field → Controls hub: plant library + custom G(s), P→PI→PID step, Bode margins, lead compensator; educational — not commissioning)
 - E-Bus / Rack Current
 - Panel Directory (paste/OCR schedule text)
 
@@ -90,7 +91,7 @@ ios/
 - RF Power & Link, Number Base Converter
 - Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
 
-Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, and Analog Design Workbench Bode magnitude. This is not a new tool list.
+Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, Analog Design Workbench Bode magnitude, and Control Systems step / Bode / lead. This is not a new tool list.
 
 ## Instruments (Field subsection — public APIs only)
 
