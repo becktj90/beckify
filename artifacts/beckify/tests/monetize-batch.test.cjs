@@ -28,6 +28,11 @@ const publicSurface = [homeSrc, siteContent, sitemapSrc, footerSrc, houseAds].jo
 ok("removed /gear and /made-in-america from public links", !catalogPath.test(publicSurface));
 ok("removed catalog routes from the React router", !/path=["']\/(?:gear|made-in-america)["']/.test(appSrc) && !/pages\/(?:gear|made-in-america)/.test(appSrc));
 ok("removed catalog URLs from the XML sitemap generator", !catalogPath.test(sitemapGen));
+const publicSitemap = fs.readFileSync(path.join(root, "public/sitemap.xml"), "utf8");
+ok(
+  "removed catalog URLs from the published sitemap.xml",
+  !/beckify\.com\/(?:gear|made-in-america)(?:\/|<|\?|#|$)/.test(publicSitemap),
+);
 ok("removed catalog paths from static route shells", !/\["(?:gear|made-in-america)"/.test(staticRoutes));
 ok("catalog page modules are gone", !fs.existsSync(path.join(root, "src/pages/gear.tsx")) && !fs.existsSync(path.join(root, "src/pages/made-in-america.tsx")));
 ok("lookbook data and GearCard are gone", !fs.existsSync(path.join(root, "src/data/gear-recommendations.ts")) && !fs.existsSync(path.join(root, "src/components/gear/GearCard.tsx")));
