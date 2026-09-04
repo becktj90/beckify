@@ -16,6 +16,11 @@ export async function downloadElementAsPng(
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   }
 
+  // Cloning drops inherited CSS custom properties (e.g. stroke="var(--color-magnitude)").
+  // Copy variables onto the clone root, then bake computed fill/stroke onto painted nodes.
+  copyCssVariablesOnto(clone, svg);
+  bakePresentationAttributes(svg, clone);
+
   const bbox = svg.getBoundingClientRect();
   const width = Math.max(1, Math.round(bbox.width) || Number(svg.getAttribute("width")) || 720);
   const height = Math.max(1, Math.round(bbox.height) || Number(svg.getAttribute("height")) || 360);
@@ -44,6 +49,47 @@ export async function downloadElementAsPng(
     triggerDownload(png, fileName.endsWith(".png") ? fileName : `${fileName}.png`);
   } finally {
     URL.revokeObjectURL(url);
+  }
+}
+
+/** Walk the live tree and copy `--*` custom properties onto the clone root. */
+function copyCssVariablesOnto(clone: SVGSVGElement, liveSvg: SVGElement) {
+  const seen = new Set<string>();
+  let node: Element | null = liveSvg;
+  while (node) {
+    const cs = getComputedStyle(node);
+    for (let i = 0; i < cs.length; i++) {
+      const name = cs.item(i);
+      if (!name.startsWith("--") || seen.has(name)) continue;
+      seen.add(name);
+      const value = cs.getPropertyValue(name).trim();
+      if (value) clone.style.setProperty(name, value);
+    }
+    node = node.parentElement;
+  }
+}
+
+/** Replace var()-based presentation with computed absolute colors on the clone. */
+function bakePresentationAttributes(liveRoot: SVGElement, cloneRoot: SVGSVGElement) {
+  const liveNodes = [liveRoot, ...Array.from(liveRoot.querySelectorAll<SVGElement>("*"))];
+  const cloneNodes = [cloneRoot, ...Array.from(cloneRoot.querySelectorAll<SVGElement>("*"))];
+  const count = Math.min(liveNodes.length, cloneNodes.length);
+  for (let i = 0; i < count; i++) {
+    const live = liveNodes[i];
+    const cloned = cloneNodes[i];
+    const cs = getComputedStyle(live);
+    const fill = cs.fill;
+    const stroke = cs.stroke;
+    if (fill && fill !== "none" && fill !== "rgba(0, 0, 0, 0)") {
+      cloned.setAttribute("fill", fill);
+    }
+    if (stroke && stroke !== "none" && stroke !== "rgba(0, 0, 0, 0)") {
+      cloned.setAttribute("stroke", stroke);
+    }
+    const strokeWidth = cs.strokeWidth;
+    if (strokeWidth) cloned.setAttribute("stroke-width", strokeWidth);
+    const opacity = cs.opacity;
+    if (opacity && opacity !== "1") cloned.setAttribute("opacity", opacity);
   }
 }
 

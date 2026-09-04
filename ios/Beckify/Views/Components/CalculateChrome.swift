@@ -219,8 +219,13 @@ struct DiagramCard<Content: View>: View {
         let fileName = "\(sanitize(exportName)).png"
         if let data = image.pngData() {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-            try? data.write(to: url, options: .atomic)
-            sharePayload = SharePayload(items: [url, accessibilitySummary])
+            do {
+                try data.write(to: url, options: .atomic)
+                sharePayload = SharePayload(items: [url, accessibilitySummary])
+            } catch {
+                // Temp write failed — share the in-memory UIImage instead of a missing file URL.
+                sharePayload = SharePayload(items: [image, accessibilitySummary])
+            }
         } else {
             sharePayload = SharePayload(items: [image, accessibilitySummary])
         }

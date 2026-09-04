@@ -21,8 +21,13 @@ public enum PlotSampling {
         throughMultiplesOfTau: Double = 5,
         samples: Int = 81
     ) -> [PlotPoint] {
-        guard tau.isFinite, tau > 0, finalValue.isFinite, samples >= 2 else { return [] }
-        let span = tau * max(throughMultiplesOfTau, 1)
+        guard tau.isFinite, tau > 0,
+              finalValue.isFinite,
+              throughMultiplesOfTau.isFinite, throughMultiplesOfTau > 0,
+              samples >= 2
+        else { return [] }
+        let span = tau * throughMultiplesOfTau
+        guard span.isFinite, span > 0 else { return [] }
         return (0..<samples).map { i in
             let t = span * Double(i) / Double(samples - 1)
             let y = finalValue * (1 - exp(-t / tau))
@@ -37,8 +42,13 @@ public enum PlotSampling {
         throughMultiplesOfTau: Double = 5,
         samples: Int = 81
     ) -> [PlotPoint] {
-        guard tau.isFinite, tau > 0, initialValue.isFinite, samples >= 2 else { return [] }
-        let span = tau * max(throughMultiplesOfTau, 1)
+        guard tau.isFinite, tau > 0,
+              initialValue.isFinite,
+              throughMultiplesOfTau.isFinite, throughMultiplesOfTau > 0,
+              samples >= 2
+        else { return [] }
+        let span = tau * throughMultiplesOfTau
+        guard span.isFinite, span > 0 else { return [] }
         return (0..<samples).map { i in
             let t = span * Double(i) / Double(samples - 1)
             let y = initialValue * exp(-t / tau)
@@ -53,11 +63,15 @@ public enum PlotSampling {
         amplitude: Double = 1,
         samples: Int = 161
     ) -> [PlotPoint] {
-        guard frequencyHz.isFinite, frequencyHz > 0, cycles > 0, amplitude.isFinite, samples >= 2 else {
+        guard frequencyHz.isFinite, frequencyHz > 0,
+              cycles.isFinite, cycles > 0,
+              amplitude.isFinite, samples >= 2
+        else {
             return []
         }
         let period = 1 / frequencyHz
         let span = period * cycles
+        guard span.isFinite, span > 0 else { return [] }
         return (0..<samples).map { i in
             let t = span * Double(i) / Double(samples - 1)
             return PlotPoint(x: t, y: amplitude * sin(2 * .pi * frequencyHz * t))
@@ -129,7 +143,7 @@ public enum PlotSampling {
     ) -> (xl: [PlotPoint], xc: [PlotPoint]) {
         guard inductance.isFinite, inductance > 0,
               capacitance.isFinite, capacitance > 0,
-              fMin > 0, fMax > fMin, samples >= 2
+              fMin.isFinite, fMax.isFinite, fMin > 0, fMax > fMin, samples >= 2
         else { return ([], []) }
 
         let logMin = log10(fMin)

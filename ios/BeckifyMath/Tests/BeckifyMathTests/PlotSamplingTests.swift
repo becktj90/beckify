@@ -54,7 +54,21 @@ final class PlotSamplingTests: XCTestCase {
 
     func testInvalidInputsYieldEmpty() {
         XCTAssertTrue(PlotSampling.rcCharge(tau: 0).isEmpty)
+        XCTAssertTrue(PlotSampling.rcCharge(tau: 1, throughMultiplesOfTau: .nan).isEmpty)
+        XCTAssertTrue(PlotSampling.rcCharge(tau: 1, throughMultiplesOfTau: .infinity).isEmpty)
+        XCTAssertTrue(PlotSampling.rcDischarge(tau: 1, throughMultiplesOfTau: .nan).isEmpty)
         XCTAssertTrue(PlotSampling.sineWave(frequencyHz: -1).isEmpty)
+        XCTAssertTrue(PlotSampling.sineWave(frequencyHz: 60, cycles: .infinity).isEmpty)
+        XCTAssertTrue(PlotSampling.sineWave(frequencyHz: 60, cycles: .nan).isEmpty)
         XCTAssertTrue(PlotSampling.ohmsLoadLine(voltage: .nan, current: 1).isEmpty)
+        XCTAssertTrue(PlotSampling.seriesImpedanceMagnitude(
+            resistance: 10, inductance: 0.1, capacitance: 1e-6,
+            fMin: 1, fMax: .infinity
+        ).isEmpty)
+        let reactance = PlotSampling.reactanceVsFrequency(
+            inductance: 0.1, capacitance: 1e-6, fMin: .nan, fMax: 1e3
+        )
+        XCTAssertTrue(reactance.xl.isEmpty)
+        XCTAssertTrue(reactance.xc.isEmpty)
     }
 }
