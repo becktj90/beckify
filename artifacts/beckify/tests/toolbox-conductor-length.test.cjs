@@ -104,9 +104,13 @@ const assert = (name, condition) => {
   if (!condition) failures++;
   console.log((condition ? '  PASS  ' : '  FAIL  ') + name);
 };
-assert('HTML option: short to parallel', html.includes('value="loop2">Short to parallel'));
-assert('HTML option: end-to-end', html.includes('value="single">End-to-end'));
-assert('HTML option: 3-phase far-end short', html.includes('value="loop3">3-phase far-end short'));
+const optionLabel = (value) => {
+  const match = html.match(new RegExp('<option value="' + value + '">([^<]+)</option>'));
+  return match ? match[1] : '';
+};
+assert('HTML option: short to parallel', /^Short to parallel\b/.test(optionLabel('loop2')));
+assert('HTML option: end-to-end', /^End-to-end\b/.test(optionLabel('single')));
+assert('HTML option: 3-phase far-end short', /^3-phase far-end short\b/.test(optionLabel('loop3')));
 assert('iOS catalog subtitle mentions milliohm and short-to-parallel',
   catalog.includes('milliohm (mΩ)') && catalog.includes('short-to-parallel'));
 assert('iOS catalog synonyms include shorted parallel and kelvin',
