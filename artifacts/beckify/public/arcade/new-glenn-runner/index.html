@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-ng-engine="phaser4">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Glenn Runner</title>
   <meta name="robots" content="noindex">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --violet: #b7abff;
+      --cyan: #8ce0ff;
+      --amber: #ffcf5d;
+      --go: #7dffb0;
+      --fail: #ff8a6a;
       --fg: #eef0fa;
       --fg-muted: #9aa3c7;
       --font-main: "Exo 2", "Sora", system-ui, sans-serif;
@@ -25,7 +30,7 @@
     }
     body { padding: 10px 10px 16px; }
     .cabinet {
-      max-width: 460px;
+      max-width: 1100px;
       margin: 0 auto;
     }
     #arcade-fs-wrapper {
@@ -35,14 +40,80 @@
       border: 1px solid rgba(183, 171, 255, 0.45);
       background: #05050d;
       box-shadow: 0 18px 50px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+      aspect-ratio: 16 / 9;
+      min-height: 220px;
     }
-    #arcadeCanvas {
-      display: block;
+    #ng-phaser-root {
+      position: absolute;
+      inset: 0;
       width: 100%;
-      height: auto;
-      max-width: 100%;
-      cursor: pointer;
-      background: #05050d;
+      height: 100%;
+    }
+    #ng-phaser-root canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .mc-hud {
+      position: absolute;
+      inset: 10px 10px auto 10px;
+      z-index: 8;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .mc-panel {
+      background: rgba(6, 10, 22, 0.78);
+      border: 1px solid rgba(140, 224, 255, 0.45);
+      border-radius: 0.7rem;
+      padding: 6px 10px 8px;
+      min-width: 0;
+    }
+    .mc-panel table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.72rem;
+      color: var(--cyan);
+    }
+    .mc-panel th {
+      text-align: left;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--amber);
+      padding: 1px 8px 1px 0;
+      width: 4.4rem;
+    }
+    .mc-panel td { text-align: right; }
+    .mc-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+    }
+    #ng-banner {
+      max-width: min(520px, 70vw);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font: 800 0.82rem/1.2 var(--font-main);
+      letter-spacing: 0.04em;
+      text-align: center;
+      color: #041014;
+      background: var(--amber);
+    }
+    #ng-banner[data-kind="go"] { background: var(--go); }
+    #ng-banner[data-kind="fail"] { background: var(--fail); color: #1a0604; }
+    #ng-banner[data-kind="warn"] { background: var(--amber); }
+    #t-radio {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--fg);
+      text-align: center;
+      text-shadow: 0 1px 2px #000;
+      max-width: 28rem;
     }
     .hud-btns {
       position: absolute;
@@ -68,7 +139,7 @@
       display: flex;
       gap: 8px;
       margin: 10px auto 0;
-      max-width: 420px;
+      max-width: 720px;
       user-select: none;
     }
     #arcade-touch-btns button {
@@ -83,12 +154,7 @@
       touch-action: none;
     }
     #atb-boost { flex: 2; border-width: 2px; }
-    .help {
-      margin: 10px 2px 0;
-      color: var(--fg-muted);
-      font-size: 0.78rem;
-      line-height: 1.45;
-    }
+    .help { margin: 10px 2px 0; color: var(--fg-muted); font-size: 0.78rem; line-height: 1.45; }
     .record {
       margin-top: 14px;
       padding: 12px 14px;
@@ -98,6 +164,21 @@
     }
     .record-title { font-size: 0.7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); font-family: var(--font-mono); }
     #arcade-hi-score { margin-top: 6px; font-size: 1.25rem; color: var(--violet); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .diff-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .diff-row button {
+      min-height: 40px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(183,171,255,.45);
+      background: transparent;
+      color: var(--fg);
+      cursor: pointer;
+      font: 700 0.78rem/1 var(--font-mono);
+    }
+    .diff-row button.is-active {
+      border-color: var(--go);
+      color: var(--go);
+    }
     .btn {
       margin-top: 8px;
       min-height: 40px;
@@ -108,9 +189,32 @@
       color: var(--fg);
       cursor: pointer;
     }
+    #ng-settings {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 12;
+      width: min(360px, 92%);
+      padding: 16px 18px;
+      border-radius: 1rem;
+      border: 1px solid var(--go);
+      background: rgba(4, 8, 16, 0.94);
+      color: var(--fg);
+    }
+    #ng-settings h2 { margin: 0 0 10px; font-size: 1.1rem; }
+    #ng-settings label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 8px 0;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
     .hud-btns button:focus-visible,
     #arcade-touch-btns button:focus-visible,
-    .btn:focus-visible {
+    .btn:focus-visible,
+    .diff-row button:focus-visible {
       outline: 2px solid var(--violet);
       outline-offset: 3px;
     }
@@ -125,6 +229,12 @@
       border: 0 !important;
       white-space: nowrap !important;
     }
+    @media (max-width: 700px) {
+      .mc-hud { grid-template-columns: 1fr 1fr; }
+      .mc-center { grid-column: 1 / -1; }
+      .mc-panel table { font-size: 0.62rem; }
+      .cabinet { max-width: 100%; }
+    }
     @media (prefers-reduced-motion: reduce) {
       html, body { scroll-behavior: auto; }
     }
@@ -133,49 +243,86 @@
       position: fixed !important;
       inset: 0;
       z-index: 10000;
+      aspect-ratio: auto;
       display: flex !important;
       align-items: center;
       justify-content: center;
-      width: auto !important;
       padding: 12px;
       background: #05050d;
       border-radius: 0;
     }
-    #arcade-fs-wrapper.arcade-immersive #arcadeCanvas {
-      max-width: 100%;
-      max-height: calc(100dvh - 24px);
-      margin: auto;
-    }
+    body.is-embedded { padding: 0; background: #05050d; }
+    body.is-embedded .help,
+    body.is-embedded .record { display: none; }
+    body.is-embedded .cabinet { max-width: none; }
+    body.is-embedded #arcade-fs-wrapper { border-radius: 0; border: 0; }
   </style>
 </head>
 <body data-arcade-standalone="true">
   <main id="sec-arcade" class="cabinet">
     <div id="arcade-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
     <div id="arcade-fs-wrapper">
-      <canvas id="arcadeCanvas" width="420" height="640" tabindex="0" aria-label="New Glenn Runner flight canvas. Hold boost to climb, steer around hazards."></canvas>
-      <div class="hud-btns">
-        <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" aria-label="Toggle mute">🔊</button>
-        <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" aria-label="Pause mission">⏸</button>
-        <button onclick="arcadeToggleSettings()" title="Mission settings" aria-label="Mission settings">⚙</button>
-        <button id="arcade-fullscreen-btn" onclick="arcadeFullscreen()" title="Play fullscreen" aria-label="Play fullscreen">⛶</button>
+      <div id="ng-phaser-root" role="application" aria-label="New Glenn Runner flight. Hold boost to climb, steer around hazards, then land on Jacklyn."></div>
+      <div class="mc-hud" aria-hidden="false">
+        <div class="mc-panel">
+          <table>
+            <caption class="visually-hidden">Mission telemetry</caption>
+            <tr><th scope="row">ALT</th><td id="t-alt">0.0 km</td></tr>
+            <tr><th scope="row">VEL</th><td id="t-vel">0 m/s</td></tr>
+            <tr><th scope="row">BURN</th><td id="t-thr">THR 0%</td></tr>
+          </table>
+        </div>
+        <div class="mc-center">
+          <div id="ng-banner" hidden data-kind="info"></div>
+          <div id="t-radio">LC-36 standing by.</div>
+        </div>
+        <div class="mc-panel">
+          <table>
+            <caption class="visually-hidden">Score and stage</caption>
+            <tr><th scope="row">STAGE</th><td id="t-stage">MENU</td></tr>
+            <tr><th scope="row">SCORE</th><td id="t-score">0</td></tr>
+            <tr><th scope="row">BEST</th><td id="t-best">0</td></tr>
+            <tr><th scope="row">COMBO</th><td id="t-combo">×0</td></tr>
+          </table>
+        </div>
       </div>
+      <div class="hud-btns">
+        <button id="arcade-mute-btn" type="button" title="Toggle mute" aria-label="Toggle mute" aria-pressed="false">🔊</button>
+        <button id="arcade-pause-btn" type="button" title="Pause mission" aria-label="Pause mission" aria-pressed="false">⏸</button>
+        <button id="arcade-settings-btn" type="button" title="Mission settings" aria-label="Mission settings">⚙</button>
+        <button id="arcade-fullscreen-btn" type="button" title="Play fullscreen" aria-label="Play fullscreen">⛶</button>
+      </div>
+      <form id="ng-settings" hidden aria-label="Mission settings">
+        <h2>Settings</h2>
+        <label>Sound <input type="checkbox" data-set="sound" checked></label>
+        <label>Music <input type="checkbox" data-set="music" checked></label>
+        <label>Reduced motion <input type="checkbox" data-set="reducedMotion"></label>
+        <label>Reduced flashes <input type="checkbox" data-set="reducedFlashes"></label>
+        <label>Haptics <input type="checkbox" data-set="haptics" checked></label>
+      </form>
     </div>
     <div id="arcade-touch-btns">
-      <button id="atb-left" aria-label="Steer left">◀</button>
-      <button id="atb-boost" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
-      <button id="atb-right" aria-label="Steer right">▶</button>
+      <button id="atb-left" type="button" aria-label="Steer left">◀</button>
+      <button id="atb-boost" type="button" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
+      <button id="atb-right" type="button" aria-label="Steer right">▶</button>
     </div>
-    <p class="help">Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB and tap ◀ ▶. Brief boost gaps are forgiven; early taps still fire landing burns. Catch aero shield, LOX top-off, and BE-4 kick. Difficulty stays KID / CADET / PAD RAT.</p>
+    <p class="help">Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, land the first stage on barge Jacklyn. Soft deck = BOOSTER RECOVERED; splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
       <div id="arcade-hi-score">NO MISSIONS FLOWN</div>
-      <button class="btn" onclick="arcadeReset()">Reset mission record</button>
+      <div class="diff-row" role="group" aria-label="Difficulty">
+        <button type="button" data-diff="KID">KID</button>
+        <button type="button" data-diff="CADET">CADET</button>
+        <button type="button" data-diff="PAD_RAT">PAD RAT</button>
+      </div>
+      <button class="btn" id="arcade-reset-btn" type="button">Reset mission record</button>
     </div>
   </main>
   <script src="/toolbox/js/local-store.js"></script>
   <script>
     window.recordGameScore = window.recordGameScore || function () { return Promise.resolve(null); };
   </script>
-  <script src="/toolbox/js/arcade.js"></script>
+  <script src="./vendor/phaser.min.js"></script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ export function NewGlennRunner() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
           <h1 id="new-glenn-title" className="font-display text-3xl font-bold tracking-tight">New Glenn Runner</h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            A compressed LC-36 flight: charge liftoff, steer with TVC, dodge the corridor, and grab aero shield, LOX, or a BE-4 kick. Keyboard and touch. Difficulty stays on the start screen — KID, CADET, or PAD RAT.
+            Phaser 4 flight from LC-36: charge liftoff on the Integrated Launch Tower, steer the corridor, then recover first stage on barge Jacklyn. Keyboard and touch. Difficulty stays on the cabinet — KID, CADET, or PAD RAT.
           </p>
         </div>
         <button
@@ -30,12 +30,12 @@ export function NewGlennRunner() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 min-h-[min(640px,80dvh)] max-w-[520px] rounded-2xl border border-[#b7abff]/40"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-video min-h-[min(360px,56dvh)] max-w-[1100px] rounded-2xl border border-[#b7abff]/40"}`}
       >
         <iframe
           src={RUNNER_SRC}
           title="New Glenn Runner"
-          className="block h-full min-h-[min(640px,80dvh)] w-full border-0 bg-black"
+          className="block h-full min-h-[min(360px,56dvh)] w-full border-0 bg-black"
           allow="fullscreen; gamepad; autoplay"
         />
         {immersive ? (
@@ -50,12 +50,12 @@ export function NewGlennRunner() {
         ) : null}
       </div>
 
-      <div className="mx-auto max-w-[520px] text-sm leading-6 text-[var(--muted)]">
+      <div className="mx-auto max-w-[1100px] text-sm leading-6 text-[var(--muted)]">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">How to fly</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes.</li>
-          <li>Touch: hold CLIMB, tap ◀ ▶, or drag on the canvas. Same-origin iframe — it plays embedded on beckify.com.</li>
-          <li>Pickups: aero shield (one hit), LOX top-off (thrust grace), BE-4 kick (extra climb). Personal best stays in this browser.</li>
+          <li>Keyboard: A/D or arrows steer, Space holds boost (brake on Jacklyn), P or Escape pauses, M mutes.</li>
+          <li>Touch: hold CLIMB / BRAKE, tap ◀ ▶, or drag on the canvas. Same-origin iframe — it plays embedded on beckify.com.</li>
+          <li>Pickups: aero shield (one hit), LOX top-off, BE-4 kick. Soft Jacklyn deck = BOOSTER RECOVERED bonus. Splash costs score, not the whole run. Personal best stays in this browser.</li>
         </ul>
       </div>
     </section>

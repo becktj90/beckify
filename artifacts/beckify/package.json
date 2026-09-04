@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "prebuild": "node scripts/generate-sitemap.mjs",
+    "prebuild": "node scripts/generate-sitemap.mjs && node scripts/sync-phaser.mjs",
     "build": "BASE_PATH=\"${BASE_PATH:-/}\" vite build --config vite.config.ts",
     "postbuild": "node scripts/generate-sitemap.mjs --dist && node scripts/generate-static-routes.mjs",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
@@ -85,6 +85,7 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "phaser": "4.2.1",
     "tesseract.js": "^7.0.0"
   }
 }
