@@ -224,6 +224,12 @@ const unlabeledHalves = schema.mergePanelDrafts(
 );
 assert.equal(unlabeledHalves.slotCount, 42);
 
+const disjointFullReads = schema.mergePanelDrafts(
+  { slotCount: 42, circuits: leftHalf },
+  { slotCount: 42, circuits: rightHalf },
+);
+assert.equal(disjointFullReads.slotCount, 42);
+
 const panelPhaseUnknown = schema.normalizePanelDraft({
   panel: { phases: 2, busAmps: 225 },
 });

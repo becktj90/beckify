@@ -170,7 +170,9 @@ seeded[0] = { circuit: '1', description: 'AHU', trip: '30A', poles: '2' };
 const seededMetrics = panel.computeDirectoryMetrics(seeded, { phase: 3, mainAmps: 200, slotCount: 42 });
 assert.equal(seededMetrics.spareTotal, 42);
 assert.notEqual(seededMetrics.spareTotal, 43);
-assert.equal(seededMetrics.spareCount, 41);
+assert.equal(seededMetrics.spareCount, 40);
+const seeded1ph = panel.computeDirectoryMetrics(seeded, { phase: 1, mainAmps: 200, slotCount: 42 });
+assert.equal(seeded1ph.spareCount, 40);
 
 assert.equal(panel.MAX_SHOTS_PER_VIEW, 3);
 assert.equal(panel.MAX_SHOTS_TOTAL, 5);

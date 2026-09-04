@@ -1372,9 +1372,25 @@ function rowSlotCount(row) {
   return Math.max(1, Number(row && row.poles) || 1);
 }
 
-function spareStats(rows, slotCount) {
+function multiPoleContinuationCircuits(rows, phase) {
+  const reserved = Object.create(null);
+  const stride = Number(phase) === 1 ? 1 : 2;
+  (rows || []).forEach(row => {
+    const poles = Math.max(1, Number(row && row.poles) || 1);
+    if (poles < 2 || isSpareOrOpen(row)) return;
+    const start = firstCircuitNumber(row && row.circuit);
+    if (!Number.isFinite(start) || start < 1 || start === Number.MAX_SAFE_INTEGER) return;
+    for (let i = 1; i < poles; i += 1) {
+      reserved[start + i * stride] = true;
+    }
+  });
+  return reserved;
+}
+
+function spareStats(rows, slotCount, phase) {
   const list = Array.isArray(rows) ? rows : [];
   const seeded = Number(slotCount) > 0 && list.length >= Number(slotCount);
+  const reserved = seeded ? multiPoleContinuationCircuits(list, phase) : Object.create(null);
   let spare = 0;
   let fromRows = 0;
   list.forEach(row => {
@@ -1382,6 +1398,8 @@ function spareStats(rows, slotCount) {
        poles on top of those rows double-counts a 2-pole breaker. */
     const slots = seeded ? 1 : rowSlotCount(row);
     fromRows += slots;
+    const circuit = firstCircuitNumber(row && row.circuit);
+    if (seeded && Number.isFinite(circuit) && reserved[circuit]) return;
     if (isSpareOrOpen(row)) spare += slots;
   });
   const total = slotCount > 0 ? slotCount : fromRows;
@@ -1443,7 +1461,7 @@ function computeDirectoryMetrics(rows, opts) {
   const fromRows = list.reduce((n, row) => n + rowSlotCount(row), 0);
   const slotCount = Number(opts.slotCount) || fromRows;
   const connected = connectedBreakerSum(list);
-  const spare = spareStats(list, slotCount);
+  const spare = spareStats(list, slotCount, phase);
   const unlabeled = list.filter(isUnlabeled);
   const vague = list.filter(isVague);
   const doubled = list.filter(looksDoubledUp);

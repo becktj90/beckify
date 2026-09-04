@@ -503,9 +503,13 @@
     });
     var unionSize = Object.keys(unionMap).length;
     var combined;
+    var bothPartial = a > 0 && b > 0 && a < 30 && b < 30;
     if (ca.length && cb.length) {
       var smaller = Math.min(ca.length, cb.length);
-      if (smaller && (overlap / smaller) < 0.35) {
+      /* Sum only when both reads look like panel halves. Two full-panel
+         OCR passes can cover disjoint circuit numbers and still each
+         report 42 — those must stay 42, not 84. */
+      if (bothPartial && smaller && (overlap / smaller) < 0.35) {
         combined = Math.max(a + b, unionSize, maxCovered);
         return snapPanelSlots(combined) || combined;
       }
