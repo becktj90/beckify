@@ -2,10 +2,18 @@ import type { PidGains, StateSpaceSystem, TransferFunction } from "@/utils/contr
 
 export type PlantCategory = "Building blocks" | "Machines" | "Hard to control" | "Multi-state";
 
+/** Rough lab difficulty — mirrors MathWorks “start simple, then raise order.” */
+export type PlantDifficulty = "intro" | "intermediate" | "advanced";
+
 export interface Plant {
   id: string;
   name: string;
   category: PlantCategory;
+  difficulty: PlantDifficulty;
+  /** Highlighted in the example gallery as a good first pick. */
+  featured?: boolean;
+  /** Search keywords beyond name/summary. */
+  tags: string[];
   /** One line on what the plant physically is. */
   summary: string;
   /** Rendered form of G(s), e.g. "4 / (s² + 1.2s + 4)". */
@@ -24,11 +32,20 @@ export interface Plant {
   stateSpace?: StateSpaceSystem;
 }
 
+export const DIFFICULTY_LABEL: Record<PlantDifficulty, string> = {
+  intro: "Intro",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
 export const PLANTS: Plant[] = [
   {
     id: "first-order",
     name: "First-order lag",
     category: "Building blocks",
+    difficulty: "intro",
+    featured: true,
+    tags: ["rc", "thermal", "tank", "process", "type 0"],
     summary: "An RC filter, a tank level, a room warming up — one storage element, no oscillation.",
     display: "1 / (2s + 1)",
     transferFunction: { numerator: [1], denominator: [2, 1] },
@@ -40,6 +57,9 @@ export const PLANTS: Plant[] = [
     id: "second-order",
     name: "Second-order, lightly damped",
     category: "Building blocks",
+    difficulty: "intro",
+    featured: true,
+    tags: ["oscillation", "damping", "zeta", "textbook"],
     summary: "ζ = 0.3, ωₙ = 2 rad/s. The textbook ringing response.",
     display: "4 / (s² + 1.2s + 4)",
     transferFunction: { numerator: [4], denominator: [1, 1.2, 4] },
@@ -51,6 +71,9 @@ export const PLANTS: Plant[] = [
     id: "integrator",
     name: "Integrator",
     category: "Building blocks",
+    difficulty: "intro",
+    featured: true,
+    tags: ["type 1", "position", "velocity"],
     summary: "Velocity in, position out. The output never settles on its own.",
     display: "1 / s",
     transferFunction: { numerator: [1], denominator: [1, 0] },
@@ -62,6 +85,8 @@ export const PLANTS: Plant[] = [
     id: "double-integrator",
     name: "Double integrator",
     category: "Building blocks",
+    difficulty: "intermediate",
+    tags: ["type 2", "mass", "space", "rigid body"],
     summary: "A rigid mass in free space — force in, position out, nothing to damp it.",
     display: "1 / s²",
     transferFunction: { numerator: [1], denominator: [1, 0, 0] },
@@ -73,6 +98,9 @@ export const PLANTS: Plant[] = [
     id: "dc-motor-speed",
     name: "DC motor speed",
     category: "Machines",
+    difficulty: "intermediate",
+    featured: true,
+    tags: ["motor", "armature", "servo", "speed", "robotics"],
     summary: "Armature dynamics with inertia, damping, and back-EMF. Fast electrical pole, slow mechanical one.",
     display: "0.6 / (0.002s² + 0.08s + 0.52)",
     transferFunction: { numerator: [0.6], denominator: [0.002, 0.08, 0.52] },
@@ -84,6 +112,9 @@ export const PLANTS: Plant[] = [
     id: "motor-position",
     name: "Motor position",
     category: "Machines",
+    difficulty: "intermediate",
+    featured: true,
+    tags: ["servo", "position", "type 1", "robotics"],
     summary: "The same motor driving a position axis — a lag in series with an integrator.",
     display: "1 / (0.5s² + s)",
     transferFunction: { numerator: [1], denominator: [0.5, 1, 0] },
@@ -95,6 +126,8 @@ export const PLANTS: Plant[] = [
     id: "mass-spring-damper",
     name: "Mass-spring-damper",
     category: "Machines",
+    difficulty: "intermediate",
+    tags: ["suspension", "compliant", "mechanical"],
     summary: "A compliant mechanism or suspension: m = 1, c = 1.4, k = 12.",
     display: "1 / (s² + 1.4s + 12)",
     transferFunction: { numerator: [1], denominator: [1, 1.4, 12] },
@@ -106,6 +139,8 @@ export const PLANTS: Plant[] = [
     id: "thermal",
     name: "Thermal process",
     category: "Machines",
+    difficulty: "intro",
+    tags: ["oven", "heat", "process", "slow"],
     summary: "Two cascaded thermal masses, heavily overdamped — an oven or heat exchanger.",
     display: "1 / (20s² + 12s + 1)",
     transferFunction: { numerator: [1], denominator: [20, 12, 1] },
@@ -117,6 +152,8 @@ export const PLANTS: Plant[] = [
     id: "dead-time",
     name: "Process with dead time",
     category: "Hard to control",
+    difficulty: "advanced",
+    tags: ["delay", "pade", "transport", "process"],
     summary: "A slow first-order lag (τ = 4 s) plus 2 s of transport delay, via a first-order Padé.",
     display: "(−s + 1) / (4s² + 5s + 1)",
     transferFunction: { numerator: [-1, 1], denominator: [4, 5, 1] },
@@ -128,6 +165,8 @@ export const PLANTS: Plant[] = [
     id: "non-minimum-phase",
     name: "Non-minimum phase",
     category: "Hard to control",
+    difficulty: "advanced",
+    tags: ["rhp zero", "undershoot", "boiler"],
     summary: "A right-half-plane zero — boiler drum level, or a bicycle steering into a turn.",
     display: "(−s + 2) / (s² + 3s + 2)",
     transferFunction: { numerator: [-1, 2], denominator: [1, 3, 2] },
@@ -139,6 +178,9 @@ export const PLANTS: Plant[] = [
     id: "unstable-first-order",
     name: "Unstable first-order",
     category: "Hard to control",
+    difficulty: "intermediate",
+    featured: true,
+    tags: ["unstable", "rhp pole", "runaway"],
     summary: "A pole in the right half plane — it runs away unless feedback holds it.",
     display: "1 / (s − 1)",
     transferFunction: { numerator: [1], denominator: [1, -1] },
@@ -150,6 +192,8 @@ export const PLANTS: Plant[] = [
     id: "aircraft-pitch",
     name: "Aircraft pitch",
     category: "Multi-state",
+    difficulty: "advanced",
+    tags: ["flight", "aerospace", "pitch", "elevator"],
     summary: "Short-period pitch dynamics: elevator deflection to pitch angle.",
     display: "(1.2s + 0.8) / (s³ + 1.4s² + 3.2s + 0.9)",
     transferFunction: { numerator: [1.2, 0.8], denominator: [1, 1.4, 3.2, 0.9] },
@@ -168,6 +212,8 @@ export const PLANTS: Plant[] = [
     id: "inverted-pendulum",
     name: "Inverted pendulum on a cart",
     category: "Multi-state",
+    difficulty: "advanced",
+    tags: ["lqr", "mpc", "unstable", "benchmark", "robotics"],
     summary: "The standard unstable benchmark for state feedback, LQR, and predictive control.",
     display: "1 / (s⁴ − 1.15s³ − 6.2s² − 2.1s + 0.8)",
     transferFunction: { numerator: [1], denominator: [1, -1.15, -6.2, -2.1, 0.8] },
