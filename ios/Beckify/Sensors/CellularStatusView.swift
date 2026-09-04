@@ -160,12 +160,28 @@ final class CellularPathModel: ObservableObject {
     }
 
     func clearHistory() {
+        cancelRTT()
         rttHistory = []
         rttSummary = nil
         rttSamples = []
         rttProgress = 0
         rttLocalEndpoint = nil
         rttRemoteEndpoint = nil
+        rttHost = ""
+        rttMessage = "Samples cleared. TCP RTT is not RSRP."
+    }
+
+    /// Drop a completed (or in-flight) result when the operator changes host.
+    /// Keeps history; the numbers on screen must match the current target.
+    func invalidateDisplayedRTT(message: String) {
+        cancelRTT()
+        rttSummary = nil
+        rttSamples = []
+        rttProgress = 0
+        rttLocalEndpoint = nil
+        rttRemoteEndpoint = nil
+        rttHost = ""
+        rttMessage = message
     }
 
     func resolvedRTTEndpoint(target: CellularRTTTarget, custom: String) -> (host: String, port: Int)? {
@@ -214,15 +230,20 @@ final class CellularPathModel: ObservableObject {
         rttGoal = 8
         let generation = rttGeneration
         rttMessage = needsLocal
-            ? "Measuring TCP RTT to \(endpoint.host):\(endpoint.port) on the cellular path. A LAN target may prompt for Local Network. Not RSRP."
-            : "Measuring TCP RTT to \(endpoint.host):\(endpoint.port) on the cellular path. This is latency, not signal strength."
+            ? "Measuring TCP RTT to \(endpoint.host):\(endpoint.port) bound to the cellular interface. A LAN target may prompt for Local Network. Not RSRP."
+            : "Measuring TCP RTT to \(endpoint.host):\(endpoint.port) bound to the cellular interface. This is latency, not signal strength."
         let host = endpoint.host
         let port = endpoint.port
         rttTask = Task { [weak self] in
             var samples: [Double?] = []
             for i in 0..<8 {
                 guard !Task.isCancelled else { return }
-                let probe = await WiFiRTTClient.probeDetail(host: host, port: UInt16(clamping: port), timeout: 3)
+                let probe = await WiFiRTTClient.probeDetail(
+                    host: host,
+                    port: UInt16(clamping: port),
+                    timeout: 3,
+                    requiredInterface: .cellular
+                )
                 samples.append(probe.rttMS)
                 let summary = WiFiLinkQuality.summarize(samplesMS: samples)
                 await MainActor.run {
@@ -339,8 +360,10 @@ final class CellularPathModel: ObservableObject {
         }
     }
 
+    /// Only the service CoreTelephony names as `dataServiceIdentifier`.
+    /// Do not fall back to an arbitrary dictionary-first SIM on dual-SIM.
     var dataService: CellularServiceSnapshot? {
-        services.first(where: \.isDataService) ?? services.first
+        services.first(where: \.isDataService)
     }
 
     private static func statusLabel(_ status: Network.NWPath.Status) -> String {
@@ -499,6 +522,13 @@ struct CellularStatusView: View {
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+        .onChange(of: rttTarget) { _, _ in
+            model.invalidateDisplayedRTT(message: "Target changed. Prior RTT was for a different host — Start again. Not RSRP.")
+        }
+        .onChange(of: customRTTHost) { _, _ in
+            guard rttTarget == .custom else { return }
+            model.invalidateDisplayedRTT(message: "Custom host changed. Prior RTT was for a different host — Start again. Not RSRP.")
+        }
     }
 
     private var honestyBanner: some View {
@@ -526,16 +556,40 @@ struct CellularStatusView: View {
                 .font(.system(size: 56, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(Theme.foreground)
                 .minimumScaleFactor(0.6)
-                .accessibilityLabel(rat.map { "Data radio \($0.compact)" } ?? "No data radio reported")
-            Text(rat?.label ?? "no RAT")
+                .accessibilityLabel(heroAccessibility)
+            Text(rat?.label ?? heroSubtitle)
                 .font(.title3.weight(.medium))
                 .foregroundStyle(Theme.foreground)
-            Text(model.defaultUsesCellular ? "Default path is cellular  ·  no public RSRP" : "Default path is not cellular  ·  no public RSRP")
+            Text(heroCaption)
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
+    }
+
+    private var heroSubtitle: String {
+        if model.services.isEmpty { return "no RAT" }
+        return "data service not identified"
+    }
+
+    private var heroCaption: String {
+        if model.dataService == nil, !model.services.isEmpty {
+            return "Per-service rows below  ·  no public RSRP"
+        }
+        return model.defaultUsesCellular
+            ? "Default path is cellular  ·  no public RSRP"
+            : "Default path is not cellular  ·  no public RSRP"
+    }
+
+    private var heroAccessibility: String {
+        if let rat = model.dataService?.rat {
+            return "Data radio \(rat.compact)"
+        }
+        if model.services.isEmpty {
+            return "No data radio reported"
+        }
+        return "Data service not identified. Listed services are not assumed to be the data SIM."
     }
 
     @ViewBuilder
@@ -622,7 +676,7 @@ struct CellularStatusView: View {
                 Button("Clear samples") { model.clearHistory() }
                     .buttonStyle(.bordered)
                     .frame(minHeight: Theme.touchTarget)
-                    .disabled(model.rttHistory.isEmpty)
+                    .disabled(model.rttMeasuring || model.rttHistory.isEmpty)
             }
             .padding(.top, 6)
             if !model.rttHistory.isEmpty {
@@ -696,8 +750,10 @@ struct CellularStatusView: View {
             if let plmn = CellularRadioIdentity.plmn(mcc: service.mcc, mnc: service.mnc) {
                 parts.append("PLMN = \(plmn)")
             }
-        } else {
+        } else if model.services.isEmpty {
             parts.append("No CoreTelephony service keys yet.")
+        } else {
+            parts.append("Data service not identified — not assuming a SIM.")
         }
         if let rtt = rttMedianText {
             parts.append("RTT median = \(rtt) to \(model.rttHost):\(model.rttPort)")
@@ -727,10 +783,12 @@ struct CellularStatusView: View {
     private var copyText: String? {
         var parts: [String] = []
         if let service = model.dataService {
-            parts.append("\(service.carrierName ?? "Carrier —"), \(service.rat.compact)")
+            parts.append("\(service.carrierName ?? "Carrier —"), \(service.rat.compact) (data service)")
             if let plmn = CellularRadioIdentity.plmn(mcc: service.mcc, mnc: service.mnc) {
                 parts.append("PLMN \(plmn)")
             }
+        } else if !model.services.isEmpty {
+            parts.append("Data service not identified")
         }
         parts.append("usesCellular \(model.defaultUsesCellular ? "yes" : "no")")
         if let rtt = rttMedianText {
