@@ -92,6 +92,37 @@ final class CellularRadioTests: XCTestCase {
         }
     }
 
+    func testGenerationGaugeFillIsNotRF() {
+        XCTAssertEqual(CellularRadioIdentity.generationStep(.unknown), 0)
+        XCTAssertEqual(CellularRadioIdentity.generationStep(.twoG), 1)
+        XCTAssertEqual(CellularRadioIdentity.generationStep(.threeG), 2)
+        XCTAssertEqual(CellularRadioIdentity.generationStep(.fourG), 3)
+        XCTAssertEqual(CellularRadioIdentity.generationStep(.fiveG), 4)
+        XCTAssertEqual(CellularRadioIdentity.generationFill(.unknown), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.generationFill(.twoG), 0.25, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.generationFill(.fiveG), 1, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.generationOrder.map(\.rawValue), ["2G", "3G", "4G", "5G"])
+        XCTAssertEqual(
+            CellularRadioIdentity.identify("CTRadioAccessTechnologyNR").technologyDetail,
+            "5G NR standalone"
+        )
+        XCTAssertEqual(
+            CellularRadioIdentity.identify("CTRadioAccessTechnologyNRNSA").technologyDetail,
+            "5G NR non-standalone (LTE anchor)"
+        )
+        XCTAssertEqual(CellularRadioIdentity.identify("CTRadioAccessTechnologyLTE").technologyDetail, "4G LTE")
+    }
+
+    func testRTTGaugeFillInvertsLatency() {
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: nil), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: .nan), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: -1), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 0), 1, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 125), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 250), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 400), 0, accuracy: 1e-9)
+    }
+
     func testNormalizeRATToken() {
         XCTAssertEqual(CellularRadioIdentity.normalizeRATToken("CTRadioAccessTechnologyLTE"), "lte")
         XCTAssertEqual(CellularRadioIdentity.normalizeRATToken("LTE"), "lte")

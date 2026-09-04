@@ -97,7 +97,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 ## Instruments (Field subsection — public APIs only)
 
 - Wi-Fi Path (`NWPathMonitor` + Apple `signalStrength` 0…1 as percent/bars, coverage heatmap, and TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com). iOS does not expose Wi-Fi RSSI/dBm to third-party apps; this tool does not invent dBm. RTT is TCP connect time — not ICMP ping. A LAN/gateway target may prompt for Local Network.
-- Cellular Path (`CTTelephonyNetworkInfo` carrier / MCC / MNC / ISO / RAT per service, `dataServiceIdentifier`, Network default + cellular path flags, `CTCellularData`, and optional TCP **link quality (RTT)** while on cellular). iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps; this tool does not invent them. CTCarrier is deprecated as of iOS 16 with no public replacement.
+- Cellular Path (`CTTelephonyNetworkInfo` carrier / MCC / MNC / ISO / RAT per service, `dataServiceIdentifier`, Network default + cellular path flags, `CTCellularData`, and optional TCP **link quality (RTT)** while on cellular). Color gauges show **radio generation** (2G…5G from RAT) and **RTT milliseconds** — not RSRP/dBm. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps; this tool does not invent them. CTCarrier is deprecated as of iOS 16 with no public replacement.
 - BLE Scanner (CoreBluetooth)
 - Noise Meter (microphone dBFS, uncalibrated)
 - Bubble Level / plumb (CoreMotion)

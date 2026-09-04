@@ -924,7 +924,12 @@ enum WiFiRTTClient {
         await probeDetail(host: host, port: port, timeout: timeout).rttMS
     }
 
-    static func probeDetail(host: String, port: UInt16, timeout: TimeInterval) async -> TCPConnectProbe {
+    static func probeDetail(
+        host: String,
+        port: UInt16,
+        timeout: TimeInterval,
+        requiredInterface: NWInterface.InterfaceType? = nil
+    ) async -> TCPConnectProbe {
         let remote = "\(host):\(port)"
         guard !host.isEmpty, port > 0 else {
             return TCPConnectProbe(rttMS: nil, localEndpoint: nil, remoteEndpoint: remote)
@@ -932,10 +937,14 @@ enum WiFiRTTClient {
         guard let nwPort = NWEndpoint.Port(rawValue: port) else {
             return TCPConnectProbe(rttMS: nil, localEndpoint: nil, remoteEndpoint: remote)
         }
+        let parameters = NWParameters.tcp
+        if let requiredInterface {
+            parameters.requiredInterfaceType = requiredInterface
+        }
         let connection = NWConnection(
             host: NWEndpoint.Host(host),
             port: nwPort,
-            using: .tcp
+            using: parameters
         )
         return await withCheckedContinuation { continuation in
             let lock = NSLock()
@@ -955,14 +964,23 @@ enum WiFiRTTClient {
                     remoteEndpoint: remote
                 ))
             }
+            func acceptTimed(_ ms: Double) {
+                if let requiredInterface {
+                    guard let path = connection.currentPath, path.usesInterfaceType(requiredInterface) else {
+                        finish(nil)
+                        return
+                    }
+                }
+                finish(max(0, ms))
+            }
             connection.stateUpdateHandler = { state in
                 let ms = (CFAbsoluteTimeGetCurrent() - start) * 1000
                 switch state {
                 case .ready:
-                    finish(max(0, ms))
+                    acceptTimed(ms)
                 case .failed(let error):
                     if isAnsweredFailure(error) {
-                        finish(max(0, ms))
+                        acceptTimed(ms)
                     } else {
                         finish(nil)
                     }

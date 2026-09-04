@@ -31,6 +31,22 @@ public struct CellularRATIdentity: Equatable, Sendable, Identifiable {
         if label.contains(generation.rawValue) { return label }
         return "\(label) (\(generation.rawValue))"
     }
+
+    /// Longer family name for the parameter board — still not an RF level.
+    public var technologyDetail: String {
+        switch generation {
+        case .fiveG:
+            return label.contains("NSA") ? "5G NR non-standalone (LTE anchor)" : "5G NR standalone"
+        case .fourG:
+            return "4G LTE"
+        case .threeG:
+            return "3G (\(label))"
+        case .twoG:
+            return "2G (\(label))"
+        case .unknown:
+            return label
+        }
+    }
 }
 
 /// Typical planning bands for cellular RF metrics. **Reference only — not measured.**
@@ -191,6 +207,32 @@ public enum CellularRadioIdentity {
 
     public static func displayField(_ value: String?) -> String {
         cleaned(value) ?? "—"
+    }
+
+    /// Generation scale used by the instrument gauge (2G → 5G). Not RF bars.
+    public static let generationOrder: [CellularGeneration] = [.twoG, .threeG, .fourG, .fiveG]
+
+    /// 0 = unknown, 1 = 2G … 4 = 5G.
+    public static func generationStep(_ generation: CellularGeneration) -> Int {
+        switch generation {
+        case .unknown: return 0
+        case .twoG: return 1
+        case .threeG: return 2
+        case .fourG: return 3
+        case .fiveG: return 4
+        }
+    }
+
+    /// 0…1 fill for a generation arc. Unknown is 0 — never a fabricated RSRP.
+    public static func generationFill(_ generation: CellularGeneration) -> Double {
+        let step = generationStep(generation)
+        return step == 0 ? 0 : Double(step) / 4.0
+    }
+
+    /// 0…1 fill for a latency gauge: lower median RTT fills more. Nil / invalid is 0.
+    public static func rttFill(medianMS: Double?) -> Double {
+        guard let medianMS, medianMS.isFinite, medianMS >= 0 else { return 0 }
+        return min(1, max(0, 1 - medianMS / 250))
     }
 
     public static func normalizeRATToken(_ raw: String) -> String {
