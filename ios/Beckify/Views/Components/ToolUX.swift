@@ -6,10 +6,20 @@ private struct OpenRelatedToolKey: EnvironmentKey {
     static let defaultValue: (ToolID) -> Void = { _ in }
 }
 
+private struct BrowseFieldHomeKey: EnvironmentKey {
+    static let defaultValue: () -> Void = {}
+}
+
 extension EnvironmentValues {
     var openRelatedTool: (ToolID) -> Void {
         get { self[OpenRelatedToolKey.self] }
         set { self[OpenRelatedToolKey.self] = newValue }
+    }
+
+    /// Switches to the Toolbox tab and selects Field. Used by Favorites empty state.
+    var browseFieldHome: () -> Void {
+        get { self[BrowseFieldHomeKey.self] }
+        set { self[BrowseFieldHomeKey.self] = newValue }
     }
 }
 

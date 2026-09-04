@@ -6,15 +6,22 @@ import BeckifyMath
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     @ObservedObject private var recents = RecentToolsStore.shared
+    @Binding var homeArea: ToolHomeArea
     @State private var query = ""
-    @State private var homeArea: ToolHomeArea = .field
     @State private var path: [ToolID] = []
     @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    init(homeArea: Binding<ToolHomeArea> = .constant(.field)) {
+        _homeArea = homeArea
+    }
+
+    /// Wide enough that two-line titles like "Conductor Cost Optimizer"
+    /// fit on iPhone without a mid-word ellipsis. Compact phones land on
+    /// two columns; iPad still uses an adaptive grid.
     private var columns: [GridItem] {
-        let minimum: CGFloat = sizeClass == .regular ? 128 : 108
+        let minimum: CGFloat = sizeClass == .regular ? 148 : 156
         return [GridItem(.adaptive(minimum: minimum), spacing: 14)]
     }
 
@@ -44,8 +51,10 @@ struct ToolGridView: View {
                                 .opacity(appeared || reduceMotion ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
+                        // Cold start: hide Recents entirely. Do not seed fake
+                        // tools or leave an empty strip for App Store shots.
                         if !recents.tools.isEmpty {
-                            avatarStrip(title: "Recent", tools: recents.tools)
+                            avatarStrip(title: "Recent", tools: Array(recents.tools.prefix(5)))
                                 .opacity(appeared || reduceMotion ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
@@ -75,8 +84,9 @@ struct ToolGridView: View {
                     NavigationLink {
                         IconGalleryView()
                     } label: {
-                        Image(systemName: "square.grid.3x3.fill")
-                            .accessibilityLabel("Icon gallery")
+                        Image(systemName: "paintpalette")
+                            .accessibilityLabel("Review tool icons")
+                            .accessibilityHint("Opens a gallery of schematic glyphs. Distinct from the Toolbox tab.")
                     }
                     .accessibilityIdentifier("iconGalleryButton")
                 }
@@ -117,7 +127,24 @@ struct ToolGridView: View {
     }
 
     private var homeHeader: some View {
-        ZStack(alignment: .bottomLeading) {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("BECKIFY")
+                .font(Theme.TypeRole.hud)
+                .tracking(2.4)
+                .foregroundStyle(Color.white.opacity(0.72))
+            Text(homeArea.headline)
+                .font(Theme.TypeRole.heroBrand)
+                .foregroundStyle(Color.white)
+            Text(homeArea.blurb)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Color.white.opacity(0.82))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, Theme.Space.lg)
+        .padding(.vertical, Theme.Space.sm)
+        .padding(.trailing, 80)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
             RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
                 .fill(Theme.instrumentPanel)
                 .overlay {
@@ -144,43 +171,11 @@ struct ToolGridView: View {
                     .padding(.trailing, 16)
                     .accessibilityHidden(true)
                 }
-                .brandGlow(radius: 18, opacity: 0.18)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("BECKIFY")
-                    .font(Theme.TypeRole.hud)
-                    .tracking(2.4)
-                    .foregroundStyle(Color.white.opacity(0.72))
-                Text(homeArea.headline)
-                    .font(Theme.TypeRole.heroBrand)
-                    .foregroundStyle(Color.white)
-                Text(homeArea.blurb)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Color.white.opacity(0.82))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    headerChip("\(ToolboxCatalog.tools(in: homeArea).count) in \(homeArea.title)")
-                    headerChip("\(ToolboxCatalog.tools.count) total")
-                }
-                .padding(.top, 4)
-            }
-            .padding(Theme.Space.lg)
         }
-        .frame(maxWidth: .infinity, minHeight: 168)
+        .brandGlow(radius: 18, opacity: 0.18)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Beckify. \(homeArea.headline). \(homeArea.blurb) \(ToolboxCatalog.tools(in: homeArea).count) tools in \(homeArea.title).")
+        .accessibilityLabel("Beckify. \(homeArea.headline). \(homeArea.blurb)")
         .accessibilityIdentifier("homeHeader")
-    }
-
-    private func headerChip(_ text: String) -> some View {
-        Text(text)
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(Color.white.opacity(0.9))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.white.opacity(0.14), in: Capsule(style: .continuous))
-            .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.18), lineWidth: 1))
     }
 
     // MARK: - Strips & sections
@@ -250,8 +245,10 @@ struct ToolGridView: View {
                                 Text(tool.title)
                                     .font(.caption2.weight(.medium))
                                     .foregroundStyle(Theme.foreground)
-                                    .lineLimit(1)
-                                    .frame(width: 64)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.85)
+                                    .frame(width: 80)
                             }
                         }
                         .buttonStyle(.plain)
@@ -280,10 +277,6 @@ struct ToolGridView: View {
                     .font(Theme.TypeRole.sectionLabel)
                     .tracking(1.0)
                     .foregroundStyle(Theme.muted)
-                Spacer(minLength: 0)
-                Text("\(tools.count)")
-                    .font(.caption2.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(Theme.muted.opacity(0.8))
             }
             .padding(.top, 4)
 
@@ -355,6 +348,7 @@ struct ToolTile: View {
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.88)
                     .fixedSize(horizontal: false, vertical: true)
                 if showArea {
                     HomeAreaBadge(area: area)
