@@ -195,18 +195,25 @@ enum Theme {
         static let icon: CGFloat = 1.8
     }
 
-    // MARK: Typography roles
+    // MARK: Typography roles — scientific / instrument hierarchy.
+    // Native SF Pro keeps App Store footprint light; roles encode tracking
+    // and mono/data contrast the way the web stack uses Exo 2 / Sora / Plex.
 
     enum TypeRole {
-        static var heroBrand: Font { .largeTitle.weight(.bold) }
-        static var sectionLabel: Font { .caption.weight(.semibold) }
-        static var fieldLabel: Font { .caption.weight(.semibold) }
-        static var body: Font { .body }
-        static var numeric: Font { .body.monospacedDigit() }
-        static var numericEmphasis: Font { .title3.monospacedDigit().weight(.semibold) }
-        static var numericHero: Font { .title2.monospacedDigit().weight(.bold) }
-        static var help: Font { .caption }
-        static var formula: Font { .body.monospaced() }
+        /// Mission wordmark on atmospheric headers.
+        static var heroBrand: Font { .system(.title, design: .default).weight(.bold) }
+        /// Uppercase shelf / section chrome (pair with `.tracking(0.8…1.2)`).
+        static var sectionLabel: Font { .system(.caption2, design: .default).weight(.semibold) }
+        static var fieldLabel: Font { .system(.caption, design: .default).weight(.semibold) }
+        static var body: Font { .system(.body, design: .default) }
+        static var lead: Font { .system(.title3, design: .default).weight(.semibold) }
+        static var numeric: Font { .system(.body, design: .monospaced).monospacedDigit() }
+        static var numericEmphasis: Font { .system(.title3, design: .monospaced).weight(.semibold) }
+        static var numericHero: Font { .system(.title2, design: .monospaced).weight(.bold) }
+        static var help: Font { .system(.caption, design: .default) }
+        static var formula: Font { .system(.body, design: .monospaced) }
+        /// Compact HUD / telemetry strip.
+        static var hud: Font { .system(.caption2, design: .monospaced).weight(.medium) }
     }
 
     // MARK: Copy

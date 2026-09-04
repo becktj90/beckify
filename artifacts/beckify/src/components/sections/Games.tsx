@@ -56,7 +56,7 @@ export const Games = () => (
     <FadeIn delay={0.06}>
       <div className="card-surface grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">The arcade brief</p>
+          <p className="type-label text-[var(--accent)]">The arcade brief</p>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
             Seven on-site games, including Apollo ({KIDS.apollo.prop}) and Rocco ({KIDS.rocco.prop}). Local scores stay in this browser.
           </p>

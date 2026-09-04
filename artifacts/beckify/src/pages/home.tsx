@@ -73,7 +73,7 @@ export default function Home() {
                       overhangs the mark's box. */}
                   <div className="space-y-2 text-center pt-2">
                     <div>
-                      <span className="inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.22em] uppercase text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20 px-3 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-2 type-label text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20 px-3 py-1 rounded-full">
                         <Orbit className="w-3 h-3" />
                         Engineering Resource
                       </span>
@@ -130,10 +130,10 @@ export default function Home() {
                   <div className="mt-4 space-y-1.5">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-                      <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent)]">Live Tool</span>
+                      <span className="type-label text-[var(--accent)]">Live Tool</span>
                     </div>
-                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">EE Toolbox</h2>
-                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">EE Toolbox</h2>
+                    <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
                       {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, number-base converter, I/O list, signal scaling, cable schedule, battery bank, and motor nameplate tools.
                     </p>
                   </div>
@@ -201,10 +201,10 @@ export default function Home() {
                   <div className="mt-4 space-y-1.5">
                     <div className="flex items-center gap-2">
                       <Zap className="w-3 h-3 text-[var(--accent-2)]" />
-                      <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Builds</span>
+                      <span className="type-label text-[var(--accent-2)]">Builds</span>
                     </div>
-                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Projects</h2>
-                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Projects</h2>
+                    <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
                       Vespa EV conversion, Sniffmaster, and other hands-on builds.
                     </p>
                   </div>
@@ -233,13 +233,13 @@ export default function Home() {
                   </div>
                   <div className="mt-4 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-[0.18em] uppercase text-green-400">
+                      <span className="inline-flex items-center gap-1 type-label text-green-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                         Playable
                       </span>
                     </div>
-                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Games</h2>
-                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Games</h2>
+                    <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
                       {PUBLIC_GAME_COUNT} browser games across shooters, runners, and launch simulation — no install, just play.
                     </p>
                   </div>
@@ -267,9 +267,9 @@ export default function Home() {
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent-2)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
                   <div className="mt-4 space-y-1.5">
-                    <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Interactive design</p>
-                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Control System Toolbox</h2>
-                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    <p className="type-label text-[var(--accent-2)]">Interactive design</p>
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Control System Toolbox</h2>
+                    <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
                       Model plants, compare open- vs closed-loop P control, sketch a root locus, design a lead, tune PID with Ziegler–Nichols and anti-windup, and read Bode GM/PM/ωb.
                     </p>
                   </div>
@@ -297,9 +297,9 @@ export default function Home() {
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent-2)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
                   <div className="mt-4 space-y-1.5">
-                    <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[var(--accent-2)]">Field-tested</p>
-                    <h2 className="font-display text-lg font-semibold text-[var(--foreground)]">Recommended Gear</h2>
-                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    <p className="type-label text-[var(--accent-2)]">Field-tested</p>
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Recommended Gear</h2>
+                    <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
                       Model-specific tools, test equipment, and field power picks.
                     </p>
                   </div>

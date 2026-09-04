@@ -125,7 +125,7 @@ export function BodePlot({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Classic linear analysis</p>
-            <h3 className="mt-2 font-display text-2xl font-bold text-[var(--foreground)]">{title}</h3>
+            <h3 className="mt-2 font-display text-2xl font-bold tracking-[-0.015em] text-[var(--foreground)]">{title}</h3>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
               Open-loop Bode of G, closed-loop T = KG/(1+KG), gain/phase margins, bandwidth ωb, and a K-slider root
               locus for {systemExample}. Extra lag from the plant model shows up here as slower damping.
@@ -191,7 +191,7 @@ export function BodePlot({
             ["Overshoot", `${fmt(metrics.overshoot)} %`],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{label}</p>
+              <p className="type-label text-[var(--muted)]">{label}</p>
               <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">{value}</p>
             </div>
           ))}

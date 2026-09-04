@@ -310,7 +310,7 @@
 
         if (tx >= 6) {
           ctx.fillStyle = 'rgba(255,255,255,0.92)';
-          ctx.font = '600 ' + Math.max(8, Math.min(12, tx)) + 'px Space Grotesk, JetBrains Mono, sans-serif';
+          ctx.font = '600 ' + Math.max(8, Math.min(12, tx)) + 'px Exo 2, IBM Plex Mono, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(String(cell.group), top.x, top.y);
@@ -512,7 +512,7 @@
           ctx.strokeStyle = 'rgba(238,240,250,0.85)';
           ctx.stroke();
           ctx.fillStyle = '#fff';
-          ctx.font = '600 10px Space Grotesk, JetBrains Mono, sans-serif';
+          ctx.font = '600 10px Exo 2, IBM Plex Mono, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(String(group), pt.x, pt.y + 0.5);
@@ -565,7 +565,7 @@
 
     if (!pack.cells.length) {
       ctx.fillStyle = '#9497b8';
-      ctx.font = '500 14px Space Grotesk, JetBrains Mono, sans-serif';
+      ctx.font = '500 14px Exo 2, IBM Plex Mono, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Paint cells in the 2D view to inspect the pack in 3D.', cssW / 2, cssH / 2);
       return;
@@ -589,7 +589,7 @@
     for (let i = 0; i < drawers.length; i += 1) drawers[i].draw();
 
     ctx.fillStyle = 'rgba(148,151,184,0.85)';
-    ctx.font = '500 11px JetBrains Mono, monospace';
+    ctx.font = '500 11px IBM Plex Mono, monospace';
     ctx.textAlign = 'left';
     ctx.fillText(pack.cells.length + ' cells · drag to orbit · scroll to zoom', 14, cssH - 14);
   }

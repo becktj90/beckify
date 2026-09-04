@@ -10,7 +10,7 @@ export const Footer = () => (
         <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--accent)]/20 bg-[var(--accent-soft)] p-1.5">
           <img src={beckifyMark} alt="Beckify" className="h-full w-full object-contain" />
         </div>
-        <p>© {new Date().getFullYear()} Beck</p>
+        <p className="type-hud text-[var(--muted)]">© {new Date().getFullYear()} Beck</p>
         {/* p-2 -m-2 grows the tap target to WCAG's 24px minimum without
             shifting the visible text/icon or the footer's own spacing —
             the negative margin cancels the padding's effect on layout. */}

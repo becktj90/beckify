@@ -301,7 +301,7 @@
     }
     ctx.stroke();
     ctx.fillStyle = '#9497b8';
-    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.font = '11px "IBM Plex Mono", monospace';
     var ticks = logAxis ? [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000] : [0, 2000, 4000, 8000, 12000, 16000, 20000];
     for (var t = 0; t < ticks.length; t++) {
       var f = ticks[t];

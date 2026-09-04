@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Glenn Runner</title>
   <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --violet: #b7abff;
       --fg: #eef0fa;
       --fg-muted: #9aa3c7;
-      --font-main: "Space Grotesk", "Inter", system-ui, sans-serif;
+      --font-main: "Exo 2", "Sora", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
     }
     html, body {
       margin: 0;
@@ -92,8 +96,8 @@
       border: 1px solid rgba(183,171,255,.28);
       background: rgba(12,10,28,.72);
     }
-    .record-title { font-size: 0.7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
-    #arcade-hi-score { margin-top: 6px; font-size: 1.25rem; color: var(--violet); }
+    .record-title { font-size: 0.7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); font-family: var(--font-mono); }
+    #arcade-hi-score { margin-top: 6px; font-size: 1.25rem; color: var(--violet); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
     .btn {
       margin-top: 8px;
       min-height: 40px;

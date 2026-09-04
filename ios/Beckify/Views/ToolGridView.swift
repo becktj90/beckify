@@ -105,14 +105,14 @@ struct ToolGridView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("BECKIFY")
-                    .font(.caption.weight(.bold))
+                    .font(Theme.TypeRole.hud)
                     .tracking(2.4)
                     .foregroundStyle(Color.white.opacity(0.72))
                 Text("Field EE Toolbox")
-                    .font(.title2.weight(.bold))
+                    .font(Theme.TypeRole.heroBrand)
                     .foregroundStyle(Color.white)
                 Text("Calculators and sensors for the job site and the bench.")
-                    .font(.subheadline)
+                    .font(Theme.TypeRole.help)
                     .foregroundStyle(Color.white.opacity(0.82))
                     .fixedSize(horizontal: false, vertical: true)
             }

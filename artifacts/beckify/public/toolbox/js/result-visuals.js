@@ -115,7 +115,7 @@
   }
 
   function text(svg, x, y, value, attrs) {
-    const node = svgElement('text', Object.assign({ x, y, fill: PALETTE.text, 'font-size': 13, 'font-family': 'JetBrains Mono, monospace' }, attrs || {}));
+    const node = svgElement('text', Object.assign({ x, y, fill: PALETTE.text, 'font-size': 13, 'font-family': 'IBM Plex Mono, ui-monospace, monospace' }, attrs || {}));
     node.textContent = value;
     svg.appendChild(node);
   }
