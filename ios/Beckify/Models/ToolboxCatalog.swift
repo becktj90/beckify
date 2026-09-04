@@ -41,6 +41,14 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case phasorDiagram
     case numberBase
     case batteryBank
+    case referenceLibrary
+    case magneticCircuit
+    case fiberLink
+    case gaussianBeam
+    case transientCircuit
+    case rackCurrent
+    case diodeIV
+    case isLoopVerifier
 
     var id: String { rawValue }
 }
@@ -52,6 +60,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     case controls = "Controls"
     case homework = "Homework"
     case sensors = "Sensors"
+    case reference = "Reference"
 
     var id: String { rawValue }
 }
@@ -410,6 +419,70 @@ enum ToolboxCatalog {
             symbol: "minus.plus.batteryblock",
             synonyms: ["battery", "bank", "series", "parallel", "amp hours", "ah", "runtime", "depth of discharge", "dod", "cells"]
         ),
+        ToolDefinition(
+            id: .referenceLibrary,
+            kind: .calculator,
+            title: "Reference Library",
+            subtitle: "NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes.",
+            symbol: "books.vertical",
+            synonyms: ["nema", "ip rating", "enclosure", "conductor color", "wire color", "hazardous", "classified", "insulation", "thhn", "torque", "bolt", "conduit", "fittings", "standard sizes", "reference", "table"]
+        ),
+        ToolDefinition(
+            id: .magneticCircuit,
+            kind: .calculator,
+            title: "Magnetic Circuit",
+            subtitle: "Reluctance, flux, and flux density from mmf, path length, area, and µr.",
+            symbol: "atom",
+            synonyms: ["magnetic circuit", "reluctance", "flux", "flux density", "mmf", "permeability", "core"]
+        ),
+        ToolDefinition(
+            id: .fiberLink,
+            kind: .homework,
+            title: "Fiber Link / NA",
+            subtitle: "Numerical aperture and acceptance angle from core/cladding index, plus V-number.",
+            symbol: "line.diagonal",
+            synonyms: ["fiber", "fibre", "optic", "numerical aperture", "na", "acceptance angle", "single mode", "multimode", "v number"]
+        ),
+        ToolDefinition(
+            id: .gaussianBeam,
+            kind: .homework,
+            title: "Gaussian Beam",
+            subtitle: "Rayleigh range, divergence, and beam radius at distance from a waist.",
+            symbol: "smallcircle.filled.circle",
+            synonyms: ["gaussian beam", "laser", "rayleigh range", "divergence", "waist", "beam radius", "photonics"]
+        ),
+        ToolDefinition(
+            id: .transientCircuit,
+            kind: .homework,
+            title: "Transient Circuits",
+            subtitle: "RC/RL charge and discharge — value at a time, percent complete, and the curve.",
+            symbol: "waveform.path.ecg.rectangle",
+            synonyms: ["transient", "rc circuit", "rl circuit", "time constant", "tau", "charging", "discharging", "step response"]
+        ),
+        ToolDefinition(
+            id: .rackCurrent,
+            kind: .calculator,
+            title: "E-Bus / Rack Current",
+            subtitle: "Sum device currents against a bus rating for headroom and percent utilization.",
+            symbol: "server.rack",
+            synonyms: ["e-bus", "rack current", "bus current", "backplane", "current budget", "headroom", "utilization", "24vdc", "5v logic"]
+        ),
+        ToolDefinition(
+            id: .diodeIV,
+            kind: .homework,
+            title: "Semiconductor I-V",
+            subtitle: "Diode forward current from the Shockley equation, with the I-V curve.",
+            symbol: "triangle.righthalf.filled",
+            synonyms: ["diode", "shockley", "iv curve", "forward voltage", "saturation current", "ideality factor", "junction", "semiconductor"]
+        ),
+        ToolDefinition(
+            id: .isLoopVerifier,
+            kind: .calculator,
+            title: "IS Loop Verifier",
+            subtitle: "Entity Concept check — barrier Voc/Isc/Ca/La against field device and cable parameters.",
+            symbol: "checkmark.shield",
+            synonyms: ["intrinsic safety", "is loop", "entity concept", "barrier", "voc", "isc", "ca", "la", "hazardous area", "zener barrier"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -417,21 +490,24 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed,
-            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
+            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors, .isLoopVerifier,
         ],
         .power: [
-            .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank,
+            .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank, .magneticCircuit,
         ],
         .controls: [
-            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase,
+            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent,
         ],
         .homework: [
             .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
-            .frequencyWave, .ledRC, .unitConverter,
+            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam, .transientCircuit, .diodeIV,
         ],
         .sensors: [
             .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
             .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
+        ],
+        .reference: [
+            .referenceLibrary,
         ],
     ]
 
@@ -512,5 +588,13 @@ enum ToolboxCatalog {
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
         .batteryBank: [.power, .unitConverter, .ohmsLaw],
+        .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector],
+        .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
+        .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],
+        .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],
+        .transientCircuit: [.frequencyWave, .ledRC, .reactance],
+        .rackCurrent: [.modbusAddress, .signalScaling, .plcTimer],
+        .diodeIV: [.ledRC, .resistorColor, .ohmsLaw],
+        .isLoopVerifier: [.receptacleSelector, .signalScaling, .panelDirectory],
     ]
 }

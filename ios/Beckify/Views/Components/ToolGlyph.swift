@@ -92,6 +92,14 @@ extension GlyphKind {
         case .phasorDiagram: return .phasorDiagram
         case .numberBase: return .numberBase
         case .batteryBank: return .batteryBank
+        case .referenceLibrary: return .referenceLibrary
+        case .magneticCircuit: return .magneticCircuit
+        case .fiberLink: return .fiberLink
+        case .gaussianBeam: return .gaussianBeam
+        case .transientCircuit: return .transientCircuit
+        case .rackCurrent: return .rackCurrent
+        case .diodeIV: return .diodeIV
+        case .isLoopVerifier: return .isLoopVerifier
         }
     }
 }
@@ -136,6 +144,14 @@ enum GlyphKind {
     case phasorDiagram
     case numberBase
     case batteryBank
+    case referenceLibrary
+    case magneticCircuit
+    case fiberLink
+    case gaussianBeam
+    case transientCircuit
+    case rackCurrent
+    case diodeIV
+    case isLoopVerifier
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -179,6 +195,14 @@ enum GlyphKind {
         case .phasorDiagram: return Self.phasorDiagram(rect)
         case .numberBase: return Self.numberBase(rect)
         case .batteryBank: return Self.batteryBank(rect)
+        case .referenceLibrary: return Self.referenceLibrary(rect)
+        case .magneticCircuit: return Self.magneticCircuit(rect)
+        case .fiberLink: return Self.fiberLink(rect)
+        case .gaussianBeam: return Self.gaussianBeam(rect)
+        case .transientCircuit: return Self.transientCircuit(rect)
+        case .rackCurrent: return Self.rackCurrent(rect)
+        case .diodeIV: return Self.diodeIV(rect)
+        case .isLoopVerifier: return Self.isLoopVerifier(rect)
         }
     }
 
@@ -742,6 +766,200 @@ enum GlyphKind {
         path.addLine(to: CGPoint(x: firstLongX, y: midY))
         path.move(to: CGPoint(x: secondShortX, y: midY))
         path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: midY))
+        return path
+    }
+
+    /// An open book — two pages meeting at a spine, with a couple of text lines.
+    private static func referenceLibrary(_ r: CGRect) -> Path {
+        var path = Path()
+        let spineX = r.midX
+        let baseY = r.maxY - r.height * 0.16
+        let topY = r.minY + r.height * 0.14
+
+        path.move(to: CGPoint(x: spineX, y: topY))
+        path.addLine(to: CGPoint(x: r.minX, y: topY + r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.minX, y: baseY))
+        path.addLine(to: CGPoint(x: spineX, y: baseY - r.height * 0.06))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: spineX, y: topY))
+        path.addLine(to: CGPoint(x: r.maxX, y: topY + r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.maxX, y: baseY))
+        path.addLine(to: CGPoint(x: spineX, y: baseY - r.height * 0.06))
+        path.closeSubpath()
+
+        for index in 0..<2 {
+            let y = topY + r.height * (0.3 + 0.14 * CGFloat(index))
+            path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: y))
+            path.addLine(to: CGPoint(x: spineX - r.width * 0.06, y: y))
+            path.move(to: CGPoint(x: spineX + r.width * 0.06, y: y))
+            path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: y))
+        }
+        return path
+    }
+
+    /// A laminated core with a closed flux loop and a direction arrow.
+    private static func magneticCircuit(_ r: CGRect) -> Path {
+        var path = Path()
+        let coreWidth = r.width * 0.26
+        let coreHeight = r.height * 0.58
+        let coreRect = CGRect(x: r.midX - coreWidth / 2, y: r.midY - coreHeight / 2, width: coreWidth, height: coreHeight)
+        path.addRoundedRect(in: coreRect, cornerSize: CGSize(width: r.width * 0.03, height: r.width * 0.03))
+
+        let loopRect = CGRect(x: r.minX + r.width * 0.04, y: r.minY + r.height * 0.08, width: r.width * 0.92, height: r.height * 0.84)
+        path.addEllipse(in: loopRect)
+
+        let arrowSize = r.width * 0.07
+        let apex = CGPoint(x: r.midX, y: loopRect.minY)
+        path.move(to: CGPoint(x: apex.x - arrowSize, y: apex.y + arrowSize))
+        path.addLine(to: apex)
+        path.addLine(to: CGPoint(x: apex.x + arrowSize, y: apex.y + arrowSize))
+        return path
+    }
+
+    /// A fiber tip with its acceptance cone and one incoming ray.
+    private static func fiberLink(_ r: CGRect) -> Path {
+        var path = Path()
+        let apex = CGPoint(x: r.minX + r.width * 0.12, y: r.midY)
+        let coneHeight = r.height * 0.34
+
+        path.move(to: CGPoint(x: r.maxX - r.width * 0.08, y: apex.y - coneHeight))
+        path.addLine(to: apex)
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: apex.y + coneHeight))
+
+        path.move(to: apex)
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: apex.y))
+
+        path.move(to: CGPoint(x: r.minX, y: apex.y - r.height * 0.4))
+        path.addLine(to: apex)
+        return path
+    }
+
+    /// A beam-waist silhouette — narrow at center, flaring at both edges.
+    private static func gaussianBeam(_ r: CGRect) -> Path {
+        var path = Path()
+        let waistX = r.midX
+        let maxHalfHeight = r.height * 0.4
+        let waistHalfHeight = r.height * 0.08
+        let steps = 20
+
+        func halfHeight(at x: CGFloat) -> CGFloat {
+            let normalized = abs(x - waistX) / (r.width / 2)
+            return waistHalfHeight + (maxHalfHeight - waistHalfHeight) * (normalized * normalized)
+        }
+
+        path.move(to: CGPoint(x: r.minX, y: r.midY - halfHeight(at: r.minX)))
+        for step in 0...steps {
+            let x = r.minX + r.width * CGFloat(step) / CGFloat(steps)
+            path.addLine(to: CGPoint(x: x, y: r.midY - halfHeight(at: x)))
+        }
+        path.move(to: CGPoint(x: r.minX, y: r.midY + halfHeight(at: r.minX)))
+        for step in 0...steps {
+            let x = r.minX + r.width * CGFloat(step) / CGFloat(steps)
+            path.addLine(to: CGPoint(x: x, y: r.midY + halfHeight(at: x)))
+        }
+        path.move(to: CGPoint(x: waistX, y: r.midY - waistHalfHeight))
+        path.addLine(to: CGPoint(x: waistX, y: r.midY + waistHalfHeight))
+        return path
+    }
+
+    /// A rising exponential charging curve against axes.
+    private static func transientCircuit(_ r: CGRect) -> Path {
+        var path = Path()
+        let baseY = r.maxY - r.height * 0.14
+        let topY = r.minY + r.height * 0.1
+
+        path.move(to: CGPoint(x: r.minX, y: topY))
+        path.addLine(to: CGPoint(x: r.minX, y: baseY))
+        path.addLine(to: CGPoint(x: r.maxX, y: baseY))
+
+        let steps = 20
+        path.move(to: CGPoint(x: r.minX, y: baseY))
+        for step in 0...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            let x = r.minX + r.width * 0.94 * t
+            let rise = 1 - exp(-3 * Double(t))
+            let y = baseY - (baseY - topY) * 0.8 * CGFloat(rise)
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        return path
+    }
+
+    /// A rack rail with device ticks feeding off it.
+    private static func rackCurrent(_ r: CGRect) -> Path {
+        var path = Path()
+        let railY = r.midY
+        path.move(to: CGPoint(x: r.minX, y: railY))
+        path.addLine(to: CGPoint(x: r.maxX, y: railY))
+
+        let deviceXs: [CGFloat] = [0.2, 0.42, 0.64, 0.86].map { r.minX + r.width * $0 }
+        let heights: [CGFloat] = [0.5, 0.3, 0.4, 0.22]
+        for (x, h) in zip(deviceXs, heights) {
+            path.move(to: CGPoint(x: x, y: railY))
+            path.addLine(to: CGPoint(x: x, y: railY + r.height * h))
+        }
+        return path
+    }
+
+    /// The diode schematic symbol (triangle + cathode bar) with a small
+    /// rising I-V curve alongside it.
+    private static func diodeIV(_ r: CGRect) -> Path {
+        var path = Path()
+        let midY = r.midY
+        let triLeft = r.minX + r.width * 0.14
+        let triRight = r.midX - r.width * 0.1
+        let barHeight = r.height * 0.3
+
+        path.move(to: CGPoint(x: r.minX, y: midY))
+        path.addLine(to: CGPoint(x: triLeft, y: midY))
+
+        path.move(to: CGPoint(x: triLeft, y: midY - r.height * 0.18))
+        path.addLine(to: CGPoint(x: triRight, y: midY))
+        path.addLine(to: CGPoint(x: triLeft, y: midY + r.height * 0.18))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: triRight, y: midY - barHeight / 2))
+        path.addLine(to: CGPoint(x: triRight, y: midY + barHeight / 2))
+
+        path.move(to: CGPoint(x: triRight, y: midY))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.02, y: midY))
+
+        let curveBaseX = r.midX + r.width * 0.12
+        let curveBaseY = r.maxY - r.height * 0.16
+        let curveTopY = r.minY + r.height * 0.14
+        path.move(to: CGPoint(x: curveBaseX, y: curveBaseY))
+        let steps = 10
+        for step in 0...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            let x = curveBaseX + (r.maxX - curveBaseX) * t
+            let rise = t * t * t
+            let y = curveBaseY - (curveBaseY - curveTopY) * rise
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        return path
+    }
+
+    /// A shield outline with a checkmark — the loop either passes or it doesn't.
+    private static func isLoopVerifier(_ r: CGRect) -> Path {
+        var path = Path()
+        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.08)
+        let leftTop = CGPoint(x: r.minX + r.width * 0.1, y: r.minY + r.height * 0.22)
+        let rightTop = CGPoint(x: r.maxX - r.width * 0.1, y: r.minY + r.height * 0.22)
+        let leftMid = CGPoint(x: r.minX + r.width * 0.1, y: r.midY + r.height * 0.06)
+        let rightMid = CGPoint(x: r.maxX - r.width * 0.1, y: r.midY + r.height * 0.06)
+        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.06)
+
+        path.move(to: top)
+        path.addLine(to: rightTop)
+        path.addLine(to: rightMid)
+        path.addLine(to: bottom)
+        path.addLine(to: leftMid)
+        path.addLine(to: leftTop)
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: r.midX - r.width * 0.14, y: r.midY))
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.02, y: r.midY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: r.midY - r.height * 0.14))
         return path
     }
 

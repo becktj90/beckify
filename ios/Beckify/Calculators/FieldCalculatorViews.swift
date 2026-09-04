@@ -1428,3 +1428,1066 @@ struct BatteryBankView: View {
         ))
     }
 }
+
+// MARK: - Reference library
+
+struct ReferenceLibraryView: View {
+    @State private var query = ""
+
+    private var topics: [ReferenceTopic] {
+        ReferenceLibrary.matching(query)
+    }
+
+    var body: some View {
+        ToolScaffold(toolID: .referenceLibrary, disclaimer: .none) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("SEARCH")
+                    .font(Theme.TypeRole.fieldLabel)
+                    .tracking(0.6)
+                    .foregroundStyle(Theme.muted)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(Theme.muted)
+                    TextField("4X, THHN, torque, hazardous…", text: $query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .foregroundStyle(Theme.foreground)
+                        .accessibilityLabel("Search the reference library")
+                }
+                .padding(.horizontal, 14)
+                .frame(minHeight: Theme.touchTarget)
+                .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                        .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+                )
+            }
+
+            if topics.isEmpty {
+                ToolEmptyState(
+                    title: "No match",
+                    detail: "Nothing in the reference library matches “\(query)”. Try a code (4X, IP67), a material (THHN), or a topic (hazardous, torque).",
+                    systemImage: "magnifyingglass"
+                )
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(topics) { topic in
+                        NavigationLink {
+                            ReferenceTopicDetailView(topic: topic)
+                        } label: {
+                            ReferenceTopicRow(topic: topic)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ReferenceTopicRow: View {
+    let topic: ReferenceTopic
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(topic.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                Text(topic.purpose)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Text("\(topic.entries.count)")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(Theme.muted)
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+        }
+        .padding(12)
+        .frame(minHeight: Theme.touchTarget)
+        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(topic.title), \(topic.entries.count) entries")
+        .accessibilityHint(topic.purpose)
+    }
+}
+
+struct ReferenceTopicDetailView: View {
+    let topic: ReferenceTopic
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(topic.purpose)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                VStack(spacing: 8) {
+                    ForEach(topic.entries) { entry in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(entry.code)
+                                    .font(.subheadline.weight(.bold).monospaced())
+                                    .foregroundStyle(Theme.accent)
+                                Spacer(minLength: 8)
+                                Text(entry.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Theme.foreground)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                            Text(entry.detail)
+                                .font(.footnote)
+                                .foregroundStyle(Theme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                                .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+                        )
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(entry.code): \(entry.title)")
+                        .accessibilityHint(entry.detail)
+                    }
+                }
+                Text("Source: \(topic.source)")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+            }
+            .padding(Theme.Space.lg)
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle(topic.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Magnetic circuit
+
+struct MagneticCircuitView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.magneticCircuit, "mmf", default: "500") private var mmf
+    @StoredInput(.magneticCircuit, "length", default: "0.2") private var length
+    @StoredInput(.magneticCircuit, "area", default: "1") private var areaCm2
+    @StoredInput(.magneticCircuit, "muR", default: "1000") private var muR
+    @StoredInput(.magneticCircuit, "jobName", default: "Magnetic circuit") private var jobName
+    @State private var session = ExplicitCalculationState<MagneticCircuitResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Entered in cm² since that is how core cross-sections are usually spec'd.
+    private var areaSquareMetres: Double { (areaCm2.parsedDouble ?? .nan) * 1e-4 }
+
+    private var inputFingerprint: String { "\(mmf)|\(length)|\(areaCm2)|\(muR)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .magneticCircuit,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .magneticCircuit,
+                symbolic: "R = l / (µ₀ µᵣ A)     Φ = mmf / R     B = Φ / A",
+                substituted: substituted,
+                meaning: "This is Ohm's law for a magnetic path: mmf plays the role of voltage, flux plays current, reluctance plays resistance. A higher µᵣ core (more iron, less air gap) means less reluctance and more flux for the same mmf."
+            )
+            TryExampleButton(title: "500 At, 20 cm path, 1 cm², µᵣ 1000") {
+                mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Magnetomotive force", unit: "At", text: $mmf, fieldID: "mmf", onSubmit: calculate)
+            NumberField(title: "Path length", unit: "m", text: $length, fieldID: "length", onSubmit: calculate)
+            NumberField(title: "Cross-sectional area", unit: "cm²", text: $areaCm2, fieldID: "area", onSubmit: calculate)
+            NumberField(title: "Relative permeability µᵣ", unit: "", text: $muR, fieldID: "muR", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Small relay-sized core"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Reluctance", value: "\(Format.number(r.reluctance, digits: 0)) At/Wb", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Flux", value: "\(Format.number(r.flux * 1000, digits: 4)) mWb")
+                    ResultRow(label: "Flux density B", value: "\(Format.number(r.fluxDensity, digits: 3)) T", emphasis: true)
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try MagneticCircuit.solve(
+                magnetomotiveForce: mmf.parsedDouble ?? .nan,
+                pathLength: length.parsedDouble ?? .nan,
+                crossSectionalArea: areaSquareMetres,
+                relativePermeability: muR.parsedDouble ?? .nan
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        mmf = ""; length = ""; areaCm2 = ""; muR = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "R \(Format.number(r.reluctance, digits: 0)) At/Wb  →  B \(Format.number(r.fluxDensity, digits: 3)) T"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "B \(Format.number(r.fluxDensity, digits: 3)) T  ·  Φ \(Format.number(r.flux * 1000, digits: 4)) mWb"
+    }
+
+    private func save(_ r: MagneticCircuitResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .magneticCircuit,
+            inputs: ["mmf": "\(mmf) At", "l": "\(length) m", "A": "\(areaCm2) cm²", "muR": muR],
+            outputs: ["B": "\(Format.number(r.fluxDensity, digits: 3)) T", "flux": "\(Format.number(r.flux * 1000, digits: 4)) mWb"]
+        ))
+    }
+}
+
+// MARK: - Fiber link / numerical aperture
+
+struct FiberLinkView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.fiberLink, "n1", default: "1.48") private var coreIndex
+    @StoredInput(.fiberLink, "n2", default: "1.46") private var claddingIndex
+    @StoredInput(.fiberLink, "radius", default: "4.5") private var coreRadius
+    @StoredInput(.fiberLink, "wavelength", default: "1310") private var wavelength
+    @StoredToggle(.fiberLink, "checkMode", default: true) private var checkMode
+    @StoredInput(.fiberLink, "jobName", default: "Fiber link") private var jobName
+    @State private var session = ExplicitCalculationState<FiberLinkResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { "\(coreIndex)|\(claddingIndex)|\(coreRadius)|\(wavelength)|\(checkMode)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .fiberLink,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .fiberLink,
+                symbolic: "NA = √(n₁² − n₂²)     θ = arcsin(NA)     V = 2π a NA / λ",
+                substituted: substituted,
+                meaning: "NA sets the acceptance cone — how much of a light source's spread the fiber can actually capture. The V-number below 2.405 is the textbook single-mode cutoff for step-index fiber."
+            )
+            TryExampleButton(title: "62.5/125 µm multimode at 1310 nm") {
+                coreIndex = "1.48"; claddingIndex = "1.46"
+                coreRadius = "4.5"; wavelength = "1310"
+                checkMode = true
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Core index n₁", unit: "", text: $coreIndex, fieldID: "n1", onSubmit: calculate)
+            NumberField(title: "Cladding index n₂", unit: "", text: $claddingIndex, fieldID: "n2", onSubmit: calculate)
+
+            Toggle("Check single-mode cutoff", isOn: $checkMode)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            if checkMode {
+                NumberField(title: "Core radius", unit: "µm", text: $coreRadius, fieldID: "radius", onSubmit: calculate)
+                NumberField(title: "Wavelength", unit: "nm", text: $wavelength, fieldID: "wavelength", onSubmit: calculate)
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    coreIndex = "1.48"; claddingIndex = "1.46"
+                    coreRadius = "4.5"; wavelength = "1310"
+                    checkMode = true
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Common multimode fiber"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Numerical aperture", value: Format.number(r.numericalAperture, digits: 4), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Acceptance angle", value: Format.degrees(r.acceptanceAngleDegrees))
+                    if let v = r.vNumber {
+                        ResultRow(label: "V-number", value: Format.number(v, digits: 3))
+                    }
+                    if let singleMode = r.isSingleMode {
+                        ResultRow(
+                            label: "Mode",
+                            value: singleMode ? "single-mode" : "multimode",
+                            emphasis: true,
+                            tone: singleMode ? Theme.good : Theme.warn
+                        )
+                    }
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try FiberLink.solve(
+                coreIndex: coreIndex.parsedDouble ?? .nan,
+                claddingIndex: claddingIndex.parsedDouble ?? .nan,
+                coreRadiusMicrons: checkMode ? (coreRadius.parsedDouble ?? .nan) : nil,
+                wavelengthNanometers: checkMode ? (wavelength.parsedDouble ?? .nan) : nil
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        coreIndex = ""; claddingIndex = ""; coreRadius = ""; wavelength = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        var line = "NA \(Format.number(r.numericalAperture, digits: 4))  →  θ \(Format.degrees(r.acceptanceAngleDegrees))"
+        if let v = r.vNumber {
+            line += "  →  V \(Format.number(v, digits: 3))"
+        }
+        return line
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "NA \(Format.number(r.numericalAperture, digits: 4))  ·  \(Format.degrees(r.acceptanceAngleDegrees))"
+    }
+
+    private func save(_ r: FiberLinkResult) {
+        var outputs = ["NA": Format.number(r.numericalAperture, digits: 4), "angle": Format.degrees(r.acceptanceAngleDegrees)]
+        if let v = r.vNumber { outputs["V"] = Format.number(v, digits: 3) }
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .fiberLink,
+            inputs: ["n1": coreIndex, "n2": claddingIndex],
+            outputs: outputs
+        ))
+    }
+}
+
+// MARK: - Gaussian beam
+
+struct GaussianBeamView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.gaussianBeam, "waist", default: "0.5") private var waist
+    @StoredInput(.gaussianBeam, "wavelength", default: "633") private var wavelength
+    @StoredInput(.gaussianBeam, "distance", default: "") private var distance
+    @StoredInput(.gaussianBeam, "jobName", default: "Gaussian beam") private var jobName
+    @State private var session = ExplicitCalculationState<GaussianBeamResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { "\(waist)|\(wavelength)|\(distance)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .gaussianBeam,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .gaussianBeam,
+                symbolic: "z_R = π w₀² / λ     θ = λ / (π w₀)     w(z) = w₀√(1 + (z/z_R)²)",
+                substituted: substituted,
+                meaning: "A real laser beam never stays parallel — it spreads at a rate set entirely by the wavelength and how tightly it's focused at the waist. A tighter waist diverges faster; that trade-off is fixed by the physics, not the laser's power."
+            )
+            TryExampleButton(title: "0.5 mm waist, 633 nm HeNe") {
+                waist = "0.5"; wavelength = "633"; distance = ""
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Waist radius w₀", unit: "mm", text: $waist, fieldID: "waist", onSubmit: calculate)
+            NumberField(title: "Wavelength", unit: "nm", text: $wavelength, fieldID: "wavelength", onSubmit: calculate)
+            NumberField(title: "Distance from waist", unit: "mm", text: $distance, optional: true, fieldID: "distance", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    waist = "0.5"; wavelength = "633"; distance = ""
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "HeNe bench laser"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Rayleigh range", value: "\(Format.number(r.rayleighRange, digits: 2)) mm", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Divergence half-angle", value: "\(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad")
+                    if let radius = r.radiusAtDistance {
+                        ResultRow(label: "Radius at distance", value: "\(Format.number(radius, digits: 4)) mm", emphasis: true)
+                    }
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try GaussianBeam.solve(
+                waistRadius: waist.parsedDouble ?? .nan,
+                wavelengthNanometers: wavelength.parsedDouble ?? .nan,
+                propagationDistance: distance.parsedDouble
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        waist = ""; wavelength = ""; distance = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        var line = "z_R \(Format.number(r.rayleighRange, digits: 2)) mm  →  θ \(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"
+        if let radius = r.radiusAtDistance {
+            line += "  →  w(z) \(Format.number(radius, digits: 4)) mm"
+        }
+        return line
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "z_R \(Format.number(r.rayleighRange, digits: 2)) mm  ·  θ \(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"
+    }
+
+    private func save(_ r: GaussianBeamResult) {
+        var outputs = ["zR": "\(Format.number(r.rayleighRange, digits: 2)) mm", "theta": "\(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"]
+        if let radius = r.radiusAtDistance { outputs["w(z)"] = "\(Format.number(radius, digits: 4)) mm" }
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .gaussianBeam,
+            inputs: ["w0": "\(waist) mm", "lambda": "\(wavelength) nm"],
+            outputs: outputs
+        ))
+    }
+}
+
+// MARK: - Transient circuits
+
+struct TransientCircuitView: View {
+    enum Kind: String, CaseIterable, Identifiable {
+        case rc = "RC"
+        case rl = "RL"
+        var id: String { rawValue }
+    }
+
+    enum Direction: String, CaseIterable, Identifiable {
+        case charging = "Charging"
+        case discharging = "Discharging"
+        var id: String { rawValue }
+    }
+
+    @EnvironmentObject private var jobs: JobStore
+    @StoredChoice(.transientCircuit, "kind", default: TransientCircuitView.Kind.rc) private var kind
+    @StoredChoice(.transientCircuit, "direction", default: TransientCircuitView.Direction.charging) private var direction
+    @StoredInput(.transientCircuit, "amplitude", default: "12") private var amplitude
+    @StoredInput(.transientCircuit, "resistance", default: "1000") private var resistance
+    @StoredInput(.transientCircuit, "capacitance", default: "100") private var capacitance
+    @StoredInput(.transientCircuit, "inductance", default: "0.5") private var inductance
+    @StoredInput(.transientCircuit, "time", default: "0.05") private var time
+    @StoredInput(.transientCircuit, "jobName", default: "Transient") private var jobName
+    @State private var session = ExplicitCalculationState<TransientResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var farads: Double { (capacitance.parsedDouble ?? .nan) * 1e-6 }
+    private var unit: String { kind == .rc ? "V" : "A" }
+
+    private var inputFingerprint: String {
+        "\(kind)|\(direction)|\(amplitude)|\(resistance)|\(capacitance)|\(inductance)|\(time)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .transientCircuit,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .transientCircuit,
+                symbolic: direction == .charging
+                    ? "v(t) = A(1 − e^(−t/τ))"
+                    : "v(t) = A · e^(−t/τ)",
+                substituted: substituted,
+                meaning: "One time constant τ covers about 63 % of the change; five time constants is close enough to call it settled. RC and RL share this exact shape — only what τ is made of changes."
+            )
+            TryExampleButton(title: "12 V, 1 kΩ, 100 µF, charging at 50 ms") {
+                kind = .rc; direction = .charging
+                amplitude = "12"; resistance = "1000"; capacitance = "100"; time = "0.05"
+                session.prepareForNewInputs()
+            }
+
+            MenuField(title: "Circuit", selection: $kind, options: Kind.allCases) { $0.rawValue }
+            MenuField(title: "Direction", selection: $direction, options: Direction.allCases) { $0.rawValue }
+            NumberField(
+                title: direction == .charging ? "Source amplitude" : "Starting value",
+                unit: unit,
+                text: $amplitude,
+                fieldID: "amplitude",
+                onSubmit: calculate
+            )
+            NumberField(title: "Resistance", unit: "Ω", text: $resistance, fieldID: "resistance", onSubmit: calculate)
+            if kind == .rc {
+                NumberField(title: "Capacitance", unit: "µF", text: $capacitance, fieldID: "capacitance", onSubmit: calculate)
+            } else {
+                NumberField(title: "Inductance", unit: "H", text: $inductance, fieldID: "inductance", onSubmit: calculate)
+            }
+            NumberField(title: "Time", unit: "s", text: $time, fieldID: "time", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    kind = .rc; direction = .charging
+                    amplitude = "12"; resistance = "1000"; capacitance = "100"; time = "0.05"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "RC charging"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                TransientResponseChart(curve: r.curve, currentTime: time.parsedDouble ?? 0, currentValue: r.valueAtTime, unit: unit)
+                    .opacity(session.isStale ? 0.72 : 1)
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Time constant τ", value: Format.time(r.timeConstant), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Value at t", value: "\(Format.number(r.valueAtTime, digits: 4)) \(unit)", emphasis: true)
+                    ResultRow(label: "Percent complete", value: Format.percent(r.percentComplete))
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            let tau: Double
+            if kind == .rc {
+                tau = try TransientCircuit.rcTimeConstant(resistance: resistance.parsedDouble ?? .nan, capacitance: farads)
+            } else {
+                tau = try TransientCircuit.rlTimeConstant(inductance: inductance.parsedDouble ?? .nan, resistance: resistance.parsedDouble ?? .nan)
+            }
+            return try TransientCircuit.step(
+                amplitude: amplitude.parsedDouble ?? .nan,
+                timeConstant: tau,
+                time: time.parsedDouble ?? .nan,
+                charging: direction == .charging
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        amplitude = ""; resistance = ""; capacitance = ""; inductance = ""; time = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "τ \(Format.time(r.timeConstant))  →  \(Format.number(r.valueAtTime, digits: 4)) \(unit) (\(Format.percent(r.percentComplete)))"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.valueAtTime, digits: 4)) \(unit)  ·  \(Format.percent(r.percentComplete))"
+    }
+
+    private func save(_ r: TransientResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .transientCircuit,
+            inputs: ["circuit": kind.rawValue, "dir": direction.rawValue, "A": amplitude, "t": "\(time) s"],
+            outputs: ["tau": Format.time(r.timeConstant), "value": "\(Format.number(r.valueAtTime, digits: 4)) \(unit)"]
+        ))
+    }
+}
+
+// MARK: - E-bus / rack current budget
+
+struct RackCurrentView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.rackCurrent, "capacity", default: "4") private var capacity
+    @StoredInput(.rackCurrent, "device1", default: "0.5") private var device1
+    @StoredInput(.rackCurrent, "device2", default: "1.2") private var device2
+    @StoredInput(.rackCurrent, "device3", default: "0.3") private var device3
+    @StoredInput(.rackCurrent, "device4", default: "") private var device4
+    @StoredInput(.rackCurrent, "device5", default: "") private var device5
+    @StoredInput(.rackCurrent, "device6", default: "") private var device6
+    @StoredInput(.rackCurrent, "jobName", default: "Rack current") private var jobName
+    @State private var session = ExplicitCalculationState<RackCurrentResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var deviceFields: [Binding<String>] {
+        [$device1, $device2, $device3, $device4, $device5, $device6]
+    }
+
+    private var inputFingerprint: String {
+        "\(capacity)|\(device1)|\(device2)|\(device3)|\(device4)|\(device5)|\(device6)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .rackCurrent,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .rackCurrent,
+                symbolic: "total = Σ I_device     headroom = capacity − total",
+                substituted: substituted,
+                meaning: "The same budget arithmetic whether it's a PLC 5 V logic bus, a 24 VDC panel rail, or a rack backplane — add up every device's continuous draw and see what's left before the bus trips or browns out."
+            )
+            TryExampleButton(title: "3 devices on a 4 A rail") {
+                capacity = "4"; device1 = "0.5"; device2 = "1.2"; device3 = "0.3"
+                device4 = ""; device5 = ""; device6 = ""
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Bus capacity", unit: "A", text: $capacity, fieldID: "capacity", onSubmit: calculate)
+            ForEach(Array(deviceFields.enumerated()), id: \.offset) { index, field in
+                NumberField(
+                    title: "Device \(index + 1)",
+                    unit: "A",
+                    text: field,
+                    optional: true,
+                    fieldID: "device\(index + 1)",
+                    onSubmit: calculate
+                )
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    capacity = "4"; device1 = "0.5"; device2 = "1.2"; device3 = "0.3"
+                    device4 = ""; device5 = ""; device6 = ""
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "3-device rail"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                if r.headroom < 0 {
+                    ToolEmptyState(
+                        title: "Over budget",
+                        detail: "These devices draw more than the bus is rated for. Something will brown out or the protection will trip — move a load to another bus or upsize the supply.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                }
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Total current", value: Format.amps(r.totalCurrent), emphasis: true, tone: Theme.good)
+                    ResultRow(
+                        label: "Headroom",
+                        value: Format.amps(r.headroom),
+                        emphasis: true,
+                        tone: r.headroom < 0 ? Theme.bad : Theme.good
+                    )
+                    ResultRow(
+                        label: "Utilization",
+                        value: Format.percent(r.utilizationPercent),
+                        tone: r.utilizationPercent > 100 ? Theme.bad : (r.utilizationPercent > 80 ? Theme.warn : Theme.foreground)
+                    )
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            let currents = deviceFields.compactMap { $0.wrappedValue.parsedDouble }
+            return try RackCurrentBudget.solve(deviceCurrents: currents, busCapacity: capacity.parsedDouble ?? .nan)
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        capacity = ""
+        for field in deviceFields { field.wrappedValue = "" }
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.amps(r.totalCurrent)) of \(capacity) A  →  \(Format.percent(r.utilizationPercent))"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.amps(r.totalCurrent))  ·  \(Format.amps(r.headroom)) headroom"
+    }
+
+    private func save(_ r: RackCurrentResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .rackCurrent,
+            inputs: ["capacity": "\(capacity) A"],
+            outputs: ["total": Format.amps(r.totalCurrent), "headroom": Format.amps(r.headroom)]
+        ))
+    }
+}
+
+// MARK: - Semiconductor I-V (diode)
+
+struct DiodeIVView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.diodeIV, "saturation", default: "2.5") private var saturationNanoamps
+    @StoredInput(.diodeIV, "ideality", default: "1.5") private var ideality
+    @StoredInput(.diodeIV, "temperature", default: "300") private var temperature
+    @StoredInput(.diodeIV, "voltage", default: "0.6") private var voltage
+    @StoredInput(.diodeIV, "jobName", default: "Diode I-V") private var jobName
+    @State private var session = ExplicitCalculationState<DiodeIVResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Entered in nanoamps, since saturation current is always a tiny number.
+    private var saturationAmps: Double { (saturationNanoamps.parsedDouble ?? .nan) * 1e-9 }
+
+    private var inputFingerprint: String { "\(saturationNanoamps)|\(ideality)|\(temperature)|\(voltage)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .diodeIV,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .diodeIV,
+                symbolic: "I = I_S (e^(V / nV_T) − 1)     V_T = kT / q",
+                substituted: substituted,
+                meaning: "The exponential is why a diode looks like an open circuit, then suddenly conducts hard over a few tenths of a volt — current changes by orders of magnitude while the voltage barely moves. That flat forward drop is the whole reason diodes make good rough voltage references."
+            )
+            TryExampleButton(title: "Small-signal diode, n = 1.5, 0.6 V") {
+                saturationNanoamps = "2.5"; ideality = "1.5"; temperature = "300"; voltage = "0.6"
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Saturation current I_S", unit: "nA", text: $saturationNanoamps, fieldID: "saturation", onSubmit: calculate)
+            NumberField(title: "Ideality factor n", unit: "", text: $ideality, fieldID: "ideality", onSubmit: calculate)
+            NumberField(title: "Temperature", unit: "K", text: $temperature, fieldID: "temperature", onSubmit: calculate)
+            NumberField(title: "Forward voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    saturationNanoamps = "2.5"; ideality = "1.5"; temperature = "300"; voltage = "0.6"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Typical silicon small-signal diode"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                DiodeIVChart(curve: r.curve, operatingVoltage: voltage.parsedDouble ?? 0, operatingCurrent: r.current)
+                    .opacity(session.isStale ? 0.72 : 1)
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Forward current", value: "\(Format.number(r.current * 1000, digits: 4)) mA", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Thermal voltage V_T", value: "\(Format.number(r.thermalVoltage * 1000, digits: 3)) mV")
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try DiodeIV.solve(
+                saturationCurrent: saturationAmps,
+                idealityFactor: ideality.parsedDouble ?? .nan,
+                temperatureKelvin: temperature.parsedDouble ?? .nan,
+                forwardVoltage: voltage.parsedDouble ?? .nan
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        saturationNanoamps = ""; ideality = ""; temperature = ""; voltage = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "I \(Format.number(r.current * 1000, digits: 4)) mA at \(voltage) V"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.current * 1000, digits: 4)) mA at \(voltage) V"
+    }
+
+    private func save(_ r: DiodeIVResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .diodeIV,
+            inputs: ["Is": "\(saturationNanoamps) nA", "n": ideality, "T": "\(temperature) K", "V": voltage],
+            outputs: ["I": "\(Format.number(r.current * 1000, digits: 4)) mA"]
+        ))
+    }
+}
+
+// MARK: - Intrinsic safety loop verifier
+
+struct ISLoopVerifierView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.isLoopVerifier, "voc", default: "24") private var voc
+    @StoredInput(.isLoopVerifier, "isc", default: "100") private var iscMilliamps
+    @StoredInput(.isLoopVerifier, "ca", default: "0.5") private var caMicrofarads
+    @StoredInput(.isLoopVerifier, "la", default: "5") private var laMillihenries
+    @StoredInput(.isLoopVerifier, "vmax", default: "30") private var vmax
+    @StoredInput(.isLoopVerifier, "imax", default: "150") private var imaxMilliamps
+    @StoredInput(.isLoopVerifier, "ci", default: "20") private var ciNanofarads
+    @StoredInput(.isLoopVerifier, "li", default: "1") private var liMillihenries
+    @StoredInput(.isLoopVerifier, "cableC", default: "50") private var cableCNanofaradsPerCore
+    @StoredInput(.isLoopVerifier, "cableL", default: "1") private var cableLMillihenries
+    @StoredInput(.isLoopVerifier, "jobName", default: "IS loop") private var jobName
+    @State private var session = ExplicitCalculationState<ISLoopResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var iscAmps: Double { (iscMilliamps.parsedDouble ?? .nan) / 1000 }
+    private var caFarads: Double { (caMicrofarads.parsedDouble ?? .nan) * 1e-6 }
+    private var laHenries: Double { (laMillihenries.parsedDouble ?? .nan) / 1000 }
+    private var imaxAmps: Double { (imaxMilliamps.parsedDouble ?? .nan) / 1000 }
+    private var ciFarads: Double { (ciNanofarads.parsedDouble ?? .nan) * 1e-9 }
+    private var liHenries: Double { (liMillihenries.parsedDouble ?? .nan) / 1000 }
+    private var cableCFarads: Double { (cableCNanofaradsPerCore.parsedDouble ?? .nan) * 1e-9 }
+    private var cableLHenries: Double { (cableLMillihenries.parsedDouble ?? .nan) / 1000 }
+
+    private var inputFingerprint: String {
+        "\(voc)|\(iscMilliamps)|\(caMicrofarads)|\(laMillihenries)|\(vmax)|\(imaxMilliamps)|\(ciNanofarads)|\(liMillihenries)|\(cableCNanofaradsPerCore)|\(cableLMillihenries)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .isLoopVerifier,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            disclaimer: .designAidExtra("This checks the four Entity Concept inequalities only — it is not a substitute for the system's control drawing, the equipment's certification documentation, or sign-off by a qualified person."),
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .isLoopVerifier,
+                symbolic: "Voc ≤ Vmax     Isc ≤ Imax     Ca ≥ Ci + Ccable     La ≥ Li + Lcable",
+                substituted: substituted,
+                meaning: "The barrier can never be allowed to deliver more energy than the field device and wiring can safely absorb in a fault. All four checks must pass — a loop that's fine on voltage and current but fails on cable capacitance is still not safe to install."
+            )
+            TryExampleButton(title: "Common 24 V zener barrier into a compliant transmitter") {
+                voc = "24"; iscMilliamps = "100"; caMicrofarads = "0.5"; laMillihenries = "5"
+                vmax = "30"; imaxMilliamps = "150"; ciNanofarads = "20"; liMillihenries = "1"
+                cableCNanofaradsPerCore = "50"; cableLMillihenries = "1"
+                session.prepareForNewInputs()
+            }
+
+            Text("BARRIER / ASSOCIATED APPARATUS")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            NumberField(title: "Voc", unit: "V", text: $voc, fieldID: "voc", onSubmit: calculate)
+            NumberField(title: "Isc", unit: "mA", text: $iscMilliamps, fieldID: "isc", onSubmit: calculate)
+            NumberField(title: "Ca", unit: "µF", text: $caMicrofarads, fieldID: "ca", onSubmit: calculate)
+            NumberField(title: "La", unit: "mH", text: $laMillihenries, fieldID: "la", onSubmit: calculate)
+
+            Text("FIELD DEVICE")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            NumberField(title: "Vmax", unit: "V", text: $vmax, fieldID: "vmax", onSubmit: calculate)
+            NumberField(title: "Imax", unit: "mA", text: $imaxMilliamps, fieldID: "imax", onSubmit: calculate)
+            NumberField(title: "Ci", unit: "nF", text: $ciNanofarads, fieldID: "ci", onSubmit: calculate)
+            NumberField(title: "Li", unit: "mH", text: $liMillihenries, fieldID: "li", onSubmit: calculate)
+
+            Text("CABLE")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            NumberField(title: "Cable capacitance", unit: "nF", text: $cableCNanofaradsPerCore, fieldID: "cableC", onSubmit: calculate)
+            NumberField(title: "Cable inductance", unit: "mH", text: $cableLMillihenries, fieldID: "cableL", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    voc = "24"; iscMilliamps = "100"; caMicrofarads = "0.5"; laMillihenries = "5"
+                    vmax = "30"; imaxMilliamps = "150"; ciNanofarads = "20"; liMillihenries = "1"
+                    cableCNanofaradsPerCore = "50"; cableLMillihenries = "1"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Compliant example loop"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Voltage", value: r.voltageOK ? "OK" : "FAILS", emphasis: true, tone: r.voltageOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Current", value: r.currentOK ? "OK" : "FAILS", emphasis: true, tone: r.currentOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Capacitance", value: r.capacitanceOK ? "OK" : "FAILS", emphasis: true, tone: r.capacitanceOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Inductance", value: r.inductanceOK ? "OK" : "FAILS", emphasis: true, tone: r.inductanceOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Total Ci + Ccable", value: "\(Format.number(r.totalCapacitance * 1e9, digits: 1)) nF")
+                    ResultRow(label: "Total Li + Lcable", value: "\(Format.number(r.totalInductance * 1000, digits: 3)) mH")
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                if !r.isSafe {
+                    ToolEmptyState(
+                        title: "This combination does not satisfy the Entity Concept",
+                        detail: "At least one of Voc/Isc/Ca/La does not clear the field device and cable parameters. Re-check the barrier selection or the cable run — do not install this pairing.",
+                        systemImage: "xmark.shield"
+                    )
+                }
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try ISLoopVerifier.verify(
+                barrierVoc: voc.parsedDouble ?? .nan,
+                barrierIsc: iscAmps,
+                barrierCa: caFarads,
+                barrierLa: laHenries,
+                deviceVmax: vmax.parsedDouble ?? .nan,
+                deviceImax: imaxAmps,
+                deviceCi: ciFarads,
+                deviceLi: liHenries,
+                cableCapacitance: cableCFarads,
+                cableInductance: cableLHenries
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        voc = ""; iscMilliamps = ""; caMicrofarads = ""; laMillihenries = ""
+        vmax = ""; imaxMilliamps = ""; ciNanofarads = ""; liMillihenries = ""
+        cableCNanofaradsPerCore = ""; cableLMillihenries = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return r.isSafe ? "All four checks pass" : "At least one check fails — do not install"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return r.isSafe ? "Entity Concept: OK" : "Entity Concept: FAILS"
+    }
+
+    private func save(_ r: ISLoopResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .isLoopVerifier,
+            inputs: ["Voc": "\(voc) V", "Isc": "\(iscMilliamps) mA", "Vmax": "\(vmax) V", "Imax": "\(imaxMilliamps) mA"],
+            outputs: ["result": r.isSafe ? "OK" : "FAILS"]
+        ))
+    }
+}

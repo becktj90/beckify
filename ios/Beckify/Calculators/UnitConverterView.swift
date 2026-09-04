@@ -256,6 +256,7 @@ struct UnitConverterView: View {
 private struct BaseValueField: View {
     let title: String
     let unit: String
+    let validCharacters: String
     @Binding var text: String
 
     var body: some View {
@@ -272,7 +273,7 @@ private struct BaseValueField: View {
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
                     .accessibilityLabel(title)
-                    .accessibilityHint("Digits" + (unit.isEmpty ? "." : ", optionally prefixed \(unit)."))
+                    .accessibilityHint(validCharacters + (unit.isEmpty ? "." : ", optionally prefixed \(unit)."))
                 if !unit.isEmpty {
                     Text(unit)
                         .font(.subheadline.weight(.medium))
@@ -317,7 +318,7 @@ struct NumberBaseView: View {
             }
 
             MenuField(title: "Enter as", selection: $base, options: NumberBase.allCases) { $0.displayName }
-            BaseValueField(title: base.displayName, unit: base.prefix, text: $value)
+            BaseValueField(title: base.displayName, unit: base.prefix, validCharacters: base.validCharactersDescription, text: $value)
 
             if let error = live.error {
                 ErrorText(message: error.message)
@@ -357,10 +358,12 @@ struct NumberBaseView: View {
     }
 
     private func save(_ r: NumberBaseResult) {
+        let alreadyPrefixed = !base.prefix.isEmpty && value.lowercased().hasPrefix(base.prefix.lowercased())
+        let entered = alreadyPrefixed ? value : "\(base.prefix)\(value)"
         jobs.save(SavedJob(
             name: jobName,
             toolID: .numberBase,
-            inputs: ["entered": "\(base.prefix)\(value)"],
+            inputs: ["entered": entered],
             outputs: ["bin": r.binary, "dec": r.decimal, "hex": r.hexadecimal]
         ))
     }

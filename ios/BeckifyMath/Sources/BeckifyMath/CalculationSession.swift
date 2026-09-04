@@ -182,6 +182,8 @@ public enum ToolCalculationPolicy {
         "reactance", "powerFactor", "shortCircuit", "circularMils", "loadFactors",
         "signalScaling", "modbusAddress", "plcTimer", "panelDirectory",
         "motorSpeed", "rfLink", "phasorDiagram", "numberBase", "batteryBank",
+        "referenceLibrary", "magneticCircuit", "fiberLink", "gaussianBeam",
+        "transientCircuit", "rackCurrent", "diodeIV", "isLoopVerifier",
     ]
 
     public static var liveToolIDs: [String] {
