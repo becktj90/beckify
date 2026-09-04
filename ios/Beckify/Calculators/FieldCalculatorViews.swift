@@ -1471,6 +1471,7 @@ struct ReferenceLibraryView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .foregroundStyle(Theme.foreground)
+                        .formFieldFocus("referenceQuery")
                         .accessibilityLabel("Search the reference library")
                 }
                 .padding(.horizontal, 14)

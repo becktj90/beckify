@@ -65,6 +65,7 @@ struct ToolScaffold<Content: View>: View {
                 disclaimerView
             }
             .padding(Theme.Space.lg)
+            .onPreferenceChange(FormFieldOrderKey.self) { chrome.replaceFieldIDs($0) }
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle(tool.title)

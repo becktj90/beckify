@@ -256,6 +256,7 @@ struct SaveJobBar: View {
             HStack(alignment: .center, spacing: 10) {
                 TextField("Name — e.g. lab 3, AHU-3 feeder", text: $jobName)
                     .textInputAutocapitalization(.words)
+                    .formFieldFocus("jobName")
                     .frame(minHeight: Theme.touchTarget)
                 Button("Save", action: action)
                     .buttonStyle(.borderedProminent)
@@ -267,6 +268,7 @@ struct SaveJobBar: View {
                 TextField("Optional note", text: notes)
                     .font(.subheadline)
                     .foregroundStyle(Theme.foreground)
+                    .formFieldFocus("jobNotes")
             }
         }
         .padding(14)

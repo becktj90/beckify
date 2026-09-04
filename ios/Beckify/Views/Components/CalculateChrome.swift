@@ -12,10 +12,10 @@ final class ToolChromeController: ObservableObject {
     @Published var calculateEnabled = true
     @Published private(set) var hasCalculate = false
     @Published var focusedFieldID: String?
+    @Published private(set) var fieldIDs: [String] = []
 
     private var calculateAction: (() -> Void)?
     private var pendingEnabled = true
-    private(set) var fieldIDs: [String] = []
 
     /// Stores the latest action without publishing. Call `publishCalculateIfNeeded()`
     /// from `onAppear` / `onChange` so SwiftUI is not mutated during `body`.
@@ -48,15 +48,14 @@ final class ToolChromeController: ObservableObject {
         dismissKeyboard()
     }
 
-    func registerField(_ id: String) {
-        if !fieldIDs.contains(id) {
-            fieldIDs.append(id)
-        }
-    }
-
-    func unregisterField(_ id: String) {
-        fieldIDs.removeAll { $0 == id }
-        if focusedFieldID == id {
+    /// Replaces the Next-tab order from the view-tree preference, so
+    /// conditionally shown fields stay in visual order instead of `onAppear` append order.
+    func replaceFieldIDs(_ ids: [String]) {
+        var seen = Set<String>()
+        let unique = ids.filter { seen.insert($0).inserted }
+        guard fieldIDs != unique else { return }
+        fieldIDs = unique
+        if let focused = focusedFieldID, !unique.contains(focused) {
             focusedFieldID = nil
         }
     }
@@ -81,6 +80,12 @@ final class ToolChromeController: ObservableObject {
 
     func dismissKeyboard() {
         focusedFieldID = nil
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }
 
@@ -92,6 +97,14 @@ extension EnvironmentValues {
     var toolChrome: ToolChromeController? {
         get { self[ToolChromeControllerKey.self] }
         set { self[ToolChromeControllerKey.self] = newValue }
+    }
+}
+
+/// Collects participating field IDs in view-tree order for keyboard Next.
+enum FormFieldOrderKey: PreferenceKey {
+    static var defaultValue: [String] = []
+    static func reduce(value: inout [String], nextValue: () -> [String]) {
+        value.append(contentsOf: nextValue())
     }
 }
 
@@ -242,8 +255,7 @@ private struct BoundFormFieldFocusModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .focused($isFocused)
-            .onAppear { chrome.registerField(fieldID) }
-            .onDisappear { chrome.unregisterField(fieldID) }
+            .preference(key: FormFieldOrderKey.self, value: [fieldID])
             .onChange(of: isFocused) { _, focused in
                 if focused {
                     chrome.focusedFieldID = fieldID
@@ -266,7 +278,15 @@ private struct LocalKeyboardDoneModifier: ViewModifier {
             .focused($isFocused)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
-                    Button("Done") { isFocused = false }
+                    Button("Done") {
+                        isFocused = false
+                        UIApplication.shared.sendAction(
+                            #selector(UIResponder.resignFirstResponder),
+                            to: nil,
+                            from: nil,
+                            for: nil
+                        )
+                    }
                 }
             }
     }
