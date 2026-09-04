@@ -170,6 +170,23 @@ sandbox.BECKIFY_API_BASE_URL = '';
   sandbox.fetch = function (_url, opts) {
     posted = JSON.parse(opts.body);
     return Promise.resolve({
+      ok: false,
+      status: 429,
+      headers: { get(name) { return String(name).toLowerCase() === 'retry-after' ? '120' : null; } },
+      json() {
+        return Promise.resolve({ error: 'Too many nameplate analyses. Please try again later.', retryAfter: 120 });
+      },
+    });
+  };
+  await assert.rejects(
+    () => api.analyzeNameplate({ size: 24, type: 'image/jpeg' }, { enhanceOn: true }),
+    /Too many AI reads/i,
+  );
+  assert.match(api.formatVisionError({ status: 429, retryAfter: 120 }), /2 min/i);
+
+  sandbox.fetch = function (_url, opts) {
+    posted = JSON.parse(opts.body);
+    return Promise.resolve({
       ok: true,
       json() {
         return Promise.resolve({
@@ -198,10 +215,15 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(motor, /shouldUpload/);
   assert.match(motor, /analyzeNameplate/);
   assert.match(motor, /BeckifyOcr\.recognize/);
+  assert.match(motor, /formatVisionError/);
+  assert.equal(typeof api.analyzeMany, 'function');
+  assert.equal(typeof api.formatVisionError, 'function');
   const panel = fs.readFileSync(path.join(root, 'panel-schedule.js'), 'utf8');
   assert.match(panel, /analyzePanelDirectory\(/);
   assert.match(panel, /shouldUpload/);
   assert.match(panel, /mode: 'directory'/);
+  assert.match(panel, /view: 'breakers'/);
+  assert.match(panel, /view: 'schedule'/);
   const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
   assert.match(panelHtml, /js\/vlm-ocr\.js/);
   assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
@@ -227,20 +249,39 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(meta.panelName, 'PANEL BLT 11');
 
   const lookGood = api.normalizeLookDraft({
-    verdict: 'looks_good', score: 88.4, headline: 'Strong light', reasons: ['Even light'], fixes: ['Smile'],
+    verdict: 'looks_good',
+    score: 88.4,
+    headline: 'Strong light',
+    summary: 'You look sharp in this frame.',
+    metrics: { lighting: 90.2, framing: 70, expression: 84, sharpness: 88 },
+    reasons: ['Even light'],
+    fixes: ['Smile'],
   });
   assert.equal(lookGood.task, 'look');
   assert.equal(lookGood.verdict, 'looks_good');
   assert.equal(lookGood.score, 88);
-  const lookDeclined = api.normalizeLookDraft({ verdict: 'declined', score: 12, headline: 'No' });
+  assert.equal(lookGood.summary, 'You look sharp in this frame.');
+  assert.equal(lookGood.metrics.lighting, 90);
+  assert.equal(lookGood.metrics.overall, 88);
+  const lookDeclined = api.normalizeLookDraft({
+    verdict: 'declined',
+    score: 12,
+    headline: 'No',
+    metrics: { lighting: 80, overall: 90 },
+  });
   assert.equal(lookDeclined.verdict, 'declined');
   assert.equal(lookDeclined.score, null);
+  assert.equal(lookDeclined.metrics.lighting, null);
+  assert.equal(lookDeclined.metrics.overall, null);
   const lookUnknown = api.analyzePayload({ verdict: 'amazing', score: 200 }, 'look');
   assert.equal(lookUnknown.verdict, 'mixed');
   assert.equal(lookUnknown.score, 100);
 
   assert.match(html, /id="sec-look-check"/);
   assert.match(html, /Analyze Look/);
+  assert.match(html, /id="look-camera-input"[^>]*capture="user"/);
+  assert.match(html, /id="look-summary"/);
+  assert.match(html, /id="look-metrics"/);
   assert.match(html, /js\/look-check\.js/);
   assert.match(html, /id="tdr_privacy"/);
   const lookJs = fs.readFileSync(path.join(root, 'look-check.js'), 'utf8');
@@ -249,6 +290,8 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(lookJs, /analyzeLook/);
   assert.match(lookJs, /\/api\/analyze-look/);
   assert.match(lookJs, /lookIsImageFile/);
+  assert.match(lookJs, /look-camera/);
+  assert.match(lookJs, /lookRenderMetrics/);
   assert.match(html, /look-verdict-card\[hidden\]/);
   const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
   assert.match(tdrJs, /prepareUploadDataUrl/);

@@ -34,11 +34,19 @@ router.post("/analyze-nameplate", async (req, res) => {
   const clientKey = getClientKey(req);
   const bucket = consumeRateLimit(rateBuckets, clientKey);
   if (!bucket.allowed) {
-    res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - Date.now()) / 1000)));
-    return res.status(429).json({ error: "Too many nameplate analyses. Please try again later." });
+    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
+    res.setHeader("Retry-After", String(retryAfter));
+    return res.status(429).json({
+      error: "Too many nameplate analyses. Please try again later.",
+      retryAfter,
+    });
   }
   if (bucket.inFlight >= 2) {
-    return res.status(429).json({ error: "Too many nameplate analyses in progress." });
+    res.setHeader("Retry-After", "15");
+    return res.status(429).json({
+      error: "Too many nameplate analyses in progress.",
+      retryAfter: 15,
+    });
   }
   bucket.inFlight += 1;
 
@@ -49,14 +57,14 @@ router.post("/analyze-nameplate", async (req, res) => {
         mimeType: picked.image.mimeType,
         model: serverModel,
         system: NAMEPLATE_VISION_SYSTEM_PROMPT,
-        userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA.",
+        userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA. Never steal HP from a catalog/model string. Dual FLA stays in dualFla with fla null. Phase is only 1 or 3 when printed.",
       })
       : await analyzeWithOpenAI({
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
         system: NAMEPLATE_VISION_SYSTEM_PROMPT,
-        userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA.",
+        userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA. Never steal HP from a catalog/model string. Dual FLA stays in dualFla with fla null. Phase is only 1 or 3 when printed.",
       });
 
     return res.json({

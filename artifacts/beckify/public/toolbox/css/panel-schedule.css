@@ -211,6 +211,36 @@ button {
   font-size: 2rem;
 }
 
+.view-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.view-card {
+  padding: 12px;
+  background: #ececec;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+.view-card h3 {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+}
+
+.view-drop {
+  min-height: 120px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.view-preview {
+  min-height: 140px;
+  margin-top: 8px;
+}
+
 .status-strip {
   display: flex;
   justify-content: space-between;
@@ -433,6 +463,11 @@ textarea {
 }
 .editor-table td.is-trip-copy {
   background: #fff3cd;
+}
+.ocr-low-conf,
+.editor-table input.ocr-low-conf {
+  outline: 2px solid #c9a000;
+  background: #fff8d0;
 }
 
 .flag-ask {

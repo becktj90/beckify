@@ -300,8 +300,8 @@ async function runOnDeviceOcr() {
     setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
   }
   if (out.failed) {
-    setStatus('OCR found no usable text. Fill the table manually — you are not blocked.' + (window.BeckifyVlmOcr ? ' Enhance with AI can draft a two-up directory from a messy photo.' : ''));
-    updateProgress(0, 'OCR found no text');
+    setStatus('OCR found no usable text. Existing rows were left alone. Fill the table manually — you are not blocked.' + (window.BeckifyVlmOcr ? ' Enhance with AI can draft a two-up directory from a messy photo.' : ''));
+    updateProgress(1, 'OCR found no text');
     renderAll();
     return out;
   }
@@ -346,7 +346,8 @@ async function runOcr() {
         updateProgress(1, 'AI draft ready. Review every circuit.');
         return;
       } catch (error) {
-        setStatus(((error && error.message) ? error.message : 'AI enhance failed.') + ' Falling back to on-device OCR.');
+        const formatted = (Vlm.formatVisionError && Vlm.formatVisionError(error)) || (error && error.message) || 'AI enhance failed.';
+        setStatus(formatted + ' Falling back to on-device OCR.');
       }
     }
     updateProgress(0, 'Starting on-device OCR…');
@@ -886,7 +887,13 @@ function renderLoadAnalysis() {
   }
 
   const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
-  const phase = Number(elements.panelPhase.value) || 3;
+  const phaseRaw = Number(elements.panelPhase && elements.panelPhase.value);
+  const phase = phaseRaw === 1 || phaseRaw === 3 ? phaseRaw : null;
+  if (!phase) {
+    elements.analysisGrid.innerHTML = summaryMetric('Waiting for system phase', 'Select 1Ø or 3Ø', 'Load math does not assume 3-phase. Pick the system on the directory card.');
+    elements.analysisGuidance.innerHTML = '<p>Phase is never assumed. Choose 1-phase or 3-phase after you read the panel label, then review the table.</p>';
+    return;
+  }
   const voltage = panelVoltageInfo(elements.panelVoltage.value, phase);
   const diversityInput = Math.max(1, panelNumber(elements.panelDiversity.value, 1));
   const knownVoltage = Number.isFinite(voltage.lineToLine) && voltage.lineToLine > 0;
@@ -1078,7 +1085,7 @@ function resetApp() {
   elements.panelPositions.value = String(DEFAULT_CIRCUIT_SLOTS);
   elements.panelBreakerSeries.value = '';
   elements.panelDate.value = '';
-  elements.panelPhase.value = '3';
+  if (elements.panelPhase) elements.panelPhase.value = '';
   elements.panelDiversity.value = '1';
   elements.imagePreview.removeAttribute('src');
   elements.previewFrame.classList.remove('has-image');
@@ -1152,7 +1159,9 @@ function saveStudyData() {
       positions: positionCount(),
       breakerSeries: elements.panelBreakerSeries.value.trim().toUpperCase(),
       date: elements.panelDate.value.trim() || defaultPrintDate(),
-      phase: Number(elements.panelPhase.value) || 3,
+      phase: Number(elements.panelPhase.value) === 1 || Number(elements.panelPhase.value) === 3
+        ? Number(elements.panelPhase.value)
+        : null,
       diversity: Math.max(1, panelNumber(elements.panelDiversity.value, 1))
     },
     rows: normalizeRows(state.rows)

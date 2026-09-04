@@ -107,7 +107,9 @@ assert.match(panelSrc, /bindEvents\(\)/);
 assert.match(panelSrc, /copied from trip — edit me/);
 assert.equal(panelSrc.includes('aria-describedby=""'), false);
 assert.match(panelSrc, /aria-describedby="trip-copy-\$\{index\}"/);
-assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*scheduleCalcGateMessage/);
+assert.match(panelSrc, /function scheduleCalcGateMessage[\s\S]*calcReady/);
+assert.match(panelSrc, /function requestCalculate/);
 assert.match(panelSrc, /function handlePrint[\s\S]*isScheduleReviewed/);
 assert.match(panelSrc, /Breaker trip is not a reviewed load/);
 assert.equal(panel.isLikelyImageFile({ type: '', name: 'dir.JPG' }), true);
@@ -116,7 +118,49 @@ assert.equal(panel.isLikelyImageFile({ type: 'application/pdf', name: 'dir.jpg' 
 
 const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
 assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
+assert.match(panelHtml, /id="ps_calculate"/);
+assert.match(panelHtml, /Calculate from reviewed table/);
 assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
+assert.match(panelHtml, /id="scheduleFile"/);
+assert.match(panelHtml, /id="scheduleCapture"[^>]*capture="environment"/);
+assert.match(panelHtml, /id="breakersFile"/);
+assert.match(panelHtml, /id="breakersCapture"[^>]*capture="environment"/);
+assert.match(panelHtml, /id="scheduleAdd"/);
+assert.match(panelHtml, /id="breakersAdd"/);
+assert.match(panelHtml, /id="mergeRows"/);
+assert.match(panelHtml, /Unknown — select before load math/);
+assert.doesNotMatch(panelHtml, /<option value="3" selected>/);
+assert.match(panelSrc, /mergeCircuitRows/);
+assert.match(panelSrc, /parseBreakerFace/);
+assert.match(panelSrc, /sizeTableToSlots/);
+assert.match(panelSrc, /Phase is never assumed/);
+
+assert.equal(panel.snapSlotCount(41), 42);
+assert.equal(panel.snapSlotCount(20), 20);
+assert.equal(panel.parseBreakerFace('SQUARE D 42 CIRCUIT 200A MAIN').slotCount, 42);
+const breakerFace = panel.parseBreakerFace('1 20A 2 20A 3 15A 4 30A 5 20A 6 20A 7 15A 8 20A 9 20A 10 20A 11 15A 12 20A');
+assert.equal(breakerFace.slotCount, 12);
+assert.equal(breakerFace.rows[0].trip, '20A');
+const sized = panel.sizeTableToSlots(20, [
+  { circuit: '1', description: 'Lights', trip: '20A', poles: '1', loadType: 'Lighting', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' },
+]);
+assert.equal(sized.length, 20);
+assert.equal(sized[0].description, 'Lights');
+assert.equal(sized[19].circuit, '20');
+
+const mergedRows = panel.mergeCircuitRows(
+  [{ circuit: '1', description: 'Lights', trip: '20A', poles: '1', loadType: 'Lighting', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' }],
+  [{ circuit: '1', description: '', trip: '', poles: '', loadType: 'General', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' },
+   { circuit: '2', description: 'Receptacles', trip: '20A', poles: '1', loadType: 'Receptacle', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' }],
+);
+assert.equal(mergedRows.find((row) => row.circuit === '1').description, 'Lights');
+assert.equal(mergedRows.find((row) => row.circuit === '2').description, 'Receptacles');
+
+const unknownPhase = panel.computeDirectoryMetrics(
+  [{ circuit: '1', description: 'Lights', trip: '20A', poles: '1' }],
+  { mainAmps: 100, slotCount: 1 }
+);
+assert.match(unknownPhase.phaseBalance.assumption, /never assumed/i);
 
 const twoUp = panel.parseScheduleText([
   'PANEL BLT 11',
