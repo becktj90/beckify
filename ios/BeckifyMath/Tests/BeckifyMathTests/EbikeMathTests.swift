@@ -108,7 +108,10 @@ final class EbikeMathTests: XCTestCase {
             efficiencyPercent: 90,
             wheelDiameterInches: 27
         )
-        XCTAssertEqual(result.wheelSpeedMilesPerHour ?? 0, 54.41, accuracy: 0.01)
+        let expected = 750 * Double.pi * (27.0 / 12.0) * 60 / 5280
+        XCTAssertEqual(result.outputRPM, 750, accuracy: 1e-12)
+        XCTAssertEqual(result.wheelSpeedMilesPerHour ?? 0, expected, accuracy: 1e-12)
+        XCTAssertEqual(result.wheelSpeedMilesPerHour ?? 0, 60.24, accuracy: 0.01)
     }
 
     func testSprocketRejectsZeroEfficiency() {
