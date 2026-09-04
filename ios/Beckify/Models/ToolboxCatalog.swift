@@ -824,11 +824,12 @@ enum ToolboxCatalog {
             id: .controlSystems,
             kind: .calculator,
             title: "Control Systems",
-            subtitle: "Pocket servo lab — plant library, P→PI→PID step, Bode margins, lead compensator.",
+            subtitle: "Pocket servo lab — plant library, PID tuning overlays, Bode margins, lead compensator.",
             symbol: "slider.horizontal.3",
             synonyms: [
-                "control systems", "pid", "bode", "lead compensator", "servo", "transfer function",
-                "plant", "step response", "phase margin", "gain margin", "tuner", "g(s)",
+                "control systems", "pid", "pid tuning", "ziegler nichols", "bode", "lead compensator",
+                "servo", "transfer function", "plant", "step response", "phase margin", "gain margin",
+                "tuner", "g(s)", "overlay",
             ]
         ),
     ]

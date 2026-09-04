@@ -206,4 +206,125 @@ final class ControlSystemsTests: XCTestCase {
         XCTAssertEqual(closed.denominator[1], 3, accuracy: 1e-12)
         XCTAssertEqual(ControlSystems.dcGain(closed), 2.0 / 3.0, accuracy: 1e-12)
     }
+
+    func testZieglerNicholsUltimateMatchesWebsiteTable() throws {
+        let classic = try ControlSystems.zieglerNicholsUltimate(ku: 6, pu: 4, form: .pid, variant: .classic)
+        XCTAssertEqual(classic.kp, 0.6 * 6, accuracy: 1e-12)
+        XCTAssertEqual(classic.ti, 2, accuracy: 1e-12)
+        XCTAssertEqual(classic.td, 0.5, accuracy: 1e-12)
+        XCTAssertEqual(classic.ki, classic.kp / classic.ti, accuracy: 1e-12)
+        XCTAssertEqual(classic.kd, classic.kp * classic.td, accuracy: 1e-12)
+
+        let modified = try ControlSystems.zieglerNicholsUltimate(ku: 6, pu: 4, form: .pid, variant: .modified)
+        XCTAssertEqual(modified.kp, 0.33 * 6, accuracy: 1e-12)
+        XCTAssertEqual(modified.ti, 2, accuracy: 1e-12)
+        XCTAssertEqual(modified.td, 4.0 / 3.0, accuracy: 1e-12)
+
+        let pOnly = try ControlSystems.zieglerNicholsUltimate(ku: 8, pu: 2, form: .p, variant: .classic)
+        XCTAssertEqual(pOnly.kp, 4, accuracy: 1e-12)
+        XCTAssertEqual(pOnly.ki, 0, accuracy: 1e-12)
+        XCTAssertEqual(pOnly.kd, 0, accuracy: 1e-12)
+
+        let pi = try ControlSystems.zieglerNicholsUltimate(ku: 8, pu: 2.4, form: .pi, variant: .classic)
+        XCTAssertEqual(pi.kp, 0.45 * 8, accuracy: 1e-12)
+        XCTAssertEqual(pi.ti, 2, accuracy: 1e-12)
+    }
+
+    func testZieglerNicholsReactionCurveMatchesWebsiteTable() throws {
+        let classic = try ControlSystems.zieglerNicholsReactionCurve(k: 1, l: 0.5, t: 2, form: .pid, variant: .classic)
+        XCTAssertEqual(classic.kp, 1.2 * 2 / 0.5, accuracy: 1e-12)
+        XCTAssertEqual(classic.ti, 1, accuracy: 1e-12)
+        XCTAssertEqual(classic.td, 0.25, accuracy: 1e-12)
+
+        let modified = try ControlSystems.zieglerNicholsReactionCurve(k: 1, l: 0.5, t: 2, form: .pid, variant: .modified)
+        XCTAssertEqual(modified.kp, 0.95 * 2 / 0.5, accuracy: 1e-12)
+        XCTAssertEqual(modified.ti, 1.2, accuracy: 1e-12)
+        XCTAssertEqual(modified.td, 0.21, accuracy: 1e-12)
+    }
+
+    func testZieglerNicholsRejectsNonPositiveInputs() {
+        XCTAssertThrowsError(try ControlSystems.zieglerNicholsUltimate(ku: 0, pu: 2))
+        XCTAssertThrowsError(try ControlSystems.zieglerNicholsUltimate(ku: 4, pu: -1))
+        XCTAssertThrowsError(try ControlSystems.zieglerNicholsReactionCurve(k: 1, l: 0, t: 2))
+    }
+
+    func testUltimateGainOfType1TripleIntegratorPlant() {
+        // 1/(s(s+1)(s+2)) has Ku = 6 by Routh — same fixture as the website engine.
+        let plant = ControlTransferFunction(numerator: [1], denominator: [1, 3, 2, 0])
+        let result = ControlSystems.ultimateGain(plant)
+        XCTAssertEqual(result.ku ?? -1, 6, accuracy: 0.15)
+        XCTAssertNotNil(result.pu)
+        if let pu = result.pu {
+            XCTAssertGreaterThan(pu, 0)
+        }
+    }
+
+    func testFirstOrderPlantHasNoUltimateGain() {
+        let plant = ControlSystems.firstOrderPlant(km: 1, tau: 1)
+        let result = ControlSystems.ultimateGain(plant)
+        XCTAssertNil(result.ku)
+        XCTAssertNil(result.pu)
+    }
+
+    func testFitReactionCurveOnFirstOrderLag() throws {
+        let plant = ControlSystems.firstOrderPlant(km: 1, tau: 2)
+        let samples = try ControlSystems.simulateStep(plant, duration: 20, dt: 0.02)
+        let fit = ControlSystems.fitReactionCurve(samples)
+        XCTAssertEqual(fit.k, 1, accuracy: 0.05)
+        XCTAssertTrue(fit.t.isFinite)
+        XCTAssertGreaterThan(fit.t, 1)
+        XCTAssertLessThan(fit.t, 4)
+        XCTAssertTrue(fit.l.isFinite)
+        XCTAssertGreaterThanOrEqual(fit.l, 0)
+    }
+
+    func testCompareControllersOverlaysOpenPPIAndPID() throws {
+        let plant = ControlSystems.firstOrderPlant(km: 1, tau: 2)
+        let traces = try ControlSystems.compareControllers(
+            plant: plant,
+            gains: ControlPidGains(kp: 2, ki: 1, kd: 0.2),
+            duration: 20
+        )
+        XCTAssertEqual(traces.map(\.mode), [.open, .p, .pi, .pid])
+        XCTAssertEqual(traces.count, 4)
+        let byMode = Dictionary(uniqueKeysWithValues: traces.map { ($0.mode, $0) })
+        XCTAssertTrue(byMode[.p]?.stable ?? false)
+        XCTAssertTrue(byMode[.pi]?.stable ?? false)
+        let pErr = byMode[.p]?.metrics?.steadyStateError ?? 1
+        let piErr = byMode[.pi]?.metrics?.steadyStateError ?? 1
+        XCTAssertGreaterThan(pErr, 0.2)
+        XCTAssertLessThan(piErr, 0.08)
+        XCTAssertEqual(byMode[.p]?.gains.ki ?? -1, 0, accuracy: 1e-12)
+        XCTAssertEqual(byMode[.pi]?.gains.kd ?? -1, 0, accuracy: 1e-12)
+        XCTAssertEqual(byMode[.pid]?.gains.kd ?? 0, 0.2, accuracy: 1e-12)
+    }
+
+    func testStepTuneCompareFlagFillsOverlay() throws {
+        let plant = ControlSystems.firstOrderPlant(km: 1, tau: 2)
+        let single = try ControlSystems.stepTune(
+            plant: plant,
+            mode: .pi,
+            gains: ControlPidGains(kp: 2, ki: 1, kd: 0),
+            duration: 12
+        )
+        XCTAssertTrue(single.comparison.isEmpty)
+
+        let overlay = try ControlSystems.stepTune(
+            plant: plant,
+            mode: .pi,
+            gains: ControlPidGains(kp: 2, ki: 1, kd: 0),
+            duration: 12,
+            compare: true
+        )
+        XCTAssertEqual(overlay.comparison.count, 4)
+        XCTAssertEqual(overlay.comparison.map(\.mode), [.open, .p, .pi, .pid])
+        XCTAssertTrue(overlay.formula.contains("Overlay"))
+    }
+
+    func testZnFormFromOpenLoopUsesPID() {
+        XCTAssertEqual(ControlZnForm.from(mode: .open), .pid)
+        XCTAssertEqual(ControlZnForm.from(mode: .p), .p)
+        XCTAssertEqual(ControlZnForm.from(mode: .pi), .pi)
+        XCTAssertEqual(ControlZnForm.from(mode: .pid), .pid)
+    }
 }

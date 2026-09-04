@@ -62,7 +62,7 @@ Field — jobsite calculators, wizards, and instruments:
 • Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
 • Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
-• Control Systems — pocket servo lab: plant library or custom G(s), P→PI→PID step metrics, Bode margins (PM, GM, ωc, ωb), and a lead compensator with analog R/C suggestion. Educational approximations — not for safety-critical commissioning. State-space LQR/Kalman/MPC stays on the website.
+• Control Systems — pocket servo lab: plant library or custom G(s), P→PI→PID step metrics with Ziegler–Nichols (Ku/Pu and FOPDT) and an Open / P / PI / PID overlay so you can simulate different responses, Bode margins (PM, GM, ωc, ωb), and a lead compensator with analog R/C suggestion. Educational approximations — not for safety-critical commissioning. State-space LQR/Kalman/MPC stays on the website.
 • E-Bus / Rack Current — sum device currents against a bus rating for headroom
 
 Toolkit — basics, bench / homework, and references:
@@ -108,7 +108,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance from a measured Ω or mΩ reading with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and single vs loop methods. Same math as the website toolbox. Design aid — not a cable locator. Field → Controls still has the native Control Systems lab from the prior listing. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance from a measured Ω or mΩ reading with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and single vs loop methods. Same math as the website toolbox. Design aid — not a cable locator. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  

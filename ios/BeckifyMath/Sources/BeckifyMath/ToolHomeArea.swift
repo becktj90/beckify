@@ -150,7 +150,9 @@ public enum ToolHomeAreaPolicy {
         "frequencyWave": ["f": "frequency", "T": "period", "λ": "wavelength", "L": "inductance", "C": "capacitance"],
         "controlSystems": [
             "plantID": "plantID", "num": "num", "den": "den",
-            "section": "section", "Kp": "kp", "Ki": "ki", "Kd": "kd",
+            "section": "section", "mode": "mode",
+            "Kp": "kp", "Ki": "ki", "Kd": "kd",
+            "Ku": "ku", "Pu": "pu",
         ],
     ]
 

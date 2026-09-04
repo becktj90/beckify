@@ -1,7 +1,7 @@
 import SwiftUI
 import BeckifyMath
 
-/// Pocket control-systems lab: plant → P/PI/PID step → Bode margins → lead.
+/// Pocket control-systems lab: plant → P/PI/PID step (ZN + overlays) → Bode → lead.
 /// Lives under Field → Controls next to Signal Scaling / Modbus / PLC Timer.
 struct ControlSystemsLabView: View {
     enum Section: String, CaseIterable, Identifiable {
@@ -28,16 +28,24 @@ struct ControlSystemsLabView: View {
     @StoredInput(.controlSystems, "kp", default: "1") private var kp
     @StoredInput(.controlSystems, "ki", default: "0.5") private var ki
     @StoredInput(.controlSystems, "kd", default: "0.4") private var kd
+    @StoredToggle(.controlSystems, "compare", default: false) private var compare
+    @StoredChoice(.controlSystems, "znVariant", default: ControlZnVariant.classic) private var znVariant
+    @StoredInput(.controlSystems, "ku", default: "4") private var ku
+    @StoredInput(.controlSystems, "pu", default: "2") private var pu
+    @StoredInput(.controlSystems, "fopdtK", default: "1") private var fopdtK
+    @StoredInput(.controlSystems, "fopdtL", default: "0.4") private var fopdtL
+    @StoredInput(.controlSystems, "fopdtT", default: "2") private var fopdtT
     @StoredInput(.controlSystems, "loopK", default: "1") private var loopK
     @StoredInput(.controlSystems, "leadPhase", default: "50") private var leadPhase
     @StoredInput(.controlSystems, "leadOmega", default: "4") private var leadOmega
     @StoredInput(.controlSystems, "jobName", default: "Control systems") private var jobName
     @State private var session = ExplicitCalculationState<Output>()
     @State private var successTick = 0
+    @State private var tunerNote: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var inputFingerprint: String {
-        "\(section)|\(plantID)|\(mode)|\(numerator)|\(denominator)|\(kp)|\(ki)|\(kd)|\(loopK)|\(leadPhase)|\(leadOmega)"
+        "\(section)|\(plantID)|\(mode)|\(numerator)|\(denominator)|\(kp)|\(ki)|\(kd)|\(compare)|\(loopK)|\(leadPhase)|\(leadOmega)"
     }
 
     var body: some View {
@@ -153,6 +161,10 @@ struct ControlSystemsLabView: View {
         .pickerStyle(.segmented)
         .accessibilityLabel("Controller type")
 
+        Toggle("Compare Open / P / PI / PID", isOn: $compare)
+            .tint(Theme.accent)
+            .accessibilityHint("Overlay four unit-step responses on one chart using the Kp, Ki, and Kd below. Unused terms are zeroed per mode.")
+
         ThumbButtonRow {
             Button("1. P until it holds") {
                 mode = .p
@@ -180,14 +192,67 @@ struct ControlSystemsLabView: View {
             .frame(minHeight: Theme.touchTarget)
         }
 
-        if mode != .open {
+        if mode != .open || compare {
             NumberField(title: "Kp", unit: "", text: $kp, fieldID: "kp", onSubmit: calculate)
         }
-        if mode == .pi || mode == .pid {
+        if mode == .pi || mode == .pid || compare {
             NumberField(title: "Ki", unit: "1/s", text: $ki, fieldID: "ki", onSubmit: calculate)
         }
-        if mode == .pid {
+        if mode == .pid || compare {
             NumberField(title: "Kd", unit: "s", text: $kd, fieldID: "kd", onSubmit: calculate)
+        }
+
+        pidTuningCard
+    }
+
+    @ViewBuilder
+    private var pidTuningCard: some View {
+        Text("Ziegler–Nichols")
+            .font(Theme.TypeRole.fieldLabel)
+            .tracking(0.6)
+            .foregroundStyle(Theme.muted)
+        Text("Classic PID: Kp = 0.6 Ku, Ti = Pu/2, Td = Pu/8. Modified cuts overshoot. Apply writes Kp, Ki, Kd — then Calculate so you can compare responses.")
+            .font(Theme.TypeRole.help)
+            .foregroundStyle(Theme.muted)
+
+        Picker("ZN table", selection: $znVariant) {
+            ForEach(ControlZnVariant.allCases, id: \.self) { Text($0.displayName).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("Ziegler–Nichols table")
+
+        NumberField(title: "Ku", unit: "", text: $ku, helpText: "Ultimate gain — P-only oscillation.", fieldID: "ku")
+        NumberField(title: "Pu", unit: "s", text: $pu, helpText: "Ultimate period of that oscillation.", fieldID: "pu")
+        ThumbButtonRow {
+            Button("Estimate Ku, Pu") { estimateUltimateGain() }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            Button("Apply ultimate") { applyZn(source: .ultimate) }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+        }
+
+        NumberField(title: "FOPDT K", unit: "", text: $fopdtK, fieldID: "fopdtK")
+        NumberField(title: "L", unit: "s", text: $fopdtL, fieldID: "fopdtL")
+        NumberField(title: "T", unit: "s", text: $fopdtT, helpText: "Reaction-curve PID: Kp = 1.2 T / (K L), Ti = 2L, Td = 0.5L.", fieldID: "fopdtT")
+        ThumbButtonRow {
+            Button("Fit open-loop step") { fitReactionCurve() }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            Button("Apply reaction") { applyZn(source: .reaction) }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+        }
+
+        if let tunerNote {
+            Text(tunerNote)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .accessibilityIdentifier("controlSystems.tunerNote")
         }
     }
 
@@ -232,14 +297,17 @@ struct ControlSystemsLabView: View {
             plantCard(plant)
         case .step(let plant, let result):
             plantCard(plant)
-            if !result.stable {
+            if result.comparison.isEmpty && !result.stable {
                 ToolEmptyState(
                     title: "This loop is unstable",
-                    detail: "The linear TF response diverges. Back the gains off, walk P → I → D, or pick a different plant.",
+                    detail: "The linear TF response diverges. Back the gains off, walk P → I → D, try Ziegler–Nichols, or pick a different plant.",
                     systemImage: "exclamationmark.triangle"
                 )
-            } else {
+            } else if result.stable || !result.comparison.isEmpty {
                 stepChart(result)
+            }
+            if !result.comparison.isEmpty {
+                compareMetricsCard(result)
             }
             ResultCard(copyText: sticky) {
                 ResultRow(label: "Controller", value: result.mode.displayName, emphasis: true)
@@ -335,26 +403,75 @@ struct ControlSystemsLabView: View {
 
     @ViewBuilder
     private func stepChart(_ result: ControlStepResult) -> some View {
-        let closed = result.closedLoop.filter { $0.y.isFinite && abs($0.y) < 1e6 }
-        let open = result.openLoop.filter { $0.y.isFinite && abs($0.y) < 1e6 }
-        if !closed.isEmpty {
+        if !result.comparison.isEmpty {
+            compareChart(result)
+        } else {
+            let closed = result.closedLoop.filter { $0.y.isFinite && abs($0.y) < 1e6 }
+            let open = result.openLoop.filter { $0.y.isFinite && abs($0.y) < 1e6 }
+            if !closed.isEmpty {
+                DiagramCard(
+                    title: "Unit step",
+                    accessibilitySummary: "Closed-loop step versus open-loop plant. Rise \(ControlSystems.formatFinite(result.metrics?.riseTime, digits: 2, suffix: " s")), overshoot \(ControlSystems.formatFinite(result.metrics?.overshoot, digits: 1, suffix: " %")).",
+                    exportName: "control-step"
+                ) {
+                    EngineerLinePlot(
+                        series: [
+                            EngineerSeries(name: "Open loop", points: open, color: Theme.chartSecondary, fills: false),
+                            EngineerSeries(name: result.mode == .open ? "Plant" : "Closed loop", points: closed, color: Theme.chartPrimary, fills: true),
+                        ],
+                        xLabel: "s",
+                        yLabel: "y",
+                        yGuides: [EngineerGuide(value: 1, label: "1", axis: .y)],
+                        height: 220
+                    )
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func compareChart(_ result: ControlStepResult) -> some View {
+        let series = result.comparison.compactMap { trace -> EngineerSeries? in
+            let points = trace.samples.filter { $0.y.isFinite && abs($0.y) < 1e6 }
+            guard !points.isEmpty else { return nil }
+            return EngineerSeries(
+                name: trace.mode.displayName,
+                points: points,
+                color: compareColor(trace.mode),
+                fills: trace.mode == .pid
+            )
+        }
+        if !series.isEmpty {
             DiagramCard(
-                title: "Unit step",
-                accessibilitySummary: "Closed-loop step versus open-loop plant. Rise \(ControlSystems.formatFinite(result.metrics?.riseTime, digits: 2, suffix: " s")), overshoot \(ControlSystems.formatFinite(result.metrics?.overshoot, digits: 1, suffix: " %")).",
-                exportName: "control-step"
+                title: "Open / P / PI / PID",
+                accessibilitySummary: compareAccessibility(result),
+                exportName: "control-step-compare"
             ) {
                 EngineerLinePlot(
-                    series: [
-                        EngineerSeries(name: "Open loop", points: open, color: Theme.chartSecondary, fills: false),
-                        EngineerSeries(name: result.mode == .open ? "Plant" : "Closed loop", points: closed, color: Theme.chartPrimary, fills: true),
-                    ],
+                    series: series,
                     xLabel: "s",
                     yLabel: "y",
                     yGuides: [EngineerGuide(value: 1, label: "1", axis: .y)],
-                    height: 220
+                    height: 240
                 )
             }
         }
+    }
+
+    @ViewBuilder
+    private func compareMetricsCard(_ result: ControlStepResult) -> some View {
+        ResultCard(title: "Overlay") {
+            ForEach(result.comparison, id: \.mode) { trace in
+                ResultRow(
+                    label: trace.mode.displayName,
+                    value: compareMetricLine(trace),
+                    tone: trace.stable ? Theme.foreground : Theme.warn
+                )
+            }
+        }
+        Text("Same Kp / Ki / Kd on every trace; unused terms are zeroed. Change the gains or Apply Ziegler–Nichols, then Calculate again.")
+            .font(.subheadline)
+            .foregroundStyle(Theme.muted)
     }
 
     @ViewBuilder
@@ -428,7 +545,8 @@ struct ControlSystemsLabView: View {
                     plant: plant.transferFunction,
                     mode: mode,
                     gains: parsedGains(),
-                    duration: plant.duration
+                    duration: plant.duration,
+                    compare: compare
                 )
                 return .step(plant, result)
             case .bode:
@@ -459,6 +577,14 @@ struct ControlSystemsLabView: View {
             applyLibraryPlant(.secondOrder)
         case .step:
             mode = .p
+            compare = false
+            znVariant = .classic
+            ku = "4"
+            pu = "2"
+            fopdtK = "1"
+            fopdtL = "0.4"
+            fopdtT = "2"
+            tunerNote = nil
             applySuggestedGains()
         case .bode:
             loopK = "1"
@@ -478,9 +604,11 @@ struct ControlSystemsLabView: View {
             plantID = .firstOrder
             applyLibraryPlant(.firstOrder)
             mode = .pi
+            compare = true
             kp = "2"
             ki = "1"
-            kd = "0"
+            kd = "0.2"
+            tunerNote = nil
         case .bode:
             plantID = .secondOrder
             applyLibraryPlant(.secondOrder)
@@ -544,12 +672,20 @@ struct ControlSystemsLabView: View {
             ]
         case .step(let p, let r):
             plant = p
+            var overlay = ""
+            if let pi = r.comparison.first(where: { $0.mode == .pi }) {
+                overlay = ControlSystems.formatFinite(pi.metrics?.steadyStateError, digits: 3)
+            }
             outputs = [
                 "mode": r.mode.displayName,
                 "stable": r.stable ? "yes" : "no",
                 "Mp": ControlSystems.formatFinite(r.metrics?.overshoot, digits: 1, suffix: " %"),
                 "ts": ControlSystems.formatFinite(r.metrics?.settlingTime, digits: 2, suffix: " s"),
+                "ess": ControlSystems.formatFinite(r.metrics?.steadyStateError, digits: 3),
             ]
+            if !overlay.isEmpty {
+                outputs["PI ess"] = overlay
+            }
         case .bode(let p, let r):
             plant = p
             outputs = [
@@ -576,6 +712,10 @@ struct ControlSystemsLabView: View {
                 "G": plant.display,
                 "num": numerator,
                 "den": denominator,
+                "mode": mode.rawValue,
+                "kp": kp,
+                "ki": ki,
+                "kd": kd,
             ],
             outputs: outputs
         ))
@@ -584,7 +724,7 @@ struct ControlSystemsLabView: View {
     private var exampleTitle: String {
         switch section {
         case .plant: return "lightly damped 2nd-order"
-        case .step: return "PI on a first-order lag"
+        case .step: return "compare Open / P / PI / PID on a lag"
         case .bode: return "2nd-order Bode margins"
         case .lead: return "50° lead at 4 rad/s"
         }
@@ -595,7 +735,9 @@ struct ControlSystemsLabView: View {
         case .plant:
             return "G(s) = N(s) / D(s)    poles = roots(D)    Kp = N(0)/D(0)"
         case .step:
-            return "C(s) = Kp + Ki/s + Kd s    T = CG / (1 + CG)"
+            return compare
+                ? "Overlay Open, P, PI, PID on the same unit step. Unused Ki / Kd are zeroed per mode."
+                : "C(s) = Kp + Ki/s + Kd s    T = CG / (1 + CG)"
         case .bode:
             return "|G(jω)|dB = 20 log10 |G|    PM = 180° + ∠G(jωc)"
         case .lead:
@@ -609,6 +751,11 @@ struct ControlSystemsLabView: View {
         case .plant(let plant):
             return "G(s) = \(plant.display)"
         case .step(_, let result):
+            if !result.comparison.isEmpty {
+                let pi = result.comparison.first { $0.mode == .pi }
+                let pid = result.comparison.first { $0.mode == .pid }
+                return "Open / P / PI / PID  ·  PI ess \(ControlSystems.formatFinite(pi?.metrics?.steadyStateError, digits: 3))  ·  PID Mp \(ControlSystems.formatFinite(pid?.metrics?.overshoot, digits: 1, suffix: " %"))"
+            }
             if result.stable {
                 return "\(result.mode.displayName)  ·  Mp \(ControlSystems.formatFinite(result.metrics?.overshoot, digits: 1, suffix: " %"))  ·  ts \(ControlSystems.formatFinite(result.metrics?.settlingTime, digits: 2, suffix: " s"))"
             }
@@ -625,7 +772,7 @@ struct ControlSystemsLabView: View {
         case .plant:
             return "Pick a library plant or type coefficients. Every other section uses this G(s). A right-half-plane pole means the open loop runs away."
         case .step:
-            return "Walk P until the plant holds, I to kill offset, D to damp ringing. Rise is 10–90%, settling is 2% of the unit step."
+            return "Walk P until the plant holds, I to kill offset, D to damp ringing. Toggle Compare to overlay Open / P / PI / PID on one chart. Ziegler–Nichols fills Kp, Ki, Kd from Ku/Pu or a FOPDT fit — a tuning aid, not autotune of a real plant."
         case .bode:
             return "Phase margin is how far you are from the −1 point at gain crossover. ωb is closed-loop speed, not a stability number."
         case .lead:
@@ -640,6 +787,10 @@ struct ControlSystemsLabView: View {
             let gain = plant.dcGain.isFinite ? Format.number(plant.dcGain, digits: 2) : "∞"
             return "\(plant.name)  ·  DC \(gain)  ·  \(plant.openLoopStable ? "stable" : "unstable")"
         case .step(_, let result):
+            if !result.comparison.isEmpty {
+                let pi = result.comparison.first { $0.mode == .pi }
+                return "Open/P/PI/PID  ·  PI ess \(ControlSystems.formatFinite(pi?.metrics?.steadyStateError, digits: 3))"
+            }
             if result.stable {
                 return "\(result.mode.displayName)  ·  Mp \(ControlSystems.formatFinite(result.metrics?.overshoot, digits: 1, suffix: "%"))  ·  ts \(ControlSystems.formatFinite(result.metrics?.settlingTime, digits: 2, suffix: "s"))"
             }
@@ -656,5 +807,114 @@ struct ControlSystemsLabView: View {
         if abs(value) >= 1e6 { return "\(Format.number(value / 1e6, digits: 3)) MΩ" }
         if abs(value) >= 1e3 { return "\(Format.number(value / 1e3, digits: 3)) kΩ" }
         return "\(Format.number(value, digits: 3)) Ω"
+    }
+
+    private enum ZnSource {
+        case ultimate
+        case reaction
+    }
+
+    private func applyZn(source: ZnSource) {
+        do {
+            let form = ControlZnForm.from(mode: mode)
+            let table: ControlZnGains
+            switch source {
+            case .ultimate:
+                table = try ControlSystems.zieglerNicholsUltimate(
+                    ku: ku.parsedDouble ?? .nan,
+                    pu: pu.parsedDouble ?? .nan,
+                    form: form,
+                    variant: znVariant
+                )
+            case .reaction:
+                table = try ControlSystems.zieglerNicholsReactionCurve(
+                    k: fopdtK.parsedDouble ?? .nan,
+                    l: fopdtL.parsedDouble ?? .nan,
+                    t: fopdtT.parsedDouble ?? .nan,
+                    form: form,
+                    variant: znVariant
+                )
+            }
+            kp = Format.number(table.kp, digits: 3)
+            ki = Format.number(table.ki, digits: 3)
+            kd = Format.number(table.kd, digits: 3)
+            if mode == .open {
+                mode = form.controllerMode
+            }
+            tunerNote = "\(znVariant.displayName) \(form.displayName): Kp \(Format.number(table.kp, digits: 3)), Ki \(Format.number(table.ki, digits: 3)), Kd \(Format.number(table.kd, digits: 3))"
+            calculate()
+        } catch let error as CalcError {
+            tunerNote = error.message
+        } catch {
+            tunerNote = "Could not apply Ziegler–Nichols."
+        }
+    }
+
+    private func estimateUltimateGain() {
+        do {
+            let plant = try resolvedPlant()
+            let result = ControlSystems.ultimateGain(plant.transferFunction)
+            guard let kuValue = result.ku, kuValue > 0, kuValue.isFinite else {
+                tunerNote = "This plant stays stable for all K — no ultimate gain. Use the reaction-curve fit instead."
+                return
+            }
+            ku = Format.number(kuValue, digits: 3)
+            if let puValue = result.pu, puValue.isFinite, puValue > 0 {
+                pu = Format.number(puValue, digits: 3)
+            }
+            tunerNote = "Estimated Ku \(ku)" + (result.pu != nil ? " · Pu \(pu) s. Apply ultimate to fill Kp, Ki, Kd." : ". Period was not resolved.")
+        } catch let error as CalcError {
+            tunerNote = error.message
+        } catch {
+            tunerNote = "Could not estimate Ku, Pu."
+        }
+    }
+
+    private func fitReactionCurve() {
+        do {
+            let plant = try resolvedPlant()
+            let dt = plant.duration / 320
+            let samples = try ControlSystems.simulateStep(plant.transferFunction, duration: plant.duration, dt: dt)
+            let fit = ControlSystems.fitReactionCurve(samples)
+            if fit.k.isFinite {
+                fopdtK = Format.number(fit.k, digits: 3)
+            }
+            guard fit.l.isFinite, fit.l > 0, fit.t.isFinite, fit.t > 0 else {
+                tunerNote = "Open-loop step did not yield a usable FOPDT delay L. Try a slower plant or a longer duration."
+                return
+            }
+            fopdtL = Format.number(max(fit.l, 0.01), digits: 3)
+            fopdtT = Format.number(max(fit.t, 0.05), digits: 3)
+            tunerNote = "Fit K \(fopdtK) · L \(fopdtL) s · T \(fopdtT) s. Apply reaction to fill Kp, Ki, Kd."
+        } catch let error as CalcError {
+            tunerNote = error.message
+        } catch {
+            tunerNote = "Could not fit the open-loop step."
+        }
+    }
+
+    private func compareColor(_ mode: ControlControllerMode) -> Color {
+        switch mode {
+        case .open: return Theme.chartSecondary
+        case .p: return Theme.chartTertiary
+        case .pi: return Theme.chartPrimary
+        case .pid: return Theme.good
+        }
+    }
+
+    private func compareMetricLine(_ trace: ControlCompareTrace) -> String {
+        if !trace.stable {
+            return "unstable"
+        }
+        let mp = ControlSystems.formatFinite(trace.metrics?.overshoot, digits: 1, suffix: "%")
+        let ess = ControlSystems.formatFinite(trace.metrics?.steadyStateError, digits: 3)
+        return "Mp \(mp)  ·  ess \(ess)"
+    }
+
+    private func compareAccessibility(_ result: ControlStepResult) -> String {
+        let bits = result.comparison.map { trace in
+            "\(trace.mode.displayName) \(compareMetricLine(trace))"
+        }
+        return "Unit-step overlay. " + bits.joined(separator: ". ")
     }
 }
