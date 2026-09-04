@@ -99,6 +99,7 @@ final class EbikeMathTests: XCTestCase {
         XCTAssertNil(result.wheelSpeedMilesPerHour)
     }
 
+    /// 11T/44T at 3000 rpm → 750 rpm out. Website `ebWheelSpeedMph(750, 27)`.
     func testSprocket27InchWheelSpeed() throws {
         let result = try EbikeSprocket.ratio(
             motorRPM: 3000,
