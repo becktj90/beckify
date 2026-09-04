@@ -414,6 +414,7 @@ struct WiFiStatusView: View {
     @StoredChoice(.wifiStatus, "surveyMode", default: WiFiSurveyMode.gps) private var surveyMode
     @StoredChoice(.wifiStatus, "rttTarget", default: WiFiRTTTarget.cloudflare) private var rttTarget
     @StoredInput(.wifiStatus, "rttHost", default: "192.168.1.1") private var customRTTHost
+    @StateObject private var lookCheck = LookCheckModel()
     @State private var notes = ""
 
     var body: some View {
@@ -421,26 +422,23 @@ struct WiFiStatusView: View {
             toolID: .wifiStatus,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Walk or tap to drop samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works. Link quality is TCP RTT, not ICMP ping.")
+            disclaimer: .sensor(extra: "Look Check GETs Apple’s hotspot-detect page. Walk or tap to drop coverage samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works. Link quality is TCP RTT, not ICMP ping."),
+            isResultStale: lookCheck.isStale(path: lookPath)
         ) {
+            LookCheckCard(model: lookCheck) {
+                lookCheck.run(path: lookPath, force: true)
+            }
             ShowWorkCard(
                 toolID: .wifiStatus,
-                symbolic: "A = NEHotspotNetwork.signalStrength ∈ [0, 1]    RTT = TCP connect time    heatmap = IDW(A, east, north)",
+                symbolic: "look = HTTP GET captive.apple.com/hotspot-detect.html → Success?    A = NEHotspotNetwork.signalStrength ∈ [0, 1]    RTT = TCP connect time",
                 substituted: substituted,
-                meaning: "Primary public unit is Apple’s 0…1 strength, shown as percent and bars. Complementary metric is TCP round-trip time to a host (link quality). Neither is a calibrated RF power reading. This sketch is not a site survey."
+                meaning: "Look Check is captive vs online, not a speed test. Primary public RF unit is Apple’s 0…1 strength, shown as percent and bars. Complementary metric is TCP round-trip time. Neither is a calibrated RF power reading."
             )
             RFHonestyBanner(
                 title: "No Wi‑Fi dBm on iOS",
-                detail: "App Store apps cannot read RSSI or dBm. This gauge is Apple’s public 0…1 signalStrength as percent and bars, plus optional TCP RTT. It will not invent a reading."
+                detail: "App Store apps cannot read RSSI or dBm. This gauge is Apple’s public 0…1 signalStrength as percent and bars, plus optional TCP RTT. Look Check is an HTTP connectivity verdict. It will not invent a reading."
             )
             WiFiStrengthGauge(strength: model.signalStrength, onWiFi: model.usesWiFi)
-            ResultCard(title: "Path") {
-                ResultRow(label: "Status", value: model.status, emphasis: true)
-                ResultRow(label: "Wi-Fi interface", value: model.usesWiFi ? "yes" : "no", tone: model.usesWiFi ? Theme.good : Theme.muted)
-                ResultRow(label: "Cellular", value: model.usesCellular ? "yes" : "no")
-                ResultRow(label: "Expensive / constrained", value: "\(model.isExpensive ? "yes" : "no") / \(model.isConstrained ? "yes" : "no")")
-                ResultRow(label: "Interfaces", value: model.interfaces.isEmpty ? "—" : model.interfaces.joined(separator: ", "))
-            }
             ResultCard(title: "Associated network", copyText: copyText) {
                 ResultRow(label: "SSID", value: model.ssid ?? "—", emphasis: true)
                 ResultRow(label: "BSSID", value: model.bssid ?? "—")
@@ -471,20 +469,58 @@ struct WiFiStatusView: View {
             }
             linkQualitySection
             coverageSection
+            AdvancedPathDisclosure {
+                ResultRow(label: "Status", value: model.status, emphasis: true)
+                ResultRow(label: "Wi-Fi interface", value: model.usesWiFi ? "yes" : "no", tone: model.usesWiFi ? Theme.good : Theme.muted)
+                ResultRow(label: "Cellular", value: model.usesCellular ? "yes" : "no")
+                ResultRow(label: "Wired", value: model.usesWired ? "yes" : "no")
+                ResultRow(label: "Expensive / constrained", value: "\(model.isExpensive ? "yes" : "no") / \(model.isConstrained ? "yes" : "no")")
+                ResultRow(label: "Interfaces", value: model.interfaces.isEmpty ? "—" : model.interfaces.joined(separator: ", "))
+                if let host = model.gatewayHosts.first {
+                    ResultRow(label: "Path gateway", value: host)
+                } else {
+                    ResultRow(label: "Path gateway", value: "not published", tone: Theme.muted)
+                }
+                Text("Interface names and path flags are here for debugging. The field verdict is Look Check above.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 6)
+            }
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
         }
         .onAppear {
             model.surveyMode = surveyMode
             model.start()
+            lookCheck.run(path: lookPath)
         }
-        .onDisappear { model.stop() }
+        .onDisappear {
+            model.stop()
+            lookCheck.cancel()
+        }
         .onChange(of: surveyMode) { _, new in
             model.surveyMode = new
         }
+        .onChange(of: lookPath.fingerprint) { _, _ in
+            lookCheck.run(path: lookPath)
+        }
+    }
+
+    private var lookPath: LookCheckPathContext {
+        LookCheckPathContext(
+            satisfied: model.status == "Satisfied",
+            usesWiFi: model.usesWiFi,
+            usesCellular: model.usesCellular,
+            usesWired: model.usesWired
+        )
     }
 
     private var substituted: String? {
         var parts: [String] = []
+        if let look = lookCheck.verdict {
+            parts.append("look = \(look.headline)")
+        } else {
+            parts.append("Look Check to classify captive vs online.")
+        }
         if let s = model.signalStrength {
             parts.append("A = \(Format.number(s, digits: 2))  →  \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) %  ·  \(WiFiCoverageMath.bars(s))/4 bars")
         } else {
@@ -497,17 +533,19 @@ struct WiFiStatusView: View {
     }
 
     private var sticky: String? {
-        if model.signalStrength == nil, model.rttSummary?.medianMS == nil {
-            return model.usesWiFi ? "Wi-Fi path, no strength yet" : nil
-        }
         var parts: [String] = []
+        if let look = lookCheck.verdict { parts.append(look.headline) }
         if model.signalStrength != nil { parts.append(strengthText) }
         if let rtt = rttMedianText { parts.append("\(rtt) RTT") }
-        return parts.isEmpty ? nil : parts.joined(separator: "  ·  ")
+        if parts.isEmpty {
+            return model.usesWiFi ? "Wi-Fi path, no look check yet" : nil
+        }
+        return parts.joined(separator: "  ·  ")
     }
 
     private var copyText: String? {
         var parts: [String] = []
+        if let look = lookCheck.copyLine { parts.append(look) }
         if model.signalStrength != nil {
             parts.append("\(model.ssid ?? "SSID —"), \(strengthText), Apple 0…1 strength")
         }
@@ -690,6 +728,9 @@ struct WiFiStatusView: View {
 
     private func save() {
         var outputs: [String: String] = [
+            "look check": lookCheck.verdict?.headline ?? "—",
+            "look path": lookCheck.verdict?.transportLabel ?? "—",
+            "local ipv4": lookCheck.localIPv4 ?? "—",
             "status": model.status,
             "wifi": model.usesWiFi ? "yes" : "no",
             "ssid": model.ssid ?? "(not returned)",
@@ -711,7 +752,7 @@ struct WiFiStatusView: View {
             toolID: .wifiStatus,
             notes: notes,
             inputs: [
-                "API": "NWPathMonitor + NEHotspotNetwork.signalStrength + TCP RTT",
+                "API": "Look Check HTTP + NWPathMonitor + NEHotspotNetwork.signalStrength + TCP RTT",
                 "mode": surveyMode.rawValue,
                 "rttTarget": rttTarget.rawValue,
                 "rttHost": customRTTHost,

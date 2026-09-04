@@ -397,20 +397,25 @@ enum ToolboxCatalog {
             id: .wifiStatus,
             kind: .sensor,
             title: "Wi-Fi Path",
-            subtitle: "Apple strength % / bars and TCP RTT. Not a dBm meter.",
+            subtitle: "Look Check, Apple strength %/bars, TCP RTT. Not a dBm meter.",
             symbol: "wifi",
-            synonyms: ["wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path", "heatmap", "coverage", "dbm", "rtt", "latency", "link quality"]
+            synonyms: [
+                "wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path",
+                "heatmap", "coverage", "dbm", "rtt", "latency", "link quality",
+                "look check", "captive", "portal", "hotspot detect", "connectivity", "local ip",
+            ]
         ),
         ToolDefinition(
             id: .cellularStatus,
             kind: .sensor,
             title: "Cellular Path",
-            subtitle: "Color gauges for generation and TCP RTT, plus carrier / RAT. Not RSRP / dBm.",
+            subtitle: "Look Check, generation + TCP RTT gauges, carrier / RAT. Not RSRP / dBm.",
             symbol: "antenna.radiowaves.left.and.right",
             synonyms: [
                 "cellular", "cell", "lte", "5g", "nr", "4g", "3g", "wcdma", "carrier",
                 "mcc", "mnc", "plmn", "rsrp", "rsrq", "sinr", "rssi", "dbm", "dual sim",
                 "radio access", "telephony", "coretelephony", "signal", "rtt", "latency",
+                "look check", "captive", "portal", "connectivity",
             ]
         ),
         ToolDefinition(

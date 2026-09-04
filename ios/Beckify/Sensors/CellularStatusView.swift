@@ -518,6 +518,7 @@ struct CellularStatusView: View {
     @StoredInput(.cellularStatus, "jobName", default: "Cellular path") private var jobName
     @StoredChoice(.cellularStatus, "rttTarget", default: CellularRTTTarget.cloudflare) private var rttTarget
     @StoredInput(.cellularStatus, "rttHost", default: "1.1.1.1") private var customRTTHost
+    @StateObject private var lookCheck = LookCheckModel()
     @State private var notes = ""
     @State private var referenceOpen = false
 
@@ -526,17 +527,21 @@ struct CellularStatusView: View {
             toolID: .cellularStatus,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "On-device CoreTelephony + Network path status. RTT is a user-started TCP probe. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm.")
+            disclaimer: .sensor(extra: "Look Check is the same HTTP hotspot-detect probe as Wi-Fi Path. On-device CoreTelephony + Network path status. RTT is a user-started TCP probe. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm."),
+            isResultStale: lookCheck.isStale(path: lookPath)
         ) {
+            LookCheckCard(model: lookCheck) {
+                lookCheck.run(path: lookPath, force: true)
+            }
             ShowWorkCard(
                 toolID: .cellularStatus,
-                symbolic: "RAT = serviceCurrentRadioAccessTechnology    path = NWPath.usesCellular    RTT = TCP connect time",
+                symbolic: "look = HTTP GET captive.apple.com/hotspot-detect.html → Success?    RAT = serviceCurrentRadioAccessTechnology    RTT = TCP connect time",
                 substituted: substituted,
-                meaning: "Gauges show radio generation (2G…5G from RAT) and measured TCP RTT. They are not RSRP, RSRQ, SINR, or dBm. Use Field Test Mode on the phone if you need those RF numbers."
+                meaning: "Look Check is captive vs online on the default path. Gauges show radio generation (2G…5G from RAT) and measured TCP RTT. They are not RSRP, RSRQ, SINR, or dBm."
             )
             RFHonestyBanner(
                 title: "No cellular dBm on iOS",
-                detail: "App Store apps cannot read RSRP, RSRQ, SINR, RSSI, or bar-count from public CoreTelephony or Network APIs. Private status-bar scraping is a reject risk. This instrument reports radio identity and a measured TCP RTT proxy only."
+                detail: "App Store apps cannot read RSRP, RSRQ, SINR, RSSI, or bar-count from public CoreTelephony or Network APIs. Private status-bar scraping is a reject risk. This instrument reports Look Check, radio identity, and a measured TCP RTT proxy only."
             )
             CellularNetworkGauges(
                 rat: model.dataService?.rat,
@@ -547,37 +552,6 @@ struct CellularStatusView: View {
                 rttMeasuring: model.rttMeasuring
             )
             cellNetworkBoard
-            ResultCard(title: "Default path") {
-                ResultRow(label: "Status", value: model.defaultStatus, emphasis: true)
-                ResultRow(
-                    label: "Uses cellular",
-                    value: model.defaultUsesCellular ? "yes" : "no",
-                    tone: model.defaultUsesCellular ? Theme.good : Theme.muted
-                )
-                ResultRow(label: "Wi-Fi / wired", value: "\(model.defaultUsesWiFi ? "yes" : "no") / \(model.defaultUsesWired ? "yes" : "no")")
-                ResultRow(label: "Expensive / constrained", value: "\(model.defaultIsExpensive ? "yes" : "no") / \(model.defaultIsConstrained ? "yes" : "no")")
-                ResultRow(label: "IPv4 / IPv6 / DNS", value: "\(flag(model.defaultSupportsIPv4)) / \(flag(model.defaultSupportsIPv6)) / \(flag(model.defaultSupportsDNS))")
-                ResultRow(label: "Unsatisfied reason", value: model.defaultUnsatisfiedReason)
-                ResultRow(label: "Interfaces", value: model.defaultInterfaces.isEmpty ? "—" : model.defaultInterfaces.joined(separator: ", "))
-                ResultRow(label: "Gateways", value: model.defaultGateways.isEmpty ? "not published" : model.defaultGateways.joined(separator: ", "))
-            }
-            ResultCard(title: "Cellular path") {
-                ResultRow(
-                    label: "Cellular monitor",
-                    value: model.cellularStatus,
-                    emphasis: true,
-                    tone: model.cellularAvailable ? Theme.good : Theme.muted
-                )
-                ResultRow(label: "Cellular available", value: model.cellularAvailable ? "yes" : "no")
-                ResultRow(label: "Expensive / constrained", value: "\(model.cellularIsExpensive ? "yes" : "no") / \(model.cellularIsConstrained ? "yes" : "no")")
-                ResultRow(label: "Unsatisfied reason", value: model.cellularUnsatisfiedReason)
-                ResultRow(label: "Interfaces", value: model.cellularInterfaces.isEmpty ? "—" : model.cellularInterfaces.joined(separator: ", "))
-                ResultRow(label: "App cellular data", value: model.restriction)
-                Text("The cellular monitor requires a cellular interface even when Wi-Fi is the default route. App cellular data uses CTCellularData.")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .padding(.top, 4)
-            }
             ResultCard(title: "Radio / SIM", copyText: copyText) {
                 ResultRow(label: "Services", value: CellularRadioIdentity.serviceCountLabel(model.services.count), emphasis: true)
                 ResultRow(label: "Data service", value: dataServiceLabel)
@@ -598,11 +572,48 @@ struct CellularStatusView: View {
                     .padding(.top, 6)
             }
             linkQualitySection
+            AdvancedPathDisclosure {
+                ResultRow(label: "Default status", value: model.defaultStatus, emphasis: true)
+                ResultRow(
+                    label: "Uses cellular",
+                    value: model.defaultUsesCellular ? "yes" : "no",
+                    tone: model.defaultUsesCellular ? Theme.good : Theme.muted
+                )
+                ResultRow(label: "Wi-Fi / wired", value: "\(model.defaultUsesWiFi ? "yes" : "no") / \(model.defaultUsesWired ? "yes" : "no")")
+                ResultRow(label: "Expensive / constrained", value: "\(model.defaultIsExpensive ? "yes" : "no") / \(model.defaultIsConstrained ? "yes" : "no")")
+                ResultRow(label: "IPv4 / IPv6 / DNS", value: "\(flag(model.defaultSupportsIPv4)) / \(flag(model.defaultSupportsIPv6)) / \(flag(model.defaultSupportsDNS))")
+                ResultRow(label: "Unsatisfied reason", value: model.defaultUnsatisfiedReason)
+                ResultRow(label: "Default interfaces", value: model.defaultInterfaces.isEmpty ? "—" : model.defaultInterfaces.joined(separator: ", "))
+                ResultRow(label: "Gateways", value: model.defaultGateways.isEmpty ? "not published" : model.defaultGateways.joined(separator: ", "))
+                ResultRow(
+                    label: "Cellular monitor",
+                    value: model.cellularStatus,
+                    tone: model.cellularAvailable ? Theme.good : Theme.muted
+                )
+                ResultRow(label: "Cellular available", value: model.cellularAvailable ? "yes" : "no")
+                ResultRow(label: "Cell expensive / constrained", value: "\(model.cellularIsExpensive ? "yes" : "no") / \(model.cellularIsConstrained ? "yes" : "no")")
+                ResultRow(label: "Cell unsatisfied", value: model.cellularUnsatisfiedReason)
+                ResultRow(label: "Cell interfaces", value: model.cellularInterfaces.isEmpty ? "—" : model.cellularInterfaces.joined(separator: ", "))
+                ResultRow(label: "App cellular data", value: model.restriction)
+                Text("Interface names and path flags are here for debugging. Look Check above is the field verdict. The cellular monitor requires a cellular interface even when Wi-Fi is the default route.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 6)
+            }
             referenceSection
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
         }
-        .onAppear { model.start() }
-        .onDisappear { model.stop() }
+        .onAppear {
+            model.start()
+            lookCheck.run(path: lookPath)
+        }
+        .onDisappear {
+            model.stop()
+            lookCheck.cancel()
+        }
+        .onChange(of: lookPath.fingerprint) { _, _ in
+            lookCheck.run(path: lookPath)
+        }
         .onChange(of: rttTarget) { _, _ in
             model.invalidateDisplayedRTT(message: "Target changed. Prior RTT was for a different host — Start again. Not RSRP.")
         }
@@ -796,8 +807,20 @@ struct CellularStatusView: View {
         .accessibilityHint("Educational RSRP, RSRQ, SINR, and RSSI bands. Not read from this device.")
     }
 
+    private var lookPath: LookCheckPathContext {
+        LookCheckPathContext(
+            satisfied: model.defaultStatus == "Satisfied",
+            usesWiFi: model.defaultUsesWiFi,
+            usesCellular: model.defaultUsesCellular,
+            usesWired: model.defaultUsesWired
+        )
+    }
+
     private var substituted: String? {
         var parts: [String] = []
+        if let look = lookCheck.verdict {
+            parts.append("look = \(look.headline)")
+        }
         if let service = model.dataService {
             parts.append("RAT = \(service.rat.compact)")
             if let plmn = CellularRadioIdentity.plmn(mcc: service.mcc, mnc: service.mnc) {
@@ -816,6 +839,7 @@ struct CellularStatusView: View {
 
     private var sticky: String? {
         var parts: [String] = []
+        if let look = lookCheck.verdict { parts.append(look.headline) }
         if let rat = model.dataService?.rat, rat.generation != .unknown || model.dataService?.ratRaw != nil {
             parts.append(rat.compact)
         }
@@ -835,6 +859,7 @@ struct CellularStatusView: View {
 
     private var copyText: String? {
         var parts: [String] = []
+        if let look = lookCheck.copyLine { parts.append(look) }
         if let service = model.dataService {
             parts.append("\(service.carrierName ?? "Carrier —"), \(service.rat.compact) (data service)")
             if let plmn = CellularRadioIdentity.plmn(mcc: service.mcc, mnc: service.mnc) {
@@ -909,6 +934,9 @@ struct CellularStatusView: View {
 
     private func save() {
         var outputs: [String: String] = [
+            "look check": lookCheck.verdict?.headline ?? "—",
+            "look path": lookCheck.verdict?.transportLabel ?? "—",
+            "local ipv4": lookCheck.localIPv4 ?? "—",
             "default status": model.defaultStatus,
             "uses cellular": model.defaultUsesCellular ? "yes" : "no",
             "cellular available": model.cellularAvailable ? "yes" : "no",
@@ -936,7 +964,7 @@ struct CellularStatusView: View {
             toolID: .cellularStatus,
             notes: notes,
             inputs: [
-                "API": "CTTelephonyNetworkInfo + NWPathMonitor + TCP RTT",
+                "API": "Look Check HTTP + CTTelephonyNetworkInfo + NWPathMonitor + TCP RTT",
                 "rttTarget": rttTarget.rawValue,
                 "rttHost": customRTTHost,
             ],

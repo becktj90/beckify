@@ -60,7 +60,7 @@ struct ToolboxView: View {
                                     Text("Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer.")
                                 }
                                 if shelf == .instruments {
-                                    Text("Wi-Fi Path shows Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows carrier / RAT and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP).")
+                                    Text("Wi-Fi Path leads with Look Check (captive / local / online), then Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows the same Look Check, carrier / RAT, and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP).")
                                 }
                             }
                         }
@@ -115,8 +115,10 @@ struct ToolboxView: View {
             || query.localizedCaseInsensitiveContains("cellular")
             || query.localizedCaseInsensitiveContains("lte")
             || query.localizedCaseInsensitiveContains("5g")
+            || query.localizedCaseInsensitiveContains("look check")
+            || query.localizedCaseInsensitiveContains("captive")
         {
-            return "Wi-Fi Path reports Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR)."
+            return "Wi-Fi Path leads with Look Check (captive / local / online), then Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports the same Look Check, carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR)."
         }
         return nil
     }

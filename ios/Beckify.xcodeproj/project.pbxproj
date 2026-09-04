@@ -67,6 +67,7 @@
 		BECF00000000000000000090 /* ConductorLengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008F /* ConductorLengthView.swift */; };
 		BECF00000000000000000092 /* CellularStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000091 /* CellularStatusView.swift */; };
 		BECF00000000000000000094 /* ReviewAskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000093 /* ReviewAskStore.swift */; };
+		BECF00000000000000000096 /* LookCheckClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000095 /* LookCheckClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -130,6 +131,7 @@
 		BECF0000000000000000008F /* ConductorLengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorLengthView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000091 /* CellularStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularStatusView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000093 /* ReviewAskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewAskStore.swift; sourceTree = "<group>"; };
+		BECF00000000000000000095 /* LookCheckClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +272,7 @@
 				BECF0000000000000000004F /* FieldPositionView.swift */,
 				BECF00000000000000000051 /* DeviceHealthView.swift */,
 				BECF00000000000000000053 /* SensorSupport.swift */,
+				BECF00000000000000000095 /* LookCheckClient.swift */,
 			);
 			path = Sensors;
 			sourceTree = "<group>";
@@ -378,6 +381,7 @@
 				BECF00000000000000000050 /* FieldPositionView.swift in Sources */,
 				BECF00000000000000000052 /* DeviceHealthView.swift in Sources */,
 				BECF00000000000000000054 /* SensorSupport.swift in Sources */,
+				BECF00000000000000000096 /* LookCheckClient.swift in Sources */,
 				BECF00000000000000000056 /* VoltageDividerView.swift in Sources */,
 				BECF00000000000000000058 /* SeriesParallelView.swift in Sources */,
 				BECF0000000000000000005A /* ResistorColorView.swift in Sources */,

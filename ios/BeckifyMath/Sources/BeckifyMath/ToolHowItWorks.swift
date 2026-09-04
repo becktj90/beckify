@@ -186,20 +186,22 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "wifiStatus": ToolHowItWorks(
-            summary: "Apple’s public 0…1 Wi-Fi strength as percent/bars, optional TCP RTT, and a coverage sketch.",
-            context: "Walk a room or tap a floor plan. Not a site-survey meter.",
+            summary: "Look Check (captive / local / online), Apple 0…1 strength %/bars when given, and TCP RTT.",
+            context: "Field connectivity first. Not a dBm meter or a site survey.",
             bullets: [
                 "iOS does not give third-party apps Wi-Fi RSSI or dBm — this tool will not invent dBm.",
+                "Look Check GETs Apple’s hotspot-detect page. Success means no captive splash — not a speed test.",
                 "RTT is TCP connect time, not ICMP ping. A LAN/gateway target may prompt for Local Network.",
                 "SSID and strength need location, plus Access Wi-Fi Information on a signed team.",
             ]
         ),
         "cellularStatus": ToolHowItWorks(
-            summary: "Radio generation from RAT (2G…5G) and optional TCP RTT, plus carrier / PLMN chips.",
-            context: "Which radio and how laggy the path is — not a field-strength meter.",
+            summary: "Look Check, radio generation from RAT (2G…5G), optional TCP RTT, and carrier / PLMN chips.",
+            context: "Which radio and whether the path is online — not a field-strength meter.",
             bullets: [
                 "iOS does not expose RSRP, RSRQ, SINR, RSSI, or dBm to third-party apps. Nothing here is invented.",
                 "Gauges are generation (from RAT) and TCP RTT milliseconds — not signal bars.",
+                "Look Check is the same HTTP hotspot-detect probe as Wi-Fi Path — captive vs online, not RSRP.",
                 "CTCarrier is deprecated as of iOS 16 with no public replacement; empty subscriber fields stay blank.",
             ]
         ),
