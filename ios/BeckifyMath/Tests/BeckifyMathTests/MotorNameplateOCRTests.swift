@@ -373,4 +373,112 @@ final class MotorNameplateOCRTests: XCTestCase {
         XCTAssertEqual(extracted.value(.frequencyHz), "60")
         XCTAssertTrue(extracted.value(.notes)?.contains("50/60") ?? false)
     }
+
+    func testHorsepowerInsideModelNumberIsNotClaimedAsHP() {
+        let modelOnly = NameplateFieldParser.extract(text: """
+        MODEL 10HP-215
+        RPM 1750
+        VOLTS 460
+        """)
+        XCTAssertNotEqual(modelOnly.value(.ratedHP), "215")
+        XCTAssertEqual(modelOnly.value(.model), "10HP-215")
+        XCTAssertEqual(modelOnly.value(.rpm), "1750")
+
+        let withLabeledHP = NameplateFieldParser.extract(text: """
+        MODEL 10HP-215
+        HP 10
+        """)
+        XCTAssertEqual(withLabeledHP.value(.ratedHP), "10")
+        XCTAssertEqual(withLabeledHP.value(.model), "10HP-215")
+    }
+
+    func testPhaseRequiresWholeTokensNotEmbeddedDigits() {
+        let voltsAmps = NameplateFieldParser.extract(text: "HP 10\nVOLTS 230/460\nAMPS 25.0/12.5")
+        XCTAssertNil(voltsAmps.value(.phases))
+
+        let frame = NameplateFieldParser.extract(text: "HP 10\nFRAME 143T")
+        XCTAssertNil(frame.value(.phases))
+
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\nPH 3").value(.phases), "3")
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\nPH 1").value(.phases), "1")
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\n3PH").value(.phases), "3")
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\n1PH").value(.phases), "1")
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\nTHREE PHASE").value(.phases), "3")
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\nSINGLE PHASE").value(.phases), "1")
+        XCTAssertEqual(NameplateFieldParser.extract(text: "HP 10\nPHASE 3").value(.phases), "3")
+        XCTAssertNil(NameplateFieldParser.extract(text: "HP 10\nPH 13").value(.phases))
+    }
+
+    func testLabeledLRAAndMOCPAmpsAreNeverFLA() {
+        let lockedRotorAmps = NameplateFieldParser.extract(text: "LOCKED ROTOR AMPS 72\nHP 10")
+        XCTAssertEqual(lockedRotorAmps.value(.lra), "72")
+        XCTAssertNil(lockedRotorAmps.value(.fla))
+
+        let lraAmps = NameplateFieldParser.extract(text: "LRA AMPS 72\nHP 5")
+        XCTAssertEqual(lraAmps.value(.lra), "72")
+        XCTAssertNil(lraAmps.value(.fla))
+
+        let mocpAmps = NameplateFieldParser.extract(text: "MOCP AMPS 40\nHP 10")
+        XCTAssertEqual(mocpAmps.value(.mocp), "40")
+        XCTAssertNil(mocpAmps.value(.fla))
+
+        XCTAssertTrue(NameplateFieldParser.isMOCPOrLRALine("LOCKED ROTOR AMPS 72"))
+        XCTAssertTrue(NameplateFieldParser.isMOCPOrLRALine("LRA AMPS 72"))
+        XCTAssertTrue(NameplateFieldParser.isMOCPOrLRALine("MOCP AMPS 40"))
+    }
+
+    func testPackedVoltsAmpsUsesValueAfterAMPS() {
+        let extracted = NameplateFieldParser.extract(text: "HP 10\nVOLTS 460 AMPS 14")
+        XCTAssertEqual(extracted.value(.voltage), "460")
+        XCTAssertEqual(extracted.value(.fla), "14")
+        XCTAssertNotEqual(extracted.value(.fla), "460")
+
+        let dual = NameplateFieldParser.extract(text: "VOLTS 230/460 AMPS 25.0/12.5\nPH 3")
+        XCTAssertEqual(dual.value(.voltage), "230/460")
+        XCTAssertEqual(dual.value(.fla), "12.5")
+    }
+
+    func testEfficiencyUnitOmitsPercentForIECClass() {
+        XCTAssertEqual(NameplateFieldID.nomEff.unit(forValue: "89.5"), "%")
+        XCTAssertEqual(NameplateFieldID.nomEff.unit(forValue: "91"), "%")
+        XCTAssertEqual(NameplateFieldID.nomEff.unit(forValue: ""), "%")
+        XCTAssertEqual(NameplateFieldID.nomEff.unit(forValue: "IE3"), "")
+        XCTAssertEqual(NameplateFieldID.nomEff.unit(forValue: "IE4"), "")
+        XCTAssertEqual(NameplateFieldID.ratedHP.unit(forValue: "10"), "HP")
+    }
+
+    func testUnknownPhaseFallsBackToPrimaryToken() {
+        XCTAssertNil(NameplateFieldParser.explicitThreePhase(""))
+        XCTAssertNil(NameplateFieldParser.explicitThreePhase("unknown"))
+        XCTAssertEqual(NameplateFieldParser.explicitThreePhase("1"), false)
+        XCTAssertEqual(NameplateFieldParser.explicitThreePhase("3"), true)
+
+        XCTAssertEqual(NameplateFieldParser.preferredToken(raw: "230/460", phase: "3"), "460")
+        XCTAssertEqual(NameplateFieldParser.preferredToken(raw: "230/460", phase: "1"), "230")
+        XCTAssertEqual(NameplateFieldParser.preferredToken(raw: "230/460", phase: ""), "230")
+        XCTAssertEqual(NameplateFieldParser.preferredToken(raw: "25.0/12.5", phase: "3"), "12.5")
+        XCTAssertEqual(NameplateFieldParser.preferredToken(raw: "25.0/12.5", phase: ""), "25.0")
+    }
+
+    func testReconstructTextRoundTripPreservesCoreFields() {
+        let fields: [NameplateFieldID: String] = [
+            .ratedHP: "10",
+            .voltage: "230/460",
+            .fla: "12.5",
+            .phases: "3",
+            .rpm: "1750",
+            .frequencyHz: "60",
+        ]
+        let text = NameplateFieldParser.reconstructText(from: fields)
+        XCTAssertTrue(text.contains("HP 10"))
+        XCTAssertTrue(text.contains("VOLTS 230/460"))
+        XCTAssertTrue(text.contains("FLA 12.5"))
+        let extracted = NameplateFieldParser.extract(text: text)
+        XCTAssertEqual(extracted.value(.ratedHP), "10")
+        XCTAssertEqual(extracted.value(.voltage), "230/460")
+        XCTAssertEqual(extracted.value(.fla), "12.5")
+        XCTAssertEqual(extracted.value(.phases), "3")
+        XCTAssertEqual(extracted.value(.rpm), "1750")
+        XCTAssertEqual(extracted.value(.frequencyHz), "60")
+    }
 }

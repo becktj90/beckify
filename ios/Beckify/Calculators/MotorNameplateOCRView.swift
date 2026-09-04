@@ -27,6 +27,9 @@ struct MotorNameplateOCRView: View {
     @State private var confirmed = false
     @State private var successTick = 0
     @State private var cameraUnavailable = false
+    /// Vision lines with `VNRecognizedText.confidence`. Used by extract so
+    /// low-confidence fields stay highlighted instead of the parser default.
+    @State private var recognizedLines: [NameplateOCRLine] = []
 
     private var inputFingerprint: String { text }
 
@@ -108,6 +111,9 @@ struct MotorNameplateOCRView: View {
             } else {
                 reviewSheet
             }
+        }
+        .onAppear {
+            restoreSavedReviewIfNeeded()
         }
         .onChange(of: inputFingerprint) { _, _ in
             session.markInputsChanged()
@@ -243,10 +249,16 @@ struct MotorNameplateOCRView: View {
                     .applying(draft: draft, confidence: confidence)
                     .confirmingReview()
                     .schemaRecord(forceReviewed: true)
+                var inputs = Dictionary(uniqueKeysWithValues: filledDraft.map { ($0.rawValue, $1) })
+                let persistText = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? NameplateFieldParser.reconstructText(from: filledDraft)
+                    : text
+                inputs["text"] = persistText
+                inputs["jobName"] = jobName
                 jobs.save(SavedJob(
                     name: jobName,
                     toolID: .motorNameplateOCR,
-                    inputs: Dictionary(uniqueKeysWithValues: filledDraft.map { ($0.rawValue, $1) }),
+                    inputs: inputs,
                     outputs: [
                         "confirmed": "true",
                         "reviewed": "true",
@@ -275,7 +287,7 @@ struct MotorNameplateOCRView: View {
         if id.isNumeric {
             NumberField(
                 title: id.label,
-                unit: id.unit,
+                unit: id.unit(forValue: draft[id] ?? ""),
                 text: binding,
                 optional: id.isOptional,
                 allowsScientific: true,
@@ -287,7 +299,7 @@ struct MotorNameplateOCRView: View {
                 title: id.label,
                 text: binding,
                 optional: id.isOptional,
-                unit: id.unit,
+                unit: id.unit(forValue: draft[id] ?? ""),
                 autocapitalization: .characters,
                 fieldID: id.rawValue,
                 lowConfidence: low
@@ -332,7 +344,7 @@ struct MotorNameplateOCRView: View {
 
     private func calculate() {
         session.calculate {
-            let extracted = NameplateFieldParser.extract(text: text)
+            let extracted = extractionFromCurrentText()
             guard extracted.populatedCount > 0 else {
                 throw CalcError.missing("nameplate fields — check the photo or edit the recognized text")
             }
@@ -365,11 +377,57 @@ struct MotorNameplateOCRView: View {
         confidence = nextConfidence
     }
 
+    private func extractionFromCurrentText() -> NameplateExtraction {
+        if recognizedLinesMatchEditor() {
+            return NameplateFieldParser.extract(lines: recognizedLines)
+        }
+        return NameplateFieldParser.extract(text: text)
+    }
+
+    private func recognizedLinesMatchEditor() -> Bool {
+        guard !recognizedLines.isEmpty else { return false }
+        let fromLines = recognizedLines
+            .map(\.text)
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let editor = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return fromLines == editor
+    }
+
+    /// Opening a saved job writes `text` / schema keys into last-used inputs.
+    /// Rebuild the review sheet so it is not blank or leftover last-used text.
+    private func restoreSavedReviewIfNeeded() {
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            var stored: [NameplateFieldID: String] = [:]
+            for id in NameplateFieldID.allCases {
+                let value = UserDefaults.standard.string(forKey: ToolInputStore.key(.motorNameplateOCR, id.rawValue)) ?? ""
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { stored[id] = trimmed }
+            }
+            if !stored.isEmpty {
+                text = NameplateFieldParser.reconstructText(from: stored)
+            }
+        }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard session.displayedResult == nil else { return }
+        calculate()
+    }
+
     private func reset() {
         text = ""
         recognizeError = nil
         capturedImage = nil
         photoItem = nil
+        draft = [:]
+        confidence = [:]
+        recognizedLines = []
+        confirmed = false
+        session.reset()
+    }
+
+    private func invalidateConfirmedReview() {
+        text = ""
+        recognizedLines = []
         draft = [:]
         confidence = [:]
         confirmed = false
@@ -378,6 +436,7 @@ struct MotorNameplateOCRView: View {
 
     private func loadExample() {
         capturedImage = nil
+        recognizedLines = []
         text = """
         EXAMPLE MOTORS
         MODEL 10HP-215
@@ -431,27 +490,22 @@ struct MotorNameplateOCRView: View {
 
     // MARK: - Vision (on-device)
 
+    /// Library photos only assign `capturedImage`. Recognition runs once via
+    /// `onChange(of: capturedImage)` — not a second concurrent Vision pass.
     @MainActor
     private func recognize(from item: PhotosPickerItem) async {
-        let textBefore = text
-        isRecognizing = true
         recognizeError = nil
-        defer {
-            isRecognizing = false
-            photoItem = nil
-        }
+        defer { photoItem = nil }
         do {
             guard let data = try await item.loadTransferable(type: Data.self),
                   let image = UIImage(data: data)
             else {
-                guard text == textBefore else { return }
                 recognizeError = "Could not read that photo."
                 return
             }
+            isRecognizing = true
             capturedImage = image
-            try await applyRecognition(image, textBefore: textBefore)
         } catch {
-            guard text == textBefore else { return }
             recognizeError = "On-device recognition failed. Edit the text or try a flatter shot."
         }
     }
@@ -472,20 +526,26 @@ struct MotorNameplateOCRView: View {
 
     @MainActor
     private func applyRecognition(_ image: UIImage, textBefore: String) async throws {
-        let recognized = try await Self.recognizeText(in: image)
+        let lines = try await Self.recognizeText(in: image)
         guard text == textBefore else { return }
-        let trimmed = recognized.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = lines
+            .map(\.text)
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             recognizeError = "No text found. Try a sharper, square-on shot of the nameplate."
+            invalidateConfirmedReview()
             return
         }
+        recognizedLines = lines
         text = trimmed
         session.markInputsChanged()
         confirmed = false
     }
 
-    /// Vision text recognition. Nothing leaves the device.
-    private static func recognizeText(in image: UIImage) async throws -> String {
+    /// Vision text recognition. Nothing leaves the device. Keeps each
+    /// candidate's confidence so extract can flag uncertain fields.
+    private static func recognizeText(in image: UIImage) async throws -> [NameplateOCRLine] {
         guard let cgImage = image.cgImage else { throw RecognitionError.unreadableImage }
         let orientation = cgImageOrientation(from: image.imageOrientation)
 
@@ -497,8 +557,14 @@ struct MotorNameplateOCRView: View {
                         return
                     }
                     let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
-                    let lines = observations.compactMap { $0.topCandidates(1).first?.string }
-                    continuation.resume(returning: lines.joined(separator: "\n"))
+                    let lines: [NameplateOCRLine] = observations.compactMap { observation in
+                        guard let candidate = observation.topCandidates(1).first else { return nil }
+                        return NameplateOCRLine(
+                            text: candidate.string,
+                            confidence: Double(candidate.confidence)
+                        )
+                    }
+                    continuation.resume(returning: lines)
                 }
                 request.recognitionLevel = .accurate
                 request.usesLanguageCorrection = false
