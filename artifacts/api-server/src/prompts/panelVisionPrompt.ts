@@ -41,6 +41,8 @@ export const PANEL_VISION_SYSTEM_PROMPT = [
   "- Do not assume missing poles or descriptions.",
   "- If the photo looks like an open panel interior, say so in warnings and still extract only readable text.",
   "- slotCount is the printed circuit/space count when the card says 20, 30, 42, or 84 circuit. Otherwise null. Do not invent a 42-row card.",
+  "- A middle or bottom tile of a tall card must not report the full panel slotCount unless the card prints it. Count only visible circuits.",
+  "- Circuit numbers such as 01 and 1 are the same slot. Tandem 1A / 1B stay distinct.",
   "- Put the readable directory transcript into raw_ocr (circuit → description lines).",
 ].join("\n");
 

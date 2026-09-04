@@ -134,8 +134,13 @@
           var g = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
           d[i] = d[i + 1] = d[i + 2] = g;
         }
-        stretchContrast(d);
         invertIfDarkField(d);
+        if (cw >= 32 && ch >= 32) {
+          tileContrastStretch(d, cw, ch, 4);
+          unsharpLight(d, cw, ch);
+        } else {
+          stretchContrast(d);
+        }
         ctx.putImageData(imageData, 0, 0);
         return canvasToBlob(canvas).then(function (blob) { return blob || canvas; });
       } catch (_) {
@@ -221,6 +226,98 @@
     for (i = 0; i < data.length; i += 4) {
       var v = Math.max(0, Math.min(255, Math.round((data[i] - lo) * scale)));
       data[i] = data[i + 1] = data[i + 2] = v;
+    }
+  }
+
+  /**
+   * Local contrast per tile. Phone glare blows a global histogram so stamped
+   * digits in a darker corner stay flat; stretching each tile independently
+   * recovers those. Fail-soft: tiny images skip this.
+   */
+  function tileContrastStretch(data, width, height, tiles) {
+    tiles = tiles || 4;
+    width = Number(width) || 0;
+    height = Number(height) || 0;
+    if (!width || !height || !data || data.length < 4) return;
+    var tileW = Math.max(8, Math.ceil(width / tiles));
+    var tileH = Math.max(8, Math.ceil(height / tiles));
+    var ty;
+    var tx;
+    for (ty = 0; ty < height; ty += tileH) {
+      for (tx = 0; tx < width; tx += tileW) {
+        var y1 = Math.min(height, ty + tileH);
+        var x1 = Math.min(width, tx + tileW);
+        var hist = new Uint32Array(256);
+        var total = 0;
+        var y;
+        var x;
+        var i;
+        for (y = ty; y < y1; y += 1) {
+          for (x = tx; x < x1; x += 1) {
+            i = (y * width + x) * 4;
+            hist[data[i]] += 1;
+            total += 1;
+          }
+        }
+        if (!total) continue;
+        var lo = 0;
+        var hi = 255;
+        var acc = 0;
+        var loCut = total * 0.02;
+        var hiCut = total * 0.98;
+        for (i = 0; i < 256; i += 1) {
+          acc += hist[i];
+          if (lo === 0 && acc >= loCut) lo = i;
+          if (acc >= hiCut) { hi = i; break; }
+        }
+        if (hi <= lo) continue;
+        var scale = 255 / (hi - lo);
+        for (y = ty; y < y1; y += 1) {
+          for (x = tx; x < x1; x += 1) {
+            i = (y * width + x) * 4;
+            var v = Math.max(0, Math.min(255, Math.round((data[i] - lo) * scale)));
+            data[i] = data[i + 1] = data[i + 2] = v;
+          }
+        }
+      }
+    }
+  }
+
+  /** Mild unsharp after invert/stretch — stamped metal edges stay faint otherwise. */
+  function unsharpLight(data, width, height) {
+    width = Number(width) || 0;
+    height = Number(height) || 0;
+    if (!width || !height || !data || data.length < 4) return;
+    var copy = new Uint8Array(width * height);
+    var y;
+    var x;
+    for (y = 0; y < height; y += 1) {
+      for (x = 0; x < width; x += 1) {
+        copy[y * width + x] = data[(y * width + x) * 4];
+      }
+    }
+    for (y = 0; y < height; y += 1) {
+      for (x = 0; x < width; x += 1) {
+        var sum = 0;
+        var n = 0;
+        var dy;
+        var dx;
+        for (dy = -1; dy <= 1; dy += 1) {
+          var yy = y + dy;
+          if (yy < 0 || yy >= height) continue;
+          for (dx = -1; dx <= 1; dx += 1) {
+            var xx = x + dx;
+            if (xx < 0 || xx >= width) continue;
+            sum += copy[yy * width + xx];
+            n += 1;
+          }
+        }
+        var idx = (y * width + x) * 4;
+        var src = copy[y * width + x];
+        var sharp = Math.round(src + 0.7 * (src - (sum / n)));
+        sharp = Math.max(0, Math.min(255, sharp));
+        data[idx] = data[idx + 1] = data[idx + 2] = sharp;
+      }
     }
   }
 
@@ -314,12 +411,34 @@
     if (!t.trim()) return 0;
     var score = 0;
     if (/\b(?:HP|H\.P\.|HORSEPOWER|kW)\b/i.test(t)) score += 3;
-    if (/\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD)\b/i.test(t)) score += 3;
+    if (/\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD)\b/i.test(t)
+      || /\b(?:I[\s._-]?N|RATED\s*CURRENT)\s*[:#=]?\s*[0-9]/i.test(t)) score += 3;
     if (/\b(?:VOLTS?|VOLTAGE)\b/i.test(t) || /\b[0-9]{2,4}(?:\/[0-9]{2,4})?\s*V\b/i.test(t)) score += 2;
-    if (/\b(?:RPM|R\.P\.M\.)\b/i.test(t)) score += 2;
+    if (/\b(?:RPM|R\.P\.M\.)\b/i.test(t) || /\bn\s*[=:]\s*[0-9]{3,5}\b/i.test(t)) score += 2;
     if (/\b(?:PH|PHASE|3Ø|1Ø)\b/i.test(t)) score += 2;
-    if (/\b(?:FRAME|TEFC|TENV|ODP|MOCP|LRA|SF)\b/i.test(t)) score += 1;
+    if (/\b(?:FRAME|TEFC|TENV|ODP|MOCP|LRA|SF|IP[0-9]{2}|IE[1-5])\b/i.test(t)) score += 1;
+    if (/\bcos\s*[φΦø]|cos\s*phi\b/i.test(t)) score += 1;
     return score;
+  }
+
+  /**
+   * IEC plates use kW / IN / IP / IE / cos φ / 50 Hz / 400 V. Two or more
+   * markers are enough to stop assuming NEMA 60 Hz.
+   */
+  function looksLikeIecPlate(text) {
+    var t = String(text || '');
+    if (!t.trim()) return false;
+    var hits = 0;
+    if (/\b(?:kW|KW)\b/.test(t) && !/\b(?:HP|H\.P\.|HORSEPOWER)\b/i.test(t)) hits += 1;
+    if (/\bIE[1-5]\b/i.test(t)) hits += 1;
+    if (/\bIP[0-9]{2}\b/i.test(t)) hits += 1;
+    if (/\b(?:I[\s._-]?N|RATED\s*CURRENT)\s*[:#=]?\s*[0-9]/i.test(t)) hits += 1;
+    if (/\bcos\s*[φΦø]|cos\s*phi\b/i.test(t)) hits += 1;
+    if (/\bn\s*[=:]\s*[0-9]{3,5}\b/i.test(t) && !/\bRPM\b/i.test(t)) hits += 1;
+    if (/\b50\s*Hz\b/i.test(t) && !/\b60\s*Hz\b/i.test(t)) hits += 1;
+    if (/\b(?:380|400|415|690)(?:\/[0-9]{2,4})?\s*V\b/i.test(t)
+      && !/\b(?:230\/460|208|460|480)\b/.test(t)) hits += 1;
+    return hits >= 2;
   }
 
   function directoryScore(text) {
@@ -397,13 +516,17 @@
     return [words.slice(0, idx + 1), words.slice(idx + 1)];
   }
 
-  function packOcrResult(result) {
+  function packOcrResult(result, opts) {
+    opts = opts || {};
     var data = (result && result.data) || {};
     var words = collectWords(data);
     var text = data.text || '';
-    var reconstructed = reconstructDirectoryFromWords(words);
-    if (reconstructed && directoryScore(reconstructed.text) >= directoryScore(text)) {
-      text = reconstructed.text;
+    var reconstructed = null;
+    if (opts.directoryMode) {
+      reconstructed = reconstructDirectoryFromWords(words);
+      if (reconstructed && directoryScore(reconstructed.text) >= directoryScore(text)) {
+        text = reconstructed.text;
+      }
     }
     var confidence = meanWordConfidence({ words: words, confidence: data.confidence });
     return {
@@ -414,7 +537,7 @@
       looksLikeOpenPanel: looksLikeOpenPanelInterior(text),
       words: words,
       reconstructed: reconstructed,
-      score: directoryScore(text),
+      score: opts.directoryMode ? directoryScore(text) : nameplateScore(text),
     };
   }
 
@@ -442,9 +565,10 @@
       return 0.62 + ratio * 0.38;
     }
     if (opts.nameplateRetry) {
-      if ((opts.pass || 1) <= 1) return ratio * 0.46;
-      if (opts.pass === 2) return 0.48 + ratio * 0.26;
-      return 0.76 + ratio * 0.24;
+      if ((opts.pass || 1) <= 1) return ratio * 0.40;
+      if (opts.pass === 2) return 0.42 + ratio * 0.16;
+      if (opts.pass === 3) return 0.60 + ratio * 0.16;
+      return 0.78 + ratio * 0.22;
     }
     return ratio;
   }
@@ -484,14 +608,14 @@
         }).then(function (worker) {
           var firstPsm = directoryMode ? 4 : 3;
           return recognizeOnce(worker, source, firstPsm).then(function (first) {
-            var best = packOcrResult(first);
+            var best = packOcrResult(first, { directoryMode: directoryMode });
             if (directoryMode) {
               if (best.score >= 6) return best;
               ocrPass = 2;
               reportProgress(0.62, 'Trying a second pass for a rotated directory…');
               return rotateImageSource(source, 90).then(function (rotated) {
                 return recognizeOnce(worker, rotated, 4).then(function (second) {
-                  var scored = packOcrResult(second);
+                  var scored = packOcrResult(second, { directoryMode: true });
                   return scored.score > best.score ? scored : best;
                 }, function () { return best; });
               }, function () { return best; });
@@ -499,10 +623,10 @@
             if (nameplateScore(best.text) >= 3 && !best.failed) return best;
             function tryAngle(degrees, pass, label) {
               ocrPass = pass;
-              reportProgress(pass === 2 ? 0.48 : 0.76, label);
+              reportProgress(pass === 2 ? 0.42 : (pass === 3 ? 0.60 : 0.78), label);
               return rotateImageSource(source, degrees).then(function (rotated) {
                 return recognizeOnce(worker, rotated, 3).then(function (next) {
-                  var scored = packOcrResult(next);
+                  var scored = packOcrResult(next, { directoryMode: false });
                   return nameplateScore(scored.text) > nameplateScore(best.text) ? scored : best;
                 }, function () { return best; });
               }, function () { return best; });
@@ -510,7 +634,11 @@
             return tryAngle(90, 2, 'Trying a rotated nameplate pass…').then(function (after90) {
               best = after90;
               if (nameplateScore(best.text) >= 3) return best;
-              return tryAngle(270, 3, 'Trying a third nameplate orientation…');
+              return tryAngle(270, 3, 'Trying a third nameplate orientation…').then(function (after270) {
+                best = after270;
+                if (nameplateScore(best.text) >= 3) return best;
+                return tryAngle(180, 4, 'Trying an upside-down nameplate pass…');
+              });
             });
           }).then(function (packed) {
             reportProgress(1, packed && packed.failed ? 'No usable text' : 'Reading complete');
@@ -578,7 +706,7 @@
     return '';
   }
 
-  var NEXT_NAMEPLATE_LABEL = '(?:MODEL|MOD(?:EL)?|HP|HORSEPOWER|VOLTS?|VOLTAGE|AMP(?:S|ERES)?|FLA|S\\.?F\\.?|PH(?:ASES?)?|RPM|HERTZ|HZ|FRAME|TYPE|ENCL(?:OSURE)?|SN|S\\/?N|SER(?:IAL)?|CAT(?:ALOG)?|PART|P\\/?N|DESIGN|CODE|CLASS|PF|kW|KW)';
+  var NEXT_NAMEPLATE_LABEL = '(?:MODEL|MOD(?:EL)?|HP|HORSEPOWER|VOLTS?|VOLTAGE|AMP(?:S|ERES)?|FLA|S\\.?F\\.?|PH(?:ASES?)?|RPM|HERTZ|HZ|FRAME|TYPE|ENCL(?:OSURE)?|SN|S\\/?N|SER(?:IAL)?|CAT(?:ALOG)?|PART|P\\/?N|DESIGN|CODE|CLASS|PF|kW|KW|I[\\s._-]?N|IE[1-5]|IP[0-9]{2}|COS)';
 
   function extractManufacturer(str) {
     var src = String(str || '');
@@ -622,65 +750,108 @@
     }
 
     var hp = extractLabeledHp(compact);
-    var kw = pick(/\b(?:kW|KW)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i) ||
-      pick(/\b([0-9]+(?:\.[0-9]+)?)\s*kW\b/i);
+    var kw = pick(/\b([0-9]+(?:\.[0-9]+)?)\s*kW\b/i);
+    if (!kw) {
+      var afterKw = compact.match(/\b(?:kW|KW)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+      if (afterKw) {
+        var afterKwRest = compact.slice(afterKw.index + afterKw[0].length);
+        if (!/^\s*\/\s*[0-9]/.test(afterKwRest) && !/^\s*V\b/i.test(afterKwRest)) {
+          kw = afterKw[1];
+        }
+      }
+    }
 
     /* Dual voltage + dual FLA must stay paired (230/460 with 28/14), never
-       first-V mashed with the last lone amp figure. */
+       first-V mashed with the last lone amp figure. IEC 400/690 V 14.8/8.5 A
+       uses the same pairing. */
     var dualPair = compact.match(/\b([0-9]{2,4}\/[0-9]{2,4})\s*V(?:OLTS?)?\s+([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)(?:\s*(?:FLA|FL\s*AMPS?|A(?:MPS?)?))?\b/i)
-      || compact.match(/\b(?:VOLTS?|VOLTAGE)\s*[:#]?\s*([0-9]{2,4}\/[0-9]{2,4})\s+(?:AMP(?:S|ERES)?|FLA|A)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
+      || compact.match(/\b(?:VOLTS?|VOLTAGE)\s*[:#]?\s*([0-9]{2,4}\/[0-9]{2,4})\s+(?:AMP(?:S|ERES)?|FLA|A|I[\s._-]?N)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
 
     /* Prefer VOLTS 460 over "10 VOLTS 460" (HP sitting in front of the label). */
     var volts = (dualPair && dualPair[1]) ||
       pick(/\b(?:VOLTS?|VOLTAGE)\s*[:#]?\s*([0-9]{2,4}(?:\/[0-9]{2,4})?)\b/i) ||
+      pick(/\b(?:U|UN)\s*[:#=]?\s*([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*V\b/i) ||
       pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*V\b(?!OLT)/i) ||
       pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*VOLTS?\b(?!\s*[:#]?\s*[0-9])/i);
 
     var labeledFla = extractLabeledFla(compact);
+    var iecCurrent = pick(/\b(?:I[\s._-]?N|RATED\s*CURRENT)\s*[:#=]?\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)/i);
     /* pickAmp already skips values whose nearby prefix is LRA/MOCP/MCA/SCA.
        A later rejected label (e.g. "AMPS 12 LRA 84") must not suppress the
-       nearby AMPS figure. */
+       nearby AMPS figure. Do not take kA / kAIC as amperes. */
     var genericFla = pickAmp(/\bAMP(?:S|ERES)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\b/i) ||
-      pickAmp(/\b([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\s*A(?:MPS?)?\b/i);
-    var dualAmpOnly = compact.match(/\b(?:AMP(?:S|ERES)?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
-    var fla = (dualPair && dualPair[2]) || labeledFla || (dualAmpOnly && dualAmpOnly[1]) || genericFla;
+      pickAmp(/\b([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\s*A(?:MPS?)?\b(?!\s*IC)/i);
+    var dualAmpOnly = compact.match(/\b(?:AMP(?:S|ERES)?|I[\s._-]?N)\s*[:#=]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
+    var fla = (dualPair && dualPair[2]) || labeledFla || iecCurrent || (dualAmpOnly && dualAmpOnly[1]) || genericFla;
 
     var rpm = pick(/\b([0-9]{3,5})\s*RPM\b/i) ||
-      pick(/\b(?:RPM|R\.P\.M\.)\s*[:#]?\s*([0-9]{3,5})\b/i);
+      pick(/\b(?:RPM|R\.P\.M\.)\s*[:#]?\s*([0-9]{3,5})\b/i) ||
+      pick(/\bn\s*[=:]\s*([0-9]{3,5})\b/i) ||
+      pick(/\b([0-9]{3,5})\s*(?:r\/min|min[\s\-¹1]*1)\b/i);
     var hz = pick(/\b(?:HZ|HERTZ|FREQ)\s*[:#]?\s*([0-9]{2,3})\b/i) ||
       pick(/\b([0-9]{2,3})\s*Hz\b/i);
+    var hzFound = hz;
+    var iecPlate = looksLikeIecPlate(compact);
+    if (!hz && !iecPlate) hz = '60';
     var phase = extractPhase(compact);
     var frame = pick(/\bFRAME\s*[:#]?\s*([A-Z0-9\-]+)\b/i);
     var sf = pick(/\b(?:S\.?F\.?|SERVICE\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
     var design = pick(/\b(?:NEMA\s*)?DESIGN\s*[:#]?\s*([A-E])\b/i);
-    var insul = pick(/\b(?:INS(?:ULATION)?(?:\s*CLASS)?|CLASS)\s*[:#]?\s*([A-H]|F|B|H|155|180|130)\b/i);
+    var insul = pick(/\b(?:INS(?:ULATION)?(?:\s*CL(?:ASS)?)?|CL(?:ASS)?\.?)\s*[:#]?\s*([ABFH]|155|180|130)\b/i);
     var code = pick(/\b(?:CODE(?:\s*LETTER)?|LRA\s*CODE|KVA\s*CODE)\s*[:#]?\s*([A-V])\b/i);
     var rise = pick(/\b(?:RISE|TEMP(?:ERATURE)?\s*RISE)\s*[:#]?\s*([0-9]{2,3})\s*°?\s*C?\b/i);
     var manufacturer = extractManufacturer(compact);
-    var model = pick(/\b(?:MODEL|CAT(?:ALOG)?(?:\s*NO\.?)?)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-\/.]{1,24})\b/i);
+    var model = pick(/\b(?:MODEL|CAT(?:ALOG)?(?:\s*NO\.?)?)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-\/.]{1,24})\b/i)
+      || pick(/\bTYPE\s*[:#]?\s*([A-Z0-9]*\d[A-Z0-9\-\/.]{0,20})\b/i);
     var serial = pick(/\b(?:S\/N|SER(?:IAL)?(?:\s*(?:NO\.?|NUMBER|#))?|SN)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-]{2,24})\b/i);
-    var enclosure = pick(/\b(TEFC|TENV|TEAO|ODP|XP|EXP(?:LOSION)?[\s-]*PROOF|WPI|WPII)\b/i);
+    var enclosure = pick(/\b(TEFC|TENV|TEAO|ODP|XP|EXP(?:LOSION)?[\s-]*PROOF|WPI|WPII)\b/i)
+      || pick(/\b(IP[0-9]{2}[A-Z]?)\b/i);
     var poles = pick(/\b(?:POLES?)\s*[:#]?\s*([0-9]{1,2})\b/i) ||
       pick(/\b([0-9]{1,2})\s*POLES?\b/i);
     var nomEff = pick(/\b(?:NOM(?:INAL)?\s*)?EFF(?:ICIENCY)?\s*[:#]?\s*([0-9]{2,3}(?:\.[0-9]+)?)\s*%?/i);
-    var pf = normalizePowerFactor(pick(/\b(?:P\.?F\.?|POWER\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\s*%?\b/i));
+    var ieClass = pick(/\b(IE[1-5])\b/i);
+    var connection = '';
+    if (/\b(?:Δ|DELTA)\s*[\/-]\s*(?:Y|STAR|WYE)\b/i.test(compact) || /\bD\s*\/\s*Y\b/i.test(compact)) {
+      connection = 'D/Y';
+    } else if (/\b(?:Y|STAR|WYE)\s*[\/-]\s*(?:Δ|DELTA|D)\b/i.test(compact)) {
+      connection = 'Y/D';
+    }
+    var pf = normalizePowerFactor(
+      pick(/\b(?:P\.?F\.?|POWER\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\s*%?\b/i)
+      || pick(/\bcos\s*[φΦø]\s*[=:]?\s*([0-9]+(?:\.[0-9]+)?)/i)
+      || pick(/\bcos\s*phi\s*[=:]?\s*([0-9]+(?:\.[0-9]+)?)/i)
+    );
     var mocp = pick(/\b(?:MOCP|M\.?O\.?C\.?P\.?|MAX(?:IMUM)?\s*OCP)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
     var lra = pick(/\b(?:LRA|L\.?R\.?A\.?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i) ||
       pick(/\bLOCKED[\s-]*ROTOR(?:\s*AMPS?)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
     var sfa = pick(/\b(?:SFA|SF\s*AMPS?|SERVICE\s*FACTOR\s*AMPS?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
 
+    var notes = '';
+    if (kw && !hp) {
+      notes = 'Plate lists ' + kw + ' kW. Enter HP only if printed — do not invent a conversion for NEC math.';
+    }
+    if (ieClass && !nomEff) {
+      notes = (notes ? notes + ' ' : '') + 'IEC efficiency class ' + ieClass + ' is not a percent. Leave nom. efficiency blank unless a number is printed.';
+    }
+
     var fields = {
-      hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz || '60',
+      hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz,
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
       code: code, riseC: rise, manufacturer: manufacturer, model: model,
       serialNumber: serial, enclosure: enclosure, poles: poles, nomEff: nomEff,
-      pf: pf, mocp: mocp, lra: lra, serviceFactorAmps: sfa, notes: '',
+      pf: pf, mocp: mocp, lra: lra, serviceFactorAmps: sfa, notes: notes,
+      ieClass: ieClass, connection: connection,
     };
-    var counted = { hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz,
+    var counted = { hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hzFound,
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
       code: code, riseC: rise };
     var filled = Object.keys(counted).filter(function (k) { return counted[k]; }).length;
-    return { fields: fields, filled: filled };
+    return {
+      fields: fields,
+      filled: filled,
+      extras: { ieClass: ieClass, connection: connection, ipRating: /^IP/i.test(enclosure) ? enclosure : '' },
+      iec: iecPlate,
+    };
   }
 
   function toNameplateDraft(text, confidence) {
@@ -691,6 +862,7 @@
       source: 'tesseract',
       rawText: text,
       confidence: typeof confidence === 'number' ? confidence / 100 : 0,
+      extras: parsed.extras,
     });
   }
 
@@ -712,6 +884,7 @@
     extractPhase: extractPhase,
     extractManufacturer: extractManufacturer,
     nameplateScore: nameplateScore,
+    looksLikeIecPlate: looksLikeIecPlate,
     toNameplateDraft: toNameplateDraft,
     meanWordConfidence: meanWordConfidence,
     humanizeStatus: humanizeStatus,
@@ -727,6 +900,11 @@
     MAX_DIRECTORY_EDGE: MAX_DIRECTORY_EDGE,
     ACCEPTED_IMAGE_LABEL: ACCEPTED_IMAGE_LABEL,
     mapOcrProgress: mapOcrProgress,
+    packOcrResult: packOcrResult,
+    tileContrastStretch: tileContrastStretch,
+    unsharpLight: unsharpLight,
+    stretchContrast: stretchContrast,
+    invertIfDarkField: invertIfDarkField,
     VENDOR: VENDOR,
   };
   global.__ocrHelperTestApi = global.BeckifyOcr;

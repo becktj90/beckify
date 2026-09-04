@@ -76,6 +76,7 @@ function cacheElements() {
   elements.directoryGrid = document.getElementById('directoryGrid');
   elements.directoryGuidance = document.getElementById('directoryGuidance');
   elements.printButton = document.getElementById('printButton');
+  elements.copyCsvButton = document.getElementById('copyCsvButton');
   elements.sheetPanelName = document.getElementById('sheetPanelName');
   elements.sheetVoltage = document.getElementById('sheetVoltage');
   elements.sheetFeed = document.getElementById('sheetFeed');
@@ -150,6 +151,7 @@ function bindEvents() {
   elements.processButton.addEventListener('click', runOcr);
   elements.resetButton.addEventListener('click', resetApp);
   elements.printButton.addEventListener('click', handlePrint);
+  if (elements.copyCsvButton) elements.copyCsvButton.addEventListener('click', handleCopyCsv);
   elements.parseTextButton.addEventListener('click', handleParseText);
   elements.addRowButton.addEventListener('click', () => {
     state.rows.push(createEmptyRow());
@@ -332,6 +334,15 @@ function updateViewPreview(view) {
   if (addButton) addButton.disabled = bucket.files.length === 0 || !canAddShot(view);
 }
 
+function describeShotRole(view, index, total) {
+  const label = view === 'breakers' ? 'Breakers' : 'Schedule';
+  const ordinal = Number(index) + 1;
+  const count = Number(total) || 1;
+  if (count <= 1) return label + ' 1';
+  const half = ordinal === 1 ? 'top/left' : (ordinal === count ? 'bottom/right' : 'middle');
+  return label + ' ' + ordinal + '/' + count + ' (' + half + ')';
+}
+
 function refreshIntakeUi() {
   syncLegacyFiles();
   REQUIRED_VIEWS.forEach(updateViewPreview);
@@ -346,8 +357,12 @@ function refreshIntakeUi() {
   }
   if (elements.shotList) {
     const parts = [];
-    if (scheduleNames.length) parts.push('Schedule: ' + scheduleNames.join(', '));
-    if (breakerNames.length) parts.push('Breakers: ' + breakerNames.join(', '));
+    viewFiles('schedule').forEach((_, index, list) => {
+      parts.push(describeShotRole('schedule', index, list.length));
+    });
+    viewFiles('breakers').forEach((_, index, list) => {
+      parts.push(describeShotRole('breakers', index, list.length));
+    });
     elements.shotList.textContent = parts.join(' · ');
   }
 }
@@ -426,19 +441,19 @@ function mergeCircuitRows(base, incoming) {
   const byKey = new Map();
   const leftover = [];
   (base || []).forEach(row => {
-    const key = String(row.circuit || '').trim().toUpperCase();
-    if (key) byKey.set(key, Object.assign({}, row));
+    const key = normalizeCircuit(row.circuit);
+    if (key) byKey.set(key, Object.assign({}, row, { circuit: key }));
     else leftover.push(Object.assign({}, row));
   });
   (incoming || []).forEach(row => {
-    const key = String(row.circuit || '').trim().toUpperCase();
+    const key = normalizeCircuit(row.circuit);
     if (!key) {
       leftover.push(Object.assign({}, row));
       return;
     }
     const prev = byKey.get(key);
     if (!prev || !tableHasUserContent([prev])) {
-      byKey.set(key, Object.assign({}, row));
+      byKey.set(key, Object.assign({}, row, { circuit: key }));
       return;
     }
     if (!prev.description && row.description) prev.description = row.description;
@@ -1120,7 +1135,11 @@ function compareCircuitRows(a, b) {
 }
 
 function normalizeCircuit(value) {
-  return String(value || '').toUpperCase().replace(/\s+/g, '');
+  const raw = String(value || '').toUpperCase().replace(/\s+/g, '');
+  if (!raw) return '';
+  const match = raw.match(/^0*(\d{1,2})([A-Z])?$/);
+  if (!match) return raw;
+  return String(Number(match[1])) + (match[2] || '');
 }
 
 function normalizeTrip(value) {
@@ -1615,22 +1634,71 @@ function renderPrintSheet() {
   elements.printScheduleBody.innerHTML = bodyRows.join('');
 }
 
-function printPairCount() {
-  const needed = Math.max(
-    MAX_CIRCUIT_SLOTS,
-    maxCircuitIn(state.rows),
-    (state.rows || []).length,
-    state.slotCount || 0
-  );
+function printSlotCount(rows, slotCount) {
+  const fromState = Number(slotCount != null ? slotCount : state.slotCount) || 0;
+  const list = rows || state.rows || [];
+  const fromRows = maxCircuitIn(list);
+  let needed = Math.max(fromState, fromRows);
+  if (!needed) {
+    const filled = list.filter(row => row && (row.description || row.trip || row.poles)).length;
+    needed = filled >= 6 ? (snapSlotCount(filled) || filled) : MAX_CIRCUIT_SLOTS;
+  }
   const even = needed % 2 === 0 ? needed : needed + 1;
-  return Math.min(MAX_EDITOR_SLOTS, Math.max(2, even)) / 2;
+  return Math.min(MAX_EDITOR_SLOTS, Math.max(2, even));
+}
+
+function printPairCount() {
+  return printSlotCount() / 2;
+}
+
+function buildScheduleExport(rows, meta) {
+  meta = meta || {};
+  const Schema = window.BeckifyNameplateSchema;
+  const draftRows = (rows || []).map(row => ({
+    circuit: { value: row.circuit || '' },
+    description: { value: row.description || '' },
+    trip: { value: tripAmps(row.trip) || null },
+    poles: { value: row.poles ? Number(row.poles) : null },
+    loadAmps: { value: null },
+    notes: { value: row.loadAmpsCopiedFromTrip ? 'trip is not a reviewed load' : '' },
+  }));
+  if (Schema && typeof Schema.exportPanelDraft === 'function') {
+    return Schema.exportPanelDraft({
+      circuits: draftRows,
+      slotCount: meta.slotCount != null ? meta.slotCount : state.slotCount,
+      panel: {
+        name: meta.panelName || (elements.panelName && elements.panelName.value),
+        voltage: meta.voltage || (elements.panelVoltage && elements.panelVoltage.value),
+        phases: meta.phase != null ? meta.phase : selectedPhase(),
+      },
+    }, { source: state.source || meta.source || '' });
+  }
+  const lines = ['circuit,description,trip,poles,loadAmps,notes'];
+  (rows || []).forEach(row => {
+    lines.push([
+      normalizeCircuit(row.circuit),
+      String(row.description || '').replace(/,/g, ' '),
+      row.trip || '',
+      row.poles || '',
+      '',
+      '',
+    ].join(','));
+  });
+  return {
+    csv: lines.join('\n'),
+    slotCount: Number(meta.slotCount != null ? meta.slotCount : state.slotCount) || 0,
+    source: state.source || '',
+    phase: selectedPhase(),
+    warnings: selectedPhase() ? [] : ['Phase is unknown. Load math stays gated until 1 or 3 is selected.'],
+    rowCount: (rows || []).length,
+  };
 }
 
 function buildCircuitSlots(rows) {
   const normalized = normalizeRows(rows);
   const slots = {};
   const overflow = [];
-  const limit = Math.min(MAX_EDITOR_SLOTS, Math.max(MAX_CIRCUIT_SLOTS, maxCircuitIn(normalized), normalized.length, state.slotCount || 0));
+  const limit = printSlotCount(normalized);
 
   normalized.forEach(row => {
     const slot = firstCircuitNumber(row.circuit);
@@ -1762,6 +1830,27 @@ function handlePrint() {
   window.print();
 }
 
+function handleCopyCsv() {
+  if (!isScheduleReviewed()) {
+    setStatus('Check “I reviewed every circuit row” before exporting. OCR is a draft, not a finished schedule.');
+    return;
+  }
+  const exported = buildScheduleExport(state.rows, { slotCount: state.slotCount || printSlotCount(state.rows) });
+  const text = exported.csv;
+  const done = function () {
+    const extra = exported.warnings && exported.warnings.length ? ' ' + exported.warnings.join(' ') : '';
+    setStatus('Copied ' + exported.rowCount + ' circuit row' + (exported.rowCount === 1 ? '' : 's')
+      + ' as CSV (' + (exported.slotCount || exported.rowCount) + ' spaces). Load amps were left blank — trip is not a reviewed load.' + extra);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function () {
+      setStatus('Could not copy CSV. Print the reviewed schedule instead.');
+    });
+    return;
+  }
+  setStatus('Clipboard is unavailable in this browser. Print the reviewed schedule instead.');
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -1821,6 +1910,9 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     tableHasUserContent,
     selectedPhase,
     canAddPanelShot,
+    describeShotRole,
+    printSlotCount,
+    buildScheduleExport,
     MAX_SHOTS_PER_VIEW,
     MAX_SHOTS_TOTAL
   };

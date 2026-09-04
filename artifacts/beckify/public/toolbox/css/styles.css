@@ -2294,6 +2294,13 @@ body.report-open { overflow: hidden; }
   outline: 2px solid #e6b800;
   background: rgba(230, 184, 0, 0.12);
 }
+.ocr-why {
+  margin: 8px 0 0;
+  padding-left: 1.2em;
+  font-size: 0.78rem;
+  color: var(--fg-muted, #b8b4c8);
+}
+.ocr-why[hidden] { display: none; }
 .ocr-dual {
   display: flex;
   flex-wrap: wrap;

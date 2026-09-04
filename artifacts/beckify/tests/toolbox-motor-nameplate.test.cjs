@@ -129,6 +129,10 @@ assert.equal(afterTess.kind, 'tesseract');
 assert.match(api.sourceMessage(afterTess.kind, afterTess.extra), /Parsed from edited text/i);
 assert.match(api.sourceMessage('tesseract'), /photo stayed on this device/i);
 assert.match(src, /keepAiSource/);
+assert.match(src, /renderHighlightReasons/);
+assert.match(src, /mnp_why/);
+assert.match(html, /id="mnp_why"/);
+assert.doesNotMatch(src, /aria-invalid/);
 
 vm.runInContext(fs.readFileSync(path.join(root, 'ocr-helper.js'), 'utf8'), sandbox, { filename: 'ocr-helper.js' });
 const ocr = sandbox.__ocrHelperTestApi;

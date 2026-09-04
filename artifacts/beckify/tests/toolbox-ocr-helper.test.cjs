@@ -180,4 +180,76 @@ for (const file of ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-ls
   assert.ok(fs.existsSync(path.join(vendorDir, file)), 'missing vendor file ' + file);
 }
 
+const iecPlate = api.parseMotorNameplate([
+  'SIEMENS',
+  'TYPE 1LA7090-4AA60',
+  '7.5 kW',
+  '400/690 V',
+  'IN 14.8/8.5 A',
+  'n=1450 r/min',
+  '50 Hz',
+  'cos φ 0.84',
+  'IP55',
+  'IE3',
+  'Cl. F',
+  'D/Y',
+].join('\n'));
+assert.equal(iecPlate.fields.kw, '7.5');
+assert.equal(iecPlate.fields.hp, '');
+assert.equal(iecPlate.fields.volts, '400/690');
+assert.equal(iecPlate.fields.fla, '14.8/8.5');
+assert.equal(iecPlate.fields.rpm, '1450');
+assert.equal(iecPlate.fields.hz, '50');
+assert.equal(iecPlate.fields.pf, '0.84');
+assert.equal(iecPlate.fields.enclosure, 'IP55');
+assert.equal(iecPlate.fields.insulation, 'F');
+assert.equal(iecPlate.fields.ieClass, 'IE3');
+assert.equal(iecPlate.fields.connection, 'D/Y');
+assert.match(iecPlate.fields.notes, /7\.5 kW/i);
+assert.doesNotMatch(iecPlate.fields.notes, /10 HP|convert/i);
+assert.equal(iecPlate.iec, true);
+assert.ok(api.looksLikeIecPlate('7.5 kW IP55 IE3 400 V'));
+assert.equal(api.looksLikeIecPlate('BALDOR 10 HP 460V 14 FLA'), false);
+
+const iecNoHz = api.parseMotorNameplate('7.5 kW IP55 IE3 IN 14.8 400 V n=1450');
+assert.equal(iecNoHz.fields.hz, '');
+assert.equal(iecNoHz.fields.fla, '14.8');
+assert.equal(iecNoHz.fields.rpm, '1450');
+assert.notEqual(iecNoHz.fields.hz, '60');
+
+const nemaStill60 = api.parseMotorNameplate('AC MOTOR 10 HP 460V 14 FLA 1750 RPM');
+assert.equal(nemaStill60.fields.hz, '60');
+
+const nameplateWords = [
+  { text: 'HP', bbox: { x0: 10, y0: 10, x1: 40, y1: 24 }, confidence: 80 },
+  { text: '10', bbox: { x0: 44, y0: 10, x1: 70, y1: 24 }, confidence: 80 },
+  { text: 'FLA', bbox: { x0: 80, y0: 10, x1: 110, y1: 24 }, confidence: 80 },
+  { text: '14', bbox: { x0: 114, y0: 10, x1: 140, y1: 24 }, confidence: 80 },
+];
+const packedNameplate = api.packOcrResult({
+  data: { text: 'HP 10 FLA 14', words: nameplateWords, confidence: 80 },
+}, { directoryMode: false });
+assert.equal(packedNameplate.text, 'HP 10 FLA 14');
+assert.equal(packedNameplate.reconstructed, null);
+
+const pixels = new Uint8ClampedArray(16 * 16 * 4);
+for (let y = 0; y < 16; y += 1) {
+  for (let x = 0; x < 16; x += 1) {
+    const i = (y * 16 + x) * 4;
+    const v = (x < 8 ? 40 : 180) + (y % 8) * 4;
+    pixels[i] = pixels[i + 1] = pixels[i + 2] = v;
+    pixels[i + 3] = 255;
+  }
+}
+api.tileContrastStretch(pixels, 16, 16, 2);
+assert.ok(pixels[0] < 20, 'darkest sample in the left tile stretches toward black');
+assert.ok(pixels[(7 * 16) * 4] > 230, 'lightest sample in the left tile stretches toward white');
+api.unsharpLight(pixels, 16, 16);
+assert.ok(Number.isFinite(pixels[0]));
+
+assert.ok(api.nameplateScore('7.5 kW IN 14.8 400 V n=1450 IE3') >= 3);
+assert.ok(api.nameplateScore('put the motor in the cabinet') < 3);
+assert.ok(api.nameplateScore('IN 14.8') >= 3);
+assert.ok(api.nameplateScore('I_N 12.5') >= 3);
+
 console.log('OCR helper parsers and vendor paths passed');

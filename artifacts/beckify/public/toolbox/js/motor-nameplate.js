@@ -271,6 +271,7 @@
     var fields = Schema && draft ? Schema.toLegacyFields(draft) : (draft && draft.fields) || {};
     applyFields(fields);
     highlightDraftFields(draft);
+    renderHighlightReasons(draft);
     renderDualFlaChooser(draft);
     var conf = el('mnp_conf');
     if (!conf) return;
@@ -295,21 +296,51 @@
   function highlightDraftFields(draft) {
     PARSED_FIELD_IDS.forEach(function (id) {
       var node = el(id);
-      if (node) node.classList.remove('ocr-low-conf');
+      if (!node) return;
+      node.classList.remove('ocr-low-conf');
+      node.removeAttribute('title');
+      if (node.getAttribute('aria-describedby') === 'mnp_why') {
+        node.removeAttribute('aria-describedby');
+      }
     });
     var Schema = global.BeckifyNameplateSchema;
     if (!Schema || !draft) return;
-    var lows = Schema.lowConfidenceFields(draft, 0.6);
-    lows.forEach(function (name) {
-      var id = FIELD_ID_BY_NAME[name];
-      if (id && el(id)) el(id).classList.add('ocr-low-conf');
+    var reasons = typeof Schema.highlightReasons === 'function'
+      ? Schema.highlightReasons(draft, 0.6)
+      : [];
+    var byName = {};
+    reasons.forEach(function (item) {
+      if (!byName[item.name]) byName[item.name] = [];
+      byName[item.name].push(item.reason);
     });
-    if (draft.extras && draft.extras.dualFla && el('mnp_fla')) {
-      el('mnp_fla').classList.add('ocr-low-conf');
+    Object.keys(byName).forEach(function (name) {
+      var id = FIELD_ID_BY_NAME[name];
+      var node = id && el(id);
+      if (!node) return;
+      node.classList.add('ocr-low-conf');
+      node.title = byName[name].join(' ');
+      node.setAttribute('aria-describedby', 'mnp_why');
+    });
+  }
+
+  function renderHighlightReasons(draft) {
+    var host = el('mnp_why');
+    if (!host) return;
+    host.textContent = '';
+    var Schema = global.BeckifyNameplateSchema;
+    var reasons = Schema && draft && typeof Schema.highlightReasons === 'function'
+      ? Schema.highlightReasons(draft, 0.6)
+      : [];
+    if (!reasons.length) {
+      host.hidden = true;
+      return;
     }
-    if (el('mnp_phase') && (!draft.fields || !draft.fields.phases || draft.fields.phases.value == null)) {
-      el('mnp_phase').classList.add('ocr-low-conf');
-    }
+    host.hidden = false;
+    reasons.forEach(function (item) {
+      var li = document.createElement('li');
+      li.textContent = item.label + ': ' + item.reason;
+      host.appendChild(li);
+    });
   }
 
   function renderDualFlaChooser(draft) {
@@ -570,6 +601,7 @@
       clearParsedFields();
       lastDraft = draft;
       highlightDraftFields(null);
+      renderHighlightReasons(null);
       renderDualFlaChooser(null);
       if (el('mnp_conf')) { el('mnp_conf').hidden = true; el('mnp_conf').textContent = ''; }
       if (el('mnp_hz')) el('mnp_hz').value = '60';
@@ -714,6 +746,7 @@
       if (el('mnp_conf')) { el('mnp_conf').hidden = true; el('mnp_conf').textContent = ''; }
       lastDraft = null;
       highlightDraftFields(null);
+      renderHighlightReasons(null);
       renderDualFlaChooser(null);
       setSource('');
       resetProgress();
@@ -756,5 +789,6 @@
     sourceMessage: sourceMessage,
     nextSourceAfterEditedParse: nextSourceAfterEditedParse,
     highlightDraftFields: highlightDraftFields,
+    renderHighlightReasons: renderHighlightReasons,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

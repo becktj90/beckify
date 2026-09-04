@@ -48,7 +48,9 @@ export const NAMEPLATE_VISION_SYSTEM_PROMPT = [
   "- ratedHP comes only from an HP / HORSEPOWER label or a standalone HP unit. Never steal digits from a catalog/model string such as 10HP-215 or EM3310T.",
   "- serialNumber comes from SER / S/N / SN / SERIAL. Do not copy the model into serialNumber.",
   "- pf is 0..1. A plate that prints 82 or 82% becomes 0.82.",
-  "- nomEff is the printed percent number (89.5), not an IEC class unless that is all that is printed.",
+  "- nomEff is the printed percent number (89.5) only. IEC class IE1–IE5 is not a percent — put it in notes and leave nomEff null.",
+  "- IEC plates (kW, IN / I_N, n= r/min, cos φ, IP54/IP55, 50 Hz, 400/690 V) use those labels. IN is rated current (FLA equivalent). n=1450 is RPM. cos φ 0.84 is pf 0.84. IP55 is enclosure. Do not assume 60 Hz or 3-phase.",
+  "- Dual IEC current such as 14.8/8.5 A with 400/690 V goes in dualFla; fla stays null.",
   "- If a value is unreadable, use null and mention it in warnings.",
   "- Put a readable plate transcript into raw_ocr.",
 ].join("\n");

@@ -309,6 +309,14 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(html, /look-verdict-card\[hidden\]/);
   const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
   assert.match(tdrJs, /prepareUploadDataUrl/);
+  const schema = sandbox.__nameplateSchemaTestApi;
+  assert.equal(typeof schema.highlightReasons, 'function');
+  assert.equal(typeof schema.exportPanelDraft, 'function');
+  const prompt = fs.readFileSync(path.join(__dirname, '..', '..', 'api-server', 'src', 'prompts', 'nameplateVisionPrompt.ts'), 'utf8');
+  assert.match(prompt, /IEC plates/);
+  assert.match(prompt, /Do not assume 60 Hz/);
+  const panelPrompt = fs.readFileSync(path.join(__dirname, '..', '..', 'api-server', 'src', 'prompts', 'panelVisionPrompt.ts'), 'utf8');
+  assert.match(panelPrompt, /middle or bottom tile/);
 
   console.log('VLM OCR client config + schema mapping passed');
 })().catch((err) => {

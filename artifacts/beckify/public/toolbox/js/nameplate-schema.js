@@ -145,7 +145,7 @@
     FIELD_SPECS.forEach(function (spec) { fields[spec.name] = emptyField(); });
     return {
       fields: fields,
-      extras: { flaDisplay: '', insulation: '', riseC: '', dualFla: '' },
+      extras: { flaDisplay: '', insulation: '', riseC: '', dualFla: '', ieClass: '', connection: '', ipRating: '' },
       source: 'empty',
       rawText: '',
       warnings: [],
@@ -272,6 +272,15 @@
     if (payload.dualFla || envelope.dualFla) {
       draft.extras.dualFla = extraFrom('dualFla');
     }
+    if (payload.ieClass || envelope.ieClass) {
+      draft.extras.ieClass = extraFrom('ieClass');
+    }
+    if (payload.connection || envelope.connection) {
+      draft.extras.connection = extraFrom('connection');
+    }
+    if (payload.ipRating || envelope.ipRating) {
+      draft.extras.ipRating = extraFrom('ipRating');
+    }
 
     applyFlaTraps(draft, rawFla);
     draft.filled = countFilled(draft.fields);
@@ -306,6 +315,9 @@
       notes: fields.notes,
       insulation: fields.insulation,
       riseC: fields.riseC,
+      ieClass: fields.ieClass || (opts && opts.extras && opts.extras.ieClass),
+      connection: fields.connection || (opts && opts.extras && opts.extras.connection),
+      ipRating: fields.ipRating || (opts && opts.extras && opts.extras.ipRating),
     }, {
       source: (opts && opts.source) || 'tesseract',
       rawText: opts && opts.rawText,
@@ -329,7 +341,7 @@
       volts: displayValue(f.voltage),
       fla: draft.extras.flaDisplay || displayValue(f.fla),
       rpm: displayValue(f.rpm),
-      hz: hz || '60',
+      hz: hz,
       phase: displayValue(f.phases),
       frame: displayValue(f.frame),
       sf: displayValue(f.sf),
@@ -362,6 +374,9 @@
       insulation: draft.extras.insulation || '',
       riseC: draft.extras.riseC || '',
       dualFla: draft.extras.dualFla || '',
+      ieClass: draft.extras.ieClass || '',
+      connection: draft.extras.connection || '',
+      ipRating: draft.extras.ipRating || '',
     };
     FIELD_NAMES.forEach(function (name) {
       if (next.fields[name].value !== null) {
@@ -382,6 +397,48 @@
 
   function lowConfidenceLabels(draft, threshold) {
     return lowConfidenceFields(draft, threshold).map(fieldLabel);
+  }
+
+  /**
+   * Honest reasons a field is yellow. These are review hints, not validation
+   * errors — do not treat them as aria-invalid.
+   */
+  function highlightReasons(draft, threshold) {
+    var reasons = [];
+    var seen = {};
+    function add(name, kind, reason) {
+      var key = name + ':' + kind;
+      if (seen[key]) return;
+      seen[key] = true;
+      reasons.push({
+        name: name,
+        label: fieldLabel(name),
+        kind: kind,
+        reason: reason,
+      });
+    }
+    if (draft && draft.extras && draft.extras.dualFla) {
+      add('fla', 'dual-fla', 'Dual FLA ' + draft.extras.dualFla + ' — pick one ampere. NEC math cannot use a pair.');
+    }
+    if (!draft || !draft.fields || !draft.fields.phases || draft.fields.phases.value == null) {
+      add('phases', 'missing-phase', 'Phase was not printed. Unknown until you enter 1 or 3.');
+    }
+    if (draft && draft.extras && draft.extras.ieClass) {
+      add('nomEff', 'ie-class', 'Plate shows IEC class ' + draft.extras.ieClass + ', not a percent. Do not treat the class as efficiency.');
+    }
+    lowConfidenceFields(draft, threshold).forEach(function (name) {
+      var cell = draft.fields[name];
+      var pct = Math.round((cell && cell.confidence ? cell.confidence : 0) * 100);
+      add(name, 'low-confidence', 'OCR confidence ' + pct + '% — glare, stamp depth, or rotation made this uncertain.');
+    });
+    if (draft && Array.isArray(draft.warnings)) {
+      draft.warnings.forEach(function (warning) {
+        if (/FLA was ignored/i.test(warning)) {
+          add('fla', 'trap', String(warning));
+        }
+      });
+    }
+    return reasons;
   }
 
   var PANEL_ROW_FIELDS = ['circuit', 'description', 'trip', 'poles', 'loadAmps', 'notes'];
@@ -440,10 +497,18 @@
     };
   }
 
+  function normalizeCircuitKey(value) {
+    var raw = value == null ? '' : String(value).trim().toUpperCase();
+    if (!raw) return '';
+    var m = raw.match(/^0*(\d{1,2})([A-Z])?$/);
+    if (!m) return raw;
+    return String(Number(m[1])) + (m[2] || '');
+  }
+
   function circuitKey(row) {
     var cell = row && row.circuit;
     var value = cell && typeof cell === 'object' ? cell.value : cell;
-    return value == null ? '' : String(value).trim().toUpperCase();
+    return normalizeCircuitKey(value);
   }
 
   function rowHasValue(row, name) {
@@ -526,6 +591,71 @@
     return snapPanelSlots(combined) || combined || 0;
   }
 
+  function circuitSortNumber(key) {
+    if (!key) return Infinity;
+    var n = Number(String(key).replace(/[A-Z]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : Infinity;
+  }
+
+  function sortPanelRows(rows) {
+    return (rows || []).slice().sort(function (a, b) {
+      var ka = circuitKey(a);
+      var kb = circuitKey(b);
+      var na = circuitSortNumber(ka);
+      var nb = circuitSortNumber(kb);
+      if (na !== nb) return na - nb;
+      return ka.localeCompare(kb);
+    });
+  }
+
+  /**
+   * Print/CSV sanity: never emit trip as loadAmps, keep unknown phase honest,
+   * and include the merged slot count + source.
+   */
+  function exportPanelDraft(draft, opts) {
+    opts = opts || {};
+    var normalized = normalizePanelDraft(draft || {}, opts);
+    var rows = sortPanelRows(normalized.rows);
+    var warnings = (normalized.warnings || []).slice();
+    if (!normalized.panel.phases || normalized.panel.phases.value == null) {
+      warnings.push('Phase is unknown. Load math stays gated until 1 or 3 is selected.');
+    }
+    var rawRows = (draft && (draft.circuits || draft.rows)) || [];
+    var clearedLoad = false;
+    rawRows.forEach(function (item) {
+      var src = item && item.fields ? item.fields : item;
+      var loadCell = src && src.loadAmps;
+      var loadVal = loadCell && typeof loadCell === 'object' ? loadCell.value : loadCell;
+      if (loadVal != null && loadVal !== '') clearedLoad = true;
+    });
+    if (clearedLoad) {
+      warnings.push('loadAmps was cleared — trip is not a reviewed load.');
+    }
+    var lines = ['circuit,description,trip,poles,loadAmps,notes'];
+    rows.forEach(function (row) {
+      var trip = row.trip && row.trip.value != null ? String(row.trip.value) : '';
+      var load = '';
+      lines.push([
+        circuitKey(row) || '',
+        String((row.description && row.description.value) || '').replace(/,/g, ' '),
+        trip,
+        row.poles && row.poles.value != null ? String(row.poles.value) : '',
+        load,
+        String((row.notes && row.notes.value) || '').replace(/,/g, ' '),
+      ].join(','));
+    });
+    return {
+      csv: lines.join('\n'),
+      slotCount: normalized.slotCount,
+      source: normalized.source || opts.source || '',
+      phase: normalized.panel.phases && normalized.panel.phases.value != null
+        ? normalized.panel.phases.value
+        : null,
+      warnings: warnings,
+      rowCount: rows.length,
+    };
+  }
+
   function mergePanelDrafts(base, incoming) {
     var left = normalizePanelDraft(base || {});
     var right = normalizePanelDraft(incoming || {});
@@ -533,6 +663,9 @@
     var order = [];
     function take(row) {
       var key = circuitKey(row);
+      if (key && row.circuit && typeof row.circuit === 'object') {
+        row.circuit.value = key;
+      }
       if (!key) {
         order.push(row);
         return;
@@ -550,6 +683,7 @@
     }
     left.rows.forEach(take);
     right.rows.forEach(take);
+    order = sortPanelRows(order);
     var panel = left.panel;
     ['name', 'voltage', 'mainAmps', 'phases', 'location'].forEach(function (name) {
       if ((!panel[name] || panel[name].value == null) && right.panel[name] && right.panel[name].value != null) {
@@ -586,10 +720,14 @@
     markReviewed: markReviewed,
     lowConfidenceFields: lowConfidenceFields,
     lowConfidenceLabels: lowConfidenceLabels,
+    highlightReasons: highlightReasons,
     fieldLabel: fieldLabel,
     normalizePanelDraft: normalizePanelDraft,
     mergePanelDrafts: mergePanelDrafts,
     mergeSlotCounts: mergeSlotCounts,
+    normalizeCircuitKey: normalizeCircuitKey,
+    sortPanelRows: sortPanelRows,
+    exportPanelDraft: exportPanelDraft,
     emptyPanelRow: emptyPanelRow,
     clampConfidence: clampConfidence,
     dualPair: dualPair,
