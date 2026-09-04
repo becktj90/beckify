@@ -79,8 +79,9 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// Color-coded shelves. Home IA is Field vs Toolkit (`ToolHomeArea`);
-/// these cases stay stable so open catalog PRs can keep merging additively.
+/// Color-coded shelves. Home IA is Field vs Toolkit (`ToolHomeAreaPolicy`
+/// owns area + shelf); these cases stay stable so open catalog PRs can keep
+/// merging additively. Category color is display/grouping aligned to shelves.
 enum ToolCategory: String, CaseIterable, Identifiable {
     case field = "Field"
     case power = "Power & AC"
@@ -161,12 +162,13 @@ extension ToolShelfKind {
 }
 
 extension ToolboxCatalog {
-    /// The shelf a tool is filed under, for the breadcrumb color on its tile.
+    /// Display/grouping color for a tool. Always follows `ToolHomeAreaPolicy.shelf`
+    /// so a Toolkit bench tool never wears Field Power teal.
     static func category(of id: ToolID) -> ToolCategory? {
-        ToolCategory.allCases.first { categories[$0]?.contains(id) == true }
+        shelf(of: id).category
     }
 
-    /// Field (jobsite) vs Toolkit (basics / bench / reference). ToolIDs stay put.
+    /// Field (jobsite) vs Toolkit (basics / bench / reference). Policy is canonical.
     static func area(of id: ToolID) -> ToolHomeArea {
         ToolHomeAreaPolicy.area(forToolID: id.rawValue)
     }
@@ -179,37 +181,22 @@ extension ToolboxCatalog {
         tools.filter { Self.area(of: $0.id) == area }
     }
 
+    /// Shelf membership comes from `ToolHomeAreaPolicy`. Category arrays supply
+    /// preferred grid order only; extras (policy members not yet listed) append.
     static func tools(on shelf: ToolShelfKind) -> [ToolDefinition] {
-        let ids: [ToolID]
-        switch shelf {
-        case .jobsite:
-            ids = (categories[.field] ?? []).filter { area(of: $0) == .field }
-        case .power:
-            ids = (categories[.power] ?? []).filter { area(of: $0) == .field }
-        case .controls:
-            ids = (categories[.controls] ?? []).filter { area(of: $0) == .field }
-        case .instruments:
-            ids = categories[.sensors] ?? []
-        case .basics:
-            ids = [
-                .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor,
-                .ledRC, .frequencyWave, .unitConverter, .timer555,
-            ]
-        case .bench:
-            // Listed tools in catalog order, plus any later ToolID that the
-            // policy files under bench (AoE analog, etc.) once those PRs merge.
-            let listed = tools.filter { ToolHomeAreaPolicy.shelf(forToolID: $0.id.rawValue) == .bench }.map(\.id)
-            let extras = ToolID.allCases.filter { id in
-                id != .powerWizard
-                    && ToolHomeAreaPolicy.shelf(forToolID: id.rawValue) == .bench
-                    && !listed.contains(id)
-                    && allTools.contains(where: { $0.id == id })
+        let members = tools.filter { Self.shelf(of: $0.id) == shelf }
+        let preferred = categories[shelf.category] ?? []
+        var seen = Set<ToolID>()
+        var ordered: [ToolDefinition] = []
+        for id in preferred {
+            if let tool = members.first(where: { $0.id == id }), seen.insert(id).inserted {
+                ordered.append(tool)
             }
-            ids = listed + extras
-        case .reference:
-            ids = categories[.reference] ?? []
         }
-        return ids.compactMap { id in allTools.first { $0.id == id } }
+        for tool in members where seen.insert(tool.id).inserted {
+            ordered.append(tool)
+        }
+        return ordered
     }
 }
 
@@ -850,37 +837,41 @@ enum ToolboxCatalog {
         ),
     ]
 
-    /// Color-coded grouping. Home IA is Field vs Toolkit (`ToolHomeAreaPolicy`);
-    /// do not delete IDs here — relocate via the policy if a tool changes area.
-    /// Open PRs can keep appending to these arrays.
+    /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
+    /// Policy owns home area + shelf; these arrays are color bags and preferred
+    /// grid order. Keep membership in sync with the policy — a tool’s category
+    /// color must not imply a different home than the policy.
+    /// Open PRs can keep appending to these arrays after updating the policy.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR,
-            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
-            .necCircuit, .loadWorksheet, .cableSchedule, .isLoopVerifier,
+            .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
+            .necCircuit, .isLoopVerifier,
         ],
         .power: [
-            .ohmsLaw, .power, .transformer, .tapChanger, .reactance, .powerFactor, .harmonicsTHD,
-            .rfLink, .batteryBank, .solarDesign, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
-            .linearRegulator,
-            .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
+            .power, .transformer, .tapChanger, .powerFactor, .harmonicsTHD,
+            .batteryBank, .solarDesign, .upsSizing,
         ],
         .controls: [
-            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent, .adcDac,
+            .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
             .controlSystems,
         ],
         .homework: [
-            .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
-            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam, .transientCircuit, .diodeIV,
-            .analogWorkbench, .noiseSNR, .instrumentationAmp,
+            .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
+            .frequencyWave, .ledRC, .unitConverter,
+            .reactance, .phasorDiagram, .numberBase, .magneticCircuit,
+            .fiberLink, .gaussianBeam, .transientCircuit, .diodeIV, .rfLink,
+            .analogWorkbench, .noiseSNR, .linearRegulator, .instrumentationAmp, .adcDac,
+            .heaterDesign, .solenoidDesign, .empEmc,
+            .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
         ],
         .sensors: [
             .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
             .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
         ],
         .reference: [
-            .referenceLibrary,
+            .referenceLibrary, .panelDirectory, .loadWorksheet, .cableSchedule,
         ],
     ]
 

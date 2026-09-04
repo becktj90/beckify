@@ -40,6 +40,13 @@ struct ToolGridView: View {
         ToolboxCatalog.tools.filter { favorites.isFavorite($0.id) }
     }
 
+    /// Pinned one-tap jobsite tools on Field home. Policy owns the ID list.
+    private var fieldQuickTools: [ToolDefinition] {
+        ToolHomeAreaPolicy.fieldQuickIDs.compactMap { raw in
+            ToolboxCatalog.tools.first { $0.id.rawValue == raw }
+        }
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
@@ -60,6 +67,16 @@ struct ToolGridView: View {
                             avatarStrip(title: "Recent", tools: Array(recents.tools.prefix(5)))
                                 .opacity(appeared || reduceMotion ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
+                        }
+                        if homeArea == .field {
+                            avatarStrip(
+                                title: "Quick",
+                                tools: fieldQuickTools,
+                                accessibilityNamePrefix: "Quick"
+                            )
+                            .opacity(appeared || reduceMotion ? 1 : 0)
+                            .offset(y: appeared || reduceMotion ? 0 : 8)
+                            .accessibilityIdentifier("fieldQuickStrip")
                         }
                     }
 
@@ -224,8 +241,12 @@ struct ToolGridView: View {
     }
 
     @ViewBuilder
-    private func avatarStrip(title: String, tools: [ToolDefinition]) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Space.xs) {
+    private func avatarStrip(
+        title: String,
+        tools: [ToolDefinition],
+        accessibilityNamePrefix: String? = nil
+    ) -> some View {
+        let strip = VStack(alignment: .leading, spacing: Theme.Space.xs) {
             Text(title.uppercased())
                 .font(Theme.TypeRole.sectionLabel)
                 .tracking(1.0)
@@ -233,32 +254,57 @@ struct ToolGridView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Theme.Space.md) {
                     ForEach(tools) { tool in
-                        NavigationLink(value: tool.id) {
-                            VStack(spacing: 6) {
-                                IconWell(toolID: tool.id, size: 52, circular: true)
-                                    .tileLift(
-                                        tint: Theme.categoryColors(
-                                            ToolboxCatalog.category(of: tool.id) ?? .power
-                                        ).primary,
-                                        radius: 10,
-                                        opacity: 0.2
-                                    )
-                                Text(tool.title)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(Theme.foreground)
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.85)
-                                    .frame(width: 80)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(tool.title)
-                        .accessibilityHint(tool.subtitle)
+                        avatarStripLink(
+                            tool: tool,
+                            accessibilityNamePrefix: accessibilityNamePrefix
+                        )
                     }
                 }
                 .padding(.vertical, 2)
             }
+        }
+        if accessibilityNamePrefix != nil {
+            strip
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Quick access")
+        } else {
+            strip
+        }
+    }
+
+    @ViewBuilder
+    private func avatarStripLink(
+        tool: ToolDefinition,
+        accessibilityNamePrefix: String?
+    ) -> some View {
+        let link = NavigationLink(value: tool.id) {
+            VStack(spacing: 6) {
+                IconWell(toolID: tool.id, size: 52, circular: true)
+                    .tileLift(
+                        tint: Theme.categoryColors(
+                            ToolboxCatalog.category(of: tool.id) ?? .power
+                        ).primary,
+                        radius: 10,
+                        opacity: 0.2
+                    )
+                Text(tool.title)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Theme.foreground)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .frame(width: 80)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            accessibilityNamePrefix.map { "\($0), \(tool.title)" } ?? tool.title
+        )
+        .accessibilityHint(tool.subtitle)
+        if accessibilityNamePrefix != nil {
+            link.accessibilityIdentifier("quickTool.\(tool.id.rawValue)")
+        } else {
+            link
         }
     }
 

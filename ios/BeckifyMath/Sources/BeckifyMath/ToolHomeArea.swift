@@ -25,12 +25,13 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
     }
 }
 
-/// Single source of truth for Field vs Toolkit. Keys match `ToolID.rawValue`.
+/// Canonical home area + shelf for every tool ID (`ToolID.rawValue`).
 ///
-/// Category membership on the iOS catalog can stay as-is for color / merge
-/// friendliness; this policy decides which home area a tool opens under.
-/// Unknown future IDs default to Field (the primary home) unless listed here
-/// as Toolkit — including AoE analog IDs that are not on `main` yet.
+/// This policy owns which home a tool opens under and which shelf it sits on.
+/// `ToolboxCatalog.categories` is display/grouping color only and must stay
+/// aligned to these shelves — a tool’s category color must not imply a
+/// different home than this policy. Unknown future IDs default to Field
+/// → Jobsite unless listed here as Toolkit (including AoE analog IDs).
 public enum ToolHomeAreaPolicy {
     public static func area(forToolID id: String) -> ToolHomeArea {
         if toolkitIDs.contains(id) { return .toolkit }
@@ -76,6 +77,12 @@ public enum ToolHomeAreaPolicy {
 
     // MARK: - Membership
 
+    /// Compact Field-home Quick strip — one-tap jobsite calcs plus Wi-Fi Path.
+    public static let fieldQuickIDs: [String] = [
+        "voltageDrop", "wireAmpacity", "motorFLA",
+        "receptacleSelector", "wifiStatus", "conduitFill",
+    ]
+
     /// Homework / bench / reference — including AoE analog IDs from open PRs
     /// so those tools land in Toolkit when they merge, without this PR adding ToolIDs.
     private static let toolkitIDs: Set<String> = [
@@ -86,6 +93,9 @@ public enum ToolHomeAreaPolicy {
         "referenceLibrary",
         "analogWorkbench", "noiseSNR", "linearRegulator",
         "instrumentationAmp", "adcDac",
+        "heaterDesign", "solenoidDesign", "empEmc",
+        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
+        "panelDirectory", "loadWorksheet", "cableSchedule",
     ]
 
     private static let basicsIDs: Set<String> = [
@@ -98,10 +108,13 @@ public enum ToolHomeAreaPolicy {
         "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
         "analogWorkbench", "noiseSNR", "linearRegulator",
         "instrumentationAmp", "adcDac",
+        "heaterDesign", "solenoidDesign", "empEmc",
+        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
     ]
 
     private static let referenceIDs: Set<String> = [
         "referenceLibrary",
+        "panelDirectory", "loadWorksheet", "cableSchedule",
     ]
 
     private static let instrumentIDs: Set<String> = [
@@ -110,11 +123,11 @@ public enum ToolHomeAreaPolicy {
         "deviceHealth",
     ]
 
+    /// Field → Power: distribution / facility energy only. Specialty design
+    /// (heaters, solenoids, EMP, e-bike / nickel pack) lives on Toolkit → Bench.
     private static let powerIDs: Set<String> = [
         "power", "powerWizard", "transformer", "powerFactor", "batteryBank",
         "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
-        "heaterDesign", "solenoidDesign", "empEmc",
-        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
     ]
 
     /// Field → Controls: jobsite loop helpers plus the Control Systems lab.
