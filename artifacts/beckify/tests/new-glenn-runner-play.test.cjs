@@ -60,6 +60,7 @@ assert.match(mission, /this\.matter/);
 assert.match(mission, /JACKLYN/);
 assert.match(mission, /BOOSTER RECOVERED/);
 assert.match(mission, /jacklynPhase/);
+assert.match(mission, /jacklynReadyAt/);
 assert.match(mission, /setZoom\(0\.82\)/);
 assert.match(mission, /recordGameScore\('new-glenn-runner'/);
 assert.match(mission, /hiArcadeScore/);

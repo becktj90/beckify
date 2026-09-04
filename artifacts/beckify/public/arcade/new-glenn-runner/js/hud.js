@@ -123,7 +123,7 @@ export function setMissionButtons(settings, onPick) {
     const label = btn.getAttribute('data-label') || id;
     const unlocked = (settings.unlockedMissions || []).includes(id);
     const active = settings.currentMission === id;
-    btn.disabled = !unlocked;
+    btn.disabled = false;
     btn.textContent = unlocked ? label : `${id} · LOCKED`;
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     btn.setAttribute('aria-disabled', unlocked ? 'false' : 'true');

@@ -239,7 +239,11 @@ export default class MissionScene extends Phaser.Scene {
     window.arcadeReset = () => this.resetMissionRecord();
 
     if (this.qaBeat === 'jacklyn') {
-      this.startMission();
+      this.session = this.freshSession();
+      this.paused = false;
+      this.menuLayer.setVisible(false);
+      setOverlay('ng-summary', false);
+      setOverlay('ng-pause', false);
       this.enterJacklyn();
     }
 
@@ -307,6 +311,7 @@ export default class MissionScene extends Phaser.Scene {
       flightTime: 0,
       landingLock: false,
       jacklynPhase: 'slide',
+      jacklynReadyAt: 0,
       objectiveDone: false,
       comboReady: false,
     };
@@ -327,6 +332,7 @@ export default class MissionScene extends Phaser.Scene {
     this.applyRocketSkin();
     this.rocket.setPosition(560, 430);
     this.rocket.setVelocity(0, 0);
+    this.rocket.setFrictionAir(0.035);
     this.rocket.setIgnoreGravity(true);
     this.matter.world.setGravity(0, 0);
     this.cameras.main.stopFollow();
@@ -401,14 +407,16 @@ export default class MissionScene extends Phaser.Scene {
     this.placeRecovery();
     this.rocket.setTexture('booster');
     const side = flight.lzOffset >= 0 ? -1 : 1;
-    this.rocket.setPosition(W / 2 + side * 340, 70);
-    this.rocket.setVelocity(side * -6.5, 2.4);
-    this.rocket.setAngle(side * -18);
+    this.session.jacklynReadyAt = this.nowSec + 0.85;
+    this.rocket.setFrictionAir(0.045);
+    this.rocket.setPosition(W / 2 + side * 500, -20);
+    this.rocket.setVelocity(side * -4.6, 1.35);
+    this.rocket.setAngle(side * -22);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, 0.72);
+    this.matter.world.setGravity(0, 0.26);
     this.cameras.main.stopFollow();
     this.cameras.main.setZoom(0.82);
-    this.cameras.main.centerOn(W / 2, 360);
+    this.cameras.main.centerOn(W / 2, 300);
     if (flight.objective?.id === 'clean' && this.session.hits === 0) this.completeObjective();
     AudioApi.play('meco', this.settings);
     setBanner('JACKLYN — slide in, RCS straighten, brake the deck', 'warn', 2800);
@@ -533,18 +541,20 @@ export default class MissionScene extends Phaser.Scene {
 
     if (boosting && this.session.fuel > 0) {
       this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 18 * dt);
-      this.rocket.applyForce({ x: axis * 0.018, y: -0.042 });
+      this.rocket.applyForce({ x: axis * 0.02, y: -0.088 });
       this.session.throttle = 1;
       this.emitPlume(1);
-      if (alt < 160) this.emitBloom();
+      if (alt < 180) this.emitBloom();
     } else {
-      this.rocket.applyForce({ x: axis * 0.008, y: 0 });
+      this.rocket.applyForce({ x: axis * 0.01, y: 0.006 });
       this.session.throttle = 0.12;
     }
+    if (this.rocket.body.velocity.y > 9) this.rocket.setVelocityY(9);
+    if (this.rocket.body.velocity.y < -6) this.rocket.setVelocityY(-6);
     this.rocket.x = clamp(this.rocket.x, 80, W - 80);
     this.session.velocity = Math.round(this.rocket.body.velocity.y * 42);
     this.session.altitudeKm = clamp(alt / 90, 0, 8);
-    if (this.rocket.y > 700) this.resolveLanding('water');
+    if (this.rocket.y > 720) this.resolveLanding('water');
   }
 
   onCollision(event) {
@@ -567,6 +577,7 @@ export default class MissionScene extends Phaser.Scene {
 
   resolveLanding(kind) {
     if (this.session.landingLock) return;
+    if (kind === 'deck' && this.nowSec < (this.session.jacklynReadyAt || 0)) return;
     this.session.landingLock = true;
     const mode = DIFFICULTY[this.settings.difficulty];
     const vy = Math.abs(this.rocket.body.velocity.y);
