@@ -42,16 +42,19 @@ final class PanelScheduleOCRTests: XCTestCase {
         XCTAssertTrue(extracted.circuits[0].isLowConfidence)
     }
 
-    func testGuessesSpareFromSpapeAndPolesFromIP() {
-        let guessed = PanelScheduleParser.guessHardToRead("4 SPAPE 20A IP")
+    func testGuessesSpareFromSparfAndPolesFromIP() {
+        // SPARF is edit-distance 1 from SPARE and 2 from SPACE — unambiguous.
+        let guessed = PanelScheduleParser.guessHardToRead("4 SPARF 20A IP")
         XCTAssertTrue(guessed.changed)
         XCTAssertTrue(guessed.text.contains("SPARE"))
-        XCTAssertTrue(guessed.text.contains("1P") || guessed.text.contains("IP") == false)
+        XCTAssertTrue(guessed.text.contains("1P"))
 
-        let extracted = PanelScheduleParser.extract(text: "4 SPAPE 20A IP")
+        let extracted = PanelScheduleParser.extract(text: "4 SPARF 20A IP")
         XCTAssertEqual(extracted.circuits.count, 1)
         XCTAssertEqual(extracted.circuits[0].name, "SPARE")
         XCTAssertTrue(extracted.circuits[0].isSpareOrSpace)
+        // SPAPE is distance 1 from both SPARE and SPACE; SPARE is listed first.
+        XCTAssertEqual(PanelScheduleParser.guessNameToken("SPAPE"), "SPARE")
     }
 
     func testVisionConfidenceScalesRowConfidence() {
@@ -133,6 +136,33 @@ final class PanelScheduleOCRTests: XCTestCase {
         XCTAssertEqual(three, 40 * 208 * sqrt(3), accuracy: 0.01)
         let split1 = PanelScheduleParser.connectedVA(tripAmps: 20, poles: 1, voltage: 240, phases: 1)
         XCTAssertEqual(split1, 20 * 120, accuracy: 0.01)
+        // Missing poles on 1Ø ≥200 V default to 2-pole so demand is not halved.
+        XCTAssertEqual(PanelScheduleParser.poleCount("", phases: 1, voltage: 240), 2)
+        XCTAssertEqual(PanelScheduleParser.poleCount("", phases: 3, voltage: 208), 1)
+        XCTAssertEqual(PanelScheduleParser.poleCount("1", phases: 1, voltage: 240), 1)
+        let missingPoles = PanelScheduleParser.connectedVA(
+            tripAmps: 20,
+            poles: PanelScheduleParser.poleCount("", phases: 1, voltage: 240),
+            voltage: 240,
+            phases: 1
+        )
+        XCTAssertEqual(missingPoles, 20 * 240, accuracy: 0.01)
+    }
+
+    func testMissingPolesOnSplitPhaseDoesNotHalveDemand() throws {
+        let circuits = [
+            PanelCircuitDraft.from(PanelCircuit(circuit: "1", name: "RANGE", trip: "50A"), confidence: 0.9),
+        ]
+        let result = try PanelScheduleDemand.estimate(
+            circuits: circuits,
+            voltage: 240,
+            phases: 1,
+            mainAmps: 200,
+            occupancy: .other
+        )
+        XCTAssertEqual(result.connectedVA, 50 * 240, accuracy: 0.01)
+        let totals = PanelScheduleDemand.categoryTotals(from: circuits, voltage: 240, phases: 1)
+        XCTAssertEqual(totals[.other] ?? 0, 50 * 240, accuracy: 0.01)
     }
 
     func testDemandAndCapacityToAddUsesWorksheetMath() throws {

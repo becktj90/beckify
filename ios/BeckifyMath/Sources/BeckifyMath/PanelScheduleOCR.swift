@@ -460,7 +460,8 @@ public enum PanelScheduleParser {
         if knownNames.contains(upper) { return token }
         let maxDistance = upper.count <= 6 ? 1 : 2
         var best: (name: String, distance: Int)?
-        for name in knownNames {
+        // First listed name at the minimum distance wins — Set order is not stable.
+        for name in knownNameOrder {
             let distance = editDistance(upper, name)
             guard distance > 0, distance <= maxDistance else { continue }
             if best == nil || distance < best!.distance {
@@ -534,10 +535,12 @@ public enum PanelScheduleParser {
         return nil
     }
 
-    public static func poleCount(_ poles: String, phases: Int) -> Int {
+    /// Missing poles: 1-pole on 3Ø (typical lighting/receptacle), 2-pole on
+    /// 1Ø ≥200 V so split-phase demand is not halved. Explicit 1/2/3 wins.
+    public static func poleCount(_ poles: String, phases: Int, voltage: Double = 0) -> Int {
         let trimmed = poles.trimmingCharacters(in: .whitespacesAndNewlines)
         if let n = Int(trimmed), n >= 1, n <= 3 { return n }
-        if trimmed.isEmpty { return phases == 3 ? 1 : 1 }
+        if trimmed.isEmpty, phases == 1, abs(voltage) >= 200 { return 2 }
         return 1
     }
 
@@ -564,7 +567,8 @@ public enum PanelScheduleParser {
         "SUMMARY", "RATING", "VOLTAGE", "MAIN",
     ]
 
-    private static let knownNames: Set<String> = [
+    /// SPARE before SPACE so a one-letter miss like SPAPE / SPARF is not a coin flip.
+    private static let knownNameOrder: [String] = [
         "LIGHTING", "LIGHTS", "LTG", "RECEPTACLES", "RECEPTACLE", "RECEPT",
         "HVAC", "AHU", "RTU", "SPARE", "SPACE", "EXTERIOR", "GARAGE",
         "KITCHEN", "BATHROOM", "BEDROOM", "DISHWASHER", "DISPOSAL", "DRYER",
@@ -573,6 +577,7 @@ public enum PanelScheduleParser {
         "COMPRESSOR", "CHILLER", "BOILER", "ELEVATOR", "CORRIDOR", "LOBBY",
         "OFFICE", "BREAK", "ROOM", "PANEL", "FEED", "CONTACTOR",
     ]
+    private static let knownNames = Set(knownNameOrder)
 
     private static let lightingKeys = [
         "LIGHT", "LIGHTING", "LIGHTS", "LTG", "LITE", "EMERGENCY", "EXIT", "SIGN",
@@ -789,7 +794,7 @@ public enum PanelScheduleDemand {
                 missingTrip += 1
                 continue
             }
-            let poles = PanelScheduleParser.poleCount(circuit.poles, phases: phases)
+            let poles = PanelScheduleParser.poleCount(circuit.poles, phases: phases, voltage: v)
             let va = PanelScheduleParser.connectedVA(
                 tripAmps: trip,
                 poles: poles,
@@ -865,7 +870,7 @@ public enum PanelScheduleDemand {
         for circuit in circuits {
             guard !circuit.isSpareOrSpace else { continue }
             guard let trip = PanelScheduleParser.parseTripAmps(circuit.trip) else { continue }
-            let poles = PanelScheduleParser.poleCount(circuit.poles, phases: phases)
+            let poles = PanelScheduleParser.poleCount(circuit.poles, phases: phases, voltage: voltage)
             let va = PanelScheduleParser.connectedVA(
                 tripAmps: trip,
                 poles: poles,

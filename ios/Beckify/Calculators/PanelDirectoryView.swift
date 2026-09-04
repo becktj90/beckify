@@ -707,7 +707,7 @@ struct PanelDirectoryView: View {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !chunk.isEmpty { chunks.append(chunk) }
             }
-            guard text == textBefore || !replacingText else { return }
+            guard text == textBefore else { return }
             let trimmed = chunks.joined(separator: "\n")
             if trimmed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 recognizeError = "No text found. Try a sharper, flatter shot of the directory."
@@ -718,7 +718,7 @@ struct PanelDirectoryView: View {
             session.markInputsChanged()
             confirmed = false
         } catch {
-            guard text == textBefore || !replacingText else { return }
+            guard text == textBefore else { return }
             recognizeError = "On-device recognition failed. Paste the text instead."
         }
     }
