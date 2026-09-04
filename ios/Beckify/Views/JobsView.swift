@@ -3,6 +3,7 @@ import BeckifyMath
 
 struct JobsView: View {
     @EnvironmentObject private var jobs: JobStore
+    @Environment(\.browseFieldHome) private var browseFieldHome
 
     private var fieldJobs: [SavedJob] {
         jobs.jobs
@@ -20,11 +21,16 @@ struct JobsView: View {
         NavigationStack {
             Group {
                 if jobs.jobs.isEmpty {
-                    ContentUnavailableView(
-                        "No saved jobs",
-                        systemImage: "note.text",
-                        description: Text("Save a calculator result or a sensor snapshot as an on-device note. This is not a project gallery — nothing is uploaded.")
-                    )
+                    ContentUnavailableView {
+                        Label("No saved jobs", systemImage: "note.text")
+                    } description: {
+                        Text("Run a Field calc, then save the result as an on-device note. Nothing is uploaded — this is not a project gallery.")
+                    } actions: {
+                        Button("Browse Field") {
+                            browseFieldHome()
+                        }
+                        .accessibilityIdentifier("browseFieldFromJobsButton")
+                    }
                 } else {
                     List {
                         if !fieldJobs.isEmpty {

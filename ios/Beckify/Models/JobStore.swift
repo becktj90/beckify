@@ -52,6 +52,7 @@ final class JobStore: ObservableObject {
             jobs.insert(job, at: 0)
         }
         persist()
+        ReviewAskStore.shared.recordSavedJob()
     }
 
     func delete(at offsets: IndexSet) {

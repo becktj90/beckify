@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import BeckifyMath
 
 @main
@@ -24,6 +25,9 @@ private enum RootTab: Hashable {
 struct RootView: View {
     @State private var tab: RootTab = .toolbox
     @State private var toolboxArea: ToolHomeArea = .field
+    @State private var didFinishFirstAppear = false
+    @ObservedObject private var reviewAsk = ReviewAskStore.shared
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         TabView(selection: $tab) {
@@ -50,6 +54,18 @@ struct RootView: View {
         .environment(\.browseFieldHome) {
             toolboxArea = .field
             tab = .toolbox
+        }
+        .onAppear {
+            reviewAsk.recordSession()
+            // Never request on first-launch onAppear (HIG + App Review 5.6.3).
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(400))
+                didFinishFirstAppear = true
+            }
+        }
+        .onChange(of: tab) { _, newTab in
+            guard didFinishFirstAppear, newTab == .toolbox else { return }
+            reviewAsk.presentIfEligible(requestReview, currentVersion: ReviewAskStore.marketingVersion)
         }
     }
 }

@@ -29,7 +29,8 @@ ios/
   Beckify.xcodeproj/     Xcode 15+ project (open this on a Mac)
   Beckify/               SwiftUI app (Calculators + Sensors)
   BeckifyMath/           Pure-Swift math + NEC tables + XCTest
-  docs/APP_STORE.md      Listing copy and App Store Connect checklist
+  docs/APP_STORE.md            Listing copy and App Store Connect checklist
+  docs/FIVE_STAR_READINESS.md  Competitor 1★ patterns, review-ask policy, pre-submit gate
 ```
 
 ## Field (jobsite — opens first)

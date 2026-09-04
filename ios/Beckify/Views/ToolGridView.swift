@@ -1,10 +1,12 @@
 import SwiftUI
+import StoreKit
 import BeckifyMath
 
 /// Premium adaptive tool launcher — Field vs Toolkit, search, favorites,
 /// recents, and shelf hierarchy with original schematic icons in soft wells.
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
+    @ObservedObject private var reviewAsk = ReviewAskStore.shared
     @ObservedObject private var recents = RecentToolsStore.shared
     @Binding var homeArea: ToolHomeArea
     @State private var query = ""
@@ -12,6 +14,7 @@ struct ToolGridView: View {
     @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.requestReview) private var requestReview
 
     init(homeArea: Binding<ToolHomeArea> = .constant(.field)) {
         _homeArea = homeArea
@@ -87,6 +90,16 @@ struct ToolGridView: View {
             .navigationDestination(for: ToolID.self) { id in
                 CalculatorHostView(toolID: id)
                     .onAppear { recents.record(id) }
+            }
+            .onChange(of: path) { oldPath, newPath in
+                // End of a tool sequence — user is back on Field home. Never
+                // ask from a Save tap or from first-launch onAppear.
+                if !oldPath.isEmpty && newPath.isEmpty {
+                    reviewAsk.presentIfEligible(
+                        requestReview,
+                        currentVersion: ReviewAskStore.marketingVersion
+                    )
+                }
             }
             .onAppear {
                 BeckifyMotion.withOptionalAnimation(
