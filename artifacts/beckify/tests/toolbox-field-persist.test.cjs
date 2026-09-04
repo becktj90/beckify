@@ -69,5 +69,7 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'in
 assert.match(html, /id="mnp_reviewed"[^>]*data-no-persist/);
 const persistSrc = fs.readFileSync(path.join(root, 'field-persist.js'), 'utf8');
 assert.match(persistSrc, /data-no-persist/);
+const urlSrc = fs.readFileSync(path.join(root, 'url-state.js'), 'utf8');
+assert.match(urlSrc, /data-no-persist/);
 
 console.log('Field persist skips OCR review checkboxes');

@@ -172,7 +172,6 @@
   function fmt(x, d) { return Number.isFinite(x) ? Number(x).toLocaleString('en-US', { maximumFractionDigits: d === undefined || d === null ? 1 : d }) : '—'; }
 
   var photoUrl = '';
-  var reviewed = false;
 
   function gather() {
     return {
@@ -287,7 +286,12 @@
   }
 
   function clearReview() {
-    if (el('mnp_reviewed')) el('mnp_reviewed').checked = false;
+    var box = el('mnp_reviewed');
+    if (!box) return;
+    if (box.checked) {
+      box.checked = false;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   }
 
   function isLikelyImageFile(file) {
