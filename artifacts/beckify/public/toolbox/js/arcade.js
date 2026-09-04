@@ -3739,6 +3739,11 @@
   }
 
   function init() {
+    // Phaser 4.2.1 + Matter is the live New Glenn Runner. Keep this 420×640
+    // canvas path inert whenever data-ng-engine="phaser4" or #ng-phaser-root is present.
+    if (document.documentElement.dataset.ngEngine === 'phaser4' || document.getElementById('ng-phaser-root')) {
+      return;
+    }
     state.canvas = document.getElementById('arcadeCanvas');
     state.wrapper = document.getElementById('arcade-fs-wrapper');
     if (!state.canvas) return;

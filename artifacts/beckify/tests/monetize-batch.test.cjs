@@ -108,7 +108,7 @@ ok("HexGL is not listed", !/name: "HexGL"/.test(siteContent));
 console.log("\n--- New Glenn route ---");
 ok("hub Play Now points at /games/new-glenn-runner", /name: "New Glenn Runner"[\s\S]{0,400}url: "\/games\/new-glenn-runner"/.test(siteContent));
 ok("React route exists", appSrc.includes('path="/games/new-glenn-runner"'));
-ok("standalone arcade page exists", arcadeHtml.includes("arcadeCanvas") && arcadeHtml.includes("data-arcade-standalone"));
+ok("standalone arcade page exists", arcadeHtml.includes("ng-phaser-root") && arcadeHtml.includes("data-arcade-standalone"));
 ok("standalone page keeps difficulty copy", arcadeHtml.includes("KID / CADET / PAD RAT"));
 ok("toolbox no longer embeds the full arcade canvas", !/id="arcadeCanvas"/.test(toolboxHtml));
 ok("toolbox keeps a games-page link", toolboxHtml.includes("/games/new-glenn-runner/"));
