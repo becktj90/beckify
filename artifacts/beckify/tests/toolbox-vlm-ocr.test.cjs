@@ -277,6 +277,20 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(lookUnknown.verdict, 'mixed');
   assert.equal(lookUnknown.score, 100);
 
+  assert.equal(api.asLookScore(null), null);
+  assert.equal(api.asLookScore(''), null);
+  assert.equal(api.asLookScore('  '), null);
+  assert.equal(api.asLookScore(0), 0);
+  const lookNullMetrics = api.normalizeLookDraft({
+    verdict: 'looks_good',
+    score: 88,
+    metrics: { lighting: null, framing: 70, expression: null, sharpness: 88 },
+  });
+  assert.equal(lookNullMetrics.metrics.lighting, null);
+  assert.equal(lookNullMetrics.metrics.expression, null);
+  assert.equal(lookNullMetrics.metrics.framing, 70);
+  assert.equal(lookNullMetrics.metrics.overall, 88);
+
   assert.match(html, /id="sec-look-check"/);
   assert.match(html, /Analyze Look/);
   assert.match(html, /id="look-camera-input"[^>]*capture="user"/);
