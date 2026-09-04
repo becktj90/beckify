@@ -46,7 +46,7 @@
   FIELD_SPECS.forEach(function (spec) { FIELD_LABELS[spec.name] = spec.label; });
   var REJECTED_AMP_AS_FLA = /(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|AIC|KAIC|SCCR)/i;
   var DUAL_NUMBER = /^([0-9]+(?:\.[0-9]+)?)\/([0-9]+(?:\.[0-9]+)?)$/;
-  var FLA_NEAR_LABEL = /(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?)/i;
+  var FLA_NEAR_LABEL = /(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?|\bAMP(?:S|ERES)?)\b/i;
 
   function emptyField() {
     return { value: null, confidence: 0, userReviewed: false };

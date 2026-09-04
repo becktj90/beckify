@@ -368,7 +368,7 @@
         extra: 'Source: local parse of the edited AI transcript. The original photo was sent to the AI reader; this step did not re-read the photo.',
       };
     }
-    return { kind: 'tesseract', extra: 'parsed from edited text' };
+    return { kind: 'tesseract', extra: 'Parsed from edited text.' };
   }
 
   function setSource(kind, extra) {

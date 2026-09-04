@@ -126,7 +126,7 @@ assert.match(api.sourceMessage(afterAi.kind, afterAi.extra), /edited AI transcri
 assert.doesNotMatch(api.sourceMessage(afterAi.kind, afterAi.extra), /photo stayed on this device/i);
 const afterTess = api.nextSourceAfterEditedParse('tesseract');
 assert.equal(afterTess.kind, 'tesseract');
-assert.match(api.sourceMessage(afterTess.kind, afterTess.extra), /parsed from edited text/i);
+assert.match(api.sourceMessage(afterTess.kind, afterTess.extra), /Parsed from edited text/i);
 assert.match(api.sourceMessage('tesseract'), /photo stayed on this device/i);
 assert.match(src, /keepAiSource/);
 

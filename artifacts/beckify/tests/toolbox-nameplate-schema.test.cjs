@@ -167,6 +167,23 @@ const flaKeptWhenLabeled = schema.normalizeDraft({
 }, { rawText: 'FLA 14.5 MOCP 30' });
 assert.equal(flaKeptWhenLabeled.fields.fla.value, 14.5);
 
+const ampsKeptWithLra = schema.normalizeDraft({
+  fla: 12,
+  lra: 84,
+}, { rawText: 'HP 10 VOLTS 460 AMPS 12 LRA 84' });
+assert.equal(ampsKeptWithLra.fields.fla.value, 12);
+assert.equal(ampsKeptWithLra.fields.lra.value, 84);
+
+const fromEdited = schema.fromLegacyParse({
+  manufacturer: 'ACME',
+  hp: '10',
+  volts: '460',
+  fla: '12',
+  lra: '84',
+}, { rawText: 'MFR ACME MODEL ABC123 HP 10 VOLTS 460 AMPS 12 LRA 84' });
+assert.equal(fromEdited.fields.fla.value, 12);
+assert.equal(fromEdited.fields.lra.value, 84);
+
 const merged = schema.mergePanelDrafts({
   circuits: [{ circuit: '1', description: 'Lights', trip: 20 }],
   panel: { name: 'LP-1' },
