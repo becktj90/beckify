@@ -22,6 +22,7 @@ ok(
   "React shell has a CSP meta",
   /http-equiv="Content-Security-Policy"/.test(reactIndex) && /object-src 'none'/.test(reactIndex),
 );
+ok("React CSP frame-src allows the same-origin New Glenn iframe", /frame-src 'self'/.test(reactIndex));
 ok("React shell has a referrer policy meta", /name="referrer"/.test(reactIndex));
 
 const toolboxHtml = read(root, "public", "toolbox", "index.html");
