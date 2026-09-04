@@ -569,6 +569,37 @@ struct TransientResponseChart: View {
     }
 }
 
+// MARK: - Diode forward I-V curve
+
+struct DiodeIVChart: View {
+    let curve: [(voltage: Double, current: Double)]
+    let operatingVoltage: Double
+    let operatingCurrent: Double
+
+    private var summary: String {
+        "Forward I-V curve. Operating point \(Format.number(operatingVoltage, digits: 3)) V, \(Format.number(operatingCurrent * 1000, digits: 3)) mA."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Forward I-V curve", accessibilitySummary: summary) {
+            Chart {
+                ForEach(Array(curve.enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("Voltage", point.voltage), y: .value("Current", point.current * 1000))
+                        .foregroundStyle(Theme.chartPrimary)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+                PointMark(x: .value("Voltage", operatingVoltage), y: .value("Current", operatingCurrent * 1000))
+                    .foregroundStyle(Theme.energized)
+                    .symbolSize(64)
+            }
+            .chartXAxisLabel("V")
+            .chartYAxisLabel("mA")
+            .frame(height: 160)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
 // MARK: - Battery bank usable capacity
 
 struct BatteryBankChart: View {

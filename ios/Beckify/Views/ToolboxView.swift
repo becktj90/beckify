@@ -175,6 +175,8 @@ struct CalculatorHostView: View {
             case .gaussianBeam: GaussianBeamView()
             case .transientCircuit: TransientCircuitView()
             case .rackCurrent: RackCurrentView()
+            case .diodeIV: DiodeIVView()
+            case .isLoopVerifier: ISLoopVerifierView()
             }
         }
     }

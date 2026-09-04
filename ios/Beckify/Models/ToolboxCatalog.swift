@@ -47,6 +47,8 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case gaussianBeam
     case transientCircuit
     case rackCurrent
+    case diodeIV
+    case isLoopVerifier
 
     var id: String { rawValue }
 }
@@ -465,6 +467,22 @@ enum ToolboxCatalog {
             symbol: "server.rack",
             synonyms: ["e-bus", "rack current", "bus current", "backplane", "current budget", "headroom", "utilization", "24vdc", "5v logic"]
         ),
+        ToolDefinition(
+            id: .diodeIV,
+            kind: .homework,
+            title: "Semiconductor I-V",
+            subtitle: "Diode forward current from the Shockley equation, with the I-V curve.",
+            symbol: "triangle.righthalf.filled",
+            synonyms: ["diode", "shockley", "iv curve", "forward voltage", "saturation current", "ideality factor", "junction", "semiconductor"]
+        ),
+        ToolDefinition(
+            id: .isLoopVerifier,
+            kind: .calculator,
+            title: "IS Loop Verifier",
+            subtitle: "Entity Concept check — barrier Voc/Isc/Ca/La against field device and cable parameters.",
+            symbol: "checkmark.shield",
+            synonyms: ["intrinsic safety", "is loop", "entity concept", "barrier", "voc", "isc", "ca", "la", "hazardous area", "zener barrier"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -472,7 +490,7 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed,
-            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
+            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors, .isLoopVerifier,
         ],
         .power: [
             .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank, .magneticCircuit,
@@ -482,7 +500,7 @@ enum ToolboxCatalog {
         ],
         .homework: [
             .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
-            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam, .transientCircuit,
+            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam, .transientCircuit, .diodeIV,
         ],
         .sensors: [
             .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
@@ -576,5 +594,7 @@ enum ToolboxCatalog {
         .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],
         .transientCircuit: [.frequencyWave, .ledRC, .reactance],
         .rackCurrent: [.modbusAddress, .signalScaling, .plcTimer],
+        .diodeIV: [.ledRC, .resistorColor, .ohmsLaw],
+        .isLoopVerifier: [.receptacleSelector, .signalScaling, .panelDirectory],
     ]
 }

@@ -2213,3 +2213,281 @@ struct RackCurrentView: View {
         ))
     }
 }
+
+// MARK: - Semiconductor I-V (diode)
+
+struct DiodeIVView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.diodeIV, "saturation", default: "2.5") private var saturationNanoamps
+    @StoredInput(.diodeIV, "ideality", default: "1.5") private var ideality
+    @StoredInput(.diodeIV, "temperature", default: "300") private var temperature
+    @StoredInput(.diodeIV, "voltage", default: "0.6") private var voltage
+    @StoredInput(.diodeIV, "jobName", default: "Diode I-V") private var jobName
+    @State private var session = ExplicitCalculationState<DiodeIVResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Entered in nanoamps, since saturation current is always a tiny number.
+    private var saturationAmps: Double { (saturationNanoamps.parsedDouble ?? .nan) * 1e-9 }
+
+    private var inputFingerprint: String { "\(saturationNanoamps)|\(ideality)|\(temperature)|\(voltage)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .diodeIV,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .diodeIV,
+                symbolic: "I = I_S (e^(V / nV_T) − 1)     V_T = kT / q",
+                substituted: substituted,
+                meaning: "The exponential is why a diode looks like an open circuit, then suddenly conducts hard over a few tenths of a volt — current changes by orders of magnitude while the voltage barely moves. That flat forward drop is the whole reason diodes make good rough voltage references."
+            )
+            TryExampleButton(title: "Small-signal diode, n = 1.5, 0.6 V") {
+                saturationNanoamps = "2.5"; ideality = "1.5"; temperature = "300"; voltage = "0.6"
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Saturation current I_S", unit: "nA", text: $saturationNanoamps, fieldID: "saturation", onSubmit: calculate)
+            NumberField(title: "Ideality factor n", unit: "", text: $ideality, fieldID: "ideality", onSubmit: calculate)
+            NumberField(title: "Temperature", unit: "K", text: $temperature, fieldID: "temperature", onSubmit: calculate)
+            NumberField(title: "Forward voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    saturationNanoamps = "2.5"; ideality = "1.5"; temperature = "300"; voltage = "0.6"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Typical silicon small-signal diode"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                DiodeIVChart(curve: r.curve, operatingVoltage: voltage.parsedDouble ?? 0, operatingCurrent: r.current)
+                    .opacity(session.isStale ? 0.72 : 1)
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Forward current", value: "\(Format.number(r.current * 1000, digits: 4)) mA", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Thermal voltage V_T", value: "\(Format.number(r.thermalVoltage * 1000, digits: 3)) mV")
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try DiodeIV.solve(
+                saturationCurrent: saturationAmps,
+                idealityFactor: ideality.parsedDouble ?? .nan,
+                temperatureKelvin: temperature.parsedDouble ?? .nan,
+                forwardVoltage: voltage.parsedDouble ?? .nan
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        saturationNanoamps = ""; ideality = ""; temperature = ""; voltage = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "I \(Format.number(r.current * 1000, digits: 4)) mA at \(voltage) V"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.current * 1000, digits: 4)) mA at \(voltage) V"
+    }
+
+    private func save(_ r: DiodeIVResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .diodeIV,
+            inputs: ["Is": "\(saturationNanoamps) nA", "n": ideality, "T": "\(temperature) K", "V": voltage],
+            outputs: ["I": "\(Format.number(r.current * 1000, digits: 4)) mA"]
+        ))
+    }
+}
+
+// MARK: - Intrinsic safety loop verifier
+
+struct ISLoopVerifierView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.isLoopVerifier, "voc", default: "24") private var voc
+    @StoredInput(.isLoopVerifier, "isc", default: "100") private var iscMilliamps
+    @StoredInput(.isLoopVerifier, "ca", default: "0.5") private var caMicrofarads
+    @StoredInput(.isLoopVerifier, "la", default: "5") private var laMillihenries
+    @StoredInput(.isLoopVerifier, "vmax", default: "30") private var vmax
+    @StoredInput(.isLoopVerifier, "imax", default: "150") private var imaxMilliamps
+    @StoredInput(.isLoopVerifier, "ci", default: "20") private var ciNanofarads
+    @StoredInput(.isLoopVerifier, "li", default: "1") private var liMillihenries
+    @StoredInput(.isLoopVerifier, "cableC", default: "50") private var cableCNanofaradsPerCore
+    @StoredInput(.isLoopVerifier, "cableL", default: "1") private var cableLMillihenries
+    @StoredInput(.isLoopVerifier, "jobName", default: "IS loop") private var jobName
+    @State private var session = ExplicitCalculationState<ISLoopResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var iscAmps: Double { (iscMilliamps.parsedDouble ?? .nan) / 1000 }
+    private var caFarads: Double { (caMicrofarads.parsedDouble ?? .nan) * 1e-6 }
+    private var laHenries: Double { (laMillihenries.parsedDouble ?? .nan) / 1000 }
+    private var imaxAmps: Double { (imaxMilliamps.parsedDouble ?? .nan) / 1000 }
+    private var ciFarads: Double { (ciNanofarads.parsedDouble ?? .nan) * 1e-9 }
+    private var liHenries: Double { (liMillihenries.parsedDouble ?? .nan) / 1000 }
+    private var cableCFarads: Double { (cableCNanofaradsPerCore.parsedDouble ?? .nan) * 1e-9 }
+    private var cableLHenries: Double { (cableLMillihenries.parsedDouble ?? .nan) / 1000 }
+
+    private var inputFingerprint: String {
+        "\(voc)|\(iscMilliamps)|\(caMicrofarads)|\(laMillihenries)|\(vmax)|\(imaxMilliamps)|\(ciNanofarads)|\(liMillihenries)|\(cableCNanofaradsPerCore)|\(cableLMillihenries)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .isLoopVerifier,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            disclaimer: .designAidExtra("This checks the four Entity Concept inequalities only — it is not a substitute for the system's control drawing, the equipment's certification documentation, or sign-off by a qualified person."),
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .isLoopVerifier,
+                symbolic: "Voc ≤ Vmax     Isc ≤ Imax     Ca ≥ Ci + Ccable     La ≥ Li + Lcable",
+                substituted: substituted,
+                meaning: "The barrier can never be allowed to deliver more energy than the field device and wiring can safely absorb in a fault. All four checks must pass — a loop that's fine on voltage and current but fails on cable capacitance is still not safe to install."
+            )
+            TryExampleButton(title: "Common 24 V zener barrier into a compliant transmitter") {
+                voc = "24"; iscMilliamps = "100"; caMicrofarads = "0.5"; laMillihenries = "5"
+                vmax = "30"; imaxMilliamps = "150"; ciNanofarads = "20"; liMillihenries = "1"
+                cableCNanofaradsPerCore = "50"; cableLMillihenries = "1"
+                session.prepareForNewInputs()
+            }
+
+            Text("BARRIER / ASSOCIATED APPARATUS")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            NumberField(title: "Voc", unit: "V", text: $voc, fieldID: "voc", onSubmit: calculate)
+            NumberField(title: "Isc", unit: "mA", text: $iscMilliamps, fieldID: "isc", onSubmit: calculate)
+            NumberField(title: "Ca", unit: "µF", text: $caMicrofarads, fieldID: "ca", onSubmit: calculate)
+            NumberField(title: "La", unit: "mH", text: $laMillihenries, fieldID: "la", onSubmit: calculate)
+
+            Text("FIELD DEVICE")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            NumberField(title: "Vmax", unit: "V", text: $vmax, fieldID: "vmax", onSubmit: calculate)
+            NumberField(title: "Imax", unit: "mA", text: $imaxMilliamps, fieldID: "imax", onSubmit: calculate)
+            NumberField(title: "Ci", unit: "nF", text: $ciNanofarads, fieldID: "ci", onSubmit: calculate)
+            NumberField(title: "Li", unit: "mH", text: $liMillihenries, fieldID: "li", onSubmit: calculate)
+
+            Text("CABLE")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            NumberField(title: "Cable capacitance", unit: "nF", text: $cableCNanofaradsPerCore, fieldID: "cableC", onSubmit: calculate)
+            NumberField(title: "Cable inductance", unit: "mH", text: $cableLMillihenries, fieldID: "cableL", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    voc = "24"; iscMilliamps = "100"; caMicrofarads = "0.5"; laMillihenries = "5"
+                    vmax = "30"; imaxMilliamps = "150"; ciNanofarads = "20"; liMillihenries = "1"
+                    cableCNanofaradsPerCore = "50"; cableLMillihenries = "1"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Compliant example loop"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Voltage", value: r.voltageOK ? "OK" : "FAILS", emphasis: true, tone: r.voltageOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Current", value: r.currentOK ? "OK" : "FAILS", emphasis: true, tone: r.currentOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Capacitance", value: r.capacitanceOK ? "OK" : "FAILS", emphasis: true, tone: r.capacitanceOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Inductance", value: r.inductanceOK ? "OK" : "FAILS", emphasis: true, tone: r.inductanceOK ? Theme.good : Theme.bad)
+                    ResultRow(label: "Total Ci + Ccable", value: "\(Format.number(r.totalCapacitance * 1e9, digits: 1)) nF")
+                    ResultRow(label: "Total Li + Lcable", value: "\(Format.number(r.totalInductance * 1000, digits: 3)) mH")
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                if !r.isSafe {
+                    ToolEmptyState(
+                        title: "This combination does not satisfy the Entity Concept",
+                        detail: "At least one of Voc/Isc/Ca/La does not clear the field device and cable parameters. Re-check the barrier selection or the cable run — do not install this pairing.",
+                        systemImage: "xmark.shield"
+                    )
+                }
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try ISLoopVerifier.verify(
+                barrierVoc: voc.parsedDouble ?? .nan,
+                barrierIsc: iscAmps,
+                barrierCa: caFarads,
+                barrierLa: laHenries,
+                deviceVmax: vmax.parsedDouble ?? .nan,
+                deviceImax: imaxAmps,
+                deviceCi: ciFarads,
+                deviceLi: liHenries,
+                cableCapacitance: cableCFarads,
+                cableInductance: cableLHenries
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        voc = ""; iscMilliamps = ""; caMicrofarads = ""; laMillihenries = ""
+        vmax = ""; imaxMilliamps = ""; ciNanofarads = ""; liMillihenries = ""
+        cableCNanofaradsPerCore = ""; cableLMillihenries = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return r.isSafe ? "All four checks pass" : "At least one check fails — do not install"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return r.isSafe ? "Entity Concept: OK" : "Entity Concept: FAILS"
+    }
+
+    private func save(_ r: ISLoopResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .isLoopVerifier,
+            inputs: ["Voc": "\(voc) V", "Isc": "\(iscMilliamps) mA", "Vmax": "\(vmax) V", "Imax": "\(imaxMilliamps) mA"],
+            outputs: ["result": r.isSafe ? "OK" : "FAILS"]
+        ))
+    }
+}

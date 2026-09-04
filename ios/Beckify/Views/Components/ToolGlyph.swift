@@ -98,6 +98,8 @@ extension GlyphKind {
         case .gaussianBeam: return .gaussianBeam
         case .transientCircuit: return .transientCircuit
         case .rackCurrent: return .rackCurrent
+        case .diodeIV: return .diodeIV
+        case .isLoopVerifier: return .isLoopVerifier
         }
     }
 }
@@ -148,6 +150,8 @@ enum GlyphKind {
     case gaussianBeam
     case transientCircuit
     case rackCurrent
+    case diodeIV
+    case isLoopVerifier
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -197,6 +201,8 @@ enum GlyphKind {
         case .gaussianBeam: return Self.gaussianBeam(rect)
         case .transientCircuit: return Self.transientCircuit(rect)
         case .rackCurrent: return Self.rackCurrent(rect)
+        case .diodeIV: return Self.diodeIV(rect)
+        case .isLoopVerifier: return Self.isLoopVerifier(rect)
         }
     }
 
@@ -892,6 +898,68 @@ enum GlyphKind {
             path.move(to: CGPoint(x: x, y: railY))
             path.addLine(to: CGPoint(x: x, y: railY + r.height * h))
         }
+        return path
+    }
+
+    /// The diode schematic symbol (triangle + cathode bar) with a small
+    /// rising I-V curve alongside it.
+    private static func diodeIV(_ r: CGRect) -> Path {
+        var path = Path()
+        let midY = r.midY
+        let triLeft = r.minX + r.width * 0.14
+        let triRight = r.midX - r.width * 0.1
+        let barHeight = r.height * 0.3
+
+        path.move(to: CGPoint(x: r.minX, y: midY))
+        path.addLine(to: CGPoint(x: triLeft, y: midY))
+
+        path.move(to: CGPoint(x: triLeft, y: midY - r.height * 0.18))
+        path.addLine(to: CGPoint(x: triRight, y: midY))
+        path.addLine(to: CGPoint(x: triLeft, y: midY + r.height * 0.18))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: triRight, y: midY - barHeight / 2))
+        path.addLine(to: CGPoint(x: triRight, y: midY + barHeight / 2))
+
+        path.move(to: CGPoint(x: triRight, y: midY))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.02, y: midY))
+
+        let curveBaseX = r.midX + r.width * 0.12
+        let curveBaseY = r.maxY - r.height * 0.16
+        let curveTopY = r.minY + r.height * 0.14
+        path.move(to: CGPoint(x: curveBaseX, y: curveBaseY))
+        let steps = 10
+        for step in 0...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            let x = curveBaseX + (r.maxX - curveBaseX) * t
+            let rise = t * t * t
+            let y = curveBaseY - (curveBaseY - curveTopY) * rise
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        return path
+    }
+
+    /// A shield outline with a checkmark — the loop either passes or it doesn't.
+    private static func isLoopVerifier(_ r: CGRect) -> Path {
+        var path = Path()
+        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.08)
+        let leftTop = CGPoint(x: r.minX + r.width * 0.1, y: r.minY + r.height * 0.22)
+        let rightTop = CGPoint(x: r.maxX - r.width * 0.1, y: r.minY + r.height * 0.22)
+        let leftMid = CGPoint(x: r.minX + r.width * 0.1, y: r.midY + r.height * 0.06)
+        let rightMid = CGPoint(x: r.maxX - r.width * 0.1, y: r.midY + r.height * 0.06)
+        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.06)
+
+        path.move(to: top)
+        path.addLine(to: rightTop)
+        path.addLine(to: rightMid)
+        path.addLine(to: bottom)
+        path.addLine(to: leftMid)
+        path.addLine(to: leftTop)
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: r.midX - r.width * 0.14, y: r.midY))
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.02, y: r.midY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: r.midY - r.height * 0.14))
         return path
     }
 

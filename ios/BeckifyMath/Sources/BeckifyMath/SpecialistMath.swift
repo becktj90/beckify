@@ -106,6 +106,148 @@ public enum RackCurrentBudget {
     }
 }
 
+// MARK: - Diode I-V (Shockley)
+
+public struct DiodeIVResult: Equatable, Sendable {
+    public var current: Double
+    public var thermalVoltage: Double
+    /// Sampled points for the forward I-V curve, 0 V to the sweep ceiling.
+    public var curve: [(voltage: Double, current: Double)]
+
+    public init(current: Double, thermalVoltage: Double, curve: [(voltage: Double, current: Double)]) {
+        self.current = current
+        self.thermalVoltage = thermalVoltage
+        self.curve = curve
+    }
+}
+
+extension DiodeIVResult {
+    public static func == (lhs: DiodeIVResult, rhs: DiodeIVResult) -> Bool {
+        lhs.current == rhs.current
+            && lhs.thermalVoltage == rhs.thermalVoltage
+            && lhs.curve.count == rhs.curve.count
+            && zip(lhs.curve, rhs.curve).allSatisfy { $0.voltage == $1.voltage && $0.current == $1.current }
+    }
+}
+
+/// The Shockley diode equation — the one curve every semiconductor course
+/// starts with, and the reason a diode's forward drop barely moves even
+/// though its current changes by orders of magnitude.
+public enum DiodeIV {
+    static let boltzmann = 1.380649e-23
+    static let elementaryCharge = 1.602176634e-19
+
+    public static func thermalVoltage(temperatureKelvin: Double) throws -> Double {
+        let t = try Positive.require(temperatureKelvin, name: "Temperature")
+        return boltzmann * t / elementaryCharge
+    }
+
+    public static func solve(
+        saturationCurrent: Double,
+        idealityFactor: Double,
+        temperatureKelvin: Double,
+        forwardVoltage: Double,
+        samples: Int = 24
+    ) throws -> DiodeIVResult {
+        let saturation = try Positive.require(saturationCurrent, name: "Saturation current")
+        let n = try Positive.require(idealityFactor, name: "Ideality factor")
+        let vt = try thermalVoltage(temperatureKelvin: temperatureKelvin)
+        guard forwardVoltage.isFinite else { throw CalcError.missing("a forward voltage") }
+
+        func current(at v: Double) -> Double {
+            saturation * (exp(v / (n * vt)) - 1)
+        }
+
+        let sweepCeiling = max(forwardVoltage * 1.2, 0.1)
+        let curve: [(voltage: Double, current: Double)] = (0..<samples).map { index in
+            let v = sweepCeiling * Double(index) / Double(samples - 1)
+            return (v, current(at: v))
+        }
+
+        return DiodeIVResult(current: current(at: forwardVoltage), thermalVoltage: vt, curve: curve)
+    }
+}
+
+// MARK: - Intrinsic safety loop (Entity Concept)
+
+public struct ISLoopResult: Equatable, Sendable {
+    public var voltageOK: Bool
+    public var currentOK: Bool
+    public var capacitanceOK: Bool
+    public var inductanceOK: Bool
+    public var isSafe: Bool
+    public var totalCapacitance: Double
+    public var totalInductance: Double
+
+    public init(
+        voltageOK: Bool,
+        currentOK: Bool,
+        capacitanceOK: Bool,
+        inductanceOK: Bool,
+        isSafe: Bool,
+        totalCapacitance: Double,
+        totalInductance: Double
+    ) {
+        self.voltageOK = voltageOK
+        self.currentOK = currentOK
+        self.capacitanceOK = capacitanceOK
+        self.inductanceOK = inductanceOK
+        self.isSafe = isSafe
+        self.totalCapacitance = totalCapacitance
+        self.totalInductance = totalInductance
+    }
+}
+
+/// The four Entity Concept inequalities from IEC 60079-11 / ISA RP12.06.01:
+/// the barrier's output must never be able to supply more than the field
+/// device can safely receive, and the field wiring's reactive parameters must
+/// fit inside what the barrier was certified against.
+///
+/// This checks the parametric inequalities only. It is not a substitute for
+/// the system's control drawing, a full loop calculation by a qualified
+/// person, or the equipment's own certification documentation.
+public enum ISLoopVerifier {
+    public static func verify(
+        barrierVoc: Double,
+        barrierIsc: Double,
+        barrierCa: Double,
+        barrierLa: Double,
+        deviceVmax: Double,
+        deviceImax: Double,
+        deviceCi: Double,
+        deviceLi: Double,
+        cableCapacitance: Double,
+        cableInductance: Double
+    ) throws -> ISLoopResult {
+        for (value, name) in [
+            (barrierVoc, "Barrier Voc"), (barrierIsc, "Barrier Isc"),
+            (barrierCa, "Barrier Ca"), (barrierLa, "Barrier La"),
+            (deviceVmax, "Device Vmax"), (deviceImax, "Device Imax"),
+            (deviceCi, "Device Ci"), (deviceLi, "Device Li"),
+            (cableCapacitance, "Cable capacitance"), (cableInductance, "Cable inductance"),
+        ] {
+            guard value.isFinite, value >= 0 else { throw CalcError.nonPositive(name) }
+        }
+
+        let totalC = deviceCi + cableCapacitance
+        let totalL = deviceLi + cableInductance
+        let voltageOK = barrierVoc <= deviceVmax
+        let currentOK = barrierIsc <= deviceImax
+        let capacitanceOK = barrierCa >= totalC
+        let inductanceOK = barrierLa >= totalL
+
+        return ISLoopResult(
+            voltageOK: voltageOK,
+            currentOK: currentOK,
+            capacitanceOK: capacitanceOK,
+            inductanceOK: inductanceOK,
+            isSafe: voltageOK && currentOK && capacitanceOK && inductanceOK,
+            totalCapacitance: totalC,
+            totalInductance: totalL
+        )
+    }
+}
+
 // MARK: - Magnetic circuit
 
 public struct MagneticCircuitResult: Equatable, Sendable {

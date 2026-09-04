@@ -88,6 +88,110 @@ final class RackCurrentBudgetTests: XCTestCase {
     }
 }
 
+final class DiodeIVTests: XCTestCase {
+    /// Room temperature (300 K) thermal voltage is the textbook ~25.85 mV.
+    func testThermalVoltageAtRoomTemperature() throws {
+        let vt = try DiodeIV.thermalVoltage(temperatureKelvin: 300)
+        XCTAssertEqual(vt, 0.025852, accuracy: 0.000001)
+    }
+
+    /// A small-signal silicon diode, n = 1.5, at two forward voltages 50 mV apart.
+    func testForwardCurrentAtTwoVoltages() throws {
+        let low = try DiodeIV.solve(saturationCurrent: 2.5e-9, idealityFactor: 1.5, temperatureKelvin: 300, forwardVoltage: 0.6)
+        let high = try DiodeIV.solve(saturationCurrent: 2.5e-9, idealityFactor: 1.5, temperatureKelvin: 300, forwardVoltage: 0.65)
+
+        XCTAssertEqual(low.current, 0.013111, accuracy: 0.00001)
+        XCTAssertEqual(high.current, 0.047601, accuracy: 0.00001)
+        XCTAssertGreaterThan(high.current, low.current)
+    }
+
+    /// At V = 0 the diode carries no current — that's the whole point of the "−1".
+    func testZeroVoltageIsZeroCurrent() throws {
+        let result = try DiodeIV.solve(saturationCurrent: 1e-9, idealityFactor: 1, temperatureKelvin: 300, forwardVoltage: 0)
+        XCTAssertEqual(result.current, 0, accuracy: 1e-15)
+    }
+
+    func testCurveStartsAtZeroAndIsMonotonicallyIncreasing() throws {
+        let result = try DiodeIV.solve(saturationCurrent: 1e-9, idealityFactor: 1.5, temperatureKelvin: 300, forwardVoltage: 0.6, samples: 12)
+
+        XCTAssertEqual(result.curve.count, 12)
+        XCTAssertEqual(try XCTUnwrap(result.curve.first?.voltage), 0, accuracy: 1e-9)
+        for (a, b) in zip(result.curve, result.curve.dropFirst()) {
+            XCTAssertLessThan(a.current, b.current)
+        }
+    }
+
+    func testNonPositiveInputsThrow() {
+        XCTAssertThrowsError(try DiodeIV.solve(saturationCurrent: 0, idealityFactor: 1, temperatureKelvin: 300, forwardVoltage: 0.6))
+        XCTAssertThrowsError(try DiodeIV.solve(saturationCurrent: 1e-9, idealityFactor: 0, temperatureKelvin: 300, forwardVoltage: 0.6))
+        XCTAssertThrowsError(try DiodeIV.thermalVoltage(temperatureKelvin: 0))
+    }
+}
+
+final class ISLoopVerifierTests: XCTestCase {
+    private let safeBarrier = (voc: 24.0, isc: 0.1, ca: 0.5e-6, la: 5e-3)
+    private let safeDevice = (vmax: 30.0, imax: 0.15, ci: 20e-9, li: 1e-3)
+
+    func testFullyCompliantLoopIsSafe() throws {
+        let result = try ISLoopVerifier.verify(
+            barrierVoc: safeBarrier.voc, barrierIsc: safeBarrier.isc, barrierCa: safeBarrier.ca, barrierLa: safeBarrier.la,
+            deviceVmax: safeDevice.vmax, deviceImax: safeDevice.imax, deviceCi: safeDevice.ci, deviceLi: safeDevice.li,
+            cableCapacitance: 50e-9, cableInductance: 1e-3
+        )
+
+        XCTAssertTrue(result.isSafe)
+        XCTAssertTrue(result.voltageOK && result.currentOK && result.capacitanceOK && result.inductanceOK)
+        XCTAssertEqual(result.totalCapacitance, safeDevice.ci + 50e-9, accuracy: 1e-15)
+        XCTAssertEqual(result.totalInductance, safeDevice.li + 1e-3, accuracy: 1e-15)
+    }
+
+    /// A barrier Voc above the device's Vmax fails on voltage alone, even
+    /// though every other parameter is fine — one bad row fails the loop.
+    func testVoltageExceedanceFailsIndependently() throws {
+        let result = try ISLoopVerifier.verify(
+            barrierVoc: 35, barrierIsc: safeBarrier.isc, barrierCa: safeBarrier.ca, barrierLa: safeBarrier.la,
+            deviceVmax: safeDevice.vmax, deviceImax: safeDevice.imax, deviceCi: safeDevice.ci, deviceLi: safeDevice.li,
+            cableCapacitance: 50e-9, cableInductance: 1e-3
+        )
+
+        XCTAssertFalse(result.isSafe)
+        XCTAssertFalse(result.voltageOK)
+        XCTAssertTrue(result.currentOK && result.capacitanceOK && result.inductanceOK)
+    }
+
+    /// Too much cable capacitance for the barrier's Ca fails on capacitance,
+    /// independent of every other row — this is the "cable run too long" case.
+    func testExcessCableCapacitanceFailsIndependently() throws {
+        let result = try ISLoopVerifier.verify(
+            barrierVoc: safeBarrier.voc, barrierIsc: safeBarrier.isc, barrierCa: safeBarrier.ca, barrierLa: safeBarrier.la,
+            deviceVmax: safeDevice.vmax, deviceImax: safeDevice.imax, deviceCi: safeDevice.ci, deviceLi: safeDevice.li,
+            cableCapacitance: 1e-6, cableInductance: 1e-3
+        )
+
+        XCTAssertFalse(result.isSafe)
+        XCTAssertFalse(result.capacitanceOK)
+        XCTAssertTrue(result.voltageOK && result.currentOK && result.inductanceOK)
+    }
+
+    /// Exactly-equal values are compliant — the standard's inequalities are ≤ / ≥, not strict.
+    func testExactEqualityIsCompliant() throws {
+        let result = try ISLoopVerifier.verify(
+            barrierVoc: 24, barrierIsc: 0.1, barrierCa: 100e-9, barrierLa: 1e-3,
+            deviceVmax: 24, deviceImax: 0.1, deviceCi: 100e-9, deviceLi: 1e-3,
+            cableCapacitance: 0, cableInductance: 0
+        )
+        XCTAssertTrue(result.isSafe)
+    }
+
+    func testNegativeParameterThrows() {
+        XCTAssertThrowsError(try ISLoopVerifier.verify(
+            barrierVoc: -1, barrierIsc: 0.1, barrierCa: 1e-6, barrierLa: 1e-3,
+            deviceVmax: 24, deviceImax: 0.1, deviceCi: 20e-9, deviceLi: 1e-3,
+            cableCapacitance: 0, cableInductance: 0
+        ))
+    }
+}
+
 final class MagneticCircuitTests: XCTestCase {
     /// 500 At around a 20 cm path, 1 cm² core, µr 1000 — a small relay-sized core.
     func testTypicalCoreSizing() throws {
