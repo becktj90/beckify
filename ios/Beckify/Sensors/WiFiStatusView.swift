@@ -351,7 +351,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
         return hosts
     }
 
-    private static func hostString(_ endpoint: NWEndpoint) -> String? {
+    private static func hostString(_ endpoint: Network.NWEndpoint) -> String? {
         switch endpoint {
         case .hostPort(let host, _):
             switch host {
@@ -928,21 +928,21 @@ enum WiFiRTTClient {
         host: String,
         port: UInt16,
         timeout: TimeInterval,
-        requiredInterface: NWInterface.InterfaceType? = nil
+        requiredInterface: Network.NWInterface.InterfaceType? = nil
     ) async -> TCPConnectProbe {
         let remote = "\(host):\(port)"
         guard !host.isEmpty, port > 0 else {
             return TCPConnectProbe(rttMS: nil, localEndpoint: nil, remoteEndpoint: remote)
         }
-        guard let nwPort = NWEndpoint.Port(rawValue: port) else {
+        guard let nwPort = Network.NWEndpoint.Port(rawValue: port) else {
             return TCPConnectProbe(rttMS: nil, localEndpoint: nil, remoteEndpoint: remote)
         }
-        let parameters = NWParameters.tcp
+        let parameters = Network.NWParameters.tcp
         if let requiredInterface {
             parameters.requiredInterfaceType = requiredInterface
         }
-        let connection = NWConnection(
-            host: NWEndpoint.Host(host),
+        let connection = Network.NWConnection(
+            host: Network.NWEndpoint.Host(host),
             port: nwPort,
             using: parameters
         )
@@ -997,7 +997,7 @@ enum WiFiRTTClient {
         }
     }
 
-    static func endpointSummary(_ endpoint: NWEndpoint?) -> String? {
+    static func endpointSummary(_ endpoint: Network.NWEndpoint?) -> String? {
         guard let endpoint else { return nil }
         switch endpoint {
         case .hostPort(let host, let port):
@@ -1018,7 +1018,7 @@ enum WiFiRTTClient {
     }
 
     /// RST / refused still traversed the path — count as an RTT sample.
-    private static func isAnsweredFailure(_ error: NWError) -> Bool {
+    private static func isAnsweredFailure(_ error: Network.NWError) -> Bool {
         switch error {
         case .posix(let code):
             return code == .ECONNREFUSED || code == .ECONNRESET

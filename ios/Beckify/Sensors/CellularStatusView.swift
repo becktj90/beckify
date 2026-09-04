@@ -31,6 +31,69 @@ struct CellularRTTHistoryRow: Identifiable, Equatable {
     var ms: Double?
 }
 
+/// Isolates deprecated CTCarrier / subscriber-provider APIs (iOS 16+, no public replacement).
+/// Read through protocol witnesses so call sites stay warning-free. Empty name/MCC/MNC/ISO
+/// or the documented `65535` placeholder means Apple withheld the field — never invent values.
+private protocol CTCarrierLegacyFields: AnyObject {
+    var carrierName: String? { get }
+    var mobileCountryCode: String? { get }
+    var mobileNetworkCode: String? { get }
+    var isoCountryCode: String? { get }
+    var allowsVOIP: Bool { get }
+}
+
+extension CTCarrier: CTCarrierLegacyFields {}
+
+private protocol CTTelephonyLegacyProviders: AnyObject {
+    var serviceSubscriberCellularProviders: [String: CTCarrier]? { get }
+    var serviceSubscriberCellularProvidersDidUpdateNotifier: ((String) -> Void)? { get set }
+}
+
+extension CTTelephonyNetworkInfo: CTTelephonyLegacyProviders {}
+
+private enum CTCarrierLegacy {
+    static func providers(from info: CTTelephonyNetworkInfo) -> [String: CTCarrier] {
+        (info as CTTelephonyLegacyProviders).serviceSubscriberCellularProviders ?? [:]
+    }
+
+    static func setProvidersUpdateHandler(
+        on info: CTTelephonyNetworkInfo,
+        _ handler: ((String) -> Void)?
+    ) {
+        (info as CTTelephonyLegacyProviders).serviceSubscriberCellularProvidersDidUpdateNotifier = handler
+    }
+
+    static func snapshot(_ carrier: CTCarrier?) -> (
+        name: String?, mcc: String?, mnc: String?, iso: String?, voip: Bool?
+    ) {
+        guard let carrier else { return (nil, nil, nil, nil, nil) }
+        let fields = carrier as CTCarrierLegacyFields
+        return (
+            CellularRadioIdentity.cleaned(fields.carrierName),
+            CellularRadioIdentity.cleaned(fields.mobileCountryCode),
+            CellularRadioIdentity.cleaned(fields.mobileNetworkCode),
+            CellularRadioIdentity.displayISO(fields.isoCountryCode),
+            fields.allowsVOIP
+        )
+    }
+}
+
+/// Data-service identity changes go through `CTTelephonyNetworkInfoDelegate`,
+/// not a `Notification.Name`. File-level `NSObject` so CoreTelephony can call
+/// off the main actor; hops back to `CellularPathModel` via `Task`.
+private final class CellularTelephonyDelegate: NSObject, CTTelephonyNetworkInfoDelegate {
+    private let onChange: () -> Void
+
+    init(onChange: @escaping () -> Void) {
+        self.onChange = onChange
+        super.init()
+    }
+
+    func dataServiceIdentifierDidChange(_ identifier: String) {
+        onChange()
+    }
+}
+
 @MainActor
 final class CellularPathModel: ObservableObject {
     @Published var defaultStatus = "Starting…"
@@ -77,6 +140,7 @@ final class CellularPathModel: ObservableObject {
     private var rttSamples: [Double?] = []
     private let telephony = CTTelephonyNetworkInfo()
     private let cellularData = CTCellularData()
+    private var telephonyDelegate: CellularTelephonyDelegate?
     private var observers: [NSObjectProtocol] = []
     private let historyCap = 12
 
@@ -116,11 +180,18 @@ final class CellularPathModel: ObservableObject {
         }
         restriction = Self.restrictionLabel(cellularData.restrictedState)
 
-        telephony.serviceSubscriberCellularProvidersDidUpdateNotifier = { [weak self] _ in
+        CTCarrierLegacy.setProvidersUpdateHandler(on: telephony) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshRadio()
             }
         }
+        let delegate = CellularTelephonyDelegate { [weak self] in
+            Task { @MainActor in
+                self?.refreshRadio()
+            }
+        }
+        telephonyDelegate = delegate
+        telephony.delegate = delegate
         refreshRadio()
 
         let center = NotificationCenter.default
@@ -137,10 +208,11 @@ final class CellularPathModel: ObservableObject {
         removeRadioObservers()
     }
 
-    /// Typed CoreTelephony names — a string typo would silently stop radio refresh.
+    /// RAT changes still post this public name. Data-service identity uses
+    /// `CTTelephonyNetworkInfoDelegate` — the typed notification member is missing
+    /// on some Cloud SDKs and is not how Apple delivers that event.
     private static let radioChangeNotifications: [Notification.Name] = [
         .CTServiceRadioAccessTechnologyDidChange,
-        CTTelephonyNetworkInfo.dataServiceIdentifierDidChangeNotification,
     ]
 
     private func removeRadioObservers() {
@@ -148,7 +220,9 @@ final class CellularPathModel: ObservableObject {
             NotificationCenter.default.removeObserver(observer)
         }
         observers.removeAll()
-        telephony.serviceSubscriberCellularProvidersDidUpdateNotifier = nil
+        telephony.delegate = nil
+        telephonyDelegate = nil
+        CTCarrierLegacy.setProvidersUpdateHandler(on: telephony, nil)
         cellularData.cellularDataRestrictionDidUpdateNotifier = nil
     }
 
@@ -336,24 +410,24 @@ final class CellularPathModel: ObservableObject {
     func refreshRadio() {
         dataServiceIdentifier = CellularRadioIdentity.cleaned(telephony.dataServiceIdentifier)
         let rats = telephony.serviceCurrentRadioAccessTechnology ?? [:]
-        let carriers = telephony.serviceSubscriberCellularProviders ?? [:]
+        let carriers = CTCarrierLegacy.providers(from: telephony)
         let ids = CellularRadioIdentity.serviceIDs(
             ratKeys: Array(rats.keys),
             carrierKeys: Array(carriers.keys)
         )
         services = ids.map { id in
-            let carrier = carriers[id]
+            let fields = CTCarrierLegacy.snapshot(carriers[id])
             let ratRaw = CellularRadioIdentity.cleaned(rats[id])
             return CellularServiceSnapshot(
                 id: id,
                 isDataService: dataServiceIdentifier == id,
                 ratRaw: ratRaw,
                 rat: CellularRadioIdentity.identify(ratRaw),
-                carrierName: CellularRadioIdentity.cleaned(carrier?.carrierName),
-                mcc: CellularRadioIdentity.cleaned(carrier?.mobileCountryCode),
-                mnc: CellularRadioIdentity.cleaned(carrier?.mobileNetworkCode),
-                iso: CellularRadioIdentity.displayISO(carrier?.isoCountryCode),
-                allowsVOIP: carrier.map(\.allowsVOIP)
+                carrierName: fields.name,
+                mcc: fields.mcc,
+                mnc: fields.mnc,
+                iso: fields.iso,
+                allowsVOIP: fields.voip
             )
         }
         if services.isEmpty {
@@ -385,6 +459,7 @@ final class CellularPathModel: ObservableObject {
         case .cellularDenied: return "Cellular denied"
         case .wifiDenied: return "Wi-Fi denied"
         case .localNetworkDenied: return "Local network denied"
+        case .vpnInactive: return "VPN inactive"
         @unknown default: return "Unknown"
         }
     }
@@ -427,7 +502,7 @@ final class CellularPathModel: ObservableObject {
         return hosts
     }
 
-    private static func hostOnly(_ endpoint: NWEndpoint) -> String? {
+    private static func hostOnly(_ endpoint: Network.NWEndpoint) -> String? {
         switch endpoint {
         case .hostPort(let host, _):
             switch host {
@@ -560,6 +635,7 @@ struct CellularStatusView: View {
         )
     }
 
+    @ViewBuilder
     private var cellNetworkBoard: some View {
         let service = model.dataService
         let rat = service?.rat
