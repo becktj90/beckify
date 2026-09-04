@@ -161,10 +161,47 @@ enum Theme {
         )
     }
 
+    /// Pastel well behind an icon — TechBank-style soft containers, mapped to
+    /// Beckify's industrial category families (not purple template defaults).
+    static func categoryWellFill(_ category: ToolCategory) -> Color {
+        categoryColors(category).primary.opacity(0.18)
+    }
+
     /// Hairline rim for `IconWell` / category wells — category primary at low opacity.
     static func categoryWellStroke(_ category: ToolCategory) -> Color {
         categoryColors(category).primary.opacity(0.38)
     }
+
+    /// Ambient page wash — depth without flat single-color backgrounds.
+    static let ambientBackground = LinearGradient(
+        colors: [
+            Color.adaptive(
+                light: UIColor(red: 228 / 255, green: 236 / 255, blue: 244 / 255, alpha: 1),
+                dark: UIColor(red: 6 / 255, green: 10 / 255, blue: 16 / 255, alpha: 1)
+            ),
+            Color.adaptive(
+                light: UIColor(red: 236 / 255, green: 241 / 255, blue: 246 / 255, alpha: 1),
+                dark: UIColor(red: 8 / 255, green: 14 / 255, blue: 22 / 255, alpha: 1)
+            ),
+            Color.adaptive(
+                light: UIColor(red: 220 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1),
+                dark: UIColor(red: 10 / 255, green: 18 / 255, blue: 26 / 255, alpha: 1)
+            ),
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    /// Glass card fill for interactive tiles (favorites chips, tool wells).
+    static let glassFill = Color.adaptive(
+        light: UIColor.white.withAlphaComponent(0.72),
+        dark: UIColor.white.withAlphaComponent(0.06)
+    )
+
+    static let glassStroke = Color.adaptive(
+        light: UIColor.white.withAlphaComponent(0.85),
+        dark: UIColor.white.withAlphaComponent(0.14)
+    )
 
     // MARK: Chart
 
@@ -187,20 +224,19 @@ enum Theme {
     }
 
     enum Radius {
-        static let control: CGFloat = 10
-        static let card: CGFloat = 14
-        static let panel: CGFloat = 18
-        static let tile: CGFloat = 16
-        /// Soft well behind a tool glyph (slightly tighter than tile).
-        static let well: CGFloat = 14
+        static let control: CGFloat = 12
+        static let card: CGFloat = 18
+        static let panel: CGFloat = 26
+        static let tile: CGFloat = 22
+        static let well: CGFloat = 18
         static let pill: CGFloat = 999
     }
 
     enum Stroke {
         static let hairline: CGFloat = 1
         static let emphasis: CGFloat = 1.5
-        static let icon: CGFloat = 1.8
-        /// Soft under-ink behind instrument glyphs — dual-stroke depth.
+        static let icon: CGFloat = 1.75
+        /// Faint understroke behind glyph linework for optical depth.
         static let iconUnder: CGFloat = 3.2
     }
 
@@ -280,6 +316,11 @@ extension View {
         shadow(color: Theme.accent.opacity(opacity), radius: radius, x: 0, y: 4)
     }
 
+    /// Soft lift under glass tiles.
+    func tileLift(tint: Color = Theme.accent, radius: CGFloat = 14, opacity: Double = 0.16) -> some View {
+        shadow(color: tint.opacity(opacity), radius: radius, x: 0, y: 6)
+    }
+
     /// Instrument panel chrome — raised surface with drafting stroke.
     func instrumentPanel(corner: CGFloat = Theme.Radius.card) -> some View {
         self
@@ -288,6 +329,24 @@ extension View {
                 RoundedRectangle(cornerRadius: corner, style: .continuous)
                     .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
             )
+    }
+
+    /// Frosted interactive card used by toolbox tiles and chips.
+    func glassCard(corner: CGFloat = Theme.Radius.card, tint: Color = Theme.accent) -> some View {
+        self
+            .background {
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .fill(Theme.glassFill)
+                    .background {
+                        RoundedRectangle(cornerRadius: corner, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .stroke(Theme.glassStroke, lineWidth: Theme.Stroke.hairline)
+            )
+            .tileLift(tint: tint, radius: 12, opacity: 0.12)
     }
 }
 

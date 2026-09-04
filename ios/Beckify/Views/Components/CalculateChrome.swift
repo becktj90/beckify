@@ -104,8 +104,8 @@ struct ToolIdentityHeader: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Space.sm) {
-            IconWell(toolID: toolID, size: 52, glyphSize: 30, selected: true)
-            .accessibilityHidden(true)
+            IconWell(toolID: toolID, size: 56)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(tool.title)
