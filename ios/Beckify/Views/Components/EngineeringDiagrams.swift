@@ -629,6 +629,59 @@ struct BatteryBankChart: View {
     }
 }
 
+// MARK: - Ampacity derating waterfall
+
+struct AmpacityWaterfallDiagram: View {
+    let steps: [CalculationTraceStep]
+
+    private var summary: String {
+        let parts = steps.map { "\($0.title) \($0.displayValue)" }
+        return "Ampacity calculation stages: " + parts.joined(separator: ", then ")
+    }
+
+    var body: some View {
+        DiagramCard(title: "Ampacity waterfall", accessibilitySummary: summary) {
+            EngineeringDiagramFrame(summary: summary) {
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                        HStack(alignment: .firstTextBaseline, spacing: Theme.Space.sm) {
+                            Text("\(index + 1)")
+                                .font(.caption.monospacedDigit().weight(.bold))
+                                .foregroundStyle(Theme.accent)
+                                .frame(width: 18, alignment: .trailing)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(step.title)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Theme.foreground)
+                                if let note = step.note {
+                                    Text(note)
+                                        .font(.caption2)
+                                        .foregroundStyle(Theme.muted)
+                                }
+                            }
+                            Spacer(minLength: 8)
+                            Text(step.displayValue)
+                                .font(.subheadline.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(index == steps.count - 1 ? Theme.good : Theme.foreground)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(step.title): \(step.displayValue). \(step.note ?? "")")
+
+                        if index < steps.count - 1 {
+                            Image(systemName: "arrow.down")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(Theme.muted)
+                                .padding(.leading, 4)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+}
+
 // MARK: - Shared engineer XY plot (Swift Charts — Charty-class craft)
 
 struct EngineerSeries: Identifiable {
@@ -974,3 +1027,207 @@ struct MonostableCapChargeChart: View {
     }
 }
 
+// MARK: - Solenoid design visualizations
+
+struct SolenoidCrossSectionDiagram: View {
+    let lengthM: Double
+    let meanRadiusM: Double
+    let outerRadiusM: Double
+    let layers: Int
+    let bCenterTesla: Double
+
+    private var summary: String {
+        "Solenoid cross-section. Length \(Format.number(lengthM * 1000, digits: 0)) mm, mean radius \(Format.number(meanRadiusM * 1000, digits: 1)) mm, \(layers) layers. Center B \(Format.number(bCenterTesla * 1000, digits: 2)) mT."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Coil cross-section", accessibilitySummary: summary) {
+            EngineeringDiagramFrame(summary: summary) {
+                GeometryReader { geo in
+                    let w = geo.size.width
+                    let h = geo.size.height
+                    let maxR = max(outerRadiusM, meanRadiusM, 1e-6)
+                    let scaleY = (h * 0.78) / max(lengthM, 1e-6)
+                    let scaleX = (w * 0.28) / maxR
+                    let scale = min(scaleX, scaleY)
+                    let cx = w * 0.5
+                    let cy = h * 0.52
+                    let halfL = lengthM * scale / 2
+                    let rMean = meanRadiusM * scale
+                    let rOuter = outerRadiusM * scale
+                    let layerCount = max(1, min(layers, 8))
+
+                    ZStack {
+                        // Soft field glow in the bore
+                        Capsule()
+                            .fill(
+                                RadialGradient(
+                                    colors: [Theme.accent.opacity(0.28), Theme.accent.opacity(0.04), .clear],
+                                    center: .center,
+                                    startRadius: 2,
+                                    endRadius: max(rMean * 1.4, 20)
+                                )
+                            )
+                            .frame(width: rMean * 2.2, height: halfL * 2.1)
+                            .position(x: cx, y: cy)
+
+                        // Left winding stack
+                        ForEach(0..<layerCount, id: \.self) { layer in
+                            let inset = CGFloat(layer) * (rOuter - rMean) / CGFloat(layerCount)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Theme.energized.opacity(0.55 - Double(layer) * 0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                        .stroke(Theme.energized.opacity(0.9), lineWidth: 1)
+                                )
+                                .frame(width: max(5, (rOuter - rMean) / CGFloat(layerCount) - 1), height: halfL * 2)
+                                .position(x: cx - rMean - inset - 4, y: cy)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Theme.energized.opacity(0.55 - Double(layer) * 0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                        .stroke(Theme.energized.opacity(0.9), lineWidth: 1)
+                                )
+                                .frame(width: max(5, (rOuter - rMean) / CGFloat(layerCount) - 1), height: halfL * 2)
+                                .position(x: cx + rMean + inset + 4, y: cy)
+                        }
+
+                        // Bore outline
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                            .frame(width: rMean * 2, height: halfL * 2)
+                            .position(x: cx, y: cy)
+
+                        // Axis arrow (B)
+                        Path { path in
+                            path.move(to: CGPoint(x: cx, y: cy + halfL * 0.85))
+                            path.addLine(to: CGPoint(x: cx, y: cy - halfL * 0.85))
+                        }
+                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        Path { path in
+                            let tip = CGPoint(x: cx, y: cy - halfL * 0.85)
+                            path.move(to: tip)
+                            path.addLine(to: CGPoint(x: tip.x - 6, y: tip.y + 10))
+                            path.move(to: tip)
+                            path.addLine(to: CGPoint(x: tip.x + 6, y: tip.y + 10))
+                        }
+                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+
+                        Text("B")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Theme.accent)
+                            .position(x: cx + 14, y: cy - halfL * 0.7)
+
+                        Text("ℓ \(Format.number(lengthM * 1000, digits: 0)) mm")
+                            .font(.caption2.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                            .position(x: cx, y: 14)
+
+                        Text("Ø \(Format.number(meanRadiusM * 2000, digits: 1)) mm")
+                            .font(.caption2.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                            .position(x: cx, y: h - 12)
+                    }
+                }
+                .frame(height: 200)
+            }
+        }
+    }
+}
+
+struct SolenoidBCurrentChart: View {
+    let points: [SolenoidPlotPoint]
+    let operatingCurrent: Double
+    let operatingB: Double
+
+    private var summary: String {
+        "Center flux density versus current. Operating point \(Format.number(operatingCurrent, digits: 2)) A, \(Format.number(operatingB * 1000, digits: 2)) mT."
+    }
+
+    var body: some View {
+        DiagramCard(title: "B vs. current", accessibilitySummary: summary) {
+            Chart {
+                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("I", point.x), y: .value("B", point.y * 1000))
+                        .foregroundStyle(Theme.chartPrimary)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+                }
+                PointMark(x: .value("I", operatingCurrent), y: .value("B", operatingB * 1000))
+                    .foregroundStyle(Theme.energized)
+                    .symbolSize(72)
+            }
+            .chartXAxisLabel("Current (A)")
+            .chartYAxisLabel("B (mT)")
+            .frame(height: 170)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+struct SolenoidForceGapChart: View {
+    let points: [SolenoidPlotPoint]
+    let operatingGapMm: Double?
+    let operatingForce: Double?
+
+    private var summary: String {
+        if let g = operatingGapMm, let f = operatingForce {
+            return "Plunger force versus air gap. At \(Format.number(g, digits: 2)) mm, force \(Format.number(f, digits: 3)) N."
+        }
+        return "Plunger force versus air gap estimate for the designed ampere-turns."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Force vs. air gap", accessibilitySummary: summary) {
+            Chart {
+                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("Gap", point.x), y: .value("Force", point.y))
+                        .foregroundStyle(Theme.chartSecondary)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+                }
+                if let g = operatingGapMm, let f = operatingForce {
+                    PointMark(x: .value("Gap", g), y: .value("Force", f))
+                        .foregroundStyle(Theme.energized)
+                        .symbolSize(72)
+                }
+            }
+            .chartXAxisLabel("Air gap (mm)")
+            .chartYAxisLabel("Force (N)")
+            .frame(height: 170)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+struct SolenoidAxialFieldChart: View {
+    let points: [SolenoidPlotPoint]
+    let lengthM: Double
+    let bCenter: Double
+
+    private var summary: String {
+        "On-axis flux density along the coil. Center \(Format.number(bCenter * 1000, digits: 2)) mT over \(Format.number(lengthM * 1000, digits: 0)) mm length."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Axial B(z)", accessibilitySummary: summary) {
+            Chart {
+                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                    AreaMark(x: .value("z", point.x), y: .value("B", point.y * 1000))
+                        .foregroundStyle(Theme.chartFill)
+                    LineMark(x: .value("z", point.x), y: .value("B", point.y * 1000))
+                        .foregroundStyle(Theme.chartPrimary)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+                RuleMark(x: .value("End−", -lengthM * 500))
+                    .foregroundStyle(Theme.muted.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                RuleMark(x: .value("End+", lengthM * 500))
+                    .foregroundStyle(Theme.muted.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            }
+            .chartXAxisLabel("z from center (mm)")
+            .chartYAxisLabel("B (mT)")
+            .frame(height: 180)
+            .accessibilityHidden(true)
+        }
+    }
+}

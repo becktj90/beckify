@@ -32,13 +32,23 @@ Calculate common jobsite numbers with units, formulas, and live results:
 
 • Ohm's Law
 • Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
-• Voltage drop with 3% / 5% informational checks and a 310.16 ampacity cross-check
+• Voltage Drop — K-factor VD with parallels, target %, ampacity check, and optional ampacity→VD handoff
 • Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
+• Tap-Changer Calculator — DETC tap recommendation from measured secondary voltage
 • 555 timer (astable and monostable)
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
-• Wire size from NEC Table 310.16, 75 °C column
+• Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA
+• Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
+• Heater Design Wizard — resistive heater line current, leg R, and resistance-wire length
+• UPS / On-site Power — design kVA, runtime, and battery Ah from critical load
+• Harmonics (THD) — current THD, dominant order, and IEEE 519 discussion bands (informational)
+• NEC Circuit Calculator — design current, derated conductor, voltage drop, and OCPD in one pass
+• Load Calculation Worksheet — NEC 220.42 lighting demand plus motor/continuous VA totals
+• Cable Schedule Generator — sequential cable IDs from a type catalog with CSV copy
+• Solenoid Design Wizard — winding pack, center B, inductance, copper loss, axial field plot, and plunger force
+• EMP / EMC Shielding — skin depth, sheet SE, Faraday-loop voltage, and aperture leakage (protection-side educational; not pulse-source design)
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
 • IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
 • Reactance & resonance, power-factor correction, short-circuit current, circular mils, load & demand factors
@@ -76,15 +86,15 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,NEMA,receptacle,outlet,IEC,ampacity,wifi,ohm,motor,battery,phasor,fiber
+electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor
 
-**What's New (1.0):**
-First toolbox with field EE calculators (including Receptacle Selector, Motor Speed & Torque, IS Loop Verifier, RF Power & Link, Battery Bank Sizing, Magnetic Circuit, Number Base Converter, E-Bus / Rack Current, and Reference Library), homework tools (phasor, fiber, Gaussian beam, transients, semiconductor I-V), and public-API sensors. On those existing tools: last-used inputs stay on device, copy result, show-work with your numbers in the formula, and related tools. Selected calculators now include engineer plots (Swift Charts) — for example Ohm's Law load line, LED/RC charge/discharge, frequency waveform, reactance/resonance, Transient Circuits, Semiconductor I-V, and 555 monostable capacitor charge — with Share/save PNG via the system share sheet. Local saved notes. Not a new product or catalog. No binary uploaded; not TestFlight.
+**What's New (draft for next Connect build — no binary uploaded):**
+Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule, and Solenoid Design Wizard with B/force/axial plots. Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -135,13 +145,13 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 Take 3–8 screens per size. Suggested shots:
 
 1. Toolbox search / tool list (system appearance)
-2. Power with the 480 V 3Ø 66.8 A / PF 90% identities result
-3. Voltage drop with 3% / 5% notes and ampacity row
-4. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
-5. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
-6. BLE scanner or bubble level
-7. Saved Jobs list (on-device notes)
-8. Favorites list (starred tools pinned for one-tap access)
+2. Wire Size & Ampacity waterfall (ambient / CCC / termination) or Voltage Drop with parallels + handoff
+3. Power with the 480 V 3Ø 66.8 A / PF 90% identities result
+4. Motor Nameplate Analyzer or Tap-Changer Calculator result card
+5. Harmonics (THD) or UPS / On-site Power sizing result
+6. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
+7. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
+8. Saved Jobs list (on-device notes) or Favorites (starred tools)
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.

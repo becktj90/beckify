@@ -62,6 +62,60 @@ struct NumberField: View {
     }
 }
 
+/// Alphanumeric / free-text input that matches NumberField chrome without forcing a decimal pad.
+struct TextInputField: View {
+    let title: String
+    @Binding var text: String
+    var placeholder: String = ""
+    var optional: Bool = false
+    var unit: String = ""
+    var autocapitalization: TextInputAutocapitalization = .never
+    var fieldID: String? = nil
+    var onSubmit: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title.uppercased())
+                    .font(Theme.TypeRole.fieldLabel)
+                    .tracking(0.6)
+                    .foregroundStyle(Theme.muted)
+                if optional {
+                    Text("optional")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.muted.opacity(0.7))
+                }
+            }
+            HStack(alignment: .firstTextBaseline) {
+                TextField(placeholder, text: $text)
+                    .keyboardType(.default)
+                    .font(.title3.monospaced().weight(.medium))
+                    .foregroundStyle(Theme.foreground)
+                    .textInputAutocapitalization(autocapitalization)
+                    .autocorrectionDisabled()
+                    .submitLabel(onSubmit == nil ? .done : .go)
+                    .onSubmit { onSubmit?() }
+                    .accessibilityLabel(title)
+                    .accessibilityIdentifier(fieldID.map { "textField.\($0)" } ?? "textField.\(title)")
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.accent)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(minHeight: Theme.touchTarget)
+            .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                    .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+            )
+        }
+    }
+}
+
 struct ResultRow: View {
     let label: String
     let value: String

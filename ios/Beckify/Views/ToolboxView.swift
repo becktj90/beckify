@@ -172,6 +172,16 @@ struct CalculatorHostView: View {
             case .rackCurrent: RackCurrentView()
             case .diodeIV: DiodeIVView()
             case .isLoopVerifier: ISLoopVerifierView()
+            case .tapChanger: TapChangerView()
+            case .harmonicsTHD: HarmonicsTHDView()
+            case .upsSizing: UPSSizingView()
+            case .motorNameplate: MotorNameplateView()
+            case .heaterDesign: HeaterDesignView()
+            case .empEmc: EMPEMCView()
+            case .necCircuit: NECCircuitView()
+            case .loadWorksheet: LoadWorksheetView()
+            case .cableSchedule: CableScheduleView()
+            case .solenoidDesign: SolenoidDesignView()
             }
         }
     }

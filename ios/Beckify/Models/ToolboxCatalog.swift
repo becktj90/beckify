@@ -49,6 +49,16 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case rackCurrent
     case diodeIV
     case isLoopVerifier
+    case tapChanger
+    case harmonicsTHD
+    case upsSizing
+    case motorNameplate
+    case heaterDesign
+    case empEmc
+    case necCircuit
+    case loadWorksheet
+    case cableSchedule
+    case solenoidDesign
 
     var id: String { rawValue }
 }
@@ -135,7 +145,7 @@ enum ToolboxCatalog {
             id: .voltageDrop,
             kind: .calculator,
             title: "Voltage Drop",
-            subtitle: "K-factor VD with 3% / 5% notes and ampacity check.",
+            subtitle: "Conductor sizing with K-factor VD, parallels, and ampacity check.",
             symbol: "arrow.down.right.and.arrow.up.left",
             synonyms: ["voltage drop", "vd", "feeder", "branch", "ampacity", "awg", "circular mils", "k-factor"]
         ),
@@ -175,9 +185,9 @@ enum ToolboxCatalog {
             id: .wireAmpacity,
             kind: .calculator,
             title: "Wire Size & Ampacity",
-            subtitle: "NEC Table 310.16, 75 °C column.",
+            subtitle: "310.16 with ambient, CCC, termination cap, and continuous load.",
             symbol: "cable.connector.horizontal",
-            synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor"]
+            synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor", "derating", "310.15"]
         ),
         ToolDefinition(
             id: .receptacleSelector,
@@ -483,17 +493,99 @@ enum ToolboxCatalog {
             symbol: "checkmark.shield",
             synonyms: ["intrinsic safety", "is loop", "entity concept", "barrier", "voc", "isc", "ca", "la", "hazardous area", "zener barrier"]
         ),
+        ToolDefinition(
+            id: .tapChanger,
+            kind: .calculator,
+            title: "Tap-Changer Calculator",
+            subtitle: "Transformer DETC tap recommendation from measured secondary voltage.",
+            symbol: "dial.low",
+            synonyms: ["tap", "oltc", "detc", "voltage regulation", "transformer tap", "23 kv"]
+        ),
+        ToolDefinition(
+            id: .harmonicsTHD,
+            kind: .calculator,
+            title: "Harmonics (THD)",
+            subtitle: "Current THD, dominant order, and IEEE 519 discussion bands.",
+            symbol: "waveform.path.ecg",
+            synonyms: ["thd", "harmonic", "ieee 519", "distortion", "thd-i", "nonlinear"]
+        ),
+        ToolDefinition(
+            id: .upsSizing,
+            kind: .calculator,
+            title: "UPS / On-site Power",
+            subtitle: "kVA, runtime, and battery Ah from IT / critical load.",
+            symbol: "battery.100.bolt",
+            synonyms: ["ups", "battery runtime", "on-site power", "inverter", "autonomy", "kva"]
+        ),
+        ToolDefinition(
+            id: .motorNameplate,
+            kind: .calculator,
+            title: "Motor Nameplate Analyzer",
+            subtitle: "Overload, Table 430.52 SCPD, 430.22 conductor, and code-letter LRA.",
+            symbol: "doc.text.magnifyingglass",
+            synonyms: ["nameplate", "overload", "430.52", "430.32", "lra", "code letter", "motor ocpd"]
+        ),
+        ToolDefinition(
+            id: .heaterDesign,
+            kind: .calculator,
+            title: "Heater Design Wizard",
+            subtitle: "Resistive heater line current, leg R, and resistance-wire length.",
+            symbol: "flame",
+            synonyms: ["heater", "nichrome", "kanthal", "element", "resistive load", "wye", "delta"]
+        ),
+        ToolDefinition(
+            id: .empEmc,
+            kind: .calculator,
+            title: "EMP / EMC Shielding",
+            subtitle: "Skin depth, sheet SE, Faraday-loop voltage, and aperture leakage.",
+            symbol: "shield.lefthalf.filled",
+            synonyms: ["emp", "emc", "shielding", "skin depth", "faraday", "aperture", "se"]
+        ),
+        ToolDefinition(
+            id: .necCircuit,
+            kind: .calculator,
+            title: "NEC Circuit Calculator",
+            subtitle: "Design current, derated conductor, voltage drop, and OCPD in one pass.",
+            symbol: "point.3.connected.trianglepath.dotted",
+            synonyms: ["nec circuit", "branch circuit", "feeder", "ocpd", "voltage drop", "ampacity"]
+        ),
+        ToolDefinition(
+            id: .loadWorksheet,
+            kind: .calculator,
+            title: "Load Calculation Worksheet",
+            subtitle: "NEC 220.42 lighting demand plus motor/continuous VA totals.",
+            symbol: "tablecells",
+            synonyms: ["load calculation", "220.42", "demand factor", "service", "feeder worksheet"]
+        ),
+        ToolDefinition(
+            id: .cableSchedule,
+            kind: .calculator,
+            title: "Cable Schedule Generator",
+            subtitle: "Sequential cable IDs from a type catalog with CSV export.",
+            symbol: "list.bullet.rectangle.portrait",
+            synonyms: ["cable schedule", "cable id", "tray", "from to", "csv", "wire schedule"]
+        ),
+        ToolDefinition(
+            id: .solenoidDesign,
+            kind: .calculator,
+            title: "Solenoid Design Wizard",
+            subtitle: "Winding pack, center B, inductance, copper loss, axial field, and plunger force.",
+            symbol: "cylinder.split.1x2",
+            synonyms: ["solenoid", "coil", "electromagnet", "ampere turns", "plunger", "inductance", "winding"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
     /// tools appear in the grid.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
-            .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed,
-            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors, .isLoopVerifier,
+            .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
+            .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
+            .necCircuit, .loadWorksheet, .cableSchedule, .isLoopVerifier,
         ],
         .power: [
-            .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank, .magneticCircuit,
+            .ohmsLaw, .power, .transformer, .tapChanger, .reactance, .powerFactor, .harmonicsTHD,
+            .rfLink, .batteryBank, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent,
@@ -596,5 +688,15 @@ enum ToolboxCatalog {
         .rackCurrent: [.modbusAddress, .signalScaling, .plcTimer],
         .diodeIV: [.ledRC, .resistorColor, .ohmsLaw],
         .isLoopVerifier: [.receptacleSelector, .signalScaling, .panelDirectory],
+        .tapChanger: [.transformer, .voltageDrop, .shortCircuit],
+        .harmonicsTHD: [.powerFactor, .power, .reactance],
+        .upsSizing: [.batteryBank, .power, .rackCurrent],
+        .motorNameplate: [.motorFLA, .motorSpeed, .wireAmpacity],
+        .heaterDesign: [.ohmsLaw, .wireAmpacity, .power],
+        .empEmc: [.rfLink, .magneticCircuit, .reactance],
+        .necCircuit: [.wireAmpacity, .voltageDrop, .loadWorksheet],
+        .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
+        .cableSchedule: [.wireAmpacity, .conduitFill, .panelDirectory],
+        .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
     ]
 }
