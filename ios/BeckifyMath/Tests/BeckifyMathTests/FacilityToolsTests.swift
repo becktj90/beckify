@@ -189,3 +189,47 @@ final class CableScheduleTests: XCTestCase {
         XCTAssertTrue(r.csv.contains("PWR-3C-10"))
     }
 }
+
+final class SolenoidDesignTests: XCTestCase {
+    func testLongSolenoidCenterFieldNearMu0NIOverL() throws {
+        // ℓ = 200 mm, R = 10 mm, N = 1000, I = 1 A, air → nearly infinite-length B.
+        let r = try SolenoidDesign.design(
+            lengthM: 0.2,
+            meanRadiusM: 0.01,
+            turns: 1000,
+            currentAmps: 1,
+            wireAWG: 24,
+            relativePermeability: 1,
+            airGapM: 0.002
+        )
+        let infinite = SolenoidDesign.mu0 * (1000 / 0.2) * 1
+        XCTAssertEqual(r.bCenterTesla, infinite, accuracy: infinite * 0.02)
+        XCTAssertGreaterThan(r.inductanceHenry, 0)
+        XCTAssertEqual(r.forceVsGap.count, 24)
+        XCTAssertFalse(r.axialField.isEmpty)
+        XCTAssertNotNil(r.forceNewton)
+    }
+
+    func testCurrentForTargetBRoundTrip() throws {
+        let i = try SolenoidDesign.currentForTargetB(
+            targetTesla: 0.01,
+            lengthM: 0.15,
+            meanRadiusM: 0.012,
+            turns: 800
+        )
+        let r = try SolenoidDesign.design(
+            lengthM: 0.15,
+            meanRadiusM: 0.012,
+            turns: 800,
+            currentAmps: i,
+            wireAWG: 22
+        )
+        XCTAssertEqual(r.bCenterTesla, 0.01, accuracy: 1e-6)
+    }
+
+    func testRejectsNonPositiveGeometry() {
+        XCTAssertThrowsError(try SolenoidDesign.design(
+            lengthM: 0, meanRadiusM: 0.01, turns: 100, currentAmps: 1, wireAWG: 22
+        ))
+    }
+}

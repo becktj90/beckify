@@ -49,6 +49,7 @@ ios/
 - NEC Circuit Calculator (design current, derated conductor, VD, OCPD)
 - Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
 - Cable Schedule Generator (sequential IDs + CSV copy)
+- Solenoid Design Wizard (winding pack, B/L/force plots, copper loss)
 - EMP / EMC Shielding (skin depth, sheet SE, Faraday loop, aperture — protection-side educational)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)

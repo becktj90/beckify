@@ -186,6 +186,7 @@ struct CalculatorHostView: View {
             case .necCircuit: NECCircuitView()
             case .loadWorksheet: LoadWorksheetView()
             case .cableSchedule: CableScheduleView()
+            case .solenoidDesign: SolenoidDesignView()
             }
         }
     }

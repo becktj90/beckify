@@ -1222,3 +1222,242 @@ struct CableScheduleView: View {
         return "\(r.rows.count) cables · \(r.rows.first?.cableID ?? "")…"
     }
 }
+
+// MARK: - Solenoid design wizard
+
+struct SolenoidDesignView: View {
+    private enum Mode: String, CaseIterable {
+        case analyze = "analyze"
+        case targetB = "targetB"
+
+        var label: String {
+            switch self {
+            case .analyze: return "Analyze geometry"
+            case .targetB: return "Size current for B"
+            }
+        }
+    }
+
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.solenoidDesign, "mode", default: "analyze") private var mode
+    @StoredInput(.solenoidDesign, "length", default: "80") private var lengthMm
+    @StoredInput(.solenoidDesign, "diameter", default: "24") private var diameterMm
+    @StoredInput(.solenoidDesign, "turns", default: "1200") private var turns
+    @StoredInput(.solenoidDesign, "current", default: "0.8") private var current
+    @StoredInput(.solenoidDesign, "targetB", default: "20") private var targetBmT
+    @StoredInput(.solenoidDesign, "awg", default: "26") private var awg
+    @StoredInput(.solenoidDesign, "muR", default: "1") private var muR
+    @StoredInput(.solenoidDesign, "gap", default: "2") private var gapMm
+    @StoredInput(.solenoidDesign, "jobName", default: "Solenoid design") private var jobName
+    @State private var session = ExplicitCalculationState<SolenoidDesignResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(mode)|\(lengthMm)|\(diameterMm)|\(turns)|\(current)|\(targetBmT)|\(awg)|\(muR)|\(gapMm)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .solenoidDesign,
+            stickyAnswer: sticky,
+            copyText: copyText,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .solenoidDesign,
+                symbolic: "B(z) finite solenoid · L ≈ μ₀μᵣN²A/ℓ · F ≈ (NI)²μ₀A/(2g²)",
+                substituted: substituted,
+                meaning: "Advanced winding pack, center-field, inductance, copper loss, axial B plot, and a single-gap plunger force estimate. Soft-iron µᵣ is linear — no saturation model. Design aid, not FEA.",
+                citation: "Finite solenoid on-axis B; long-coil inductance; variable-reluctance force rule of thumb."
+            )
+
+            MenuField(title: "Wizard mode", selection: $mode, options: Mode.allCases.map(\.rawValue)) {
+                Mode(rawValue: $0)?.label ?? $0
+            }
+
+            Text("GEOMETRY").font(.caption.weight(.semibold)).foregroundStyle(Theme.muted)
+            NumberField(title: "Coil length", unit: "mm", text: $lengthMm, fieldID: "length", onSubmit: calculate)
+            NumberField(title: "Mean diameter", unit: "mm", text: $diameterMm, fieldID: "diameter", onSubmit: calculate)
+            NumberField(title: "Turns", unit: "", text: $turns, fieldID: "turns", onSubmit: calculate)
+            NumberField(title: "Wire AWG", unit: "", text: $awg, fieldID: "awg", onSubmit: calculate)
+            NumberField(title: "Relative µᵣ", unit: "", text: $muR, fieldID: "muR", onSubmit: calculate)
+            NumberField(title: "Air gap (force)", unit: "mm", text: $gapMm, optional: true, fieldID: "gap", onSubmit: calculate)
+
+            Text("ELECTRICAL").font(.caption.weight(.semibold)).foregroundStyle(Theme.muted)
+            if mode == Mode.targetB.rawValue {
+                NumberField(title: "Target center B", unit: "mT", text: $targetBmT, fieldID: "targetB", onSubmit: calculate)
+            } else {
+                NumberField(title: "Coil current", unit: "A", text: $current, fieldID: "current", onSubmit: calculate)
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: {
+                    lengthMm = ""; diameterMm = ""; turns = ""; current = ""; targetBmT = ""
+                    awg = "26"; muR = "1"; gapMm = ""; session.reset()
+                },
+                onExample: {
+                    mode = Mode.analyze.rawValue
+                    lengthMm = "80"; diameterMm = "24"; turns = "1200"; current = "0.8"
+                    awg = "26"; muR = "1"; gapMm = "2"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "80×24 mm, 1200 turns, 26 AWG, 0.8 A"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                SolenoidCrossSectionDiagram(
+                    lengthM: r.lengthM,
+                    meanRadiusM: r.meanRadiusM,
+                    outerRadiusM: r.packing.coilOuterRadiusM,
+                    layers: r.packing.layers,
+                    bCenterTesla: r.bCenterTesla
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
+                ResultCard(copyText: copyText) {
+                    ResultRow(label: "Center B", value: "\(Format.number(r.bCenterTesla * 1000, digits: 2)) mT", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Ampere-turns", value: "\(Format.number(r.ampereTurns, digits: 0)) At")
+                    ResultRow(label: "Inductance", value: "\(Format.number(r.inductanceHenry * 1000, digits: 2)) mH", emphasis: true)
+                    ResultRow(label: "Stored energy", value: "\(Format.number(r.energyJoules * 1000, digits: 2)) mJ")
+                    if let force = r.forceNewton {
+                        ResultRow(label: "Plunger force", value: "\(Format.number(force, digits: 3)) N", tone: Theme.copper)
+                    }
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+
+                ResultCard(title: "Winding & copper") {
+                    ResultRow(label: "Packing", value: "\(r.packing.layers) layers × \(r.packing.turnsPerLayer) t/layer")
+                    ResultRow(label: "Fill factor", value: Format.percent(r.packing.fillFactor * 100))
+                    ResultRow(label: "Wire length", value: "\(Format.number(r.wireLengthM, digits: 2)) m")
+                    ResultRow(label: "Resistance", value: "\(Format.number(r.resistanceOhms, digits: 2)) Ω")
+                    ResultRow(label: "Voltage @ I", value: Format.volts(r.voltageVolts))
+                    ResultRow(label: "Copper loss", value: "\(Format.number(r.copperLossWatts, digits: 2)) W")
+                    ResultRow(label: "Current density", value: "\(Format.number(r.currentDensityAPerMm2, digits: 2)) A/mm²", tone: r.currentDensityAPerMm2 > 6 ? Theme.warn : Theme.foreground)
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+
+                SolenoidBCurrentChart(
+                    points: r.bVsCurrent,
+                    operatingCurrent: r.currentAmps,
+                    operatingB: r.bCenterTesla
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
+                SolenoidAxialFieldChart(
+                    points: r.axialField,
+                    lengthM: r.lengthM,
+                    bCenter: r.bCenterTesla
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
+                SolenoidForceGapChart(
+                    points: r.forceVsGap,
+                    operatingGapMm: r.airGapM.map { $0 * 1000 },
+                    operatingForce: r.forceNewton
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
+                if !r.warnings.isEmpty {
+                    ResultCard(title: "Design notes") {
+                        ForEach(r.warnings, id: \.self) { note in
+                            Text(note)
+                                .font(Theme.TypeRole.help)
+                                .foregroundStyle(Theme.warn)
+                        }
+                    }
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
+
+                Text("Design aid — not a PE stamp, FEA substitute, or saturated-iron model.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
+                    jobs.save(SavedJob(
+                        name: jobName,
+                        toolID: .solenoidDesign,
+                        inputs: [
+                            "ℓ": lengthMm, "Ø": diameterMm, "N": turns, "I": Format.number(r.currentAmps, digits: 3),
+                        ],
+                        outputs: [
+                            "B": "\(Format.number(r.bCenterTesla * 1000, digits: 2)) mT",
+                            "L": "\(Format.number(r.inductanceHenry * 1000, digits: 2)) mH",
+                        ]
+                    ))
+                }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in session.markInputsChanged() }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            let lengthM = (lengthMm.parsedDouble ?? .nan) / 1000
+            let radiusM = (diameterMm.parsedDouble ?? .nan) / 2000
+            guard let turnsVal = turns.parsedDouble, turnsVal.isFinite else {
+                throw CalcError.missing("Turns")
+            }
+            guard let awgValRaw = awg.parsedDouble, awgValRaw.isFinite else {
+                throw CalcError.missing("Wire AWG")
+            }
+            let n = Int(turnsVal.rounded())
+            let awgVal = Int(awgValRaw.rounded())
+            let mur = muR.parsedDouble ?? .nan
+            let gapText = gapMm.trimmingCharacters(in: .whitespacesAndNewlines)
+            let gapM: Double?
+            if gapText.isEmpty {
+                gapM = nil
+            } else if let gap = gapMm.parsedDouble, gap.isFinite {
+                gapM = gap / 1000
+            } else {
+                throw CalcError.outOfRange("Air gap is not a valid number.")
+            }
+
+            let amps: Double
+            if mode == Mode.targetB.rawValue {
+                amps = try SolenoidDesign.currentForTargetB(
+                    targetTesla: (targetBmT.parsedDouble ?? .nan) / 1000,
+                    lengthM: lengthM,
+                    meanRadiusM: radiusM,
+                    turns: n,
+                    relativePermeability: mur
+                )
+            } else {
+                amps = current.parsedDouble ?? .nan
+            }
+
+            return try SolenoidDesign.design(
+                lengthM: lengthM,
+                meanRadiusM: radiusM,
+                turns: n,
+                currentAmps: amps,
+                wireAWG: awgVal,
+                relativePermeability: mur,
+                airGapM: gapM
+            )
+        }
+        if let r = session.displayedResult, mode == Mode.targetB.rawValue, !session.isStale {
+            current = Format.number(r.currentAmps, digits: 3)
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion { successTick += 1 }
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(r.formula) → \(Format.number(r.bCenterTesla * 1000, digits: 2)) mT · \(Format.number(r.inductanceHenry * 1000, digits: 2)) mH"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.bCenterTesla * 1000, digits: 1)) mT · \(Format.number(r.inductanceHenry * 1000, digits: 1)) mH · \(Format.number(r.ampereTurns, digits: 0)) At"
+    }
+
+    private var copyText: String? { sticky }
+}

@@ -58,6 +58,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case necCircuit
     case loadWorksheet
     case cableSchedule
+    case solenoidDesign
 
     var id: String { rawValue }
 }
@@ -564,6 +565,14 @@ enum ToolboxCatalog {
             symbol: "list.bullet.rectangle.portrait",
             synonyms: ["cable schedule", "cable id", "tray", "from to", "csv", "wire schedule"]
         ),
+        ToolDefinition(
+            id: .solenoidDesign,
+            kind: .calculator,
+            title: "Solenoid Design Wizard",
+            subtitle: "Winding pack, center B, inductance, copper loss, axial field, and plunger force.",
+            symbol: "cylinder.split.1x2",
+            synonyms: ["solenoid", "coil", "electromagnet", "ampere turns", "plunger", "inductance", "winding"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -576,7 +585,7 @@ enum ToolboxCatalog {
         ],
         .power: [
             .ohmsLaw, .power, .transformer, .tapChanger, .reactance, .powerFactor, .harmonicsTHD,
-            .rfLink, .batteryBank, .upsSizing, .heaterDesign, .magneticCircuit, .empEmc,
+            .rfLink, .batteryBank, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent,
@@ -688,5 +697,6 @@ enum ToolboxCatalog {
         .necCircuit: [.wireAmpacity, .voltageDrop, .loadWorksheet],
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
         .cableSchedule: [.wireAmpacity, .conduitFill, .panelDirectory],
+        .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
     ]
 }

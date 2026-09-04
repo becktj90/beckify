@@ -185,7 +185,7 @@ public enum ToolCalculationPolicy {
         "referenceLibrary", "magneticCircuit", "fiberLink", "gaussianBeam",
         "transientCircuit", "rackCurrent", "diodeIV", "isLoopVerifier",
         "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate", "heaterDesign",
-        "empEmc", "necCircuit", "loadWorksheet", "cableSchedule",
+        "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
     ]
 
     public static var liveToolIDs: [String] {

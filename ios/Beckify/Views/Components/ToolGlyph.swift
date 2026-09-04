@@ -109,6 +109,7 @@ extension GlyphKind {
         case .necCircuit: return .necCircuit
         case .loadWorksheet: return .loadWorksheet
         case .cableSchedule: return .cableSchedule
+        case .solenoidDesign: return .solenoidDesign
         }
     }
 }
@@ -170,6 +171,7 @@ enum GlyphKind {
     case necCircuit
     case loadWorksheet
     case cableSchedule
+    case solenoidDesign
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -230,6 +232,7 @@ enum GlyphKind {
         case .necCircuit: return Self.necCircuit(rect)
         case .loadWorksheet: return Self.loadWorksheet(rect)
         case .cableSchedule: return Self.cableSchedule(rect)
+        case .solenoidDesign: return Self.solenoidDesign(rect)
         }
     }
 
@@ -1053,6 +1056,26 @@ enum GlyphKind {
             path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: y))
             path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: y))
         }
+        return path
+    }
+
+    private static func solenoidDesign(_ r: CGRect) -> Path {
+        var path = Path()
+        let left = r.minX + r.width * 0.22
+        let right = r.maxX - r.width * 0.22
+        let top = r.minY + r.height * 0.18
+        let bottom = r.maxY - r.height * 0.18
+        path.addRoundedRect(
+            in: CGRect(x: left, y: top, width: right - left, height: bottom - top),
+            cornerSize: CGSize(width: 6, height: 6)
+        )
+        for i in 0..<5 {
+            let y = top + (bottom - top) * (0.15 + 0.15 * CGFloat(i))
+            path.move(to: CGPoint(x: left + 4, y: y))
+            path.addLine(to: CGPoint(x: right - 4, y: y))
+        }
+        path.move(to: CGPoint(x: r.midX, y: bottom + 2))
+        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.04))
         return path
     }
 

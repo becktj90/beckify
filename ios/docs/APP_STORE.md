@@ -47,6 +47,7 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • NEC Circuit Calculator — design current, derated conductor, voltage drop, and OCPD in one pass
 • Load Calculation Worksheet — NEC 220.42 lighting demand plus motor/continuous VA totals
 • Cable Schedule Generator — sequential cable IDs from a type catalog with CSV copy
+• Solenoid Design Wizard — winding pack, center B, inductance, copper loss, axial field plot, and plunger force
 • EMP / EMC Shielding — skin depth, sheet SE, Faraday-loop voltage, and aperture leakage (protection-side educational; not pulse-source design)
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
 • IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
@@ -93,7 +94,11 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor
 
 **What's New (draft for next Connect build — no binary uploaded):**
+<<<<<<< HEAD
 Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule. Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded.
+=======
+Facility tools including Tap-Changer, Harmonics (THD), UPS, Motor Nameplate, Heater Design, EMP/EMC, NEC Circuit, Load Worksheet, Cable Schedule, and Solenoid Design Wizard with B/force/axial plots. Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Still a design aid. Not TestFlight; no binary uploaded.
+>>>>>>> 0e22cb4 (feat(ios): advanced Solenoid Design Wizard with field plots)
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
