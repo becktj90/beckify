@@ -59,6 +59,7 @@
 		BECF0000000000000000007E /* ConductorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007D /* ConductorHandoff.swift */; };
 		BECF00000000000000000080 /* FacilityCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007F /* FacilityCalculatorViews.swift */; };
 		BECF00000000000000000082 /* SolarDesignWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000081 /* SolarDesignWizardView.swift */; };
+		BECF00000000000000000084 /* AnalogCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000083 /* AnalogCalculatorViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -114,6 +115,7 @@
 		BECF0000000000000000007D /* ConductorHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorHandoff.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007F /* FacilityCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacilityCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF00000000000000000081 /* SolarDesignWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarDesignWizardView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000083 /* AnalogCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalogCalculatorViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -229,6 +231,7 @@
 				BECF00000000000000000071 /* ControlsCalculatorViews.swift */,
 				BECF00000000000000000073 /* PanelDirectoryView.swift */,
 				BECF00000000000000000081 /* SolarDesignWizardView.swift */,
+				BECF00000000000000000083 /* AnalogCalculatorViews.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -375,6 +378,7 @@
 				BECF0000000000000000007E /* ConductorHandoff.swift in Sources */,
 				BECF00000000000000000080 /* FacilityCalculatorViews.swift in Sources */,
 				BECF00000000000000000082 /* SolarDesignWizardView.swift in Sources */,
+				BECF00000000000000000084 /* AnalogCalculatorViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

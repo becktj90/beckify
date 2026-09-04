@@ -55,11 +55,13 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • RF Power & Link — dBm to watts, VSWR and return loss, free-space path loss
 • Battery Bank Sizing — series/parallel cells to bank voltage, amp-hours, and runtime
 • Magnetic Circuit — reluctance, flux, and flux density from mmf, path length, area, and µr
+• Linear / LDO Regulator — LM317-style Vout from R1/R2 (or solve R2), dropout, Pd, and a θJA junction-temperature estimate
 • Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
 • Number Base Converter — binary, octal, decimal, hex, plus signed 8/16/32-bit read of the same bits
 • E-Bus / Rack Current — sum device currents against a bus rating for headroom
 • Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
+• ADC / DAC & Sampling — LSB, code count, ideal quantization SNR, Nyquist, optional DAC code-to-voltage (not the 4–20 mA scaler)
 • Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 • Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
 
@@ -74,6 +76,9 @@ Homework calculators:
 • Transient Circuits — RC/RL charge and discharge, value at a time, and the curve
 • Fiber Link / NA and Gaussian Beam — numerical aperture, V-number, Rayleigh range, and beam radius
 • Semiconductor I-V — diode forward current from the Shockley equation, with the I-V curve
+• Analog Design Workbench — ideal op-amp stages (inverting, noninverting, follower, difference, summing, integrator, differentiator) and RC / Sallen–Key filters with a magnitude Bode sketch
+• Noise & SNR — Johnson noise, optional shot, amplifier e_n / i_n, total referred noise, SNR, and a rough noise figure (not a SPICE .noise run)
+• Instrumentation Amp — 3-op-amp gain G = 1 + 2R/Rg, or a 4-resistor difference amp, with output swing vs rails
 
 Measure with public Apple APIs (not private APIs):
 
@@ -87,15 +92,15 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “solar”, “pv”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor,solar,pv
+electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor,solar,pv,opamp,snr,adc
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule, Solenoid Design Wizard with B/force/axial plots, and Solar Design Wizard (PV sizing with phone IMU/compass aim and optional storage). Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded; not App Store submit.
+Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule, Solenoid Design Wizard with B/force/axial plots, and Solar Design Wizard (PV sizing with phone IMU/compass aim and optional storage). Analog tools: Analog Design Workbench, Noise & SNR, Linear / LDO Regulator, Instrumentation Amp, and ADC / DAC & Sampling. Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  

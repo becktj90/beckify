@@ -392,6 +392,11 @@ extension GlyphKind {
         case .cableSchedule: return .cableSchedule
         case .solenoidDesign: return .solenoidDesign
         case .solarDesign: return .solarDesign
+        case .analogWorkbench: return .analogWorkbench
+        case .noiseSNR: return .noiseSNR
+        case .linearRegulator: return .linearRegulator
+        case .instrumentationAmp: return .instrumentationAmp
+        case .adcDac: return .adcDac
         }
     }
 }
@@ -455,6 +460,11 @@ enum GlyphKind {
     case cableSchedule
     case solenoidDesign
     case solarDesign
+    case analogWorkbench
+    case noiseSNR
+    case linearRegulator
+    case instrumentationAmp
+    case adcDac
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -517,6 +527,11 @@ enum GlyphKind {
         case .cableSchedule: return Self.cableSchedule(rect)
         case .solenoidDesign: return Self.solenoidDesign(rect)
         case .solarDesign: return Self.solarDesign(rect)
+        case .analogWorkbench: return Self.analogWorkbench(rect)
+        case .noiseSNR: return Self.noiseSNR(rect)
+        case .linearRegulator: return Self.linearRegulator(rect)
+        case .instrumentationAmp: return Self.instrumentationAmp(rect)
+        case .adcDac: return Self.adcDac(rect)
         }
     }
 
@@ -1386,6 +1401,121 @@ enum GlyphKind {
         path.addLine(to: CGPoint(x: (p1.x+p2.x)/2, y: (p1.y+p2.y)/2))
         path.move(to: CGPoint(x: (p0.x+p1.x)/2, y: (p0.y+p1.y)/2))
         path.addLine(to: CGPoint(x: (p3.x+p2.x)/2, y: (p3.y+p2.y)/2))
+        return path
+    }
+
+    /// Single op-amp triangle with +/− inputs and an output lead.
+    private static func analogWorkbench(_ r: CGRect) -> Path {
+        var path = Path()
+        let left = r.minX + r.width * 0.18
+        let right = r.maxX - r.width * 0.16
+        let top = r.minY + r.height * 0.16
+        let bottom = r.maxY - r.height * 0.16
+        path.move(to: CGPoint(x: left, y: top))
+        path.addLine(to: CGPoint(x: right, y: r.midY))
+        path.addLine(to: CGPoint(x: left, y: bottom))
+        path.closeSubpath()
+        path.move(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.34))
+        path.addLine(to: CGPoint(x: left, y: r.minY + r.height * 0.34))
+        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.34))
+        path.addLine(to: CGPoint(x: left, y: r.maxY - r.height * 0.34))
+        path.move(to: CGPoint(x: right, y: r.midY))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        let plusY = r.minY + r.height * 0.34
+        path.move(to: CGPoint(x: left + r.width * 0.08, y: plusY))
+        path.addLine(to: CGPoint(x: left + r.width * 0.18, y: plusY))
+        path.move(to: CGPoint(x: left + r.width * 0.13, y: plusY - r.height * 0.05))
+        path.addLine(to: CGPoint(x: left + r.width * 0.13, y: plusY + r.height * 0.05))
+        path.move(to: CGPoint(x: left + r.width * 0.08, y: r.maxY - r.height * 0.34))
+        path.addLine(to: CGPoint(x: left + r.width * 0.18, y: r.maxY - r.height * 0.34))
+        return path
+    }
+
+    /// Resistor zigzag with a noisy scribble above it.
+    private static func noiseSNR(_ r: CGRect) -> Path {
+        var path = Path()
+        let midY = r.midY + r.height * 0.12
+        path.move(to: CGPoint(x: r.minX, y: midY))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.16, y: midY))
+        let zig = r.width * 0.48
+        let step = zig / 6
+        let start = r.minX + r.width * 0.16
+        for index in 0..<6 {
+            let x = start + step * (CGFloat(index) + 0.5)
+            path.addLine(to: CGPoint(x: x, y: midY + (index.isMultiple(of: 2) ? -r.height * 0.12 : r.height * 0.12)))
+        }
+        path.addLine(to: CGPoint(x: start + zig, y: midY))
+        path.addLine(to: CGPoint(x: r.maxX, y: midY))
+
+        let noiseY = r.minY + r.height * 0.28
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: noiseY))
+        let samples = 8
+        for i in 1...samples {
+            let t = CGFloat(i) / CGFloat(samples)
+            let x = r.minX + r.width * 0.08 + r.width * 0.84 * t
+            let amp: CGFloat = (i.isMultiple(of: 2) ? -1 : 1) * r.height * (0.06 + CGFloat(i % 3) * 0.03)
+            path.addLine(to: CGPoint(x: x, y: noiseY + amp))
+        }
+        return path
+    }
+
+    /// Three-terminal regulator block with in / adj / out leads.
+    private static func linearRegulator(_ r: CGRect) -> Path {
+        var path = Path()
+        let box = CGRect(
+            x: r.minX + r.width * 0.22,
+            y: r.minY + r.height * 0.22,
+            width: r.width * 0.46,
+            height: r.height * 0.56
+        )
+        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
+        path.move(to: CGPoint(x: r.minX, y: r.midY))
+        path.addLine(to: CGPoint(x: box.minX, y: r.midY))
+        path.move(to: CGPoint(x: box.maxX, y: r.midY))
+        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        path.move(to: CGPoint(x: box.midX, y: box.maxY))
+        path.addLine(to: CGPoint(x: box.midX, y: r.maxY))
+        path.move(to: CGPoint(x: box.midX - r.width * 0.08, y: r.maxY - r.height * 0.08))
+        path.addLine(to: CGPoint(x: box.midX + r.width * 0.08, y: r.maxY - r.height * 0.08))
+        return path
+    }
+
+    /// Three small op-amp triangles in the classic InAmp arrangement.
+    private static func instrumentationAmp(_ r: CGRect) -> Path {
+        var path = Path()
+        func triangle(at origin: CGPoint, width: CGFloat, height: CGFloat) {
+            path.move(to: CGPoint(x: origin.x, y: origin.y))
+            path.addLine(to: CGPoint(x: origin.x + width, y: origin.y + height / 2))
+            path.addLine(to: CGPoint(x: origin.x, y: origin.y + height))
+            path.closeSubpath()
+        }
+        let w = r.width * 0.28
+        let h = r.height * 0.28
+        triangle(at: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12), width: w, height: h)
+        triangle(at: CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.12 - h), width: w, height: h)
+        triangle(at: CGPoint(x: r.midX + r.width * 0.04, y: r.midY - h / 2), width: w, height: h)
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08 + w, y: r.minY + r.height * 0.12 + h / 2))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.04, y: r.midY - h * 0.18))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08 + w, y: r.maxY - r.height * 0.12 - h / 2))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.04, y: r.midY + h * 0.18))
+        return path
+    }
+
+    /// ADC stairstep from a rising analog slope.
+    private static func adcDac(_ r: CGRect) -> Path {
+        var path = Path()
+        let baseY = r.maxY - r.height * 0.14
+        path.move(to: CGPoint(x: r.minX, y: baseY))
+        let steps = 4
+        for i in 0..<steps {
+            let x0 = r.minX + r.width * CGFloat(i) / CGFloat(steps)
+            let x1 = r.minX + r.width * CGFloat(i + 1) / CGFloat(steps)
+            let y = baseY - r.height * 0.16 * CGFloat(i + 1)
+            path.addLine(to: CGPoint(x: x0 + r.width * 0.02, y: y))
+            path.addLine(to: CGPoint(x: x1, y: y))
+        }
+        path.move(to: CGPoint(x: r.minX, y: baseY))
+        path.addLine(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.1))
         return path
     }
 
