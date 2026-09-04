@@ -227,6 +227,11 @@ struct CalculatorHostView: View {
             case .linearRegulator: LinearRegulatorView()
             case .instrumentationAmp: InstrumentationAmpView()
             case .adcDac: ADCDACView()
+            case .eBikeTorqueRPM: EbikeTorqueRPMView()
+            case .eBikeSprocket: EbikeSprocketView()
+            case .eBikeRange: EbikeRangeView()
+            case .eBikePackDesigner: EbikePackDesignerView()
+            case .nickelStrip: NickelStripView()
             }
         }
     }

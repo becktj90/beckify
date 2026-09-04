@@ -22,6 +22,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate",
             "heaterDesign", "empEmc", "necCircuit", "loadWorksheet",
             "cableSchedule", "solenoidDesign",
+            "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
         ]
         for id in field {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
@@ -60,6 +61,10 @@ final class ToolHomeAreaTests: XCTestCase {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
         }
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "solarDesign"), .power)
+        for id in ["eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .power, id)
+        }
     }
 
     func testShelfAreaMatchesHomeArea() {

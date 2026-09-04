@@ -114,6 +114,7 @@ public enum ToolHomeAreaPolicy {
         "power", "powerWizard", "transformer", "powerFactor", "batteryBank",
         "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
         "heaterDesign", "solenoidDesign", "empEmc",
+        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
     ]
 
     private static let controlsIDs: Set<String> = [

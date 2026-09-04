@@ -52,6 +52,11 @@ Field — jobsite calculators, wizards, and instruments:
 • IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
 • Power-factor correction, short-circuit current, circular mils, load & demand factors
 • Battery Bank Sizing — series/parallel cells to bank voltage, amp-hours, and runtime
+• E-Bike Torque / RPM — shaft torque or RPM from mechanical power (W, kW, or hp)
+• Sprocket Ratio Designer — drive/driven teeth to ratio, output RPM/torque, and optional wheel speed, or invert a target
+• Range Estimator — pack V×Ah and Wh/mi to miles, kilometers, and runtime (not a GPS speed)
+• Battery Pack Designer — series/parallel pack planning from cell ratings or a voltage/current target (design aid; verify datasheet, BMS, and fusing before you build — not a weld cert). Use Battery Bank Sizing for usable DoD and runtime
+• Nickel Strip — strip cross-section to planning continuous and short-pulse current (derate for alloy, path, and welds)
 • Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
 • Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
@@ -92,15 +97,15 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search Field and Toolkit (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pv,opamp,snr,adc
+electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pv,opamp,snr,adc,ebike
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Home is Field vs Toolkit — jobsite tools open first; basics, bench homework, and the reference library live in Toolkit. Sensors sit under Field → Instruments. Search covers both and labels the area. Saved Jobs prefer Field and can Open in tool with a best-effort restore. Motor Nameplate OCR: photograph or pick a plate, on-device Vision, shared schema (value + confidence + reviewed; confirm sets reviewed). MOCP/LRA are never FLA. Optional seed into Motor FLA / Nameplate Analyzer / Speed. Photos stay on device; cloud VLM is off. Analyzer remains the NEC 430 calculator. Facility tools and Solar Design Wizard stay in Field. AoE analog lives in Toolkit → Bench. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Field → Power now includes native e-bike tools matching the website toolbox math: Torque/RPM, Sprocket Ratio Designer, Range Estimator, Battery Pack Designer (S×P planning), and Nickel Strip. Design aids only — verify cell datasheet, BMS, and fusing before you build; not a weld cert. Battery Bank Sizing is unchanged (runtime/DoD). Home is still Field vs Toolkit. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -160,6 +165,7 @@ Take 3–8 screens per size. Suggested shots:
 8. Favorites list (starred tools pinned for one-tap access)
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
 10. Solar Design Wizard — panel aim readouts (tilt/heading) and/or a sizing result with optional storage (do not claim sensors were live in Simulator if they were not)
+11. E-bike Field tools — Torque/RPM, Sprocket Ratio, Range Estimator, or Pack Designer result (design-aid framing visible)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
 
