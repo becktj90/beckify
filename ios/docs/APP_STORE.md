@@ -176,7 +176,7 @@ The app follows the system light or dark appearance; it does not force dark. Sys
 
 ## App icon
 
-App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 1024×1024 RGB, single catalog slot). Original stacked-rings mark: nested white circles sharing a bottom tangent (tunnel), the whole shape centered on a black square. Full-bleed square — do not pre-round corners or add alpha; Apple applies the squircle. Do not use a photograph of a real person.
+App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 1024×1024 RGB, single catalog slot). Refined stacked-rings mark: three equal-weight copper/gold concentric rings plus a glowing core on charcoal, no text. Heavy strokes so the rings stay readable at home-screen size. Full-bleed square — do not pre-round corners or add alpha; Apple applies the squircle. Do not use a photograph of a real person.
 
 ## Remaining steps (Mac + App Store Connect)
 
