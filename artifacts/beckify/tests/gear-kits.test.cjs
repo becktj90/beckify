@@ -37,8 +37,20 @@ test("kits resolve to catalog SKUs and stay unique inside a chapter", () => {
   for (const kit of GEAR_KITS) {
     const names = kit.slots.map((slot) => slot.name);
     assert.equal(new Set(names).size, names.length, `${kit.id} has duplicate SKUs`);
-    const budgetRoles = kit.slots.filter((slot) => slot.budget).map((slot) => slot.role);
-    assert.ok(budgetRoles.length <= kit.slots.length);
+    const byRole = new Map();
+    for (const slot of kit.slots) {
+      const group = byRole.get(slot.role) ?? { primary: 0, budget: 0 };
+      if (slot.budget) group.budget += 1;
+      else group.primary += 1;
+      byRole.set(slot.role, group);
+    }
+    for (const [role, group] of byRole) {
+      assert.ok(group.primary <= 1, `${kit.id} ${role} has multiple primaries`);
+      assert.ok(group.budget <= 1, `${kit.id} ${role} has multiple budget alts`);
+      if (group.budget) {
+        assert.equal(group.primary, 1, `${kit.id} ${role} budget alt has no primary`);
+      }
+    }
     for (const slot of kit.slots) {
       assert.equal(findGear(slot.name).name, slot.name);
     }

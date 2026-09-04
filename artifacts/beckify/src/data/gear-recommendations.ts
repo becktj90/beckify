@@ -460,7 +460,7 @@ export const GEAR_KITS: GearKit[] = [
     slots: [
       { name: "Megger TDR500/3", role: "TDR" },
       { name: "Fluke Networks MicroScanner PoE", role: "Verifier" },
-      { name: "Klein Tools Scout Pro 3", role: "VDV", budget: true },
+      { name: "Klein Tools Scout Pro 3", role: "Verifier", budget: true },
     ],
   },
   {
