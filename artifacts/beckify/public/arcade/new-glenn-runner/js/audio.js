@@ -74,8 +74,12 @@ const AudioApi = {
   applyMix(settings) {
     const sound = this.scene?.sound;
     if (!sound) return;
-    sound.setMute(this.silenced(settings));
-    sound.setVolume(this.masterVolume(settings));
+    const silent = this.silenced(settings);
+    sound.mute = silent;
+    if (typeof sound.setMute === 'function') sound.setMute(silent);
+    const vol = this.masterVolume(settings);
+    sound.volume = vol;
+    if (typeof sound.setVolume === 'function') sound.setVolume(vol);
     if (!this.bedsAllowed(settings)) this.stopBeds();
   },
 

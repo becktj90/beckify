@@ -1090,6 +1090,7 @@ export default class MissionScene extends Phaser.Scene {
         ? `${flight.id}  ${flight.payload}  ·  PB ${best.toLocaleString()}  ·  LAST ${last.toLocaleString()}  ·  ${this.settings.difficulty}`
         : `${flight.id}  ${flight.payload}  ·  NO MISSIONS FLOWN  ·  ${this.settings.difficulty}`,
     });
+    AudioApi.applyMix(this.settings);
     document.body.dataset.phase = this.status;
     if (boosting && this.status === 'ASCENT' && !this.settings.reducedMotion) {
       /* plume handled in update */
