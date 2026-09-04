@@ -367,9 +367,17 @@ async function tdrRunAnalysis() {
   }
 }
 
+function tdrIsImageFile(file) {
+  if (!file) return false;
+  const type = String(file.type || '');
+  if (type.indexOf('image/') === 0) return true;
+  if (type) return false;
+  return /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i.test(String(file.name || ''));
+}
+
 function tdrHandleFile(file) {
   if (!file) return;
-  if (!file.type || !file.type.startsWith('image/')) {
+  if (!tdrIsImageFile(file)) {
     tdrSetStatus('Please choose a valid image file.');
     return;
   }

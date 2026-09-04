@@ -170,6 +170,8 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(lookJs, /does not upload/);
   assert.match(lookJs, /analyzeLook/);
   assert.match(lookJs, /\/api\/analyze-look/);
+  assert.match(lookJs, /lookIsImageFile/);
+  assert.match(html, /look-verdict-card\[hidden\]/);
   const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
   assert.match(tdrJs, /prepareUploadDataUrl/);
 
