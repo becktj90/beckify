@@ -14,7 +14,7 @@ Every primary tool has an original vector `ToolGlyph` (not a shared SF Symbol). 
 
 `ToolCalculationPolicy` / `ToolDefinition.calculationMode` is the single source of truth:
 
-- **Live** — Unit Converter, Resistor Color, Circular Mils, Modbus Address: update when inputs are valid.
+- **Live** — Unit Converter, Resistor Color, Circular Mils, Modbus Address, Number Base Converter: update when inputs are valid.
 - **Explicit** — multi-input engineering tools: require **Calculate**; preserve the last success as stale while inputs change (“Inputs changed — Calculate again.”).
 - **Sensor** — continuous / permission-gated instruments.
 
@@ -39,23 +39,33 @@ ios/
 - Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
 - 555 Timer (astable / monostable)
 - Motor FLA (430.248 / 430.250)
+- Motor Speed & Torque (sync RPM, slip, shaft torque)
 - Wire Size & Ampacity (310.16 75 °C)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
+- IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
 - Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
 - Reactance & Resonance, Power Factor Correction, Short-Circuit Current
 - Circular Mils, Load & Demand Factors
+- RF Power & Link, Battery Bank Sizing, Magnetic Circuit
 - Signal Scaling, Modbus Address, PLC Timer Preset
+- Number Base Converter, E-Bus / Rack Current
 - Panel Directory (paste/OCR schedule text)
+- Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
 
 ## Homework calculators
 
 - Voltage Divider (Vout, or solve R1/R2)
 - Series / Parallel R and C
 - Resistor Color Code (4-band and 5-band, decode + encode)
+- Phasor Diagram (2–3 phasors + sum; balanced 3Ø tap)
 - Frequency / period / wavelength and LC resonance
 - LED current-limit R and RC τ (555 astable/monostable stays in 555 Timer)
+- Transient Circuits (RC/RL charge/discharge + curve)
+- Fiber Link / NA (numerical aperture, acceptance angle, V-number)
+- Gaussian Beam (Rayleigh range, divergence, beam radius)
+- Semiconductor I-V (Shockley forward current + I–V curve)
 
-Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, and 555 Timer monostable capacitor charge. This is not a new tool list.
+Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, and 555 Timer monostable capacitor charge. This is not a new tool list.
 
 ## Sensors (public APIs only)
 

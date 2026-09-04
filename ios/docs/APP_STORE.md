@@ -37,20 +37,32 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
 • 555 timer (astable and monostable)
 • Motor full-load current from NEC Tables 430.248 and 430.250
+• Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Wire size from NEC Table 310.16, 75 °C column
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
+• IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
 • Reactance & resonance, power-factor correction, short-circuit current, circular mils, load & demand factors
+• RF Power & Link — dBm to watts, VSWR and return loss, free-space path loss
+• Battery Bank Sizing — series/parallel cells to bank voltage, amp-hours, and runtime
+• Magnetic Circuit — reluctance, flux, and flux density from mmf, path length, area, and µr
 • Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
+• Number Base Converter — binary, octal, decimal, hex, plus signed 8/16/32-bit read of the same bits
+• E-Bus / Rack Current — sum device currents against a bus rating for headroom
 • Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
+• Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
 
 Homework calculators:
 
 • Voltage divider (Vout, or solve R1 / R2)
 • Series / parallel resistors and capacitors
 • Resistor color code (4-band and 5-band, decode and encode)
+• Phasor Diagram — plot 2–3 phasors and sum them (balanced 3-phase set is one tap)
 • Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC))
 • LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
+• Transient Circuits — RC/RL charge and discharge, value at a time, and the curve
+• Fiber Link / NA and Gaussian Beam — numerical aperture, V-number, Rayleigh range, and beam radius
+• Semiconductor I-V — diode forward current from the Shockley equation, with the I-V curve
 
 Measure with public Apple APIs (not private APIs):
 
@@ -64,15 +76,15 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “receptacle”, “divider”, “color code”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,NEMA,receptacle,outlet,IEC,ampacity,wifi,ohm
+electrical,NEC,NEMA,receptacle,outlet,IEC,ampacity,wifi,ohm,motor,battery,phasor,fiber
 
 **What's New (1.0):**
-First toolbox with field EE calculators (including Receptacle Selector), homework tools, and public-API sensors. On those existing tools: last-used inputs stay on device, copy result, show-work with your numbers in the formula, and related tools. Selected calculators now include engineer plots (Swift Charts) — for example Ohm's Law load line, LED/RC charge/discharge, frequency waveform, reactance/resonance, and 555 monostable capacitor charge — with Share/save PNG via the system share sheet. Local saved notes. Not a new product or catalog. No binary uploaded; not TestFlight.
+First toolbox with field EE calculators (including Receptacle Selector, Motor Speed & Torque, IS Loop Verifier, RF Power & Link, Battery Bank Sizing, Magnetic Circuit, Number Base Converter, E-Bus / Rack Current, and Reference Library), homework tools (phasor, fiber, Gaussian beam, transients, semiconductor I-V), and public-API sensors. On those existing tools: last-used inputs stay on device, copy result, show-work with your numbers in the formula, and related tools. Selected calculators now include engineer plots (Swift Charts) — for example Ohm's Law load line, LED/RC charge/discharge, frequency waveform, reactance/resonance, Transient Circuits, Semiconductor I-V, and 555 monostable capacitor charge — with Share/save PNG via the system share sheet. Local saved notes. Not a new product or catalog. No binary uploaded; not TestFlight.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -130,7 +142,7 @@ Take 3–8 screens per size. Suggested shots:
 6. BLE scanner or bubble level
 7. Saved Jobs list (on-device notes)
 8. Favorites list (starred tools pinned for one-tap access)
-9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, or Transient Circuits response)
+9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
 
