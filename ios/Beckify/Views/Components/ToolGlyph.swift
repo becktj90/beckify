@@ -100,6 +100,15 @@ extension GlyphKind {
         case .rackCurrent: return .rackCurrent
         case .diodeIV: return .diodeIV
         case .isLoopVerifier: return .isLoopVerifier
+        case .tapChanger: return .tapChanger
+        case .harmonicsTHD: return .harmonicsTHD
+        case .upsSizing: return .upsSizing
+        case .motorNameplate: return .motorNameplate
+        case .heaterDesign: return .heaterDesign
+        case .empEmc: return .empEmc
+        case .necCircuit: return .necCircuit
+        case .loadWorksheet: return .loadWorksheet
+        case .cableSchedule: return .cableSchedule
         }
     }
 }
@@ -152,6 +161,15 @@ enum GlyphKind {
     case rackCurrent
     case diodeIV
     case isLoopVerifier
+    case tapChanger
+    case harmonicsTHD
+    case upsSizing
+    case motorNameplate
+    case heaterDesign
+    case empEmc
+    case necCircuit
+    case loadWorksheet
+    case cableSchedule
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -203,6 +221,15 @@ enum GlyphKind {
         case .rackCurrent: return Self.rackCurrent(rect)
         case .diodeIV: return Self.diodeIV(rect)
         case .isLoopVerifier: return Self.isLoopVerifier(rect)
+        case .tapChanger: return Self.tapChanger(rect)
+        case .harmonicsTHD: return Self.harmonicsTHD(rect)
+        case .upsSizing: return Self.upsSizing(rect)
+        case .motorNameplate: return Self.motorNameplate(rect)
+        case .heaterDesign: return Self.heaterDesign(rect)
+        case .empEmc: return Self.empEmc(rect)
+        case .necCircuit: return Self.necCircuit(rect)
+        case .loadWorksheet: return Self.loadWorksheet(rect)
+        case .cableSchedule: return Self.cableSchedule(rect)
         }
     }
 
@@ -960,6 +987,72 @@ enum GlyphKind {
         path.move(to: CGPoint(x: r.midX - r.width * 0.14, y: r.midY))
         path.addLine(to: CGPoint(x: r.midX - r.width * 0.02, y: r.midY + r.height * 0.12))
         path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: r.midY - r.height * 0.14))
+        return path
+    }
+
+    // Placeholder glyphs — icon art agent will refine.
+    private static func tapChanger(_ r: CGRect) -> Path {
+        var path = transformer(r)
+        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.18, y: r.minY + r.height * 0.18))
+        path.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.28))
+        return path
+    }
+
+    private static func harmonicsTHD(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX, y: r.midY))
+        for step in 0...24 {
+            let t = CGFloat(step) / 24
+            let y = r.midY - sin(t * .pi * 2) * r.height * 0.22 - sin(t * .pi * 6) * r.height * 0.08
+            path.addLine(to: CGPoint(x: r.minX + r.width * t, y: y))
+        }
+        return path
+    }
+
+    private static func upsSizing(_ r: CGRect) -> Path {
+        batteryBank(r)
+    }
+
+    private static func motorNameplate(_ r: CGRect) -> Path {
+        var path = motorFLA(r)
+        path.addRect(CGRect(x: r.minX + r.width * 0.62, y: r.minY + r.height * 0.18, width: r.width * 0.28, height: r.height * 0.36))
+        return path
+    }
+
+    private static func heaterDesign(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.2))
+        path.addCurve(
+            to: CGPoint(x: r.maxX - r.width * 0.12, y: r.maxY - r.height * 0.2),
+            control1: CGPoint(x: r.minX + r.width * 0.3, y: r.minY + r.height * 0.1),
+            control2: CGPoint(x: r.maxX - r.width * 0.3, y: r.minY + r.height * 0.1)
+        )
+        path.move(to: CGPoint(x: r.midX - r.width * 0.08, y: r.maxY - r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.02))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.08, y: r.maxY - r.height * 0.12))
+        return path
+    }
+
+    private static func empEmc(_ r: CGRect) -> Path {
+        isLoopVerifier(r)
+    }
+
+    private static func necCircuit(_ r: CGRect) -> Path {
+        wireAmpacity(r)
+    }
+
+    private static func loadWorksheet(_ r: CGRect) -> Path {
+        panelDirectory(r)
+    }
+
+    private static func cableSchedule(_ r: CGRect) -> Path {
+        var path = Path()
+        for i in 0..<4 {
+            let y = r.minY + r.height * (0.2 + 0.18 * CGFloat(i))
+            path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: y))
+            path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: y))
+        }
         return path
     }
 

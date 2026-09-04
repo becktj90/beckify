@@ -402,7 +402,6 @@ struct ShortCircuitDiagram: View {
     }
 }
 
-<<<<<<< HEAD
 // MARK: - Motor torque-speed curve
 
 struct MotorTorqueCurveChart: View {
@@ -626,7 +625,10 @@ struct BatteryBankChart: View {
             .chartYAxisLabel("Wh")
             .frame(height: 160)
             .accessibilityHidden(true)
-=======
+        }
+    }
+}
+
 // MARK: - Ampacity derating waterfall
 
 struct AmpacityWaterfallDiagram: View {
@@ -676,7 +678,6 @@ struct AmpacityWaterfallDiagram: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
->>>>>>> ac3740d (feat(ios): professional ampacity derating and voltage-drop sizing)
         }
     }
 }
