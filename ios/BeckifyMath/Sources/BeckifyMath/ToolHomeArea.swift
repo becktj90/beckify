@@ -117,8 +117,13 @@ public enum ToolHomeAreaPolicy {
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
     ]
 
+    /// Field → Controls: jobsite loop helpers plus the Control Systems lab.
+    /// Analysis (PID / Bode / lead) sits next to Signal Scaling and PLC Timer
+    /// rather than Toolkit → Bench (Analog Workbench) because the same Field
+    /// audience already uses those tools on a loop. State-space studios stay web-only.
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
+        "controlSystems",
     ]
 
     /// Saved-job keys are short labels (`V`, `I`); stored fields are longer.
@@ -139,6 +144,10 @@ public enum ToolHomeAreaPolicy {
         "ledRC": ["Vin": "supply", "Vf": "vf", "If": "current", "R": "resistance", "C": "capacitance"],
         "timer555": ["R1": "r1", "R2": "r2", "C": "c", "R": "r1"],
         "frequencyWave": ["f": "frequency", "T": "period", "λ": "wavelength", "L": "inductance", "C": "capacitance"],
+        "controlSystems": [
+            "plantID": "plantID", "num": "num", "den": "den",
+            "section": "section", "Kp": "kp", "Ki": "ki", "Kd": "kd",
+        ],
     ]
 
     private static func coerceStoredValue(field: String, value: String) -> String {

@@ -61,6 +61,7 @@ Field — jobsite calculators, wizards, and instruments:
 • Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
 • Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
+• Control Systems — pocket servo lab: plant library or custom G(s), P→PI→PID step metrics, Bode margins (PM, GM, ωc, ωb), and a lead compensator with analog R/C suggestion. Educational approximations — not for safety-critical commissioning. State-space LQR/Kalman/MPC stays on the website.
 • E-Bus / Rack Current — sum device currents against a bus rating for headroom
 
 Toolkit — basics, bench / homework, and references:
@@ -98,15 +99,15 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pv,opamp,snr,adc,ebike
+electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Field → Power adds native e-bike tools matching the website toolbox math: Torque/RPM, Sprocket Ratio Designer, Range Estimator, Battery Pack Designer (S×P planning), and Nickel Strip. Design aids only — verify cell datasheet, BMS, and fusing before you build; not a weld cert. Battery Bank Sizing is unchanged (runtime/DoD). Field Jobsite still has Conductor Cost Optimizer and mixed-size Conduit Fill from the prior listing. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Field → Controls adds a native Control Systems lab (not a web wrap): pick a plant or enter G(s), walk P→PI→PID step metrics, read Bode gain/phase margins as sticky numbers, and place a lead network with a simple R/C suggestion. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. Field → Power still has the e-bike tools from the prior listing. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  

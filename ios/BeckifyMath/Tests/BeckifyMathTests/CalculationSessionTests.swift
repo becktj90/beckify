@@ -23,6 +23,7 @@ final class CalculationSessionTests: XCTestCase {
             "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
             "motorNameplateOCR",
             "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
+            "controlSystems",
         ]
         for id in explicit {
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .explicit, id)

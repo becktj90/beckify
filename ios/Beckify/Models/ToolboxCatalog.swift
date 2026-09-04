@@ -72,6 +72,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case eBikeRange
     case eBikePackDesigner
     case nickelStrip
+    case controlSystems
 
     var id: String { rawValue }
 }
@@ -805,6 +806,19 @@ enum ToolboxCatalog {
             symbol: "rectangle.split.1x2",
             synonyms: ["nickel strip", "nickel plated", "spot weld", "busbar", "ampacity", "18650", "pack"]
         ),
+        // Field → Controls hub (not Toolkit → Bench): same shelf as Signal
+        // Scaling / PLC Timer. Analysis, not a second Analog Workbench.
+        ToolDefinition(
+            id: .controlSystems,
+            kind: .calculator,
+            title: "Control Systems",
+            subtitle: "Pocket servo lab — plant library, P→PI→PID step, Bode margins, lead compensator.",
+            symbol: "slider.horizontal.3",
+            synonyms: [
+                "control systems", "pid", "bode", "lead compensator", "servo", "transfer function",
+                "plant", "step response", "phase margin", "gain margin", "tuner", "g(s)",
+            ]
+        ),
     ]
 
     /// Color-coded grouping. Home IA is Field vs Toolkit (`ToolHomeAreaPolicy`);
@@ -825,6 +839,7 @@ enum ToolboxCatalog {
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent, .adcDac,
+            .controlSystems,
         ],
         .homework: [
             .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
@@ -909,9 +924,9 @@ enum ToolboxCatalog {
         .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],
         .circularMils: [.wireAmpacity, .voltageDrop, .conduitFill],
         .loadFactors: [.panelDirectory, .power, .motorFLA],
-        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter],
+        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems],
         .modbusAddress: [.signalScaling, .plcTimer],
-        .plcTimer: [.timer555, .modbusAddress, .signalScaling],
+        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems],
         .panelDirectory: [.loadFactors, .wireAmpacity, .motorFLA],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.frequencyWave, .reactance, .unitConverter],
@@ -943,10 +958,11 @@ enum ToolboxCatalog {
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
         .cableSchedule: [.wireAmpacity, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
-        .analogWorkbench: [.voltageDivider, .frequencyWave, .instrumentationAmp],
+        .analogWorkbench: [.voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
         .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],
         .linearRegulator: [.voltageDivider, .power, .ledRC],
         .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
+        .controlSystems: [.signalScaling, .plcTimer, .analogWorkbench, .transientCircuit],
     ]
 }
