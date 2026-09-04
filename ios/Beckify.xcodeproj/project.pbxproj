@@ -65,6 +65,7 @@
 		BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008B /* EbikeCalculatorViews.swift */; };
 		BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008D /* ControlSystemsLabView.swift */; };
 		BECF00000000000000000090 /* ConductorLengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008F /* ConductorLengthView.swift */; };
+		BECF00000000000000000092 /* CellularStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000091 /* CellularStatusView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -126,6 +127,7 @@
 		BECF0000000000000000008B /* EbikeCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EbikeCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008D /* ControlSystemsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSystemsLabView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008F /* ConductorLengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorLengthView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000091 /* CellularStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularStatusView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -255,6 +257,7 @@
 			isa = PBXGroup;
 			children = (
 				BECF00000000000000000041 /* WiFiStatusView.swift */,
+				BECF00000000000000000091 /* CellularStatusView.swift */,
 				BECF00000000000000000043 /* BluetoothScannerView.swift */,
 				BECF00000000000000000045 /* NoiseMeterView.swift */,
 				BECF00000000000000000047 /* BubbleLevelView.swift */,
@@ -361,6 +364,7 @@
 				BECF00000000000000000020 /* JobsView.swift in Sources */,
 				BECF00000000000000000022 /* ToolboxView.swift in Sources */,
 				BECF00000000000000000042 /* WiFiStatusView.swift in Sources */,
+				BECF00000000000000000092 /* CellularStatusView.swift in Sources */,
 				BECF00000000000000000044 /* BluetoothScannerView.swift in Sources */,
 				BECF00000000000000000046 /* NoiseMeterView.swift in Sources */,
 				BECF00000000000000000048 /* BubbleLevelView.swift in Sources */,
@@ -489,7 +493,7 @@
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path tool to a host you choose, including a LAN or default-gateway address. This is latency, not Wi-Fi signal strength. Nothing is uploaded.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to photograph a motor nameplate so on-device text recognition can suggest fields. The photo stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
@@ -531,7 +535,7 @@
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path tool to a host you choose, including a LAN or default-gateway address. This is latency, not Wi-Fi signal strength. Nothing is uploaded.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to photograph a motor nameplate so on-device text recognition can suggest fields. The photo stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";

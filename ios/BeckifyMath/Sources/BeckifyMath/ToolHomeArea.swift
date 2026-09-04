@@ -105,7 +105,7 @@ public enum ToolHomeAreaPolicy {
     ]
 
     private static let instrumentIDs: Set<String> = [
-        "wifiStatus", "bluetoothScan", "noiseMeter", "bubbleLevel",
+        "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "bubbleLevel",
         "magnetometer", "barometer", "motionSnapshot", "fieldPosition",
         "deviceHealth",
     ]
@@ -156,6 +156,10 @@ public enum ToolHomeAreaPolicy {
         ],
         "wifiStatus": [
             "mode": "surveyMode",
+            "rttTarget": "rttTarget",
+            "rttHost": "rttHost",
+        ],
+        "cellularStatus": [
             "rttTarget": "rttTarget",
             "rttHost": "rttHost",
         ],

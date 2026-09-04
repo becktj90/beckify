@@ -352,6 +352,7 @@ extension GlyphKind {
         case .frequencyWave: return .frequencyWave
         case .ledRC: return .ledRC
         case .wifiStatus: return .wifiStatus
+        case .cellularStatus: return .cellularStatus
         case .bluetoothScan: return .bluetoothScan
         case .noiseMeter: return .noiseMeter
         case .bubbleLevel: return .bubbleLevel
@@ -429,6 +430,7 @@ enum GlyphKind {
     case frequencyWave
     case ledRC
     case wifiStatus
+    case cellularStatus
     case bluetoothScan
     case noiseMeter
     case bubbleLevel
@@ -505,6 +507,7 @@ enum GlyphKind {
         case .frequencyWave: return Self.frequencyWave(rect)
         case .ledRC: return Self.ledRC(rect)
         case .wifiStatus: return Self.wifiStatus(rect)
+        case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
         case .bubbleLevel: return Self.bubbleLevel(rect)
@@ -1800,6 +1803,26 @@ enum GlyphKind {
     }
 
     // MARK: - Sensors
+
+    private static func cellularStatus(_ r: CGRect) -> Path {
+        var path = Path()
+        let mastTop = CGPoint(x: r.minX + r.width * 0.38, y: r.minY + r.height * 0.14)
+        let mastBot = CGPoint(x: r.minX + r.width * 0.38, y: r.maxY - r.height * 0.12)
+        path.move(to: CGPoint(x: mastTop.x - r.width * 0.12, y: mastTop.y + r.height * 0.12))
+        path.addLine(to: mastTop)
+        path.addLine(to: CGPoint(x: mastTop.x + r.width * 0.12, y: mastTop.y + r.height * 0.12))
+        path.move(to: mastTop)
+        path.addLine(to: mastBot)
+        path.move(to: CGPoint(x: mastBot.x - r.width * 0.16, y: mastBot.y))
+        path.addLine(to: CGPoint(x: mastBot.x + r.width * 0.16, y: mastBot.y))
+        let bars: [CGFloat] = [0.22, 0.36, 0.52]
+        for (index, height) in bars.enumerated() {
+            let x = r.minX + r.width * (0.62 + 0.12 * CGFloat(index))
+            path.move(to: CGPoint(x: x, y: r.maxY - r.height * 0.16))
+            path.addLine(to: CGPoint(x: x, y: r.maxY - r.height * (0.16 + height)))
+        }
+        return path
+    }
 
     private static func wifiStatus(_ r: CGRect) -> Path {
         var path = Path()

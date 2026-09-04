@@ -125,6 +125,22 @@ final class ToolHomeAreaTests: XCTestCase {
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "wifiStatus"), .instruments)
     }
 
+    func testCellularStatusIsFieldInstrumentAndRestoresRTTFields() {
+        let mapped = ToolHomeAreaPolicy.storedFields(
+            toolID: "cellularStatus",
+            inputs: [
+                "rttTarget": "1.1.1.1",
+                "rttHost": "beckify.com:443",
+            ]
+        )
+        XCTAssertEqual(mapped["rttTarget"], "1.1.1.1")
+        XCTAssertEqual(mapped["rttHost"], "beckify.com:443")
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "cellularStatus"), .field)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "cellularStatus"), .instruments)
+        XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "cellularStatus"), .sensor)
+        XCTAssertTrue(ToolCalculationPolicy.knownToolIDs.contains("cellularStatus"))
+    }
+
     func testConductorLengthRestoreMapsAliasesAndPreset() {
         let mapped = ToolHomeAreaPolicy.storedFields(
             toolID: "conductorLength",

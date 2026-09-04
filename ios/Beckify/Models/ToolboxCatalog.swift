@@ -20,6 +20,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case frequencyWave
     case ledRC
     case wifiStatus
+    case cellularStatus
     case bluetoothScan
     case noiseMeter
     case bubbleLevel
@@ -401,6 +402,18 @@ enum ToolboxCatalog {
             subtitle: "Apple strength % / bars and TCP RTT. Not a dBm meter.",
             symbol: "wifi",
             synonyms: ["wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path", "heatmap", "coverage", "dbm", "rtt", "latency", "link quality"]
+        ),
+        ToolDefinition(
+            id: .cellularStatus,
+            kind: .sensor,
+            title: "Cellular Path",
+            subtitle: "Carrier, RAT, and TCP RTT on cell. Not an RSRP / dBm meter.",
+            symbol: "antenna.radiowaves.left.and.right",
+            synonyms: [
+                "cellular", "cell", "lte", "5g", "nr", "4g", "3g", "wcdma", "carrier",
+                "mcc", "mnc", "plmn", "rsrp", "rsrq", "sinr", "rssi", "dbm", "dual sim",
+                "radio access", "telephony", "coretelephony", "signal", "rtt", "latency",
+            ]
         ),
         ToolDefinition(
             id: .bluetoothScan,
@@ -860,7 +873,7 @@ enum ToolboxCatalog {
             .analogWorkbench, .noiseSNR, .instrumentationAmp,
         ],
         .sensors: [
-            .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
+            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
             .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
         ],
         .reference: [
@@ -924,8 +937,9 @@ enum ToolboxCatalog {
         .unitConverter: [.circularMils, .signalScaling, .wireAmpacity],
         .frequencyWave: [.reactance, .timer555, .ledRC],
         .ledRC: [.ohmsLaw, .timer555, .resistorColor],
-        .wifiStatus: [.bluetoothScan, .fieldPosition, .deviceHealth],
-        .bluetoothScan: [.wifiStatus, .deviceHealth],
+        .wifiStatus: [.cellularStatus, .bluetoothScan, .deviceHealth],
+        .cellularStatus: [.wifiStatus, .rfLink, .bluetoothScan],
+        .bluetoothScan: [.wifiStatus, .cellularStatus, .deviceHealth],
         .noiseMeter: [.deviceHealth],
         .bubbleLevel: [.motionSnapshot, .magnetometer, .solarDesign],
         .magnetometer: [.bubbleLevel, .solarDesign, .motionSnapshot],
@@ -943,7 +957,7 @@ enum ToolboxCatalog {
         .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems],
         .panelDirectory: [.loadFactors, .wireAmpacity, .motorFLA],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
-        .rfLink: [.frequencyWave, .reactance, .unitConverter],
+        .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
         .batteryBank: [.power, .solarDesign, .ohmsLaw, .eBikePackDesigner, .eBikeRange],
