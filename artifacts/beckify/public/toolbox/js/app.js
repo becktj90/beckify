@@ -910,6 +910,37 @@ function clrPathFactor(method) {
   return method === 'single' ? 1 : 2;
 }
 
+function clrMethodCopy(method) {
+  if (method === 'single') {
+    return {
+      detail: 'One conductor measured end-to-end; distance = solved path',
+      primaryLabel: 'End-to-End Length',
+      setupLabel: 'End-to-end: distance equals the solved path',
+      farLabel: 'Far end',
+      rule: 'End-to-end length = solved conductor path',
+      factor: 'Path factor: ×1 (end-to-end)'
+    };
+  }
+  if (method === 'loop3') {
+    return {
+      detail: 'Symmetrical far-end short; distance to short = path ÷ 2',
+      primaryLabel: 'Distance to Short',
+      setupLabel: '3-phase far-end short: distance to short = path ÷ 2',
+      farLabel: 'Short / bond',
+      rule: 'Distance to short = total solved path ÷ 2',
+      factor: 'Path factor: ÷2 — distance to short is one-way'
+    };
+  }
+  return {
+    detail: 'Measure between two parallels shorted/bonded along the run; distance to short = path ÷ 2',
+    primaryLabel: 'Distance to Short',
+    setupLabel: 'Short to parallel: distance to short = path ÷ 2',
+    farLabel: 'Short / bond',
+    rule: 'Distance to short = total solved path ÷ 2',
+    factor: 'Path factor: ÷2 — distance to short is one-way'
+  };
+}
+
 function conductorLengthByResistanceModel(input) {
   const resistanceOhms = clrResistanceToOhms(input.resistance, input.resistanceUnit);
   const measuredTempC = clrTempToC(input.temperature, input.temperatureUnit);
@@ -954,15 +985,20 @@ window.conductorLengthMethodChange = function () {
   const factorEl = document.getElementById('clr_diag_factor');
   if (!methodEl) return;
   const method = methodEl.value;
+  const copy = clrMethodCopy(method);
   const single = document.getElementById('clr_diag_single');
   const loop2 = document.getElementById('clr_diag_loop2');
   const loop3 = document.getElementById('clr_diag_loop3');
+  const detailEl = document.getElementById('clr_method_detail');
+  const farEl = document.getElementById('clr_diag_far_label');
+  const ruleEl = document.getElementById('clr_diag_rule');
   if (single) single.style.display = method === 'single' ? '' : 'none';
   if (loop2) loop2.style.display = method === 'loop2' ? '' : 'none';
   if (loop3) loop3.style.display = method === 'loop3' ? '' : 'none';
-  if (factorEl) factorEl.textContent = method === 'single'
-    ? 'Loop factor: ×1 (single conductor)'
-    : 'Loop factor: ÷2 to report one-way distance';
+  if (detailEl) detailEl.textContent = copy.detail;
+  if (farEl) farEl.textContent = copy.farLabel;
+  if (ruleEl) ruleEl.textContent = copy.rule;
+  if (factorEl) factorEl.textContent = copy.factor;
 };
 
 window.conductorLengthPresetChange = function () {
@@ -1009,16 +1045,15 @@ window.calcConductorLengthByResistance = function () {
       rho: rho
     });
     const materialLabel = (CLR_MATERIAL_PRESETS[material] && CLR_MATERIAL_PRESETS[material].label) || 'Custom';
+    const copy = clrMethodCopy(method);
     showResult('clr_result', [
-      ['One-Way Distance', fmt(result.oneWayLengthFt, 2) + ' ft (' + fmt(result.oneWayLengthM, 2) + ' m)'],
-      ['Total Conductor Wire Length', fmt(result.totalLengthFt, 2) + ' ft (' + fmt(result.totalLengthM, 2) + ' m)'],
+      [copy.primaryLabel, fmt(result.oneWayLengthFt, 2) + ' ft (' + fmt(result.oneWayLengthM, 2) + ' m)'],
+      ['Total Conductor Path', fmt(result.totalLengthFt, 2) + ' ft (' + fmt(result.totalLengthM, 2) + ' m)'],
       ['Temperature-Corrected Resistance @ ' + fmt(referenceTempC, 0) + '°C', fmt(result.resistanceAtRefTemp, 6) + ' Ω'],
       ['Resistance Used', fmt(result.resistanceOhms, 6) + ' Ω'],
       ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
       ['Material / ρ', materialLabel + ' — ' + fmt(rho, 4) + ' Ω·cmil/ft'],
-      ['Measurement Method', method === 'single'
-        ? 'Single conductor: one-way equals solved path length'
-        : 'Loop measurement: one-way = total solved path ÷ 2']
+      ["What's Shorted?", copy.setupLabel]
     ]);
   } catch (err) {
     showError('clr_result', err && err.message ? err.message : 'Could not solve conductor length.');

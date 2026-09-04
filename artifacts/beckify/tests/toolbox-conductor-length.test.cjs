@@ -98,6 +98,20 @@ r = conductorLengthByResistanceModel({
 });
 ok('3-phase loop one-way uses ÷2 factor', r.oneWayLengthFt, r.totalLengthFt / 2, 1e-9);
 
+const html = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const catalog = fs.readFileSync(require('path').join(__dirname, '..', '..', '..', 'ios', 'Beckify', 'Models', 'ToolboxCatalog.swift'), 'utf8');
+const assert = (name, condition) => {
+  if (!condition) failures++;
+  console.log((condition ? '  PASS  ' : '  FAIL  ') + name);
+};
+assert('HTML option: short to parallel', html.includes('value="loop2">Short to parallel'));
+assert('HTML option: end-to-end', html.includes('value="single">End-to-end'));
+assert('HTML option: 3-phase far-end short', html.includes('value="loop3">3-phase far-end short'));
+assert('iOS catalog subtitle mentions milliohm and short-to-parallel',
+  catalog.includes('milliohm (mΩ)') && catalog.includes('short-to-parallel'));
+assert('iOS catalog synonyms include shorted parallel and kelvin',
+  catalog.includes('"shorted parallel"') && catalog.includes('"kelvin"') && catalog.includes('"mohm"'));
+
 console.log('\n--- E-bike helpers ---');
 ok('2 kW to watts', ebPowerToWatts(2, 'kw'), 2000, 0);
 ok('1 hp to watts', ebPowerToWatts(1, 'hp'), 746, 0);

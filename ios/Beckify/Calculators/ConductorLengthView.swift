@@ -9,7 +9,7 @@ struct ConductorLengthView: View {
     @StoredInput(.conductorLength, "size", default: "1/0") private var size
     @StoredInput(.conductorLength, "customCmil", default: "250000") private var customCmil
     @StoredChoice(.conductorLength, "preset", default: ConductorLengthMaterial.copperAnnealed) private var material
-    @StoredChoice(.conductorLength, "method", default: ConductorLengthMethod.single) private var method
+    @StoredChoice(.conductorLength, "method", default: ConductorLengthMethod.loop2) private var method
     @StoredInput(.conductorLength, "temp", default: "20") private var temperature
     @StoredChoice(.conductorLength, "tempUnit", default: ConductorLengthTempUnit.celsius) private var temperatureUnit
     @StoredChoice(.conductorLength, "refTemp", default: ConductorLengthRefTemp.c20) private var refTemp
@@ -44,14 +44,14 @@ struct ConductorLengthView: View {
             toolID: .conductorLength,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .designAidExtra("Uses R = ρL/CM with a linear α compensation. Contact resistance, stranding, and manufacturer ρ will shift the estimate — not a cable locator or a bid length."),
+            disclaimer: .designAidExtra("Uses R = ρL/CM with a linear α compensation. Contact resistance, stranding, and manufacturer ρ will shift the estimate — not a cable locator, TDR, or a bid length."),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .conductorLength,
                 symbolic: "L = (R_ref × CM) / ρ    R_ref = R / [1 + α × (T − T_ref)]",
                 substituted: substituted,
-                meaning: "Measured resistance is first corrected to the resistivity reference temperature, then solved for total conductor path. Loop methods divide that path by two so the sticky number is one-way distance.",
+                meaning: "Measured resistance is first corrected to the resistivity reference temperature, then solved for total conductor path. End-to-end reports that path. Short-to-parallel and 3-phase far-end short divide it by two so the sticky number is distance to the short.",
                 citation: "NEC Chapter 9 Table 8 circular mils · Cu ρ 10.371 / 12.9 Ω·cmil/ft · Al ρ 17.02 / 21.2 · α_Cu 0.00393 / α_Al 0.00403.",
                 referenceTool: .circularMils
             )
@@ -90,10 +90,13 @@ struct ConductorLengthView: View {
             ) { $0.displayName }
 
             MenuField(
-                title: "Measurement method",
+                title: "What's shorted?",
                 selection: $method,
-                options: ConductorLengthMethod.allCases
+                options: [.loop2, .single, .loop3]
             ) { $0.displayName }
+            Text(method.detail)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
 
             HStack(alignment: .top, spacing: Theme.Space.sm) {
                 NumberField(
@@ -138,7 +141,7 @@ struct ConductorLengthView: View {
                 onCalculate: calculate,
                 onReset: reset,
                 onExample: applyExample,
-                exampleTitle: "250 mΩ, 1/0 Cu, 20 °C"
+                exampleTitle: "250 mΩ, 1/0 Cu, short to parallel"
             )
 
             if let error = session.lastValidationError ?? session.error {
@@ -151,7 +154,7 @@ struct ConductorLengthView: View {
 
                 ResultCard(copyText: copyText) {
                     ResultRow(
-                        label: "One-way distance",
+                        label: method.primaryLengthLabel,
                         value: "\(Format.number(r.oneWayLengthFt, digits: 2)) ft  ·  \(Format.meters(r.oneWayLengthM))",
                         emphasis: true,
                         tone: Theme.good
@@ -275,7 +278,7 @@ struct ConductorLengthView: View {
         size = "1/0"
         customCmil = "250000"
         material = .copperAnnealed
-        method = .single
+        method = .loop2
         temperature = "20"
         temperatureUnit = .celsius
         refTemp = .c20
@@ -291,7 +294,8 @@ struct ConductorLengthView: View {
 
     private var sticky: String? {
         guard let r = session.displayedResult else { return nil }
-        return "\(Format.number(r.oneWayLengthFt, digits: 2)) ft one-way  ·  \(Format.meters(r.oneWayLengthM))"
+        let phrase = method == .single ? "end-to-end" : "to short"
+        return "\(Format.number(r.oneWayLengthFt, digits: 2)) ft \(phrase)  ·  \(Format.meters(r.oneWayLengthM))"
     }
 
     private var copyText: String? { sticky }
@@ -305,18 +309,22 @@ private struct ConductorLengthDiagram: View {
     private var summary: String {
         switch method {
         case .single:
-            return "DMM in ohms mode on a single conductor from near end to far end. Loop factor ×1."
+            return "Milliohm / DMM on one conductor measured end-to-end. Distance equals the solved path."
         case .loop2:
-            return "DMM on a two-conductor loop with a far-end jumper. One-way is total path divided by 2."
+            return "Measure between two parallels shorted or bonded along the run. Distance to the short is total path divided by 2."
         case .loop3:
-            return "DMM on a three-phase loop with a symmetrical far-end short. One-way is total path divided by 2."
+            return "Measure on a three-phase run with a symmetrical far-end short. Distance to the short is total path divided by 2."
         }
+    }
+
+    private var farEndCaption: String {
+        method == .single ? "Far end" : "Short / bond"
     }
 
     private var factorNote: String {
         method == .single
-            ? "Loop factor: ×1 (single conductor)"
-            : "Loop factor: ÷2 to report one-way distance"
+            ? "Path factor: ×1 (end-to-end)"
+            : "Path factor: ÷2 — distance to short is one-way"
     }
 
     var body: some View {
@@ -335,9 +343,9 @@ private struct ConductorLengthDiagram: View {
                 .frame(height: 118)
 
                 HStack {
-                    Text("Near end")
+                    Text("Meter")
                     Spacer()
-                    Text("Far end")
+                    Text(farEndCaption)
                 }
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Theme.muted)
@@ -345,7 +353,9 @@ private struct ConductorLengthDiagram: View {
                 Text(method.detail)
                     .font(.caption)
                     .foregroundStyle(Theme.foreground)
-                Text("Displayed one-way distance = total solved path ÷ loop factor. \(factorNote)")
+                Text(method == .single
+                     ? "End-to-end length = solved conductor path. \(factorNote)"
+                     : "Distance to short = total solved path ÷ 2. \(factorNote)")
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
             }
@@ -361,7 +371,7 @@ private struct ConductorLengthDiagram: View {
                     Text("DMM")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Theme.foreground)
-                    Text("Ω mode")
+                    Text("mΩ / Ω")
                         .font(.caption2)
                         .foregroundStyle(Theme.muted)
                 }
