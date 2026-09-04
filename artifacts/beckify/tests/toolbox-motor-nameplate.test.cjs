@@ -104,6 +104,8 @@ const phaseBlock = html.slice(html.indexOf('id="mnp_phase"'), html.indexOf('id="
 assert.match(phaseBlock, /<option value="" selected>/);
 assert.doesNotMatch(phaseBlock, /<option value="3" selected>/);
 assert.match(html, /id="mnp_reviewed"[^>]*data-no-persist/);
+assert.match(html, /id="mnp_enhance"[^>]*data-no-persist/);
+assert.match(html, /id="mnp_vlm_token"[^>]*data-no-persist/);
 assert.match(src, /el\('mnp_phase'\)\.value = ''/);
 assert.equal((src.match(/mnp_phase'\)\.value = '3'/g) || []).length, 0);
 

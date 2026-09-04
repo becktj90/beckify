@@ -1,3 +1,6 @@
+/* Optional cloud VLM assist for panel directories is ready on
+   BeckifyVlmOcr.analyzePanelDirectory. This page stays on-device Tesseract. */
+
 const DEFAULT_CIRCUIT_SLOTS = 42;
 const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];
 const CIRCUIT_CLASSES = ['General', 'Lighting', 'Receptacle', 'HVAC', 'Motor', 'Critical', 'Emergency', 'Spare'];

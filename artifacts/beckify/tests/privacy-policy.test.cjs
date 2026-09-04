@@ -41,5 +41,12 @@ ok("static route generator includes privacy", staticRoutes.includes('["privacy",
 ok("xml sitemap generator includes /privacy", sitemapGen.includes('["/privacy", "monthly", "0.7"]'));
 ok("privacy page keeps the remaining games listed", sitemapSrc.includes("Cosmic Cadet") && sitemapSrc.includes("Apollo & Rocco Run") && sitemapSrc.includes("New Glenn Runner"));
 ok("HexGL stays off the sitemap and routes", !/hexgl/i.test(sitemapSrc) && !appSrc.includes('path="/games/hexgl"') && !/hexgl/i.test(sitemapGen));
+ok(
+  "website toolbox privacy documents optional VLM upload",
+  /Website toolbox photos/.test(privacyPage) &&
+    /Enhance with AI/.test(privacyPage) &&
+    /does not upload/.test(privacyPage) &&
+    /analyze-nameplate/.test(privacyPage),
+);
 
 process.exitCode = failures ? 1 : 0;

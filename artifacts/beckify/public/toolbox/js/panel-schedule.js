@@ -1,3 +1,7 @@
+/* Optional cloud VLM assist for panel directories is ready on
+   BeckifyVlmOcr.analyzePanelDirectory (shared with motor nameplate).
+   This page stays on-device Tesseract. Photos are not uploaded here. */
+
 const MAX_CIRCUIT_SLOTS = 42;
 const PRINT_ROW_PAIRS = MAX_CIRCUIT_SLOTS / 2;
 const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];

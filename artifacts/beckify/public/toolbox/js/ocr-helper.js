@@ -270,17 +270,41 @@
     var insul = pick(/\b(?:INS(?:ULATION)?(?:\s*CLASS)?|CLASS)\s*[:#]?\s*([A-H]|F|B|H|155|180|130)\b/i);
     var code = pick(/\b(?:CODE|LRA\s*CODE|KVA\s*CODE)\s*[:#]?\s*([A-V])\b/i);
     var rise = pick(/\b(?:RISE|TEMP(?:ERATURE)?\s*RISE)\s*[:#]?\s*([0-9]{2,3})\s*°?\s*C?\b/i);
+    var manufacturer = pick(/\b(?:MFG|MFR|MANUFACTURER)\s*[:#]?\s*([A-Z][A-Z0-9.&-]{1,24})\b/i);
+    var model = pick(/\b(?:MODEL|CAT(?:ALOG)?(?:\s*NO\.?)?)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-\/.]{1,24})\b/i);
+    var enclosure = pick(/\b(TEFC|TENV|TEAO|ODP|XP|EXP(?:LOSION)?[\s-]*PROOF|WPI|WPII)\b/i);
+    var poles = pick(/\b(?:POLES?)\s*[:#]?\s*([0-9]{1,2})\b/i) ||
+      pick(/\b([0-9]{1,2})\s*POLES?\b/i);
+    var nomEff = pick(/\b(?:NOM(?:INAL)?\s*)?EFF(?:ICIENCY)?\s*[:#]?\s*([0-9]{2,3}(?:\.[0-9]+)?)\s*%?/i);
+    var pf = pick(/\b(?:P\.?F\.?|POWER\s*FACTOR)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
+    var mocp = pick(/\b(?:MOCP|M\.?O\.?C\.?P\.?|MAX(?:IMUM)?\s*OCP)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
+    var lra = pick(/\b(?:LRA|L\.?R\.?A\.?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i) ||
+      pick(/\bLOCKED[\s-]*ROTOR(?:\s*AMPS?)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
+    var sfa = pick(/\b(?:SFA|SF\s*AMPS?|SERVICE\s*FACTOR\s*AMPS?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?)\b/i);
 
     var fields = {
       hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz || '60',
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
-      code: code, riseC: rise,
+      code: code, riseC: rise, manufacturer: manufacturer, model: model,
+      enclosure: enclosure, poles: poles, nomEff: nomEff, pf: pf, mocp: mocp,
+      lra: lra, serviceFactorAmps: sfa, notes: '',
     };
     var counted = { hp: hp, kw: kw, volts: volts, fla: fla, rpm: rpm, hz: hz,
       phase: phase, frame: frame, sf: sf, design: design, insulation: insul,
       code: code, riseC: rise };
     var filled = Object.keys(counted).filter(function (k) { return counted[k]; }).length;
     return { fields: fields, filled: filled };
+  }
+
+  function toNameplateDraft(text, confidence) {
+    var parsed = parseMotorNameplate(text);
+    var Schema = global.BeckifyNameplateSchema;
+    if (!Schema) return { fields: parsed.fields, filled: parsed.filled, source: 'tesseract' };
+    return Schema.fromLegacyParse(parsed.fields, {
+      source: 'tesseract',
+      rawText: text,
+      confidence: typeof confidence === 'number' ? confidence / 100 : 0,
+    });
   }
 
   function humanizeStatus(status) {
@@ -298,6 +322,7 @@
     loadScript: loadScript,
     looksLikeOpenPanelInterior: looksLikeOpenPanelInterior,
     parseMotorNameplate: parseMotorNameplate,
+    toNameplateDraft: toNameplateDraft,
     meanWordConfidence: meanWordConfidence,
     humanizeStatus: humanizeStatus,
     isLikelyImageFile: isLikelyImageFile,

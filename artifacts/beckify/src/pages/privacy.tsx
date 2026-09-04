@@ -198,6 +198,30 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="font-display text-xl font-bold tracking-tight">Website toolbox photos (beckify.com)</h2>
+            <p className="text-base leading-relaxed">
+              This section describes the <strong>website</strong> toolbox at{" "}
+              <a className="text-[var(--accent)] underline-offset-4 hover:underline" href={`${SITE_URL}/toolbox/`}>
+                {SITE_URL}/toolbox/
+              </a>
+              , not the native iOS app. The iOS app still does not upload photos.
+            </p>
+            <p className="text-base leading-relaxed">
+              Motor nameplate and panel directory tools default to on-device Tesseract.js. Choosing a photo does
+              not upload it. The image stays in the browser and is discarded on reset or when you leave the page.
+            </p>
+            <p className="text-base leading-relaxed">
+              Optional <strong>Enhance with AI</strong> on the motor nameplate tool uploads the photo only after
+              you turn the toggle on and click Read nameplate. You may point that request at a HTTPS endpoint you
+              control, or at the Beckify proxy when it is configured (
+              <code className="font-mono text-[0.9em]">/api/analyze-nameplate</code>
+              ). A personal API key stays in session storage on this device and is not sent to Beckify. The result
+              is an assistive draft for you to review — not perfect OCR and not an AI electrician. NEC math still
+              waits for the review checkbox.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="font-display text-xl font-bold tracking-tight">Contact</h2>
             <p className="text-base leading-relaxed">
               Questions:{" "}

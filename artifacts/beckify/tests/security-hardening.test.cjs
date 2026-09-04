@@ -62,6 +62,10 @@ ok("Panel pages have CSP metas", /Content-Security-Policy/.test(panelSchedule) &
 
 const tdr = read(root, "public", "toolbox", "js", "tdr-analyzer.js");
 ok("TDR API helper rejects non-https bases", /u\.protocol !== 'https:'/.test(tdr));
+const vlm = read(root, "public", "toolbox", "js", "vlm-ocr.js");
+ok("VLM helper rejects non-https bases", /u\.protocol !== 'https:'/.test(vlm));
+ok("VLM helper keeps API tokens out of localStorage", /sessionStorage/.test(vlm) && /TOKEN_KEY/.test(vlm));
+ok("VLM helper does not upload unless Enhance is on", /enhanceOn/.test(vlm) && /shouldUpload/.test(vlm));
 
 const projectsUi = read(root, "public", "toolbox", "js", "projects-ui.js");
 ok("Job Open uses safeJobHref", /function safeJobHref/.test(projectsUi) && /safeJobHref\(run\.url\)/.test(projectsUi));
@@ -72,7 +76,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after OCR review-gate fix", /CACHE_VERSION = 'v28'/.test(sw));
+ok("Toolbox SW cache version bumped after optional VLM OCR", /CACHE_VERSION = 'v29'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),
