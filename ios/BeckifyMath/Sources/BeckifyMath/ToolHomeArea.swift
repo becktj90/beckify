@@ -129,6 +129,10 @@ public enum ToolHomeAreaPolicy {
         ],
         "conduitFill": ["n": "qty", "emt": "trade", "size": "size"],
         "wireAmpacity": ["I": "amps", "mat": "material"],
+        "conductorCost": [
+            "V": "voltage", "I": "load", "L": "length", "unit": "loadUnit",
+            "mat": "material", "PF": "pf",
+        ],
         "motorFLA": ["HP": "hp", "V": "systemVolts"],
         "voltageDivider": ["Vin": "vin", "Vout": "vout", "R1": "r1", "R2": "r2"],
         "ledRC": ["Vin": "supply", "Vf": "vf", "If": "current", "R": "resistance", "C": "capacitance"],

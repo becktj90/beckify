@@ -57,7 +57,7 @@ struct ToolboxView: View {
                                 Text(shelf.title)
                             } footer: {
                                 if shelf == .jobsite, homeArea == .field {
-                                    Text("Ampacity is used by Voltage Drop (cross-check) and Wire Size & Ampacity (310.16).")
+                                    Text("Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer.")
                                 }
                                 if shelf == .instruments {
                                     Text("Wi-Fi dBm/RSSI is not a public iOS API. Wi-Fi Path maps Apple’s 0…1 signalStrength (percent/bars) with a location heatmap — it will not invent dBm.")
@@ -106,7 +106,7 @@ struct ToolboxView: View {
 
     private var searchFooterText: String? {
         if query.localizedCaseInsensitiveContains("ampacity") {
-            return "Ampacity is used by Voltage Drop (cross-check) and Wire Size & Ampacity (310.16)."
+            return "Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer."
         }
         if query.localizedCaseInsensitiveContains("rssi") || query.localizedCaseInsensitiveContains("wifi") || query.localizedCaseInsensitiveContains("dbm") {
             return "Wi-Fi dBm/RSSI is not a public iOS API. Wi-Fi Path maps Apple’s 0…1 signalStrength (percent/bars) with a location heatmap — it will not invent dBm."
@@ -168,6 +168,7 @@ struct CalculatorHostView: View {
             case .powerWizard: PowerWizardView()
             case .voltageDrop: VoltageDropView()
             case .conduitFill: ConduitFillView()
+            case .conductorCost: ConductorCostView()
             case .transformer: TransformerView()
             case .timer555: Timer555View()
             case .motorFLA: MotorFLAView()

@@ -188,6 +188,82 @@ final class ConduitFillTests: XCTestCase {
         let twoWire = try ConduitFill.calculate(quantity: 2, size: "12", tradeSize: "1/2")
         XCTAssertEqual(twoWire.maxFillPercent, 31)
     }
+
+    func testMixedSizesSumChapter9Areas() throws {
+        // Website example: 3 × 3/0 + 1 × 3/0 + 1 × 6 AWG THHN.
+        let groups = [
+            ConduitFillGroup(quantity: 3, size: "3/0", insulation: .thhn),
+            ConduitFillGroup(quantity: 1, size: "3/0", insulation: .thhn),
+            ConduitFillGroup(quantity: 1, size: "6", insulation: .thhn),
+        ]
+        let expected = 4 * 0.2679 + 0.0507
+        XCTAssertEqual(try ConduitFill.totalArea(groups: groups), expected, accuracy: 1e-9)
+
+        let r = try ConduitFill.calculate(groups: groups, raceway: .emt, tradeSize: "2")
+        XCTAssertEqual(r.conductorCount, 5)
+        XCTAssertEqual(r.maxFillPercent, 40)
+        XCTAssertEqual(r.totalWireArea, expected, accuracy: 1e-9)
+        XCTAssertEqual(r.raceway, .emt)
+        XCTAssertTrue(r.isMixed)
+        XCTAssertTrue(r.passes)
+        XCTAssertEqual(r.groupAreas.count, 3)
+        XCTAssertEqual(r.groupAreas[0], 3 * 0.2679, accuracy: 1e-9)
+        XCTAssertEqual(r.groupAreas[2], 0.0507, accuracy: 1e-9)
+    }
+
+    func testMixedFillSuggestsSmallestEMT() throws {
+        let groups = [
+            ConduitFillGroup(quantity: 3, size: "250", insulation: .thhn),
+            ConduitFillGroup(quantity: 1, size: "2/0", insulation: .thhn),
+            ConduitFillGroup(quantity: 1, size: "4", insulation: .thhn),
+        ]
+        let total = try ConduitFill.totalArea(groups: groups)
+        XCTAssertEqual(total, 3 * 0.3970 + 0.2223 + 0.0824, accuracy: 1e-9)
+
+        let tight = try ConduitFill.calculate(groups: groups, raceway: .emt, tradeSize: "1-1/2")
+        XCTAssertEqual(tight.maxFillPercent, 40)
+        XCTAssertFalse(tight.passes)
+        // 3×250 + 2/0 + 4 AWG = 1.4957 in²; 2" EMT at 40% is only 1.3424 in².
+        XCTAssertEqual(tight.suggestedTradeSize, "2-1/2")
+
+        let suggested = try ConduitFill.suggestedTradeSize(groups: groups, raceway: .emt)
+        XCTAssertEqual(suggested, "2-1/2")
+    }
+
+    func testMixedFillUsesOtherRacewaysAndNippleLimit() throws {
+        let groups = [ConduitFillGroup(quantity: 1, size: "4/0", insulation: .xhhw)]
+        let one = try ConduitFill.calculate(groups: groups, raceway: .rmc, tradeSize: "1/2")
+        XCTAssertEqual(one.maxFillPercent, 53)
+        XCTAssertEqual(one.totalWireArea, 0.3197, accuracy: 1e-9)
+        XCTAssertEqual(one.conduitArea, 0.314, accuracy: 1e-9)
+
+        let nipple = try ConduitFill.calculate(
+            groups: [
+                ConduitFillGroup(quantity: 2, size: "4", insulation: .thhn),
+                ConduitFillGroup(quantity: 1, size: "8", insulation: .thhn),
+            ],
+            raceway: .pvc40,
+            tradeSize: "1",
+            nipple: true
+        )
+        XCTAssertEqual(nipple.maxFillPercent, 60)
+        XCTAssertEqual(nipple.conductorCount, 3)
+        XCTAssertTrue(nipple.nipple)
+        XCTAssertEqual(nipple.totalWireArea, 2 * 0.0824 + 0.0366, accuracy: 1e-9)
+    }
+
+    func testSameSizePathStillWorksAfterMixedAPI() throws {
+        let legacy = try ConduitFill.calculate(quantity: 4, size: "12", tradeSize: "3/4")
+        let mixed = try ConduitFill.calculate(
+            groups: [ConduitFillGroup(quantity: 4, size: "12", insulation: .thhn)],
+            raceway: .emt,
+            tradeSize: "3/4"
+        )
+        XCTAssertEqual(legacy.totalWireArea, mixed.totalWireArea, accuracy: 1e-12)
+        XCTAssertEqual(legacy.actualFillPercent, mixed.actualFillPercent, accuracy: 1e-12)
+        XCTAssertEqual(legacy.passes, mixed.passes)
+        XCTAssertFalse(legacy.isMixed)
+    }
 }
 
 final class TransformerSizingTests: XCTestCase {

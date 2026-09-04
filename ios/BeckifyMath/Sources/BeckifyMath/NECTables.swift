@@ -65,11 +65,54 @@ public enum NECTables: Sendable {
         }
     }
 
+    /// Trade sizes in ascending area order — used when searching for the smallest raceway.
+    public static let racewayTradeOrder: [String] = [
+        "1/2", "3/4", "1", "1-1/4", "1-1/2", "2", "2-1/2", "3", "3-1/2", "4", "5", "6",
+    ]
+
     /// NEC Chapter 9 Table 4 — EMT total internal area (in²), not the 40 % column.
     public static let emtArea: [(trade: String, area: Double)] = [
         ("1/2", 0.304), ("3/4", 0.533), ("1", 0.864), ("1-1/4", 1.496),
         ("1-1/2", 2.036), ("2", 3.356), ("2-1/2", 4.788), ("3", 7.393),
         ("3-1/2", 9.893), ("4", 12.720),
+    ]
+
+    /// NEC Chapter 9 Table 4 — total internal area (in²) by raceway type.
+    public static let racewayArea: [RacewayKind: [String: Double]] = [
+        .emt: [
+            "1/2": 0.304, "3/4": 0.533, "1": 0.864, "1-1/4": 1.496, "1-1/2": 2.036,
+            "2": 3.356, "2-1/2": 4.788, "3": 7.393, "3-1/2": 9.893, "4": 12.720,
+        ],
+        .imc: [
+            "1/2": 0.342, "3/4": 0.586, "1": 0.959, "1-1/4": 1.647, "1-1/2": 2.225,
+            "2": 3.630, "2-1/2": 5.135, "3": 7.922, "3-1/2": 10.584, "4": 13.631,
+        ],
+        .rmc: [
+            "1/2": 0.314, "3/4": 0.549, "1": 0.887, "1-1/4": 1.526, "1-1/2": 2.071,
+            "2": 3.408, "2-1/2": 4.866, "3": 7.499, "3-1/2": 10.010, "4": 12.882,
+            "5": 20.212, "6": 29.158,
+        ],
+        .pvc40: [
+            "1/2": 0.285, "3/4": 0.508, "1": 0.832, "1-1/4": 1.453, "1-1/2": 1.986,
+            "2": 3.291, "2-1/2": 4.695, "3": 7.268, "3-1/2": 9.737, "4": 12.554,
+            "5": 19.761, "6": 28.567,
+        ],
+        .pvc80: [
+            "1/2": 0.217, "3/4": 0.409, "1": 0.688, "1-1/4": 1.237, "1-1/2": 1.711,
+            "2": 2.874, "2-1/2": 4.119, "3": 6.442, "3-1/2": 8.688, "4": 11.258,
+            "5": 17.855, "6": 25.598,
+        ],
+        .ent: [
+            "1/2": 0.285, "3/4": 0.508, "1": 0.832, "1-1/4": 1.453, "1-1/2": 1.986, "2": 3.291,
+        ],
+        .fmc: [
+            "1/2": 0.317, "3/4": 0.533, "1": 0.817, "1-1/4": 1.277, "1-1/2": 1.858,
+            "2": 3.269, "2-1/2": 4.909, "3": 7.069, "3-1/2": 9.621, "4": 12.566,
+        ],
+        .lfmc: [
+            "1/2": 0.314, "3/4": 0.541, "1": 0.873, "1-1/4": 1.528, "1-1/2": 1.981,
+            "2": 3.246, "2-1/2": 4.881, "3": 7.475, "3-1/2": 9.731, "4": 12.692,
+        ],
     ]
 
     /// NEC Chapter 9 Table 5 — THHN / THWN-2 conductor area including insulation (in²).
@@ -81,12 +124,83 @@ public enum NECTables: Sendable {
         "600": 0.8676, "700": 0.9887, "750": 1.0496, "800": 1.1085, "900": 1.2311, "1000": 1.3478,
     ]
 
+    /// NEC Chapter 9 Table 5 — conductor area including insulation (in²).
+    public static let insulatedArea: [ConductorInsulationKind: [String: Double]] = [
+        .thhn: thhnArea,
+        .xhhw: [
+            "14": 0.0139, "12": 0.0181, "10": 0.0243, "8": 0.0437, "6": 0.0590,
+            "4": 0.0814, "3": 0.0962, "2": 0.1146, "1": 0.1534,
+            "1/0": 0.1825, "2/0": 0.2190, "3/0": 0.2642, "4/0": 0.3197,
+            "250": 0.3904, "300": 0.4536, "350": 0.5166, "400": 0.5782, "500": 0.6984,
+            "600": 0.8709, "700": 0.9923, "750": 1.0532, "800": 1.1122, "900": 1.2351, "1000": 1.3519,
+        ],
+        .rhw: [
+            "14": 0.0293, "12": 0.0353, "10": 0.0437, "8": 0.0835, "6": 0.1041,
+            "4": 0.1333, "3": 0.1521, "2": 0.1750, "1": 0.2660,
+            "1/0": 0.3039, "2/0": 0.3505, "3/0": 0.4072, "4/0": 0.4754,
+            "250": 0.6291, "300": 0.7088, "350": 0.7870, "400": 0.8626, "500": 1.0082,
+            "600": 1.2135, "700": 1.3561, "750": 1.4272, "800": 1.4957, "900": 1.6377, "1000": 1.7719,
+        ],
+    ]
+
+    /// NEC Chapter 9 Table 8 — DC resistance at 75 °C, stranded, uncoated (Ω / 1000 ft).
+    public static let dcResistanceOhmPerKft: [ConductorMaterial: [String: Double]] = [
+        .copper: [
+            "14": 3.14, "12": 1.98, "10": 1.24, "8": 0.778, "6": 0.491, "4": 0.308,
+            "3": 0.245, "2": 0.194, "1": 0.154, "1/0": 0.122, "2/0": 0.0967,
+            "3/0": 0.0766, "4/0": 0.0608, "250": 0.0515, "300": 0.0429, "350": 0.0367,
+            "400": 0.0321, "500": 0.0258, "600": 0.0214, "700": 0.0184, "750": 0.0171,
+            "800": 0.0161, "900": 0.0143, "1000": 0.0129,
+        ],
+        .aluminum: [
+            "12": 3.25, "10": 2.04, "8": 1.28, "6": 0.808, "4": 0.508,
+            "3": 0.403, "2": 0.319, "1": 0.253, "1/0": 0.201, "2/0": 0.159,
+            "3/0": 0.126, "4/0": 0.100, "250": 0.0847, "300": 0.0707, "350": 0.0605,
+            "400": 0.0529, "500": 0.0424, "600": 0.0353, "700": 0.0303, "750": 0.0282,
+            "800": 0.0265, "900": 0.0235, "1000": 0.0212,
+        ],
+    ]
+
+    public static func conductorArea(size: String, insulation: ConductorInsulationKind) -> Double? {
+        insulatedArea[insulation]?[size]
+    }
+
+    public static func racewayInternalArea(kind: RacewayKind, trade: String) -> Double? {
+        racewayArea[kind]?[trade]
+    }
+
+    public static func tradeSizes(for kind: RacewayKind) -> [String] {
+        racewayTradeOrder.filter { racewayArea[kind]?[$0] != nil }
+    }
+
     /// NEC Chapter 9 Table 1 — maximum fill of a raceway.
-    public static func table1FillPercent(conductorCount: Int) -> Double {
+    /// Nipple ≤ 24 in uses Table 1 Note 4 (60 %).
+    public static func table1FillPercent(conductorCount: Int, nipple: Bool = false) -> Double {
+        if nipple { return 60 }
         switch conductorCount {
         case 1: return 53
         case 2: return 31
         default: return 40
+        }
+    }
+
+    public static func table1FillBasis(conductorCount: Int, nipple: Bool = false) -> String {
+        if nipple { return "Nipple ≤ 24 in — Ch.9 Table 1, Note 4" }
+        switch conductorCount {
+        case 1: return "1 conductor — Ch.9 Table 1"
+        case 2: return "2 conductors — Ch.9 Table 1"
+        default: return "Over 2 conductors — Ch.9 Table 1"
+        }
+    }
+
+    public static func smallestTradeSize(
+        kind: RacewayKind,
+        totalWireArea: Double,
+        maxFillPercent: Double
+    ) -> String? {
+        tradeSizes(for: kind).first { trade in
+            guard let area = racewayInternalArea(kind: kind, trade: trade) else { return false }
+            return area * maxFillPercent / 100 + 1e-12 >= totalWireArea
         }
     }
 

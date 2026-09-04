@@ -369,6 +369,17 @@ enum Format {
         return formatter.string(from: NSNumber(value: value)) ?? "—"
     }
 
+    static func dollars(_ value: Double) -> String {
+        guard value.isFinite else { return "—" }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        formatter.maximumFractionDigits = value >= 100 ? 0 : 2
+        formatter.minimumFractionDigits = value >= 100 ? 0 : 2
+        return formatter.string(from: NSNumber(value: value)) ?? "—"
+    }
+
     static func amps(_ value: Double) -> String { "\(number(value, digits: 2)) A" }
     static func volts(_ value: Double) -> String { "\(number(value, digits: 2)) V" }
     static func watts(_ value: Double) -> String { "\(number(value, digits: 2)) W" }

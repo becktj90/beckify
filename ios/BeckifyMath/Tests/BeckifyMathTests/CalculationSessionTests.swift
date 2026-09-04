@@ -16,6 +16,7 @@ final class CalculationSessionTests: XCTestCase {
             "ohmsLaw", "power", "voltageDrop", "conduitFill", "transformer",
             "reactance", "powerFactor", "shortCircuit", "loadFactors",
             "signalScaling", "plcTimer", "timer555", "motorFLA", "wireAmpacity",
+            "conductorCost",
             "voltageDivider", "seriesParallel", "frequencyWave", "ledRC",
             "receptacleSelector", "panelDirectory", "powerWizard",
             "motorSpeed", "rfLink", "phasorDiagram", "batteryBank", "solarDesign",

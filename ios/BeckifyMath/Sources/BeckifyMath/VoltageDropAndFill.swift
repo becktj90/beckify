@@ -78,6 +78,22 @@ public enum VoltageDrop {
     }
 }
 
+public struct ConduitFillGroup: Equatable, Codable, Sendable, Hashable {
+    public var quantity: Int
+    public var size: String
+    public var insulation: ConductorInsulationKind
+
+    public init(quantity: Int, size: String, insulation: ConductorInsulationKind = .thhn) {
+        self.quantity = quantity
+        self.size = size
+        self.insulation = insulation
+    }
+
+    public var label: String {
+        "\(quantity) × \(NECTables.wireLabel(size)) \(insulation.displayName)"
+    }
+}
+
 public struct ConduitFillResult: Equatable, Sendable {
     public var conductorCount: Int
     public var conductorSize: String
@@ -90,6 +106,12 @@ public struct ConduitFillResult: Equatable, Sendable {
     public var passes: Bool
     public var suggestedTradeSize: String?
     public var formula: String
+    public var raceway: RacewayKind
+    public var groups: [ConduitFillGroup]
+    public var groupAreas: [Double]
+    public var fillBasis: String
+    public var nipple: Bool
+    public var isMixed: Bool
 
     public init(
         conductorCount: Int,
@@ -102,7 +124,13 @@ public struct ConduitFillResult: Equatable, Sendable {
         actualFillPercent: Double,
         passes: Bool,
         suggestedTradeSize: String?,
-        formula: String
+        formula: String,
+        raceway: RacewayKind = .emt,
+        groups: [ConduitFillGroup] = [],
+        groupAreas: [Double] = [],
+        fillBasis: String = "NEC Ch.9 Table 1",
+        nipple: Bool = false,
+        isMixed: Bool = false
     ) {
         self.conductorCount = conductorCount
         self.conductorSize = conductorSize
@@ -115,40 +143,116 @@ public struct ConduitFillResult: Equatable, Sendable {
         self.passes = passes
         self.suggestedTradeSize = suggestedTradeSize
         self.formula = formula
+        self.raceway = raceway
+        self.groups = groups
+        self.groupAreas = groupAreas
+        self.fillBasis = fillBasis
+        self.nipple = nipple
+        self.isMixed = isMixed
     }
 }
 
-/// THHN in EMT using Chapter 9 Table 1 fill percentages and Tables 4 / 5 areas.
+/// Chapter 9 Table 1 fill with Table 4 raceway areas and Table 5 conductor areas.
 public enum ConduitFill {
+    /// Same-size THHN in EMT — original single-size path.
     public static func calculate(quantity: Int, size: String, tradeSize: String) throws -> ConduitFillResult {
-        guard quantity >= 1 else { throw CalcError.nonPositive("Conductor quantity") }
-        guard let wireArea = NECTables.thhnArea[size] else {
-            throw CalcError.notListed("No THHN area listed for \(size).")
-        }
-        guard let conduit = NECTables.emtArea.first(where: { $0.trade == tradeSize }) else {
-            throw CalcError.notListed("Unknown EMT trade size \(tradeSize).")
-        }
-        let total = Double(quantity) * wireArea
-        let maxPct = NECTables.table1FillPercent(conductorCount: quantity)
-        let maxArea = conduit.area * maxPct / 100
-        let fillPct = total / conduit.area * 100
-        let pass = total <= maxArea
-        var suggested: String?
-        if !pass {
-            suggested = NECTables.emtArea.first(where: { $0.area * maxPct / 100 >= total })?.trade
-        }
-        return ConduitFillResult(
-            conductorCount: quantity,
-            conductorSize: size,
+        try calculate(
+            groups: [ConduitFillGroup(quantity: quantity, size: size, insulation: .thhn)],
+            raceway: .emt,
             tradeSize: tradeSize,
-            totalWireArea: total,
-            conduitArea: conduit.area,
+            nipple: false
+        )
+    }
+
+    /// Mixed or same-size fill for any transcribed Table 4 raceway.
+    public static func calculate(
+        groups: [ConduitFillGroup],
+        raceway: RacewayKind,
+        tradeSize: String,
+        nipple: Bool = false
+    ) throws -> ConduitFillResult {
+        guard !groups.isEmpty else {
+            throw CalcError.missing("at least one conductor group")
+        }
+
+        var totalCount = 0
+        var totalArea = 0.0
+        var areas: [Double] = []
+        var normalized: [ConduitFillGroup] = []
+
+        for group in groups {
+            let qty = try WholeCount.parse(Double(group.quantity), name: "Conductor quantity")
+            guard let wireArea = NECTables.conductorArea(size: group.size, insulation: group.insulation) else {
+                throw CalcError.notListed("No \(group.insulation.displayName) area listed for \(NECTables.wireLabel(group.size)).")
+            }
+            let groupArea = Double(qty) * wireArea
+            totalCount += qty
+            totalArea += groupArea
+            areas.append(groupArea)
+            normalized.append(ConduitFillGroup(quantity: qty, size: group.size, insulation: group.insulation))
+        }
+
+        guard let conduitArea = NECTables.racewayInternalArea(kind: raceway, trade: tradeSize) else {
+            throw CalcError.notListed("Unknown \(raceway.displayName) trade size \(tradeSize).")
+        }
+
+        let maxPct = NECTables.table1FillPercent(conductorCount: totalCount, nipple: nipple)
+        let maxArea = conduitArea * maxPct / 100
+        let fillPct = totalArea / conduitArea * 100
+        let pass = totalArea <= maxArea + 1e-12
+        let suggested = pass
+            ? nil
+            : NECTables.smallestTradeSize(kind: raceway, totalWireArea: totalArea, maxFillPercent: maxPct)
+
+        let uniqueSizes = Set(normalized.map(\.size))
+        let sizeLabel = uniqueSizes.count == 1
+            ? (normalized.first.map { $0.size } ?? "mixed")
+            : normalized.map { "\($0.quantity)×\(NECTables.wireLabel($0.size))" }.joined(separator: " + ")
+
+        return ConduitFillResult(
+            conductorCount: totalCount,
+            conductorSize: sizeLabel,
+            tradeSize: tradeSize,
+            totalWireArea: totalArea,
+            conduitArea: conduitArea,
             maxFillPercent: maxPct,
             maxFillArea: maxArea,
             actualFillPercent: fillPct,
             passes: pass,
             suggestedTradeSize: suggested,
-            formula: "Fill % = (n × conductor area) / raceway area × 100    NEC Ch.9 Table 1"
+            formula: "Fill % = (Σ conductor areas) / raceway area × 100    NEC Ch.9 Table 1",
+            raceway: raceway,
+            groups: normalized,
+            groupAreas: areas,
+            fillBasis: NECTables.table1FillBasis(conductorCount: totalCount, nipple: nipple),
+            nipple: nipple,
+            isMixed: uniqueSizes.count > 1 || Set(normalized.map(\.insulation)).count > 1
         )
+    }
+
+    /// Smallest trade size of `raceway` that holds the groups under Table 1.
+    public static func suggestedTradeSize(
+        groups: [ConduitFillGroup],
+        raceway: RacewayKind = .emt,
+        nipple: Bool = false
+    ) throws -> String? {
+        let count = try groups.reduce(0) { acc, group in
+            acc + (try WholeCount.parse(Double(group.quantity), name: "Conductor quantity"))
+        }
+        let total = try totalArea(groups: groups)
+        let maxPct = NECTables.table1FillPercent(conductorCount: count, nipple: nipple)
+        return NECTables.smallestTradeSize(kind: raceway, totalWireArea: total, maxFillPercent: maxPct)
+    }
+
+    public static func totalArea(groups: [ConduitFillGroup]) throws -> Double {
+        var total = 0.0
+        for group in groups {
+            let qty = try WholeCount.parse(Double(group.quantity), name: "Conductor quantity")
+            guard let wireArea = NECTables.conductorArea(size: group.size, insulation: group.insulation) else {
+                throw CalcError.notListed("No \(group.insulation.displayName) area listed for \(NECTables.wireLabel(group.size)).")
+            }
+            total += Double(qty) * wireArea
+        }
+        return total
     }
 }
