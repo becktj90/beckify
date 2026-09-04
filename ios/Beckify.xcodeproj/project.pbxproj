@@ -64,6 +64,7 @@
 		BECF0000000000000000008A /* ConductorCostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000089 /* ConductorCostView.swift */; };
 		BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008B /* EbikeCalculatorViews.swift */; };
 		BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008D /* ControlSystemsLabView.swift */; };
+		BECF00000000000000000090 /* ConductorLengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008F /* ConductorLengthView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -124,6 +125,7 @@
 		BECF00000000000000000089 /* ConductorCostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorCostView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008B /* EbikeCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EbikeCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008D /* ControlSystemsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSystemsLabView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000008F /* ConductorLengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorLengthView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +230,7 @@
 				BECF00000000000000000011 /* VoltageDropView.swift */,
 				BECF00000000000000000013 /* WireAmpacityView.swift */,
 				BECF00000000000000000089 /* ConductorCostView.swift */,
+				BECF0000000000000000008F /* ConductorLengthView.swift */,
 				BECF00000000000000000055 /* VoltageDividerView.swift */,
 				BECF00000000000000000057 /* SeriesParallelView.swift */,
 				BECF00000000000000000059 /* ResistorColorView.swift */,
@@ -395,6 +398,7 @@
 				BECF0000000000000000008A /* ConductorCostView.swift in Sources */,
 				BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */,
 				BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */,
+				BECF00000000000000000090 /* ConductorLengthView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -139,6 +139,10 @@ public enum ToolHomeAreaPolicy {
             "V": "voltage", "I": "load", "L": "length", "unit": "loadUnit",
             "mat": "material", "PF": "pf",
         ],
+        "conductorLength": [
+            "R": "resistance", "unit": "rUnit", "size": "size", "CM": "customCmil",
+            "mat": "preset", "method": "method", "T": "temp",
+        ],
         "motorFLA": ["HP": "hp", "V": "systemVolts"],
         "voltageDivider": ["Vin": "vin", "Vout": "vout", "R1": "r1", "R2": "r2"],
         "ledRC": ["Vin": "supply", "Vf": "vf", "If": "current", "R": "resistance", "C": "capacitance"],
@@ -161,6 +165,13 @@ public enum ToolHomeAreaPolicy {
         case "material":
             if folded.hasPrefix("al") { return ConductorMaterial.aluminum.rawValue }
             if folded.hasPrefix("cu") || folded.contains("copper") { return ConductorMaterial.copper.rawValue }
+            return value
+        case "preset":
+            if folded.hasPrefix("al") { return ConductorLengthMaterial.aluminum.rawValue }
+            if folded.contains("hard") { return ConductorLengthMaterial.copperHardDrawn.rawValue }
+            if folded.hasPrefix("cu") || folded.contains("copper") {
+                return ConductorLengthMaterial.copperAnnealed.rawValue
+            }
             return value
         default:
             return value

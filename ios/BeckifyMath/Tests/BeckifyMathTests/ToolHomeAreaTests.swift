@@ -14,7 +14,7 @@ final class ToolHomeAreaTests: XCTestCase {
 
     func testHeuristicFieldJobsiteTools() {
         let field = [
-            "voltageDrop", "wireAmpacity", "conductorCost", "conduitFill", "transformer",
+            "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength", "conduitFill", "transformer",
             "motorFLA", "power", "powerWizard", "receptacleSelector",
             "panelDirectory", "circularMils", "loadFactors", "shortCircuit",
             "motorSpeed", "isLoopVerifier", "signalScaling", "modbusAddress",
@@ -107,5 +107,25 @@ final class ToolHomeAreaTests: XCTestCase {
             inputs: ["rows": "42"]
         )
         XCTAssertEqual(mapped["rows"], "42")
+    }
+
+    func testConductorLengthRestoreMapsAliasesAndPreset() {
+        let mapped = ToolHomeAreaPolicy.storedFields(
+            toolID: "conductorLength",
+            inputs: [
+                "R": "250",
+                "unit": "mohm",
+                "mat": "Aluminum",
+                "method": "loop2",
+                "T": "68",
+            ]
+        )
+        XCTAssertEqual(mapped["resistance"], "250")
+        XCTAssertEqual(mapped["rUnit"], "mohm")
+        XCTAssertEqual(mapped["preset"], ConductorLengthMaterial.aluminum.rawValue)
+        XCTAssertEqual(mapped["method"], "loop2")
+        XCTAssertEqual(mapped["temp"], "68")
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "conductorLength"), .field)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "conductorLength"), .jobsite)
     }
 }

@@ -169,6 +169,7 @@ struct CalculatorHostView: View {
             case .voltageDrop: VoltageDropView()
             case .conduitFill: ConduitFillView()
             case .conductorCost: ConductorCostView()
+            case .conductorLength: ConductorLengthView()
             case .transformer: TransformerView()
             case .timer555: Timer555View()
             case .motorFLA: MotorFLAView()
