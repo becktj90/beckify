@@ -7,13 +7,13 @@ final class RecentToolsStore: ObservableObject {
     static let shared = RecentToolsStore()
 
     private let defaultsKey = "com.beckify.toolbox.recentTools"
-    private let limit = 8
+    private let limit = 5
 
     @Published private(set) var recentIDs: [ToolID] = []
 
     init() {
         let raw = UserDefaults.standard.stringArray(forKey: defaultsKey) ?? []
-        recentIDs = raw.compactMap(ToolID.init(rawValue:))
+        recentIDs = Array(raw.compactMap(ToolID.init(rawValue:)).prefix(limit))
     }
 
     func record(_ id: ToolID) {

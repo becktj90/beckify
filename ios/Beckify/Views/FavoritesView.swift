@@ -4,6 +4,7 @@ import BeckifyMath
 /// Pinned tools for one-tap access — like the starred-tools list in EE-toolkit-style apps.
 struct FavoritesView: View {
     @EnvironmentObject private var favorites: FavoritesStore
+    @Environment(\.browseFieldHome) private var browseFieldHome
 
     private var tools: [ToolDefinition] {
         ToolboxCatalog.tools.filter { favorites.isFavorite($0.id) }
@@ -13,11 +14,16 @@ struct FavoritesView: View {
         NavigationStack {
             Group {
                 if tools.isEmpty {
-                    ContentUnavailableView(
-                        "No favorites yet",
-                        systemImage: "star",
-                        description: Text("Tap the star on any calculator or sensor to pin it here for one-tap access.")
-                    )
+                    ContentUnavailableView {
+                        Label("No favorites yet", systemImage: "star")
+                    } description: {
+                        Text("Star tools you use on the job so they show up here for one-tap access.")
+                    } actions: {
+                        Button("Browse Field") {
+                            browseFieldHome()
+                        }
+                        .accessibilityIdentifier("browseFieldButton")
+                    }
                 } else {
                     List {
                         ForEach(tools) { tool in

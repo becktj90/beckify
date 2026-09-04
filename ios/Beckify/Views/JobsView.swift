@@ -23,7 +23,7 @@ struct JobsView: View {
                     ContentUnavailableView(
                         "No saved jobs",
                         systemImage: "note.text",
-                        description: Text("Save a calculator result or a sensor snapshot as a lightweight on-device note for homework or field work. Field tools sort first. This is not a project gallery and nothing is uploaded.")
+                        description: Text("Save a calculator result or a sensor snapshot as an on-device note. This is not a project gallery — nothing is uploaded.")
                     )
                 } else {
                     List {
@@ -56,7 +56,9 @@ struct JobsView: View {
                 }
             }
             .navigationTitle("Saved Jobs")
-            .toolbar { EditButton() }
+            .toolbar {
+                if !jobs.jobs.isEmpty { EditButton() }
+            }
             .background(Theme.ambientBackground.ignoresSafeArea())
         }
     }

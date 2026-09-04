@@ -6,12 +6,16 @@ import BeckifyMath
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     @ObservedObject private var recents = RecentToolsStore.shared
+    @Binding var homeArea: ToolHomeArea
     @State private var query = ""
-    @State private var homeArea: ToolHomeArea = .field
     @State private var path: [ToolID] = []
     @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(homeArea: Binding<ToolHomeArea> = .constant(.field)) {
+        _homeArea = homeArea
+    }
 
     /// Wide enough that two-line titles like "Conductor Cost Optimizer"
     /// fit on iPhone without a mid-word ellipsis. Compact phones land on
@@ -50,7 +54,7 @@ struct ToolGridView: View {
                         // Cold start: hide Recents entirely. Do not seed fake
                         // tools or leave an empty strip for App Store shots.
                         if !recents.tools.isEmpty {
-                            avatarStrip(title: "Recent", tools: recents.tools)
+                            avatarStrip(title: "Recent", tools: Array(recents.tools.prefix(5)))
                                 .opacity(appeared || reduceMotion ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
@@ -80,8 +84,9 @@ struct ToolGridView: View {
                     NavigationLink {
                         IconGalleryView()
                     } label: {
-                        Image(systemName: "square.grid.3x3.fill")
-                            .accessibilityLabel("Icon gallery")
+                        Image(systemName: "paintpalette")
+                            .accessibilityLabel("Review tool icons")
+                            .accessibilityHint("Opens a gallery of schematic glyphs. Distinct from the Toolbox tab.")
                     }
                     .accessibilityIdentifier("iconGalleryButton")
                 }
@@ -136,7 +141,7 @@ struct ToolGridView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, Theme.Space.lg)
-        .padding(.vertical, Theme.Space.md)
+        .padding(.vertical, Theme.Space.sm)
         .padding(.trailing, 80)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
@@ -200,8 +205,7 @@ struct ToolGridView: View {
                 title: area.title,
                 tools: tools,
                 delay: Double(index) * 0.04,
-                showAreaBadge: true,
-                showCount: true
+                showAreaBadge: true
             )
         }
     }
@@ -262,8 +266,7 @@ struct ToolGridView: View {
         title: String,
         tools: [ToolDefinition],
         delay: Double,
-        showAreaBadge: Bool = false,
-        showCount: Bool = false
+        showAreaBadge: Bool = false
     ) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
             HStack(spacing: 8) {
@@ -274,13 +277,6 @@ struct ToolGridView: View {
                     .font(Theme.TypeRole.sectionLabel)
                     .tracking(1.0)
                     .foregroundStyle(Theme.muted)
-                Spacer(minLength: 0)
-                if showCount {
-                    Text("\(tools.count)")
-                        .font(.caption2.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(Theme.muted.opacity(0.8))
-                        .accessibilityLabel("\(tools.count) results")
-                }
             }
             .padding(.top, 4)
 

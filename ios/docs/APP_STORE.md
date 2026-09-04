@@ -156,7 +156,7 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 
 Take 3–8 screens per size. Suggested shots:
 
-1. Field home (Jobsite / Power / Controls / Instruments) with Field | Toolkit control
+1. Field home (Jobsite / Power / Controls / Instruments) with Field | Toolkit control. First-open / marketing: no Recents row, no tool-count pills or shelf totals.
 2. Toolkit home (Basics / Bench / Reference)
 3. Search results labeled Field vs Toolkit
 4. Wire Size & Ampacity waterfall, Conductor Cost Optimizer ranking, or Voltage Drop with parallels + handoff
