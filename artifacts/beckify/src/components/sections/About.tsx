@@ -23,7 +23,7 @@ export const About = () => {
             />
           </div>
           <div className="space-y-3">
-            <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--foreground)]">
+            <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-[-0.015em] text-[var(--foreground)]">
               {PROFILE.name}
             </h1>
             <div className="flex flex-wrap items-center gap-2">

@@ -228,10 +228,10 @@ export default function ControlSystemsPage() {
         <div className="card-surface rounded-3xl p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+              <p className="type-label text-[var(--accent)]">
                 Plant under study
               </p>
-              <h2 className="mt-1 font-display text-2xl font-bold text-[var(--foreground)]">{displayName}</h2>
+              <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.015em] text-[var(--foreground)]">{displayName}</h2>
               <code className="mt-2 block font-mono text-base text-[var(--accent-2)]">G(s) = {plant.display}</code>
               {source === "example" ? (
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">{libraryPlant.summary}</p>
@@ -271,7 +271,7 @@ export default function ControlSystemsPage() {
               ["Poles", poleZero.poles.length ? poleZero.poles.map(formatComplex).join(", ") : "—"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-2xl border border-[var(--border)] bg-black/15 p-3">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{label}</dt>
+                <dt className="type-label text-[var(--muted)]">{label}</dt>
                 <dd
                   className={`mt-1 truncate font-mono text-sm ${
                     label === "Open loop" && !openLoopStable ? "text-amber-300" : "text-[var(--foreground)]"
@@ -359,20 +359,20 @@ export default function ControlSystemsPage() {
               systemExample={plant.name}
             />
             <section className="card-surface rounded-3xl p-5 md:p-6">
-              <h2 className="font-display text-xl font-bold text-[var(--foreground)]">Poles and zeros</h2>
+              <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-[var(--foreground)]">Poles and zeros</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">
                 Roots of G(s). A positive real part is a right-half-plane pole. Extra lag from the modeler adds a real
                 pole that the locus has to drag left.
               </p>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <div className="rounded-2xl border border-[var(--border)] bg-black/15 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Poles</p>
+                  <p className="type-label text-[var(--muted)]">Poles</p>
                   <p className="mt-2 font-mono text-sm leading-6 text-[var(--foreground)]">
                     {poleZero.poles.length ? poleZero.poles.map(formatComplex).join("  ·  ") : "—"}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-black/15 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Zeros</p>
+                  <p className="type-label text-[var(--muted)]">Zeros</p>
                   <p className="mt-2 font-mono text-sm leading-6 text-[var(--foreground)]">
                     {poleZero.zeros.length ? poleZero.zeros.map(formatComplex).join("  ·  ") : "none"}
                   </p>
@@ -390,7 +390,7 @@ export default function ControlSystemsPage() {
             className="space-y-6"
           >
             <section className="card-surface rounded-3xl p-5 md:p-6">
-              <h2 className="font-display text-xl font-bold text-[var(--foreground)]">State-space model</h2>
+              <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-[var(--foreground)]">State-space model</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">
                 {plant.stateSpace
                   ? "This plant ships with a physically meaningful realisation, so the states map to real quantities."
@@ -404,7 +404,7 @@ export default function ControlSystemsPage() {
                   ["D", stateSpace.D],
                 ].map(([label, matrix]) => (
                   <div key={String(label)} className="rounded-2xl border border-[var(--border)] bg-black/15 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                    <p className="type-label text-[var(--accent)]">
                       {String(label)} matrix
                     </p>
                     <pre className="mt-2 overflow-auto font-mono text-xs leading-6 text-[var(--foreground)]">

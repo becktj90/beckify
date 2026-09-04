@@ -42,7 +42,7 @@ function NavLink({
       <LinkTag
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors ${
+        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium tracking-[0.01em] transition-colors ${
           active
             ? "text-[var(--accent-foreground)] bg-[var(--accent)]"
             : "text-[var(--foreground)] hover:bg-white/08"
@@ -58,7 +58,7 @@ function NavLink({
       href={href}
       aria-label={label}
       title={label}
-      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium tracking-[0.02em] transition-all duration-200 whitespace-nowrap ${
         active
           ? "text-[var(--accent-foreground)] bg-[var(--accent)] shadow-[0_0_12px_rgba(139,123,255,0.45)]"
           : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/08"
@@ -118,8 +118,7 @@ export const Nav = () => {
               />
             </div>
             <span
-              className="font-logo text-base font-bold tracking-wide text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors duration-200"
-              style={{ fontFamily: "var(--font-logo)" }}
+              className="logo-text text-base font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors duration-200"
             >
               Beckify
             </span>
@@ -154,7 +153,7 @@ export const Nav = () => {
                 </button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[min(20rem,85vw)] border-l border-[var(--border)] bg-[var(--background)]">
-                <SheetTitle className="text-[var(--foreground)]">Beckify</SheetTitle>
+                <SheetTitle className="logo-text text-[var(--foreground)]">Beckify</SheetTitle>
                 <SheetDescription className="sr-only">Site navigation</SheetDescription>
                 <nav aria-label="Site" className="mt-4 flex flex-col gap-1">
                   {NAV_LINKS.map(({ href, label, external }) => (

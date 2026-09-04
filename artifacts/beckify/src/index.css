@@ -7,9 +7,15 @@
  *
  * Theme: deep-space / nebula. Near-black background, glowing violet/blue
  * accents, starfield backdrop. See .starfield and .nebula-glow below.
+ *
+ * Typography — modern scientific / space instrument:
+ *   logo    Orbitron     — mission wordmark / HUD brand
+ *   display Exo 2        — aerospace section titles
+ *   sans    Sora         — UI body (replaces Inter)
+ *   mono    IBM Plex Mono — formulas, telemetry, toolbox data
+ * Fonts load once via <link> in index.html (not @import here).
  * ============================================================================
  */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Orbitron:wght@600;700;800&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -36,10 +42,10 @@
   --color-secondary: var(--surface);
   --color-secondary-foreground: var(--foreground);
 
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
-  --font-logo: "Orbitron", "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", "Courier New", monospace;
+  --font-sans: "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Exo 2", "Sora", system-ui, sans-serif;
+  --font-logo: "Orbitron", "Exo 2", sans-serif;
+  --font-mono: "IBM Plex Mono", "ui-monospace", "Cascadia Code", monospace;
 
   --radius-card: 1rem;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px -8px rgba(0, 0, 0, 0.55);
@@ -70,10 +76,34 @@
   --game-play: #55e6cb;
   --game-reward: #ffb84a;
   --game-control-height: 2.75rem;
+
+  /* Type scale — scientific instrument hierarchy */
+  --text-micro: 0.625rem;   /* 10px — HUD chips */
+  --text-xs: 0.75rem;       /* 12px — captions */
+  --text-sm: 0.875rem;      /* 14px — UI meta */
+  --text-base: 1rem;        /* 16px — body */
+  --text-lg: 1.125rem;      /* 18px — lead */
+  --text-xl: 1.25rem;       /* 20px — card titles */
+  --text-2xl: 1.5rem;       /* 24px — section */
+  --text-3xl: 1.875rem;     /* 30px — page */
+  --text-4xl: 2.25rem;      /* 36px — hero */
+  --text-5xl: 3rem;         /* 48px — brand */
+
+  --leading-tight: 1.12;
+  --leading-snug: 1.35;
+  --leading-body: 1.65;
+  --leading-loose: 1.8;
+
+  --tracking-brand: 0.06em;
+  --tracking-display: -0.015em;
+  --tracking-body: 0.01em;
+  --tracking-label: 0.18em;
+  --tracking-hud: 0.22em;
 }
 
 html {
   scroll-behavior: smooth;
+  hanging-punctuation: first allow-end last;
 }
 
 @layer base {
@@ -81,10 +111,46 @@ html {
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 400;
+    line-height: var(--leading-body);
+    letter-spacing: var(--tracking-body);
+    font-size-adjust: from-font;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    color: var(--foreground);
+    text-wrap: balance;
+    font-size-adjust: from-font;
+  }
+
+  h1 { font-size: clamp(var(--text-3xl), 4vw, var(--text-5xl)); font-weight: 800; }
+  h2 { font-size: clamp(var(--text-2xl), 2.5vw, var(--text-3xl)); }
+  h3 { font-size: var(--text-xl); font-weight: 600; }
+  h4 { font-size: var(--text-lg); font-weight: 600; }
+
+  p {
+    line-height: var(--leading-body);
+    text-wrap: pretty;
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+    font-size-adjust: from-font;
+    font-variant-numeric: tabular-nums;
+  }
+
+  small {
+    font-size: var(--text-sm);
   }
 }
 
@@ -115,10 +181,46 @@ html {
   color: transparent;
 }
 
-/* Wordmark treatment matching the geometric font used in the Beckify logo. */
+/* Wordmark treatment — Orbitron mission typography */
 .logo-text {
   font-family: var(--font-logo);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--tracking-brand);
+  font-weight: 700;
+  font-size-adjust: from-font;
+}
+
+/* Scientific / space utility roles */
+.type-display {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  font-size-adjust: from-font;
+}
+
+.type-label {
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.type-hud {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-hud);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  font-size-adjust: from-font;
+}
+
+.type-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size-adjust: from-font;
+  letter-spacing: 0;
 }
 
 /* ============================================================================
@@ -677,7 +779,7 @@ html {
 }
 .cosmic-cadet::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .65; background-image: radial-gradient(#bfeaff 1px, transparent 1.5px), radial-gradient(#9d68ff 1px, transparent 1.5px); background-size: 61px 67px, 109px 117px; background-position: 2px 7px, 31px 49px; }
 .cosmic-title { display: grid; justify-items: center; gap: .1rem; margin: 0 auto clamp(1rem, 2vw, 1.8rem); text-align: center; }
-.cosmic-title h1 { margin: 0; font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 4.5rem); font-weight: 900; letter-spacing: .09em; line-height: .9; color: #f5fbff; text-shadow: 0 0 22px rgba(77, 202, 255, .42); }
+.cosmic-title h1 { margin: 0; font-family: var(--font-logo); font-size: clamp(2.2rem, 5vw, 4.5rem); font-weight: 800; letter-spacing: .08em; line-height: .9; color: #f5fbff; text-shadow: 0 0 22px rgba(77, 202, 255, .42); font-size-adjust: from-font; }
 .cosmic-title p { order: 2; margin: .5rem 0 0; color: #d7ddec; font-size: clamp(.65rem, 1.15vw, .95rem); font-weight: 700; letter-spacing: .38em; }
 .cosmic-title i { width: min(370px, 70vw); height: 2px; background: linear-gradient(90deg, transparent, var(--cosmic-cyan), var(--cosmic-violet), transparent); box-shadow: 0 0 14px var(--cosmic-violet); }
 .cosmic-layout { display: grid; grid-template-columns: minmax(190px, 1fr) minmax(0, 550px) minmax(190px, 1fr); align-items: center; gap: clamp(1rem, 4vw, 5rem); max-width: 1420px; margin: auto; }

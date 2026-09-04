@@ -550,7 +550,7 @@
     });
     svg.appendChild(svgEl('rect', { x: 0, y: 0, width: w, height: h, fill: COLORS.bg, rx: 8 }));
     if (!graph || !graph.ok) {
-      const t = svgEl('text', { x: w / 2, y: h / 2, fill: COLORS.red, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'JetBrains Mono, monospace' });
+      const t = svgEl('text', { x: w / 2, y: h / 2, fill: COLORS.red, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'IBM Plex Mono, monospace' });
       t.textContent = (graph && graph.reason) || 'No feasible region';
       svg.appendChild(t);
       return svg;
@@ -574,10 +574,10 @@
 
     svg.appendChild(svgEl('line', { x1: padL, y1: h - padB, x2: w - padR, y2: h - padB, stroke: COLORS.line, 'stroke-width': 1.5 }));
     svg.appendChild(svgEl('line', { x1: padL, y1: padT, x2: padL, y2: h - padB, stroke: COLORS.line, 'stroke-width': 1.5 }));
-    const xLabel = svgEl('text', { x: w - padR, y: h - 10, fill: COLORS.muted, 'font-size': 11, 'text-anchor': 'end', 'font-family': 'JetBrains Mono, monospace' });
+    const xLabel = svgEl('text', { x: w - padR, y: h - 10, fill: COLORS.muted, 'font-size': 11, 'text-anchor': 'end', 'font-family': 'IBM Plex Mono, monospace' });
     xLabel.textContent = problem.names[0] || 'x1';
     svg.appendChild(xLabel);
-    const yLabel = svgEl('text', { x: 8, y: padT + 4, fill: COLORS.muted, 'font-size': 11, 'font-family': 'JetBrains Mono, monospace' });
+    const yLabel = svgEl('text', { x: 8, y: padT + 4, fill: COLORS.muted, 'font-size': 11, 'font-family': 'IBM Plex Mono, monospace' });
     yLabel.textContent = problem.names[1] || 'x2';
     svg.appendChild(yLabel);
 
@@ -585,11 +585,11 @@
     for (let i = 1; i <= ticks; i++) {
       const xv = xmax * i / ticks, yv = ymax * i / ticks;
       svg.appendChild(svgEl('line', { x1: px(xv), y1: h - padB, x2: px(xv), y2: h - padB + 4, stroke: COLORS.muted }));
-      const tx = svgEl('text', { x: px(xv), y: h - 14, fill: COLORS.muted, 'font-size': 10, 'text-anchor': 'middle', 'font-family': 'JetBrains Mono, monospace' });
+      const tx = svgEl('text', { x: px(xv), y: h - 14, fill: COLORS.muted, 'font-size': 10, 'text-anchor': 'middle', 'font-family': 'IBM Plex Mono, monospace' });
       tx.textContent = fmtNum(xv, 2);
       svg.appendChild(tx);
       svg.appendChild(svgEl('line', { x1: padL - 4, y1: py(yv), x2: padL, y2: py(yv), stroke: COLORS.muted }));
-      const ty = svgEl('text', { x: padL - 8, y: py(yv) + 3, fill: COLORS.muted, 'font-size': 10, 'text-anchor': 'end', 'font-family': 'JetBrains Mono, monospace' });
+      const ty = svgEl('text', { x: padL - 8, y: py(yv) + 3, fill: COLORS.muted, 'font-size': 10, 'text-anchor': 'end', 'font-family': 'IBM Plex Mono, monospace' });
       ty.textContent = fmtNum(yv, 2);
       svg.appendChild(ty);
     }
@@ -652,7 +652,7 @@
       }));
       const t = svgEl('text', {
         x: px(p.x) + 8, y: py(p.y) - 8, fill: isOpt ? COLORS.yellow : COLORS.text,
-        'font-size': 11, 'font-family': 'JetBrains Mono, monospace',
+        'font-size': 11, 'font-family': 'IBM Plex Mono, monospace',
       });
       t.textContent = 'V' + (i + 1) + ' (' + fmtNum(p.x, 2) + ', ' + fmtNum(p.y, 2) + ')';
       svg.appendChild(t);

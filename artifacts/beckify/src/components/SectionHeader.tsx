@@ -5,6 +5,7 @@ import { Terminal } from "lucide-react";
 /**
  * Standard heading used at the top of every page section.
  * Pass a title and (optionally) a subtitle/icon.
+ * Display face: Exo 2 — scientific / aerospace hierarchy.
  */
 export const SectionHeader = ({
   title,
@@ -31,12 +32,14 @@ export const SectionHeader = ({
         <div className="w-9 h-9 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center">
           <Icon className="w-4.5 h-4.5" />
         </div>
-        <Heading className="font-display text-2xl md:text-3xl font-bold tracking-tight text-[var(--foreground)]">
+        <Heading className="font-display text-2xl md:text-3xl font-bold tracking-[-0.015em] text-[var(--foreground)] leading-[1.12]">
           {title}
         </Heading>
       </div>
       {subtitle && (
-        <p className="text-base text-[var(--muted)] leading-relaxed max-w-2xl">{subtitle}</p>
+        <p className="text-base text-[var(--muted)] leading-[1.65] tracking-[0.01em] max-w-2xl">
+          {subtitle}
+        </p>
       )}
     </div>
   );
