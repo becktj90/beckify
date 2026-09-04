@@ -682,7 +682,6 @@ struct AmpacityWaterfallDiagram: View {
     }
 }
 
-<<<<<<< HEAD
 // MARK: - Shared engineer XY plot (Swift Charts — Charty-class craft)
 
 struct EngineerSeries: Identifiable {
@@ -1028,7 +1027,6 @@ struct MonostableCapChargeChart: View {
     }
 }
 
-=======
 // MARK: - Solenoid design visualizations
 
 struct SolenoidCrossSectionDiagram: View {
@@ -1233,4 +1231,3 @@ struct SolenoidAxialFieldChart: View {
         }
     }
 }
->>>>>>> 0e22cb4 (feat(ios): advanced Solenoid Design Wizard with field plots)
