@@ -157,6 +157,7 @@ public enum ToolCalculationPolicy {
 
         case
             "wifiStatus",
+            "cellularStatus",
             "bluetoothScan",
             "noiseMeter",
             "bubbleLevel",
@@ -177,6 +178,7 @@ public enum ToolCalculationPolicy {
         "ohmsLaw", "power", "powerWizard", "voltageDrop", "conduitFill", "transformer",
         "timer555", "motorFLA", "wireAmpacity", "conductorCost", "conductorLength", "voltageDivider", "seriesParallel",
         "resistorColor", "unitConverter", "frequencyWave", "ledRC", "wifiStatus",
+        "cellularStatus",
         "bluetoothScan", "noiseMeter", "bubbleLevel", "magnetometer", "barometer",
         "motionSnapshot", "fieldPosition", "deviceHealth", "receptacleSelector",
         "reactance", "powerFactor", "shortCircuit", "circularMils", "loadFactors",

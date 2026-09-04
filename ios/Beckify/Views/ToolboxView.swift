@@ -60,7 +60,7 @@ struct ToolboxView: View {
                                     Text("Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer.")
                                 }
                                 if shelf == .instruments {
-                                    Text("Wi-Fi Path shows Apple’s 0…1 signalStrength as percent and bars, plus TCP link-quality RTT. iOS does not give third-party apps Wi-Fi dBm.")
+                                    Text("Wi-Fi Path shows Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows carrier / RAT and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP).")
                                 }
                             }
                         }
@@ -108,8 +108,15 @@ struct ToolboxView: View {
         if query.localizedCaseInsensitiveContains("ampacity") {
             return "Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer."
         }
-        if query.localizedCaseInsensitiveContains("rssi") || query.localizedCaseInsensitiveContains("wifi") || query.localizedCaseInsensitiveContains("dbm") {
-            return "Wi-Fi Path shows Apple’s 0…1 signalStrength as percent and bars, plus TCP link-quality RTT. iOS does not give third-party apps Wi-Fi dBm."
+        if query.localizedCaseInsensitiveContains("rssi")
+            || query.localizedCaseInsensitiveContains("wifi")
+            || query.localizedCaseInsensitiveContains("dbm")
+            || query.localizedCaseInsensitiveContains("rsrp")
+            || query.localizedCaseInsensitiveContains("cellular")
+            || query.localizedCaseInsensitiveContains("lte")
+            || query.localizedCaseInsensitiveContains("5g")
+        {
+            return "Wi-Fi Path reports Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR)."
         }
         return nil
     }
@@ -182,6 +189,7 @@ struct CalculatorHostView: View {
             case .frequencyWave: FrequencyView()
             case .ledRC: LEDRCView()
             case .wifiStatus: WiFiStatusView()
+            case .cellularStatus: CellularStatusView()
             case .bluetoothScan: BluetoothScannerView()
             case .noiseMeter: NoiseMeterView()
             case .bubbleLevel: BubbleLevelView()

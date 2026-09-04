@@ -91,6 +91,7 @@ Toolkit — basics, bench / homework, and references:
 Instruments (Field subsection) — measure with public Apple APIs (not private APIs):
 
 • Wi-Fi path (Network.framework) plus Apple’s public 0…1 `signalStrength` shown as percent/bars, an on-device coverage heatmap (GPS walk or tap-on-floor), and **link quality (RTT)** via TCP connect time to the path gateway or a user-chosen host (1.1.1.1 / beckify.com). iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. RTT is not ICMP ping. A LAN/gateway target may prompt for Local Network. Current SSID needs location plus, on a signed team, Access Wi-Fi Information.
+• Cellular path (CoreTelephony + Network.framework): per-service carrier name, MCC/MNC, ISO country, radio-access technology (5G NR / LTE / 3G / …), which service is the data service, default-path vs cellular-required path flags, and optional **link quality (RTT)** via TCP connect while the default path uses cellular. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm; this tool will not invent those. CTCarrier is deprecated as of iOS 16 with no public replacement — empty subscriber fields stay blank. A collapsed reference sheet explains typical RSRP/RSRQ/SINR bands and is labeled as not measured on this device.
 • BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
@@ -100,7 +101,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”, “cellular”, “lte”, “5g”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -108,7 +109,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Wi-Fi Path no longer shows a dBm row. It reports Apple’s public 0…1 `signalStrength` as percent and bars, keeps the coverage heatmap, and adds TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. App Store apps cannot ICMP ping; a LAN target may prompt for Local Network. Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance from a measured Ω or mΩ reading with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and single vs loop methods. Same math as the website toolbox. Design aid — not a cable locator. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Field → Instruments adds **Cellular Path**: carrier / MCC / MNC / ISO country, radio-access technology per SIM service, data-service identity, Network path flags, and optional TCP **link quality (RTT)** while on cellular. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps — this tool does not invent them. A collapsed reference sheet explains typical RF bands and is labeled as not measured. Wi-Fi Path no longer shows a dBm row. It reports Apple’s public 0…1 `signalStrength` as percent and bars, keeps the coverage heatmap, and adds TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. App Store apps cannot ICMP ping; a LAN target may prompt for Local Network. Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance from a measured Ω or mΩ reading with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and single vs loop methods. Same math as the website toolbox. Design aid — not a cable locator. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -116,6 +117,10 @@ Wi-Fi Path no longer shows a dBm row. It reports Apple’s public 0…1 `signalS
 **Contact:** trevorjohnbeck@gmail.com
 
 **Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md) (“Data Not Collected”).
+
+## Cellular App Store limitation (honest)
+
+Public iOS APIs do **not** provide cellular RSRP, RSRQ, SINR, RSSI, or dBm to third-party apps. `CTTelephonyNetworkInfo.serviceCurrentRadioAccessTechnology` reports RAT strings (`CTRadioAccessTechnologyNR`, `LTE`, …). `dataServiceIdentifier` marks the data SIM. `serviceSubscriberCellularProviders` still returns `CTCarrier` fields (name, MCC, MNC, ISO country, `allowsVOIP`) but **CTCarrier is deprecated as of iOS 16 with no public replacement** — values may be empty. `NWPathMonitor` (default and `requiredInterfaceType: .cellular`) reports path status, `usesCellular`, expensive/constrained, interface names, and IPv4/IPv6/DNS support. `CTCellularData` reports whether the app’s cellular data is restricted. Complementary **link quality (RTT)** is TCP connect time while the default path uses cellular — not ICMP ping, not RSRP. Do not add private APIs or status-bar scraping to fake a field-strength meter.
 
 ## Wi-Fi App Store limitation (honest)
 
@@ -130,14 +135,14 @@ Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
 - No advertising identifier
 - No account
 - Saved jobs and last-used tool inputs use on-device storage only (`UserDefaults`)
-- Microphone, Bluetooth, and location are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
+- Microphone, Bluetooth, location, and CoreTelephony radio identity are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
 
 Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
 - `NSPrivacyTracking` = false  
 - No collected data types  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path TCP RTT to a LAN/gateway host), camera — see the Beckify target build settings. Photo Library full access is not requested; Motor Nameplate OCR and Panel Directory use the system picker and/or camera.
+Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera — see the Beckify target build settings. Photo Library full access is not requested; Motor Nameplate OCR and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
 
 ## Export compliance
 

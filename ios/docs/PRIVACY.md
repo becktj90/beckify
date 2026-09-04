@@ -33,7 +33,7 @@ Permissions are requested only when the related tool is used, not at launch (exc
 | Microphone | Noise Meter | Relative dBFS from live audio. Not recorded, not uploaded, not a calibrated SLM. |
 | Bluetooth | BLE Scanner | Nearby BLE advertisements (name, identifier, RSSI, advertised service UUIDs). Not uploaded. |
 | Location (When In Use) | Position; Wi-Fi Path; Solar Design Wizard (optional latitude) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples, optional latitude for PV tilt advice. Not used at launch. Not uploaded. |
-| Local Network | Wi-Fi Path (optional) | TCP connect timing to a LAN or default-gateway host the user chooses. Used only when measuring **link quality (RTT)**. Not uploaded. Public hosts such as 1.1.1.1 do not need this permission. |
+| Local Network | Wi-Fi Path (optional); Cellular Path (optional) | TCP connect timing to a LAN or default-gateway host the user chooses. Used only when measuring **link quality (RTT)**. Not uploaded. Public hosts such as 1.1.1.1 do not need this permission. |
 | Camera | Motor Nameplate OCR | A still photo of a motor nameplate. Vision text recognition and the structured field parser run on this device. The photo is not uploaded and is not kept in Saved Jobs. |
 
 Photo Library full access is **not** requested. Panel Directory and Motor Nameplate OCR can use the system photo picker (`PhotosPicker`) so you choose one image; Vision text recognition runs on that image on-device and the recognized text stays in the tool. Motor Nameplate OCR can also use the camera for a still photo. Nothing is uploaded.
@@ -45,6 +45,8 @@ Share on an engineer plot renders a PNG on this device and opens the system shar
 CoreMotion (level, magnetometer, barometer, g-force) does not use those permission strings. Battery and thermal state are local diagnostics.
 
 iOS does **not** give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool shows Apple’s public 0…1 `signalStrength` (percent and bars), an on-device coverage sketch, and TCP **link quality (RTT)** to a gateway or chosen host. It does not invent dBm. App Store apps cannot send ICMP ping; a failed or permission-blocked probe stays blank.
+
+iOS does **not** give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm. The Cellular Path tool reads on-device CoreTelephony radio identity (carrier name, MCC/MNC, ISO country, RAT, data-service id) and Network path flags. Optional TCP RTT runs only when you tap Start and only while the default path uses cellular. It does not invent field-strength numbers. Empty CTCarrier fields stay blank.
 
 ## What stays on the device
 

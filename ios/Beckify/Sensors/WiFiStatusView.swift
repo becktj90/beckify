@@ -913,10 +913,25 @@ struct WiFiHeatmapCanvas: View {
 }
 
 /// App Store–safe TCP connect timing. Not ICMP ping, not RSSI, not dBm.
+struct TCPConnectProbe: Equatable {
+    var rttMS: Double?
+    var localEndpoint: String?
+    var remoteEndpoint: String?
+}
+
 enum WiFiRTTClient {
     static func probe(host: String, port: UInt16, timeout: TimeInterval) async -> Double? {
-        guard !host.isEmpty, port > 0 else { return nil }
-        guard let nwPort = NWEndpoint.Port(rawValue: port) else { return nil }
+        await probeDetail(host: host, port: port, timeout: timeout).rttMS
+    }
+
+    static func probeDetail(host: String, port: UInt16, timeout: TimeInterval) async -> TCPConnectProbe {
+        let remote = "\(host):\(port)"
+        guard !host.isEmpty, port > 0 else {
+            return TCPConnectProbe(rttMS: nil, localEndpoint: nil, remoteEndpoint: remote)
+        }
+        guard let nwPort = NWEndpoint.Port(rawValue: port) else {
+            return TCPConnectProbe(rttMS: nil, localEndpoint: nil, remoteEndpoint: remote)
+        }
         let connection = NWConnection(
             host: NWEndpoint.Host(host),
             port: nwPort,
@@ -931,9 +946,14 @@ enum WiFiRTTClient {
                 defer { lock.unlock() }
                 guard !finished else { return }
                 finished = true
+                let local = endpointSummary(connection.currentPath?.localEndpoint)
                 connection.stateUpdateHandler = nil
                 connection.cancel()
-                continuation.resume(returning: value)
+                continuation.resume(returning: TCPConnectProbe(
+                    rttMS: value,
+                    localEndpoint: local,
+                    remoteEndpoint: remote
+                ))
             }
             connection.stateUpdateHandler = { state in
                 let ms = (CFAbsoluteTimeGetCurrent() - start) * 1000
@@ -956,6 +976,26 @@ enum WiFiRTTClient {
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + timeout) {
                 finish(nil)
             }
+        }
+    }
+
+    static func endpointSummary(_ endpoint: NWEndpoint?) -> String? {
+        guard let endpoint else { return nil }
+        switch endpoint {
+        case .hostPort(let host, let port):
+            let hostText: String
+            switch host {
+            case .name(let name, _):
+                hostText = name
+            case .ipv4, .ipv6:
+                hostText = "\(host)"
+            @unknown default:
+                hostText = "\(host)"
+            }
+            guard !hostText.isEmpty else { return nil }
+            return "\(hostText):\(port)"
+        default:
+            return nil
         }
     }
 
