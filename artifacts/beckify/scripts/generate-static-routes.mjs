@@ -19,9 +19,9 @@ const staticRoutes = [
   ["games/cosmic-cadet", "Cosmic Cadet Browser Game | Beckify", "Play Cosmic Cadet, a responsive browser space shooter with keyboard, pointer, touch, waves, hull damage, pause, and fullscreen play."],
   ["games/booty-butt-scooter", "Booty Butt Scooter Browser Game | Beckify", "Play Booty Butt Scooter, a quick browser game with responsive controls and score tracking."],
   ["games/finger-runner", "Finger Runner Browser Game | Beckify", "Play Finger Runner, a touch-friendly endless browser runner with simple controls, persistent high scores, and quick arcade sessions."],
-  ["games/toot-troopers", "Toot Troopers Browser Game | Beckify", "Play Toot Troopers, an original fart-powered flight game starring Apollo and Rocco."],
-  ["games/apollo-rocco-run", "Apollo & Rocco Run Browser Game | Beckify", "Play Apollo & Rocco Run, a backyard water-balloon runner starring Apollo (orange balloon) and Rocco (pink balloon)."],
-  ["games/pup-planet", "Pup Planet Browser Game | Beckify", "Play Pup Planet: pick Apollo or Rocco and mine and build on a seeded little planet in this first-person WebGL sandbox. Built big and simple for iPad."],
+  ["games/toot-troopers", "Toot Troopers Browser Game | Beckify", "Play Toot Troopers, an original fart-powered flight game with cartoon flyers Blaze and Spark."],
+  ["games/apollo-rocco-run", "Apollo & Rocco Run Browser Game | Beckify", "Play Apollo & Rocco Run, a backyard water-balloon runner with cartoon heroes Blaze (orange balloon) and Spark (pink balloon)."],
+  ["games/pup-planet", "Pup Planet Browser Game | Beckify", "Play Pup Planet: pick Blaze or Spark and mine and build on a seeded little planet in this first-person WebGL sandbox. Built big and simple for iPad."],
   ["games/new-glenn-runner", "New Glenn Runner Browser Game | Beckify", "Play New Glenn Runner, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];

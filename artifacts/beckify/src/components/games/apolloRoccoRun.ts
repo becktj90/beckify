@@ -1,5 +1,5 @@
 export type Lane = 0 | 1 | 2;
-export type Rider = "apollo" | "rocco";
+export type Rider = "blaze" | "spark";
 export type Difficulty = "kid" | "cadet";
 export type Pose = "run" | "jump" | "slide";
 export type HazardKind = "low" | "high";
@@ -56,8 +56,8 @@ export const TUNING = {
 } as const;
 
 export const RIDERS: Record<Rider, { label: string; accent: string; ink: string }> = {
-  apollo: { label: "Apollo", accent: "#ff7a2d", ink: "#1a140c" },
-  rocco: { label: "Rocco", accent: "#ff5ea8", ink: "#1a140c" },
+  blaze: { label: "Blaze", accent: "#ff7a2d", ink: "#1a140c" },
+  spark: { label: "Spark", accent: "#ff5ea8", ink: "#1a140c" },
 };
 
 export function clamp(value: number, min: number, max: number) {

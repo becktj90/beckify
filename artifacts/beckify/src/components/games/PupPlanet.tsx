@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Maximize2, Minimize2, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
+import { HEROES, HERO_IDS, cartoonHeroSrc, type HeroId } from "./characterArt";
 
-// First-person WebGL voxel sandbox, starring Apollo and Rocco as playable
-// kids. Chunked storage, seeded terrain, and raycast
+// First-person WebGL voxel sandbox with cartoon miner pickers.
+// Chunked storage, seeded terrain, and raycast
 // mine/place follow the architecture of fogleman/Craft (MIT,
 // https://github.com/fogleman/Craft). Original TypeScript + three.js — no
 // Craft source, shaders, textures, or assets are reused.
@@ -44,20 +45,18 @@ const PALETTE: Record<number, { name: string; color: string; top?: number; side?
 
 const HOTBAR: BlockId[] = [BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.SAND, BLOCK.SNOW, BLOCK.WOOD, BLOCK.PLANK, BLOCK.BRICK, BLOCK.GLASS];
 
-// Same kids and accent colors as Booty Butt Scooter and Toot Troopers —
-// Apollo's orange balloon, Rocco's pink balloon — so picking a rider here
+// Same cartoon heroes and accent colors as Booty Butt Scooter and Toot Troopers —
+// Blaze's orange balloon, Spark's pink balloon — so picking a miner here
 // feels like the same character, not a reskin special to this game.
-type Character = "apollo" | "rocco";
-const CHARACTERS: Record<Character, { label: string; accent: string; ink: string; portrait: string }> = {
-  apollo: { label: "Apollo", accent: "#ff7a2d", ink: "#1a140c", portrait: "games/kids/apollo.png" },
-  rocco: { label: "Rocco", accent: "#ff5ea8", ink: "#1a140c", portrait: "games/kids/rocco.png" },
-};
+type Character = HeroId;
+const CHARACTERS = HEROES;
 const loadCharacter = (): Character => {
   try {
     const v = localStorage.getItem(CHARACTER_KEY);
-    return v === "rocco" ? "rocco" : "apollo";
+    if (v === "spark" || v === "rocco") return "spark";
+    return "blaze";
   } catch {
-    return "apollo";
+    return "blaze";
   }
 };
 
@@ -725,10 +724,10 @@ export function PupPlanet() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Sandbox / First-person building</p>
           <h1 id="pup-planet-title" className="font-display text-3xl font-bold tracking-tight">Pup Planet</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">Play as Apollo (orange balloon) or Rocco (pink balloon), mining and building on their own seeded little planet. Made big and simple for iPad.</p>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">Play as Blaze (orange balloon) or Spark (pink balloon), mining and building on a seeded little planet. Made big and simple for iPad.</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-          <img src={`${import.meta.env.BASE_URL}${pup.portrait}`} alt="" width={36} height={36} className="h-9 w-9 rounded-full border-2 object-cover" style={{ borderColor: pup.accent }} />
+          <img src={cartoonHeroSrc(character)} alt="" width={36} height={36} className="h-9 w-9 rounded-full border-2 object-cover" style={{ borderColor: pup.accent }} />
           <span>MINED {stats.mined} · PLACED {stats.placed}{flying ? " · FLY" : ""}</span>
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => setMuted((v) => !v)} aria-label={muted ? "Enable game sounds" : "Mute game sounds"}>{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
           <button type="button" className="game-icon-button rounded-md border border-[var(--border)] p-2" onClick={() => toggleFullscreen(stageRef.current)} aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}>{immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
@@ -755,10 +754,10 @@ export function PupPlanet() {
         {!started ? (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#08203a]/55 p-6 text-center backdrop-blur-[2px]">
             <div className="max-w-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Backyard-kid sandbox</p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-white">Pick a kid and land!</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: pup.accent }}>Cartoon miner sandbox</p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-white">Pick a miner and land!</h2>
               <div className="pointer-events-auto mt-4 flex justify-center gap-3">
-                {(Object.keys(CHARACTERS) as Character[]).map((id) => (
+                {HERO_IDS.map((id) => (
                   <button
                     key={id}
                     type="button"
@@ -766,7 +765,7 @@ export function PupPlanet() {
                     style={character === id ? { borderColor: CHARACTERS[id].accent, background: CHARACTERS[id].accent, color: CHARACTERS[id].ink } : { borderColor: "rgba(255,255,255,0.35)", color: "white" }}
                     onClick={() => setCharacter(id)}
                   >
-                    <img src={`${import.meta.env.BASE_URL}${CHARACTERS[id].portrait}`} alt="" width={44} height={44} className="h-11 w-11 rounded-full object-cover" />
+                    <img src={cartoonHeroSrc(id)} alt="" width={44} height={44} className="h-11 w-11 rounded-full object-cover" />
                     {CHARACTERS[id].label}
                   </button>
                 ))}
@@ -781,8 +780,8 @@ export function PupPlanet() {
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
         <span aria-live="polite">{hint}</span>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1.5" aria-label="Choose Apollo or Rocco">
-            {(Object.keys(CHARACTERS) as Character[]).map((id) => (
+          <div className="flex gap-1.5" aria-label="Choose Blaze or Spark">
+            {HERO_IDS.map((id) => (
               <button
                 key={id}
                 type="button"

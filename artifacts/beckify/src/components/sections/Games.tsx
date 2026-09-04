@@ -5,9 +5,9 @@ import { GAMES } from "@/data/site-content";
 import { PUBLIC_GAME_COUNT } from "@/data/site-stats";
 import { Button } from "@/components/ui/button";
 import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
-import { KIDS, kidSrc } from "@/components/games/characterArt";
+import { HERO_IDS, cartoonHeroSrc, type HeroId } from "@/components/games/characterArt";
 
-const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string; art?: "apollo" | "rocco" | "both" | "cadet" | "rocket" | "runner" | "planet" }> = {
+const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string; art?: "blaze" | "both" | "cadet" | "rocket" | "runner" | "planet" }> = {
   "Cosmic Cadet": { mode: "Wave shooter", input: "Drag + BLAST pad", accent: "#35cfff", art: "cadet" },
   "Booty Butt Scooter": { mode: "Crossy hopper", input: "Tap + keyboard", accent: "#ff7a2d", art: "both" },
   "New Glenn Runner": { mode: "Launch arcade", input: "Keyboard + drag", accent: "#8b7bff", art: "rocket" },
@@ -20,13 +20,12 @@ const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string
 function CardArt({ name }: { name: string }) {
   const detail = GAME_DETAILS[name];
   const accent = detail?.accent ?? "var(--accent)";
-  const base = import.meta.env.BASE_URL;
-  const portraits = detail?.art === "runner" ? (["apollo"] as const) : detail?.art === "both" || detail?.art === "planet" ? (["apollo", "rocco"] as const) : null;
+  const portraits: HeroId[] | null = detail?.art === "runner" ? ["blaze"] : detail?.art === "both" || detail?.art === "planet" ? [...HERO_IDS] : null;
   if (portraits) {
     return (
       <div className="game-card-art" style={{ background: `linear-gradient(135deg, ${accent}33, #12203a)` }}>
         {portraits.map((id) => (
-          <img key={id} src={kidSrc(id, base)} alt="" width={72} height={72} />
+          <img key={id} src={cartoonHeroSrc(id)} alt="" width={72} height={72} />
         ))}
       </div>
     );
@@ -58,7 +57,7 @@ export const Games = () => (
         <div>
           <p className="type-label text-[var(--accent)]">The arcade brief</p>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Seven on-site games, including Apollo ({KIDS.apollo.prop}) and Rocco ({KIDS.rocco.prop}). Local scores stay in this browser.
+            Seven on-site games with cartoon heroes — Blaze (orange balloon) and Spark (pink balloon). Local scores stay in this browser.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">

@@ -14,10 +14,10 @@ import {
   Wind,
 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
-import { KIDS, drawKidPortrait, drawScooterBody, kidSrc, type KidId } from "./characterArt";
+import { HEROES, HERO_IDS, cartoonHeroSrc, drawCartoonHero, drawScooterBody, type HeroId } from "./characterArt";
 
 type Status = "ready" | "running" | "paused" | "gameover";
-type Character = KidId;
+type Character = HeroId;
 type RowKind = "grass" | "road";
 type MoveKind = "hop" | "fart";
 
@@ -173,7 +173,6 @@ function drawVehicle(
 
 function drawCharacterSprite(
   context: CanvasRenderingContext2D,
-  image: HTMLImageElement,
   character: Character,
   farting: boolean,
   x: number,
@@ -181,13 +180,13 @@ function drawCharacterSprite(
   scale: number,
   tilt: number,
 ) {
-  const accent = KIDS[character].accent;
+  const accent = HEROES[character].accent;
   context.save();
   context.translate(x, y);
   context.rotate(tilt);
   context.scale(scale, scale);
   drawScooterBody(context, accent, 1, farting);
-  drawKidPortrait(context, image, 4, -38, 72, { ring: accent, squash: 1 });
+  drawCartoonHero(context, character, 4, -38, 72, { ring: accent, squash: 1 });
   context.restore();
 }
 
@@ -241,8 +240,6 @@ function drawRoadSurface(context: CanvasRenderingContext2D, y: number, isGrass: 
 export function BootyButtScooter() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const spriteRef = useRef<HTMLImageElement | null>(null);
-  const portraitsRef = useRef<{ apollo: HTMLImageElement; rocco: HTMLImageElement } | null>(null);
   const statusRef = useRef<Status>("ready");
   const bestRef = useRef(0);
   const scoreRef = useRef(0);
@@ -251,7 +248,7 @@ export function BootyButtScooter() {
   const fartFlashRef = useRef(0);
   const invulnerableRef = useRef(0);
   const puffsRef = useRef<Puff[]>([]);
-  const riderRef = useRef<Character>("apollo");
+  const riderRef = useRef<Character>("blaze");
   const soundRef = useRef(true);
   const startRef = useRef<(() => void) | null>(null);
   const resetRef = useRef<(() => void) | null>(null);
@@ -262,7 +259,7 @@ export function BootyButtScooter() {
   const [status, setStatus] = useState<Status>("ready");
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(() => (typeof window === "undefined" ? 0 : Number(localStorage.getItem(BEST_KEY) || 0)));
-  const [character, setCharacter] = useState<Character>("apollo");
+  const [character, setCharacter] = useState<Character>("blaze");
   const [sound, setSound] = useState(true);
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
 
@@ -277,20 +274,6 @@ export function BootyButtScooter() {
   useEffect(() => {
     soundRef.current = sound;
   }, [sound]);
-
-  useEffect(() => {
-    const apollo = new Image();
-    const rocco = new Image();
-    const base = import.meta.env.BASE_URL;
-    apollo.src = kidSrc("apollo", base);
-    rocco.src = kidSrc("rocco", base);
-    portraitsRef.current = { apollo, rocco };
-    spriteRef.current = apollo;
-    return () => {
-      spriteRef.current = null;
-      portraitsRef.current = null;
-    };
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -579,13 +562,11 @@ export function BootyButtScooter() {
 
       puffsRef.current.forEach(drawPuff);
 
-      const portraits = portraitsRef.current;
-      const sprite = portraits?.[riderRef.current] ?? spriteRef.current;
-      if (sprite) {
+      {
         const x = tileCenterX(player.renderCol);
         const y = tileCenterY(player.renderRow, cameraRow) + player.bob;
         const tilt = clamp((player.move?.toCol ?? player.col) - player.renderCol, -1, 1) * 0.12;
-        drawCharacterSprite(context, sprite, riderRef.current, fartFlashRef.current > 0, x, y, 0.92, tilt);
+        drawCharacterSprite(context, riderRef.current, fartFlashRef.current > 0, x, y, 0.92, tilt);
 
         if (fartFlashRef.current > 0) {
           context.save();
@@ -694,7 +675,6 @@ export function BootyButtScooter() {
       hopRef.current = null;
       fartRef.current = null;
       setStatusRef.current = null;
-      spriteRef.current = null;
       audio?.close();
     };
   }, []);
@@ -716,7 +696,7 @@ export function BootyButtScooter() {
             Booty Butt Scooter
           </h1>
           <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">
-            Help Apollo or Rocco hop through traffic, dodge the cross-town crush, and fart-boost past the meanest gaps.
+            Help Blaze or Spark hop through traffic, dodge the cross-town crush, and fart-boost past the meanest gaps.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
@@ -748,10 +728,10 @@ export function BootyButtScooter() {
         {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
 
         <div className="kid-hud">
-          <div className="kid-chip" style={{ color: KIDS[character].accent }}>
-            <img src={kidSrc(character, import.meta.env.BASE_URL)} alt="" width={32} height={32} />
+          <div className="kid-chip" style={{ color: HEROES[character].accent }}>
+            <img src={cartoonHeroSrc(character)} alt="" width={32} height={32} />
             <div>
-              <span>{KIDS[character].label}</span>
+              <span>{HEROES[character].label}</span>
               <strong>ROW {score.toString().padStart(3, "0")}</strong>
             </div>
           </div>
@@ -798,16 +778,16 @@ export function BootyButtScooter() {
               </p>
               {status !== "paused" ? (
                 <div className="kid-pick">
-                  {(["apollo", "rocco"] as Character[]).map((id) => (
+                  {HERO_IDS.map((id) => (
                     <button
                       key={id}
                       type="button"
                       className={character === id ? "is-on" : ""}
-                      style={character === id ? { borderColor: KIDS[id].accent, background: KIDS[id].accent, color: KIDS[id].ink } : undefined}
+                      style={character === id ? { borderColor: HEROES[id].accent, background: HEROES[id].accent, color: HEROES[id].ink } : undefined}
                       onClick={() => changeCharacter(id)}
                     >
-                      <img src={kidSrc(id, import.meta.env.BASE_URL)} alt="" width={72} height={72} />
-                      {KIDS[id].label}
+                      <img src={cartoonHeroSrc(id)} alt="" width={72} height={72} />
+                      {HEROES[id].label}
                     </button>
                   ))}
                 </div>
@@ -815,7 +795,7 @@ export function BootyButtScooter() {
               <button
                 type="button"
                 className="kid-play"
-                style={{ background: KIDS[character].accent, color: KIDS[character].ink }}
+                style={{ background: HEROES[character].accent, color: HEROES[character].ink }}
                 onClick={() => (status === "paused" ? setStatusRef.current?.("running") : startRef.current?.())}
               >
                 <Play size={16} />
@@ -829,7 +809,7 @@ export function BootyButtScooter() {
 
       <div className="game-command-bar flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
         <span>
-          Score {score} · Best {best} · Rider {character === "apollo" ? "Apollo" : "Rocco"}
+          Score {score} · Best {best} · Rider {HEROES[character].label}
         </span>
         <div className="flex flex-wrap gap-2" aria-label="Scooter controls">
           <button
