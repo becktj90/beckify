@@ -5,14 +5,17 @@ import BeckifyMath
 /// Writes the same on-device keys those tools already persist — not a cloud handoff.
 enum MotorNameplateHandoff {
     static func seed(_ fields: [NameplateFieldID: String], into tool: ToolID) {
-        let phase = fields[.phase] ?? ""
+        let phase = fields[.phases] ?? ""
         let threePhase = phase != "1"
-        let hpRaw = fields[.horsepower] ?? ""
+        let hpRaw = fields[.ratedHP] ?? ""
         let voltsRaw = fields[.voltage] ?? ""
-        let ampsRaw = fields[.amps] ?? ""
+        // Hard rule: only FLA seeds Analyzer FLA. Never MOCP or LRA.
+        let ampsRaw = fields[.fla] ?? ""
         let rpmRaw = fields[.rpm] ?? ""
-        let hzRaw = fields[.frequency] ?? ""
-        let sfRaw = fields[.serviceFactor] ?? ""
+        let hzRaw = fields[.frequencyHz] ?? ""
+        let sfRaw = fields[.sf] ?? ""
+        let codeRaw = fields[.codeLetter] ?? ""
+        let polesRaw = fields[.poles] ?? ""
 
         switch tool {
         case .motorFLA:
@@ -47,6 +50,9 @@ enum MotorNameplateHandoff {
             if phase == "1" || phase == "3" {
                 UserDefaults.standard.set(phase, forKey: ToolInputStore.key(.motorNameplate, "phases"))
             }
+            if !codeRaw.isEmpty {
+                UserDefaults.standard.set(codeRaw, forKey: ToolInputStore.key(.motorNameplate, "code"))
+            }
 
         case .motorSpeed:
             if !rpmRaw.isEmpty {
@@ -59,8 +65,10 @@ enum MotorNameplateHandoff {
             let hz = NameplateFieldParser.frequencyHertz(hzRaw) ?? 60
             let line = hz == 50 ? "50 Hz" : "60 Hz"
             UserDefaults.standard.set(line, forKey: ToolInputStore.key(.motorSpeed, "line"))
-            if let rpm = Double(NameplateFieldParser.primaryToken(rpmRaw)),
-               let poles = NameplateFieldParser.inferredPoles(rpm: rpm, frequencyHz: hz) {
+            if !polesRaw.isEmpty {
+                UserDefaults.standard.set(polesRaw, forKey: ToolInputStore.key(.motorSpeed, "poles"))
+            } else if let rpm = Double(NameplateFieldParser.primaryToken(rpmRaw)),
+                      let poles = NameplateFieldParser.inferredPoles(rpm: rpm, frequencyHz: hz) {
                 UserDefaults.standard.set("\(poles)", forKey: ToolInputStore.key(.motorSpeed, "poles"))
             }
 

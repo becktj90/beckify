@@ -37,7 +37,7 @@ Permissions are requested only when the related tool is used, not at launch (exc
 
 Photo Library full access is **not** requested. Panel Directory and Motor Nameplate OCR can use the system photo picker (`PhotosPicker`) so you choose one image; Vision text recognition runs on that image on-device and the recognized text stays in the tool. Motor Nameplate OCR can also use the camera for a still photo. Nothing is uploaded.
 
-A future cloud VLM/agent path may be wired to the same nameplate fields. It is **off by default** in this app and is not enabled in this release. If it is ever offered, a photo or recognized text would leave the device only after an explicit user action — never automatically, and never at launch.
+Structured nameplate fields use a shared schema (each field is a value, a confidence, and a reviewed flag). Human confirm sets reviewed. Vision and the heuristic parser stay on this device. A future cloud VLM/agent path may be wired to the same keys. It is **off by default** in this app and is not enabled in this release. If it is ever offered, a photo or recognized text would leave the device only after an explicit user action — never automatically, and never at launch.
 
 Share on an engineer plot renders a PNG on this device and opens the system share sheet (Save Image, Files, AirDrop, and so on). The image is written to a temporary file, or held as an in-memory `UIImage` if that write fails. Nothing is uploaded. Choosing Save Image in the system sheet does not require the app to request Photo Library full access.
 

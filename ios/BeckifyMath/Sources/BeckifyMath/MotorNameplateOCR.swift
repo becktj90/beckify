@@ -1,69 +1,5 @@
 import Foundation
 
-/// Structured motor-nameplate fields. Raw OCR lines are evidence, not truth.
-public enum NameplateFieldID: String, Codable, CaseIterable, Sendable, Hashable {
-    case horsepower
-    case rpm
-    case voltage
-    case amps
-    case powerFactor
-    case serviceFactor
-    case frame
-    case model
-    case serial
-    case manufacturer
-    case frequency
-    case phase
-    case efficiency
-    case enclosure
-
-    public var label: String {
-        switch self {
-        case .horsepower: return "Horsepower"
-        case .rpm: return "RPM"
-        case .voltage: return "Voltage"
-        case .amps: return "Amps"
-        case .powerFactor: return "Power factor"
-        case .serviceFactor: return "Service factor"
-        case .frame: return "Frame"
-        case .model: return "Model"
-        case .serial: return "Serial"
-        case .manufacturer: return "Manufacturer"
-        case .frequency: return "Frequency"
-        case .phase: return "Phase"
-        case .efficiency: return "Efficiency"
-        case .enclosure: return "Enclosure"
-        }
-    }
-
-    public var unit: String {
-        switch self {
-        case .horsepower: return "HP"
-        case .rpm: return "RPM"
-        case .voltage: return "V"
-        case .amps: return "A"
-        case .powerFactor: return ""
-        case .serviceFactor: return ""
-        case .frame: return ""
-        case .model: return ""
-        case .serial: return ""
-        case .manufacturer: return ""
-        case .frequency: return "Hz"
-        case .phase: return ""
-        case .efficiency: return "%"
-        case .enclosure: return ""
-        }
-    }
-}
-
-/// Where a structured value came from. `vlm` is reserved for a future cloud
-/// path and is not emitted by the on-device heuristic in this package.
-public enum NameplateFieldSource: String, Codable, Sendable {
-    case heuristic
-    case user
-    case vlm
-}
-
 public struct NameplateOCRLine: Equatable, Sendable {
     public var text: String
     /// Optional Vision (or other recognizer) confidence in 0…1.
@@ -72,31 +8,6 @@ public struct NameplateOCRLine: Equatable, Sendable {
     public init(text: String, confidence: Double? = nil) {
         self.text = text
         self.confidence = confidence
-    }
-}
-
-public struct NameplateField: Equatable, Sendable {
-    public var id: NameplateFieldID
-    public var value: String
-    /// 0…1. Below `NameplateFieldParser.lowConfidenceThreshold` the review UI
-    /// should highlight the field so a human confirms it.
-    public var confidence: Double
-    public var source: NameplateFieldSource
-
-    public init(
-        id: NameplateFieldID,
-        value: String,
-        confidence: Double,
-        source: NameplateFieldSource = .heuristic
-    ) {
-        self.id = id
-        self.value = value
-        self.confidence = min(max(confidence, 0), 1)
-        self.source = source
-    }
-
-    public var isLowConfidence: Bool {
-        source != .user && confidence < NameplateFieldParser.lowConfidenceThreshold
     }
 }
 
@@ -218,31 +129,50 @@ public enum NameplateFieldParser {
             fields.append(field)
         }
 
+        func appendNote(_ text: String, confidence: Double) {
+            let existing = fields.first { $0.id == .notes }
+            let merged = [existing?.value, text].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "; ")
+            fields.removeAll { $0.id == .notes }
+            claimed.insert(.notes)
+            fields.append(NameplateField(id: .notes, value: merged, confidence: confidence))
+        }
+
         for (index, line) in compacted.enumerated() {
             let next = index + 1 < compacted.count ? compacted[index + 1] : nil
-            take(labeled(in: line, next: next, id: .horsepower, labels: hpLabels, parse: parseHorsepower))
+            take(labeled(in: line, next: next, id: .ratedHP, labels: hpLabels, parse: parseHorsepower))
+            take(labeled(in: line, next: next, id: .ratedKW, labels: kwLabels, parse: parsePositiveNumber))
             take(labeled(in: line, next: next, id: .rpm, labels: rpmLabels, parse: parseRPM))
             take(labeled(in: line, next: next, id: .voltage, labels: voltLabels, parse: parseVoltage))
-            take(labeled(in: line, next: next, id: .amps, labels: ampLabels, parse: parseAmps))
-            take(labeled(in: line, next: next, id: .frequency, labels: hzLabels, parse: parseFrequency))
-            take(labeled(in: line, next: next, id: .phase, labels: phaseLabels, parse: parsePhase))
-            take(labeled(in: line, next: next, id: .serviceFactor, labels: sfLabels, parse: parseServiceFactor))
-            take(labeled(in: line, next: next, id: .powerFactor, labels: pfLabels, parse: parsePowerFactor))
-            take(labeled(in: line, next: next, id: .efficiency, labels: effLabels, parse: parseEfficiency))
+            take(labeled(in: line, next: next, id: .mocp, labels: mocpLabels, parse: parseSingleAmps))
+            take(labeled(in: line, next: next, id: .lra, labels: lraLabels, parse: parseSingleAmps))
+            take(labeled(in: line, next: next, id: .serviceFactorAmps, labels: sfaLabels, parse: parseSingleAmps))
+            take(labeled(in: line, next: next, id: .fla, labels: ampLabels, parse: parseFLA))
+            take(labeled(in: line, next: next, id: .frequencyHz, labels: hzLabels, parse: parseFrequencyHz))
+            take(labeled(in: line, next: next, id: .phases, labels: phaseLabels, parse: parsePhase))
+            take(labeled(in: line, next: next, id: .sf, labels: sfLabels, parse: parseServiceFactor))
+            take(labeled(in: line, next: next, id: .pf, labels: pfLabels, parse: parsePowerFactor))
+            take(labeled(in: line, next: next, id: .nomEff, labels: effLabels, parse: parseNomEff))
             take(labeled(in: line, next: next, id: .frame, labels: frameLabels, parse: parseFrame))
             take(labeled(in: line, next: next, id: .enclosure, labels: enclosureLabels, parse: parseEnclosure))
-            take(labeled(in: line, next: next, id: .serial, labels: serialLabels, parse: parseSerialOrModel))
+            take(labeled(in: line, next: next, id: .serialNumber, labels: serialLabels, parse: parseSerialOrModel))
             take(labeled(in: line, next: next, id: .model, labels: modelLabels, parse: parseSerialOrModel))
             take(labeled(in: line, next: next, id: .manufacturer, labels: mfrLabels, parse: parseManufacturer))
+            take(labeled(in: line, next: next, id: .poles, labels: poleLabels, parse: parsePoles))
+            take(labeled(in: line, next: next, id: .designLetter, labels: designLabels, parse: parseDesignLetter))
+            take(labeled(in: line, next: next, id: .codeLetter, labels: codeLabels, parse: parseCodeLetter))
+            take(labeled(in: line, next: next, id: .insulationClass, labels: insulationLabels, parse: parseInsulationClass))
         }
 
         for line in compacted {
-            take(unitSuffixed(line, id: .horsepower, suffixes: ["HP", "H.P."], parse: parseHorsepower))
+            take(unitSuffixed(line, id: .ratedHP, suffixes: ["HP", "H.P."], parse: parseHorsepower))
+            take(unitSuffixed(line, id: .ratedKW, suffixes: ["KW", "K.W."], parse: parsePositiveNumber))
             take(unitSuffixed(line, id: .rpm, suffixes: ["RPM", "R.P.M.", "R/MIN"], parse: parseRPM))
             take(unitSuffixed(line, id: .voltage, suffixes: ["V", "VOLT", "VOLTS"], parse: parseVoltage))
-            take(unitSuffixed(line, id: .amps, suffixes: ["A", "AMP", "AMPS", "AMPERE", "AMPERES", "FLA"], parse: parseAmps))
-            take(unitSuffixed(line, id: .frequency, suffixes: ["HZ", "HERTZ", "CYC", "CYCLES"], parse: parseFrequency))
-            take(unitSuffixed(line, id: .phase, suffixes: ["PH", "PHASE", "Ø"], parse: parsePhase))
+            if !isMOCPOrLRALine(line.text) {
+                take(unitSuffixed(line, id: .fla, suffixes: ["A", "AMP", "AMPS", "AMPERE", "AMPERES", "FLA"], parse: parseFLA))
+            }
+            take(unitSuffixed(line, id: .frequencyHz, suffixes: ["HZ", "HERTZ", "CYC", "CYCLES"], parse: parseFrequencyHz))
+            take(unitSuffixed(line, id: .phases, suffixes: ["PH", "PHASE", "Ø"], parse: parsePhase))
         }
 
         for line in compacted {
@@ -252,28 +182,58 @@ public enum NameplateFieldParser {
             if !claimed.contains(.frame), let value = bareFrame(in: line.text) {
                 take(NameplateField(id: .frame, value: value, confidence: scaled(0.66, line.confidence)))
             }
-            if !claimed.contains(.phase), let value = barePhase(in: line.text) {
-                take(NameplateField(id: .phase, value: value, confidence: scaled(0.72, line.confidence)))
+            if !claimed.contains(.phases), let value = barePhase(in: line.text) {
+                take(NameplateField(id: .phases, value: value, confidence: scaled(0.72, line.confidence)))
+            }
+            if let ie = ieClass(normalize(line.text)) {
+                appendNote("IE class \(ie)", confidence: scaled(0.7, line.confidence))
             }
         }
 
-        if !claimed.contains(.horsepower) {
-            for line in compacted {
-                if let kw = labeledValue(in: line, next: nil, labels: ["KW", "K.W."], parse: parsePositiveNumber) {
-                    let hp = (Double(kw) ?? 0) / 0.746
-                    if hp > 0 {
-                        take(NameplateField(
-                            id: .horsepower,
-                            value: formatNumber(hp, digits: hp >= 10 ? 1 : 2),
-                            confidence: scaled(0.62, line.confidence)
-                        ))
-                    }
-                }
-            }
+        if !claimed.contains(.ratedHP), claimed.contains(.ratedKW),
+           let kw = Double(fields.first { $0.id == .ratedKW }?.value ?? ""), kw > 0 {
+            take(NameplateField(
+                id: .ratedHP,
+                value: formatNumber(kw / 0.746, digits: kw / 0.746 >= 10 ? 1 : 2),
+                confidence: 0.62
+            ))
+        }
+        if !claimed.contains(.ratedKW), claimed.contains(.ratedHP),
+           let hp = MotorFLA.horsepowerValue(fields.first { $0.id == .ratedHP }?.value ?? ""), hp > 0 {
+            take(NameplateField(
+                id: .ratedKW,
+                value: formatNumber(hp * 0.746, digits: 2),
+                confidence: 0.62
+            ))
+        }
+
+        if !claimed.contains(.poles),
+           let rpm = Double(fields.first { $0.id == .rpm }?.value ?? ""),
+           let hz = Double(fields.first { $0.id == .frequencyHz }?.value ?? ""),
+           let poles = inferredPoles(rpm: rpm, frequencyHz: hz) {
+            take(NameplateField(id: .poles, value: "\(poles)", confidence: 0.64))
         }
 
         if !claimed.contains(.manufacturer), let mfr = firstManufacturer(in: compacted) {
             take(mfr)
+        }
+
+        if let fla = fields.first(where: { $0.id == .fla }), fla.value.contains("/") {
+            let three = fields.contains { $0.id == .phases && $0.value == "3" }
+            let picked = preferredAmps(raw: fla.value, threePhase: three)
+            fields.removeAll { $0.id == .fla }
+            fields.append(NameplateField(
+                id: .fla,
+                value: picked,
+                confidence: min(fla.confidence, 0.78),
+                source: fla.source
+            ))
+            appendNote("dual FLA \(fla.value) — recorded \(picked) A", confidence: min(fla.confidence, 0.78))
+        }
+
+        let joined = compacted.map { normalize($0.text) }.joined(separator: " ")
+        if joined.contains("50/60") || joined.contains("60/50") {
+            appendNote("dual frequency 50/60 — recorded 60 Hz", confidence: 0.70)
         }
 
         fields.sort { $0.id.sortOrder < $1.id.sortOrder }
@@ -330,9 +290,13 @@ public enum NameplateFieldParser {
     // MARK: - Line matching
 
     private static let hpLabels = ["HP", "H.P.", "H P", "HORSEPOWER", "HORSE POWER"]
+    private static let kwLabels = ["KW", "K.W.", "KILOWATT", "KILOWATTS"]
     private static let rpmLabels = ["RPM", "R.P.M.", "R/MIN", "MIN-1", "SPEED"]
     private static let voltLabels = ["VOLTS", "VOLT", "VOLTAGE", "V"]
-    private static let ampLabels = ["AMPS", "AMP", "AMPERES", "AMPERE", "FLA", "FLC", "AMPERES AMPS"]
+    private static let ampLabels = ["AMPS", "AMP", "AMPERES", "AMPERE", "FLA", "FLC"]
+    private static let mocpLabels = ["MOCP", "MAX OCP", "MAXIMUM OCP", "MAX OVERCURRENT", "MAXIMUM OVERCURRENT"]
+    private static let lraLabels = ["LRA", "LOCKED ROTOR", "LOCKED-ROTOR", "LR AMPS", "L.R.A."]
+    private static let sfaLabels = ["SFA", "SF AMPS", "SF AMP", "SERVICE FACTOR AMPS"]
     private static let hzLabels = ["HZ", "HERTZ", "FREQ", "FREQUENCY", "CYCLES", "CYC"]
     private static let phaseLabels = ["PH", "PHASE", "PHAS", "Ø"]
     private static let sfLabels = ["SF", "S.F.", "SERVICE FACTOR", "SERV FACTOR"]
@@ -343,6 +307,19 @@ public enum NameplateFieldParser {
     private static let serialLabels = ["SER", "S/N", "S.N.", "SN", "SERIAL", "SERIAL NO", "SERIAL NO.", "SER NO", "SER. NO."]
     private static let modelLabels = ["MODEL", "CAT", "CAT NO", "CAT. NO.", "CAT NO.", "TYPE", "SPEC", "SPEC NO", "SPEC. NO.", "CATALOG"]
     private static let mfrLabels = ["MFR", "MFG", "MANUFACTURER", "MADE BY"]
+    private static let poleLabels = ["POLES", "POLE"]
+    private static let designLabels = ["DESIGN", "NEMA DESIGN", "DES"]
+    private static let codeLabels = ["CODE", "CODE LETTER"]
+    private static let insulationLabels = ["INS", "INSUL", "INSULATION", "CLASS", "INS CLASS"]
+
+    /// Hard rule: MOCP and LRA are never FLA, even when the line also says AMPS.
+    public static func isMOCPOrLRALine(_ text: String) -> Bool {
+        let upper = normalize(text)
+        for label in mocpLabels + lraLabels {
+            if rangeOfLabel(normalize(label), in: upper) != nil { return true }
+        }
+        return false
+    }
 
     private static func labeled(
         in line: NameplateOCRLine,
@@ -433,21 +410,77 @@ public enum NameplateFieldParser {
         return token
     }
 
-    private static func parseAmps(_ raw: String) -> String? {
+    /// FLA only. Dual listings stay as `a/b` until extract() records one number.
+    /// Does not reject a remainder that also mentions LRA — the labeled FLA
+    /// token already selected this value. MOCP/LRA lines are skipped for
+    /// unit-suffix AMPS so "MOCP 40 A" never becomes FLA.
+    private static func parseFLA(_ raw: String) -> String? {
         guard let token = dualOrSingleNumber(raw) else { return nil }
         let parts = token.split(separator: "/").compactMap { Double($0) }
-        guard !parts.isEmpty, parts.allSatisfy({ $0 > 0 && $0 <= 20_000 }) else { return nil }
+        guard !parts.isEmpty, parts.allSatisfy({ $0 > 0 && $0 <= 2_000 }) else { return nil }
         return token
     }
 
-    private static func parseFrequency(_ raw: String) -> String? {
+    /// Single ampere reading for MOCP / LRA / SFA — never a dual FLA pair.
+    private static func parseSingleAmps(_ raw: String) -> String? {
+        firstNumber(in: raw, min: 0.1, max: 10_000)
+    }
+
+    /// Hertz as a single number. Dual `50/60` records 60 (common US plant).
+    private static func parseFrequencyHz(_ raw: String) -> String? {
+        let upper = normalize(raw)
+        if upper.contains("50/60") || upper.contains("60/50") { return "60" }
         if let dual = dualOrSingleNumber(raw) {
             let parts = dual.split(separator: "/").compactMap { Double($0) }
-            if parts.allSatisfy({ $0 == 50 || $0 == 60 }) { return dual }
+            if parts.count == 2, parts.allSatisfy({ $0 == 50 || $0 == 60 }) { return "60" }
         }
-        guard let token = firstNumericToken(raw, allowingFraction: false),
+        return firstNumber(in: raw, min: 25, max: 400)
+    }
+
+    /// Nominal efficiency as a percent (50–100). IE class goes to notes, not here.
+    private static func parseNomEff(_ raw: String) -> String? {
+        if ieClass(normalize(raw)) != nil { return nil }
+        if let n = firstNumber(in: raw, min: 0.4, max: 1.0), let v = Double(n), v <= 1 {
+            return formatNumber(v * 100, digits: 1)
+        }
+        return firstNumber(in: raw, min: 50, max: 100)
+    }
+
+    private static func parsePoles(_ raw: String) -> String? {
+        guard let n = firstNumber(in: raw, min: 2, max: 16),
+              let v = Double(n), v == floor(v), Int(v) % 2 == 0 else { return nil }
+        return "\(Int(v))"
+    }
+
+    private static func parseDesignLetter(_ raw: String) -> String? {
+        parseLetterToken(raw, allowed: "ABCDE")
+    }
+
+    private static func parseCodeLetter(_ raw: String) -> String? {
+        parseLetterToken(raw, allowed: "ABCDEFGHJKLMNPQRSTUV")
+    }
+
+    private static func parseInsulationClass(_ raw: String) -> String? {
+        parseLetterToken(raw, allowed: "ABFHN")
+    }
+
+    private static func parseLetterToken(_ raw: String, allowed: String) -> String? {
+        let skip: Set<String> = [
+            "LETTER", "CLASS", "NEMA", "DESIGN", "DES", "CODE",
+            "INS", "INSUL", "INSULATION",
+        ]
+        for token in tokenize(raw) {
+            let upper = normalize(token)
+            if skip.contains(upper) { continue }
+            if upper.count == 1, allowed.contains(upper) { return upper }
+        }
+        return nil
+    }
+
+    private static func firstNumber(in text: String, min: Double, max: Double) -> String? {
+        guard let token = firstNumericToken(text, allowingFraction: true),
               let value = Double(token),
-              value == 50 || value == 60
+              value >= min, value <= max
         else { return nil }
         return stripTrailingZeros(token)
     }
@@ -469,23 +502,13 @@ public enum NameplateFieldParser {
         return token
     }
 
+    /// Power factor as 0–1. A plate that prints `82` or `82%` becomes `0.82`.
     private static func parsePowerFactor(_ raw: String) -> String? {
         guard let token = firstNumericToken(raw, allowingFraction: true),
-              let value = Double(token)
+              let value = Double(token), value > 0, value <= 100
         else { return nil }
-        if value > 0, value <= 1.0 { return token }
-        if value > 1, value <= 100 { return token }
-        return nil
-    }
-
-    private static func parseEfficiency(_ raw: String) -> String? {
-        let upper = normalize(raw)
-        if let ie = ieClass(upper) { return ie }
-        guard let token = firstNumericToken(raw, allowingFraction: true),
-              let value = Double(token),
-              value >= 20, value <= 100
-        else { return nil }
-        return token
+        if value > 1 { return formatNumber(value / 100, digits: 2) }
+        return formatNumber(value, digits: 2)
     }
 
     private static func parseFrame(_ raw: String) -> String? {
@@ -621,6 +644,7 @@ public enum NameplateFieldParser {
         "HZ", "PH", "PHASE", "SF", "PF", "EFF", "FRAME", "ENCL", "ENCLOSURE",
         "MODEL", "SERIAL", "TYPE", "CAT", "TEFC", "ODP", "TENV", "MOTOR",
         "NAMEPLATE", "AC", "DC", "INS", "CLASS", "DUTY", "CONT", "CONTINUOUS",
+        "MOCP", "LRA", "SFA", "POLES", "POLE", "DESIGN", "CODE", "FLC",
     ]
 
     // MARK: - Text helpers
@@ -651,7 +675,7 @@ public enum NameplateFieldParser {
         while searchFrom < upper.endIndex,
               let range = upper.range(of: needle, range: searchFrom..<upper.endIndex)
         {
-            let beforeOK = isLabelBoundary(before: range.lowerBound, in: upper)
+            let beforeOK = isLabelBoundary(before: range.lowerBound, in: upper, needle: needle)
             let afterOK = range.upperBound == upper.endIndex
                 || !upper[range.upperBound].isLetter
             if beforeOK && afterOK { return range }
@@ -660,9 +684,24 @@ public enum NameplateFieldParser {
         return nil
     }
 
+    /// Labels that can follow a value on a packed line (`FLA 12.5 LRA 72`).
+    /// HP / RPM / V / A stay unit suffixes so `10 HP 1750 RPM` is not stolen.
+    private static let labelsAllowedAfterNumber: Set<String> = [
+        "LRA", "L.R.A.", "LOCKED ROTOR", "LOCKED-ROTOR", "LR AMPS",
+        "MOCP", "MAX OCP", "MAXIMUM OCP", "MAX OVERCURRENT", "MAXIMUM OVERCURRENT",
+        "SFA", "SF AMPS", "SF AMP", "SERVICE FACTOR AMPS",
+        "FLA", "FLC",
+        "SF", "S.F.", "SERVICE FACTOR",
+        "PF", "P.F.", "POWER FACTOR",
+        "DESIGN", "NEMA DESIGN", "CODE", "CODE LETTER",
+        "CLASS", "INS CLASS",
+        "SER", "SN", "S/N",
+    ]
+
     /// Labels must be their own token. Rejects `10HP-215` (HP glued inside a
-    /// model) and `10 HP 1750 RPM` (HP is a unit suffix). Allows `215T  SF`.
-    private static func isLabelBoundary(before index: String.Index, in upper: String) -> Bool {
+    /// model) and `10 HP 1750 RPM` (HP is a unit suffix). Allows `215T  SF`
+    /// and a second amp label after a number (`FLA 12.5 LRA 72`).
+    private static func isLabelBoundary(before index: String.Index, in upper: String, needle: String) -> Bool {
         guard index > upper.startIndex else { return true }
         let immediate = upper[upper.index(before: index)]
         if immediate.isLetter || immediate.isNumber { return false }
@@ -681,7 +720,7 @@ public enum NameplateFieldParser {
         }
         let prior = String(upper[tokenStart...cursor])
         if Double(prior) != nil || MotorFLA.horsepowerValue(prior) != nil {
-            return false
+            return labelsAllowedAfterNumber.contains(needle)
         }
         return true
     }
@@ -747,26 +786,5 @@ public enum NameplateFieldParser {
         let rounded = (value * pow(10, Double(digits))).rounded() / pow(10, Double(digits))
         if rounded == floor(rounded) { return String(Int(rounded)) }
         return String(format: "%.\(digits)f", rounded)
-    }
-}
-
-private extension NameplateFieldID {
-    var sortOrder: Int {
-        switch self {
-        case .manufacturer: return 0
-        case .model: return 1
-        case .serial: return 2
-        case .horsepower: return 3
-        case .rpm: return 4
-        case .voltage: return 5
-        case .amps: return 6
-        case .frequency: return 7
-        case .phase: return 8
-        case .serviceFactor: return 9
-        case .powerFactor: return 10
-        case .efficiency: return 11
-        case .frame: return 12
-        case .enclosure: return 13
-        }
     }
 }

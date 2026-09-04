@@ -27,21 +27,25 @@ final class MotorNameplateOCRTests: XCTestCase {
 
         XCTAssertEqual(extracted.value(.manufacturer), "EXAMPLE MOTORS")
         XCTAssertEqual(extracted.value(.model), "10HP-215")
-        XCTAssertEqual(extracted.value(.horsepower), "10")
+        XCTAssertEqual(extracted.value(.ratedHP), "10")
         XCTAssertEqual(extracted.value(.rpm), "1750")
         XCTAssertEqual(extracted.value(.voltage), "230/460")
-        XCTAssertEqual(extracted.value(.amps), "25.0/12.5")
-        XCTAssertEqual(extracted.value(.frequency), "60")
-        XCTAssertEqual(extracted.value(.phase), "3")
-        XCTAssertEqual(extracted.value(.serviceFactor), "1.15")
-        XCTAssertEqual(extracted.value(.powerFactor), "82")
-        XCTAssertEqual(extracted.value(.efficiency), "89.5")
+        XCTAssertEqual(extracted.value(.fla), "12.5")
+        XCTAssertEqual(extracted.value(.frequencyHz), "60")
+        XCTAssertEqual(extracted.value(.phases), "3")
+        XCTAssertEqual(extracted.value(.sf), "1.15")
+        XCTAssertEqual(extracted.value(.pf), "0.82")
+        XCTAssertEqual(extracted.value(.nomEff), "89.5")
         XCTAssertEqual(extracted.value(.frame), "215T")
         XCTAssertEqual(extracted.value(.enclosure), "TEFC")
-        XCTAssertEqual(extracted.value(.serial), "A12345")
+        XCTAssertEqual(extracted.value(.serialNumber), "A12345")
+        XCTAssertEqual(extracted.value(.poles), "4")
+        XCTAssertEqual(extracted.value(.ratedKW), "7.46")
+        XCTAssertTrue(extracted.value(.notes)?.contains("dual FLA") ?? false)
         XCTAssertEqual(extracted.agentID, "heuristic-v1")
         XCTAssertFalse(extracted.leavesDevice)
-        XCTAssertGreaterThan(extracted.field(.horsepower)?.confidence ?? 0, 0.8)
+        XCTAssertGreaterThan(extracted.field(.ratedHP)?.confidence ?? 0, 0.8)
+        XCTAssertFalse(extracted.field(.fla)?.reviewed ?? true)
     }
 
     func testStackedVisionStyleLines() {
@@ -60,26 +64,26 @@ final class MotorNameplateOCRTests: XCTestCase {
         3
         """
         let extracted = NameplateFieldParser.extract(text: text)
-        XCTAssertEqual(extracted.value(.horsepower), "7.5")
+        XCTAssertEqual(extracted.value(.ratedHP), "7.5")
         XCTAssertEqual(extracted.value(.rpm), "1760")
         XCTAssertEqual(extracted.value(.voltage), "460")
-        XCTAssertEqual(extracted.value(.amps), "10.0")
-        XCTAssertEqual(extracted.value(.frequency), "60")
-        XCTAssertEqual(extracted.value(.phase), "3")
+        XCTAssertEqual(extracted.value(.fla), "10.0")
+        XCTAssertEqual(extracted.value(.frequencyHz), "60")
+        XCTAssertEqual(extracted.value(.phases), "3")
     }
 
     func testValueThenUnitOnOneLine() {
         let text = "10 HP  1750 RPM  460 V  14 A  60 HZ  3 PH  TEFC  215T  SF 1.15"
         let extracted = NameplateFieldParser.extract(text: text)
-        XCTAssertEqual(extracted.value(.horsepower), "10")
+        XCTAssertEqual(extracted.value(.ratedHP), "10")
         XCTAssertEqual(extracted.value(.rpm), "1750")
         XCTAssertEqual(extracted.value(.voltage), "460")
-        XCTAssertEqual(extracted.value(.amps), "14")
-        XCTAssertEqual(extracted.value(.frequency), "60")
-        XCTAssertEqual(extracted.value(.phase), "3")
+        XCTAssertEqual(extracted.value(.fla), "14")
+        XCTAssertEqual(extracted.value(.frequencyHz), "60")
+        XCTAssertEqual(extracted.value(.phases), "3")
         XCTAssertEqual(extracted.value(.enclosure), "TEFC")
         XCTAssertEqual(extracted.value(.frame), "215T")
-        XCTAssertEqual(extracted.value(.serviceFactor), "1.15")
+        XCTAssertEqual(extracted.value(.sf), "1.15")
     }
 
     func testFractionalSinglePhasePlate() {
@@ -94,11 +98,11 @@ final class MotorNameplateOCRTests: XCTestCase {
         FRAME 56
         """
         let extracted = NameplateFieldParser.extract(text: text)
-        XCTAssertEqual(extracted.value(.horsepower), "1/2")
+        XCTAssertEqual(extracted.value(.ratedHP), "1/2")
         XCTAssertEqual(extracted.value(.rpm), "1725")
         XCTAssertEqual(extracted.value(.voltage), "115")
-        XCTAssertEqual(extracted.value(.amps), "9.8")
-        XCTAssertEqual(extracted.value(.phase), "1")
+        XCTAssertEqual(extracted.value(.fla), "9.8")
+        XCTAssertEqual(extracted.value(.phases), "1")
         XCTAssertEqual(extracted.value(.enclosure), "ODP")
         XCTAssertEqual(extracted.value(.frame), "56")
     }
@@ -112,11 +116,11 @@ final class MotorNameplateOCRTests: XCTestCase {
         3PH
         """
         let extracted = NameplateFieldParser.extract(text: text)
-        XCTAssertEqual(extracted.value(.horsepower), "10")
+        XCTAssertEqual(extracted.value(.ratedHP), "10")
         XCTAssertEqual(extracted.value(.rpm), "1750")
         XCTAssertEqual(extracted.value(.voltage), "230/460")
-        XCTAssertEqual(extracted.value(.powerFactor), "0.85")
-        XCTAssertEqual(extracted.value(.phase), "3")
+        XCTAssertEqual(extracted.value(.pf), "0.85")
+        XCTAssertEqual(extracted.value(.phases), "3")
     }
 
     func testKwMapsToHorsepowerWhenHPMissing() {
@@ -126,9 +130,10 @@ final class MotorNameplateOCRTests: XCTestCase {
         VOLTS 460
         """
         let extracted = NameplateFieldParser.extract(text: text)
-        XCTAssertEqual(extracted.value(.horsepower), "10")
-        XCTAssertLessThan(extracted.field(.horsepower)?.confidence ?? 1, 0.70)
-        XCTAssertTrue(extracted.field(.horsepower)?.isLowConfidence ?? false)
+        XCTAssertEqual(extracted.value(.ratedHP), "10")
+        XCTAssertEqual(extracted.value(.ratedKW), "7.46")
+        XCTAssertLessThan(extracted.field(.ratedHP)?.confidence ?? 1, 0.70)
+        XCTAssertTrue(extracted.field(.ratedHP)?.isLowConfidence ?? false)
     }
 
     func testLabeledHPWinsOverKw() {
@@ -137,8 +142,9 @@ final class MotorNameplateOCRTests: XCTestCase {
         kW 7.46
         """
         let extracted = NameplateFieldParser.extract(text: text)
-        XCTAssertEqual(extracted.value(.horsepower), "10")
-        XCTAssertGreaterThan(extracted.field(.horsepower)?.confidence ?? 0, 0.80)
+        XCTAssertEqual(extracted.value(.ratedHP), "10")
+        XCTAssertEqual(extracted.value(.ratedKW), "7.46")
+        XCTAssertGreaterThan(extracted.field(.ratedHP)?.confidence ?? 0, 0.80)
     }
 
     func testGarbageIsNotANameplate() {
@@ -146,7 +152,7 @@ final class MotorNameplateOCRTests: XCTestCase {
         PANEL MDP-2
         400A MCB
         """)
-        XCTAssertNil(extracted.value(.horsepower))
+        XCTAssertNil(extracted.value(.ratedHP))
         XCTAssertNil(extracted.value(.rpm))
         XCTAssertNil(extracted.value(.manufacturer))
         XCTAssertLessThan(extracted.populatedCount, 3)
@@ -164,15 +170,66 @@ final class MotorNameplateOCRTests: XCTestCase {
             NameplateOCRLine(text: "RPM 1750", confidence: 0.95),
         ]
         let extracted = NameplateFieldParser.extract(lines: lines)
-        XCTAssertLessThan(extracted.field(.horsepower)?.confidence ?? 1, 0.50)
+        XCTAssertLessThan(extracted.field(.ratedHP)?.confidence ?? 1, 0.50)
         XCTAssertGreaterThan(extracted.field(.rpm)?.confidence ?? 0, 0.80)
-        XCTAssertTrue(extracted.field(.horsepower)?.isLowConfidence ?? false)
+        XCTAssertTrue(extracted.field(.ratedHP)?.isLowConfidence ?? false)
     }
 
-    func testIEEfficiencyClass() {
+    func testIEEfficiencyClassGoesToNotesNotNomEff() {
         let extracted = NameplateFieldParser.extract(text: "EFF IE3\nHP 15\nRPM 1460\nHZ 50")
-        XCTAssertEqual(extracted.value(.efficiency), "IE3")
-        XCTAssertEqual(extracted.value(.frequency), "50")
+        XCTAssertNil(extracted.value(.nomEff))
+        XCTAssertTrue(extracted.value(.notes)?.contains("IE3") ?? false)
+        XCTAssertEqual(extracted.value(.frequencyHz), "50")
+        XCTAssertEqual(extracted.value(.poles), "4")
+    }
+
+    func testMOCPAndLRAAreNeverFLA() {
+        let text = """
+        HP 10
+        VOLTS 460
+        FLA 12.5
+        LRA 72
+        MOCP 40
+        SFA 14.4
+        HZ 60
+        PH 3
+        """
+        let extracted = NameplateFieldParser.extract(text: text)
+        XCTAssertEqual(extracted.value(.fla), "12.5")
+        XCTAssertEqual(extracted.value(.lra), "72")
+        XCTAssertEqual(extracted.value(.mocp), "40")
+        XCTAssertEqual(extracted.value(.serviceFactorAmps), "14.4")
+        XCTAssertNotEqual(extracted.value(.fla), extracted.value(.lra))
+        XCTAssertNotEqual(extracted.value(.fla), extracted.value(.mocp))
+
+        let mocpOnly = NameplateFieldParser.extract(text: "MOCP 40 A\nHP 10")
+        XCTAssertEqual(mocpOnly.value(.mocp), "40")
+        XCTAssertNil(mocpOnly.value(.fla))
+
+        let lraAmps = NameplateFieldParser.extract(text: "LOCKED ROTOR 72 AMPS\nHP 5")
+        XCTAssertEqual(lraAmps.value(.lra), "72")
+        XCTAssertNil(lraAmps.value(.fla))
+        XCTAssertTrue(NameplateFieldParser.isMOCPOrLRALine("MOCP 40 A"))
+        XCTAssertTrue(NameplateFieldParser.isMOCPOrLRALine("LRA 72"))
+        XCTAssertFalse(NameplateFieldParser.isMOCPOrLRALine("FLA 12.5"))
+    }
+
+    func testSameLineFLAAndLRA() {
+        let extracted = NameplateFieldParser.extract(text: "FLA 12.5 LRA 72\nHP 10")
+        XCTAssertEqual(extracted.value(.fla), "12.5")
+        XCTAssertEqual(extracted.value(.lra), "72")
+    }
+
+    func testDesignCodeInsulationLetters() {
+        let extracted = NameplateFieldParser.extract(text: """
+        HP 10
+        DESIGN B
+        CODE G
+        INSULATION CLASS F
+        """)
+        XCTAssertEqual(extracted.value(.designLetter), "B")
+        XCTAssertEqual(extracted.value(.codeLetter), "G")
+        XCTAssertEqual(extracted.value(.insulationClass), "F")
     }
 
     func testHandoffHelpersPreferHighVoltageOnThreePhase() {
@@ -225,7 +282,7 @@ final class MotorNameplateOCRTests: XCTestCase {
             NameplateOCRLine(text: "RPM 1750"),
             NameplateOCRLine(text: "this line is not a field"),
         ])
-        XCTAssertEqual(result.value(.horsepower), "10")
+        XCTAssertEqual(result.value(.ratedHP), "10")
         XCTAssertEqual(result.value(.rpm), "1750")
         XCTAssertFalse(result.fields.contains { $0.value.contains("this line is not a field") })
         XCTAssertFalse(result.leavesDevice)
@@ -234,5 +291,86 @@ final class MotorNameplateOCRTests: XCTestCase {
     func testExtractionPolicyToolIDIsExplicit() {
         XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "motorNameplateOCR"), .explicit)
         XCTAssertTrue(ToolCalculationPolicy.knownToolIDs.contains("motorNameplateOCR"))
+    }
+
+    func testSharedSchemaKeysAndReviewedFlag() throws {
+        let extracted = NameplateFieldParser.extract(text: """
+        HP 10
+        FLA 12.5
+        LRA 72
+        MOCP 40
+        VOLTS 460
+        HZ 60
+        PH 3
+        PF 82
+        SER A12345
+        """)
+        XCTAssertFalse(extracted.fields.contains { $0.reviewed })
+
+        let record = extracted.schemaRecord()
+        XCTAssertEqual(record.ratedHP.value, 10)
+        XCTAssertEqual(record.fla.value, 12.5)
+        XCTAssertEqual(record.lra.value, 72)
+        XCTAssertEqual(record.mocp.value, 40)
+        XCTAssertEqual(record.voltage.value, "460")
+        XCTAssertEqual(record.frequencyHz.value, 60)
+        XCTAssertEqual(record.phases.value, 3)
+        XCTAssertEqual(record.pf.value, 0.82)
+        XCTAssertEqual(record.serialNumber.value, "A12345")
+        XCTAssertFalse(record.fla.reviewed)
+        XCTAssertNotEqual(record.fla.value, record.lra.value)
+        XCTAssertNotEqual(record.fla.value, record.mocp.value)
+
+        let confirmed = extracted.confirmingReview()
+        XCTAssertTrue(confirmed.field(.fla)?.reviewed ?? false)
+        XCTAssertTrue(confirmed.field(.lra)?.reviewed ?? false)
+        XCTAssertFalse(extracted.field(.fla)?.reviewed ?? true)
+        XCTAssertTrue(confirmed.schemaRecord().fla.reviewed)
+        XCTAssertTrue(record.confirmed().fla.reviewed)
+
+        let json = try XCTUnwrap(record.jsonString())
+        XCTAssertTrue(json.contains("\"fla\""))
+        XCTAssertTrue(json.contains("\"serialNumber\""))
+        XCTAssertTrue(json.contains("\"frequencyHz\""))
+        XCTAssertTrue(json.contains("\"ratedHP\""))
+        XCTAssertTrue(json.contains("\"reviewed\""))
+        XCTAssertTrue(json.contains("\"confidence\""))
+        XCTAssertFalse(json.contains("\"horsepower\""))
+        XCTAssertFalse(json.contains("\"amps\""))
+        XCTAssertFalse(json.contains("\"frequency\""))
+        XCTAssertFalse(json.contains("\"phase\""))
+
+        let decoded = try JSONDecoder().decode(MotorNameplateRecord.self, from: Data(json.utf8))
+        XCTAssertEqual(decoded.fla.value, 12.5)
+        XCTAssertEqual(decoded.lra.value, 72)
+        XCTAssertEqual(decoded.mocp.value, 40)
+        XCTAssertEqual(decoded.pf.value, 0.82)
+        XCTAssertEqual(decoded.serialNumber.value, "A12345")
+        XCTAssertFalse(decoded.fla.reviewed)
+    }
+
+    func testApplyingDraftDoesNotMarkReviewedUntilConfirm() {
+        let extracted = NameplateFieldParser.extract(text: "HP 10\nFLA 12.5")
+        let edited = extracted.applying(draft: [
+            .ratedHP: "15",
+            .fla: "12.5",
+        ])
+        XCTAssertEqual(edited.value(.ratedHP), "15")
+        XCTAssertEqual(edited.field(.ratedHP)?.source, .user)
+        XCTAssertEqual(edited.field(.ratedHP)?.confidence, 1)
+        XCTAssertFalse(edited.field(.ratedHP)?.reviewed ?? true)
+        XCTAssertEqual(edited.field(.fla)?.source, .heuristic)
+        XCTAssertFalse(edited.field(.fla)?.reviewed ?? true)
+
+        let confirmed = edited.confirmingReview()
+        XCTAssertTrue(confirmed.field(.ratedHP)?.reviewed ?? false)
+        XCTAssertTrue(confirmed.field(.fla)?.reviewed ?? false)
+        XCTAssertTrue(confirmed.schemaRecord(forceReviewed: true).ratedHP.reviewed)
+    }
+
+    func testDualFrequencyRecordsSixty() {
+        let extracted = NameplateFieldParser.extract(text: "HP 10\nHZ 50/60")
+        XCTAssertEqual(extracted.value(.frequencyHz), "60")
+        XCTAssertTrue(extracted.value(.notes)?.contains("50/60") ?? false)
     }
 }

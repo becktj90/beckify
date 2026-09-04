@@ -50,8 +50,8 @@ struct MotorNameplateOCRView: View {
                 toolID: .motorNameplateOCR,
                 symbolic: "Vision lines → nameplate fields (HP, RPM, V, A, …) → human confirm",
                 substituted: substituted,
-                meaning: "On-device text recognition is evidence, not the nameplate. The heuristic agent maps labeled lines into fields with per-field confidence. Confirm before Saved Jobs, then optionally seed Motor FLA, Motor Nameplate Analyzer, or Motor Speed. Design aid — not a PE stamp.",
-                citation: "Apple Vision on-device. Parser is a heuristic agent, not a cloud model. NEC math stays in Motor Nameplate Analyzer."
+                meaning: "On-device text recognition is evidence, not the nameplate. The heuristic agent maps labeled lines into the shared nameplate schema (value + confidence + reviewed). Confirm marks reviewed. MOCP and LRA are never used as FLA. Then optionally seed Motor FLA, Motor Nameplate Analyzer, or Motor Speed. Design aid — not a PE stamp.",
+                citation: "Apple Vision on-device. Shared schema with website OCR. Parser is a heuristic agent, not a cloud model. NEC math stays in Motor Nameplate Analyzer."
             )
 
             photoBlock
@@ -225,8 +225,7 @@ struct MotorNameplateOCRView: View {
         .opacity(session.isStale ? 0.72 : 1)
 
         Button {
-            confirmed = true
-            if !reduceMotion { successTick += 1 }
+            confirmReview()
         } label: {
             Text(confirmed ? "Confirmed" : "Confirm reviewed fields")
                 .font(.headline.weight(.semibold))
@@ -240,14 +239,20 @@ struct MotorNameplateOCRView: View {
 
         if confirmed, !session.isStale {
             SaveJobBar(jobName: $jobName, canSave: true) {
+                let record = session.displayedResult?
+                    .applying(draft: draft, confidence: confidence)
+                    .confirmingReview()
+                    .schemaRecord(forceReviewed: true)
                 jobs.save(SavedJob(
                     name: jobName,
                     toolID: .motorNameplateOCR,
-                    inputs: Dictionary(uniqueKeysWithValues: filledDraft.map { ($0.label, $1) }),
+                    inputs: Dictionary(uniqueKeysWithValues: filledDraft.map { ($0.rawValue, $1) }),
                     outputs: [
                         "confirmed": "true",
+                        "reviewed": "true",
                         "agent": session.displayedResult?.agentID ?? "heuristic-v1",
                         "fields": "\(filledDraft.count)",
+                        "schema": record?.jsonString() ?? "",
                     ]
                 ))
             }
@@ -267,12 +272,12 @@ struct MotorNameplateOCRView: View {
             }
         )
         let low = isLow(id)
-        if numericIDs.contains(id) {
+        if id.isNumeric {
             NumberField(
                 title: id.label,
                 unit: id.unit,
                 text: binding,
-                optional: true,
+                optional: id.isOptional,
                 allowsScientific: true,
                 fieldID: id.rawValue,
                 lowConfidence: low
@@ -281,7 +286,7 @@ struct MotorNameplateOCRView: View {
             TextInputField(
                 title: id.label,
                 text: binding,
-                optional: true,
+                optional: id.isOptional,
                 unit: id.unit,
                 autocapitalization: .characters,
                 fieldID: id.rawValue,
@@ -290,11 +295,8 @@ struct MotorNameplateOCRView: View {
         }
     }
 
-    private var numericIDs: Set<NameplateFieldID> {
-        [.horsepower, .rpm, .voltage, .amps, .powerFactor, .serviceFactor, .frequency, .phase]
-    }
-
     private func isLow(_ id: NameplateFieldID) -> Bool {
+        guard !confirmed else { return false }
         guard !(draft[id] ?? "").isEmpty else { return false }
         return (confidence[id] ?? 1) < NameplateFieldParser.lowConfidenceThreshold
     }
@@ -343,6 +345,15 @@ struct MotorNameplateOCRView: View {
         }
     }
 
+    private func confirmReview() {
+        guard let current = session.displayedResult, !session.isStale, !filledDraft.isEmpty else { return }
+        let reviewed = current.applying(draft: draft, confidence: confidence).confirmingReview()
+        session.calculate { reviewed }
+        confirmed = true
+        apply(reviewed)
+        if !reduceMotion { successTick += 1 }
+    }
+
     private func apply(_ extracted: NameplateExtraction) {
         var nextDraft: [NameplateFieldID: String] = [:]
         var nextConfidence: [NameplateFieldID: Double] = [:]
@@ -374,6 +385,8 @@ struct MotorNameplateOCRView: View {
         RPM 1750
         VOLTS 230/460
         AMPS 25.0/12.5
+        LRA 72
+        MOCP 40
         HZ 60
         PH 3
         SF 1.15
@@ -381,6 +394,9 @@ struct MotorNameplateOCRView: View {
         EFF 89.5
         FRAME 215T
         ENCL TEFC
+        DESIGN B
+        CODE G
+        CLASS F
         SER A12345
         """
         recognizeError = nil
@@ -390,7 +406,7 @@ struct MotorNameplateOCRView: View {
 
     private var substituted: String? {
         guard let extracted = session.displayedResult else { return nil }
-        let hp = draft[.horsepower] ?? extracted.value(.horsepower) ?? "—"
+        let hp = draft[.ratedHP] ?? extracted.value(.ratedHP) ?? "—"
         let rpm = draft[.rpm] ?? extracted.value(.rpm) ?? "—"
         let volts = draft[.voltage] ?? extracted.value(.voltage) ?? "—"
         return "\(extracted.populatedCount) fields · HP \(hp) · \(rpm) RPM · \(volts) V"
@@ -398,7 +414,7 @@ struct MotorNameplateOCRView: View {
 
     private var sticky: String? {
         guard session.displayedResult != nil else { return nil }
-        let hp = draft[.horsepower] ?? "—"
+        let hp = draft[.ratedHP] ?? "—"
         let rpm = draft[.rpm] ?? "—"
         return confirmed
             ? "Confirmed  ·  \(hp) HP  ·  \(rpm) RPM"

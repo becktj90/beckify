@@ -651,7 +651,7 @@ enum ToolboxCatalog {
             id: .motorNameplateOCR,
             kind: .calculator,
             title: "Motor Nameplate OCR",
-            subtitle: "Photograph a plate; Vision + heuristic fields, then you confirm.",
+            subtitle: "Photograph a plate; Vision + shared-schema fields, then you confirm.",
             symbol: "text.viewfinder",
             synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan"]
         ),

@@ -38,7 +38,7 @@ Field — jobsite calculators, wizards, and instruments:
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA (typed or seeded from a confirmed OCR review)
-• Motor Nameplate OCR — camera or photo library, on-device Vision, heuristic field extract (HP, RPM, V, A, and the rest of a typical plate), human confirm before Saved Jobs; optional seed into Motor FLA / Analyzer / Speed. No cloud upload.
+• Motor Nameplate OCR — camera or photo library, on-device Vision, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed. No cloud upload.
 • Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
 • Heater Design Wizard — resistive heater line current, leg R, and resistance-wire length
 • UPS / On-site Power — design kVA, runtime, and battery Ah from critical load
@@ -100,7 +100,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pv,opamp,snr,adc
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Home is Field vs Toolkit — jobsite tools open first; basics, bench homework, and the reference library live in Toolkit. Sensors sit under Field → Instruments. Search covers both and labels the area. Saved Jobs prefer Field and can Open in tool with a best-effort restore. Motor Nameplate OCR: photograph or pick a plate, on-device Vision, heuristic fields (HP, RPM, V, A, and the rest), confirm before Saved Jobs, optional seed into Motor FLA / Nameplate Analyzer / Speed. Photos stay on device; cloud VLM is off. Analyzer remains the NEC 430 calculator. Facility tools and Solar Design Wizard stay in Field. AoE analog lives in Toolkit → Bench. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Home is Field vs Toolkit — jobsite tools open first; basics, bench homework, and the reference library live in Toolkit. Sensors sit under Field → Instruments. Search covers both and labels the area. Saved Jobs prefer Field and can Open in tool with a best-effort restore. Motor Nameplate OCR: photograph or pick a plate, on-device Vision, shared schema (value + confidence + reviewed; confirm sets reviewed). MOCP/LRA are never FLA. Optional seed into Motor FLA / Nameplate Analyzer / Speed. Photos stay on device; cloud VLM is off. Analyzer remains the NEC 430 calculator. Facility tools and Solar Design Wizard stay in Field. AoE analog lives in Toolkit → Bench. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
