@@ -120,6 +120,16 @@ assert.match(src, /OCR failed\. Fill the fields manually/);
 assert.match(src, /el\('mnp_phase'\)\.value = ''/);
 assert.equal((src.match(/mnp_phase'\)\.value = '3'/g) || []).length, 0);
 
+const afterAi = api.nextSourceAfterEditedParse('vlm');
+assert.equal(afterAi.kind, 'edited-ai');
+assert.match(api.sourceMessage(afterAi.kind, afterAi.extra), /edited AI transcript/i);
+assert.doesNotMatch(api.sourceMessage(afterAi.kind, afterAi.extra), /photo stayed on this device/i);
+const afterTess = api.nextSourceAfterEditedParse('tesseract');
+assert.equal(afterTess.kind, 'tesseract');
+assert.match(api.sourceMessage(afterTess.kind, afterTess.extra), /Parsed from edited text/i);
+assert.match(api.sourceMessage('tesseract'), /photo stayed on this device/i);
+assert.match(src, /keepAiSource/);
+
 vm.runInContext(fs.readFileSync(path.join(root, 'ocr-helper.js'), 'utf8'), sandbox, { filename: 'ocr-helper.js' });
 const ocr = sandbox.__ocrHelperTestApi;
 const mocp = ocr.parseMotorNameplate('MOCP 30 FLA 14.5 HP 10');

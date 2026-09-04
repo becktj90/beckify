@@ -303,6 +303,8 @@
   }
 
   function asLookScore(value) {
+    if (value == null || value === '') return null;
+    if (typeof value === 'string' && !String(value).trim()) return null;
     var n = Number(value);
     if (!Number.isFinite(n)) return null;
     return Math.max(0, Math.min(100, Math.round(n)));
@@ -583,6 +585,7 @@
     analyzeTdr: analyzeTdr,
     analyzeLook: analyzeLook,
     normalizeLookDraft: normalizeLookDraft,
+    asLookScore: asLookScore,
     extractJsonObject: extractJsonObject,
     safeExtractJsonObject: safeExtractJsonObject,
     formatVisionError: formatVisionError,

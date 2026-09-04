@@ -167,6 +167,23 @@ const flaKeptWhenLabeled = schema.normalizeDraft({
 }, { rawText: 'FLA 14.5 MOCP 30' });
 assert.equal(flaKeptWhenLabeled.fields.fla.value, 14.5);
 
+const ampsKeptWithLra = schema.normalizeDraft({
+  fla: 12,
+  lra: 84,
+}, { rawText: 'HP 10 VOLTS 460 AMPS 12 LRA 84' });
+assert.equal(ampsKeptWithLra.fields.fla.value, 12);
+assert.equal(ampsKeptWithLra.fields.lra.value, 84);
+
+const fromEdited = schema.fromLegacyParse({
+  manufacturer: 'ACME',
+  hp: '10',
+  volts: '460',
+  fla: '12',
+  lra: '84',
+}, { rawText: 'MFR ACME MODEL ABC123 HP 10 VOLTS 460 AMPS 12 LRA 84' });
+assert.equal(fromEdited.fields.fla.value, 12);
+assert.equal(fromEdited.fields.lra.value, 84);
+
 const merged = schema.mergePanelDrafts({
   circuits: [{ circuit: '1', description: 'Lights', trip: 20 }],
   panel: { name: 'LP-1' },
@@ -182,6 +199,36 @@ assert.equal(merged.rows.find((row) => row.circuit.value === '2').description.va
 assert.equal(merged.panel.name.value, 'LP-1');
 assert.equal(merged.panel.voltage.value, '208Y/120V');
 assert.equal(merged.panel.phases.value, 3);
+
+const leftHalf = [];
+const rightHalf = [];
+for (let i = 1; i <= 21; i += 1) leftHalf.push({ circuit: String(i), description: i === 1 ? 'Lights' : '' });
+for (let i = 22; i <= 42; i += 1) rightHalf.push({ circuit: String(i), description: i === 22 ? 'Receptacles' : '' });
+const mergedHalves = schema.mergePanelDrafts(
+  { slotCount: 21, circuits: leftHalf },
+  { slotCount: 21, circuits: rightHalf },
+);
+assert.equal(mergedHalves.slotCount, 42);
+assert.ok(mergedHalves.rows.some((row) => row.circuit.value === '1'));
+assert.ok(mergedHalves.rows.some((row) => row.circuit.value === '42'));
+
+const samePanelTwice = schema.mergePanelDrafts(
+  { slotCount: 42, circuits: [{ circuit: '1' }, { circuit: '42' }] },
+  { slotCount: 42, circuits: [{ circuit: '1' }, { circuit: '40' }] },
+);
+assert.equal(samePanelTwice.slotCount, 42);
+
+const unlabeledHalves = schema.mergePanelDrafts(
+  { slotCount: 21, circuits: [] },
+  { slotCount: 21, circuits: [] },
+);
+assert.equal(unlabeledHalves.slotCount, 42);
+
+const disjointFullReads = schema.mergePanelDrafts(
+  { slotCount: 42, circuits: leftHalf },
+  { slotCount: 42, circuits: rightHalf },
+);
+assert.equal(disjointFullReads.slotCount, 42);
 
 const panelPhaseUnknown = schema.normalizePanelDraft({
   panel: { phases: 2, busAmps: 225 },

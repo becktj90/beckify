@@ -161,6 +161,20 @@ assert.equal(noStealAmp.fields.fla, '');
 assert.equal(noStealAmp.fields.mocp, '30');
 assert.equal(noStealAmp.fields.lra, '84');
 
+const unlistedMfr = api.parseMotorNameplate('MFR ACME MODEL ABC123 HP 10 VOLTS 460');
+assert.equal(unlistedMfr.fields.manufacturer, 'ACME');
+assert.doesNotMatch(String(unlistedMfr.fields.manufacturer), /MODEL|VOLTS|HP 10/i);
+assert.equal(unlistedMfr.fields.model, 'ABC123');
+assert.equal(unlistedMfr.fields.hp, '10');
+assert.equal(unlistedMfr.fields.volts, '460');
+
+const ampsThenLra = api.parseMotorNameplate('HP 10 VOLTS 460 AMPS 12 LRA 84');
+assert.equal(ampsThenLra.fields.fla, '12');
+assert.equal(ampsThenLra.fields.lra, '84');
+assert.notEqual(ampsThenLra.fields.fla, '84');
+assert.equal(ampsThenLra.fields.hp, '10');
+assert.equal(ampsThenLra.fields.volts, '460');
+
 const vendorDir = path.join(root, 'vendor', 'tesseract');
 for (const file of ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-lstm.wasm.js', 'eng.traineddata.gz']) {
   assert.ok(fs.existsSync(path.join(vendorDir, file)), 'missing vendor file ' + file);

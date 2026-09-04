@@ -578,11 +578,19 @@
     return '';
   }
 
+  var NEXT_NAMEPLATE_LABEL = '(?:MODEL|MOD(?:EL)?|HP|HORSEPOWER|VOLTS?|VOLTAGE|AMP(?:S|ERES)?|FLA|S\\.?F\\.?|PH(?:ASES?)?|RPM|HERTZ|HZ|FRAME|TYPE|ENCL(?:OSURE)?|SN|S\\/?N|SER(?:IAL)?|CAT(?:ALOG)?|PART|P\\/?N|DESIGN|CODE|CLASS|PF|kW|KW)';
+
   function extractManufacturer(str) {
     var src = String(str || '');
     var known = src.match(KNOWN_MANUFACTURER);
     if (known) return String(known[1]).replace(/\s+/g, ' ');
-    var labeled = src.match(/\b(?:MFG|MFR|MANUFACTURER)\s*[:#]?\s*([A-Za-z][A-Za-z0-9.& \-]{1,28})/);
+    /* Unlisted MFR/MFG values must stop at the next nameplate label.
+       "MFR ACME MODEL ABC123 HP 10 VOLTS 460" is manufacturer ACME, not
+       the rest of the plate. */
+    var labeled = src.match(new RegExp(
+      '\\b(?:MFG|MFR|MANUFACTURER)\\s*[:#]?\\s+([A-Za-z][A-Za-z0-9.&\\-]{1,28}(?:\\s+(?!' + NEXT_NAMEPLATE_LABEL + '\\b)[A-Za-z][A-Za-z0-9.&\\-]{1,20}){0,3})(?=\\s+' + NEXT_NAMEPLATE_LABEL + '\\b|\\s*$|[\\n\\r])',
+      'i'
+    ));
     return labeled ? String(labeled[1]).trim() : '';
   }
 
@@ -629,13 +637,11 @@
       pick(/\b([0-9]{2,4}(?:\/[0-9]{2,4})?)\s*VOLTS?\b(?!\s*[:#]?\s*[0-9])/i);
 
     var labeledFla = extractLabeledFla(compact);
-    var hasFlaLabel = /\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?)\b/i.test(compact);
-    var hasRejectedAmp = /\b(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?)\b/i.test(compact);
-    var genericFla = '';
-    if (hasFlaLabel || !hasRejectedAmp) {
-      genericFla = pickAmp(/\bAMP(?:S|ERES)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\b/i) ||
-        pickAmp(/\b([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\s*A(?:MPS?)?\b/i);
-    }
+    /* pickAmp already skips values whose nearby prefix is LRA/MOCP/MCA/SCA.
+       A later rejected label (e.g. "AMPS 12 LRA 84") must not suppress the
+       nearby AMPS figure. */
+    var genericFla = pickAmp(/\bAMP(?:S|ERES)?\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\b/i) ||
+      pickAmp(/\b([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+(?:\.[0-9]+)?)?)\s*A(?:MPS?)?\b/i);
     var dualAmpOnly = compact.match(/\b(?:AMP(?:S|ERES)?)\s*[:#]?\s*([0-9]+(?:\.[0-9]+)?\/[0-9]+(?:\.[0-9]+)?)\b/i);
     var fla = (dualPair && dualPair[2]) || labeledFla || (dualAmpOnly && dualAmpOnly[1]) || genericFla;
 

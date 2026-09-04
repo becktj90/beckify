@@ -46,7 +46,7 @@
   FIELD_SPECS.forEach(function (spec) { FIELD_LABELS[spec.name] = spec.label; });
   var REJECTED_AMP_AS_FLA = /(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|AIC|KAIC|SCCR)/i;
   var DUAL_NUMBER = /^([0-9]+(?:\.[0-9]+)?)\/([0-9]+(?:\.[0-9]+)?)$/;
-  var FLA_NEAR_LABEL = /(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?)/i;
+  var FLA_NEAR_LABEL = /(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD(?:\s*AMPS?)?|\bAMP(?:S|ERES)?)\b/i;
 
   function emptyField() {
     return { value: null, confidence: 0, userReviewed: false };
@@ -452,6 +452,80 @@
     return cell.value !== null && cell.value !== '';
   }
 
+  var TYPICAL_PANEL_SLOTS = [8, 12, 16, 18, 20, 24, 30, 32, 36, 40, 42, 48, 54, 60, 72, 84];
+
+  function snapPanelSlots(n) {
+    n = Number(n);
+    if (!Number.isFinite(n) || n < 6) return 0;
+    n = Math.min(84, Math.round(n));
+    var best = n;
+    var bestDist = Infinity;
+    TYPICAL_PANEL_SLOTS.forEach(function (typical) {
+      var dist = Math.abs(typical - n);
+      if (dist < bestDist || (dist === bestDist && typical >= n)) {
+        bestDist = dist;
+        best = typical;
+      }
+    });
+    return bestDist <= 2 ? best : n;
+  }
+
+  function collectCircuitNumbers(draft) {
+    var seen = {};
+    var nums = [];
+    (draft && draft.rows || []).forEach(function (row) {
+      var n = Number(circuitKey(row));
+      if (!Number.isFinite(n) || n < 1 || n > 84) return;
+      var rounded = Math.round(n);
+      if (seen[rounded]) return;
+      seen[rounded] = true;
+      nums.push(rounded);
+    });
+    return nums;
+  }
+
+  function mergeSlotCounts(left, right) {
+    var a = Number(left && left.slotCount) || 0;
+    var b = Number(right && right.slotCount) || 0;
+    var ca = collectCircuitNumbers(left);
+    var cb = collectCircuitNumbers(right);
+    var unionMap = {};
+    var overlap = 0;
+    var maxCovered = 0;
+    ca.forEach(function (n) { unionMap[n] = true; });
+    cb.forEach(function (n) {
+      if (unionMap[n]) overlap += 1;
+      else unionMap[n] = true;
+    });
+    Object.keys(unionMap).forEach(function (key) {
+      var n = Number(key);
+      if (n > maxCovered) maxCovered = n;
+    });
+    var unionSize = Object.keys(unionMap).length;
+    var combined;
+    var bothPartial = a > 0 && b > 0 && a < 30 && b < 30;
+    if (ca.length && cb.length) {
+      var smaller = Math.min(ca.length, cb.length);
+      /* Sum only when both reads look like panel halves. Two full-panel
+         OCR passes can cover disjoint circuit numbers and still each
+         report 42 — those must stay 42, not 84. */
+      if (bothPartial && smaller && (overlap / smaller) < 0.35) {
+        combined = Math.max(a + b, unionSize, maxCovered);
+        return snapPanelSlots(combined) || combined;
+      }
+      combined = Math.max(a, b, maxCovered, unionSize);
+      return snapPanelSlots(combined) || combined;
+    }
+    /* Two partial-looking counts with no shared circuit numbers are treated
+       as different halves (21 + 21 → 42). Two full-panel reads stay at max. */
+    if (a > 0 && b > 0 && a < 30 && b < 30 && !overlap) {
+      combined = a + b;
+      return snapPanelSlots(combined) || combined;
+    }
+    combined = Math.max(a, b, maxCovered);
+    return snapPanelSlots(combined) || combined || 0;
+  }
+
   function mergePanelDrafts(base, incoming) {
     var left = normalizePanelDraft(base || {});
     var right = normalizePanelDraft(incoming || {});
@@ -488,7 +562,7 @@
       task: 'panel',
       rows: order.slice(0, 84),
       panel: panel,
-      slotCount: Math.max(left.slotCount || 0, right.slotCount || 0),
+      slotCount: mergeSlotCounts(left, right),
       source: right.source || left.source || 'merged',
       rawText: rawParts.join('\n'),
       warnings: warnings,
@@ -515,6 +589,7 @@
     fieldLabel: fieldLabel,
     normalizePanelDraft: normalizePanelDraft,
     mergePanelDrafts: mergePanelDrafts,
+    mergeSlotCounts: mergeSlotCounts,
     emptyPanelRow: emptyPanelRow,
     clampConfidence: clampConfidence,
     dualPair: dualPair,

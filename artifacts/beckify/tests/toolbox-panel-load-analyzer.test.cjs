@@ -162,6 +162,26 @@ const unknownPhase = panel.computeDirectoryMetrics(
 );
 assert.match(unknownPhase.phaseBalance.assumption, /never assumed/i);
 
+const seeded = [];
+for (let i = 1; i <= 42; i += 1) {
+  seeded.push({ circuit: String(i), description: '', trip: '', poles: '1' });
+}
+seeded[0] = { circuit: '1', description: 'AHU', trip: '30A', poles: '2' };
+const seededMetrics = panel.computeDirectoryMetrics(seeded, { phase: 3, mainAmps: 200, slotCount: 42 });
+assert.equal(seededMetrics.spareTotal, 42);
+assert.notEqual(seededMetrics.spareTotal, 43);
+assert.equal(seededMetrics.spareCount, 40);
+const seeded1ph = panel.computeDirectoryMetrics(seeded, { phase: 1, mainAmps: 200, slotCount: 42 });
+assert.equal(seeded1ph.spareCount, 40);
+
+assert.equal(panel.MAX_SHOTS_PER_VIEW, 3);
+assert.equal(panel.MAX_SHOTS_TOTAL, 5);
+assert.equal(panel.canAddPanelShot({ schedule: ['a', 'b'], breakers: ['c', 'd'] }, 'schedule'), true);
+assert.equal(panel.canAddPanelShot({ schedule: ['a', 'b', 'c'], breakers: ['d', 'e'] }, 'breakers'), false);
+assert.equal(panel.canAddPanelShot({ schedule: ['a', 'b', 'c'], breakers: ['d', 'e'] }, 'schedule'), false);
+assert.equal(panel.canAddPanelShot({ schedule: ['a'], breakers: [] }, 'breakers'), true);
+assert.match(panelHtml, /5 total/);
+
 const twoUp = panel.parseScheduleText([
   'PANEL BLT 11',
   'POWER POLE RM 105 1 2 POWER POLE RM 106',

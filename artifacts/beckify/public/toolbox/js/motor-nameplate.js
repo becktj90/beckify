@@ -227,6 +227,7 @@
     notes: 'mnp_notes',
   };
   var lastDraft = null;
+  var lastSourceKind = '';
   var lastProgress = 0;
 
   function clearParsedFields() {
@@ -344,7 +345,34 @@
     });
   }
 
+  function sourceMessage(kind, extra) {
+    if (!kind) return '';
+    if (kind === 'vlm') {
+      return 'Source: AI draft' + (extra ? ' (' + extra + ')' : '') + '. Photos were forwarded only because Enhance with AI was on. On-device Tesseract was not used for this read.';
+    }
+    if (kind === 'edited-ai') {
+      return extra || 'Source: local parse of the edited AI transcript. The original photo was sent to the AI reader; this step did not re-read the photo.';
+    }
+    if (kind === 'tesseract') {
+      return extra
+        ? 'Source: on-device parse. ' + extra
+        : 'Source: on-device Tesseract. The photo stayed on this device.';
+    }
+    return extra || '';
+  }
+
+  function nextSourceAfterEditedParse(priorKind) {
+    if (priorKind === 'vlm' || priorKind === 'edited-ai' || priorKind === 'merged') {
+      return {
+        kind: 'edited-ai',
+        extra: 'Source: local parse of the edited AI transcript. The original photo was sent to the AI reader; this step did not re-read the photo.',
+      };
+    }
+    return { kind: 'tesseract', extra: 'Parsed from edited text.' };
+  }
+
   function setSource(kind, extra) {
+    lastSourceKind = kind || '';
     var n = el('mnp_source');
     if (!n) return;
     if (!kind) {
@@ -353,13 +381,7 @@
       return;
     }
     n.hidden = false;
-    if (kind === 'vlm') {
-      n.textContent = 'Source: AI draft' + (extra ? ' (' + extra + ')' : '') + '. Photos were forwarded only because Enhance with AI was on. On-device Tesseract was not used for this read.';
-    } else if (kind === 'tesseract') {
-      n.textContent = 'Source: on-device Tesseract. The photo stayed on this device.';
-    } else {
-      n.textContent = extra || '';
-    }
+    n.textContent = sourceMessage(kind, extra);
   }
 
   function setProgress(ratio, status) {
@@ -534,7 +556,8 @@
     }
   }
 
-  function applyTesseractResult(out) {
+  function applyTesseractResult(out, options) {
+    options = options || {};
     var text = (out && out.text) || '';
     if (el('mnp_raw')) el('mnp_raw').value = text;
     var empty = !!(out && out.failed) || !String(text).trim();
@@ -555,7 +578,11 @@
       applyDraft(draft);
     }
     clearReview();
-    setSource('tesseract');
+    if (options.keepAiSource) {
+      setSource('edited-ai', options.extra);
+    } else {
+      setSource('tesseract', options.extra);
+    }
     var filled = draft && typeof draft.filled === 'number' ? draft.filled : 0;
     var msg = empty
       ? 'OCR found no usable text. Previous draft fields were cleared. Fill the fields manually — you are not blocked.'
@@ -569,13 +596,16 @@
       setStatus('OCR helper did not load. Fill the fields manually.');
       return;
     }
+    var next = nextSourceAfterEditedParse(lastSourceKind);
+    var opts = next.kind === 'edited-ai'
+      ? { keepAiSource: true, extra: next.extra }
+      : { extra: next.extra };
     if (!String(text).trim()) {
-      applyTesseractResult({ text: '', failed: true, confidence: 0 });
+      applyTesseractResult({ text: '', failed: true, confidence: 0 }, opts);
       setStatus('Raw text is empty. Draft fields were cleared. Type or paste OCR text, or fill the fields manually.');
       return;
     }
-    applyTesseractResult({ text: text, failed: false, lowConfidence: false, confidence: 70 });
-    setSource('tesseract', 'parsed from edited text');
+    applyTesseractResult({ text: text, failed: false, lowConfidence: false, confidence: 70 }, opts);
     setStatus('Parsed the edited text into a draft. Correct every field, then check the review box.');
   }
 
@@ -723,6 +753,8 @@
     applyFields: applyFields,
     applyTesseractResult: applyTesseractResult,
     parseEditedText: parseEditedText,
+    sourceMessage: sourceMessage,
+    nextSourceAfterEditedParse: nextSourceAfterEditedParse,
     highlightDraftFields: highlightDraftFields,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -5,6 +5,7 @@
 const MAX_CIRCUIT_SLOTS = 42;
 const MAX_EDITOR_SLOTS = 84;
 const MAX_SHOTS_PER_VIEW = 3;
+const MAX_SHOTS_TOTAL = 5;
 const TYPICAL_SLOT_COUNTS = [8, 12, 16, 18, 20, 24, 30, 32, 36, 40, 42, 48, 54, 60, 72, 84];
 const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];
 const REQUIRED_VIEWS = ['schedule', 'breakers'];
@@ -288,6 +289,21 @@ function allViewFiles() {
   return REQUIRED_VIEWS.flatMap(view => viewFiles(view));
 }
 
+function canAddPanelShot(photos, kind) {
+  const counts = photos || {};
+  const schedule = (counts.schedule || []).length;
+  const breakers = (counts.breakers || []).length;
+  const viewCount = kind === 'breakers' ? breakers : schedule;
+  return viewCount < MAX_SHOTS_PER_VIEW && (schedule + breakers) < MAX_SHOTS_TOTAL;
+}
+
+function canAddShot(kind) {
+  return canAddPanelShot({
+    schedule: viewFiles('schedule'),
+    breakers: viewFiles('breakers'),
+  }, kind);
+}
+
 function syncLegacyFiles() {
   state.files = allViewFiles();
   state.file = state.files[state.files.length - 1] || null;
@@ -313,7 +329,7 @@ function updateViewPreview(view) {
       ? (view === 'breakers' ? 'No breaker photo yet' : 'No schedule photo yet')
       : (bucket.files.length === 1 ? last.name : bucket.files.length + ' photos — last: ' + last.name);
   }
-  if (addButton) addButton.disabled = bucket.files.length === 0 || bucket.files.length >= MAX_SHOTS_PER_VIEW;
+  if (addButton) addButton.disabled = bucket.files.length === 0 || !canAddShot(view);
 }
 
 function refreshIntakeUi() {
@@ -355,11 +371,13 @@ function handleFileSelection(file, opts) {
     });
     bucket.files = [file];
     bucket.urls = [URL.createObjectURL(file)];
-  } else if (bucket.files.length < MAX_SHOTS_PER_VIEW) {
+  } else if (canAddShot(view)) {
     bucket.files.push(file);
     bucket.urls.push(URL.createObjectURL(file));
   } else {
-    setStatus('That view already has three photos. Reset to start a new set.');
+    setStatus(viewState(view).files.length >= MAX_SHOTS_PER_VIEW
+      ? 'That view already has three photos. Reset to start a new set.'
+      : 'This read is limited to 5 photos total (the AI quota is 5 reads / 15 min). Reset to start a new set.');
     return;
   }
 
@@ -1354,13 +1372,34 @@ function rowSlotCount(row) {
   return Math.max(1, Number(row && row.poles) || 1);
 }
 
-function spareStats(rows, slotCount) {
+function multiPoleContinuationCircuits(rows, phase) {
+  const reserved = Object.create(null);
+  const stride = Number(phase) === 1 ? 1 : 2;
+  (rows || []).forEach(row => {
+    const poles = Math.max(1, Number(row && row.poles) || 1);
+    if (poles < 2 || isSpareOrOpen(row)) return;
+    const start = firstCircuitNumber(row && row.circuit);
+    if (!Number.isFinite(start) || start < 1 || start === Number.MAX_SAFE_INTEGER) return;
+    for (let i = 1; i < poles; i += 1) {
+      reserved[start + i * stride] = true;
+    }
+  });
+  return reserved;
+}
+
+function spareStats(rows, slotCount, phase) {
   const list = Array.isArray(rows) ? rows : [];
+  const seeded = Number(slotCount) > 0 && list.length >= Number(slotCount);
+  const reserved = seeded ? multiPoleContinuationCircuits(list, phase) : Object.create(null);
   let spare = 0;
   let fromRows = 0;
   list.forEach(row => {
-    const slots = rowSlotCount(row);
+    /* After a full seed, every physical space is already a row. Counting
+       poles on top of those rows double-counts a 2-pole breaker. */
+    const slots = seeded ? 1 : rowSlotCount(row);
     fromRows += slots;
+    const circuit = firstCircuitNumber(row && row.circuit);
+    if (seeded && Number.isFinite(circuit) && reserved[circuit]) return;
     if (isSpareOrOpen(row)) spare += slots;
   });
   const total = slotCount > 0 ? slotCount : fromRows;
@@ -1422,7 +1461,7 @@ function computeDirectoryMetrics(rows, opts) {
   const fromRows = list.reduce((n, row) => n + rowSlotCount(row), 0);
   const slotCount = Number(opts.slotCount) || fromRows;
   const connected = connectedBreakerSum(list);
-  const spare = spareStats(list, slotCount);
+  const spare = spareStats(list, slotCount, phase);
   const unlabeled = list.filter(isUnlabeled);
   const vague = list.filter(isVague);
   const doubled = list.filter(looksDoubledUp);
@@ -1460,7 +1499,7 @@ function renderDirectoryMetrics() {
   const metrics = computeDirectoryMetrics(rows, {
     phase: selectedPhase(),
     mainAmps: elements.panelCapacityAmps ? elements.panelCapacityAmps.value : '',
-    slotCount: rows.reduce((n, row) => n + rowSlotCount(row), 0) || MAX_CIRCUIT_SLOTS,
+    slotCount: Number(state.slotCount) || rows.length || MAX_CIRCUIT_SLOTS,
   });
   const mainLabel = metrics.mainAmps
     ? `${formatNumber(metrics.connectedBreakerAmps)} A vs ${formatNumber(metrics.mainAmps)} A main (${formatNumber(metrics.connectedToMainPct)}% connected)`
@@ -1472,7 +1511,7 @@ function renderDirectoryMetrics() {
   elements.directoryGrid.innerHTML = [
     summaryMetric('Main vs connected branch breakers', mainLabel, 'Sum of trip ratings on non-spare rows. Rough indicator only.'),
     summaryMetric('Rough phase balance', legText, metrics.phaseBalance.assumption),
-    summaryMetric('Spare / open slots', `${metrics.spareCount} of ${metrics.spareTotal} (${formatNumber(metrics.sparePct)}%)`, 'Physical slots from pole count on spare/blank/open wording.'),
+    summaryMetric('Spare / open slots', `${metrics.spareCount} of ${metrics.spareTotal} (${formatNumber(metrics.sparePct)}%)`, 'Physical spaces in the reviewed table. Multi-pole breakers already occupy following seeded rows.'),
     summaryMetric('Worth asking an electrician', metrics.flags.length ? metrics.flags.join('; ') : 'No extra flags from labels', 'Flags are not diagnosed defects.'),
   ].join('');
   const notes = [
@@ -1780,6 +1819,9 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     computeDirectoryMetrics,
     mergeCircuitRows,
     tableHasUserContent,
-    selectedPhase
+    selectedPhase,
+    canAddPanelShot,
+    MAX_SHOTS_PER_VIEW,
+    MAX_SHOTS_TOTAL
   };
 }
