@@ -189,6 +189,7 @@ public enum ToolCalculationPolicy {
         "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
+        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
     ]
 
     public static var liveToolIDs: [String] {

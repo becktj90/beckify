@@ -399,6 +399,11 @@ extension GlyphKind {
         case .linearRegulator: return .linearRegulator
         case .instrumentationAmp: return .instrumentationAmp
         case .adcDac: return .adcDac
+        case .eBikeTorqueRPM: return .eBikeTorqueRPM
+        case .eBikeSprocket: return .eBikeSprocket
+        case .eBikeRange: return .eBikeRange
+        case .eBikePackDesigner: return .eBikePackDesigner
+        case .nickelStrip: return .nickelStrip
         }
     }
 }
@@ -469,6 +474,11 @@ enum GlyphKind {
     case linearRegulator
     case instrumentationAmp
     case adcDac
+    case eBikeTorqueRPM
+    case eBikeSprocket
+    case eBikeRange
+    case eBikePackDesigner
+    case nickelStrip
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -538,6 +548,11 @@ enum GlyphKind {
         case .linearRegulator: return Self.linearRegulator(rect)
         case .instrumentationAmp: return Self.instrumentationAmp(rect)
         case .adcDac: return Self.adcDac(rect)
+        case .eBikeTorqueRPM: return Self.eBikeTorqueRPM(rect)
+        case .eBikeSprocket: return Self.eBikeSprocket(rect)
+        case .eBikeRange: return Self.eBikeRange(rect)
+        case .eBikePackDesigner: return Self.eBikePackDesigner(rect)
+        case .nickelStrip: return Self.nickelStrip(rect)
         }
     }
 
@@ -1906,6 +1921,97 @@ enum GlyphKind {
         )
         path.move(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.24))
         path.addLine(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.44))
+        return path
+    }
+
+    /// Motor circle with a torque arc and a radial shaft tick.
+    private static func eBikeTorqueRPM(_ r: CGRect) -> Path {
+        var path = Path()
+        let radius = min(r.width, r.height) * 0.32
+        path.addEllipse(in: CGRect(x: r.midX - radius, y: r.midY - radius, width: radius * 2, height: radius * 2))
+        path.addEllipse(in: CGRect(x: r.midX - radius * 0.28, y: r.midY - radius * 0.28, width: radius * 0.56, height: radius * 0.56))
+        path.addArc(
+            center: CGPoint(x: r.midX, y: r.midY),
+            radius: radius * 1.28,
+            startAngle: .degrees(-20),
+            endAngle: .degrees(110),
+            clockwise: false
+        )
+        let tip = CGPoint(
+            x: r.midX + cos(110 * .pi / 180) * radius * 1.28,
+            y: r.midY + sin(110 * .pi / 180) * radius * 1.28
+        )
+        path.move(to: tip)
+        path.addLine(to: CGPoint(x: tip.x + r.width * 0.06, y: tip.y + r.height * 0.04))
+        path.move(to: tip)
+        path.addLine(to: CGPoint(x: tip.x - r.width * 0.02, y: tip.y + r.height * 0.08))
+        path.move(to: CGPoint(x: r.midX, y: r.midY))
+        path.addLine(to: CGPoint(x: r.midX + radius * 0.85, y: r.midY - radius * 0.2))
+        return path
+    }
+
+    /// Small drive sprocket and larger driven sprocket on a chain line.
+    private static func eBikeSprocket(_ r: CGRect) -> Path {
+        var path = Path()
+        let drive = CGRect(x: r.minX + r.width * 0.08, y: r.midY - r.height * 0.14, width: r.width * 0.28, height: r.width * 0.28)
+        let driven = CGRect(x: r.maxX - r.width * 0.46, y: r.midY - r.height * 0.26, width: r.width * 0.4, height: r.width * 0.4)
+        path.addEllipse(in: drive)
+        path.addEllipse(in: driven)
+        path.addEllipse(in: drive.insetBy(dx: drive.width * 0.28, dy: drive.height * 0.28))
+        path.addEllipse(in: driven.insetBy(dx: driven.width * 0.3, dy: driven.height * 0.3))
+        path.move(to: CGPoint(x: drive.midX, y: drive.minY))
+        path.addLine(to: CGPoint(x: driven.midX, y: driven.minY + driven.height * 0.08))
+        path.move(to: CGPoint(x: drive.midX, y: drive.maxY))
+        path.addLine(to: CGPoint(x: driven.midX, y: driven.maxY - driven.height * 0.08))
+        return path
+    }
+
+    /// Battery block with a range arrow.
+    private static func eBikeRange(_ r: CGRect) -> Path {
+        var path = Path()
+        let body = CGRect(x: r.minX + r.width * 0.1, y: r.minY + r.height * 0.18, width: r.width * 0.36, height: r.height * 0.28)
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: r.width * 0.04, height: r.width * 0.04))
+        path.addRect(CGRect(x: body.maxX, y: body.midY - r.height * 0.06, width: r.width * 0.05, height: r.height * 0.12))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.28))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.maxY - r.height * 0.28))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.26, y: r.maxY - r.height * 0.38))
+        path.move(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.maxY - r.height * 0.28))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.26, y: r.maxY - r.height * 0.18))
+        return path
+    }
+
+    /// Six cell circles in a 3×2 pack grid.
+    private static func eBikePackDesigner(_ r: CGRect) -> Path {
+        var path = Path()
+        let cols = 3
+        let rows = 2
+        let cell = min(r.width, r.height) * 0.2
+        let gap = r.width * 0.06
+        let totalW = CGFloat(cols) * cell + CGFloat(cols - 1) * gap
+        let totalH = CGFloat(rows) * cell + CGFloat(rows - 1) * gap
+        let originX = r.midX - totalW / 2
+        let originY = r.midY - totalH / 2
+        for row in 0..<rows {
+            for col in 0..<cols {
+                let x = originX + CGFloat(col) * (cell + gap)
+                let y = originY + CGFloat(row) * (cell + gap)
+                path.addEllipse(in: CGRect(x: x, y: y, width: cell, height: cell))
+            }
+        }
+        return path
+    }
+
+    /// Flat strip with thickness ticks.
+    private static func nickelStrip(_ r: CGRect) -> Path {
+        var path = Path()
+        let strip = CGRect(x: r.minX + r.width * 0.12, y: r.midY - r.height * 0.1, width: r.width * 0.76, height: r.height * 0.2)
+        path.addRect(strip)
+        path.move(to: CGPoint(x: strip.minX - r.width * 0.02, y: strip.minY))
+        path.addLine(to: CGPoint(x: strip.minX - r.width * 0.08, y: strip.minY))
+        path.move(to: CGPoint(x: strip.minX - r.width * 0.02, y: strip.maxY))
+        path.addLine(to: CGPoint(x: strip.minX - r.width * 0.08, y: strip.maxY))
+        path.move(to: CGPoint(x: strip.minX - r.width * 0.05, y: strip.minY))
+        path.addLine(to: CGPoint(x: strip.minX - r.width * 0.05, y: strip.maxY))
         return path
     }
 }

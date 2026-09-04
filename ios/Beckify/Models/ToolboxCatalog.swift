@@ -67,6 +67,11 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case linearRegulator
     case instrumentationAmp
     case adcDac
+    case eBikeTorqueRPM
+    case eBikeSprocket
+    case eBikeRange
+    case eBikePackDesigner
+    case nickelStrip
 
     var id: String { rawValue }
 }
@@ -760,6 +765,46 @@ enum ToolboxCatalog {
             symbol: "square.stack.3d.up",
             synonyms: ["adc", "dac", "lsb", "nyquist", "sampling", "quantization", "enob", "anti alias", "bits", "full scale"]
         ),
+        ToolDefinition(
+            id: .eBikeTorqueRPM,
+            kind: .calculator,
+            title: "E-Bike Torque / RPM",
+            subtitle: "Shaft torque or RPM from mechanical power — W, kW, or hp.",
+            symbol: "gauge.with.dots.needle.67percent",
+            synonyms: ["ebike", "e-bike", "torque", "rpm", "hub motor", "mid drive", "newton metre", "lb-ft", "drivetrain"]
+        ),
+        ToolDefinition(
+            id: .eBikeSprocket,
+            kind: .calculator,
+            title: "Sprocket Ratio Designer",
+            subtitle: "Drive/driven teeth to ratio, output RPM/torque, and wheel speed — or invert a target.",
+            symbol: "circle.circle",
+            synonyms: ["sprocket", "gear ratio", "chain", "driven", "drive teeth", "wheel speed", "ebike", "e-bike"]
+        ),
+        ToolDefinition(
+            id: .eBikeRange,
+            kind: .calculator,
+            title: "Range Estimator",
+            subtitle: "Pack V×Ah and Wh/mi to miles, kilometers, runtime, and implied speed.",
+            symbol: "point.bottomleft.forward.to.point.topright.scurvepath",
+            synonyms: ["range", "wh/mi", "watt hours", "ebike", "e-bike", "mileage", "runtime", "consumption"]
+        ),
+        ToolDefinition(
+            id: .eBikePackDesigner,
+            kind: .calculator,
+            title: "Battery Pack Designer",
+            subtitle: "Series/parallel pack planning from cell ratings or a voltage/current target.",
+            symbol: "square.grid.3x3",
+            synonyms: ["pack", "18650", "21700", "series parallel", "bms", "c-rate", "ebike", "e-bike", "cell layout"]
+        ),
+        ToolDefinition(
+            id: .nickelStrip,
+            kind: .calculator,
+            title: "Nickel Strip",
+            subtitle: "Strip cross-section to planning continuous and short-pulse current.",
+            symbol: "rectangle.split.1x2",
+            synonyms: ["nickel strip", "nickel plated", "spot weld", "busbar", "ampacity", "18650", "pack"]
+        ),
     ]
 
     /// Color-coded grouping. Home IA is Field vs Toolkit (`ToolHomeAreaPolicy`);
@@ -776,6 +821,7 @@ enum ToolboxCatalog {
             .ohmsLaw, .power, .transformer, .tapChanger, .reactance, .powerFactor, .harmonicsTHD,
             .rfLink, .batteryBank, .solarDesign, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
             .linearRegulator,
+            .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent, .adcDac,
@@ -871,8 +917,13 @@ enum ToolboxCatalog {
         .rfLink: [.frequencyWave, .reactance, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
-        .batteryBank: [.power, .solarDesign, .ohmsLaw],
+        .batteryBank: [.power, .solarDesign, .ohmsLaw, .eBikePackDesigner, .eBikeRange],
         .solarDesign: [.batteryBank, .power, .bubbleLevel, .magnetometer],
+        .eBikeTorqueRPM: [.eBikeSprocket, .motorSpeed, .power],
+        .eBikeSprocket: [.eBikeTorqueRPM, .eBikeRange, .motorSpeed],
+        .eBikeRange: [.eBikePackDesigner, .batteryBank, .eBikeTorqueRPM],
+        .eBikePackDesigner: [.batteryBank, .nickelStrip, .eBikeRange],
+        .nickelStrip: [.eBikePackDesigner, .batteryBank, .circularMils],
         .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector],
         .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
         .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],

@@ -57,6 +57,11 @@ ios/
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
 - Power Factor Correction, Short-Circuit Current, Circular Mils, Load & Demand Factors
 - Battery Bank Sizing
+- E-Bike Torque / RPM (shaft torque or RPM from W / kW / hp)
+- Sprocket Ratio Designer (drive/driven teeth, output RPM/torque, optional wheel speed, or invert a target)
+- Range Estimator (pack V×Ah and Wh/mi → miles, km, runtime)
+- Battery Pack Designer (S×P planning from a voltage/current target or a known layout — design aid, not a BMS/weld cert; Battery Bank Sizing stays the runtime/DoD tool)
+- Nickel Strip (cross-section × planning current density)
 - Solar Design Wizard (PV sizing, phone IMU/compass aim, optional storage)
 - Signal Scaling, Modbus Address, PLC Timer Preset
 - E-Bus / Rack Current

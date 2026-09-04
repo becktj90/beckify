@@ -63,6 +63,7 @@
 		BECF00000000000000000086 /* MotorNameplateOCRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000085 /* MotorNameplateOCRView.swift */; };
 		BECF00000000000000000088 /* MotorNameplateHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000087 /* MotorNameplateHandoff.swift */; };
 		BECF0000000000000000008A /* ConductorCostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000089 /* ConductorCostView.swift */; };
+		BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008B /* EbikeCalculatorViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -122,6 +123,7 @@
 		BECF00000000000000000085 /* MotorNameplateOCRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorNameplateOCRView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000087 /* MotorNameplateHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorNameplateHandoff.swift; sourceTree = "<group>"; };
 		BECF00000000000000000089 /* ConductorCostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorCostView.swift; sourceTree = "<group>"; };
+		BECF0000000000000000008B /* EbikeCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EbikeCalculatorViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -241,6 +243,7 @@
 				BECF00000000000000000081 /* SolarDesignWizardView.swift */,
 				BECF00000000000000000083 /* AnalogCalculatorViews.swift */,
 				BECF00000000000000000085 /* MotorNameplateOCRView.swift */,
+				BECF0000000000000000008B /* EbikeCalculatorViews.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -391,6 +394,7 @@
 				BECF00000000000000000086 /* MotorNameplateOCRView.swift in Sources */,
 				BECF00000000000000000088 /* MotorNameplateHandoff.swift in Sources */,
 				BECF0000000000000000008A /* ConductorCostView.swift in Sources */,
+				BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
