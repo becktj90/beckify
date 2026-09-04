@@ -1360,6 +1360,9 @@ enum GlyphKind {
         }
         path.move(to: CGPoint(x: r.midX, y: bottom + 2))
         path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.04))
+        return path
+    }
+
     private static func solarDesign(_ r: CGRect) -> Path {
         var path = Path()
         // Sun
