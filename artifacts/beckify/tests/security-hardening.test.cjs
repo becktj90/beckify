@@ -62,6 +62,9 @@ ok("Panel pages have CSP metas", /Content-Security-Policy/.test(panelSchedule) &
 
 const tdr = read(root, "public", "toolbox", "js", "tdr-analyzer.js");
 ok("TDR API helper rejects non-https bases", /u\.protocol !== 'https:'/.test(tdr));
+const look = read(root, "public", "toolbox", "js", "look-check.js");
+ok("Look Check API helper rejects non-https bases", /u\.protocol !== 'https:'/.test(look));
+ok("Look Check does not upload on file pick", /does not upload/.test(look) && /Analyze Look/.test(look));
 const vlm = read(root, "public", "toolbox", "js", "vlm-ocr.js");
 ok("VLM helper rejects non-https bases", /u\.protocol !== 'https:'/.test(vlm));
 ok("VLM helper keeps API tokens out of localStorage", /sessionStorage/.test(vlm) && /TOKEN_KEY/.test(vlm));
@@ -76,7 +79,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after optional VLM OCR", /CACHE_VERSION = 'v29'/.test(sw));
+ok("Toolbox SW cache version bumped after Look Check", /CACHE_VERSION = 'v31'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),

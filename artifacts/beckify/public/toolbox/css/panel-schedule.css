@@ -393,6 +393,22 @@ textarea {
   border-bottom: 2px solid var(--panel-light);
 }
 .callout-privacy { background: #e8f5e9; }
+.callout-privacy.is-upload { background: #fff3cd; }
+.vlm-settings {
+  padding: 10px 12px;
+  background: #ece9d8;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+.vlm-settings .note,
+.note {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #333;
+}
 .callout-safety { background: #fff8dc; }
 .callout-caution { background: #ffe4e1; }
 .callout[hidden] { display: none !important; }

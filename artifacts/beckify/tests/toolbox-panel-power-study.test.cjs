@@ -128,6 +128,11 @@ const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox'
 assert.match(panelHtml, /js\/ocr-helper\.js/);
 assert.doesNotMatch(panelHtml, /cdn\.jsdelivr\.net\/npm\/tesseract/);
 assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
+assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
 assert.match(panelHtml, /The photo stays on this device/);
+
+const mergedCells = panel.parseScheduleText('T-BLC21 1 2 T-BLC22');
+assert.equal(mergedCells.rows.find((row) => row.circuit === '1').description, 'T-BLC21');
+assert.equal(mergedCells.rows.find((row) => row.circuit === '2').description, 'T-BLC22');
 
 console.log('Panel power study helpers passed');

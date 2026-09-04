@@ -34,7 +34,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v29';
+const CACHE_VERSION = 'v31';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -68,6 +68,7 @@ const SHELL = [
   './js/report-export.js',
   './js/url-state.js',
   './js/tdr-analyzer.js',
+  './js/look-check.js',
   './js/local-store.js',
   './js/projects-ui.js',
   './js/arcade.js',

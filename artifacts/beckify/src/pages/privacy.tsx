@@ -211,13 +211,26 @@ export default function PrivacyPage() {
               not upload it. The image stays in the browser and is discarded on reset or when you leave the page.
             </p>
             <p className="text-base leading-relaxed">
-              Optional <strong>Enhance with AI</strong> on the motor nameplate tool uploads the photo only after
-              you turn the toggle on and click Read nameplate. You may point that request at a HTTPS endpoint you
-              control, or at the Beckify proxy when it is configured (
+              Optional <strong>Enhance with AI</strong> on the motor nameplate and panel directory tools uploads
+              the photo only after you turn the toggle on and click Read. You may point that request at a HTTPS
+              endpoint you control, or at the Beckify proxy when it is configured (
               <code className="font-mono text-[0.9em]">/api/analyze-nameplate</code>
+              {" "}
+              or{" "}
+              <code className="font-mono text-[0.9em]">/api/analyze-panel</code>
               ). A personal API key stays in session storage on this device and is not sent to Beckify. The result
-              is an assistive draft for you to review — not perfect OCR and not an AI electrician. NEC math still
-              waits for the review checkbox.
+              is an assistive draft for you to review — not perfect OCR and not an AI electrician. NEC math and
+              directory metrics still wait for the review checkbox.
+            </p>
+            <p className="text-base leading-relaxed">
+              Megger TDR Analyzer and Look Check are cloud vision tools. Choosing a photo still does not upload
+              it. The image leaves this device only when you click Analyze Trace or Analyze Look (
+              <code className="font-mono text-[0.9em]">/api/analyze-tdr</code>
+              {" "}
+              or{" "}
+              <code className="font-mono text-[0.9em]">/api/analyze-look</code>
+              ). Look Check is entertainment only — not medical or dating advice — and will not rate a photo if
+              anyone appears under 18.
             </p>
           </section>
 

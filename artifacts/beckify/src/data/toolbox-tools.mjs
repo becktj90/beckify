@@ -170,6 +170,7 @@ export const TOOLS = [
   ["battery-bank", "Battery Bank Calculator", "Size a battery bank from load and backup duration, or reverse-solve runtime from series/parallel strings, with chemistry presets and a continuous C-rate flag.", "sec-battery-bank"],
   ["panel-schedule", "Panel Schedule", "Read a panel schedule image and estimate circuit demand, breaker layout, diversity, panel FLA, and remaining expansion capacity. Load-analyzer and power-study modes.", "sec-panel-schedule"],
   ["megger-tdr-analyzer", "Megger TDR Trace Analyzer", "Analyze a Megger TDR500 screen image for velocity factor, range, impedance, and cable fault reflections.", "sec-tdr"],
+  ["look-check", "Look Check", "Upload any photo for a playful good-or-bad look verdict. Entertainment only — not medical or dating advice. Photos upload only when you click Analyze Look.", "sec-look-check"],
   ["smith-chart", "Smith Chart Tool", "Explore transmission-line impedance matching, reflection coefficient, VSWR, and return loss.", "sec-smith-chart"],
   ["emp-emc-shielding", "EMP / EMC Shielding Calculator", "Educational Faraday-loop, aperture-leakage, and skin-depth estimates for cages, seams, and cable-entry protection. Protection-side physics only — not a pulse-source designer.", "sec-emp-emc"],
   ["heater-wizard", "Heater Design Wizard", "Size industrial resistive heaters across voltage, phase, and wye or delta wiring, and design custom Nichrome or Kanthal heating elements by wire gauge and length.", "sec-heater-wizard"],
@@ -242,7 +243,7 @@ export const CATEGORIES = [
   ["distribution", "Power Distribution", "Size conductors, transformers, conduit, and protection for electrical distribution systems.", "sec-vdrop"],
   ["power-systems", "Power Systems", "Estimate UPS, generator, hybrid power, solar PV, and facility load requirements.", "sec-ups"],
   ["nec-calculations", "NEC Calculations", "Use field-focused NEC reference calculators for circuits, ampacity, grounding, and raceway fill.", "sec-nec"],
-  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel-directory OCR, motor nameplates, cable schedules, Megger TDR, PLC I/O lists, scaling, Modbus addressing, timer presets, and phone-sensor meters (lux, hum, spectrum, sound level).", "sec-tdr"],
+  ["field-test-fault-locating", "Field Test and Fault Locating", "Use field tools for panel-directory OCR, motor nameplates, cable schedules, Megger TDR, Look Check, PLC I/O lists, scaling, Modbus addressing, timer presets, and phone-sensor meters (lux, hum, spectrum, sound level).", "sec-tdr"],
   ["reference-tables", "Electrical Reference Tables", "Browse conductor, motor, conduit, enclosure, IP rating, and NEC reference information.", "sec-wire-ref"],
 ];
 

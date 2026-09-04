@@ -7,6 +7,8 @@ export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 export const MAX_REQUESTS_PER_WINDOW = 5;
 export const MAX_IN_FLIGHT_PER_CLIENT = 2;
 export const PROVIDER_TIMEOUT_MS = 45_000;
+export const PANEL_PROVIDER_TIMEOUT_MS = 90_000;
+export const PANEL_MAX_OUTPUT_TOKENS = 8192;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 
 export class ProviderTimeoutError extends Error {
@@ -110,9 +112,30 @@ export async function analyzeWithOpenAI(args: {
   model: string;
   system: string;
   userText: string;
+  maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<unknown> {
   const apiKey = process.env["OPENAI_API_KEY"];
   if (!apiKey) throw new Error("OPENAI_API_KEY is required for OpenAI vision analysis.");
+
+  const body: Record<string, unknown> = {
+    model: args.model,
+    temperature: 0,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: args.system },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: args.userText },
+          { type: "image_url", image_url: { url: toDataUrl(args.image, args.mimeType), detail: "high" } },
+        ],
+      },
+    ],
+  };
+  if (typeof args.maxTokens === "number" && args.maxTokens > 0) {
+    body.max_tokens = args.maxTokens;
+  }
 
   const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -120,22 +143,8 @@ export async function analyzeWithOpenAI(args: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: args.model,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: args.system },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: args.userText },
-            { type: "image_url", image_url: { url: toDataUrl(args.image, args.mimeType) } },
-          ],
-        },
-      ],
-    }),
-  });
+    body: JSON.stringify(body),
+  }, args.timeoutMs);
 
   const payload = await response.json() as {
     choices?: Array<{ message?: { content?: string | null } }>;
@@ -153,6 +162,8 @@ export async function analyzeWithAnthropic(args: {
   model: string;
   system: string;
   userText: string;
+  maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<unknown> {
   const apiKey = process.env["ANTHROPIC_API_KEY"];
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is required for Anthropic vision analysis.");
@@ -166,7 +177,7 @@ export async function analyzeWithAnthropic(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      max_tokens: 1600,
+      max_tokens: typeof args.maxTokens === "number" && args.maxTokens > 0 ? args.maxTokens : 1600,
       temperature: 0,
       system: args.system,
       messages: [
@@ -182,7 +193,7 @@ export async function analyzeWithAnthropic(args: {
         },
       ],
     }),
-  });
+  }, args.timeoutMs);
 
   const payload = await response.json() as {
     content?: Array<{ text?: string }>;
@@ -194,9 +205,9 @@ export async function analyzeWithAnthropic(args: {
   return extractJsonObject(content);
 }
 
-async function fetchWithTimeout(input: string, init: RequestInit): Promise<Response> {
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(input, { ...init, signal: controller.signal });
   } catch (error) {

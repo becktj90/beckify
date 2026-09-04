@@ -332,14 +332,20 @@ async function tdrRunAnalysis() {
   tdrSetProgress(18, 'Reading image…');
 
   try {
-    const dataUrl = await tdrFileToDataUrl(tdrState.file);
-    tdrSetProgress(42, 'Sending to vision model…');
+    const Vlm = window.BeckifyVlmOcr;
+    const dataUrl = (Vlm && typeof Vlm.prepareUploadDataUrl === 'function')
+      ? await Vlm.prepareUploadDataUrl(tdrState.file)
+      : await tdrFileToDataUrl(tdrState.file);
+    tdrSetProgress(42, 'Sending upright photo to vision model…');
+    const mimeType = String(dataUrl).indexOf('data:image/png') === 0
+      ? 'image/png'
+      : (tdrState.file.type || 'image/jpeg');
     const response = await fetch(tdrApiUrl('/api/analyze-tdr'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         imageBase64: dataUrl,
-        mimeType: tdrState.file.type || 'image/jpeg',
+        mimeType,
       }),
     });
 
@@ -361,9 +367,17 @@ async function tdrRunAnalysis() {
   }
 }
 
+function tdrIsImageFile(file) {
+  if (!file) return false;
+  const type = String(file.type || '');
+  if (type.indexOf('image/') === 0) return true;
+  if (type) return false;
+  return /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i.test(String(file.name || ''));
+}
+
 function tdrHandleFile(file) {
   if (!file) return;
-  if (!file.type || !file.type.startsWith('image/')) {
+  if (!tdrIsImageFile(file)) {
     tdrSetStatus('Please choose a valid image file.');
     return;
   }

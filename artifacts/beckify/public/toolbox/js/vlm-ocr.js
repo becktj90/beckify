@@ -10,11 +10,11 @@
 
      1. Custom HTTPS URL in the tool settings (optional Bearer token is kept
         in sessionStorage only — never localStorage, never sent to Beckify).
-        POST { imageBase64, mimeType, task: "nameplate"|"panel" }
+        POST { imageBase64, mimeType, task: "nameplate"|"panel"|"tdr"|"look" }
 
      2. Beckify proxy placeholder: <meta name="beckify-api-base-url"> or
         window.BECKIFY_API_BASE_URL (deploy injects TDR_API_BASE_URL here).
-        HTTPS only. POST {base}/api/analyze-nameplate or /api/analyze-panel
+        HTTPS only. POST {base}/api/analyze-nameplate, /api/analyze-panel, /api/analyze-tdr, or /api/analyze-look
         Server env: OPENAI_API_KEY or ANTHROPIC_API_KEY
         Optional: NAMEPLATE_VISION_PROVIDER, NAMEPLATE_VISION_MODEL
 
@@ -28,7 +28,10 @@
   var TOKEN_KEY = 'beckify-vlm-token';
   var TASK_NAMEPLATE = 'nameplate';
   var TASK_PANEL = 'panel';
+  var TASK_TDR = 'tdr';
+  var TASK_LOOK = 'look';
   var MAX_BYTES = 8 * 1024 * 1024;
+  var MAX_UPLOAD_EDGE = 2048;
 
   function schema() {
     return global.BeckifyNameplateSchema;
@@ -109,7 +112,10 @@
   }
 
   function endpointFor(config, task) {
-    var suffix = task === TASK_PANEL ? '/api/analyze-panel' : '/api/analyze-nameplate';
+    var suffix = '/api/analyze-nameplate';
+    if (task === TASK_PANEL) suffix = '/api/analyze-panel';
+    else if (task === TASK_TDR) suffix = '/api/analyze-tdr';
+    else if (task === TASK_LOOK) suffix = '/api/analyze-look';
     if (config.mode === 'custom') return config.customUrl;
     if (config.mode === 'proxy') return config.proxyUrl + suffix;
     return '';
@@ -132,6 +138,48 @@
     });
   }
 
+  /**
+   * EXIF-upright + shrink before upload. Panel directories are often landscape
+   * pixels with Orientation=6; sending them sideways hurts VLM accuracy and
+   * burns tokens. Falls back to the raw file data URL on any failure.
+   */
+  function prepareUploadDataUrl(file) {
+    if (!file || typeof createImageBitmap !== 'function' || typeof document === 'undefined') {
+      return fileToDataUrl(file);
+    }
+    return createImageBitmap(file, { imageOrientation: 'from-image' })
+      .catch(function () { return createImageBitmap(file); })
+      .then(function (bitmap) {
+        try {
+          var w = bitmap.width || 0;
+          var h = bitmap.height || 0;
+          if (!w || !h) {
+            try { bitmap.close(); } catch (_) { /* ignore */ }
+            return fileToDataUrl(file);
+          }
+          var scale = 1;
+          var edge = Math.max(w, h);
+          if (edge > MAX_UPLOAD_EDGE) scale = MAX_UPLOAD_EDGE / edge;
+          var cw = Math.max(1, Math.round(w * scale));
+          var ch = Math.max(1, Math.round(h * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = cw;
+          canvas.height = ch;
+          var ctx = canvas.getContext && canvas.getContext('2d');
+          if (!ctx) {
+            try { bitmap.close(); } catch (_) { /* ignore */ }
+            return fileToDataUrl(file);
+          }
+          ctx.drawImage(bitmap, 0, 0, cw, ch);
+          try { bitmap.close(); } catch (_) { /* ignore */ }
+          return canvas.toDataURL('image/jpeg', 0.88);
+        } catch (_) {
+          try { bitmap.close(); } catch (__) { /* ignore */ }
+          return fileToDataUrl(file);
+        }
+      }, function () { return fileToDataUrl(file); });
+  }
+
   function extractJsonObject(text) {
     var trimmed = String(text || '').trim();
     var fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -142,7 +190,36 @@
     return JSON.parse(json);
   }
 
+  function knownTask(task) {
+    if (task === TASK_PANEL || task === TASK_TDR || task === TASK_LOOK) return task;
+    return TASK_NAMEPLATE;
+  }
+
+  function normalizeLookDraft(raw) {
+    var allowed = { looks_good: 1, mixed: 1, looks_bad: 1, no_person: 1, declined: 1 };
+    var verdict = String((raw && raw.verdict) || '').toLowerCase();
+    if (!allowed[verdict]) verdict = 'mixed';
+    var score = Number(raw && raw.score);
+    if (!Number.isFinite(score)) score = null;
+    else score = Math.max(0, Math.min(100, Math.round(score)));
+    if (verdict === 'declined') score = null;
+    return {
+      task: TASK_LOOK,
+      verdict: verdict,
+      score: score,
+      headline: String((raw && raw.headline) || ''),
+      reasons: Array.isArray(raw && raw.reasons) ? raw.reasons.map(String) : [],
+      fixes: Array.isArray(raw && raw.fixes) ? raw.fixes.map(String) : [],
+      photoNotes: Array.isArray(raw && (raw.photoNotes || raw.photo_notes))
+        ? (raw.photoNotes || raw.photo_notes).map(String)
+        : [],
+      warnings: Array.isArray(raw && raw.warnings) ? raw.warnings.map(String) : [],
+    };
+  }
+
   function analyzePayload(payload, task, source, rawFallback) {
+    if (task === TASK_LOOK) return normalizeLookDraft(payload);
+    if (task === TASK_TDR) return payload || {};
     var Schema = schema();
     if (!Schema) throw new Error('Nameplate schema helper did not load.');
     if (task === TASK_PANEL) {
@@ -174,7 +251,7 @@
    */
   function analyze(file, opts) {
     opts = opts || {};
-    var task = opts.task === TASK_PANEL ? TASK_PANEL : TASK_NAMEPLATE;
+    var task = knownTask(opts.task);
     var config = resolveConfig(opts.enhanceOn);
     if (!opts.enhanceOn) {
       return Promise.reject(new Error('AI enhance is off. On-device OCR will be used instead.'));
@@ -185,11 +262,13 @@
     var url = endpointFor(config, task);
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
     onProgress(0.15, 'Preparing photo for optional AI enhance…');
-    return fileToDataUrl(file).then(function (dataUrl) {
+    return prepareUploadDataUrl(file).then(function (dataUrl) {
       onProgress(0.4, 'Uploading photo for optional AI enhance…');
       var body = {
         imageBase64: dataUrl,
-        mimeType: (file && file.type) || 'image/jpeg',
+        mimeType: (String(dataUrl).indexOf('data:image/png') === 0)
+          ? 'image/png'
+          : ((file && file.type) || 'image/jpeg'),
         task: task,
       };
       var token = config.mode === 'custom' ? config.token : '';
@@ -220,6 +299,57 @@
     return analyze(file, next);
   }
 
+  function analyzeTdr(file, opts) {
+    var next = Object.assign({}, opts || {}, { task: TASK_TDR, enhanceOn: true });
+    return analyze(file, next);
+  }
+
+  function analyzeLook(file, opts) {
+    var next = Object.assign({}, opts || {}, { task: TASK_LOOK, enhanceOn: true });
+    return analyze(file, next);
+  }
+
+  function rowsFromPanelDraft(draft, makeRow) {
+    var create = typeof makeRow === 'function' ? makeRow : function () { return {}; };
+    return ((draft && draft.rows) || []).map(function (cell) {
+      var row = create();
+      var circuit = cell && cell.circuit && cell.circuit.value;
+      var description = cell && cell.description && cell.description.value;
+      var trip = cell && cell.trip && cell.trip.value;
+      var poles = cell && cell.poles && cell.poles.value;
+      var notes = cell && cell.notes && cell.notes.value;
+      row.circuit = circuit == null ? '' : String(circuit);
+      row.description = description == null ? '' : String(description);
+      if (notes && row.description && String(notes) !== String(description)) {
+        row.description = String(description) + ' (' + String(notes) + ')';
+      } else if (notes && !row.description) {
+        row.description = String(notes);
+      }
+      row.trip = trip == null || trip === '' ? '' : String(trip);
+      row.poles = poles == null || poles === '' ? '' : String(poles);
+      row.loadAmps = '';
+      row.loadAmpsCopiedFromTrip = false;
+      return row;
+    }).filter(function (row) {
+      return row.circuit || row.description || row.trip || row.poles;
+    });
+  }
+
+  function panelMetaFromDraft(draft) {
+    var panel = (draft && draft.panel) || {};
+    function val(field) {
+      if (!field || field.value == null || field.value === '') return '';
+      return field.value;
+    }
+    return {
+      panelName: val(panel.name),
+      voltage: val(panel.voltage),
+      mainAmps: val(panel.mainAmps),
+      phases: val(panel.phases),
+      location: val(panel.location),
+    };
+  }
+
   function shouldUpload(enhanceOn) {
     return resolveConfig(enhanceOn).ready;
   }
@@ -229,6 +359,8 @@
     TOKEN_KEY: TOKEN_KEY,
     TASK_NAMEPLATE: TASK_NAMEPLATE,
     TASK_PANEL: TASK_PANEL,
+    TASK_TDR: TASK_TDR,
+    TASK_LOOK: TASK_LOOK,
     MAX_BYTES: MAX_BYTES,
     loadSettings: loadSettings,
     saveSettings: saveSettings,
@@ -240,8 +372,16 @@
     analyze: analyze,
     analyzeNameplate: analyzeNameplate,
     analyzePanelDirectory: analyzePanelDirectory,
+    analyzeTdr: analyzeTdr,
+    analyzeLook: analyzeLook,
+    normalizeLookDraft: normalizeLookDraft,
     extractJsonObject: extractJsonObject,
     analyzePayload: analyzePayload,
+    prepareUploadDataUrl: prepareUploadDataUrl,
+    fileToDataUrl: fileToDataUrl,
+    rowsFromPanelDraft: rowsFromPanelDraft,
+    panelMetaFromDraft: panelMetaFromDraft,
+    MAX_UPLOAD_EDGE: MAX_UPLOAD_EDGE,
   };
   global.__vlmOcrTestApi = global.BeckifyVlmOcr;
 })(typeof window !== 'undefined' ? window : globalThis);

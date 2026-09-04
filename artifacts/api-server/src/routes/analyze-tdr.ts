@@ -240,12 +240,13 @@ async function analyzeWithOpenAI(args: { image: string; mimeType: string; model:
           content: [
             {
               type: "text",
-              text: "Analyze this Megger TDR500 screen and return the structured JSON report.",
+              text: "Upright the photo if it is rotated. Analyze this Megger TDR500 screen and return the structured JSON report.",
             },
             {
               type: "image_url",
               image_url: {
                 url: toDataUrl(args.image, args.mimeType),
+                detail: "high",
               },
             },
           ],
@@ -286,7 +287,7 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
     },
     body: JSON.stringify({
       model: args.model,
-      max_tokens: 1200,
+      max_tokens: 2400,
       temperature: 0,
       system: TDR_VISION_SYSTEM_PROMPT,
       messages: [
@@ -295,7 +296,7 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
           content: [
             {
               type: "text",
-              text: "Analyze this Megger TDR500 screen and return the structured JSON report.",
+              text: "Upright the photo if it is rotated. Analyze this Megger TDR500 screen and return the structured JSON report.",
             },
             {
               type: "image",

@@ -62,6 +62,7 @@ app.use(cors({
 app.use("/api/analyze-tdr", express.json({ limit: "12mb" }));
 app.use("/api/analyze-nameplate", express.json({ limit: "12mb" }));
 app.use("/api/analyze-panel", express.json({ limit: "12mb" }));
+app.use("/api/analyze-look", express.json({ limit: "12mb" }));
 app.use(express.json({ limit: "64kb" }));
 app.use(express.urlencoded({ extended: true, limit: "64kb" }));
 

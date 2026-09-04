@@ -339,11 +339,22 @@
         var cell = src && src[name];
         row[name] = fieldFrom(unwrapRaw(cell), type, rawConfidence(cell, fallbackConf));
       });
+      // Trip is never a reviewed load from VLM.
+      row.loadAmps = emptyField();
       return row;
     });
+    var panelSrc = (raw && raw.panel) || {};
+    var panel = {
+      name: fieldFrom(unwrapRaw(panelSrc.name), 'string', rawConfidence(panelSrc.name, fallbackConf)),
+      voltage: fieldFrom(unwrapRaw(panelSrc.voltage), 'string', rawConfidence(panelSrc.voltage, fallbackConf)),
+      mainAmps: fieldFrom(unwrapRaw(panelSrc.mainAmps), 'number', rawConfidence(panelSrc.mainAmps, fallbackConf)),
+      phases: fieldFrom(unwrapRaw(panelSrc.phases), 'int', rawConfidence(panelSrc.phases, fallbackConf)),
+      location: fieldFrom(unwrapRaw(panelSrc.location), 'string', rawConfidence(panelSrc.location, fallbackConf)),
+    };
     return {
       task: 'panel',
       rows: rows,
+      panel: panel,
       source: opts.source || 'unknown',
       rawText: asString(opts.rawText || (raw && raw.raw_ocr) || '') || '',
       warnings: Array.isArray(raw && raw.warnings) ? raw.warnings.map(String) : (opts.warnings || []),

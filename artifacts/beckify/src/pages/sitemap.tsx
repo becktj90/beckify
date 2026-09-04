@@ -179,6 +179,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Sound Level Meter", "sec-sound-level"),
       t("Lux / Light Meter", "sec-lux-meter"),
       t("Panel Schedule", "sec-panel-schedule"),
+      t("Look Check", "sec-look-check"),
     ],
   },
   {

@@ -16,6 +16,7 @@
   var MAX_BYTES = 12 * 1024 * 1024;
   var LOW_CONFIDENCE = 60;
   var MAX_PREPROCESS_EDGE = 1600;
+  var MAX_DIRECTORY_EDGE = 2400;
   var IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i;
   var ACCEPTED_IMAGE_LABEL = 'JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF';
   var REJECTED_AMP_LABEL = /(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|AIC|KAIC|SCCR)\s*[:#]?\s*$/i;
@@ -91,57 +92,316 @@
   }
 
   /**
-   * Optional, best-effort shrink + grayscale. Failures fall back to the
-   * original file so HEIC/odd decoders never block manual entry.
+   * Optional, best-effort EXIF-aware upright + shrink + grayscale. Failures
+   * fall back to the original file so HEIC/odd decoders never block manual entry.
+   * Phone panel-directory shots often store landscape pixels with Orientation=6;
+   * drawing without EXIF correction leaves the schedule sideways for Tesseract.
    */
-  function preprocessForOcr(file) {
-    if (!file || typeof document === 'undefined' || typeof Image === 'undefined') {
+  function preprocessForOcr(file, opts) {
+    opts = opts || {};
+    if (!file || typeof document === 'undefined') {
       return Promise.resolve(file);
+    }
+    return loadBitmap(file).then(function (bitmap) {
+      if (!bitmap) return file;
+      try {
+        var w = bitmap.width || 0;
+        var h = bitmap.height || 0;
+        if (!w || !h) {
+          closeBitmap(bitmap);
+          return file;
+        }
+        var scale = 1;
+        var edge = Math.max(w, h);
+        var maxEdge = (opts && opts.maxEdge) || MAX_PREPROCESS_EDGE;
+        if (edge > maxEdge) scale = maxEdge / edge;
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        var ctx = canvas.getContext && canvas.getContext('2d');
+        if (!ctx) {
+          closeBitmap(bitmap);
+          return file;
+        }
+        ctx.drawImage(bitmap, 0, 0, cw, ch);
+        closeBitmap(bitmap);
+        var imageData = ctx.getImageData(0, 0, cw, ch);
+        var d = imageData.data;
+        for (var i = 0; i < d.length; i += 4) {
+          var g = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+          d[i] = d[i + 1] = d[i + 2] = g;
+        }
+        stretchContrast(d);
+        ctx.putImageData(imageData, 0, 0);
+        return canvasToBlob(canvas).then(function (blob) { return blob || canvas; });
+      } catch (_) {
+        closeBitmap(bitmap);
+        return file;
+      }
+    }, function () { return file; });
+  }
+
+  function closeBitmap(bitmap) {
+    try {
+      if (bitmap && typeof bitmap.close === 'function') bitmap.close();
+    } catch (_) { /* ignore */ }
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise(function (resolve) {
+      if (typeof canvas.toBlob === 'function') {
+        canvas.toBlob(function (blob) { resolve(blob || null); }, 'image/png');
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  function loadBitmap(file) {
+    if (typeof createImageBitmap === 'function') {
+      return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () {
+        return createImageBitmap(file).catch(function () { return null; });
+      });
+    }
+    if (typeof Image === 'undefined' || typeof URL === 'undefined') {
+      return Promise.resolve(null);
     }
     return new Promise(function (resolve) {
       var url;
       try { url = URL.createObjectURL(file); }
-      catch (_) { resolve(file); return; }
+      catch (_) { resolve(null); return; }
       var img = new Image();
-      function finish(result) {
-        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
-        resolve(result);
-      }
       img.onload = function () {
-        try {
-          var w = img.naturalWidth || img.width;
-          var h = img.naturalHeight || img.height;
-          if (!w || !h) { finish(file); return; }
-          var scale = 1;
-          var edge = Math.max(w, h);
-          if (edge > MAX_PREPROCESS_EDGE) scale = MAX_PREPROCESS_EDGE / edge;
-          var cw = Math.max(1, Math.round(w * scale));
-          var ch = Math.max(1, Math.round(h * scale));
-          var canvas = document.createElement('canvas');
-          canvas.width = cw;
-          canvas.height = ch;
-          var ctx = canvas.getContext && canvas.getContext('2d');
-          if (!ctx) { finish(file); return; }
-          ctx.drawImage(img, 0, 0, cw, ch);
-          var imageData = ctx.getImageData(0, 0, cw, ch);
-          var d = imageData.data;
-          for (var i = 0; i < d.length; i += 4) {
-            var g = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
-            d[i] = d[i + 1] = d[i + 2] = g;
-          }
-          ctx.putImageData(imageData, 0, 0);
-          if (typeof canvas.toBlob === 'function') {
-            canvas.toBlob(function (blob) { finish(blob || canvas); }, 'image/png');
-          } else {
-            finish(canvas);
-          }
-        } catch (_) {
-          finish(file);
-        }
+        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+        resolve(img);
       };
-      img.onerror = function () { finish(file); };
+      img.onerror = function () {
+        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+        resolve(null);
+      };
       img.src = url;
     });
+  }
+
+  function stretchContrast(data) {
+    var hist = new Uint32Array(256);
+    var i;
+    for (i = 0; i < data.length; i += 4) hist[data[i]] += 1;
+    var total = data.length / 4;
+    if (!total) return;
+    var lo = 0;
+    var hi = 255;
+    var acc = 0;
+    var loCut = total * 0.02;
+    var hiCut = total * 0.98;
+    for (i = 0; i < 256; i += 1) {
+      acc += hist[i];
+      if (lo === 0 && acc >= loCut) lo = i;
+      if (acc >= hiCut) { hi = i; break; }
+    }
+    if (hi <= lo) return;
+    var scale = 255 / (hi - lo);
+    for (i = 0; i < data.length; i += 4) {
+      var v = Math.max(0, Math.min(255, Math.round((data[i] - lo) * scale)));
+      data[i] = data[i + 1] = data[i + 2] = v;
+    }
+  }
+
+  function rotateImageSource(source, degrees) {
+    if (!source || typeof document === 'undefined' || !degrees) {
+      return Promise.resolve(source);
+    }
+    return loadBitmap(source).then(function (bitmap) {
+      if (!bitmap) return source;
+      try {
+        var w = bitmap.width || 0;
+        var h = bitmap.height || 0;
+        if (!w || !h) {
+          closeBitmap(bitmap);
+          return source;
+        }
+        var rad = (degrees * Math.PI) / 180;
+        var swap = Math.abs(degrees) % 180 === 90;
+        var canvas = document.createElement('canvas');
+        canvas.width = swap ? h : w;
+        canvas.height = swap ? w : h;
+        var ctx = canvas.getContext && canvas.getContext('2d');
+        if (!ctx) {
+          closeBitmap(bitmap);
+          return source;
+        }
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(rad);
+        ctx.drawImage(bitmap, -w / 2, -h / 2);
+        closeBitmap(bitmap);
+        return canvasToBlob(canvas).then(function (blob) { return blob || canvas; });
+      } catch (_) {
+        closeBitmap(bitmap);
+        return source;
+      }
+    }, function () { return source; });
+  }
+
+  function collectWords(data) {
+    var words = (data && data.words) || [];
+    if (words.length) return words;
+    var blocks = (data && data.blocks) || [];
+    var out = [];
+    for (var b = 0; b < blocks.length; b += 1) {
+      var paras = (blocks[b] && blocks[b].paragraphs) || [];
+      for (var p = 0; p < paras.length; p += 1) {
+        var lines = (paras[p] && paras[p].lines) || [];
+        for (var l = 0; l < lines.length; l += 1) {
+          var lineWords = (lines[l] && lines[l].words) || [];
+          for (var w = 0; w < lineWords.length; w += 1) out.push(lineWords[w]);
+        }
+      }
+    }
+    return out;
+  }
+
+  function wordBox(word) {
+    var box = word && (word.bbox || word.boundingBox || word);
+    if (!box) return null;
+    var x0 = Number(box.x0 != null ? box.x0 : box.x);
+    var y0 = Number(box.y0 != null ? box.y0 : box.y);
+    var x1 = Number(box.x1 != null ? box.x1 : (x0 + Number(box.w || box.width || 0)));
+    var y1 = Number(box.y1 != null ? box.y1 : (y0 + Number(box.h || box.height || 0)));
+    if (![x0, y0, x1, y1].every(Number.isFinite)) return null;
+    return { x0: x0, y0: y0, x1: x1, y1: y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
+  }
+
+  function normalizeOcrWord(word) {
+    var text = String((word && (word.text || word.word)) || '').replace(/[|]+/g, '').trim();
+    var box = wordBox(word);
+    if (!text || !box) return null;
+    return {
+      text: text,
+      confidence: typeof word.confidence === 'number' ? word.confidence : 60,
+      x0: box.x0,
+      y0: box.y0,
+      x1: box.x1,
+      y1: box.y1,
+      cx: box.cx,
+      cy: box.cy,
+    };
+  }
+
+  function isCircuitToken(text) {
+    var n = Number(String(text || '').replace(/[^\d]/g, ''));
+    return Number.isFinite(n) && n >= 1 && n <= 84 && /^\d{1,2}[A-Z]?$/.test(String(text || '').trim());
+  }
+
+  function directoryScore(text) {
+    var t = String(text || '');
+    if (!t.trim()) return 0;
+    var score = 0;
+    if (/\b(?:spare|space|recept|panel|ckt|circuit|lighting|power\s*pole|crac|turnstile)\b/i.test(t)) score += 4;
+    var nums = t.match(/\b(?:[1-9]|[1-7]\d|8[0-4])\b/g);
+    if (nums) score += Math.min(10, Math.floor(nums.length / 3));
+    if (t.length > 40) score += 1;
+    if (t.length > 200) score += 1;
+    return score;
+  }
+
+  function reconstructDirectoryFromWords(words) {
+    var items = (words || []).map(normalizeOcrWord).filter(function (w) {
+      return w && w.confidence >= 20;
+    });
+    if (items.length < 6) return null;
+    items.sort(function (a, b) { return a.cy - b.cy || a.cx - b.cx; });
+    var heights = items.map(function (w) { return Math.max(4, w.y1 - w.y0); }).sort(function (a, b) { return a - b; });
+    var rowTol = Math.max(8, heights[Math.floor(heights.length / 2)] * 0.75);
+    var rows = [];
+    items.forEach(function (word) {
+      var last = rows[rows.length - 1];
+      if (!last || Math.abs(word.cy - last.cy) > rowTol) {
+        rows.push({ cy: word.cy, words: [word] });
+      } else {
+        last.words.push(word);
+        last.cy = ((last.cy * (last.words.length - 1)) + word.cy) / last.words.length;
+      }
+    });
+    var lines = rows.map(function (row) {
+      row.words.sort(function (a, b) { return a.cx - b.cx; });
+      return formatDirectoryRow(row.words);
+    }).filter(Boolean);
+    if (lines.length < 2) return null;
+    return { text: lines.join('\n'), lineCount: lines.length, lines: lines };
+  }
+
+  function formatDirectoryRow(words) {
+    var circuits = words.filter(function (w) { return isCircuitToken(w.text); });
+    if (circuits.length >= 2) {
+      var leftC = circuits[0];
+      var rightC = circuits[circuits.length - 1];
+      var leftDesc = words.filter(function (w) { return w.cx < leftC.cx; });
+      var mid = words.filter(function (w) { return w.cx > leftC.cx && w.cx < rightC.cx; });
+      var rightDesc = words.filter(function (w) { return w.cx > rightC.cx; });
+      if (leftDesc.length && rightDesc.length) {
+        return [joinWords(leftDesc), leftC.text, rightC.text, joinWords(rightDesc)].join('  ');
+      }
+      if (mid.length >= 2) {
+        var split = splitAtLargestGap(mid);
+        return [leftC.text, joinWords(split[0]), rightC.text, joinWords(split[1])].join('  ');
+      }
+    }
+    return joinWords(words);
+  }
+
+  function joinWords(words) {
+    return (words || []).map(function (w) { return w.text; }).join(' ').trim();
+  }
+
+  function splitAtLargestGap(words) {
+    if (!words || words.length < 2) return [words || [], []];
+    var best = -1;
+    var idx = Math.floor((words.length - 1) / 2);
+    for (var i = 0; i < words.length - 1; i += 1) {
+      var gap = words[i + 1].x0 - words[i].x1;
+      if (gap > best) {
+        best = gap;
+        idx = i;
+      }
+    }
+    return [words.slice(0, idx + 1), words.slice(idx + 1)];
+  }
+
+  function packOcrResult(result) {
+    var data = (result && result.data) || {};
+    var words = collectWords(data);
+    var text = data.text || '';
+    var reconstructed = reconstructDirectoryFromWords(words);
+    if (reconstructed && directoryScore(reconstructed.text) >= directoryScore(text)) {
+      text = reconstructed.text;
+    }
+    var confidence = meanWordConfidence({ words: words, confidence: data.confidence });
+    return {
+      text: text,
+      confidence: confidence,
+      lowConfidence: isLowConfidence(confidence, text),
+      failed: !String(text).trim(),
+      looksLikeOpenPanel: looksLikeOpenPanelInterior(text),
+      words: words,
+      reconstructed: reconstructed,
+      score: directoryScore(text),
+    };
+  }
+
+  function recognizeOnce(worker, source, psm) {
+    var params = {
+      tessedit_pageseg_mode: String(psm),
+      preserve_interword_spaces: '1',
+    };
+    var run = function () {
+      return worker.recognize(source);
+    };
+    if (typeof worker.setParameters === 'function') {
+      return worker.setParameters(params).then(run, run);
+    }
+    return run();
   }
 
   function recognize(file, opts) {
@@ -151,8 +411,10 @@
     if (!isLikelyImageFile(file)) return Promise.reject(new Error('Please choose a photo (' + ACCEPTED_IMAGE_LABEL + ').'));
 
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
+    var directoryMode = opts.mode === 'directory';
+    var preprocessOpts = directoryMode ? { maxEdge: MAX_DIRECTORY_EDGE } : {};
     return loadScript().then(function (Tesseract) {
-      return preprocessForOcr(file).then(function (source) {
+      return preprocessForOcr(file, preprocessOpts).then(function (source) {
         return Tesseract.createWorker('eng', 1, {
           workerPath: vendorUrl('worker.min.js'),
           corePath: vendorUrl('tesseract-core-simd-lstm.wasm.js'),
@@ -160,28 +422,27 @@
           gzip: true,
           logger: function (message) {
             var ratio = typeof message.progress === 'number' ? message.progress : 0;
-            onProgress(ratio, message.status || '');
+            onProgress(ratio * (directoryMode ? 0.55 : 1), message.status || '');
           },
         }).then(function (worker) {
-          return worker.recognize(source).then(function (result) {
-            return worker.terminate().then(function () { return result; }, function () { return result; });
+          var firstPsm = directoryMode ? 4 : 3;
+          return recognizeOnce(worker, source, firstPsm).then(function (first) {
+            var best = packOcrResult(first);
+            if (!directoryMode || best.score >= 6) return best;
+            onProgress(0.62, 'Trying a second pass for a rotated directory…');
+            return rotateImageSource(source, 90).then(function (rotated) {
+              return recognizeOnce(worker, rotated, 4).then(function (second) {
+                var scored = packOcrResult(second);
+                return scored.score > best.score ? scored : best;
+              }, function () { return best; });
+            }, function () { return best; });
+          }).then(function (packed) {
+            return worker.terminate().then(function () { return packed; }, function () { return packed; });
           }, function (err) {
             return worker.terminate().then(function () { throw err; }, function () { throw err; });
           });
         });
       });
-    }).then(function (result) {
-      var data = (result && result.data) || {};
-      var text = data.text || '';
-      var confidence = meanWordConfidence(data);
-      return {
-        text: text,
-        confidence: confidence,
-        lowConfidence: isLowConfidence(confidence, text),
-        failed: !String(text).trim(),
-        looksLikeOpenPanel: looksLikeOpenPanelInterior(text),
-        words: data.words || [],
-      };
     });
   }
 
@@ -328,9 +589,13 @@
     isLikelyImageFile: isLikelyImageFile,
     isLowConfidence: isLowConfidence,
     preprocessForOcr: preprocessForOcr,
+    reconstructDirectoryFromWords: reconstructDirectoryFromWords,
+    directoryScore: directoryScore,
+    rotateImageSource: rotateImageSource,
     MAX_BYTES: MAX_BYTES,
     LOW_CONFIDENCE: LOW_CONFIDENCE,
     MAX_PREPROCESS_EDGE: MAX_PREPROCESS_EDGE,
+    MAX_DIRECTORY_EDGE: MAX_DIRECTORY_EDGE,
     ACCEPTED_IMAGE_LABEL: ACCEPTED_IMAGE_LABEL,
     VENDOR: VENDOR,
   };

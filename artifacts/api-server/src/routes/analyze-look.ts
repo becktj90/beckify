@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { NAMEPLATE_VISION_SYSTEM_PROMPT } from "../prompts/nameplateVisionPrompt.js";
+import { LOOK_VISION_SYSTEM_PROMPT } from "../prompts/lookVisionPrompt.js";
 import {
   ProviderTimeoutError,
   analyzeWithAnthropic,
@@ -26,7 +26,7 @@ const serverProvider = configuredProvider();
 const serverModel = configuredModel(serverProvider);
 const router: IRouter = Router();
 
-router.post("/analyze-nameplate", async (req, res) => {
+router.post("/analyze-look", async (req, res) => {
   const body = (req.body || {}) as AnalyzeBody;
   const picked = pickImage(body);
   if ("error" in picked) return res.status(picked.status).json({ error: picked.error });
@@ -35,12 +35,14 @@ router.post("/analyze-nameplate", async (req, res) => {
   const bucket = consumeRateLimit(rateBuckets, clientKey);
   if (!bucket.allowed) {
     res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - Date.now()) / 1000)));
-    return res.status(429).json({ error: "Too many nameplate analyses. Please try again later." });
+    return res.status(429).json({ error: "Too many look checks. Please try again later." });
   }
   if (bucket.inFlight >= 2) {
-    return res.status(429).json({ error: "Too many nameplate analyses in progress." });
+    return res.status(429).json({ error: "Too many look checks in progress." });
   }
   bucket.inFlight += 1;
+
+  const userText = "Upright the photo if it is rotated. Give a playful honest verdict: do they look good or bad? Follow the JSON shape.";
 
   try {
     const result = serverProvider === "anthropic"
@@ -48,15 +50,17 @@ router.post("/analyze-nameplate", async (req, res) => {
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
-        system: NAMEPLATE_VISION_SYSTEM_PROMPT,
-        userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA.",
+        system: LOOK_VISION_SYSTEM_PROMPT,
+        userText,
+        maxTokens: 1200,
       })
       : await analyzeWithOpenAI({
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
-        system: NAMEPLATE_VISION_SYSTEM_PROMPT,
-        userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA.",
+        system: LOOK_VISION_SYSTEM_PROMPT,
+        userText,
+        maxTokens: 1200,
       });
 
     return res.json({
@@ -66,7 +70,7 @@ router.post("/analyze-nameplate", async (req, res) => {
     });
   } catch (error) {
     const isTimeout = error instanceof ProviderTimeoutError;
-    console.error("Nameplate vision provider request failed", error);
+    console.error("Look vision provider request failed", error);
     return res.status(isTimeout ? 504 : 502).json({
       error: isTimeout
         ? "The vision provider timed out. Please try again."

@@ -1,5 +1,5 @@
-/* Optional cloud VLM assist for panel directories is ready on
-   BeckifyVlmOcr.analyzePanelDirectory. This page stays on-device Tesseract. */
+/* On-device Tesseract is the default. Optional Enhance with AI calls
+   BeckifyVlmOcr.analyzePanelDirectory after the user opts in. */
 
 const DEFAULT_CIRCUIT_SLOTS = 42;
 const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];
@@ -69,6 +69,12 @@ function cacheElements() {
   elements.printScheduleBody = document.getElementById('printScheduleBody');
   elements.analysisGrid = document.getElementById('analysisGrid');
   elements.analysisGuidance = document.getElementById('analysisGuidance');
+  elements.enhance = document.getElementById('panelEnhance');
+  elements.vlmSettings = document.getElementById('panelVlmSettings');
+  elements.vlmEndpoint = document.getElementById('panelVlmEndpoint');
+  elements.vlmToken = document.getElementById('panelVlmToken');
+  elements.vlmConfig = document.getElementById('panelVlmConfig');
+  elements.privacyBanner = document.getElementById('privacyBanner');
 }
 
 function bindEvents() {
@@ -133,6 +139,15 @@ function bindEvents() {
   if (elements.reviewedSchedule) {
     elements.reviewedSchedule.addEventListener('change', renderAll);
   }
+  if (elements.enhance) {
+    elements.enhance.addEventListener('change', syncVlmUi);
+  }
+  [elements.vlmEndpoint, elements.vlmToken].forEach(input => {
+    if (!input) return;
+    input.addEventListener('change', syncVlmUi);
+    input.addEventListener('blur', syncVlmUi);
+  });
+  syncVlmUi();
 }
 
 function positionCount() {
@@ -178,7 +193,117 @@ function handleFileSelection(file) {
   elements.processButton.disabled = false;
   clearReview();
   resetProgress();
-  setStatus('Image ready. Click “Read Schedule” to run on-device OCR.');
+  setStatus(enhanceOn()
+    ? 'Photo is ready on this device. Read Schedule will upload it only because Enhance with AI is on. Correct every circuit afterward.'
+    : 'Image ready. Click “Read Schedule” to run on-device OCR.');
+}
+
+function enhanceOn() {
+  return !!(elements.enhance && elements.enhance.checked);
+}
+
+function syncVlmUi() {
+  const on = enhanceOn();
+  if (elements.vlmSettings) elements.vlmSettings.hidden = !on;
+  if (elements.privacyBanner) {
+    elements.privacyBanner.classList.toggle('is-upload', on);
+    const strong = elements.privacyBanner.querySelector('strong');
+    const label = on
+      ? ' Enhance with AI is on. The photo will leave this device only when you click Read Schedule. Default Tesseract stays available if you turn this off.'
+      : ' The photo stays on this device. It is never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read Schedule. On-device Tesseract.js is the default. The image is not saved after you leave or reset.';
+    if (strong) {
+      strong.textContent = 'Privacy before you pick a photo.';
+      strong.nextSibling && strong.nextSibling.remove();
+      strong.after(document.createTextNode(label));
+    }
+  }
+  const Vlm = window.BeckifyVlmOcr;
+  if (Vlm && elements.vlmEndpoint && !elements.vlmEndpoint.dataset.hydrated) {
+    const saved = Vlm.loadSettings();
+    if (saved.endpoint) elements.vlmEndpoint.value = saved.endpoint;
+    if (saved.token && elements.vlmToken) elements.vlmToken.value = saved.token;
+    elements.vlmEndpoint.dataset.hydrated = '1';
+  }
+  if (Vlm && on) {
+    if (elements.vlmEndpoint) Vlm.saveSettings({ endpoint: elements.vlmEndpoint.value });
+    if (elements.vlmToken) Vlm.saveSettings({ token: elements.vlmToken.value });
+  }
+  if (elements.vlmConfig && Vlm) {
+    const cfg = Vlm.resolveConfig(on);
+    if (!on) elements.vlmConfig.textContent = 'Enhance is off. On-device Tesseract is the default.';
+    else if (cfg.mode === 'custom') elements.vlmConfig.textContent = 'Custom HTTPS endpoint will receive the photo when you click Read Schedule.';
+    else if (cfg.mode === 'proxy') elements.vlmConfig.textContent = `Beckify proxy (${cfg.proxyUrl}/api/analyze-panel) will receive the photo when you click Read Schedule.`;
+    else elements.vlmConfig.textContent = 'No HTTPS endpoint is configured. Read Schedule will stay on-device Tesseract.';
+  }
+}
+
+function applyVlmDraft(draft, warnings) {
+  const Vlm = window.BeckifyVlmOcr;
+  const rows = Vlm && Vlm.rowsFromPanelDraft
+    ? Vlm.rowsFromPanelDraft(draft, createEmptyRow)
+    : [];
+  rows.forEach(row => {
+    row.trip = row.trip ? normalizeTrip(row.trip) : '';
+    row.poles = String(row.poles || '').replace(/P/i, '').trim();
+    row.loadType = inferLoadType(row.description);
+    row.circuitClass = inferCircuitClass(row.description);
+    row.loadAmps = '';
+    row.loadAmpsCopiedFromTrip = false;
+  });
+  if (rows.length) state.rows = normalizeRows(rows);
+  const meta = Vlm && Vlm.panelMetaFromDraft ? Vlm.panelMetaFromDraft(draft) : {};
+  applyMetadataIfBlank({
+    panelName: meta.panelName,
+    voltage: meta.voltage,
+    feed: meta.mainAmps ? `${meta.mainAmps}A Main` : '',
+    date: '',
+    defaultSeries: '',
+  });
+  if (meta.mainAmps && elements.panelMainRating && !String(elements.panelMainRating.value || '').trim()) {
+    elements.panelMainRating.value = String(meta.mainAmps);
+  }
+  if (meta.phases && elements.panelPhase && (meta.phases === 1 || meta.phases === 3)) {
+    elements.panelPhase.value = String(meta.phases);
+  }
+  const raw = (draft && draft.rawText) || '';
+  state.rawText = raw;
+  if (elements.rawText) elements.rawText.value = raw;
+  clearReview();
+  const extra = (warnings && warnings.length) ? ` ${warnings.join(' ')}` : '';
+  setStatus(`AI draft filled ${rows.length} circuit row${rows.length === 1 ? '' : 's'}. This is not perfect OCR and not an AI electrician. Correct every row, then check the review box.${extra}`);
+  renderAll();
+}
+
+async function runOnDeviceOcr() {
+  const out = await window.BeckifyOcr.recognize(state.file, {
+    mode: 'directory',
+    onProgress: (ratio, status) => {
+      updateProgress(ratio, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
+    }
+  });
+  const text = out.text || '';
+  state.rawText = text;
+  elements.rawText.value = text;
+  clearReview();
+  if (elements.openPanelCaution) {
+    elements.openPanelCaution.hidden = !out.looksLikeOpenPanel;
+  }
+  if (out.looksLikeOpenPanel) {
+    setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
+  }
+  if (out.failed) {
+    setStatus('OCR found no usable text. Fill the table manually — you are not blocked.' + (window.BeckifyVlmOcr ? ' Enhance with AI can draft a two-up directory from a messy photo.' : ''));
+    updateProgress(0, 'OCR found no text');
+    renderAll();
+    return out;
+  }
+  parseAndApplyText(text, true);
+  if (out.lowConfidence) {
+    setStatus(`OCR confidence is low (${out.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
+  } else if (!out.looksLikeOpenPanel) {
+    updateProgress(1, 'OCR complete. Review the table before using the estimates.');
+  }
+  return out;
 }
 
 async function runOcr() {
@@ -193,36 +318,31 @@ async function runOcr() {
   }
 
   elements.processButton.disabled = true;
-  updateProgress(0, 'Starting on-device OCR…');
+  const Vlm = window.BeckifyVlmOcr;
+  const useVlm = enhanceOn() && Vlm && Vlm.shouldUpload(true);
+  if (enhanceOn() && Vlm && !useVlm) {
+    setStatus('Enhance with AI is on but no HTTPS endpoint is configured. Using on-device Tesseract instead.');
+  }
 
   try {
-    const out = await window.BeckifyOcr.recognize(state.file, {
-      onProgress: (ratio, status) => {
-        updateProgress(ratio, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
+    if (useVlm) {
+      updateProgress(0.1, 'Uploading photo for optional AI enhance…');
+      try {
+        const out = await Vlm.analyzePanelDirectory(state.file, {
+          enhanceOn: true,
+          onProgress: (ratio, status) => {
+            updateProgress(ratio, status || 'Enhancing…');
+          },
+        });
+        applyVlmDraft(out.draft, out.warnings);
+        updateProgress(1, 'AI draft ready. Review every circuit.');
+        return;
+      } catch (error) {
+        setStatus(((error && error.message) ? error.message : 'AI enhance failed.') + ' Falling back to on-device OCR.');
       }
-    });
-    const text = out.text || '';
-    state.rawText = text;
-    elements.rawText.value = text;
-    clearReview();
-    if (elements.openPanelCaution) {
-      elements.openPanelCaution.hidden = !out.looksLikeOpenPanel;
     }
-    if (out.looksLikeOpenPanel) {
-      setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
-    }
-    if (out.failed) {
-      setStatus('OCR found no usable text. Fill the table manually — you are not blocked.');
-      updateProgress(0, 'OCR found no text');
-      renderAll();
-      return;
-    }
-    parseAndApplyText(text, true);
-    if (out.lowConfidence) {
-      setStatus(`OCR confidence is low (${out.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
-    } else if (!out.looksLikeOpenPanel) {
-      updateProgress(1, 'OCR complete. Review the table before using the estimates.');
-    }
+    updateProgress(0, 'Starting on-device OCR…');
+    await runOnDeviceOcr();
   } catch (error) {
     console.error(error);
     setStatus((error && error.message ? `${error.message} ` : '') + 'OCR failed. Fill the table manually — you are not blocked.');
@@ -256,6 +376,12 @@ function parseScheduleText(text) {
   rawLines.forEach(line => {
     const compact = compactLine(line);
     if (isIgnoredLine(compact)) return;
+
+    const paired = parsePairedDirectoryLine(compact);
+    if (paired) {
+      paired.forEach(row => pushUniqueRow(row, rows, seen));
+      return;
+    }
 
     const columns = splitColumns(line);
     if (columns.length >= 6) {
@@ -457,6 +583,26 @@ function parseFreeformRow(line, defaultSeries) {
   const segments = splitCircuitSegments(compactLine(line));
   if (!segments.length) return null;
   return parseSegmentTokens(segments[0], defaultSeries);
+}
+
+function parsePairedDirectoryLine(line) {
+  const tokens = String(line || '').split(/\s+/).filter(Boolean);
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (!isBareCircuitToken(tokens[index]) || !isBareCircuitToken(tokens[index + 1])) continue;
+    const leftNum = Number(tokens[index]);
+    const rightNum = Number(tokens[index + 1]);
+    if (leftNum < 1 || rightNum < 1 || leftNum > 84 || rightNum > 84) continue;
+    if (Math.abs(rightNum - leftNum) !== 1) continue;
+    const left = tokens.slice(0, index).join(' ');
+    const right = tokens.slice(index + 2).join(' ');
+    if (!/[A-Za-z]{2,}/.test(left) || !/[A-Za-z]{2,}/.test(right)) continue;
+    if (looksLikeCircuit(tokens[0])) continue;
+    return [
+      Object.assign(createEmptyRow(), { circuit: String(leftNum), description: left, loadType: inferLoadType(left), circuitClass: inferCircuitClass(left) }),
+      Object.assign(createEmptyRow(), { circuit: String(rightNum), description: right, loadType: inferLoadType(right), circuitClass: inferCircuitClass(right) }),
+    ];
+  }
+  return null;
 }
 
 function pushUniqueRow(row, rows, seen) {
@@ -1027,6 +1173,7 @@ function escapeHtml(value) {
 if (typeof window !== 'undefined' && window.__ENABLE_PANEL_POWER_STUDY_TEST_API__) {
   window.__panelPowerStudyTestApi = {
     parseScheduleText,
+    parsePairedDirectoryLine,
     parseColumnsToRow,
     parseFreeformRow,
     normalizeRows,

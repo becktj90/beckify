@@ -116,5 +116,26 @@ assert.equal(panel.isLikelyImageFile({ type: 'application/pdf', name: 'dir.jpg' 
 
 const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
 assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
+assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
+
+const twoUp = panel.parseScheduleText([
+  'PANEL BLT 11',
+  'POWER POLE RM 105 1 2 POWER POLE RM 106',
+  'RECP RM 105 3 4 RECP TV RM 105',
+].join('\n'));
+assert.match(String(twoUp.meta.panelName), /BLT|11/i);
+const byCkt = Object.fromEntries(twoUp.rows.map((row) => [row.circuit, row.description]));
+assert.equal(byCkt['1'], 'POWER POLE RM 105');
+assert.equal(byCkt['2'], 'POWER POLE RM 106');
+assert.equal(byCkt['3'], 'RECP RM 105');
+assert.equal(byCkt['4'], 'RECP TV RM 105');
+const numbered = panel.parseScheduleText('1 WEST TURNSTILES 2 SPARE');
+assert.equal(numbered.rows.find((row) => row.circuit === '1').description, 'WEST TURNSTILES');
+assert.equal(numbered.rows.find((row) => row.circuit === '2').description, 'SPARE');
+const paired = panel.parsePairedDirectoryLine('WEST SECURITY GATE 23 25 WEST SECURITY GATE');
+assert.equal(paired, null);
+const adjacent = panel.parsePairedDirectoryLine('WEST SECURITY GATE 23 24 SPACE');
+assert.equal(adjacent[0].circuit, '23');
+assert.equal(adjacent[1].description, 'SPACE');
 
 console.log('Panel load analyzer helpers passed');

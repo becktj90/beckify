@@ -164,6 +164,7 @@ export default function Home() {
                     { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
                     { href: "/toolbox/#sec-ebike-tools", label: "Battery pack designer" },
                     { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },
+                    { href: "/toolbox/#sec-look-check", label: "Look Check" },
                     { href: "/toolbox/#sec-torque-lookup", label: "Torque lookup" },
                     { href: "/toolbox/#sec-bldg-load", label: "Load worksheet" },
                     { href: "/toolbox/#sec-wire-colors", label: "Wire colors" },
