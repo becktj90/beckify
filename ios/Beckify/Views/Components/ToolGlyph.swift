@@ -340,6 +340,7 @@ extension GlyphKind {
         case .voltageDrop: return .voltageDrop
         case .conduitFill: return .conduitFill
         case .conductorCost: return .conductorCost
+        case .conductorLength: return .conductorLength
         case .transformer: return .transformer
         case .timer555: return .timer555
         case .motorFLA: return .motorFLA
@@ -416,6 +417,7 @@ enum GlyphKind {
     case voltageDrop
     case conduitFill
     case conductorCost
+    case conductorLength
     case transformer
     case timer555
     case motorFLA
@@ -491,6 +493,7 @@ enum GlyphKind {
         case .voltageDrop: return Self.voltageDrop(rect)
         case .conduitFill: return Self.conduitFill(rect)
         case .conductorCost: return Self.conductorCost(rect)
+        case .conductorLength: return Self.conductorLength(rect)
         case .transformer: return Self.transformer(rect)
         case .timer555: return Self.timer555(rect)
         case .motorFLA: return Self.motorFLA(rect)
@@ -696,6 +699,44 @@ enum GlyphKind {
             width: tag.width * 0.36,
             height: tag.height * 0.28
         ))
+        return path
+    }
+
+    /// DMM on a run with a length rule — distinct from voltage-drop ticks
+    /// and from the conductor-cost price tag.
+    private static func conductorLength(_ r: CGRect) -> Path {
+        var path = Path()
+        let meter = CGRect(
+            x: r.minX + r.width * 0.04,
+            y: r.midY - r.height * 0.28,
+            width: r.width * 0.30,
+            height: r.height * 0.48
+        )
+        path.addRoundedRect(in: meter, cornerSize: CGSize(width: 3, height: 3))
+        path.move(to: CGPoint(x: meter.minX + meter.width * 0.18, y: meter.minY + meter.height * 0.32))
+        path.addLine(to: CGPoint(x: meter.maxX - meter.width * 0.18, y: meter.minY + meter.height * 0.32))
+        path.move(to: CGPoint(x: meter.minX + meter.width * 0.18, y: meter.minY + meter.height * 0.55))
+        path.addLine(to: CGPoint(x: meter.maxX - meter.width * 0.42, y: meter.minY + meter.height * 0.55))
+
+        let wireY = r.midY - r.height * 0.08
+        path.move(to: CGPoint(x: meter.maxX, y: wireY))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.10, y: wireY))
+        path.addEllipse(in: CGRect(
+            x: r.maxX - r.width * 0.14,
+            y: wireY - r.height * 0.05,
+            width: r.width * 0.10,
+            height: r.height * 0.10
+        ))
+
+        let ruleY = r.maxY - r.height * 0.20
+        path.move(to: CGPoint(x: meter.maxX + r.width * 0.02, y: ruleY))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: ruleY))
+        for index in 0..<5 {
+            let x = meter.maxX + r.width * 0.02 + r.width * 0.13 * CGFloat(index)
+            let tick = index % 2 == 0 ? r.height * 0.12 : r.height * 0.07
+            path.move(to: CGPoint(x: x, y: ruleY))
+            path.addLine(to: CGPoint(x: x, y: ruleY - tick))
+        }
         return path
     }
 

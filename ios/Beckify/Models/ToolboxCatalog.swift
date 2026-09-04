@@ -12,6 +12,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case motorFLA
     case wireAmpacity
     case conductorCost
+    case conductorLength
     case voltageDivider
     case seriesParallel
     case resistorColor
@@ -325,6 +326,17 @@ enum ToolboxCatalog {
             subtitle: "Compare compliant sizes and parallels with planning $/kft and optional I²R.",
             symbol: "dollarsign.circle",
             synonyms: ["conductor cost", "optimize", "planning allowance", "parallel runs", "copper cost", "aluminum cost", "i2r", "kft", "wire select"]
+        ),
+        ToolDefinition(
+            id: .conductorLength,
+            kind: .calculator,
+            title: "Conductor Length by Resistance",
+            subtitle: "Estimate length from measured resistance with Cu/Al temperature compensation.",
+            symbol: "ruler",
+            synonyms: [
+                "conductor length", "length from r", "resistance length", "loop resistance",
+                "circular mils", "awg", "copper", "aluminum", "milliohm", "cable length",
+            ]
         ),
         ToolDefinition(
             id: .receptacleSelector,
@@ -826,7 +838,7 @@ enum ToolboxCatalog {
     /// Open PRs can keep appending to these arrays.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
-            .wireAmpacity, .conductorCost, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
+            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR,
             .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .loadWorksheet, .cableSchedule, .isLoopVerifier,
@@ -896,13 +908,14 @@ enum ToolboxCatalog {
         .ohmsLaw: [.power, .voltageDivider, .ledRC],
         .power: [.ohmsLaw, .transformer, .powerFactor],
         .powerWizard: [.power, .motorFLA, .transformer],
-        .voltageDrop: [.wireAmpacity, .conductorCost, .conduitFill],
+        .voltageDrop: [.wireAmpacity, .conductorCost, .conductorLength, .conduitFill],
         .conduitFill: [.wireAmpacity, .voltageDrop, .conductorCost],
-        .conductorCost: [.wireAmpacity, .voltageDrop, .conduitFill],
+        .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
+        .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.power, .shortCircuit, .motorFLA],
         .timer555: [.plcTimer, .ledRC, .frequencyWave],
         .motorFLA: [.motorNameplateOCR, .motorNameplate, .motorSpeed],
-        .wireAmpacity: [.voltageDrop, .conductorCost, .conduitFill],
+        .wireAmpacity: [.voltageDrop, .conductorCost, .conductorLength],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
@@ -922,7 +935,7 @@ enum ToolboxCatalog {
         .reactance: [.powerFactor, .frequencyWave, .ohmsLaw],
         .powerFactor: [.power, .reactance, .transformer],
         .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],
-        .circularMils: [.wireAmpacity, .voltageDrop, .conduitFill],
+        .circularMils: [.conductorLength, .wireAmpacity, .voltageDrop],
         .loadFactors: [.panelDirectory, .power, .motorFLA],
         .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems],
         .modbusAddress: [.signalScaling, .plcTimer],
