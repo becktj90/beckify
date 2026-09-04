@@ -186,6 +186,7 @@ public enum ToolCalculationPolicy {
         "transientCircuit", "rackCurrent", "diodeIV", "isLoopVerifier",
         "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate", "heaterDesign",
         "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
+        "solarDesign",
     ]
 
     public static var liveToolIDs: [String] {

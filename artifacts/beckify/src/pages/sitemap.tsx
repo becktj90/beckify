@@ -104,6 +104,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
     tools: [
       t("On-site Power", "sec-ups"),
+      t("Solar Design Wizard", "sec-solar-wizard"),
       t("Battery Bank Calculator", "sec-battery-bank"),
     ],
   },

@@ -490,7 +490,7 @@
     if (id === 'sec-xfmr' || id === 'sec-xfmr-size' || id === 'sec-xfmr-engine' || id === 'sec-xfmr-wizard') return transformer(shell(result, 'Transformer primary to secondary energy transfer'));
     if (id === 'sec-wire-select') return capacity(shell(result, 'Conductor ampacity against the allowable design envelope'), 'AMPACITY SELECTION', 'selected conductor vs allowable envelope', PALETTE.green);
     if (id === 'sec-sc') return faultPath(shell(result, 'Source through overcurrent protection to fault path'));
-    if (id === 'sec-ups' || id === 'sec-gen' || id === 'sec-hybrid' || id === 'sec-bess') return energyBars(shell(result, 'Load, reserve, and capacity relationship'), 'ENERGY CAPACITY');
+    if (id === 'sec-ups' || id === 'sec-gen' || id === 'sec-hybrid' || id === 'sec-bess' || id === 'sec-solar-wizard') return energyBars(shell(result, 'Load, reserve, and capacity relationship'), 'ENERGY CAPACITY');
     if (id === 'sec-ebike-tools') return drivetrain(shell(result, 'E-bike drivetrain gear ratio relationship'));
     if (id === 'sec-nec') return faultPath(shell(result, 'Branch circuit source, protection, conductors, and load path'));
     if (id === 'sec-isloop') return safetyLoop(shell(result, 'Intrinsic-safety barrier and field-device loop'));

@@ -58,6 +58,7 @@
 		BECF0000000000000000007C /* RecentToolsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007B /* RecentToolsStore.swift */; };
 		BECF0000000000000000007E /* ConductorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007D /* ConductorHandoff.swift */; };
 		BECF00000000000000000080 /* FacilityCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007F /* FacilityCalculatorViews.swift */; };
+		BECF00000000000000000082 /* SolarDesignWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000081 /* SolarDesignWizardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -112,6 +113,7 @@
 		BECF0000000000000000007B /* RecentToolsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentToolsStore.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007D /* ConductorHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorHandoff.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007F /* FacilityCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacilityCalculatorViews.swift; sourceTree = "<group>"; };
+		BECF00000000000000000081 /* SolarDesignWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarDesignWizardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -226,6 +228,7 @@
 				BECF0000000000000000007F /* FacilityCalculatorViews.swift */,
 				BECF00000000000000000071 /* ControlsCalculatorViews.swift */,
 				BECF00000000000000000073 /* PanelDirectoryView.swift */,
+				BECF00000000000000000081 /* SolarDesignWizardView.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -371,6 +374,7 @@
 				BECF0000000000000000007C /* RecentToolsStore.swift in Sources */,
 				BECF0000000000000000007E /* ConductorHandoff.swift in Sources */,
 				BECF00000000000000000080 /* FacilityCalculatorViews.swift in Sources */,
+				BECF00000000000000000082 /* SolarDesignWizardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -460,7 +464,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool and in Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch). Location is not used at launch and is not uploaded.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -500,7 +504,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool and in Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch). Location is not used at launch and is not uploaded.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field and homework notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
