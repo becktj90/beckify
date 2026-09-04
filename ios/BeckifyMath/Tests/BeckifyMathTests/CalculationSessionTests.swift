@@ -21,7 +21,7 @@ final class CalculationSessionTests: XCTestCase {
             "receptacleSelector", "panelDirectory", "powerWizard",
             "motorSpeed", "rfLink", "phasorDiagram", "batteryBank", "solarDesign",
             "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
-            "motorNameplateOCR",
+            "motorNameplateOCR", "lookCheck",
             "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
             "controlSystems",
         ]

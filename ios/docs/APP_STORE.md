@@ -42,6 +42,7 @@ Jobsite:
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA (typed or seeded from a confirmed OCR review)
 • Motor Nameplate OCR — camera or photo library, on-device Vision, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed. No cloud upload.
+• Look Check — camera or photo library, then Analyze Look for a playful good-or-bad verdict plus lighting / framing / expression / sharpness metrics. Entertainment only — not medical or dating advice. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Not the Wi-Fi / Cellular Online / Captive connectivity card.
 • Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
 • Short-circuit current, circular mils, load & demand factors
@@ -109,8 +110,8 @@ Reference:
 
 Instruments (Field subsection) — measure with public Apple APIs (not private APIs):
 
-• Wi-Fi path: **Look Check** first (HTTP GET to Apple’s `captive.apple.com/hotspot-detect.html` — Success means no captive portal; redirect/login HTML is called captive; a path that cannot reach that host is local-only). Then Apple’s public 0…1 `signalStrength` shown as percent/bars when `NEHotspotNetwork` returns it, optional local IPv4 from the probe’s Network `localEndpoint`, an on-device coverage heatmap (GPS walk or tap-on-floor), and **link quality (RTT)** via TCP connect time to the path gateway or a user-chosen host (1.1.1.1 / beckify.com). Raw path chrome (`en0`, `pdp_ip0`, expensive/constrained) is behind a collapsed Advanced path disclosure. iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. RTT is not ICMP ping. A LAN/gateway target may prompt for Local Network. Look Check to Apple’s public host does not. Current SSID needs location plus, on a signed team, Access Wi-Fi Information.
-• Cellular path (CoreTelephony + Network.framework): the same **Look Check**, then color arc gauges for **radio generation** (2G…5G from RAT — not signal bars and not RSRP) and **TCP RTT milliseconds**, plus a carrier / RAT chip board for the identified data service (type, generation, RAT, PLMN, MCC/MNC, carrier). Per-service carrier name, MCC/MNC, ISO country, radio-access technology (5G NR / LTE / 3G / …), data-service identity, default-path vs cellular-required path flags (collapsed under Advanced path), and optional **link quality (RTT)** via TCP connect while the default path uses cellular. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm; this tool will not invent those. CTCarrier is deprecated as of iOS 16 with no public replacement — empty subscriber fields stay blank. A collapsed reference sheet explains typical RSRP/RSRQ/SINR bands and is labeled as not measured on this device.
+• Wi-Fi path: **Online / Captive** first (HTTP GET to Apple’s `captive.apple.com/hotspot-detect.html` — Success means no captive portal; redirect/login HTML is called captive; a path that cannot reach that host is local-only). Then Apple’s public 0…1 `signalStrength` shown as percent/bars when `NEHotspotNetwork` returns it, optional local IPv4 from the probe’s Network `localEndpoint`, an on-device coverage heatmap (GPS walk or tap-on-floor), and **link quality (RTT)** via TCP connect time to the path gateway or a user-chosen host (1.1.1.1 / beckify.com). Raw path chrome (`en0`, `pdp_ip0`, expensive/constrained) is behind a collapsed Advanced path disclosure. iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. RTT is not ICMP ping. A LAN/gateway target may prompt for Local Network. Online / Captive to Apple’s public host does not. Current SSID needs location plus, on a signed team, Access Wi-Fi Information. Catalog **Look Check** is a separate photo tool on Jobsite.
+• Cellular path (CoreTelephony + Network.framework): the same **Online / Captive** probe, then color arc gauges for **radio generation** (2G…5G from RAT — not signal bars and not RSRP) and **TCP RTT milliseconds**, plus a carrier / RAT chip board for the identified data service (type, generation, RAT, PLMN, MCC/MNC, carrier). Per-service carrier name, MCC/MNC, ISO country, radio-access technology (5G NR / LTE / 3G / …), data-service identity, default-path vs cellular-required path flags (collapsed under Advanced path), and optional **link quality (RTT)** via TCP connect while the default path uses cellular. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm; this tool will not invent those. CTCarrier is deprecated as of iOS 16 with no public replacement — empty subscriber fields stay blank. A collapsed reference sheet explains typical RSRP/RSRQ/SINR bands and is labeled as not measured on this device.
 • BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
@@ -120,7 +121,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “milliohm”, “shorted parallel”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”, “look check”, “captive”, “cellular”, “lte”, “5g”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Every catalog tool also has a short **How it works** note (toolbar About / collapsed disclosure — open by default on homework tools) covering what it computes, when to use it, and honesty limits. Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “milliohm”, “shorted parallel”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “look check”, “analyze look”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”, “captive”, “cellular”, “lte”, “5g”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Every catalog tool also has a short **How it works** note (toolbar About / collapsed disclosure — open by default on homework tools) covering what it computes, when to use it, and honesty limits. Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -128,14 +129,14 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect build — no binary uploaded):**
-**Wi-Fi Path** is now a field connectivity tool: it leads with **Look Check** (captive portal / local-only / online) using Apple’s public hotspot-detect page, shows optional local IPv4 from Network.framework when the probe yields one, keeps Apple 0…1 strength %/bars and TCP RTT, and hides raw `en0` / `pdp_ip0` path chrome behind Advanced path. **Cellular Path** reuses the same Look Check. iOS still cannot read Wi-Fi or cellular dBm — this build does not invent RSSI/RSRP. Field home (not while searching) shows a **Quick** strip — an avatar row of pinned jobsite tools: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, and Conduit Fill. Every catalog tool has a short **About / How it works** note. App Store apps cannot ICMP ping; a LAN RTT target may prompt for Local Network. Look Check to `captive.apple.com` does not. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+**Look Check** is now a first-class Jobsite tool: take or choose a photo, preview it on device, then tap **Analyze Look** to upload for a playful good-or-bad verdict plus lighting / framing / expression / sharpness metrics. Entertainment only — not medical or dating advice. Taking or choosing a photo does not upload it. The Wi-Fi / Cellular connectivity probe is labeled **Online / Captive** so it is not confused with this photo product. iOS still cannot read Wi-Fi or cellular dBm — this build does not invent RSSI/RSRP. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
-**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md) (“Data Not Collected”).
+**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md). Look Check Analyze Look is a user-initiated photo upload; update the App Privacy nutrition label to Photos (App Functionality, not linked, not tracking).
 
 ## Cellular App Store limitation (honest)
 
@@ -143,11 +144,11 @@ Public iOS APIs do **not** provide cellular RSRP, RSRQ, SINR, RSSI, or dBm to th
 
 ## Wi-Fi App Store limitation (honest)
 
-Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple DTS). **Look Check** is an HTTP GET to `captive.apple.com/hotspot-detect.html` over Network.framework TCP (not URLSession cleartext, so no ATS exception). A `Success` body is “no captive portal”; a redirect or login HTML is “captive portal”; a satisfied path that cannot reach the host is “local only.” Optional local IPv4 is the probe connection’s `localEndpoint` when it is IPv4 — not a public-IP service and not RSSI. `NWPathMonitor` reports path status; interface names stay behind Advanced path. `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID and a **0.0–1.0** `signalStrength` after location (and Access Wi-Fi Information on a signed team). That 0–1 value is often 0.0; it is not calibrated dBm and is shown as percent/bars only. The in-app heatmap sketches Apple’s 0–1 strength versus GPS or a tapped floor plan. Complementary **link quality (RTT)** is TCP connect time (refused RST still counts) to `NWPath.gateways` or a user-chosen host — not ICMP ping, which App Store apps cannot send. A LAN/gateway target may show the Local Network prompt; without that permission the probe fails honestly. Look Check to Apple’s public host does not need Local Network. iOS does not always publish a gateway. Do not add private APIs to fake a dBm meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
+Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple DTS). **Online / Captive** is an HTTP GET to `captive.apple.com/hotspot-detect.html` over Network.framework TCP (not URLSession cleartext, so no ATS exception). A `Success` body is “no captive portal”; a redirect or login HTML is “captive portal”; a satisfied path that cannot reach the host is “local only.” Optional local IPv4 is the probe connection’s `localEndpoint` when it is IPv4 — not a public-IP service and not RSSI. `NWPathMonitor` reports path status; interface names stay behind Advanced path. `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID and a **0.0–1.0** `signalStrength` after location (and Access Wi-Fi Information on a signed team). That 0–1 value is often 0.0; it is not calibrated dBm and is shown as percent/bars only. The in-app heatmap sketches Apple’s 0–1 strength versus GPS or a tapped floor plan. Complementary **link quality (RTT)** is TCP connect time (refused RST still counts) to `NWPath.gateways` or a user-chosen host — not ICMP ping, which App Store apps cannot send. A LAN/gateway target may show the Local Network prompt; without that permission the probe fails honestly. Online / Captive to Apple’s public host does not need Local Network. iOS does not always publish a gateway. Do not add private APIs to fake a dBm meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices. Catalog **Look Check** is a separate photo tool and is not this probe.
 
 ## App privacy (nutrition label)
 
-Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
+Data collection: **Photos** only when the user taps **Analyze Look** in Look Check (see [`PRIVACY.md`](PRIVACY.md)). Not linked to identity. Not used for tracking.
 
 - No analytics
 - No tracking
@@ -155,17 +156,18 @@ Data collection: **none** (see [`PRIVACY.md`](PRIVACY.md)).
 - No account
 - Saved jobs and last-used tool inputs use on-device storage only (`UserDefaults`)
 - Microphone, Bluetooth, location, and CoreTelephony radio identity are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
+- Look Check photos stay on device until Analyze Look; Motor Nameplate OCR and Panel Directory photos never upload
 
 Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
 - `NSPrivacyTracking` = false  
-- No collected data types  
+- Photos or Videos collected for App Functionality, not linked, not used for tracking  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera — see the Beckify target build settings. Photo Library full access is not requested; Motor Nameplate OCR and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
+Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera — see the Beckify target build settings. Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
 
 ## Export compliance
 
-The app uses HTTPS for optional links the user taps (beckify.com, mailto). **Look Check** also opens a cleartext HTTP GET to Apple’s public captive-portal detect host (`captive.apple.com`) — the standard hotspot-detect technique; the request carries no user content. It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
+The app uses HTTPS for optional links the user taps (beckify.com, mailto) and for Look Check **Analyze Look** (`https://beckify.com/api/analyze-look` or a user-entered HTTPS endpoint). **Online / Captive** also opens a cleartext HTTP GET to Apple’s public captive-portal detect host (`captive.apple.com`) — the standard hotspot-detect technique; the request carries no user content. It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
 
 ## Screenshots (required sizes)
 
@@ -193,8 +195,9 @@ Take 3–8 screens per size. Suggested shots:
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
 10. Solar Design Wizard — panel aim readouts (tilt/heading) and/or a sizing result with optional storage (do not claim sensors were live in Simulator if they were not)
 11. Toolkit → Bench e-bike tools — Torque/RPM, Sprocket Ratio, Range Estimator, or Pack Designer result (design-aid framing visible; not Field)
-12. Cellular Path — Look Check verdict plus color arc gauges for radio generation (2G…5G from RAT) and TCP RTT ms, plus the carrier / RAT chip board (do not imply RSRP/dBm; this is a suggested shot, not a captured screenshot)
-13. Wi-Fi Path — Look Check first (no captive portal / local only / captive), Apple strength %/bars when available, no dBm row (suggested shot, not captured)
+12. Cellular Path — Online / Captive verdict plus color arc gauges for radio generation (2G…5G from RAT) and TCP RTT ms, plus the carrier / RAT chip board (do not imply RSRP/dBm; this is a suggested shot, not a captured screenshot)
+13. Wi-Fi Path — Online / Captive first (no captive portal / local only / captive), Apple strength %/bars when available, no dBm row (suggested shot, not captured)
+14. Look Check — photo preview plus Analyze Look metrics (entertainment disclaimer visible)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
 
@@ -228,7 +231,7 @@ The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
 1. Create the app record — already done (see table). On a Mac, open `ios/Beckify.xcodeproj` and set **Team** / confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
-2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Look Check plus Apple’s public 0–1 `signalStrength` (percent/bars) plus TCP RTT, not dBm.
+2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Online / Captive plus Apple’s public 0–1 `signalStrength` (percent/bars) plus TCP RTT, not dBm.
 3. Run on a physical device at least once if not already done (capability / provisioning / sensor check). This Linux CI job does not do that.
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
 5. Capture screenshots at the sizes below. Do **not** ship website screenshots.

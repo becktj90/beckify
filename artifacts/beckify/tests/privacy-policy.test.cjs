@@ -23,7 +23,7 @@ console.log("\n--- Privacy policy ---");
 ok("live policy is not a draft", !/Status:\s*Draft/i.test(privacyMd) && !/not published on https:\/\/beckify.com/i.test(privacyMd));
 ok("policy names Trevor Beck and contact email", /Trevor Beck/.test(privacyMd) && /trevorjohnbeck@gmail.com/.test(privacyMd));
 ok("policy URL is https://beckify.com/privacy", /https:\/\/beckify.com\/privacy/.test(privacyMd));
-ok("nutrition label is Data Not Collected", /Data Not Collected/.test(privacyMd));
+ok("nutrition label documents Look Check photo upload", /Analyze Look/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd));
 ok("sensors and Saved Jobs stay on device", /Saved Jobs stay on the device/.test(privacyMd));
 ok("no analytics, ads, tracking, or accounts", /No analytics/.test(privacyMd) && /No ads/.test(privacyMd) && /no tracking/.test(privacyMd) && /No user accounts/.test(privacyMd));
 ok("permissions only when tools are used", /only when the related tool is used/.test(privacyMd));
@@ -33,7 +33,7 @@ ok("Apple Developer Program noted as signed up on 2026-09-02", /2026-09-02/.test
 ok("remaining Mac steps still listed", /Archive in Xcode/.test(appStoreMd) && /Attach screenshots/.test(appStoreMd) && /set \*\*Team\*\*/.test(appStoreMd) && /Create the app record/.test(appStoreMd));
 ok("bundle ID, name, devices, price, age stay honest", /com\.beckify\.toolbox/.test(appStoreMd) && /\*\*Name:\*\* Beckify/.test(appStoreMd) && /iPhone and iPad/.test(appStoreMd) && /no in-app purchases, no ads/.test(appStoreMd) && /4\+/.test(appStoreMd));
 ok("support and marketing URLs are beckify.com", /\*\*Support URL:\*\* https:\/\/beckify.com/.test(appStoreMd) && /\*\*Marketing URL:\*\* https:\/\/beckify.com/.test(appStoreMd));
-ok("React privacy page is a live policy", /Data Not Collected/.test(privacyPage) && /com.beckify.toolbox/.test(privacyPage) && !/not published/.test(privacyPage));
+ok("React privacy page is a live policy", /Analyze Look/.test(privacyPage) && /com.beckify.toolbox/.test(privacyPage) && !/not published/.test(privacyPage));
 ok("React routes cover /privacy and /privacy/", appSrc.includes('path="/privacy"') && appSrc.includes('path="/privacy/"'));
 ok("sitemap All pages lists Privacy", /href: "\/privacy", label: "Privacy"/.test(sitemapSrc));
 ok("footer links Privacy", footerSrc.includes('href="/privacy"') && footerSrc.includes("Privacy"));

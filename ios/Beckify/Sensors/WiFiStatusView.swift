@@ -422,7 +422,7 @@ struct WiFiStatusView: View {
             toolID: .wifiStatus,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Look Check GETs Apple’s hotspot-detect page. Walk or tap to drop coverage samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works. Link quality is TCP RTT, not ICMP ping."),
+            disclaimer: .sensor(extra: "Online / Captive GETs Apple’s hotspot-detect page. Walk or tap to drop coverage samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works. Link quality is TCP RTT, not ICMP ping."),
             isResultStale: lookCheck.isStale(path: lookPath)
         ) {
             LookCheckCard(model: lookCheck) {
@@ -432,11 +432,11 @@ struct WiFiStatusView: View {
                 toolID: .wifiStatus,
                 symbolic: "look = HTTP GET captive.apple.com/hotspot-detect.html → Success?    A = NEHotspotNetwork.signalStrength ∈ [0, 1]    RTT = TCP connect time",
                 substituted: substituted,
-                meaning: "Look Check is captive vs online, not a speed test. Primary public RF unit is Apple’s 0…1 strength, shown as percent and bars. Complementary metric is TCP round-trip time. Neither is a calibrated RF power reading."
+                meaning: "Online / Captive is captive vs online, not a speed test. Primary public RF unit is Apple’s 0…1 strength, shown as percent and bars. Complementary metric is TCP round-trip time. Neither is a calibrated RF power reading."
             )
             RFHonestyBanner(
                 title: "No Wi‑Fi dBm on iOS",
-                detail: "App Store apps cannot read RSSI or dBm. This gauge is Apple’s public 0…1 signalStrength as percent and bars, plus optional TCP RTT. Look Check is an HTTP connectivity verdict. It will not invent a reading."
+                detail: "App Store apps cannot read RSSI or dBm. This gauge is Apple’s public 0…1 signalStrength as percent and bars, plus optional TCP RTT. Online / Captive is an HTTP connectivity verdict. It will not invent a reading."
             )
             WiFiStrengthGauge(strength: model.signalStrength, onWiFi: model.usesWiFi)
             ResultCard(title: "Associated network", copyText: copyText) {
@@ -481,7 +481,7 @@ struct WiFiStatusView: View {
                 } else {
                     ResultRow(label: "Path gateway", value: "not published", tone: Theme.muted)
                 }
-                Text("Interface names and path flags are here for debugging. The field verdict is Look Check above.")
+                Text("Interface names and path flags are here for debugging. The field verdict is Online / Captive above.")
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, 6)
@@ -519,7 +519,7 @@ struct WiFiStatusView: View {
         if let look = lookCheck.verdict {
             parts.append("look = \(look.headline)")
         } else {
-            parts.append("Look Check to classify captive vs online.")
+            parts.append("Online / Captive to classify captive vs online.")
         }
         if let s = model.signalStrength {
             parts.append("A = \(Format.number(s, digits: 2))  →  \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) %  ·  \(WiFiCoverageMath.bars(s))/4 bars")
@@ -538,7 +538,7 @@ struct WiFiStatusView: View {
         if model.signalStrength != nil { parts.append(strengthText) }
         if let rtt = rttMedianText { parts.append("\(rtt) RTT") }
         if parts.isEmpty {
-            return model.usesWiFi ? "Wi-Fi path, no look check yet" : nil
+            return model.usesWiFi ? "Wi-Fi path, no online / captive check yet" : nil
         }
         return parts.joined(separator: "  ·  ")
     }
@@ -728,7 +728,7 @@ struct WiFiStatusView: View {
 
     private func save() {
         var outputs: [String: String] = [
-            "look check": lookCheck.verdict?.headline ?? "—",
+            "online captive": lookCheck.verdict?.headline ?? "—",
             "look path": lookCheck.verdict?.transportLabel ?? "—",
             "local ipv4": lookCheck.localIPv4 ?? "—",
             "status": model.status,
@@ -752,7 +752,7 @@ struct WiFiStatusView: View {
             toolID: .wifiStatus,
             notes: notes,
             inputs: [
-                "API": "Look Check HTTP + NWPathMonitor + NEHotspotNetwork.signalStrength + TCP RTT",
+                "API": "Online / Captive HTTP + NWPathMonitor + NEHotspotNetwork.signalStrength + TCP RTT",
                 "mode": surveyMode.rawValue,
                 "rttTarget": rttTarget.rawValue,
                 "rttHost": customRTTHost,

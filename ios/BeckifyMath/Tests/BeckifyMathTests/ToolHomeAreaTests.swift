@@ -20,7 +20,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "motorSpeed", "isLoopVerifier", "signalScaling", "modbusAddress",
             "plcTimer", "rackCurrent", "powerFactor", "batteryBank",
             "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate",
-            "motorNameplateOCR", "necCircuit",
+            "motorNameplateOCR", "lookCheck", "necCircuit",
             "controlSystems",
         ]
         for id in field {
@@ -107,6 +107,7 @@ final class ToolHomeAreaTests: XCTestCase {
         let jobsite = [
             "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength",
             "conduitFill", "motorFLA", "motorSpeed", "motorNameplate", "motorNameplateOCR",
+            "lookCheck",
             "receptacleSelector", "shortCircuit", "circularMils", "loadFactors",
             "necCircuit", "isLoopVerifier",
         ]

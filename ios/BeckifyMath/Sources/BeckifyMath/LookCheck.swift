@@ -47,7 +47,7 @@ public struct LookCheckPathContext: Equatable, Sendable {
     }
 }
 
-/// Parsed HTTP/1.x response from the Look Check probe. Body is decoded text.
+/// Parsed HTTP/1.x response from the Online / Captive probe. Body is decoded text.
 public struct LookCheckHTTPResponse: Equatable, Sendable {
     public var status: Int
     public var reason: String
@@ -66,7 +66,7 @@ public struct LookCheckHTTPResponse: Equatable, Sendable {
     public var location: String? { headers["location"] }
 }
 
-/// Field-facing Look Check result. Copy stays connectivity-honest — never a dBm row.
+/// Field-facing Online / Captive result. Copy stays connectivity-honest — never a dBm row.
 public struct LookCheckVerdict: Equatable, Sendable {
     public var kind: LookCheckKind
     public var headline: String
@@ -98,7 +98,7 @@ public struct LookCheckVerdict: Equatable, Sendable {
     }
 
     public var copyLine: String {
-        var parts = ["Look Check: \(headline)"]
+        var parts = ["Online / Captive: \(headline)"]
         if transportLabel != "—" { parts.append(transportLabel) }
         if let ip = localIPv4 { parts.append("local IPv4 \(ip)") }
         else if let addr = localAddress { parts.append("local \(addr)") }
@@ -151,7 +151,7 @@ public enum LookCheck {
             return verdict(
                 .offline,
                 headline: "No path",
-                detail: "No satisfied network path. Look Check stays blank until a path is up. This is not a signal reading."
+                detail: "No satisfied network path. Online / Captive stays blank until a path is up. This is not a signal reading."
             )
         }
 
@@ -184,7 +184,7 @@ public enum LookCheck {
             return verdict(
                 .unclear,
                 headline: "Unclear",
-                detail: "TCP reached the look-check host but the HTTP body was empty or unreadable. The tool will not invent a verdict. Try Safari."
+                detail: "TCP reached the hotspot-detect host but the HTTP body was empty or unreadable. The tool will not invent a verdict. Try Safari."
             )
         }
 

@@ -57,6 +57,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case upsSizing
     case motorNameplate
     case motorNameplateOCR
+    case lookCheck
     case heaterDesign
     case empEmc
     case necCircuit
@@ -397,25 +398,25 @@ enum ToolboxCatalog {
             id: .wifiStatus,
             kind: .sensor,
             title: "Wi-Fi Path",
-            subtitle: "Look Check, Apple strength %/bars, TCP RTT. Not a dBm meter.",
+            subtitle: "Online / Captive, Apple strength %/bars, TCP RTT. Not a dBm meter.",
             symbol: "wifi",
             synonyms: [
                 "wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path",
                 "heatmap", "coverage", "dbm", "rtt", "latency", "link quality",
-                "look check", "captive", "portal", "hotspot detect", "connectivity", "local ip",
+                "online captive", "captive", "portal", "hotspot detect", "connectivity", "local ip",
             ]
         ),
         ToolDefinition(
             id: .cellularStatus,
             kind: .sensor,
             title: "Cellular Path",
-            subtitle: "Look Check, generation + TCP RTT gauges, carrier / RAT. Not RSRP / dBm.",
+            subtitle: "Online / Captive, generation + TCP RTT gauges, carrier / RAT. Not RSRP / dBm.",
             symbol: "antenna.radiowaves.left.and.right",
             synonyms: [
                 "cellular", "cell", "lte", "5g", "nr", "4g", "3g", "wcdma", "carrier",
                 "mcc", "mnc", "plmn", "rsrp", "rsrq", "sinr", "rssi", "dbm", "dual sim",
                 "radio access", "telephony", "coretelephony", "signal", "rtt", "latency",
-                "look check", "captive", "portal", "connectivity",
+                "online captive", "captive", "portal", "connectivity",
             ]
         ),
         ToolDefinition(
@@ -699,6 +700,17 @@ enum ToolboxCatalog {
             synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan"]
         ),
         ToolDefinition(
+            id: .lookCheck,
+            kind: .calculator,
+            title: "Look Check",
+            subtitle: "Upload any photo for a playful good-or-bad look verdict. Entertainment only.",
+            symbol: "person.crop.rectangle",
+            synonyms: [
+                "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",
+                "analyze look", "camera", "lighting", "framing", "expression", "entertainment",
+            ]
+        ),
+        ToolDefinition(
             id: .heaterDesign,
             kind: .calculator,
             title: "Heater Design Wizard",
@@ -858,7 +870,7 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
-            .motorNameplateOCR,
+            .motorNameplateOCR, .lookCheck,
             .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
         ],
@@ -987,6 +999,7 @@ enum ToolboxCatalog {
         .upsSizing: [.batteryBank, .power, .rackCurrent],
         .motorNameplate: [.motorNameplateOCR, .motorFLA, .motorSpeed],
         .motorNameplateOCR: [.motorNameplate, .motorFLA, .motorSpeed],
+        .lookCheck: [.motorNameplateOCR, .panelDirectory],
         .heaterDesign: [.ohmsLaw, .wireAmpacity, .power],
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.wireAmpacity, .voltageDrop, .loadWorksheet],

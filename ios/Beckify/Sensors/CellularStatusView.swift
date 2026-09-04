@@ -527,7 +527,7 @@ struct CellularStatusView: View {
             toolID: .cellularStatus,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Look Check is the same HTTP hotspot-detect probe as Wi-Fi Path. On-device CoreTelephony + Network path status. RTT is a user-started TCP probe. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm."),
+            disclaimer: .sensor(extra: "Online / Captive is the same HTTP hotspot-detect probe as Wi-Fi Path. On-device CoreTelephony + Network path status. RTT is a user-started TCP probe. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm."),
             isResultStale: lookCheck.isStale(path: lookPath)
         ) {
             LookCheckCard(model: lookCheck) {
@@ -537,11 +537,11 @@ struct CellularStatusView: View {
                 toolID: .cellularStatus,
                 symbolic: "look = HTTP GET captive.apple.com/hotspot-detect.html → Success?    RAT = serviceCurrentRadioAccessTechnology    RTT = TCP connect time",
                 substituted: substituted,
-                meaning: "Look Check is captive vs online on the default path. Gauges show radio generation (2G…5G from RAT) and measured TCP RTT. They are not RSRP, RSRQ, SINR, or dBm."
+                meaning: "Online / Captive is captive vs online on the default path. Gauges show radio generation (2G…5G from RAT) and measured TCP RTT. They are not RSRP, RSRQ, SINR, or dBm."
             )
             RFHonestyBanner(
                 title: "No cellular dBm on iOS",
-                detail: "App Store apps cannot read RSRP, RSRQ, SINR, RSSI, or bar-count from public CoreTelephony or Network APIs. Private status-bar scraping is a reject risk. This instrument reports Look Check, radio identity, and a measured TCP RTT proxy only."
+                detail: "App Store apps cannot read RSRP, RSRQ, SINR, RSSI, or bar-count from public CoreTelephony or Network APIs. Private status-bar scraping is a reject risk. This instrument reports Online / Captive, radio identity, and a measured TCP RTT proxy only."
             )
             CellularNetworkGauges(
                 rat: model.dataService?.rat,
@@ -595,7 +595,7 @@ struct CellularStatusView: View {
                 ResultRow(label: "Cell unsatisfied", value: model.cellularUnsatisfiedReason)
                 ResultRow(label: "Cell interfaces", value: model.cellularInterfaces.isEmpty ? "—" : model.cellularInterfaces.joined(separator: ", "))
                 ResultRow(label: "App cellular data", value: model.restriction)
-                Text("Interface names and path flags are here for debugging. Look Check above is the field verdict. The cellular monitor requires a cellular interface even when Wi-Fi is the default route.")
+                Text("Interface names and path flags are here for debugging. Online / Captive above is the field verdict. The cellular monitor requires a cellular interface even when Wi-Fi is the default route.")
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, 6)
@@ -934,7 +934,7 @@ struct CellularStatusView: View {
 
     private func save() {
         var outputs: [String: String] = [
-            "look check": lookCheck.verdict?.headline ?? "—",
+            "online captive": lookCheck.verdict?.headline ?? "—",
             "look path": lookCheck.verdict?.transportLabel ?? "—",
             "local ipv4": lookCheck.localIPv4 ?? "—",
             "default status": model.defaultStatus,
@@ -964,7 +964,7 @@ struct CellularStatusView: View {
             toolID: .cellularStatus,
             notes: notes,
             inputs: [
-                "API": "Look Check HTTP + CTTelephonyNetworkInfo + NWPathMonitor + TCP RTT",
+                "API": "Online / Captive HTTP + CTTelephonyNetworkInfo + NWPathMonitor + TCP RTT",
                 "rttTarget": rttTarget.rawValue,
                 "rttHost": customRTTHost,
             ],
