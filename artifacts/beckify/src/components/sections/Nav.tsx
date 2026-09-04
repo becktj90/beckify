@@ -11,7 +11,6 @@ const NAV_ICON_NAMES: Record<string, BeckifyIconName> = {
   "Control Systems": "gauge",
   Projects: "projects",
   Games: "games",
-  "Recommended Gear": "signal",
 };
 
 function NavLink({

@@ -1,9 +1,7 @@
-import { Link } from "wouter";
-import { ArrowRight, CheckCircle2, Factory, Flag, SearchCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Flag, SearchCheck, ShieldCheck } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { GearCard } from "@/components/gear/GearCard";
 import {
-  GEAR_RECOMMENDATIONS,
   MADE_IN_AMERICA_FAQ,
   USA_MADE_BRANDS,
   USA_MADE_GEAR,
@@ -46,19 +44,13 @@ export function AmericanMadeShowcase() {
               >
                 Browse verified picks <ArrowRight className="h-4 w-4" />
               </a>
-              <Link
-                href="/gear"
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-5 py-2.5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/60"
-              >
-                Full gear catalog
-              </Link>
             </div>
           </div>
           <dl className="relative z-10 mt-8 grid gap-3 sm:grid-cols-3">
             {[
               { label: "Verified picks", value: String(USA_MADE_GEAR.length) },
               { label: "Categories covered", value: String(categoryCount) },
-              { label: "Total catalog", value: String(GEAR_RECOMMENDATIONS.length) },
+              { label: "Brands listed", value: String(USA_MADE_BRANDS.length) },
             ].map((stat) => (
               <div key={stat.label} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
@@ -180,26 +172,16 @@ export function AmericanMadeShowcase() {
       <FadeIn delay={0.22}>
         <section
           aria-labelledby="expand-title"
-          className="flex flex-col gap-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 md:flex-row md:items-center md:justify-between md:p-6"
+          className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 md:p-6"
         >
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Should we expand?</p>
-            <h2 id="expand-title" className="mt-1 font-display text-xl font-bold">
-              Quality over quantity
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              This list stays small on purpose. A short, verified catalog is more useful than hundreds of unverified
-              listings. The full gear page covers test equipment, cable tools, and field power — we only badge items
-              here when origin is clear.
-            </p>
-          </div>
-          <Link
-            href="/gear"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-5 py-2.5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]"
-          >
-            <Factory className="h-4 w-4 text-[var(--accent)]" />
-            Browse all {GEAR_RECOMMENDATIONS.length} gear picks
-          </Link>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Should we expand?</p>
+          <h2 id="expand-title" className="mt-1 font-display text-xl font-bold">
+            Quality over quantity
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+            This list stays small on purpose. A short, verified lookbook is more useful than hundreds of unverified
+            listings. We only badge items when origin is clear.
+          </p>
         </section>
       </FadeIn>
 

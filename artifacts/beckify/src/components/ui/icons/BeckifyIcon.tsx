@@ -29,8 +29,7 @@ const PATHS: Record<BeckifyIconName, string[]> = {
   // wrench in the nav, where both previously used the same glyph.
   gauge: ["M4 17a8 8 0 0 1 16 0", "M12 17 15.5 10.5", "M12 17h.01"],
   menu: ["M4 7h16", "M4 12h16", "M4 17h16"],
-  // A mast with a signal arc — Recommended Gear is test/RF equipment, and
-  // previously had no entry here, silently falling back to the home icon.
+  // Mast with a signal arc. Kept for icon-catalog completeness; no current nav item uses it.
   signal: ["M12 20v-9", "M8 20h8", "M8.5 8a3.8 3.8 0 0 1 7 0", "M12 5h.01"],
 };
 

@@ -4,8 +4,8 @@ const path = require("node:path");
 
 const root = path.join(__dirname, "..");
 const gearSrc = fs.readFileSync(path.join(root, "src/data/gear-recommendations.ts"), "utf8");
-const gearMatrix = fs.readFileSync(path.join(root, "src/components/GearMatrix.tsx"), "utf8");
 const gearCard = fs.readFileSync(path.join(root, "src/components/gear/GearCard.tsx"), "utf8");
+const madeInAmerica = fs.readFileSync(path.join(root, "src/components/AmericanMadeShowcase.tsx"), "utf8");
 const vespaSrc = fs.readFileSync(path.join(root, "src/components/VespaPartsCatalog.tsx"), "utf8");
 const siteContent = fs.readFileSync(path.join(root, "src/data/site-content.ts"), "utf8");
 const siteStats = fs.readFileSync(path.join(root, "src/data/site-stats.ts"), "utf8");
@@ -21,16 +21,21 @@ function ok(name, condition, detail) {
   console.log((condition ? "  PASS  " : "  FAIL  ") + name + (detail ? " — " + detail : ""));
 }
 
-console.log("\n--- Gear photos ---");
+console.log("\n--- Made in America lookbook ---");
 const imageUrls = [...gearSrc.matchAll(/imageUrl:\s*"([^"]+)"/g)].map((m) => m[1]);
-ok("every gear card has an imageUrl", imageUrls.length >= 35, String(imageUrls.length));
-ok("gear images are same-origin", imageUrls.every((url) => url.startsWith("/images/gear/")), imageUrls.filter((u) => !u.startsWith("/images/gear/")).join(", "));
-ok("no third-party hotlinks remain in gear data", !/imageUrl:\s*"https?:\/\//.test(gearSrc));
+ok("every lookbook card has an imageUrl", imageUrls.length >= 5, String(imageUrls.length));
+ok("lookbook images are same-origin", imageUrls.every((url) => url.startsWith("/images/gear/")), imageUrls.filter((u) => !u.startsWith("/images/gear/")).join(", "));
+ok("no third-party hotlinks remain in lookbook data", !/imageUrl:\s*"https?:\/\//.test(gearSrc));
 const missingFiles = imageUrls.filter((url) => !fs.existsSync(path.join(root, "public", url)));
-ok("every gear image file exists", missingFiles.length === 0, missingFiles.join(", "));
-ok("affiliate disclosure appears before kit merchandising", gearMatrix.indexOf("As an Amazon Associate") < gearMatrix.indexOf('id="kits"') && gearMatrix.includes("Jump to kits"));
+ok("every lookbook image file exists", missingFiles.length === 0, missingFiles.join(", "));
+ok("affiliate disclosure appears on Made in America", madeInAmerica.includes("As an Amazon Associate"));
 ok("amazon affiliate tag kept", /tag=beckify-20/.test(gearSrc));
 ok("amazon buttons stay rel=sponsored", /rel="sponsored noopener noreferrer"/.test(gearCard));
+ok("removed /gear catalog is not linked from Made in America", !madeInAmerica.includes('href="/gear"'));
+ok("removed /gear from home, nav, footer, and sitemap pages", ![homeSrc, siteContent, sitemapSrc, fs.readFileSync(path.join(root, "src/components/sections/Footer.tsx"), "utf8")].some((src) => src.includes('"/gear"')));
+ok("removed /gear route from the React router", !appSrc.includes('path="/gear"') && !appSrc.includes("pages/gear"));
+ok("removed /gear from the XML sitemap generator", !fs.readFileSync(path.join(root, "scripts/generate-sitemap.mjs"), "utf8").includes('"/gear"'));
+ok("removed /gear from static route shells", !fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8").includes('["gear"'));
 
 console.log("\n--- Vespa BOM ---");
 const amazonHrefs = [...vespaSrc.matchAll(/href:\s*"(https:\/\/www\.amazon\.com[^"]+)"/g)].map((m) => m[1]);
