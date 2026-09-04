@@ -66,7 +66,7 @@ struct Timer555View: View {
                 Text("Astable").tag(Mode.astable)
                 Text("Monostable").tag(Mode.monostable)
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             if mode == .astable {
                 ShowWorkCard(

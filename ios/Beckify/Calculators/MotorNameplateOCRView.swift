@@ -68,6 +68,7 @@ struct MotorNameplateOCRView: View {
                     .font(.body.monospaced())
                     .foregroundStyle(Theme.foreground)
                     .scrollContentBackground(.hidden)
+                    .formFieldFocus("recognizedText")
                     .frame(minHeight: 120)
                     .padding(12)
                     .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

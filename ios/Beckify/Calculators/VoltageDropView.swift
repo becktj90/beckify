@@ -50,11 +50,11 @@ struct VoltageDropView: View {
             Picker("System", selection: $system) {
                 ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             Picker("Material", selection: $material) {
                 ForEach(ConductorMaterial.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             NumberField(title: "Supply voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)
             NumberField(title: "Load current", unit: "A", text: $current, fieldID: "current", onSubmit: calculate)

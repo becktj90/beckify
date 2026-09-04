@@ -40,6 +40,7 @@ struct NumberField: View {
                     .autocorrectionDisabled()
                     .submitLabel(onSubmit == nil ? .done : .go)
                     .onSubmit { onSubmit?() }
+                    .formFieldFocus(fieldID ?? title)
                     .accessibilityLabel(title)
                     .accessibilityHint(optional ? "Optional. Unit \(unit)." : "Unit \(unit).")
                     .accessibilityIdentifier(fieldID.map { "numberField.\($0)" } ?? "numberField.\(title)")
@@ -113,6 +114,7 @@ struct TextInputField: View {
                     .autocorrectionDisabled()
                     .submitLabel(onSubmit == nil ? .done : .go)
                     .onSubmit { onSubmit?() }
+                    .formFieldFocus(fieldID ?? title)
                     .accessibilityLabel(title)
                     .accessibilityIdentifier(fieldID.map { "textField.\($0)" } ?? "textField.\(title)")
                 if !unit.isEmpty {
@@ -254,6 +256,7 @@ struct SaveJobBar: View {
             HStack(alignment: .center, spacing: 10) {
                 TextField("Name — e.g. lab 3, AHU-3 feeder", text: $jobName)
                     .textInputAutocapitalization(.words)
+                    .formFieldFocus("jobName")
                     .frame(minHeight: Theme.touchTarget)
                 Button("Save", action: action)
                     .buttonStyle(.borderedProminent)
@@ -265,6 +268,7 @@ struct SaveJobBar: View {
                 TextField("Optional note", text: notes)
                     .font(.subheadline)
                     .foregroundStyle(Theme.foreground)
+                    .formFieldFocus("jobNotes")
             }
         }
         .padding(14)

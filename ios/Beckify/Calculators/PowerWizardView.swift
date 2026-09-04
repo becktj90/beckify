@@ -42,11 +42,11 @@ struct PowerWizardView: View {
             Picker("System", selection: $system) {
                 ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             Picker("Known", selection: $known) {
                 ForEach(Known.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             NumberField(title: "Known value", unit: known.rawValue, text: $value, fieldID: "value", onSubmit: calculate)
             NumberField(title: system == .threePhase ? "Line-to-line voltage" : "Voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculate)

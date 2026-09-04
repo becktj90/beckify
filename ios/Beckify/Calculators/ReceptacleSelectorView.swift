@@ -79,7 +79,7 @@ struct ReceptacleSelectorView: View {
             Picker("Phase", selection: $phase) {
                 ForEach(ReceptaclePhaseKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             MenuField(title: "Current / ampacity", selection: $ampPreset, options: ReceptacleAmpPreset.allCases) {
                 $0 == .custom ? "Custom" : "\($0.rawValue) A"
@@ -100,7 +100,7 @@ struct ReceptacleSelectorView: View {
             Picker("Neutral", selection: $neutral) {
                 ForEach(NeutralChoice.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             Toggle("Isolated ground", isOn: $isolatedGround)
                 .tint(Theme.accent)
@@ -118,7 +118,7 @@ struct ReceptacleSelectorView: View {
                     Text("60 Hz").tag(60.0)
                     Text("50 Hz").tag(50.0)
                 }
-                .pickerStyle(.segmented)
+                .segmentedControlStyle()
                 Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA faces do not change.")
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)

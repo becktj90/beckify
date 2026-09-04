@@ -59,6 +59,7 @@ struct PanelDirectoryView: View {
                     .font(.body.monospaced())
                     .foregroundStyle(Theme.foreground)
                     .scrollContentBackground(.hidden)
+                    .formFieldFocus("scheduleText")
                     .frame(minHeight: 140)
                     .padding(12)
                     .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

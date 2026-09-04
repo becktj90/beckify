@@ -46,11 +46,11 @@ struct TransformerView: View {
                 Text("1Ø").tag(ElectricalSystem.singlePhase)
                 Text("3Ø").tag(ElectricalSystem.threePhase)
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             Picker("Load", selection: $loadKind) {
                 ForEach(LoadKind.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             NumberField(title: "Connected load", unit: loadKind.rawValue, text: $load, fieldID: "load", onSubmit: calculate)
             if loadKind == .kw {

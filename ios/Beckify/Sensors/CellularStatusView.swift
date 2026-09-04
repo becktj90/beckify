@@ -696,7 +696,7 @@ struct CellularStatusView: View {
             Picker("RTT host", selection: $rttTarget) {
                 ForEach(CellularRTTTarget.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             .disabled(model.rttMeasuring)
             .padding(.top, 6)
             if rttTarget == .custom {

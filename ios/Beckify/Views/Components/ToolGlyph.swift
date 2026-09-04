@@ -78,13 +78,35 @@ struct ToolGlyph: View {
 /// and list rows (pastel container + crisp schematic).
 struct IconWell: View {
     let toolID: ToolID
-    var size: CGFloat = 56
     var glyphSize: CGFloat? = nil
     var selected: Bool = true
     var circular: Bool = false
 
+    private let baseSize: CGFloat
+    @ScaledMetric(relativeTo: .body) private var scaledSize: CGFloat = 56
+
+    init(
+        toolID: ToolID,
+        size: CGFloat = 56,
+        glyphSize: CGFloat? = nil,
+        selected: Bool = true,
+        circular: Bool = false
+    ) {
+        self.toolID = toolID
+        self.glyphSize = glyphSize
+        self.selected = selected
+        self.circular = circular
+        self.baseSize = size
+        _scaledSize = ScaledMetric(wrappedValue: size, relativeTo: .body)
+    }
+
     private var category: ToolCategory? { ToolboxCatalog.category(of: toolID) }
-    private var resolvedGlyph: CGFloat { glyphSize ?? size * 0.58 }
+    private var size: CGFloat { scaledSize }
+    private var resolvedGlyph: CGFloat {
+        let glyphBase = glyphSize ?? baseSize * 0.58
+        let scale = baseSize > 0 ? scaledSize / baseSize : 1
+        return glyphBase * scale
+    }
     private var corner: CGFloat {
         if circular { return size / 2 }
         // Scale the well radius with size so large grid tiles stay soft, not boxy.

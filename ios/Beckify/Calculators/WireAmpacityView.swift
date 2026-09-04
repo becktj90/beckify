@@ -78,12 +78,12 @@ struct WireAmpacityView: View {
             Picker("Mode", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             Picker("Material", selection: $material) {
                 ForEach(ConductorMaterial.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             NumberField(title: "Load current", unit: "A", text: $amps, fieldID: "amps", onSubmit: calculate)
             MenuField(title: "Insulation", selection: $insulation, options: TempChoice.allCases) { $0.label }

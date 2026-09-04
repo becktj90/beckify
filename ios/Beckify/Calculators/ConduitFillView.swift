@@ -66,7 +66,7 @@ struct ConduitFillView: View {
             Picker("Mode", selection: $mode) {
                 ForEach(FillMode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             MenuField(title: "Raceway", selection: $raceway, options: RacewayKind.allCases) { $0.displayName }
             MenuField(title: "Trade size", selection: $trade, options: trades, label: { "\($0)\"" })

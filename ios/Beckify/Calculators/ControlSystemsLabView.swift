@@ -66,7 +66,7 @@ struct ControlSystemsLabView: View {
             Picker("Section", selection: $section) {
                 ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             .accessibilityLabel("Lab section")
 
             plantPicker
@@ -158,7 +158,7 @@ struct ControlSystemsLabView: View {
         Picker("Controller", selection: $mode) {
             ForEach(ControlControllerMode.allCases, id: \.self) { Text($0.displayName).tag($0) }
         }
-        .pickerStyle(.segmented)
+        .segmentedControlStyle()
         .accessibilityLabel("Controller type")
 
         Toggle("Compare Open / P / PI / PID", isOn: $compare)
@@ -218,7 +218,7 @@ struct ControlSystemsLabView: View {
         Picker("ZN table", selection: $znVariant) {
             ForEach(ControlZnVariant.allCases, id: \.self) { Text($0.displayName).tag($0) }
         }
-        .pickerStyle(.segmented)
+        .segmentedControlStyle()
         .accessibilityLabel("Ziegler–Nichols table")
 
         NumberField(title: "Ku", unit: "", text: $ku, helpText: "Ultimate gain — P-only oscillation.", fieldID: "ku")

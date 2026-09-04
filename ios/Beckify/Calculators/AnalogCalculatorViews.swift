@@ -126,7 +126,7 @@ struct AnalogDesignWorkbenchView: View {
             Picker("Panel", selection: $panel) {
                 ForEach(Panel.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             if panel == .stages {
                 stagesFields
