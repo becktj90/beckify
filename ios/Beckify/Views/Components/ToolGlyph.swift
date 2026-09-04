@@ -21,9 +21,12 @@ struct ToolGlyph: View {
     var size: CGFloat = 44
     var selected: Bool = false
     var toolID: ToolID? = nil
+    /// When the caller already resolved the shelf (e.g. `IconWell`), pass it
+    /// through to skip a second `ToolboxCatalog.category(of:)` lookup.
+    var category: ToolCategory? = nil
 
-    private var category: ToolCategory? {
-        toolID.flatMap(ToolboxCatalog.category(of:))
+    private var resolvedCategory: ToolCategory? {
+        category ?? toolID.flatMap(ToolboxCatalog.category(of:))
     }
 
     private var strokeColor: Color { selected ? Theme.accent : Theme.muted }
@@ -53,8 +56,8 @@ struct ToolGlyph: View {
                 style: underStyle
             )
 
-            if let category {
-                let colors = Theme.categoryColors(category)
+            if let resolvedCategory {
+                let colors = Theme.categoryColors(resolvedCategory)
                 let shading = GraphicsContext.Shading.linearGradient(
                     Gradient(colors: [colors.primary, colors.secondary]),
                     startPoint: CGPoint(x: rect.minX, y: rect.minY),
@@ -111,7 +114,8 @@ struct IconWell: View {
                 kind: .forTool(toolID),
                 size: resolvedGlyph,
                 selected: selected,
-                toolID: toolID
+                toolID: toolID,
+                category: category
             )
         }
         .frame(width: size, height: size)
