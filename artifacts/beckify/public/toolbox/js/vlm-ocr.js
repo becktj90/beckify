@@ -424,6 +424,7 @@
         mimeType: uploadMimeType(dataUrl, 'image/jpeg'),
         task: task,
       };
+      if (task === TASK_PANEL && opts.view) body.view = String(opts.view);
       var token = config.mode === 'custom' ? config.token : '';
       return postVision(url, body, token).then(function (payload) {
         report(0.85, 'Reading AI draft…');

@@ -4,18 +4,25 @@
 
 const MAX_CIRCUIT_SLOTS = 42;
 const MAX_EDITOR_SLOTS = 84;
-const PRINT_ROW_PAIRS = MAX_CIRCUIT_SLOTS / 2;
+const MAX_SHOTS_PER_VIEW = 3;
+const TYPICAL_SLOT_COUNTS = [8, 12, 16, 18, 20, 24, 30, 32, 36, 40, 42, 48, 54, 60, 72, 84];
 const LOAD_TYPES = ['General', 'Lighting', 'Receptacle', 'Motor', 'HVAC', 'Kitchen', 'IT / Electronics', 'Process', 'EV Charging', 'Spare'];
+const REQUIRED_VIEWS = ['schedule', 'breakers'];
 
 const state = {
   file: null,
   files: [],
   imageUrl: '',
   imageUrls: [],
+  views: {
+    schedule: { files: [], urls: [] },
+    breakers: { files: [], urls: [] }
+  },
   rows: [],
   rawText: '',
   lastProgress: 0,
   source: '',
+  slotCount: 0,
   calcReady: false
 };
 
@@ -25,6 +32,8 @@ window.addEventListener('pagehide', () => {
   revokeShotUrls();
   state.file = null;
   state.files = [];
+  state.views.schedule = { files: [], urls: [] };
+  state.views.breakers = { files: [], urls: [] };
 });
 
 function bootPanelSchedule() {
@@ -42,17 +51,12 @@ if (document.readyState === 'loading') {
 }
 
 function cacheElements() {
-  elements.imageInput = document.getElementById('imageInput');
   elements.processButton = document.getElementById('processButton');
   elements.resetButton = document.getElementById('resetButton');
-  elements.dropZone = document.getElementById('dropZone');
   elements.statusText = document.getElementById('statusText');
   elements.fileName = document.getElementById('fileName');
   elements.progressFill = document.getElementById('progressFill');
   elements.progressLabel = document.getElementById('progressLabel');
-  elements.imagePreview = document.getElementById('imagePreview');
-  elements.previewPlaceholder = document.getElementById('previewPlaceholder');
-  elements.previewFrame = document.querySelector('.preview-frame');
   elements.rawText = document.getElementById('rawText');
   elements.panelName = document.getElementById('panelName');
   elements.panelVoltage = document.getElementById('panelVoltage');
@@ -84,60 +88,66 @@ function cacheElements() {
   elements.vlmToken = document.getElementById('panelVlmToken');
   elements.vlmConfig = document.getElementById('panelVlmConfig');
   elements.privacyBanner = document.getElementById('privacyBanner');
-  elements.addShotButton = document.getElementById('addShotButton');
   elements.mergeRows = document.getElementById('mergeRows');
   elements.sourceBadge = document.getElementById('ocrSource');
   elements.shotList = document.getElementById('shotList');
+  elements.scheduleAdd = document.getElementById('scheduleAdd');
+  elements.breakersAdd = document.getElementById('breakersAdd');
 }
 
-function bindEvents() {
-  elements.imageInput.addEventListener('change', event => {
-    const [file] = event.target.files || [];
-    handleFileSelection(file);
-  });
-  const capture = document.getElementById('imageCapture');
-  if (capture) {
-    capture.addEventListener('change', event => {
+function bindViewIntake(view) {
+  const fileInput = document.getElementById(view + 'File');
+  const captureInput = document.getElementById(view + 'Capture');
+  const addButton = document.getElementById(view + 'Add');
+  const addInput = document.getElementById(view + 'AddFile');
+  const dropZone = document.getElementById(view + 'Drop');
+  if (fileInput) {
+    fileInput.addEventListener('change', event => {
       const [file] = event.target.files || [];
-      handleFileSelection(file);
+      handleFileSelection(file, { view });
+      fileInput.value = '';
     });
   }
-
-  ['dragenter', 'dragover'].forEach(eventName => {
-    elements.dropZone.addEventListener(eventName, event => {
-      event.preventDefault();
-      elements.dropZone.classList.add('is-dragover');
-    });
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    elements.dropZone.addEventListener(eventName, event => {
-      event.preventDefault();
-      elements.dropZone.classList.remove('is-dragover');
-    });
-  });
-
-  elements.dropZone.addEventListener('drop', event => {
-    const [file] = event.dataTransfer?.files || [];
-    handleFileSelection(file);
-  });
-
-  elements.processButton.addEventListener('click', runOcr);
-  elements.resetButton.addEventListener('click', resetApp);
-  if (elements.addShotButton) {
-    elements.addShotButton.addEventListener('click', () => {
-      const extra = document.getElementById('imageAdd');
-      if (extra) extra.click();
+  if (captureInput) {
+    captureInput.addEventListener('change', event => {
+      const [file] = event.target.files || [];
+      handleFileSelection(file, { view });
+      captureInput.value = '';
     });
   }
-  const addInput = document.getElementById('imageAdd');
-  if (addInput) {
+  if (addButton && addInput) {
+    addButton.addEventListener('click', () => addInput.click());
     addInput.addEventListener('change', event => {
       const [file] = event.target.files || [];
-      handleFileSelection(file, { append: true });
+      handleFileSelection(file, { view, append: true });
       addInput.value = '';
     });
   }
+  if (dropZone) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropZone.classList.add('is-dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropZone.classList.remove('is-dragover');
+      });
+    });
+    dropZone.addEventListener('drop', event => {
+      const [file] = event.dataTransfer?.files || [];
+      handleFileSelection(file, { view });
+    });
+  }
+}
+
+function bindEvents() {
+  REQUIRED_VIEWS.forEach(bindViewIntake);
+
+  elements.processButton.addEventListener('click', runOcr);
+  elements.resetButton.addEventListener('click', resetApp);
   elements.printButton.addEventListener('click', handlePrint);
   elements.parseTextButton.addEventListener('click', handleParseText);
   elements.addRowButton.addEventListener('click', () => {
@@ -261,6 +271,71 @@ function scheduleCalcGateMessage(kind) {
   return null;
 }
 
+function viewState(view) {
+  if (!state.views[view]) state.views[view] = { files: [], urls: [] };
+  return state.views[view];
+}
+
+function hasView(view) {
+  return viewState(view).files.length > 0;
+}
+
+function viewFiles(view) {
+  return viewState(view).files.slice();
+}
+
+function allViewFiles() {
+  return REQUIRED_VIEWS.flatMap(view => viewFiles(view));
+}
+
+function syncLegacyFiles() {
+  state.files = allViewFiles();
+  state.file = state.files[state.files.length - 1] || null;
+  state.imageUrls = REQUIRED_VIEWS.flatMap(view => viewState(view).urls.slice());
+  state.imageUrl = state.imageUrls[state.imageUrls.length - 1] || '';
+}
+
+function updateViewPreview(view) {
+  const bucket = viewState(view);
+  const frame = document.getElementById(view + 'Preview');
+  const image = document.getElementById(view + 'PreviewImg');
+  const name = document.getElementById(view + 'FileName');
+  const addButton = document.getElementById(view + 'Add');
+  const last = bucket.files[bucket.files.length - 1];
+  const url = bucket.urls[bucket.urls.length - 1];
+  if (frame) frame.classList.toggle('has-image', Boolean(url));
+  if (image) {
+    if (url) image.src = url;
+    else image.removeAttribute('src');
+  }
+  if (name) {
+    name.textContent = !last
+      ? (view === 'breakers' ? 'No breaker photo yet' : 'No schedule photo yet')
+      : (bucket.files.length === 1 ? last.name : bucket.files.length + ' photos — last: ' + last.name);
+  }
+  if (addButton) addButton.disabled = bucket.files.length === 0 || bucket.files.length >= MAX_SHOTS_PER_VIEW;
+}
+
+function refreshIntakeUi() {
+  syncLegacyFiles();
+  REQUIRED_VIEWS.forEach(updateViewPreview);
+  const ready = hasView('schedule') && hasView('breakers');
+  if (elements.processButton) elements.processButton.disabled = !ready;
+  const scheduleNames = viewFiles('schedule').map(file => file.name);
+  const breakerNames = viewFiles('breakers').map(file => file.name);
+  if (elements.fileName) {
+    elements.fileName.textContent = ready
+      ? `Schedule ${scheduleNames.length} · Breakers ${breakerNames.length}`
+      : (!scheduleNames.length && !breakerNames.length ? 'No files selected' : 'Need both views');
+  }
+  if (elements.shotList) {
+    const parts = [];
+    if (scheduleNames.length) parts.push('Schedule: ' + scheduleNames.join(', '));
+    if (breakerNames.length) parts.push('Breakers: ' + breakerNames.join(', '));
+    elements.shotList.textContent = parts.join(' · ');
+  }
+}
+
 function handleFileSelection(file, opts) {
   if (!file || !isLikelyImageFile(file)) {
     setStatus('Please choose a valid image file.');
@@ -271,51 +346,45 @@ function handleFileSelection(file, opts) {
     return;
   }
 
-  const append = !!(opts && opts.append) && state.files.length > 0;
+  const view = opts && REQUIRED_VIEWS.includes(opts.view) ? opts.view : 'schedule';
+  const bucket = viewState(view);
+  const append = !!(opts && opts.append) && bucket.files.length > 0;
   if (!append) {
-    revokeShotUrls();
-    state.files = [file];
-  } else if (state.files.length < 4) {
-    state.files.push(file);
+    bucket.urls.forEach(url => {
+      try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+    });
+    bucket.files = [file];
+    bucket.urls = [URL.createObjectURL(file)];
+  } else if (bucket.files.length < MAX_SHOTS_PER_VIEW) {
+    bucket.files.push(file);
+    bucket.urls.push(URL.createObjectURL(file));
   } else {
-    setStatus('This read already has four photos. Reset to start a new set.');
+    setStatus('That view already has three photos. Reset to start a new set.');
     return;
   }
 
-  state.file = state.files[state.files.length - 1];
-  const url = URL.createObjectURL(state.file);
-  state.imageUrls.push(url);
-  state.imageUrl = url;
-  elements.imagePreview.src = url;
-  elements.previewFrame.classList.add('has-image');
-  elements.fileName.textContent = state.files.length === 1
-    ? file.name
-    : state.files.length + ' photos — last: ' + file.name;
-  if (elements.shotList) {
-    elements.shotList.textContent = state.files.map((item, i) => (i + 1) + '. ' + item.name).join(' · ');
-  }
-  elements.processButton.disabled = false;
-  if (elements.addShotButton) elements.addShotButton.disabled = state.files.length >= 4;
   if (append && elements.mergeRows) elements.mergeRows.checked = true;
   clearReview();
   resetProgress();
-  setStatus(enhanceOn()
-    ? (append
-      ? 'Added another photo. Read Schedule will upload each shot only because Enhance with AI is on. Circuits merge by number.'
-      : 'Photo is ready on this device. Read Schedule will upload it only because Enhance with AI is on. Correct every circuit afterward.')
-    : (append
-      ? 'Added another photo. Read Schedule will OCR each shot and merge circuit rows by number.'
-      : 'Image ready. Click “Read Schedule” to run on-device OCR. Add another photo for the rest of a long directory.'));
+  refreshIntakeUi();
+  const missing = !hasView('schedule') ? 'schedule / directory' : (!hasView('breakers') ? 'breaker / dead-front' : '');
+  setStatus(missing
+    ? `Saved the ${view} photo on this device. Add a ${missing} photo — take or upload — then read both views.`
+    : (enhanceOn()
+      ? 'Both views are ready on this device. Read both views will upload them only because Enhance with AI is on.'
+      : 'Both views are ready. Click “Read both views” to OCR the schedule and count breaker spaces.'));
 }
 
 function revokeShotUrls() {
-  state.imageUrls.forEach(url => {
-    try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+  REQUIRED_VIEWS.forEach(view => {
+    const bucket = viewState(view);
+    bucket.urls.forEach(url => {
+      try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+    });
+    bucket.urls = [];
+    bucket.files = [];
   });
   state.imageUrls = [];
-  if (state.imageUrl) {
-    try { URL.revokeObjectURL(state.imageUrl); } catch (_) { /* ignore */ }
-  }
   state.imageUrl = '';
 }
 
@@ -362,6 +431,110 @@ function mergeCircuitRows(base, incoming) {
   return normalizeRows([...byKey.values(), ...leftover]).slice(0, MAX_EDITOR_SLOTS);
 }
 
+function snapSlotCount(value) {
+  const count = Number(value);
+  if (!Number.isFinite(count) || count < 6) return 0;
+  const clamped = Math.min(MAX_EDITOR_SLOTS, Math.max(6, Math.round(count)));
+  let best = clamped;
+  let dist = Infinity;
+  TYPICAL_SLOT_COUNTS.forEach(typical => {
+    const next = Math.abs(typical - clamped);
+    if (next < dist || (next === dist && typical > best)) {
+      dist = next;
+      best = typical;
+    }
+  });
+  return dist <= 3 ? best : clamped;
+}
+
+function maxCircuitIn(rows) {
+  return (rows || []).reduce((max, row) => {
+    const n = firstCircuitNumber(row.circuit);
+    if (!Number.isFinite(n) || n < 1 || n > MAX_EDITOR_SLOTS) return max;
+    return n > max ? n : max;
+  }, 0);
+}
+
+function sizeTableToSlots(slotCount, rows) {
+  const fromRows = maxCircuitIn(rows);
+  const count = snapSlotCount(slotCount) || snapSlotCount(fromRows) || 0;
+  if (!count) return normalizeRows(rows || []);
+  const seeded = Array.from({ length: Math.min(MAX_EDITOR_SLOTS, count) }, (_, index) => {
+    const row = createEmptyRow();
+    row.circuit = String(index + 1);
+    return row;
+  });
+  return mergeCircuitRows(seeded, rows || []);
+}
+
+function parseBreakerFace(text) {
+  const raw = String(text || '');
+  const compact = raw.replace(/\s+/g, ' ').trim();
+  const labeled = compact.match(/\b(\d{1,2})\s*[-–]?\s*(?:circuit|ckt|space|slot)s?\b/i)
+    || compact.match(/\b(?:circuit|ckt|space|slot)s?\s*[:#-]?\s*(\d{1,2})\b/i);
+  let slotCount = labeled ? snapSlotCount(labeled[1]) : 0;
+  const rows = [];
+  const numbered = raw.matchAll(/\b(?:ckt|circuit|#)?\s*([1-9]\d?)\s+(\d{1,3})\s*A\b/gi);
+  for (const match of numbered) {
+    rows.push({
+      circuit: String(Number(match[1])),
+      description: '',
+      trip: normalizeTrip(match[2] + 'A'),
+      poles: '1',
+      loadType: 'General',
+      loadAmps: '',
+      loadAmpsCopiedFromTrip: false,
+      demandFactor: '1'
+    });
+  }
+  const voltages = new Set([120, 208, 240, 277, 480, 600]);
+  if (!slotCount) {
+    const nums = [...raw.matchAll(/\b([1-9]\d?)\b/g)]
+      .map(match => Number(match[1]))
+      .filter(n => n >= 1 && n <= 84 && !voltages.has(n));
+    const distinct = [...new Set(nums)];
+    if (distinct.length >= 8) slotCount = snapSlotCount(Math.max(...distinct));
+  }
+  if (!slotCount && !rows.length) {
+    const trips = [...raw.matchAll(/\b(\d{1,3})\s*A\b/gi)]
+      .map(match => Number(match[1]))
+      .filter(n => n >= 15 && n <= 400);
+    if (trips.length >= 6) {
+      slotCount = snapSlotCount(trips.length);
+      trips.forEach((amp, index) => {
+        rows.push({
+          circuit: String(index + 1),
+          description: '',
+          trip: String(amp),
+          poles: '1',
+          loadType: 'General',
+          loadAmps: '',
+          loadAmpsCopiedFromTrip: false,
+          demandFactor: '1'
+        });
+      });
+    }
+  }
+  if (!slotCount && rows.length) {
+    slotCount = snapSlotCount(Math.max(maxCircuitIn(rows), rows.length));
+  }
+  return { slotCount: slotCount || 0, rows: normalizeRows(rows) };
+}
+
+function applyCombinedRead(scheduleRows, breakerInfo, opts) {
+  const incomingSchedule = scheduleRows || [];
+  const breakerRows = (breakerInfo && breakerInfo.rows) || [];
+  const slotHint = (breakerInfo && breakerInfo.slotCount)
+    || (opts && opts.slotCount)
+    || maxCircuitIn(incomingSchedule)
+    || maxCircuitIn(breakerRows);
+  let next = sizeTableToSlots(slotHint, incomingSchedule);
+  if (breakerRows.length) next = mergeCircuitRows(next, breakerRows);
+  const merge = !!(opts && opts.merge) && tableHasUserContent(state.rows);
+  state.rows = merge ? mergeCircuitRows(state.rows, next) : next;
+  state.slotCount = state.rows.length;
+}
+
 function setSource(kind, extra) {
   state.source = kind || '';
   if (!elements.sourceBadge) return;
@@ -389,8 +562,8 @@ function syncVlmUi() {
     elements.privacyBanner.classList.toggle('is-upload', on);
     const strong = elements.privacyBanner.querySelector('strong');
     const label = on
-      ? ' Enhance with AI is on. The photo will leave this device only when you click Read Schedule. If you use the Beckify proxy, the photo may be forwarded to OpenAI and/or Anthropic. Default Tesseract stays available if you turn this off.'
-      : ' The photo stays on this device. It is never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read Schedule. On-device Tesseract.js is the default. The image is not saved after you leave or reset.';
+      ? ' Enhance with AI is on. The photos will leave this device only when you click Read both views. If you use the Beckify proxy, they may be forwarded to OpenAI and/or Anthropic. Default Tesseract stays available if you turn this off.'
+      : ' The photos stay on this device. They are never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read both views. On-device Tesseract.js is the default. The images are not saved after you leave or reset.';
     if (strong) {
       strong.textContent = 'Privacy before you pick a photo.';
       strong.nextSibling && strong.nextSibling.remove();
@@ -416,16 +589,16 @@ function syncVlmUi() {
   if (elements.vlmConfig && Vlm) {
     const cfg = Vlm.resolveConfig(on);
     if (!on) elements.vlmConfig.textContent = 'Enhance is off. On-device Tesseract is the default.';
-    else if (cfg.mode === 'custom') elements.vlmConfig.textContent = 'Custom HTTPS endpoint will receive the photo when you click Read Schedule.';
+    else if (cfg.mode === 'custom') elements.vlmConfig.textContent = 'Custom HTTPS endpoint will receive the photos when you click Read both views.';
     else if (cfg.mode === 'proxy') {
-      elements.vlmConfig.textContent = `Beckify proxy (${cfg.proxyUrl}/api/analyze-panel) will receive the photo when you click Read Schedule. `
+      elements.vlmConfig.textContent = `Beckify proxy (${cfg.proxyUrl}/api/analyze-panel) will receive the photos when you click Read both views. `
         + (Vlm.PROXY_DOWNSTREAM_NOTE || 'The Beckify proxy may forward the photo to OpenAI and/or Anthropic.');
     }
-    else elements.vlmConfig.textContent = 'No HTTPS endpoint is configured. Read Schedule will stay on-device Tesseract.';
+    else elements.vlmConfig.textContent = 'No HTTPS endpoint is configured. Read both views will stay on-device Tesseract.';
   }
 }
 
-function applyVlmDraft(draft, warnings) {
+function rowsFromDraft(draft) {
   const Vlm = window.BeckifyVlmOcr;
   const rows = Vlm && Vlm.rowsFromPanelDraft
     ? Vlm.rowsFromPanelDraft(draft, createEmptyRow)
@@ -438,12 +611,11 @@ function applyVlmDraft(draft, warnings) {
     row.loadAmpsCopiedFromTrip = false;
     row.demandFactor = row.demandFactor || '1';
   });
-  if (rows.length) {
-    const merge = !!(elements.mergeRows && elements.mergeRows.checked) || state.files.length > 1;
-    state.rows = merge && tableHasUserContent(state.rows)
-      ? mergeCircuitRows(state.rows, rows)
-      : normalizeRows(rows);
-  }
+  return rows;
+}
+
+function applyDraftMeta(draft) {
+  const Vlm = window.BeckifyVlmOcr;
   const meta = Vlm && Vlm.panelMetaFromDraft ? Vlm.panelMetaFromDraft(draft) : {};
   applyMetadataIfBlank({
     panelName: meta.panelName,
@@ -458,18 +630,30 @@ function applyVlmDraft(draft, warnings) {
   if (meta.phases && elements.panelPhase && (meta.phases === 1 || meta.phases === 3)) {
     elements.panelPhase.value = String(meta.phases);
   }
-  const raw = (draft && draft.rawText) || '';
-  state.rawText = raw;
-  if (elements.rawText) elements.rawText.value = raw;
+}
+
+function applyVlmDraft(draft, warnings, breakerDraft) {
+  const scheduleRows = rowsFromDraft(draft);
+  const breakerRows = rowsFromDraft(breakerDraft);
+  const slotCount = (breakerDraft && breakerDraft.slotCount)
+    || (draft && draft.slotCount)
+    || 0;
+  applyCombinedRead(scheduleRows, { slotCount, rows: breakerRows }, {
+    merge: !!(elements.mergeRows && elements.mergeRows.checked),
+  });
+  applyDraftMeta(draft);
+  applyDraftMeta(breakerDraft);
+  const rawParts = [(draft && draft.rawText) || '', (breakerDraft && breakerDraft.rawText) || ''].filter(Boolean);
+  state.rawText = rawParts.join('\n--- breakers ---\n');
+  if (elements.rawText) elements.rawText.value = state.rawText;
   clearReview();
   const extra = (warnings && warnings.length) ? ` ${warnings.join(' ')}` : '';
   setSource('vlm');
-  setStatus(`AI draft filled ${rows.length} circuit row${rows.length === 1 ? '' : 's'}. This is not perfect OCR and not an AI electrician. Correct every row, check the review box, then calculate.${extra}`);
+  setStatus(`AI draft filled ${state.rows.length} circuit row${state.rows.length === 1 ? '' : 's'} from the schedule and breaker views. This is not perfect OCR and not an AI electrician. Correct every row, check the review box, then calculate.${extra}`);
   renderAll();
 }
 
-async function runOnDeviceOcr() {
-  const files = state.files.length ? state.files : (state.file ? [state.file] : []);
+async function recognizeView(view, files, progressStart, progressSpan) {
   let combined = '';
   let anyOpen = false;
   let anyLow = false;
@@ -478,8 +662,8 @@ async function runOnDeviceOcr() {
     const out = await window.BeckifyOcr.recognize(files[index], {
       mode: 'directory',
       onProgress: (ratio, status) => {
-        const start = index / files.length;
-        const span = 1 / files.length;
+        const start = progressStart + (index / files.length) * progressSpan;
+        const span = progressSpan / files.length;
         updateProgress(start + (Number(ratio) || 0) * span, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
       }
     });
@@ -487,39 +671,54 @@ async function runOnDeviceOcr() {
     if (out.looksLikeOpenPanel) anyOpen = true;
     if (out.lowConfidence) anyLow = true;
     if (out.text) combined = combined ? `${combined}\n${out.text}` : out.text;
-    if (out.text && !out.failed) {
-      parseAndApplyText(out.text, index === 0, { merge: index > 0 || !!(elements.mergeRows && elements.mergeRows.checked) });
-    }
   }
-  const text = combined;
+  return { text: combined, anyOpen, anyLow, lastOut, view };
+}
+
+async function runOnDeviceOcr() {
+  const scheduleList = viewFiles('schedule');
+  const breakerList = viewFiles('breakers');
+  const scheduleOut = await recognizeView('schedule', scheduleList, 0, 0.55);
+  const breakerOut = await recognizeView('breakers', breakerList, 0.55, 0.45);
+  const scheduleParsed = parseScheduleText(scheduleOut.text || '');
+  const breakerInfo = parseBreakerFace(breakerOut.text || '');
+  applyMetadataIfBlank(scheduleParsed.meta);
+  applyCombinedRead(scheduleParsed.rows, breakerInfo, {
+    merge: !!(elements.mergeRows && elements.mergeRows.checked),
+  });
+  const text = [scheduleOut.text, breakerOut.text].filter(Boolean).join('\n--- breakers ---\n');
   state.rawText = text;
-  elements.rawText.value = text;
+  if (elements.rawText) elements.rawText.value = text;
   clearReview();
-  if (elements.openPanelCaution) {
-    elements.openPanelCaution.hidden = !anyOpen;
-  }
+  const anyOpen = scheduleOut.anyOpen || breakerOut.anyOpen;
+  if (elements.openPanelCaution) elements.openPanelCaution.hidden = !anyOpen;
   if (anyOpen) {
-    setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
+    setStatus('A photo looks like a live open interior. Do not work inside a live panel. For breakers, photograph the dead-front with the cover on.');
   }
   if (!String(text).trim()) {
     setStatus('OCR found no usable text. Existing rows were left alone. Fill the table manually — you are not blocked.' + (window.BeckifyVlmOcr ? ' Enhance with AI can draft a two-up directory from a messy photo.' : ''));
     updateProgress(1, 'OCR found no text');
     setSource('tesseract');
     renderAll();
-    return lastOut;
+    return breakerOut.lastOut || scheduleOut.lastOut;
   }
-  setSource('tesseract', files.length > 1 ? `Merged ${files.length} photos.` : '');
-  if (anyLow) {
-    setStatus(`OCR confidence is low (${lastOut.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
-  } else if (!anyOpen) {
-    updateProgress(1, 'OCR complete. Review the preview grid before using the estimates.');
+  const shotCount = scheduleList.length + breakerList.length;
+  setSource('tesseract', shotCount > 1 ? `Read ${scheduleList.length} schedule and ${breakerList.length} breaker photo${breakerList.length === 1 ? '' : 's'}.` : '');
+  if (!anyOpen) {
+    setStatus(`OCR drafted ${state.rows.length} circuit row${state.rows.length === 1 ? '' : 's'} from the schedule and breaker views${breakerInfo.slotCount ? ` (${breakerInfo.slotCount} spaces)` : ''}. Correct every row, check review, then calculate.`);
   }
-  return lastOut;
+  if (scheduleOut.anyLow || breakerOut.anyLow) {
+    const conf = (breakerOut.lastOut.confidence || scheduleOut.lastOut.confidence || 0);
+    setStatus(`OCR confidence is low (${conf.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
+  }
+  updateProgress(1, 'OCR complete. Review the table before calculating.');
+  renderAll();
+  return breakerOut.lastOut || scheduleOut.lastOut;
 }
 
 async function runOcr() {
-  if (!state.file) {
-    setStatus('Choose a directory photo, or fill the table manually — you are not blocked.');
+  if (!hasView('schedule') || !hasView('breakers')) {
+    setStatus('Add both required views: a schedule/directory photo and a breaker/dead-front photo. Take or upload each. Or type the table by hand.');
     return;
   }
 
@@ -537,15 +736,45 @@ async function runOcr() {
 
   try {
     if (useVlm) {
-      updateProgress(0.1, 'Uploading photo for optional AI enhance…');
+      updateProgress(0.1, 'Uploading both views for optional AI enhance…');
       try {
-        const out = await Vlm.analyzePanelDirectory(state.files.length ? state.files : state.file, {
+        const scheduleOut = await Vlm.analyzePanelDirectory(viewFiles('schedule'), {
           enhanceOn: true,
+          view: 'schedule',
           onProgress: (ratio, status) => {
-            updateProgress(ratio, status || 'Enhancing…');
+            updateProgress(0.1 + (Number(ratio) || 0) * 0.4, status || 'Reading schedule…');
           },
         });
-        applyVlmDraft(out.draft, out.warnings);
+        let breakerDraft = null;
+        let breakerWarnings = [];
+        try {
+          const breakerOut = await Vlm.analyzePanelDirectory(viewFiles('breakers'), {
+            enhanceOn: true,
+            view: 'breakers',
+            onProgress: (ratio, status) => {
+              updateProgress(0.5 + (Number(ratio) || 0) * 0.45, status || 'Counting breaker spaces…');
+            },
+          });
+          breakerDraft = breakerOut.draft;
+          breakerWarnings = breakerOut.warnings || [];
+        } catch (breakerError) {
+          const formatted = (Vlm.formatVisionError && Vlm.formatVisionError(breakerError)) || (breakerError && breakerError.message) || 'Breaker AI read failed.';
+          setStatus(formatted + ' Counting breaker spaces on-device.');
+          const local = await recognizeView('breakers', viewFiles('breakers'), 0.5, 0.45);
+          const parsed = parseBreakerFace(local.text || '');
+          breakerDraft = { slotCount: parsed.slotCount, rawText: local.text, rows: [] };
+          if (parsed.rows.length) {
+            breakerDraft = Object.assign(breakerDraft, {
+              rows: parsed.rows.map(row => ({
+                circuit: { value: row.circuit },
+                description: { value: row.description },
+                trip: { value: row.trip },
+                poles: { value: row.poles },
+              })),
+            });
+          }
+        }
+        applyVlmDraft(scheduleOut.draft, (scheduleOut.warnings || []).concat(breakerWarnings), breakerDraft);
         updateProgress(1, 'AI draft ready. Review every circuit.');
         return;
       } catch (error) {
@@ -1325,8 +1554,9 @@ function renderPrintSheet() {
 
   const slots = buildCircuitSlots(state.rows);
   const bodyRows = [];
+  const pairCount = printPairCount();
 
-  for (let pair = 0; pair < PRINT_ROW_PAIRS; pair += 1) {
+  for (let pair = 0; pair < pairCount; pair += 1) {
     const left = slots[pair * 2 + 1] || createPlaceholderRow(pair * 2 + 1);
     const right = slots[pair * 2 + 2] || createPlaceholderRow(pair * 2 + 2);
     bodyRows.push(`
@@ -1346,14 +1576,26 @@ function renderPrintSheet() {
   elements.printScheduleBody.innerHTML = bodyRows.join('');
 }
 
+function printPairCount() {
+  const needed = Math.max(
+    MAX_CIRCUIT_SLOTS,
+    maxCircuitIn(state.rows),
+    (state.rows || []).length,
+    state.slotCount || 0
+  );
+  const even = needed % 2 === 0 ? needed : needed + 1;
+  return Math.min(MAX_EDITOR_SLOTS, Math.max(2, even)) / 2;
+}
+
 function buildCircuitSlots(rows) {
   const normalized = normalizeRows(rows);
   const slots = {};
   const overflow = [];
+  const limit = Math.min(MAX_EDITOR_SLOTS, Math.max(MAX_CIRCUIT_SLOTS, maxCircuitIn(normalized), normalized.length, state.slotCount || 0));
 
   normalized.forEach(row => {
     const slot = firstCircuitNumber(row.circuit);
-    if (slot >= 1 && slot <= MAX_CIRCUIT_SLOTS && !slots[slot]) {
+    if (slot >= 1 && slot <= limit && !slots[slot]) {
       slots[slot] = row;
     } else {
       overflow.push(row);
@@ -1361,7 +1603,7 @@ function buildCircuitSlots(rows) {
   });
 
   overflow.forEach(row => {
-    for (let slot = 1; slot <= MAX_CIRCUIT_SLOTS; slot += 1) {
+    for (let slot = 1; slot <= limit; slot += 1) {
       if (!slots[slot]) {
         slots[slot] = { ...row, circuit: row.circuit || String(slot) };
         break;
@@ -1388,7 +1630,7 @@ function createEmptyRow() {
 }
 
 function seedRows(count) {
-  const safeCount = Math.max(1, Math.min(MAX_CIRCUIT_SLOTS, Number(count) || MAX_CIRCUIT_SLOTS));
+  const safeCount = Math.max(1, Math.min(MAX_EDITOR_SLOTS, Number(count) || MAX_CIRCUIT_SLOTS));
   state.rows = Array.from({ length: safeCount }, (_, index) => ({
     circuit: String(index + 1),
     description: '',
@@ -1407,28 +1649,23 @@ function resetApp() {
   state.file = null;
   state.files = [];
   state.rawText = '';
+  state.slotCount = 0;
   seedRows(MAX_CIRCUIT_SLOTS);
-  elements.imageInput.value = '';
-  elements.rawText.value = '';
+  if (elements.rawText) elements.rawText.value = '';
   elements.panelName.value = '';
   elements.panelVoltage.value = '';
   elements.panelFeed.value = '';
   elements.panelDate.value = '';
   if (elements.panelPhase) elements.panelPhase.value = '';
-  if (elements.shotList) elements.shotList.textContent = '';
-  if (elements.addShotButton) elements.addShotButton.disabled = true;
   if (elements.mergeRows) elements.mergeRows.checked = false;
   setSource('');
   elements.panelCapacityAmps.value = '';
   elements.panelDiversity.value = '1';
-  elements.imagePreview.removeAttribute('src');
-  elements.previewFrame.classList.remove('has-image');
-  elements.fileName.textContent = 'No file selected';
-  elements.processButton.disabled = true;
+  refreshIntakeUi();
   clearReview();
   if (elements.openPanelCaution) elements.openPanelCaution.hidden = true;
   resetProgress();
-  setStatus('Reset complete. Upload a new schedule image to begin again.');
+  setStatus('Reset complete. Add a schedule photo and a breaker photo — take or upload each — or type rows by hand.');
   renderAll();
 }
 
@@ -1523,6 +1760,11 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     isScheduleReviewed,
     isCalcReady,
     requestCalculate,
+    snapSlotCount,
+    parseBreakerFace,
+    sizeTableToSlots,
+    applyCombinedRead,
+    hasView,
     isLikelyImageFile,
     normalizeDemandFactor,
     isSpareOrOpen,

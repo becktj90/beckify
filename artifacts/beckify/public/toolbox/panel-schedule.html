@@ -50,7 +50,7 @@
         <div>
           <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
           <h1>Panel Schedule Load Analyzer</h1>
-          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Optional Enhance with AI can read rotated two-up cards, glare, and ink corrections. Edit and update every row by hand, then calculate. Manual entry still works with no photo. Informational estimate — not an electrical inspection. Not perfect OCR and not an AI electrician.</p>
+          <p class="hero-copy">Photograph two views: the printed schedule/directory card, and the breaker dead-front. The breaker photo sizes the table to the real space count; the schedule photo fills descriptions. Take or upload each view. On-device Tesseract.js is the default. Optional Enhance with AI can read glare and two-up cards. Edit every row, then calculate. Manual entry still works with no photo. Informational estimate — not an electrical inspection. Not perfect OCR and not an AI electrician.</p>
         </div>
         <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
       </div>
@@ -63,7 +63,7 @@
         </div>
         <div class="window-body stack-lg">
           <div id="privacyBanner" class="callout callout-privacy">
-            <strong>Privacy before you pick a photo.</strong> The photo stays on this device. It is never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read Schedule. On-device Tesseract.js is the default. The image is not saved after you leave or reset.
+            <strong>Privacy before you pick a photo.</strong> The photos stay on this device. They are never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read both views. On-device Tesseract.js is the default. The images are not saved after you leave or reset.
           </div>
           <label class="review-check" for="panelEnhance">
             <input id="panelEnhance" type="checkbox" data-no-persist>
@@ -80,23 +80,65 @@
                 <input id="panelVlmToken" type="password" autocomplete="off" data-no-persist placeholder="not sent to Beckify">
               </label>
             </div>
-            <p id="panelVlmConfig" class="note">No custom URL yet. If the Beckify API base is injected at deploy, that proxy will be used. Otherwise Read Schedule stays on-device.</p>
+            <p id="panelVlmConfig" class="note">No custom URL yet. If the Beckify API base is injected at deploy, that proxy will be used. Otherwise Read both views stays on-device.</p>
           </div>
           <div class="callout callout-safety">
-            <strong>Photograph the directory / label only.</strong> This tool reads the printed circuit directory or schedule card on the panel door — not the live interior of an open panel. Keep the door closed if you can. Never open a panel or touch anything inside it to get this photo. Square the card to the camera, fill the frame, use even light, and avoid glare.
+            <strong>Two required views — cover on.</strong> Schedule: the printed directory card on the door. Breakers: the dead-front handles and amp stamps with the cover on. Never open a live panel or photograph the bus / lugs. Square each view, fill the frame, use even light, and avoid glare.
           </div>
           <div id="openPanelCaution" class="callout callout-caution" hidden>
-            <strong>This photo looks like an open panel interior.</strong> Do not work inside a live panel. OCR will still try to help with whatever text it can read, but that is not the intended use. Photograph the directory with the door closed if you can. Any safety concern goes to a licensed electrician.
+            <strong>This photo looks like a live open interior.</strong> Do not work inside a live panel. For the breaker view, photograph the dead-front handles with the cover on. OCR will still try to help with whatever text it can read. Any safety concern goes to a licensed electrician.
           </div>
 
-          <div class="toolbar">
-            <label class="btn" for="imageInput">Choose file</label>
-            <input id="imageInput" type="file" accept="image/*" hidden>
-            <label class="btn" for="imageCapture">Take photo</label>
-            <input id="imageCapture" type="file" accept="image/*" capture="environment" hidden>
-            <input id="imageAdd" type="file" accept="image/*" hidden>
-            <button id="addShotButton" class="btn" type="button" disabled>Add another photo</button>
-            <button id="processButton" class="btn btn-primary" type="button" disabled>Read Schedule</button>
+          <div class="view-grid">
+            <article class="view-card" data-view="schedule">
+              <h3>1. Schedule / directory</h3>
+              <p class="field-help">Printed circuit card on the panel door. Take a photo or upload one. For a tall 42- or 84-circuit card, add the bottom half.</p>
+              <div class="toolbar toolbar-wrap">
+                <label class="btn" for="scheduleCapture">Take photo</label>
+                <input id="scheduleCapture" type="file" accept="image/*" capture="environment" hidden>
+                <label class="btn" for="scheduleFile">Upload</label>
+                <input id="scheduleFile" type="file" accept="image/*" hidden>
+                <input id="scheduleAddFile" type="file" accept="image/*" hidden>
+                <button id="scheduleAdd" class="btn" type="button" disabled>Add another</button>
+              </div>
+              <label id="scheduleDrop" class="drop-zone view-drop" for="scheduleFile">
+                <span class="drop-zone-icon">📋</span>
+                <strong>Drop a schedule photo</strong>
+                <span>JPG, PNG, WEBP, or HEIC. Choosing a file does not upload it.</span>
+              </label>
+              <p id="scheduleFileName" class="note">No schedule photo yet</p>
+              <div id="schedulePreview" class="preview-frame view-preview">
+                <img id="schedulePreviewImg" alt="Schedule / directory preview">
+                <div id="schedulePreviewPlaceholder" class="preview-placeholder">Schedule preview</div>
+              </div>
+            </article>
+
+            <article class="view-card" data-view="breakers">
+              <h3>2. Breakers / dead-front</h3>
+              <p class="field-help">Photograph the breaker row with the cover on so the tool can count spaces and size the table. Take a photo or upload one. Add another shot for a tall panel.</p>
+              <div class="toolbar toolbar-wrap">
+                <label class="btn" for="breakersCapture">Take photo</label>
+                <input id="breakersCapture" type="file" accept="image/*" capture="environment" hidden>
+                <label class="btn" for="breakersFile">Upload</label>
+                <input id="breakersFile" type="file" accept="image/*" hidden>
+                <input id="breakersAddFile" type="file" accept="image/*" hidden>
+                <button id="breakersAdd" class="btn" type="button" disabled>Add another</button>
+              </div>
+              <label id="breakersDrop" class="drop-zone view-drop" for="breakersFile">
+                <span class="drop-zone-icon">🔌</span>
+                <strong>Drop a breaker photo</strong>
+                <span>Dead-front handles and amp stamps. Cover on. Choosing a file does not upload it.</span>
+              </label>
+              <p id="breakersFileName" class="note">No breaker photo yet</p>
+              <div id="breakersPreview" class="preview-frame view-preview">
+                <img id="breakersPreviewImg" alt="Breaker / dead-front preview">
+                <div id="breakersPreviewPlaceholder" class="preview-placeholder">Breaker preview</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="toolbar toolbar-wrap">
+            <button id="processButton" class="btn btn-primary" type="button" disabled>Read both views</button>
             <button id="resetButton" class="btn" type="button">Reset</button>
           </div>
           <label class="review-check" for="mergeRows">
@@ -105,15 +147,9 @@
           </label>
           <p id="shotList" class="note"></p>
 
-          <label id="dropZone" class="drop-zone" for="imageInput">
-            <span class="drop-zone-icon">📂</span>
-            <strong>Drag &amp; drop a directory photo here</strong>
-            <span>JPG, PNG, WEBP, or HEIC of the printed schedule/label. Framing: fill the frame, even light, avoid glare. For a 42- or 84-circuit card, photograph the top then add the bottom. You can skip the photo and type rows by hand.</span>
-          </label>
-
           <div class="status-strip" role="status" aria-live="polite">
-            <span id="statusText">Awaiting image upload.</span>
-            <span id="fileName">No file selected</span>
+            <span id="statusText">Add a schedule photo and a breaker photo — take or upload each — or type rows by hand.</span>
+            <span id="fileName">No files selected</span>
           </div>
           <p id="ocrSource" class="note" hidden></p>
 
@@ -122,11 +158,6 @@
               <div id="progressFill" class="progress-fill"></div>
             </div>
             <span id="progressLabel">0%</span>
-          </div>
-
-          <div class="preview-frame">
-            <img id="imagePreview" alt="Uploaded panel schedule preview">
-            <div id="previewPlaceholder" class="preview-placeholder">Image preview appears here.</div>
           </div>
         </div>
       </section>

@@ -134,6 +134,11 @@ assert.equal(panel.rows[0].trip.value, 20);
 assert.equal(panel.rows[0].loadAmps.value, null);
 assert.equal(panel.rows[0].circuit.userReviewed, false);
 assert.equal(panel.panel.name.value, null);
+const slotted = schema.normalizePanelDraft({
+  slotCount: 42,
+  circuits: [{ circuit: '1', description: 'Lights', trip: 20 }],
+});
+assert.equal(slotted.slotCount, 42);
 
 const serialDraft = schema.normalizeDraft({
   serialNumber: { value: 'A12345', confidence: 0.8 },

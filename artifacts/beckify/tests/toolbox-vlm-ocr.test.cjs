@@ -222,6 +222,8 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(panel, /analyzePanelDirectory\(/);
   assert.match(panel, /shouldUpload/);
   assert.match(panel, /mode: 'directory'/);
+  assert.match(panel, /view: 'breakers'/);
+  assert.match(panel, /view: 'schedule'/);
   const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
   assert.match(panelHtml, /js\/vlm-ocr\.js/);
   assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);

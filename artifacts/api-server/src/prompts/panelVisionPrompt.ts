@@ -23,6 +23,7 @@ export const PANEL_VISION_SYSTEM_PROMPT = [
   '  "circuits": [',
   '    { "circuit": { "value": string|null, "confidence": number }, "description": { "value": string|null, "confidence": number }, "trip": { "value": number|null, "confidence": number }, "poles": { "value": number|null, "confidence": number }, "loadAmps": { "value": null, "confidence": 0 }, "notes": { "value": string|null, "confidence": number } }',
   "  ],",
+  '  "slotCount": number|null,',
   '  "raw_ocr": string,',
   '  "warnings": string[]',
   "}",
@@ -39,7 +40,41 @@ export const PANEL_VISION_SYSTEM_PROMPT = [
   "- mainAmps is the printed main / bus / MCB rating, not a sum of branch trips.",
   "- Do not assume missing poles or descriptions.",
   "- If the photo looks like an open panel interior, say so in warnings and still extract only readable text.",
+  "- slotCount is the printed circuit/space count when the card says 20, 30, 42, or 84 circuit. Otherwise null. Do not invent a 42-row card.",
   "- Put the readable directory transcript into raw_ocr (circuit → description lines).",
+].join("\n");
+
+export const BREAKER_VISION_SYSTEM_PROMPT = [
+  "You count spaces on a panelboard dead-front (breaker handles and amp stamps).",
+  "Photograph intent is the cover-on dead-front, not a live open interior.",
+  "You are not an electrician. Do not invent loads from breaker trip.",
+  "OCR is imperfect. Prefer null over a guess.",
+  "",
+  "Return one JSON object only. No markdown, no prose, no code fences.",
+  "Use this shape:",
+  "{",
+  '  "panel": {',
+  '    "name": { "value": string|null, "confidence": number },',
+  '    "voltage": { "value": string|null, "confidence": number },',
+  '    "mainAmps": { "value": number|null, "confidence": number },',
+  '    "phases": { "value": 1|3|null, "confidence": number },',
+  '    "location": { "value": string|null, "confidence": number }',
+  "  },",
+  '  "slotCount": number|null,',
+  '  "circuits": [',
+  '    { "circuit": { "value": string|null, "confidence": number }, "description": { "value": null, "confidence": 0 }, "trip": { "value": number|null, "confidence": number }, "poles": { "value": number|null, "confidence": number }, "loadAmps": { "value": null, "confidence": 0 }, "notes": { "value": string|null, "confidence": number } }',
+  "  ],",
+  '  "raw_ocr": string,',
+  '  "warnings": string[]',
+  "}",
+  "",
+  "Rules:",
+  "- slotCount is the physical space / circuit count you can see (typical 12, 20, 24, 30, 42, 84). Tandem/twin handles count as two circuits.",
+  "- This frame may be only the top or bottom of a tall panel. Count only what is visible. Do not invent missing spaces.",
+  "- trip is the amp stamp on the handle only. description stays null — the schedule card is a different photo.",
+  "- loadAmps must stay null. Trip is not a reviewed load.",
+  "- If the photo is a live open interior (bus, lugs), say so in warnings and still count only visible handles.",
+  "- phases and mainAmps only when printed on the dead-front or main breaker.",
 ].join("\n");
 
 export interface PanelVisionField {
@@ -64,6 +99,7 @@ export interface PanelVisionAnalysis {
     phases?: PanelVisionField;
     location?: PanelVisionField;
   };
+  slotCount?: number | null;
   circuits: PanelVisionCircuit[];
   raw_ocr: string;
   warnings: string[];

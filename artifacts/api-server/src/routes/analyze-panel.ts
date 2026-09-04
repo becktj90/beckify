@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { PANEL_VISION_SYSTEM_PROMPT } from "../prompts/panelVisionPrompt.js";
+import { BREAKER_VISION_SYSTEM_PROMPT, PANEL_VISION_SYSTEM_PROMPT } from "../prompts/panelVisionPrompt.js";
 import {
   PANEL_MAX_OUTPUT_TOKENS,
   PANEL_PROVIDER_TIMEOUT_MS,
@@ -21,6 +21,7 @@ interface AnalyzeBody {
   provider?: string;
   model?: string;
   task?: string;
+  view?: string;
 }
 
 const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
@@ -54,13 +55,21 @@ router.post("/analyze-panel", async (req, res) => {
   }
   bucket.inFlight += 1;
 
-  const userText = [
-    "Extract the printed panel directory into structured JSON.",
-    "Upright rotated phone photos first. Emit one circuit entry per odd/even number you can actually read.",
-    "This frame may be only part of a large card — do not invent missing circuits.",
-    "Prefer handwritten corrections over crossed-out print. Do not copy breaker trip into load amps.",
-    "phases is 1 or 3 only when printed. Never assume 3-phase.",
-  ].join(" ");
+  const breakerView = String(body.view || "").toLowerCase() === "breakers";
+  const userText = breakerView
+    ? [
+      "Count dead-front breaker spaces and read handle amp stamps into structured JSON.",
+      "Upright rotated phone photos first. slotCount is the visible space count. Do not invent missing spaces.",
+      "description stays null. Do not copy trip into load amps. Cover-on dead-front only.",
+    ].join(" ")
+    : [
+      "Extract the printed panel directory into structured JSON.",
+      "Upright rotated phone photos first. Emit one circuit entry per odd/even number you can actually read.",
+      "This frame may be only part of a large card — do not invent missing circuits.",
+      "Prefer handwritten corrections over crossed-out print. Do not copy breaker trip into load amps.",
+      "phases is 1 or 3 only when printed. Never assume 3-phase.",
+    ].join(" ");
+  const system = breakerView ? BREAKER_VISION_SYSTEM_PROMPT : PANEL_VISION_SYSTEM_PROMPT;
 
   try {
     const result = serverProvider === "anthropic"
@@ -68,7 +77,7 @@ router.post("/analyze-panel", async (req, res) => {
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
-        system: PANEL_VISION_SYSTEM_PROMPT,
+        system,
         userText,
         maxTokens: PANEL_MAX_OUTPUT_TOKENS,
         timeoutMs: PANEL_PROVIDER_TIMEOUT_MS,
@@ -77,7 +86,7 @@ router.post("/analyze-panel", async (req, res) => {
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
-        system: PANEL_VISION_SYSTEM_PROMPT,
+        system,
         userText,
         maxTokens: PANEL_MAX_OUTPUT_TOKENS,
         timeoutMs: PANEL_PROVIDER_TIMEOUT_MS,

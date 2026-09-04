@@ -422,10 +422,15 @@
     if (!panel.mainAmps.value && (panelSrc.busAmps !== undefined || panelSrc.busRating !== undefined)) {
       panel.mainAmps = fieldFrom(unwrapRaw(panelSrc.busAmps || panelSrc.busRating), 'number', rawConfidence(panelSrc.busAmps || panelSrc.busRating, fallbackConf));
     }
+    var slotRaw = raw && (raw.slotCount != null ? raw.slotCount : (raw.slot_count != null ? raw.slot_count : (panelSrc.slotCount != null ? panelSrc.slotCount : panelSrc.spaces)));
+    var slotCount = Number(typeof slotRaw === 'object' && slotRaw ? slotRaw.value : slotRaw);
+    if (!Number.isFinite(slotCount) || slotCount < 6) slotCount = 0;
+    else slotCount = Math.min(84, Math.round(slotCount));
     return {
       task: 'panel',
       rows: rows,
       panel: panel,
+      slotCount: slotCount,
       source: opts.source || 'unknown',
       rawText: asString(opts.rawText || (raw && raw.raw_ocr) || '') || '',
       warnings: Array.isArray(raw && raw.warnings) ? raw.warnings.map(String) : (opts.warnings || []),
@@ -483,6 +488,7 @@
       task: 'panel',
       rows: order.slice(0, 84),
       panel: panel,
+      slotCount: Math.max(left.slotCount || 0, right.slotCount || 0),
       source: right.source || left.source || 'merged',
       rawText: rawParts.join('\n'),
       warnings: warnings,
