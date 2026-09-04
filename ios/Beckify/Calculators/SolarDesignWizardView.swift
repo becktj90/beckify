@@ -255,6 +255,9 @@ struct SolarDesignWizardView: View {
             Text(sensors.locationStatus)
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
+            if sensors.locationStatus.localizedCaseInsensitiveContains("denied") {
+                SettingsLinkButton()
+            }
         }
     }
 

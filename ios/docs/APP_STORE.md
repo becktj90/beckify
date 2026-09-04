@@ -4,6 +4,8 @@ Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor 
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
+**Five-star / review-risk plan:** [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) — competitor 1★ patterns, first-open/trust punch list, Connect checklist, respectful `requestReview` timing, and honesty constraints (no fake Wi‑Fi/cellular dBm). Use the ITMS-90382 cooldown to finish that list before the next upload.
+
 ## Listing copy
 
 **Name:** Beckify  
@@ -214,5 +216,6 @@ Still needed (Mac + Trevor; not done in this Linux environment):
 7. Upload the signed archive (Organizer or Transporter). Wait for processing. Upload is still outstanding; that is not TestFlight distribution and not App Store submit.
 8. Attach screenshots, review the encryption and content-rights questions, then submit for review (not done).
 9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
+10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382 (~2026-09-05), upload a **new** version/build tuple once — do not retry the same binary.
 
 Until those steps are done, there is **no** uploaded binary. The app is **not** on TestFlight and **not** on the App Store.

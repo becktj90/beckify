@@ -66,6 +66,7 @@
 		BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008D /* ControlSystemsLabView.swift */; };
 		BECF00000000000000000090 /* ConductorLengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008F /* ConductorLengthView.swift */; };
 		BECF00000000000000000092 /* CellularStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000091 /* CellularStatusView.swift */; };
+		BECF00000000000000000094 /* ReviewAskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000093 /* ReviewAskStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -128,6 +129,7 @@
 		BECF0000000000000000008D /* ControlSystemsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSystemsLabView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008F /* ConductorLengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorLengthView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000091 /* CellularStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularStatusView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000093 /* ReviewAskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewAskStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +187,7 @@
 			isa = PBXGroup;
 			children = (
 				BECF00000000000000000015 /* JobStore.swift */,
+				BECF00000000000000000093 /* ReviewAskStore.swift */,
 				BECF00000000000000000017 /* ToolboxCatalog.swift */,
 				BECF00000000000000000063 /* ToolInputStore.swift */,
 				BECF00000000000000000067 /* FavoritesStore.swift */,
@@ -358,6 +361,7 @@
 				BECF00000000000000000012 /* VoltageDropView.swift in Sources */,
 				BECF00000000000000000014 /* WireAmpacityView.swift in Sources */,
 				BECF00000000000000000016 /* JobStore.swift in Sources */,
+				BECF00000000000000000094 /* ReviewAskStore.swift in Sources */,
 				BECF00000000000000000018 /* ToolboxCatalog.swift in Sources */,
 				BECF0000000000000000001A /* Theme.swift in Sources */,
 				BECF0000000000000000001E /* FormControls.swift in Sources */,

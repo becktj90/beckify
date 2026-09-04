@@ -542,7 +542,10 @@ struct CellularStatusView: View {
                 substituted: substituted,
                 meaning: "Gauges show radio generation (2G…5G from RAT) and measured TCP RTT. They are not RSRP, RSRQ, SINR, or dBm. Use Field Test Mode on the phone if you need those RF numbers."
             )
-            honestyBanner
+            RFHonestyBanner(
+                title: "No cellular dBm on iOS",
+                detail: "App Store apps cannot read RSRP, RSRQ, SINR, RSSI, or bar-count from public CoreTelephony or Network APIs. Private status-bar scraping is a reject risk. This instrument reports radio identity and a measured TCP RTT proxy only."
+            )
             CellularNetworkGauges(
                 rat: model.dataService?.rat,
                 hasServices: !model.services.isEmpty,
@@ -615,24 +618,6 @@ struct CellularStatusView: View {
             guard rttTarget == .custom else { return }
             model.invalidateDisplayedRTT(message: "Custom host changed. Prior RTT was for a different host — Start again. Not RSRP.")
         }
-    }
-
-    private var honestyBanner: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("No cellular dBm on iOS")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.foreground)
-            Text("App Store apps cannot read RSRP, RSRQ, SINR, RSSI, or bar-count from public CoreTelephony or Network APIs. Private status-bar scraping is a reject risk. This instrument reports radio identity and a measured TCP RTT proxy only.")
-                .font(.caption)
-                .foregroundStyle(Theme.muted)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.warn.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Theme.warn.opacity(0.35), lineWidth: 1)
-        )
     }
 
     @ViewBuilder

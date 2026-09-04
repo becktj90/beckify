@@ -429,6 +429,10 @@ struct WiFiStatusView: View {
                 substituted: substituted,
                 meaning: "Primary public unit is Apple’s 0…1 strength, shown as percent and bars. Complementary metric is TCP round-trip time to a host (link quality). Neither is a calibrated RF power reading. This sketch is not a site survey."
             )
+            RFHonestyBanner(
+                title: "No Wi‑Fi dBm on iOS",
+                detail: "App Store apps cannot read RSSI or dBm. This gauge is Apple’s public 0…1 signalStrength as percent and bars, plus optional TCP RTT. It will not invent a reading."
+            )
             WiFiStrengthGauge(strength: model.signalStrength, onWiFi: model.usesWiFi)
             ResultCard(title: "Path") {
                 ResultRow(label: "Status", value: model.status, emphasis: true)
