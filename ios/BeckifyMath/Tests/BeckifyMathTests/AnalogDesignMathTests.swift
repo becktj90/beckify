@@ -94,6 +94,49 @@ final class AnalogFilterTests: XCTestCase {
         XCTAssertThrowsError(try AnalogFilter.sallenKeyQ(k: 3))
         XCTAssertThrowsError(try AnalogFilter.sallenKeyQ(k: 3.2))
     }
+
+    func testFirstOrderSolveIgnoresMissingQ() throws {
+        let rc = try AnalogFilter.solve(
+            family: .rcLowpass,
+            designFrequency: 1_000,
+            resistance: 10_000,
+            capacitance: 15.915494309189533e-9,
+            passbandGain: 1,
+            quality: .nan
+        )
+        XCTAssertEqual(rc.qualityFactor, 0.5, accuracy: 1e-12)
+        XCTAssertEqual(rc.cornerHz, 1000, accuracy: 0.01)
+
+        let allpass = try AnalogFilter.solve(
+            family: .firstOrderAllpass,
+            designFrequency: 1_000,
+            resistance: 10_000,
+            capacitance: 15.915494309189533e-9,
+            passbandGain: 2,
+            quality: .nan
+        )
+        XCTAssertEqual(allpass.qualityFactor, 0.5, accuracy: 1e-12)
+        XCTAssertEqual(allpass.passbandGainVV, 2, accuracy: 1e-12)
+    }
+
+    func testSecondOrderStillRequiresQ() {
+        XCTAssertThrowsError(try AnalogFilter.solve(
+            family: .sallenKeyLowpass,
+            designFrequency: 1_000,
+            resistance: 10_000,
+            capacitance: 15.9e-9,
+            passbandGain: 1,
+            quality: .nan
+        ))
+        XCTAssertThrowsError(try AnalogFilter.solve(
+            family: .twinTNotch,
+            designFrequency: 1_000,
+            resistance: 10_000,
+            capacitance: 15.9e-9,
+            passbandGain: 1,
+            quality: .nan
+        ))
+    }
 }
 
 final class NoiseSNRTests: XCTestCase {
@@ -197,6 +240,36 @@ final class LinearRegulatorTests: XCTestCase {
         XCTAssertEqual(r.thetaJAUsed, 10, accuracy: 1e-12)
         XCTAssertEqual(r.junctionC, 60, accuracy: 1e-9)
         XCTAssertFalse(r.junctionHigh)
+    }
+
+    func testInvalidHeatsinkThetaSAThrows() {
+        XCTAssertThrowsError(try LinearRegulator.solve(
+            vin: 12, voutOrTarget: 5, r1: 240, r2: 720, vref: 1.25, iadj: 0,
+            dropout: 2, loadCurrent: 0.5, ambientC: 25, thetaJA: 50,
+            thetaJC: 5, thetaSA: .nan, solveResistors: false
+        ))
+        XCTAssertThrowsError(try LinearRegulator.solve(
+            vin: 12, voutOrTarget: 5, r1: 240, r2: 720, vref: 1.25, iadj: 0,
+            dropout: 2, loadCurrent: 0.5, ambientC: 25, thetaJA: 50,
+            thetaJC: 5, thetaSA: 0, solveResistors: false
+        ))
+    }
+
+    func testInvalidThetaJCWithHeatsinkThrows() {
+        XCTAssertThrowsError(try LinearRegulator.solve(
+            vin: 12, voutOrTarget: 5, r1: 240, r2: 720, vref: 1.25, iadj: 0,
+            dropout: 2, loadCurrent: 0.5, ambientC: 25, thetaJA: 50,
+            thetaJC: .nan, thetaSA: 6, solveResistors: false
+        ))
+    }
+
+    func testOmittedThetaJCUsesDefaultWhenHeatsinkPresent() throws {
+        let r = try LinearRegulator.solve(
+            vin: 12, voutOrTarget: 5, r1: 240, r2: 720, vref: 1.25, iadj: 0,
+            dropout: 2, loadCurrent: 0.5, ambientC: 25, thetaJA: 50,
+            thetaJC: nil, thetaSA: 6, solveResistors: false
+        )
+        XCTAssertEqual(r.thetaJAUsed, 11, accuracy: 1e-12)
     }
 }
 

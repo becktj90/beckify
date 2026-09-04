@@ -327,6 +327,16 @@ public enum AnalogFilter {
         return 3 - 1 / quality
     }
 
+    /// First-order families do not take a Q input (the UI hides it).
+    public static func usesQuality(_ family: AnalogFilterFamily) -> Bool {
+        switch family {
+        case .sallenKeyLowpass, .sallenKeyHighpass, .twinTNotch:
+            return true
+        case .rcLowpass, .rcHighpass, .firstOrderAllpass:
+            return false
+        }
+    }
+
     public static func solve(
         family: AnalogFilterFamily,
         designFrequency: Double,
@@ -340,12 +350,13 @@ public enum AnalogFilter {
         let r = try Positive.require(resistance, name: "R")
         let cIn = try Positive.require(capacitance, name: "C")
         let gain = try Positive.require(passbandGain, name: "Gain")
-        let qIn = try Positive.require(quality, name: "Q")
+        // RC / all-pass ignore Q. Do not fail if the hidden field is blank or leftover junk.
+        let qIn = usesQuality(family) ? try Positive.require(quality, name: "Q") : 0.5
 
         let rcCorner = try cornerHz(resistance: r, capacitance: cIn)
         let suggestedC = try capacitanceForCorner(resistance: r, frequency: f0In)
 
-        let isFirstOrder = family == .rcLowpass || family == .rcHighpass || family == .firstOrderAllpass
+        let isFirstOrder = !usesQuality(family)
         let corner = isFirstOrder ? rcCorner : f0In
         var q = qIn
         var k: Double?
@@ -692,11 +703,17 @@ public enum LinearRegulator {
         let pd = max(0, headroom) * iLoad
 
         var thetaUsed = thJA
-        if let sa = thetaSA, sa > 0 {
-            let jc = thetaJC ?? 5
-            guard jc.isFinite, jc > 0 else { throw CalcError.nonPositive("θJC") }
+        if let sa = thetaSA {
+            // Non-nil means the operator entered a sink. NaN / 0 must not look like “no heatsink”.
+            let sink = try Positive.require(sa, name: "θSA")
+            let jc: Double
+            if let providedJC = thetaJC {
+                jc = try Positive.require(providedJC, name: "θJC")
+            } else {
+                jc = 5
+            }
             // Package + sink in series. Free-air θJA is ignored once a sink is entered.
-            thetaUsed = jc + sa
+            thetaUsed = jc + sink
         }
 
         let tj = ambientC + pd * thetaUsed

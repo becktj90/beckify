@@ -665,6 +665,8 @@ struct LinearRegulatorView: View {
         session.calculate {
             let saText = thetaSA.trimmingCharacters(in: .whitespacesAndNewlines)
             let sa = saText.isEmpty ? nil : (thetaSA.parsedDouble ?? .nan)
+            // θJC is only in play with a heatsink. Blank or junk must not become the solver default.
+            let jc: Double? = saText.isEmpty ? nil : (thetaJC.parsedDouble ?? .nan)
             return try LinearRegulator.solve(
                 vin: vin.parsedDouble ?? .nan,
                 voutOrTarget: vout.parsedDouble ?? .nan,
@@ -676,7 +678,7 @@ struct LinearRegulatorView: View {
                 loadCurrent: load.parsedDouble ?? .nan,
                 ambientC: ambient.parsedDouble ?? .nan,
                 thetaJA: thetaJA.parsedDouble ?? .nan,
-                thetaJC: thetaJC.parsedDouble,
+                thetaJC: jc,
                 thetaSA: sa,
                 solveResistors: mode == .solveR2
             )
