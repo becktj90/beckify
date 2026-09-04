@@ -79,18 +79,6 @@ struct ToolGridView: View {
             .navigationTitle("Beckify")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Search Field and Toolkit…")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        IconGalleryView()
-                    } label: {
-                        Image(systemName: "paintpalette")
-                            .accessibilityLabel("Review tool icons")
-                            .accessibilityHint("Opens a gallery of schematic glyphs. Distinct from the Toolbox tab.")
-                    }
-                    .accessibilityIdentifier("iconGalleryButton")
-                }
-            }
             .overlay {
                 if isSearching && searchResults.isEmpty {
                     ContentUnavailableView.search(text: query)
