@@ -207,10 +207,10 @@ struct AnalogDesignWorkbenchView: View {
         MenuField(title: "Family", selection: $filter, options: AnalogFilterFamily.allCases) { $0.displayName }
         NumberField(title: "Design / center frequency", unit: "Hz", text: $frequency, fieldID: "f0", onSubmit: calculate)
         NumberField(title: "Reference R", unit: "Ω", text: $filterR, fieldID: "filterR", onSubmit: calculate)
-        NumberField(title: "Reference C", unit: "nF", text: $filterCNF, fieldID: "filterC", helpText: "Used for 1st-order fc. 2nd-order families size C from R and the design frequency.", onSubmit: calculate)
+        NumberField(title: "Reference C", unit: "nF", text: $filterCNF, helpText: "Used for 1st-order fc. 2nd-order families size C from R and the design frequency.", fieldID: "filterC", onSubmit: calculate)
         NumberField(title: "Passband gain", unit: "V/V", text: $filterGain, fieldID: "gain", onSubmit: calculate)
         if filter == .sallenKeyLowpass || filter == .sallenKeyHighpass || filter == .twinTNotch {
-            NumberField(title: "Q", unit: "", text: $filterQ, fieldID: "q", helpText: "0.707 is Butterworth for Sallen–Key. Twin-T passive notch is much shallower unless you raise Q.", onSubmit: calculate)
+            NumberField(title: "Q", unit: "", text: $filterQ, helpText: "0.707 is Butterworth for Sallen–Key. Twin-T passive notch is much shallower unless you raise Q.", fieldID: "q", onSubmit: calculate)
         }
     }
 
@@ -596,17 +596,17 @@ struct LinearRegulatorView: View {
             if mode == .solveR2 {
                 NumberField(title: "Target Vout", unit: "V", text: $vout, fieldID: "vout", onSubmit: calculate)
             }
-            NumberField(title: "R1", unit: "Ω", text: $r1, fieldID: "r1", helpText: "LM317 datasheets often start at 240 Ω between OUT and ADJ.", onSubmit: calculate)
+            NumberField(title: "R1", unit: "Ω", text: $r1, helpText: "LM317 datasheets often start at 240 Ω between OUT and ADJ.", fieldID: "r1", onSubmit: calculate)
             if mode == .fromResistors {
                 NumberField(title: "R2", unit: "Ω", text: $r2, fieldID: "r2", onSubmit: calculate)
             }
             NumberField(title: "Vref", unit: "V", text: $vref, fieldID: "vref", onSubmit: calculate)
-            NumberField(title: "Iadj", unit: "µA", text: $iadjUA, fieldID: "iadj", helpText: "Typical 50 µA. Enter 0 to ignore.", onSubmit: calculate)
+            NumberField(title: "Iadj", unit: "µA", text: $iadjUA, helpText: "Typical 50 µA. Enter 0 to ignore.", fieldID: "iadj", onSubmit: calculate)
             NumberField(title: "Dropout / minimum headroom", unit: "V", text: $dropout, fieldID: "do", onSubmit: calculate)
             NumberField(title: "Load current", unit: "A", text: $load, fieldID: "i", onSubmit: calculate)
             NumberField(title: "Ambient", unit: "°C", text: $ambient, fieldID: "ta", onSubmit: calculate)
             NumberField(title: "Package θJA (free air)", unit: "°C/W", text: $thetaJA, fieldID: "thja", onSubmit: calculate)
-            NumberField(title: "Heatsink θSA", unit: "°C/W", text: $thetaSA, optional: true, fieldID: "thsa", helpText: "If set, Tj uses θJC + θSA instead of free-air θJA.", onSubmit: calculate)
+            NumberField(title: "Heatsink θSA", unit: "°C/W", text: $thetaSA, optional: true, helpText: "If set, Tj uses θJC + θSA instead of free-air θJA.", fieldID: "thsa", onSubmit: calculate)
             if !thetaSA.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 NumberField(title: "θJC", unit: "°C/W", text: $thetaJC, fieldID: "thjc", onSubmit: calculate)
             }
@@ -764,7 +764,7 @@ struct InstrumentationAmpView: View {
             NumberField(title: "V2 (non-inverting / +in)", unit: "V", text: $v2, fieldID: "v2", onSubmit: calculate)
             NumberField(title: "V1 (inverting / −in)", unit: "V", text: $v1, fieldID: "v1", onSubmit: calculate)
             if mode == .threeOpAmp {
-                NumberField(title: "R (each gain-leg resistor)", unit: "Ω", text: $r, fieldID: "r", helpText: "Classic form uses 2R in 1 + 2R/Rg. 25 kΩ → 50 kΩ / Rg.", onSubmit: calculate)
+                NumberField(title: "R (each gain-leg resistor)", unit: "Ω", text: $r, helpText: "Classic form uses 2R in 1 + 2R/Rg. 25 kΩ → 50 kΩ / Rg.", fieldID: "r", onSubmit: calculate)
                 NumberField(title: "Rg", unit: "Ω", text: $rg, fieldID: "rg", onSubmit: calculate)
             } else {
                 NumberField(title: "Rf", unit: "Ω", text: $r, fieldID: "rf", onSubmit: calculate)
@@ -889,9 +889,9 @@ struct ADCDACView: View {
             )
 
             NumberField(title: "Bits n", unit: "", text: $bits, fieldID: "bits", onSubmit: calculate)
-            NumberField(title: "Full-scale span", unit: "V", text: $fullScale, fieldID: "fs", helpText: "Unipolar span 0…FS. Sibling to Signal Scaling — this tool does not map 4–20 mA.", onSubmit: calculate)
+            NumberField(title: "Full-scale span", unit: "V", text: $fullScale, helpText: "Unipolar span 0…FS. Sibling to Signal Scaling — this tool does not map 4–20 mA.", fieldID: "fs", onSubmit: calculate)
             NumberField(title: "Sample rate Fs", unit: "Hz", text: $sampleRate, fieldID: "fsamp", onSubmit: calculate)
-            NumberField(title: "DAC code (optional)", unit: "", text: $dacCode, optional: true, fieldID: "code", helpText: "0 … 2ⁿ−1. V = code · LSB.", onSubmit: calculate)
+            NumberField(title: "DAC code (optional)", unit: "", text: $dacCode, optional: true, helpText: "0 … 2ⁿ−1. V = code · LSB.", fieldID: "code", onSubmit: calculate)
 
             CalculatorActionBar(
                 onCalculate: calculate,
