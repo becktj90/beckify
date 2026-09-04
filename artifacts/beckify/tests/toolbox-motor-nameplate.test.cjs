@@ -106,6 +106,9 @@ assert.doesNotMatch(phaseBlock, /<option value="3" selected>/);
 assert.match(html, /id="mnp_reviewed"[^>]*data-no-persist/);
 assert.match(html, /id="mnp_enhance"[^>]*data-no-persist/);
 assert.match(html, /id="mnp_vlm_token"[^>]*data-no-persist/);
+assert.match(src, /Fill the fields manually/);
+assert.match(src, /Falling back to on-device OCR/);
+assert.match(src, /OCR failed\. Fill the fields manually/);
 assert.match(src, /el\('mnp_phase'\)\.value = ''/);
 assert.equal((src.match(/mnp_phase'\)\.value = '3'/g) || []).length, 0);
 

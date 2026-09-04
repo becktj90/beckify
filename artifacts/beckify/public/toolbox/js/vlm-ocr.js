@@ -32,6 +32,7 @@
   var TASK_LOOK = 'look';
   var MAX_BYTES = 8 * 1024 * 1024;
   var MAX_UPLOAD_EDGE = 2048;
+  var PROXY_DOWNSTREAM_NOTE = 'The Beckify proxy may forward the photo to OpenAI and/or Anthropic.';
 
   function schema() {
     return global.BeckifyNameplateSchema;
@@ -55,12 +56,12 @@
   }
 
   function httpsBase(raw) {
-    var trimmed = String(raw || '').trim().replace(/\/$/, '');
+    var trimmed = String(raw || '').trim();
     if (!trimmed) return '';
     try {
       var u = new URL(trimmed);
       if (u.protocol !== 'https:') return '';
-      return u.origin + u.pathname.replace(/\/$/, '');
+      return u.origin + u.pathname.replace(/\/$/, '') + u.search;
     } catch (_) {
       return '';
     }
@@ -85,13 +86,36 @@
 
   function saveSettings(partial) {
     var current = loadSettings();
-    if (partial && Object.prototype.hasOwnProperty.call(partial, 'endpoint')) {
-      storageSet(global.localStorage, SETTINGS_KEY, httpsBase(partial.endpoint));
+    var nextEndpoint = current.endpoint;
+    var nextToken = current.token;
+    var hasEndpoint = !!(partial && Object.prototype.hasOwnProperty.call(partial, 'endpoint'));
+    var hasToken = !!(partial && Object.prototype.hasOwnProperty.call(partial, 'token'));
+    if (hasEndpoint) {
+      nextEndpoint = httpsBase(partial.endpoint);
+      if (nextEndpoint !== current.endpoint && current.endpoint && !hasToken) nextToken = '';
     }
-    if (partial && Object.prototype.hasOwnProperty.call(partial, 'token')) {
-      storageSet(global.sessionStorage, TOKEN_KEY, String(partial.token || ''));
-    }
+    if (hasToken) nextToken = String(partial.token || '');
+    storageSet(global.localStorage, SETTINGS_KEY, nextEndpoint);
+    storageSet(global.sessionStorage, TOKEN_KEY, nextToken);
     return loadSettings();
+  }
+
+  /**
+   * Persist the settings form. Changing the custom URL drops the stored
+   * bearer token so a credential for endpoint A is never posted to B.
+   */
+  function saveFormSettings(endpointRaw, tokenRaw) {
+    var current = loadSettings();
+    var nextEndpoint = httpsBase(endpointRaw);
+    var switchedEndpoint = nextEndpoint !== current.endpoint && !!current.endpoint;
+    var nextToken = switchedEndpoint ? '' : String(tokenRaw || '');
+    storageSet(global.localStorage, SETTINGS_KEY, nextEndpoint);
+    storageSet(global.sessionStorage, TOKEN_KEY, nextToken);
+    return {
+      endpoint: nextEndpoint,
+      token: nextToken,
+      tokenCleared: switchedEndpoint,
+    };
   }
 
   function resolveConfig(enhanceOn) {
@@ -138,46 +162,87 @@
     });
   }
 
+  function uploadMimeType(dataUrl, fallback) {
+    var match = /^data:([^;,]+)/i.exec(String(dataUrl || ''));
+    return match ? String(match[1]).toLowerCase() : (fallback || 'image/jpeg');
+  }
+
+  function canvasToJpegDataUrl(source, width, height) {
+    if (!source || typeof document === 'undefined') return '';
+    var w = width || source.width || source.naturalWidth || 0;
+    var h = height || source.height || source.naturalHeight || 0;
+    if (!w || !h) return '';
+    var scale = 1;
+    var edge = Math.max(w, h);
+    if (edge > MAX_UPLOAD_EDGE) scale = MAX_UPLOAD_EDGE / edge;
+    var cw = Math.max(1, Math.round(w * scale));
+    var ch = Math.max(1, Math.round(h * scale));
+    var canvas = document.createElement('canvas');
+    canvas.width = cw;
+    canvas.height = ch;
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) return '';
+    ctx.drawImage(source, 0, 0, cw, ch);
+    try {
+      return canvas.toDataURL('image/jpeg', 0.88);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function decodeWithImageElement(file) {
+    if (!file || typeof Image === 'undefined' || typeof URL === 'undefined') {
+      return Promise.resolve('');
+    }
+    return new Promise(function (resolve) {
+      var url;
+      try { url = URL.createObjectURL(file); } catch (_) { resolve(''); return; }
+      var img = new Image();
+      img.onload = function () {
+        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+        resolve(canvasToJpegDataUrl(img) || '');
+      };
+      img.onerror = function () {
+        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+        resolve('');
+      };
+      img.src = url;
+    });
+  }
+
   /**
-   * EXIF-upright + shrink before upload. Panel directories are often landscape
-   * pixels with Orientation=6; sending them sideways hurts VLM accuracy and
-   * burns tokens. Falls back to the raw file data URL on any failure.
+   * EXIF-upright + shrink + JPEG re-encode before upload. HEIC/BMP/TIFF picks
+   * become image/jpeg when the browser can decode them so the proxy MIME
+   * check matches the data URL. Falls back to the raw file data URL on any
+   * failure.
    */
   function prepareUploadDataUrl(file) {
-    if (!file || typeof createImageBitmap !== 'function' || typeof document === 'undefined') {
+    if (!file || typeof document === 'undefined') {
       return fileToDataUrl(file);
     }
-    return createImageBitmap(file, { imageOrientation: 'from-image' })
-      .catch(function () { return createImageBitmap(file); })
-      .then(function (bitmap) {
-        try {
-          var w = bitmap.width || 0;
-          var h = bitmap.height || 0;
-          if (!w || !h) {
+    var fromBitmap = Promise.resolve('');
+    if (typeof createImageBitmap === 'function') {
+      fromBitmap = createImageBitmap(file, { imageOrientation: 'from-image' })
+        .catch(function () { return createImageBitmap(file); })
+        .then(function (bitmap) {
+          if (!bitmap) return '';
+          try {
+            var jpeg = canvasToJpegDataUrl(bitmap, bitmap.width, bitmap.height);
             try { bitmap.close(); } catch (_) { /* ignore */ }
-            return fileToDataUrl(file);
+            return jpeg;
+          } catch (_) {
+            try { bitmap.close(); } catch (__) { /* ignore */ }
+            return '';
           }
-          var scale = 1;
-          var edge = Math.max(w, h);
-          if (edge > MAX_UPLOAD_EDGE) scale = MAX_UPLOAD_EDGE / edge;
-          var cw = Math.max(1, Math.round(w * scale));
-          var ch = Math.max(1, Math.round(h * scale));
-          var canvas = document.createElement('canvas');
-          canvas.width = cw;
-          canvas.height = ch;
-          var ctx = canvas.getContext && canvas.getContext('2d');
-          if (!ctx) {
-            try { bitmap.close(); } catch (_) { /* ignore */ }
-            return fileToDataUrl(file);
-          }
-          ctx.drawImage(bitmap, 0, 0, cw, ch);
-          try { bitmap.close(); } catch (_) { /* ignore */ }
-          return canvas.toDataURL('image/jpeg', 0.88);
-        } catch (_) {
-          try { bitmap.close(); } catch (__) { /* ignore */ }
-          return fileToDataUrl(file);
-        }
-      }, function () { return fileToDataUrl(file); });
+        }, function () { return ''; });
+    }
+    return fromBitmap.then(function (jpeg) {
+      if (jpeg && jpeg.indexOf('data:image/jpeg') === 0) return jpeg;
+      return decodeWithImageElement(file).then(function (fromImage) {
+        if (fromImage && fromImage.indexOf('data:image/jpeg') === 0) return fromImage;
+        return fileToDataUrl(file);
+      });
+    });
   }
 
   function extractJsonObject(text) {
@@ -228,6 +293,11 @@
     return Schema.normalizeDraft(payload, { source: source, rawText: rawFallback || (payload && payload.raw_ocr) });
   }
 
+  function visionDraftInput(payload) {
+    if (payload && payload.analysis && typeof payload.analysis === 'object') return payload.analysis;
+    return payload || {};
+  }
+
   function postVision(url, body, token) {
     var headers = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = 'Bearer ' + token;
@@ -266,15 +336,13 @@
       onProgress(0.4, 'Uploading photo for optional AI enhance…');
       var body = {
         imageBase64: dataUrl,
-        mimeType: (String(dataUrl).indexOf('data:image/png') === 0)
-          ? 'image/png'
-          : ((file && file.type) || 'image/jpeg'),
+        mimeType: uploadMimeType(dataUrl, 'image/jpeg'),
         task: task,
       };
       var token = config.mode === 'custom' ? config.token : '';
       return postVision(url, body, token).then(function (payload) {
         onProgress(0.85, 'Reading AI draft…');
-        var analysis = payload.analysis || payload.fields || payload;
+        var analysis = visionDraftInput(payload);
         var draft = analyzePayload(analysis, task, 'vlm-' + config.mode, payload.raw_ocr || analysis.raw_ocr);
         onProgress(1, 'AI draft ready. Review every field.');
         return {
@@ -364,6 +432,7 @@
     MAX_BYTES: MAX_BYTES,
     loadSettings: loadSettings,
     saveSettings: saveSettings,
+    saveFormSettings: saveFormSettings,
     resolveConfig: resolveConfig,
     endpointFor: endpointFor,
     metaApiBase: metaApiBase,
@@ -378,7 +447,10 @@
     extractJsonObject: extractJsonObject,
     analyzePayload: analyzePayload,
     prepareUploadDataUrl: prepareUploadDataUrl,
+    uploadMimeType: uploadMimeType,
+    visionDraftInput: visionDraftInput,
     fileToDataUrl: fileToDataUrl,
+    PROXY_DOWNSTREAM_NOTE: PROXY_DOWNSTREAM_NOTE,
     rowsFromPanelDraft: rowsFromPanelDraft,
     panelMetaFromDraft: panelMetaFromDraft,
     MAX_UPLOAD_EDGE: MAX_UPLOAD_EDGE,

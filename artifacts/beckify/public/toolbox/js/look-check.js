@@ -133,14 +133,22 @@ function lookSyncSettings() {
     if (saved.token && lookEl.token) lookEl.token.value = saved.token;
     lookEl.endpoint.dataset.hydrated = '1';
   }
-  if (lookEl.endpoint) Vlm.saveSettings({ endpoint: lookEl.endpoint.value });
-  if (lookEl.token) Vlm.saveSettings({ token: lookEl.token.value });
+  if (lookEl.endpoint || lookEl.token) {
+    const savedForm = Vlm.saveFormSettings
+      ? Vlm.saveFormSettings(lookEl.endpoint && lookEl.endpoint.value, lookEl.token && lookEl.token.value)
+      : Vlm.saveSettings({
+        endpoint: lookEl.endpoint && lookEl.endpoint.value,
+        token: lookEl.token && lookEl.token.value,
+      });
+    if (savedForm && savedForm.tokenCleared && lookEl.token) lookEl.token.value = '';
+  }
   if (!lookEl.configNote) return;
   const cfg = Vlm.resolveConfig(true);
   if (cfg.mode === 'custom') {
     lookEl.configNote.textContent = 'Custom HTTPS endpoint will receive the photo when you click Analyze Look.';
   } else if (cfg.mode === 'proxy') {
-    lookEl.configNote.textContent = 'Beckify proxy (' + cfg.proxyUrl + '/api/analyze-look) will receive the photo when you click Analyze Look.';
+    lookEl.configNote.textContent = 'Beckify proxy (' + cfg.proxyUrl + '/api/analyze-look) will receive the photo when you click Analyze Look. '
+      + (Vlm.PROXY_DOWNSTREAM_NOTE || 'The Beckify proxy may forward the photo to OpenAI and/or Anthropic.');
   } else {
     lookEl.configNote.textContent = 'No custom URL yet. Analyze Look uses the Beckify API on this site when available.';
   }

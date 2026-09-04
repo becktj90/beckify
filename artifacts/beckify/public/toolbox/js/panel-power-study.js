@@ -209,7 +209,7 @@ function syncVlmUi() {
     elements.privacyBanner.classList.toggle('is-upload', on);
     const strong = elements.privacyBanner.querySelector('strong');
     const label = on
-      ? ' Enhance with AI is on. The photo will leave this device only when you click Read Schedule. Default Tesseract stays available if you turn this off.'
+      ? ' Enhance with AI is on. The photo will leave this device only when you click Read Schedule. If you use the Beckify proxy, the photo may be forwarded to OpenAI and/or Anthropic. Default Tesseract stays available if you turn this off.'
       : ' The photo stays on this device. It is never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read Schedule. On-device Tesseract.js is the default. The image is not saved after you leave or reset.';
     if (strong) {
       strong.textContent = 'Privacy before you pick a photo.';
@@ -225,14 +225,22 @@ function syncVlmUi() {
     elements.vlmEndpoint.dataset.hydrated = '1';
   }
   if (Vlm && on) {
-    if (elements.vlmEndpoint) Vlm.saveSettings({ endpoint: elements.vlmEndpoint.value });
-    if (elements.vlmToken) Vlm.saveSettings({ token: elements.vlmToken.value });
+    const savedForm = Vlm.saveFormSettings
+      ? Vlm.saveFormSettings(elements.vlmEndpoint && elements.vlmEndpoint.value, elements.vlmToken && elements.vlmToken.value)
+      : Vlm.saveSettings({
+        endpoint: elements.vlmEndpoint && elements.vlmEndpoint.value,
+        token: elements.vlmToken && elements.vlmToken.value,
+      });
+    if (savedForm && savedForm.tokenCleared && elements.vlmToken) elements.vlmToken.value = '';
   }
   if (elements.vlmConfig && Vlm) {
     const cfg = Vlm.resolveConfig(on);
     if (!on) elements.vlmConfig.textContent = 'Enhance is off. On-device Tesseract is the default.';
     else if (cfg.mode === 'custom') elements.vlmConfig.textContent = 'Custom HTTPS endpoint will receive the photo when you click Read Schedule.';
-    else if (cfg.mode === 'proxy') elements.vlmConfig.textContent = `Beckify proxy (${cfg.proxyUrl}/api/analyze-panel) will receive the photo when you click Read Schedule.`;
+    else if (cfg.mode === 'proxy') {
+      elements.vlmConfig.textContent = `Beckify proxy (${cfg.proxyUrl}/api/analyze-panel) will receive the photo when you click Read Schedule. `
+        + (Vlm.PROXY_DOWNSTREAM_NOTE || 'The Beckify proxy may forward the photo to OpenAI and/or Anthropic.');
+    }
     else elements.vlmConfig.textContent = 'No HTTPS endpoint is configured. Read Schedule will stay on-device Tesseract.';
   }
 }

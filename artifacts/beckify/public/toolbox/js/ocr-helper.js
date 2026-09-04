@@ -404,6 +404,16 @@
     return run();
   }
 
+  function mapOcrProgress(opts) {
+    opts = opts || {};
+    var ratio = typeof opts.ratio === 'number' ? opts.ratio : 0;
+    if (ratio < 0) ratio = 0;
+    if (ratio > 1) ratio = 1;
+    if (!opts.directoryMode) return ratio;
+    if ((opts.pass || 1) <= 1) return ratio * 0.55;
+    return 0.62 + ratio * 0.38;
+  }
+
   function recognize(file, opts) {
     opts = opts || {};
     if (!file) return Promise.reject(new Error('Choose a photo first.'));
@@ -413,6 +423,13 @@
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
     var directoryMode = opts.mode === 'directory';
     var preprocessOpts = directoryMode ? { maxEdge: MAX_DIRECTORY_EDGE } : {};
+    var lastProgress = 0;
+    var directoryPass = 1;
+    function reportProgress(ratio, status) {
+      var next = Math.max(lastProgress, Math.max(0, Math.min(1, Number(ratio) || 0)));
+      lastProgress = next;
+      onProgress(next, status || '');
+    }
     return loadScript().then(function (Tesseract) {
       return preprocessForOcr(file, preprocessOpts).then(function (source) {
         return Tesseract.createWorker('eng', 1, {
@@ -422,14 +439,19 @@
           gzip: true,
           logger: function (message) {
             var ratio = typeof message.progress === 'number' ? message.progress : 0;
-            onProgress(ratio * (directoryMode ? 0.55 : 1), message.status || '');
+            reportProgress(mapOcrProgress({
+              ratio: ratio,
+              directoryMode: directoryMode,
+              pass: directoryPass,
+            }), message.status || '');
           },
         }).then(function (worker) {
           var firstPsm = directoryMode ? 4 : 3;
           return recognizeOnce(worker, source, firstPsm).then(function (first) {
             var best = packOcrResult(first);
             if (!directoryMode || best.score >= 6) return best;
-            onProgress(0.62, 'Trying a second pass for a rotated directory…');
+            directoryPass = 2;
+            reportProgress(0.62, 'Trying a second pass for a rotated directory…');
             return rotateImageSource(source, 90).then(function (rotated) {
               return recognizeOnce(worker, rotated, 4).then(function (second) {
                 var scored = packOcrResult(second);
@@ -597,6 +619,7 @@
     MAX_PREPROCESS_EDGE: MAX_PREPROCESS_EDGE,
     MAX_DIRECTORY_EDGE: MAX_DIRECTORY_EDGE,
     ACCEPTED_IMAGE_LABEL: ACCEPTED_IMAGE_LABEL,
+    mapOcrProgress: mapOcrProgress,
     VENDOR: VENDOR,
   };
   global.__ocrHelperTestApi = global.BeckifyOcr;

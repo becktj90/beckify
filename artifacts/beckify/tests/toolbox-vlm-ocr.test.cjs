@@ -30,6 +30,12 @@ const sandbox = {
   document: {
     querySelector() { return { getAttribute() { return ''; } }; },
   },
+  FileReader: class {
+    readAsDataURL() {
+      this.result = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+      if (typeof this.onload === 'function') this.onload();
+    }
+  },
   fetch() { throw new Error('fetch should not run in this unit test unless stubbed'); },
 };
 sandbox.window = sandbox;
@@ -50,6 +56,11 @@ assert.equal(typeof api.analyzeLook, 'function');
 
 assert.equal(api.httpsBase('http://evil.example'), '');
 assert.equal(api.httpsBase('https://api.beckify.com/'), 'https://api.beckify.com');
+assert.equal(api.httpsBase('https://proxy.example/ocr?version=2&region=us'), 'https://proxy.example/ocr?version=2&region=us');
+assert.equal(api.httpsBase('https://proxy.example/ocr/?v=1'), 'https://proxy.example/ocr?v=1');
+assert.equal(api.uploadMimeType('data:image/jpeg;base64,/9j/xxxx', 'image/heic'), 'image/jpeg');
+assert.equal(api.uploadMimeType('data:image/png;base64,iVBOR', 'image/tiff'), 'image/png');
+assert.equal(api.uploadMimeType('not-a-data-url', 'image/jpeg'), 'image/jpeg');
 
 let cfg = api.resolveConfig(false);
 assert.equal(cfg.ready, false);
@@ -60,6 +71,25 @@ assert.equal(store[api.SETTINGS_KEY], 'https://proxy.example/ocr');
 assert.equal(session[api.TOKEN_KEY], 'secret-token');
 assert.ok(!Object.values(store).includes('secret-token'));
 
+api.saveSettings({ endpoint: '', token: '' });
+const firstForm = api.saveFormSettings('https://fresh.example/ocr', 'fresh-token');
+assert.equal(firstForm.token, 'fresh-token');
+assert.equal(firstForm.tokenCleared, false);
+assert.equal(session[api.TOKEN_KEY], 'fresh-token');
+
+api.saveSettings({ endpoint: 'https://other.example/vision' });
+assert.equal(store[api.SETTINGS_KEY], 'https://other.example/vision');
+assert.equal(session[api.TOKEN_KEY] || '', '');
+const clearedForm = api.saveFormSettings('https://third.example/ocr', 'stale-token');
+assert.equal(clearedForm.token, '');
+assert.equal(clearedForm.tokenCleared, true);
+assert.equal(session[api.TOKEN_KEY] || '', '');
+api.saveSettings({ endpoint: 'https://proxy.example/ocr?version=2', token: 'secret-token' });
+assert.equal(store[api.SETTINGS_KEY], 'https://proxy.example/ocr?version=2');
+assert.equal(session[api.TOKEN_KEY], 'secret-token');
+assert.equal(api.resolveConfig(true).customUrl, 'https://proxy.example/ocr?version=2');
+
+api.saveSettings({ endpoint: 'https://proxy.example/ocr', token: 'secret-token' });
 cfg = api.resolveConfig(true);
 assert.equal(cfg.mode, 'custom');
 assert.equal(cfg.ready, true);
@@ -86,6 +116,16 @@ assert.equal(vlmDraft.fields.ratedHP.value, 10);
 assert.equal(vlmDraft.fields.fla.value, null);
 assert.equal(vlmDraft.fields.mocp.value, 30);
 
+const byoEnvelope = api.analyzePayload(api.visionDraftInput({
+  fields: { ratedHP: { value: 5, confidence: 0.8 }, fla: { value: null, confidence: 0 } },
+  raw_ocr: 'HP 5 glare',
+  warnings: ['FLA unreadable under glare'],
+  dualFla: '28/14',
+}), 'nameplate', 'vlm-custom', 'HP 5 glare');
+assert.ok(byoEnvelope.warnings.some((w) => /glare/i.test(w)));
+assert.equal(byoEnvelope.extras.dualFla, '28/14');
+assert.equal(byoEnvelope.fields.ratedHP.value, 5);
+
 const panelDraft = api.analyzePayload({
   circuits: [{ circuit: '3', description: 'Lighting', trip: 20, poles: 1 }],
 }, 'panel', 'vlm-test');
@@ -110,9 +150,47 @@ sandbox.BECKIFY_API_BASE_URL = '';
     /no HTTPS endpoint/i,
   );
 
+  api.saveSettings({ endpoint: 'https://proxy.example/ocr', token: 'keep-me' });
+  let posted;
+  sandbox.createImageBitmap = function () {
+    return Promise.resolve({
+      width: 4,
+      height: 4,
+      close() {},
+    });
+  };
+  sandbox.document.createElement = function () {
+    return {
+      width: 0,
+      height: 0,
+      getContext() { return { drawImage() {} }; },
+      toDataURL() { return 'data:image/jpeg;base64,/9j/encodedFromCanvas'; },
+    };
+  };
+  sandbox.fetch = function (_url, opts) {
+    posted = JSON.parse(opts.body);
+    return Promise.resolve({
+      ok: true,
+      json() {
+        return Promise.resolve({
+          fields: { ratedHP: { value: 7.5, confidence: 0.8 } },
+          raw_ocr: 'HP 7.5',
+          warnings: ['ambiguous FLA'],
+        });
+      },
+    });
+  };
+  const enhanced = await api.analyzeNameplate({ size: 24, type: 'image/heic' }, { enhanceOn: true });
+  assert.equal(posted.mimeType, 'image/jpeg');
+  assert.match(posted.imageBase64, /^data:image\/jpeg/);
+  assert.ok(enhanced.warnings.some((w) => /ambiguous FLA/i.test(w)));
+  assert.equal(enhanced.draft.fields.ratedHP.value, 7.5);
+  api.saveSettings({ endpoint: '', token: '' });
+
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
   assert.match(html, /id="mnp_enhance"[^>]*data-no-persist/);
   assert.match(html, /Enhance with AI/);
+  assert.match(html, /OpenAI and\/or Anthropic/);
   assert.match(html, /not an AI electrician/);
   assert.match(html, /js\/vlm-ocr\.js/);
   assert.match(html, /js\/nameplate-schema\.js/);

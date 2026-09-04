@@ -197,7 +197,8 @@
       raw.warnings.forEach(function (w) { draft.warnings.push(String(w)); });
     }
 
-    var payload = raw && raw.fields && typeof raw.fields === 'object' ? raw.fields : (raw || {});
+    var envelope = raw && typeof raw === 'object' ? raw : {};
+    var payload = envelope.fields && typeof envelope.fields === 'object' ? envelope.fields : envelope;
     var fallbackConf = opts.confidence === undefined || opts.confidence === null
       ? 0.5
       : clampConfidence(opts.confidence);
@@ -209,10 +210,23 @@
       draft.fields[spec.name] = fieldFrom(unwrapRaw(cell), type, rawConfidence(cell, fallbackConf));
     });
 
-    if (payload.insulation !== undefined) draft.extras.insulation = asString(unwrapRaw(payload.insulation)) || '';
-    if (payload.riseC !== undefined) draft.extras.riseC = asString(unwrapRaw(payload.riseC)) || '';
-    if (payload.flaDisplay) draft.extras.flaDisplay = asString(payload.flaDisplay) || '';
-    if (payload.dualFla) draft.extras.dualFla = asString(payload.dualFla) || '';
+    function extraFrom(key) {
+      if (payload[key] !== undefined) return asString(unwrapRaw(payload[key])) || '';
+      if (envelope !== payload && envelope[key] !== undefined) return asString(unwrapRaw(envelope[key])) || '';
+      return '';
+    }
+    if (payload.insulation !== undefined || envelope.insulation !== undefined) {
+      draft.extras.insulation = extraFrom('insulation');
+    }
+    if (payload.riseC !== undefined || envelope.riseC !== undefined) {
+      draft.extras.riseC = extraFrom('riseC');
+    }
+    if (payload.flaDisplay || envelope.flaDisplay) {
+      draft.extras.flaDisplay = extraFrom('flaDisplay');
+    }
+    if (payload.dualFla || envelope.dualFla) {
+      draft.extras.dualFla = extraFrom('dualFla');
+    }
 
     applyFlaTraps(draft, rawFla);
     draft.filled = countFilled(draft.fields);

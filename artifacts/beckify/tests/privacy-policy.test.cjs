@@ -49,7 +49,9 @@ ok(
     /analyze-nameplate/.test(privacyPage) &&
     /analyze-panel/.test(privacyPage) &&
     /analyze-tdr/.test(privacyPage) &&
-    /analyze-look/.test(privacyPage),
+    /analyze-look/.test(privacyPage) &&
+    /OpenAI/.test(privacyPage) &&
+    /Anthropic/.test(privacyPage),
 );
 
 process.exitCode = failures ? 1 : 0;

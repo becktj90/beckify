@@ -118,6 +118,12 @@ assert.equal(api.looksLikeOpenPanelInterior('live parts behind the dead front ne
 assert.equal(api.meanWordConfidence(null), 0);
 assert.equal(api.meanWordConfidence({}), 0);
 assert.equal(api.meanWordConfidence({ confidence: 81, words: [] }), 81);
+assert.equal(api.mapOcrProgress({ ratio: 1, directoryMode: true, pass: 1 }), 0.55);
+assert.equal(api.mapOcrProgress({ ratio: 0, directoryMode: true, pass: 2 }), 0.62);
+assert.ok(api.mapOcrProgress({ ratio: 0.1, directoryMode: true, pass: 2 }) > 0.62);
+assert.ok(api.mapOcrProgress({ ratio: 1, directoryMode: true, pass: 2 }) >= 0.99);
+assert.ok(api.mapOcrProgress({ ratio: 1, directoryMode: true, pass: 1 })
+  < api.mapOcrProgress({ ratio: 0, directoryMode: true, pass: 2 }));
 
 const vendorDir = path.join(root, 'vendor', 'tesseract');
 for (const file of ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-lstm.wasm.js', 'eng.traineddata.gz']) {
