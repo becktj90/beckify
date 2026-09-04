@@ -18,7 +18,7 @@ final class CalculationSessionTests: XCTestCase {
             "signalScaling", "plcTimer", "timer555", "motorFLA", "wireAmpacity",
             "voltageDivider", "seriesParallel", "frequencyWave", "ledRC",
             "receptacleSelector", "panelDirectory", "powerWizard",
-            "motorSpeed", "rfLink", "phasorDiagram", "batteryBank",
+            "motorSpeed", "rfLink", "phasorDiagram", "batteryBank", "solarDesign",
         ]
         for id in explicit {
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .explicit, id)

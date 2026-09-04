@@ -63,6 +63,7 @@ const SHELL = [
   './js/factor-tools.js',
   './js/xfmr-engine.js',
   './js/heater-wizard.js',
+  './js/solar-wizard.js',
   './js/timer555.js',
   './js/report-export.js',
   './js/url-state.js',

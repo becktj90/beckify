@@ -134,7 +134,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">EE Toolbox</h2>
                     <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
-                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, linear-programming optimizer, number-base converter, I/O list, signal scaling, cable schedule, battery bank, and motor nameplate tools.
+                      {PUBLIC_CALCULATOR_COUNT} calculators. Voltage drop, conduit fill, ampacity, transformer sizing, short circuit, harmonics, TDR, EMP/EMC shielding, homework EE, solar design, linear-programming optimizer, number-base converter, I/O list, signal scaling, cable schedule, battery bank, and motor nameplate tools.
                     </p>
                   </div>
                 </a>
@@ -160,6 +160,7 @@ export default function Home() {
                     { href: "/toolbox/#sec-lux-meter", label: "Lux meter" },
                     { href: "/toolbox/#sec-cable-schedule", label: "Cable schedule" },
                     { href: "/toolbox/#sec-nema-wiring", label: "NEMA wiring" },
+                    { href: "/toolbox/#sec-solar-wizard", label: "Solar design" },
                     { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
                     { href: "/toolbox/#sec-ebike-tools", label: "Battery pack designer" },
                     { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },

@@ -32,7 +32,7 @@ Permissions are requested only when the related tool is used, not at launch (exc
 | --- | --- | --- |
 | Microphone | Noise Meter | Relative dBFS from live audio. Not recorded, not uploaded, not a calibrated SLM. |
 | Bluetooth | BLE Scanner | Nearby BLE advertisements (name, identifier, RSSI, advertised service UUIDs). Not uploaded. |
-| Location (When In Use) | Position; Wi-Fi Path (SSID / 0…1 amplitude / optional GPS coverage sketch) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples. Not used at launch. Not uploaded. |
+| Location (When In Use) | Position; Wi-Fi Path; Solar Design Wizard (optional latitude) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples, optional latitude for PV tilt advice. Not used at launch. Not uploaded. |
 
 Photo Library full access is **not** requested. Panel Directory can use the system photo picker (`PhotosPicker`) so you choose one image; Vision text recognition runs on that image on-device and the recognized text stays in the tool. Nothing is uploaded.
 

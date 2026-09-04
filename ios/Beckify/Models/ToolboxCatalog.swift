@@ -59,6 +59,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case loadWorksheet
     case cableSchedule
     case solenoidDesign
+    case solarDesign
 
     var id: String { rawValue }
 }
@@ -573,6 +574,14 @@ enum ToolboxCatalog {
             symbol: "cylinder.split.1x2",
             synonyms: ["solenoid", "coil", "electromagnet", "ampere turns", "plunger", "inductance", "winding"]
         ),
+        ToolDefinition(
+            id: .solarDesign,
+            kind: .calculator,
+            title: "Solar Design Wizard",
+            subtitle: "PV from rooftop to utility — aim with phone sensors, optional storage sizing.",
+            symbol: "sun.max.fill",
+            synonyms: ["solar", "photovoltaic", "pv", "panel tilt", "azimuth", "peak sun hours", "battery storage", "bess", "array", "orientation"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -585,7 +594,7 @@ enum ToolboxCatalog {
         ],
         .power: [
             .ohmsLaw, .power, .transformer, .tapChanger, .reactance, .powerFactor, .harmonicsTHD,
-            .rfLink, .batteryBank, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
+            .rfLink, .batteryBank, .solarDesign, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent,
@@ -660,8 +669,8 @@ enum ToolboxCatalog {
         .wifiStatus: [.bluetoothScan, .fieldPosition, .deviceHealth],
         .bluetoothScan: [.wifiStatus, .deviceHealth],
         .noiseMeter: [.deviceHealth],
-        .bubbleLevel: [.motionSnapshot, .magnetometer, .fieldPosition],
-        .magnetometer: [.bubbleLevel, .fieldPosition, .motionSnapshot],
+        .bubbleLevel: [.motionSnapshot, .magnetometer, .solarDesign],
+        .magnetometer: [.bubbleLevel, .solarDesign, .motionSnapshot],
         .barometer: [.fieldPosition, .deviceHealth],
         .motionSnapshot: [.bubbleLevel, .magnetometer],
         .fieldPosition: [.magnetometer, .wifiStatus, .barometer],
@@ -679,7 +688,8 @@ enum ToolboxCatalog {
         .rfLink: [.frequencyWave, .reactance, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
-        .batteryBank: [.power, .unitConverter, .ohmsLaw],
+        .batteryBank: [.power, .solarDesign, .ohmsLaw],
+        .solarDesign: [.batteryBank, .power, .bubbleLevel, .magnetometer],
         .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector],
         .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
         .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],

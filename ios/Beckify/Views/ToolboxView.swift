@@ -183,6 +183,7 @@ struct CalculatorHostView: View {
             case .loadWorksheet: LoadWorksheetView()
             case .cableSchedule: CableScheduleView()
             case .solenoidDesign: SolenoidDesignView()
+            case .solarDesign: SolarDesignWizardView()
             }
         }
     }

@@ -218,6 +218,7 @@
       <div class="sidebar-section-title">04 · System planning</div>
       <button class="nav-btn" data-target="sec-ups" data-keywords="ups generator hybrid bess peak shave on-site standby battery energy storage">On-site power</button>
       <button class="nav-btn" data-target="sec-heater-wizard" data-keywords="heater wizard industrial resistive element design nichrome kanthal wire gauge awg wye delta three phase single phase duct immersion coil resistance alloy">Heater | Design Wizard</button>
+      <button class="nav-btn" data-target="sec-solar-wizard" data-keywords="solar design wizard photovoltaic pv array tilt azimuth peak sun hours battery storage bess residential commercial utility panel orientation device orientation compass">Solar | Design Wizard</button>
       <button class="nav-btn" data-target="sec-lsi">LSI Breaker Visualizer</button>
       <button class="nav-btn" data-target="sec-tap" data-keywords="tap changer detc oltc 23kv 480v de-energized tap">Tap-Changer Calc</button>
       <button class="nav-btn" data-target="sec-harmonics">Harmonics Tool</button>
@@ -346,6 +347,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">🔋</span><span class="home-cat-name">Power Systems</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-ups">On-site power (UPS / generator / hybrid / BESS)</a></li>
+            <li><a class="home-tool-link" href="#sec-solar-wizard">Solar Design Wizard</a></li>
           </ul>
         </div>
 
@@ -5847,6 +5849,223 @@
       </div>
     </section><!-- end sec-heater-wizard -->
 
+
+    <!-- ════════════════════════════════════════
+         SOLAR DESIGN WIZARD
+         ════════════════════════════════════════ -->
+    <section id="sec-solar-wizard" class="section">
+      <div class="section-header">
+        <h2>☀ Solar Design Wizard</h2>
+        <p>Size PV arrays from rooftop homes to utility facilities, aim panels with phone sensors, and optionally size energy storage.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Solar Design Wizard</summary>
+          <div class="section-info-body">
+            <strong>Array sizing</strong> uses Daily_kWh / (PSH × η × orientation factor) to find DC kW, then ceil-divides by module wattage for panel count.<br><br>
+            <ul>
+              <li><strong>Optimal tilt</strong> ≈ |latitude| year-round; summer ≈ lat−15°; winter ≈ lat+15°. Azimuth 180° (true south) in the northern hemisphere, 0° (true north) in the southern.</li>
+              <li><strong>Orientation factor</strong> is a transparent cosine model of tilt and azimuth error — not Perez/Hay-Davies and not a shade study.</li>
+              <li><strong>PSH presets</strong> and system efficiency are editable planning defaults, not measured site data.</li>
+              <li><strong>Storage</strong> (optional) sizes nameplate kWh = usable / (DoD × round-trip η) for autonomy, peak-shave, or self-consumption modes.</li>
+              <li><strong>Phone sensors</strong> use DeviceOrientation: lay the phone face-up on the module for tilt; point the top of the phone toward the skyward edge for azimuth.</li>
+            </ul>
+            Planning aid only — not a PE stamp, interconnection study, structural calc, or fire-code review.
+          </div>
+        </details>
+      </div>
+
+      <div class="card-grid two-col">
+        <div class="card">
+          <div class="card-title">1 · Site &amp; load</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Array_kW ≈ Daily_kWh / (PSH × η × f_orient)<br>
+              Panels = ceil(Array_kW × 1000 / W_module)
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="solar_scale">System scale</label>
+                <select id="solar_scale" name="solar_scale" onchange="solarOnScaleChange()">
+                  <option value="residential" selected>Residential (rooftop / small)</option>
+                  <option value="commercial">Commercial / campus</option>
+                  <option value="utility">Utility / large facility</option>
+                </select>
+              </div>
+              <div>
+                <label for="solar_lat">Latitude (°)</label>
+                <input id="solar_lat" name="solar_lat" type="number" value="40" min="-90" max="90" step="any" inputmode="decimal" onchange="solarUpdateAdvice()">
+              </div>
+            </div>
+            <div class="note" id="solar_advice_banner">Suggested fixed tilt updates from latitude.</div>
+            <div class="input-group">
+              <div>
+                <label for="solar_daily_kwh">Daily energy need (kWh/day)</label>
+                <input id="solar_daily_kwh" name="solar_daily_kwh" type="number" value="30" min="0" step="any" inputmode="decimal">
+              </div>
+              <div>
+                <label for="solar_psh_preset">Peak sun hours climate</label>
+                <select id="solar_psh_preset" name="solar_psh_preset" onchange="solarOnPshPresetChange()">
+                  <option value="arid">Arid / desert (6.0)</option>
+                  <option value="southwest">US Southwest / Mediterranean (5.5)</option>
+                  <option value="temperate" selected>Temperate sunny (4.5)</option>
+                  <option value="mixed">Mixed / cloudy temperate (3.5)</option>
+                  <option value="cloudy">Cloudy / high latitude (2.5)</option>
+                  <option value="custom">Custom…</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" id="solar_psh_custom_wrap" hidden>
+              <div>
+                <label for="solar_psh">Custom peak sun hours (h/day)</label>
+                <input id="solar_psh" name="solar_psh" type="number" value="4.5" min="0" max="12" step="any" inputmode="decimal">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">2 · Modules &amp; orientation</div>
+          <div class="card-body">
+            <div class="input-group">
+              <div>
+                <label for="solar_panel_w">Module STC power (W)</label>
+                <input id="solar_panel_w" name="solar_panel_w" type="number" value="400" min="1" step="any" inputmode="decimal" list="solar_panel_w_list">
+                <datalist id="solar_panel_w_list">
+                  <option value="300"></option><option value="400"></option>
+                  <option value="450"></option><option value="550"></option><option value="700"></option>
+                </datalist>
+              </div>
+              <div>
+                <label for="solar_panel_count">Panel count override (optional)</label>
+                <input id="solar_panel_count" name="solar_panel_count" type="number" placeholder="auto" min="1" step="1" inputmode="numeric">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="solar_tilt">Tilt from horizontal (°)</label>
+                <input id="solar_tilt" name="solar_tilt" type="number" value="40" min="0" max="90" step="any" inputmode="decimal">
+              </div>
+              <div>
+                <label for="solar_azimuth">Azimuth (° from N, clockwise)</label>
+                <input id="solar_azimuth" name="solar_azimuth" type="number" value="180" min="0" max="360" step="any" inputmode="decimal">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="solar_eta">System efficiency η (%)</label>
+                <input id="solar_eta" name="solar_eta" type="number" value="80" min="1" max="100" step="any" inputmode="decimal">
+              </div>
+              <div>
+                <label for="solar_dcac">DC:AC ratio</label>
+                <input id="solar_dcac" name="solar_dcac" type="number" value="1.20" min="0.8" max="2" step="0.01" inputmode="decimal">
+              </div>
+            </div>
+            <button class="btn btn-secondary" type="button" onclick="solarApplyOptimalOrientation()">Use optimal tilt &amp; azimuth for latitude</button>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">3 · Phone sensor — panel aim</div>
+          <div class="card-body">
+            <div class="note">Lay the phone <strong>face-up on the module</strong> for tilt. Point the <strong>top of the phone toward the skyward (high) edge</strong> of the array for azimuth. On iOS Safari you must grant orientation permission. Magnetic interference near steel racks can skew heading.</div>
+            <div class="solar-sensor-layout">
+              <div class="solar-sensor-readouts">
+                <div class="input-group">
+                  <div><label>Measured tilt</label><div id="solar_sensor_tilt" class="solar-sensor-value">—</div></div>
+                  <div><label>Measured heading</label><div id="solar_sensor_heading" class="solar-sensor-value">—</div></div>
+                </div>
+                <div class="note" id="solar_sensor_status">Sensors idle</div>
+                <div class="note" id="solar_sensor_match">Start sensors to compare against your design targets.</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+                  <button class="btn" type="button" onclick="solarStartSensors()">Start phone sensors</button>
+                  <button class="btn btn-secondary" type="button" onclick="solarStopSensors()">Stop</button>
+                  <button class="btn btn-accent" type="button" onclick="solarUseSensorForDesign()">Use reading in design</button>
+                </div>
+              </div>
+              <svg id="solar_orient_gauge" class="solar-orient-gauge" viewBox="0 0 200 200" role="img" aria-label="Compass and tilt gauge for panel orientation">
+                <circle cx="100" cy="100" r="78" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="2"/>
+                <text x="100" y="28" text-anchor="middle" font-size="11" fill="currentColor">N</text>
+                <text x="100" y="188" text-anchor="middle" font-size="11" fill="currentColor">S</text>
+                <text x="18" y="104" text-anchor="middle" font-size="11" fill="currentColor">W</text>
+                <text x="182" y="104" text-anchor="middle" font-size="11" fill="currentColor">E</text>
+                <g id="solar_gauge_needle">
+                  <line x1="100" y1="100" x2="100" y2="32" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+                  <circle cx="100" cy="100" r="4" fill="#f59e0b"/>
+                </g>
+                <g id="solar_gauge_tip">
+                  <path d="M70 140 L130 140 L100 70 Z" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.85"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">4 · Energy storage (optional)</div>
+          <div class="card-body">
+            <label class="solar-check">
+              <input type="checkbox" id="solar_include_storage" name="solar_include_storage" onchange="solarOnStorageToggle()">
+              Include battery energy storage in this design
+            </label>
+            <div id="solar_storage_panel" hidden>
+              <div class="input-group" style="margin-top:12px">
+                <div>
+                  <label for="solar_storage_mode">Storage sizing mode</label>
+                  <select id="solar_storage_mode" name="solar_storage_mode" onchange="solarOnStorageModeChange()">
+                    <option value="autonomy" selected>Autonomy (days of load)</option>
+                    <option value="peakShave">Peak-shave (kW × hours)</option>
+                    <option value="selfConsumption">Self-consumption (% of daily PV)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="solar_storage_dod">Usable DoD (%)</label>
+                  <input id="solar_storage_dod" name="solar_storage_dod" type="number" value="90" min="1" max="100" step="any" inputmode="decimal">
+                </div>
+                <div>
+                  <label for="solar_storage_rte">Round-trip efficiency (%)</label>
+                  <input id="solar_storage_rte" name="solar_storage_rte" type="number" value="90" min="1" max="100" step="any" inputmode="decimal">
+                </div>
+              </div>
+              <div class="input-group" id="solar_mode_autonomy">
+                <div>
+                  <label for="solar_autonomy_days">Days of autonomy</label>
+                  <input id="solar_autonomy_days" name="solar_autonomy_days" type="number" value="1" min="0.1" step="any" inputmode="decimal">
+                </div>
+              </div>
+              <div class="input-group" id="solar_mode_peak" hidden>
+                <div>
+                  <label for="solar_peak_kw">Peak load to cover (kW)</label>
+                  <input id="solar_peak_kw" name="solar_peak_kw" type="number" value="5" min="0" step="any" inputmode="decimal">
+                </div>
+                <div>
+                  <label for="solar_peak_hours">Duration (h)</label>
+                  <input id="solar_peak_hours" name="solar_peak_hours" type="number" value="4" min="0" max="24" step="any" inputmode="decimal">
+                </div>
+              </div>
+              <div class="input-group" id="solar_mode_self" hidden>
+                <div>
+                  <label for="solar_self_pct">Fraction of daily PV to buffer (%)</label>
+                  <input id="solar_self_pct" name="solar_self_pct" type="number" value="40" min="1" max="100" step="any" inputmode="decimal">
+                </div>
+              </div>
+              <div class="formula-box">Nameplate_kWh = Usable_kWh / (DoD × η_RTE)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-body">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <button class="btn btn-accent" type="button" onclick="calcSolarDesign()">▶ Calculate solar design</button>
+              <button class="btn btn-secondary" type="button" onclick="solarExampleResidential()">Example: 30 kWh/day home</button>
+              <button class="btn btn-secondary" type="button" onclick="solarExampleUtility()">Example: 50 MWh/day facility</button>
+            </div>
+            <div id="solar_result" class="result"></div>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-solar-wizard -->
+
+
     <!-- ════════════════════════════════════════
          CIRCUIT SIMULATOR
          ════════════════════════════════════════ -->
@@ -11297,6 +11516,7 @@
 <script src="js/xfmr-wizard.js"></script>
 <script src="js/mv-cable.js"></script>
 <script src="js/heater-wizard.js"></script>
+<script src="js/solar-wizard.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
 <script src="js/emp-emc.js"></script>

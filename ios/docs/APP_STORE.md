@@ -59,6 +59,7 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
 • Number Base Converter — binary, octal, decimal, hex, plus signed 8/16/32-bit read of the same bits
 • E-Bus / Rack Current — sum device currents against a bus rating for headroom
+• Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
 • Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
 • Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
 

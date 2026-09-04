@@ -391,6 +391,7 @@ extension GlyphKind {
         case .loadWorksheet: return .loadWorksheet
         case .cableSchedule: return .cableSchedule
         case .solenoidDesign: return .solenoidDesign
+        case .solarDesign: return .solarDesign
         }
     }
 }
@@ -453,6 +454,7 @@ enum GlyphKind {
     case loadWorksheet
     case cableSchedule
     case solenoidDesign
+    case solarDesign
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -514,6 +516,7 @@ enum GlyphKind {
         case .loadWorksheet: return Self.loadWorksheet(rect)
         case .cableSchedule: return Self.cableSchedule(rect)
         case .solenoidDesign: return Self.solenoidDesign(rect)
+        case .solarDesign: return Self.solarDesign(rect)
         }
     }
 
@@ -1357,6 +1360,29 @@ enum GlyphKind {
         }
         path.move(to: CGPoint(x: r.midX, y: bottom + 2))
         path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.04))
+    private static func solarDesign(_ r: CGRect) -> Path {
+        var path = Path()
+        // Sun
+        let sunR = min(r.width, r.height) * 0.14
+        let sunC = CGPoint(x: r.minX + r.width * 0.72, y: r.minY + r.height * 0.28)
+        path.addEllipse(in: CGRect(x: sunC.x - sunR, y: sunC.y - sunR, width: sunR * 2, height: sunR * 2))
+        for i in 0..<8 {
+            let a = CGFloat(i) * .pi / 4
+            let inner = sunR * 1.25
+            let outer = sunR * 1.85
+            path.move(to: CGPoint(x: sunC.x + cos(a) * inner, y: sunC.y + sin(a) * inner))
+            path.addLine(to: CGPoint(x: sunC.x + cos(a) * outer, y: sunC.y + sin(a) * outer))
+        }
+        // Tilted panel parallelogram
+        let p0 = CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.22)
+        let p1 = CGPoint(x: r.minX + r.width * 0.55, y: r.maxY - r.height * 0.18)
+        let p2 = CGPoint(x: r.minX + r.width * 0.68, y: r.minY + r.height * 0.42)
+        let p3 = CGPoint(x: r.minX + r.width * 0.25, y: r.minY + r.height * 0.38)
+        path.move(to: p0); path.addLine(to: p1); path.addLine(to: p2); path.addLine(to: p3); path.closeSubpath()
+        path.move(to: CGPoint(x: (p0.x+p3.x)/2, y: (p0.y+p3.y)/2))
+        path.addLine(to: CGPoint(x: (p1.x+p2.x)/2, y: (p1.y+p2.y)/2))
+        path.move(to: CGPoint(x: (p0.x+p1.x)/2, y: (p0.y+p1.y)/2))
+        path.addLine(to: CGPoint(x: (p3.x+p2.x)/2, y: (p3.y+p2.y)/2))
         return path
     }
 
