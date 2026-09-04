@@ -57,6 +57,7 @@ struct ToolScaffold<Content: View>: View {
                 if showsIdentityHeader {
                     ToolIdentityHeader(toolID: toolID)
                 }
+                AboutToolCard(toolID: toolID)
                 if isResultStale {
                     StaleResultBanner()
                 }
@@ -94,6 +95,9 @@ struct ToolScaffold<Content: View>: View {
                 FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
                     favorites.toggle(toolID)
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                HowItWorksToolbarButton(toolID: toolID)
             }
             if let copyText, !copyText.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -270,6 +274,132 @@ struct TryExampleButton: View {
         .tint(Theme.accent)
         .accessibilityLabel("Try an example")
         .accessibilityHint(title)
+    }
+}
+
+/// Shared AppStorage key so the toolbar About control and `AboutToolCard` stay in sync.
+enum HowItWorksExpansion {
+    static func storageKey(for id: ToolID) -> String {
+        "com.beckify.toolbox.howItWorks.\(id.rawValue)"
+    }
+
+    static func defaultExpanded(for id: ToolID) -> Bool {
+        ToolboxCatalog.tool(id).kind == .homework
+    }
+}
+
+/// Compact toolbar affordance. Field stays inputs-first; this opens the same disclosure.
+struct HowItWorksToolbarButton: View {
+    let toolID: ToolID
+    @AppStorage private var expanded: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(toolID: ToolID) {
+        self.toolID = toolID
+        _expanded = AppStorage(
+            wrappedValue: HowItWorksExpansion.defaultExpanded(for: toolID),
+            HowItWorksExpansion.storageKey(for: toolID)
+        )
+    }
+
+    var body: some View {
+        Button {
+            BeckifyMotion.withOptionalAnimation(BeckifyMotion.staleReveal, reduceMotion: reduceMotion) {
+                expanded.toggle()
+            }
+        } label: {
+            Image(systemName: expanded ? "info.circle.fill" : "info.circle")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Theme.accent)
+                .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(expanded ? "Hide how \(ToolboxCatalog.tool(toolID).title) works" : "How \(ToolboxCatalog.tool(toolID).title) works")
+        .accessibilityHint("Shows a short how-it-works note. Inputs stay first.")
+        .accessibilityIdentifier("howItWorksToolbar.\(toolID.rawValue)")
+        .accessibilityAddTraits(expanded ? [.isSelected] : [])
+    }
+}
+
+/// Collapsed-by-default Field About card. Homework tools start open, matching Show Work.
+struct AboutToolCard: View {
+    let toolID: ToolID
+    @AppStorage private var expanded: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(toolID: ToolID) {
+        self.toolID = toolID
+        _expanded = AppStorage(
+            wrappedValue: HowItWorksExpansion.defaultExpanded(for: toolID),
+            HowItWorksExpansion.storageKey(for: toolID)
+        )
+    }
+
+    var body: some View {
+        if let copy = ToolboxCatalog.tool(toolID).howItWorks {
+            VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                Button {
+                    BeckifyMotion.withOptionalAnimation(BeckifyMotion.staleReveal, reduceMotion: reduceMotion) {
+                        expanded.toggle()
+                    }
+                } label: {
+                    HStack {
+                        Text("HOW IT WORKS")
+                            .font(Theme.TypeRole.sectionLabel)
+                            .tracking(0.8)
+                            .foregroundStyle(Theme.muted)
+                        Spacer()
+                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+                    .frame(minHeight: Theme.touchTarget)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("How it works")
+                .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+                .accessibilityHint("Short note on what this tool computes and its limits.")
+                .accessibilityIdentifier("howItWorksToggle.\(toolID.rawValue)")
+
+                if expanded {
+                    Text(copy.summary)
+                        .font(Theme.TypeRole.body)
+                        .foregroundStyle(Theme.foreground)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(copy.context)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if !copy.bullets.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(copy.bullets.enumerated()), id: \.offset) { _, bullet in
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text("·")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(Theme.accent)
+                                        .accessibilityHidden(true)
+                                    Text(bullet)
+                                        .font(Theme.TypeRole.help)
+                                        .foregroundStyle(Theme.muted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
+                }
+            }
+            .padding(.horizontal, Theme.Space.md)
+            .padding(.bottom, expanded ? Theme.Space.md : 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .instrumentPanel(corner: Theme.Radius.card)
+            .accessibilityIdentifier("howItWorksCard.\(toolID.rawValue)")
+            .accessibilityElement(children: .contain)
+        }
     }
 }
 
