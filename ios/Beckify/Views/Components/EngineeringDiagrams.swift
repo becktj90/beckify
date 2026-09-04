@@ -17,6 +17,34 @@ struct EngineeringDiagramFrame<Content: View>: View {
 
 // MARK: - Voltage drop conductor run
 
+/// Point geometry for the conductor run, resolved in `Double` space so the
+/// view builders below stay free of `Double`/`CGFloat` mixing.
+private struct VoltageDropLayout {
+    let width: CGFloat
+    let axisY: CGFloat
+    let sagY: CGFloat
+    let loadY: CGFloat
+
+    init(size: CGSize) {
+        let w: Double = Double(size.width)
+        let h: Double = Double(size.height)
+        let y: Double = h * 0.55
+
+        width = CGFloat(w)
+        axisY = CGFloat(y)
+        sagY = CGFloat(y - h * 0.12)
+        loadY = CGFloat(y + h * 0.08)
+    }
+
+    var runPath: Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 28, y: axisY))
+        path.addLine(to: CGPoint(x: width * 0.45, y: sagY))
+        path.addLine(to: CGPoint(x: width - 28, y: loadY))
+        return path
+    }
+}
+
 struct VoltageDropDiagram: View {
     let supply: Double
     let drop: Double
@@ -27,48 +55,57 @@ struct VoltageDropDiagram: View {
         "Conductor run from \(Format.volts(supply)) supply to \(Format.volts(receiving)) load. Drop \(Format.volts(drop)), \(Format.percent(dropPercent))."
     }
 
+    private var dropTone: Color {
+        if dropPercent > 5 { return Theme.bad }
+        if dropPercent > 3 { return Theme.warn }
+        return Theme.good
+    }
+
     var body: some View {
         DiagramCard(title: "Conductor run", accessibilitySummary: summary) {
             EngineeringDiagramFrame(summary: summary) {
                 GeometryReader { geo in
-                    let w = geo.size.width
-                    let h = geo.size.height
-                    let y = h * 0.55
-                    ZStack {
-                        // Source node
-                        Circle()
-                            .stroke(Theme.accent, lineWidth: Theme.Stroke.emphasis)
-                            .frame(width: 16, height: 16)
-                            .position(x: 18, y: y)
-                        // Load node
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(Theme.energized, lineWidth: Theme.Stroke.emphasis)
-                            .frame(width: 18, height: 18)
-                            .position(x: w - 18, y: y)
-                        // Declining potential polyline
-                        Path { path in
-                            path.move(to: CGPoint(x: 28, y: y))
-                            path.addLine(to: CGPoint(x: w * 0.45, y: y - h * 0.12))
-                            path.addLine(to: CGPoint(x: w - 28, y: y + h * 0.08))
-                        }
-                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-
-                        Text(Format.volts(supply))
-                            .font(.caption2.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(Theme.foreground)
-                            .position(x: 40, y: y - 28)
-                        Text("−\(Format.volts(drop))")
-                            .font(.caption2.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(dropPercent > 5 ? Theme.bad : (dropPercent > 3 ? Theme.warn : Theme.good))
-                            .position(x: w * 0.5, y: y - 36)
-                        Text(Format.volts(receiving))
-                            .font(.caption2.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(Theme.foreground)
-                            .position(x: w - 44, y: y - 28)
-                    }
+                    conductorRun(VoltageDropLayout(size: geo.size))
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func conductorRun(_ layout: VoltageDropLayout) -> some View {
+        ZStack {
+            // Source node
+            Circle()
+                .stroke(Theme.accent, lineWidth: Theme.Stroke.emphasis)
+                .frame(width: 16, height: 16)
+                .position(x: 18, y: layout.axisY)
+            // Load node
+            RoundedRectangle(cornerRadius: 3)
+                .stroke(Theme.energized, lineWidth: Theme.Stroke.emphasis)
+                .frame(width: 18, height: 18)
+                .position(x: layout.width - 18, y: layout.axisY)
+            // Declining potential polyline
+            layout.runPath
+                .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+
+            potentialLabels(layout)
+        }
+    }
+
+    @ViewBuilder
+    private func potentialLabels(_ layout: VoltageDropLayout) -> some View {
+        label(Format.volts(supply), tone: Theme.foreground)
+            .position(x: 40, y: layout.axisY - 28)
+        label("−\(Format.volts(drop))", tone: dropTone)
+            .position(x: layout.width * 0.5, y: layout.axisY - 36)
+        label(Format.volts(receiving), tone: Theme.foreground)
+            .position(x: layout.width - 44, y: layout.axisY - 28)
+    }
+
+    private func label(_ text: String, tone: Color) -> some View {
+        Text(text)
+            .font(.caption2.monospacedDigit().weight(.semibold))
+            .foregroundStyle(tone)
     }
 
     static func model(from r: VoltageDropResult) -> VoltageDropDiagram? {
@@ -86,6 +123,38 @@ struct VoltageDropDiagram: View {
 
 // MARK: - Power triangle
 
+/// Leg lengths in points plus the shared triangle path, so the stroke and its
+/// fill reuse one path instead of rebuilding the same expression twice.
+private struct PowerTriangleLayout {
+    let origin: CGPoint
+    let realLeg: CGFloat
+    let reactiveLeg: CGFloat
+    let isDrawable: Bool
+
+    init(size: CGSize, kw: Double, kvar: Double, kva: Double) {
+        let w: Double = Double(size.width)
+        let h: Double = Double(size.height)
+        let drawable: Bool = kw.isFinite && kvar.isFinite && kva.isFinite && kva > 0
+        let maxLeg: Double = min(w * 0.7, h * 0.7)
+        let scale: Double = max(kva, 0.001)
+
+        origin = CGPoint(x: CGFloat(w * 0.14), y: CGFloat(h * 0.82))
+        realLeg = drawable ? CGFloat(kw / scale * maxLeg) : 0
+        reactiveLeg = drawable ? CGFloat(abs(kvar) / scale * maxLeg) : 0
+        isDrawable = drawable
+    }
+
+    var trianglePath: Path {
+        var path = Path()
+        guard isDrawable else { return path }
+        path.move(to: origin)
+        path.addLine(to: CGPoint(x: origin.x + realLeg, y: origin.y))
+        path.addLine(to: CGPoint(x: origin.x + realLeg, y: origin.y - reactiveLeg))
+        path.closeSubpath()
+        return path
+    }
+}
+
 struct PowerTriangleDiagram: View {
     let kw: Double
     let kvar: Double
@@ -96,54 +165,43 @@ struct PowerTriangleDiagram: View {
         "Power triangle. True \(Format.number(kw, digits: 2)) kW, reactive \(Format.number(kvar, digits: 2)) kVAR, apparent \(Format.number(kva, digits: 2)) kVA."
     }
 
-    private var hasFiniteLegs: Bool {
-        kw.isFinite && kvar.isFinite && kva.isFinite && kva > 0
-    }
-
     var body: some View {
         DiagramCard(title: title, accessibilitySummary: summary) {
             EngineeringDiagramFrame(summary: summary) {
                 GeometryReader { geo in
-                    let w = geo.size.width
-                    let h = geo.size.height
-                    let origin = CGPoint(x: w * 0.14, y: h * 0.82)
-                    let maxLeg = min(w * 0.7, h * 0.7)
-                    let scale = max(kva, 0.001)
-                    let pLen = hasFiniteLegs ? CGFloat(kw / scale) * maxLeg : 0
-                    let qLen = hasFiniteLegs ? CGFloat(abs(kvar) / scale) * maxLeg : 0
-                    Path { path in
-                        guard hasFiniteLegs else { return }
-                        path.move(to: origin)
-                        path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y))
-                        path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y - qLen))
-                        path.closeSubpath()
-                    }
-                    .stroke(Theme.accent, lineWidth: 2)
-                    .background(
-                        Path { path in
-                            guard hasFiniteLegs else { return }
-                            path.move(to: origin)
-                            path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y))
-                            path.addLine(to: CGPoint(x: origin.x + pLen, y: origin.y - qLen))
-                            path.closeSubpath()
-                        }
-                        .fill(Theme.chartFill)
-                    )
-                    Text("kW")
-                        .font(.caption2)
-                        .foregroundStyle(Theme.muted)
-                        .position(x: origin.x + pLen / 2, y: origin.y + 12)
-                    Text("kVAR")
-                        .font(.caption2)
-                        .foregroundStyle(Theme.muted)
-                        .position(x: origin.x + pLen + 22, y: origin.y - qLen / 2)
-                    Text("kVA")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Theme.accent2)
-                        .position(x: origin.x + pLen / 2 - 8, y: origin.y - qLen / 2 - 8)
+                    triangle(PowerTriangleLayout(size: geo.size, kw: kw, kvar: kvar, kva: kva))
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func triangle(_ layout: PowerTriangleLayout) -> some View {
+        layout.trianglePath
+            .stroke(Theme.accent, lineWidth: 2)
+            .background(layout.trianglePath.fill(Theme.chartFill))
+
+        legLabels(layout)
+    }
+
+    @ViewBuilder
+    private func legLabels(_ layout: PowerTriangleLayout) -> some View {
+        let origin: CGPoint = layout.origin
+        let p: CGFloat = layout.realLeg
+        let q: CGFloat = layout.reactiveLeg
+
+        Text("kW")
+            .font(.caption2)
+            .foregroundStyle(Theme.muted)
+            .position(x: origin.x + p / 2, y: origin.y + 12)
+        Text("kVAR")
+            .font(.caption2)
+            .foregroundStyle(Theme.muted)
+            .position(x: origin.x + p + 22, y: origin.y - q / 2)
+        Text("kVA")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Theme.accent2)
+            .position(x: origin.x + p / 2 - 8, y: origin.y - q / 2 - 8)
     }
 }
 
@@ -282,6 +340,36 @@ struct LoadFactorChart: View {
 
 // MARK: - Conduit fill packing
 
+/// Raceway bore plus the conductor ring positions, so the per-conductor
+/// trigonometry no longer type-checks alongside the enclosing `ZStack`.
+private struct ConduitFillLayout {
+    let center: CGPoint
+    let bore: CGFloat
+    let conductorCount: Int
+    let conductorDiameter: CGFloat
+    let ringRadius: CGFloat
+
+    init(size: CGSize, conductorCount: Int) {
+        let side: Double = min(Double(size.width), Double(size.height)) * 0.8
+        let originX: Double = (Double(size.width) - side) / 2
+        let originY: Double = (Double(size.height) - side) / 2
+
+        center = CGPoint(x: CGFloat(originX + side / 2), y: CGFloat(originY + side / 2))
+        bore = CGFloat(side)
+        self.conductorCount = max(1, min(conductorCount, 12))
+        conductorDiameter = CGFloat(side * 0.12)
+        ringRadius = CGFloat(side * 0.28)
+    }
+
+    func conductorCenter(_ index: Int) -> CGPoint {
+        let angle: Double = Double(index) / Double(conductorCount) * 2 * Double.pi - Double.pi / 2
+        return CGPoint(
+            x: center.x + CGFloat(cos(angle)) * ringRadius,
+            y: center.y + CGFloat(sin(angle)) * ringRadius
+        )
+    }
+}
+
 struct ConduitFillDiagram: View {
     let fillPercent: Double
     let limitPercent: Double
@@ -291,37 +379,41 @@ struct ConduitFillDiagram: View {
         "Conduit cross-section filled \(Format.percent(fillPercent)) of a \(Format.percent(limitPercent)) limit with \(conductorCount) conductors."
     }
 
+    private var isOverLimit: Bool { fillPercent > limitPercent }
+
     var body: some View {
         DiagramCard(title: "Raceway fill", accessibilitySummary: summary) {
             EngineeringDiagramFrame(summary: summary) {
                 GeometryReader { geo in
-                    let side = min(geo.size.width, geo.size.height) * 0.8
-                    let origin = CGPoint(x: (geo.size.width - side) / 2, y: (geo.size.height - side) / 2)
-                    let raceway = CGRect(x: origin.x, y: origin.y, width: side, height: side)
-                    ZStack {
-                        Circle()
-                            .stroke(Theme.accent, lineWidth: 2)
-                            .frame(width: side, height: side)
-                            .position(x: raceway.midX, y: raceway.midY)
-                        let count = max(1, min(conductorCount, 12))
-                        ForEach(0..<count, id: \.self) { index in
-                            let angle = Double(index) / Double(count) * 2 * Double.pi - Double.pi / 2
-                            let radius = side * 0.28
-                            let cx = raceway.midX + CGFloat(cos(angle)) * radius
-                            let cy = raceway.midY + CGFloat(sin(angle)) * radius
-                            let wire = side * 0.12
-                            Circle()
-                                .stroke(fillPercent > limitPercent ? Theme.bad : Theme.energized, lineWidth: 1.5)
-                                .frame(width: wire, height: wire)
-                                .position(x: cx, y: cy)
-                        }
-                        Text(Format.percent(fillPercent))
-                            .font(.caption.monospacedDigit().weight(.bold))
-                            .foregroundStyle(fillPercent > limitPercent ? Theme.bad : Theme.good)
-                            .position(x: raceway.midX, y: raceway.midY)
-                    }
+                    crossSection(ConduitFillLayout(size: geo.size, conductorCount: conductorCount))
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func crossSection(_ layout: ConduitFillLayout) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Theme.accent, lineWidth: 2)
+                .frame(width: layout.bore, height: layout.bore)
+                .position(layout.center)
+
+            conductors(layout)
+
+            Text(Format.percent(fillPercent))
+                .font(.caption.monospacedDigit().weight(.bold))
+                .foregroundStyle(isOverLimit ? Theme.bad : Theme.good)
+                .position(layout.center)
+        }
+    }
+
+    private func conductors(_ layout: ConduitFillLayout) -> some View {
+        ForEach(0..<layout.conductorCount, id: \.self) { index in
+            Circle()
+                .stroke(isOverLimit ? Theme.bad : Theme.energized, lineWidth: 1.5)
+                .frame(width: layout.conductorDiameter, height: layout.conductorDiameter)
+                .position(layout.conductorCenter(index))
         }
     }
 }
@@ -1029,6 +1121,169 @@ struct MonostableCapChargeChart: View {
 
 // MARK: - Solenoid design visualizations
 
+/// Every pixel value the coil cross-section needs, resolved once in `Double`
+/// space and handed to the view layers as explicit `CGFloat`. Keeping the
+/// unit-to-point math out of the view builders is what lets the Swift type
+/// checker finish: mixing `Double` metres with `CGFloat` points inside a
+/// `ZStack` made the whole body one unsolvable expression.
+private struct SolenoidCrossSectionLayout {
+    let centerX: CGFloat
+    let centerY: CGFloat
+    let halfLength: CGFloat
+    let meanRadius: CGFloat
+    let layerCount: Int
+    let layerWidth: CGFloat
+    let layerStep: CGFloat
+    let canvasHeight: CGFloat
+
+    init(size: CGSize, lengthM: Double, meanRadiusM: Double, outerRadiusM: Double, layers: Int) {
+        let w: Double = Double(size.width)
+        let h: Double = Double(size.height)
+        let maxR: Double = max(outerRadiusM, meanRadiusM, 1e-6)
+        let scaleY: Double = (h * 0.78) / max(lengthM, 1e-6)
+        let scaleX: Double = (w * 0.28) / maxR
+        let scale: Double = min(scaleX, scaleY)
+        let count: Int = max(1, min(layers, 8))
+        let bandWidth: Double = (outerRadiusM - meanRadiusM) * scale / Double(count)
+
+        centerX = CGFloat(w * 0.5)
+        centerY = CGFloat(h * 0.52)
+        halfLength = CGFloat(lengthM * scale / 2)
+        meanRadius = CGFloat(meanRadiusM * scale)
+        layerCount = count
+        layerWidth = CGFloat(max(5, bandWidth - 1))
+        layerStep = CGFloat(bandWidth)
+        canvasHeight = CGFloat(h)
+    }
+
+    var coilHeight: CGFloat { halfLength * 2 }
+    var boreWidth: CGFloat { meanRadius * 2 }
+    var glowEndRadius: CGFloat { max(meanRadius * 1.4, 20) }
+    var axisTip: CGPoint { CGPoint(x: centerX, y: centerY - halfLength * 0.85) }
+    var axisTail: CGPoint { CGPoint(x: centerX, y: centerY + halfLength * 0.85) }
+
+    func windingInset(_ layer: Int) -> CGFloat { CGFloat(layer) * layerStep }
+}
+
+/// Soft field glow inside the bore.
+private struct SolenoidBoreGlow: View {
+    let layout: SolenoidCrossSectionLayout
+
+    var body: some View {
+        Capsule()
+            .fill(glow)
+            .frame(width: layout.meanRadius * 2.2, height: layout.halfLength * 2.1)
+            .position(x: layout.centerX, y: layout.centerY)
+    }
+
+    private var glow: RadialGradient {
+        RadialGradient(
+            colors: [Theme.accent.opacity(0.28), Theme.accent.opacity(0.04), .clear],
+            center: .center,
+            startRadius: 2,
+            endRadius: layout.glowEndRadius
+        )
+    }
+}
+
+/// One mirrored pair of winding bands, left and right of the bore.
+private struct SolenoidWindingLayer: View {
+    let layout: SolenoidCrossSectionLayout
+    let layer: Int
+
+    var body: some View {
+        let inset: CGFloat = layout.windingInset(layer)
+        let shade: Double = 0.55 - Double(layer) * 0.04
+        Group {
+            band(shade: shade)
+                .position(x: layout.centerX - layout.meanRadius - inset - 4, y: layout.centerY)
+            band(shade: shade)
+                .position(x: layout.centerX + layout.meanRadius + inset + 4, y: layout.centerY)
+        }
+    }
+
+    private func band(shade: Double) -> some View {
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .fill(Theme.energized.opacity(shade))
+            .overlay(
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(Theme.energized.opacity(0.9), lineWidth: 1)
+            )
+            .frame(width: layout.layerWidth, height: layout.coilHeight)
+    }
+}
+
+private struct SolenoidWindingStack: View {
+    let layout: SolenoidCrossSectionLayout
+
+    var body: some View {
+        ForEach(0..<layout.layerCount, id: \.self) { layer in
+            SolenoidWindingLayer(layout: layout, layer: layer)
+        }
+    }
+}
+
+private struct SolenoidBoreOutline: View {
+    let layout: SolenoidCrossSectionLayout
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+            .frame(width: layout.boreWidth, height: layout.coilHeight)
+            .position(x: layout.centerX, y: layout.centerY)
+    }
+}
+
+/// Axis line, arrow head, and the `B` marker.
+private struct SolenoidAxisArrow: View {
+    let layout: SolenoidCrossSectionLayout
+
+    var body: some View {
+        let tip: CGPoint = layout.axisTip
+        Group {
+            Path { path in
+                path.move(to: layout.axisTail)
+                path.addLine(to: tip)
+            }
+            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+
+            Path { path in
+                path.move(to: tip)
+                path.addLine(to: CGPoint(x: tip.x - 6, y: tip.y + 10))
+                path.move(to: tip)
+                path.addLine(to: CGPoint(x: tip.x + 6, y: tip.y + 10))
+            }
+            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+
+            Text("B")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Theme.accent)
+                .position(x: layout.centerX + 14, y: layout.centerY - layout.halfLength * 0.7)
+        }
+    }
+}
+
+private struct SolenoidDimensionLabels: View {
+    let layout: SolenoidCrossSectionLayout
+    let lengthLabel: String
+    let boreLabel: String
+
+    var body: some View {
+        Group {
+            label(lengthLabel)
+                .position(x: layout.centerX, y: 14)
+            label(boreLabel)
+                .position(x: layout.centerX, y: layout.canvasHeight - 12)
+        }
+    }
+
+    private func label(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.monospacedDigit().weight(.semibold))
+            .foregroundStyle(Theme.muted)
+    }
+}
+
 struct SolenoidCrossSectionDiagram: View {
     let lengthM: Double
     let meanRadiusM: Double
@@ -1040,97 +1295,43 @@ struct SolenoidCrossSectionDiagram: View {
         "Solenoid cross-section. Length \(Format.number(lengthM * 1000, digits: 0)) mm, mean radius \(Format.number(meanRadiusM * 1000, digits: 1)) mm, \(layers) layers. Center B \(Format.number(bCenterTesla * 1000, digits: 2)) mT."
     }
 
+    private var lengthLabel: String {
+        "ℓ \(Format.number(lengthM * 1000, digits: 0)) mm"
+    }
+
+    private var boreLabel: String {
+        "Ø \(Format.number(meanRadiusM * 2000, digits: 1)) mm"
+    }
+
     var body: some View {
         DiagramCard(title: "Coil cross-section", accessibilitySummary: summary) {
             EngineeringDiagramFrame(summary: summary) {
                 GeometryReader { geo in
-                    let w = geo.size.width
-                    let h = geo.size.height
-                    let maxR = max(outerRadiusM, meanRadiusM, 1e-6)
-                    let scaleY = (h * 0.78) / max(lengthM, 1e-6)
-                    let scaleX = (w * 0.28) / maxR
-                    let scale = min(scaleX, scaleY)
-                    let cx = w * 0.5
-                    let cy = h * 0.52
-                    let halfL = lengthM * scale / 2
-                    let rMean = meanRadiusM * scale
-                    let rOuter = outerRadiusM * scale
-                    let layerCount = max(1, min(layers, 8))
-
-                    ZStack {
-                        // Soft field glow in the bore
-                        Capsule()
-                            .fill(
-                                RadialGradient(
-                                    colors: [Theme.accent.opacity(0.28), Theme.accent.opacity(0.04), .clear],
-                                    center: .center,
-                                    startRadius: 2,
-                                    endRadius: max(rMean * 1.4, 20)
-                                )
-                            )
-                            .frame(width: rMean * 2.2, height: halfL * 2.1)
-                            .position(x: cx, y: cy)
-
-                        // Left winding stack
-                        ForEach(0..<layerCount, id: \.self) { layer in
-                            let inset = CGFloat(layer) * (rOuter - rMean) / CGFloat(layerCount)
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(Theme.energized.opacity(0.55 - Double(layer) * 0.04))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                        .stroke(Theme.energized.opacity(0.9), lineWidth: 1)
-                                )
-                                .frame(width: max(5, (rOuter - rMean) / CGFloat(layerCount) - 1), height: halfL * 2)
-                                .position(x: cx - rMean - inset - 4, y: cy)
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(Theme.energized.opacity(0.55 - Double(layer) * 0.04))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                        .stroke(Theme.energized.opacity(0.9), lineWidth: 1)
-                                )
-                                .frame(width: max(5, (rOuter - rMean) / CGFloat(layerCount) - 1), height: halfL * 2)
-                                .position(x: cx + rMean + inset + 4, y: cy)
-                        }
-
-                        // Bore outline
-                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
-                            .frame(width: rMean * 2, height: halfL * 2)
-                            .position(x: cx, y: cy)
-
-                        // Axis arrow (B)
-                        Path { path in
-                            path.move(to: CGPoint(x: cx, y: cy + halfL * 0.85))
-                            path.addLine(to: CGPoint(x: cx, y: cy - halfL * 0.85))
-                        }
-                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                        Path { path in
-                            let tip = CGPoint(x: cx, y: cy - halfL * 0.85)
-                            path.move(to: tip)
-                            path.addLine(to: CGPoint(x: tip.x - 6, y: tip.y + 10))
-                            path.move(to: tip)
-                            path.addLine(to: CGPoint(x: tip.x + 6, y: tip.y + 10))
-                        }
-                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-
-                        Text("B")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Theme.accent)
-                            .position(x: cx + 14, y: cy - halfL * 0.7)
-
-                        Text("ℓ \(Format.number(lengthM * 1000, digits: 0)) mm")
-                            .font(.caption2.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(Theme.muted)
-                            .position(x: cx, y: 14)
-
-                        Text("Ø \(Format.number(meanRadiusM * 2000, digits: 1)) mm")
-                            .font(.caption2.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(Theme.muted)
-                            .position(x: cx, y: h - 12)
-                    }
+                    crossSection(crossSectionLayout(for: geo.size))
                 }
                 .frame(height: 200)
             }
+        }
+    }
+
+    private func crossSectionLayout(for size: CGSize) -> SolenoidCrossSectionLayout {
+        SolenoidCrossSectionLayout(
+            size: size,
+            lengthM: lengthM,
+            meanRadiusM: meanRadiusM,
+            outerRadiusM: outerRadiusM,
+            layers: layers
+        )
+    }
+
+    @ViewBuilder
+    private func crossSection(_ layout: SolenoidCrossSectionLayout) -> some View {
+        ZStack {
+            SolenoidBoreGlow(layout: layout)
+            SolenoidWindingStack(layout: layout)
+            SolenoidBoreOutline(layout: layout)
+            SolenoidAxisArrow(layout: layout)
+            SolenoidDimensionLabels(layout: layout, lengthLabel: lengthLabel, boreLabel: boreLabel)
         }
     }
 }
