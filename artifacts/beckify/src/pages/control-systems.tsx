@@ -160,19 +160,18 @@ export default function ControlSystemsPage() {
       </FadeIn>
 
       <FadeIn delay={0.03}>
-        <ol className="mb-2 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        <ol className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
           {[
             ["1", "Model"],
             ["2", "Analyze / tune"],
             ["3", "Compensator / state space"],
           ].map(([n, label], index) => (
-            <li
-              key={label}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-black/20 px-3 py-1.5"
-            >
-              <span className="text-[var(--accent)]">{n}</span>
-              {label}
-              {index < 2 ? <span className="text-[var(--border)]" aria-hidden="true">→</span> : null}
+            <li key={label} className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-black/20 px-3 py-1.5">
+                <span className="text-[var(--accent)]">{n}</span>
+                {label}
+              </span>
+              {index < 2 ? <span className="text-[var(--muted)]/50" aria-hidden="true">→</span> : null}
             </li>
           ))}
         </ol>
