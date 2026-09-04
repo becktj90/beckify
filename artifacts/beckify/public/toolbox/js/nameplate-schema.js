@@ -591,13 +591,19 @@
     return snapPanelSlots(combined) || combined || 0;
   }
 
+  function circuitSortNumber(key) {
+    if (!key) return Infinity;
+    var n = Number(String(key).replace(/[A-Z]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : Infinity;
+  }
+
   function sortPanelRows(rows) {
     return (rows || []).slice().sort(function (a, b) {
       var ka = circuitKey(a);
       var kb = circuitKey(b);
-      var na = Number(String(ka).replace(/[A-Z]/g, ''));
-      var nb = Number(String(kb).replace(/[A-Z]/g, ''));
-      if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      var na = circuitSortNumber(ka);
+      var nb = circuitSortNumber(kb);
+      if (na !== nb) return na - nb;
       return ka.localeCompare(kb);
     });
   }
@@ -615,14 +621,16 @@
       warnings.push('Phase is unknown. Load math stays gated until 1 or 3 is selected.');
     }
     var rawRows = (draft && (draft.circuits || draft.rows)) || [];
+    var clearedLoad = false;
     rawRows.forEach(function (item) {
       var src = item && item.fields ? item.fields : item;
       var loadCell = src && src.loadAmps;
       var loadVal = loadCell && typeof loadCell === 'object' ? loadCell.value : loadCell;
-      if (loadVal != null && loadVal !== '') {
-        warnings.push('loadAmps was cleared — trip is not a reviewed load.');
-      }
+      if (loadVal != null && loadVal !== '') clearedLoad = true;
     });
+    if (clearedLoad) {
+      warnings.push('loadAmps was cleared — trip is not a reviewed load.');
+    }
     var lines = ['circuit,description,trip,poles,loadAmps,notes'];
     rows.forEach(function (row) {
       var trip = row.trip && row.trip.value != null ? String(row.trip.value) : '';

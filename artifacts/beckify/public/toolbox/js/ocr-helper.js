@@ -411,7 +411,8 @@
     if (!t.trim()) return 0;
     var score = 0;
     if (/\b(?:HP|H\.P\.|HORSEPOWER|kW)\b/i.test(t)) score += 3;
-    if (/\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD|I[\s._-]?N)\b/i.test(t)) score += 3;
+    if (/\b(?:FLA|FL\s*AMPS?|FULL[\s-]*LOAD)\b/i.test(t)
+      || /\b(?:I[\s._-]?N|RATED\s*CURRENT)\s*[:#=]?\s*[0-9]/i.test(t)) score += 3;
     if (/\b(?:VOLTS?|VOLTAGE)\b/i.test(t) || /\b[0-9]{2,4}(?:\/[0-9]{2,4})?\s*V\b/i.test(t)) score += 2;
     if (/\b(?:RPM|R\.P\.M\.)\b/i.test(t) || /\bn\s*[=:]\s*[0-9]{3,5}\b/i.test(t)) score += 2;
     if (/\b(?:PH|PHASE|3Ø|1Ø)\b/i.test(t)) score += 2;

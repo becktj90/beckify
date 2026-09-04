@@ -248,5 +248,8 @@ api.unsharpLight(pixels, 16, 16);
 assert.ok(Number.isFinite(pixels[0]));
 
 assert.ok(api.nameplateScore('7.5 kW IN 14.8 400 V n=1450 IE3') >= 3);
+assert.ok(api.nameplateScore('put the motor in the cabinet') < 3);
+assert.ok(api.nameplateScore('IN 14.8') >= 3);
+assert.ok(api.nameplateScore('I_N 12.5') >= 3);
 
 console.log('OCR helper parsers and vendor paths passed');

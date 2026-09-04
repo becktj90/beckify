@@ -291,4 +291,22 @@ assert.equal(exported.slotCount, 20);
 assert.ok(exported.warnings.some((w) => /Phase is unknown/i.test(w)));
 assert.ok(exported.warnings.some((w) => /loadAmps was cleared/i.test(w)));
 
+const blankLast = schema.sortPanelRows([
+  { circuit: { value: '' }, description: { value: 'Unlabeled' } },
+  { circuit: { value: '2' }, description: { value: 'Receptacles' } },
+  { circuit: { value: '1' }, description: { value: 'Lights' } },
+]);
+assert.equal(blankLast[0].circuit.value, '1');
+assert.equal(blankLast[1].circuit.value, '2');
+assert.equal(blankLast[2].description.value, 'Unlabeled');
+
+const manyLoads = schema.exportPanelDraft({
+  circuits: [
+    { circuit: '1', description: 'Lights', trip: 20, loadAmps: 20 },
+    { circuit: '2', description: 'Receptacles', trip: 20, loadAmps: 16 },
+    { circuit: '3', description: 'AHU', trip: 30, loadAmps: 22 },
+  ],
+});
+assert.equal(manyLoads.warnings.filter((w) => /loadAmps was cleared/i.test(w)).length, 1);
+
 console.log('Nameplate schema + parse traps passed');
