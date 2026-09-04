@@ -17,6 +17,7 @@
   var LOW_CONFIDENCE = 60;
   var MAX_PREPROCESS_EDGE = 1600;
   var IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i;
+  var ACCEPTED_IMAGE_LABEL = 'JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF';
   var REJECTED_AMP_LABEL = /(?:MOCP|M\.?O\.?C\.?P\.?|MCA|SCA|LRA|L\.?R\.?A\.?|AIC|KAIC|SCCR)\s*[:#]?\s*$/i;
 
   function vendorUrl(file) {
@@ -147,7 +148,7 @@
     opts = opts || {};
     if (!file) return Promise.reject(new Error('Choose a photo first.'));
     if (file.size > MAX_BYTES) return Promise.reject(new Error('Please choose an image smaller than 12 MB.'));
-    if (!isLikelyImageFile(file)) return Promise.reject(new Error('Please choose a photo (PNG, JPG, HEIC/HEIF, or WEBP).'));
+    if (!isLikelyImageFile(file)) return Promise.reject(new Error('Please choose a photo (' + ACCEPTED_IMAGE_LABEL + ').'));
 
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
     return loadScript().then(function (Tesseract) {
@@ -305,6 +306,7 @@
     MAX_BYTES: MAX_BYTES,
     LOW_CONFIDENCE: LOW_CONFIDENCE,
     MAX_PREPROCESS_EDGE: MAX_PREPROCESS_EDGE,
+    ACCEPTED_IMAGE_LABEL: ACCEPTED_IMAGE_LABEL,
     VENDOR: VENDOR,
   };
   global.__ocrHelperTestApi = global.BeckifyOcr;

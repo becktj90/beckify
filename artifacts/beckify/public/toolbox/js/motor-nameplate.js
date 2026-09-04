@@ -308,7 +308,11 @@
   function handleFile(file) {
     if (!file) return;
     if (file.size > 12 * 1024 * 1024) { setStatus('Please choose an image smaller than 12 MB.'); return; }
-    if (!isLikelyImageFile(file)) { setStatus('Please choose a photo (PNG, JPG, HEIC/HEIF, or WEBP).'); return; }
+    if (!isLikelyImageFile(file)) {
+      var formats = (global.BeckifyOcr && global.BeckifyOcr.ACCEPTED_IMAGE_LABEL) || 'JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF';
+      setStatus('Please choose a photo (' + formats + ').');
+      return;
+    }
     revokePhoto();
     photoUrl = URL.createObjectURL(file);
     var img = el('mnp_preview');

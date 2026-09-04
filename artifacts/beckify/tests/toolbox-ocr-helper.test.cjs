@@ -73,7 +73,9 @@ assert.equal(mca.fields.fla, '12.8');
 assert.equal(mca.fields.hp, '7.5');
 assert.equal(mca.fields.volts, '230');
 
-assert.match(fs.readFileSync(path.join(root, 'ocr-helper.js'), 'utf8'), /PNG, JPG, HEIC\/HEIF, or WEBP/);
+assert.equal(api.ACCEPTED_IMAGE_LABEL, 'JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF');
+assert.match(fs.readFileSync(path.join(root, 'ocr-helper.js'), 'utf8'), /ACCEPTED_IMAGE_LABEL/);
+assert.match(fs.readFileSync(path.join(root, 'ocr-helper.js'), 'utf8'), /HEIC\/HEIF/);
 assert.equal(api.isLikelyImageFile({ type: '', name: 'plate.JPG' }), true);
 assert.equal(api.isLikelyImageFile({ type: '', name: 'plate.png' }), true);
 assert.equal(api.isLikelyImageFile({ type: '', name: 'plate.heic' }), true);
