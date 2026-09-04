@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartExportButton } from "@/components/control/ChartExportButton";
 import {
   bodeResponse,
   closedLoopBandwidth,
@@ -197,8 +198,11 @@ export function BodePlot({
         </div>
 
         <div className="mt-6 grid gap-5 xl:grid-cols-2">
-          <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
-            <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Bode magnitude — OL G vs CL T</p>
+          <div data-chart-export-root className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Bode magnitude — OL G vs CL T</p>
+              <ChartExportButton fileName="beckify-bode-magnitude" />
+            </div>
             <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={magData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -212,8 +216,11 @@ export function BodePlot({
               </LineChart>
             </ChartContainer>
           </div>
-          <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
-            <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Bode phase (open loop)</p>
+          <div data-chart-export-root className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Bode phase (open loop)</p>
+              <ChartExportButton fileName="beckify-bode-phase" />
+            </div>
             <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={bode.map((point) => ({ ...point, x: log10(point.omega) }))}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -225,8 +232,11 @@ export function BodePlot({
               </LineChart>
             </ChartContainer>
           </div>
-          <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
-            <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Nyquist plane</p>
+          <div data-chart-export-root className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Nyquist plane</p>
+              <ChartExportButton fileName="beckify-nyquist" />
+            </div>
             <ResponsiveContainer width="100%" height={290}>
               <ScatterChart>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -239,8 +249,11 @@ export function BodePlot({
               </ScatterChart>
             </ResponsiveContainer>
           </div>
-          <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
-            <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Nichols chart</p>
+          <div data-chart-export-root className="rounded-3xl border border-[var(--border)] bg-black/20 p-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Nichols chart</p>
+              <ChartExportButton fileName="beckify-nichols" />
+            </div>
             <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={bode}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -251,10 +264,13 @@ export function BodePlot({
               </LineChart>
             </ChartContainer>
           </div>
-          <div className="rounded-3xl border border-[var(--border)] bg-black/20 p-4 xl:col-span-2">
+          <div data-chart-export-root className="rounded-3xl border border-[var(--border)] bg-black/20 p-4 xl:col-span-2">
             <div className="grid gap-5 xl:grid-cols-2">
               <div>
-                <p className="mb-1 text-sm font-semibold text-[var(--foreground)]">Root locus vs K</p>
+                <div className="mb-1 flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">Root locus vs K</p>
+                  <ChartExportButton fileName="beckify-root-locus" />
+                </div>
                 <p className="mb-3 text-xs leading-5 text-[var(--muted)]">
                   Closed-loop poles at this K: {closedPoles.map((pole) => formatComplex({ re: pole.real, im: pole.imag })).join(" · ") || "—"}.
                   {ku.Ku

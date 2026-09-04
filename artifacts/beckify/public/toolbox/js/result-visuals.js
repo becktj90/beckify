@@ -30,12 +30,88 @@
     wrap.className = 'calculation-visual';
     wrap.setAttribute('role', 'img');
     wrap.setAttribute('aria-label', label);
+    wrap.setAttribute('data-chart-export-root', '1');
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'calculation-visual-toolbar';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'calculation-visual-export';
+    btn.textContent = 'Save PNG';
+    btn.title = 'Download this plot as a PNG image';
+    btn.addEventListener('click', () => exportVisualPng(wrap, label));
+    toolbar.appendChild(btn);
+    wrap.appendChild(toolbar);
+
     // SVG height must be a numeric length or omitted. CSS owns responsive sizing.
     const svg = svgElement('svg', { viewBox: '0 0 640 180', width: '100%', focusable: 'false', 'aria-hidden': 'true' });
     wrap.appendChild(svg);
     const copy = result.querySelector('.result-copy-row');
     result.insertBefore(wrap, copy || null);
     return svg;
+  }
+
+  function exportVisualPng(wrap, label) {
+    const svg = wrap.querySelector('svg');
+    if (!svg) return;
+    const clone = svg.cloneNode(true);
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', '1280');
+    clone.setAttribute('height', '360');
+    const xml = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1280;
+      canvas.height = 360;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        return;
+      }
+      ctx.fillStyle = '#05060f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((png) => {
+        if (!png) return;
+        const href = URL.createObjectURL(png);
+        const a = document.createElement('a');
+        const slug = String(label || 'beckify-plot').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'beckify-plot';
+        a.href = href;
+        a.download = slug + '.png';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(href);
+      }, 'image/png');
+    };
+    image.onerror = () => URL.revokeObjectURL(url);
+    image.src = url;
+  }
+
+  function rcChargeDischarge(svg) {
+    plotAxes(svg, 'RC CHARGE / DISCHARGE', 'time (τ)', 'v / V');
+    const charge = [];
+    const discharge = [];
+    for (let i = 0; i <= 80; i += 1) {
+      const t = (i / 80) * 5;
+      const x = 48 + (t / 5) * 568;
+      const yc = 132 - (1 - Math.exp(-t)) * 84;
+      const yd = 132 - Math.exp(-t) * 84;
+      charge.push(x + ',' + yc);
+      discharge.push(x + ',' + yd);
+    }
+    svg.appendChild(svgElement('polyline', { points: charge.join(' '), fill: 'none', stroke: PALETTE.accent, 'stroke-width': 3, 'stroke-linejoin': 'round' }));
+    svg.appendChild(svgElement('polyline', { points: discharge.join(' '), fill: 'none', stroke: PALETTE.yellow, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }));
+    const xTau = 48 + (1 / 5) * 568;
+    line(svg, xTau, 42, xTau, 132, { stroke: PALETTE.muted, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' });
+    text(svg, xTau + 4, 56, 'τ', { fill: PALETTE.muted, 'font-size': 11 });
+    text(svg, 560, 56, 'charge', { fill: PALETTE.accent, 'font-size': 11 });
+    text(svg, 560, 74, 'discharge', { fill: PALETTE.yellow, 'font-size': 11 });
   }
 
   function text(svg, x, y, value, attrs) {
@@ -397,6 +473,7 @@
     const values = resultNumbers(result);
     const id = section.id;
     if (id === 'sec-ohm') return ohms(shell(result, 'Ohm\'s law relationship between voltage, current, and resistance'));
+    if (id === 'sec-555') return waveform(shell(result, '555 timer output waveform over time'), '555 OUTPUT', PALETTE.accent);
     if (id === 'sec-conductor-length') return conductorLength(shell(result, 'Conductor path measured from test resistance'));
     if (id === 'sec-vdrop') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((_value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
     if (id === 'sec-conduit' || id === 'sec-conduit-adv') return conduitSection(shell(result, 'Conduit cross-section and conductor fill envelope'));

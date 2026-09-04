@@ -95,6 +95,10 @@ struct LEDRCView: View {
                         ResultRow(label: "5τ", value: Format.time(r.fiveTau), emphasis: true)
                     }
                     .opacity(session.isStale ? 0.72 : 1)
+                    if r.tau.isFinite, r.tau > 0 {
+                        RCChargeDischargeChart(tau: r.tau)
+                            .opacity(session.isStale ? 0.72 : 1)
+                    }
                     SaveJobBar(jobName: $jobName, canSave: !session.isStale) { saveRC(r) }
                 }
             }

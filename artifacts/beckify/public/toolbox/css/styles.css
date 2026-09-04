@@ -2317,3 +2317,31 @@ body.report-open { overflow: hidden; }
   color: var(--yellow);
 }
 
+
+/* ── Calculation visual export ── */
+.calculation-visual {
+  position: relative;
+  margin: 12px 0 8px;
+}
+.calculation-visual-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+.calculation-visual-export {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--fg-muted);
+  font: 600 11px/1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.calculation-visual-export:hover {
+  color: var(--fg);
+  border-color: var(--border-hover);
+  background: var(--violet-soft);
+}

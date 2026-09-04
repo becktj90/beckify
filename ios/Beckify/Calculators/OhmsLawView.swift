@@ -55,6 +55,10 @@ struct OhmsLawView: View {
                     ResultRow(label: "Power", value: "\(Format.watts(r.power))  (\(Format.number(r.power / 1000, digits: 3)) kW)", tone: Theme.good)
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if r.voltage.isFinite, r.current.isFinite, r.voltage > 0, r.current > 0 {
+                    OhmsLawLoadLineChart(voltage: r.voltage, current: r.current, resistance: r.resistance)
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }
