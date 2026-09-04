@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import BeckifyMath
 
 // MARK: - Calculate interaction chrome
@@ -147,17 +148,38 @@ struct ToolIdentityHeader: View {
 struct DiagramCard<Content: View>: View {
     var title: String
     var accessibilitySummary: String
+    /// Optional file-friendly name used when sharing (without extension).
+    var exportName: String = "beckify-plot"
     @ViewBuilder var content: Content
+
+    @State private var sharePayload: SharePayload?
+    @State private var exportFailed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
-            Text(title.uppercased())
-                .font(Theme.TypeRole.sectionLabel)
-                .tracking(0.8)
-                .foregroundStyle(Theme.muted)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(title.uppercased())
+                    .font(Theme.TypeRole.sectionLabel)
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.muted)
+                Spacer(minLength: 8)
+                Button {
+                    exportAndShare()
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .font(.caption.weight(.semibold))
+                        .labelStyle(.titleAndIcon)
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .accessibilityLabel("Share or save plot image")
+                .accessibilityHint("Opens the system share sheet so you can save or send a PNG of this plot.")
+                .accessibilityIdentifier("diagramShareButton")
+            }
+
             content
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 140)
+                .frame(minHeight: 160)
                 .padding(Theme.Space.sm)
                 .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
                 .overlay(
@@ -167,7 +189,103 @@ struct DiagramCard<Content: View>: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(accessibilitySummary)
         }
+        .sheet(item: $sharePayload) { payload in
+            ActivityShareSheet(items: payload.items)
+        }
+        .alert("Couldn’t export plot", isPresented: $exportFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The plot image couldn’t be rendered. Try again after the chart finishes drawing.")
+        }
     }
+
+    @MainActor
+    private func exportAndShare() {
+        let exportView = DiagramExportCanvas(
+            title: title,
+            summary: accessibilitySummary,
+            content: { content }
+        )
+        .frame(width: 720)
+        .padding(20)
+        .background(Theme.background)
+
+        let renderer = ImageRenderer(content: exportView)
+        renderer.scale = 3
+        guard let image = renderer.uiImage else {
+            exportFailed = true
+            return
+        }
+        let fileName = "\(sanitize(exportName)).png"
+        if let data = image.pngData() {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            do {
+                try data.write(to: url, options: .atomic)
+                sharePayload = SharePayload(items: [url, accessibilitySummary])
+            } catch {
+                // Temp write failed — share the in-memory UIImage instead of a missing file URL.
+                sharePayload = SharePayload(items: [image, accessibilitySummary])
+            }
+        } else {
+            sharePayload = SharePayload(items: [image, accessibilitySummary])
+        }
+    }
+
+    private func sanitize(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let safe = trimmed.replacingOccurrences(of: "[^A-Za-z0-9._-]+", with: "-", options: .regularExpression)
+        return safe.isEmpty ? "beckify-plot" : safe
+    }
+}
+
+/// Renders the diagram with a print-friendly header for PNG export.
+private struct DiagramExportCanvas<Content: View>: View {
+    let title: String
+    let summary: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("BECKIFY")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.6)
+                    .foregroundStyle(Theme.accent)
+                Spacer()
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+            }
+            content
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 280)
+                .padding(12)
+                .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Text(summary)
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Design aid only — not a PE stamp or calibrated instrument.")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted.opacity(0.8))
+        }
+    }
+}
+
+private struct SharePayload: Identifiable {
+    let id = UUID()
+    let items: [Any]
+}
+
+/// System share sheet — Save Image, Messages, Files, AirDrop, etc.
+struct ActivityShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 struct FieldValidationText: View {

@@ -544,27 +544,27 @@ struct TransientResponseChart: View {
     let currentTime: Double
     let currentValue: Double
     let unit: String
+    var timeConstant: Double? = nil
 
     private var summary: String {
         "Step response curve. At \(Format.number(currentTime, digits: 3)) s, value is \(Format.number(currentValue, digits: 3)) \(unit)."
     }
 
+    private var points: [PlotPoint] {
+        curve.map { PlotPoint(x: $0.time, y: $0.value) }
+    }
+
     var body: some View {
-        DiagramCard(title: "Response curve", accessibilitySummary: summary) {
-            Chart {
-                ForEach(Array(curve.enumerated()), id: \.offset) { _, point in
-                    LineMark(x: .value("Time", point.time), y: .value("Value", point.value))
-                        .foregroundStyle(Theme.chartPrimary)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                }
-                PointMark(x: .value("Time", currentTime), y: .value("Value", currentValue))
-                    .foregroundStyle(Theme.energized)
-                    .symbolSize(64)
-            }
-            .chartXAxisLabel("Time (s)")
-            .chartYAxisLabel(unit)
-            .frame(height: 160)
-            .accessibilityHidden(true)
+        DiagramCard(title: "Response curve", accessibilitySummary: summary, exportName: "transient-response") {
+            EngineerLinePlot(
+                series: [EngineerSeries(name: unit, points: points, color: Theme.chartPrimary, fills: true)],
+                xLabel: "Time (s)",
+                yLabel: unit,
+                markers: [
+                    EngineerMarker(x: currentTime, y: currentValue, label: "t", color: Theme.energized),
+                ],
+                xGuides: timeConstant.map { [EngineerGuide(value: $0, label: "τ", axis: .x)] } ?? []
+            )
         }
     }
 }
@@ -580,22 +580,25 @@ struct DiodeIVChart: View {
         "Forward I-V curve. Operating point \(Format.number(operatingVoltage, digits: 3)) V, \(Format.number(operatingCurrent * 1000, digits: 3)) mA."
     }
 
+    private var points: [PlotPoint] {
+        curve.map { PlotPoint(x: $0.voltage, y: $0.current * 1000) }
+    }
+
     var body: some View {
-        DiagramCard(title: "Forward I-V curve", accessibilitySummary: summary) {
-            Chart {
-                ForEach(Array(curve.enumerated()), id: \.offset) { _, point in
-                    LineMark(x: .value("Voltage", point.voltage), y: .value("Current", point.current * 1000))
-                        .foregroundStyle(Theme.chartPrimary)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                }
-                PointMark(x: .value("Voltage", operatingVoltage), y: .value("Current", operatingCurrent * 1000))
-                    .foregroundStyle(Theme.energized)
-                    .symbolSize(64)
-            }
-            .chartXAxisLabel("V")
-            .chartYAxisLabel("mA")
-            .frame(height: 160)
-            .accessibilityHidden(true)
+        DiagramCard(title: "Forward I-V curve", accessibilitySummary: summary, exportName: "diode-iv") {
+            EngineerLinePlot(
+                series: [EngineerSeries(name: "I_f", points: points, color: Theme.chartPrimary, fills: false)],
+                xLabel: "V (V)",
+                yLabel: "I (mA)",
+                markers: [
+                    EngineerMarker(
+                        x: operatingVoltage,
+                        y: operatingCurrent * 1000,
+                        label: "Q",
+                        color: Theme.energized
+                    ),
+                ]
+            )
         }
     }
 }
@@ -612,15 +615,362 @@ struct BatteryBankChart: View {
     }
 
     var body: some View {
-        DiagramCard(title: "Usable capacity", accessibilitySummary: summary) {
+        DiagramCard(title: "Usable capacity", accessibilitySummary: summary, exportName: "battery-bank") {
             Chart {
                 BarMark(x: .value("Metric", "Total"), y: .value("Wh", totalWattHours))
                     .foregroundStyle(Theme.chartGrid)
                 BarMark(x: .value("Metric", "Usable"), y: .value("Wh", usableWattHours))
                     .foregroundStyle(Theme.chartPrimary)
             }
-            .frame(height: 140)
+            .chartYAxisLabel("Wh")
+            .frame(height: 160)
             .accessibilityHidden(true)
         }
     }
 }
+
+// MARK: - Shared engineer XY plot (Swift Charts — Charty-class craft)
+
+struct EngineerSeries: Identifiable {
+    var id: String { name }
+    var name: String
+    var points: [PlotPoint]
+    var color: Color
+    var fills: Bool = false
+}
+
+struct EngineerMarker: Identifiable {
+    var id: String { "\(label)-\(x)-\(y)" }
+    var x: Double
+    var y: Double
+    var label: String
+    var color: Color
+}
+
+struct EngineerGuide: Identifiable {
+    enum Axis { case x, y }
+    var id: String { "\(label)-\(value)-\(axis)" }
+    var value: Double
+    var label: String
+    var axis: Axis
+}
+
+/// Multi-series XY plot with grid, units, markers, and τ-style guides —
+/// detailed enough for lab notes, exportable via the parent `DiagramCard`.
+struct EngineerLinePlot: View {
+    var series: [EngineerSeries]
+    var xLabel: String
+    var yLabel: String
+    var markers: [EngineerMarker] = []
+    var xGuides: [EngineerGuide] = []
+    var yGuides: [EngineerGuide] = []
+    var logX: Bool = false
+    var height: CGFloat = 200
+
+    var body: some View {
+        let chart = Chart {
+            ForEach(series) { s in
+                ForEach(Array(s.points.enumerated()), id: \.offset) { _, point in
+                    LineMark(
+                        x: .value(xLabel, point.x),
+                        y: .value(yLabel, point.y),
+                        series: .value("Series", s.name)
+                    )
+                    .foregroundStyle(by: .value("Series", s.name))
+                    .lineStyle(StrokeStyle(lineWidth: 2.25, lineJoin: .round))
+                    .interpolationMethod(.catmullRom)
+
+                    if s.fills {
+                        AreaMark(
+                            x: .value(xLabel, point.x),
+                            y: .value(yLabel, point.y),
+                            series: .value("Series", s.name)
+                        )
+                        .foregroundStyle(by: .value("Series", s.name))
+                        .opacity(0.14)
+                        .interpolationMethod(.catmullRom)
+                    }
+                }
+            }
+            ForEach(markers) { mark in
+                PointMark(x: .value(xLabel, mark.x), y: .value(yLabel, mark.y))
+                    .foregroundStyle(mark.color)
+                    .symbolSize(72)
+                    .annotation(position: .top, spacing: 4) {
+                        Text(mark.label)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(mark.color)
+                    }
+            }
+            ForEach(xGuides) { guide in
+                RuleMark(x: .value(guide.label, guide.value))
+                    .foregroundStyle(Theme.muted.opacity(0.55))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text(guide.label)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+            }
+            ForEach(yGuides) { guide in
+                RuleMark(y: .value(guide.label, guide.value))
+                    .foregroundStyle(Theme.muted.opacity(0.55))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .annotation(position: .trailing, alignment: .leading) {
+                        Text(guide.label)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+            }
+        }
+        .chartForegroundStyleScale(
+            domain: series.map(\.name),
+            range: series.map(\.color)
+        )
+        .chartXAxis {
+            AxisMarks(position: .bottom, values: .automatic(desiredCount: 5)) { _ in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(Theme.chartGrid)
+                AxisTick()
+                AxisValueLabel(format: floatingFormat)
+                    .font(.caption2.monospacedDigit())
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 5)) { _ in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(Theme.chartGrid)
+                AxisTick()
+                AxisValueLabel(format: floatingFormat)
+                    .font(.caption2.monospacedDigit())
+            }
+        }
+        .chartXAxisLabel(xLabel, position: .bottom, alignment: .center)
+        .chartYAxisLabel(yLabel, position: .leading, alignment: .center)
+        .chartLegend(series.count > 1 ? .visible : .hidden)
+        .frame(height: height)
+        .accessibilityHidden(true)
+
+        if logX {
+            chart.chartXScale(type: .log)
+        } else {
+            chart
+        }
+    }
+
+    private var floatingFormat: FloatingPointFormatStyle<Double> {
+        .number.precision(.significantDigits(1...4))
+    }
+}
+
+// MARK: - RC charge / discharge (LED·RC tool)
+
+struct RCChargeDischargeChart: View {
+    let tau: Double
+    var finalValue: Double = 1
+
+    private var charge: [PlotPoint] { PlotSampling.rcCharge(tau: tau, finalValue: finalValue) }
+    private var discharge: [PlotPoint] { PlotSampling.rcDischarge(tau: tau, initialValue: finalValue) }
+
+    private var summary: String {
+        "RC charge and discharge over 5τ. τ = \(Format.time(tau)). At one τ the capacitor is ~63% charged or discharged."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Charge / discharge", accessibilitySummary: summary, exportName: "rc-charge-discharge") {
+            EngineerLinePlot(
+                series: [
+                    EngineerSeries(name: "Charge", points: charge, color: Theme.chartPrimary, fills: true),
+                    EngineerSeries(name: "Discharge", points: discharge, color: Theme.chartSecondary, fills: false),
+                ],
+                xLabel: "Time (s)",
+                yLabel: "v / V",
+                markers: [
+                    EngineerMarker(
+                        x: tau,
+                        y: finalValue * (1 - exp(-1)),
+                        label: "0.63 V",
+                        color: Theme.energized
+                    ),
+                ],
+                xGuides: [
+                    EngineerGuide(value: tau, label: "τ", axis: .x),
+                    EngineerGuide(value: 5 * tau, label: "5τ", axis: .x),
+                ],
+                height: 220
+            )
+        }
+    }
+}
+
+// MARK: - Frequency / period sine wave
+
+struct SineWaveChart: View {
+    let frequency: Double
+    var amplitude: Double = 1
+    var cycles: Double = 2
+
+    private var points: [PlotPoint] {
+        PlotSampling.sineWave(frequencyHz: frequency, cycles: cycles, amplitude: amplitude)
+    }
+
+    private var summary: String {
+        "\(Format.number(cycles, digits: 0))-cycle sine at \(Format.frequency(frequency)), amplitude \(Format.number(amplitude, digits: 2))."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Waveform", accessibilitySummary: summary, exportName: "sine-wave") {
+            EngineerLinePlot(
+                series: [EngineerSeries(name: "v(t)", points: points, color: Theme.chartPrimary, fills: false)],
+                xLabel: "Time (s)",
+                yLabel: "Amplitude",
+                yGuides: [
+                    EngineerGuide(value: 0, label: "0", axis: .y),
+                ],
+                height: 200
+            )
+        }
+    }
+}
+
+// MARK: - Ohm's law load line
+
+struct OhmsLawLoadLineChart: View {
+    let voltage: Double
+    let current: Double
+    let resistance: Double
+
+    private var points: [PlotPoint] { PlotSampling.ohmsLoadLine(voltage: voltage, current: current) }
+
+    private var summary: String {
+        "Load line through \(Format.volts(voltage)), \(Format.amps(current)). R = \(Format.number(resistance, digits: 3)) Ω."
+    }
+
+    var body: some View {
+        DiagramCard(title: "V–I load line", accessibilitySummary: summary, exportName: "ohms-load-line") {
+            EngineerLinePlot(
+                series: [EngineerSeries(name: "Load line", points: points, color: Theme.chartPrimary, fills: true)],
+                xLabel: "Voltage (V)",
+                yLabel: "Current (A)",
+                markers: [
+                    EngineerMarker(x: voltage, y: current, label: "OP", color: Theme.energized),
+                ],
+                height: 200
+            )
+        }
+    }
+}
+
+// MARK: - Series RLC impedance magnitude
+
+struct ResonanceImpedanceChart: View {
+    let resistance: Double
+    let inductance: Double
+    let capacitance: Double
+    let resonantFrequency: Double
+
+    private var points: [PlotPoint] {
+        PlotSampling.seriesImpedanceMagnitude(
+            resistance: resistance,
+            inductance: inductance,
+            capacitance: capacitance,
+            fMin: max(resonantFrequency / 20, 1e-3),
+            fMax: resonantFrequency * 20
+        )
+    }
+
+    private var summary: String {
+        "Series |Z| vs frequency. Resonance near \(Format.frequency(resonantFrequency)), R = \(Format.number(resistance, digits: 3)) Ω."
+    }
+
+    var body: some View {
+        DiagramCard(title: "|Z| vs frequency", accessibilitySummary: summary, exportName: "rlc-impedance") {
+            EngineerLinePlot(
+                series: [EngineerSeries(name: "|Z|", points: points, color: Theme.chartPrimary, fills: true)],
+                xLabel: "Frequency (Hz)",
+                yLabel: "|Z| (Ω)",
+                xGuides: [
+                    EngineerGuide(value: resonantFrequency, label: "f₀", axis: .x),
+                ],
+                logX: true,
+                height: 220
+            )
+        }
+    }
+}
+
+// MARK: - Reactance X_L / X_C vs frequency
+
+struct ReactanceSweepChart: View {
+    let inductance: Double
+    let capacitance: Double
+    let frequency: Double
+
+    private var curves: (xl: [PlotPoint], xc: [PlotPoint]) {
+        let lo = max(frequency / 20, 0.1)
+        let hi = max(frequency * 20, lo * 10)
+        return PlotSampling.reactanceVsFrequency(
+            inductance: inductance,
+            capacitance: capacitance,
+            fMin: lo,
+            fMax: hi
+        )
+    }
+
+    private var summary: String {
+        "X_L rises and X_C falls with frequency. Marker at \(Format.frequency(frequency))."
+    }
+
+    var body: some View {
+        let xl = 2 * Double.pi * frequency * inductance
+        let xc = 1 / (2 * Double.pi * frequency * capacitance)
+        return DiagramCard(title: "X_L & X_C vs f", accessibilitySummary: summary, exportName: "reactance-sweep") {
+            EngineerLinePlot(
+                series: [
+                    EngineerSeries(name: "X_L", points: curves.xl, color: Theme.chartPrimary, fills: false),
+                    EngineerSeries(name: "X_C", points: curves.xc, color: Theme.chartSecondary, fills: false),
+                ],
+                xLabel: "Frequency (Hz)",
+                yLabel: "Reactance (Ω)",
+                markers: [
+                    EngineerMarker(x: frequency, y: xl, label: "X_L", color: Theme.chartPrimary),
+                    EngineerMarker(x: frequency, y: xc, label: "X_C", color: Theme.chartSecondary),
+                ],
+                logX: true,
+                height: 220
+            )
+        }
+    }
+}
+
+// MARK: - 555 monostable capacitor charge
+
+struct MonostableCapChargeChart: View {
+    let pulseWidth: Double
+    var vcc: Double = 5
+
+    private var points: [PlotPoint] {
+        PlotSampling.monostableCapVoltage(pulseWidth: pulseWidth, vcc: vcc)
+    }
+
+    private var summary: String {
+        "Timing capacitor charges toward \(Format.volts(vcc)) and trips at ⅔ Vcc when t = \(Format.time(pulseWidth))."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Capacitor charge", accessibilitySummary: summary, exportName: "555-monostable") {
+            EngineerLinePlot(
+                series: [EngineerSeries(name: "Vc", points: points, color: Theme.chartPrimary, fills: true)],
+                xLabel: "Time (s)",
+                yLabel: "Vc (V)",
+                markers: [
+                    EngineerMarker(x: pulseWidth, y: vcc * 2 / 3, label: "⅔ Vcc", color: Theme.energized),
+                ],
+                xGuides: [EngineerGuide(value: pulseWidth, label: "t", axis: .x)],
+                yGuides: [EngineerGuide(value: vcc * 2 / 3, label: "⅔", axis: .y)],
+                height: 210
+            )
+        }
+    }
+}
+

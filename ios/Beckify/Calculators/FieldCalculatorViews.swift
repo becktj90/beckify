@@ -87,6 +87,25 @@ struct ReactanceView: View {
                         angleDegrees: r.phaseAngleDegrees
                     )
                     .opacity(session.isStale ? 0.72 : 1)
+                    if let L = inductance.parsedDouble, L > 0,
+                       farads.isFinite, farads > 0,
+                       let f = frequency.parsedDouble, f > 0 {
+                        ReactanceSweepChart(inductance: L, capacitance: farads, frequency: f)
+                            .opacity(session.isStale ? 0.72 : 1)
+                    }
+                }
+                if case .resonance(let r) = output,
+                   let L = inductance.parsedDouble, L > 0,
+                   farads > 0,
+                   let R = resistance.parsedDouble, R >= 0,
+                   r.frequency.isFinite, r.frequency > 0 {
+                    ResonanceImpedanceChart(
+                        resistance: R,
+                        inductance: L,
+                        capacitance: farads,
+                        resonantFrequency: r.frequency
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
                 }
                 ResultCard(copyText: sticky) { rows(for: output) }
                     .opacity(session.isStale ? 0.72 : 1)
@@ -2014,7 +2033,13 @@ struct TransientCircuitView: View {
             }
 
             if let r = session.displayedResult {
-                TransientResponseChart(curve: r.curve, currentTime: time.parsedDouble ?? 0, currentValue: r.valueAtTime, unit: unit)
+                TransientResponseChart(
+                    curve: r.curve,
+                    currentTime: time.parsedDouble ?? 0,
+                    currentValue: r.valueAtTime,
+                    unit: unit,
+                    timeConstant: r.timeConstant
+                )
                     .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Time constant τ", value: Format.time(r.timeConstant), emphasis: true, tone: Theme.good)

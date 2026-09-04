@@ -73,6 +73,10 @@ struct FrequencyView: View {
                     ResultRow(label: "Wavelength", value: Format.meters(r.wavelength))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if r.frequency.isFinite, r.frequency > 0 {
+                    SineWaveChart(frequency: r.frequency)
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }

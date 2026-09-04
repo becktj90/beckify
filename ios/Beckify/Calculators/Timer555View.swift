@@ -150,6 +150,10 @@ struct Timer555View: View {
                         ))
                     }
                 case .monostable(let r):
+                    if r.pulseWidth.isFinite, r.pulseWidth > 0 {
+                        MonostableCapChargeChart(pulseWidth: r.pulseWidth)
+                            .opacity(session.isStale ? 0.72 : 1)
+                    }
                     ResultCard(copyText: copyText) {
                         ResultRow(label: "Pulse width", value: Format.time(r.pulseWidth), emphasis: true, tone: Theme.good)
                         ResultRow(label: "Max retrigger", value: Format.frequency(r.maxRetriggerHz))

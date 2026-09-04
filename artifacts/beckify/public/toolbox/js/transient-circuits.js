@@ -510,6 +510,51 @@
     });
     y1lab.textContent = fmtEng(yMin, 2, sol.type === 'rl' ? 'A' : 'V');
     svg.appendChild(y1lab);
+    host.setAttribute('data-chart-export-root', '1');
+    if (!host.querySelector('.calculation-visual-export')) {
+      const toolbar = document.createElement('div');
+      toolbar.className = 'calculation-visual-toolbar';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'calculation-visual-export';
+      btn.textContent = 'Save PNG';
+      btn.title = 'Download this transient plot as a PNG image';
+      btn.addEventListener('click', function () {
+        const clone = svg.cloneNode(true);
+        if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        const xml = new XMLSerializer().serializeToString(clone);
+        const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const image = new Image();
+        image.onload = function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = W * 2;
+          canvas.height = H * 2;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { URL.revokeObjectURL(url); return; }
+          ctx.fillStyle = '#0d1117';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          canvas.toBlob(function (png) {
+            if (!png) return;
+            const href = URL.createObjectURL(png);
+            const a = document.createElement('a');
+            a.href = href;
+            a.download = 'beckify-transient-response.png';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(href);
+          }, 'image/png');
+        };
+        image.onerror = function () { URL.revokeObjectURL(url); };
+        image.src = url;
+      });
+      toolbar.appendChild(btn);
+      host.insertBefore(toolbar, host.firstChild);
+    }
     host.appendChild(svg);
   }
 
