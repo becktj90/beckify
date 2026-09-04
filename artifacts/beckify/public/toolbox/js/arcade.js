@@ -18,6 +18,8 @@
     difficulty: 'CADET',
     engineerPanel: false,
     hiScore: 0,
+    hiArcadeScore: 0,
+    lastArcadeScore: 0,
     leaderboard: [],
     missionCount: 0,
     bestFlight: null,
@@ -50,9 +52,9 @@
     'BE-4 burns methane — cleaner than kerosene and easier to reuse.'
   ];
   const DIFFICULTY = {
-    KID:     { spawnMul: 0.25, hitboxScale: 0.45, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false, gimbalSlewRate: 0.028, gimbalDriftBias: 0 },
-    CADET:   { spawnMul: 0.55, hitboxScale: 0.55, graceFrames: 90,  qStressGain: 0.08, qStressDecay: 0.18, landingTolerance: 18, secoBand: 200, allowFail: true,  gimbalSlewRate: 0.016, gimbalDriftBias: 0.0003 },
-    PAD_RAT: { spawnMul: 1.0,  hitboxScale: 0.7,  graceFrames: 45,  qStressGain: 0.16, qStressDecay: 0.07, landingTolerance: 10, secoBand: 100, allowFail: true,  gimbalSlewRate: 0.009, gimbalDriftBias: 0.0008 }
+    KID:     { spawnMul: 0.25, hitboxScale: 0.42, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false, gimbalSlewRate: 0.032, gimbalDriftBias: 0,     pickupMul: 1.35 },
+    CADET:   { spawnMul: 0.55, hitboxScale: 0.52, graceFrames: 90,  qStressGain: 0.08, qStressDecay: 0.18, landingTolerance: 18, secoBand: 200, allowFail: true,  gimbalSlewRate: 0.022, gimbalDriftBias: 0.0002, pickupMul: 1.0 },
+    PAD_RAT: { spawnMul: 1.0,  hitboxScale: 0.66, graceFrames: 45,  qStressGain: 0.16, qStressDecay: 0.07, landingTolerance: 10, secoBand: 100, allowFail: true,  gimbalSlewRate: 0.013, gimbalDriftBias: 0.0007, pickupMul: 0.7 }
   };
   const MISSION_CAPTIONS = {
     PAD: 'Pad ops complete. Countdown at T-3 and all systems are green.',
@@ -138,6 +140,16 @@
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
+  const BOOST_COYOTE_SEC = 0.14;
+  const BOOST_BUFFER_SEC = 0.18;
+  const PICKUP_TYPES = ['shield', 'fuel', 'boost'];
+  const SHIELD_MAX = 2;
+  const FUEL_GRACE_BONUS = 1.15;
+  const OVERDRIVE_SEC = 4.2;
+  const OVERDRIVE_THRUST = 1.28;
+  const OVERDRIVE_SCORE = 2;
+  const TRAIL_MAX = 16;
+  const PICKUP_SPAWN_CHANCE = 0.22;
   const NO_THRUST_FAIL_SEC = 2.2;
   const MAX_NO_THRUST_TIME_SEC = 3.5;
   const NO_THRUST_DROP_RATE = 18;
@@ -482,6 +494,11 @@
         case 'level_start': tone(261.63, 0.08, 'triangle', 0.03); tone(329.63, 0.08, 'triangle', 0.03); tone(392, 0.08, 'triangle', 0.03); tone(523.25, 0.14, 'triangle', 0.04); break;
         case 'level_clear': tone(523.25, 0.1, 'triangle', 0.04); tone(392, 0.12, 'triangle', 0.04); tone(329.63, 0.14, 'triangle', 0.03); break;
         case 'star': tone(440, 0.08, 'sine', 0.03); tone(659.25, 0.12, 'triangle', 0.028); break;
+        case 'pickup': tone(523.25, 0.07, 'sine', 0.035); tone(784, 0.12, 'triangle', 0.03); break;
+        case 'shield': tone(196, 0.08, 'triangle', 0.04, 420); noise(0.1, 0.02, 1400); break;
+        case 'fuel': tone(262, 0.09, 'sine', 0.03); tone(392, 0.12, 'triangle', 0.028); break;
+        case 'overdrive': tone(330, 0.08, 'square', 0.035, 660); tone(440, 0.14, 'sawtooth', 0.02); break;
+        case 'score_pop': tone(880, 0.05, 'sine', 0.018, 1320); break;
       }
     }
 
@@ -702,7 +719,7 @@
       stars: { deep: createStars(90, 0.05, 0.2), mid: createStars(45, 0.12, 0.45) },
       clouds: createClouds(),
       shake: { intensity: 0, duration: 0 },
-      input: { left: false, right: false, pointerX: CW / 2, boostHeld: false, boostPressed: false, konami: [], pointerDown: false },
+      input: { left: false, right: false, pointerX: CW / 2, boostHeld: false, boostPressed: false, boostCoyote: 0, boostBuffer: 0, konami: [], pointerDown: false },
       ui: {
         settingsOpen: false,
         radio: 'Gradatim ferociter.',
@@ -737,7 +754,9 @@
         missionPatch: null,
         summaryButtons: [],
         overlayMessage: '',
-        overlayTimer: 0
+        overlayTimer: 0,
+        floatScores: [],
+        liveStatus: ''
       },
       session: {
         missionNo: settings.missionCount + 1,
@@ -775,8 +794,14 @@
         upperObstacleCount: 0,
         nextUpperSpawnAt: 1.5,
         obstacleStreak: 0,
-        summaryReady: false
+        summaryReady: false,
+        shield: 0,
+        overdrive: 0,
+        scoreMult: 1,
+        pickupsCollected: 0
       },
+      pickups: [],
+      trail: [],
       world: { scrollY: 0, cameraVy: 0, padGone: false },
       telemetry: { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' },
       rocket: { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0, gimbalAngle: 0, gimbalDrift: 0 },
@@ -792,6 +817,229 @@
       },
       buttons: { mute: null, pause: null }
     };
+  }
+
+  function announce(message) {
+    state.ui.liveStatus = message || '';
+    const el = document.getElementById('arcade-live');
+    if (el) el.textContent = state.ui.liveStatus;
+  }
+
+  function isBoosting() {
+    return !!(state.input.boostHeld || state.input.boostCoyote > 0);
+  }
+
+  function consumeBoostTap() {
+    if (state.input.boostPressed || state.input.boostBuffer > 0) {
+      state.input.boostPressed = false;
+      state.input.boostBuffer = 0;
+      return true;
+    }
+    return false;
+  }
+
+  function updateInputFeel(dt) {
+    if (state.input.boostHeld) state.input.boostCoyote = BOOST_COYOTE_SEC;
+    else state.input.boostCoyote = Math.max(0, (state.input.boostCoyote || 0) - dt);
+    if (state.input.boostPressed) state.input.boostBuffer = BOOST_BUFFER_SEC;
+    else state.input.boostBuffer = Math.max(0, (state.input.boostBuffer || 0) - dt);
+  }
+
+  function addFloatScore(x, y, text, color) {
+    state.ui.floatScores.push({
+      x: x,
+      y: y,
+      text: text,
+      color: color || '#ffcf5d',
+      life: 0.85,
+      vy: -28
+    });
+    if (state.ui.floatScores.length > 12) state.ui.floatScores.shift();
+  }
+
+  function updateFloatScores(dt) {
+    for (let i = state.ui.floatScores.length - 1; i >= 0; i--) {
+      const pop = state.ui.floatScores[i];
+      pop.life -= dt;
+      pop.y += pop.vy * dt;
+      if (pop.life <= 0) state.ui.floatScores.splice(i, 1);
+    }
+  }
+
+  function pushTrail(x, y) {
+    if (state.settings.reducedMotion) return;
+    state.trail.push({ x: x, y: y, life: 1 });
+    if (state.trail.length > TRAIL_MAX) state.trail.shift();
+  }
+
+  function updateTrail(dt) {
+    for (let i = state.trail.length - 1; i >= 0; i--) {
+      state.trail[i].life -= dt * 2.4;
+      if (state.trail[i].life <= 0) state.trail.splice(i, 1);
+    }
+  }
+
+  function drawTrail(ctx) {
+    if (state.settings.reducedMotion || !state.trail.length) return;
+    ctx.save();
+    for (let i = 0; i < state.trail.length; i++) {
+      const p = state.trail[i];
+      const t = (i + 1) / state.trail.length;
+      ctx.fillStyle = `rgba(255,176,80,${(p.life * t * 0.28).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y + 22, 4 + t * 5, 7 + t * 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawFloatScores(ctx) {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
+    for (const pop of state.ui.floatScores) {
+      ctx.globalAlpha = Math.max(0, pop.life / 0.85);
+      ctx.fillStyle = pop.color;
+      ctx.fillText(pop.text, pop.x, pop.y);
+    }
+    ctx.restore();
+  }
+
+  function musicMoodForPhase(phase) {
+    if (phase === 'MAX_Q') return 'maxq';
+    if (phase === 'PAD') return 'pad';
+    if (phase === 'ORBIT_INSERT' || phase === 'PAYLOAD_DEPLOY' || phase === 'EXTENDED') return 'orbital';
+    if (phase === 'KARMAN' || phase === 'BOOSTER_RTLS') return 'triumph';
+    if (phase === 'ASCENT' || phase === 'SUPERSONIC' || phase === 'STAGE_SEP') return 'ascent';
+    return 'idle';
+  }
+
+  function obstacleHitbox(o) {
+    const pad = o.type === 'lightning' ? 0.78 : 0.88;
+    return { x: o.x - (o.w * pad) / 2, y: o.y - (o.h * pad) / 2, w: o.w * pad, h: o.h * pad };
+  }
+
+  function tryAbsorbHit() {
+    if ((state.session.shield || 0) <= 0) return false;
+    state.session.shield -= 1;
+    state.session.phaseGrace = Math.max(state.session.phaseGrace, 0.55);
+    addShake(5, 0.22);
+    vibrate([18]);
+    Audio.play('shield', state.settings);
+    addFloatScore(state.rocket.x, state.rocket.y - 36, 'SHIELD HOLD', '#8ce0ff');
+    announce('Aero shield absorbed a hit');
+    Particles.burst(state.settings.reducedMotion ? 10 : 22, () => ({
+      kind: 'flash',
+      section: state.effects.splitView ? 'upper' : 'main',
+      x: state.rocket.x + rand(-10, 10),
+      y: state.rocket.y + rand(-16, 16),
+      vx: rand(-1.4, 1.4),
+      vy: rand(-1.4, 1.4),
+      life: 0.55,
+      decay: 0.06,
+      size: rand(2, 4),
+      grow: 0.03,
+      alpha: 0.7,
+      color: '140,224,255'
+    }));
+    return true;
+  }
+
+  function collectPickup(p) {
+    state.session.pickupsCollected += 1;
+    state.session.score += 0.35;
+    Audio.play('pickup', state.settings);
+    if (p.type === 'shield') {
+      state.session.shield = Math.min(SHIELD_MAX, (state.session.shield || 0) + 1);
+      Audio.play('shield', state.settings);
+      addFloatScore(p.x, p.y, 'AERO SHIELD', '#8ce0ff');
+      announce('Aero shield online');
+    } else if (p.type === 'fuel') {
+      state.session.noThrustTime = 0;
+      state.session.phaseGrace = Math.max(state.session.phaseGrace, FUEL_GRACE_BONUS);
+      state.session.launchCharge = 1;
+      Audio.play('fuel', state.settings);
+      addFloatScore(p.x, p.y, 'LOX TOP-OFF', '#9df6bf');
+      announce('LOX top-off — thrust grace restored');
+    } else {
+      state.session.overdrive = OVERDRIVE_SEC;
+      state.session.scoreMult = OVERDRIVE_SCORE;
+      Audio.play('overdrive', state.settings);
+      addFloatScore(p.x, p.y, 'BE-4 KICK', '#ffb300');
+      announce('BE-4 kick — extra thrust');
+    }
+    Particles.burst(state.settings.reducedMotion ? 8 : 20, () => ({
+      kind: 'flash',
+      section: 'main',
+      x: p.x + rand(-8, 8),
+      y: p.y + rand(-8, 8),
+      vx: rand(-1.1, 1.1),
+      vy: rand(-1.4, 0.4),
+      life: 0.6,
+      decay: 0.05,
+      size: rand(1.6, 3.2),
+      grow: 0.02,
+      alpha: 0.7,
+      color: p.type === 'fuel' ? '150,255,190' : p.type === 'shield' ? '140,224,255' : '255,179,0'
+    }));
+  }
+
+  function spawnPickup() {
+    const type = PICKUP_TYPES[Math.floor(Math.random() * PICKUP_TYPES.length)];
+    let x = rand(54, CW - 54);
+    if (Math.abs(x - state.rocket.x) < 28) x = clamp(state.rocket.x + (x < state.rocket.x ? -56 : 56), 54, CW - 54);
+    state.pickups.push({
+      type,
+      x,
+      y: -22,
+      w: 20,
+      h: 20,
+      vy: rand(1.7, 2.5),
+      pulse: 0
+    });
+  }
+
+  function maybeSpawnPickup() {
+    if (state.pickups.length >= 2) return;
+    if (state.session.phaseGrace > 0.4) return;
+    const chance = PICKUP_SPAWN_CHANCE * (currentDifficulty().pickupMul || 1);
+    if (Math.random() < chance) spawnPickup();
+  }
+
+  function updatePickups(dt) {
+    const step = dt * BASE_FPS;
+    for (let i = state.pickups.length - 1; i >= 0; i--) {
+      const p = state.pickups[i];
+      p.pulse += dt;
+      p.y += (p.vy + state.world.cameraVy * 0.45) * step;
+      if (p.y > CH + 24) {
+        state.pickups.splice(i, 1);
+        continue;
+      }
+      if (nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, false), { x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h })) {
+        collectPickup(p);
+        state.pickups.splice(i, 1);
+      }
+    }
+  }
+
+  function drawPickup(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    const pulse = 0.55 + Math.sin((p.pulse || 0) * 8) * 0.25;
+    const color = p.type === 'shield' ? '140,224,255' : p.type === 'fuel' ? '157,246,191' : '255,179,0';
+    ctx.fillStyle = `rgba(${color},${pulse * 0.22})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${color},0.95)`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-9, -9, 18, 18);
+    ctx.fillStyle = `rgba(${color},0.95)`;
+    ctx.font = 'bold 8px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.type === 'shield' ? 'SHLD' : p.type === 'fuel' ? 'LOX' : 'BE-4', 0, 3);
+    ctx.restore();
   }
 
   const state = createState();
@@ -846,8 +1094,16 @@
   function updateButtons() {
     const mute = document.getElementById('arcade-mute-btn');
     const pause = document.getElementById('arcade-pause-btn');
-    if (mute) mute.textContent = state.settings.muted ? '🔇' : '🔊';
-    if (pause) pause.textContent = state.status === 'PAUSED' || state.status === 'PAUSED_AUTO' ? '▶' : '⏸';
+    if (mute) {
+      mute.textContent = state.settings.muted ? '🔇' : '🔊';
+      mute.setAttribute('aria-pressed', state.settings.muted ? 'true' : 'false');
+    }
+    if (pause) {
+      const paused = state.status === 'PAUSED' || state.status === 'PAUSED_AUTO';
+      pause.textContent = paused ? '▶' : '⏸';
+      pause.setAttribute('aria-pressed', paused ? 'true' : 'false');
+      pause.setAttribute('aria-label', paused ? 'Resume mission' : 'Pause mission');
+    }
   }
 
   function resizeCanvas() {
@@ -879,6 +1135,8 @@
 
   function resetMissionRecord() {
     state.settings.hiScore = 0;
+    state.settings.hiArcadeScore = 0;
+    state.settings.lastArcadeScore = 0;
     state.settings.bestFlight = null;
     state.settings.patches = [];
     saveSettings();
@@ -888,12 +1146,15 @@
   function updateRecordDisplay() {
     const el = document.getElementById('arcade-hi-score');
     if (!el) return;
-    if (!state.settings.bestFlight) {
+    const bestArcade = state.settings.hiArcadeScore || 0;
+    if (!state.settings.bestFlight && !bestArcade) {
       el.textContent = 'NO MISSIONS FLOWN';
       return;
     }
     const best = state.settings.bestFlight;
-    el.textContent = `${best.name} | ${best.medal} | Booster ${best.booster ? '✅' : '❌'} | Payload ${best.payload ? '✅' : '❌'}`;
+    const last = state.settings.lastArcadeScore || 0;
+    const medal = best ? ` | ${best.name} ${best.medal}` : '';
+    el.textContent = `PB ${bestArcade.toLocaleString()}  ·  LAST ${last.toLocaleString()}${medal}`;
   }
 
   function freshSystems() {
@@ -938,6 +1199,8 @@
     state.ui.summaryButtons = [];
     state.ui.overlayMessage = '';
     state.ui.overlayTimer = 0;
+    state.ui.floatScores = [];
+    state.ui.liveStatus = '';
     state.session = {
       missionNo: state.settings.missionCount + 1,
       missionName: `NG-${state.settings.missionCount + 1}`,
@@ -974,8 +1237,16 @@
       upperObstacleCount: 0,
       nextUpperSpawnAt: 1.5,
       obstacleStreak: 0,
-      summaryReady: false
+      summaryReady: false,
+      shield: 0,
+      overdrive: 0,
+      scoreMult: 1,
+      pickupsCollected: 0
     };
+    state.pickups = [];
+    state.trail = [];
+    state.input.boostCoyote = 0;
+    state.input.boostBuffer = 0;
     state.world = { scrollY: 0, cameraVy: 0, padGone: false };
     state.telemetry = { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' };
     state.rocket = { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0, gimbalAngle: 0, gimbalDrift: 0 };
@@ -1001,7 +1272,7 @@
   }
 
   function arcadeScore() {
-    return Math.round(state.session.score * 250 + state.session.obstacleStreak * 40 + (state.session.boosterRecovered ? 500 : 0) + (state.session.payloadDeployed ? 500 : 0));
+    return Math.round(state.session.score * 250 + state.session.obstacleStreak * 40 + (state.session.pickupsCollected || 0) * 80 + (state.session.boosterRecovered ? 500 : 0) + (state.session.payloadDeployed ? 500 : 0));
   }
 
   function starsForPhase(phase) {
@@ -1116,6 +1387,8 @@
     if (state.status === 'RUD') return;
     state.status = auto ? 'PAUSED_AUTO' : 'PAUSED';
     Audio.stopRumble();
+    Audio.stopMusic();
+    announce(auto ? 'Mission paused in background' : 'Mission paused. Press P, Escape, or tap to resume.');
     updateButtons();
   }
 
@@ -1123,6 +1396,8 @@
     if (state.status !== 'PAUSED' && state.status !== 'PAUSED_AUTO') return;
     state.status = 'RUNNING';
     state.lastTs = 0;
+    Audio.setMood(musicMoodForPhase(state.session.phase), state.settings);
+    announce('Mission resumed');
     updateButtons();
   }
 
@@ -1255,7 +1530,8 @@
     }
     const baseVy = type === 'lightning' ? rand(LIGHTNING_VY_MIN, LIGHTNING_VY_MAX) : rand(OBSTACLE_VY_MIN, OBSTACLE_VY_MAX);
     // Slight homing: obstacles drift toward the rocket to increase pressure.
-    const homeVx = (state.rocket.x - x) * OBSTACLE_HOMING_STRENGTH;
+    const homeScale = state.settings.difficulty === 'PAD_RAT' ? 1 : state.settings.difficulty === 'CADET' ? 0.4 : 0.15;
+    const homeVx = (state.rocket.x - x) * OBSTACLE_HOMING_STRENGTH * homeScale;
     state.obstacles.push({
       type,
       x,
@@ -1338,7 +1614,8 @@
 
     // === LATERAL PHYSICS ===
     const lateralAccel = lowGravity ? LATERAL_ACCEL_SPACE : LATERAL_ACCEL_ATMO;
-    if (state.input.boostHeld) {
+    const boosting = isBoosting();
+    if (boosting) {
       // With thrust: gimbal angle determines lateral force via thrust vectoring.
       state.rocket.vx += Math.sin(state.rocket.gimbalAngle) * lateralAccel * LATERAL_GIMBAL_SCALE * step;
     } else if (!lowGravity) {
@@ -1357,18 +1634,19 @@
     // === VERTICAL PHYSICS ===
     const gravity = lowGravity ? GRAVITY_SPACE : GRAVITY_ATMO;
     state.rocket.vy += gravity * step;
-    const thrustlessDropAccel = !state.input.boostHeld && !lowGravity
+    const thrustlessDropAccel = !boosting && !lowGravity
       ? clamp((state.session.noThrustTime || 0) * THRUSTLESS_DROP_RATE, 0, MAX_THRUSTLESS_DROP)
       : 0;
     state.rocket.vy += thrustlessDropAccel * step;
-    if (state.input.boostHeld) {
+    if (boosting) {
       const thrust = lowGravity ? MAIN_THRUST_SPACE : MAIN_THRUST_ATMO;
       // Thrust builds as propellant burns — lighter rocket accelerates faster (realistic TWR growth).
-      const thrustScale = lowGravity ? 1.0 : clamp(1.0 + state.session.phaseElapsed * THRUST_GROWTH_RATE, 1.0, MAX_THRUST_SCALE);
+      const kick = state.session.overdrive > 0 ? OVERDRIVE_THRUST : 1;
+      const thrustScale = (lowGravity ? 1.0 : clamp(1.0 + state.session.phaseElapsed * THRUST_GROWTH_RATE, 1.0, MAX_THRUST_SCALE)) * kick;
       const vertThrust = Math.cos(state.rocket.gimbalAngle) * thrust * thrustScale;
       state.rocket.vy = Math.max(lowGravity ? MAX_UPWARD_VELOCITY_SPACE : MAX_UPWARD_VELOCITY_ATMO, state.rocket.vy - vertThrust * step);
       state.rocket.burn = Math.max(state.rocket.burn, MAIN_BURN_MIN);
-      spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
+      spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, (lowGravity ? 0.7 : 1.1) * kick, state.effects.splitView ? 'upper' : 'main');
     }
     if (Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * 0.5 && Math.random() < (lowGravity ? SIDE_THRUSTER_SPAWN_CHANCE_SPACE : SIDE_THRUSTER_SPAWN_CHANCE_ATMO)) {
       spawnExhaust('be3u', state.rocket.x - Math.sign(state.rocket.gimbalAngle) * 12, state.rocket.y + 8, lowGravity ? 0.24 : 0.34, state.effects.splitView ? 'upper' : 'main');
@@ -1380,13 +1658,14 @@
       state.rocket.vy *= ROCKET_BOUNDARY_DAMPING;
     }
     // Tilt primarily follows gimbal angle (gives visual feedback of TVC state).
-    const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
+    const tumble = !boosting && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
     state.rocket.tilt = clamp(state.rocket.gimbalAngle * GIMBAL_TILT_MULTIPLIER + state.rocket.vx * VELOCITY_TILT_FACTOR * VELOCITY_TILT_DAMPEN + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
+    pushTrail(state.rocket.x, state.rocket.y);
   }
 
   function updateNoThrustLoss(dt, failKey) {
-    if (state.input.boostHeld) {
+    if (isBoosting()) {
       state.session.noThrustTime = 0;
       return false;
     }
@@ -1505,8 +1784,10 @@
 
   function updateBestFlight(success) {
     // Cross-game record kept by the toolbox; a no-op if storage is unavailable.
+    const points = arcadeScore();
+    state.settings.lastArcadeScore = points;
     if (typeof window.recordGameScore === 'function') {
-      window.recordGameScore('new-glenn-runner', state.session.score);
+      window.recordGameScore('new-glenn-runner', points);
     }
     const medal = missionMedal(state.session.score);
     const record = {
@@ -1514,14 +1795,18 @@
       medal,
       booster: state.session.boosterRecovered,
       payload: success && state.session.payloadDeployed,
-      score: state.session.score
+      score: state.session.score,
+      arcade: points
     };
-    if (!state.settings.bestFlight || record.score >= (state.settings.bestFlight.score || 0)) {
+    if (!state.settings.hiArcadeScore || points >= state.settings.hiArcadeScore) {
+      state.settings.hiArcadeScore = points;
+    }
+    if (!state.settings.bestFlight || record.score >= (state.settings.bestFlight.score || 0) || points >= (state.settings.bestFlight.arcade || 0)) {
       state.settings.bestFlight = record;
       state.settings.hiScore = record.score;
-      saveSettings();
-      updateRecordDisplay();
     }
+    saveSettings();
+    updateRecordDisplay();
   }
 
   function startSummary() {
@@ -1620,6 +1905,8 @@
         Audio.play('stage_sep', state.settings);
         setRadio(RADIO.STAGE_SEP, 2.5);
         state.effects.stageSepPuff = 1;
+        state.obstacles = [];
+        state.pickups = [];
         addShake(3, 0.3);
         break;
       case 'KARMAN':
@@ -1648,6 +1935,13 @@
   }
 
   function updateMission(dt) {
+    updateInputFeel(dt);
+    if (state.session.overdrive > 0) {
+      state.session.overdrive = Math.max(0, state.session.overdrive - dt);
+      if (state.session.overdrive === 0) state.session.scoreMult = 1;
+    }
+    updateTrail(dt);
+    updateFloatScores(dt);
     updateWorldScroll(dt);
     state.session.phaseElapsed += dt * MISSION_PACE;
     if (state.ui.radioTimer > 0) state.ui.radioTimer -= dt;
@@ -1780,9 +2074,9 @@
         state.ui.tutorialSeen = true;
       }
     }
-    if (state.input.boostHeld) {
-      addShake(1.2, 0.1);
-      Audio.updateRumble(0.55, state.settings);
+    if (isBoosting()) {
+      addShake(state.session.overdrive > 0 ? 1.6 : 1.2, 0.1);
+      Audio.updateRumble(state.session.overdrive > 0 ? 0.72 : 0.55, state.settings);
     } else {
       Audio.updateRumble(0.35, state.settings);
     }
@@ -1792,6 +2086,7 @@
         spawnAtmosphericObstacle();
         state.session.ascentObstacleCount += 1;
         state.session.nextAscentSpawnAt += (rand(1.8, 3.2) * ASCENT_SPAWN_INTERVAL_MULTIPLIER) / Math.max(0.4, mode.spawnMul + 0.2);
+        if (state.session.ascentObstacleCount % 4 === 0) maybeSpawnPickup();
       }
     }
     if (state.effects.liftoffShake > 0) {
@@ -1814,6 +2109,13 @@
         color: '235,245,255'
       }));
     }
+    if (updateFlightHazards(dt, 'ascent')) return;
+    if (state.session.totalElapsed >= PHASES.ASCENT.end) transitionPhase('MAX_Q');
+  }
+
+  function updateFlightHazards(dt, failKey) {
+    const step = dt * BASE_FPS;
+    updatePickups(dt);
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const o = state.obstacles[i];
       o.waveTime = (o.waveTime || 0) + dt;
@@ -1827,7 +2129,10 @@
       if (o.y > CH + 30) {
         state.obstacles.splice(i, 1);
         state.session.obstacleStreak += 1;
-        state.session.score += 0.25;
+        const award = 0.25 * (state.session.scoreMult || 1);
+        state.session.score += award;
+        addFloatScore(o.x, CH - 70, `+${Math.round(40 * (state.session.scoreMult || 1))}`, '#ffcf5d');
+        if (!state.settings.reducedMotion) Audio.play('score_pop', state.settings);
         if (state.session.obstacleStreak > 0 && state.session.obstacleStreak % 3 === 0) {
           showOverlayMessage(`CLEAR SKY x${state.session.obstacleStreak}  +FLIGHT POINTS`, 1.2);
           Audio.play('boop', state.settings);
@@ -1853,12 +2158,16 @@
         o.whooshed = true;
         Audio.play('whoosh', state.settings);
       }
-      if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, false), { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h })) {
-        triggerRud('ascent');
-        return;
+      if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, false), obstacleHitbox(o))) {
+        if (tryAbsorbHit()) {
+          state.obstacles.splice(i, 1);
+          continue;
+        }
+        triggerRud(failKey);
+        return true;
       }
     }
-    if (state.session.totalElapsed >= PHASES.ASCENT.end) transitionPhase('MAX_Q');
+    return false;
   }
 
   function updateMaxQ(dt) {
@@ -1881,10 +2190,18 @@
     state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
     if (updateNoThrustLoss(dt, 'maxq')) return;
     state.session.recentSteerSign = gimbalSign || state.session.recentSteerSign;
-    if (state.session.phaseElapsed > 2.5 && Math.random() < 0.022 * Math.max(0.2, mode.spawnMul)) spawnAtmosphericObstacle();
+    if (state.session.phaseElapsed > 2.5 && Math.random() < 0.022 * Math.max(0.2, mode.spawnMul)) {
+      spawnAtmosphericObstacle();
+      maybeSpawnPickup();
+    }
+    if (updateFlightHazards(dt, 'maxq')) return;
     if (state.session.structuralStress >= 1) {
-      triggerRud('maxq');
-      return;
+      if (tryAbsorbHit()) {
+        state.session.structuralStress = 0.45;
+      } else {
+        triggerRud('maxq');
+        return;
+      }
     }
     if (state.session.totalElapsed >= PHASES.MAX_Q.end) transitionPhase('SUPERSONIC');
   }
@@ -1896,7 +2213,11 @@
     applyRocketControl(dt, false);
     Audio.updateRumble(0.35, state.settings);
     if (updateNoThrustLoss(dt, 'ascent')) return;
-    if (Math.random() < 0.013 * Math.max(0.2, mode.spawnMul)) spawnAtmosphericObstacle();
+    if (Math.random() < 0.013 * Math.max(0.2, mode.spawnMul)) {
+      spawnAtmosphericObstacle();
+      if (Math.random() < 0.35) maybeSpawnPickup();
+    }
+    if (updateFlightHazards(dt, 'ascent')) return;
     if (state.session.totalElapsed >= PHASES.SUPERSONIC.end) transitionPhase('STAGE_SEP');
   }
 
@@ -1934,14 +2255,14 @@
     state.booster.vx = approach(state.booster.vx, steer * 2.2, 0.09 * step);
     state.booster.x = clamp(state.booster.x + state.booster.vx * step, 46, CW - 46);
     state.booster.y = lerp(46, 245, 1 - clamp(desiredAlt / 80000, 0, 1));
-    if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (state.input.boostPressed || (isCadet && splitT >= 356))) {
+    if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (consumeBoostTap() || isBoosting() || (isCadet && splitT >= 356))) {
       state.booster.reentryBurnDone = true;
       state.booster.burn = 1.6;
       showOverlayMessage(`REENTRY BURN COMMANDED (${formatMissionTime(splitActual)})`, 1.6);
       Audio.play('boost', state.settings);
       addShake(2, 0.35);
     }
-    if (!state.booster.landingBurnDone && splitT >= 394 && splitT <= 408 && (state.input.boostPressed || (isCadet && splitT >= 402))) {
+    if (!state.booster.landingBurnDone && splitT >= 394 && splitT <= 408 && (consumeBoostTap() || isBoosting() || (isCadet && splitT >= 402))) {
       state.booster.landingBurnDone = true;
       state.booster.burn = 2.1;
       showOverlayMessage('LANDING BURN GO', 1.4);
@@ -1994,6 +2315,10 @@
       h.y += h.vy;
       if (h.y > 325 || h.x < -40 || h.x > CW + 40) state.upperHazards.splice(i, 1);
       if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.upper.x, state.upper.y, true), { x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h })) {
+        if (tryAbsorbHit()) {
+          state.upperHazards.splice(i, 1);
+          continue;
+        }
         triggerRud('orbit');
         return;
       }
@@ -2008,7 +2333,7 @@
     state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.1 + state.world.cameraVy * 0.2);
     state.upper.targetBand = 0.5 + Math.sin(state.session.phaseElapsed * 2.2) * 0.22;
-    if (state.input.boostHeld) state.upper.throttle = clamp(state.upper.throttle + dt * 0.75, 0, 1);
+    if (isBoosting()) state.upper.throttle = clamp(state.upper.throttle + dt * 0.75, 0, 1);
     else state.upper.throttle = clamp(state.upper.throttle - dt * 0.38, 0, 1);
     const error = Math.abs(state.upper.throttle - state.upper.targetBand);
     if (error < 0.08) state.upper.targetLock += dt * 1.35;
@@ -2033,7 +2358,7 @@
     state.session.totalElapsed += dt * MISSION_PACE;
     updateSky(dt, 0.08 + state.world.cameraVy * 0.18);
     state.upper.deployAngle = approach(state.upper.deployAngle, 0.55, dt * 1.5);
-    if (state.input.boostPressed && !state.upper.released) {
+    if ((consumeBoostTap() || isBoosting()) && !state.upper.released) {
       state.upper.released = true;
       state.session.payloadDeployed = true;
       ratePhase('PAYLOAD_DEPLOY', 'GOLD');
@@ -2056,6 +2381,10 @@
       const h = state.upperHazards[i];
       h.y += h.vy * 1.2;
       if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, true), { x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h })) {
+        if (tryAbsorbHit()) {
+          state.upperHazards.splice(i, 1);
+          continue;
+        }
         triggerRud('orbit');
         return;
       }
@@ -2325,7 +2654,7 @@
     const labels = state.easter.binLabels;
     const stacks = binBlockPositions(groundY);
     ctx.fillStyle = '#0b1216';
-    ctx.font = '5px "Share Tech Mono", monospace';
+    ctx.font = '5px "IBM Plex Mono", ui-monospace, monospace';
     stacks.forEach(({ x, y }, i) => {
       ctx.fillText(labels[i % labels.length], x + BIN_LABEL_OFFSET_X, y + BIN_LABEL_OFFSET_Y);
     });
@@ -2431,12 +2760,15 @@
     if (state.settings.difficulty !== 'PAD_RAT') {
       const closingRate = Math.max(0.001, (o.vy + state.world.cameraVy) * BASE_FPS);
       const closing = state.rocket.y > o.y ? (state.rocket.y - o.y) / closingRate : 9;
-      if (closing <= OBSTACLE_WARNING_TIME && Math.abs(o.x - state.rocket.x) < Math.max(24, o.w * 0.9)) {
-        ctx.fillStyle = 'rgba(255,220,90,0.8)';
+      if (closing <= OBSTACLE_WARNING_TIME && Math.abs(o.x - state.rocket.x) < Math.max(36, o.w * 1.4)) {
+        const urgent = closing <= 0.55;
+        ctx.fillStyle = urgent ? 'rgba(255,90,70,0.22)' : 'rgba(255,220,90,0.14)';
+        ctx.fillRect(o.x - 7, 0, 14, Math.max(18, o.y));
+        ctx.fillStyle = urgent ? 'rgba(255,90,70,0.95)' : 'rgba(255,220,90,0.88)';
         ctx.beginPath();
-        ctx.moveTo(o.x, 8);
-        ctx.lineTo(o.x - 8, 18);
-        ctx.lineTo(o.x + 8, 18);
+        ctx.moveTo(o.x, 6);
+        ctx.lineTo(o.x - 10, 20);
+        ctx.lineTo(o.x + 10, 20);
         ctx.closePath();
         ctx.fill();
       }
@@ -2448,7 +2780,7 @@
       ctx.beginPath();
       ctx.moveTo(-8, 0); ctx.quadraticCurveTo(-2, -7, 3, 0); ctx.quadraticCurveTo(8, -7, 12, 0); ctx.stroke();
       ctx.fillStyle = '#ff6';
-      ctx.font = '7px "Share Tech Mono", monospace';
+      ctx.font = '7px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillText('I ♥ FL', -10, -10);
     } else if (o.type === 'ice') {
       ctx.fillStyle = 'rgba(190,230,255,0.85)';
@@ -2508,7 +2840,7 @@
       ctx.fillRect(-22, -3, 10, 6);
       ctx.fillRect(12, -3, 10, 6);
       ctx.fillStyle = '#ffcf5d';
-      ctx.font = '5px "Share Tech Mono", monospace';
+      ctx.font = '5px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillText(Math.random() < 0.5 ? 'KEPLER (ret.)' : 'OUT OF SERVICE 1998', -26, -9);
     } else if (h.type === 'micro') {
       ctx.strokeStyle = '#fff';
@@ -2547,7 +2879,7 @@
     ctx.fillStyle = '#33261d';
     ctx.fillRect(-8, -62, 16, 1);
     ctx.fillStyle = '#1d2632';
-    ctx.font = 'bold 5px "Share Tech Mono", monospace';
+    ctx.font = 'bold 5px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('NG-7', 0, -66);
     ctx.save();
@@ -2569,7 +2901,7 @@
     });
     if (mode === 'booster') {
       ctx.fillStyle = '#66c9ff';
-      ctx.font = 'bold 6px "Share Tech Mono", monospace';
+      ctx.font = 'bold 6px "IBM Plex Mono", ui-monospace, monospace';
       ctx.textAlign = 'center';
       ctx.fillText('Never Tell Me The Odds', 0, 4);
     }
@@ -2646,7 +2978,7 @@
     ctx.beginPath(); ctx.moveTo(-18, 4); ctx.lineTo(0, -10); ctx.lineTo(18, 4); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-18, -10); ctx.lineTo(0, 4); ctx.lineTo(18, -10); ctx.stroke();
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '8px "Share Tech Mono", monospace';
+    ctx.font = '8px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('JACKLYN', 0, -16);
     ctx.restore();
@@ -2656,10 +2988,10 @@
     const padRatHud = state.settings.difficulty === 'PAD_RAT';
     ctx.save();
     ctx.fillStyle = '#8ce0ff';
-    ctx.font = padRatHud ? 'bold 15px "Share Tech Mono", monospace' : 'bold 18px "Share Tech Mono", monospace';
+    ctx.font = padRatHud ? 'bold 15px "IBM Plex Mono", ui-monospace, monospace' : 'bold 18px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText(state.telemetry.tPlus, 10, 22);
     ctx.fillStyle = '#ffb300';
-    ctx.font = padRatHud ? 'bold 10px "Share Tech Mono", monospace' : 'bold 11px "Share Tech Mono", monospace';
+    ctx.font = padRatHud ? 'bold 10px "IBM Plex Mono", ui-monospace, monospace' : 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText(`${currentPhaseLabel()}  │  ${state.session.missionName}`, 10, 38);
     const phaseOrder = ['PAD', 'ASCENT', 'MAX_Q', 'SUPERSONIC', 'STAGE_SEP', 'KARMAN', 'BOOSTER_RTLS', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
     const activeIdx = phaseOrder.indexOf(state.session.phase);
@@ -2670,7 +3002,7 @@
       ctx.fill();
     });
     ctx.fillStyle = '#33ff33';
-    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
     const launchPhase = state.session.phase === 'PAD' || state.session.phase === 'ASCENT';
     const dynamicMetricLabel = launchPhase ? 'CHARGE' : 'FLOW';
     const dynamicMetricValue = launchPhase
@@ -2681,10 +3013,19 @@
     ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
     ctx.fillText(`${dynamicMetricLabel} ${dynamicMetricValue.toFixed(0)}%`, 170, 54);
     ctx.fillText(`GUIDE ${(state.upper.targetLock * 100).toFixed(0)}%`, 170, 68);
-    ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 82);
+    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}`, 170, 82);
+    ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 96);
+    if ((state.session.shield || 0) > 0 || state.session.overdrive > 0 || state.session.phaseGrace > 0) {
+      ctx.fillStyle = '#8ce0ff';
+      const chips = [];
+      if (state.session.shield > 0) chips.push(`SHLD×${state.session.shield}`);
+      if (state.session.overdrive > 0) chips.push(`BE-4 ${state.session.overdrive.toFixed(1)}s`);
+      if (state.session.phaseGrace > 0) chips.push('GRACE');
+      ctx.fillText(chips.join('  ·  '), 10, 116);
+    }
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '10px "Share Tech Mono", monospace';
-    ctx.fillText(state.ui.radio, 10, 102);
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(state.ui.radio, 10, 132);
     if (state.ui.overlayTimer > 0) {
       ctx.fillStyle = '#ffcf5d';
       ctx.fillRect(36, CH - 54, CW - 72, 22);
@@ -2694,13 +3035,13 @@
     }
     if (state.session.phase === 'MAX_Q') {
       ctx.strokeStyle = '#ff5d5d';
-      ctx.strokeRect(171, 90, 120, 10);
+      ctx.strokeRect(171, 146, 120, 10);
       ctx.fillStyle = '#ff5d5d';
-      ctx.fillRect(171, 90, 120 * clamp(state.session.structuralStress, 0, 1), 10);
+      ctx.fillRect(171, 146, 120 * clamp(state.session.structuralStress, 0, 1), 10);
       ctx.fillStyle = 'rgba(255,220,90,0.45)';
-      ctx.fillRect(171 + 120 * 0.72, 90, 120 * 0.28, 10);
+      ctx.fillRect(171 + 120 * 0.72, 146, 120 * 0.28, 10);
       ctx.fillStyle = '#ff9d5d';
-      ctx.fillText('Throttling down — handling Max-Q nicely.', 170, 114);
+      ctx.fillText('Throttling down — handling Max-Q nicely.', 170, 170);
     }
     if ((state.session.phase === 'KARMAN' || state.session.phase === 'BOOSTER_RTLS') && !state.booster.touchdown) {
       const t = state.session.totalElapsed;
@@ -2744,15 +3085,15 @@
       ctx.lineTo(CW - 20, 212 - clamp((eng.qKpa || 0) * 0.15, 0, 36));
       ctx.stroke();
     }
-    if (state.session.phaseGrace > 0) {
+    if (state.session.phaseGrace > 0 || (state.session.shield || 0) > 0) {
       const pulse = 0.45 + Math.sin((performance.now() || 0) / 150) * 0.2;
-      ctx.strokeStyle = `rgba(120,255,170,${pulse})`;
+      ctx.strokeStyle = state.session.shield > 0 ? `rgba(140,224,255,${pulse})` : `rgba(120,255,170,${pulse})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(state.rocket.x, state.rocket.y, 26, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = '#9df6bf';
-      ctx.fillText('GRACE', state.rocket.x - 14, state.rocket.y - 32);
+      ctx.fillStyle = state.session.shield > 0 ? '#8ce0ff' : '#9df6bf';
+      ctx.fillText(state.session.shield > 0 ? 'SHIELD' : 'GRACE', state.rocket.x - 16, state.rocket.y - 32);
     }
     if (state.ui.tutorialTimer > 0 && state.session.phase === 'ASCENT') {
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
@@ -2788,7 +3129,7 @@
       ctx.fillStyle = markerColor;
       ctx.fillRect(gx + clamp(gimbalFrac * gw - 3, 0, gw - 6), gy, 6, gh);
       ctx.fillStyle = '#33ff33';
-      ctx.font = '8px "Share Tech Mono", monospace';
+      ctx.font = '8px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillText('TVC', gx - 24, gy + gh - 1);
     }
     if (state.ui.phaseCaptionTimer > 0 && state.ui.phaseCaption) {
@@ -2815,7 +3156,7 @@
     drawRocket(ctx, state.upper.x, state.upper.y, state.rocket.tilt * 0.45, 'upper', { fairingGone: state.rocket.fairingGone });
     drawFairingSplit(ctx);
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('UPPER STAGE — BE-3U', 12, 302);
     ctx.restore();
 
@@ -2829,7 +3170,7 @@
     Particles.draw(ctx, 'booster');
     if (state.booster.alive) drawRocket(ctx, state.booster.x, 324 + state.booster.y, clamp(state.booster.vx * 0.04, -0.2, 0.2), 'booster', { fairingGone: true });
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('BOOSTER — NEVER TELL ME THE ODDS', 12, 624);
     ctx.restore();
 
@@ -2845,9 +3186,9 @@
     ctx.fillRect(0, 0, CW, CH);
     ctx.fillStyle = '#33ff33';
     ctx.textAlign = 'center';
-    ctx.font = '20px "VT323", monospace';
+    ctx.font = '20px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText('NEW GLENN // FLIGHT MISSION', CW / 2, 124);
-    ctx.font = '12px "Share Tech Mono", monospace';
+    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillStyle = '#8ce0ff';
     ctx.fillText('FIRST NEWLY-BUILT ORBITAL PAD SINCE THE 1960s', CW / 2, 154);
     ctx.fillText('LC-36 | Gradatim Ferociter', CW / 2, 174);
@@ -2855,7 +3196,7 @@
     ctx.fillText(state.ui.tip, CW / 2, 202);
     ctx.strokeStyle = '#ffcf5d';
     ctx.strokeRect(86, 254, CW - 172, 42);
-    ctx.font = 'bold 16px "Share Tech Mono", monospace';
+    ctx.font = 'bold 16px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('TAP OR PRESS SPACE TO START PREFLIGHT', CW / 2, 281);
     state.ui.difficultyButtons = [
       { mode: 'KID', x: 80, y: 302, w: 78, h: 24 },
@@ -2870,13 +3211,15 @@
       ctx.fillText(btn.mode === 'PAD_RAT' ? 'PAD RAT' : btn.mode, btn.x + btn.w / 2, btn.y + 16);
     });
     ctx.fillStyle = '#33ff33';
-    ctx.font = '11px "Share Tech Mono", monospace';
-    ctx.fillText('HOLD BOOST TO LIFT. STEER AROUND HAZARDS.', CW / 2, 346);
-    ctx.fillText('TAP THE GOLD PROMPT FOR STAGE SEP + PAYLOAD.', CW / 2, 362);
-    ctx.fillText('CLEAR SKY STREAKS = EXTRA FLIGHT POINTS.', CW / 2, 378);
+    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText('HOLD BOOST TO CLIMB. A/D OR ◀▶ STEER.', CW / 2, 346);
+    ctx.fillText('BRIEF BOOST GAPS ARE FORGIVEN. TAP EARLY STILL COUNTS.', CW / 2, 362);
+    ctx.fillText('CATCH SHIELD · LOX · BE-4 KICK. GOLD PROMPTS FOR BURNS.', CW / 2, 378);
     ctx.fillText('KID = FRIENDLY | CADET = CLASSIC | PAD RAT = HARD', CW / 2, 394);
-    if (state.settings.bestFlight) ctx.fillText(`BEST: ${state.settings.bestFlight.name} | ${state.settings.bestFlight.medal}`, CW / 2, 410);
-    ctx.fillText('P pause | M mute | Settings in pause menu', CW / 2, 426);
+    const pb = state.settings.hiArcadeScore || 0;
+    const last = state.settings.lastArcadeScore || 0;
+    ctx.fillText(pb || last ? `PB ${pb.toLocaleString()}  ·  LAST ${last.toLocaleString()}` : 'NO PERSONAL BEST YET', CW / 2, 410);
+    ctx.fillText('P / ESC pause  ·  M mute  ·  SPACE / HOLD TO CLIMB', CW / 2, 426);
   }
 
   function drawPadOverlay(ctx) {
@@ -2887,9 +3230,9 @@
     ctx.strokeStyle = '#33ff33';
     ctx.strokeRect(18, 236, CW - 36, 214);
     ctx.fillStyle = '#33ff33';
-    ctx.font = '18px "VT323", monospace';
+    ctx.font = '18px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText('AUTO GO / NO-GO POLL', 34, 260);
-    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText(`Systems auto-flip green in ${pollSeconds}s. Tap once to skip directly to liftoff.`, 34, 278);
     state.ui.systems.forEach(sys => {
       ctx.strokeStyle = sys.ok ? '#33ff33' : '#56666f';
@@ -2910,9 +3253,9 @@
     ctx.strokeRect(40, 228, CW - 80, 84);
     ctx.fillStyle = '#ffcf5d';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 14px "Share Tech Mono", monospace';
+    ctx.font = 'bold 14px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('STAGE SEPARATION CONFIRMED', CW / 2, 262);
-    ctx.font = '12px "Share Tech Mono", monospace';
+    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('Gradatim Ferociter', CW / 2, 286);
     ctx.restore();
   }
@@ -2924,7 +3267,7 @@
     ctx.strokeStyle = '#33ff33';
     ctx.strokeRect(44, 140, CW - 88, 270);
     ctx.fillStyle = '#33ff33';
-    ctx.font = '18px "VT323", monospace';
+    ctx.font = '18px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText('SETTINGS', 66, 170);
     const rows = [
       ['Sound', state.settings.sound],
@@ -2938,7 +3281,7 @@
     rows.forEach((row, idx) => {
       const y = 212 + idx * 30;
       ctx.fillStyle = '#8ce0ff';
-      ctx.font = '11px "Share Tech Mono", monospace';
+      ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillText(row[0], 70, y);
       ctx.fillStyle = row[1] ? '#33ff33' : '#ff5d5d';
       ctx.fillText(row[1] ? 'ON' : 'OFF', 290, y);
@@ -2954,9 +3297,9 @@
     ctx.fillRect(0, 0, CW, CH);
     ctx.fillStyle = '#ff5d5d';
     ctx.textAlign = 'center';
-    ctx.font = '34px "VT323", monospace';
+    ctx.font = '34px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText('MISSION FAILED', CW / 2, 212);
-    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     const map = {
       ascent: 'VEHICLE LOST DURING ASCENT — Investigation board convened.',
       maxq: 'STRUCTURAL FAILURE AT MAX-Q — She wasn\'t ready for that maneuver.',
@@ -2965,7 +3308,8 @@
     };
     ctx.fillText(map[state.effects.quickMessage] || 'VEHICLE LOST.', CW / 2, 244);
     ctx.fillStyle = '#33ff33';
-    ctx.fillText(`Mission ${state.session.missionName} | ALT ${(state.session.maxAltitude / 1000).toFixed(1)} km | Booster ${state.session.boosterRecovered ? '✅' : '❌'}`, CW / 2, 278);
+    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  PB ${(state.settings.hiArcadeScore || 0).toLocaleString()}`, CW / 2, 266);
+    ctx.fillText(`Mission ${state.session.missionName} | ALT ${(state.session.maxAltitude / 1000).toFixed(1)} km | Booster ${state.session.boosterRecovered ? '✅' : '❌'}`, CW / 2, 286);
     ctx.fillStyle = '#ffcf5d';
     if (state.status === 'CONTINUE') {
       ctx.fillText(`CONTINUE? ${Math.max(0, state.ui.continueCountdown)}...`, CW / 2, 312);
@@ -2990,10 +3334,10 @@
     ctx.strokeRect(30, 58, CW - 60, CH - 116);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#33ff33';
-    ctx.font = '28px "VT323", monospace';
+    ctx.font = '28px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText(state.session.missionName, CW / 2, 96);
-    ctx.font = '12px "Share Tech Mono", monospace';
-    ctx.fillText(`Overall Medal: ${missionMedal(state.session.score)} | Gradatim ferociter.`, CW / 2, 120);
+    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  PB ${(state.settings.hiArcadeScore || 0).toLocaleString()}  ·  ${missionMedal(state.session.score)}`, CW / 2, 120);
     drawPatch(ctx, state.ui.missionPatch, CW / 2, 182);
     ctx.fillStyle = '#8ce0ff';
     ctx.textAlign = 'left';
@@ -3031,24 +3375,30 @@
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(0, 0, 58, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#8ce0ff';
-    ctx.font = 'bold 18px "Share Tech Mono", monospace';
+    ctx.font = 'bold 18px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(patch.mission, 0, -8);
-    ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.font = '9px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText(patch.date, 0, 12);
     ctx.fillText(patch.payload.toUpperCase(), 0, 30);
     ctx.restore();
   }
 
   function drawPause(ctx) {
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillStyle = 'rgba(0,0,0,0.62)';
     ctx.fillRect(0, 0, CW, CH);
     ctx.fillStyle = '#ffcf5d';
     ctx.textAlign = 'center';
-    ctx.font = '28px "VT323", monospace';
-    ctx.fillText('PAUSED — tap to resume', CW / 2, CH / 2 - 18);
-    ctx.font = '11px "Share Tech Mono", monospace';
-    ctx.fillText('P toggles pause. M toggles mute.', CW / 2, CH / 2 + 10);
+    ctx.font = '28px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(state.status === 'PAUSED_AUTO' ? 'HOLDING' : 'PAUSED', CW / 2, CH / 2 - 52);
+    ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = '#8ce0ff';
+    ctx.fillText(currentPhaseLabel(), CW / 2, CH / 2 - 24);
+    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, CW / 2, CH / 2 - 6);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.fillText('Tap, SPACE, P, or Escape to resume', CW / 2, CH / 2 + 22);
+    ctx.fillStyle = '#9aa3c7';
+    ctx.fillText('M mute  ·  O settings  ·  reduced motion honored', CW / 2, CH / 2 + 42);
   }
 
   function drawLevelIntro(ctx) {
@@ -3062,9 +3412,9 @@
     ctx.fillRect(0, CH - 130, CW, 130);
     ctx.fillStyle = '#e9f4ff';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 24px "VT323", monospace';
+    ctx.font = 'bold 24px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText(`LEVEL ${n}`, CW / 2, CH / 2 - 44);
-    ctx.font = '14px "Share Tech Mono", monospace';
+    ctx.font = '14px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('═══════════', CW / 2, CH / 2 - 24);
     ctx.fillText((p.label || '').replace(/^LEVEL \d+:\s*/i, ''), CW / 2, CH / 2 - 6);
     ctx.fillText('═══════════', CW / 2, CH / 2 + 12);
@@ -3084,9 +3434,9 @@
     ctx.strokeRect(36, 156, CW - 72, 270);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ffcf5d';
-    ctx.font = 'bold 24px "VT323", monospace';
+    ctx.font = 'bold 24px "Exo 2", "Sora", system-ui, sans-serif';
     ctx.fillText(`LEVEL ${n} CLEARED`, CW / 2, 190);
-    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     state.ui.scorePops.forEach((row, i) => {
       ctx.fillText(`${row.label.padEnd(8, ' ')} : ${row.value}`, CW / 2, 222 + i * 24);
     });
@@ -3104,7 +3454,7 @@
     ctx.strokeRect(0, CH / 2 - 24, CW, 48);
     ctx.fillStyle = '#ffcf5d';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 14px "Share Tech Mono", monospace';
+    ctx.font = 'bold 14px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('★ KARMAN LINE CROSSED · WELCOME TO SPACE ★', CW / 2, CH / 2 + 6);
     ctx.restore();
   }
@@ -3129,6 +3479,8 @@
         if (!state.world.padGone || state.session.phase === 'PAD') drawLaunchPad(ctx);
         Particles.draw(ctx, 'main');
         state.obstacles.forEach(o => drawObstacle(ctx, o));
+        (state.pickups || []).forEach(p => drawPickup(ctx, p));
+        drawTrail(ctx);
         drawVaporCone(ctx);
         if (state.effects.shockRing > 0) {
           const r = (1 - state.effects.shockRing) * 170;
@@ -3154,12 +3506,13 @@
         }
       }
       drawHud(ctx);
+      drawFloatScores(ctx);
       drawLevelClear(ctx);
       drawLevelIntro(ctx);
       drawKarmanBanner(ctx);
       if (state.session.phase === 'PAD' || state.session.phase === 'STAGE_SEP' || state.session.phase === 'PAYLOAD_DEPLOY' || state.ui.karmanBannerTimer > 0 || state.ui.levelIntroTimer > 0 || state.ui.levelClearTimer > 0 || (state.session.phase === 'KARMAN' && !state.rocket.fairingGone) || state.session.phase === 'ORBIT_INSERT') {
         ctx.fillStyle = '#8ce0ff';
-        ctx.font = '10px "Share Tech Mono", monospace';
+        ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
         ctx.fillText('SKIP ▸▸', CW - 60, CH - 10);
       }
       if (state.session.phase === 'PAD') drawPadOverlay(ctx);
@@ -3340,7 +3693,11 @@
   function setBoostHeld(value) {
     if (value && !state.input.boostHeld) {
       state.input.boostPressed = true;
+      state.input.boostBuffer = BOOST_BUFFER_SEC;
       Audio.play('boost', state.settings);
+    }
+    if (!value && state.input.boostHeld) {
+      state.input.boostCoyote = BOOST_COYOTE_SEC;
     }
     state.input.boostHeld = value;
   }
@@ -3427,18 +3784,36 @@
 
     document.addEventListener('keydown', (e) => {
       Audio.unlock(state.settings);
-      if (e.code === 'ArrowLeft' || e.code === 'KeyA') state.input.left = true;
-      if (e.code === 'ArrowRight' || e.code === 'KeyD') state.input.right = true;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        e.preventDefault();
+        state.input.left = true;
+      }
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        e.preventDefault();
+        state.input.right = true;
+      }
       if (e.code === 'Space') {
         e.preventDefault();
+        if (state.status === 'PAUSED' || state.status === 'PAUSED_AUTO') {
+          resumeGame();
+          return;
+        }
         if (state.status === 'READY') startPadOps();
         else if (state.status === 'GAMEOVER') { resetSession(); startPadOps(); }
         else if (state.status === 'SUMMARY') handleSummaryButton('replay');
-        setBoostHeld(true);
+        else if (state.status === 'CONTINUE') {
+          state.session.continuesUsed += 1;
+          restartFromFailedLevel();
+        }
+        if (state.status === 'RUNNING' || state.status === 'READY') setBoostHeld(true);
       }
       if (e.code === 'KeyP') togglePause();
       if (e.code === 'KeyM') toggleMute();
-      if (e.code === 'Escape' && state.ui.settingsOpen) state.ui.settingsOpen = false;
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        if (state.ui.settingsOpen) state.ui.settingsOpen = false;
+        else togglePause();
+      }
       if ((state.status === 'GAMEOVER' || state.status === 'CONTINUE') && state.ui.enteringInitials) {
         if (/^[a-z]$/i.test(e.key)) {
           const arr = state.ui.initials.split('');

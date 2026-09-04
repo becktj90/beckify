@@ -108,6 +108,26 @@
       color: var(--fg);
       cursor: pointer;
     }
+    .hud-btns button:focus-visible,
+    #arcade-touch-btns button:focus-visible,
+    .btn:focus-visible {
+      outline: 2px solid var(--violet);
+      outline-offset: 3px;
+    }
+    .visually-hidden:where(:not(:focus-within, :active)) {
+      position: absolute !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      width: 1px !important;
+      height: 1px !important;
+      margin: -1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      white-space: nowrap !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html, body { scroll-behavior: auto; }
+    }
     html.arcade-immersive-open, html.arcade-immersive-open body { overflow: hidden; }
     #arcade-fs-wrapper.arcade-immersive {
       position: fixed !important;
@@ -129,9 +149,10 @@
   </style>
 </head>
 <body data-arcade-standalone="true">
-  <section id="sec-arcade" class="cabinet">
+  <main id="sec-arcade" class="cabinet">
+    <div id="arcade-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
     <div id="arcade-fs-wrapper">
-      <canvas id="arcadeCanvas" width="420" height="640"></canvas>
+      <canvas id="arcadeCanvas" width="420" height="640" role="img" aria-label="New Glenn Runner flight canvas. Hold boost to climb, steer around hazards."></canvas>
       <div class="hud-btns">
         <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" aria-label="Toggle mute">🔊</button>
         <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" aria-label="Pause mission">⏸</button>
@@ -144,13 +165,14 @@
       <button id="atb-boost" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
       <button id="atb-right" aria-label="Steer right">▶</button>
     </div>
-    <p class="help">Hold BOOST during countdown, steer around hazards, tap the highlighted mission prompt. Start-screen difficulty stays KID / CADET / PAD RAT.</p>
+    <p class="help">Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB and tap ◀ ▶. Brief boost gaps are forgiven; early taps still fire landing burns. Catch aero shield, LOX top-off, and BE-4 kick. Difficulty stays KID / CADET / PAD RAT.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
       <div id="arcade-hi-score">NO MISSIONS FLOWN</div>
       <button class="btn" onclick="arcadeReset()">Reset mission record</button>
     </div>
-  </section>
+  </main>
+  <script src="/toolbox/js/local-store.js"></script>
   <script>
     window.recordGameScore = window.recordGameScore || function () { return Promise.resolve(null); };
   </script>
