@@ -113,10 +113,32 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(motor, /analyzeNameplate/);
   assert.match(motor, /BeckifyOcr\.recognize/);
   const panel = fs.readFileSync(path.join(root, 'panel-schedule.js'), 'utf8');
-  assert.match(panel, /analyzePanelDirectory/);
-  assert.doesNotMatch(panel, /analyzePanelDirectory\(/);
+  assert.match(panel, /analyzePanelDirectory\(/);
+  assert.match(panel, /shouldUpload/);
+  assert.match(panel, /mode: 'directory'/);
   const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
   assert.match(panelHtml, /js\/vlm-ocr\.js/);
+  assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
+  assert.match(panelHtml, /Enhance with AI/);
+  assert.match(panelHtml, /not an AI electrician/);
+  assert.match(panelHtml, /connect-src 'self' https:/);
+  assert.match(panelHtml, /beckify-api-base-url/);
+  const power = fs.readFileSync(path.join(root, 'panel-power-study.js'), 'utf8');
+  assert.match(power, /analyzePanelDirectory\(/);
+  const powerHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-power-study.html'), 'utf8');
+  assert.match(powerHtml, /id="panelEnhance"[^>]*data-no-persist/);
+  assert.match(powerHtml, /connect-src 'self' https:/);
+
+  const fromDraft = api.rowsFromPanelDraft({
+    rows: [
+      { circuit: { value: '23' }, description: { value: 'WEST SECURITY GATE' }, trip: { value: null }, poles: { value: 2 }, notes: { value: 'handwritten' } },
+    ],
+  }, () => ({ demandFactor: '1' }));
+  assert.equal(fromDraft[0].circuit, '23');
+  assert.match(fromDraft[0].description, /WEST SECURITY GATE/);
+  assert.equal(fromDraft[0].loadAmps, '');
+  const meta = api.panelMetaFromDraft({ panel: { name: { value: 'PANEL BLT 11' }, voltage: { value: '208/120V' } } });
+  assert.equal(meta.panelName, 'PANEL BLT 11');
   console.log('VLM OCR client config + schema mapping passed');
 })().catch((err) => {
   console.error(err);

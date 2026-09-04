@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta name="beckify-api-base-url" content="">
   <title>Panel Schedule Load Analyzer | Beckify</title>
   <meta name="description" content="Extract an editable panel schedule from a photo and estimate circuit demand, panel current, diversity, and capacity.">
   <meta name="robots" content="index,follow">
@@ -49,7 +50,7 @@
         <div>
           <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
           <h1>Panel Schedule Load Analyzer</h1>
-          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Manual entry still works with no photo. Informational estimate — not an electrical inspection.</p>
+          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Optional Enhance with AI can read rotated two-up cards, glare, and ink corrections. Manual entry still works with no photo. Informational estimate — not an electrical inspection. Not perfect OCR and not an AI electrician.</p>
         </div>
         <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
       </div>
@@ -61,8 +62,25 @@
           <span class="title-bar-text" id="upload-title">Image Intake</span>
         </div>
         <div class="window-body stack-lg">
-          <div class="callout callout-privacy">
-            <strong>Privacy before you pick a photo.</strong> The photo stays on this device. It is never uploaded to Beckify or any server. On-device Tesseract.js reads it in the browser. The image is not saved after you leave or reset.
+          <div id="privacyBanner" class="callout callout-privacy">
+            <strong>Privacy before you pick a photo.</strong> The photo stays on this device. It is never uploaded to Beckify or any server unless you turn on Enhance with AI and then click Read Schedule. On-device Tesseract.js is the default. The image is not saved after you leave or reset.
+          </div>
+          <label class="review-check" for="panelEnhance">
+            <input id="panelEnhance" type="checkbox" data-no-persist>
+            Enhance with AI (optional). Uploads this photo to a VLM endpoint you choose or the Beckify proxy. Off by default. Still a draft — not verified input.
+          </label>
+          <div id="panelVlmSettings" class="vlm-settings" hidden>
+            <div class="meta-grid">
+              <label>
+                <span>Custom VLM endpoint (optional)</span>
+                <input id="panelVlmEndpoint" type="url" inputmode="url" autocomplete="off" data-no-persist placeholder="https://your-proxy.example/ocr" spellcheck="false">
+              </label>
+              <label>
+                <span>Bearer token for that endpoint (optional)</span>
+                <input id="panelVlmToken" type="password" autocomplete="off" data-no-persist placeholder="not sent to Beckify">
+              </label>
+            </div>
+            <p id="panelVlmConfig" class="note">No custom URL yet. If the Beckify API base is injected at deploy, that proxy will be used. Otherwise Read Schedule stays on-device.</p>
           </div>
           <div class="callout callout-safety">
             <strong>Photograph the directory / label only.</strong> This tool reads the printed circuit directory or schedule card on the panel door — not the live interior of an open panel. Keep the door closed if you can. Never open a panel or touch anything inside it to get this photo. Square the card to the camera, fill the frame, use even light, and avoid glare.

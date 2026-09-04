@@ -118,7 +118,8 @@ const panel = schema.normalizePanelDraft({
 assert.equal(panel.task, 'panel');
 assert.equal(panel.rows[0].circuit.value, '1');
 assert.equal(panel.rows[0].trip.value, 20);
-assert.equal(panel.rows[0].loadAmps.value, 20);
+assert.equal(panel.rows[0].loadAmps.value, null);
 assert.equal(panel.rows[0].circuit.userReviewed, false);
+assert.equal(panel.panel.name.value, null);
 
 console.log('Nameplate schema + parse traps passed');

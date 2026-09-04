@@ -89,7 +89,27 @@ assert.equal(api.isLowConfidence(0, ''), false);
 assert.equal(api.isLowConfidence(59, 'FLA 14'), true);
 assert.equal(api.isLowConfidence(60, 'FLA 14'), false);
 assert.equal(api.MAX_PREPROCESS_EDGE, 1600);
+assert.equal(api.MAX_DIRECTORY_EDGE, 2400);
 assert.equal(typeof api.preprocessForOcr, 'function');
+assert.equal(typeof api.reconstructDirectoryFromWords, 'function');
+assert.ok(api.directoryScore('PANEL BLT 11 SPARE RECEPT POWER POLE 1 2 3 4 5 6 7 8') >= 6);
+assert.ok(api.directoryScore('xyz') < 3);
+
+const rebuilt = api.reconstructDirectoryFromWords([
+  { text: 'POWER', bbox: { x0: 10, y0: 10, x1: 60, y1: 24 }, confidence: 80 },
+  { text: 'POLE', bbox: { x0: 64, y0: 10, x1: 110, y1: 24 }, confidence: 80 },
+  { text: '1', bbox: { x0: 200, y0: 10, x1: 214, y1: 24 }, confidence: 90 },
+  { text: '2', bbox: { x0: 230, y0: 10, x1: 244, y1: 24 }, confidence: 90 },
+  { text: 'POWER', bbox: { x0: 300, y0: 10, x1: 350, y1: 24 }, confidence: 80 },
+  { text: 'POLE', bbox: { x0: 354, y0: 10, x1: 400, y1: 24 }, confidence: 80 },
+  { text: 'RECP', bbox: { x0: 10, y0: 40, x1: 60, y1: 54 }, confidence: 80 },
+  { text: '3', bbox: { x0: 200, y0: 40, x1: 214, y1: 54 }, confidence: 90 },
+  { text: '4', bbox: { x0: 230, y0: 40, x1: 244, y1: 54 }, confidence: 90 },
+  { text: 'RECP', bbox: { x0: 300, y0: 40, x1: 350, y1: 54 }, confidence: 80 },
+]);
+assert.ok(rebuilt);
+assert.match(rebuilt.text, /1\s+2/);
+assert.match(rebuilt.text, /POWER/);
 
 assert.equal(api.looksLikeOpenPanelInterior('Lighting 20A ckt 1'), false);
 assert.equal(api.looksLikeOpenPanelInterior('voltage stabilizer on circuit 4'), false);

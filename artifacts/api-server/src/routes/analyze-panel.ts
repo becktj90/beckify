@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { PANEL_VISION_SYSTEM_PROMPT } from "../prompts/panelVisionPrompt.js";
 import {
+  PANEL_MAX_OUTPUT_TOKENS,
+  PANEL_PROVIDER_TIMEOUT_MS,
   ProviderTimeoutError,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
@@ -26,8 +28,8 @@ const serverProvider = configuredProvider();
 const serverModel = configuredModel(serverProvider);
 const router: IRouter = Router();
 
-/* Ready for a later panel UI toggle. Website panel schedule still defaults to
-   on-device Tesseract and does not call this unless Enhance is wired later. */
+/* Optional Enhance path for panel-schedule / panel-power-study. On-device
+   Tesseract remains the default when Enhance is off. */
 router.post("/analyze-panel", async (req, res) => {
   const body = (req.body || {}) as AnalyzeBody;
   const picked = pickImage(body);
@@ -44,6 +46,12 @@ router.post("/analyze-panel", async (req, res) => {
   }
   bucket.inFlight += 1;
 
+  const userText = [
+    "Extract the printed panel directory into structured JSON.",
+    "Upright rotated phone photos first. Emit one circuit entry per odd/even number.",
+    "Prefer handwritten corrections over crossed-out print. Do not copy breaker trip into load amps.",
+  ].join(" ");
+
   try {
     const result = serverProvider === "anthropic"
       ? await analyzeWithAnthropic({
@@ -51,14 +59,18 @@ router.post("/analyze-panel", async (req, res) => {
         mimeType: picked.image.mimeType,
         model: serverModel,
         system: PANEL_VISION_SYSTEM_PROMPT,
-        userText: "Extract the printed panel directory into structured JSON. Do not copy breaker trip into load amps.",
+        userText,
+        maxTokens: PANEL_MAX_OUTPUT_TOKENS,
+        timeoutMs: PANEL_PROVIDER_TIMEOUT_MS,
       })
       : await analyzeWithOpenAI({
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
         system: PANEL_VISION_SYSTEM_PROMPT,
-        userText: "Extract the printed panel directory into structured JSON. Do not copy breaker trip into load amps.",
+        userText,
+        maxTokens: PANEL_MAX_OUTPUT_TOKENS,
+        timeoutMs: PANEL_PROVIDER_TIMEOUT_MS,
       });
 
     return res.json({

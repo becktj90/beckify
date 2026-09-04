@@ -46,7 +46,8 @@ ok(
   /Website toolbox photos/.test(privacyPage) &&
     /Enhance with AI/.test(privacyPage) &&
     /does not upload/.test(privacyPage) &&
-    /analyze-nameplate/.test(privacyPage),
+    /analyze-nameplate/.test(privacyPage) &&
+    /analyze-panel/.test(privacyPage),
 );
 
 process.exitCode = failures ? 1 : 0;

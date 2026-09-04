@@ -29,6 +29,7 @@
   var TASK_NAMEPLATE = 'nameplate';
   var TASK_PANEL = 'panel';
   var MAX_BYTES = 8 * 1024 * 1024;
+  var MAX_UPLOAD_EDGE = 2048;
 
   function schema() {
     return global.BeckifyNameplateSchema;
@@ -132,6 +133,48 @@
     });
   }
 
+  /**
+   * EXIF-upright + shrink before upload. Panel directories are often landscape
+   * pixels with Orientation=6; sending them sideways hurts VLM accuracy and
+   * burns tokens. Falls back to the raw file data URL on any failure.
+   */
+  function prepareUploadDataUrl(file) {
+    if (!file || typeof createImageBitmap !== 'function' || typeof document === 'undefined') {
+      return fileToDataUrl(file);
+    }
+    return createImageBitmap(file, { imageOrientation: 'from-image' })
+      .catch(function () { return createImageBitmap(file); })
+      .then(function (bitmap) {
+        try {
+          var w = bitmap.width || 0;
+          var h = bitmap.height || 0;
+          if (!w || !h) {
+            try { bitmap.close(); } catch (_) { /* ignore */ }
+            return fileToDataUrl(file);
+          }
+          var scale = 1;
+          var edge = Math.max(w, h);
+          if (edge > MAX_UPLOAD_EDGE) scale = MAX_UPLOAD_EDGE / edge;
+          var cw = Math.max(1, Math.round(w * scale));
+          var ch = Math.max(1, Math.round(h * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = cw;
+          canvas.height = ch;
+          var ctx = canvas.getContext && canvas.getContext('2d');
+          if (!ctx) {
+            try { bitmap.close(); } catch (_) { /* ignore */ }
+            return fileToDataUrl(file);
+          }
+          ctx.drawImage(bitmap, 0, 0, cw, ch);
+          try { bitmap.close(); } catch (_) { /* ignore */ }
+          return canvas.toDataURL('image/jpeg', 0.88);
+        } catch (_) {
+          try { bitmap.close(); } catch (__) { /* ignore */ }
+          return fileToDataUrl(file);
+        }
+      }, function () { return fileToDataUrl(file); });
+  }
+
   function extractJsonObject(text) {
     var trimmed = String(text || '').trim();
     var fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -185,11 +228,13 @@
     var url = endpointFor(config, task);
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
     onProgress(0.15, 'Preparing photo for optional AI enhance…');
-    return fileToDataUrl(file).then(function (dataUrl) {
+    return prepareUploadDataUrl(file).then(function (dataUrl) {
       onProgress(0.4, 'Uploading photo for optional AI enhance…');
       var body = {
         imageBase64: dataUrl,
-        mimeType: (file && file.type) || 'image/jpeg',
+        mimeType: (String(dataUrl).indexOf('data:image/png') === 0)
+          ? 'image/png'
+          : ((file && file.type) || 'image/jpeg'),
         task: task,
       };
       var token = config.mode === 'custom' ? config.token : '';
@@ -220,6 +265,47 @@
     return analyze(file, next);
   }
 
+  function rowsFromPanelDraft(draft, makeRow) {
+    var create = typeof makeRow === 'function' ? makeRow : function () { return {}; };
+    return ((draft && draft.rows) || []).map(function (cell) {
+      var row = create();
+      var circuit = cell && cell.circuit && cell.circuit.value;
+      var description = cell && cell.description && cell.description.value;
+      var trip = cell && cell.trip && cell.trip.value;
+      var poles = cell && cell.poles && cell.poles.value;
+      var notes = cell && cell.notes && cell.notes.value;
+      row.circuit = circuit == null ? '' : String(circuit);
+      row.description = description == null ? '' : String(description);
+      if (notes && row.description && String(notes) !== String(description)) {
+        row.description = String(description) + ' (' + String(notes) + ')';
+      } else if (notes && !row.description) {
+        row.description = String(notes);
+      }
+      row.trip = trip == null || trip === '' ? '' : String(trip);
+      row.poles = poles == null || poles === '' ? '' : String(poles);
+      row.loadAmps = '';
+      row.loadAmpsCopiedFromTrip = false;
+      return row;
+    }).filter(function (row) {
+      return row.circuit || row.description || row.trip || row.poles;
+    });
+  }
+
+  function panelMetaFromDraft(draft) {
+    var panel = (draft && draft.panel) || {};
+    function val(field) {
+      if (!field || field.value == null || field.value === '') return '';
+      return field.value;
+    }
+    return {
+      panelName: val(panel.name),
+      voltage: val(panel.voltage),
+      mainAmps: val(panel.mainAmps),
+      phases: val(panel.phases),
+      location: val(panel.location),
+    };
+  }
+
   function shouldUpload(enhanceOn) {
     return resolveConfig(enhanceOn).ready;
   }
@@ -242,6 +328,11 @@
     analyzePanelDirectory: analyzePanelDirectory,
     extractJsonObject: extractJsonObject,
     analyzePayload: analyzePayload,
+    prepareUploadDataUrl: prepareUploadDataUrl,
+    fileToDataUrl: fileToDataUrl,
+    rowsFromPanelDraft: rowsFromPanelDraft,
+    panelMetaFromDraft: panelMetaFromDraft,
+    MAX_UPLOAD_EDGE: MAX_UPLOAD_EDGE,
   };
   global.__vlmOcrTestApi = global.BeckifyVlmOcr;
 })(typeof window !== 'undefined' ? window : globalThis);
