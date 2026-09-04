@@ -45,6 +45,8 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case magneticCircuit
     case fiberLink
     case gaussianBeam
+    case transientCircuit
+    case rackCurrent
 
     var id: String { rawValue }
 }
@@ -447,6 +449,22 @@ enum ToolboxCatalog {
             symbol: "smallcircle.filled.circle",
             synonyms: ["gaussian beam", "laser", "rayleigh range", "divergence", "waist", "beam radius", "photonics"]
         ),
+        ToolDefinition(
+            id: .transientCircuit,
+            kind: .homework,
+            title: "Transient Circuits",
+            subtitle: "RC/RL charge and discharge — value at a time, percent complete, and the curve.",
+            symbol: "waveform.path.ecg.rectangle",
+            synonyms: ["transient", "rc circuit", "rl circuit", "time constant", "tau", "charging", "discharging", "step response"]
+        ),
+        ToolDefinition(
+            id: .rackCurrent,
+            kind: .calculator,
+            title: "E-Bus / Rack Current",
+            subtitle: "Sum device currents against a bus rating for headroom and percent utilization.",
+            symbol: "server.rack",
+            synonyms: ["e-bus", "rack current", "bus current", "backplane", "current budget", "headroom", "utilization", "24vdc", "5v logic"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -460,11 +478,11 @@ enum ToolboxCatalog {
             .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank, .magneticCircuit,
         ],
         .controls: [
-            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase,
+            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent,
         ],
         .homework: [
             .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
-            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam,
+            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam, .transientCircuit,
         ],
         .sensors: [
             .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
@@ -556,5 +574,7 @@ enum ToolboxCatalog {
         .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
         .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],
         .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],
+        .transientCircuit: [.frequencyWave, .ledRC, .reactance],
+        .rackCurrent: [.modbusAddress, .signalScaling, .plcTimer],
     ]
 }

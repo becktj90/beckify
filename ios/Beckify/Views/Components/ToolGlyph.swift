@@ -96,6 +96,8 @@ extension GlyphKind {
         case .magneticCircuit: return .magneticCircuit
         case .fiberLink: return .fiberLink
         case .gaussianBeam: return .gaussianBeam
+        case .transientCircuit: return .transientCircuit
+        case .rackCurrent: return .rackCurrent
         }
     }
 }
@@ -144,6 +146,8 @@ enum GlyphKind {
     case magneticCircuit
     case fiberLink
     case gaussianBeam
+    case transientCircuit
+    case rackCurrent
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -191,6 +195,8 @@ enum GlyphKind {
         case .magneticCircuit: return Self.magneticCircuit(rect)
         case .fiberLink: return Self.fiberLink(rect)
         case .gaussianBeam: return Self.gaussianBeam(rect)
+        case .transientCircuit: return Self.transientCircuit(rect)
+        case .rackCurrent: return Self.rackCurrent(rect)
         }
     }
 
@@ -848,6 +854,44 @@ enum GlyphKind {
         }
         path.move(to: CGPoint(x: waistX, y: r.midY - waistHalfHeight))
         path.addLine(to: CGPoint(x: waistX, y: r.midY + waistHalfHeight))
+        return path
+    }
+
+    /// A rising exponential charging curve against axes.
+    private static func transientCircuit(_ r: CGRect) -> Path {
+        var path = Path()
+        let baseY = r.maxY - r.height * 0.14
+        let topY = r.minY + r.height * 0.1
+
+        path.move(to: CGPoint(x: r.minX, y: topY))
+        path.addLine(to: CGPoint(x: r.minX, y: baseY))
+        path.addLine(to: CGPoint(x: r.maxX, y: baseY))
+
+        let steps = 20
+        path.move(to: CGPoint(x: r.minX, y: baseY))
+        for step in 0...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            let x = r.minX + r.width * 0.94 * t
+            let rise = 1 - exp(-3 * Double(t))
+            let y = baseY - (baseY - topY) * 0.8 * CGFloat(rise)
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        return path
+    }
+
+    /// A rack rail with device ticks feeding off it.
+    private static func rackCurrent(_ r: CGRect) -> Path {
+        var path = Path()
+        let railY = r.midY
+        path.move(to: CGPoint(x: r.minX, y: railY))
+        path.addLine(to: CGPoint(x: r.maxX, y: railY))
+
+        let deviceXs: [CGFloat] = [0.2, 0.42, 0.64, 0.86].map { r.minX + r.width * $0 }
+        let heights: [CGFloat] = [0.5, 0.3, 0.4, 0.22]
+        for (x, h) in zip(deviceXs, heights) {
+            path.move(to: CGPoint(x: x, y: railY))
+            path.addLine(to: CGPoint(x: x, y: railY + r.height * h))
+        }
         return path
     }
 

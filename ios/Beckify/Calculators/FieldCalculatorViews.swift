@@ -1924,3 +1924,292 @@ struct GaussianBeamView: View {
         ))
     }
 }
+
+// MARK: - Transient circuits
+
+struct TransientCircuitView: View {
+    enum Kind: String, CaseIterable, Identifiable {
+        case rc = "RC"
+        case rl = "RL"
+        var id: String { rawValue }
+    }
+
+    enum Direction: String, CaseIterable, Identifiable {
+        case charging = "Charging"
+        case discharging = "Discharging"
+        var id: String { rawValue }
+    }
+
+    @EnvironmentObject private var jobs: JobStore
+    @StoredChoice(.transientCircuit, "kind", default: TransientCircuitView.Kind.rc) private var kind
+    @StoredChoice(.transientCircuit, "direction", default: TransientCircuitView.Direction.charging) private var direction
+    @StoredInput(.transientCircuit, "amplitude", default: "12") private var amplitude
+    @StoredInput(.transientCircuit, "resistance", default: "1000") private var resistance
+    @StoredInput(.transientCircuit, "capacitance", default: "100") private var capacitance
+    @StoredInput(.transientCircuit, "inductance", default: "0.5") private var inductance
+    @StoredInput(.transientCircuit, "time", default: "0.05") private var time
+    @StoredInput(.transientCircuit, "jobName", default: "Transient") private var jobName
+    @State private var session = ExplicitCalculationState<TransientResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var farads: Double { (capacitance.parsedDouble ?? .nan) * 1e-6 }
+    private var unit: String { kind == .rc ? "V" : "A" }
+
+    private var inputFingerprint: String {
+        "\(kind)|\(direction)|\(amplitude)|\(resistance)|\(capacitance)|\(inductance)|\(time)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .transientCircuit,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .transientCircuit,
+                symbolic: direction == .charging
+                    ? "v(t) = A(1 − e^(−t/τ))"
+                    : "v(t) = A · e^(−t/τ)",
+                substituted: substituted,
+                meaning: "One time constant τ covers about 63 % of the change; five time constants is close enough to call it settled. RC and RL share this exact shape — only what τ is made of changes."
+            )
+            TryExampleButton(title: "12 V, 1 kΩ, 100 µF, charging at 50 ms") {
+                kind = .rc; direction = .charging
+                amplitude = "12"; resistance = "1000"; capacitance = "100"; time = "0.05"
+                session.prepareForNewInputs()
+            }
+
+            MenuField(title: "Circuit", selection: $kind, options: Kind.allCases) { $0.rawValue }
+            MenuField(title: "Direction", selection: $direction, options: Direction.allCases) { $0.rawValue }
+            NumberField(
+                title: direction == .charging ? "Source amplitude" : "Starting value",
+                unit: unit,
+                text: $amplitude,
+                fieldID: "amplitude",
+                onSubmit: calculate
+            )
+            NumberField(title: "Resistance", unit: "Ω", text: $resistance, fieldID: "resistance", onSubmit: calculate)
+            if kind == .rc {
+                NumberField(title: "Capacitance", unit: "µF", text: $capacitance, fieldID: "capacitance", onSubmit: calculate)
+            } else {
+                NumberField(title: "Inductance", unit: "H", text: $inductance, fieldID: "inductance", onSubmit: calculate)
+            }
+            NumberField(title: "Time", unit: "s", text: $time, fieldID: "time", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    kind = .rc; direction = .charging
+                    amplitude = "12"; resistance = "1000"; capacitance = "100"; time = "0.05"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "RC charging"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                TransientResponseChart(curve: r.curve, currentTime: time.parsedDouble ?? 0, currentValue: r.valueAtTime, unit: unit)
+                    .opacity(session.isStale ? 0.72 : 1)
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Time constant τ", value: Format.time(r.timeConstant), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Value at t", value: "\(Format.number(r.valueAtTime, digits: 4)) \(unit)", emphasis: true)
+                    ResultRow(label: "Percent complete", value: Format.percent(r.percentComplete))
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            let tau: Double
+            if kind == .rc {
+                tau = try TransientCircuit.rcTimeConstant(resistance: resistance.parsedDouble ?? .nan, capacitance: farads)
+            } else {
+                tau = try TransientCircuit.rlTimeConstant(inductance: inductance.parsedDouble ?? .nan, resistance: resistance.parsedDouble ?? .nan)
+            }
+            return try TransientCircuit.step(
+                amplitude: amplitude.parsedDouble ?? .nan,
+                timeConstant: tau,
+                time: time.parsedDouble ?? .nan,
+                charging: direction == .charging
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        amplitude = ""; resistance = ""; capacitance = ""; inductance = ""; time = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "τ \(Format.time(r.timeConstant))  →  \(Format.number(r.valueAtTime, digits: 4)) \(unit) (\(Format.percent(r.percentComplete)))"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.valueAtTime, digits: 4)) \(unit)  ·  \(Format.percent(r.percentComplete))"
+    }
+
+    private func save(_ r: TransientResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .transientCircuit,
+            inputs: ["circuit": kind.rawValue, "dir": direction.rawValue, "A": amplitude, "t": "\(time) s"],
+            outputs: ["tau": Format.time(r.timeConstant), "value": "\(Format.number(r.valueAtTime, digits: 4)) \(unit)"]
+        ))
+    }
+}
+
+// MARK: - E-bus / rack current budget
+
+struct RackCurrentView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.rackCurrent, "capacity", default: "4") private var capacity
+    @StoredInput(.rackCurrent, "device1", default: "0.5") private var device1
+    @StoredInput(.rackCurrent, "device2", default: "1.2") private var device2
+    @StoredInput(.rackCurrent, "device3", default: "0.3") private var device3
+    @StoredInput(.rackCurrent, "device4", default: "") private var device4
+    @StoredInput(.rackCurrent, "device5", default: "") private var device5
+    @StoredInput(.rackCurrent, "device6", default: "") private var device6
+    @StoredInput(.rackCurrent, "jobName", default: "Rack current") private var jobName
+    @State private var session = ExplicitCalculationState<RackCurrentResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var deviceFields: [Binding<String>] {
+        [$device1, $device2, $device3, $device4, $device5, $device6]
+    }
+
+    private var inputFingerprint: String {
+        "\(capacity)|\(device1)|\(device2)|\(device3)|\(device4)|\(device5)|\(device6)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .rackCurrent,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .rackCurrent,
+                symbolic: "total = Σ I_device     headroom = capacity − total",
+                substituted: substituted,
+                meaning: "The same budget arithmetic whether it's a PLC 5 V logic bus, a 24 VDC panel rail, or a rack backplane — add up every device's continuous draw and see what's left before the bus trips or browns out."
+            )
+            TryExampleButton(title: "3 devices on a 4 A rail") {
+                capacity = "4"; device1 = "0.5"; device2 = "1.2"; device3 = "0.3"
+                device4 = ""; device5 = ""; device6 = ""
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Bus capacity", unit: "A", text: $capacity, fieldID: "capacity", onSubmit: calculate)
+            ForEach(Array(deviceFields.enumerated()), id: \.offset) { index, field in
+                NumberField(
+                    title: "Device \(index + 1)",
+                    unit: "A",
+                    text: field,
+                    optional: true,
+                    fieldID: "device\(index + 1)",
+                    onSubmit: calculate
+                )
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    capacity = "4"; device1 = "0.5"; device2 = "1.2"; device3 = "0.3"
+                    device4 = ""; device5 = ""; device6 = ""
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "3-device rail"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                if r.headroom < 0 {
+                    ToolEmptyState(
+                        title: "Over budget",
+                        detail: "These devices draw more than the bus is rated for. Something will brown out or the protection will trip — move a load to another bus or upsize the supply.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                }
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Total current", value: Format.amps(r.totalCurrent), emphasis: true, tone: Theme.good)
+                    ResultRow(
+                        label: "Headroom",
+                        value: Format.amps(r.headroom),
+                        emphasis: true,
+                        tone: r.headroom < 0 ? Theme.bad : Theme.good
+                    )
+                    ResultRow(
+                        label: "Utilization",
+                        value: Format.percent(r.utilizationPercent),
+                        tone: r.utilizationPercent > 100 ? Theme.bad : (r.utilizationPercent > 80 ? Theme.warn : Theme.foreground)
+                    )
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            let currents = deviceFields.compactMap { $0.wrappedValue.parsedDouble }
+            return try RackCurrentBudget.solve(deviceCurrents: currents, busCapacity: capacity.parsedDouble ?? .nan)
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        capacity = ""
+        for field in deviceFields { field.wrappedValue = "" }
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.amps(r.totalCurrent)) of \(capacity) A  →  \(Format.percent(r.utilizationPercent))"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.amps(r.totalCurrent))  ·  \(Format.amps(r.headroom)) headroom"
+    }
+
+    private func save(_ r: RackCurrentResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .rackCurrent,
+            inputs: ["capacity": "\(capacity) A"],
+            outputs: ["total": Format.amps(r.totalCurrent), "headroom": Format.amps(r.headroom)]
+        ))
+    }
+}

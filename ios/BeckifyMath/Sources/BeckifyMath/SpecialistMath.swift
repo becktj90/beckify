@@ -1,5 +1,111 @@
 import Foundation
 
+// MARK: - RC / RL transient response
+
+public struct TransientResult: Equatable, Sendable {
+    public var timeConstant: Double
+    /// Voltage (RC) or current (RL) at the requested time.
+    public var valueAtTime: Double
+    /// Percent of the way from the starting value to the final value.
+    public var percentComplete: Double
+    /// Sampled points for a response curve, time then value.
+    public var curve: [(time: Double, value: Double)]
+
+    public init(timeConstant: Double, valueAtTime: Double, percentComplete: Double, curve: [(time: Double, value: Double)]) {
+        self.timeConstant = timeConstant
+        self.valueAtTime = valueAtTime
+        self.percentComplete = percentComplete
+        self.curve = curve
+    }
+}
+
+extension TransientResult {
+    public static func == (lhs: TransientResult, rhs: TransientResult) -> Bool {
+        lhs.timeConstant == rhs.timeConstant
+            && lhs.valueAtTime == rhs.valueAtTime
+            && lhs.percentComplete == rhs.percentComplete
+            && lhs.curve.count == rhs.curve.count
+            && zip(lhs.curve, rhs.curve).allSatisfy { $0.time == $1.time && $0.value == $1.value }
+    }
+}
+
+public enum TransientCircuit {
+    /// First-order step response. `amplitude` is the target when charging
+    /// (the value being risen toward) or the starting value when discharging
+    /// (the value being decayed away from) — same exponential, opposite sense.
+    public static func step(
+        amplitude: Double,
+        timeConstant: Double,
+        time: Double,
+        charging: Bool,
+        samples: Int = 24
+    ) throws -> TransientResult {
+        let final = try Positive.require(amplitude, name: "Amplitude")
+        let tau = try Positive.require(timeConstant, name: "Time constant")
+        guard time.isFinite, time >= 0 else { throw CalcError.nonPositive("Time") }
+
+        func value(at t: Double) -> Double {
+            charging ? final * (1 - exp(-t / tau)) : final * exp(-t / tau)
+        }
+
+        let v = value(at: time)
+        let percent = charging ? (v / final) * 100 : (1 - v / final) * 100
+
+        let span = max(time, tau * 5)
+        let curve: [(time: Double, value: Double)] = (0..<samples).map { i in
+            let t = span * Double(i) / Double(samples - 1)
+            return (t, value(at: t))
+        }
+
+        return TransientResult(timeConstant: tau, valueAtTime: v, percentComplete: percent, curve: curve)
+    }
+
+    /// RC time constant in seconds, farads entered directly (convert µF before calling).
+    public static func rcTimeConstant(resistance: Double, capacitance: Double) throws -> Double {
+        try Positive.require(resistance, name: "Resistance") * (try Positive.require(capacitance, name: "Capacitance"))
+    }
+
+    /// RL time constant in seconds.
+    public static func rlTimeConstant(inductance: Double, resistance: Double) throws -> Double {
+        try Positive.require(inductance, name: "Inductance") / (try Positive.require(resistance, name: "Resistance"))
+    }
+}
+
+// MARK: - Rack / bus current budget
+
+public struct RackCurrentResult: Equatable, Sendable {
+    public var totalCurrent: Double
+    public var headroom: Double
+    public var utilizationPercent: Double
+
+    public init(totalCurrent: Double, headroom: Double, utilizationPercent: Double) {
+        self.totalCurrent = totalCurrent
+        self.headroom = headroom
+        self.utilizationPercent = utilizationPercent
+    }
+}
+
+/// Adding up device draws against a bus or backplane's rated current — the
+/// same arithmetic whether it's a PLC 5 V logic bus or a 24 VDC panel rail.
+public enum RackCurrentBudget {
+    public static func solve(deviceCurrents: [Double], busCapacity: Double) throws -> RackCurrentResult {
+        let capacity = try Positive.require(busCapacity, name: "Bus capacity")
+        guard !deviceCurrents.isEmpty else { throw CalcError.missing("at least one device current") }
+        for current in deviceCurrents {
+            guard current.isFinite, current >= 0 else {
+                throw CalcError.nonPositive("Every device current")
+            }
+        }
+
+        let total = deviceCurrents.reduce(0, +)
+        return RackCurrentResult(
+            totalCurrent: total,
+            headroom: capacity - total,
+            utilizationPercent: (total / capacity) * 100
+        )
+    }
+}
+
 // MARK: - Magnetic circuit
 
 public struct MagneticCircuitResult: Equatable, Sendable {

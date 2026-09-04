@@ -1,6 +1,93 @@
 import XCTest
 @testable import BeckifyMath
 
+final class TransientCircuitTests: XCTestCase {
+    /// 12 V through 1 kΩ / 100 µF (τ = 0.1 s), read at t = 0.05 s.
+    func testRCChargingAtHalfTimeConstant() throws {
+        let tau = try TransientCircuit.rcTimeConstant(resistance: 1000, capacitance: 100e-6)
+        let result = try TransientCircuit.step(amplitude: 12, timeConstant: tau, time: 0.05, charging: true)
+
+        XCTAssertEqual(tau, 0.1, accuracy: 1e-9)
+        XCTAssertEqual(result.valueAtTime, 4.7216, accuracy: 0.001)
+        XCTAssertEqual(result.percentComplete, 39.347, accuracy: 0.001)
+    }
+
+    /// Discharging from the same 12 V starting point mirrors the charging curve.
+    func testRCDischargingComplementsCharging() throws {
+        let charge = try TransientCircuit.step(amplitude: 12, timeConstant: 0.1, time: 0.05, charging: true)
+        let discharge = try TransientCircuit.step(amplitude: 12, timeConstant: 0.1, time: 0.05, charging: false)
+
+        XCTAssertEqual(discharge.valueAtTime, 12 - charge.valueAtTime, accuracy: 1e-9)
+        XCTAssertEqual(discharge.percentComplete, charge.percentComplete, accuracy: 1e-9)
+    }
+
+    func testRLTimeConstant() throws {
+        let tau = try TransientCircuit.rlTimeConstant(inductance: 0.5, resistance: 10)
+        XCTAssertEqual(tau, 0.05, accuracy: 1e-9)
+    }
+
+    /// At t = 0 nothing has happened yet: 0 % charged, full starting value discharged.
+    func testZeroTimeIsTheStartingPoint() throws {
+        let charge = try TransientCircuit.step(amplitude: 5, timeConstant: 1, time: 0, charging: true)
+        let discharge = try TransientCircuit.step(amplitude: 5, timeConstant: 1, time: 0, charging: false)
+
+        XCTAssertEqual(charge.valueAtTime, 0, accuracy: 1e-9)
+        XCTAssertEqual(discharge.valueAtTime, 5, accuracy: 1e-9)
+    }
+
+    /// After about 5 time constants the response is effectively settled (>99 %).
+    func testFiveTimeConstantsIsEffectivelySettled() throws {
+        let result = try TransientCircuit.step(amplitude: 10, timeConstant: 1, time: 5, charging: true)
+        XCTAssertGreaterThan(result.percentComplete, 99)
+    }
+
+    func testCurveStartsAtZeroAndSpansAtLeastTheRequestedTime() throws {
+        let result = try TransientCircuit.step(amplitude: 10, timeConstant: 1, time: 2, charging: true, samples: 10)
+
+        XCTAssertEqual(result.curve.count, 10)
+        XCTAssertEqual(result.curve.first?.time, 0, accuracy: 1e-9)
+        XCTAssertGreaterThanOrEqual(result.curve.last?.time ?? 0, 2)
+    }
+
+    func testNonPositiveInputsThrow() {
+        XCTAssertThrowsError(try TransientCircuit.step(amplitude: 0, timeConstant: 1, time: 1, charging: true))
+        XCTAssertThrowsError(try TransientCircuit.step(amplitude: 10, timeConstant: 0, time: 1, charging: true))
+        XCTAssertThrowsError(try TransientCircuit.step(amplitude: 10, timeConstant: 1, time: -1, charging: true))
+        XCTAssertThrowsError(try TransientCircuit.rcTimeConstant(resistance: 0, capacitance: 1e-6))
+        XCTAssertThrowsError(try TransientCircuit.rlTimeConstant(inductance: 0.5, resistance: 0))
+    }
+}
+
+final class RackCurrentBudgetTests: XCTestCase {
+    func testTotalsAndHeadroom() throws {
+        let result = try RackCurrentBudget.solve(deviceCurrents: [0.5, 1.2, 0.3], busCapacity: 4)
+
+        XCTAssertEqual(result.totalCurrent, 2.0, accuracy: 1e-9)
+        XCTAssertEqual(result.headroom, 2.0, accuracy: 1e-9)
+        XCTAssertEqual(result.utilizationPercent, 50, accuracy: 1e-9)
+    }
+
+    /// Overloading the bus is a valid (if alarming) answer, not an error —
+    /// negative headroom is exactly the warning sign the tool exists to show.
+    func testOverloadIsNegativeHeadroomNotAnError() throws {
+        let result = try RackCurrentBudget.solve(deviceCurrents: [3, 3], busCapacity: 4)
+        XCTAssertEqual(result.headroom, -2, accuracy: 1e-9)
+        XCTAssertEqual(result.utilizationPercent, 150, accuracy: 1e-9)
+    }
+
+    func testEmptyDeviceListThrows() {
+        XCTAssertThrowsError(try RackCurrentBudget.solve(deviceCurrents: [], busCapacity: 4))
+    }
+
+    func testNegativeDeviceCurrentThrows() {
+        XCTAssertThrowsError(try RackCurrentBudget.solve(deviceCurrents: [1, -1], busCapacity: 4))
+    }
+
+    func testZeroCapacityThrows() {
+        XCTAssertThrowsError(try RackCurrentBudget.solve(deviceCurrents: [1], busCapacity: 0))
+    }
+}
+
 final class MagneticCircuitTests: XCTestCase {
     /// 500 At around a 20 cm path, 1 cm² core, µr 1000 — a small relay-sized core.
     func testTypicalCoreSizing() throws {

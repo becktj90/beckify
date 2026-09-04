@@ -173,6 +173,8 @@ struct CalculatorHostView: View {
             case .magneticCircuit: MagneticCircuitView()
             case .fiberLink: FiberLinkView()
             case .gaussianBeam: GaussianBeamView()
+            case .transientCircuit: TransientCircuitView()
+            case .rackCurrent: RackCurrentView()
             }
         }
     }
