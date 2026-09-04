@@ -10,11 +10,11 @@
 
      1. Custom HTTPS URL in the tool settings (optional Bearer token is kept
         in sessionStorage only — never localStorage, never sent to Beckify).
-        POST { imageBase64, mimeType, task: "nameplate"|"panel" }
+        POST { imageBase64, mimeType, task: "nameplate"|"panel"|"tdr"|"look" }
 
      2. Beckify proxy placeholder: <meta name="beckify-api-base-url"> or
         window.BECKIFY_API_BASE_URL (deploy injects TDR_API_BASE_URL here).
-        HTTPS only. POST {base}/api/analyze-nameplate or /api/analyze-panel
+        HTTPS only. POST {base}/api/analyze-nameplate, /api/analyze-panel, /api/analyze-tdr, or /api/analyze-look
         Server env: OPENAI_API_KEY or ANTHROPIC_API_KEY
         Optional: NAMEPLATE_VISION_PROVIDER, NAMEPLATE_VISION_MODEL
 
@@ -28,6 +28,8 @@
   var TOKEN_KEY = 'beckify-vlm-token';
   var TASK_NAMEPLATE = 'nameplate';
   var TASK_PANEL = 'panel';
+  var TASK_TDR = 'tdr';
+  var TASK_LOOK = 'look';
   var MAX_BYTES = 8 * 1024 * 1024;
   var MAX_UPLOAD_EDGE = 2048;
 
@@ -110,7 +112,10 @@
   }
 
   function endpointFor(config, task) {
-    var suffix = task === TASK_PANEL ? '/api/analyze-panel' : '/api/analyze-nameplate';
+    var suffix = '/api/analyze-nameplate';
+    if (task === TASK_PANEL) suffix = '/api/analyze-panel';
+    else if (task === TASK_TDR) suffix = '/api/analyze-tdr';
+    else if (task === TASK_LOOK) suffix = '/api/analyze-look';
     if (config.mode === 'custom') return config.customUrl;
     if (config.mode === 'proxy') return config.proxyUrl + suffix;
     return '';
@@ -185,7 +190,36 @@
     return JSON.parse(json);
   }
 
+  function knownTask(task) {
+    if (task === TASK_PANEL || task === TASK_TDR || task === TASK_LOOK) return task;
+    return TASK_NAMEPLATE;
+  }
+
+  function normalizeLookDraft(raw) {
+    var allowed = { looks_good: 1, mixed: 1, looks_bad: 1, no_person: 1, declined: 1 };
+    var verdict = String((raw && raw.verdict) || '').toLowerCase();
+    if (!allowed[verdict]) verdict = 'mixed';
+    var score = Number(raw && raw.score);
+    if (!Number.isFinite(score)) score = null;
+    else score = Math.max(0, Math.min(100, Math.round(score)));
+    if (verdict === 'declined') score = null;
+    return {
+      task: TASK_LOOK,
+      verdict: verdict,
+      score: score,
+      headline: String((raw && raw.headline) || ''),
+      reasons: Array.isArray(raw && raw.reasons) ? raw.reasons.map(String) : [],
+      fixes: Array.isArray(raw && raw.fixes) ? raw.fixes.map(String) : [],
+      photoNotes: Array.isArray(raw && (raw.photoNotes || raw.photo_notes))
+        ? (raw.photoNotes || raw.photo_notes).map(String)
+        : [],
+      warnings: Array.isArray(raw && raw.warnings) ? raw.warnings.map(String) : [],
+    };
+  }
+
   function analyzePayload(payload, task, source, rawFallback) {
+    if (task === TASK_LOOK) return normalizeLookDraft(payload);
+    if (task === TASK_TDR) return payload || {};
     var Schema = schema();
     if (!Schema) throw new Error('Nameplate schema helper did not load.');
     if (task === TASK_PANEL) {
@@ -217,7 +251,7 @@
    */
   function analyze(file, opts) {
     opts = opts || {};
-    var task = opts.task === TASK_PANEL ? TASK_PANEL : TASK_NAMEPLATE;
+    var task = knownTask(opts.task);
     var config = resolveConfig(opts.enhanceOn);
     if (!opts.enhanceOn) {
       return Promise.reject(new Error('AI enhance is off. On-device OCR will be used instead.'));
@@ -262,6 +296,16 @@
 
   function analyzePanelDirectory(file, opts) {
     var next = Object.assign({}, opts || {}, { task: TASK_PANEL });
+    return analyze(file, next);
+  }
+
+  function analyzeTdr(file, opts) {
+    var next = Object.assign({}, opts || {}, { task: TASK_TDR, enhanceOn: true });
+    return analyze(file, next);
+  }
+
+  function analyzeLook(file, opts) {
+    var next = Object.assign({}, opts || {}, { task: TASK_LOOK, enhanceOn: true });
     return analyze(file, next);
   }
 
@@ -315,6 +359,8 @@
     TOKEN_KEY: TOKEN_KEY,
     TASK_NAMEPLATE: TASK_NAMEPLATE,
     TASK_PANEL: TASK_PANEL,
+    TASK_TDR: TASK_TDR,
+    TASK_LOOK: TASK_LOOK,
     MAX_BYTES: MAX_BYTES,
     loadSettings: loadSettings,
     saveSettings: saveSettings,
@@ -326,6 +372,9 @@
     analyze: analyze,
     analyzeNameplate: analyzeNameplate,
     analyzePanelDirectory: analyzePanelDirectory,
+    analyzeTdr: analyzeTdr,
+    analyzeLook: analyzeLook,
+    normalizeLookDraft: normalizeLookDraft,
     extractJsonObject: extractJsonObject,
     analyzePayload: analyzePayload,
     prepareUploadDataUrl: prepareUploadDataUrl,

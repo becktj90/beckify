@@ -2,6 +2,7 @@ export const NAMEPLATE_VISION_SYSTEM_PROMPT = [
   "You extract motor nameplate text into a structured draft for a human to review.",
   "You are not an electrician. Do not size conductors, breakers, or overloads.",
   "OCR is imperfect. Prefer null over a guess. Never invent a phase.",
+  "Phone photos are often rotated 90° with stamped metal glare. Upright the plate first. Prefer stamped/printed text over reflections.",
   "",
   "Return one JSON object only. No markdown, no prose, no code fences.",
   "Use this shape:",

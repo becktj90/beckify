@@ -222,6 +222,16 @@ export default function PrivacyPage() {
               is an assistive draft for you to review — not perfect OCR and not an AI electrician. NEC math and
               directory metrics still wait for the review checkbox.
             </p>
+            <p className="text-base leading-relaxed">
+              Megger TDR Analyzer and Look Check are cloud vision tools. Choosing a photo still does not upload
+              it. The image leaves this device only when you click Analyze Trace or Analyze Look (
+              <code className="font-mono text-[0.9em]">/api/analyze-tdr</code>
+              {" "}
+              or{" "}
+              <code className="font-mono text-[0.9em]">/api/analyze-look</code>
+              ). Look Check is entertainment only — not medical or dating advice — and will not rate a photo if
+              anyone appears under 18.
+            </p>
           </section>
 
           <section className="space-y-3">

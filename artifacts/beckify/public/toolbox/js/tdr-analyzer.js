@@ -332,14 +332,20 @@ async function tdrRunAnalysis() {
   tdrSetProgress(18, 'Reading image…');
 
   try {
-    const dataUrl = await tdrFileToDataUrl(tdrState.file);
-    tdrSetProgress(42, 'Sending to vision model…');
+    const Vlm = window.BeckifyVlmOcr;
+    const dataUrl = (Vlm && typeof Vlm.prepareUploadDataUrl === 'function')
+      ? await Vlm.prepareUploadDataUrl(tdrState.file)
+      : await tdrFileToDataUrl(tdrState.file);
+    tdrSetProgress(42, 'Sending upright photo to vision model…');
+    const mimeType = String(dataUrl).indexOf('data:image/png') === 0
+      ? 'image/png'
+      : (tdrState.file.type || 'image/jpeg');
     const response = await fetch(tdrApiUrl('/api/analyze-tdr'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         imageBase64: dataUrl,
-        mimeType: tdrState.file.type || 'image/jpeg',
+        mimeType,
       }),
     });
 

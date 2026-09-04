@@ -90,6 +90,7 @@ ok("sitemap lists cable schedule with a working hash link", sitemapSrc.includes(
 ok("sitemap lists battery bank with a working hash link", sitemapSrc.includes('t("Battery Bank Calculator", "sec-battery-bank")'));
 ok("sitemap lists Battery Pack Designer in the e-bike group", sitemapSrc.includes('t("Battery Pack Designer", "sec-ebike-tools")'));
 ok("sitemap lists motor nameplate with a working hash link", sitemapSrc.includes('t("Motor Nameplate Analyzer", "sec-motor-nameplate")'));
+ok("sitemap lists Look Check with a working hash link", sitemapSrc.includes('t("Look Check", "sec-look-check")'));
 ok("sitemap lists NEMA wiring with a working hash link", sitemapSrc.includes('t("NEMA Wiring & Color Codes", "sec-nema-wiring")'));
 ok("sitemap lists the homework EE set", [
   't("Magnetic Circuit Workbench", "sec-magnetic-circuit")',

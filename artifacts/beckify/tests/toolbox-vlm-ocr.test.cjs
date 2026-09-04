@@ -42,7 +42,11 @@ const api = sandbox.__vlmOcrTestApi;
 assert.ok(api);
 assert.equal(api.TASK_NAMEPLATE, 'nameplate');
 assert.equal(api.TASK_PANEL, 'panel');
+assert.equal(api.TASK_TDR, 'tdr');
+assert.equal(api.TASK_LOOK, 'look');
 assert.equal(typeof api.analyzePanelDirectory, 'function');
+assert.equal(typeof api.analyzeTdr, 'function');
+assert.equal(typeof api.analyzeLook, 'function');
 
 assert.equal(api.httpsBase('http://evil.example'), '');
 assert.equal(api.httpsBase('https://api.beckify.com/'), 'https://api.beckify.com');
@@ -61,6 +65,8 @@ assert.equal(cfg.mode, 'custom');
 assert.equal(cfg.ready, true);
 assert.equal(api.endpointFor(cfg, 'nameplate'), 'https://proxy.example/ocr');
 assert.equal(api.endpointFor(cfg, 'panel'), 'https://proxy.example/ocr');
+assert.equal(api.endpointFor(cfg, 'tdr'), 'https://proxy.example/ocr');
+assert.equal(api.endpointFor(cfg, 'look'), 'https://proxy.example/ocr');
 
 api.saveSettings({ endpoint: '', token: '' });
 sandbox.BECKIFY_API_BASE_URL = 'https://api.beckify.com';
@@ -68,6 +74,8 @@ cfg = api.resolveConfig(true);
 assert.equal(cfg.mode, 'proxy');
 assert.equal(api.endpointFor(cfg, 'nameplate'), 'https://api.beckify.com/api/analyze-nameplate');
 assert.equal(api.endpointFor(cfg, 'panel'), 'https://api.beckify.com/api/analyze-panel');
+assert.equal(api.endpointFor(cfg, 'tdr'), 'https://api.beckify.com/api/analyze-tdr');
+assert.equal(api.endpointFor(cfg, 'look'), 'https://api.beckify.com/api/analyze-look');
 assert.equal(api.shouldUpload(false), false);
 
 const vlmDraft = api.analyzePayload({
@@ -139,6 +147,32 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(fromDraft[0].loadAmps, '');
   const meta = api.panelMetaFromDraft({ panel: { name: { value: 'PANEL BLT 11' }, voltage: { value: '208/120V' } } });
   assert.equal(meta.panelName, 'PANEL BLT 11');
+
+  const lookGood = api.normalizeLookDraft({
+    verdict: 'looks_good', score: 88.4, headline: 'Strong light', reasons: ['Even light'], fixes: ['Smile'],
+  });
+  assert.equal(lookGood.task, 'look');
+  assert.equal(lookGood.verdict, 'looks_good');
+  assert.equal(lookGood.score, 88);
+  const lookDeclined = api.normalizeLookDraft({ verdict: 'declined', score: 12, headline: 'No' });
+  assert.equal(lookDeclined.verdict, 'declined');
+  assert.equal(lookDeclined.score, null);
+  const lookUnknown = api.analyzePayload({ verdict: 'amazing', score: 200 }, 'look');
+  assert.equal(lookUnknown.verdict, 'mixed');
+  assert.equal(lookUnknown.score, 100);
+
+  assert.match(html, /id="sec-look-check"/);
+  assert.match(html, /Analyze Look/);
+  assert.match(html, /js\/look-check\.js/);
+  assert.match(html, /id="tdr_privacy"/);
+  const lookJs = fs.readFileSync(path.join(root, 'look-check.js'), 'utf8');
+  assert.match(lookJs, /12 \* 1024 \* 1024/);
+  assert.match(lookJs, /does not upload/);
+  assert.match(lookJs, /analyzeLook/);
+  assert.match(lookJs, /\/api\/analyze-look/);
+  const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
+  assert.match(tdrJs, /prepareUploadDataUrl/);
+
   console.log('VLM OCR client config + schema mapping passed');
 })().catch((err) => {
   console.error(err);

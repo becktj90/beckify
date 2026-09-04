@@ -142,6 +142,24 @@
     .tdr-pill.up { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
     .tdr-pill.down { background: rgba(248, 113, 113, 0.12); color: #f87171; }
     .tdr-pill.unknown { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
+    .look-verdict-card {
+      display: grid;
+      gap: 16px;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .look-verdict-card[data-verdict="looks_good"] { border-color: rgba(74, 222, 128, 0.45); background: rgba(74, 222, 128, 0.08); }
+    .look-verdict-card[data-verdict="looks_bad"] { border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.08); }
+    .look-verdict-card[data-verdict="mixed"] { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.07); }
+    .look-verdict-card[data-verdict="declined"] { border-color: rgba(148, 163, 184, 0.4); background: rgba(148, 163, 184, 0.08); }
+    .look-verdict-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .look-score { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
+    .look-verdict-card[data-verdict="looks_good"] .look-score { color: #4ade80; }
+    .look-verdict-card[data-verdict="looks_bad"] .look-score { color: #f87171; }
+    .look-verdict-card[data-verdict="mixed"] .look-score { color: #fbbf24; }
+    .look-verdict-list { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.55; }
     .feynman-lesson { margin: 14px 0 18px; padding: 16px 18px; border: 1px solid rgba(110, 231, 183, 0.28); border-radius: 14px; background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(79,139,255,0.05)); }
     .feynman-lesson-title { color: #6ee7b7; font-weight: 700; font-size: 0.98rem; }
     .feynman-formula { margin: 8px 0; color: #eef0fa; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
@@ -226,6 +244,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
+      <button class="nav-btn" data-target="sec-look-check" data-keywords="look check photo verdict good bad selfie appearance entertainment vision">Look Check</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -281,7 +300,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">56 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">57 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <div class="home-grid">
@@ -329,6 +348,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">🧪</span><span class="home-cat-name">Field Test &amp; Fault Locating</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Analyzer</a></li>
+            <li><a class="home-tool-link" href="#sec-look-check">Look Check</a></li>
             <li><a class="home-tool-link" href="#sec-panel-schedule">Panel Schedule</a></li>
             <li><a class="home-tool-link" href="#sec-io-list-generator">I/O List Generator</a></li>
             <li><a class="home-tool-link" href="#sec-signal-scaling">Process Value / Signal Scaling</a></li>
@@ -9938,7 +9958,7 @@
         <details class="section-info">
           <summary>ℹ More Info — Megger TDR Trace Analyzer</summary>
           <div class="section-info-body">
-            This analyzer reads the TDR LCD image with a vision model, extracts the on-screen Velocity Factor, Range, and Impedance, and labels the visible reflections. Upward / positive reflections generally indicate an <strong>open</strong> or higher-impedance discontinuity; downward / negative reflections generally indicate a <strong>short</strong> or lower-impedance discontinuity.
+            This analyzer reads the TDR LCD image with a vision model, extracts the on-screen Velocity Factor, Range, and Impedance, and labels the visible reflections. Phone photos are uprighted before upload. Upward / positive reflections generally indicate an <strong>open</strong> or higher-impedance discontinuity; downward / negative reflections generally indicate a <strong>short</strong> or lower-impedance discontinuity. Choosing a photo does not upload it — Analyze Trace does.
           </div>
         </details>
       </div>
@@ -9946,11 +9966,12 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Upload TDR Screen</div>
           <div class="card-body">
+            <div id="tdr_privacy" class="photo-privacy"><strong>Privacy:</strong> choosing a TDR photo does not upload it. The image stays in this browser until you click Analyze Trace. Then it is sent upright to the Beckify vision API (or a HTTPS endpoint you configure). The photo is not saved after you leave or reset.</div>
             <div id="tdr-drop-zone" class="tdr-drop-zone" role="button" tabindex="0" aria-label="Drag and drop a Megger TDR photo or choose a file">
               <div style="font-size:2rem">📷</div>
               <div>
                 <strong>Drag and drop a Megger TDR500 photo here</strong><br>
-                or choose a file to begin OCR analysis.
+                Choosing a file does not upload it. Analyze Trace sends an upright copy.
               </div>
               <input id="tdr-file-input" type="file" accept="image/*" hidden>
               <button id="tdr-browse-btn" class="btn btn-accent" type="button">Choose Photo</button>
@@ -10040,6 +10061,121 @@
             </div>
             <div class="note" style="margin-top:10px">
               Use the VF slider when the cable spec is known better than the screen OCR. The fault distances re-scale instantly so the repair callout stays usable in the field.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         LOOK CHECK
+         ════════════════════════════════════════ -->
+    <section id="sec-look-check" class="section">
+      <div class="section-header">
+        <h2>Look Check</h2>
+        <p>Any photo, a playful honest verdict: do you look good or bad? Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Look Check</summary>
+          <div class="section-info-body">
+            This is a bonus vision tool. It rates lighting, angle, expression, and framing — not your worth.
+            Anyone who appears under 18 is not rated. Cloud-only: there is no on-device Tesseract path.
+            Choosing a photo does not upload it. Analyze Look sends an upright copy to a HTTPS vision endpoint.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid two-col">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Upload a photo</div>
+          <div class="card-body">
+            <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
+            <div class="photo-safety"><strong>Entertainment only.</strong> Kind-honest notes about light, angle, and the shot — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
+            <div id="look_vlm_settings" class="vlm-settings">
+              <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
+              <div class="input-group">
+                <div>
+                  <label for="look-vlm-endpoint">Custom VLM endpoint (optional)</label>
+                  <input id="look-vlm-endpoint" type="url" inputmode="url" autocomplete="off" data-no-persist placeholder="https://your-proxy.example/ocr" spellcheck="false">
+                </div>
+                <div>
+                  <label for="look-vlm-token">Bearer token for that endpoint (optional)</label>
+                  <input id="look-vlm-token" type="password" autocomplete="off" data-no-persist placeholder="not sent to Beckify">
+                </div>
+              </div>
+              <p id="look-vlm-config" class="note">No custom URL yet. Analyze Look uses the Beckify API on this site when available.</p>
+            </div>
+            <div id="look-drop-zone" class="tdr-drop-zone" role="button" tabindex="0" aria-label="Drag and drop a photo or choose a file">
+              <div style="font-size:2rem">📷</div>
+              <div>
+                <strong>Drop any photo or tap to choose</strong><br>
+                Choosing a file does not upload it.
+              </div>
+              <input id="look-file-input" type="file" accept="image/*" hidden>
+              <button id="look-browse-btn" class="btn btn-accent" type="button">Choose Photo</button>
+            </div>
+
+            <div id="look-preview-frame" class="tdr-preview-frame" style="margin-top:12px">
+              <div id="look-preview-placeholder" class="tdr-preview-placeholder">No image loaded yet.</div>
+              <img id="look-preview-image" alt="Look Check photo preview">
+            </div>
+
+            <div class="input-group" style="margin-top:12px">
+              <div>
+                <label>File</label>
+                <div id="look-file-name" class="note">No file selected</div>
+              </div>
+              <div>
+                <label>Status</label>
+                <div id="look-status" class="note">Ready for a photo. Choosing a file does not upload it.</div>
+              </div>
+            </div>
+
+            <div class="progress-shell" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px">
+              <div class="progress-bar" style="height:18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:999px;overflow:hidden">
+                <div id="look-progress-fill" class="progress-fill" style="width:0%;height:100%;background:linear-gradient(90deg,var(--violet) 0%,var(--blue) 100%)"></div>
+              </div>
+              <span id="look-progress-label" style="min-width:46px;text-align:right;font-weight:700">0%</span>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button id="look-analyze-btn" class="btn btn-accent" type="button" disabled>Analyze Look</button>
+              <button id="look-reset-btn" class="btn" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Verdict</div>
+          <div class="card-body">
+            <div id="look-verdict-card" class="look-verdict-card" hidden>
+              <div class="look-verdict-top">
+                <div>
+                  <div id="look-verdict-badge" class="tdr-pill unknown">Mixed</div>
+                  <h3 id="look-headline" style="margin:10px 0 0">Waiting on a photo.</h3>
+                </div>
+                <div id="look-score-wrap">
+                  <div id="look-score" class="look-score">—</div>
+                  <div class="note">out of 100</div>
+                </div>
+              </div>
+              <div>
+                <strong>Why</strong>
+                <ul id="look-reasons" class="look-verdict-list"></ul>
+              </div>
+              <div>
+                <strong>Retake tips</strong>
+                <ul id="look-fixes" class="look-verdict-list"></ul>
+              </div>
+              <div>
+                <strong>Photo notes</strong>
+                <ul id="look-photo-notes" class="look-verdict-list"></ul>
+              </div>
+              <div id="look-warnings-host" hidden>
+                <strong>Notes</strong>
+                <ul id="look-warnings" class="look-verdict-list"></ul>
+              </div>
+            </div>
+            <div class="note" style="margin-top:12px">
+              Kind-honest, not cruel. If the model declines, that is the right answer — especially for anyone who looks under 18.
             </div>
           </div>
         </div>
@@ -11552,6 +11688,7 @@
 <script src="js/vlm-ocr.js"></script>
 <script src="js/motor-nameplate.js"></script>
 <script src="js/tdr-analyzer.js"></script>
+<script src="js/look-check.js"></script>
 <script src="js/local-store.js"></script>
 <script src="js/projects-ui.js"></script>
 <script src="js/conduit-guide.js"></script>

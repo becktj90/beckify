@@ -47,7 +47,9 @@ ok(
     /Enhance with AI/.test(privacyPage) &&
     /does not upload/.test(privacyPage) &&
     /analyze-nameplate/.test(privacyPage) &&
-    /analyze-panel/.test(privacyPage),
+    /analyze-panel/.test(privacyPage) &&
+    /analyze-tdr/.test(privacyPage) &&
+    /analyze-look/.test(privacyPage),
 );
 
 process.exitCode = failures ? 1 : 0;

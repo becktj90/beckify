@@ -185,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ['sec-sc', 'short-circuit', 'calcSC'],
     ['sec-nec', 'nec-circuit', 'calcNEC'],
     ['sec-tdr', 'tdr', 'calcTdrAnalyzer'],
+    ['sec-look-check', 'look-check', 'calcLookCheck'],
     ['sec-emp-emc', 'emp-emc', 'calcEmpEmc'],
   ];
   tools.forEach(function (t) {
