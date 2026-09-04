@@ -407,7 +407,7 @@ enum ToolboxCatalog {
             id: .cellularStatus,
             kind: .sensor,
             title: "Cellular Path",
-            subtitle: "Carrier, RAT, and TCP RTT on cell. Not an RSRP / dBm meter.",
+            subtitle: "Color gauges for generation and TCP RTT, plus carrier / RAT. Not RSRP / dBm.",
             symbol: "antenna.radiowaves.left.and.right",
             synonyms: [
                 "cellular", "cell", "lte", "5g", "nr", "4g", "3g", "wcdma", "carrier",

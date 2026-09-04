@@ -287,11 +287,11 @@ final class CellularPathModel: ObservableObject {
             if needsLocalNetwork {
                 rttMessage = "No TCP response from \(rttHost):\(rttPort). Local Network may be off, or nothing is listening. App Store apps cannot ICMP ping. This is not RSRP or dBm."
             } else {
-                rttMessage = "No TCP response from \(rttHost):\(rttPort). The host may be unreachable, or the cellular path is down. This is not RSRP or dBm."
+                rttMessage = "No TCP response from \(rttHost):\(rttPort) on the cellular interface. The host may be unreachable, or cellular is down. This is not RSRP or dBm."
             }
             return
         }
-        rttMessage = "TCP connect time to \(rttHost):\(rttPort) while on cellular — link quality (RTT), not RSRP and not dBm. Refused connections still count when the host answers with a RST."
+        rttMessage = "TCP connect time to \(rttHost):\(rttPort) bound to cellular — link quality (RTT), not RSRP and not dBm. Refused connections still count when the host answers with a RST."
     }
 
     private func stopMonitors() {
@@ -462,10 +462,18 @@ struct CellularStatusView: View {
                 toolID: .cellularStatus,
                 symbolic: "RAT = serviceCurrentRadioAccessTechnology    path = NWPath.usesCellular    RTT = TCP connect time",
                 substituted: substituted,
-                meaning: "Public APIs identify the cellular radio and path. They do not expose a numeric RF level. Complementary metric is TCP round-trip time while the default path uses cellular. Neither is a calibrated field-strength meter. Use Field Test Mode on the phone if you need RSRP."
+                meaning: "Gauges show radio generation (2G…5G from RAT) and measured TCP RTT. They are not RSRP, RSRQ, SINR, or dBm. Use Field Test Mode on the phone if you need those RF numbers."
             )
             honestyBanner
-            radioHero
+            CellularNetworkGauges(
+                rat: model.dataService?.rat,
+                hasServices: !model.services.isEmpty,
+                onCellular: model.defaultUsesCellular,
+                rttMedianMS: model.rttSummary?.medianMS,
+                rttBand: model.rttSummary?.band,
+                rttMeasuring: model.rttMeasuring
+            )
+            cellNetworkBoard
             ResultCard(title: "Default path") {
                 ResultRow(label: "Status", value: model.defaultStatus, emphasis: true)
                 ResultRow(
@@ -549,47 +557,35 @@ struct CellularStatusView: View {
         )
     }
 
-    private var radioHero: some View {
-        let rat = model.dataService?.rat
-        VStack(spacing: 10) {
-            Text(rat?.generationLabel ?? "—")
-                .font(.system(size: 56, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(Theme.foreground)
-                .minimumScaleFactor(0.6)
-                .accessibilityLabel(heroAccessibility)
-            Text(rat?.label ?? heroSubtitle)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(Theme.foreground)
-            Text(heroCaption)
+    private var cellNetworkBoard: some View {
+        let service = model.dataService
+        let rat = service?.rat
+        ResultCard(title: "Cell network") {
+            Text(service == nil && !model.services.isEmpty
+                 ? "Data service not identified — chips stay blank rather than assuming a SIM."
+                 : "Type and subscriber fields from CoreTelephony. Color follows generation, not signal strength.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                CellularParamChip(label: "Type", value: rat?.technologyDetail ?? "—", tone: ratTone(rat))
+                CellularParamChip(label: "Generation", value: rat?.generationLabel ?? "—", tone: ratTone(rat))
+                CellularParamChip(label: "RAT", value: rat?.label ?? "—", tone: ratTone(rat))
+                CellularParamChip(label: "RAT constant", value: CellularRadioIdentity.displayField(service?.ratRaw))
+                CellularParamChip(label: "Carrier", value: CellularRadioIdentity.displayField(service?.carrierName))
+                CellularParamChip(label: "PLMN", value: CellularRadioIdentity.plmn(mcc: service?.mcc, mnc: service?.mnc) ?? "—")
+                CellularParamChip(label: "MCC", value: CellularRadioIdentity.displayField(service?.mcc))
+                CellularParamChip(label: "MNC", value: CellularRadioIdentity.displayField(service?.mnc))
+                CellularParamChip(label: "ISO country", value: CellularRadioIdentity.displayField(service?.iso))
+                CellularParamChip(
+                    label: "VoIP",
+                    value: service?.allowsVOIP.map { $0 ? "yes" : "no" } ?? "—",
+                    tone: service?.allowsVOIP == true ? Theme.good : Theme.muted
+                )
+                CellularParamChip(label: "Data service", value: dataServiceLabel, tone: service == nil ? Theme.muted : Theme.good)
+                CellularParamChip(label: "SIM / services", value: CellularRadioIdentity.serviceCountLabel(model.services.count))
+            }
+            .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-    }
-
-    private var heroSubtitle: String {
-        if model.services.isEmpty { return "no RAT" }
-        return "data service not identified"
-    }
-
-    private var heroCaption: String {
-        if model.dataService == nil, !model.services.isEmpty {
-            return "Per-service rows below  ·  no public RSRP"
-        }
-        return model.defaultUsesCellular
-            ? "Default path is cellular  ·  no public RSRP"
-            : "Default path is not cellular  ·  no public RSRP"
-    }
-
-    private var heroAccessibility: String {
-        if let rat = model.dataService?.rat {
-            return "Data radio \(rat.compact)"
-        }
-        if model.services.isEmpty {
-            return "No data radio reported"
-        }
-        return "Data service not identified. Listed services are not assumed to be the data SIM."
     }
 
     @ViewBuilder
@@ -603,6 +599,7 @@ struct CellularStatusView: View {
             ResultRow(label: "Carrier", value: CellularRadioIdentity.displayField(service.carrierName))
             ResultRow(label: "MCC / MNC", value: CellularRadioIdentity.plmn(mcc: service.mcc, mnc: service.mnc) ?? "—")
             ResultRow(label: "ISO country", value: CellularRadioIdentity.displayField(service.iso))
+            ResultRow(label: "Type", value: service.rat.technologyDetail, tone: ratTone(service.rat))
             ResultRow(label: "RAT", value: service.rat.compact, tone: ratTone(service.rat))
             ResultRow(label: "RAT constant", value: CellularRadioIdentity.displayField(service.ratRaw))
             ResultRow(label: "Allows VoIP", value: service.allowsVOIP.map { $0 ? "yes" : "no" } ?? "—")
@@ -834,12 +831,12 @@ struct CellularStatusView: View {
         }
     }
 
-    private func ratTone(_ rat: CellularRATIdentity) -> Color {
-        switch rat.generation {
+    private func ratTone(_ rat: CellularRATIdentity?) -> Color {
+        switch rat?.generation {
         case .fiveG, .fourG: return Theme.good
         case .threeG: return Theme.warn
         case .twoG: return Theme.bad
-        case .unknown: return Theme.muted
+        default: return Theme.muted
         }
     }
 
@@ -889,5 +886,199 @@ struct CellularStatusView: View {
             ],
             outputs: outputs
         ))
+    }
+}
+
+struct CellularNetworkGauges: View {
+    var rat: CellularRATIdentity?
+    var hasServices: Bool
+    var onCellular: Bool
+    var rttMedianMS: Double?
+    var rttBand: WiFiRTTBand?
+    var rttMeasuring: Bool
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 18) {
+                generationGauge
+                rttGauge
+            }
+            VStack(spacing: 22) {
+                generationGauge
+                rttGauge
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    private var generationGauge: some View {
+        let generation = rat?.generation ?? .unknown
+        let fill = CellularRadioIdentity.generationFill(generation)
+        let step = CellularRadioIdentity.generationStep(generation)
+        return CellularArcGauge(
+            fill: fill,
+            colors: [Theme.bad, Theme.warn, Theme.accent, Theme.good],
+            value: rat?.generationLabel ?? "—",
+            unit: rat?.label ?? (hasServices ? "data SIM unknown" : "no RAT"),
+            caption: onCellular ? "Generation  ·  not RSRP" : "Not on cellular  ·  not RSRP",
+            accessibility: generationAccessibility
+        ) {
+            HStack(alignment: .bottom, spacing: 8) {
+                ForEach(Array(CellularRadioIdentity.generationOrder.enumerated()), id: \.element) { index, gen in
+                    VStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(index + 1 <= step ? generationColor(gen) : Theme.border)
+                            .frame(width: 22, height: CGFloat(18 + (index + 1) * 10))
+                        Text(gen.rawValue)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(index + 1 == step ? generationColor(gen) : Theme.muted)
+                    }
+                    .accessibilityHidden(true)
+                }
+            }
+        }
+    }
+
+    private var rttGauge: some View {
+        let fill = CellularRadioIdentity.rttFill(medianMS: rttMedianMS)
+        let value: String = {
+            if let rttMedianMS { return Format.number(rttMedianMS, digits: 0) }
+            return rttMeasuring ? "…" : "—"
+        }()
+        let unit = rttMedianMS == nil ? (rttMeasuring ? "measuring RTT" : "ms RTT") : "ms median"
+        return CellularArcGauge(
+            fill: fill,
+            colors: [Theme.bad, Theme.warn, Theme.good],
+            value: value,
+            unit: unit,
+            caption: rttBand.map { "\($0.rawValue)  ·  TCP, not dBm" } ?? "TCP RTT  ·  not dBm",
+            accessibility: rttAccessibility
+        ) {
+            HStack(spacing: 6) {
+                ForEach(["<25", "<60", "<120", "≥250"], id: \.self) { label in
+                    Text(label)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.horizontal, 4)
+            LinearGradient(colors: [Theme.good, Theme.warn, Theme.bad], startPoint: .leading, endPoint: .trailing)
+                .frame(height: 8)
+                .clipShape(Capsule())
+            Text("Excellent → poor  ·  milliseconds")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
+        }
+    }
+
+    private var generationAccessibility: String {
+        if let rat {
+            return "Cell generation \(rat.generationLabel), \(rat.technologyDetail). Gauge is radio type, not RSRP."
+        }
+        if hasServices {
+            return "Data service not identified. Generation gauge empty."
+        }
+        return "No radio access technology reported."
+    }
+
+    private var rttAccessibility: String {
+        if let rttMedianMS, let rttBand {
+            return "Cellular TCP RTT \(Format.number(rttMedianMS, digits: 0)) milliseconds, \(rttBand.rawValue). Not dBm."
+        }
+        if rttMeasuring { return "Measuring cellular TCP RTT." }
+        return "No cellular RTT yet."
+    }
+
+    private func generationColor(_ generation: CellularGeneration) -> Color {
+        switch generation {
+        case .fiveG, .fourG: return Theme.good
+        case .threeG: return Theme.warn
+        case .twoG: return Theme.bad
+        case .unknown: return Theme.muted
+        }
+    }
+}
+
+struct CellularArcGauge<Footer: View>: View {
+    var fill: Double
+    var colors: [Color]
+    var value: String
+    var unit: String
+    var caption: String
+    var accessibility: String
+    @ViewBuilder var footer: Footer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let clamped = min(1, max(0, fill))
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .stroke(Theme.border, lineWidth: 14)
+                Circle()
+                    .trim(from: 0, to: CGFloat(clamped) * 0.75)
+                    .stroke(
+                        AngularGradient(colors: colors, center: .center),
+                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(225))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: clamped)
+                VStack(spacing: 3) {
+                    Text(value)
+                        .font(.system(size: 36, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Theme.foreground)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                    Text(unit)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Theme.muted)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
+                .padding(.horizontal, 22)
+            }
+            .frame(width: 176, height: 176)
+            .accessibilityElement()
+            .accessibilityLabel(accessibility)
+            footer
+            Text(caption)
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct CellularParamChip: View {
+    var label: String
+    var value: String
+    var tone: Color = Theme.foreground
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
+                .tracking(0.5)
+                .foregroundStyle(Theme.muted)
+            Text(value)
+                .font(.subheadline.monospacedDigit().weight(.semibold))
+                .foregroundStyle(tone)
+                .minimumScaleFactor(0.7)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+        .padding(12)
+        .background(tone.opacity(0.10), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(tone.opacity(0.28), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) \(value)")
     }
 }
