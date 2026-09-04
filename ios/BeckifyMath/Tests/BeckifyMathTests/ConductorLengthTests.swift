@@ -81,6 +81,24 @@ final class ConductorLengthTests: XCTestCase {
         XCTAssertEqual(result.pathFactor, 2, accuracy: 1e-12)
     }
 
+    func testMethodDisplayNamesUseFieldLanguage() {
+        XCTAssertEqual(ConductorLengthMethod.single.rawValue, "single")
+        XCTAssertEqual(ConductorLengthMethod.loop2.rawValue, "loop2")
+        XCTAssertEqual(ConductorLengthMethod.loop3.rawValue, "loop3")
+        XCTAssertEqual(ConductorLengthMethod.single.displayName, "End-to-end")
+        XCTAssertEqual(ConductorLengthMethod.loop2.displayName, "Short to parallel")
+        XCTAssertEqual(ConductorLengthMethod.loop3.displayName, "3-phase far-end short")
+        XCTAssertEqual(ConductorLengthMethod.single.pathFactor, 1, accuracy: 1e-12)
+        XCTAssertEqual(ConductorLengthMethod.loop2.pathFactor, 2, accuracy: 1e-12)
+        XCTAssertEqual(ConductorLengthMethod.loop3.pathFactor, 2, accuracy: 1e-12)
+        XCTAssertEqual(ConductorLengthMethod.single.primaryLengthLabel, "End-to-end length")
+        XCTAssertEqual(ConductorLengthMethod.loop2.primaryLengthLabel, "Distance to short")
+        XCTAssertEqual(ConductorLengthMethod.loop3.primaryLengthLabel, "Distance to short")
+        XCTAssertTrue(ConductorLengthMethod.single.detail.contains("end-to-end"))
+        XCTAssertTrue(ConductorLengthMethod.loop2.detail.contains("path ÷ 2"))
+        XCTAssertTrue(ConductorLengthMethod.loop3.detail.contains("path ÷ 2"))
+    }
+
     func testCatalogCircularMilsMatchWebsiteSizeBook() {
         XCTAssertEqual(ConductorLength.circularMils(forSize: "1/0"), 105_600)
         XCTAssertEqual(ConductorLength.circularMils(forSize: "2"), 66_360)

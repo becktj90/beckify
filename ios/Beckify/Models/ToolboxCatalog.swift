@@ -332,11 +332,14 @@ enum ToolboxCatalog {
             id: .conductorLength,
             kind: .calculator,
             title: "Conductor Length by Resistance",
-            subtitle: "Estimate length from measured resistance with Cu/Al temperature compensation.",
+            subtitle: "Length from a milliohm (mΩ) reading — end-to-end or short-to-parallel.",
             symbol: "ruler",
             synonyms: [
-                "conductor length", "length from r", "resistance length", "loop resistance",
-                "circular mils", "awg", "copper", "aluminum", "milliohm", "cable length",
+                "conductor length", "length from resistance", "length from r", "resistance length",
+                "milliohm", "mohm", "mΩ", "cable length", "loop resistance",
+                "shorted parallel", "short to parallel", "shorted to parallel",
+                "fault location resistance", "end to end", "end-to-end",
+                "kelvin", "duct bank", "circular mils", "awg", "copper", "aluminum",
             ]
         ),
         ToolDefinition(

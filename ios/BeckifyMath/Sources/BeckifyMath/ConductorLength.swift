@@ -36,18 +36,23 @@ public enum ConductorLengthMethod: String, Codable, CaseIterable, Sendable, Hash
 
     public var displayName: String {
         switch self {
-        case .single: return "Single conductor"
-        case .loop2: return "2-conductor loop"
-        case .loop3: return "3-phase loop"
+        case .single: return "End-to-end"
+        case .loop2: return "Short to parallel"
+        case .loop3: return "3-phase far-end short"
         }
     }
 
     public var detail: String {
         switch self {
-        case .single: return "One-way equals solved path length"
-        case .loop2: return "Far-end jumper; one-way = total path ÷ 2"
-        case .loop3: return "Symmetrical far-end short; one-way = total path ÷ 2"
+        case .single: return "One conductor measured end-to-end; distance = solved path"
+        case .loop2: return "Measure between two parallels shorted/bonded along the run; distance to short = path ÷ 2"
+        case .loop3: return "Symmetrical far-end short; distance to short = path ÷ 2"
         }
+    }
+
+    /// Sticky / result headline: end-to-end length vs one-way distance to the short.
+    public var primaryLengthLabel: String {
+        self == .single ? "End-to-end length" : "Distance to short"
     }
 
     /// Website `clrPathFactor`: single is ×1, every loop method is ÷2.

@@ -2426,12 +2426,12 @@
     <section id="sec-conductor-length" class="section">
       <div class="section-header">
         <h2>📏 Conductor Length by Resistance</h2>
-        <p>Estimate one-way distance from measured conductor resistance, circular mil area, and material resistivity.</p>
+        <p>Estimate length from a milliohm (mΩ) reading — end-to-end or shorted to a parallel.</p>
         <details class="section-info">
           <summary>ℹ More Info — Conductor Length by Resistance</summary>
           <div class="section-info-body">
             This tool solves conductor length from the resistivity relationship <strong>R = ρ × L / CM</strong>, rearranged as <strong>L = R × CM / ρ</strong>.<br><br>
-            Enter the measured loop or single-conductor resistance, pick wire size/material, then apply temperature compensation to normalize resistance to the selected resistivity reference temperature.<br><br>
+            Use a milliohm / Kelvin reading. <strong>End-to-end</strong> is one conductor measured from end to end (distance = solved path). <strong>Short to parallel</strong> is a measurement between two parallels that are shorted or bonded somewhere along the run (distance to the short = path ÷ 2). <strong>3-phase far-end short</strong> is the same ÷2 rule on a symmetrical far-end short. Not a cable locator or TDR — contact resistance and stranding shift the estimate.<br><br>
             <strong>Temperature compensation:</strong> R<sub>T2</sub> = R<sub>T1</sub> × [1 + α × (T2 − T1)]<br>
             The calculator uses this form to convert measured resistance at ambient temperature to the selected reference temperature before solving length.
           </div>
@@ -2507,12 +2507,13 @@
                 </select>
               </div>
               <div>
-                <label>Measurement Method</label>
+                <label>What's Shorted?</label>
                 <select id="clr_method" onchange="conductorLengthMethodChange()">
-                  <option value="single">Single Conductor (One-Way)</option>
-                  <option value="loop2">Loop Resistance (2-Conductor Shorted at Far End)</option>
-                  <option value="loop3">3-Phase Loop (Symmetrical Far-End Short)</option>
+                  <option value="loop2">Short to parallel (bonded along the run)</option>
+                  <option value="single">End-to-end (one conductor)</option>
+                  <option value="loop3">3-phase far-end short</option>
                 </select>
+                <p id="clr_method_detail" class="note">Measure between two parallels shorted/bonded along the run; distance to short = path ÷ 2</p>
               </div>
             </div>
 
@@ -2564,26 +2565,26 @@
           <div class="card-body">
             <svg class="clr-diagram" id="clr_diagram" viewBox="0 0 560 260" role="img" aria-labelledby="clr_diag_title clr_diag_desc">
               <title id="clr_diag_title">Conductor resistance measurement circuit</title>
-              <desc id="clr_diag_desc">Selectable wiring diagrams for single-conductor, two-conductor loop, and three-phase loop resistance methods.</desc>
+              <desc id="clr_diag_desc">Selectable wiring diagrams for end-to-end, short-to-parallel, and 3-phase far-end short milliohm measurements.</desc>
 
               <rect x="18" y="30" width="120" height="70" rx="8" class="clr-diag-meter"></rect>
               <text x="78" y="58" text-anchor="middle" class="clr-diag-label">DMM</text>
-              <text x="78" y="80" text-anchor="middle" class="clr-diag-sub">Ω Mode</text>
+              <text x="78" y="80" text-anchor="middle" class="clr-diag-sub">mΩ / Ω</text>
 
               <text x="182" y="36" class="clr-diag-tag">Near End</text>
-              <text x="440" y="36" class="clr-diag-tag">Far End</text>
+              <text x="440" y="36" class="clr-diag-tag" id="clr_diag_far_label">Short / bond</text>
 
-              <g id="clr_diag_single">
+              <g id="clr_diag_single" style="display:none">
                 <line x1="138" y1="65" x2="498" y2="65" class="clr-diag-wire"></line>
                 <circle cx="496" cy="65" r="7" class="clr-diag-probe"></circle>
-                <text x="260" y="56" class="clr-diag-sub">Single conductor test path</text>
+                <text x="260" y="56" class="clr-diag-sub">End-to-end on one conductor</text>
               </g>
 
-              <g id="clr_diag_loop2" style="display:none">
+              <g id="clr_diag_loop2">
                 <line x1="138" y1="55" x2="470" y2="55" class="clr-diag-wire"></line>
                 <line x1="138" y1="95" x2="470" y2="95" class="clr-diag-wire"></line>
                 <line x1="470" y1="55" x2="470" y2="95" class="clr-diag-jumper"></line>
-                <text x="260" y="122" class="clr-diag-sub">Far-end jumper closes a 2-conductor loop</text>
+                <text x="260" y="122" class="clr-diag-sub">Parallels shorted or bonded along the run</text>
               </g>
 
               <g id="clr_diag_loop3" style="display:none">
@@ -2591,11 +2592,11 @@
                 <line x1="138" y1="75" x2="455" y2="75" class="clr-diag-wire"></line>
                 <line x1="138" y1="105" x2="455" y2="105" class="clr-diag-wire"></line>
                 <line x1="455" y1="35" x2="455" y2="115" class="clr-diag-jumper"></line>
-                <text x="260" y="132" class="clr-diag-sub">Symmetrical far-end short across phase conductors</text>
+                <text x="260" y="132" class="clr-diag-sub">3-phase far-end short across phase conductors</text>
               </g>
 
-              <text x="26" y="170" class="clr-diag-note">Displayed one-way distance = total solved path ÷ loop factor</text>
-              <text x="26" y="194" class="clr-diag-note" id="clr_diag_factor">Loop factor: ×1 (single conductor)</text>
+              <text x="26" y="170" class="clr-diag-note" id="clr_diag_rule">Distance to short = total solved path ÷ 2</text>
+              <text x="26" y="194" class="clr-diag-note" id="clr_diag_factor">Path factor: ÷2 — distance to short is one-way</text>
             </svg>
           </div>
         </div>
