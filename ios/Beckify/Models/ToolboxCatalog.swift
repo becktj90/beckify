@@ -53,6 +53,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case harmonicsTHD
     case upsSizing
     case motorNameplate
+    case motorNameplateOCR
     case heaterDesign
     case empEmc
     case necCircuit
@@ -647,6 +648,14 @@ enum ToolboxCatalog {
             synonyms: ["nameplate", "overload", "430.52", "430.32", "lra", "code letter", "motor ocpd"]
         ),
         ToolDefinition(
+            id: .motorNameplateOCR,
+            kind: .calculator,
+            title: "Motor Nameplate OCR",
+            subtitle: "Photograph a plate; Vision + shared-schema fields, then you confirm.",
+            symbol: "text.viewfinder",
+            synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan"]
+        ),
+        ToolDefinition(
             id: .heaterDesign,
             kind: .calculator,
             title: "Heater Design Wizard",
@@ -750,6 +759,7 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
+            .motorNameplateOCR,
             .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .loadWorksheet, .cableSchedule, .isLoopVerifier,
         ],
@@ -820,7 +830,7 @@ enum ToolboxCatalog {
         .conduitFill: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.power, .shortCircuit, .motorFLA],
         .timer555: [.plcTimer, .ledRC, .frequencyWave],
-        .motorFLA: [.wireAmpacity, .panelDirectory, .transformer],
+        .motorFLA: [.motorNameplateOCR, .motorNameplate, .motorSpeed],
         .wireAmpacity: [.voltageDrop, .conduitFill, .circularMils],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
@@ -847,7 +857,7 @@ enum ToolboxCatalog {
         .modbusAddress: [.signalScaling, .plcTimer],
         .plcTimer: [.timer555, .modbusAddress, .signalScaling],
         .panelDirectory: [.loadFactors, .wireAmpacity, .motorFLA],
-        .motorSpeed: [.motorFLA, .power, .transformer],
+        .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.frequencyWave, .reactance, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
@@ -864,7 +874,8 @@ enum ToolboxCatalog {
         .tapChanger: [.transformer, .voltageDrop, .shortCircuit],
         .harmonicsTHD: [.powerFactor, .power, .reactance],
         .upsSizing: [.batteryBank, .power, .rackCurrent],
-        .motorNameplate: [.motorFLA, .motorSpeed, .wireAmpacity],
+        .motorNameplate: [.motorNameplateOCR, .motorFLA, .motorSpeed],
+        .motorNameplateOCR: [.motorNameplate, .motorFLA, .motorSpeed],
         .heaterDesign: [.ohmsLaw, .wireAmpacity, .power],
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.wireAmpacity, .voltageDrop, .loadWorksheet],

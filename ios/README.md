@@ -42,6 +42,7 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Motor Speed & Torque (sync RPM, slip, shaft torque)
 - Motor Nameplate Analyzer (430.32 overload, Table 430.52 SCPD, 430.22 conductor, code-letter LRA)
+- Motor Nameplate OCR (camera or library photo, on-device Vision, heuristic field extract into the shared nameplate schema — value + confidence + reviewed; human confirm sets reviewed. MOCP and LRA are never treated as FLA. Cloud VLM protocol is off. Optional seed into FLA / Analyzer / Speed)
 - Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load)
 - Heater Design Wizard (resistive heater current, leg R, element wire length)
 - UPS / On-site Power (kVA, runtime, battery Ah)

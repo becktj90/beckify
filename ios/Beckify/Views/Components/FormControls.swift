@@ -11,6 +11,7 @@ struct NumberField: View {
     var helpText: String? = nil
     var fieldID: String? = nil
     var onSubmit: (() -> Void)? = nil
+    var lowConfidence: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -23,6 +24,11 @@ struct NumberField: View {
                     Text("optional")
                         .font(.caption2)
                         .foregroundStyle(Theme.muted.opacity(0.7))
+                }
+                if lowConfidence {
+                    Text("check")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Theme.warn)
                 }
             }
             HStack(alignment: .firstTextBaseline) {
@@ -48,7 +54,7 @@ struct NumberField: View {
             .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
-                    .stroke(errorMessage == nil ? Theme.border : Theme.bad.opacity(0.7), lineWidth: Theme.Stroke.hairline)
+                    .stroke(strokeColor, lineWidth: Theme.Stroke.hairline)
             )
             if let helpText, errorMessage == nil {
                 Text(helpText)
@@ -59,6 +65,12 @@ struct NumberField: View {
                 FieldValidationText(message: errorMessage)
             }
         }
+    }
+
+    private var strokeColor: Color {
+        if errorMessage != nil { return Theme.bad.opacity(0.7) }
+        if lowConfidence { return Theme.warn.opacity(0.85) }
+        return Theme.border
     }
 }
 
@@ -72,6 +84,7 @@ struct TextInputField: View {
     var autocapitalization: TextInputAutocapitalization = .never
     var fieldID: String? = nil
     var onSubmit: (() -> Void)? = nil
+    var lowConfidence: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -84,6 +97,11 @@ struct TextInputField: View {
                     Text("optional")
                         .font(.caption2)
                         .foregroundStyle(Theme.muted.opacity(0.7))
+                }
+                if lowConfidence {
+                    Text("check")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Theme.warn)
                 }
             }
             HStack(alignment: .firstTextBaseline) {
@@ -110,7 +128,7 @@ struct TextInputField: View {
             .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
-                    .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+                    .stroke(lowConfidence ? Theme.warn.opacity(0.85) : Theme.border, lineWidth: Theme.Stroke.hairline)
             )
         }
     }

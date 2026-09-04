@@ -75,8 +75,9 @@ public struct MotorNameplateResult: Equatable, Sendable {
     public var formula: String
 }
 
-/// Nameplate → overload / SCPD / 430.22 conductor math. OCR stays optional on the UI;
-/// this module only consumes reviewed numeric fields.
+/// Nameplate → overload / SCPD / 430.22 conductor math. Structured OCR lives in
+/// `NameplateFieldParser` / Motor Nameplate OCR; this module only consumes
+/// reviewed numeric fields.
 public enum MotorNameplate {
     /// NEC Table 430.52 percentages: ntd, td, inst, inv.
     private static let table430_52: [MotorNameplateType: (ntd: Double, td: Double, inst: Double, inv: Double)] = [
