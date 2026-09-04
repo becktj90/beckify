@@ -154,6 +154,11 @@ public enum ToolHomeAreaPolicy {
             "Kp": "kp", "Ki": "ki", "Kd": "kd",
             "Ku": "ku", "Pu": "pu",
         ],
+        "wifiStatus": [
+            "mode": "surveyMode",
+            "rttTarget": "rttTarget",
+            "rttHost": "rttHost",
+        ],
     ]
 
     private static func coerceStoredValue(field: String, value: String) -> String {

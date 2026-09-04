@@ -174,6 +174,7 @@ ATS: no `NSAppTransportSecurity` / `NSAllowsArbitraryLoads` in the generated Inf
 | `NSMicrophoneUsageDescription` | `NoiseMeterView` / `AVAudioApplication.requestRecordPermission` | `onAppear` of Noise Meter |
 | `NSBluetoothAlwaysUsageDescription` + Peripheral | `BluetoothScannerView` creates `CBCentralManager` in `start()` | `onAppear` of BLE Scanner |
 | `NSLocationWhenInUseUsageDescription` | `FieldPositionView`, `WiFiStatusView` | `onAppear` of those tools |
+| `NSLocalNetworkUsageDescription` | `WiFiStatusView` TCP RTT to a LAN/gateway host | User taps Measure RTT on a local target |
 
 No camera, photos, tracking, or contacts strings. `PrivacyInfo.xcprivacy`: `NSPrivacyTracking` false, empty collected-data types, UserDefaults reason `CA92.1`. Matches `JobStore`.
 

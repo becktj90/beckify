@@ -60,7 +60,7 @@ struct ToolboxView: View {
                                     Text("Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer.")
                                 }
                                 if shelf == .instruments {
-                                    Text("Wi-Fi dBm/RSSI is not a public iOS API. Wi-Fi Path maps Apple’s 0…1 signalStrength (percent/bars) with a location heatmap — it will not invent dBm.")
+                                    Text("Wi-Fi Path shows Apple’s 0…1 signalStrength as percent and bars, plus TCP link-quality RTT. iOS does not give third-party apps Wi-Fi dBm.")
                                 }
                             }
                         }
@@ -109,7 +109,7 @@ struct ToolboxView: View {
             return "Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer."
         }
         if query.localizedCaseInsensitiveContains("rssi") || query.localizedCaseInsensitiveContains("wifi") || query.localizedCaseInsensitiveContains("dbm") {
-            return "Wi-Fi dBm/RSSI is not a public iOS API. Wi-Fi Path maps Apple’s 0…1 signalStrength (percent/bars) with a location heatmap — it will not invent dBm."
+            return "Wi-Fi Path shows Apple’s 0…1 signalStrength as percent and bars, plus TCP link-quality RTT. iOS does not give third-party apps Wi-Fi dBm."
         }
         return nil
     }
