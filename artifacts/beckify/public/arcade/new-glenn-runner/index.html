@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Glenn Runner</title>
+  <title>New Glenn Runner | Beckify</title>
   <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,7 +82,7 @@
       cursor: pointer;
       touch-action: none;
     }
-    #atb-boost { flex: 2; border-width: 2px; }
+    #atb-boost { flex: 2; border-width: 2px; min-height: 56px; }
     .help {
       margin: 10px 2px 0;
       color: var(--fg-muted);
@@ -150,9 +150,10 @@
 </head>
 <body data-arcade-standalone="true">
   <main id="sec-arcade" class="cabinet">
+    <h1 class="visually-hidden">New Glenn Runner</h1>
     <div id="arcade-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
     <div id="arcade-fs-wrapper">
-      <canvas id="arcadeCanvas" width="420" height="640" tabindex="0" aria-label="New Glenn Runner flight canvas. Hold boost to climb, steer around hazards."></canvas>
+      <canvas id="arcadeCanvas" width="420" height="640" tabindex="0" aria-label="New Glenn Runner flight canvas. Hold boost to climb, steer around hazards, then land the first stage on Jacklyn."></canvas>
       <div class="hud-btns">
         <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" aria-label="Toggle mute">🔊</button>
         <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" aria-label="Pause mission">⏸</button>
@@ -165,7 +166,7 @@
       <button id="atb-boost" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
       <button id="atb-right" aria-label="Steer right">▶</button>
     </div>
-    <p class="help">Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB and tap ◀ ▶. Brief boost gaps are forgiven; early taps still fire landing burns. Catch aero shield, LOX top-off, and BE-4 kick. Difficulty stays KID / CADET / PAD RAT.</p>
+    <p class="help">Keyboard: A/D or arrows steer, Space holds boost (or brake on Jacklyn), P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. Early climb is a teach window. After separation, land the first stage on Jacklyn — the labeled landing barge. Soft deck catch scores; a tip or splash cuts combo but the run continues. Catch aero shield, LOX top-off, and BE-4 kick. Difficulty stays KID / CADET / PAD RAT.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
       <div id="arcade-hi-score">NO MISSIONS FLOWN</div>

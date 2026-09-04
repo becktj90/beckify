@@ -1,6 +1,14 @@
 (function () {
   'use strict';
 
+  // New Glenn Runner — Beckify's only arcade title (HTML/CSS/JS canvas).
+  // Beat: PAD charge → ascent corridor → Max-Q → MECO/sep → Karman split →
+  // BOOSTER_RTLS first-stage recovery onto Jacklyn (landing barge): a short
+  // steer + throttle skill check. Soft deck touchdown = recovered (legs, steam,
+  // banner, bonus). Tip/splash is recoverable — score/combo hit, run continues.
+  // Then SECO and payload. Kids (Apollo/Rocco) stay avatars, never playable.
+  // Play-feel: coyote/buffer boost, early teach window, near-miss juice, PB.
+
   const CW = 420;
   const CH = 640;
   const BASE_FPS = 60;
@@ -52,9 +60,9 @@
     'BE-4 burns methane — cleaner than kerosene and easier to reuse.'
   ];
   const DIFFICULTY = {
-    KID:     { spawnMul: 0.25, hitboxScale: 0.42, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false, gimbalSlewRate: 0.032, gimbalDriftBias: 0,     pickupMul: 1.35 },
-    CADET:   { spawnMul: 0.55, hitboxScale: 0.52, graceFrames: 90,  qStressGain: 0.08, qStressDecay: 0.18, landingTolerance: 18, secoBand: 200, allowFail: true,  gimbalSlewRate: 0.022, gimbalDriftBias: 0.0002, pickupMul: 1.0 },
-    PAD_RAT: { spawnMul: 1.0,  hitboxScale: 0.66, graceFrames: 45,  qStressGain: 0.16, qStressDecay: 0.07, landingTolerance: 10, secoBand: 100, allowFail: true,  gimbalSlewRate: 0.013, gimbalDriftBias: 0.0007, pickupMul: 0.7 }
+    KID:     { spawnMul: 0.22, hitboxScale: 0.42, graceFrames: 210, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 32, secoBand: 280, allowFail: false, gimbalSlewRate: 0.032, gimbalDriftBias: 0,     pickupMul: 1.45, ascentTeachSec: 12 },
+    CADET:   { spawnMul: 0.48, hitboxScale: 0.52, graceFrames: 120, qStressGain: 0.08, qStressDecay: 0.18, landingTolerance: 22, secoBand: 200, allowFail: true,  gimbalSlewRate: 0.022, gimbalDriftBias: 0.0002, pickupMul: 1.1, ascentTeachSec: 8 },
+    PAD_RAT: { spawnMul: 0.92, hitboxScale: 0.66, graceFrames: 50,  qStressGain: 0.16, qStressDecay: 0.07, landingTolerance: 14, secoBand: 100, allowFail: true,  gimbalSlewRate: 0.013, gimbalDriftBias: 0.0007, pickupMul: 0.75, ascentTeachSec: 4 }
   };
   const MISSION_CAPTIONS = {
     PAD: 'Pad ops complete. Countdown at T-3 and all systems are green.',
@@ -63,7 +71,7 @@
     SUPERSONIC: 'Passing through supersonic climb toward MECO.',
     STAGE_SEP: 'MECO. Sep clean.',
     KARMAN: 'Crossing 100 km — welcome to space.',
-    BOOSTER_RTLS: 'Booster recovery ops in progress.',
+    BOOSTER_RTLS: 'GS-1 returning — land the first stage on Jacklyn.',
     ORBIT_INSERT: 'SECO target is generous — guide velocity into the green.',
     PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.'
   };
@@ -74,7 +82,7 @@
     SUPERSONIC: 'Tower clear. Roll program.',
     STAGE_SEP: 'MECO confirmed. Stage sep nominal. Booster heading home.',
     KARMAN: 'S-band lock. Telemetry green.',
-    BOOSTER_RTLS: 'GS-1 on the deck. Pad rats earned their pay.',
+    BOOSTER_RTLS: 'Jacklyn on station. Steer GS-1 onto the painted deck.',
     ORBIT_INSERT: 'SECO guidance is live. Enjoy the easy green band.',
     PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.',
     BOOSTER_WIN: 'Landed on Jacklyn. Sea state nominal. Coffee earned.'
@@ -99,7 +107,7 @@
     SUPERSONIC:     { label: 'LEVEL 4: SUPERSONIC',       start: 130,  end: 215 },
     STAGE_SEP:      { label: 'LEVEL 5: STAGE SEP',        start: 215,  end: 240 },
     KARMAN:         { label: 'LEVEL 6: KARMAN LINE',      start: 240,  end: 290 },
-    BOOSTER_RTLS:   { label: 'LEVEL 7: BOOSTER RTLS',     start: 290,  end: 410 },
+    BOOSTER_RTLS:   { label: 'LEVEL 7: JACKLYN RECOVERY', start: 290,  end: 410 },
     ORBIT_INSERT:   { label: 'LEVEL 8: ORBIT INSERT',     start: 410,  end: 470 },
     PAYLOAD_DEPLOY: { label: 'LEVEL 9: PAYLOAD DEPLOY',   start: 470,  end: 500 },
     EXTENDED:       { label: 'EXTENDED MISSION',          start: 500,  end: Infinity }
@@ -132,10 +140,11 @@
   const LAUNCH_CHARGE_DECAY_RATE = 0.22;
   const LAUNCH_BOOST_MIN = 0.9;
   const LAUNCH_BOOST_MAX = 2.7;
-  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 1.6; // Denser spawn pacing; lower = more frequent obstacles.
-  const ASCENT_INITIAL_SPAWN_AT = 1.5;
-  const ASCENT_INITIAL_OBSTACLE_TARGET = 14;
-  const ASCENT_MAX_OBSTACLE_TARGET = 24;
+  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 1.85; // Gentle early ramp; lower = more frequent obstacles.
+  const ASCENT_INITIAL_SPAWN_AT = 16;
+  const ASCENT_INITIAL_OBSTACLE_TARGET = 8;
+  const ASCENT_MAX_OBSTACLE_TARGET = 18;
+  const ASCENT_FIRST_HAZARD_AT = 18;
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
@@ -233,6 +242,20 @@
   const PAD_SPRITE_H = 480;
   const ROCKET_SPRITE_W = 56;
   const ROCKET_SPRITE_H = 180;
+  const NEAR_MISS_LATERAL = 46;
+  const NEAR_MISS_SCORE = 0.1;
+  const JACKLYN_DECK_Y = 486;
+  const JACKLYN_HULL_HALF = 112;
+  const JACKLYN_LANDING_GRAVITY = 0.038;
+  const JACKLYN_LANDING_THRUST = 0.072;
+  const JACKLYN_LANDING_MAX_VY = 3.4;
+  const JACKLYN_SOFT_VY = 1.55;
+  const JACKLYN_PERFECT_VY = 1.02;
+  const JACKLYN_SETUP_SEC = 1.15;
+  const JACKLYN_CELEBRATE_SEC = 2.55;
+  const JACKLYN_MAX_FLIGHT_SEC = 14;
+  const JACKLYN_RECOVERY_BONUS = 2.2;
+  const SLOWMO_SCALE = 0.38;
 
   let skySprite = null;
   let lastSkyKey = -1;
@@ -484,6 +507,9 @@
         case 'meco': tone(92, 0.2, 'triangle', 0.055, 48); noise(0.16, 0.025, 220); break;
         case 'stage_sep': tone(180, 0.12, 'triangle', 0.045, 110); break;
         case 'landing_touchdown': tone(120, 0.09, 'triangle', 0.05, 80); noise(0.22, 0.018, 900); break;
+        case 'landing_cheer': tone(262, 0.1, 'triangle', 0.04); tone(330, 0.12, 'triangle', 0.035); tone(392, 0.16, 'sawtooth', 0.03); noise(0.2, 0.02, 700); break;
+        case 'landing_splash': noise(0.28, 0.04, 600); tone(90, 0.2, 'sine', 0.04, 40); break;
+        case 'near_miss': tone(740, 0.05, 'sine', 0.02, 980); noise(0.08, 0.016, 2200); break;
         case 'rud': tone(180, 0.32, 'sawtooth', 0.07, 44); noise(0.28, 0.05, 1000); break;
         case 'ui_click': tone(720, 0.045, 'square', 0.03, 540); break;
         case 'countdown_beep': tone(320, 0.08, 'sine', 0.03); break;
@@ -756,7 +782,10 @@
         overlayMessage: '',
         overlayTimer: 0,
         floatScores: [],
-        liveStatus: ''
+        liveStatus: '',
+        landingBanner: '',
+        landingBannerSub: '',
+        landingBannerTimer: 0
       },
       session: {
         missionNo: settings.missionCount + 1,
@@ -798,7 +827,10 @@
         shield: 0,
         overdrive: 0,
         scoreMult: 1,
-        pickupsCollected: 0
+        pickupsCollected: 0,
+        taughtPickup: false,
+        landingQuality: null,
+        closeCalls: 0
       },
       pickups: [],
       trail: [],
@@ -806,10 +838,10 @@
       telemetry: { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' },
       rocket: { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0, gimbalAngle: 0, gimbalDrift: 0 },
       upper: { x: CW / 2, y: 142, vx: 0, vy: 0, throttle: 0.45, targetBand: 0.5, targetLock: 0, deployAngle: 0, released: false },
-      booster: { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 },
+      booster: { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0, legs: 0, flightTime: 0, celebrate: 0, splash: 0, tip: 0, landingQuality: null },
       obstacles: [],
       upperHazards: [],
-      effects: { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0 },
+      effects: { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0, landingFocus: false, landingSetup: 0, timeScale: 1, slowMo: 0, comboFlash: 0, seaPhase: 0 },
       easter: {
         binLabels: BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)],
         bezosMode: false,
@@ -827,6 +859,51 @@
 
   function isBoosting() {
     return !!(state.input.boostHeld || state.input.boostCoyote > 0);
+  }
+
+  function isLandingFocus() {
+    return !!(state.effects.landingFocus && state.session.phase === 'BOOSTER_RTLS');
+  }
+
+  function landingZoneHalf() {
+    return (currentDifficulty().landingTolerance || 18) * 2.05;
+  }
+
+  function wantsJacklynBeat() {
+    try {
+      return new URLSearchParams(window.location.search).get('beat') === 'jacklyn';
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function startSlowMo(scale, duration) {
+    if (state.settings.reducedMotion) return;
+    state.effects.timeScale = scale || SLOWMO_SCALE;
+    state.effects.slowMo = duration || 0.7;
+  }
+
+  function syncTouchLabels() {
+    const boost = document.getElementById('atb-boost');
+    if (!boost) return;
+    if (isLandingFocus() && !state.booster.touchdown) {
+      boost.textContent = 'HOLD TO BRAKE';
+      boost.setAttribute('aria-label', 'Hold to brake for Jacklyn landing');
+    } else {
+      boost.textContent = 'HOLD TO CLIMB';
+      boost.setAttribute('aria-label', 'Hold boost to climb');
+    }
+  }
+
+  function landingSteerAxis() {
+    let axis = 0;
+    if (state.input.left) axis -= 1;
+    if (state.input.right) axis += 1;
+    if (state.input.pointerDown) {
+      const dx = state.input.pointerX - state.booster.x;
+      if (Math.abs(dx) > 10) axis += clamp(dx / 90, -1, 1);
+    }
+    return clamp(axis, -1, 1);
   }
 
   function consumeBoostTap() {
@@ -1201,6 +1278,9 @@
     state.ui.overlayTimer = 0;
     state.ui.floatScores = [];
     state.ui.liveStatus = '';
+    state.ui.landingBanner = '';
+    state.ui.landingBannerSub = '';
+    state.ui.landingBannerTimer = 0;
     state.session = {
       missionNo: state.settings.missionCount + 1,
       missionName: `NG-${state.settings.missionCount + 1}`,
@@ -1241,7 +1321,10 @@
       shield: 0,
       overdrive: 0,
       scoreMult: 1,
-      pickupsCollected: 0
+      pickupsCollected: 0,
+      taughtPickup: false,
+      landingQuality: null,
+      closeCalls: 0
     };
     state.pickups = [];
     state.trail = [];
@@ -1251,10 +1334,10 @@
     state.telemetry = { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' };
     state.rocket = { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0, gimbalAngle: 0, gimbalDrift: 0 };
     state.upper = { x: CW / 2, y: 142, vx: 0, vy: 0, throttle: 0.45, targetBand: 0.5, targetLock: 0, deployAngle: 0, released: false };
-    state.booster = { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 };
+    state.booster = { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0, legs: 0, flightTime: 0, celebrate: 0, splash: 0, tip: 0, landingQuality: null };
     state.obstacles = [];
     state.upperHazards = [];
-    state.effects = { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0 };
+    state.effects = { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0, landingFocus: false, landingSetup: 0, timeScale: 1, slowMo: 0, comboFlash: 0, seaPhase: 0 };
     state.easter.binLabels = BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)];
     state.easter.van = { parked: true, x: 20, y: CH - 82, beeped: false, messageShown: false };
     Audio.setMood('idle', state.settings);
@@ -1263,6 +1346,7 @@
     Audio.stopMusic();
     Audio.stopRumble();
     updateButtons();
+    syncTouchLabels();
   }
 
   function missionMedal(score) {
@@ -1272,7 +1356,8 @@
   }
 
   function arcadeScore() {
-    return Math.round(state.session.score * 250 + state.session.obstacleStreak * 40 + (state.session.pickupsCollected || 0) * 80 + (state.session.boosterRecovered ? 500 : 0) + (state.session.payloadDeployed ? 500 : 0));
+    const landingBonus = state.session.landingQuality === 'perfect' ? 350 : state.session.landingQuality === 'soft' ? 180 : state.session.landingQuality === 'tip' ? 40 : 0;
+    return Math.round(state.session.score * 250 + state.session.obstacleStreak * 40 + (state.session.pickupsCollected || 0) * 80 + (state.session.closeCalls || 0) * 25 + (state.session.boosterRecovered ? 500 : 0) + landingBonus + (state.session.payloadDeployed ? 500 : 0));
   }
 
   function starsForPhase(phase) {
@@ -1380,6 +1465,18 @@
     Audio.play('level_start', state.settings);
     Audio.setMood('pad', state.settings);
     Audio.play('ui_click', state.settings);
+    if (wantsJacklynBeat()) {
+      state.session.phase = 'BOOSTER_RTLS';
+      state.session.totalElapsed = PHASES.BOOSTER_RTLS.start;
+      state.session.phaseElapsed = 0;
+      state.session.phaseGrace = currentDifficulty().graceFrames / BASE_FPS;
+      state.rocket.fairingGone = true;
+      state.effects.landingSetup = 0.35;
+      state.ui.levelIntroTimer = 0.4;
+      setRadio(RADIO.BOOSTER_RTLS, 2.2);
+      Audio.setMood('triumph', state.settings);
+      announce('Jacklyn recovery practice — steer the booster onto the barge.');
+    }
   }
 
   function pauseGame(auto) {
@@ -1543,9 +1640,10 @@
       waveAmplitude: type === 'lightning' ? rand(0.05, 0.12) : rand(0.08, 0.2),
       waveFreq: rand(1.2, 2.6),
       wavePhase: rand(0, Math.PI * 2),
-      waveTime: 0,
-      whooshed: false
-    });
+        waveTime: 0,
+        whooshed: false,
+        nearMissed: false
+      });
     // On harder difficulties occasionally spawn a paired obstacle nearby to force a harder dodge.
     if (state.settings.difficulty !== 'KID' && Math.random() < PAIRED_OBSTACLE_SPAWN_CHANCE && type !== 'lightning') {
       const pairedX = clamp(x + rand(PAIRED_OBSTACLE_MIN_OFFSET, PAIRED_OBSTACLE_MAX_OFFSET) * (Math.random() < 0.5 ? 1 : -1), OBSTACLE_EDGE_MARGIN, CW - OBSTACLE_EDGE_MARGIN);
@@ -1561,7 +1659,8 @@
         waveFreq: rand(1.2, 2.6),
         wavePhase: rand(0, Math.PI * 2),
         waveTime: 0,
-        whooshed: false
+        whooshed: false,
+        nearMissed: false
       });
     }
   }
@@ -1761,6 +1860,7 @@
     state.status = 'RUD';
     state.effects.rudTimer = 1.5;
     state.effects.quickMessage = messageKey;
+    announce(messageKey === 'maxq' ? 'Mission failed: structural failure at Max-Q.' : messageKey === 'orbit' ? 'Mission failed: upper-stage collision.' : messageKey === 'offorbit' ? 'Mission failed: SECO miss.' : 'Mission failed during ascent.');
     state.ui.flash = state.settings.reducedFlashes ? 0 : 0.8;
     spawnExplosion(state.effects.splitView ? state.upper.x : state.rocket.x, state.effects.splitView ? state.upper.y : state.rocket.y, state.effects.splitView ? 'upper' : 'main');
     addShake(9, 0.5);
@@ -1837,7 +1937,8 @@
   }
 
   function currentPhaseLabel() {
-    if (state.session.phase === 'KARMAN' || state.session.phase === 'BOOSTER_RTLS') return 'KARMAN / BOOSTER RECOVERY';
+    if (state.session.phase === 'BOOSTER_RTLS') return 'LEVEL 7: JACKLYN RECOVERY';
+    if (state.session.phase === 'KARMAN') return 'KARMAN / BOOSTER RECOVERY';
     return (PHASES[state.session.phase] || PHASES.PAD).label;
   }
 
@@ -1854,7 +1955,9 @@
     if (state.session.phase === 'SUPERSONIC') ratePhase('SUPERSONIC', state.session.obstacleStreak > 6 ? 'GOLD' : 'SILVER');
     if (state.session.phase === 'STAGE_SEP') ratePhase('STAGE_SEP', 'GOLD');
     if (state.session.phase === 'KARMAN') ratePhase('KARMAN', state.upperHazards.length < 2 ? 'GOLD' : 'SILVER');
-    if (state.session.phase === 'BOOSTER_RTLS') ratePhase('BOOSTER_RTLS', state.session.boosterRecovered ? 'GOLD' : state.session.boosterLost ? 'BRONZE' : 'SILVER');
+    if (state.session.phase === 'BOOSTER_RTLS') {
+      ratePhase('BOOSTER_RTLS', state.session.landingQuality === 'perfect' ? 'GOLD' : state.session.boosterRecovered ? 'SILVER' : 'BRONZE');
+    }
     state.session.levelStars[previousPhase] = starsForPhase(previousPhase);
     for (let i = 0; i < (state.session.levelStars[previousPhase] || 0); i++) Audio.play('star', state.settings);
     Audio.play('level_clear', state.settings);
@@ -1880,7 +1983,9 @@
         const launchCharge = clamp(state.session.launchCharge || 0, 0, 1);
         const boostVelocity = LAUNCH_BOOST_MIN + launchCharge * (LAUNCH_BOOST_MAX - LAUNCH_BOOST_MIN);
         setRadio(RADIO.ASCENT, 2.2);
-        state.ui.tutorialTimer = state.ui.tutorialSeen ? 0 : 2;
+        state.ui.tutorialTimer = state.ui.tutorialSeen ? 0 : 2.6;
+        state.session.ascentGrace = currentDifficulty().ascentTeachSec || 8;
+        state.session.taughtPickup = false;
         state.effects.liftoffShake = 1.6 + launchCharge * 1.7;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
@@ -1908,6 +2013,8 @@
         state.obstacles = [];
         state.pickups = [];
         addShake(3, 0.3);
+        addFloatScore(CW / 2, CH * 0.28, 'MECO · SEP CLEAN', '#8ce0ff');
+        startSlowMo(0.55, 0.28);
         break;
       case 'KARMAN':
         state.effects.splitView = true;
@@ -1921,7 +2028,10 @@
         break;
       case 'BOOSTER_RTLS':
         state.effects.splitView = true;
-        setRadio('Booster RTLS timeline compressed; real T+ markers preserved.', 2.8);
+        state.effects.landingFocus = false;
+        state.effects.landingSetup = JACKLYN_SETUP_SEC;
+        setRadio(RADIO.BOOSTER_RTLS, 2.8);
+        announce('Jacklyn on station. First-stage recovery is live.');
         break;
       case 'ORBIT_INSERT':
         setRadio('SECO guidance is live. Hit the target band.', 2.7);
@@ -1951,6 +2061,9 @@
     if (state.ui.levelClearTimer > 0) state.ui.levelClearTimer = Math.max(0, state.ui.levelClearTimer - dt);
     if (state.ui.levelStarsPopup > 0) state.ui.levelStarsPopup = Math.max(0, state.ui.levelStarsPopup - dt);
     if (state.ui.karmanBannerTimer > 0) state.ui.karmanBannerTimer = Math.max(0, state.ui.karmanBannerTimer - dt);
+    if (state.ui.landingBannerTimer > 0) state.ui.landingBannerTimer = Math.max(0, state.ui.landingBannerTimer - dt);
+    if (state.effects.comboFlash > 0) state.effects.comboFlash = Math.max(0, state.effects.comboFlash - dt);
+    if (state.effects.seaPhase !== undefined) state.effects.seaPhase += dt;
     if (state.ui.flash > 0) state.ui.flash = Math.max(0, state.ui.flash - dt * 1.8);
     if (state.session.phaseGrace > 0) state.session.phaseGrace = Math.max(0, state.session.phaseGrace - dt);
     if (state.effects.delugeTimer > 0) state.effects.delugeTimer = Math.max(0, state.effects.delugeTimer - dt);
@@ -2080,13 +2193,23 @@
     } else {
       Audio.updateRumble(0.35, state.settings);
     }
+    if (state.session.ascentGrace > 0) {
+      state.session.ascentGrace = Math.max(0, state.session.ascentGrace - dt);
+      state.session.phaseGrace = Math.max(state.session.phaseGrace, 0.25);
+    }
     if (updateNoThrustLoss(dt, 'ascent')) return;
-    if (state.session.phaseElapsed > 3 && state.ui.tutorialTimer <= 0) {
+    if (state.session.phaseElapsed > ASCENT_FIRST_HAZARD_AT && state.ui.tutorialTimer <= 0) {
+      if (!state.session.taughtPickup) {
+        spawnPickup();
+        state.session.taughtPickup = true;
+        addFloatScore(CW / 2, CH * 0.28, 'CATCH THIS', '#8ce0ff');
+      }
       if (state.session.ascentObstacleCount < state.session.ascentObstacleTarget && state.session.phaseElapsed >= state.session.nextAscentSpawnAt) {
         spawnAtmosphericObstacle();
         state.session.ascentObstacleCount += 1;
-        state.session.nextAscentSpawnAt += (rand(1.8, 3.2) * ASCENT_SPAWN_INTERVAL_MULTIPLIER) / Math.max(0.4, mode.spawnMul + 0.2);
-        if (state.session.ascentObstacleCount % 4 === 0) maybeSpawnPickup();
+        const ramp = 1 + Math.min(0.55, state.session.phaseElapsed / 90);
+        state.session.nextAscentSpawnAt += (rand(2.1, 3.6) * ASCENT_SPAWN_INTERVAL_MULTIPLIER) / Math.max(0.4, (mode.spawnMul + 0.2) * ramp);
+        if (state.session.ascentObstacleCount % 3 === 0) maybeSpawnPickup();
       }
     }
     if (state.effects.liftoffShake > 0) {
@@ -2135,6 +2258,7 @@
         addFloatScore(o.x, CH - 70, `+${Math.max(0, arcadeScore() - beforeScore)}`, '#ffcf5d');
         if (!state.settings.reducedMotion) Audio.play('score_pop', state.settings);
         if (state.session.obstacleStreak > 0 && state.session.obstacleStreak % 3 === 0) {
+          state.effects.comboFlash = 1.1;
           showOverlayMessage(`CLEAR SKY x${state.session.obstacleStreak}  +FLIGHT POINTS`, 1.2);
           Audio.play('boop', state.settings);
           Particles.burst(18, () => ({
@@ -2158,6 +2282,29 @@
       if (!o.whooshed && dist < 90) {
         o.whooshed = true;
         Audio.play('whoosh', state.settings);
+      }
+      const lat = Math.abs(o.x - state.rocket.x);
+      if (!o.nearMissed && o.y > state.rocket.y - 6 && o.y < state.rocket.y + 34 && lat < NEAR_MISS_LATERAL && lat > 14) {
+        o.nearMissed = true;
+        state.session.closeCalls += 1;
+        const beforeNear = arcadeScore();
+        state.session.score += NEAR_MISS_SCORE * (state.session.scoreMult || 1);
+        addFloatScore(state.rocket.x, state.rocket.y - 40, `CLOSE CALL +${Math.max(0, arcadeScore() - beforeNear)}`, '#9df6bf');
+        if (!state.settings.reducedMotion) Audio.play('near_miss', state.settings);
+        Particles.burst(state.settings.reducedMotion ? 6 : 14, () => ({
+          kind: 'flash',
+          section: 'main',
+          x: o.x + rand(-6, 6),
+          y: o.y + rand(-8, 8),
+          vx: rand(-0.8, 0.8),
+          vy: rand(-0.6, 0.6),
+          life: 0.45,
+          decay: 0.07,
+          size: rand(1.4, 2.6),
+          grow: 0.02,
+          alpha: 0.55,
+          color: '157,246,191'
+        }));
       }
       if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, false), obstacleHitbox(o))) {
         if (tryAbsorbHit()) {
@@ -2235,12 +2382,220 @@
     if (state.session.totalElapsed >= PHASES.STAGE_SEP.end) transitionPhase('KARMAN');
   }
 
+  function burstJacklynSteam(heavy) {
+    const n = state.settings.reducedMotion ? 10 : (heavy ? 46 : 22);
+    Particles.burst(n, () => ({
+      kind: Math.random() < 0.45 ? 'smoke' : 'flash',
+      section: 'main',
+      x: state.booster.x + rand(-22, 22),
+      y: JACKLYN_DECK_Y + rand(-4, 10),
+      vx: rand(-1.4, 1.4),
+      vy: rand(-2.2, -0.2),
+      life: 0.9,
+      decay: rand(0.03, 0.06),
+      size: rand(3, 8),
+      grow: 0.05,
+      alpha: 0.55,
+      color: Math.random() < 0.4 ? '230,240,255' : '180,210,230'
+    }));
+  }
+
+  function burstJacklynSplash() {
+    Particles.burst(state.settings.reducedMotion ? 16 : 40, () => ({
+      kind: Math.random() < 0.5 ? 'smoke' : 'flash',
+      section: 'main',
+      x: state.booster.x + rand(-18, 18),
+      y: JACKLYN_DECK_Y + 28 + rand(-6, 16),
+      vx: rand(-2.2, 2.2),
+      vy: rand(-2.8, 0.4),
+      life: 0.8,
+      decay: 0.05,
+      size: rand(2, 6),
+      grow: 0.04,
+      alpha: 0.65,
+      color: Math.random() < 0.5 ? '90,180,210' : '210,235,245'
+    }));
+  }
+
+  function beginJacklynLanding() {
+    state.effects.landingFocus = true;
+    state.effects.splitView = false;
+    state.effects.landingSetup = 0;
+    state.booster.x = CW / 2 + rand(-52, 52);
+    state.booster.y = 84;
+    state.booster.vx = rand(-0.55, 0.55);
+    state.booster.vy = 1.7;
+    state.booster.burn = 0;
+    state.booster.legs = 0;
+    state.booster.alive = true;
+    state.booster.touchdown = false;
+    state.booster.splash = 0;
+    state.booster.tip = 0;
+    state.booster.celebrate = 0;
+    state.booster.flightTime = 0;
+    state.booster.landingQuality = null;
+    state.ui.landingBanner = '';
+    state.ui.landingBannerSub = '';
+    state.ui.landingBannerTimer = 0;
+    announce('Steer the booster onto Jacklyn. Hold boost to brake for a soft deck landing.');
+    showOverlayMessage('JACKLYN DEAD AHEAD — STEER + HOLD BOOST TO BRAKE', 2.8);
+    setRadio(RADIO.BOOSTER_RTLS, 2.6);
+    syncTouchLabels();
+  }
+
+  function showLandingBanner(title, sub, seconds) {
+    state.ui.landingBanner = title;
+    state.ui.landingBannerSub = sub || '';
+    state.ui.landingBannerTimer = seconds || 2.6;
+  }
+
+  function resolveJacklynTouchdown() {
+    if (state.booster.touchdown) return;
+    const deckX = CW / 2;
+    const zone = landingZoneHalf();
+    const absDx = Math.abs(state.booster.x - deckX);
+    const vy = Math.abs(state.booster.vy);
+    const onZone = absDx <= zone;
+    const onHull = absDx <= JACKLYN_HULL_HALF;
+    const braking = state.booster.landingBurnDone || isBoosting();
+    const kid = state.settings.difficulty === 'KID';
+    let quality = 'splash';
+    if (onZone && vy <= JACKLYN_PERFECT_VY && braking) quality = 'perfect';
+    else if (onZone && vy <= JACKLYN_SOFT_VY) quality = 'soft';
+    else if (onHull || (kid && absDx <= JACKLYN_HULL_HALF + 28)) quality = 'tip';
+    if (kid && quality === 'splash') quality = 'tip';
+
+    state.booster.touchdown = true;
+    state.booster.touchdownVy = vy * 60;
+    state.booster.landingQuality = quality;
+    state.session.landingQuality = quality;
+    state.booster.celebrate = JACKLYN_CELEBRATE_SEC;
+    const before = arcadeScore();
+
+    if (quality === 'perfect' || quality === 'soft') {
+      state.session.boosterRecovered = true;
+      state.session.boosterLost = false;
+      state.session.score += quality === 'perfect' ? JACKLYN_RECOVERY_BONUS : JACKLYN_RECOVERY_BONUS * 0.65;
+      if (quality === 'perfect') {
+        state.session.scoreMult = Math.max(state.session.scoreMult || 1, 1.5);
+        state.session.overdrive = Math.max(state.session.overdrive, 2.4);
+        startSlowMo(SLOWMO_SCALE, 0.72);
+      }
+      state.booster.legs = 0.02;
+      Audio.play('landing_touchdown', state.settings);
+      Audio.play('landing_cheer', state.settings);
+      Audio.play('success', state.settings);
+      setRadio(RADIO.BOOSTER_WIN, 3);
+      const label = quality === 'perfect' ? 'BOOSTER RECOVERED' : 'SOFT TOUCHDOWN';
+      const sub = quality === 'perfect'
+        ? `JACKLYN  ·  landing barge  ·  +${Math.max(0, arcadeScore() - before)}  ·  STREAK LIVE`
+        : `JACKLYN  ·  landing barge  ·  +${Math.max(0, arcadeScore() - before)}`;
+      showLandingBanner(label, sub, 3.2);
+      showOverlayMessage(quality === 'perfect' ? 'Landed on Jacklyn — perfect catch.' : 'Landed on Jacklyn.', 3);
+      addFloatScore(state.booster.x, state.booster.y - 48, quality === 'perfect' ? 'PERFECT CATCH' : 'ON DECK', '#ffcf5d');
+      announce(quality === 'perfect' ? 'Booster recovered on Jacklyn. Perfect catch.' : 'Booster recovered on Jacklyn.');
+      addShake(quality === 'perfect' ? 3.2 : 2.2, 0.35);
+      vibrate([36, 20, 36]);
+      burstJacklynSteam(true);
+    } else if (quality === 'tip') {
+      state.session.boosterRecovered = true;
+      state.session.boosterLost = false;
+      state.session.obstacleStreak = Math.max(0, Math.floor((state.session.obstacleStreak || 0) * 0.4));
+      state.session.score = Math.max(0, state.session.score - 0.25);
+      state.booster.tip = 1;
+      state.booster.legs = 0.35;
+      Audio.play('landing_touchdown', state.settings);
+      setRadio('Tip on Jacklyn — salvage crew walking it back. Mission continues.', 3);
+      showLandingBanner('TIP ON DECK', 'JACKLYN  ·  landing barge  ·  salvage  ·  combo cut', 3);
+      showOverlayMessage('Tip on Jacklyn — recovered, combo cut.', 2.6);
+      addFloatScore(state.booster.x, state.booster.y - 42, 'SALVAGE', '#ff9d5d');
+      announce('Booster tipped on Jacklyn. Recovered, combo cut. Mission continues.');
+      addShake(5, 0.4);
+      vibrate([24]);
+      burstJacklynSteam(false);
+    } else {
+      state.session.boosterRecovered = false;
+      state.session.boosterLost = true;
+      state.session.obstacleStreak = 0;
+      state.session.score = Math.max(0, state.session.score - 0.55);
+      state.booster.splash = 1;
+      state.booster.alive = true;
+      Audio.play('landing_splash', state.settings);
+      setRadio('Splashdown off Jacklyn. Booster lost — upper stage still flying.', 3);
+      showLandingBanner('SPLASHDOWN', 'Missed Jacklyn  ·  score hit  ·  upper stage continues', 3);
+      showOverlayMessage('Missed Jacklyn — splash. Mission continues.', 2.6);
+      addFloatScore(state.booster.x, state.booster.y - 36, 'SPLASH', '#8ce0ff');
+      announce('Booster missed Jacklyn and splashed. Score hit. Mission continues.');
+      addShake(4, 0.45);
+      vibrate([50]);
+      burstJacklynSplash();
+    }
+    syncTouchLabels();
+  }
+
+  function finishJacklynLanding() {
+    state.effects.landingFocus = false;
+    state.effects.timeScale = 1;
+    state.effects.slowMo = 0;
+    state.session.totalElapsed = PHASES.BOOSTER_RTLS.end;
+    syncTouchLabels();
+    transitionPhase('ORBIT_INSERT');
+  }
+
+  function updateJacklynLanding(dt) {
+    const step = dt * BASE_FPS;
+    state.effects.seaPhase += dt;
+    if (state.booster.touchdown) {
+      state.booster.celebrate = Math.max(0, (state.booster.celebrate || 0) - dt);
+      if ((state.session.boosterRecovered || state.booster.tip) && state.booster.legs < 1) {
+        state.booster.legs = Math.min(1, state.booster.legs + dt * 2.4);
+      }
+      if (state.session.boosterRecovered && !state.settings.reducedMotion && Math.random() < 0.55) {
+        burstJacklynSteam(false);
+      }
+      if (state.booster.splash && Math.random() < 0.35) burstJacklynSplash();
+      Audio.updateRumble(state.session.boosterRecovered ? 0.12 : 0.08, state.settings);
+      if (state.booster.celebrate <= 0) finishJacklynLanding();
+      return;
+    }
+
+    state.booster.flightTime += dt;
+    let axis = landingSteerAxis();
+    const err = CW / 2 - state.booster.x;
+    if (state.settings.difficulty === 'KID') axis = clamp(axis + clamp(err / 140, -0.55, 0.55), -1, 1);
+    else if (state.settings.difficulty === 'CADET' && Math.abs(err) < 90) axis = clamp(axis + clamp(err / 220, -0.22, 0.22), -1, 1);
+
+    state.booster.vx = approach(state.booster.vx, axis * 2.35, 0.1 * step);
+    state.booster.x = clamp(state.booster.x + state.booster.vx * step, 36, CW - 36);
+    state.booster.vy += JACKLYN_LANDING_GRAVITY * step;
+    if (isBoosting()) {
+      state.booster.landingBurnDone = true;
+      state.booster.burn = Math.max(state.booster.burn, 0.18);
+      state.booster.vy -= JACKLYN_LANDING_THRUST * step;
+      spawnExhaust('be4', state.booster.x, state.booster.y + 28, 0.85, 'main');
+      Audio.updateRumble(0.48, state.settings);
+      if (!state.settings.reducedMotion && Math.random() < 0.4) addShake(0.7, 0.06);
+    } else {
+      Audio.updateRumble(0.18, state.settings);
+    }
+    state.booster.vy = clamp(state.booster.vy, 0.28, JACKLYN_LANDING_MAX_VY);
+    if (state.booster.burn > 0) state.booster.burn = Math.max(0, state.booster.burn - dt);
+    if (state.booster.flightTime > JACKLYN_MAX_FLIGHT_SEC) state.booster.vy = Math.max(state.booster.vy, 2.4);
+    state.booster.y += state.booster.vy * step * 0.92;
+
+    const deckHit = JACKLYN_DECK_Y - 26;
+    if (state.booster.y >= deckHit) {
+      state.booster.y = deckHit;
+      resolveJacklynTouchdown();
+    }
+  }
+
   function updateBooster(dt) {
+    if (isLandingFocus()) return;
     if (!state.booster.alive || state.booster.touchdown) return;
     const step = dt * BASE_FPS;
     const splitT = state.session.totalElapsed;
     const splitActual = Math.round(timelineValue(MAIN_TIMELINE, 'actual', splitT));
-    const isCadet = state.settings.difficulty === 'CADET';
     const desiredAlt = timelineValue(BOOSTER_TIMELINE, 'altitude', clamp(splitT, PHASES.KARMAN.start, PHASES.BOOSTER_RTLS.end));
     const desiredVy = timelineValue(BOOSTER_TIMELINE, 'velocity', clamp(splitT, PHASES.KARMAN.start, PHASES.BOOSTER_RTLS.end));
     state.booster.vy = approach(state.booster.vy, desiredVy / 60, 0.06 * step);
@@ -2256,40 +2611,29 @@
     state.booster.vx = approach(state.booster.vx, steer * 2.2, 0.09 * step);
     state.booster.x = clamp(state.booster.x + state.booster.vx * step, 46, CW - 46);
     state.booster.y = lerp(46, 245, 1 - clamp(desiredAlt / 80000, 0, 1));
-    if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (consumeBoostTap() || isBoosting() || (isCadet && splitT >= 356))) {
+    if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (consumeBoostTap() || isBoosting())) {
       state.booster.reentryBurnDone = true;
       state.booster.burn = 1.6;
       showOverlayMessage(`REENTRY BURN COMMANDED (${formatMissionTime(splitActual)})`, 1.6);
       Audio.play('boost', state.settings);
       addShake(2, 0.35);
     }
-    if (!state.booster.landingBurnDone && splitT >= 394 && splitT <= 408 && (consumeBoostTap() || isBoosting() || (isCadet && splitT >= 402))) {
-      state.booster.landingBurnDone = true;
-      state.booster.burn = 2.1;
-      showOverlayMessage('LANDING BURN GO', 1.4);
-      Audio.play('boost', state.settings);
-    }
-    if (splitT >= PHASES.BOOSTER_RTLS.end && !state.booster.touchdown) {
-      state.booster.touchdown = true;
-      state.booster.touchdownVy = Math.abs(state.booster.vy * 60);
-      const tol = currentDifficulty().landingTolerance;
-      const centered = Math.abs(state.booster.x - CW / 2) <= tol;
-      const soft = state.booster.touchdownVy < (tol * 2.4);
-      if (isCadet || (centered && soft && state.booster.reentryBurnDone && state.booster.landingBurnDone)) {
-        state.session.boosterRecovered = true;
-        Audio.play('landing_touchdown', state.settings);
-        setRadio(RADIO.BOOSTER_WIN, 2.5);
-        showOverlayMessage(`Landed on Jacklyn (${formatMissionTime(splitActual)})`, 3);
-        addShake(4.5, 0.5);
-        vibrate([40]);
-      } else {
-        state.session.boosterLost = true;
-        showOverlayMessage('Booster lost during reentry.', 1.6);
-      }
-    }
   }
 
   function updateSplitPhase(dt) {
+    if (state.session.phase === 'BOOSTER_RTLS' && (isLandingFocus() || state.effects.landingSetup > 0)) {
+      if (!isLandingFocus()) {
+        state.session.totalElapsed += dt * MISSION_PACE;
+        state.effects.landingSetup = Math.max(0, state.effects.landingSetup - dt);
+        updateSky(dt, 0.12);
+        if (state.effects.landingSetup <= 0) beginJacklynLanding();
+        else updateBooster(dt);
+      } else {
+        updateJacklynLanding(dt);
+      }
+      return;
+    }
+
     state.session.totalElapsed += dt * MISSION_PACE;
     state.effects.splitView = true;
     updateSky(dt, 0.14 + state.world.cameraVy * 0.28);
@@ -2326,7 +2670,10 @@
     }
     updateBooster(dt);
     if (state.session.totalElapsed >= PHASES.KARMAN.end && state.session.phase === 'KARMAN') transitionPhase('BOOSTER_RTLS');
-    if (state.session.totalElapsed >= PHASES.BOOSTER_RTLS.end && state.session.phase === 'BOOSTER_RTLS') transitionPhase('ORBIT_INSERT');
+    if (state.session.totalElapsed >= PHASES.BOOSTER_RTLS.end && state.session.phase === 'BOOSTER_RTLS' && !isLandingFocus()) {
+      if (!state.booster.touchdown) beginJacklynLanding();
+      else transitionPhase('ORBIT_INSERT');
+    }
   }
 
   function updateOrbitInsert(dt) {
@@ -2905,6 +3252,19 @@
       ctx.font = 'bold 6px "IBM Plex Mono", ui-monospace, monospace';
       ctx.textAlign = 'center';
       ctx.fillText('Never Tell Me The Odds', 0, 4);
+      const legs = opts.legs || 0;
+      if (legs > 0) {
+        ctx.strokeStyle = '#1a2330';
+        ctx.lineWidth = 2.2;
+        ctx.fillStyle = '#2a3544';
+        [[-1, -18], [1, 18]].forEach(([sign, footX]) => {
+          ctx.beginPath();
+          ctx.moveTo(sign * 8, 26);
+          ctx.lineTo(sign * (8 + 16 * legs), 26 + 20 * legs);
+          ctx.stroke();
+          ctx.fillRect(sign * (8 + 16 * legs) - 4, 24 + 20 * legs, 8, 3);
+        });
+      }
     }
     if (state.settings.difficulty === 'KID' && mode === 'main') {
       ctx.fillStyle = '#2c2c2c';
@@ -2929,7 +3289,7 @@
 
   function drawRocket(ctx, x, y, tilt, mode, opts) {
     opts = opts || {};
-    const shouldUseCache = !state.easter.bezosMode && mode !== 'booster';
+    const shouldUseCache = !state.easter.bezosMode && mode !== 'booster' && !(opts.legs > 0);
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(tilt || 0);
@@ -2967,21 +3327,202 @@
     ctx.restore();
   }
 
-  function drawJacklyn(ctx, y0) {
+  function drawJacklyn(ctx, y0, opts) {
+    opts = opts || {};
+    const focus = !!opts.focus;
+    const scale = focus ? 1 : 0.62;
     ctx.save();
-    ctx.translate(CW / 2, y0 + 234);
-    ctx.fillStyle = '#0e151d';
-    ctx.fillRect(-76, 8, 152, 18);
-    ctx.fillStyle = '#2a3540';
-    ctx.fillRect(-62, -2, 124, 14);
-    ctx.strokeStyle = '#ffcf5d';
+    ctx.translate(opts.x != null ? opts.x : CW / 2, (opts.y != null ? opts.y : (y0 + (focus ? 0 : 234))));
+    ctx.scale(scale, scale);
+
+    const t = state.effects.seaPhase || 0;
+    const roll = focus ? Math.sin(t * 0.7) * 1.2 : 0;
+    ctx.rotate(roll * Math.PI / 180);
+
+    // Hull — long flat ASDS-style barge, not an octagonal droneship.
+    ctx.fillStyle = '#1a2a36';
+    ctx.beginPath();
+    ctx.moveTo(-132, 22);
+    ctx.lineTo(-118, 40);
+    ctx.lineTo(118, 40);
+    ctx.lineTo(132, 22);
+    ctx.lineTo(124, 10);
+    ctx.lineTo(-124, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#0c141c';
+    ctx.fillRect(-122, 36, 244, 10);
+
+    // Deck
+    ctx.fillStyle = '#c9d0d6';
+    ctx.fillRect(-108, 2, 216, 20);
+    ctx.fillStyle = '#aeb6be';
+    ctx.fillRect(-108, 18, 216, 4);
+
+    // Painted landing zone — chevrons + dashed box (not color-only).
+    const zone = landingZoneHalf() / scale;
+    ctx.strokeStyle = '#1d2630';
+    ctx.setLineDash([5, 4]);
     ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-18, 4); ctx.lineTo(0, -10); ctx.lineTo(18, 4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-18, -10); ctx.lineTo(0, 4); ctx.lineTo(18, -10); ctx.stroke();
-    ctx.fillStyle = '#ffcf5d';
-    ctx.font = '8px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.strokeRect(-zone, 3, zone * 2, 16);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#1d2630';
+    for (let i = -3; i <= 3; i++) {
+      const cx = i * 16;
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, 16);
+      ctx.lineTo(cx, 6);
+      ctx.lineTo(cx + 6, 16);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#0c141c';
+    ctx.font = 'bold 8px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('JACKLYN', 0, -16);
+    ctx.fillText('LZ', 0, 15);
+
+    // Island / crane — offset superstructure, Blue Origin barge, not twin towers.
+    ctx.fillStyle = '#243240';
+    ctx.fillRect(78, -28, 36, 32);
+    ctx.fillStyle = '#2f4254';
+    ctx.fillRect(84, -40, 16, 14);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.fillRect(88, -36, 4, 4);
+    ctx.strokeStyle = '#4a6074';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-96, 2);
+    ctx.lineTo(-96, -22);
+    ctx.lineTo(-70, -8);
+    ctx.stroke();
+    ctx.fillStyle = '#4a6074';
+    ctx.fillRect(-100, -4, 8, 6);
+
+    // Edge lights
+    const blink = (Math.sin(t * 6) > 0) || state.settings.reducedMotion;
+    for (let i = -5; i <= 5; i++) {
+      ctx.fillStyle = blink ? '#fff4c2' : '#8a7a40';
+      ctx.beginPath();
+      ctx.arc(i * 18, 4, 2.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText('JACKLYN', 0, -8);
+    ctx.font = '7px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = '#e8eef4';
+    ctx.fillText('landing barge', 0, -18);
+
+    ctx.restore();
+  }
+
+  function drawJacklynOcean(ctx) {
+    const t = state.effects.seaPhase || 0;
+    const sky = ctx.createLinearGradient(0, 0, 0, CH);
+    sky.addColorStop(0, '#1a1540');
+    sky.addColorStop(0.42, '#2a3a6a');
+    sky.addColorStop(0.7, '#1a4a62');
+    sky.addColorStop(1, '#0b2a38');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, CW, CH);
+
+    ctx.fillStyle = 'rgba(220,230,255,0.55)';
+    for (let i = 0; i < 18; i++) {
+      const sx = (i * 47 + t * 8) % CW;
+      const sy = 36 + (i * 19) % 160;
+      ctx.fillRect(sx, sy, 1.4, 1.4);
+    }
+
+    const horizon = 300;
+    ctx.fillStyle = '#0a3a4a';
+    ctx.fillRect(0, horizon, CW, CH - horizon);
+    const sea = ctx.createLinearGradient(0, horizon, 0, CH);
+    sea.addColorStop(0, '#14586a');
+    sea.addColorStop(0.45, '#0d3d4c');
+    sea.addColorStop(1, '#082830');
+    ctx.fillStyle = sea;
+    ctx.fillRect(0, horizon, CW, CH - horizon);
+
+    ctx.strokeStyle = 'rgba(180,220,230,0.22)';
+    ctx.lineWidth = 1.2;
+    for (let row = 0; row < 7; row++) {
+      ctx.beginPath();
+      const y = horizon + 18 + row * 28;
+      for (let x = 0; x <= CW; x += 10) {
+        const amp = 3.2 + row * 0.4;
+        const yy = y + Math.sin(x * 0.045 + t * 1.6 + row) * amp;
+        if (x === 0) ctx.moveTo(x, yy);
+        else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(210,235,240,0.18)';
+    ctx.fillRect(0, horizon, CW, 4);
+
+    drawJacklyn(ctx, 0, { focus: true, x: CW / 2, y: JACKLYN_DECK_Y + 8 });
+
+    // Extra target box above the deck so success is not color-only.
+    const zone = landingZoneHalf();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(CW / 2 - zone, JACKLYN_DECK_Y - 36, zone * 2, 40);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = 'bold 10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('DECK TARGET', CW / 2, JACKLYN_DECK_Y - 42);
+    ctx.restore();
+
+    Particles.draw(ctx, 'main');
+    if (state.booster.alive) {
+      const tilt = state.booster.tip ? 0.38 : clamp(state.booster.vx * 0.05, -0.22, 0.22);
+      const yOff = state.booster.splash ? 18 : 0;
+      drawRocket(ctx, state.booster.x, state.booster.y + yOff, tilt, 'booster', {
+        fairingGone: true,
+        legs: state.booster.legs || 0
+      });
+    }
+
+    ctx.fillStyle = 'rgba(5,10,16,0.55)';
+    ctx.fillRect(10, 10, CW - 20, 54);
+    ctx.strokeStyle = '#ffcf5d';
+    ctx.strokeRect(10, 10, CW - 20, 54);
+    ctx.fillStyle = '#ffcf5d';
+    ctx.font = 'bold 13px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('JACKLYN  ·  landing barge', 20, 30);
+    ctx.fillStyle = '#e8eef4';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+    const offset = Math.round(state.booster.x - CW / 2);
+    const offsetLabel = offset === 0 ? 'CENTERED' : (offset < 0 ? `LEFT ${Math.abs(offset)}` : `RIGHT ${offset}`);
+    const brake = isBoosting() || state.booster.landingBurnDone ? 'BRAKE ON' : 'BRAKE OFF';
+    ctx.fillText(`${offsetLabel}   ${brake}   VY ${state.booster.vy.toFixed(1)}`, 20, 48);
+
+    if (!state.booster.touchdown) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffcf5d';
+      ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.fillText('STEER  ◀ ▶    HOLD BOOST TO BRAKE', CW / 2, CH - 18);
+    }
+  }
+
+  function drawLandingBanner(ctx) {
+    if (state.ui.landingBannerTimer <= 0 || !state.ui.landingBanner) return;
+    ctx.save();
+    ctx.fillStyle = 'rgba(6,10,18,0.86)';
+    ctx.fillRect(18, CH / 2 - 40, CW - 36, 80);
+    ctx.strokeStyle = state.session.boosterLost ? '#8ce0ff' : '#ffcf5d';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(18, CH / 2 - 40, CW - 36, 80);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = state.session.boosterLost ? '#8ce0ff' : '#ffcf5d';
+    ctx.font = 'bold 18px "Exo 2", "Sora", system-ui, sans-serif';
+    ctx.fillText(state.ui.landingBanner, CW / 2, CH / 2 - 8);
+    ctx.fillStyle = '#e8eef4';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(state.ui.landingBannerSub || 'JACKLYN  ·  landing barge', CW / 2, CH / 2 + 16);
     ctx.restore();
   }
 
@@ -3013,9 +3554,14 @@
     ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 68);
     ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
     ctx.fillText(`${dynamicMetricLabel} ${dynamicMetricValue.toFixed(0)}%`, 170, 54);
-    ctx.fillText(`GUIDE ${(state.upper.targetLock * 100).toFixed(0)}%`, 170, 68);
-    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}`, 170, 82);
-    ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 96);
+    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}`, 170, 68);
+    ctx.fillText(`BEST ${(state.settings.hiArcadeScore || 0).toLocaleString()}`, 170, 82);
+    if (state.session.phase === 'MAX_Q') ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 96);
+    if (state.session.obstacleStreak >= 2) {
+      ctx.fillStyle = state.effects.comboFlash > 0 ? '#ffcf5d' : '#9df6bf';
+      ctx.fillText(`STREAK x${state.session.obstacleStreak}`, 10, 96);
+      ctx.fillStyle = '#33ff33';
+    }
     if ((state.session.shield || 0) > 0 || state.session.overdrive > 0 || state.session.phaseGrace > 0) {
       ctx.fillStyle = '#8ce0ff';
       const chips = [];
@@ -3044,19 +3590,13 @@
       ctx.fillStyle = '#ff9d5d';
       ctx.fillText('Throttling down — handling Max-Q nicely.', 170, 170);
     }
-    if ((state.session.phase === 'KARMAN' || state.session.phase === 'BOOSTER_RTLS') && !state.booster.touchdown) {
+    if (state.session.phase === 'KARMAN' && !state.booster.touchdown) {
       const t = state.session.totalElapsed;
       if (!state.booster.reentryBurnDone && t >= 344 && t <= 364) {
         ctx.fillStyle = 'rgba(255,207,93,0.85)';
         ctx.fillRect(CW - 152, CH - 74, 136, 18);
         ctx.fillStyle = '#041014';
         ctx.fillText('REENTRY BURN READY', CW - 146, CH - 61);
-      }
-      if (!state.booster.landingBurnDone && t >= 394 && t <= 408) {
-        ctx.fillStyle = 'rgba(150,255,190,0.85)';
-        ctx.fillRect(CW - 152, CH - 52, 136, 18);
-        ctx.fillStyle = '#041014';
-        ctx.fillText('LANDING BURN READY', CW - 146, CH - 39);
       }
     }
     if (state.session.phase === 'ORBIT_INSERT') {
@@ -3103,7 +3643,7 @@
       ctx.strokeRect(58, CH - 112, CW - 116, 32);
       ctx.fillStyle = '#ffcf5d';
       ctx.textAlign = 'center';
-      ctx.fillText('Hold BOOST. Steer with TVC gimbal. Dodge everything.', CW / 2, CH - 92);
+      ctx.fillText('Hold BOOST to climb. Steer around hazards. First hits are forgiven.', CW / 2, CH - 92);
       ctx.textAlign = 'left';
     }
     // Gimbal TVC angle indicator — visible during powered atmospheric flight.
@@ -3169,10 +3709,10 @@
     ctx.fillRect(0, 522, CW, CH - 522);
     drawJacklyn(ctx, 324);
     Particles.draw(ctx, 'booster');
-    if (state.booster.alive) drawRocket(ctx, state.booster.x, 324 + state.booster.y, clamp(state.booster.vx * 0.04, -0.2, 0.2), 'booster', { fairingGone: true });
+    if (state.booster.alive) drawRocket(ctx, state.booster.x, 324 + state.booster.y, clamp(state.booster.vx * 0.04, -0.2, 0.2), 'booster', { fairingGone: true, legs: state.booster.legs || 0 });
     ctx.fillStyle = '#ffcf5d';
     ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('BOOSTER — NEVER TELL ME THE ODDS', 12, 624);
+    ctx.fillText('BOOSTER — HEADING FOR JACKLYN', 12, 624);
     ctx.restore();
 
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
@@ -3306,18 +3846,22 @@
     ctx.fillStyle = '#ff5d5d';
     ctx.textAlign = 'center';
     ctx.font = '34px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText('MISSION FAILED', CW / 2, 212);
+    ctx.fillText('MISSION FAILED', CW / 2, 200);
     ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     const map = {
-      ascent: 'VEHICLE LOST DURING ASCENT — Investigation board convened.',
-      maxq: 'STRUCTURAL FAILURE AT MAX-Q — She wasn\'t ready for that maneuver.',
-      orbit: 'VEHICLE LOST IN UPPER ASCENT — Orbital debris won that round.',
-      offorbit: 'PROPELLANT DEPLETED — Payload in off-nominal orbit. (Welcome to the NG-3 club.)'
+      ascent: 'ASCENT LOSS — hit a corridor hazard or dropped thrust too long.',
+      maxq: 'MAX-Q BREAKUP — too much gimbal at high dynamic pressure.',
+      orbit: 'UPPER-STAGE HIT — debris or sat crossed the corridor.',
+      offorbit: 'SECO MISS — throttle left the green band. (NG-3 club.)'
     };
-    ctx.fillText(map[state.effects.quickMessage] || 'VEHICLE LOST.', CW / 2, 244);
+    const failLine = map[state.effects.quickMessage] || 'VEHICLE LOST.';
+    ctx.fillText(failLine, CW / 2, 232);
+    ctx.fillStyle = '#8ce0ff';
+    ctx.fillText(`Lasted ${state.telemetry.tPlus || 'T+0'}  ·  ${currentPhaseLabel()}`, CW / 2, 250);
     ctx.fillStyle = '#33ff33';
-    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  PB ${(state.settings.hiArcadeScore || 0).toLocaleString()}`, CW / 2, 266);
-    ctx.fillText(`Mission ${state.session.missionName} | ALT ${(state.session.maxAltitude / 1000).toFixed(1)} km | Booster ${state.session.boosterRecovered ? '✅' : '❌'}`, CW / 2, 286);
+    ctx.fillText(`SCORE ${arcadeScore().toLocaleString()}  ·  BEST ${(state.settings.hiArcadeScore || 0).toLocaleString()}`, CW / 2, 272);
+    const jacklyn = state.session.boosterRecovered ? 'JACKLYN CATCH' : (state.session.boosterLost ? 'JACKLYN MISS' : 'JACKLYN —');
+    ctx.fillText(`Mission ${state.session.missionName}  ·  ${jacklyn}`, CW / 2, 290);
     ctx.fillStyle = '#ffcf5d';
     if (state.status === 'CONTINUE') {
       ctx.fillText(`CONTINUE? ${Math.max(0, state.ui.continueCountdown)}...`, CW / 2, 312);
@@ -3352,7 +3896,10 @@
     ctx.fillText(`Scripted mission time: ${formatMissionTime(PHASES.PAYLOAD_DEPLOY.end)}`, 60, 262);
     ctx.fillText(`Max altitude: ${(state.session.maxAltitude / 1000).toFixed(1)} km`, 60, 282);
     ctx.fillText(`Max velocity: ${Math.round(state.session.maxVelocity)} m/s`, 60, 302);
-    ctx.fillText(`Booster recovered: ${state.session.boosterRecovered ? '✅' : '❌'}`, 60, 322);
+    const recoverLine = state.session.boosterRecovered
+      ? (state.session.landingQuality === 'perfect' ? 'JACKLYN CATCH (perfect)' : state.session.landingQuality === 'tip' ? 'JACKLYN SALVAGE (tip)' : 'JACKLYN CATCH')
+      : (state.session.boosterLost ? 'JACKLYN MISS (splash)' : '—');
+    ctx.fillText(`Booster recovered: ${recoverLine}`, 60, 322);
     ctx.fillText(`Payload deployed: ${state.session.payloadDeployed ? '✅' : '❌'}`, 60, 342);
     const rows = ['PAD', 'ASCENT', 'MAX_Q', 'SUPERSONIC', 'STAGE_SEP', 'KARMAN', 'BOOSTER_RTLS', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
     rows.forEach((row, idx) => ctx.fillText(`${row.replace('_', ' ')}: ${state.session.phaseRatings[row] || '—'}`, 60, 370 + idx * 18));
@@ -3480,7 +4027,9 @@
     } else if (state.status === 'SUMMARY') {
       drawSummary(ctx);
     } else {
-      if (state.effects.splitView && state.session.phase !== 'ORBIT_INSERT' && state.session.phase !== 'PAYLOAD_DEPLOY') {
+      if (isLandingFocus()) {
+        drawJacklynOcean(ctx);
+      } else if (state.effects.splitView && state.session.phase !== 'ORBIT_INSERT' && state.session.phase !== 'PAYLOAD_DEPLOY') {
         drawSplitView(ctx);
       } else {
         drawBackground(ctx, state.telemetry.altitude || 0);
@@ -3513,12 +4062,13 @@
           drawRocket(ctx, state.upper.x, state.upper.y, state.upper.deployAngle * 0.3, 'upper', { fairingGone: true });
         }
       }
-      drawHud(ctx);
+      if (!isLandingFocus()) drawHud(ctx);
       drawFloatScores(ctx);
       drawLevelClear(ctx);
       drawLevelIntro(ctx);
       drawKarmanBanner(ctx);
-      if (state.session.phase === 'PAD' || state.session.phase === 'STAGE_SEP' || state.session.phase === 'PAYLOAD_DEPLOY' || state.ui.karmanBannerTimer > 0 || state.ui.levelIntroTimer > 0 || state.ui.levelClearTimer > 0 || (state.session.phase === 'KARMAN' && !state.rocket.fairingGone) || state.session.phase === 'ORBIT_INSERT') {
+      drawLandingBanner(ctx);
+      if (state.session.phase === 'PAD' || state.session.phase === 'STAGE_SEP' || state.session.phase === 'PAYLOAD_DEPLOY' || state.ui.karmanBannerTimer > 0 || state.ui.levelIntroTimer > 0 || state.ui.levelClearTimer > 0 || (state.session.phase === 'KARMAN' && !state.rocket.fairingGone) || state.session.phase === 'ORBIT_INSERT' || (state.session.phase === 'BOOSTER_RTLS' && !isLandingFocus())) {
         ctx.fillStyle = '#8ce0ff';
         ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
         ctx.fillText('SKIP ▸▸', CW - 60, CH - 10);
@@ -3683,6 +4233,8 @@
       } else if (state.session.phase === 'STAGE_SEP') {
         state.session.totalElapsed = PHASES.STAGE_SEP.end;
         transitionPhase('KARMAN');
+      } else if (state.session.phase === 'BOOSTER_RTLS' && !isLandingFocus()) {
+        beginJacklynLanding();
       } else if ((state.session.phase === 'KARMAN' || state.session.phase === 'BOOSTER_RTLS') && !state.rocket.fairingGone) {
         state.rocket.fairingGone = true;
         state.effects.fairingSplit = 0.8;
@@ -3864,6 +4416,7 @@
       }, 0);
     });
     bindTouchButtons();
+    syncTouchLabels();
     window.addEventListener('resize', resizeCanvas);
     document.addEventListener('fullscreenchange', resizeCanvas);
     document.addEventListener('webkitfullscreenchange', resizeCanvas);
@@ -3886,7 +4439,14 @@
       return;
     }
     if (state.status === 'READY' || state.status === 'RUNNING' || state.status === 'RUD' || state.status === 'SUMMARY' || state.status === 'GAMEOVER' || state.status === 'CONTINUE') {
-      if (state.status === 'RUNNING' || state.status === 'RUD') updateMission(dt);
+      if (state.status === 'RUNNING' || state.status === 'RUD') {
+      if (state.effects.slowMo > 0) {
+        state.effects.slowMo = Math.max(0, state.effects.slowMo - dt);
+        if (state.effects.slowMo <= 0) state.effects.timeScale = 1;
+      }
+      const simDt = dt * (state.effects.timeScale || 1);
+      updateMission(simDt);
+    }
       if (state.status === 'CONTINUE') updateContinue(dt);
       draw();
     }

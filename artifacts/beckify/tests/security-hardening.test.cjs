@@ -80,7 +80,11 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
+<<<<<<< HEAD
 ok("Toolbox SW cache version bumped after OCR/VLM wave 2", /CACHE_VERSION = 'v41'/.test(sw));
+=======
+ok("Toolbox SW cache version bumped after Jacklyn recovery pass", /CACHE_VERSION = 'v41'/.test(sw));
+>>>>>>> dca964d (feat(arcade): Jacklyn barge recovery and New Glenn feel pass)
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),

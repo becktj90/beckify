@@ -15,7 +15,7 @@ export function NewGlennRunner() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
           <h1 id="new-glenn-title" className="font-display text-3xl font-bold tracking-tight">New Glenn Runner</h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            A compressed LC-36 flight: charge liftoff, steer with TVC, dodge the corridor, and grab aero shield, LOX, or a BE-4 kick. Keyboard and touch. Difficulty stays on the start screen — KID, CADET, or PAD RAT.
+            A compressed LC-36 flight: charge liftoff, steer with TVC, dodge the corridor, grab aero shield, LOX, or a BE-4 kick, then land the first stage on Jacklyn. Keyboard and touch. Difficulty stays on the start screen — KID, CADET, or PAD RAT.
           </p>
         </div>
         <button
@@ -55,7 +55,7 @@ export function NewGlennRunner() {
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes.</li>
           <li>Touch: hold CLIMB, tap ◀ ▶, or drag on the canvas. Same-origin iframe — it plays embedded on beckify.com.</li>
-          <li>Pickups: aero shield (one hit), LOX top-off (thrust grace), BE-4 kick (extra climb). Personal best stays in this browser.</li>
+          <li>Pickups: aero shield (one hit), LOX top-off (thrust grace), BE-4 kick (extra climb). After MECO, steer the booster onto Jacklyn — soft deck catch for bonus, tip or splash cuts combo but the mission continues. Personal best stays in this browser.</li>
         </ul>
       </div>
     </section>

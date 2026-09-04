@@ -228,7 +228,7 @@ export const GAMES: Game[] = [
   {
     name: "New Glenn Runner",
     description:
-      "A stylized vertical launch arcade: charge liftoff, dodge the corridor, grab rocket pickups, and chase a local personal best.",
+      "A stylized vertical launch arcade: charge liftoff, dodge the corridor, grab rocket pickups, land the first stage on Jacklyn, and chase a local personal best.",
     url: "/games/new-glenn-runner",
   },
 ];

@@ -34,7 +34,7 @@ export const Games = () => {
           <div>
             <p className="type-label text-[var(--accent)]">The arcade brief</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-              New Glenn Runner is the public game on Beckify. Charge liftoff, steer the corridor, grab rocket-themed pickups, and chase a local best on this device.
+              New Glenn Runner is the public game on Beckify. Charge liftoff, steer the corridor, grab rocket pickups, land the first stage on Jacklyn, and chase a local best on this device.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">
