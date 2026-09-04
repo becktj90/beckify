@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Copy the npm Phaser 4 build into the arcade vendor folder.
+ * Copy Phaser 4.2.1 full UMD (Matter included) into the arcade vendor folder.
+ * Same file as jsDelivr phaser@4.2.1/dist/phaser.min.js.
+ * Never copy phaser-arcade-physics — New Glenn Runner uses built-in Matter.
  * Keeps the iframe on a same-origin script (CSP + no CDN in the game HTML).
  */
 import { createRequire } from 'node:module';
@@ -39,6 +41,16 @@ if (!src) {
   throw new Error('phaser@4.2.x is not installed and vendor/phaser.min.js is missing.');
 }
 
+if (src.includes('phaser-arcade-physics')) {
+  throw new Error('Refusing arcade-physics-only Phaser. New Glenn Runner needs the full 4.2.1 Matter build.');
+}
+
 fs.mkdirSync(path.dirname(dest), { recursive: true });
 fs.copyFileSync(src, dest);
-console.log(`Synced Phaser from ${src} -> ${dest}`);
+
+const copied = fs.readFileSync(dest, 'utf8');
+if (!copied.includes('Matter') || copied.length < 800000) {
+  throw new Error('Vendor Phaser build looks incomplete — expected the full 4.2.1 bundle with Matter.');
+}
+
+console.log(`Synced Phaser 4.2.1 (full Matter) from ${src} -> ${dest}`);

@@ -3739,8 +3739,8 @@
   }
 
   function init() {
-    // Phaser 4 is the live New Glenn Runner. Keep this canvas path inert
-    // whenever the LC-36 Phaser shell is present so players never get the 420×640 strip.
+    // Phaser 4.2.1 + Matter is the live New Glenn Runner. Keep this 420×640
+    // canvas path inert whenever data-ng-engine="phaser4" or #ng-phaser-root is present.
     if (document.documentElement.dataset.ngEngine === 'phaser4' || document.getElementById('ng-phaser-root')) {
       return;
     }

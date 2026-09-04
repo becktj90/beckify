@@ -30,7 +30,7 @@ export function NewGlennRunner() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-video min-h-[min(360px,56dvh)] max-w-[1100px] rounded-2xl border border-[#b7abff]/40"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-video min-h-[min(360px,56dvh)] max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
       >
         <iframe
           src={RUNNER_SRC}
@@ -50,7 +50,7 @@ export function NewGlennRunner() {
         ) : null}
       </div>
 
-      <div className="mx-auto max-w-[1100px] text-sm leading-6 text-[var(--muted)]">
+      <div className="mx-auto max-w-[1280px] text-sm leading-6 text-[var(--muted)]">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">How to fly</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Keyboard: A/D or arrows steer, Space holds boost (brake on Jacklyn), P or Escape pauses, M mutes.</li>

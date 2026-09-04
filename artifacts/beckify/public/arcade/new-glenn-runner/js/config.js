@@ -1,6 +1,7 @@
 /**
- * New Glenn Runner — Phaser 4 vertical slice (pad → ascent → Jacklyn).
+ * New Glenn Runner — Phaser 4.2.1 + built-in Matter (pad → ascent → Jacklyn).
  * Arcade-tuned constants. Real NG telemetry is compressed, not simulated.
+ * Matter forces are 0.01–0.1; velocities are ~1–15 per step, not pixels/sec.
  */
 export const W = 1280;
 export const H = 720;

@@ -50,6 +50,7 @@ export default class MissionScene extends Phaser.Scene {
     this.inputState = createInput();
     this.status = 'MENU';
     this.paused = false;
+    this.pausedForSettings = false;
     this.settingsOpen = false;
     this.nowSec = 0;
     this.tip = pick(TIPS);
@@ -93,9 +94,7 @@ export default class MissionScene extends Phaser.Scene {
       frictionAir: 0.035,
       density: 0.002,
     });
-    this.rocket.setCollisionCategory(CAT_ROCKET);
-    this.rocket.setCollidesWith(CAT_DECK | CAT_WATER | CAT_HAZARD | CAT_PICKUP);
-    this.rocket.setFixedRotation();
+    this.bindRocketBody();
     this.rocket.setIgnoreGravity(true);
 
     const noopEmitter = { emitParticleAt() {}, setDepth() { return this; } };
@@ -243,6 +242,8 @@ export default class MissionScene extends Phaser.Scene {
     if (this.qaBeat === 'jacklyn') {
       this.session = this.freshSession();
       this.paused = false;
+      this.pausedForSettings = false;
+      this.syncMatterPause();
       this.menuLayer.setVisible(false);
       setOverlay('ng-summary', false);
       setOverlay('ng-pause', false);
@@ -324,6 +325,11 @@ export default class MissionScene extends Phaser.Scene {
     this.session = this.freshSession();
     this.status = 'PAD';
     this.paused = false;
+    this.pausedForSettings = false;
+    this.settingsOpen = false;
+    const settingsPanel = document.getElementById('ng-settings');
+    if (settingsPanel) settingsPanel.hidden = true;
+    this.syncMatterPause();
     this.menuLayer.setVisible(false);
     setOverlay('ng-summary', false);
     setOverlay('ng-pause', false);
@@ -891,11 +897,31 @@ export default class MissionScene extends Phaser.Scene {
     this.refreshHud();
   }
 
+  /**
+   * Phaser MatterPhysics.pause/resume → world.enabled.
+   * Physics stops only when paused === true (settings mid-flight sets that flag).
+   */
+  syncMatterPause() {
+    if (this.paused === true) this.matter.pause();
+    else this.matter.resume();
+  }
+
+  /**
+   * setBody / setRectangle wipe mass, friction, and collision filters.
+   * Re-apply after any reshape. Positions are center-of-mass.
+   */
+  bindRocketBody() {
+    this.rocket.setFrictionAir(0.035);
+    this.rocket.setCollisionCategory(CAT_ROCKET);
+    this.rocket.setCollidesWith(CAT_DECK | CAT_WATER | CAT_HAZARD | CAT_PICKUP);
+    this.rocket.setFixedRotation();
+  }
+
   togglePause() {
     if (this.status === 'MENU' || this.status === 'SUMMARY') return;
     this.paused = !this.paused;
-    if (this.paused) this.matter.world.pause();
-    else this.matter.world.resume();
+    this.pausedForSettings = false;
+    this.syncMatterPause();
     setOverlay('ng-pause', this.paused);
     setBanner(this.paused ? 'PAUSED' : 'RESUMED', 'info', 900);
     this.refreshHud();
@@ -913,6 +939,17 @@ export default class MissionScene extends Phaser.Scene {
     const panel = document.getElementById('ng-settings');
     if (panel) panel.hidden = !this.settingsOpen;
     if (this.settingsOpen) syncSettingsForm(this.settings);
+    const inFlight = this.status === 'PAD' || this.status === 'ASCENT' || this.status === 'JACKLYN';
+    if (this.settingsOpen && inFlight && this.paused !== true) {
+      this.paused = true;
+      this.pausedForSettings = true;
+      this.syncMatterPause();
+    } else if (!this.settingsOpen && this.pausedForSettings) {
+      this.pausedForSettings = false;
+      this.paused = false;
+      this.syncMatterPause();
+      setOverlay('ng-pause', false);
+    }
   }
 
   toggleFullscreen() {
@@ -932,6 +969,7 @@ export default class MissionScene extends Phaser.Scene {
   applyRocketSkin() {
     const key = `rocket-${this.currentFlight().id}`;
     this.rocket.setTexture(this.textures.exists(key) ? key : 'rocket');
+    this.bindRocketBody();
   }
 
   refreshMenuCopy() {
