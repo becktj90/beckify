@@ -95,6 +95,7 @@ export const DEFAULT_SETTINGS = {
   reducedFlashes: false,
   haptics: true,
   muted: false,
+  volume: 0.72,
   difficulty: 'CADET',
   engineerPanel: false,
   hiScore: 0,

@@ -148,4 +148,35 @@ assert.match(arcadeHtml, /max-width:\s*1280px/);
 assert.match(arcadeHtml, /data-ng-engine="phaser4"/);
 assert.doesNotMatch(arcadeHtml, /src="\.\/js\/arcade\.js"/);
 
+const audioJs = fs.readFileSync(path.join(arcadeDir, 'js/audio.js'), 'utf8');
+const audioAttr = fs.readFileSync(path.join(arcadeDir, 'audio/ATTRIBUTION.md'), 'utf8');
+const audioDir = path.join(arcadeDir, 'audio');
+const audioClips = [
+  'roar-loop', 'liftoff', 'maxq', 'meco', 'whoosh', 'burn-loop',
+  'touchdown', 'recovered', 'splash', 'quindar', 'pickup', 'hit', 'rud',
+];
+for (const clip of audioClips) {
+  assert.ok(fs.existsSync(path.join(audioDir, `${clip}.ogg`)), `${clip}.ogg`);
+  assert.ok(fs.existsSync(path.join(audioDir, `${clip}.mp3`)), `${clip}.mp3`);
+}
+assert.match(audioJs, /preload\(scene\)/);
+assert.match(audioJs, /scene\.load\.audio/);
+assert.match(audioJs, /sound\.unlock/);
+assert.match(audioJs, /sound\.setMute/);
+assert.match(audioJs, /prefers-reduced-motion never mutes/);
+assert.doesNotMatch(audioJs, /blue origin|youtube/i);
+assert.match(mission, /AudioApi\.preload\(this\)/);
+assert.match(mission, /setBed\('roar'/);
+assert.match(mission, /setBed\('burn'/);
+assert.match(mission, /play\('whoosh'/);
+assert.match(mission, /play\('recovered'/);
+assert.match(config, /volume: 0\.72/);
+assert.match(arcadeHtml, /data-set="volume"/);
+assert.match(audioAttr, /nasa\.gov\/artemisaudio/);
+assert.match(audioAttr, /nasa\.gov\/historical-sounds/);
+assert.match(audioAttr, /No NASA endorsement is implied/);
+assert.match(audioAttr, /590189main_ringtone_131_launchNats/);
+assert.doesNotMatch(audioAttr, /blueorigin|youtu\.be|youtube\.com/i);
+assert.match(storageDoc, /volume.*0–1/);
+
 console.log('New Glenn Runner Phaser 4 path, Jacklyn recovery, and iframe host checks passed');
