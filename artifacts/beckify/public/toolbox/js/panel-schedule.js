@@ -15,7 +15,8 @@ const state = {
   rows: [],
   rawText: '',
   lastProgress: 0,
-  source: ''
+  source: '',
+  calcReady: false
 };
 
 const elements = {};
@@ -65,6 +66,7 @@ function cacheElements() {
   elements.fillSlotsButton = document.getElementById('fillSlotsButton');
   elements.editorTableBody = document.getElementById('editorTableBody');
   elements.reviewedSchedule = document.getElementById('reviewedSchedule');
+  elements.calculateButton = document.getElementById('ps_calculate');
   elements.openPanelCaution = document.getElementById('openPanelCaution');
   elements.directoryGrid = document.getElementById('directoryGrid');
   elements.directoryGuidance = document.getElementById('directoryGuidance');
@@ -150,12 +152,35 @@ function bindEvents() {
     setStatus('Seeded 42 editable circuit rows for manual entry.');
   });
 
-  [elements.panelName, elements.panelVoltage, elements.panelFeed, elements.panelDate, elements.panelPhase, elements.panelCapacityAmps, elements.panelDiversity].forEach(input => {
-    input.addEventListener('input', renderAll);
-    input.addEventListener('change', renderAll);
+  [elements.panelName, elements.panelFeed, elements.panelDate].forEach(input => {
+    if (!input) return;
+    input.addEventListener('input', renderPrintSheet);
+    input.addEventListener('change', renderPrintSheet);
+  });
+  [elements.panelVoltage, elements.panelPhase, elements.panelCapacityAmps, elements.panelDiversity].forEach(input => {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      invalidateCalc();
+      renderPrintSheet();
+      renderLoadAnalysis();
+      renderDirectoryMetrics();
+    });
+    input.addEventListener('change', () => {
+      invalidateCalc();
+      renderPrintSheet();
+      renderLoadAnalysis();
+      renderDirectoryMetrics();
+    });
   });
   if (elements.reviewedSchedule) {
-    elements.reviewedSchedule.addEventListener('change', renderAll);
+    elements.reviewedSchedule.addEventListener('change', () => {
+      if (!elements.reviewedSchedule.checked) invalidateCalc();
+      renderLoadAnalysis();
+      renderDirectoryMetrics();
+    });
+  }
+  if (elements.calculateButton) {
+    elements.calculateButton.addEventListener('click', requestCalculate);
   }
   if (elements.enhance) {
     elements.enhance.addEventListener('change', syncVlmUi);
@@ -181,10 +206,59 @@ function isLikelyImageFile(file) {
 
 function clearReview() {
   if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+  invalidateCalc();
+}
+
+function invalidateCalc() {
+  state.calcReady = false;
 }
 
 function isScheduleReviewed() {
   return !!(elements.reviewedSchedule && elements.reviewedSchedule.checked);
+}
+
+function isCalcReady() {
+  return isScheduleReviewed() && state.calcReady === true;
+}
+
+function requestCalculate() {
+  if (!isScheduleReviewed()) {
+    state.calcReady = false;
+    setStatus('Check “I reviewed every circuit row” before calculating. Edit the table first — OCR is a draft.');
+    renderLoadAnalysis();
+    renderDirectoryMetrics();
+    return;
+  }
+  state.calcReady = true;
+  renderAll();
+  setStatus(selectedPhase()
+    ? 'Calculated from the reviewed table. Edit a row to update the schedule, then calculate again.'
+    : 'Calculated directory metrics. Select 1-phase or 3-phase, then calculate again for load math.');
+}
+
+function scheduleCalcGateMessage(kind) {
+  const isLoad = kind === 'load';
+  if (!isScheduleReviewed()) {
+    return {
+      metricLabel: 'Waiting for review',
+      metricValue: 'Edit the table',
+      metricDetail: isLoad
+        ? 'OCR is a draft. Load summary stays hidden until you confirm the table and calculate. Breaker trip is not a reviewed load.'
+        : 'OCR is a draft. Directory metrics stay hidden until you confirm the table and calculate.',
+      guidance: '<p>Correct any circuit row by hand, then check “I reviewed every circuit row” and click Calculate from reviewed table. You can still type every field with no photo.</p>',
+    };
+  }
+  if (!state.calcReady) {
+    return {
+      metricLabel: 'Waiting to calculate',
+      metricValue: 'Click Calculate',
+      metricDetail: isLoad
+        ? 'The schedule is editable. Load summary stays hidden until you calculate from the reviewed table. Breaker trip is not a reviewed load.'
+        : 'The schedule is editable. Directory metrics stay hidden until you calculate from the reviewed table.',
+      guidance: '<p>Update any row or panel field, then click Calculate from reviewed table. Changing a circuit row clears the review check so a second look is required.</p>',
+    };
+  }
+  return null;
 }
 
 function handleFileSelection(file, opts) {
@@ -390,7 +464,7 @@ function applyVlmDraft(draft, warnings) {
   clearReview();
   const extra = (warnings && warnings.length) ? ` ${warnings.join(' ')}` : '';
   setSource('vlm');
-  setStatus(`AI draft filled ${rows.length} circuit row${rows.length === 1 ? '' : 's'}. This is not perfect OCR and not an AI electrician. Correct every row, then check the review box.${extra}`);
+  setStatus(`AI draft filled ${rows.length} circuit row${rows.length === 1 ? '' : 's'}. This is not perfect OCR and not an AI electrician. Correct every row, check the review box, then calculate.${extra}`);
   renderAll();
 }
 
@@ -1147,10 +1221,10 @@ function computeDirectoryMetrics(rows, opts) {
 
 function renderDirectoryMetrics() {
   if (!elements.directoryGrid || !elements.directoryGuidance) return;
-  const reviewed = isScheduleReviewed();
-  if (!reviewed) {
-    elements.directoryGrid.innerHTML = summaryMetric('Waiting for review', 'Check the box', 'OCR is a draft. Directory metrics stay hidden until you confirm the table.');
-    elements.directoryGuidance.innerHTML = '<p>Check “I reviewed every circuit row” after correcting the table. You can still type every field by hand with no photo.</p>';
+  const waiting = scheduleCalcGateMessage('directory');
+  if (waiting) {
+    elements.directoryGrid.innerHTML = summaryMetric(waiting.metricLabel, waiting.metricValue, waiting.metricDetail);
+    elements.directoryGuidance.innerHTML = waiting.guidance;
     return;
   }
   const rows = normalizeRows(state.rows);
@@ -1184,9 +1258,10 @@ function renderDirectoryMetrics() {
 
 function renderLoadAnalysis() {
   if (!elements.analysisGrid || !elements.analysisGuidance) return;
-  if (!isScheduleReviewed()) {
-    elements.analysisGrid.innerHTML = summaryMetric('Waiting for review', 'Check the box', 'OCR is a draft. Load summary stays hidden until you confirm the table. Breaker trip is not a reviewed load.');
-    elements.analysisGuidance.innerHTML = '<p>Check “I reviewed every circuit row” after correcting the table. Est. Load A values copied from trip stay flagged until you edit them.</p>';
+  const waiting = scheduleCalcGateMessage('load');
+  if (waiting) {
+    elements.analysisGrid.innerHTML = summaryMetric(waiting.metricLabel, waiting.metricValue, waiting.metricDetail);
+    elements.analysisGuidance.innerHTML = waiting.guidance;
     return;
   }
   const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
@@ -1446,6 +1521,8 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     normalizeLoadAmps,
     isLoadAmpsCopiedFromTrip,
     isScheduleReviewed,
+    isCalcReady,
+    requestCalculate,
     isLikelyImageFile,
     normalizeDemandFactor,
     isSpareOrOpen,

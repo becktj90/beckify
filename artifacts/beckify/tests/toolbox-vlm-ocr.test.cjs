@@ -170,19 +170,6 @@ sandbox.BECKIFY_API_BASE_URL = '';
   sandbox.fetch = function (_url, opts) {
     posted = JSON.parse(opts.body);
     return Promise.resolve({
-      ok: true,
-      json() {
-        return Promise.resolve({
-          fields: { ratedHP: { value: 7.5, confidence: 0.8 } },
-          raw_ocr: 'HP 7.5',
-          warnings: ['ambiguous FLA'],
-        });
-      },
-    });
-  };
-  sandbox.fetch = function (_url, opts) {
-    posted = JSON.parse(opts.body);
-    return Promise.resolve({
       ok: false,
       status: 429,
       headers: { get(name) { return String(name).toLowerCase() === 'retry-after' ? '120' : null; } },
@@ -260,20 +247,39 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(meta.panelName, 'PANEL BLT 11');
 
   const lookGood = api.normalizeLookDraft({
-    verdict: 'looks_good', score: 88.4, headline: 'Strong light', reasons: ['Even light'], fixes: ['Smile'],
+    verdict: 'looks_good',
+    score: 88.4,
+    headline: 'Strong light',
+    summary: 'You look sharp in this frame.',
+    metrics: { lighting: 90.2, framing: 70, expression: 84, sharpness: 88 },
+    reasons: ['Even light'],
+    fixes: ['Smile'],
   });
   assert.equal(lookGood.task, 'look');
   assert.equal(lookGood.verdict, 'looks_good');
   assert.equal(lookGood.score, 88);
-  const lookDeclined = api.normalizeLookDraft({ verdict: 'declined', score: 12, headline: 'No' });
+  assert.equal(lookGood.summary, 'You look sharp in this frame.');
+  assert.equal(lookGood.metrics.lighting, 90);
+  assert.equal(lookGood.metrics.overall, 88);
+  const lookDeclined = api.normalizeLookDraft({
+    verdict: 'declined',
+    score: 12,
+    headline: 'No',
+    metrics: { lighting: 80, overall: 90 },
+  });
   assert.equal(lookDeclined.verdict, 'declined');
   assert.equal(lookDeclined.score, null);
+  assert.equal(lookDeclined.metrics.lighting, null);
+  assert.equal(lookDeclined.metrics.overall, null);
   const lookUnknown = api.analyzePayload({ verdict: 'amazing', score: 200 }, 'look');
   assert.equal(lookUnknown.verdict, 'mixed');
   assert.equal(lookUnknown.score, 100);
 
   assert.match(html, /id="sec-look-check"/);
   assert.match(html, /Analyze Look/);
+  assert.match(html, /id="look-camera-input"[^>]*capture="user"/);
+  assert.match(html, /id="look-summary"/);
+  assert.match(html, /id="look-metrics"/);
   assert.match(html, /js\/look-check\.js/);
   assert.match(html, /id="tdr_privacy"/);
   const lookJs = fs.readFileSync(path.join(root, 'look-check.js'), 'utf8');
@@ -282,6 +288,8 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(lookJs, /analyzeLook/);
   assert.match(lookJs, /\/api\/analyze-look/);
   assert.match(lookJs, /lookIsImageFile/);
+  assert.match(lookJs, /look-camera/);
+  assert.match(lookJs, /lookRenderMetrics/);
   assert.match(html, /look-verdict-card\[hidden\]/);
   const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
   assert.match(tdrJs, /prepareUploadDataUrl/);

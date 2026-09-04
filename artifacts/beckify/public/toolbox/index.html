@@ -161,6 +161,15 @@
     .look-verdict-card[data-verdict="looks_bad"] .look-score { color: #f87171; }
     .look-verdict-card[data-verdict="mixed"] .look-score { color: #fbbf24; }
     .look-verdict-list { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.55; }
+    .look-summary { margin: 0; line-height: 1.55; max-width: 70ch; }
+    .look-summary[hidden] { display: none; }
+    .look-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 10px; }
+    .look-metrics[hidden] { display: none; }
+    .look-metric { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.03); }
+    .look-metric-label { color: var(--fg-muted); font-size: 0.85rem; }
+    .look-metric-value { font-size: 1.55rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+    .look-metric-bar { height: 6px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.08); }
+    .look-metric-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--violet) 0%, var(--blue) 100%); }
     .feynman-lesson { margin: 14px 0 18px; padding: 16px 18px; border: 1px solid rgba(110, 231, 183, 0.28); border-radius: 14px; background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(79,139,255,0.05)); }
     .feynman-lesson-title { color: #6ee7b7; font-weight: 700; font-size: 0.98rem; }
     .feynman-formula { margin: 8px 0; color: #eef0fa; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
@@ -245,7 +254,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
-      <button class="nav-btn" data-target="sec-look-check" data-keywords="look check photo verdict good bad selfie appearance entertainment vision">Look Check</button>
+      <button class="nav-btn" data-target="sec-look-check" data-keywords="look check photo verdict good bad selfie appearance camera metrics entertainment vision">Look Check</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -10084,21 +10093,21 @@
     <section id="sec-look-check" class="section">
       <div class="section-header">
         <h2>Look Check</h2>
-        <p>Any photo, a playful honest verdict: do you look good or bad? Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
+        <p>Take a camera photo of a person, then get lighting / framing / expression scores and a brief how-you-look summary. Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
         <details class="section-info">
           <summary>ℹ More Info — Look Check</summary>
           <div class="section-info-body">
-            This is a bonus vision tool. It rates lighting, angle, expression, and framing — not your worth.
+            This is a bonus vision tool. It rates lighting, angle, expression, sharpness, and framing — not your worth.
             Anyone who appears under 18 is not rated. Cloud-only: there is no on-device Tesseract path.
-            Choosing a photo does not upload it. Analyze Look sends an upright copy to a HTTPS vision endpoint.
+            Taking or choosing a photo does not upload it. Analyze Look sends an upright copy to a HTTPS vision endpoint.
           </div>
         </details>
       </div>
       <div class="card-grid two-col">
         <div class="card" style="grid-column:1/-1">
-          <div class="card-title">Upload a photo</div>
+          <div class="card-title">Take or choose a photo</div>
           <div class="card-body">
-            <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
+            <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
             <div class="photo-safety"><strong>Entertainment only.</strong> Kind-honest notes about light, angle, and the shot — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
             <div id="look_vlm_settings" class="vlm-settings">
               <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
@@ -10117,11 +10126,15 @@
             <div id="look-drop-zone" class="tdr-drop-zone" role="button" tabindex="0" aria-label="Drag and drop a photo or choose a file">
               <div style="font-size:2rem">📷</div>
               <div>
-                <strong>Drop any photo or tap to choose</strong><br>
-                Choosing a file does not upload it.
+                <strong>Take a photo, drop a file, or choose one</strong><br>
+                Taking or choosing a photo does not upload it.
               </div>
               <input id="look-file-input" type="file" accept="image/*" hidden>
-              <button id="look-browse-btn" class="btn btn-accent" type="button">Choose Photo</button>
+              <input id="look-camera-input" type="file" accept="image/*" capture="user" hidden>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+                <button id="look-camera-btn" class="btn btn-accent" type="button">Take Photo</button>
+                <button id="look-browse-btn" class="btn" type="button">Choose Photo</button>
+              </div>
             </div>
 
             <div id="look-preview-frame" class="tdr-preview-frame" style="margin-top:12px">
@@ -10136,7 +10149,7 @@
               </div>
               <div>
                 <label>Status</label>
-                <div id="look-status" class="note">Ready for a photo. Choosing a file does not upload it.</div>
+                <div id="look-status" class="note">Ready for a camera photo or a file. Taking or choosing a photo does not upload it.</div>
               </div>
             </div>
 
@@ -10168,6 +10181,8 @@
                   <div class="note">out of 100</div>
                 </div>
               </div>
+              <p id="look-summary" class="look-summary" hidden></p>
+              <div id="look-metrics" class="look-metrics" hidden></div>
               <div>
                 <strong>Why</strong>
                 <ul id="look-reasons" class="look-verdict-list"></ul>

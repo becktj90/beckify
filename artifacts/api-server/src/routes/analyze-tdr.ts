@@ -43,6 +43,7 @@ router.post("/analyze-tdr", async (req, res) => {
     return res.status(429).json({ error: "Too many TDR analyses. Please try again later.", retryAfter });
   }
   if (bucket.inFlight >= MAX_IN_FLIGHT_PER_CLIENT) {
+    res.setHeader("Retry-After", "15");
     return res.status(429).json({ error: "Too many TDR analyses in progress.", retryAfter: 15 });
   }
   bucket.inFlight += 1;
@@ -101,7 +102,7 @@ function consumeRateLimit(clientKey: string) {
       if (value.resetAt <= now) rateBuckets.delete(key);
     }
   }
-  return { ...bucket, allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW };
+  return Object.assign(bucket, { allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW });
 }
 
 function stripDataUrl(image: string): string {

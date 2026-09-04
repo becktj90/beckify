@@ -1,6 +1,6 @@
 /*
- * Look Check — playful good / bad photo verdict.
- * Cloud-only. Choosing a file does not upload it; Analyze Look does.
+ * Look Check — camera or file photo, then metrics plus a brief how-you-look summary.
+ * Cloud-only. Taking or choosing a photo does not upload it; Analyze Look does.
  * Entertainment only. Not medical or dating advice.
  */
 
@@ -52,6 +52,7 @@ function lookSetBusy(isBusy) {
   lookState.busy = isBusy;
   if (lookEl.analyzeBtn) lookEl.analyzeBtn.disabled = isBusy || !lookState.file;
   if (lookEl.browseBtn) lookEl.browseBtn.disabled = isBusy;
+  if (lookEl.cameraBtn) lookEl.cameraBtn.disabled = isBusy;
   if (lookEl.resetBtn) lookEl.resetBtn.disabled = isBusy;
 }
 
@@ -85,6 +86,42 @@ function lookDefaultHeadline(verdict) {
   return 'Some things work. Some things to retake.';
 }
 
+const LOOK_METRIC_ROWS = [
+  { key: 'lighting', label: 'Lighting' },
+  { key: 'framing', label: 'Framing' },
+  { key: 'expression', label: 'Expression' },
+  { key: 'sharpness', label: 'Sharpness' },
+  { key: 'overall', label: 'Overall' },
+];
+
+function lookRenderMetrics(draft) {
+  if (!lookEl.metrics) return;
+  const metrics = draft && draft.metrics ? draft.metrics : {};
+  const show = draft && draft.verdict !== 'declined' && LOOK_METRIC_ROWS.some((row) => metrics[row.key] != null);
+  lookEl.metrics.hidden = !show;
+  lookEl.metrics.replaceChildren();
+  if (!show) return;
+  LOOK_METRIC_ROWS.forEach((row) => {
+    const value = metrics[row.key];
+    const article = document.createElement('article');
+    article.className = 'look-metric';
+    const label = document.createElement('span');
+    label.className = 'look-metric-label';
+    label.textContent = row.label;
+    const strong = document.createElement('strong');
+    strong.className = 'look-metric-value';
+    strong.textContent = value == null ? '—' : String(value);
+    const bar = document.createElement('div');
+    bar.className = 'look-metric-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('span');
+    fill.style.width = value == null ? '0%' : `${value}%`;
+    bar.appendChild(fill);
+    article.append(label, strong, bar);
+    lookEl.metrics.appendChild(article);
+  });
+}
+
 function lookFillList(host, items, emptyText) {
   if (!host) return;
   host.replaceChildren();
@@ -112,6 +149,12 @@ function lookRenderDraft(draft) {
   lookEl.verdictCard.dataset.verdict = draft.verdict;
   if (lookEl.badge) lookEl.badge.textContent = lookBadge(draft.verdict);
   if (lookEl.headline) lookEl.headline.textContent = draft.headline || lookDefaultHeadline(draft.verdict);
+  if (lookEl.summary) {
+    const summary = String(draft.summary || '').trim();
+    lookEl.summary.hidden = !summary;
+    lookEl.summary.textContent = summary;
+  }
+  lookRenderMetrics(draft);
   const showScore = draft.verdict !== 'declined' && draft.score != null;
   if (lookEl.scoreWrap) lookEl.scoreWrap.hidden = !showScore;
   if (lookEl.score) lookEl.score.textContent = showScore ? String(draft.score) : '—';
@@ -251,7 +294,7 @@ function lookHandleFile(file) {
   lookRenderDraft(null);
   lookUpdatePreview();
   lookResetProgress();
-  lookSetStatus('Photo is on this device only. Analyze Look uploads it. Choosing a file does not.');
+  lookSetStatus('Photo is on this device only. Analyze Look uploads it. Taking or choosing a photo does not.');
   if (lookEl.analyzeBtn) lookEl.analyzeBtn.disabled = false;
 }
 
@@ -261,10 +304,11 @@ function lookReset() {
   lookState.imageUrl = '';
   lookState.draft = null;
   if (lookEl.fileInput) lookEl.fileInput.value = '';
+  if (lookEl.cameraInput) lookEl.cameraInput.value = '';
   lookRenderDraft(null);
   lookUpdatePreview();
   lookResetProgress();
-  lookSetStatus('Ready for a photo. Choosing a file does not upload it.');
+  lookSetStatus('Ready for a camera photo or a file. Taking or choosing a photo does not upload it.');
   if (lookEl.analyzeBtn) lookEl.analyzeBtn.disabled = true;
 }
 
@@ -272,8 +316,17 @@ function lookBindEvents() {
   if (lookEl.browseBtn && lookEl.fileInput) {
     lookEl.browseBtn.addEventListener('click', () => lookEl.fileInput.click());
   }
+  if (lookEl.cameraBtn && lookEl.cameraInput) {
+    lookEl.cameraBtn.addEventListener('click', () => lookEl.cameraInput.click());
+  }
   if (lookEl.fileInput) {
     lookEl.fileInput.addEventListener('change', (event) => {
+      const [file] = event.target.files || [];
+      lookHandleFile(file);
+    });
+  }
+  if (lookEl.cameraInput) {
+    lookEl.cameraInput.addEventListener('change', (event) => {
       const [file] = event.target.files || [];
       lookHandleFile(file);
     });
@@ -311,7 +364,9 @@ function lookBindEvents() {
 function lookCacheElements() {
   lookEl.dropZone = document.getElementById('look-drop-zone');
   lookEl.fileInput = document.getElementById('look-file-input');
+  lookEl.cameraInput = document.getElementById('look-camera-input');
   lookEl.browseBtn = document.getElementById('look-browse-btn');
+  lookEl.cameraBtn = document.getElementById('look-camera-btn');
   lookEl.analyzeBtn = document.getElementById('look-analyze-btn');
   lookEl.resetBtn = document.getElementById('look-reset-btn');
   lookEl.previewFrame = document.getElementById('look-preview-frame');
@@ -327,6 +382,8 @@ function lookCacheElements() {
   lookEl.verdictCard = document.getElementById('look-verdict-card');
   lookEl.badge = document.getElementById('look-verdict-badge');
   lookEl.headline = document.getElementById('look-headline');
+  lookEl.summary = document.getElementById('look-summary');
+  lookEl.metrics = document.getElementById('look-metrics');
   lookEl.score = document.getElementById('look-score');
   lookEl.scoreWrap = document.getElementById('look-score-wrap');
   lookEl.reasons = document.getElementById('look-reasons');

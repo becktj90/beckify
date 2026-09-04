@@ -50,7 +50,7 @@
         <div>
           <p class="hero-kicker">Beckify Electrical Engineering Toolbox / local-first analysis</p>
           <h1>Panel Schedule Load Analyzer</h1>
-          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Optional Enhance with AI can read rotated two-up cards, glare, and ink corrections. Manual entry still works with no photo. Informational estimate — not an electrical inspection. Not perfect OCR and not an AI electrician.</p>
+          <p class="hero-copy">Photograph the printed circuit directory or schedule card with the panel door closed. On-device Tesseract.js fills an editable table. Optional Enhance with AI can read rotated two-up cards, glare, and ink corrections. Edit and update every row by hand, then calculate. Manual entry still works with no photo. Informational estimate — not an electrical inspection. Not perfect OCR and not an AI electrician.</p>
         </div>
         <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
       </div>
@@ -202,8 +202,12 @@
           </div>
           <label class="review-check">
             <input id="reviewedSchedule" type="checkbox" data-no-persist>
-            I reviewed every circuit row. OCR is a draft, not verified input. Directory metrics, load summary, and print wait for this check.
+            I reviewed every circuit row. OCR is a draft, not verified input. Edit the table first — directory metrics and load summary wait until you calculate.
           </label>
+          <div class="toolbar toolbar-wrap">
+            <button id="ps_calculate" class="btn btn-primary" type="button">Calculate from reviewed table</button>
+          </div>
+          <p class="field-help">Correct any circuit, trip, poles, or estimated load before you calculate. Changing a row clears the review check. Print still waits for the review box. Informational estimate — not an NEC Article 220 calculation.</p>
         </div>
       </section>
 
@@ -212,7 +216,7 @@
           <span class="title-bar-text" id="directory-title">Directory metrics (from the reviewed table)</span>
         </div>
         <div class="window-body stack-lg">
-          <p class="field-help">Written for someone who is not an electrician. These numbers come from the table above after you review it. They are a photo-based estimate, not a measurement and not an inspection.</p>
+          <p class="field-help">Written for someone who is not an electrician. These numbers come from the table above after you review it and click Calculate. They are a photo-based estimate, not a measurement and not an inspection.</p>
           <div class="analysis-grid" id="directoryGrid" aria-live="polite"></div>
           <div id="directoryGuidance" class="analysis-guidance"></div>
           <p class="field-help">Persistent disclaimer: informational estimate from a photo or typed directory, not an electrical inspection. Any safety concern goes to a licensed electrician.</p>

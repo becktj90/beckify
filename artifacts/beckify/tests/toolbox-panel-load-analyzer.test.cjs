@@ -107,7 +107,9 @@ assert.match(panelSrc, /bindEvents\(\)/);
 assert.match(panelSrc, /copied from trip — edit me/);
 assert.equal(panelSrc.includes('aria-describedby=""'), false);
 assert.match(panelSrc, /aria-describedby="trip-copy-\$\{index\}"/);
-assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*isScheduleReviewed/);
+assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*scheduleCalcGateMessage/);
+assert.match(panelSrc, /function scheduleCalcGateMessage[\s\S]*calcReady/);
+assert.match(panelSrc, /function requestCalculate/);
 assert.match(panelSrc, /function handlePrint[\s\S]*isScheduleReviewed/);
 assert.match(panelSrc, /Breaker trip is not a reviewed load/);
 assert.equal(panel.isLikelyImageFile({ type: '', name: 'dir.JPG' }), true);
@@ -116,6 +118,8 @@ assert.equal(panel.isLikelyImageFile({ type: 'application/pdf', name: 'dir.jpg' 
 
 const panelHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'panel-schedule.html'), 'utf8');
 assert.match(panelHtml, /id="reviewedSchedule"[^>]*data-no-persist/);
+assert.match(panelHtml, /id="ps_calculate"/);
+assert.match(panelHtml, /Calculate from reviewed table/);
 assert.match(panelHtml, /id="panelEnhance"[^>]*data-no-persist/);
 assert.match(panelHtml, /id="addShotButton"/);
 assert.match(panelHtml, /id="mergeRows"/);

@@ -302,19 +302,44 @@
     return TASK_NAMEPLATE;
   }
 
+  function asLookScore(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }
+
+  function normalizeLookMetrics(raw, overallScore, verdict) {
+    var src = raw && typeof raw === 'object' ? (raw.metrics || raw) : {};
+    var metrics = {
+      lighting: asLookScore(src.lighting),
+      framing: asLookScore(src.framing),
+      expression: asLookScore(src.expression),
+      sharpness: asLookScore(src.sharpness != null ? src.sharpness : src.focus),
+      overall: asLookScore(src.overall),
+    };
+    if (metrics.overall == null) metrics.overall = overallScore;
+    if (verdict === 'declined') {
+      return { lighting: null, framing: null, expression: null, sharpness: null, overall: null };
+    }
+    if (verdict === 'no_person') metrics.expression = null;
+    return metrics;
+  }
+
   function normalizeLookDraft(raw) {
     var allowed = { looks_good: 1, mixed: 1, looks_bad: 1, no_person: 1, declined: 1 };
     var verdict = String((raw && raw.verdict) || '').toLowerCase();
     if (!allowed[verdict]) verdict = 'mixed';
-    var score = Number(raw && raw.score);
-    if (!Number.isFinite(score)) score = null;
-    else score = Math.max(0, Math.min(100, Math.round(score)));
+    var score = asLookScore(raw && raw.score);
     if (verdict === 'declined') score = null;
+    var summary = String((raw && (raw.summary || raw.brief)) || '').trim();
+    if (verdict === 'declined' && !summary) summary = String((raw && raw.headline) || '').trim();
     return {
       task: TASK_LOOK,
       verdict: verdict,
       score: score,
       headline: String((raw && raw.headline) || ''),
+      summary: summary,
+      metrics: normalizeLookMetrics(raw, score, verdict),
       reasons: Array.isArray(raw && raw.reasons) ? raw.reasons.map(String) : [],
       fixes: Array.isArray(raw && raw.fixes) ? raw.fixes.map(String) : [],
       photoNotes: Array.isArray(raw && (raw.photoNotes || raw.photo_notes))

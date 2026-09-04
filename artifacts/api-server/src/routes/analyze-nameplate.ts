@@ -42,6 +42,7 @@ router.post("/analyze-nameplate", async (req, res) => {
     });
   }
   if (bucket.inFlight >= 2) {
+    res.setHeader("Retry-After", "15");
     return res.status(429).json({
       error: "Too many nameplate analyses in progress.",
       retryAfter: 15,

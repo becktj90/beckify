@@ -80,7 +80,7 @@ ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after OCR/VLM review fixes", /CACHE_VERSION = 'v33'/.test(sw));
+ok("Toolbox SW cache version bumped after OCR/VLM review fixes", /CACHE_VERSION = 'v34'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),

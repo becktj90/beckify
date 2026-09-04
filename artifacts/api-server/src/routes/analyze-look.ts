@@ -34,15 +34,17 @@ router.post("/analyze-look", async (req, res) => {
   const clientKey = getClientKey(req);
   const bucket = consumeRateLimit(rateBuckets, clientKey);
   if (!bucket.allowed) {
-    res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - Date.now()) / 1000)));
-    return res.status(429).json({ error: "Too many look checks. Please try again later." });
+    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
+    res.setHeader("Retry-After", String(retryAfter));
+    return res.status(429).json({ error: "Too many look checks. Please try again later.", retryAfter });
   }
   if (bucket.inFlight >= 2) {
-    return res.status(429).json({ error: "Too many look checks in progress." });
+    res.setHeader("Retry-After", "15");
+    return res.status(429).json({ error: "Too many look checks in progress.", retryAfter: 15 });
   }
   bucket.inFlight += 1;
 
-  const userText = "Upright the photo if it is rotated. Give a playful honest verdict: do they look good or bad? Follow the JSON shape.";
+  const userText = "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary of how they look. Follow the JSON shape.";
 
   try {
     const result = serverProvider === "anthropic"
@@ -52,7 +54,7 @@ router.post("/analyze-look", async (req, res) => {
         model: serverModel,
         system: LOOK_VISION_SYSTEM_PROMPT,
         userText,
-        maxTokens: 1200,
+        maxTokens: 1600,
       })
       : await analyzeWithOpenAI({
         image: picked.image.base64,
@@ -60,7 +62,7 @@ router.post("/analyze-look", async (req, res) => {
         model: serverModel,
         system: LOOK_VISION_SYSTEM_PROMPT,
         userText,
-        maxTokens: 1200,
+        maxTokens: 1600,
       });
 
     return res.json({
