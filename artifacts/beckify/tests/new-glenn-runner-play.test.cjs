@@ -37,6 +37,8 @@ assert.doesNotMatch(arcade, /label:\s*"Rocco"/);
 assert.match(arcadeHtml, /data-arcade-standalone/);
 assert.match(arcadeHtml, /KID \/ CADET \/ PAD RAT/);
 assert.match(arcadeHtml, /id="arcade-live"/);
+assert.doesNotMatch(arcadeHtml, /role="img"/);
+assert.match(arcade, /beforeScore = arcadeScore\(\)/);
 assert.match(arcadeHtml, /aria-live="polite"/);
 assert.match(arcadeHtml, /src="\/toolbox\/js\/arcade\.js"/);
 assert.match(arcadeHtml, /src="\/toolbox\/js\/local-store\.js"/);

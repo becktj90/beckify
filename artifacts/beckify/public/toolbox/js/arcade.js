@@ -2128,10 +2128,11 @@
       }
       if (o.y > CH + 30) {
         state.obstacles.splice(i, 1);
+        const beforeScore = arcadeScore();
         state.session.obstacleStreak += 1;
         const award = 0.25 * (state.session.scoreMult || 1);
         state.session.score += award;
-        addFloatScore(o.x, CH - 70, `+${Math.round(40 * (state.session.scoreMult || 1))}`, '#ffcf5d');
+        addFloatScore(o.x, CH - 70, `+${Math.max(0, arcadeScore() - beforeScore)}`, '#ffcf5d');
         if (!state.settings.reducedMotion) Audio.play('score_pop', state.settings);
         if (state.session.obstacleStreak > 0 && state.session.obstacleStreak % 3 === 0) {
           showOverlayMessage(`CLEAR SKY x${state.session.obstacleStreak}  +FLIGHT POINTS`, 1.2);
