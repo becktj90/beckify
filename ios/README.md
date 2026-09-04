@@ -96,7 +96,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 
 ## Instruments (Field subsection — public APIs only)
 
-- Wi-Fi Path (`NWPathMonitor` + `NEHotspotNetwork.signalStrength` 0…1 heatmap). **No Wi-Fi dBm** — iOS does not expose RSSI to third-party apps.
+- Wi-Fi Path (`NWPathMonitor` + Apple `signalStrength` 0…1 as percent/bars, coverage heatmap, and TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com). iOS does not expose Wi-Fi RSSI/dBm to third-party apps; this tool does not invent dBm. RTT is TCP connect time — not ICMP ping. A LAN/gateway target may prompt for Local Network.
 - BLE Scanner (CoreBluetooth)
 - Noise Meter (microphone dBFS, uncalibrated)
 - Bubble Level / plumb (CoreMotion)

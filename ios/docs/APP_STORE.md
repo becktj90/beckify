@@ -90,7 +90,7 @@ Toolkit — basics, bench / homework, and references:
 
 Instruments (Field subsection) — measure with public Apple APIs (not private APIs):
 
-• Wi-Fi path (Network.framework) plus Apple’s public 0…1 `signalStrength` shown as percent/bars and an on-device coverage heatmap (GPS walk or tap-on-floor). iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. Current SSID needs location plus, on a signed team, Access Wi-Fi Information.
+• Wi-Fi path (Network.framework) plus Apple’s public 0…1 `signalStrength` shown as percent/bars, an on-device coverage heatmap (GPS walk or tap-on-floor), and **link quality (RTT)** via TCP connect time to the path gateway or a user-chosen host (1.1.1.1 / beckify.com). iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. RTT is not ICMP ping. A LAN/gateway target may prompt for Local Network. Current SSID needs location plus, on a signed team, Access Wi-Fi Information.
 • BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
@@ -108,7 +108,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance from a measured Ω or mΩ reading with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and single vs loop methods. Same math as the website toolbox. Design aid — not a cable locator. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Wi-Fi Path no longer shows a dBm row. It reports Apple’s public 0…1 `signalStrength` as percent and bars, keeps the coverage heatmap, and adds TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. App Store apps cannot ICMP ping; a LAN target may prompt for Local Network. Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance from a measured Ω or mΩ reading with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and single vs loop methods. Same math as the website toolbox. Design aid — not a cable locator. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -119,7 +119,7 @@ Field → Jobsite adds Conductor Length by Resistance: estimate one-way distance
 
 ## Wi-Fi App Store limitation (honest)
 
-Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple DTS). `NWPathMonitor` reports path status. `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID and a **0.0–1.0** `signalStrength` after location (and Access Wi-Fi Information on a signed team). That 0–1 value is often 0.0; it is not calibrated dBm. The in-app heatmap sketches Apple’s 0–1 amplitude versus GPS or a tapped floor plan. Do not add private APIs to fake a dBm meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
+Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple DTS). `NWPathMonitor` reports path status. `NEHotspotNetwork.fetchCurrent` may return SSID/BSSID and a **0.0–1.0** `signalStrength` after location (and Access Wi-Fi Information on a signed team). That 0–1 value is often 0.0; it is not calibrated dBm and is shown as percent/bars only. The in-app heatmap sketches Apple’s 0–1 strength versus GPS or a tapped floor plan. Complementary **link quality (RTT)** is TCP connect time (refused RST still counts) to `NWPath.gateways` or a user-chosen host — not ICMP ping, which App Store apps cannot send. A LAN/gateway target may show the Local Network prompt; without that permission the probe fails honestly. iOS does not always publish a gateway. Do not add private APIs to fake a dBm meter. On a Mac with a paid team, optionally add the **Access Wi-Fi Information** capability if SSID is empty in review devices.
 
 ## App privacy (nutrition label)
 
@@ -137,7 +137,7 @@ Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`
 - No collected data types  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, camera — see the Beckify target build settings. Photo Library full access is not requested; Motor Nameplate OCR and Panel Directory use the system picker and/or camera.
+Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path TCP RTT to a LAN/gateway host), camera — see the Beckify target build settings. Photo Library full access is not requested; Motor Nameplate OCR and Panel Directory use the system picker and/or camera.
 
 ## Export compliance
 
@@ -200,7 +200,7 @@ The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
 1. Create the app record — already done (see table). On a Mac, open `ios/Beckify.xcodeproj` and set **Team** / confirm Signing & Capabilities shows Team **9TR6R5LV8M** (already in Debug and Release `DEVELOPMENT_TEAM`). Automatic signing still creates certificates/profiles on that Mac.
-2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Apple’s public 0–1 `signalStrength`, not dBm.
+2. Optionally add **Access Wi-Fi Information** if you want SSID from `NEHotspotNetwork.fetchCurrent` on device. Wi-Fi Path still uses Apple’s public 0–1 `signalStrength` (percent/bars) plus TCP RTT, not dBm.
 3. Run on a physical device at least once if not already done (capability / provisioning / sensor check). This Linux CI job does not do that.
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
 5. Capture screenshots at the sizes below. Do **not** ship website screenshots.

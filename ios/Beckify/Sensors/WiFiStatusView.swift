@@ -11,6 +11,14 @@ enum WiFiSurveyMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum WiFiRTTTarget: String, CaseIterable, Identifiable {
+    case gateway = "Gateway"
+    case cloudflare = "1.1.1.1"
+    case beckify = "beckify.com"
+    case custom = "Custom"
+    var id: String { rawValue }
+}
+
 @MainActor
 final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var status = "Starting…"
@@ -31,6 +39,12 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     @Published var surveyMode: WiFiSurveyMode = .gps
     @Published var samples: [WiFiAmplitudeSample] = []
     @Published var denied = false
+    @Published var gatewayHosts: [String] = []
+    @Published var rttMeasuring = false
+    @Published var rttSummary: WiFiRTTSummary?
+    @Published var rttHost = ""
+    @Published var rttPort = 443
+    @Published var rttMessage = "TCP connect time to a host — latency, not RSSI and not dBm. App Store apps cannot send ICMP ping."
 
     var roomWidth: Double = 12
     var roomDepth: Double = 8
@@ -40,6 +54,8 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     private let location = CLLocationManager()
     private var waitingForAuth = false
     private var pollTask: Task<Void, Never>?
+    private var rttTask: Task<Void, Never>?
+    private var rttGeneration = 0
     private var originLat: Double?
     private var originLon: Double?
     private var lastSampleEast: Double?
@@ -71,7 +87,102 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
         monitor?.cancel()
         monitor = nil
         stopSurvey()
+        cancelRTT()
         location.stopUpdatingLocation()
+    }
+
+    func cancelRTT() {
+        rttGeneration += 1
+        rttTask?.cancel()
+        rttTask = nil
+        rttMeasuring = false
+    }
+
+    func resolvedRTTEndpoint(target: WiFiRTTTarget, custom: String) -> (host: String, port: Int, needsLocalNetwork: Bool)? {
+        switch target {
+        case .gateway:
+            guard let host = gatewayHosts.first else { return nil }
+            let port = WiFiLinkQuality.defaultPort(forHost: host)
+            return (host, port, WiFiLinkQuality.needsLocalNetworkPrompt(host: host))
+        case .cloudflare:
+            return ("1.1.1.1", 443, false)
+        case .beckify:
+            return ("beckify.com", 443, false)
+        case .custom:
+            let fallback = WiFiLinkQuality.defaultPort(
+                forHost: custom.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+            guard let parsed = WiFiLinkQuality.parseHostPort(custom, defaultPort: fallback) else { return nil }
+            return (parsed.host, parsed.port, WiFiLinkQuality.needsLocalNetworkPrompt(host: parsed.host))
+        }
+    }
+
+    func measureLinkQuality(target: WiFiRTTTarget, custom: String) {
+        cancelRTT()
+        rttSummary = nil
+        guard status == "Satisfied" else {
+            rttHost = ""
+            rttMessage = "No satisfied network path. Link quality (RTT) cannot be measured while offline."
+            return
+        }
+        guard let endpoint = resolvedRTTEndpoint(target: target, custom: custom) else {
+            rttHost = ""
+            if target == .gateway {
+                rttMessage = "No default gateway on this path. iOS does not always publish one. Enter a LAN IP or use 1.1.1.1 / beckify.com."
+            } else if target == .custom {
+                rttMessage = "Enter a host such as 1.1.1.1, beckify.com, or 192.168.1.1:80."
+            } else {
+                rttMessage = "Could not resolve that host."
+            }
+            return
+        }
+        rttHost = endpoint.host
+        rttPort = endpoint.port
+        rttMeasuring = true
+        let generation = rttGeneration
+        rttMessage = endpoint.needsLocalNetwork
+            ? "Measuring TCP RTT to \(endpoint.host):\(endpoint.port). A LAN / gateway target may prompt for Local Network. ICMP ping is not available."
+            : "Measuring TCP RTT to \(endpoint.host):\(endpoint.port). This is latency, not signal strength. ICMP ping is not available."
+        let host = endpoint.host
+        let port = endpoint.port
+        rttTask = Task { [weak self] in
+            var samples: [Double?] = []
+            for i in 0..<5 {
+                guard !Task.isCancelled else { return }
+                let ms = await WiFiRTTClient.probe(host: host, port: UInt16(clamping: port), timeout: 3)
+                samples.append(ms)
+                let summary = WiFiLinkQuality.summarize(samplesMS: samples)
+                await MainActor.run {
+                    guard let self, self.rttGeneration == generation else { return }
+                    self.rttSummary = summary
+                }
+                if i + 1 < 5 {
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                }
+            }
+            await MainActor.run {
+                guard let self, self.rttGeneration == generation else { return }
+                self.rttMeasuring = false
+                self.rttTask = nil
+                self.finishRTTMessage(needsLocalNetwork: endpoint.needsLocalNetwork)
+            }
+        }
+    }
+
+    private func finishRTTMessage(needsLocalNetwork: Bool) {
+        guard let summary = rttSummary else {
+            rttMessage = "Link quality (RTT) is unavailable."
+            return
+        }
+        if summary.successCount == 0 {
+            if needsLocalNetwork {
+                rttMessage = "No TCP response from \(rttHost):\(rttPort). Local Network may be off, or nothing is listening on that port. App Store apps cannot ICMP ping. This is not RSSI or dBm."
+            } else {
+                rttMessage = "No TCP response from \(rttHost):\(rttPort). The host may be unreachable, or the path is down. App Store apps cannot ICMP ping. This is not RSSI or dBm."
+            }
+            return
+        }
+        rttMessage = "TCP connect time to \(rttHost):\(rttPort) — link quality (RTT), not RSSI and not dBm. Refused connections still count when the host answers with a RST."
     }
 
     func requestNetworkInfo() {
@@ -225,6 +336,36 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
         isExpensive = path.isExpensive
         isConstrained = path.isConstrained
         interfaces = path.availableInterfaces.map(\.name)
+        gatewayHosts = Self.gatewayHosts(from: path)
+    }
+
+    private static func gatewayHosts(from path: Network.NWPath) -> [String] {
+        var seen = Set<String>()
+        var hosts: [String] = []
+        for endpoint in path.gateways {
+            guard let host = hostString(endpoint) else { continue }
+            if seen.insert(host).inserted {
+                hosts.append(host)
+            }
+        }
+        return hosts
+    }
+
+    private static func hostString(_ endpoint: NWEndpoint) -> String? {
+        switch endpoint {
+        case .hostPort(let host, _):
+            switch host {
+            case .name(let name, _):
+                return name.isEmpty ? nil : name
+            case .ipv4, .ipv6:
+                return "\(host)"
+            @unknown default:
+                let raw = "\(host)"
+                return raw.isEmpty ? nil : raw
+            }
+        default:
+            return nil
+        }
     }
 
     private func startPolling() {
@@ -249,17 +390,17 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
                     let clamped = WiFiCoverageMath.clampStrength(raw)
                     self.signalStrength = clamped
                     if !raw.isFinite {
-                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength was non-finite, so amplitude is shown as 0 on Apple’s 0…1 scale. This is not RSSI and not dBm."
+                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength was non-finite, so strength is shown as 0 on Apple’s 0…1 scale."
                     } else if clamped <= 0 {
-                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength is \(Format.number(clamped, digits: 2)) on Apple’s 0…1 scale — often 0. This is not RSSI and not dBm."
+                        self.ssidMessage = "SSID from NEHotspotNetwork.fetchCurrent. signalStrength is \(Format.number(clamped, digits: 2)) on Apple’s 0…1 scale — often 0 even when Wi-Fi works."
                     } else {
-                        self.ssidMessage = "Relative amplitude from NEHotspotNetwork.signalStrength (0…1). Public iOS APIs do not expose Wi-Fi dBm."
+                        self.ssidMessage = "Apple NEHotspotNetwork.signalStrength (0…1), shown as percent and bars. Not a calibrated RF power reading."
                     }
                 } else {
                     self.ssid = nil
                     self.bssid = nil
                     self.signalStrength = nil
-                    self.ssidMessage = "No current hotspot. Common causes: not on Wi-Fi, missing Access Wi-Fi Information, or location off."
+                    self.ssidMessage = "No current hotspot. Common causes: not on Wi-Fi, missing Access Wi-Fi Information, or location off. Strength stays unavailable — the tool will not invent a reading."
                 }
             }
         }
@@ -271,6 +412,8 @@ struct WiFiStatusView: View {
     @StateObject private var model = WiFiPathModel()
     @StoredInput(.wifiStatus, "jobName", default: "Wi-Fi coverage") private var jobName
     @StoredChoice(.wifiStatus, "surveyMode", default: WiFiSurveyMode.gps) private var surveyMode
+    @StoredChoice(.wifiStatus, "rttTarget", default: WiFiRTTTarget.cloudflare) private var rttTarget
+    @StoredInput(.wifiStatus, "rttHost", default: "192.168.1.1") private var customRTTHost
     @State private var notes = ""
 
     var body: some View {
@@ -278,13 +421,13 @@ struct WiFiStatusView: View {
             toolID: .wifiStatus,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Walk or tap to drop samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works.")
+            disclaimer: .sensor(extra: "Walk or tap to drop samples. GPS indoor accuracy is often several meters. Apple may return 0.0 for signalStrength even when Wi-Fi works. Link quality is TCP RTT, not ICMP ping.")
         ) {
             ShowWorkCard(
                 toolID: .wifiStatus,
-                symbolic: "A = NEHotspotNetwork.signalStrength ∈ [0, 1]    heatmap = IDW(A, east, north)",
+                symbolic: "A = NEHotspotNetwork.signalStrength ∈ [0, 1]    RTT = TCP connect time    heatmap = IDW(A, east, north)",
                 substituted: substituted,
-                meaning: "Suitable public unit is Apple’s 0…1 amplitude, shown as % and bars. Wi-Fi dBm / RSSI is not given to third-party iOS apps. This sketch is not a site survey."
+                meaning: "Primary public unit is Apple’s 0…1 strength, shown as percent and bars. Complementary metric is TCP round-trip time to a host (link quality). Neither is a calibrated RF power reading. This sketch is not a site survey."
             )
             WiFiStrengthGauge(strength: model.signalStrength, onWiFi: model.usesWiFi)
             ResultCard(title: "Path") {
@@ -298,31 +441,31 @@ struct WiFiStatusView: View {
                 ResultRow(label: "SSID", value: model.ssid ?? "—", emphasis: true)
                 ResultRow(label: "BSSID", value: model.bssid ?? "—")
                 ResultRow(
-                    label: "Amplitude",
-                    value: amplitudeText,
+                    label: "Strength",
+                    value: strengthText,
                     emphasis: true,
-                    tone: amplitudeTone
+                    tone: strengthTone
                 )
-                ResultRow(label: "dBm / RSSI", value: "Apple doesn’t expose this to apps", tone: Theme.muted)
                 Text(model.ssidMessage)
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
-                Button("Read SSID + amplitude") { model.requestNetworkInfo() }
+                Button("Read SSID + strength") { model.requestNetworkInfo() }
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.accent)
                     .frame(minHeight: Theme.touchTarget)
                     .padding(.top, 6)
-                    .accessibilityLabel("Read SSID and amplitude")
-                    .accessibilityHint("Uses location in this tool only. Does not invent Wi-Fi dBm.")
+                    .accessibilityLabel("Read SSID and Apple strength")
+                    .accessibilityHint("Uses location in this tool only. Shows Apple’s 0 to 1 signalStrength as percent and bars.")
             }
             if model.denied {
                 ToolEmptyState(
-                    title: "Location is needed for SSID",
-                    detail: "iOS will not hand a third-party app the current SSID or Apple’s 0…1 amplitude without When In Use location.",
+                    title: "Location is needed for SSID and strength",
+                    detail: "iOS will not hand a third-party app the current SSID or Apple’s 0…1 signalStrength without When In Use location. Strength stays blank — the tool will not invent a reading.",
                     systemImage: "wifi.slash",
                     showsSettings: true
                 )
             }
+            linkQualitySection
             coverageSection
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: true) { save() }
         }
@@ -337,35 +480,142 @@ struct WiFiStatusView: View {
     }
 
     private var substituted: String? {
-        guard let s = model.signalStrength else {
-            return "Read SSID + amplitude to plug Apple’s 0…1 value into the gauge. This will not become dBm."
+        var parts: [String] = []
+        if let s = model.signalStrength {
+            parts.append("A = \(Format.number(s, digits: 2))  →  \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) %  ·  \(WiFiCoverageMath.bars(s))/4 bars")
+        } else {
+            parts.append("Read SSID + strength to plug Apple’s 0…1 value into the gauge.")
         }
-        return "A = \(Format.number(s, digits: 2))  →  \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) %  ·  \(WiFiCoverageMath.bars(s))/4 bars"
+        if let rtt = rttMedianText {
+            parts.append("RTT median = \(rtt) to \(model.rttHost):\(model.rttPort)")
+        }
+        return parts.joined(separator: "    ")
     }
 
     private var sticky: String? {
-        guard model.signalStrength != nil else { return model.usesWiFi ? "Wi-Fi path, no amplitude yet" : nil }
-        return amplitudeText
+        if model.signalStrength == nil, model.rttSummary?.medianMS == nil {
+            return model.usesWiFi ? "Wi-Fi path, no strength yet" : nil
+        }
+        var parts: [String] = []
+        if model.signalStrength != nil { parts.append(strengthText) }
+        if let rtt = rttMedianText { parts.append("\(rtt) RTT") }
+        return parts.isEmpty ? nil : parts.joined(separator: "  ·  ")
     }
 
     private var copyText: String? {
-        let ssid = model.ssid ?? "SSID —"
+        var parts: [String] = []
         if model.signalStrength != nil {
-            return "\(ssid), \(amplitudeText), Apple 0…1 scale (no dBm API)"
+            parts.append("\(model.ssid ?? "SSID —"), \(strengthText), Apple 0…1 strength")
         }
-        return nil
+        if let rtt = rttMedianText {
+            parts.append("Link quality (RTT) \(rtt) median to \(model.rttHost):\(model.rttPort)")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: ". ")
     }
 
-    private var amplitudeText: String {
+    private var strengthText: String {
         guard let s = model.signalStrength else { return "—" }
         return "\(Format.number(WiFiCoverageMath.percent(s), digits: 0)) %   (\(Format.number(s, digits: 2)) · \(WiFiCoverageMath.bars(s))/4)"
     }
 
-    private var amplitudeTone: Color {
+    private var strengthTone: Color {
         guard let s = model.signalStrength else { return Theme.muted }
         if s >= 0.6 { return Theme.good }
         if s >= 0.3 { return Theme.warn }
         return Theme.bad
+    }
+
+    private var rttMedianText: String? {
+        guard let ms = model.rttSummary?.medianMS else { return nil }
+        return "\(Format.number(ms, digits: 0)) ms"
+    }
+
+    @ViewBuilder
+    private var linkQualitySection: some View {
+        ResultCard(title: "Link quality (RTT)") {
+            ResultRow(label: "Target", value: rttTargetLabel)
+            ResultRow(
+                label: "Median",
+                value: rttMedianText ?? (model.rttMeasuring ? "measuring…" : "—"),
+                emphasis: true,
+                tone: rttTone
+            )
+            ResultRow(label: "Min / max", value: rttRangeText)
+            ResultRow(label: "Loss", value: rttLossText)
+            ResultRow(label: "Band", value: model.rttSummary?.band.rawValue ?? "—", tone: rttTone)
+            if let host = model.gatewayHosts.first {
+                ResultRow(label: "Path gateway", value: host)
+            } else {
+                ResultRow(label: "Path gateway", value: "not published", tone: Theme.muted)
+            }
+            Picker("RTT host", selection: $rttTarget) {
+                ForEach(WiFiRTTTarget.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .disabled(model.rttMeasuring)
+            .padding(.top, 6)
+            if rttTarget == .custom {
+                TextInputField(
+                    title: "Host",
+                    text: $customRTTHost,
+                    placeholder: "1.1.1.1, beckify.com, or 192.168.1.1:80",
+                    fieldID: "rttHost",
+                    onSubmit: { model.measureLinkQuality(target: rttTarget, custom: customRTTHost) }
+                )
+            }
+            Text(model.rttMessage)
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+            if model.status != "Satisfied" {
+                ToolEmptyState(
+                    title: "RTT unavailable offline",
+                    detail: "Link quality needs a satisfied network path. This is TCP latency, not Apple strength and not a dBm reading.",
+                    systemImage: "wifi.slash"
+                )
+            } else if rttTarget == .gateway, model.gatewayHosts.isEmpty {
+                ToolEmptyState(
+                    title: "No default gateway on this path",
+                    detail: "iOS does not always publish a gateway. Enter a LAN IP (may prompt for Local Network) or measure 1.1.1.1 / beckify.com. ICMP ping is not available to App Store apps.",
+                    systemImage: "point.3.connected.trianglepath.dotted"
+                )
+            }
+            Button(model.rttMeasuring ? "Measuring…" : "Measure RTT") {
+                model.measureLinkQuality(target: rttTarget, custom: customRTTHost)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .frame(minHeight: Theme.touchTarget)
+            .padding(.top, 6)
+            .disabled(model.rttMeasuring || model.status != "Satisfied")
+            .accessibilityLabel("Measure link quality RTT")
+            .accessibilityHint("Times a TCP connect to the chosen host. Not ICMP ping. A LAN host may ask for Local Network permission.")
+        }
+    }
+
+    private var rttTargetLabel: String {
+        guard let endpoint = model.resolvedRTTEndpoint(target: rttTarget, custom: customRTTHost) else {
+            return rttTarget.rawValue
+        }
+        return "\(endpoint.host):\(endpoint.port)"
+    }
+
+    private var rttRangeText: String {
+        guard let summary = model.rttSummary, let minMS = summary.minMS, let maxMS = summary.maxMS else { return "—" }
+        return "\(Format.number(minMS, digits: 0))–\(Format.number(maxMS, digits: 0)) ms"
+    }
+
+    private var rttLossText: String {
+        guard let summary = model.rttSummary else { return "—" }
+        return "\(Format.number(summary.lossPercent, digits: 0)) %  (\(summary.failureCount)/\(summary.attempts))"
+    }
+
+    private var rttTone: Color {
+        switch model.rttSummary?.band {
+        case .excellent, .good: return Theme.good
+        case .fair: return Theme.warn
+        case .slow, .poor: return Theme.bad
+        default: return Theme.muted
+        }
     }
 
     @ViewBuilder
@@ -381,8 +631,8 @@ struct WiFiStatusView: View {
             .pickerStyle(.segmented)
             .disabled(model.surveying)
             Text(surveyMode == .gps
-                 ? "Walk the space. Samples drop every ~1.5 m from GPS plus Apple’s 0…1 amplitude."
-                 : "Tap the floor plan to drop a sample at that spot using the current amplitude.")
+                 ? "Walk the space. Samples drop every ~1.5 m from GPS plus Apple’s 0…1 strength."
+                 : "Tap the floor plan to drop a sample at that spot using the current Apple strength.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
             WiFiHeatmapCanvas(
@@ -439,20 +689,28 @@ struct WiFiStatusView: View {
             "status": model.status,
             "wifi": model.usesWiFi ? "yes" : "no",
             "ssid": model.ssid ?? "(not returned)",
-            "amplitude 0-1": model.signalStrength.map { Format.number($0, digits: 2) } ?? "—",
-            "dBm": "Apple 0…1 scale (no dBm API)",
+            "strength 0-1": model.signalStrength.map { Format.number($0, digits: 2) } ?? "—",
+            "strength %": model.signalStrength.map { Format.number(WiFiCoverageMath.percent($0), digits: 0) } ?? "—",
             "samples": "\(model.samples.count)",
         ]
         if let s = model.samples.max(by: { $0.strength < $1.strength }) {
             outputs["peak %"] = Format.number(WiFiCoverageMath.percent(s.strength), digits: 0)
+        }
+        if let summary = model.rttSummary {
+            outputs["rtt host"] = model.rttHost.isEmpty ? "—" : "\(model.rttHost):\(model.rttPort)"
+            outputs["rtt median ms"] = summary.medianMS.map { Format.number($0, digits: 0) } ?? "—"
+            outputs["rtt loss %"] = Format.number(summary.lossPercent, digits: 0)
+            outputs["rtt band"] = summary.band.rawValue
         }
         jobs.save(SavedJob(
             name: jobName,
             toolID: .wifiStatus,
             notes: notes,
             inputs: [
-                "API": "NWPathMonitor + NEHotspotNetwork.signalStrength",
+                "API": "NWPathMonitor + NEHotspotNetwork.signalStrength + TCP RTT",
                 "mode": surveyMode.rawValue,
+                "rttTarget": rttTarget.rawValue,
+                "rttHost": customRTTHost,
             ],
             outputs: outputs
         ))
@@ -483,14 +741,14 @@ struct WiFiStrengthGauge: View {
                     Text(strength == nil ? "—" : "\(Format.number(WiFiCoverageMath.percent(s), digits: 0))")
                         .font(.largeTitle.weight(.semibold).monospacedDigit())
                         .foregroundStyle(Theme.foreground)
-                    Text(strength == nil ? "no amplitude" : "%  ·  Apple 0…1")
+                    Text(strength == nil ? "no strength" : "%  ·  Apple 0…1")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(Theme.muted)
                 }
             }
             .frame(width: 200, height: 200)
             .accessibilityElement()
-            .accessibilityLabel(strength == nil ? "No Wi-Fi amplitude" : "Apple amplitude \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) percent, \(bars) of 4 bars. Not dBm.")
+            .accessibilityLabel(strength == nil ? "No Apple Wi-Fi strength" : "Apple strength \(Format.number(WiFiCoverageMath.percent(s), digits: 0)) percent, \(bars) of 4 bars.")
             HStack(alignment: .bottom, spacing: 7) {
                 ForEach(1...4, id: \.self) { i in
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
@@ -525,7 +783,7 @@ struct WiFiHeatLegend: View {
             Text("High")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
-            Text("Apple 0…1, not dBm")
+            Text("Apple 0…1 strength")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
         }
@@ -569,7 +827,7 @@ struct WiFiHeatmapCanvas: View {
 
     private var overlayCaption: String {
         if mode == .tap, !amplitudeReady {
-            return "Read SSID + amplitude first"
+            return "Read SSID + strength first"
         }
         return mode == .tap ? "Tap to sample" : "GPS east / north"
     }
@@ -651,5 +909,63 @@ struct WiFiHeatmapCanvas: View {
         let nx = (east - box.minE) / max(box.maxE - box.minE, 1e-9)
         let ny = (north - box.minN) / max(box.maxN - box.minN, 1e-9)
         return CGPoint(x: nx * size.width, y: (1 - ny) * size.height)
+    }
+}
+
+/// App Store–safe TCP connect timing. Not ICMP ping, not RSSI, not dBm.
+enum WiFiRTTClient {
+    static func probe(host: String, port: UInt16, timeout: TimeInterval) async -> Double? {
+        guard !host.isEmpty, port > 0 else { return nil }
+        guard let nwPort = NWEndpoint.Port(rawValue: port) else { return nil }
+        let connection = NWConnection(
+            host: NWEndpoint.Host(host),
+            port: nwPort,
+            using: .tcp
+        )
+        return await withCheckedContinuation { continuation in
+            let lock = NSLock()
+            var finished = false
+            let start = CFAbsoluteTimeGetCurrent()
+            func finish(_ value: Double?) {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !finished else { return }
+                finished = true
+                connection.stateUpdateHandler = nil
+                connection.cancel()
+                continuation.resume(returning: value)
+            }
+            connection.stateUpdateHandler = { state in
+                let ms = (CFAbsoluteTimeGetCurrent() - start) * 1000
+                switch state {
+                case .ready:
+                    finish(max(0, ms))
+                case .failed(let error):
+                    if isAnsweredFailure(error) {
+                        finish(max(0, ms))
+                    } else {
+                        finish(nil)
+                    }
+                case .cancelled:
+                    finish(nil)
+                default:
+                    break
+                }
+            }
+            connection.start(queue: DispatchQueue.global(qos: .userInitiated))
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + timeout) {
+                finish(nil)
+            }
+        }
+    }
+
+    /// RST / refused still traversed the path — count as an RTT sample.
+    private static func isAnsweredFailure(_ error: NWError) -> Bool {
+        switch error {
+        case .posix(let code):
+            return code == .ECONNREFUSED || code == .ECONNRESET
+        default:
+            return false
+        }
     }
 }

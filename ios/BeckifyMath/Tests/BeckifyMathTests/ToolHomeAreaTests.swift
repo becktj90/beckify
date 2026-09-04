@@ -109,6 +109,22 @@ final class ToolHomeAreaTests: XCTestCase {
         XCTAssertEqual(mapped["rows"], "42")
     }
 
+    func testWiFiStatusRestoreMapsSurveyAndRTTFields() {
+        let mapped = ToolHomeAreaPolicy.storedFields(
+            toolID: "wifiStatus",
+            inputs: [
+                "mode": "Tap floor",
+                "rttTarget": "1.1.1.1",
+                "rttHost": "192.168.1.1:80",
+            ]
+        )
+        XCTAssertEqual(mapped["surveyMode"], "Tap floor")
+        XCTAssertEqual(mapped["rttTarget"], "1.1.1.1")
+        XCTAssertEqual(mapped["rttHost"], "192.168.1.1:80")
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "wifiStatus"), .field)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "wifiStatus"), .instruments)
+    }
+
     func testConductorLengthRestoreMapsAliasesAndPreset() {
         let mapped = ToolHomeAreaPolicy.storedFields(
             toolID: "conductorLength",

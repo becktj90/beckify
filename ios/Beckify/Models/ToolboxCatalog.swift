@@ -398,9 +398,9 @@ enum ToolboxCatalog {
             id: .wifiStatus,
             kind: .sensor,
             title: "Wi-Fi Path",
-            subtitle: "Path + Apple 0…1 amplitude map. Not Wi-Fi dBm.",
+            subtitle: "Apple strength % / bars and TCP RTT. Not a dBm meter.",
             symbol: "wifi",
-            synonyms: ["wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path", "heatmap", "coverage", "dbm"]
+            synonyms: ["wifi", "wi-fi", "wlan", "ssid", "rssi", "signal", "hotspot", "network path", "heatmap", "coverage", "dbm", "rtt", "latency", "link quality"]
         ),
         ToolDefinition(
             id: .bluetoothScan,
