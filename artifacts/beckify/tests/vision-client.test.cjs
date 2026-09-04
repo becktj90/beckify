@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const Module = require('node:module');
 const ts = require('typescript');
 
 const srcPath = path.join(__dirname, '..', '..', 'api-server', 'src', 'lib', 'visionClient.ts');
@@ -15,10 +16,11 @@ const { outputText } = ts.transpileModule(source, {
   fileName: 'visionClient.ts',
 });
 
-const module = { exports: {} };
-const fn = new Function('exports', 'module', 'require', outputText);
-fn(module.exports, module, require);
-const api = module.exports;
+const generated = new Module('visionClient');
+generated.filename = path.join(__dirname, 'visionClient.generated.js');
+generated.paths = Module._nodeModulePaths(path.dirname(srcPath));
+generated._compile(outputText, generated.filename);
+const api = generated.exports;
 
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00]);
 const jpegB64 = jpeg.toString('base64');
