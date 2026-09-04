@@ -42,12 +42,12 @@ struct ToolGridView: View {
 
                     LazyVGrid(columns: columns, spacing: 18) {
                         if isSearching {
-                            section(title: "Results", tools: searchResults)
+                            section(title: "Results", category: nil, tools: searchResults)
                         } else {
                             ForEach(ToolCategory.allCases) { category in
                                 let tools = ToolboxCatalog.tools(in: category)
                                 if !tools.isEmpty {
-                                    section(title: category.rawValue, tools: tools)
+                                    section(title: category.rawValue, category: category, tools: tools)
                                 }
                             }
                         }
@@ -97,8 +97,8 @@ struct ToolGridView: View {
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous))
                 }
                 .overlay(alignment: .trailing) {
-                    ToolGlyph(kind: .forTool(.ohmsLaw), size: 88, selected: true)
-                        .opacity(0.22)
+                    IconWell(toolID: .ohmsLaw, size: 96, selected: true)
+                        .opacity(0.28)
                         .padding(.trailing, 18)
                         .accessibilityHidden(true)
                 }
@@ -146,7 +146,7 @@ struct ToolGridView: View {
 
     private func compactTile(_ tool: ToolDefinition) -> some View {
         HStack(spacing: 10) {
-            ToolGlyph(kind: .forTool(tool.id), size: 28, selected: true, toolID: tool.id)
+            IconWell(toolID: tool.id, size: 32, glyphSize: 20, selected: true)
             Text(tool.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
@@ -161,7 +161,7 @@ struct ToolGridView: View {
     }
 
     @ViewBuilder
-    private func section(title: String, tools: [ToolDefinition]) -> some View {
+    private func section(title: String, category: ToolCategory?, tools: [ToolDefinition]) -> some View {
         Section {
             ForEach(tools) { tool in
                 NavigationLink(value: tool.id) {
@@ -180,7 +180,10 @@ struct ToolGridView: View {
                 }
             }
         } header: {
-            HStack {
+            HStack(spacing: Theme.Space.xs) {
+                if let category {
+                    CategoryWell(category: category, size: 22)
+                }
                 Text(title.uppercased())
                     .font(Theme.TypeRole.sectionLabel)
                     .tracking(0.8)
@@ -192,15 +195,12 @@ struct ToolGridView: View {
     }
 }
 
-/// One grid tile: original glyph, title, and compact subtitle.
+/// One grid tile: IconWell glyph, title, and compact subtitle.
 struct ToolTile: View {
     let tool: ToolDefinition
     var isFavorite: Bool
 
     private var category: ToolCategory? { ToolboxCatalog.category(of: tool.id) }
-    private var tileFill: LinearGradient {
-        category.map(Theme.categoryIconGradient) ?? Theme.iconGradient
-    }
     private var borderTint: Color {
         category.map { Theme.categoryColors($0).primary } ?? Theme.accent
     }
@@ -208,16 +208,13 @@ struct ToolTile: View {
     var body: some View {
         VStack(spacing: 8) {
             ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                    .fill(tileFill)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                            .stroke(borderTint.opacity(0.3), lineWidth: 1)
-                    )
-                    .overlay(
-                        ToolGlyph(kind: GlyphKind.forTool(tool.id), size: 46, selected: true, toolID: tool.id)
-                    )
+                Color.clear
                     .aspectRatio(1, contentMode: .fit)
+                    .overlay {
+                        GeometryReader { geo in
+                            IconWell(toolID: tool.id, size: geo.size.width, selected: true)
+                        }
+                    }
                     .shadow(color: borderTint.opacity(0.18), radius: 8, x: 0, y: 4)
 
                 if isFavorite {

@@ -104,12 +104,7 @@ struct ToolIdentityHeader: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Space.sm) {
-            ToolGlyph(
-                kind: .forTool(toolID),
-                size: 52,
-                selected: true,
-                toolID: toolID
-            )
+            IconWell(toolID: toolID, size: 52, glyphSize: 30, selected: true)
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
