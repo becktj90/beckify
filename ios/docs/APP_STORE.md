@@ -22,7 +22,7 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 Trevor decided App Store v1 is **free** ($0): no IAP. Do not add a paid price or in-app purchases to listing copy or the Xcode project. There is no StoreKit target.
 
 **Promotional text (170 characters, optional):**
-Native field-EE calculators plus public-API sensors for homework and jobsite notes. Design aid — not a PE stamp or calibrated instrument.
+Native field-EE calculators with shareable engineer plots, plus public-API sensors. Design aid — not a PE stamp or calibrated instrument.
 
 **Description:**
 
@@ -64,7 +64,7 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “receptacle”, “divider”, “color code”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “receptacle”, “divider”, “color code”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -72,7 +72,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,NEMA,receptacle,outlet,IEC,ampacity,wifi,ohm
 
 **What's New (1.0):**
-First toolbox with field EE calculators (including Receptacle Selector), homework tools, and public-API sensors. On those existing tools: last-used inputs stay on device, copy result, show-work with your numbers in the formula, and related tools. Local saved notes. Not a new product. No binary uploaded; not TestFlight.
+First toolbox with field EE calculators (including Receptacle Selector), homework tools, and public-API sensors. On those existing tools: last-used inputs stay on device, copy result, show-work with your numbers in the formula, and related tools. Selected calculators now include engineer plots (Swift Charts) — for example Ohm's Law load line, LED/RC charge/discharge, frequency waveform, reactance/resonance, and 555 monostable capacitor charge — with Share/save PNG via the system share sheet. Local saved notes. Not a new product or catalog. No binary uploaded; not TestFlight.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -130,6 +130,9 @@ Take 3–8 screens per size. Suggested shots:
 6. BLE scanner or bubble level
 7. Saved Jobs list (on-device notes)
 8. Favorites list (starred tools pinned for one-tap access)
+9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, or Transient Circuits response)
+
+Pick a 3–8 subset and include the plot + Share shot if you have room.
 
 The app follows the system light or dark appearance; it does not force dark. System appearance shots are fine — do not require dark-only screenshots. Do not claim outdoor/high-contrast beyond what Settings actually does. Do not show ads, Amazon, games, or a phone number.
 

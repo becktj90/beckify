@@ -55,6 +55,8 @@ ios/
 - Frequency / period / wavelength and LC resonance
 - LED current-limit R and RC τ (555 astable/monostable stays in 555 Timer)
 
+Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, and 555 Timer monostable capacitor charge. This is not a new tool list.
+
 ## Sensors (public APIs only)
 
 - Wi-Fi Path (`NWPathMonitor` + `NEHotspotNetwork.signalStrength` 0…1 heatmap). **No Wi-Fi dBm** — iOS does not expose RSSI to third-party apps.
