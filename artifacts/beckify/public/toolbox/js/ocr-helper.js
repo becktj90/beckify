@@ -429,7 +429,7 @@
     var t = String(text || '');
     if (!t.trim()) return false;
     var hits = 0;
-    if (/\b(?:kW|KW)\b/.test(t) && !/\b(?:HP|H\.P\.|HORSEPOWER)\b/i.test(t)) hits += 1;
+    if (/\bkW\b/i.test(t) && !/\b(?:HP|H\.P\.|HORSEPOWER)\b/i.test(t)) hits += 1;
     if (/\bIE[1-5]\b/i.test(t)) hits += 1;
     if (/\bIP[0-9]{2}\b/i.test(t)) hits += 1;
     if (/\b(?:I[\s._-]?N|RATED\s*CURRENT)\s*[:#=]?\s*[0-9]/i.test(t)) hits += 1;

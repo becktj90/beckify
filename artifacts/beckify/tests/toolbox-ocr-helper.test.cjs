@@ -209,6 +209,7 @@ assert.match(iecPlate.fields.notes, /7\.5 kW/i);
 assert.doesNotMatch(iecPlate.fields.notes, /10 HP|convert/i);
 assert.equal(iecPlate.iec, true);
 assert.ok(api.looksLikeIecPlate('7.5 kW IP55 IE3 400 V'));
+assert.ok(api.looksLikeIecPlate('7.5 kw IP55'));
 assert.equal(api.looksLikeIecPlate('BALDOR 10 HP 460V 14 FLA'), false);
 
 const iecNoHz = api.parseMotorNameplate('7.5 kW IP55 IE3 IN 14.8 400 V n=1450');
@@ -216,6 +217,11 @@ assert.equal(iecNoHz.fields.hz, '');
 assert.equal(iecNoHz.fields.fla, '14.8');
 assert.equal(iecNoHz.fields.rpm, '1450');
 assert.notEqual(iecNoHz.fields.hz, '60');
+
+const iecLowerKw = api.parseMotorNameplate('7.5 kw IP55 IE3 IN 14.8 400 V n=1450');
+assert.equal(iecLowerKw.iec, true);
+assert.equal(iecLowerKw.fields.hz, '');
+assert.notEqual(iecLowerKw.fields.hz, '60');
 
 const nemaStill60 = api.parseMotorNameplate('AC MOTOR 10 HP 460V 14 FLA 1750 RPM');
 assert.equal(nemaStill60.fields.hz, '60');

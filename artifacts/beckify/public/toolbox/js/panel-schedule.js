@@ -489,8 +489,7 @@ function maxCircuitIn(rows) {
 }
 
 function sizeTableToSlots(slotCount, rows) {
-  const fromRows = maxCircuitIn(rows);
-  const count = snapSlotCount(slotCount) || snapSlotCount(fromRows) || 0;
+  const count = snapSlotCount(slotCount) || 0;
   if (!count) return normalizeRows(rows || []);
   const seeded = Array.from({ length: Math.min(MAX_EDITOR_SLOTS, count) }, (_, index) => {
     const row = createEmptyRow();
@@ -520,20 +519,11 @@ function parseBreakerFace(text) {
       demandFactor: '1'
     });
   }
-  const voltages = new Set([120, 208, 240, 277, 480, 600]);
-  if (!slotCount) {
-    const nums = [...raw.matchAll(/\b([1-9]\d?)\b/g)]
-      .map(match => Number(match[1]))
-      .filter(n => n >= 1 && n <= 84 && !voltages.has(n));
-    const distinct = [...new Set(nums)];
-    if (distinct.length >= 8) slotCount = snapSlotCount(Math.max(...distinct));
-  }
   if (!slotCount && !rows.length) {
     const trips = [...raw.matchAll(/\b(\d{1,3})\s*A\b/gi)]
       .map(match => Number(match[1]))
       .filter(n => n >= 15 && n <= 400);
     if (trips.length >= 6) {
-      slotCount = snapSlotCount(trips.length);
       trips.forEach((amp, index) => {
         rows.push({
           circuit: String(index + 1),
@@ -548,24 +538,20 @@ function parseBreakerFace(text) {
       });
     }
   }
-  if (!slotCount && rows.length) {
-    slotCount = snapSlotCount(Math.max(maxCircuitIn(rows), rows.length));
-  }
   return { slotCount: slotCount || 0, rows: normalizeRows(rows) };
 }
 
 function applyCombinedRead(scheduleRows, breakerInfo, opts) {
   const incomingSchedule = scheduleRows || [];
   const breakerRows = (breakerInfo && breakerInfo.rows) || [];
-  const slotHint = (breakerInfo && breakerInfo.slotCount)
-    || (opts && opts.slotCount)
-    || maxCircuitIn(incomingSchedule)
-    || maxCircuitIn(breakerRows);
-  let next = sizeTableToSlots(slotHint, incomingSchedule);
+  const printed = Number(breakerInfo && breakerInfo.slotCount)
+    || Number(opts && opts.slotCount)
+    || 0;
+  let next = sizeTableToSlots(printed, incomingSchedule);
   if (breakerRows.length) next = mergeCircuitRows(next, breakerRows);
   const merge = !!(opts && opts.merge) && tableHasUserContent(state.rows);
   state.rows = merge ? mergeCircuitRows(state.rows, next) : next;
-  state.slotCount = state.rows.length;
+  state.slotCount = printed > 0 ? printed : 0;
 }
 
 function setSource(kind, extra) {
@@ -1518,7 +1504,7 @@ function renderDirectoryMetrics() {
   const metrics = computeDirectoryMetrics(rows, {
     phase: selectedPhase(),
     mainAmps: elements.panelCapacityAmps ? elements.panelCapacityAmps.value : '',
-    slotCount: Number(state.slotCount) || rows.length || MAX_CIRCUIT_SLOTS,
+    slotCount: Number(state.slotCount) || 0,
   });
   const mainLabel = metrics.mainAmps
     ? `${formatNumber(metrics.connectedBreakerAmps)} A vs ${formatNumber(metrics.mainAmps)} A main (${formatNumber(metrics.connectedToMainPct)}% connected)`
@@ -1634,21 +1620,31 @@ function renderPrintSheet() {
   elements.printScheduleBody.innerHTML = bodyRows.join('');
 }
 
+function printedSlotCount(slotCount) {
+  return Number(slotCount != null ? slotCount : state.slotCount) || 0;
+}
+
 function printSlotCount(rows, slotCount) {
-  const fromState = Number(slotCount != null ? slotCount : state.slotCount) || 0;
+  const printed = printedSlotCount(slotCount);
   const list = rows || state.rows || [];
   const fromRows = maxCircuitIn(list);
-  let needed = Math.max(fromState, fromRows);
-  if (!needed) {
-    const filled = list.filter(row => row && (row.description || row.trip || row.poles)).length;
-    needed = filled >= 6 ? (snapSlotCount(filled) || filled) : MAX_CIRCUIT_SLOTS;
-  }
+  const needed = Math.max(printed, fromRows);
+  if (!needed) return 2;
   const even = needed % 2 === 0 ? needed : needed + 1;
   return Math.min(MAX_EDITOR_SLOTS, Math.max(2, even));
 }
 
 function printPairCount() {
   return printSlotCount() / 2;
+}
+
+function csvCell(value) {
+  const Schema = window.BeckifyNameplateSchema;
+  if (Schema && typeof Schema.csvCell === 'function') return Schema.csvCell(value);
+  let text = value == null ? '' : String(value);
+  if (/^[=+\-@]/.test(text)) text = "'" + text;
+  if (/[",\n\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
 }
 
 function buildScheduleExport(rows, meta) {
@@ -1659,13 +1655,15 @@ function buildScheduleExport(rows, meta) {
     description: { value: row.description || '' },
     trip: { value: tripAmps(row.trip) || null },
     poles: { value: row.poles ? Number(row.poles) : null },
-    loadAmps: { value: null },
+    loadAmps: row.loadAmps != null && row.loadAmps !== ''
+      ? (typeof row.loadAmps === 'object' ? row.loadAmps : { value: row.loadAmps })
+      : { value: null },
     notes: { value: row.loadAmpsCopiedFromTrip ? 'trip is not a reviewed load' : '' },
   }));
   if (Schema && typeof Schema.exportPanelDraft === 'function') {
     return Schema.exportPanelDraft({
       circuits: draftRows,
-      slotCount: meta.slotCount != null ? meta.slotCount : state.slotCount,
+      slotCount: printedSlotCount(meta.slotCount != null ? meta.slotCount : state.slotCount),
       panel: {
         name: meta.panelName || (elements.panelName && elements.panelName.value),
         voltage: meta.voltage || (elements.panelVoltage && elements.panelVoltage.value),
@@ -1674,22 +1672,33 @@ function buildScheduleExport(rows, meta) {
     }, { source: state.source || meta.source || '' });
   }
   const lines = ['circuit,description,trip,poles,loadAmps,notes'];
+  let clearedLoad = false;
   (rows || []).forEach(row => {
+    const loadCell = row && row.loadAmps;
+    const loadVal = loadCell && typeof loadCell === 'object' ? loadCell.value : loadCell;
+    if (loadVal != null && loadVal !== '') clearedLoad = true;
     lines.push([
-      normalizeCircuit(row.circuit),
-      String(row.description || '').replace(/,/g, ' '),
-      row.trip || '',
-      row.poles || '',
-      '',
-      '',
+      csvCell(normalizeCircuit(row.circuit)),
+      csvCell(row.description || ''),
+      csvCell(row.trip || ''),
+      csvCell(row.poles || ''),
+      csvCell(''),
+      csvCell(row.loadAmpsCopiedFromTrip ? 'trip is not a reviewed load' : ''),
     ].join(','));
   });
+  const warnings = [];
+  if (!selectedPhase() && meta.phase == null) {
+    warnings.push('Phase is unknown. Load math stays gated until 1 or 3 is selected.');
+  } else if (meta.phase != null && Number(meta.phase) !== 1 && Number(meta.phase) !== 3) {
+    warnings.push('Phase is unknown. Load math stays gated until 1 or 3 is selected.');
+  }
+  if (clearedLoad) warnings.push('loadAmps was cleared — trip is not a reviewed load.');
   return {
     csv: lines.join('\n'),
-    slotCount: Number(meta.slotCount != null ? meta.slotCount : state.slotCount) || 0,
+    slotCount: printedSlotCount(meta.slotCount != null ? meta.slotCount : state.slotCount),
     source: state.source || '',
-    phase: selectedPhase(),
-    warnings: selectedPhase() ? [] : ['Phase is unknown. Load math stays gated until 1 or 3 is selected.'],
+    phase: selectedPhase() || (Number(meta.phase) === 1 || Number(meta.phase) === 3 ? Number(meta.phase) : null),
+    warnings: warnings,
     rowCount: (rows || []).length,
   };
 }
@@ -1835,12 +1844,15 @@ function handleCopyCsv() {
     setStatus('Check “I reviewed every circuit row” before exporting. OCR is a draft, not a finished schedule.');
     return;
   }
-  const exported = buildScheduleExport(state.rows, { slotCount: state.slotCount || printSlotCount(state.rows) });
+  const exported = buildScheduleExport(state.rows, { slotCount: printedSlotCount() });
   const text = exported.csv;
   const done = function () {
     const extra = exported.warnings && exported.warnings.length ? ' ' + exported.warnings.join(' ') : '';
+    const sizeBit = exported.slotCount
+      ? ' (' + exported.slotCount + ' spaces)'
+      : ' (panel size was not printed)';
     setStatus('Copied ' + exported.rowCount + ' circuit row' + (exported.rowCount === 1 ? '' : 's')
-      + ' as CSV (' + (exported.slotCount || exported.rowCount) + ' spaces). Load amps were left blank — trip is not a reviewed load.' + extra);
+      + ' as CSV' + sizeBit + '. Load amps were left blank — trip is not a reviewed load.' + extra);
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done, function () {
@@ -1912,6 +1924,8 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) 
     canAddPanelShot,
     describeShotRole,
     printSlotCount,
+    printedSlotCount,
+    getPrintedSlotCount: printedSlotCount,
     buildScheduleExport,
     MAX_SHOTS_PER_VIEW,
     MAX_SHOTS_TOTAL

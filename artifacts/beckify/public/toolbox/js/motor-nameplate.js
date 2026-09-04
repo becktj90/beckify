@@ -265,14 +265,8 @@
     setVal('mnp_notes', fields.notes);
   }
 
-  function applyDraft(draft) {
-    lastDraft = draft || null;
+  function renderDraftNotes(draft) {
     var Schema = global.BeckifyNameplateSchema;
-    var fields = Schema && draft ? Schema.toLegacyFields(draft) : (draft && draft.fields) || {};
-    applyFields(fields);
-    highlightDraftFields(draft);
-    renderHighlightReasons(draft);
-    renderDualFlaChooser(draft);
     var conf = el('mnp_conf');
     if (!conf) return;
     var lows = Schema && draft && typeof Schema.lowConfidenceLabels === 'function'
@@ -291,6 +285,47 @@
       conf.hidden = true;
       conf.textContent = '';
     }
+  }
+
+  function applyDraft(draft) {
+    lastDraft = draft || null;
+    var Schema = global.BeckifyNameplateSchema;
+    var fields = Schema && draft ? Schema.toLegacyFields(draft) : (draft && draft.fields) || {};
+    applyFields(fields);
+    highlightDraftFields(draft);
+    renderHighlightReasons(draft);
+    renderDualFlaChooser(draft);
+    renderDraftNotes(draft);
+  }
+
+  function pickDualFlaAmp(amp) {
+    var picked = String(amp || '').replace(/\s*A\s*$/i, '').trim();
+    if (!picked) return false;
+    setVal('mnp_fla', picked);
+    if (lastDraft && lastDraft.fields) {
+      var cell = lastDraft.fields.fla;
+      if (cell && typeof cell === 'object') {
+        lastDraft.fields.fla = {
+          value: picked,
+          confidence: cell.confidence,
+          userReviewed: cell.userReviewed,
+          reviewed: cell.reviewed,
+        };
+      } else {
+        lastDraft.fields.fla = { value: picked, confidence: 1, userReviewed: false };
+      }
+    }
+    if (lastDraft && lastDraft.extras && typeof lastDraft.extras === 'object') {
+      lastDraft.extras.dualFla = '';
+      lastDraft.extras.flaDisplay = picked;
+    }
+    highlightDraftFields(lastDraft);
+    renderHighlightReasons(lastDraft);
+    renderDualFlaChooser(lastDraft);
+    renderDraftNotes(lastDraft);
+    clearReview();
+    setStatus('Using ' + picked + ' A. Confirm phase and voltage before calculating.');
+    return true;
   }
 
   function highlightDraftFields(draft) {
@@ -367,10 +402,7 @@
       btn.className = 'ocr-chip';
       btn.textContent = amp + ' A' + (index === 0 ? ' (low-voltage side)' : ' (high-voltage side)');
       btn.addEventListener('click', function () {
-        setVal('mnp_fla', amp);
-        if (el('mnp_fla')) el('mnp_fla').classList.remove('ocr-low-conf');
-        clearReview();
-        setStatus('Using ' + amp + ' A from dual FLA ' + pair + '. Confirm phase and voltage before calculating.');
+        pickDualFlaAmp(amp);
       });
       host.appendChild(btn);
     });
@@ -790,5 +822,7 @@
     nextSourceAfterEditedParse: nextSourceAfterEditedParse,
     highlightDraftFields: highlightDraftFields,
     renderHighlightReasons: renderHighlightReasons,
+    pickDualFlaAmp: pickDualFlaAmp,
+    getLastDraft: function () { return lastDraft; },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

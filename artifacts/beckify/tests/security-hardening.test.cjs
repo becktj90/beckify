@@ -77,10 +77,11 @@ ok("Job Open uses safeJobHref", /function safeJobHref/.test(projectsUi) && /safe
 const panelJs = read(root, "public", "toolbox", "js", "panel-schedule.js");
 const panelPowerJs = read(root, "public", "toolbox", "js", "panel-power-study.js");
 ok("Panel schedule OCR caps upload size", /12 \* 1024 \* 1024/.test(panelJs));
+ok("Panel and schema CSV cells neutralize formula prefixes", /function csvCell/.test(panelJs) && /\^\[=\+\\-@\]/.test(panelJs));
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after OCR/VLM wave 2", /CACHE_VERSION = 'v41'/.test(sw));
+ok("Toolbox SW cache version bumped after OCR wave 2 review follow-ups", /CACHE_VERSION = 'v42'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),
