@@ -52,7 +52,10 @@
           <h1>Panel Schedule Load Analyzer</h1>
           <p class="hero-copy">Photograph two views: the printed schedule/directory card, and the breaker dead-front. The breaker photo sizes the table to the real space count; the schedule photo fills descriptions. Take or upload each view. On-device Tesseract.js is the default. Optional Enhance with AI can read glare and two-up cards. Edit every row, then calculate. Manual entry still works with no photo. Informational estimate — not an electrical inspection. Not perfect OCR and not an AI electrician.</p>
         </div>
-        <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
+        <div class="hero-actions">
+          <button id="copyCsvButton" class="btn" type="button">Copy CSV</button>
+          <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
+        </div>
       </div>
     </header>
 
@@ -143,7 +146,7 @@
           </div>
           <label class="review-check" for="mergeRows">
             <input id="mergeRows" type="checkbox" data-no-persist>
-            Merge new reads into the current table by circuit number. Leave unchecked to replace the table.
+            Merge new reads into the current table by circuit number (01 and 1 are the same slot). Leave unchecked to replace the table. For a tall card, add the bottom half and keep Merge checked.
           </label>
           <p id="shotList" class="note"></p>
 

@@ -239,4 +239,56 @@ assert.equal(panelPhaseUnknown.panel.mainAmps.value, 225);
 const reviewedAlias = schema.markReviewed(fromTess, true);
 assert.equal(reviewedAlias.fields.fla.reviewed, true);
 
+const iecPlate = ocr.parseMotorNameplate([
+  'SIEMENS 7.5 kW 400/690 V IN 14.8/8.5 A n=1450 50 Hz cos phi 0.84 IP55 IE3 Cl. F',
+].join('\n'));
+const iecDraft = schema.fromLegacyParse(iecPlate.fields, { extras: iecPlate.extras, rawText: '7.5 kW IP55 IE3' });
+assert.equal(iecDraft.extras.ieClass, 'IE3');
+assert.equal(schema.toLegacyFields(iecDraft).hz, '50');
+assert.equal(schema.toLegacyFields(schema.fromLegacyParse({ kw: '7.5' })).hz, '');
+assert.ok(schema.highlightReasons(iecDraft).some((item) => item.kind === 'ie-class'));
+assert.ok(schema.highlightReasons(iecDraft).some((item) => item.name === 'phases'));
+
+const whyDual = schema.highlightReasons(dual);
+assert.ok(whyDual.some((item) => item.kind === 'dual-fla' && /28\/14/.test(item.reason)));
+
+assert.equal(schema.normalizeCircuitKey('01'), '1');
+assert.equal(schema.normalizeCircuitKey('1A'), '1A');
+assert.equal(schema.normalizeCircuitKey('01B'), '1B');
+
+const paddedMerge = schema.mergePanelDrafts(
+  { circuits: [{ circuit: '01', description: 'Lights', trip: 20 }] },
+  { circuits: [{ circuit: '1', description: '', trip: null }, { circuit: '2', description: 'Receptacles', trip: 20 }] },
+);
+assert.equal(paddedMerge.rows.find((row) => schema.normalizeCircuitKey(row.circuit.value) === '1').description.value, 'Lights');
+assert.equal(paddedMerge.rows[0].circuit.value, '1');
+assert.equal(paddedMerge.rows[1].circuit.value, '2');
+
+const top84 = [];
+const mid84 = [];
+const bot84 = [];
+for (let i = 1; i <= 28; i += 1) top84.push({ circuit: String(i), description: i === 1 ? 'Lights' : '' });
+for (let i = 29; i <= 56; i += 1) mid84.push({ circuit: String(i), description: i === 29 ? 'AHU' : '' });
+for (let i = 57; i <= 84; i += 1) bot84.push({ circuit: String(i), description: i === 84 ? 'Spare' : '' });
+const mergedThirds = schema.mergePanelDrafts(
+  schema.mergePanelDrafts({ slotCount: 28, circuits: top84 }, { slotCount: 28, circuits: mid84 }),
+  { slotCount: 28, circuits: bot84 },
+);
+assert.equal(mergedThirds.slotCount, 84);
+assert.equal(mergedThirds.rows.find((row) => row.circuit.value === '1').description.value, 'Lights');
+assert.equal(mergedThirds.rows.find((row) => row.circuit.value === '84').description.value, 'Spare');
+
+const exported = schema.exportPanelDraft({
+  slotCount: 20,
+  circuits: [{ circuit: '1', description: 'Lights', trip: 20, loadAmps: 20 }],
+  panel: { phases: 2 },
+});
+assert.match(exported.csv, /^circuit,description,trip,poles,loadAmps,notes/m);
+assert.match(exported.csv, /1,Lights,20,,/);
+assert.doesNotMatch(exported.csv.split('\n')[1], /,20$/);
+assert.equal(exported.phase, null);
+assert.equal(exported.slotCount, 20);
+assert.ok(exported.warnings.some((w) => /Phase is unknown/i.test(w)));
+assert.ok(exported.warnings.some((w) => /loadAmps was cleared/i.test(w)));
+
 console.log('Nameplate schema + parse traps passed');

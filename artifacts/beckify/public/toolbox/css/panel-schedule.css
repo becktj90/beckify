@@ -130,6 +130,14 @@ button {
   line-height: 1.5;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(320px, 520px) minmax(380px, 1fr) minmax(320px, 460px);

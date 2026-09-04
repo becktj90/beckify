@@ -202,4 +202,39 @@ const adjacent = panel.parsePairedDirectoryLine('WEST SECURITY GATE 23 24 SPACE'
 assert.equal(adjacent[0].circuit, '23');
 assert.equal(adjacent[1].description, 'SPACE');
 
+assert.equal(panel.normalizeCircuit('01'), '1');
+assert.equal(panel.normalizeCircuit('01A'), '1A');
+const paddedRows = panel.mergeCircuitRows(
+  [{ circuit: '01', description: 'Lights', trip: '20A', poles: '1', loadType: 'Lighting', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' }],
+  [{ circuit: '1', description: '', trip: '', poles: '', loadType: 'General', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' }],
+);
+assert.equal(paddedRows.find((row) => row.circuit === '1').description, 'Lights');
+assert.equal(paddedRows.filter((row) => row.circuit === '1' || row.circuit === '01').length, 1);
+
+assert.equal(panel.describeShotRole('schedule', 0, 1), 'Schedule 1');
+assert.match(panel.describeShotRole('schedule', 0, 2), /top\/left/);
+assert.match(panel.describeShotRole('breakers', 1, 2), /bottom\/right/);
+
+const twenty = Array.from({ length: 20 }, (_, i) => ({
+  circuit: String(i + 1),
+  description: i === 0 ? 'Lights' : '',
+  trip: i === 0 ? '20A' : '',
+  poles: i === 0 ? '1' : '',
+}));
+assert.equal(panel.printSlotCount(twenty, 20), 20);
+assert.ok(panel.printSlotCount(twenty, 20) < 42);
+
+const exportedSchedule = panel.buildScheduleExport([
+  { circuit: '1', description: 'Lights', trip: '20A', poles: '1', loadAmps: '', loadAmpsCopiedFromTrip: true },
+], { slotCount: 20, phase: null });
+assert.match(exportedSchedule.csv, /1,Lights,20/);
+assert.doesNotMatch(exportedSchedule.csv.split('\n')[1], /,20$/);
+assert.ok(exportedSchedule.warnings.some((w) => /Phase is unknown/i.test(w)));
+
+assert.match(panelSrc, /copyCsvButton/);
+assert.match(panelSrc, /printSlotCount/);
+assert.match(panelSrc, /describeShotRole/);
+assert.match(panelHtml, /id="copyCsvButton"/);
+assert.match(panelHtml, /01 and 1 are the same slot/);
+
 console.log('Panel load analyzer helpers passed');
