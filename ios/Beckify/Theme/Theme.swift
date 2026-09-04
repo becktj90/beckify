@@ -315,6 +315,15 @@ extension Color {
 }
 
 extension View {
+    /// Shared segmented picker: system style with a ≥ `Theme.touchTarget` (44pt)
+    /// glove-friendly hit target. Prefer this over a bare `.pickerStyle(.segmented)`.
+    func segmentedControlStyle() -> some View {
+        self
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+            .frame(minHeight: Theme.touchTarget)
+    }
+
     /// Restrained depth for brand-forward surfaces. Avoid stacking on every card.
     func brandGlow(radius: CGFloat = 12, opacity: Double = 0.14) -> some View {
         shadow(color: Theme.accent.opacity(opacity), radius: radius, x: 0, y: 4)

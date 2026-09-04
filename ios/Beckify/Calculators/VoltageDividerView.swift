@@ -38,7 +38,7 @@ struct VoltageDividerView: View {
             Picker("Solve", selection: $solve) {
                 ForEach(Solve.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             NumberField(title: "Vin", unit: "V", text: $vin, fieldID: "vin", onSubmit: calculate)
             if solve != .vout { NumberField(title: "Vout", unit: "V", text: $vout, fieldID: "vout", onSubmit: calculate) }
             if solve != .r1 { NumberField(title: "R1 (top)", unit: "Ω", text: $r1, fieldID: "r1", onSubmit: calculate) }

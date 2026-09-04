@@ -88,7 +88,7 @@ struct UnitConverterView: View {
             Picker("Category", selection: $category) {
                 ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             categoryFields
 
             if let error = live.error {
@@ -194,7 +194,7 @@ struct UnitConverterView: View {
             Picker("Quantity", selection: $siKind) {
                 ForEach(SIKind.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             NumberField(title: "Value", unit: fromP.rawValue + siKind.rawValue, text: $value, allowsScientific: true)
             MenuField(title: "From", selection: $fromP, options: Array(SIPrefix.allCases)) { $0.label }
             MenuField(title: "To", selection: $toP, options: Array(SIPrefix.allCases)) { $0.label }
@@ -202,24 +202,24 @@ struct UnitConverterView: View {
             Picker("Kind", selection: $dbKind) {
                 ForEach(DBKind.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             Picker("Direction", selection: $dbModeRatio) {
                 Text("Ratio → dB").tag(true)
                 Text("dB → ratio").tag(false)
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             NumberField(title: dbModeRatio ? "Ratio" : "dB", unit: dbModeRatio ? "—" : "dB", text: $value)
         case .temp:
             Picker("From", selection: $tempDir) {
                 ForEach(TempDir.allCases) { Text($0.label).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             NumberField(title: "Temperature", unit: tempDir.unit, text: $value)
         case .length:
             Picker("From", selection: $lengthDir) {
                 ForEach(LengthDir.allCases) { Text($0.label).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             NumberField(title: "Length", unit: lengthDir.unit, text: $value)
         }
     }
@@ -272,6 +272,7 @@ private struct BaseValueField: View {
                     .foregroundStyle(Theme.foreground)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
+                    .formFieldFocus(title)
                     .accessibilityLabel(title)
                     .accessibilityHint(validCharacters + (unit.isEmpty ? "." : ", optionally prefixed \(unit)."))
                 if !unit.isEmpty {

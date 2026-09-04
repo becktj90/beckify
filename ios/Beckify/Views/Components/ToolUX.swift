@@ -41,7 +41,15 @@ struct ToolScaffold<Content: View>: View {
     @ViewBuilder var content: Content
 
     @EnvironmentObject private var favorites: FavoritesStore
+    @StateObject private var chrome = ToolChromeController()
     private var tool: ToolDefinition { ToolboxCatalog.tool(toolID) }
+
+    /// Calculate stays in the sticky strip when the keyboard is down so a
+    /// gloved thumb can hit it without scrolling. While editing, it moves to
+    /// the keyboard toolbar with Done / Next.
+    private var showsStickyCalculate: Bool {
+        chrome.hasCalculate && chrome.focusedFieldID == nil
+    }
 
     var body: some View {
         ScrollView {
@@ -63,9 +71,7 @@ struct ToolScaffold<Content: View>: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let stickyAnswer, !stickyAnswer.isEmpty {
-                StickyAnswerBar(answer: stickyAnswer, copyText: copyText, isStale: isResultStale)
-            }
+            stickyChrome
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -93,6 +99,37 @@ struct ToolScaffold<Content: View>: View {
                     CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy result from toolbar")
                 }
             }
+            ToolbarItemGroup(placement: .keyboard) {
+                Button("Done") { chrome.dismissKeyboard() }
+                    .accessibilityIdentifier("keyboardDone")
+                if chrome.hasNextField {
+                    Button("Next") { chrome.focusNext() }
+                        .accessibilityIdentifier("keyboardNext")
+                }
+                Spacer()
+                if chrome.hasCalculate {
+                    Button("Calculate") { chrome.performCalculate() }
+                        .fontWeight(.semibold)
+                        .disabled(!chrome.calculateEnabled)
+                        .accessibilityIdentifier("keyboardCalculate")
+                }
+            }
+        }
+        .environment(\.toolChrome, chrome)
+    }
+
+    @ViewBuilder
+    private var stickyChrome: some View {
+        VStack(spacing: 0) {
+            if showsStickyCalculate {
+                StickyCalculateBar(
+                    isEnabled: chrome.calculateEnabled,
+                    action: { chrome.performCalculate() }
+                )
+            }
+            if let stickyAnswer, !stickyAnswer.isEmpty {
+                StickyAnswerBar(answer: stickyAnswer, copyText: copyText, isStale: isResultStale)
+            }
         }
     }
 
@@ -117,7 +154,7 @@ struct StickyAnswerBar: View {
     var isStale: Bool = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text("ANSWER")
@@ -135,7 +172,6 @@ struct StickyAnswerBar: View {
                 Text(answer)
                     .font(.body.monospacedDigit().weight(.semibold))
                     .foregroundStyle(isStale ? Theme.muted : Theme.foreground)
-                    .minimumScaleFactor(0.8)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityLabel(isStale ? "Stale answer \(answer). Inputs changed — Calculate again." : "Answer \(answer)")
             }
@@ -367,10 +403,10 @@ struct ShowWorkCard: View {
     }
 }
 
-/// Deliberately quiet: a single-line strip of name-only chips, not a second
+/// Deliberately quiet: a single-line strip of compact chips, not a second
 /// list of cards competing with the calculator above it. A tool that wants
 /// prominence earns it by being in Favorites or Quick Tools, not by showing up
-/// here three times over.
+/// here three times over. Icons use `IconWell` so they follow Dynamic Type.
 struct RelatedToolsSection: View {
     let current: ToolID
     @Environment(\.openRelatedTool) private var openRelated
@@ -381,7 +417,7 @@ struct RelatedToolsSection: View {
 
     var body: some View {
         if !related.isEmpty {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
                 Text("Also")
                     .font(.caption2)
                     .foregroundStyle(Theme.muted.opacity(0.8))
@@ -391,15 +427,18 @@ struct RelatedToolsSection: View {
                             Button {
                                 openRelated(tool.id)
                             } label: {
-                                Text(tool.title)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(Theme.muted)
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Theme.surfaceRaised.opacity(0.7), in: Capsule())
-                                    .frame(minHeight: Theme.touchTarget)
-                                    .contentShape(Rectangle())
+                                HStack(spacing: 6) {
+                                    IconWell(toolID: tool.id, size: 22, selected: true)
+                                    Text(tool.title)
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(Theme.muted)
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Theme.surfaceRaised.opacity(0.7), in: Capsule())
+                                .frame(minHeight: Theme.touchTarget)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Open related tool \(tool.title)")

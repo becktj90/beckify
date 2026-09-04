@@ -51,12 +51,12 @@ struct SeriesParallelView: View {
             Picker("Part", selection: $part) {
                 ForEach(Part.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             Picker("Network", selection: $kind) {
                 Text("Series").tag(NetworkKind.series)
                 Text("Parallel").tag(NetworkKind.parallel)
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             NumberField(title: "Value 1", unit: unit, text: $v1, allowsScientific: true, fieldID: "v1", onSubmit: calculate)
             NumberField(title: "Value 2", unit: unit, text: $v2, allowsScientific: true, fieldID: "v2", onSubmit: calculate)
             NumberField(title: "Value 3", unit: unit, text: $v3, optional: true, allowsScientific: true, onSubmit: calculate)

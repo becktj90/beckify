@@ -47,7 +47,7 @@ struct LEDRCView: View {
             Picker("Mode", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             if mode == .led {
                 NumberField(title: "Supply", unit: "V", text: $supply, fieldID: "supply", onSubmit: calculate)
                 NumberField(title: "LED Vf", unit: "V", text: $vf, fieldID: "vf", onSubmit: calculate)

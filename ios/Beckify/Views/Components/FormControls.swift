@@ -40,6 +40,7 @@ struct NumberField: View {
                     .autocorrectionDisabled()
                     .submitLabel(onSubmit == nil ? .done : .go)
                     .onSubmit { onSubmit?() }
+                    .formFieldFocus(fieldID ?? title)
                     .accessibilityLabel(title)
                     .accessibilityHint(optional ? "Optional. Unit \(unit)." : "Unit \(unit).")
                     .accessibilityIdentifier(fieldID.map { "numberField.\($0)" } ?? "numberField.\(title)")
@@ -113,6 +114,7 @@ struct TextInputField: View {
                     .autocorrectionDisabled()
                     .submitLabel(onSubmit == nil ? .done : .go)
                     .onSubmit { onSubmit?() }
+                    .formFieldFocus(fieldID ?? title)
                     .accessibilityLabel(title)
                     .accessibilityIdentifier(fieldID.map { "textField.\($0)" } ?? "textField.\(title)")
                 if !unit.isEmpty {

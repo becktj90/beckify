@@ -50,7 +50,7 @@ struct MotorFLAView: View {
                 Text("430.248 1Ø").tag(false)
                 Text("430.250 3Ø").tag(true)
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
 
             MenuField(title: "Horsepower", selection: $hp, options: hpOptions) { "\($0) HP" }
             NumberField(title: "System voltage", unit: "V", text: $systemVolts, fieldID: "systemVolts", onSubmit: calculate)

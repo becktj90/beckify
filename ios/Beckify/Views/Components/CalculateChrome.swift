@@ -2,6 +2,99 @@ import SwiftUI
 import UIKit
 import BeckifyMath
 
+// MARK: - Tool chrome coordinator
+
+/// Shared Calculate + keyboard-focus coordinator for `ToolScaffold`.
+/// `CalculatorActionBar` publishes Calculate here so the primary action can
+/// live in sticky / keyboard chrome instead of mid-scroll.
+@MainActor
+final class ToolChromeController: ObservableObject {
+    @Published var calculateEnabled = true
+    @Published private(set) var hasCalculate = false
+    @Published var focusedFieldID: String?
+
+    private var calculateAction: (() -> Void)?
+    private var pendingEnabled = true
+    private(set) var fieldIDs: [String] = []
+
+    /// Stores the latest action without publishing. Call `publishCalculateIfNeeded()`
+    /// from `onAppear` / `onChange` so SwiftUI is not mutated during `body`.
+    func bindCalculate(enabled: Bool, action: @escaping () -> Void) {
+        calculateAction = action
+        pendingEnabled = enabled
+    }
+
+    func publishCalculateIfNeeded() {
+        if calculateEnabled != pendingEnabled {
+            calculateEnabled = pendingEnabled
+        }
+        if !hasCalculate {
+            hasCalculate = true
+        }
+    }
+
+    func clearCalculate() {
+        calculateAction = nil
+        if hasCalculate {
+            hasCalculate = false
+        }
+        if !calculateEnabled {
+            calculateEnabled = true
+        }
+    }
+
+    func performCalculate() {
+        calculateAction?()
+        dismissKeyboard()
+    }
+
+    func registerField(_ id: String) {
+        if !fieldIDs.contains(id) {
+            fieldIDs.append(id)
+        }
+    }
+
+    func unregisterField(_ id: String) {
+        fieldIDs.removeAll { $0 == id }
+        if focusedFieldID == id {
+            focusedFieldID = nil
+        }
+    }
+
+    var hasNextField: Bool {
+        guard let focused = focusedFieldID,
+              let index = fieldIDs.firstIndex(of: focused)
+        else { return false }
+        return index + 1 < fieldIDs.count
+    }
+
+    func focusNext() {
+        guard let focused = focusedFieldID,
+              let index = fieldIDs.firstIndex(of: focused),
+              index + 1 < fieldIDs.count
+        else {
+            dismissKeyboard()
+            return
+        }
+        focusedFieldID = fieldIDs[index + 1]
+    }
+
+    func dismissKeyboard() {
+        focusedFieldID = nil
+    }
+}
+
+private struct ToolChromeControllerKey: EnvironmentKey {
+    static let defaultValue: ToolChromeController? = nil
+}
+
+extension EnvironmentValues {
+    var toolChrome: ToolChromeController? {
+        get { self[ToolChromeControllerKey.self] }
+        set { self[ToolChromeControllerKey.self] = newValue }
+    }
+}
+
 // MARK: - Calculate interaction chrome
 
 /// Primary Calculate control for explicit tools. Always tappable unless a
@@ -26,6 +119,30 @@ struct CalculateButton: View {
     }
 }
 
+/// Sticky Calculate strip so one-thumb / gloves can hit the primary action
+/// without scrolling past fields. Does not replace the answer bar.
+struct StickyCalculateBar: View {
+    var isEnabled: Bool = true
+    var action: () -> Void
+
+    var body: some View {
+        CalculateButton(isEnabled: isEnabled, action: action)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 10)
+            .frame(maxWidth: .infinity)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Theme.border)
+                    .frame(height: 1)
+            }
+            .accessibilityIdentifier("stickyCalculateBar")
+    }
+}
+
+/// Reset / Example stay in the scroll body. Calculate is hoisted into
+/// `ToolScaffold` sticky + keyboard chrome via `ToolChromeController`.
 struct CalculatorActionBar: View {
     var onCalculate: () -> Void
     var onReset: (() -> Void)? = nil
@@ -33,9 +150,13 @@ struct CalculatorActionBar: View {
     var exampleTitle: String? = nil
     var calculateEnabled: Bool = true
 
+    @Environment(\.toolChrome) private var chrome
+
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
-            CalculateButton(isEnabled: calculateEnabled, action: onCalculate)
+            if chrome == nil {
+                CalculateButton(isEnabled: calculateEnabled, action: onCalculate)
+            }
             if onReset != nil || onExample != nil {
                 HStack(spacing: Theme.Space.sm) {
                     if let onReset {
@@ -53,8 +174,8 @@ struct CalculatorActionBar: View {
                                 exampleTitle.map { "Example: \($0)" } ?? "Example",
                                 systemImage: "sparkle"
                             )
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                         }
                         .buttonStyle(.bordered)
                         .tint(Theme.accent2)
@@ -67,6 +188,94 @@ struct CalculatorActionBar: View {
             }
         }
         .accessibilityElement(children: .contain)
+        .background {
+            BindCalculateProbe(enabled: calculateEnabled, action: onCalculate)
+        }
+    }
+}
+
+/// Keeps the hoisted Calculate closure current whenever the action bar
+/// is re-evaluated, without publishing on every pass.
+private struct BindCalculateProbe: View {
+    var enabled: Bool
+    var action: () -> Void
+    @Environment(\.toolChrome) private var chrome
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+            .onAppear {
+                chrome?.bindCalculate(enabled: enabled, action: action)
+                chrome?.publishCalculateIfNeeded()
+            }
+            .onChange(of: enabled) { _, newValue in
+                chrome?.bindCalculate(enabled: newValue, action: action)
+                chrome?.publishCalculateIfNeeded()
+            }
+    }
+}
+
+// MARK: - Form field keyboard focus
+
+/// Registers a text field with `ToolChromeController` and binds `@FocusState`
+/// so the scaffold keyboard toolbar can offer Done / Next.
+struct FormFieldFocusModifier: ViewModifier {
+    let fieldID: String
+    @Environment(\.toolChrome) private var chrome
+
+    func body(content: Content) -> some View {
+        if let chrome {
+            content.modifier(BoundFormFieldFocusModifier(fieldID: fieldID, chrome: chrome))
+        } else {
+            content.modifier(LocalKeyboardDoneModifier())
+        }
+    }
+}
+
+/// Observes the scaffold chrome so Next / Done can move `@FocusState`.
+private struct BoundFormFieldFocusModifier: ViewModifier {
+    let fieldID: String
+    @ObservedObject var chrome: ToolChromeController
+    @FocusState private var isFocused: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .focused($isFocused)
+            .onAppear { chrome.registerField(fieldID) }
+            .onDisappear { chrome.unregisterField(fieldID) }
+            .onChange(of: isFocused) { _, focused in
+                if focused {
+                    chrome.focusedFieldID = fieldID
+                } else if chrome.focusedFieldID == fieldID {
+                    chrome.focusedFieldID = nil
+                }
+            }
+            .onChange(of: chrome.focusedFieldID) { _, newValue in
+                isFocused = (newValue == fieldID)
+            }
+    }
+}
+
+/// Fallback Done when a field is used outside `ToolScaffold`.
+private struct LocalKeyboardDoneModifier: ViewModifier {
+    @FocusState private var isFocused: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .focused($isFocused)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button("Done") { isFocused = false }
+                }
+            }
+    }
+}
+
+extension View {
+    /// Shared decimal-pad / text-field focus participation for Done / Next.
+    func formFieldFocus(_ fieldID: String) -> some View {
+        modifier(FormFieldFocusModifier(fieldID: fieldID))
     }
 }
 

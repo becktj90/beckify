@@ -223,7 +223,7 @@ struct SolarDesignWizardView: View {
                 Text("Commercial").tag(SolarSystemScale.commercial.rawValue)
                 Text("Utility / facility").tag(SolarSystemScale.utility.rawValue)
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             .onChange(of: scaleRaw) { _, _ in
                 if let e = SolarDesign.defaultSystemEfficiencyPercent[scale] {
                     eta = Format.number(e, digits: 0)
@@ -356,7 +356,7 @@ struct SolarDesignWizardView: View {
                     Text("Peak-shave").tag(SolarStorageMode.peakShave.rawValue)
                     Text("Self-consumption").tag(SolarStorageMode.selfConsumption.rawValue)
                 }
-                .pickerStyle(.segmented)
+                .segmentedControlStyle()
                 .onChange(of: storageModeRaw) { _, _ in session.prepareForNewInputs() }
 
                 switch storageMode {

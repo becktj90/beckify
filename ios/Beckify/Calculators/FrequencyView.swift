@@ -42,7 +42,7 @@ struct FrequencyView: View {
             Picker("Known", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             switch mode {
             case .freq: NumberField(title: "Frequency", unit: "Hz", text: $frequency, allowsScientific: true, fieldID: "frequency", onSubmit: calculate)
             case .period: NumberField(title: "Period", unit: "s", text: $period, allowsScientific: true, fieldID: "period", onSubmit: calculate)

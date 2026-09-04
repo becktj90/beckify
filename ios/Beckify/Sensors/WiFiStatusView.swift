@@ -555,7 +555,7 @@ struct WiFiStatusView: View {
             Picker("RTT host", selection: $rttTarget) {
                 ForEach(WiFiRTTTarget.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             .disabled(model.rttMeasuring)
             .padding(.top, 6)
             if rttTarget == .custom {
@@ -632,7 +632,7 @@ struct WiFiStatusView: View {
             Picker("Survey", selection: $surveyMode) {
                 ForEach(WiFiSurveyMode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             .disabled(model.surveying)
             Text(surveyMode == .gps
                  ? "Walk the space. Samples drop every ~1.5 m from GPS plus Apple’s 0…1 strength."

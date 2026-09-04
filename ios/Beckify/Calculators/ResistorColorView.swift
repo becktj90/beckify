@@ -48,14 +48,14 @@ struct ResistorColorView: View {
             Picker("Mode", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedControlStyle()
             if mode == .encode {
                 NumberField(title: "Resistance", unit: "Ω", text: $ohms)
                 Picker("Bands", selection: $encodeBands) {
                     Text("4").tag(4)
                     Text("5").tag(5)
                 }
-                .pickerStyle(.segmented)
+                .segmentedControlStyle()
                 MenuField(title: "Tolerance", selection: $tolerance, options: toleranceBands) { $0.displayName }
             } else {
                 MenuField(title: "Digit 1", selection: $d1, options: digitBands) { $0.displayName }
