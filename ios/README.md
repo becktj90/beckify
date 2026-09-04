@@ -10,7 +10,7 @@ This is not a website wrapper. There is no `WKWebView` of beckify.com and no web
 
 Reusable tokens live in `Beckify/Theme/Theme.swift` (surfaces, semantic accents, spacing, radius, stroke, typography, chart colors, motion). Calculator chrome — identity header, Calculate / Reset / Example, stale-result banner, diagrams — lives under `Beckify/Views/Components/`.
 
-Every primary tool has an original vector `ToolGlyph` (not a shared SF Symbol). Open **Icon Gallery** from the toolbox toolbar palette (not the Toolbox tab) to review them together.
+Every primary tool has an original vector `ToolGlyph` (not a shared SF Symbol).
 
 ### Calculation modes
 
