@@ -109,7 +109,7 @@ ios/
 ### Reference
 
 - Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
-- Panel Directory (paste/OCR schedule text)
+- Panel Directory (camera or library photo stays on screen; on-device Vision + heuristic extract into an editable schedule — circuit, name, trip, poles, class — value + confidence + reviewed; confirm, then demand / capacity-to-add via the same 220.42 worksheet as Load Calculation Worksheet. Trip is not measured load. Cloud VLM is off. Optional seed into Load Calculation Worksheet)
 - Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
 - Cable Schedule Generator (sequential IDs + CSV copy)
 

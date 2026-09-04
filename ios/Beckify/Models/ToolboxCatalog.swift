@@ -551,9 +551,9 @@ enum ToolboxCatalog {
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
-            subtitle: "Paste or OCR a panel schedule photo into circuit, name, trip, and poles.",
+            subtitle: "Photo a schedule; confirm the editable rows; then demand and capacity-to-add.",
             symbol: "list.bullet.rectangle",
-            synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend"]
+            synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm"]
         ),
         ToolDefinition(
             id: .motorSpeed,
@@ -974,7 +974,7 @@ enum ToolboxCatalog {
         .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems],
         .modbusAddress: [.signalScaling, .plcTimer],
         .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems],
-        .panelDirectory: [.loadFactors, .wireAmpacity, .motorFLA],
+        .panelDirectory: [.loadWorksheet, .loadFactors, .wireAmpacity],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],

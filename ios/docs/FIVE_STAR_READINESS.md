@@ -18,6 +18,7 @@ Public sources only. No App Store Connect scrape. No password.
 - Field opens first. Cold start hides Recents. Favorites and Jobs empty states now send the operator back to Field.
 - Conduit fill already has mixed sizes **and** the nipple 60% toggle (Ch. 9 Table 1 Note 4) — the exact miss that got Southwire a “this app will lie to you” 1★.
 - Motor Nameplate OCR: on-device Vision, human confirm, MOCP/LRA never treated as FLA.
+- Panel Directory: on-device Vision, photo stays on screen, human confirm, demand/capacity-to-add is a design aid (trip ≠ measured load).
 - iPhone **and** iPad (`TARGETED_DEVICE_FAMILY` 1,2). Do not claim iPad if screenshots are iPhone-only.
 
 **Would block 5★ (or a clean review) if we ship sloppy:**
@@ -87,7 +88,7 @@ Do these on a Mac after the ITMS-90382 window. This environment cannot archive o
 - [ ] Do **not** declare Location / Microphone as collected: they are processed on device and never leave. Photos are collected only after Analyze Look.
 - [ ] Tracking = No. No advertising SDKs to declare. Look Check may forward a user-initiated photo through the Beckify API to OpenAI/Anthropic.
 - [ ] Privacy Policy URL live: https://beckify.com/privacy
-- [ ] Usage strings (already in the Xcode target) match the Review notes: mic = Noise Meter dBFS; location = Position / Wi‑Fi Path / optional Solar latitude; Local Network = TCP RTT to a LAN host; camera = Motor Nameplate OCR and Look Check; Bluetooth = BLE scanner.
+- [ ] Usage strings (already in the Xcode target) match the Review notes: mic = Noise Meter dBFS; location = Position / Wi‑Fi Path / optional Solar latitude; Local Network = TCP RTT to a LAN host; camera = Motor Nameplate OCR, Panel Directory, and Look Check; Bluetooth = BLE scanner.
 
 ### Listing
 
@@ -120,7 +121,7 @@ Suggested block:
 
 > Beckify is a native SwiftUI field electrical toolbox (not a web wrapper). Free, no ads, no IAP, no account, no analytics. Saved Jobs and last-used inputs stay in UserDefaults on device.
 >
-> Permissions are requested only when that instrument or OCR tool is opened — not at launch. Microphone = uncalibrated Noise Meter (dBFS, not an SLM). Location When In Use = Position, Wi‑Fi Path (SSID / Apple 0–1 signalStrength / optional heatmap), optional Solar latitude. Local Network = optional TCP RTT to a LAN/gateway host (latency, not RF). Camera = Motor Nameplate OCR; Vision stays on device; Photo Library full access is not requested. Bluetooth = BLE scanner.
+> Permissions are requested only when that instrument or OCR tool is opened — not at launch. Microphone = uncalibrated Noise Meter (dBFS, not an SLM). Location When In Use = Position, Wi‑Fi Path (SSID / Apple 0–1 signalStrength / optional heatmap), optional Solar latitude. Local Network = optional TCP RTT to a LAN/gateway host (latency, not RF). Camera = Motor Nameplate OCR and Panel Directory (Vision on device; photos never upload) or Look Check (uploads only after Analyze Look). Photo Library full access is not requested. Bluetooth = BLE scanner.
 >
 > iOS does not expose Wi‑Fi RSSI/dBm or cellular RSRP/RSRQ/SINR/dBm to third-party apps. The Wi‑Fi and Cellular Path tools do not invent those numbers. Cellular color gauges are radio generation (from RAT) and TCP RTT milliseconds.
 >

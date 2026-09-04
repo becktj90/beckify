@@ -29,7 +29,7 @@ public enum LoadWorksheetOccupancy: String, Codable, CaseIterable, Sendable {
     }
 }
 
-public enum LoadRowType: String, Codable, CaseIterable, Sendable {
+public enum LoadRowType: String, Codable, CaseIterable, Sendable, Hashable {
     case lighting
     case receptacle
     case continuous
