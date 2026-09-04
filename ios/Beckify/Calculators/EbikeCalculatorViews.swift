@@ -400,8 +400,8 @@ struct EbikeRangeView: View {
             toolID: .eBikeRange,
             stickyAnswer: sticky,
             copyText: sticky,
-            isResultStale: session.isStale,
-            disclaimer: .designAidExtra("Real-world range varies with rider mass, grade, wind, tire pressure, assist level, and ambient temperature. This is pack V×Ah / Wh/mi — no depth-of-discharge or Peukert. Use Battery Bank Sizing if you need usable DoD and inverter efficiency.")
+            disclaimer: .designAidExtra("Real-world range varies with rider mass, grade, wind, tire pressure, assist level, and ambient temperature. This is pack V×Ah / Wh/mi — no depth-of-discharge or Peukert. Use Battery Bank Sizing if you need usable DoD and inverter efficiency."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .eBikeRange,
@@ -551,8 +551,8 @@ struct EbikePackDesignerView: View {
             toolID: .eBikePackDesigner,
             stickyAnswer: sticky,
             copyText: sticky,
-            isResultStale: session.isStale,
-            disclaimer: .designAidExtra("Planning aid only — not a BMS design, weld certification, or thermal model. Verify the cell datasheet, BMS, fusing, nickel strip or busbar ampacity, and enclosure limits before you build. Battery Bank Sizing covers usable DoD and runtime at a watt load.")
+            disclaimer: .designAidExtra("Planning aid only — not a BMS design, weld certification, or thermal model. Verify the cell datasheet, BMS, fusing, nickel strip or busbar ampacity, and enclosure limits before you build. Battery Bank Sizing covers usable DoD and runtime at a watt load."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .eBikePackDesigner,
@@ -811,8 +811,8 @@ struct NickelStripView: View {
             toolID: .nickelStrip,
             stickyAnswer: sticky,
             copyText: sticky,
-            isResultStale: session.isStale,
-            disclaimer: .designAidExtra("Derate for nickel-plated steel, long paths, poor welds, insulation, and temperature rise. Planning current only — not a weld certification or a substitute for the cell/BMS datasheet.")
+            disclaimer: .designAidExtra("Derate for nickel-plated steel, long paths, poor welds, insulation, and temperature rise. Planning current only — not a weld certification or a substitute for the cell/BMS datasheet."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .nickelStrip,
