@@ -139,7 +139,8 @@ assert.equal(panel.snapSlotCount(41), 42);
 assert.equal(panel.snapSlotCount(20), 20);
 assert.equal(panel.parseBreakerFace('SQUARE D 42 CIRCUIT 200A MAIN').slotCount, 42);
 const breakerFace = panel.parseBreakerFace('1 20A 2 20A 3 15A 4 30A 5 20A 6 20A 7 15A 8 20A 9 20A 10 20A 11 15A 12 20A');
-assert.equal(breakerFace.slotCount, 12);
+assert.equal(breakerFace.slotCount, 0);
+assert.equal(breakerFace.rows.length, 12);
 assert.equal(breakerFace.rows[0].trip, '20A');
 const sized = panel.sizeTableToSlots(20, [
   { circuit: '1', description: 'Lights', trip: '20A', poles: '1', loadType: 'Lighting', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' },
@@ -231,8 +232,30 @@ assert.match(exportedSchedule.csv, /1,Lights,20/);
 assert.doesNotMatch(exportedSchedule.csv.split('\n')[1], /,20$/);
 assert.ok(exportedSchedule.warnings.some((w) => /Phase is unknown/i.test(w)));
 
+const highOnly = [
+  { circuit: '43', description: 'AHU', trip: '30A', poles: '2', loadType: 'HVAC', loadAmps: '22', loadAmpsCopiedFromTrip: false, demandFactor: '1' },
+  { circuit: '63', description: 'Spare', trip: '', poles: '', loadType: 'Spare', loadAmps: '', loadAmpsCopiedFromTrip: false, demandFactor: '1' },
+];
+assert.equal(panel.sizeTableToSlots(0, highOnly).length, 2);
+assert.ok(panel.sizeTableToSlots(0, highOnly).length < 64);
+assert.equal(panel.printSlotCount(highOnly, 0), 64);
+const exportHigh = panel.buildScheduleExport(highOnly, { slotCount: 0, phase: 3 });
+assert.equal(exportHigh.slotCount, 0);
+assert.ok(exportHigh.warnings.some((w) => /loadAmps was cleared/i.test(w)));
+assert.doesNotMatch(exportHigh.csv, /(?:,22|,22\r)$/m);
+
+const formulaRow = panel.buildScheduleExport([
+  { circuit: '1', description: '=CMD', trip: '20A', poles: '1', loadAmps: '16', loadAmpsCopiedFromTrip: false },
+], { slotCount: 20, phase: 3 });
+assert.match(formulaRow.csv, /'=CMD/);
+assert.ok(formulaRow.warnings.some((w) => /loadAmps was cleared/i.test(w)));
+
+panel.applyCombinedRead(highOnly, { slotCount: 0, rows: [] });
+assert.equal(panel.printedSlotCount(), 0);
+
 assert.match(panelSrc, /copyCsvButton/);
 assert.match(panelSrc, /printSlotCount/);
+assert.match(panelSrc, /printedSlotCount/);
 assert.match(panelSrc, /describeShotRole/);
 assert.match(panelHtml, /id="copyCsvButton"/);
 assert.match(panelHtml, /01 and 1 are the same slot/);

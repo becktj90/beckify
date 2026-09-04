@@ -535,11 +535,17 @@
     return bestDist <= 2 ? best : n;
   }
 
+  function circuitSortNumber(key) {
+    if (!key) return Infinity;
+    var n = Number(String(key).replace(/[A-Z]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : Infinity;
+  }
+
   function collectCircuitNumbers(draft) {
     var seen = {};
     var nums = [];
     (draft && draft.rows || []).forEach(function (row) {
-      var n = Number(circuitKey(row));
+      var n = circuitSortNumber(circuitKey(row));
       if (!Number.isFinite(n) || n < 1 || n > 84) return;
       var rounded = Math.round(n);
       if (seen[rounded]) return;
@@ -591,12 +597,6 @@
     return snapPanelSlots(combined) || combined || 0;
   }
 
-  function circuitSortNumber(key) {
-    if (!key) return Infinity;
-    var n = Number(String(key).replace(/[A-Z]/g, ''));
-    return Number.isFinite(n) && n > 0 ? n : Infinity;
-  }
-
   function sortPanelRows(rows) {
     return (rows || []).slice().sort(function (a, b) {
       var ka = circuitKey(a);
@@ -606,6 +606,17 @@
       if (na !== nb) return na - nb;
       return ka.localeCompare(kb);
     });
+  }
+
+  /**
+   * Quote delimiters/newlines and neutralize spreadsheet formula injection
+   * (=, +, -, @) so copied CSV is data, not a formula when opened in Excel.
+   */
+  function csvCell(value) {
+    var text = value == null ? '' : String(value);
+    if (/^[=+\-@]/.test(text)) text = "'" + text;
+    if (/[",\n\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+    return text;
   }
 
   /**
@@ -636,12 +647,12 @@
       var trip = row.trip && row.trip.value != null ? String(row.trip.value) : '';
       var load = '';
       lines.push([
-        circuitKey(row) || '',
-        String((row.description && row.description.value) || '').replace(/,/g, ' '),
-        trip,
-        row.poles && row.poles.value != null ? String(row.poles.value) : '',
-        load,
-        String((row.notes && row.notes.value) || '').replace(/,/g, ' '),
+        csvCell(circuitKey(row) || ''),
+        csvCell((row.description && row.description.value) || ''),
+        csvCell(trip),
+        csvCell(row.poles && row.poles.value != null ? String(row.poles.value) : ''),
+        csvCell(load),
+        csvCell((row.notes && row.notes.value) || ''),
       ].join(','));
     });
     return {
@@ -726,7 +737,10 @@
     mergePanelDrafts: mergePanelDrafts,
     mergeSlotCounts: mergeSlotCounts,
     normalizeCircuitKey: normalizeCircuitKey,
+    circuitSortNumber: circuitSortNumber,
+    collectCircuitNumbers: collectCircuitNumbers,
     sortPanelRows: sortPanelRows,
+    csvCell: csvCell,
     exportPanelDraft: exportPanelDraft,
     emptyPanelRow: emptyPanelRow,
     clampConfidence: clampConfidence,

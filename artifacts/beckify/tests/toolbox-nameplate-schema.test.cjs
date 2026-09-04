@@ -309,4 +309,29 @@ const manyLoads = schema.exportPanelDraft({
 });
 assert.equal(manyLoads.warnings.filter((w) => /loadAmps was cleared/i.test(w)).length, 1);
 
+assert.equal(schema.csvCell('Lights'), 'Lights');
+assert.equal(schema.csvCell('=HYPERLINK("http://evil")'), '"\'=HYPERLINK(""http://evil"")"');
+assert.equal(schema.csvCell('+cmd'), "'+cmd");
+assert.equal(schema.csvCell('-1+1'), "'-1+1");
+assert.equal(schema.csvCell('@SUM(A1)'), "'@SUM(A1)");
+assert.equal(schema.csvCell('Lights, AHU'), '"Lights, AHU"');
+assert.equal(schema.csvCell('line\nbreak'), '"line\nbreak"');
+
+const injected = schema.exportPanelDraft({
+  circuits: [
+    { circuit: '1', description: '=CMD,open', trip: 20, notes: '+payload' },
+  ],
+});
+assert.match(injected.csv, /"'=CMD,open"/);
+assert.match(injected.csv, /'\+payload/);
+
+const tandemNums = schema.collectCircuitNumbers(schema.normalizePanelDraft({
+  circuits: [{ circuit: '1A' }, { circuit: '1B' }, { circuit: '21A' }, { circuit: '01' }],
+}));
+assert.equal(tandemNums.includes(1), true);
+assert.equal(tandemNums.includes(21), true);
+assert.equal(tandemNums.length, 2);
+assert.equal(schema.circuitSortNumber('1A'), 1);
+assert.equal(schema.circuitSortNumber('21B'), 21);
+
 console.log('Nameplate schema + parse traps passed');

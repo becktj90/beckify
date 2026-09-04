@@ -146,4 +146,17 @@ const dualPlate = ocr.parseMotorNameplate('230/460V 28/14 FLA');
 assert.equal(dualPlate.fields.volts, '230/460');
 assert.equal(dualPlate.fields.fla, '28/14');
 
+vm.runInContext(fs.readFileSync(path.join(root, 'nameplate-schema.js'), 'utf8'), sandbox, { filename: 'nameplate-schema.js' });
+const schema = sandbox.BeckifyNameplateSchema;
+const dualDraft = schema.fromLegacyParse(dualPlate.fields, { extras: { dualFla: dualPlate.fields.fla } });
+assert.ok(schema.highlightReasons(dualDraft).some((item) => item.kind === 'dual-fla'));
+api.applyDraft(dualDraft);
+assert.ok(api.getLastDraft().extras.dualFla);
+assert.equal(api.pickDualFlaAmp('14'), true);
+const afterPick = api.getLastDraft();
+assert.equal(afterPick.fields.fla.value, '14');
+assert.equal(afterPick.extras.dualFla, '');
+assert.equal(afterPick.extras.flaDisplay, '14');
+assert.ok(!schema.highlightReasons(afterPick).some((item) => item.kind === 'dual-fla'));
+
 console.log('Motor nameplate NEC percentage tables passed');
