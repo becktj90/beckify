@@ -14,7 +14,7 @@ Public sources only. No App Store Connect scrape. No password.
 - Honest RF instruments: **no fabricated Wi‑Fi or cellular dBm / RSRP**. Reviewers and App Review both punish fake meters.
 - Design-aid disclaimer on every tool. Not a PE stamp, not a calibrated SLM, not a TDR.
 - Permissions only when the tool opens — not at launch. Photo Library full access is not requested.
-- Data Not Collected. No analytics, no crash SDK, no account, no ads.
+- No analytics, no crash SDK, no account, no ads. Look Check uploads a photo only after Analyze Look.
 - Field opens first. Cold start hides Recents. Favorites and Jobs empty states now send the operator back to Field.
 - Conduit fill already has mixed sizes **and** the nipple 60% toggle (Ch. 9 Table 1 Note 4) — the exact miss that got Southwire a “this app will lie to you” 1★.
 - Motor Nameplate OCR: on-device Vision, human confirm, MOCP/LRA never treated as FLA.
@@ -61,7 +61,7 @@ Crawled public App Store review pages and review-mirror sites for Southwire Cond
 | **Search doesn’t find the table** | Ugly’s: article numbers and table titles miss. | Search covers Field + Toolkit and labels the area. Ampacity / wifi / cellular / milliohm footers. | Type the keyword list from `APP_STORE.md` on device. If a shipped tool doesn’t appear, that’s a 1★. |
 | **Crashes / stuck Continue** | Electrician’s Helper: crash after selecting conduit. Elite: “equal sign doesn’t work.” | Linux math tests; stale-result banner instead of silent overwrite. | Mac: Calculate / Reset / Example on Field jobsite tools + Cellular / Wi‑Fi Path + OCR. |
 | **Broken or bait OCR** | Category risk (not a single app): garbage fields saved as truth. | Confirm marks reviewed. MOCP/LRA ≠ FLA. Cloud VLM **off**. Photo not uploaded. | Screenshot must show the confirm step, not a magic “done” plate. |
-| **Permission / privacy surprise** | Utility-app Review rejections: missing usage strings; location at launch; “Data Not Collected” vs an SDK. | Usage strings in the target; location/mic/BT/Local Network/camera only in-tool; `PrivacyInfo.xcprivacy` empty collected types. | Connect nutrition label = **Data Not Collected**. Review notes must say why (on-device only). |
+| **Permission / privacy surprise** | Utility-app Review rejections: missing usage strings; location at launch; nutrition label vs an SDK. | Usage strings in the target; location/mic/BT/Local Network/camera only in-tool; `PrivacyInfo.xcprivacy` declares Photos only for Look Check Analyze Look (not linked, not tracking). | Connect nutrition label = **Photos** (App Functionality). Review notes must say Analyze Look is user-initiated and nameplate/panel stay on-device. |
 | **iPad claim without iPad UI** | Guideline 2.3 / 2.4: metadata must match. Several paid toolkits are “Designed for iPad” and then feel like stretched phone. | Target is iPhone + iPad. Adaptive grid. | Capture a **13" iPad** screenshot set. If you skip iPad shots, do not market iPad-only features. |
 | **Outdoor glare / forced dark** | Operators use phones in sun. Claiming “high contrast outdoor mode” you don’t have is a 2.3 risk. | Follows system light/dark. No forced dark. `APP_STORE.md` already forbids overclaim. | Ship system-appearance shots. Optional: Settings → Display → Increase Contrast on a glare check — don’t put it on the listing. |
 | **Fake RF meters** | Users **and** Review will roast a “dBm” number iOS does not give third parties. | Wi‑Fi: 0…1 `signalStrength` as %/bars + TCP RTT. Cellular: RAT generation + TCP RTT. No invented RSRP. | Screenshots: gauges labeled generation / RTT ms. Review notes paste the honesty paragraph. |
@@ -83,11 +83,11 @@ Do these on a Mac after the ITMS-90382 window. This environment cannot archive o
 
 ### Privacy nutrition label
 
-- [ ] App Privacy = **Data Not Collected** (matches [`PRIVACY.md`](PRIVACY.md) and `PrivacyInfo.xcprivacy`).
-- [ ] Do **not** declare Location / Photos / Microphone as collected: they are processed on device and never leave. Apple’s optional-disclosure rule: on-device-only data is not “collected.”
-- [ ] Tracking = No. No third-party SDKs to declare.
+- [ ] App Privacy = **Photos** for Look Check Analyze Look (matches [`PRIVACY.md`](PRIVACY.md) and `PrivacyInfo.xcprivacy`). Not linked. Not tracking.
+- [ ] Do **not** declare Location / Microphone as collected: they are processed on device and never leave. Photos are collected only after Analyze Look.
+- [ ] Tracking = No. No advertising SDKs to declare. Look Check may forward a user-initiated photo through the Beckify API to OpenAI/Anthropic.
 - [ ] Privacy Policy URL live: https://beckify.com/privacy
-- [ ] Usage strings (already in the Xcode target) match the Review notes: mic = Noise Meter dBFS; location = Position / Wi‑Fi Path / optional Solar latitude; Local Network = TCP RTT to a LAN host; camera = Motor Nameplate OCR; Bluetooth = BLE scanner.
+- [ ] Usage strings (already in the Xcode target) match the Review notes: mic = Noise Meter dBFS; location = Position / Wi‑Fi Path / optional Solar latitude; Local Network = TCP RTT to a LAN host; camera = Motor Nameplate OCR and Look Check; Bluetooth = BLE scanner.
 
 ### Listing
 

@@ -28,7 +28,7 @@ export default function PrivacyPage() {
     <Layout showAds={false}>
       <SchemaHead
         title="Privacy Policy | Beckify iOS"
-        description="Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Data Not Collected. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts."
+        description="Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Look Check uploads a photo only when you tap Analyze Look. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts."
         path="/privacy"
         type="article"
         schema={pageSchema}
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
         <SectionHeader
           title="Privacy Policy"
           level="h1"
-          subtitle="Beckify for iPhone and iPad. Data Not Collected."
+          subtitle="Beckify for iPhone and iPad. Look Check uploads only when you tap Analyze Look."
           icon={Shield}
         />
       </FadeIn>
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
               </a>
             </dd>
             <dt className="text-[var(--muted)]">Last updated</dt>
-            <dd>2 September 2026</dd>
+            <dd>4 September 2026</dd>
           </dl>
 
           <p className="text-base leading-relaxed text-[var(--muted)]">
@@ -76,8 +76,10 @@ export default function PrivacyPage() {
           </p>
 
           <p className="text-base leading-relaxed">
-            Apple’s App Privacy nutrition label for this app is <strong>Data Not Collected</strong>. Sensor
-            readings and Saved Jobs stay on the device.
+            Apple’s App Privacy nutrition label for this app is <strong>Photos</strong> (App Functionality)
+            when you use Look Check <strong>Analyze Look</strong>. That upload is user-initiated, not linked
+            to an account, and not used for tracking. Sensor readings, Saved Jobs, Motor Nameplate OCR, and
+            Panel Directory stay on the device.
           </p>
 
           <section className="space-y-3">
@@ -148,11 +150,27 @@ export default function PrivacyPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3 align-top">Location (When In Use)</td>
-                    <td className="p-3 align-top">Position; Wi-Fi Path (SSID / 0…1 amplitude / optional GPS coverage sketch)</td>
-                    <td className="p-3 align-top">
+                    <td className="border-b border-[var(--border)] p-3 align-top">Location (When In Use)</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">Position; Wi-Fi Path (SSID / 0…1 amplitude / optional GPS coverage sketch)</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">
                       Coordinates, current SSID, Apple <code className="font-mono text-[0.9em]">signalStrength</code>{" "}
                       0…1, on-device heatmap samples. Not used at launch. Not uploaded.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border-b border-[var(--border)] p-3 align-top">Local Network</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">Wi-Fi Path (optional); Cellular Path (optional)</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">
+                      TCP connect timing to a LAN or default-gateway host you choose. Public hosts such as
+                      1.1.1.1, and Online / Captive to captive.apple.com, do not need this permission.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 align-top">Camera</td>
+                    <td className="p-3 align-top">Motor Nameplate OCR; Look Check</td>
+                    <td className="p-3 align-top">
+                      Nameplate photos stay on this device. A Look Check photo uploads only when you tap
+                      Analyze Look.
                     </td>
                   </tr>
                 </tbody>
@@ -163,9 +181,23 @@ export default function PrivacyPage() {
               Battery and thermal state are local diagnostics.
             </p>
             <p className="text-base leading-relaxed">
-              iOS does <strong>not</strong> give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool shows
-              Apple’s public 0…1 <code className="font-mono text-[0.9em]">signalStrength</code> (percent and
-              bars) and an on-device coverage sketch. It does not invent dBm.
+              iOS does <strong>not</strong> give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool leads
+              with <strong>Online / Captive</strong> (Apple hotspot-detect) and shows Apple’s public 0…1{" "}
+              <code className="font-mono text-[0.9em]">signalStrength</code> (percent and bars) and an
+              on-device coverage sketch. It does not invent dBm. Catalog Look Check is a separate photo tool.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-xl font-bold tracking-tight">Look Check (iOS photo tool)</h2>
+            <p className="text-base leading-relaxed">
+              Catalog Look Check is the website photo product — not the Wi-Fi / Cellular{" "}
+              <strong>Online / Captive</strong> hotspot-detect card. Taking or choosing a photo does not
+              upload it. <strong>Analyze Look</strong> POSTs an upright JPEG to{" "}
+              <code className="font-mono text-[0.9em]">https://beckify.com/api/analyze-look</code> (or a
+              HTTPS endpoint you enter). The Beckify API may forward that photo to OpenAI and/or Anthropic.
+              Entertainment only — not medical or dating advice. Anyone who appears under 18 is not rated.
+              The photo is not saved in Saved Jobs.
             </p>
           </section>
 
@@ -204,7 +236,7 @@ export default function PrivacyPage() {
               <a className="text-[var(--accent)] underline-offset-4 hover:underline" href={`${SITE_URL}/toolbox/`}>
                 {SITE_URL}/toolbox/
               </a>
-              , not the native iOS app. The iOS app still does not upload photos.
+              . The native iOS Look Check tool uses the same Analyze Look upload rule.
             </p>
             <p className="text-base leading-relaxed">
               Motor nameplate and panel directory tools default to on-device Tesseract.js. Choosing a photo does

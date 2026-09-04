@@ -411,6 +411,7 @@ extension GlyphKind {
         case .upsSizing: return .upsSizing
         case .motorNameplate: return .motorNameplate
         case .motorNameplateOCR: return .motorNameplateOCR
+        case .lookCheck: return .lookCheck
         case .heaterDesign: return .heaterDesign
         case .empEmc: return .empEmc
         case .necCircuit: return .necCircuit
@@ -489,6 +490,7 @@ enum GlyphKind {
     case upsSizing
     case motorNameplate
     case motorNameplateOCR
+    case lookCheck
     case heaterDesign
     case empEmc
     case necCircuit
@@ -566,6 +568,7 @@ enum GlyphKind {
         case .upsSizing: return Self.upsSizing(rect)
         case .motorNameplate: return Self.motorNameplate(rect)
         case .motorNameplateOCR: return Self.motorNameplateOCR(rect)
+        case .lookCheck: return Self.lookCheck(rect)
         case .heaterDesign: return Self.heaterDesign(rect)
         case .empEmc: return Self.empEmc(rect)
         case .necCircuit: return Self.necCircuit(rect)
@@ -1468,6 +1471,37 @@ enum GlyphKind {
             path.move(to: origin)
             path.addLine(to: CGPoint(x: origin.x, y: origin.y + arm * dy))
         }
+        return path
+    }
+
+    /// Camera frame with a person silhouette — catalog Look Check, not the
+    /// Online / Captive connectivity card.
+    private static func lookCheck(_ r: CGRect) -> Path {
+        var path = Path()
+        let frame = CGRect(
+            x: r.minX + r.width * 0.16,
+            y: r.minY + r.height * 0.22,
+            width: r.width * 0.68,
+            height: r.height * 0.58
+        )
+        path.addRoundedRect(in: frame, cornerSize: CGSize(width: 4, height: 4))
+        let head = CGRect(
+            x: r.minX + r.width * 0.40,
+            y: r.minY + r.height * 0.32,
+            width: r.width * 0.20,
+            height: r.height * 0.18
+        )
+        path.addEllipse(in: head)
+        path.move(to: CGPoint(x: r.minX + r.width * 0.30, y: r.minY + r.height * 0.70))
+        path.addQuadCurve(
+            to: CGPoint(x: r.minX + r.width * 0.70, y: r.minY + r.height * 0.70),
+            control: CGPoint(x: r.minX + r.width * 0.50, y: r.minY + r.height * 0.52)
+        )
+        let arm = min(r.width, r.height) * 0.10
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.08 + arm, y: r.minY + r.height * 0.12))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12 + arm))
         return path
     }
 

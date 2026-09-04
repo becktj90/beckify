@@ -186,22 +186,22 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "wifiStatus": ToolHowItWorks(
-            summary: "Look Check (captive / local / online), Apple 0…1 strength %/bars when given, and TCP RTT.",
+            summary: "Online / Captive (local / online), Apple 0…1 strength %/bars when given, and TCP RTT.",
             context: "Field connectivity first. Not a dBm meter or a site survey.",
             bullets: [
                 "iOS does not give third-party apps Wi-Fi RSSI or dBm — this tool will not invent dBm.",
-                "Look Check GETs Apple’s hotspot-detect page. Success means no captive splash — not a speed test.",
+                "Online / Captive GETs Apple’s hotspot-detect page. Success means no captive splash — not a speed test.",
                 "RTT is TCP connect time, not ICMP ping. A LAN/gateway target may prompt for Local Network.",
                 "SSID and strength need location, plus Access Wi-Fi Information on a signed team.",
             ]
         ),
         "cellularStatus": ToolHowItWorks(
-            summary: "Look Check, radio generation from RAT (2G…5G), optional TCP RTT, and carrier / PLMN chips.",
+            summary: "Online / Captive, radio generation from RAT (2G…5G), optional TCP RTT, and carrier / PLMN chips.",
             context: "Which radio and whether the path is online — not a field-strength meter.",
             bullets: [
                 "iOS does not expose RSRP, RSRQ, SINR, RSSI, or dBm to third-party apps. Nothing here is invented.",
                 "Gauges are generation (from RAT) and TCP RTT milliseconds — not signal bars.",
-                "Look Check is the same HTTP hotspot-detect probe as Wi-Fi Path — captive vs online, not RSRP.",
+                "Online / Captive is the same HTTP hotspot-detect probe as Wi-Fi Path — captive vs online, not RSRP.",
                 "CTCarrier is deprecated as of iOS 16 with no public replacement; empty subscriber fields stay blank.",
             ]
         ),
@@ -491,6 +491,14 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Heuristic extract. Confirm marks reviewed. Cloud VLM is off.",
                 "MOCP and LRA are never used as FLA. Recognition can misread a stamped plate.",
+            ]
+        ),
+        "lookCheck": ToolHowItWorks(
+            summary: "Camera or library photo, then Analyze Look for a playful good-or-bad verdict plus lighting metrics.",
+            context: "Entertainment only. The photo stays on this device until you tap Analyze Look.",
+            bullets: [
+                "Not medical or dating advice. Anyone who appears under 18 is not rated.",
+                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
             ]
         ),
         "heaterDesign": ToolHowItWorks(

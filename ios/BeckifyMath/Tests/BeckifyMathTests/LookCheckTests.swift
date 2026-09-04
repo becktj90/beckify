@@ -150,7 +150,7 @@ final class LookCheckTests: XCTestCase {
             connected: true,
             localEndpoint: "172.16.4.9:9"
         )
-        XCTAssertTrue(v.copyLine.contains("Look Check: No captive portal"))
+        XCTAssertTrue(v.copyLine.contains("Online / Captive: No captive portal"))
         XCTAssertTrue(v.copyLine.contains("local IPv4 172.16.4.9"))
         XCTAssertTrue(LookCheck.httpRequest().contains("GET /hotspot-detect.html HTTP/1.1"))
         XCTAssertTrue(LookCheck.httpRequest().contains("Host: captive.apple.com"))

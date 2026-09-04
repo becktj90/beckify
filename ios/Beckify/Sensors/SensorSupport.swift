@@ -65,13 +65,14 @@ func formatCoordinate(_ value: Double, digits: Int = 6) -> String {
     String(format: "%.\(digits)f", value)
 }
 
-/// First-class Look Check card — captive / local / online, never a dBm row.
+/// Embedded Online / Captive card — captive / local / online, never a dBm row.
+/// Distinct from the catalog Look Check photo tool (`LookCheckPhotoView`).
 struct LookCheckCard: View {
     @ObservedObject var model: LookCheckModel
     var onCheck: () -> Void
 
     var body: some View {
-        ResultCard(title: "Look Check", copyText: model.copyLine) {
+        ResultCard(title: "Online / Captive", copyText: model.copyLine) {
             ResultRow(
                 label: "Verdict",
                 value: model.verdict?.headline ?? (model.measuring ? "Checking…" : "—"),
@@ -91,7 +92,7 @@ struct LookCheckCard: View {
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
-            Button(model.measuring ? "Checking…" : "Look Check") {
+            Button(model.measuring ? "Checking…" : "Check path") {
                 onCheck()
             }
             .buttonStyle(.borderedProminent)
@@ -99,8 +100,8 @@ struct LookCheckCard: View {
             .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
             .padding(.top, 6)
             .disabled(model.measuring)
-            .accessibilityLabel(model.measuring ? "Look Check in progress" : "Run Look Check")
-            .accessibilityHint("Fetches Apple’s hotspot-detect page over HTTP. Success means no captive splash. Not RSSI and not dBm.")
+            .accessibilityLabel(model.measuring ? "Online / Captive check in progress" : "Run Online / Captive check")
+            .accessibilityHint("Fetches Apple’s hotspot-detect page over HTTP. Success means no captive splash. Not RSSI and not dBm. Not the Look Check photo tool.")
         }
     }
 

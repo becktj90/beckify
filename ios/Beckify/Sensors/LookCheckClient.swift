@@ -144,7 +144,7 @@ enum LookCheckClient {
 final class LookCheckModel: ObservableObject {
     @Published private(set) var measuring = false
     @Published private(set) var verdict: LookCheckVerdict?
-    @Published var message = "Look Check fetches Apple’s hotspot-detect page over HTTP. Success means no captive splash — not RSSI and not dBm."
+    @Published var message = "Online / Captive fetches Apple’s hotspot-detect page over HTTP. Success means no captive splash — not RSSI and not dBm."
 
     private var task: Task<Void, Never>?
     private var generation = 0
