@@ -950,7 +950,7 @@ enum WiFiRTTClient {
             let lock = NSLock()
             var finished = false
             let start = CFAbsoluteTimeGetCurrent()
-            func finish(_ value: Double?) {
+            @Sendable func finish(_ value: Double?) {
                 lock.lock()
                 defer { lock.unlock() }
                 guard !finished else { return }
@@ -964,7 +964,7 @@ enum WiFiRTTClient {
                     remoteEndpoint: remote
                 ))
             }
-            func acceptTimed(_ ms: Double) {
+            @Sendable func acceptTimed(_ ms: Double) {
                 if let requiredInterface {
                     guard let path = connection.currentPath, path.usesInterfaceType(requiredInterface) else {
                         finish(nil)
