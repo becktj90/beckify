@@ -2,7 +2,7 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments.
+Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
 This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode. Website toolbox IA is a follow-up, not this app.
 
@@ -35,42 +35,44 @@ ios/
 
 ## Field (jobsite — opens first)
 
-- Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
+`ToolHomeAreaPolicy` owns home area + shelf. Field home (not while searching) shows a Quick strip of pinned jobsite tools: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
+
+### Jobsite
+
 - Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff)
 - Conductor Cost Optimizer (compliant size × parallel-run ranking with planning $/kft and optional I²R energy — not a live quote)
 - Conductor Length by Resistance (length from a milliohm / mΩ reading — end-to-end or short-to-parallel; Cu/Al α compensation)
 - Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways)
-- Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
-- Tap-Changer Calculator (DETC tap from measured secondary)
 - Motor FLA (430.248 / 430.250)
 - Motor Speed & Torque (sync RPM, slip, shaft torque)
 - Motor Nameplate Analyzer (430.32 overload, Table 430.52 SCPD, 430.22 conductor, code-letter LRA)
 - Motor Nameplate OCR (camera or library photo, on-device Vision, heuristic field extract into the shared nameplate schema — value + confidence + reviewed; human confirm sets reviewed. MOCP and LRA are never treated as FLA. Cloud VLM protocol is off. Optional seed into FLA / Analyzer / Speed)
 - Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load)
-- Heater Design Wizard (resistive heater current, leg R, element wire length)
-- UPS / On-site Power (kVA, runtime, battery Ah)
-- Harmonics (THD) (current THD / IEEE 519 discussion bands)
-- NEC Circuit Calculator (design current, derated conductor, VD, OCPD)
-- Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
-- Cable Schedule Generator (sequential IDs + CSV copy)
-- Solenoid Design Wizard (winding pack, B/L/force plots, copper loss)
-- EMP / EMC Shielding (skin depth, sheet SE, Faraday loop, aperture — protection-side educational)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
+- Short-Circuit Current, Circular Mils, Load & Demand Factors
+- NEC Circuit Calculator (design current, derated conductor, VD, OCPD — live one-shot calc, not paperwork)
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
-- Power Factor Correction, Short-Circuit Current, Circular Mils, Load & Demand Factors
+
+### Power (facility / distribution only)
+
+- Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
+- Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
+- Tap-Changer Calculator (DETC tap from measured secondary)
+- Power Factor Correction
+- Harmonics (THD) (current THD / IEEE 519 discussion bands)
 - Battery Bank Sizing
-- E-Bike Torque / RPM (shaft torque or RPM from W / kW / hp)
-- Sprocket Ratio Designer (drive/driven teeth, output RPM/torque, optional wheel speed, or invert a target)
-- Range Estimator (pack V×Ah and Wh/mi → miles, km, runtime)
-- Battery Pack Designer (S×P planning from a voltage/current target or a known layout — design aid, not a BMS/weld cert; Battery Bank Sizing stays the runtime/DoD tool)
-- Nickel Strip (cross-section × planning current density)
 - Solar Design Wizard (PV sizing, phone IMU/compass aim, optional storage)
+- UPS / On-site Power (kVA, runtime, battery Ah)
+
+### Controls
+
 - Signal Scaling, Modbus Address, PLC Timer Preset
-- Control Systems (Field → Controls hub: plant library + custom G(s), P→PI→PID step with Ziegler–Nichols and Open/P/PI/PID overlay, Bode margins, lead compensator; educational — not commissioning)
 - E-Bus / Rack Current
-- Panel Directory (paste/OCR schedule text)
+- Control Systems (Field → Controls hub: plant library + custom G(s), P→PI→PID step with Ziegler–Nichols and Open/P/PI/PID overlay, Bode margins, lead compensator; educational — not commissioning)
 
 ## Toolkit (basics, bench / homework, reference)
+
+### Basics
 
 - Ohm's Law
 - Voltage Divider (Vout, or solve R1/R2)
@@ -80,6 +82,9 @@ ios/
 - LED current-limit R and RC τ (555 astable/monostable stays in 555 Timer)
 - Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
 - 555 Timer (astable / monostable)
+
+### Bench
+
 - Reactance & Resonance, Phasor Diagram, Magnetic Circuit
 - Transient Circuits (RC/RL charge/discharge + curve)
 - Fiber Link / NA (numerical aperture, acceptance angle, V-number)
@@ -91,7 +96,21 @@ ios/
 - Instrumentation Amp (3-op-amp G = 1 + 2R/Rg, or 4-resistor difference amp)
 - ADC / DAC & Sampling (LSB, quantization SNR, Nyquist, optional DAC code-to-voltage)
 - RF Power & Link, Number Base Converter
+- Heater Design Wizard (resistive heater current, leg R, element wire length)
+- Solenoid Design Wizard (winding pack, B/L/force plots, copper loss)
+- EMP / EMC Shielding (skin depth, sheet SE, Faraday loop, aperture — protection-side educational)
+- E-Bike Torque / RPM (shaft torque or RPM from W / kW / hp)
+- Sprocket Ratio Designer (drive/driven teeth, output RPM/torque, optional wheel speed, or invert a target)
+- Range Estimator (pack V×Ah and Wh/mi → miles, km, runtime)
+- Battery Pack Designer (S×P planning from a voltage/current target or a known layout — design aid, not a BMS/weld cert; Battery Bank Sizing stays the Field → Power runtime/DoD tool)
+- Nickel Strip (cross-section × planning current density)
+
+### Reference
+
 - Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
+- Panel Directory (paste/OCR schedule text)
+- Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
+- Cable Schedule Generator (sequential IDs + CSV copy)
 
 Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, Analog Design Workbench Bode magnitude, and Control Systems step / PID overlay / Bode / lead. This is not a new tool list.
 
