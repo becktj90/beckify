@@ -113,7 +113,7 @@ struct ToolGridView: View {
                 // ask from a Save tap or from first-launch onAppear.
                 if !oldPath.isEmpty && newPath.isEmpty {
                     reviewAsk.presentIfEligible(
-                        requestReview,
+                        { requestReview() },
                         currentVersion: ReviewAskStore.marketingVersion
                     )
                 }

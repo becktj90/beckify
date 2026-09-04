@@ -1,12 +1,11 @@
 import Foundation
-import StoreKit
 import BeckifyMath
 
 /// On-device counters for a respectful App Store review ask.
 ///
-/// Importing StoreKit here is **only** for `RequestReviewAction`. There is still
-/// no IAP, no StoreKit product, and no paid listing. Apple’s system prompt is
-/// the only UI — no custom “Rate us 5★” sheet (App Review 5.6.1).
+/// StoreKit stays at the SwiftUI environment boundary. There is still no IAP,
+/// no StoreKit product, and no paid listing. Apple’s system prompt is the only
+/// UI — no custom “Rate us 5★” sheet (App Review 5.6.1).
 @MainActor
 final class ReviewAskStore: ObservableObject {
     static let shared = ReviewAskStore()
@@ -95,7 +94,7 @@ final class ReviewAskStore: ObservableObject {
     /// If a win is pending and the policy gates pass, consume the ask and
     /// present Apple’s system sheet after a short pause. Caller must be at
     /// Field home (or switching back to Toolbox) — never first-launch onAppear.
-    func presentIfEligible(_ requestReview: RequestReviewAction, currentVersion: String) {
+    func presentIfEligible(_ requestReview: @MainActor @escaping () -> Void, currentVersion: String) {
         guard !deniedPermissionThisSession else { return }
         guard pendingAsk, ReviewAskPolicy.shouldRequest(snapshot(currentVersion: currentVersion)) else {
             return
@@ -104,7 +103,7 @@ final class ReviewAskStore: ObservableObject {
         lastPromptedVersion = currentVersion
         defaults.set(false, forKey: Key.pending)
         defaults.set(currentVersion, forKey: Key.lastPromptedVersion)
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(2))
             requestReview()
         }
@@ -122,7 +121,7 @@ final class ReviewAskStore: ObservableObject {
         )
     }
 
-    static var marketingVersion: String {
+    nonisolated static var marketingVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }
 }

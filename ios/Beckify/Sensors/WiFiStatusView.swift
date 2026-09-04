@@ -555,7 +555,7 @@ struct WiFiStatusView: View {
             Picker("RTT host", selection: $rttTarget) {
                 ForEach(WiFiRTTTarget.allCases) { Text($0.rawValue).tag($0) }
             }
-            .segmentedControlStyle()
+            .pickerStyle(.segmented)
             .disabled(model.rttMeasuring)
             .padding(.top, 6)
             if rttTarget == .custom {
@@ -632,7 +632,7 @@ struct WiFiStatusView: View {
             Picker("Survey", selection: $surveyMode) {
                 ForEach(WiFiSurveyMode.allCases) { Text($0.rawValue).tag($0) }
             }
-            .segmentedControlStyle()
+            .pickerStyle(.segmented)
             .disabled(model.surveying)
             Text(surveyMode == .gps
                  ? "Walk the space. Samples drop every ~1.5 m from GPS plus Apple’s 0…1 strength."
@@ -923,6 +923,19 @@ struct TCPConnectProbe: Equatable {
     var remoteEndpoint: String?
 }
 
+private final class TCPProbeCompletionGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var finished = false
+
+    func markFinished() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !finished else { return false }
+        finished = true
+        return true
+    }
+}
+
 enum WiFiRTTClient {
     static func probe(host: String, port: UInt16, timeout: TimeInterval) async -> Double? {
         await probeDetail(host: host, port: port, timeout: timeout).rttMS
@@ -951,14 +964,10 @@ enum WiFiRTTClient {
             using: parameters
         )
         return await withCheckedContinuation { continuation in
-            let lock = NSLock()
-            var finished = false
+            let completionGate = TCPProbeCompletionGate()
             let start = CFAbsoluteTimeGetCurrent()
             @Sendable func finish(_ value: Double?) {
-                lock.lock()
-                defer { lock.unlock() }
-                guard !finished else { return }
-                finished = true
+                guard completionGate.markFinished() else { return }
                 let local = endpointSummary(connection.currentPath?.localEndpoint)
                 connection.stateUpdateHandler = nil
                 connection.cancel()

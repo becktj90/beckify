@@ -31,50 +31,42 @@ struct CellularRTTHistoryRow: Identifiable, Equatable {
     var ms: Double?
 }
 
-/// Isolates deprecated CTCarrier / subscriber-provider APIs (iOS 16+, no public replacement).
-/// Read through protocol witnesses so call sites stay warning-free. Empty name/MCC/MNC/ISO
-/// or the documented `65535` placeholder means Apple withheld the field — never invent values.
-private protocol CTCarrierLegacyFields: AnyObject {
-    var carrierName: String? { get }
-    var mobileCountryCode: String? { get }
-    var mobileNetworkCode: String? { get }
-    var isoCountryCode: String? { get }
-    var allowsVOIP: Bool { get }
-}
-
-extension CTCarrier: CTCarrierLegacyFields {}
-
-private protocol CTTelephonyLegacyProviders: AnyObject {
-    var serviceSubscriberCellularProviders: [String: CTCarrier]? { get }
-    var serviceSubscriberCellularProvidersDidUpdateNotifier: ((String) -> Void)? { get set }
-}
-
-extension CTTelephonyNetworkInfo: CTTelephonyLegacyProviders {}
-
+/// Isolates deprecated subscriber-provider APIs (iOS 16+, no public replacement).
+/// Access stays dynamic so deprecated `CTCarrier` symbols do not leak into typed call sites.
 private enum CTCarrierLegacy {
-    static func providers(from info: CTTelephonyNetworkInfo) -> [String: CTCarrier] {
-        (info as CTTelephonyLegacyProviders).serviceSubscriberCellularProviders ?? [:]
+    static func providers(from info: CTTelephonyNetworkInfo) -> [String: AnyObject] {
+        (info.value(forKey: "serviceSubscriberCellularProviders") as? [String: AnyObject]) ?? [:]
     }
 
     static func setProvidersUpdateHandler(
         on info: CTTelephonyNetworkInfo,
         _ handler: ((String) -> Void)?
     ) {
-        (info as CTTelephonyLegacyProviders).serviceSubscriberCellularProvidersDidUpdateNotifier = handler
+        info.setValue(handler, forKey: "serviceSubscriberCellularProvidersDidUpdateNotifier")
     }
 
-    static func snapshot(_ carrier: CTCarrier?) -> (
+    static func snapshot(_ carrier: AnyObject?) -> (
         name: String?, mcc: String?, mnc: String?, iso: String?, voip: Bool?
     ) {
         guard let carrier else { return (nil, nil, nil, nil, nil) }
-        let fields = carrier as CTCarrierLegacyFields
         return (
-            CellularRadioIdentity.cleaned(fields.carrierName),
-            CellularRadioIdentity.cleaned(fields.mobileCountryCode),
-            CellularRadioIdentity.cleaned(fields.mobileNetworkCode),
-            CellularRadioIdentity.displayISO(fields.isoCountryCode),
-            fields.allowsVOIP
+            CellularRadioIdentity.cleaned(stringValue("carrierName", from: carrier)),
+            CellularRadioIdentity.cleaned(stringValue("mobileCountryCode", from: carrier)),
+            CellularRadioIdentity.cleaned(stringValue("mobileNetworkCode", from: carrier)),
+            CellularRadioIdentity.displayISO(stringValue("isoCountryCode", from: carrier)),
+            boolValue("allowsVOIP", from: carrier)
         )
+    }
+
+    private static func stringValue(_ key: String, from object: AnyObject) -> String? {
+        (object.value(forKey: key) as? String)
+    }
+
+    private static func boolValue(_ key: String, from object: AnyObject) -> Bool? {
+        if let value = object.value(forKey: key) as? Bool {
+            return value
+        }
+        return (object.value(forKey: key) as? NSNumber)?.boolValue
     }
 }
 
@@ -696,7 +688,7 @@ struct CellularStatusView: View {
             Picker("RTT host", selection: $rttTarget) {
                 ForEach(CellularRTTTarget.allCases) { Text($0.rawValue).tag($0) }
             }
-            .segmentedControlStyle()
+            .pickerStyle(.segmented)
             .disabled(model.rttMeasuring)
             .padding(.top, 6)
             if rttTarget == .custom {

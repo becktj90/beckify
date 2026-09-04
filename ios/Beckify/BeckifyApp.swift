@@ -65,7 +65,7 @@ struct RootView: View {
         }
         .onChange(of: tab) { _, newTab in
             guard didFinishFirstAppear, newTab == .toolbox else { return }
-            reviewAsk.presentIfEligible(requestReview, currentVersion: ReviewAskStore.marketingVersion)
+            reviewAsk.presentIfEligible({ requestReview() }, currentVersion: ReviewAskStore.marketingVersion)
         }
     }
 }
