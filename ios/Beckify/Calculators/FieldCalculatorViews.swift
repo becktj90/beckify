@@ -641,3 +641,790 @@ struct LoadFactorsView: View {
         return "DF \(Format.number(r.demandFactor, digits: 3))"
     }
 }
+
+// MARK: - Motor speed & torque
+
+struct MotorSpeedView: View {
+    enum Mode: String, CaseIterable, Identifiable {
+        case slip = "Speed & slip"
+        case torque = "Torque"
+        var id: String { rawValue }
+    }
+
+    enum Line: String, CaseIterable, Identifiable {
+        case sixty = "60 Hz"
+        case fifty = "50 Hz"
+        var id: String { rawValue }
+        var hertz: Double { self == .sixty ? 60 : 50 }
+    }
+
+    private enum Output: Equatable {
+        case speed(MotorSpeedResult)
+        case torque(MotorTorqueResult)
+    }
+
+    @EnvironmentObject private var jobs: JobStore
+    @StoredChoice(.motorSpeed, "mode", default: MotorSpeedView.Mode.slip) private var mode
+    @StoredChoice(.motorSpeed, "line", default: MotorSpeedView.Line.sixty) private var line
+    @StoredInput(.motorSpeed, "poles", default: "4") private var poles
+    @StoredInput(.motorSpeed, "rpm", default: "1750") private var rpm
+    @StoredInput(.motorSpeed, "hp", default: "10") private var horsepower
+    @StoredInput(.motorSpeed, "torqueRPM", default: "1750") private var torqueRPM
+    @StoredInput(.motorSpeed, "jobName", default: "Motor") private var jobName
+    @State private var session = ExplicitCalculationState<Output>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(mode)|\(line)|\(poles)|\(rpm)|\(horsepower)|\(torqueRPM)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .motorSpeed,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .motorSpeed,
+                symbolic: mode == .slip
+                    ? "n_s = 120 f / p     slip = (n_s − n) / n_s"
+                    : "T (lb·ft) = 5252 · HP / RPM",
+                substituted: substituted,
+                meaning: mode == .slip
+                    ? "An induction motor's rotor always lags the rotating field — that lag is what produces torque. A nameplate 1750 on a 4-pole 60 Hz machine is 1800 synchronous minus about 2.8 % slip."
+                    : "5252 is 33 000 ft·lb per minute per horsepower divided by 2π. Torque rises as speed falls for the same power, which is why a gearbox output shaft needs the bigger coupling."
+            )
+            TryExampleButton(title: "10 HP, 4-pole, 1750 RPM nameplate") {
+                mode = .slip
+                line = .sixty
+                poles = "4"
+                rpm = "1750"
+                horsepower = "10"
+                torqueRPM = "1750"
+                session.prepareForNewInputs()
+            }
+
+            MenuField(title: "Mode", selection: $mode, options: Mode.allCases) { $0.rawValue }
+
+            if mode == .slip {
+                MenuField(title: "Line frequency", selection: $line, options: Line.allCases) { $0.rawValue }
+                ThumbButtonRow {
+                    ForEach(MotorSpeed.commonPoleCounts, id: \.self) { count in
+                        Button("\(count)P") { poles = "\(count)" }
+                            .buttonStyle(.bordered)
+                            .tint(Theme.accent)
+                            .frame(minHeight: Theme.touchTarget)
+                    }
+                }
+                NumberField(title: "Poles", unit: "even", text: $poles, fieldID: "poles", onSubmit: calculate)
+                NumberField(title: "Nameplate RPM", unit: "RPM", text: $rpm, fieldID: "rpm", onSubmit: calculate)
+            } else {
+                NumberField(title: "Horsepower", unit: "HP", text: $horsepower, fieldID: "hp", onSubmit: calculate)
+                NumberField(title: "Speed", unit: "RPM", text: $torqueRPM, fieldID: "torqueRPM", onSubmit: calculate)
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    if mode == .slip {
+                        line = .sixty
+                        poles = "4"
+                        rpm = "1750"
+                    } else {
+                        horsepower = "10"
+                        torqueRPM = "1750"
+                    }
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "4-pole, 1750 RPM"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let output = session.displayedResult {
+                switch output {
+                case .speed(let r):
+                    ResultCard(copyText: sticky) {
+                        ResultRow(label: "Synchronous", value: "\(Format.number(r.synchronousRPM, digits: 0)) RPM", emphasis: true, tone: Theme.good)
+                        ResultRow(label: "Rotor", value: "\(Format.number(r.rotorRPM, digits: 0)) RPM", emphasis: true)
+                        ResultRow(label: "Slip", value: Format.percent(r.slipPercent))
+                        ResultRow(label: "Rotor frequency", value: Format.frequency(r.slipFrequency))
+                    }
+                    .opacity(session.isStale ? 0.72 : 1)
+                case .torque(let r):
+                    MotorTorqueCurveChart(horsepower: r.horsepower, ratedRPM: r.rpm, ratedTorqueLbFt: r.torqueLbFt)
+                        .opacity(session.isStale ? 0.72 : 1)
+                    ResultCard(copyText: sticky) {
+                        ResultRow(label: "Torque", value: "\(Format.number(r.torqueLbFt, digits: 2)) lb·ft", emphasis: true, tone: Theme.good)
+                        ResultRow(label: "Torque", value: "\(Format.number(r.torqueNewtonMetres, digits: 2)) N·m", emphasis: true)
+                        ResultRow(label: "At", value: "\(Format.number(r.rpm, digits: 0)) RPM")
+                    }
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(output) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            if mode == .slip {
+                let poleCount = try WholeCount.parse(poles.parsedDouble ?? .nan, name: "Poles")
+                return .speed(try MotorSpeed.slip(
+                    frequency: line.hertz,
+                    poles: poleCount,
+                    nameplateRPM: rpm.parsedDouble ?? .nan
+                ))
+            }
+            return .torque(try MotorTorque.fromHorsepower(
+                horsepower.parsedDouble ?? .nan,
+                rpm: torqueRPM.parsedDouble ?? .nan
+            ))
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        poles = ""
+        rpm = ""
+        horsepower = ""
+        torqueRPM = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let output = session.displayedResult else { return nil }
+        switch output {
+        case .speed(let r):
+            return "120 × \(Format.number(line.hertz, digits: 0)) / \(poles) = \(Format.number(r.synchronousRPM, digits: 0)) RPM  →  slip \(Format.percent(r.slipPercent))"
+        case .torque(let r):
+            return "5252 × \(Format.number(r.horsepower, digits: 2)) / \(Format.number(r.rpm, digits: 0)) = \(Format.number(r.torqueLbFt, digits: 2)) lb·ft"
+        }
+    }
+
+    private var sticky: String? {
+        guard let output = session.displayedResult else { return nil }
+        switch output {
+        case .speed(let r):
+            return "\(Format.number(r.synchronousRPM, digits: 0)) RPM sync  ·  \(Format.percent(r.slipPercent)) slip"
+        case .torque(let r):
+            return "\(Format.number(r.torqueLbFt, digits: 2)) lb·ft  ·  \(Format.number(r.torqueNewtonMetres, digits: 2)) N·m"
+        }
+    }
+
+    private func save(_ output: Output) {
+        var outputs: [String: String] = [:]
+        switch output {
+        case .speed(let r):
+            outputs["sync"] = "\(Format.number(r.synchronousRPM, digits: 0)) RPM"
+            outputs["slip"] = Format.percent(r.slipPercent)
+        case .torque(let r):
+            outputs["torque"] = "\(Format.number(r.torqueLbFt, digits: 2)) lb·ft"
+        }
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .motorSpeed,
+            inputs: mode == .slip
+                ? ["poles": poles, "line": line.rawValue, "nameplate": "\(rpm) RPM"]
+                : ["hp": horsepower, "rpm": torqueRPM],
+            outputs: outputs
+        ))
+    }
+}
+
+// MARK: - RF power & link
+
+struct RFLinkView: View {
+    enum Mode: String, CaseIterable, Identifiable {
+        case power = "dBm ↔ W"
+        case match = "VSWR"
+        case path = "Path loss"
+        var id: String { rawValue }
+    }
+
+    enum PowerEntry: String, CaseIterable, Identifiable {
+        case dBm = "dBm"
+        case watts = "Watts"
+        var id: String { rawValue }
+    }
+
+    enum MatchEntry: String, CaseIterable, Identifiable {
+        case vswr = "VSWR"
+        case returnLoss = "Return loss"
+        var id: String { rawValue }
+    }
+
+    private enum Output: Equatable {
+        case power(RFPowerResult)
+        case match(MatchResult)
+        case path(PathLossResult)
+    }
+
+    @EnvironmentObject private var jobs: JobStore
+    @StoredChoice(.rfLink, "mode", default: RFLinkView.Mode.power) private var mode
+    @StoredChoice(.rfLink, "powerEntry", default: RFLinkView.PowerEntry.dBm) private var powerEntry
+    @StoredChoice(.rfLink, "matchEntry", default: RFLinkView.MatchEntry.vswr) private var matchEntry
+    @StoredInput(.rfLink, "level", default: "30") private var level
+    @StoredInput(.rfLink, "impedance", default: "50") private var impedance
+    @StoredInput(.rfLink, "match", default: "1.5") private var matchValue
+    @StoredInput(.rfLink, "freq", default: "2400") private var frequency
+    @StoredInput(.rfLink, "distance", default: "100") private var distance
+    @StoredInput(.rfLink, "tx", default: "20") private var transmit
+    @StoredInput(.rfLink, "txGain", default: "3") private var txGain
+    @StoredInput(.rfLink, "rxGain", default: "3") private var rxGain
+    @StoredInput(.rfLink, "jobName", default: "RF link") private var jobName
+    @State private var session = ExplicitCalculationState<Output>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(mode)|\(powerEntry)|\(matchEntry)|\(level)|\(impedance)|\(matchValue)|\(frequency)|\(distance)|\(transmit)|\(txGain)|\(rxGain)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .rfLink,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .rfLink,
+                symbolic: symbolic,
+                substituted: substituted,
+                meaning: meaning
+            )
+            MenuField(title: "Mode", selection: $mode, options: Mode.allCases) { $0.rawValue }
+
+            switch mode {
+            case .power: powerInputs
+            case .match: matchInputs
+            case .path: pathInputs
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: loadExample,
+                exampleTitle: exampleTitle
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let output = session.displayedResult {
+                resultView(for: output)
+                    .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(output) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    // MARK: Inputs
+
+    @ViewBuilder
+    private var powerInputs: some View {
+        MenuField(title: "Enter", selection: $powerEntry, options: PowerEntry.allCases) { $0.rawValue }
+        NumberField(
+            title: powerEntry == .dBm ? "Level" : "Power",
+            unit: powerEntry == .dBm ? "dBm" : "W",
+            text: $level,
+            allowsScientific: true,
+            fieldID: "level",
+            onSubmit: calculate
+        )
+        NumberField(title: "Reference impedance", unit: "Ω", text: $impedance, fieldID: "impedance", onSubmit: calculate)
+    }
+
+    @ViewBuilder
+    private var matchInputs: some View {
+        MenuField(title: "Enter", selection: $matchEntry, options: MatchEntry.allCases) { $0.rawValue }
+        NumberField(
+            title: matchEntry == .vswr ? "VSWR" : "Return loss",
+            unit: matchEntry == .vswr ? ": 1" : "dB",
+            text: $matchValue,
+            fieldID: "match",
+            onSubmit: calculate
+        )
+    }
+
+    @ViewBuilder
+    private var pathInputs: some View {
+        NumberField(title: "Frequency", unit: "MHz", text: $frequency, fieldID: "freq", onSubmit: calculate)
+        NumberField(title: "Distance", unit: "m", text: $distance, fieldID: "distance", onSubmit: calculate)
+        NumberField(title: "Transmit level", unit: "dBm", text: $transmit, optional: true, fieldID: "tx", onSubmit: calculate)
+        NumberField(title: "TX antenna gain", unit: "dBi", text: $txGain, optional: true, fieldID: "txGain", onSubmit: calculate)
+        NumberField(title: "RX antenna gain", unit: "dBi", text: $rxGain, optional: true, fieldID: "rxGain", onSubmit: calculate)
+    }
+
+    // MARK: Results
+
+    @ViewBuilder
+    private func resultView(for output: Output) -> some View {
+        switch output {
+        case .power(let r):
+            ResultCard(copyText: sticky) {
+                ResultRow(label: "Level", value: "\(Format.number(r.dBm, digits: 2)) dBm", emphasis: true, tone: Theme.good)
+                ResultRow(label: "Power", value: "\(Format.number(r.watts, digits: 4)) W", emphasis: true)
+                ResultRow(label: "Power", value: "\(Format.number(r.milliwatts, digits: 3)) mW")
+                ResultRow(label: "RMS into \(Format.number(r.impedance, digits: 0)) Ω", value: Format.volts(r.voltsRMS))
+            }
+        case .match(let r):
+            if r.vswr > 3 {
+                ToolEmptyState(
+                    title: "That is a poor match",
+                    detail: "Above about 3:1 most transmitters start folding back power to protect the final stage. Check the connector, the feedline, and the antenna tuning before you blame the radio.",
+                    systemImage: "exclamationmark.triangle"
+                )
+            }
+            ResultCard(copyText: sticky) {
+                ResultRow(
+                    label: "VSWR",
+                    value: r.vswr.isFinite ? "\(Format.number(r.vswr, digits: 3)) : 1" : "∞ : 1",
+                    emphasis: true,
+                    tone: r.vswr <= 2 ? Theme.good : Theme.warn
+                )
+                ResultRow(
+                    label: "Return loss",
+                    value: r.returnLossDB >= AntennaMatch.perfectMatchReturnLossDB
+                        ? "perfect match"
+                        : "\(Format.number(r.returnLossDB, digits: 2)) dB",
+                    emphasis: true
+                )
+                ResultRow(label: "|Γ|", value: Format.number(r.reflectionCoefficient, digits: 4))
+                ResultRow(label: "Power reflected", value: Format.percent(r.reflectedPowerPercent))
+                ResultRow(
+                    label: "Mismatch loss",
+                    value: r.mismatchLossDB.isFinite ? "\(Format.number(r.mismatchLossDB, digits: 3)) dB" : "all of it"
+                )
+            }
+        case .path(let r):
+            PathLossDistanceChart(frequencyMHz: r.frequencyMHz, currentDistance: r.distanceMetres, currentLossDB: r.lossDB)
+            ResultCard(copyText: sticky) {
+                ResultRow(label: "Path loss", value: "\(Format.number(r.lossDB, digits: 2)) dB", emphasis: true, tone: Theme.good)
+                if let received = r.receivedDBm {
+                    ResultRow(label: "Received", value: "\(Format.number(received, digits: 2)) dBm", emphasis: true)
+                }
+                ResultRow(label: "At", value: "\(Format.number(r.frequencyMHz, digits: 0)) MHz, \(Format.meters(r.distanceMetres))")
+            }
+            ToolEmptyState(
+                title: "Free space only",
+                detail: "This is the loss with nothing in the way. Walls, floors, foliage, and ground reflections all add to it — treat the number as the best case, not the design margin.",
+                systemImage: "info.circle"
+            )
+        }
+    }
+
+    private func calculate() {
+        session.calculate {
+            switch mode {
+            case .power:
+                let z = impedance.parsedDouble ?? .nan
+                if powerEntry == .dBm {
+                    return .power(try RFPower.fromDBm(level.parsedDouble ?? .nan, impedance: z))
+                }
+                return .power(try RFPower.fromWatts(level.parsedDouble ?? .nan, impedance: z))
+            case .match:
+                let value = matchValue.parsedDouble ?? .nan
+                if matchEntry == .vswr {
+                    return .match(try AntennaMatch.fromVSWR(value))
+                }
+                return .match(try AntennaMatch.fromReturnLoss(value))
+            case .path:
+                return .path(try FreeSpacePathLoss.loss(
+                    frequencyMHz: frequency.parsedDouble ?? .nan,
+                    distanceMetres: distance.parsedDouble ?? .nan,
+                    transmitDBm: transmit.parsedDouble,
+                    transmitGainDBi: txGain.parsedDouble ?? 0,
+                    receiveGainDBi: rxGain.parsedDouble ?? 0
+                ))
+            }
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        level = ""
+        matchValue = ""
+        frequency = ""
+        distance = ""
+        transmit = ""
+        txGain = ""
+        rxGain = ""
+        session.reset()
+    }
+
+    private func loadExample() {
+        switch mode {
+        case .power:
+            powerEntry = .dBm
+            level = "30"
+            impedance = "50"
+        case .match:
+            matchEntry = .vswr
+            matchValue = "1.5"
+        case .path:
+            frequency = "2400"
+            distance = "100"
+            transmit = "20"
+            txGain = "3"
+            rxGain = "3"
+        }
+        session.prepareForNewInputs()
+    }
+
+    private var exampleTitle: String {
+        switch mode {
+        case .power: return "1 W into 50 Ω"
+        case .match: return "1.5:1 — a decent antenna"
+        case .path: return "2.4 GHz across 100 m"
+        }
+    }
+
+    private var symbolic: String {
+        switch mode {
+        case .power: return "P(mW) = 10^(dBm/10)     V_rms = √(P · Z)"
+        case .match: return "Γ = (SWR − 1)/(SWR + 1)     RL = −20·log₁₀|Γ|"
+        case .path: return "FSPL(dB) = 20·log₁₀(d_km) + 20·log₁₀(f_MHz) + 32.44"
+        }
+    }
+
+    private var meaning: String {
+        switch mode {
+        case .power:
+            return "dBm is an absolute level, not a ratio — 0 dBm is exactly one milliwatt. Every 3 dB doubles the power and every 10 dB multiplies it by ten, which is why the whole trade works in logs."
+        case .match:
+            return "VSWR, return loss, and |Γ| are three ways of saying the same thing: how much of the forward power comes straight back at you. 2:1 is about 11 % reflected, which most gear tolerates."
+        case .path:
+            return "Signal spreads over a sphere, so doubling the distance costs 6 dB — and so does doubling the frequency, because a higher-frequency antenna captures a smaller area for the same gain."
+        }
+    }
+
+    private var substituted: String? {
+        guard let output = session.displayedResult else { return nil }
+        switch output {
+        case .power(let r):
+            return "\(Format.number(r.dBm, digits: 2)) dBm = \(Format.number(r.watts, digits: 4)) W"
+        case .match(let r):
+            let swr = r.vswr.isFinite ? Format.number(r.vswr, digits: 3) : "∞"
+            return "SWR \(swr):1  →  |Γ| \(Format.number(r.reflectionCoefficient, digits: 3))  →  \(Format.percent(r.reflectedPowerPercent)) reflected"
+        case .path(let r):
+            return "\(Format.number(r.frequencyMHz, digits: 0)) MHz over \(Format.meters(r.distanceMetres)) = \(Format.number(r.lossDB, digits: 2)) dB"
+        }
+    }
+
+    private var sticky: String? {
+        guard let output = session.displayedResult else { return nil }
+        switch output {
+        case .power(let r):
+            return "\(Format.number(r.dBm, digits: 2)) dBm  ·  \(Format.number(r.watts, digits: 4)) W"
+        case .match(let r):
+            let swr = r.vswr.isFinite ? Format.number(r.vswr, digits: 3) : "∞"
+            return "\(swr):1  ·  \(Format.number(r.returnLossDB, digits: 2)) dB RL"
+        case .path(let r):
+            if let received = r.receivedDBm {
+                return "\(Format.number(r.lossDB, digits: 2)) dB  ·  \(Format.number(received, digits: 2)) dBm received"
+            }
+            return "\(Format.number(r.lossDB, digits: 2)) dB"
+        }
+    }
+
+    private func save(_ output: Output) {
+        var outputs: [String: String] = [:]
+        var inputs: [String: String] = [:]
+        switch output {
+        case .power(let r):
+            inputs = ["entry": powerEntry.rawValue, "value": level, "Z": impedance]
+            outputs = ["dBm": Format.number(r.dBm, digits: 2), "W": Format.number(r.watts, digits: 4)]
+        case .match(let r):
+            inputs = ["entry": matchEntry.rawValue, "value": matchValue]
+            outputs = ["VSWR": r.vswr.isFinite ? Format.number(r.vswr, digits: 3) : "∞", "RL": Format.number(r.returnLossDB, digits: 2)]
+        case .path(let r):
+            inputs = ["f": "\(frequency) MHz", "d": "\(distance) m", "tx": "\(transmit) dBm"]
+            outputs = ["loss": Format.number(r.lossDB, digits: 2)]
+        }
+        jobs.save(SavedJob(name: jobName, toolID: .rfLink, inputs: inputs, outputs: outputs))
+    }
+}
+
+// MARK: - Phasor diagram
+
+struct PhasorDiagramView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.phasorDiagram, "mag1", default: "120") private var mag1
+    @StoredInput(.phasorDiagram, "angle1", default: "0") private var angle1
+    @StoredInput(.phasorDiagram, "mag2", default: "120") private var mag2
+    @StoredInput(.phasorDiagram, "angle2", default: "-120") private var angle2
+    @StoredInput(.phasorDiagram, "mag3", default: "120") private var mag3
+    @StoredInput(.phasorDiagram, "angle3", default: "-240") private var angle3
+    @StoredToggle(.phasorDiagram, "useThird", default: true) private var useThird
+    @StoredInput(.phasorDiagram, "jobName", default: "Phasor sum") private var jobName
+    @State private var session = ExplicitCalculationState<PhasorSumResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(mag1)|\(angle1)|\(mag2)|\(angle2)|\(mag3)|\(angle3)|\(useThird)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .phasorDiagram,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .phasorDiagram,
+                symbolic: "resultant = Σ (magnitude ∠ angle)",
+                substituted: substituted,
+                meaning: "Each phasor is a spinning vector frozen at one instant. Adding them the way you add any vectors — real parts together, imaginary parts together — is exactly how three-phase currents combine (or cancel) on a shared neutral."
+            )
+            TryExampleButton(title: "Balanced 120 V three-phase set") {
+                mag1 = "120"; angle1 = "0"
+                mag2 = "120"; angle2 = "-120"
+                mag3 = "120"; angle3 = "-240"
+                useThird = true
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Phasor 1 magnitude", unit: "", text: $mag1, fieldID: "mag1", onSubmit: calculate)
+            NumberField(title: "Phasor 1 angle", unit: "°", text: $angle1, fieldID: "angle1", onSubmit: calculate)
+            NumberField(title: "Phasor 2 magnitude", unit: "", text: $mag2, fieldID: "mag2", onSubmit: calculate)
+            NumberField(title: "Phasor 2 angle", unit: "°", text: $angle2, fieldID: "angle2", onSubmit: calculate)
+
+            Toggle("Add a third phasor", isOn: $useThird)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            if useThird {
+                NumberField(title: "Phasor 3 magnitude", unit: "", text: $mag3, fieldID: "mag3", onSubmit: calculate)
+                NumberField(title: "Phasor 3 angle", unit: "°", text: $angle3, fieldID: "angle3", onSubmit: calculate)
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    mag1 = "120"; angle1 = "0"
+                    mag2 = "120"; angle2 = "-120"
+                    mag3 = "120"; angle3 = "-240"
+                    useThird = true
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Balanced 3-phase"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                PhasorPolarDiagram(
+                    phasors: r.phasors,
+                    resultantMagnitude: r.resultantMagnitude,
+                    resultantAngleDegrees: r.resultantAngleDegrees
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Resultant magnitude", value: Format.number(r.resultantMagnitude, digits: 3), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Resultant angle", value: Format.degrees(r.resultantAngleDegrees))
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            var phasors = [
+                Phasor(id: 0, label: "1", magnitude: mag1.parsedDouble ?? .nan, angleDegrees: angle1.parsedDouble ?? .nan),
+                Phasor(id: 1, label: "2", magnitude: mag2.parsedDouble ?? .nan, angleDegrees: angle2.parsedDouble ?? .nan),
+            ]
+            if useThird {
+                phasors.append(Phasor(id: 2, label: "3", magnitude: mag3.parsedDouble ?? .nan, angleDegrees: angle3.parsedDouble ?? .nan))
+            }
+            return try PhasorSum.resultant(of: phasors)
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        mag1 = ""; angle1 = ""
+        mag2 = ""; angle2 = ""
+        mag3 = ""; angle3 = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(r.phasors.count) phasors  →  \(Format.number(r.resultantMagnitude, digits: 3)) ∠ \(Format.number(r.resultantAngleDegrees, digits: 2))°"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.resultantMagnitude, digits: 3)) ∠ \(Format.number(r.resultantAngleDegrees, digits: 1))°"
+    }
+
+    private func save(_ r: PhasorSumResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .phasorDiagram,
+            inputs: ["count": "\(r.phasors.count)"],
+            outputs: ["magnitude": Format.number(r.resultantMagnitude, digits: 3), "angle": Format.degrees(r.resultantAngleDegrees)]
+        ))
+    }
+}
+
+// MARK: - Battery bank sizing
+
+struct BatteryBankView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.batteryBank, "cellVoltage", default: "3.2") private var cellVoltage
+    @StoredInput(.batteryBank, "cellAh", default: "100") private var cellAh
+    @StoredInput(.batteryBank, "series", default: "4") private var series
+    @StoredInput(.batteryBank, "parallel", default: "1") private var parallel
+    @StoredInput(.batteryBank, "dod", default: "80") private var dod
+    @StoredInput(.batteryBank, "loadWatts", default: "100") private var loadWatts
+    @StoredInput(.batteryBank, "efficiency", default: "95") private var efficiency
+    @StoredInput(.batteryBank, "jobName", default: "Battery bank") private var jobName
+    @State private var session = ExplicitCalculationState<BatteryBankResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String {
+        "\(cellVoltage)|\(cellAh)|\(series)|\(parallel)|\(dod)|\(loadWatts)|\(efficiency)"
+    }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .batteryBank,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .batteryBank,
+                symbolic: "V_bank = S · V_cell     Ah_bank = P · Ah_cell     t = Wh_usable · η / P_load",
+                substituted: substituted,
+                meaning: "Series strings add voltage without changing amp-hours; parallel strings add amp-hours without changing voltage. Depth of discharge and inverter efficiency both shrink what you actually get to use — a 100 % DoD number is a lab spec, not a runtime plan."
+            )
+            TryExampleButton(title: "4× 3.2 V / 100 Ah LiFePO4, 100 W load") {
+                cellVoltage = "3.2"; cellAh = "100"
+                series = "4"; parallel = "1"
+                dod = "80"; loadWatts = "100"; efficiency = "95"
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Cell voltage", unit: "V", text: $cellVoltage, fieldID: "cellVoltage", onSubmit: calculate)
+            NumberField(title: "Cell capacity", unit: "Ah", text: $cellAh, fieldID: "cellAh", onSubmit: calculate)
+            NumberField(title: "Series count", unit: "cells", text: $series, fieldID: "series", onSubmit: calculate)
+            NumberField(title: "Parallel count", unit: "strings", text: $parallel, fieldID: "parallel", onSubmit: calculate)
+            NumberField(title: "Usable depth of discharge", unit: "%", text: $dod, fieldID: "dod", onSubmit: calculate)
+            NumberField(title: "Load", unit: "W", text: $loadWatts, fieldID: "loadWatts", onSubmit: calculate)
+            NumberField(title: "System efficiency", unit: "%", text: $efficiency, optional: true, fieldID: "efficiency", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    cellVoltage = "3.2"; cellAh = "100"
+                    series = "4"; parallel = "1"
+                    dod = "80"; loadWatts = "100"; efficiency = "95"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "4S1P LiFePO4, 100 W"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                BatteryBankChart(usableWattHours: r.usableWattHours, totalWattHours: r.bankWattHours, runtimeHours: r.runtimeHours)
+                    .opacity(session.isStale ? 0.72 : 1)
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Bank voltage", value: Format.volts(r.bankVoltage), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Bank capacity", value: "\(Format.number(r.bankAmpHours, digits: 1)) Ah")
+                    ResultRow(label: "Total energy", value: "\(Format.number(r.bankWattHours, digits: 0)) Wh")
+                    ResultRow(label: "Usable energy", value: "\(Format.number(r.usableWattHours, digits: 0)) Wh")
+                    ResultRow(label: "Runtime at load", value: "\(Format.number(r.runtimeHours, digits: 2)) h", emphasis: true)
+                    ResultRow(label: "Cell count", value: "\(r.cellCount)")
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try BatteryBank.size(
+                cellVoltage: cellVoltage.parsedDouble ?? .nan,
+                cellAmpHours: cellAh.parsedDouble ?? .nan,
+                seriesCount: series.parsedDouble ?? .nan,
+                parallelCount: parallel.parsedDouble ?? .nan,
+                usableDepthOfDischargePercent: dod.parsedDouble ?? .nan,
+                loadWatts: loadWatts.parsedDouble ?? .nan,
+                systemEfficiencyPercent: efficiency.parsedDouble ?? 100
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        cellVoltage = ""; cellAh = ""
+        series = ""; parallel = ""
+        dod = ""; loadWatts = ""; efficiency = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.volts(r.bankVoltage))  ·  \(Format.number(r.bankAmpHours, digits: 1)) Ah  →  \(Format.number(r.runtimeHours, digits: 2)) h at \(loadWatts) W"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "\(Format.number(r.runtimeHours, digits: 2)) h  ·  \(Format.volts(r.bankVoltage))  ·  \(Format.number(r.bankAmpHours, digits: 1)) Ah"
+    }
+
+    private func save(_ r: BatteryBankResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .batteryBank,
+            inputs: ["cell": "\(cellVoltage) V / \(cellAh) Ah", "config": "\(series)S\(parallel)P", "load": "\(loadWatts) W"],
+            outputs: ["bank": Format.volts(r.bankVoltage), "runtime": "\(Format.number(r.runtimeHours, digits: 2)) h"]
+        ))
+    }
+}

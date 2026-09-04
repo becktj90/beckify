@@ -23,7 +23,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
     @Published var ssid: String?
     @Published var bssid: String?
     @Published var signalStrength: Double?
-    @Published var ssidMessage = "Location is needed to read the current SSID and Apple’s 0…1 signalStrength. dBm is not available."
+    @Published var ssidMessage = "Location is needed to read the current SSID and Apple’s 0…1 signal scale."
     @Published var latitude: Double?
     @Published var longitude: Double?
     @Published var accuracy: Double?
@@ -76,7 +76,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
 
     func requestNetworkInfo() {
         waitingForAuth = true
-        ssidMessage = "Location is required by iOS to read SSID / BSSID / signalStrength. Nothing is uploaded. dBm is never provided."
+        ssidMessage = "Location is required by iOS to read SSID / BSSID / signalStrength. Nothing is uploaded."
         ensureLocationThen {
             self.fetchNetwork()
             self.startPolling()
@@ -88,7 +88,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
             switch location.authorizationStatus {
             case .denied, .restricted:
                 denied = true
-                ssidMessage = "Location permission is off. iOS will not return SSID or signalStrength. dBm is never available."
+                ssidMessage = "Location permission is off. Turn it on to see SSID and Apple’s 0…1 signal scale."
                 return
             default:
                 break
@@ -157,7 +157,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
             waitingForAuth = false
             denied = true
             surveying = false
-            ssidMessage = "Location permission is off. iOS will not return SSID or signalStrength. dBm is never available."
+            ssidMessage = "Location permission is off. Turn it on to see SSID and Apple’s 0…1 signal scale."
         }
     }
 
@@ -259,7 +259,7 @@ final class WiFiPathModel: NSObject, ObservableObject, CLLocationManagerDelegate
                     self.ssid = nil
                     self.bssid = nil
                     self.signalStrength = nil
-                    self.ssidMessage = "No current hotspot. Common causes: not on Wi-Fi, missing Access Wi-Fi Information, or location off. dBm is never available to third-party apps."
+                    self.ssidMessage = "No current hotspot. Common causes: not on Wi-Fi, missing Access Wi-Fi Information, or location off."
                 }
             }
         }
@@ -303,7 +303,7 @@ struct WiFiStatusView: View {
                     emphasis: true,
                     tone: amplitudeTone
                 )
-                ResultRow(label: "dBm / RSSI", value: "not provided by iOS", tone: Theme.warn)
+                ResultRow(label: "dBm / RSSI", value: "Apple doesn’t expose this to apps", tone: Theme.muted)
                 Text(model.ssidMessage)
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
@@ -318,7 +318,7 @@ struct WiFiStatusView: View {
             if model.denied {
                 ToolEmptyState(
                     title: "Location is needed for SSID",
-                    detail: "iOS will not hand a third-party app the current SSID or Apple’s 0…1 amplitude without When In Use location. dBm is never available.",
+                    detail: "iOS will not hand a third-party app the current SSID or Apple’s 0…1 amplitude without When In Use location.",
                     systemImage: "wifi.slash",
                     showsSettings: true
                 )
@@ -351,7 +351,7 @@ struct WiFiStatusView: View {
     private var copyText: String? {
         let ssid = model.ssid ?? "SSID —"
         if model.signalStrength != nil {
-            return "\(ssid), \(amplitudeText), dBm not provided by iOS"
+            return "\(ssid), \(amplitudeText), Apple 0…1 scale (no dBm API)"
         }
         return nil
     }
@@ -440,7 +440,7 @@ struct WiFiStatusView: View {
             "wifi": model.usesWiFi ? "yes" : "no",
             "ssid": model.ssid ?? "(not returned)",
             "amplitude 0-1": model.signalStrength.map { Format.number($0, digits: 2) } ?? "—",
-            "dBm": "not provided by iOS",
+            "dBm": "Apple 0…1 scale (no dBm API)",
             "samples": "\(model.samples.count)",
         ]
         if let s = model.samples.max(by: { $0.strength < $1.strength }) {
@@ -498,7 +498,7 @@ struct WiFiStrengthGauge: View {
                         .frame(width: 22, height: CGFloat(18 + i * 10))
                 }
             }
-            Text(onWiFi ? "Wi-Fi path up  ·  dBm locked by iOS" : "Not on a Wi-Fi path  ·  dBm locked by iOS")
+            Text(onWiFi ? "Wi-Fi path up  ·  Apple’s 0…1 scale" : "Not on a Wi-Fi path  ·  Apple’s 0…1 scale")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
         }

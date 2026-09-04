@@ -151,7 +151,8 @@ public enum ToolCalculationPolicy {
             "unitConverter",
             "resistorColor",
             "circularMils",
-            "modbusAddress":
+            "modbusAddress",
+            "numberBase":
             return .live
 
         case
@@ -180,6 +181,7 @@ public enum ToolCalculationPolicy {
         "motionSnapshot", "fieldPosition", "deviceHealth", "receptacleSelector",
         "reactance", "powerFactor", "shortCircuit", "circularMils", "loadFactors",
         "signalScaling", "modbusAddress", "plcTimer", "panelDirectory",
+        "motorSpeed", "rfLink", "phasorDiagram", "numberBase", "batteryBank",
     ]
 
     public static var liveToolIDs: [String] {

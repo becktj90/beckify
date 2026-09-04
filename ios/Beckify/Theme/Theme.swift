@@ -75,6 +75,79 @@ enum Theme {
         dark: UIColor(red: 244 / 255, green: 112 / 255, blue: 120 / 255, alpha: 1)
     )
 
+    // MARK: Category identity
+
+    /// A two-stop gradient family per `ToolCategory`, so the tool grid reads as
+    /// color-coded shelves instead of one flat wash behind every icon.
+    static func categoryColors(_ category: ToolCategory) -> (primary: Color, secondary: Color) {
+        switch category {
+        case .field:
+            // Copper — the conductor color, for wire/load/field work.
+            return (energized, Color.adaptive(
+                light: UIColor(red: 198 / 255, green: 132 / 255, blue: 58 / 255, alpha: 1),
+                dark: UIColor(red: 240 / 255, green: 184 / 255, blue: 110 / 255, alpha: 1)
+            ))
+        case .power:
+            // Brand teal/blue — the primary instrument identity.
+            return (accent, accent2)
+        case .controls:
+            // Violet — instrumentation and PLC panels read this way in the field.
+            return (
+                Color.adaptive(
+                    light: UIColor(red: 96 / 255, green: 60 / 255, blue: 176 / 255, alpha: 1),
+                    dark: UIColor(red: 176 / 255, green: 140 / 255, blue: 244 / 255, alpha: 1)
+                ),
+                Color.adaptive(
+                    light: UIColor(red: 132 / 255, green: 40 / 255, blue: 140 / 255, alpha: 1),
+                    dark: UIColor(red: 216 / 255, green: 128 / 255, blue: 224 / 255, alpha: 1)
+                )
+            )
+        case .homework:
+            // Chalkboard green.
+            return (good, Color.adaptive(
+                light: UIColor(red: 52 / 255, green: 150 / 255, blue: 92 / 255, alpha: 1),
+                dark: UIColor(red: 140 / 255, green: 226 / 255, blue: 176 / 255, alpha: 1)
+            ))
+        case .sensors:
+            // Magenta — deliberately far from the electrical blues/greens so a
+            // sensor reading is never mistaken for a calculated result.
+            return (
+                Color.adaptive(
+                    light: UIColor(red: 176 / 255, green: 42 / 255, blue: 122 / 255, alpha: 1),
+                    dark: UIColor(red: 240 / 255, green: 128 / 255, blue: 196 / 255, alpha: 1)
+                ),
+                Color.adaptive(
+                    light: UIColor(red: 140 / 255, green: 54 / 255, blue: 168 / 255, alpha: 1),
+                    dark: UIColor(red: 210 / 255, green: 150 / 255, blue: 240 / 255, alpha: 1)
+                )
+            )
+        }
+    }
+
+    /// A small, deterministic per-tool hue nudge so tiles in the same category
+    /// aren't perfectly identical — individual without leaving the family.
+    /// Uses a fixed string hash rather than `String.hashValue`, which Swift
+    /// re-seeds every process launch and would make the nudge flicker between
+    /// app opens instead of staying put on a given tool's tile.
+    static func toolHueNudge(_ id: ToolID) -> Angle {
+        var hash: UInt64 = 5381
+        for byte in id.rawValue.utf8 {
+            hash = (hash &* 33) &+ UInt64(byte)
+        }
+        let bucket = hash % 9
+        return .degrees(Double(bucket) * 3.2 - 12.8)
+    }
+
+    /// Soft tinted fill for a category-colored icon tile.
+    static func categoryIconGradient(_ category: ToolCategory) -> LinearGradient {
+        let colors = categoryColors(category)
+        return LinearGradient(
+            colors: [colors.primary.opacity(0.30), colors.secondary.opacity(0.16)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     // MARK: Chart
 
     static let chartPrimary = accent

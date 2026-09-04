@@ -6,7 +6,7 @@ final class CalculationSessionTests: XCTestCase {
     // MARK: - Mode classification
 
     func testLiveToolsAreClassifiedLive() {
-        for id in ["unitConverter", "resistorColor", "circularMils", "modbusAddress"] {
+        for id in ["unitConverter", "resistorColor", "circularMils", "modbusAddress", "numberBase"] {
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .live, id)
         }
     }
@@ -18,6 +18,7 @@ final class CalculationSessionTests: XCTestCase {
             "signalScaling", "plcTimer", "timer555", "motorFLA", "wireAmpacity",
             "voltageDivider", "seriesParallel", "frequencyWave", "ledRC",
             "receptacleSelector", "panelDirectory", "powerWizard",
+            "motorSpeed", "rfLink", "phasorDiagram", "batteryBank",
         ]
         for id in explicit {
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .explicit, id)

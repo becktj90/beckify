@@ -36,6 +36,11 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case modbusAddress
     case plcTimer
     case panelDirectory
+    case motorSpeed
+    case rfLink
+    case phasorDiagram
+    case numberBase
+    case batteryBank
 
     var id: String { rawValue }
 }
@@ -49,6 +54,13 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     case sensors = "Sensors"
 
     var id: String { rawValue }
+}
+
+extension ToolboxCatalog {
+    /// The shelf a tool is filed under, for the breadcrumb color on its tile.
+    static func category(of id: ToolID) -> ToolCategory? {
+        ToolCategory.allCases.first { categories[$0]?.contains(id) == true }
+    }
 }
 
 enum ToolKind: String, Codable {
@@ -358,23 +370,63 @@ enum ToolboxCatalog {
             symbol: "list.bullet.rectangle",
             synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend"]
         ),
+        ToolDefinition(
+            id: .motorSpeed,
+            kind: .calculator,
+            title: "Motor Speed & Torque",
+            subtitle: "Synchronous RPM, slip from a nameplate, and shaft torque from HP — with the curve.",
+            symbol: "gauge.with.needle",
+            synonyms: ["motor", "slip", "synchronous", "rpm", "poles", "torque", "shaft", "lb-ft", "nameplate", "5252"]
+        ),
+        ToolDefinition(
+            id: .rfLink,
+            kind: .calculator,
+            title: "RF Power & Link",
+            subtitle: "dBm to watts, VSWR and return loss, and free-space path loss vs. distance.",
+            symbol: "antenna.radiowaves.left.and.right",
+            synonyms: ["rf", "dbm", "watts", "vswr", "swr", "return loss", "antenna", "path loss", "fspl", "link budget", "reflection"]
+        ),
+        ToolDefinition(
+            id: .phasorDiagram,
+            kind: .homework,
+            title: "Phasor Diagram",
+            subtitle: "Plot 2–3 phasors and sum them — the balanced 3-phase set is one tap away.",
+            symbol: "chart.dots.scatter",
+            synonyms: ["phasor", "vector", "three phase", "balanced", "polar", "angle", "resultant"]
+        ),
+        ToolDefinition(
+            id: .numberBase,
+            kind: .calculator,
+            title: "Number Base Converter",
+            subtitle: "Binary, octal, decimal, hex — plus 8/16/32-bit signed read of the same bits.",
+            symbol: "number",
+            synonyms: ["binary", "hex", "hexadecimal", "octal", "decimal", "base converter", "twos complement", "register", "modbus"]
+        ),
+        ToolDefinition(
+            id: .batteryBank,
+            kind: .calculator,
+            title: "Battery Bank Sizing",
+            subtitle: "Series/parallel cells to bank voltage, amp-hours, and runtime at a load.",
+            symbol: "minus.plus.batteryblock",
+            synonyms: ["battery", "bank", "series", "parallel", "amp hours", "ah", "runtime", "depth of discharge", "dod", "cells"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
     /// tools appear in the grid.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
-            .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA,
+            .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed,
             .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
         ],
         .power: [
-            .ohmsLaw, .power, .transformer, .reactance, .powerFactor,
+            .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank,
         ],
         .controls: [
-            .signalScaling, .modbusAddress, .plcTimer, .timer555,
+            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase,
         ],
         .homework: [
-            .voltageDivider, .seriesParallel, .resistorColor,
+            .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
             .frequencyWave, .ledRC, .unitConverter,
         ],
         .sensors: [
@@ -455,5 +507,10 @@ enum ToolboxCatalog {
         .modbusAddress: [.signalScaling, .plcTimer],
         .plcTimer: [.timer555, .modbusAddress, .signalScaling],
         .panelDirectory: [.loadFactors, .wireAmpacity, .motorFLA],
+        .motorSpeed: [.motorFLA, .power, .transformer],
+        .rfLink: [.frequencyWave, .reactance, .unitConverter],
+        .phasorDiagram: [.reactance, .power, .ohmsLaw],
+        .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
+        .batteryBank: [.power, .unitConverter, .ohmsLaw],
     ]
 }

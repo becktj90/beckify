@@ -4,11 +4,19 @@ import SwiftUI
 /// it stays crisp at any size, follows the theme, and ships no image assets.
 ///
 /// Each `ToolID` maps 1:1 to a distinct `GlyphKind` drawing — no unrelated tools
-/// share the same schematic.
+/// share the same schematic. When `toolID` is supplied the stroke is a
+/// category-colored gradient with a small per-tool hue nudge, so the grid reads
+/// as color-coded shelves instead of one flat accent everywhere; omit it for a
+/// plain monochrome glyph (used sparingly, e.g. inside an already-colored chip).
 struct ToolGlyph: View {
     let kind: GlyphKind
     var size: CGFloat = 44
     var selected: Bool = false
+    var toolID: ToolID? = nil
+
+    private var category: ToolCategory? {
+        toolID.flatMap(ToolboxCatalog.category(of:))
+    }
 
     private var strokeColor: Color { selected ? Theme.accent : Theme.muted }
 
@@ -22,8 +30,20 @@ struct ToolGlyph: View {
             let rect = CGRect(origin: .zero, size: canvasSize)
                 .insetBy(dx: canvasSize.width * 0.14, dy: canvasSize.height * 0.14)
             let style = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
-            context.stroke(kind.path(in: rect), with: .color(strokeColor), style: style)
+            let path = kind.path(in: rect)
+            if let category {
+                let colors = Theme.categoryColors(category)
+                let shading = GraphicsContext.Shading.linearGradient(
+                    Gradient(colors: [colors.primary, colors.secondary]),
+                    startPoint: CGPoint(x: rect.minX, y: rect.minY),
+                    endPoint: CGPoint(x: rect.maxX, y: rect.maxY)
+                )
+                context.stroke(path, with: shading, style: style)
+            } else {
+                context.stroke(path, with: .color(strokeColor), style: style)
+            }
         }
+        .hueRotation(toolID.map(Theme.toolHueNudge) ?? .zero)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
@@ -67,6 +87,11 @@ extension GlyphKind {
         case .modbusAddress: return .modbusAddress
         case .plcTimer: return .plcTimer
         case .panelDirectory: return .panelDirectory
+        case .motorSpeed: return .motorSpeed
+        case .rfLink: return .rfLink
+        case .phasorDiagram: return .phasorDiagram
+        case .numberBase: return .numberBase
+        case .batteryBank: return .batteryBank
         }
     }
 }
@@ -106,6 +131,11 @@ enum GlyphKind {
     case modbusAddress
     case plcTimer
     case panelDirectory
+    case motorSpeed
+    case rfLink
+    case phasorDiagram
+    case numberBase
+    case batteryBank
 
     // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
@@ -144,6 +174,11 @@ enum GlyphKind {
         case .modbusAddress: return Self.modbusAddress(rect)
         case .plcTimer: return Self.plcTimer(rect)
         case .panelDirectory: return Self.panelDirectory(rect)
+        case .motorSpeed: return Self.motorSpeed(rect)
+        case .rfLink: return Self.rfLink(rect)
+        case .phasorDiagram: return Self.phasorDiagram(rect)
+        case .numberBase: return Self.numberBase(rect)
+        case .batteryBank: return Self.batteryBank(rect)
         }
     }
 
@@ -568,6 +603,145 @@ enum GlyphKind {
         }
         path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.1))
         path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.1))
+        return path
+    }
+
+    // MARK: - Expansion pack
+
+    /// Tachometer: an open gauge arc, five ticks, and a needle past center.
+    private static func motorSpeed(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY + r.height * 0.08)
+        let radius = min(r.width, r.height) * 0.4
+        let startDeg: CGFloat = 200
+        let endDeg: CGFloat = -20
+        let steps = 24
+
+        for step in 0...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            let rad = (startDeg + (endDeg - startDeg) * t) * .pi / 180
+            let point = CGPoint(x: center.x + cos(rad) * radius, y: center.y - sin(rad) * radius)
+            if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+
+        for tick in 0...4 {
+            let t = CGFloat(tick) / 4
+            let rad = (startDeg + (endDeg - startDeg) * t) * .pi / 180
+            let outer = CGPoint(x: center.x + cos(rad) * radius, y: center.y - sin(rad) * radius)
+            let inner = CGPoint(x: center.x + cos(rad) * radius * 0.8, y: center.y - sin(rad) * radius * 0.8)
+            path.move(to: inner)
+            path.addLine(to: outer)
+        }
+
+        let needleRad: CGFloat = 55 * .pi / 180
+        path.move(to: center)
+        path.addLine(to: CGPoint(x: center.x + cos(needleRad) * radius * 0.68, y: center.y - sin(needleRad) * radius * 0.68))
+
+        let hub = radius * 0.09
+        path.addEllipse(in: CGRect(x: center.x - hub, y: center.y - hub, width: hub * 2, height: hub * 2))
+        return path
+    }
+
+    /// A transmitter dot with three arcs of "radio waves" fanning upward from it.
+    private static func rfLink(_ r: CGRect) -> Path {
+        var path = Path()
+        let source = CGPoint(x: r.midX, y: r.maxY - r.height * 0.14)
+
+        let dot = r.width * 0.045
+        path.addEllipse(in: CGRect(x: source.x - dot, y: source.y - dot, width: dot * 2, height: dot * 2))
+
+        for ring in 1...3 {
+            let radius = r.height * 0.17 * CGFloat(ring)
+            let steps = 16
+            for step in 0...steps {
+                let t = CGFloat(step) / CGFloat(steps)
+                let rad = (200 + 140 * t) * .pi / 180
+                let point = CGPoint(x: source.x + cos(rad) * radius, y: source.y + sin(rad) * radius)
+                if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+            }
+        }
+        return path
+    }
+
+    /// A dial circle with three arrows from center, at different angles and
+    /// lengths — a phasor diagram, not a balanced-set illustration.
+    private static func phasorDiagram(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY)
+        let radius = min(r.width, r.height) * 0.38
+
+        path.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+
+        let vectors: [(angleDeg: CGFloat, length: CGFloat)] = [
+            (-90, radius * 0.92),
+            (30, radius * 0.68),
+            (150, radius * 0.78),
+        ]
+        for vector in vectors {
+            let rad = vector.angleDeg * .pi / 180
+            let tip = CGPoint(x: center.x + cos(rad) * vector.length, y: center.y + sin(rad) * vector.length)
+            path.move(to: center)
+            path.addLine(to: tip)
+
+            let arrowLength = radius * 0.16
+            let spread: CGFloat = 24 * .pi / 180
+            for sign: CGFloat in [-1, 1] {
+                let backRad = rad + .pi + sign * spread
+                path.move(to: tip)
+                path.addLine(to: CGPoint(x: tip.x + cos(backRad) * arrowLength, y: tip.y + sin(backRad) * arrowLength))
+            }
+        }
+        return path
+    }
+
+    /// A four-cell register outline with a literal 1-0-1-0 bit pattern inside.
+    private static func numberBase(_ r: CGRect) -> Path {
+        var path = Path()
+        let boxWidth = r.width * 0.86
+        let boxHeight = r.height * 0.42
+        let box = CGRect(x: r.midX - boxWidth / 2, y: r.midY - boxHeight / 2, width: boxWidth, height: boxHeight)
+        path.addRoundedRect(in: box, cornerSize: CGSize(width: r.width * 0.05, height: r.width * 0.05))
+
+        for i in 1...3 {
+            let x = box.minX + boxWidth * CGFloat(i) / 4
+            path.move(to: CGPoint(x: x, y: box.minY))
+            path.addLine(to: CGPoint(x: x, y: box.maxY))
+        }
+
+        let bits = [true, false, true, false]
+        for (index, isOne) in bits.enumerated() where isOne {
+            let x = box.minX + boxWidth * (CGFloat(index) + 0.5) / 4
+            path.move(to: CGPoint(x: x, y: box.midY - boxHeight * 0.24))
+            path.addLine(to: CGPoint(x: x, y: box.midY + boxHeight * 0.24))
+        }
+        return path
+    }
+
+    /// Two schematic battery cells (long/short plate pairs) wired in series.
+    private static func batteryBank(_ r: CGRect) -> Path {
+        var path = Path()
+        let midY = r.midY
+        let gap = r.width * 0.16
+        let firstLongX = r.midX - gap * 1.5
+        let firstShortX = firstLongX + gap * 0.5
+        let secondLongX = firstLongX + gap * 2
+        let secondShortX = secondLongX + gap * 0.5
+
+        for longX in [firstLongX, secondLongX] {
+            path.move(to: CGPoint(x: longX, y: midY - r.height * 0.22))
+            path.addLine(to: CGPoint(x: longX, y: midY + r.height * 0.22))
+        }
+        for shortX in [firstShortX, secondShortX] {
+            path.move(to: CGPoint(x: shortX, y: midY - r.height * 0.1))
+            path.addLine(to: CGPoint(x: shortX, y: midY + r.height * 0.1))
+        }
+
+        path.move(to: CGPoint(x: firstShortX, y: midY))
+        path.addLine(to: CGPoint(x: secondLongX, y: midY))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.06, y: midY))
+        path.addLine(to: CGPoint(x: firstLongX, y: midY))
+        path.move(to: CGPoint(x: secondShortX, y: midY))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: midY))
         return path
     }
 

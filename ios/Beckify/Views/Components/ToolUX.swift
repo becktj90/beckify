@@ -341,6 +341,10 @@ struct ShowWorkCard: View {
     }
 }
 
+/// Deliberately quiet: a single-line strip of name-only chips, not a second
+/// list of cards competing with the calculator above it. A tool that wants
+/// prominence earns it by being in Favorites or Quick Tools, not by showing up
+/// here three times over.
 struct RelatedToolsSection: View {
     let current: ToolID
     @Environment(\.openRelatedTool) private var openRelated
@@ -351,46 +355,34 @@ struct RelatedToolsSection: View {
 
     var body: some View {
         if !related.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("RELATED TOOLS")
-                    .font(.caption.weight(.semibold))
-                    .tracking(0.8)
-                    .foregroundStyle(Theme.muted)
-                VStack(spacing: 8) {
-                    ForEach(related) { tool in
-                        Button {
-                            openRelated(tool.id)
-                        } label: {
-                            HStack(spacing: 12) {
-                                ToolGlyph(kind: .forTool(tool.id), size: 28, selected: true)
-                                    .frame(width: 28, height: 28)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(tool.title)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(Theme.foreground)
-                                    Text(tool.subtitle)
-                                        .font(.caption)
-                                        .foregroundStyle(Theme.muted)
-                                        .multilineTextAlignment(.leading)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer(minLength: 8)
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("Also")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted.opacity(0.8))
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(related) { tool in
+                            Button {
+                                openRelated(tool.id)
+                            } label: {
+                                Text(tool.title)
+                                    .font(.caption2.weight(.medium))
                                     .foregroundStyle(Theme.muted)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Theme.surfaceRaised.opacity(0.7), in: Capsule())
+                                    .frame(minHeight: Theme.touchTarget)
+                                    .contentShape(Rectangle())
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .frame(minHeight: Theme.touchTarget)
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Open related tool \(tool.title)")
                         }
-                        .buttonStyle(.plain)
-                        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
-                        .accessibilityLabel("Related tool: \(tool.title)")
-                        .accessibilityHint(tool.subtitle)
                     }
                 }
             }
+            .padding(.top, 2)
+            .opacity(0.85)
         }
     }
 }

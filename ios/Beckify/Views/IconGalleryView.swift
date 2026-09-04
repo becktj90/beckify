@@ -24,16 +24,18 @@ struct IconGalleryView: View {
 private struct IconGalleryCell: View {
     let tool: ToolDefinition
 
+    private var category: ToolCategory? { ToolboxCatalog.category(of: tool.id) }
+
     var body: some View {
         VStack(spacing: Theme.Space.xs) {
             ZStack {
                 RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                    .fill(Theme.iconGradient)
+                    .fill(category.map(Theme.categoryIconGradient) ?? Theme.iconGradient)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
                             .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
                     )
-                ToolGlyph(kind: .forTool(tool.id), size: 52, selected: true)
+                ToolGlyph(kind: .forTool(tool.id), size: 52, selected: true, toolID: tool.id)
             }
             .aspectRatio(1, contentMode: .fit)
 
