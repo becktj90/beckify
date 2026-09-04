@@ -3193,7 +3193,14 @@
     ctx.fillText('FIRST NEWLY-BUILT ORBITAL PAD SINCE THE 1960s', CW / 2, 154);
     ctx.fillText('LC-36 | Gradatim Ferociter', CW / 2, 174);
     ctx.fillStyle = '#ffcf5d';
-    ctx.fillText(state.ui.tip, CW / 2, 202);
+    const tip = state.ui.tip || '';
+    if (tip.length > 46) {
+      const cut = Math.max(18, tip.lastIndexOf(' ', 46));
+      ctx.fillText(tip.slice(0, cut), CW / 2, 194);
+      ctx.fillText(tip.slice(cut + 1), CW / 2, 210);
+    } else {
+      ctx.fillText(tip, CW / 2, 202);
+    }
     ctx.strokeStyle = '#ffcf5d';
     ctx.strokeRect(86, 254, CW - 172, 42);
     ctx.font = 'bold 16px "IBM Plex Mono", ui-monospace, monospace';
