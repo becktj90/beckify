@@ -230,7 +230,8 @@ public struct ControlStepResult: Equatable, Sendable {
         closedLoop: [PlotPoint],
         openLoop: [PlotPoint],
         closedLoopTF: ControlTransferFunction,
-        formula: String
+        formula: String,
+        comparison: [ControlCompareTrace] = []
     ) {
         self.mode = mode
         self.gains = gains
@@ -241,6 +242,112 @@ public struct ControlStepResult: Equatable, Sendable {
         self.openLoop = openLoop
         self.closedLoopTF = closedLoopTF
         self.formula = formula
+        self.comparison = comparison
+    }
+
+    /// Open / P / PI / PID overlays when the operator asks to compare responses.
+    public var comparison: [ControlCompareTrace]
+}
+
+public struct ControlCompareTrace: Equatable, Sendable {
+    public var mode: ControlControllerMode
+    public var gains: ControlPidGains
+    public var stable: Bool
+    public var metrics: ControlPerformance?
+    public var samples: [PlotPoint]
+
+    public init(
+        mode: ControlControllerMode,
+        gains: ControlPidGains,
+        stable: Bool,
+        metrics: ControlPerformance?,
+        samples: [PlotPoint]
+    ) {
+        self.mode = mode
+        self.gains = gains
+        self.stable = stable
+        self.metrics = metrics
+        self.samples = samples
+    }
+}
+
+/// Ziegler–Nichols form. Raw values match the website `ZnForm`.
+public enum ControlZnForm: String, CaseIterable, Sendable, Hashable {
+    case p = "P"
+    case pi = "PI"
+    case pid = "PID"
+
+    public var displayName: String { rawValue }
+
+    public var controllerMode: ControlControllerMode {
+        switch self {
+        case .p: return .p
+        case .pi: return .pi
+        case .pid: return .pid
+        }
+    }
+
+    public static func from(mode: ControlControllerMode) -> ControlZnForm {
+        switch mode {
+        case .open, .pid: return .pid
+        case .p: return .p
+        case .pi: return .pi
+        }
+    }
+}
+
+/// Classic 1942 table vs the common reduced-overshoot (“modified”) table.
+public enum ControlZnVariant: String, CaseIterable, Sendable, Hashable {
+    case classic
+    case modified
+
+    public var displayName: String {
+        switch self {
+        case .classic: return "Classic"
+        case .modified: return "Modified"
+        }
+    }
+}
+
+public struct ControlZnGains: Equatable, Sendable {
+    public var kp: Double
+    public var ki: Double
+    public var kd: Double
+    public var ti: Double
+    public var td: Double
+
+    public init(kp: Double, ki: Double, kd: Double, ti: Double, td: Double) {
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.ti = ti
+        self.td = td
+    }
+
+    public var pid: ControlPidGains { ControlPidGains(kp: kp, ki: ki, kd: kd) }
+}
+
+public struct ControlUltimateGain: Equatable, Sendable {
+    public var ku: Double?
+    public var pu: Double?
+    public var omega: Double?
+
+    public init(ku: Double?, pu: Double?, omega: Double?) {
+        self.ku = ku
+        self.pu = pu
+        self.omega = omega
+    }
+}
+
+public struct ControlFopdtFit: Equatable, Sendable {
+    public var k: Double
+    public var l: Double
+    public var t: Double
+
+    public init(k: Double, l: Double, t: Double) {
+        self.k = k
+        self.l = l
+        self.t = t
     }
 }
 
@@ -691,6 +798,173 @@ public enum ControlSystems {
         }
     }
 
+    /// Ziegler–Nichols from ultimate gain Ku and ultimate period Pu.
+    /// Same table as website `zieglerNicholsUltimate` (classic 1942 vs modified).
+    public static func zieglerNicholsUltimate(
+        ku: Double,
+        pu: Double,
+        form: ControlZnForm = .pid,
+        variant: ControlZnVariant = .classic
+    ) throws -> ControlZnGains {
+        guard ku.isFinite, ku > 0 else { throw CalcError.nonPositive("Ku") }
+        guard pu.isFinite, pu > 0 else { throw CalcError.nonPositive("Pu") }
+        var kp = 0.0
+        var ti = Double.infinity
+        var td = 0.0
+        if variant == .classic {
+            switch form {
+            case .p:
+                kp = 0.5 * ku
+            case .pi:
+                kp = 0.45 * ku
+                ti = pu / 1.2
+            case .pid:
+                kp = 0.6 * ku
+                ti = pu / 2
+                td = pu / 8
+            }
+        } else {
+            switch form {
+            case .p:
+                kp = 0.2 * ku
+            case .pi:
+                kp = 0.28 * ku
+                ti = pu / 2
+            case .pid:
+                kp = 0.33 * ku
+                ti = pu / 2
+                td = pu / 3
+            }
+        }
+        return ControlZnGains(
+            kp: kp,
+            ki: ti.isFinite ? kp / ti : 0,
+            kd: kp * td,
+            ti: ti,
+            td: td
+        )
+    }
+
+    /// Open-loop Ziegler–Nichols from FOPDT K, L, T.
+    /// Same table as website `zieglerNicholsReactionCurve`.
+    public static func zieglerNicholsReactionCurve(
+        k: Double,
+        l: Double,
+        t: Double,
+        form: ControlZnForm = .pid,
+        variant: ControlZnVariant = .classic
+    ) throws -> ControlZnGains {
+        guard k.isFinite, k > 0 else { throw CalcError.nonPositive("FOPDT K") }
+        guard l.isFinite, l > 0 else { throw CalcError.nonPositive("FOPDT L") }
+        guard t.isFinite, t > 0 else { throw CalcError.nonPositive("FOPDT T") }
+        let kl = k * l
+        var kp = 0.0
+        var ti = Double.infinity
+        var td = 0.0
+        if variant == .classic {
+            switch form {
+            case .p:
+                kp = t / kl
+            case .pi:
+                kp = (0.9 * t) / kl
+                ti = l / 0.3
+            case .pid:
+                kp = (1.2 * t) / kl
+                ti = 2 * l
+                td = 0.5 * l
+            }
+        } else {
+            switch form {
+            case .p:
+                kp = (0.5 * t) / kl
+            case .pi:
+                kp = (0.6 * t) / kl
+                ti = 4 * l
+            case .pid:
+                kp = (0.95 * t) / kl
+                ti = 2.4 * l
+                td = 0.42 * l
+            }
+        }
+        return ControlZnGains(
+            kp: kp,
+            ki: ti.isFinite ? kp / ti : 0,
+            kd: kp * td,
+            ti: ti,
+            td: td
+        )
+    }
+
+    /// Fit FOPDT K, L, T from a unit-step using the 28%/63% points (no tangent).
+    public static func fitReactionCurve(_ samples: [ControlStepSample]) -> ControlFopdtFit {
+        let y0 = samples.first?.y ?? 0
+        let yf = samples.last?.y ?? y0
+        let k = yf - y0
+        func at(_ frac: Double) -> Double? {
+            let target = y0 + frac * k
+            return samples.first { sample in
+                k >= 0 ? sample.y >= target : sample.y <= target
+            }?.t
+        }
+        guard let t28 = at(0.28), let t63 = at(0.63), t63 > t28 else {
+            return ControlFopdtFit(k: k, l: .nan, t: .nan)
+        }
+        let t = (t63 - t28) / 0.67
+        let l = max(0, t63 - t)
+        return ControlFopdtFit(k: k, l: l, t: t)
+    }
+
+    /// Smallest K > 0 at which a closed-loop pole reaches the imaginary axis.
+    /// Ku and Pu = 2π / ωu when a crossing exists. Website `ultimateGain`.
+    public static func ultimateGain(_ tf: ControlTransferFunction, kMax: Double = 400) -> ControlUltimateGain {
+        func probe(_ gain: Double) -> [ControlComplex] {
+            polynomialRoots(closedLoopFromGain(tf, gain: gain).denominator)
+        }
+        func realMax(_ gain: Double) -> Double {
+            probe(gain).map(\.re).max() ?? -.infinity
+        }
+        if realMax(1e-6) >= 0, realMax(kMax) >= 0 {
+            let imag = probe(1e-6).first { abs($0.re) < 0.05 }
+            let omega = imag.map { abs($0.im) } ?? 0
+            return ControlUltimateGain(
+                ku: 0,
+                pu: imag != nil && omega > controlEpsilon ? (2 * .pi) / omega : nil,
+                omega: imag != nil && omega > controlEpsilon ? omega : nil
+            )
+        }
+        var lo = 1e-6
+        var hi = kMax
+        if realMax(hi) < 0 {
+            return ControlUltimateGain(ku: nil, pu: nil, omega: nil)
+        }
+        for _ in 0..<42 {
+            let mid = (lo + hi) / 2
+            if realMax(mid) >= 0 { hi = mid } else { lo = mid }
+        }
+        let poles = probe(hi)
+        guard let first = poles.first else {
+            return ControlUltimateGain(ku: hi, pu: nil, omega: nil)
+        }
+        let imag = poles.reduce(first) { best, pole in
+            abs(pole.re) < abs(best.re) ? pole : best
+        }
+        let omega = abs(imag.im)
+        return ControlUltimateGain(
+            ku: hi,
+            pu: omega > controlEpsilon ? (2 * .pi) / omega : nil,
+            omega: omega > controlEpsilon ? omega : nil
+        )
+    }
+
+    private static func closedLoopFromGain(_ tf: ControlTransferFunction, gain: Double) -> ControlTransferFunction {
+        closedLoopTransferFunction(
+            seriesTransferFunction(
+                ControlTransferFunction(numerator: [gain], denominator: [1]),
+                tf
+            )
+        )
+    }
+
     public static func leadCompensator(alpha: Double, timeConstant: Double, gain: Double = 1) -> ControlTransferFunction {
         ControlTransferFunction(
             numerator: [gain * timeConstant, gain],
@@ -775,7 +1049,8 @@ public enum ControlSystems {
         plant: ControlTransferFunction,
         mode: ControlControllerMode,
         gains: ControlPidGains,
-        duration: Double
+        duration: Double,
+        compare: Bool = false
     ) throws -> ControlStepResult {
         guard duration.isFinite, duration > 0 else { throw CalcError.nonPositive("Duration") }
         try validateGains(gains, mode: mode)
@@ -806,6 +1081,15 @@ public enum ControlSystems {
         case .pid:
             formula = "C(s) = Kp + Ki/s + Kd s    T = CG / (1 + CG)"
         }
+        var comparison: [ControlCompareTrace] = []
+        if compare {
+            comparison = try compareControllers(
+                plant: plant,
+                gains: gains,
+                duration: duration,
+                openSamples: openSamples
+            )
+        }
         return ControlStepResult(
             mode: mode,
             gains: gainsForMode(mode, gains),
@@ -815,8 +1099,51 @@ public enum ControlSystems {
             closedLoop: closedSamples.map { PlotPoint(x: $0.t, y: $0.y) },
             openLoop: openSamples.map { PlotPoint(x: $0.t, y: $0.y) },
             closedLoopTF: closedTF,
-            formula: formula
+            formula: compare
+                ? "Overlay Open / P / PI / PID on the same unit step. Ziegler–Nichols fills Kp, Ki, Kd — then Calculate again."
+                : formula,
+            comparison: comparison
         )
+    }
+
+    /// Open, P, PI, and PID on one time axis so tunings can be compared.
+    public static func compareControllers(
+        plant: ControlTransferFunction,
+        gains: ControlPidGains,
+        duration: Double,
+        openSamples: [ControlStepSample]? = nil
+    ) throws -> [ControlCompareTrace] {
+        let dt = duration / 320
+        let open = try openSamples ?? simulateStep(plant, duration: duration, dt: dt)
+        var traces: [ControlCompareTrace] = []
+        for mode in [ControlControllerMode.open, .p, .pi, .pid] {
+            let samples: [ControlStepSample]
+            let tf: ControlTransferFunction
+            if mode == .open {
+                samples = open
+                tf = plant
+            } else {
+                let filled = ControlPidGains(
+                    kp: gains.kp,
+                    ki: mode == .p ? 0 : (gains.ki.isFinite ? gains.ki : 0),
+                    kd: mode == .pid ? (gains.kd.isFinite ? gains.kd : 0) : 0
+                )
+                try validateGains(filled, mode: mode)
+                let controller = pidTransferFunction(gainsForMode(mode, filled))
+                tf = closedLoopTransferFunction(seriesTransferFunction(controller, plant))
+                samples = try simulateStep(tf, duration: duration, dt: dt)
+            }
+            let diverged = samples.contains { !$0.y.isFinite || abs($0.y) > 1e6 }
+            let stable = isStable(tf) && !diverged
+            traces.append(ControlCompareTrace(
+                mode: mode,
+                gains: gainsForMode(mode, gains),
+                stable: stable,
+                metrics: stable ? computePerformance(samples) : nil,
+                samples: samples.map { PlotPoint(x: $0.t, y: $0.y) }
+            ))
+        }
+        return traces
     }
 
     public static func bodeAnalysis(
