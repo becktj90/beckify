@@ -160,21 +160,24 @@ final class CellularPathModel: ObservableObject {
     }
 
     func clearHistory() {
-        cancelRTT()
-        rttHistory = []
-        rttSummary = nil
-        rttSamples = []
-        rttProgress = 0
-        rttLocalEndpoint = nil
-        rttRemoteEndpoint = nil
-        rttHost = ""
-        rttMessage = "Samples cleared. TCP RTT is not RSRP."
+        resetDisplayedRTT(
+            clearHistory: true,
+            message: "Samples cleared. TCP RTT is not RSRP."
+        )
     }
 
     /// Drop a completed (or in-flight) result when the operator changes host.
     /// Keeps history; the numbers on screen must match the current target.
     func invalidateDisplayedRTT(message: String) {
+        resetDisplayedRTT(clearHistory: false, message: message)
+    }
+
+    /// Shared RTT field reset. History is optional so Clear and target-change stay in lockstep.
+    private func resetDisplayedRTT(clearHistory: Bool, message: String) {
         cancelRTT()
+        if clearHistory {
+            rttHistory = []
+        }
         rttSummary = nil
         rttSamples = []
         rttProgress = 0
@@ -956,7 +959,7 @@ struct CellularNetworkGauges: View {
             accessibility: rttAccessibility
         ) {
             HStack(spacing: 6) {
-                ForEach(["<25", "<60", "<120", "≥250"], id: \.self) { label in
+                ForEach(CellularRadioIdentity.rttGaugeLegendLabels, id: \.self) { label in
                     Text(label)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Theme.muted)

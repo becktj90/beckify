@@ -229,10 +229,16 @@ public enum CellularRadioIdentity {
         return step == 0 ? 0 : Double(step) / 4.0
     }
 
+    /// Median RTT (ms) that empties the latency gauge. Matches Wi-Fi Path's poor band.
+    public static let rttGaugeEmptyMS: Double = 250
+
+    /// Legend ticks under the RTT gauge. Last tick is `rttGaugeEmptyMS`.
+    public static let rttGaugeLegendLabels = ["<25", "<60", "<120", "≥\(Int(rttGaugeEmptyMS))"]
+
     /// 0…1 fill for a latency gauge: lower median RTT fills more. Nil / invalid is 0.
     public static func rttFill(medianMS: Double?) -> Double {
         guard let medianMS, medianMS.isFinite, medianMS >= 0 else { return 0 }
-        return min(1, max(0, 1 - medianMS / 250))
+        return min(1, max(0, 1 - medianMS / rttGaugeEmptyMS))
     }
 
     public static func normalizeRATToken(_ raw: String) -> String {

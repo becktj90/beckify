@@ -114,13 +114,16 @@ final class CellularRadioTests: XCTestCase {
     }
 
     func testRTTGaugeFillInvertsLatency() {
+        let emptyMS = CellularRadioIdentity.rttGaugeEmptyMS
+        XCTAssertEqual(emptyMS, 250, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttGaugeLegendLabels.last, "≥\(Int(emptyMS))")
         XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: nil), 0, accuracy: 1e-9)
         XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: .nan), 0, accuracy: 1e-9)
         XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: -1), 0, accuracy: 1e-9)
         XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 0), 1, accuracy: 1e-9)
-        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 125), 0.5, accuracy: 1e-9)
-        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 250), 0, accuracy: 1e-9)
-        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: 400), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: emptyMS / 2), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: emptyMS), 0, accuracy: 1e-9)
+        XCTAssertEqual(CellularRadioIdentity.rttFill(medianMS: emptyMS + 150), 0, accuracy: 1e-9)
     }
 
     func testNormalizeRATToken() {
