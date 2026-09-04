@@ -8,17 +8,18 @@ const gearSchema = [
     "@type": "CollectionPage",
     "@id": "https://beckify.com/gear#webpage",
     url: "https://beckify.com/gear",
-    name: "Recommended Electrical Tools, Supplies, and Field Gear",
-    description: "Model-specific tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices.",
+    name: "Field Kit — Electrical Tools We Trust on the Job",
+    description:
+      "Curated, model-specific field kits for electrical work: jobsite starter, panel troubleshooting, cable fault location, and bench controls.",
     mainEntity: { "@id": "https://beckify.com/gear#recommendations" },
-    about: ["electrical hand tools", "electrical test equipment", "cable fault location", "jobsite lighting", "portable power"],
+    about: ["electrical field kits", "electrical hand tools", "electrical test equipment", "cable fault location"],
   },
   {
     "@context": "https://schema.org",
     "@type": "ItemList",
     "@id": "https://beckify.com/gear#recommendations",
     name: "Recommended Electrical Tools and Field Gear",
-    description: "Model-specific recommendations for professional electrical work, supplies, and field support.",
+    description: "Model-specific recommendations for professional electrical work, organized as curated field kits.",
     numberOfItems: GEAR_RECOMMENDATIONS.length,
     itemListElement: GEAR_RECOMMENDATIONS.map((item, index) => ({
       "@type": "ListItem",
@@ -33,5 +34,16 @@ const gearSchema = [
 ];
 
 export default function GearPage() {
-  return <Layout><SchemaHead title="Recommended Electrical Tools, Supplies & Field Gear | Beckify" description="Direct model links for industry-standard tools, electrical test equipment, cable fault locators, jobsite supplies, field power, lighting, cooling, and USA-made choices." path="/gear" type="article" schema={gearSchema} /><GearMatrix /></Layout>;
+  return (
+    <Layout>
+      <SchemaHead
+        title="Field Kit | Electrical Tools We Trust on the Job | Beckify"
+        description="Curated field kits for electrical work — model-specific meters, hand tools, thermal, insulation, and cable fault gear. Not a gadget dump."
+        path="/gear"
+        type="article"
+        schema={gearSchema}
+      />
+      <GearMatrix />
+    </Layout>
+  );
 }

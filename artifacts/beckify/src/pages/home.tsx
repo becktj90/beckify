@@ -302,7 +302,7 @@ export default function Home() {
                     <p className="type-label text-[var(--accent-2)]">Field-tested</p>
                     <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Recommended Gear</h2>
                     <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
-                      Model-specific tools, test equipment, and field power picks.
+                      Field kits we actually trust — model-specific electrical gear.
                     </p>
                   </div>
                 </Link>

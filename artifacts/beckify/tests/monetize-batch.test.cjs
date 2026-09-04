@@ -28,7 +28,7 @@ ok("gear images are same-origin", imageUrls.every((url) => url.startsWith("/imag
 ok("no third-party hotlinks remain in gear data", !/imageUrl:\s*"https?:\/\//.test(gearSrc));
 const missingFiles = imageUrls.filter((url) => !fs.existsSync(path.join(root, "public", url)));
 ok("every gear image file exists", missingFiles.length === 0, missingFiles.join(", "));
-ok("affiliate disclosure appears before featured USA-made cards", gearMatrix.indexOf("As an Amazon Associate") < gearMatrix.indexOf("American-made gear worth prioritizing"));
+ok("affiliate disclosure appears before kit merchandising", gearMatrix.indexOf("As an Amazon Associate") < gearMatrix.indexOf('id="kits"') && gearMatrix.includes("Jump to kits"));
 ok("amazon affiliate tag kept", /tag=beckify-20/.test(gearSrc));
 ok("amazon buttons stay rel=sponsored", /rel="sponsored noopener noreferrer"/.test(gearCard));
 

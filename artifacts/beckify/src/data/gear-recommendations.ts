@@ -399,6 +399,122 @@ export const GEAR_RECOMMENDATIONS: Gear[] = [
 
 export const USA_MADE_GEAR = GEAR_RECOMMENDATIONS.filter((item) => item.usaMade);
 
+export type GearKitId = "jobsite-starter" | "panel-troubleshooting" | "cable-fault" | "bench-controls";
+
+export type GearKitSlot = {
+  name: string;
+  role: string;
+  budget?: boolean;
+};
+
+export type GearKit = {
+  id: GearKitId;
+  index: string;
+  name: string;
+  job: string;
+  slots: GearKitSlot[];
+};
+
+/**
+ * Featured field kits. One primary per job, plus at most one budget alt.
+ * Comfort gear stays out of these chapters.
+ *
+ * Curation assumptions (easy to tweak):
+ * - Prefer Fluke / Klein / Daniels / Megger / quality hand tools
+ * - Cut near-clone featured meters, clamps, and scopes
+ * - TORRAS / BougeRV stay in the catalog only
+ */
+export const GEAR_KITS: GearKit[] = [
+  {
+    id: "jobsite-starter",
+    index: "01",
+    name: "Jobsite starter",
+    job: "Strip, cut, tape, check for voltage, take everyday readings.",
+    slots: [
+      { name: "Klein Tools 11055", role: "Stripper" },
+      { name: "Klein Tools 63050", role: "Cable cutter" },
+      { name: "Scotch Super 33+", role: "Tape" },
+      { name: "Fluke 2AC Alert", role: "NCV" },
+      { name: "Fluke 117", role: "Everyday meter" },
+      { name: "Klein Tools MM400", role: "Everyday meter", budget: true },
+    ],
+  },
+  {
+    id: "panel-troubleshooting",
+    index: "02",
+    name: "Panel & troubleshooting",
+    job: "A Fluke-class DMM, a clamp, thermal, and insulation when the panel is the problem.",
+    slots: [
+      { name: "Fluke 87V", role: "Primary DMM" },
+      { name: "Fluke 376 FC", role: "Clamp" },
+      { name: "Klein Tools CL120", role: "Clamp", budget: true },
+      { name: "FLIR C5", role: "Thermal" },
+      { name: "Fluke 1507", role: "Insulation" },
+    ],
+  },
+  {
+    id: "cable-fault",
+    index: "03",
+    name: "Cable & fault",
+    job: "Find the path, the fault, and the length — then stop guessing.",
+    slots: [
+      { name: "Megger TDR500/3", role: "TDR" },
+      { name: "Fluke Networks MicroScanner PoE", role: "Verifier" },
+      { name: "Klein Tools Scout Pro 3", role: "Verifier", budget: true },
+    ],
+  },
+  {
+    id: "bench-controls",
+    index: "04",
+    name: "Bench & controls",
+    job: "Waveforms, specified torque, and 4–20 mA without a cluttered bench.",
+    slots: [
+      { name: "RIGOL DHO804", role: "Scope" },
+      { name: "RIGOL DS1054Z", role: "Scope", budget: true },
+      { name: "Wiha TorqueVario-S 28506", role: "Torque" },
+      { name: "Fluke 771", role: "Process mA" },
+      { name: "Daniels Manufacturing AF8", role: "Qualified crimp" },
+    ],
+  },
+];
+
+/** Quiet footer strip — never lead the page. Fridge and neck AC stay in Browse all only. */
+export const JOBSITE_SUPPORT_NAMES = [
+  "EcoFlow DELTA Pro 3",
+  "HOTLIGH Magnetic Flashlight",
+  "SeeDevil 150 W Balloon Light Kit",
+] as const;
+
+export const CATALOG_SECTIONS: { category: GearCategory; label: string; chip: string }[] = [
+  { category: "Tools and supplies", label: "Tools & supplies", chip: "Tools" },
+  { category: "Test equipment", label: "Test equipment", chip: "Test" },
+  { category: "Cable and fault location", label: "Cable & fault", chip: "Cable" },
+  { category: "Job comfort and power", label: "Jobsite support", chip: "Jobsite" },
+];
+
+export const CATALOG_LEADS: Record<GearCategory, string> = {
+  "Tools and supplies": "Daniels Manufacturing AF8",
+  "Test equipment": "Fluke 87V",
+  "Cable and fault location": "Megger TDR500/3",
+  "Job comfort and power": "EcoFlow DELTA Pro 3",
+};
+
+export function findGear(name: string): Gear {
+  const item = GEAR_RECOMMENDATIONS.find((entry) => entry.name === name);
+  if (!item) {
+    throw new Error(`Unknown gear recommendation: ${name}`);
+  }
+  return item;
+}
+
+export function kitEntries(kit: GearKit) {
+  return kit.slots.map((slot) => ({
+    item: findGear(slot.name),
+    role: slot.role,
+    budget: slot.budget,
+  }));
+}
+
 export const USA_MADE_BRANDS = [
   { name: "Klein Tools", note: "Hand tools and strippers from U.S. plants" },
   { name: "CHANNELLOCK", note: "Pliers forged in Meadville, Pennsylvania" },

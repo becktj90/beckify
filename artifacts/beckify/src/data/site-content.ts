@@ -77,7 +77,7 @@ export interface HubCard {
 export const HOME_NAV_CARDS: HubCard[] = [
   {
     title: "Recommended Gear",
-    description: "Electrical test equipment for bench and field diagnostics.",
+    description: "Field kits we actually trust — model-specific electrical gear.",
     href: "/gear",
     icon: RadioTower,
   },
