@@ -30,44 +30,44 @@ Field jobsite tools and a Toolkit for basics and bench homework. Shareable engin
 
 Beckify is a professional field electrical toolbox for engineers, technicians, and students. It is a native iPhone and iPad app, not a website wrapper and not a project gallery. The home screen is two areas: **Field** (jobsite tools, opens first) and **Toolkit** (basics, bench homework, and references). Search covers both and shows which area a result belongs to.
 
-Field — jobsite calculators, wizards, and instruments:
+Field — jobsite calculators, wizards, and instruments. Field home (not while searching) includes a Quick strip: an avatar row of pinned jobsite tools (Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill).
 
-• Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
+Jobsite:
+
 • Voltage Drop — K-factor VD with parallels, target %, ampacity check, and optional ampacity→VD handoff
 • Conductor Cost Optimizer — compares compliant sizes and parallel runs using a user-entered or default planning $/kft and optional I²R energy. Planning allowance only — not LME or a bid
 • Conductor Length by Resistance — estimate length from a milliohm (mΩ) reading, end-to-end or short-to-parallel, with copper/aluminum temperature compensation and AWG/kcmil or custom circular mils
 • Conduit fill — same-size or mixed conductor sizes; Chapter 9 Table 1 vs Table 4 raceways and Table 5 areas (EMT, IMC, RMC, PVC, ENT, FMC, LFMC)
-• Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
-• Tap-Changer Calculator — DETC tap recommendation from measured secondary voltage
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA (typed or seeded from a confirmed OCR review)
 • Motor Nameplate OCR — camera or photo library, on-device Vision, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed. No cloud upload.
 • Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
-• Heater Design Wizard — resistive heater line current, leg R, and resistance-wire length
-• UPS / On-site Power — design kVA, runtime, and battery Ah from critical load
-• Harmonics (THD) — current THD, dominant order, and IEEE 519 discussion bands (informational)
-• NEC Circuit Calculator — design current, derated conductor, voltage drop, and OCPD in one pass
-• Load Calculation Worksheet — NEC 220.42 lighting demand plus motor/continuous VA totals
-• Cable Schedule Generator — sequential cable IDs from a type catalog with CSV copy
-• Solenoid Design Wizard — winding pack, center B, inductance, copper loss, axial field plot, and plunger force
-• EMP / EMC Shielding — skin depth, sheet SE, Faraday-loop voltage, and aperture leakage (protection-side educational; not pulse-source design)
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
+• Short-circuit current, circular mils, load & demand factors
+• NEC Circuit Calculator — design current, derated conductor, voltage drop, and OCPD in one pass (live one-shot calc, not paperwork)
 • IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
-• Power-factor correction, short-circuit current, circular mils, load & demand factors
+
+Power — facility and distribution energy only (saved Power Wizard jobs still open; Power Wizard is not listed):
+
+• Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR
+• Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
+• Tap-Changer Calculator — DETC tap recommendation from measured secondary voltage
+• Power-factor correction
+• Harmonics (THD) — current THD, dominant order, and IEEE 519 discussion bands (informational)
 • Battery Bank Sizing — series/parallel cells to bank voltage, amp-hours, and runtime
-• E-Bike Torque / RPM — shaft torque or RPM from mechanical power (W, kW, or hp)
-• Sprocket Ratio Designer — drive/driven teeth to ratio, output RPM/torque, and optional wheel speed, or invert a target
-• Range Estimator — pack V×Ah and Wh/mi to miles, kilometers, and runtime (not a GPS speed)
-• Battery Pack Designer — series/parallel pack planning from cell ratings or a voltage/current target (design aid; verify datasheet, BMS, and fusing before you build — not a weld cert). Use Battery Bank Sizing for usable DoD and runtime
-• Nickel Strip — strip cross-section to planning continuous and short-pulse current (derate for alloy, path, and welds)
 • Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
-• Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
+• UPS / On-site Power — design kVA, runtime, and battery Ah from critical load
+
+Controls:
+
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
-• Control Systems — pocket servo lab: plant library or custom G(s), P→PI→PID step metrics with Ziegler–Nichols (Ku/Pu and FOPDT) and an Open / P / PI / PID overlay so you can simulate different responses, Bode margins (PM, GM, ωc, ωb), and a lead compensator with analog R/C suggestion. Educational approximations — not for safety-critical commissioning. State-space LQR/Kalman/MPC stays on the website.
 • E-Bus / Rack Current — sum device currents against a bus rating for headroom
+• Control Systems — pocket servo lab: plant library or custom G(s), P→PI→PID step metrics with Ziegler–Nichols (Ku/Pu and FOPDT) and an Open / P / PI / PID overlay so you can simulate different responses, Bode margins (PM, GM, ωc, ωb), and a lead compensator with analog R/C suggestion. Educational approximations — not for safety-critical commissioning. State-space LQR/Kalman/MPC stays on the website.
 
 Toolkit — basics, bench / homework, and references:
+
+Basics:
 
 • Ohm's Law
 • Voltage divider (Vout, or solve R1 / R2)
@@ -77,6 +77,9 @@ Toolkit — basics, bench / homework, and references:
 • LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
 • 555 timer (astable and monostable)
 • Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
+
+Bench:
+
 • Reactance & resonance, Phasor Diagram, Magnetic Circuit
 • Transient Circuits — RC/RL charge and discharge, value at a time, and the curve
 • Fiber Link / NA and Gaussian Beam — numerical aperture, V-number, Rayleigh range, and beam radius
@@ -88,7 +91,21 @@ Toolkit — basics, bench / homework, and references:
 • ADC / DAC & Sampling — LSB, code count, ideal quantization SNR, Nyquist, optional DAC code-to-voltage (not the 4–20 mA scaler)
 • RF Power & Link — dBm to watts, VSWR and return loss, free-space path loss
 • Number Base Converter — binary, octal, decimal, hex, plus signed 8/16/32-bit read of the same bits
+• Heater Design Wizard — resistive heater line current, leg R, and resistance-wire length
+• Solenoid Design Wizard — winding pack, center B, inductance, copper loss, axial field plot, and plunger force
+• EMP / EMC Shielding — skin depth, sheet SE, Faraday-loop voltage, and aperture leakage (protection-side educational; not pulse-source design)
+• E-Bike Torque / RPM — shaft torque or RPM from mechanical power (W, kW, or hp)
+• Sprocket Ratio Designer — drive/driven teeth to ratio, output RPM/torque, and optional wheel speed, or invert a target
+• Range Estimator — pack V×Ah and Wh/mi to miles, kilometers, and runtime (not a GPS speed)
+• Battery Pack Designer — series/parallel pack planning from cell ratings or a voltage/current target (design aid; verify datasheet, BMS, and fusing before you build — not a weld cert). Use Battery Bank Sizing (Field → Power) for usable DoD and runtime
+• Nickel Strip — strip cross-section to planning continuous and short-pulse current (derate for alloy, path, and welds)
+
+Reference:
+
 • Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
+• Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
+• Load Calculation Worksheet — NEC 220.42 lighting demand plus motor/continuous VA totals
+• Cable Schedule Generator — sequential cable IDs from a type catalog with CSV copy
 
 Instruments (Field subsection) — measure with public Apple APIs (not private APIs):
 
@@ -111,7 +128,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Every catalog tool now has a short **About / How it works** note (toolbar info, or a collapsed disclosure — Field stays inputs-first; homework tools can start open). Copy is data-driven per tool: what it computes, when to use it, and honesty limits (design aid, not commissioning). Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). **Cellular Path** now shows color arc gauges for **radio generation** (2G…5G from RAT — not signal bars and not RSRP) and **TCP RTT milliseconds**, plus a carrier / RAT chip board for the identified data service. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps — this tool does not invent them. A collapsed reference sheet explains typical RF bands and is labeled as not measured. CTCarrier is deprecated as of iOS 16 with no public replacement. Wi-Fi Path no longer shows a dBm row. It reports Apple’s public 0…1 `signalStrength` as percent and bars, keeps the coverage heatmap, and adds TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. App Store apps cannot ICMP ping; a LAN target may prompt for Local Network. Field → Jobsite Conductor Length by Resistance now talks like the milliohm meter: search milliohm / shorted parallel, then pick end-to-end vs short-to-parallel (or 3-phase far-end short). Distance to the short is path ÷ 2. Same math as the website toolbox. Design aid — not a cable locator or TDR. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Field home (not while searching) shows a **Quick** strip — an avatar row of pinned jobsite tools: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, and Conduit Fill. Heater, solenoid, EMP/EMC, and e-bike / nickel-strip tools are Toolkit → Bench. Panel Directory, Load Calculation Worksheet, and Cable Schedule are Toolkit → Reference. Field → Power stays facility and distribution energy only. Every catalog tool now has a short **About / How it works** note (toolbar info, or a collapsed disclosure — Field stays inputs-first; homework tools can start open). Copy is data-driven per tool: what it computes, when to use it, and honesty limits (design aid, not commissioning). Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). **Cellular Path** now shows color arc gauges for **radio generation** (2G…5G from RAT — not signal bars and not RSRP) and **TCP RTT milliseconds**, plus a carrier / RAT chip board for the identified data service. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps — this tool does not invent them. A collapsed reference sheet explains typical RF bands and is labeled as not measured. CTCarrier is deprecated as of iOS 16 with no public replacement. Wi-Fi Path no longer shows a dBm row. It reports Apple’s public 0…1 `signalStrength` as percent and bars, keeps the coverage heatmap, and adds TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. App Store apps cannot ICMP ping; a LAN target may prompt for Local Network. Field → Jobsite Conductor Length by Resistance now talks like the milliohm meter: search milliohm / shorted parallel, then pick end-to-end vs short-to-parallel (or 3-phase far-end short). Distance to the short is path ÷ 2. Same math as the website toolbox. Design aid — not a cable locator or TDR. Control Systems Step now includes Ziegler–Nichols PID tuning (estimate Ku/Pu, FOPDT reaction-curve fit, classic vs modified tables) and an Open / P / PI / PID overlay so you can simulate different responses on one chart. Educational approximations — not for safety-critical commissioning. Full LQR / Kalman / MPC state-space studios stay on the website. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -165,7 +182,7 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 
 Take 3–8 screens per size. Suggested shots:
 
-1. Field home (Jobsite / Power / Controls / Instruments) with Field | Toolkit control. First-open / marketing: no Recents row, no tool-count pills or shelf totals.
+1. Field home (Jobsite / Power / Controls / Instruments) with Field | Toolkit control and the Quick strip (avatar row of pinned jobsite tools). First-open / marketing: no Recents row, no tool-count pills or shelf totals.
 2. Toolkit home (Basics / Bench / Reference)
 3. Search results labeled Field vs Toolkit
 4. Wire Size & Ampacity waterfall, Conductor Cost Optimizer ranking, or Voltage Drop with parallels + handoff
@@ -175,7 +192,7 @@ Take 3–8 screens per size. Suggested shots:
 8. Favorites list (starred tools pinned for one-tap access)
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
 10. Solar Design Wizard — panel aim readouts (tilt/heading) and/or a sizing result with optional storage (do not claim sensors were live in Simulator if they were not)
-11. E-bike Field tools — Torque/RPM, Sprocket Ratio, Range Estimator, or Pack Designer result (design-aid framing visible)
+11. Toolkit → Bench e-bike tools — Torque/RPM, Sprocket Ratio, Range Estimator, or Pack Designer result (design-aid framing visible; not Field)
 12. Cellular Path — color arc gauges for radio generation (2G…5G from RAT) and TCP RTT ms, plus the carrier / RAT chip board (do not imply RSRP/dBm; this is a suggested shot, not a captured screenshot)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
