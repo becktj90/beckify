@@ -1,4 +1,5 @@
 import SwiftUI
+import BeckifyMath
 
 /// Pinned tools for one-tap access — like the starred-tools list in EE-toolkit-style apps.
 struct FavoritesView: View {
@@ -60,13 +61,18 @@ struct FavoritesView: View {
 private struct FavoriteRowLabel: View {
     let tool: ToolDefinition
 
+    private var area: ToolHomeArea { ToolboxCatalog.area(of: tool.id) }
+
     var body: some View {
         HStack(spacing: 14) {
             IconWell(toolID: tool.id, size: 44)
             VStack(alignment: .leading, spacing: 3) {
-                Text(tool.title)
-                    .font(.headline)
-                    .foregroundStyle(Theme.foreground)
+                HStack(spacing: 8) {
+                    Text(tool.title)
+                        .font(.headline)
+                        .foregroundStyle(Theme.foreground)
+                    HomeAreaBadge(area: area)
+                }
                 Text(tool.subtitle)
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
@@ -76,7 +82,7 @@ private struct FavoriteRowLabel: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(tool.title)
+        .accessibilityLabel("\(tool.title), \(area.title)")
         .accessibilityHint(tool.subtitle)
         .accessibilityIdentifier("toolRow.\(tool.id.rawValue)")
     }

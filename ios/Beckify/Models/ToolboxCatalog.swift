@@ -69,7 +69,8 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// Grid sections on the toolbox home screen.
+/// Color-coded shelves. Home IA is Field vs Toolkit (`ToolHomeArea`);
+/// these cases stay stable so open catalog PRs can keep merging additively.
 enum ToolCategory: String, CaseIterable, Identifiable {
     case field = "Field"
     case power = "Power & AC"
@@ -79,12 +80,126 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     case reference = "Reference"
 
     var id: String { rawValue }
+
+    /// Operator-facing shelf title. Raw values stay unchanged for merge stability.
+    var displayName: String {
+        switch self {
+        case .field: return "Jobsite"
+        case .power: return "Power & AC"
+        case .controls: return "Controls"
+        case .homework: return "Bench / homework"
+        case .sensors: return "Instruments"
+        case .reference: return "Reference"
+        }
+    }
+}
+
+extension ToolHomeArea {
+    var title: String {
+        switch self {
+        case .field: return "Field"
+        case .toolkit: return "Toolkit"
+        }
+    }
+
+    var headline: String {
+        switch self {
+        case .field: return "Field EE Toolbox"
+        case .toolkit: return "Toolkit"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .field:
+            return "Jobsite calculators, wizards, and instruments."
+        case .toolkit:
+            return "Basics, bench homework, and references."
+        }
+    }
+}
+
+extension ToolShelfKind {
+    var title: String {
+        switch self {
+        case .jobsite: return "Jobsite"
+        case .power: return "Power & AC"
+        case .controls: return "Controls"
+        case .instruments: return "Instruments"
+        case .basics: return "Basics"
+        case .bench: return "Bench / homework"
+        case .reference: return "Reference"
+        }
+    }
+
+    /// Shelves shown under one home area, in grid order.
+    static func shelves(in area: ToolHomeArea) -> [ToolShelfKind] {
+        allCases.filter { $0.homeArea == area }
+    }
+
+    /// Existing category glyph / color family for this shelf.
+    var category: ToolCategory {
+        switch self {
+        case .jobsite: return .field
+        case .power: return .power
+        case .controls: return .controls
+        case .instruments: return .sensors
+        case .basics, .bench: return .homework
+        case .reference: return .reference
+        }
+    }
 }
 
 extension ToolboxCatalog {
     /// The shelf a tool is filed under, for the breadcrumb color on its tile.
     static func category(of id: ToolID) -> ToolCategory? {
         ToolCategory.allCases.first { categories[$0]?.contains(id) == true }
+    }
+
+    /// Field (jobsite) vs Toolkit (basics / bench / reference). ToolIDs stay put.
+    static func area(of id: ToolID) -> ToolHomeArea {
+        ToolHomeAreaPolicy.area(forToolID: id.rawValue)
+    }
+
+    static func shelf(of id: ToolID) -> ToolShelfKind {
+        ToolHomeAreaPolicy.shelf(forToolID: id.rawValue)
+    }
+
+    static func tools(in area: ToolHomeArea) -> [ToolDefinition] {
+        tools.filter { Self.area(of: $0.id) == area }
+    }
+
+    static func tools(on shelf: ToolShelfKind) -> [ToolDefinition] {
+        let ids: [ToolID]
+        switch shelf {
+        case .jobsite:
+            ids = (categories[.field] ?? []).filter { area(of: $0) == .field }
+        case .power:
+            ids = (categories[.power] ?? []).filter { area(of: $0) == .field }
+        case .controls:
+            ids = (categories[.controls] ?? []).filter { area(of: $0) == .field }
+        case .instruments:
+            ids = categories[.sensors] ?? []
+        case .basics:
+            ids = [
+                .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor,
+                .ledRC, .frequencyWave, .unitConverter, .timer555,
+            ]
+        case .bench:
+            // Listed tools in catalog order, plus any later ToolID that the
+            // policy files under bench (AoE analog, etc.) once those PRs merge.
+            let listed = tools.filter { ToolHomeAreaPolicy.shelf(forToolID: $0.id.rawValue) == .bench }.map(\.id)
+            let extras = ToolID.allCases.filter { id in
+                id != .powerWizard
+                    && ToolHomeAreaPolicy.shelf(forToolID: id.rawValue) == .bench
+                    && !listed.contains(id)
+                    && allTools.contains(where: { $0.id == id })
+            }
+            ids = listed + extras
+        case .reference:
+            ids = categories[.reference] ?? []
+        }
+        return ids.compactMap { id in allTools.first { $0.id == id } }
     }
 }
 
@@ -629,8 +744,9 @@ enum ToolboxCatalog {
         ),
     ]
 
-    /// Grid grouping for the home screen. Order inside a section is the order
-    /// tools appear in the grid.
+    /// Color-coded grouping. Home IA is Field vs Toolkit (`ToolHomeAreaPolicy`);
+    /// do not delete IDs here — relocate via the policy if a tool changes area.
+    /// Open PRs can keep appending to these arrays.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,

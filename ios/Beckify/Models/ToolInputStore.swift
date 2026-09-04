@@ -8,6 +8,18 @@ enum ToolInputStore {
     static func key(_ tool: ToolID, _ field: String) -> String {
         prefix + tool.rawValue + "." + field
     }
+
+    /// Best-effort restore of a saved job into the tool's last-used fields.
+    /// Unknown or empty keys are skipped. Does not block opening the tool.
+    static func restore(from job: SavedJob, defaults: UserDefaults = .standard) {
+        if !job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            defaults.set(job.name, forKey: key(job.toolID, "jobName"))
+        }
+        let fields = ToolHomeAreaPolicy.storedFields(toolID: job.toolID.rawValue, inputs: job.inputs)
+        for (field, value) in fields {
+            defaults.set(value, forKey: key(job.toolID, field))
+        }
+    }
 }
 
 /// String field persisted in UserDefaults / AppStorage for one tool.
