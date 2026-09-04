@@ -78,6 +78,22 @@ private enum CTCarrierLegacy {
     }
 }
 
+/// Data-service identity changes go through `CTTelephonyNetworkInfoDelegate`,
+/// not a `Notification.Name`. File-level `NSObject` so CoreTelephony can call
+/// off the main actor; hops back to `CellularPathModel` via `Task`.
+private final class CellularTelephonyDelegate: NSObject, CTTelephonyNetworkInfoDelegate {
+    private let onChange: () -> Void
+
+    init(onChange: @escaping () -> Void) {
+        self.onChange = onChange
+        super.init()
+    }
+
+    func dataServiceIdentifierDidChange(_ identifier: String) {
+        onChange()
+    }
+}
+
 @MainActor
 final class CellularPathModel: ObservableObject {
     @Published var defaultStatus = "Starting…"
@@ -124,6 +140,7 @@ final class CellularPathModel: ObservableObject {
     private var rttSamples: [Double?] = []
     private let telephony = CTTelephonyNetworkInfo()
     private let cellularData = CTCellularData()
+    private var telephonyDelegate: CellularTelephonyDelegate?
     private var observers: [NSObjectProtocol] = []
     private let historyCap = 12
 
@@ -168,6 +185,13 @@ final class CellularPathModel: ObservableObject {
                 self?.refreshRadio()
             }
         }
+        let delegate = CellularTelephonyDelegate { [weak self] in
+            Task { @MainActor in
+                self?.refreshRadio()
+            }
+        }
+        telephonyDelegate = delegate
+        telephony.delegate = delegate
         refreshRadio()
 
         let center = NotificationCenter.default
@@ -184,13 +208,11 @@ final class CellularPathModel: ObservableObject {
         removeRadioObservers()
     }
 
-    /// Portable CoreTelephony names. Some SDKs omit the typed
-    /// `CTTelephonyNetworkInfo.dataServiceIdentifierDidChangeNotification` member;
-    /// string names match Apple’s public notification constants and never crash if unused.
+    /// RAT changes still post this public name. Data-service identity uses
+    /// `CTTelephonyNetworkInfoDelegate` — the typed notification member is missing
+    /// on some Cloud SDKs and is not how Apple delivers that event.
     private static let radioChangeNotifications: [Notification.Name] = [
         .CTServiceRadioAccessTechnologyDidChange,
-        Notification.Name("CTTelephonyNetworkInfo.dataServiceIdentifierDidChangeNotification"),
-        Notification.Name("CTTelephonyNetworkInfoDataServiceIdentifierDidChangeNotification"),
     ]
 
     private func removeRadioObservers() {
@@ -198,6 +220,8 @@ final class CellularPathModel: ObservableObject {
             NotificationCenter.default.removeObserver(observer)
         }
         observers.removeAll()
+        telephony.delegate = nil
+        telephonyDelegate = nil
         CTCarrierLegacy.setProvidersUpdateHandler(on: telephony, nil)
         cellularData.cellularDataRestrictionDidUpdateNotifier = nil
     }
