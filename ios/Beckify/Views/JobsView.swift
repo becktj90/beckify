@@ -32,10 +32,12 @@ struct JobsView: View {
                         }
                         .onDelete(perform: jobs.delete)
                     }
+                    .scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Saved Jobs")
             .toolbar { EditButton() }
+            .background(Theme.ambientBackground.ignoresSafeArea())
         }
     }
 }

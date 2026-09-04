@@ -1,16 +1,18 @@
 import SwiftUI
 
 /// Premium adaptive tool launcher — identity, search, favorites, recents,
-/// and category hierarchy with original schematic icons.
+/// and category hierarchy with original schematic icons in soft wells.
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     @ObservedObject private var recents = RecentToolsStore.shared
     @State private var query = ""
     @State private var path: [ToolID] = []
+    @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var columns: [GridItem] {
-        let minimum: CGFloat = sizeClass == .regular ? 120 : 104
+        let minimum: CGFloat = sizeClass == .regular ? 128 : 108
         return [GridItem(.adaptive(minimum: minimum), spacing: 14)]
     }
 
@@ -32,32 +34,42 @@ struct ToolGridView: View {
                 VStack(alignment: .leading, spacing: Theme.Space.lg) {
                     if !isSearching {
                         homeHeader
+                            .opacity(appeared || reduceMotion ? 1 : 0)
+                            .offset(y: appeared || reduceMotion ? 0 : 10)
+
                         if !favoriteTools.isEmpty {
-                            horizontalStrip(title: "Favorites", tools: favoriteTools)
+                            avatarStrip(title: "Favorites", tools: favoriteTools)
+                                .opacity(appeared || reduceMotion ? 1 : 0)
+                                .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
                         if !recents.tools.isEmpty {
-                            horizontalStrip(title: "Recent", tools: recents.tools)
+                            avatarStrip(title: "Recent", tools: recents.tools)
+                                .opacity(appeared || reduceMotion ? 1 : 0)
+                                .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
                     }
 
-                    LazyVGrid(columns: columns, spacing: 18) {
-                        if isSearching {
-                            section(title: "Results", category: nil, tools: searchResults)
-                        } else {
-                            ForEach(ToolCategory.allCases) { category in
-                                let tools = ToolboxCatalog.tools(in: category)
-                                if !tools.isEmpty {
-                                    section(title: category.rawValue, category: category, tools: tools)
-                                }
+                    if isSearching {
+                        categoryBlock(title: "Results", tools: searchResults, delay: 0)
+                    } else {
+                        ForEach(Array(ToolCategory.allCases.enumerated()), id: \.element.id) { index, category in
+                            let tools = ToolboxCatalog.tools(in: category)
+                            if !tools.isEmpty {
+                                categoryBlock(title: category.rawValue, tools: tools, delay: Double(index) * 0.04)
                             }
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
-                .padding(.top, 8)
+                .padding(.horizontal, 18)
+                .padding(.bottom, 28)
+                .padding(.top, 10)
             }
-            .background(Theme.background.ignoresSafeArea())
+            .background {
+                ZStack {
+                    Theme.ambientBackground.ignoresSafeArea()
+                    AmbientGlowOrbs()
+                }
+            }
             .navigationTitle("Beckify")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Ohm, receptacle, 4–20 mA, modbus…")
@@ -81,6 +93,14 @@ struct ToolGridView: View {
                 CalculatorHostView(toolID: id)
                     .onAppear { recents.record(id) }
             }
+            .onAppear {
+                BeckifyMotion.withOptionalAnimation(
+                    BeckifyMotion.homeReveal,
+                    reduceMotion: reduceMotion
+                ) {
+                    appeared = true
+                }
+            }
         }
         .environment(\.openRelatedTool, { id in
             path.append(id)
@@ -88,22 +108,35 @@ struct ToolGridView: View {
         })
     }
 
+    // MARK: - Header
+
     private var homeHeader: some View {
         ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
                 .fill(Theme.instrumentPanel)
                 .overlay {
-                    BlueprintGridBackground(opacity: 0.14)
+                    // Concentric instrument rings — depth cue inspired by
+                    // premium mobile heroes, drawn in brand teal not purple.
+                    ConcentricRings()
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous))
                 }
+                .overlay {
+                    BlueprintGridBackground(opacity: 0.10)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous))
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: Theme.Stroke.hairline)
+                )
                 .overlay(alignment: .trailing) {
-                    IconWell(toolID: .ohmsLaw, size: 96, selected: true)
+                    IconWell(toolID: .ohmsLaw, size: 92, selected: true)
                         .opacity(0.28)
-                        .padding(.trailing, 18)
+                        .padding(.trailing, 16)
                         .accessibilityHidden(true)
                 }
+                .brandGlow(radius: 18, opacity: 0.18)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("BECKIFY")
                     .font(Theme.TypeRole.hud)
                     .tracking(2.4)
@@ -115,87 +148,119 @@ struct ToolGridView: View {
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Color.white.opacity(0.82))
                     .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    headerChip("\(ToolboxCatalog.tools.count) tools")
+                    headerChip("\(ToolCategory.allCases.count) shelves")
+                }
+                .padding(.top, 4)
             }
-            .padding(Theme.Space.md)
+            .padding(Theme.Space.lg)
         }
-        .frame(maxWidth: .infinity, minHeight: 132)
+        .frame(maxWidth: .infinity, minHeight: 168)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Beckify. Field EE Toolbox.")
+        .accessibilityLabel("Beckify. Field EE Toolbox. \(ToolboxCatalog.tools.count) tools.")
         .accessibilityIdentifier("homeHeader")
     }
 
+    private func headerChip(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Color.white.opacity(0.9))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.14), in: Capsule(style: .continuous))
+            .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.18), lineWidth: 1))
+    }
+
+    // MARK: - Strips & sections
+
     @ViewBuilder
-    private func horizontalStrip(title: String, tools: [ToolDefinition]) -> some View {
+    private func avatarStrip(title: String, tools: [ToolDefinition]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.xs) {
             Text(title.uppercased())
                 .font(Theme.TypeRole.sectionLabel)
-                .tracking(0.8)
+                .tracking(1.0)
                 .foregroundStyle(Theme.muted)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.Space.sm) {
+                HStack(spacing: Theme.Space.md) {
                     ForEach(tools) { tool in
                         NavigationLink(value: tool.id) {
-                            compactTile(tool)
+                            VStack(spacing: 6) {
+                                IconWell(toolID: tool.id, size: 52, circular: true)
+                                    .tileLift(
+                                        tint: Theme.categoryColors(
+                                            ToolboxCatalog.category(of: tool.id) ?? .power
+                                        ).primary,
+                                        radius: 10,
+                                        opacity: 0.2
+                                    )
+                                Text(tool.title)
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Theme.foreground)
+                                    .lineLimit(1)
+                                    .frame(width: 64)
+                            }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(tool.title)
+                        .accessibilityHint(tool.subtitle)
                     }
                 }
+                .padding(.vertical, 2)
             }
         }
-    }
-
-    private func compactTile(_ tool: ToolDefinition) -> some View {
-        HStack(spacing: 10) {
-            IconWell(toolID: tool.id, size: 32, glyphSize: 20, selected: true)
-            Text(tool.title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.foreground)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 12)
-        .frame(minHeight: Theme.touchTarget)
-        .background(Theme.surface, in: Capsule(style: .continuous))
-        .overlay(Capsule(style: .continuous).stroke(Theme.border, lineWidth: 1))
-        .accessibilityLabel(tool.title)
-        .accessibilityHint(tool.subtitle)
     }
 
     @ViewBuilder
-    private func section(title: String, category: ToolCategory?, tools: [ToolDefinition]) -> some View {
-        Section {
-            ForEach(tools) { tool in
-                NavigationLink(value: tool.id) {
-                    ToolTile(tool: tool, isFavorite: favorites.isFavorite(tool.id))
-                }
-                .buttonStyle(.plain)
-                .contextMenu {
-                    Button {
-                        favorites.toggle(tool.id)
-                    } label: {
-                        Label(
-                            favorites.isFavorite(tool.id) ? "Remove from Favorites" : "Add to Favorites",
-                            systemImage: favorites.isFavorite(tool.id) ? "star.slash" : "star"
-                        )
+    private func categoryBlock(title: String, tools: [ToolDefinition], delay: Double) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            HStack(spacing: 8) {
+                Capsule(style: .continuous)
+                    .fill(Theme.accent.opacity(0.85))
+                    .frame(width: 3, height: 12)
+                Text(title.uppercased())
+                    .font(Theme.TypeRole.sectionLabel)
+                    .tracking(1.0)
+                    .foregroundStyle(Theme.muted)
+                Spacer(minLength: 0)
+                Text("\(tools.count)")
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(Theme.muted.opacity(0.8))
+            }
+            .padding(.top, 4)
+
+            LazyVGrid(columns: columns, spacing: 16) {
+                ForEach(tools) { tool in
+                    NavigationLink(value: tool.id) {
+                        ToolTile(tool: tool, isFavorite: favorites.isFavorite(tool.id))
+                    }
+                    .buttonStyle(ToolTileButtonStyle())
+                    .contextMenu {
+                        Button {
+                            favorites.toggle(tool.id)
+                        } label: {
+                            Label(
+                                favorites.isFavorite(tool.id) ? "Remove from Favorites" : "Add to Favorites",
+                                systemImage: favorites.isFavorite(tool.id) ? "star.slash" : "star"
+                            )
+                        }
                     }
                 }
             }
-        } header: {
-            HStack(spacing: Theme.Space.xs) {
-                if let category {
-                    CategoryWell(category: category, size: 22)
-                }
-                Text(title.uppercased())
-                    .font(Theme.TypeRole.sectionLabel)
-                    .tracking(0.8)
-                    .foregroundStyle(Theme.muted)
-                Spacer()
-            }
-            .padding(.top, 8)
         }
+        .opacity(appeared || reduceMotion || isSearching ? 1 : 0)
+        .offset(y: appeared || reduceMotion || isSearching ? 0 : 12)
+        .animation(
+            reduceMotion ? nil : BeckifyMotion.homeReveal.delay(delay),
+            value: appeared
+        )
     }
 }
 
-/// One grid tile: IconWell glyph, title, and compact subtitle.
+// MARK: - Tile
+
+/// One grid tile: soft icon well on glass, title, and compact subtitle.
 struct ToolTile: View {
     let tool: ToolDefinition
     var isFavorite: Bool
@@ -206,27 +271,22 @@ struct ToolTile: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             ZStack(alignment: .topTrailing) {
-                Color.clear
-                    .aspectRatio(1, contentMode: .fit)
-                    .overlay {
-                        GeometryReader { geo in
-                            IconWell(toolID: tool.id, size: geo.size.width, selected: true)
-                        }
-                    }
-                    .shadow(color: borderTint.opacity(0.18), radius: 8, x: 0, y: 4)
+                IconWell(toolID: tool.id, size: 72)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
 
                 if isFavorite {
                     Image(systemName: "star.fill")
-                        .font(.caption2)
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(Theme.energized)
-                        .padding(7)
+                        .padding(8)
                         .accessibilityHidden(true)
                 }
             }
 
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 Text(tool.title)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
@@ -241,12 +301,73 @@ struct ToolTile: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
         }
-        .contentShape(Rectangle())
+        .padding(10)
+        .frame(maxWidth: .infinity)
+        .glassCard(corner: Theme.Radius.tile, tint: borderTint)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tool.title)
         .accessibilityHint(tool.subtitle)
         .accessibilityIdentifier("toolTile.\(tool.id.rawValue)")
+    }
+}
+
+/// Press feedback without spring noise. Honors Reduce Motion.
+private struct ToolTileButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : BeckifyMotion.tilePress, value: configuration.isPressed)
+    }
+}
+
+/// Soft atmospheric orbs behind the grid — teal/copper brand, not purple glow.
+private struct AmbientGlowOrbs: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Theme.accent.opacity(0.10))
+                .frame(width: 280, height: 280)
+                .blur(radius: 60)
+                .offset(x: -120, y: -180)
+            Circle()
+                .fill(Theme.energized.opacity(0.07))
+                .frame(width: 220, height: 220)
+                .blur(radius: 50)
+                .offset(x: 140, y: 320)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Concentric rings for the hero panel — instrument / radar language.
+private struct ConcentricRings: View {
+    var body: some View {
+        Canvas { context, size in
+            let center = CGPoint(x: size.width * 0.78, y: size.height * 0.42)
+            for i in 1...4 {
+                let radius = CGFloat(i) * min(size.width, size.height) * 0.14
+                let rect = CGRect(
+                    x: center.x - radius,
+                    y: center.y - radius,
+                    width: radius * 2,
+                    height: radius * 2
+                )
+                context.stroke(
+                    Path(ellipseIn: rect),
+                    with: .color(Color.white.opacity(0.10 - Double(i) * 0.015)),
+                    lineWidth: 1
+                )
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

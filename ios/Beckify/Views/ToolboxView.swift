@@ -94,6 +94,7 @@ struct ToolRow: View {
         HStack(spacing: 14) {
             HStack(spacing: 14) {
                 IconWell(toolID: tool.id, size: 40, glyphSize: 24, selected: true)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(tool.title)
                         .font(.headline)

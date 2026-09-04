@@ -18,12 +18,21 @@ struct RootView: View {
     var body: some View {
         TabView {
             ToolGridView()
-                .tabItem { Label("Toolbox", systemImage: "square.grid.2x2.fill") }
+                .tabItem {
+                    Label("Toolbox", systemImage: "square.grid.2x2.fill")
+                }
             FavoritesView()
-                .tabItem { Label("Favorites", systemImage: "star.fill") }
+                .tabItem {
+                    Label("Favorites", systemImage: "star.fill")
+                }
             JobsView()
-                .tabItem { Label("Jobs", systemImage: "note.text") }
+                .tabItem {
+                    Label("Jobs", systemImage: "note.text")
+                }
         }
         .tint(Theme.accent)
+        // Frosted tab chrome — reads as a floating bar over the ambient wash.
+        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 }
