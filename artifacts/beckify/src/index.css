@@ -13,9 +13,9 @@
  *   display Exo 2        — aerospace section titles
  *   sans    Sora         — UI body (replaces Inter)
  *   mono    IBM Plex Mono — formulas, telemetry, toolbox data
+ * Fonts load once via <link> in index.html (not @import here).
  * ============================================================================
  */
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800&family=Sora:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -103,7 +103,6 @@
 
 html {
   scroll-behavior: smooth;
-  font-size: 16px;
   hanging-punctuation: first allow-end last;
 }
 
