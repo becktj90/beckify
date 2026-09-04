@@ -15,7 +15,7 @@ export function NewGlennRunner() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
           <h1 id="new-glenn-title" className="font-display text-3xl font-bold tracking-tight">New Glenn Runner</h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            Phaser 4 flight from LC-36: charge liftoff on the Integrated Launch Tower, steer the corridor, then recover first stage on barge Jacklyn. Keyboard and touch. Difficulty stays on the cabinet — KID, CADET, or PAD RAT.
+            Phaser 4 flights from LC-36: pick an NG-n stack with its own payload, charge liftoff on the Integrated Launch Tower, steer the corridor, then slide first stage onto barge Jacklyn. Keyboard and touch. Difficulty stays on the cabinet — KID, CADET, or PAD RAT.
           </p>
         </div>
         <button
@@ -55,7 +55,7 @@ export function NewGlennRunner() {
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Keyboard: A/D or arrows steer, Space holds boost (brake on Jacklyn), P or Escape pauses, M mutes.</li>
           <li>Touch: hold CLIMB / BRAKE, tap ◀ ▶, or drag on the canvas. Same-origin iframe — it plays embedded on beckify.com.</li>
-          <li>Pickups: aero shield (one hit), LOX top-off, BE-4 kick. Soft Jacklyn deck = BOOSTER RECOVERED bonus. Splash costs score, not the whole run. Personal best stays in this browser.</li>
+          <li>Missions are NG-1 through NG-5, each with a named payload on the fairing and HUD. Finish Jacklyn to unlock the next flight. Soft deck = BOOSTER RECOVERED bonus. Splash costs score, not the whole run. Personal bests stay in this browser.</li>
         </ul>
       </div>
     </section>

@@ -3,6 +3,7 @@ import { H, W } from './config.js';
 import MissionScene from './mission.js';
 
 const parent = document.getElementById('ng-phaser-root');
+const debug = new URLSearchParams(window.location.search).get('debug') === '1';
 
 const game = new Phaser.Game({
   type: Phaser.WEBGL,
@@ -16,7 +17,8 @@ const game = new Phaser.Game({
     default: 'matter',
     matter: {
       gravity: { x: 0, y: 0.85 },
-      enableSleeping: false,
+      enableSleeping: true,
+      debug,
     },
   },
   scale: {

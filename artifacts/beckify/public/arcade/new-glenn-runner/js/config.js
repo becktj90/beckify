@@ -5,10 +5,14 @@
 export const W = 1280;
 export const H = 720;
 
-/** Current settings + scores. Bumped from V3 because the engine is Phaser 4. */
-export const STORAGE_KEY = 'newGlennRunnerStateV4';
-/** Prior canvas keys — high scores and prefs are copied forward once. */
-export const LEGACY_KEYS = ['newGlennRunnerStateV3', 'newGlennRunnerSettingsV2'];
+/** Current settings + scores. Bumped for NG-n mission unlocks + per-flight bests. */
+export const STORAGE_KEY = 'newGlennRunnerStateV5';
+/** Prior keys — high scores and prefs are copied forward once. */
+export const LEGACY_KEYS = [
+  'newGlennRunnerStateV4',
+  'newGlennRunnerStateV3',
+  'newGlennRunnerSettingsV2',
+];
 
 export const DIFFICULTY = {
   KID: {
@@ -101,4 +105,7 @@ export const DEFAULT_SETTINGS = {
   achievements: [],
   patches: [],
   engine: 'phaser4',
+  currentMission: 'NG-1',
+  unlockedMissions: ['NG-1'],
+  missionBests: {},
 };

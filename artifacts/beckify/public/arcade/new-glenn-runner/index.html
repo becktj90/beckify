@@ -179,6 +179,65 @@
       border-color: var(--go);
       color: var(--go);
     }
+    .diff-row button.is-locked,
+    .diff-row button:disabled {
+      cursor: not-allowed;
+      opacity: 0.72;
+      border-style: dashed;
+    }
+    #t-payload {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--cyan);
+      text-align: center;
+      text-shadow: 0 1px 2px #000;
+    }
+    .flight-bar {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 8px;
+      z-index: 9;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      pointer-events: auto;
+    }
+    .flight-bar .diff-row { margin-top: 0; }
+    body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .flight-bar {
+      display: none;
+    }
+    .ng-overlay {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 11;
+      width: min(440px, 90%);
+      padding: 18px 20px 16px;
+      border-radius: 1rem;
+      border: 1px solid var(--go);
+      background: rgba(4, 8, 16, 0.94);
+      color: var(--fg);
+      text-align: center;
+    }
+    .ng-overlay[hidden] { display: none !important; }
+    .ng-overlay h2 { margin: 0 0 8px; font-size: 1.15rem; }
+    .ng-overlay p {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .mc-obj {
+      font-family: var(--font-mono);
+      font-size: 0.64rem;
+      color: var(--amber);
+      text-align: center;
+      text-shadow: 0 1px 2px #000;
+    }
     .btn {
       margin-top: 8px;
       min-height: 40px;
@@ -251,11 +310,27 @@
       background: #05050d;
       border-radius: 0;
     }
-    body.is-embedded { padding: 0; background: #05050d; }
+    html, body { height: 100%; }
+    body.is-embedded { padding: 0; background: #05050d; overflow: hidden; }
     body.is-embedded .help,
     body.is-embedded .record { display: none; }
-    body.is-embedded .cabinet { max-width: none; }
-    body.is-embedded #arcade-fs-wrapper { border-radius: 0; border: 0; }
+    body.is-embedded .cabinet {
+      max-width: none;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    body.is-embedded #arcade-fs-wrapper {
+      flex: 1;
+      aspect-ratio: auto;
+      min-height: 0;
+      border-radius: 0;
+      border: 0;
+    }
+    body.is-embedded #arcade-touch-btns {
+      flex-shrink: 0;
+      margin: 6px 8px 8px;
+    }
   </style>
 </head>
 <body data-arcade-standalone="true">
@@ -267,6 +342,7 @@
         <div class="mc-panel">
           <table>
             <caption class="visually-hidden">Mission telemetry</caption>
+            <tr><th scope="row">FLT</th><td id="t-mission">NG-1</td></tr>
             <tr><th scope="row">ALT</th><td id="t-alt">0.0 km</td></tr>
             <tr><th scope="row">VEL</th><td id="t-vel">0 m/s</td></tr>
             <tr><th scope="row">BURN</th><td id="t-thr">THR 0%</td></tr>
@@ -274,7 +350,9 @@
         </div>
         <div class="mc-center">
           <div id="ng-banner" hidden data-kind="info"></div>
+          <div id="t-payload">BRP  Blue Ring Pathfinder</div>
           <div id="t-radio">LC-36 standing by.</div>
+          <div id="t-obj" class="mc-obj">Grab an aero shield</div>
         </div>
         <div class="mc-panel">
           <table>
@@ -300,13 +378,36 @@
         <label>Reduced flashes <input type="checkbox" data-set="reducedFlashes"></label>
         <label>Haptics <input type="checkbox" data-set="haptics" checked></label>
       </form>
+      <div class="flight-bar">
+        <div class="diff-row" role="group" aria-label="Flight manifest">
+          <button type="button" data-mission="NG-1" data-label="NG-1 · BRP">NG-1 · BRP</button>
+          <button type="button" data-mission="NG-2" data-label="NG-2 · ESC">NG-2 · ESC</button>
+          <button type="button" data-mission="NG-3" data-label="NG-3 · BB1">NG-3 · BB1</button>
+          <button type="button" data-mission="NG-4" data-label="NG-4 · LSK">NG-4 · LSK</button>
+          <button type="button" data-mission="NG-5" data-label="NG-5 · BRT">NG-5 · BRT</button>
+        </div>
+        <div class="diff-row" role="group" aria-label="Difficulty">
+          <button type="button" data-diff="KID">KID</button>
+          <button type="button" data-diff="CADET">CADET</button>
+          <button type="button" data-diff="PAD_RAT">PAD RAT</button>
+        </div>
+      </div>
+      <div id="ng-pause" class="ng-overlay" hidden role="status">
+        <h2>PAUSED</h2>
+        <p>P or Escape resumes. M mutes. O opens settings.</p>
+      </div>
+      <div id="ng-summary" class="ng-overlay" hidden role="dialog" aria-labelledby="ng-summary-title">
+        <h2 id="ng-summary-title">MISSION COMPLETE</h2>
+        <p id="ng-summary-body"></p>
+        <button class="btn" id="ng-summary-continue" type="button">CONTINUE</button>
+      </div>
     </div>
     <div id="arcade-touch-btns">
       <button id="atb-left" type="button" aria-label="Steer left">◀</button>
       <button id="atb-boost" type="button" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
       <button id="atb-right" type="button" aria-label="Steer right">▶</button>
     </div>
-    <p class="help">Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, land the first stage on barge Jacklyn. Soft deck = BOOSTER RECOVERED; splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked NG-n flight (each has its own payload). Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, slide the booster onto barge Jacklyn — not a vertical drop. Soft deck = BOOSTER RECOVERED; splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
       <div id="arcade-hi-score">NO MISSIONS FLOWN</div>

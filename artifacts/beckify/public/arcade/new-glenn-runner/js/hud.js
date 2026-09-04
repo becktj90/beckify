@@ -38,6 +38,9 @@ export function renderHud(snapshot) {
     't-best': snapshot.best,
     't-combo': snapshot.combo,
     't-radio': snapshot.radio,
+    't-mission': snapshot.mission,
+    't-payload': snapshot.payload,
+    't-obj': snapshot.objective,
   };
   for (const [id, value] of Object.entries(map)) {
     const node = el(id);
@@ -59,6 +62,19 @@ export function renderHud(snapshot) {
   if (record) record.textContent = snapshot.recordLine;
 }
 
+export function setOverlay(id, open) {
+  const node = el(id);
+  if (!node) return;
+  node.hidden = !open;
+}
+
+export function setSummaryCopy(title, body) {
+  const heading = el('ng-summary-title');
+  const text = el('ng-summary-body');
+  if (heading) heading.textContent = title;
+  if (text) text.textContent = body;
+}
+
 export function bindChrome(handlers) {
   const clicks = [
     ['arcade-mute-btn', handlers.toggleMute],
@@ -66,6 +82,7 @@ export function bindChrome(handlers) {
     ['arcade-settings-btn', handlers.toggleSettings],
     ['arcade-fullscreen-btn', handlers.toggleFullscreen],
     ['arcade-reset-btn', handlers.resetRecord],
+    ['ng-summary-continue', handlers.continueSummary],
   ];
   clicks.forEach(([id, fn]) => {
     const node = el(id);
@@ -98,6 +115,25 @@ export function bindChrome(handlers) {
   hold('atb-left', () => handlers.steer(-1, true), () => handlers.steer(-1, false));
   hold('atb-right', () => handlers.steer(1, true), () => handlers.steer(1, false));
   hold('atb-boost', () => handlers.boost(true), () => handlers.boost(false));
+}
+
+export function setMissionButtons(settings, onPick) {
+  document.querySelectorAll('[data-mission]').forEach((btn) => {
+    const id = btn.getAttribute('data-mission');
+    const label = btn.getAttribute('data-label') || id;
+    const unlocked = (settings.unlockedMissions || []).includes(id);
+    const active = settings.currentMission === id;
+    btn.disabled = !unlocked;
+    btn.textContent = unlocked ? label : `${id} · LOCKED`;
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+    btn.classList.toggle('is-active', active);
+    btn.classList.toggle('is-locked', !unlocked);
+    if (!btn._bound) {
+      btn._bound = true;
+      btn.addEventListener('click', () => onPick(id));
+    }
+  });
 }
 
 export function setDifficultyButtons(active, onPick) {

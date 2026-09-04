@@ -1,4 +1,5 @@
 /** Procedural LC-36 / New Glenn / Jacklyn sprites. Pad uses the ILT only. */
+import { MISSIONS } from './missions.js';
 
 function canvas(w, h) {
   const cv = document.createElement('canvas');
@@ -22,7 +23,7 @@ function featherPath(ctx, x, y, s) {
   ctx.restore();
 }
 
-export function makeRocket(fairing) {
+export function makeRocket(fairing, payload) {
   const cv = canvas(72, 220);
   const ctx = cv.getContext('2d');
   ctx.translate(36, 18);
@@ -38,8 +39,14 @@ export function makeRocket(fairing) {
     ctx.lineTo(-20, 52);
     ctx.bezierCurveTo(-20, 28, -16, 8, 0, 0);
     ctx.fill();
-    ctx.fillStyle = '#d5dde6';
-    ctx.fillRect(-20, 50, 40, 4);
+    ctx.fillStyle = payload?.accent || '#d5dde6';
+    ctx.fillRect(-20, 50, 40, 5);
+    if (payload?.mark) {
+      ctx.fillStyle = payload.accent || '#3ec6ff';
+      ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(payload.mark, 0, 44);
+    }
   } else {
     ctx.fillStyle = '#f4f7fb';
     ctx.fillRect(-16, 28, 32, 26);
@@ -252,46 +259,83 @@ function drawIlt(ctx, x, groundY) {
   ctx.restore();
 }
 
-export function makeJacklyn() {
-  const cv = canvas(420, 160);
+/** First-stage booster: gold crown + four solid black strakes. No grid fins. */
+export function makeBooster() {
+  const cv = canvas(80, 240);
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#0d141c';
-  ctx.fillRect(20, 88, 380, 36);
-  ctx.fillStyle = '#1b2732';
-  ctx.fillRect(46, 70, 328, 22);
-  ctx.fillStyle = '#2a3844';
-  ctx.fillRect(70, 58, 280, 16);
-  ctx.fillStyle = '#ffcf5d';
-  ctx.strokeStyle = '#ffcf5d';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([10, 7]);
-  ctx.strokeRect(150, 60, 120, 18);
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.moveTo(186, 78);
-  ctx.lineTo(210, 60);
-  ctx.lineTo(234, 78);
-  ctx.moveTo(186, 60);
-  ctx.lineTo(210, 78);
-  ctx.lineTo(234, 60);
-  ctx.stroke();
-  ctx.fillStyle = '#24313c';
-  ctx.fillRect(300, 28, 56, 42);
-  ctx.fillStyle = '#ffcf5d';
-  ctx.fillRect(348, 8, 6, 50);
-  ctx.fillRect(336, 8, 28, 6);
-  for (let i = 0; i < 8; i++) {
-    ctx.fillStyle = i % 2 ? '#ffe08a' : '#9ad4ff';
+  ctx.translate(40, 12);
+  const gold = ctx.createLinearGradient(-22, 0, 22, 36);
+  gold.addColorStop(0, '#e8c36a');
+  gold.addColorStop(0.5, '#c48a2a');
+  gold.addColorStop(1, '#8a5a12');
+  ctx.fillStyle = gold;
+  ctx.fillRect(-22, 0, 44, 34);
+  ctx.fillStyle = '#f4f7fb';
+  ctx.fillRect(-20, 34, 40, 150);
+  ctx.fillStyle = '#111318';
+  [[-28, 46], [16, 46], [-28, 78], [16, 78]].forEach(([x, y]) => {
     ctx.beginPath();
-    ctx.arc(70 + i * 36, 92, 3, 0, Math.PI * 2);
+    ctx.moveTo(x < 0 ? -20 : 20, y);
+    ctx.lineTo(x, y + 8);
+    ctx.lineTo(x, y + 26);
+    ctx.lineTo(x < 0 ? -20 : 20, y + 18);
+    ctx.closePath();
+    ctx.fill();
+  });
+  ctx.fillStyle = '#0b0d12';
+  ctx.font = 'bold 8px "IBM Plex Mono", ui-monospace, monospace';
+  ctx.save();
+  ctx.translate(-6, 120);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('BLUE ORIGIN', 0, 0);
+  ctx.restore();
+  ctx.fillStyle = '#c48a2a';
+  ctx.fillRect(-22, 176, 44, 12);
+  for (let i = 0; i < 7; i++) {
+    const x = -18 + i * 6;
+    ctx.fillStyle = '#2b3038';
+    ctx.beginPath();
+    ctx.ellipse(x, 202, 3.2, 7, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.fillStyle = '#ffcf5d';
-  ctx.font = 'bold 16px "IBM Plex Mono", ui-monospace, monospace';
+  return cv;
+}
+
+/** Jacklyn: dark deck between white bow/stern bookends. No ASDS circle-X. */
+export function makeJacklyn() {
+  const cv = canvas(560, 180);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#0a2a3c';
+  ctx.fillRect(0, 150, 560, 30);
+  ctx.fillStyle = '#141a20';
+  ctx.fillRect(86, 108, 388, 44);
+  ctx.fillStyle = '#1c242c';
+  ctx.fillRect(100, 96, 360, 16);
+  ctx.fillStyle = '#f4f7fb';
+  ctx.fillRect(12, 48, 86, 106);
+  ctx.fillRect(462, 40, 86, 114);
+  ctx.fillStyle = '#dfe6ee';
+  ctx.fillRect(20, 56, 70, 28);
+  ctx.fillRect(470, 48, 70, 28);
+  ctx.fillStyle = '#c5ced6';
+  ctx.beginPath();
+  ctx.arc(55, 44, 16, 0, Math.PI * 2);
+  ctx.arc(505, 36, 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#ffcf5d';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 6]);
+  ctx.strokeRect(210, 98, 140, 18);
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(250, 114);
+  ctx.lineTo(280, 98);
+  ctx.lineTo(310, 114);
+  ctx.stroke();
+  ctx.fillStyle = '#0b0d12';
+  ctx.font = 'bold 22px "IBM Plex Mono", ui-monospace, monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('JACKLYN', 210, 48);
-  ctx.fillStyle = '#0d141c';
-  ctx.fillRect(10, 118, 400, 14);
+  ctx.fillText('JACKLYN', 280, 148);
   return cv;
 }
 
@@ -412,7 +456,13 @@ export function installTextures(scene) {
     scene.textures.addCanvas(key, cv);
   };
   add('rocket', makeRocket(true));
-  add('booster', makeRocket(false));
+  add('booster', makeBooster());
+  add('bloom', makeDot('#ffb020', 80, 80));
+  add('rcs', makeDot('#f4fbff', 12, 12));
+  add('soot', makeDot('#6a3a18', 22, 22));
+  MISSIONS.forEach((mission) => {
+    add(`rocket-${mission.id}`, makeRocket(true, mission));
+  });
   add('pad', makePad());
   add('ocean', makeOcean());
   add('jacklyn', makeJacklyn());
