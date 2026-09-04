@@ -41,10 +41,12 @@ final class ToolHowItWorksTests: XCTestCase {
         let wifi = ToolHowItWorksCatalog.copy(forToolID: "wifiStatus")
         XCTAssertTrue(wifi?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("dBm") }) == true)
         XCTAssertTrue(wifi?.summary.localizedCaseInsensitiveContains("RTT") == true)
+        XCTAssertTrue(wifi?.summary.localizedCaseInsensitiveContains("Look Check") == true)
 
         let cellular = ToolHowItWorksCatalog.copy(forToolID: "cellularStatus")
         XCTAssertTrue(cellular?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("RSRP") }) == true)
         XCTAssertTrue(cellular?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("invent") }) == true)
+        XCTAssertTrue(cellular?.summary.localizedCaseInsensitiveContains("Look Check") == true)
 
         let ble = ToolHowItWorksCatalog.copy(forToolID: "bluetoothScan")
         XCTAssertTrue(ble?.summary.localizedCaseInsensitiveContains("CoreBluetooth") == true)
