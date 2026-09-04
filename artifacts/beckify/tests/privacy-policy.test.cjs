@@ -39,7 +39,7 @@ ok("sitemap All pages lists Privacy", /href: "\/privacy", label: "Privacy"/.test
 ok("footer links Privacy", footerSrc.includes('href="/privacy"') && footerSrc.includes("Privacy"));
 ok("static route generator includes privacy", staticRoutes.includes('["privacy", "Privacy Policy | Beckify iOS"'));
 ok("xml sitemap generator includes /privacy", sitemapGen.includes('["/privacy", "monthly", "0.7"]'));
-ok("privacy page keeps the remaining games listed", sitemapSrc.includes("Cosmic Cadet") && sitemapSrc.includes("Apollo & Rocco Run") && sitemapSrc.includes("New Glenn Runner"));
+ok("privacy page keeps the remaining game listed", sitemapSrc.includes("New Glenn Runner") && !sitemapSrc.includes("Cosmic Cadet") && !sitemapSrc.includes("Apollo & Rocco Run"));
 ok("HexGL stays off the sitemap and routes", !/hexgl/i.test(sitemapSrc) && !appSrc.includes('path="/games/hexgl"') && !/hexgl/i.test(sitemapGen));
 ok(
   "website toolbox privacy documents optional VLM upload",
