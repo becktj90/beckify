@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
-import { KIDS, drawKidPortrait, kidSrc, type KidId } from "./characterArt";
+import { HEROES, HERO_IDS, cartoonHeroSrc, drawCartoonHero, type HeroId } from "./characterArt";
 
 type Status = "ready" | "running" | "paused" | "gameover";
-type Rider = KidId;
+type Rider = HeroId;
 type Gate = { x: number; gapY: number; scored: boolean };
 const W = 480;
 const H = 640;
@@ -33,19 +33,17 @@ export function TootTroopers() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<Status>("ready");
-  const riderRef = useRef<Rider>("apollo");
+  const riderRef = useRef<Rider>("blaze");
   const soundRef = useRef(true);
   const startRef = useRef<() => void>(() => {});
   const pauseRef = useRef<() => void>(() => {});
   const [status, setStatus] = useState<Status>("ready");
-  const [rider, setRider] = useState<Rider>("apollo");
+  const [rider, setRider] = useState<Rider>("blaze");
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(safeBest);
   const [sound, setSound] = useState(true);
   const bestRef = useRef(best);
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
-  const assetBase = import.meta.env.BASE_URL;
-
   useEffect(() => { riderRef.current = rider; }, [rider]);
   useEffect(() => { soundRef.current = sound; }, [sound]);
   useEffect(() => { bestRef.current = best; }, [best]);
@@ -64,9 +62,6 @@ export function TootTroopers() {
     let gates: Gate[] = [];
     let lastHud = 0;
     let lastTootAt = 0;
-    const characterArt = { apollo: new Image(), rocco: new Image() };
-    characterArt.apollo.src = kidSrc("apollo", assetBase);
-    characterArt.rocco.src = kidSrc("rocco", assetBase);
     const state = (next: Status) => { statusRef.current = next; setStatus(next); };
     const audioReady = () => {
       if (!soundRef.current) return undefined;
@@ -211,7 +206,7 @@ export function TootTroopers() {
       ctx.save();
       ctx.translate(128, y);
       ctx.rotate(Math.max(-0.3, Math.min(0.45, velocity / 16)));
-      drawKidPortrait(ctx, characterArt[active], 0, 0, 86, { ring: KIDS[active].accent, tilt: 0 });
+      drawCartoonHero(ctx, active, 0, 0, 86, { ring: HEROES[active].accent, tilt: 0 });
       ctx.restore();
       raf = requestAnimationFrame(draw);
     };
@@ -235,16 +230,16 @@ export function TootTroopers() {
       canvas.removeEventListener("pointerdown", pointer);
       window.removeEventListener("keydown", key);
     };
-  }, [assetBase]);
+  }, []);
 
-  const kid = KIDS[rider];
+  const hero = HEROES[rider];
   return (
     <section className="space-y-5" aria-labelledby="toot-troopers-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: kid.accent }}>Arcade / fart-powered flight</p>
+          <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: hero.accent }}>Arcade / fart-powered flight</p>
           <h1 id="toot-troopers-title" className="font-display text-3xl font-bold">Toot Troopers</h1>
-          <p className="mt-1 max-w-xl text-sm text-[var(--muted)]">Apollo and Rocco are late for the sky picnic. Fart-flap through the inflatable rings and keep the snacks airborne.</p>
+          <p className="mt-1 max-w-xl text-sm text-[var(--muted)]">Blaze and Spark are late for the sky picnic. Fart-flap through the inflatable rings and keep the snacks airborne.</p>
         </div>
         <div className="flex gap-2">
           <button type="button" className="game-control rounded-md border border-[var(--border)] p-2" onClick={() => setSound((v) => !v)} aria-label={sound ? "Mute game" : "Unmute game"}>{sound ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
@@ -256,9 +251,9 @@ export function TootTroopers() {
         <canvas ref={canvasRef} width={W} height={H} className="block h-auto w-full touch-none" aria-label="Toot Troopers fart-powered side-scrolling game" />
         {immersive && <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#11133d] p-3 text-white" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={16} /></button>}
         <div className="kid-hud">
-          <div className="kid-chip" style={{ color: kid.accent }}>
-            <img src={kidSrc(rider, assetBase)} alt="" width={32} height={32} />
-            <div><span>{kid.label}</span><strong>TOOTS {score}</strong></div>
+          <div className="kid-chip" style={{ color: hero.accent }}>
+            <img src={cartoonHeroSrc(rider)} alt="" width={32} height={32} />
+            <div><span>{hero.label}</span><strong>TOOTS {score}</strong></div>
           </div>
           <div className="kid-chip">
             <div><span>Best</span><b>{best}</b></div>
@@ -270,19 +265,19 @@ export function TootTroopers() {
         {status !== "running" && (
           <div className="kid-overlay" onClick={(event) => { if ((event.target as HTMLElement).closest("button")) return; if (status === "paused") pauseRef.current(); else startRef.current(); }}>
             <div className="kid-overlay-card">
-              <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: kid.accent }}>{status === "gameover" ? `Snack crash · ${score} gates` : status === "paused" ? "Holding altitude" : "Ready for takeoff"}</p>
-              <h2 className="font-display font-bold">{status === "gameover" ? "Try another toot." : status === "paused" ? "Still flying." : "Pick a kid."}</h2>
+              <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: hero.accent }}>{status === "gameover" ? `Snack crash · ${score} gates` : status === "paused" ? "Holding altitude" : "Ready for takeoff"}</p>
+              <h2 className="font-display font-bold">{status === "gameover" ? "Try another toot." : status === "paused" ? "Still flying." : "Pick a flyer."}</h2>
               {status !== "paused" ? (
                 <div className="kid-pick">
-                  {(["apollo", "rocco"] as Rider[]).map((id) => (
-                    <button key={id} type="button" className={rider === id ? "is-on" : ""} style={rider === id ? { borderColor: KIDS[id].accent, background: KIDS[id].accent, color: KIDS[id].ink } : undefined} onClick={() => setRider(id)}>
-                      <img src={kidSrc(id, assetBase)} alt="" width={72} height={72} />
-                      {KIDS[id].label}
+                  {HERO_IDS.map((id) => (
+                    <button key={id} type="button" className={rider === id ? "is-on" : ""} style={rider === id ? { borderColor: HEROES[id].accent, background: HEROES[id].accent, color: HEROES[id].ink } : undefined} onClick={() => setRider(id)}>
+                      <img src={cartoonHeroSrc(id)} alt="" width={72} height={72} />
+                      {HEROES[id].label}
                     </button>
                   ))}
                 </div>
               ) : null}
-              <button type="button" className="kid-play" style={{ background: kid.accent, color: kid.ink }} onClick={() => status === "paused" ? pauseRef.current() : startRef.current()}>
+              <button type="button" className="kid-play" style={{ background: hero.accent, color: hero.ink }} onClick={() => status === "paused" ? pauseRef.current() : startRef.current()}>
                 <Play size={16} />
                 {status === "gameover" ? "Try again" : status === "paused" ? "Resume" : "FART TO FLY"}
               </button>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
-import { KIDS, drawKidPortrait, kidSrc } from "./characterArt";
+import { HEROES, cartoonHeroSrc, drawCartoonHero } from "./characterArt";
 
 type Status = "ready" | "running" | "paused" | "gameover";
 type Obstacle = { x: number; width: number; height: number; hue: string; kind: "gate" | "crate" | "beacon" };
@@ -63,9 +63,6 @@ export function FingerRunner() {
     let jumpBuffer = 0;
     let previous = performance.now();
     let animationFrame = 0;
-    const runner = new Image();
-    runner.src = kidSrc("apollo", import.meta.env.BASE_URL);
-
     const resetWorld = () => {
       player.y = GROUND - player.height;
       player.velocityY = 0;
@@ -193,7 +190,7 @@ export function FingerRunner() {
       context.globalAlpha = 1;
       context.save();
       context.translate(player.x + player.width / 2, player.y + player.height / 2);
-      drawKidPortrait(context, runner, 0, 0, 52, { ring: KIDS.apollo.accent });
+      drawCartoonHero(context, "blaze", 0, 0, 52, { ring: HEROES.blaze.accent });
       context.restore();
     };
 
@@ -242,7 +239,7 @@ export function FingerRunner() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Arcade / Reflex course</p>
           <h1 id="finger-runner-title" className="font-display text-3xl font-bold tracking-tight">Finger Runner</h1>
-          <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">A one-button runner built for short sessions: read the rhythm, clear the gates, and chase a longer distance. Apollo (orange balloon) leads the dash.</p>
+          <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">A one-button runner built for short sessions: read the rhythm, clear the gates, and chase a longer distance. Blaze, the orange-balloon cartoon runner, leads the dash.</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
           <span>BEST {best.toString().padStart(4, "0")}</span>
@@ -255,9 +252,9 @@ export function FingerRunner() {
         <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="block h-auto w-full touch-none" aria-label="Finger Runner endless runner" />
         {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
         <div className="kid-hud">
-          <div className="kid-chip" style={{ color: KIDS.apollo.accent }}>
-            <img src={kidSrc("apollo", import.meta.env.BASE_URL)} alt="" width={32} height={32} />
-            <div><span>Apollo</span><strong>{score.toString().padStart(4, "0")}</strong></div>
+          <div className="kid-chip" style={{ color: HEROES.blaze.accent }}>
+            <img src={cartoonHeroSrc("blaze")} alt="" width={32} height={32} />
+            <div><span>Blaze</span><strong>{score.toString().padStart(4, "0")}</strong></div>
           </div>
           <div className="kid-chip"><div><span>Best</span><b>{best.toString().padStart(4, "0")}</b></div></div>
         </div>
@@ -267,7 +264,7 @@ export function FingerRunner() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ff7a2d]">{status === "gameover" ? "Run complete" : status === "paused" ? "Course paused" : "Ready to run"}</p>
               <h2 className="font-display font-bold">{status === "gameover" ? "Beat your line." : status === "paused" ? "Hold position." : "Find the rhythm."}</h2>
               <p className="mt-3">{status === "gameover" ? `Distance ${score}. Best ${best}.` : "Tap, click, Space, or Arrow Up to jump. Press P or Escape to pause."}</p>
-              <button type="button" className="kid-play" style={{ background: KIDS.apollo.accent, color: KIDS.apollo.ink }} onClick={overlayAction}>
+              <button type="button" className="kid-play" style={{ background: HEROES.blaze.accent, color: HEROES.blaze.ink }} onClick={overlayAction}>
                 <Play size={16} />
                 {status === "paused" ? "Resume" : status === "gameover" ? "Run again" : "Start run"}
               </button>

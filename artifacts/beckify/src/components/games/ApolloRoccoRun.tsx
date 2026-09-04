@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
-import { KIDS, drawKidPortrait, kidSrc } from "./characterArt";
+import { HEROES, HERO_IDS, cartoonHeroSrc, drawCartoonHero } from "./characterArt";
 import {
   FAR_Z,
   PLAYER_Z,
-  RIDERS,
   TUNING,
   applyHit,
   hazardResult,
@@ -62,7 +61,7 @@ export function ApolloRoccoRun() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<GameStatus>("ready");
-  const riderRef = useRef<Rider>("apollo");
+  const riderRef = useRef<Rider>("blaze");
   const difficultyRef = useRef<Difficulty>("kid");
   const soundRef = useRef(true);
   const bestRef = useRef(safeBest());
@@ -71,7 +70,7 @@ export function ApolloRoccoRun() {
   const pauseRef = useRef(() => {});
   const actRef = useRef<(name: InputName) => void>(() => {});
   const [status, setStatus] = useState<GameStatus>("ready");
-  const [rider, setRider] = useState<Rider>("apollo");
+  const [rider, setRider] = useState<Rider>("blaze");
   const [difficulty, setDifficulty] = useState<Difficulty>("kid");
   const [score, setScore] = useState(0);
   const [hits, setHits] = useState<number>(TUNING.kid.hits);
@@ -79,8 +78,6 @@ export function ApolloRoccoRun() {
   const [sound, setSound] = useState(true);
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
   const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
-  const assetBase = import.meta.env.BASE_URL;
-
   const setGameStatus = (next: GameStatus) => {
     statusRef.current = next;
     setStatus(next);
@@ -116,13 +113,6 @@ export function ApolloRoccoRun() {
     const hazards: Hazard[] = [];
     const snacks: Treat[] = [];
     const sparks: { x: number; y: number; vx: number; vy: number; life: number; color: string }[] = [];
-    const portraits = {
-      apollo: new Image(),
-      rocco: new Image(),
-    };
-    portraits.apollo.src = kidSrc("apollo", assetBase);
-    portraits.rocco.src = kidSrc("rocco", assetBase);
-
     const tone = (hz: number, seconds: number, volume = 0.03, type: OscillatorType = "triangle") => {
       if (!soundRef.current) return;
       try {
@@ -264,7 +254,7 @@ export function ApolloRoccoRun() {
           treats += 1;
           distance += 8;
           const point = project(treat.lane, treat.z, 0.4);
-          burst(point.x, point.y, RIDERS[riderRef.current].accent);
+          burst(point.x, point.y, HEROES[riderRef.current].accent);
           tone(880, 0.08, 0.02);
         }
       }
@@ -416,7 +406,7 @@ export function ApolloRoccoRun() {
           ctx.save();
           ctx.translate(point.x, point.y);
           ctx.scale(point.scale, point.scale);
-          ctx.fillStyle = riderRef.current === "rocco" ? "#ff5ea8" : "#ff7a2d";
+          ctx.fillStyle = riderRef.current === "spark" ? "#ff5ea8" : "#ff7a2d";
           ctx.shadowColor = ctx.fillStyle;
           ctx.shadowBlur = 16;
           ctx.beginPath();
@@ -440,8 +430,8 @@ export function ApolloRoccoRun() {
       ctx.translate(player.x, player.y - 18);
       ctx.scale(player.scale * 1.15, player.scale * 1.15);
       const hidden = iframes > 0 && Math.floor(elapsed * 16) % 2 === 0;
-      drawKidPortrait(ctx, portraits[riderRef.current], 0, pose === "jump" ? -10 : Math.sin(bob) * 3, 92, {
-        ring: RIDERS[riderRef.current].accent,
+      drawCartoonHero(ctx, riderRef.current, 0, pose === "jump" ? -10 : Math.sin(bob) * 3, 92, {
+        ring: HEROES[riderRef.current].accent,
         squash: pose === "slide" ? 0.62 : 1,
         alpha: hidden ? 0.45 : 1,
         tilt: pose === "jump" ? -0.1 : 0,
@@ -490,7 +480,7 @@ export function ApolloRoccoRun() {
       document.removeEventListener("visibilitychange", visibility);
       audio?.close().catch(() => {});
     };
-  }, [assetBase]);
+  }, []);
 
   const overlayAction = () => {
     const intent = playIntent(status);
@@ -521,17 +511,17 @@ export function ApolloRoccoRun() {
     },
   });
 
-  const activeKid = KIDS[rider];
+  const activeHero = HEROES[rider];
   const maxHits = TUNING[difficulty].hits;
 
   return (
     <section className="space-y-5" aria-labelledby="apollo-rocco-run-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: activeKid.accent }}>Backyard water-balloon run</p>
+          <p className="text-xs font-bold uppercase tracking-[.2em]" style={{ color: activeHero.accent }}>Backyard water-balloon run</p>
           <h1 id="apollo-rocco-run-title" className="font-display text-3xl font-bold">Apollo &amp; Rocco Run</h1>
           <p className="mt-1 max-w-xl text-sm text-[var(--muted)]">
-            Apollo holds the orange balloon. Rocco brings the pink balloon and water gun. Hop the kiddie pools, slide under the sprinklers, grab snacks.
+            Blaze holds the orange balloon. Spark brings the pink balloon and water gun. Hop the kiddie pools, slide under the sprinklers, grab snacks.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
@@ -551,7 +541,7 @@ export function ApolloRoccoRun() {
           width={WIDTH}
           height={HEIGHT}
           className="block h-auto w-full touch-none select-none"
-          aria-label="Apollo and Rocco Run three-lane backyard runner"
+          aria-label="Balloon Run three-lane backyard runner"
           onPointerDown={onCanvasPointerDown}
           onPointerUp={endSwipe}
           onPointerCancel={endSwipe}
@@ -559,10 +549,10 @@ export function ApolloRoccoRun() {
         {immersive ? <button type="button" className="absolute right-4 top-4 z-30 rounded-full border border-white/30 bg-[#06101f]/90 p-3 text-white shadow-lg" onClick={exitFullscreen} aria-label="Exit fullscreen"><Minimize2 size={18} /></button> : null}
 
         <div className="kid-hud">
-          <div className="kid-chip" style={{ color: activeKid.accent }}>
-            <img src={kidSrc(rider, assetBase)} alt="" width={32} height={32} />
+          <div className="kid-chip" style={{ color: activeHero.accent }}>
+            <img src={cartoonHeroSrc(rider)} alt="" width={32} height={32} />
             <div>
-              <span>{activeKid.label}</span>
+              <span>{activeHero.label}</span>
               <strong>{score.toString().padStart(4, "0")}</strong>
             </div>
           </div>
@@ -583,8 +573,8 @@ export function ApolloRoccoRun() {
         {status !== "running" ? (
           <div className="kid-overlay" onClick={(event) => { if ((event.target as HTMLElement).closest("button")) return; overlayAction(); }}>
             <div className="kid-overlay-card">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: activeKid.accent }}>
-                {status === "gameover" ? "Splash out" : status === "paused" ? "Timeout" : "Pick a kid"}
+              <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: activeHero.accent }}>
+                {status === "gameover" ? "Splash out" : status === "paused" ? "Timeout" : "Pick a runner"}
               </p>
               <h2 className="font-display font-bold">
                 {status === "gameover" ? "Try another lap." : status === "paused" ? "Still on the path." : "Water balloon run."}
@@ -594,21 +584,21 @@ export function ApolloRoccoRun() {
                   ? `You scored ${score}. Local best ${best}. This device only.`
                   : status === "paused"
                     ? "Pause keeps this run. Resume when you are ready."
-                    : "Apollo is the orange balloon kid. Rocco is the pink balloon / water gun kid. KID is the default — wide gaps, slow ramp, four hits."}
+                    : "Blaze is the orange-balloon cartoon. Spark is the pink-balloon / water-gun cartoon. KID is the default — wide gaps, slow ramp, four hits."}
               </p>
               {status !== "paused" ? (
                 <>
                   <div className="kid-pick">
-                    {(["apollo", "rocco"] as Rider[]).map((id) => (
+                    {HERO_IDS.map((id) => (
                       <button
                         key={id}
                         type="button"
                         className={rider === id ? "is-on" : ""}
-                        style={rider === id ? { borderColor: KIDS[id].accent, background: KIDS[id].accent, color: KIDS[id].ink } : undefined}
+                        style={rider === id ? { borderColor: HEROES[id].accent, background: HEROES[id].accent, color: HEROES[id].ink } : undefined}
                         onClick={() => setRider(id)}
                       >
-                        <img src={kidSrc(id, assetBase)} alt="" width={72} height={72} />
-                        {KIDS[id].label}
+                        <img src={cartoonHeroSrc(id)} alt="" width={72} height={72} />
+                        {HEROES[id].label}
                       </button>
                     ))}
                   </div>
@@ -618,7 +608,7 @@ export function ApolloRoccoRun() {
                   </div>
                 </>
               ) : null}
-              <button type="button" className="kid-play" style={{ background: activeKid.accent, color: activeKid.ink }} onClick={overlayAction}>
+              <button type="button" className="kid-play" style={{ background: activeHero.accent, color: activeHero.ink }} onClick={overlayAction}>
                 <Play size={16} />
                 {status === "paused" ? "Resume" : status === "gameover" ? "Run again" : "Start run"}
               </button>
@@ -633,11 +623,11 @@ export function ApolloRoccoRun() {
 
         <div className="kid-pads" aria-label="On-canvas runner controls">
           <div>
-            <button type="button" className="kid-pad" style={{ borderColor: activeKid.accent }} aria-label="Move left" {...hold("left")}>
+            <button type="button" className="kid-pad" style={{ borderColor: activeHero.accent }} aria-label="Move left" {...hold("left")}>
               <ArrowLeft size={26} />
               <span>Left</span>
             </button>
-            <button type="button" className="kid-pad" style={{ borderColor: activeKid.accent }} aria-label="Move right" {...hold("right")}>
+            <button type="button" className="kid-pad" style={{ borderColor: activeHero.accent }} aria-label="Move right" {...hold("right")}>
               <ArrowRight size={26} />
               <span>Right</span>
             </button>

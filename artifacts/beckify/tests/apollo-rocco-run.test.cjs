@@ -125,10 +125,14 @@ const gameFiles = [
   path.join(__dirname, '..', 'src', 'pages', 'apollo-rocco-run.tsx'),
 ];
 for (const file of gameFiles) {
-  const text = fs.readFileSync(file, 'utf8').toLowerCase();
-  assert.equal(text.includes('temple run'), false, `${path.basename(file)} must not name Temple Run`);
-  assert.equal(text.includes('imangi'), false, `${path.basename(file)} must not credit Imangi`);
-  assert.equal(text.includes('based on temple'), false);
+  const text = fs.readFileSync(file, 'utf8');
+  const lower = text.toLowerCase();
+  assert.equal(lower.includes('temple run'), false, `${path.basename(file)} must not name Temple Run`);
+  assert.equal(lower.includes('imangi'), false, `${path.basename(file)} must not credit Imangi`);
+  assert.equal(lower.includes('based on temple'), false);
+  assert.equal(/games\/kids\/(apollo|rocco)\.png/.test(text), false, `${path.basename(file)} must not load kid photos`);
 }
+
+assert.equal(run.RIDERS, undefined);
 
 console.log('Apollo & Rocco Run lane/jump/kid-hit helpers passed');

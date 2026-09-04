@@ -96,7 +96,7 @@ export const HOME_NAV_CARDS: HubCard[] = [
   },
   {
     title: "Games",
-    description: "Seven original browser games starring Apollo and Rocco — no ads.",
+    description: "Seven original browser games with cartoon heroes — no ads.",
     href: "/games",
     icon: Gamepad2,
   },
@@ -233,7 +233,7 @@ export const GAMES: Game[] = [
   {
     name: "Booty Butt Scooter",
     description:
-      "Crossy-style scooter hopper starring Apollo (orange balloon) and Rocco (pink balloon), with fart boosts, traffic dodges, and score persistence.",
+      "Crossy-style scooter hopper with cartoon riders Blaze (orange balloon) and Spark (pink balloon), fart boosts, traffic dodges, and score persistence.",
     url: "/games/booty-butt-scooter",
   },
   {
@@ -249,17 +249,17 @@ export const GAMES: Game[] = [
   },
   {
     name: "Toot Troopers",
-    description: "Original fart-powered flight starring Apollo and Rocco. Toot through sky gates and beat your local best.",
+    description: "Original fart-powered flight with cartoon flyers Blaze and Spark. Toot through sky gates and beat your local best.",
     url: "/games/toot-troopers",
   },
   {
     name: "Apollo & Rocco Run",
-    description: "Backyard water-balloon run starring Apollo (orange balloon) and Rocco (pink balloon). Three-lane trail, jump, slide, KID difficulty, and a local best on this device.",
+    description: "Backyard water-balloon run with cartoon runners Blaze (orange balloon) and Spark (pink balloon). Three-lane trail, jump, slide, KID difficulty, and a local best on this device.",
     url: "/games/apollo-rocco-run",
   },
   {
     name: "Pup Planet",
-    description: "Play as Apollo or Rocco, mining and building on their own seeded little planet in this first-person WebGL sandbox.",
+    description: "Play as Blaze or Spark, mining and building on a seeded little planet in this first-person WebGL sandbox.",
     url: "/games/pup-planet",
   },
 ];
