@@ -31,8 +31,17 @@ struct TapChangerView: View {
             )
 
             NumberField(title: "Measured secondary", unit: "V", text: $measured, fieldID: "measured", onSubmit: calculate)
-            MenuField(title: "Current tap", selection: $currentTap, options: tapChoices.map { String(format: "%g", $0) }) { raw in
-                guard let value = Double(raw) else { return raw }
+            MenuField(
+                title: "Current tap",
+                selection: Binding(
+                    get: {
+                        let value = currentTap.parsedDouble ?? 0
+                        return tapChoices.first { abs($0 - value) < 1e-9 } ?? 0
+                    },
+                    set: { currentTap = String(format: "%g", $0) }
+                ),
+                options: tapChoices
+            ) { value in
                 if value > 0 { return "+\(Format.number(value, digits: 1))%" }
                 if value < 0 { return "\(Format.number(value, digits: 1))%" }
                 return "0% (Nominal)"
@@ -416,7 +425,7 @@ struct MotorNameplateView: View {
             NumberField(title: "Voltage", unit: "V", text: $volts, optional: true, fieldID: "volts", onSubmit: calculate)
             NumberField(title: "Service factor", unit: "", text: $sf, optional: true, fieldID: "sf", onSubmit: calculate)
             NumberField(title: "Temp rise", unit: "°C", text: $rise, optional: true, fieldID: "rise", onSubmit: calculate)
-            NumberField(title: "Code letter", unit: "", text: $code, optional: true, fieldID: "code", onSubmit: calculate)
+            TextInputField(title: "Code letter", text: $code, placeholder: "G", optional: true, autocapitalization: .characters, fieldID: "code", onSubmit: calculate)
             MenuField(title: "Phases", selection: $phases, options: ["1", "3"]) { $0 == "1" ? "1-phase" : "3-phase" }
             MenuField(title: "Motor type", selection: $motorType, options: MotorNameplateType.allCases.map(\.rawValue)) { raw in
                 MotorNameplateType(rawValue: raw)?.label ?? raw
@@ -868,7 +877,7 @@ struct NECCircuitView: View {
                 symbolic: "I_des = FLA×mult; ampacity ≥ I_des; VD = φ·K·I·L/CM",
                 substituted: substituted,
                 meaning: "One-shot branch/feeder sketch: design current, derated ampacity pick, voltage drop, and OCPD. Leave FLA blank to compute from kW.",
-                citation: "NEC 210.19 / 215.2 continuous, Table 310.16, Ch.9 Table 8. Design aid."
+                citation: "NEC 210.19 / 215.2 continuous, Table 310.16, Ch.9 Table 8 (CM) and Table 9 (K-factor VD). Design aid."
             )
 
             NumberField(title: "FLA (optional)", unit: "A", text: $fla, optional: true, fieldID: "fla", onSubmit: calculate)
@@ -1043,20 +1052,30 @@ struct LoadWorksheetView: View {
     private func calculate() {
         session.calculate {
             let rows = [
-                LoadWorksheetRow(description: "Lighting", type: .lighting, vaEach: lightVA.parsedDouble ?? 0),
-                LoadWorksheetRow(description: "Receptacles", type: .receptacle, vaEach: receptVA.parsedDouble ?? 0),
-                LoadWorksheetRow(description: "Continuous", type: .continuous, vaEach: contVA.parsedDouble ?? 0),
-                LoadWorksheetRow(description: "Motor", type: .motor, vaEach: motorVA.parsedDouble ?? 0),
+                LoadWorksheetRow(description: "Lighting", type: .lighting, vaEach: try parseOptionalVA(lightVA, name: "Lighting VA")),
+                LoadWorksheetRow(description: "Receptacles", type: .receptacle, vaEach: try parseOptionalVA(receptVA, name: "Receptacle VA")),
+                LoadWorksheetRow(description: "Continuous", type: .continuous, vaEach: try parseOptionalVA(contVA, name: "Continuous VA")),
+                LoadWorksheetRow(description: "Motor", type: .motor, vaEach: try parseOptionalVA(motorVA, name: "Motor VA")),
             ]
             return try LoadWorksheet.calculate(
                 rows: rows,
                 occupancy: LoadWorksheetOccupancy(rawValue: occ) ?? .other,
                 voltage: volts.parsedDouble ?? .nan,
                 phases: Int(phases) ?? 3,
-                sparePercent: spare.parsedDouble ?? 0
+                sparePercent: try parseOptionalVA(spare, name: "Spare percent")
             )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion { successTick += 1 }
+    }
+
+    /// Blank → 0; non-empty garbage → error (do not silently zero bad input).
+    private func parseOptionalVA(_ text: String, name: String) throws -> Double {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return 0 }
+        guard let value = trimmed.parsedDouble, value.isFinite, value >= 0 else {
+            throw CalcError.outOfRange("\(name) is not a valid non-negative number.")
+        }
+        return value
     }
 
     private var substituted: String? {
@@ -1109,20 +1128,20 @@ struct CableScheduleView: View {
                 citation: "Project document generator. Ampacity notes use Table 310.16 75°C when listed."
             )
 
-            NumberField(title: "ID prefix", unit: "", text: $prefix, fieldID: "prefix", onSubmit: calculate)
+            TextInputField(title: "ID prefix", text: $prefix, placeholder: "C", autocapitalization: .characters, fieldID: "prefix", onSubmit: calculate)
             NumberField(title: "Start number", unit: "", text: $start, fieldID: "start", onSubmit: calculate)
 
             Text("LINE A").font(.caption.weight(.semibold)).foregroundStyle(Theme.muted)
             MenuField(title: "Type", selection: $typeA, options: typeOptions) { $0 }
             NumberField(title: "Quantity", unit: "", text: $qtyA, fieldID: "qtyA", onSubmit: calculate)
-            NumberField(title: "From", unit: "", text: $fromA, fieldID: "fromA", onSubmit: calculate)
-            NumberField(title: "To", unit: "", text: $toA, fieldID: "toA", onSubmit: calculate)
+            TextInputField(title: "From", text: $fromA, placeholder: "MCC-1", autocapitalization: .characters, fieldID: "fromA", onSubmit: calculate)
+            TextInputField(title: "To", text: $toA, placeholder: "P-101", autocapitalization: .characters, fieldID: "toA", onSubmit: calculate)
 
             Text("LINE B").font(.caption.weight(.semibold)).foregroundStyle(Theme.muted)
             MenuField(title: "Type", selection: $typeB, options: typeOptions) { $0 }
             NumberField(title: "Quantity", unit: "", text: $qtyB, fieldID: "qtyB", onSubmit: calculate)
-            NumberField(title: "From", unit: "", text: $fromB, fieldID: "fromB", onSubmit: calculate)
-            NumberField(title: "To", unit: "", text: $toB, fieldID: "toB", onSubmit: calculate)
+            TextInputField(title: "From", text: $fromB, placeholder: "PLC-1", autocapitalization: .characters, fieldID: "fromB", onSubmit: calculate)
+            TextInputField(title: "To", text: $toB, placeholder: "JB-12", autocapitalization: .characters, fieldID: "toB", onSubmit: calculate)
 
             CalculatorActionBar(
                 onCalculate: calculate,
