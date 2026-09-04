@@ -26,6 +26,8 @@ assert.match(arcade, /announce\(/);
 assert.match(arcade, /arcade-live/);
 assert.match(arcade, /function beginJacklynLanding\(/);
 assert.match(arcade, /function updateJacklynLanding\(/);
+const seaPhaseIncrements = arcade.match(/state\.effects\.seaPhase \+= dt/g) || [];
+assert.equal(seaPhaseIncrements.length, 1, 'seaPhase must increment once per frame (updateMission only)');
 assert.match(arcade, /function resolveJacklynTouchdown\(/);
 assert.match(arcade, /function drawJacklynOcean\(/);
 assert.match(arcade, /BOOSTER RECOVERED/);

@@ -2576,7 +2576,6 @@
 
   function updateJacklynLanding(dt) {
     const step = dt * BASE_FPS;
-    state.effects.seaPhase += dt;
     if (state.booster.touchdown) {
       state.booster.celebrate = Math.max(0, (state.booster.celebrate || 0) - dt);
       if ((state.session.boosterRecovered || state.booster.tip) && state.booster.legs < 1) {
