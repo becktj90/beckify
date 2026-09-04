@@ -146,6 +146,26 @@ final class SolarDesignTests: XCTestCase {
         XCTAssertEqual(r.arrayKwDc, 8.0, accuracy: 1e-9)
     }
 
+    func testRejectsZeroSystemEfficiency() {
+        XCTAssertThrowsError(
+            try SolarDesign.size(
+                scale: .residential,
+                latitudeDegrees: 40,
+                dailyLoadKwh: 30,
+                peakSunHours: 4.5,
+                panelWatts: 400,
+                tiltDegrees: 40,
+                azimuthDegrees: 180,
+                systemEfficiencyPercent: 0
+            )
+        ) { error in
+            guard let calc = error as? CalcError else {
+                return XCTFail("Expected CalcError")
+            }
+            XCTAssertEqual(calc.message, "System efficiency must be greater than 0 and at most 100 %.")
+        }
+    }
+
     func testRejectsBadLatitude() {
         XCTAssertThrowsError(try SolarDesign.orientationAdvice(latitudeDegrees: 95))
     }

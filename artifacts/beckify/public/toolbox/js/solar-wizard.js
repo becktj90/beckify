@@ -140,7 +140,7 @@
       label = 'Peak-shave (' + fmt(opts.peakHours, 1) + ' h)';
     } else if (opts.mode === 'selfConsumption') {
       if (!(opts.selfPct > 0) || opts.selfPct > 100) {
-        return { error: 'Self-consumption fraction is between 0 and 100 %.' };
+        return { error: 'Self-consumption fraction must be greater than 0 and at most 100 %.' };
       }
       if (!(opts.dailyProd > 0)) return { error: 'Daily production must be greater than zero.' };
       usable = opts.dailyProd * (opts.selfPct / 100);
@@ -177,7 +177,7 @@
     }
     if (!(inputs.panelW > 0)) return { error: 'Panel wattage must be greater than zero.' };
     if (!(inputs.eta > 0) || inputs.eta > 100) {
-      return { error: 'System efficiency is between 0 and 100 %.' };
+      return { error: 'System efficiency must be greater than 0 and at most 100 %.' };
     }
     if (!(inputs.ratio >= 0.8) || inputs.ratio > 2) {
       return { error: 'DC:AC ratio should be between 0.8 and 2.0.' };
@@ -233,7 +233,7 @@
       specific: specific,
       inverterKw: inverterKw,
       ratio: inputs.ratio,
-      eta: eta,
+      systemEfficiencyFraction: eta,
       psh: inputs.psh,
       area: area,
       panelW: inputs.panelW,
@@ -296,7 +296,7 @@
     html += '<strong>Orientation</strong><br>';
     html += 'Target tilt ' + fmt(r.advice.yearRound, 1) + '° (summer ' + fmt(r.advice.summer, 1) + '° / winter ' + fmt(r.advice.winter, 1) + '°) · azimuth ' + azLabel + ' (' + r.advice.hemisphere + ')<br>';
     html += 'Your errors: tilt Δ ' + fmt(r.orient.tiltErr, 1) + '° · azimuth Δ ' + fmt(r.orient.azErr, 1) + '° → orientation factor ' + fmt(r.orient.factor * 100, 1) + '%<br>';
-    html += 'System η ' + fmt(r.eta * 100, 0) + '% · PSH ' + fmt(r.psh, 2) + ' h/day · scale ' + r.scale.label;
+    html += 'System η ' + fmt(r.systemEfficiencyFraction * 100, 0) + '% · PSH ' + fmt(r.psh, 2) + ' h/day · scale ' + r.scale.label;
     html += '</div>';
 
     if (r.storage) {

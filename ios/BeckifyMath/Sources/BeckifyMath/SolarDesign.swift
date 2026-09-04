@@ -72,7 +72,8 @@ public struct SolarDesignResult: Equatable, Sendable {
     public var annualProductionKwh: Double
     public var specificYieldKwhPerKwp: Double
     public var orientationFactor: Double
-    public var systemEfficiency: Double
+    /// System efficiency as a fraction in (0, 1] — e.g. 0.80 for 80 %.
+    public var systemEfficiencyFraction: Double
     public var inverterKwAc: Double
     public var dcAcRatio: Double
     public var peakSunHours: Double
@@ -91,7 +92,7 @@ public struct SolarDesignResult: Equatable, Sendable {
         annualProductionKwh: Double,
         specificYieldKwhPerKwp: Double,
         orientationFactor: Double,
-        systemEfficiency: Double,
+        systemEfficiencyFraction: Double,
         inverterKwAc: Double,
         dcAcRatio: Double,
         peakSunHours: Double,
@@ -109,7 +110,7 @@ public struct SolarDesignResult: Equatable, Sendable {
         self.annualProductionKwh = annualProductionKwh
         self.specificYieldKwhPerKwp = specificYieldKwhPerKwp
         self.orientationFactor = orientationFactor
-        self.systemEfficiency = systemEfficiency
+        self.systemEfficiencyFraction = systemEfficiencyFraction
         self.inverterKwAc = inverterKwAc
         self.dcAcRatio = dcAcRatio
         self.peakSunHours = peakSunHours
@@ -259,13 +260,17 @@ public enum SolarDesign {
             advice: advice
         )
 
-        let etaPct = systemEfficiencyPercent ?? defaultSystemEfficiencyPercent[scale]!
+        guard let etaPct = systemEfficiencyPercent ?? defaultSystemEfficiencyPercent[scale] else {
+            throw CalcError.outOfRange("No default system efficiency is defined for scale \(scale.rawValue).")
+        }
         guard etaPct.isFinite, etaPct > 0, etaPct <= 100 else {
-            throw CalcError.outOfRange("System efficiency is between 0 and 100 %.")
+            throw CalcError.outOfRange("System efficiency must be greater than 0 and at most 100 %.")
         }
         let eta = etaPct / 100
 
-        let ratio = dcAcRatio ?? defaultDcAcRatio[scale]!
+        guard let ratio = dcAcRatio ?? defaultDcAcRatio[scale] else {
+            throw CalcError.outOfRange("No default DC:AC ratio is defined for scale \(scale.rawValue).")
+        }
         guard ratio.isFinite, ratio >= 0.8, ratio <= 2.0 else {
             throw CalcError.outOfRange("DC:AC ratio should be between 0.8 and 2.0 for planning.")
         }
@@ -317,7 +322,7 @@ public enum SolarDesign {
             annualProductionKwh: annual,
             specificYieldKwhPerKwp: specific,
             orientationFactor: orient.factor,
-            systemEfficiency: eta,
+            systemEfficiencyFraction: eta,
             inverterKwAc: inverterKw,
             dcAcRatio: ratio,
             peakSunHours: psh,
@@ -343,10 +348,10 @@ public enum SolarDesign {
     ) throws -> SolarStorageResult {
         let load = try Positive.require(dailyLoadKwh, name: "Daily load")
         guard dodPercent.isFinite, dodPercent > 0, dodPercent <= 100 else {
-            throw CalcError.outOfRange("Storage depth of discharge is between 0 and 100 %.")
+            throw CalcError.outOfRange("Storage depth of discharge must be greater than 0 and at most 100 %.")
         }
         guard roundTripEfficiencyPercent.isFinite, roundTripEfficiencyPercent > 0, roundTripEfficiencyPercent <= 100 else {
-            throw CalcError.outOfRange("Round-trip efficiency is between 0 and 100 %.")
+            throw CalcError.outOfRange("Round-trip efficiency must be greater than 0 and at most 100 %.")
         }
         let dod = dodPercent / 100
         let rte = roundTripEfficiencyPercent / 100
@@ -378,7 +383,7 @@ public enum SolarDesign {
             guard selfConsumptionFractionPercent.isFinite,
                   selfConsumptionFractionPercent > 0,
                   selfConsumptionFractionPercent <= 100 else {
-                throw CalcError.outOfRange("Self-consumption fraction is between 0 and 100 %.")
+                throw CalcError.outOfRange("Self-consumption fraction must be greater than 0 and at most 100 %.")
             }
             let prod = try Positive.require(dailyProductionKwh, name: "Daily production")
             usableNeeded = prod * (selfConsumptionFractionPercent / 100)
