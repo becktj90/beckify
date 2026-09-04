@@ -651,7 +651,7 @@ struct HeaterDesignView: View {
                 guard let awgVal = awg.parsedDouble, awgVal.isFinite else {
                     throw CalcError.missing("Element AWG")
                 }
-                try HeaterDesign.element(
+                return try HeaterDesign.element(
                     targetResistanceOhms: elec.legResistanceOhms,
                     targetWatts: elec.totalWatts / (elec.phase == .three ? 3 : 1),
                     resistivityOhmMm2PerM: rho.parsedDouble ?? .nan,
