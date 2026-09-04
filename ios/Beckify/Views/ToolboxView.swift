@@ -214,6 +214,7 @@ struct CalculatorHostView: View {
             case .harmonicsTHD: HarmonicsTHDView()
             case .upsSizing: UPSSizingView()
             case .motorNameplate: MotorNameplateView()
+            case .motorNameplateOCR: MotorNameplateOCRView()
             case .heaterDesign: HeaterDesignView()
             case .empEmc: EMPEMCView()
             case .necCircuit: NECCircuitView()

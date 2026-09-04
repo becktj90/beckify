@@ -385,6 +385,7 @@ extension GlyphKind {
         case .harmonicsTHD: return .harmonicsTHD
         case .upsSizing: return .upsSizing
         case .motorNameplate: return .motorNameplate
+        case .motorNameplateOCR: return .motorNameplateOCR
         case .heaterDesign: return .heaterDesign
         case .empEmc: return .empEmc
         case .necCircuit: return .necCircuit
@@ -453,6 +454,7 @@ enum GlyphKind {
     case harmonicsTHD
     case upsSizing
     case motorNameplate
+    case motorNameplateOCR
     case heaterDesign
     case empEmc
     case necCircuit
@@ -520,6 +522,7 @@ enum GlyphKind {
         case .harmonicsTHD: return Self.harmonicsTHD(rect)
         case .upsSizing: return Self.upsSizing(rect)
         case .motorNameplate: return Self.motorNameplate(rect)
+        case .motorNameplateOCR: return Self.motorNameplateOCR(rect)
         case .heaterDesign: return Self.heaterDesign(rect)
         case .empEmc: return Self.empEmc(rect)
         case .necCircuit: return Self.necCircuit(rect)
@@ -1319,6 +1322,37 @@ enum GlyphKind {
     private static func motorNameplate(_ r: CGRect) -> Path {
         var path = motorFLA(r)
         path.addRect(CGRect(x: r.minX + r.width * 0.62, y: r.minY + r.height * 0.18, width: r.width * 0.28, height: r.height * 0.36))
+        return path
+    }
+
+    /// Nameplate card with viewfinder corners — sibling to the analyzer glyph.
+    private static func motorNameplateOCR(_ r: CGRect) -> Path {
+        var path = Path()
+        let plate = CGRect(
+            x: r.minX + r.width * 0.20,
+            y: r.minY + r.height * 0.30,
+            width: r.width * 0.60,
+            height: r.height * 0.44
+        )
+        path.addRoundedRect(in: plate, cornerSize: CGSize(width: 3, height: 3))
+        for index in 0..<3 {
+            let y = plate.minY + plate.height * (0.30 + 0.20 * CGFloat(index))
+            path.move(to: CGPoint(x: plate.minX + plate.width * 0.16, y: y))
+            path.addLine(to: CGPoint(x: plate.maxX - plate.width * 0.16, y: y))
+        }
+        let arm = min(r.width, r.height) * 0.12
+        let corners: [(CGPoint, CGFloat, CGFloat)] = [
+            (CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12), 1, 1),
+            (CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.12), -1, 1),
+            (CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.12), 1, -1),
+            (CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.12), -1, -1),
+        ]
+        for (origin, dx, dy) in corners {
+            path.move(to: origin)
+            path.addLine(to: CGPoint(x: origin.x + arm * dx, y: origin.y))
+            path.move(to: origin)
+            path.addLine(to: CGPoint(x: origin.x, y: origin.y + arm * dy))
+        }
         return path
     }
 

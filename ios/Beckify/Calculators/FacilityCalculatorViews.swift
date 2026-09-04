@@ -431,7 +431,7 @@ struct MotorNameplateView: View {
                 toolID: .motorNameplate,
                 symbolic: "OL ≤ %×FLA; SCPD ≤ T430.52 %×FLA; cond ≥ 125%×FLA",
                 substituted: substituted,
-                meaning: "Enter reviewed nameplate values (OCR can fill fields later). Uses NEC 430.32, Table 430.52, and 430.22. Design aid — confirm with the nameplate and AHJ.",
+                meaning: "Enter reviewed nameplate values, or seed them from Motor Nameplate OCR after you confirm the plate. Uses NEC 430.32, Table 430.52, and 430.22. Design aid — confirm with the nameplate and AHJ.",
                 citation: "NEC 430.32, Table 430.52, 430.22, 430.7(B) / NEMA MG-1."
             )
 

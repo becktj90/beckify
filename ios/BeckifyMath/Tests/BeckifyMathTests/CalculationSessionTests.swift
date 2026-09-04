@@ -20,6 +20,7 @@ final class CalculationSessionTests: XCTestCase {
             "receptacleSelector", "panelDirectory", "powerWizard",
             "motorSpeed", "rfLink", "phasorDiagram", "batteryBank", "solarDesign",
             "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
+            "motorNameplateOCR",
         ]
         for id in explicit {
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .explicit, id)

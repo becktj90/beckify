@@ -80,4 +80,45 @@ public enum MotorFLA {
 
     /// Conductor minimum = 125 % of table FLA (NEC 430.22).
     public static func conductorAmps(fla: Double) -> Double { fla * 1.25 }
+
+    /// Parse a table or nameplate HP token (`7-1/2`, `1/2`, `10`, `7.5`).
+    public static func horsepowerValue(_ token: String) -> Double? {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+        guard !trimmed.isEmpty else { return nil }
+
+        if let direct = Double(trimmed), direct > 0, direct.isFinite {
+            return direct
+        }
+
+        let compact = trimmed.replacingOccurrences(of: " ", with: "")
+        if let mixed = compact.range(of: "-") {
+            let whole = Double(compact[..<mixed.lowerBound])
+            let frac = fractionValue(String(compact[mixed.upperBound...]))
+            if let whole, let frac { return whole + frac }
+        }
+        return fractionValue(compact)
+    }
+
+    /// Closest listed HP row for seeding Motor FLA from a reviewed nameplate.
+    public static func nearestListedHorsepower(value: Double, threePhase: Bool) -> String? {
+        guard value > 0, value.isFinite else { return nil }
+        let table = threePhase ? table430_250 : table430_248
+        return table.min { lhs, rhs in
+            let a = horsepowerValue(lhs.horsepower) ?? .infinity
+            let b = horsepowerValue(rhs.horsepower) ?? .infinity
+            return abs(a - value) < abs(b - value)
+        }?.horsepower
+    }
+
+    private static func fractionValue(_ token: String) -> Double? {
+        let parts = token.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2,
+              let num = Double(parts[0]),
+              let den = Double(parts[1]),
+              den != 0
+        else { return nil }
+        let value = num / den
+        return value > 0 && value.isFinite ? value : nil
+    }
 }
