@@ -133,9 +133,6 @@ for (const file of gameFiles) {
   assert.equal(/games\/kids\/(apollo|rocco)\.png/.test(text), false, `${path.basename(file)} must not load kid photos`);
 }
 
-assert.equal(run.RIDERS.blaze.label, 'Blaze');
-assert.equal(run.RIDERS.spark.label, 'Spark');
-assert.equal(run.RIDERS.apollo, undefined);
-assert.equal(run.RIDERS.rocco, undefined);
+assert.equal(run.RIDERS, undefined);
 
 console.log('Apollo & Rocco Run lane/jump/kid-hit helpers passed');

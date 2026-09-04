@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 import { HERO_IDS, cartoonHeroSrc, type HeroId } from "@/components/games/characterArt";
 
-const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string; art?: "blaze" | "both" | "cadet" | "rocket" | "runner" | "planet" }> = {
+const GAME_DETAILS: Record<string, { mode: string; input: string; accent: string; art?: "both" | "cadet" | "rocket" | "runner" | "planet" }> = {
   "Cosmic Cadet": { mode: "Wave shooter", input: "Drag + BLAST pad", accent: "#35cfff", art: "cadet" },
   "Booty Butt Scooter": { mode: "Crossy hopper", input: "Tap + keyboard", accent: "#ff7a2d", art: "both" },
   "New Glenn Runner": { mode: "Launch arcade", input: "Keyboard + drag", accent: "#8b7bff", art: "rocket" },

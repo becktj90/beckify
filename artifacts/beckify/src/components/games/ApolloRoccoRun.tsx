@@ -5,7 +5,6 @@ import { HEROES, HERO_IDS, cartoonHeroSrc, drawCartoonHero } from "./characterAr
 import {
   FAR_Z,
   PLAYER_Z,
-  RIDERS,
   TUNING,
   applyHit,
   hazardResult,
@@ -255,7 +254,7 @@ export function ApolloRoccoRun() {
           treats += 1;
           distance += 8;
           const point = project(treat.lane, treat.z, 0.4);
-          burst(point.x, point.y, RIDERS[riderRef.current].accent);
+          burst(point.x, point.y, HEROES[riderRef.current].accent);
           tone(880, 0.08, 0.02);
         }
       }
@@ -432,7 +431,7 @@ export function ApolloRoccoRun() {
       ctx.scale(player.scale * 1.15, player.scale * 1.15);
       const hidden = iframes > 0 && Math.floor(elapsed * 16) % 2 === 0;
       drawCartoonHero(ctx, riderRef.current, 0, pose === "jump" ? -10 : Math.sin(bob) * 3, 92, {
-        ring: RIDERS[riderRef.current].accent,
+        ring: HEROES[riderRef.current].accent,
         squash: pose === "slide" ? 0.62 : 1,
         alpha: hidden ? 0.45 : 1,
         tilt: pose === "jump" ? -0.1 : 0,

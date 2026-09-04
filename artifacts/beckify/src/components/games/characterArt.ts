@@ -34,7 +34,7 @@ export const HEROES: Record<HeroId, {
   },
 };
 
-export function cartoonHeroSrc(id: HeroId) {
+function buildCartoonHeroSrc(id: HeroId) {
   const hero = HEROES[id];
   const hair = id === "blaze"
     ? `<path d="M20 30c1-12 10-18 16-18 7 0 15 5 16 17-4-6-9-8-16-7-6 1-12 4-16 8z" fill="${hero.hair}"/>
@@ -56,6 +56,15 @@ export function cartoonHeroSrc(id: HeroId) {
     <path d="M30 39q6 5 12 0" fill="none" stroke="#1a140c" stroke-width="1.7" stroke-linecap="round"/>
   </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+const CARTOON_HERO_SRC: Record<HeroId, string> = {
+  blaze: buildCartoonHeroSrc("blaze"),
+  spark: buildCartoonHeroSrc("spark"),
+};
+
+export function cartoonHeroSrc(id: HeroId) {
+  return CARTOON_HERO_SRC[id];
 }
 
 export function drawCartoonHero(
