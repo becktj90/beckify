@@ -88,11 +88,13 @@ assert.match(textures, /function makeBloom\(/);
 assert.match(textures, /deck-pad/);
 assert.match(textures, /JACKLYN/);
 assert.match(textures, /solid black strakes/);
-assert.match(textures, /No lattice grid fins/);
-assert.match(textures, /No ASDS circle-X/);
+assert.match(textures, /lattice grid fins/);
+assert.match(textures, /REJECT Falcon cues/);
+assert.match(textures, /ASDS circle-X/);
 assert.doesNotMatch(textures, /makeGridFin|gridFin|latticeFin/);
+assert.doesNotMatch(textures, /booster-legs/);
+assert.doesNotMatch(mission, /booster-legs/);
 assert.match(mission, /playRecoveredSpectacle/);
-assert.match(mission, /booster-legs/);
 
 assert.match(arcadeJs, /ng-phaser-root/);
 assert.match(arcadeJs, /dataset\.ngEngine === 'phaser4'/);

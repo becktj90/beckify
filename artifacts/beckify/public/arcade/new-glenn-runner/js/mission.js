@@ -815,12 +815,11 @@ export default class MissionScene extends Phaser.Scene {
       this.time.delayedCall(360, () => { this.time.timeScale = 1; });
     }
     this.time.delayedCall(900, () => {
-      if (this.textures.exists('booster-legs')) this.rocket.setTexture('booster-legs');
       if (!this.settings.reducedMotion) this.cameras.main.zoomTo(1.16, 640);
       if (this.smokeBank) {
         this.tweens.add({
           targets: this.smokeBank,
-          alpha: 0.35,
+          alpha: 0.42,
           duration: 700,
         });
       }

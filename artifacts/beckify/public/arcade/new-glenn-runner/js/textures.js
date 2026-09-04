@@ -260,12 +260,13 @@ function drawIlt(ctx, x, groundY) {
 }
 
 /**
- * NG-2 recovery silhouette (hard constraint):
+ * Authentic New Glenn recovery silhouette (hard constraint):
  * metallic gold upper ring, four LARGE solid black strakes just below it,
- * tall white cylinder, optional BLUE ORIGIN. No lattice grid fins.
- * Legs stay hidden in the fireball; `legs=true` reveals them after smoke thins.
+ * tall white cylinder, optional BLUE ORIGIN.
+ * REJECT Falcon cues: lattice grid fins, A-frame landing legs,
+ * 3-1 landing-burn language, ASDS circle-X droneship.
  */
-export function makeBooster(legs = false) {
+export function makeBooster() {
   const cv = canvas(96, 268);
   const ctx = cv.getContext('2d');
   ctx.translate(48, 10);
@@ -285,7 +286,6 @@ export function makeBooster(legs = false) {
 
   ctx.fillStyle = '#0b0d12';
   [[-38, 52], [22, 52], [-36, 86], [20, 86]].forEach(([x, y], i) => {
-    const w = i < 2 ? 18 : 16;
     const h = i < 2 ? 30 : 26;
     ctx.beginPath();
     ctx.moveTo(x < 0 ? -22 : 22, y + 4);
@@ -310,19 +310,6 @@ export function makeBooster(legs = false) {
   ctx.fillStyle = '#c48a2a';
   ctx.fillRect(-24, 206, 48, 12);
 
-  if (legs) {
-    ctx.fillStyle = '#2a3038';
-    [[-40, 198], [28, 198], [-34, 210], [22, 210]].forEach(([x, y]) => {
-      ctx.beginPath();
-      ctx.moveTo(x < 0 ? -22 : 22, 200);
-      ctx.lineTo(x, y + 18);
-      ctx.lineTo(x + (x < 0 ? 8 : -8), y + 18);
-      ctx.lineTo(x < 0 ? -20 : 20, 206);
-      ctx.closePath();
-      ctx.fill();
-    });
-  }
-
   for (let i = 0; i < 7; i++) {
     const x = -18 + i * 6;
     ctx.fillStyle = '#2b3038';
@@ -333,7 +320,7 @@ export function makeBooster(legs = false) {
   return cv;
 }
 
-/** Jacklyn: dark deck between white multi-story bow/stern bookends. No ASDS circle-X. */
+/** Jacklyn: dark deck between white multi-story bow/stern bookends. Not an ASDS circle-X droneship. */
 export function makeJacklyn() {
   const cv = canvas(640, 220);
   const ctx = cv.getContext('2d');
@@ -368,14 +355,9 @@ export function makeJacklyn() {
 
   ctx.strokeStyle = '#ffcf5d';
   ctx.lineWidth = 3;
-  ctx.setLineDash([8, 6]);
+  ctx.setLineDash([10, 7]);
   ctx.strokeRect(246, 132, 148, 20);
   ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.moveTo(286, 152);
-  ctx.lineTo(320, 132);
-  ctx.lineTo(354, 152);
-  ctx.stroke();
 
   ctx.fillStyle = '#0b0d12';
   ctx.font = 'bold 26px "IBM Plex Mono", ui-monospace, monospace';
@@ -548,8 +530,7 @@ export function installTextures(scene) {
     scene.textures.addCanvas(key, cv);
   };
   add('rocket', makeRocket(true));
-  add('booster', makeBooster(false));
-  add('booster-legs', makeBooster(true));
+  add('booster', makeBooster());
   add('bloom', makeBloom());
   add('rcs', makeDot('#f4fbff', 16, 16));
   add('soot', makeDot('#6a3a18', 36, 36));
