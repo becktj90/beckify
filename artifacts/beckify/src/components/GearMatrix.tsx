@@ -8,8 +8,6 @@ import {
   CATALOG_SECTIONS,
   GEAR_KITS,
   GEAR_RECOMMENDATIONS,
-  JOBSITE_SUPPORT_NAMES,
-  findGear,
   kitEntries,
   type Gear,
   type GearCategory,
@@ -61,6 +59,7 @@ export function GearMatrix() {
   const filtered = useMemo(
     () =>
       GEAR_RECOMMENDATIONS.filter((item) => {
+        if (item.category === "Job comfort and power") return false;
         if (chip === "USA made" && !item.usaMade) return false;
         if (chip !== "All" && chip !== "USA made" && item.category !== chip) return false;
         return matchesQuery(item, query);
@@ -69,7 +68,6 @@ export function GearMatrix() {
   );
 
   const sections = useMemo(() => {
-    const searching = Boolean(query.trim());
     const visibleCategories =
       chip !== "All" && chip !== "USA made"
         ? CATALOG_SECTIONS.filter((section) => section.category === chip)
@@ -81,12 +79,8 @@ export function GearMatrix() {
         const rest = lead ? items.filter((item) => item.name !== lead.name) : [];
         return { ...section, lead, rest };
       })
-      .filter((section) => section.lead)
-      .filter((section) => {
-        if (chip === "All" && !searching && section.category === "Job comfort and power") return false;
-        return true;
-      });
-  }, [chip, filtered, query]);
+      .filter((section) => section.lead);
+  }, [chip, filtered]);
 
   const selectChip = (next: CatalogChip) => {
     setChip(next);
@@ -288,29 +282,6 @@ export function GearMatrix() {
           </div>
         )}
       </div>
-
-      {!query.trim() && chip === "All" ? (
-      <FadeIn>
-        <section
-          id="jobsite-support"
-          aria-labelledby="jobsite-support-title"
-          className="scroll-mt-28 border-t border-[var(--border)] pt-12"
-        >
-          <p className="type-label text-[var(--muted)]">Optional</p>
-          <h2 id="jobsite-support-title" className="mt-2 font-display text-2xl font-bold tracking-tight">
-            Jobsite support
-          </h2>
-          <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">
-            Power and light when the site is the constraint — not part of the core electrical kit.
-          </p>
-          <div className="mt-6 divide-y divide-[var(--border)]">
-            {JOBSITE_SUPPORT_NAMES.map((name) => (
-              <GearRow key={name} item={findGear(name)} />
-            ))}
-          </div>
-        </section>
-      </FadeIn>
-      ) : null}
     </section>
   );
 }

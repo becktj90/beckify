@@ -478,18 +478,11 @@ export const GEAR_KITS: GearKit[] = [
   },
 ];
 
-/** Quiet footer strip — never lead the page. Fridge and neck AC stay in Browse all only. */
-export const JOBSITE_SUPPORT_NAMES = [
-  "EcoFlow DELTA Pro 3",
-  "HOTLIGH Magnetic Flashlight",
-  "SeeDevil 150 W Balloon Light Kit",
-] as const;
-
+/** Browse-all index and sticky chips. Comfort/power SKUs stay in GEAR_RECOMMENDATIONS for later remonetization. */
 export const CATALOG_SECTIONS: { category: GearCategory; label: string; chip: string }[] = [
   { category: "Tools and supplies", label: "Tools & supplies", chip: "Tools" },
   { category: "Test equipment", label: "Test equipment", chip: "Test" },
   { category: "Cable and fault location", label: "Cable & fault", chip: "Cable" },
-  { category: "Job comfort and power", label: "Jobsite support", chip: "Jobsite" },
 ];
 
 export const CATALOG_LEADS: Record<GearCategory, string> = {

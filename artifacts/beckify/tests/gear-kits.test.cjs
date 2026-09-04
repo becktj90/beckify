@@ -18,8 +18,8 @@ compiled(mod.exports, mod);
 const {
   GEAR_RECOMMENDATIONS,
   GEAR_KITS,
-  JOBSITE_SUPPORT_NAMES,
   CATALOG_LEADS,
+  CATALOG_SECTIONS,
   findGear,
   kitEntries,
 } = mod.exports;
@@ -67,11 +67,16 @@ test("comfort gadgets stay out of featured kits", () => {
   }
 });
 
-test("jobsite support strip is a short optional appendix", () => {
-  assert.ok(JOBSITE_SUPPORT_NAMES.length >= 2 && JOBSITE_SUPPORT_NAMES.length <= 3);
-  for (const name of JOBSITE_SUPPORT_NAMES) {
+test("jobsite comfort stays in catalog data but is not merchandised", () => {
+  assert.equal(mod.exports.JOBSITE_SUPPORT_NAMES, undefined);
+  assert.ok(!CATALOG_SECTIONS.some((section) => section.category === "Job comfort and power"));
+  assert.ok(!CATALOG_SECTIONS.some((section) => /jobsite/i.test(section.chip) || /jobsite/i.test(section.label)));
+  for (const name of ["EcoFlow DELTA Pro 3", "HOTLIGH Magnetic Flashlight", "SeeDevil 150 W Balloon Light Kit"]) {
     assert.equal(findGear(name).category, "Job comfort and power");
   }
+  const matrix = fs.readFileSync(path.join(__dirname, "..", "src", "components", "GearMatrix.tsx"), "utf8");
+  assert.ok(!matrix.includes("jobsite-support"));
+  assert.ok(!matrix.includes("JOBSITE_SUPPORT_NAMES"));
 });
 
 test("catalog leads exist in their section", () => {
