@@ -71,7 +71,7 @@ struct LookCheckCard: View {
     var onCheck: () -> Void
 
     var body: some View {
-        ResultCard(title: "Look check", copyText: model.copyLine) {
+        ResultCard(title: "Look Check", copyText: model.copyLine) {
             ResultRow(
                 label: "Verdict",
                 value: model.verdict?.headline ?? (model.measuring ? "Checking…" : "—"),
@@ -91,7 +91,7 @@ struct LookCheckCard: View {
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
-            Button(model.measuring ? "Checking…" : "Look check") {
+            Button(model.measuring ? "Checking…" : "Look Check") {
                 onCheck()
             }
             .buttonStyle(.borderedProminent)
@@ -99,7 +99,7 @@ struct LookCheckCard: View {
             .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
             .padding(.top, 6)
             .disabled(model.measuring)
-            .accessibilityLabel(model.measuring ? "Look check in progress" : "Run look check")
+            .accessibilityLabel(model.measuring ? "Look Check in progress" : "Run Look Check")
             .accessibilityHint("Fetches Apple’s hotspot-detect page over HTTP. Success means no captive splash. Not RSSI and not dBm.")
         }
     }
@@ -114,7 +114,7 @@ struct LookCheckCard: View {
     }
 }
 
-/// NWPath chrome Trevor does not want on the default field view.
+/// NWPath chrome (interface names, expensive/constrained) stays off the default field view.
 struct AdvancedPathDisclosure<Content: View>: View {
     @State private var open = false
     @ViewBuilder var content: Content

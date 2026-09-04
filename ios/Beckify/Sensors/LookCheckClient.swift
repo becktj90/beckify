@@ -1,6 +1,5 @@
 import Combine
 import Network
-import SwiftUI
 import BeckifyMath
 
 /// Outcome of one App Store–safe HTTP look-check probe. Not RSSI and not dBm.
