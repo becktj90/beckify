@@ -159,8 +159,8 @@ struct SolarDesignWizardView: View {
             toolID: .solarDesign,
             stickyAnswer: sticky,
             copyText: sticky,
-            isResultStale: session.isStale,
-            disclaimer: .sensor(extra: "Planning aid only — not a shade study, PE stamp, or interconnection model. IMU/compass are the phone’s sensors, not a survey instrument.")
+            disclaimer: .sensor(extra: "Planning aid only — not a shade study, PE stamp, or interconnection model. IMU/compass are the phone’s sensors, not a survey instrument."),
+            isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .solarDesign,
@@ -175,7 +175,7 @@ struct SolarDesignWizardView: View {
             NumberField(title: "Daily energy need", unit: "kWh/day", text: $dailyKwh, fieldID: "dailyKwh", onSubmit: calculate)
             NumberField(title: "Peak sun hours", unit: "h/day", text: $psh, helpText: "Arid ≈ 6, Southwest ≈ 5.5, temperate ≈ 4.5, cloudy ≈ 2.5", fieldID: "psh", onSubmit: calculate)
             NumberField(title: "Module STC power", unit: "W", text: $panelWatts, fieldID: "panelWatts", onSubmit: calculate)
-            NumberField(title: "Panel count override", unit: "panels", text: $panelCount, optional: true, placeholder: "auto", fieldID: "panelCount", onSubmit: calculate)
+            NumberField(title: "Panel count override", unit: "panels", text: $panelCount, placeholder: "auto", optional: true, fieldID: "panelCount", onSubmit: calculate)
 
             orientationSection
             sensorSection
