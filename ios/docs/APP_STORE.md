@@ -22,21 +22,19 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 Trevor decided App Store v1 is **free** ($0): no IAP. Do not add a paid price or in-app purchases to listing copy or the Xcode project. There is no StoreKit target.
 
 **Promotional text (170 characters, optional):**
-Native field-EE calculators with shareable engineer plots, plus public-API sensors. Design aid — not a PE stamp or calibrated instrument.
+Field jobsite tools and a Toolkit for basics and bench homework. Shareable engineer plots. Design aid — not a PE stamp or calibrated instrument.
 
 **Description:**
 
-Beckify is a professional field electrical toolbox for engineers, technicians, and students. It is a native iPhone and iPad app, not a website wrapper and not a project gallery.
+Beckify is a professional field electrical toolbox for engineers, technicians, and students. It is a native iPhone and iPad app, not a website wrapper and not a project gallery. The home screen is two areas: **Field** (jobsite tools, opens first) and **Toolkit** (basics, bench homework, and references). Search covers both and shows which area a result belongs to.
 
-Calculate common jobsite numbers with units, formulas, and live results:
+Field — jobsite calculators, wizards, and instruments:
 
-• Ohm's Law
 • Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
 • Voltage Drop — K-factor VD with parallels, target %, ampacity check, and optional ampacity→VD handoff
 • Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
 • Tap-Changer Calculator — DETC tap recommendation from measured secondary voltage
-• 555 timer (astable and monostable)
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA
@@ -51,36 +49,37 @@ Calculate common jobsite numbers with units, formulas, and live results:
 • EMP / EMC Shielding — skin depth, sheet SE, Faraday-loop voltage, and aperture leakage (protection-side educational; not pulse-source design)
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
 • IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
-• Reactance & resonance, power-factor correction, short-circuit current, circular mils, load & demand factors
-• RF Power & Link — dBm to watts, VSWR and return loss, free-space path loss
+• Power-factor correction, short-circuit current, circular mils, load & demand factors
 • Battery Bank Sizing — series/parallel cells to bank voltage, amp-hours, and runtime
-• Magnetic Circuit — reluctance, flux, and flux density from mmf, path length, area, and µr
-• Linear / LDO Regulator — LM317-style Vout from R1/R2 (or solve R2), dropout, Pd, and a θJA junction-temperature estimate
+• Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
 • Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
 • Signal scaling (4–20 mA), Modbus address forms, PLC timer presets
-• Number Base Converter — binary, octal, decimal, hex, plus signed 8/16/32-bit read of the same bits
 • E-Bus / Rack Current — sum device currents against a bus rating for headroom
-• Solar Design Wizard — size PV from rooftop to utility, aim panels with phone sensors, optional energy storage
-• ADC / DAC & Sampling — LSB, code count, ideal quantization SNR, Nyquist, optional DAC code-to-voltage (not the 4–20 mA scaler)
-• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
-• Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
 
-Homework calculators:
+Toolkit — basics, bench / homework, and references:
 
+• Ohm's Law
 • Voltage divider (Vout, or solve R1 / R2)
 • Series / parallel resistors and capacitors
 • Resistor color code (4-band and 5-band, decode and encode)
-• Phasor Diagram — plot 2–3 phasors and sum them (balanced 3-phase set is one tap)
 • Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC))
 • LED current-limiting resistor and RC time constant τ = RC (555 timing stays in the 555 tool)
+• 555 timer (astable and monostable)
+• Unit converter: SI prefixes for V/A/Ω/W, dB ratio, °C/°F, m/ft, mils/mm
+• Reactance & resonance, Phasor Diagram, Magnetic Circuit
 • Transient Circuits — RC/RL charge and discharge, value at a time, and the curve
 • Fiber Link / NA and Gaussian Beam — numerical aperture, V-number, Rayleigh range, and beam radius
 • Semiconductor I-V — diode forward current from the Shockley equation, with the I-V curve
 • Analog Design Workbench — ideal op-amp stages (inverting, noninverting, follower, difference, summing, integrator, differentiator) and RC / Sallen–Key filters with a magnitude Bode sketch
 • Noise & SNR — Johnson noise, optional shot, amplifier e_n / i_n, total referred noise, SNR, and a rough noise figure (not a SPICE .noise run)
+• Linear / LDO Regulator — LM317-style Vout from R1/R2 (or solve R2), dropout, Pd, and a θJA junction-temperature estimate
 • Instrumentation Amp — 3-op-amp gain G = 1 + 2R/Rg, or a 4-resistor difference amp, with output swing vs rails
+• ADC / DAC & Sampling — LSB, code count, ideal quantization SNR, Nyquist, optional DAC code-to-voltage (not the 4–20 mA scaler)
+• RF Power & Link — dBm to watts, VSWR and return loss, free-space path loss
+• Number Base Converter — binary, octal, decimal, hex, plus signed 8/16/32-bit read of the same bits
+• Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
 
-Measure with public Apple APIs (not private APIs):
+Instruments (Field subsection) — measure with public Apple APIs (not private APIs):
 
 • Wi-Fi path (Network.framework) plus Apple’s public 0…1 `signalStrength` shown as percent/bars and an on-device coverage heatmap (GPS walk or tap-on-floor). iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. Current SSID needs location plus, on a signed team, Access Wi-Fi Information.
 • BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services
@@ -92,7 +91,7 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -100,7 +99,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor,solar,pv,opamp,snr,adc
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule, Solenoid Design Wizard with B/force/axial plots, and Solar Design Wizard (PV sizing with phone IMU/compass aim and optional storage). Analog tools: Analog Design Workbench, Noise & SNR, Linear / LDO Regulator, Instrumentation Amp, and ADC / DAC & Sampling. Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded; not App Store submit.
+Home is Field vs Toolkit — jobsite tools open first; basics, bench homework, and the reference library live in Toolkit. Sensors sit under Field → Instruments. Search covers both and labels the area. Saved Jobs prefer Field and can Open in tool with a best-effort restore. Facility tools and Solar Design Wizard stay in Field. AoE analog (workbench, noise/SNR, LDO, InAmp, ADC/DAC) lives in Toolkit → Bench. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -150,14 +149,14 @@ Apple's current required screenshot classes for an iPhone + iPad app (verify in 
 
 Take 3–8 screens per size. Suggested shots:
 
-1. Toolbox search / tool list (system appearance)
-2. Wire Size & Ampacity waterfall (ambient / CCC / termination) or Voltage Drop with parallels + handoff
-3. Power with the 480 V 3Ø 66.8 A / PF 90% identities result
-4. Motor Nameplate Analyzer or Tap-Changer Calculator result card
-5. Harmonics (THD) or UPS / On-site Power sizing result
+1. Field home (Jobsite / Power / Controls / Instruments) with Field | Toolkit control
+2. Toolkit home (Basics / Bench / Reference)
+3. Search results labeled Field vs Toolkit
+4. Wire Size & Ampacity waterfall or Voltage Drop with parallels + handoff
+5. Motor Nameplate Analyzer or Tap-Changer Calculator result card
 6. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
-7. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
-8. Saved Jobs list (on-device notes) or Favorites (starred tools)
+7. Saved Jobs list (Field jobs first; Open in tool)
+8. Favorites list (starred tools pinned for one-tap access)
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
 10. Solar Design Wizard — panel aim readouts (tilt/heading) and/or a sizing result with optional storage (do not claim sensors were live in Simulator if they were not)
 

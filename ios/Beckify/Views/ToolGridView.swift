@@ -1,11 +1,13 @@
 import SwiftUI
+import BeckifyMath
 
-/// Premium adaptive tool launcher — identity, search, favorites, recents,
-/// and category hierarchy with original schematic icons in soft wells.
+/// Premium adaptive tool launcher — Field vs Toolkit, search, favorites,
+/// recents, and shelf hierarchy with original schematic icons in soft wells.
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     @ObservedObject private var recents = RecentToolsStore.shared
     @State private var query = ""
+    @State private var homeArea: ToolHomeArea = .field
     @State private var path: [ToolID] = []
     @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -36,7 +38,7 @@ struct ToolGridView: View {
                         homeHeader
                             .opacity(appeared || reduceMotion ? 1 : 0)
                             .offset(y: appeared || reduceMotion ? 0 : 10)
-
+                        areaPicker
                         if !favoriteTools.isEmpty {
                             avatarStrip(title: "Favorites", tools: favoriteTools)
                                 .opacity(appeared || reduceMotion ? 1 : 0)
@@ -50,12 +52,26 @@ struct ToolGridView: View {
                     }
 
                     if isSearching {
-                        categoryBlock(title: "Results", tools: searchResults, delay: 0)
-                    } else {
-                        ForEach(Array(ToolCategory.allCases.enumerated()), id: \.element.id) { index, category in
-                            let tools = ToolboxCatalog.tools(in: category)
+                        ForEach(Array(ToolHomeArea.allCases.enumerated()), id: \.element) { index, area in
+                            let tools = searchResults.filter { ToolboxCatalog.area(of: $0.id) == area }
                             if !tools.isEmpty {
-                                categoryBlock(title: category.rawValue, tools: tools, delay: Double(index) * 0.04)
+                                categoryBlock(
+                                    title: area.title,
+                                    tools: tools,
+                                    delay: Double(index) * 0.04,
+                                    showAreaBadge: true
+                                )
+                            }
+                        }
+                    } else {
+                        ForEach(Array(ToolShelfKind.shelves(in: homeArea).enumerated()), id: \.element) { index, shelf in
+                            let tools = ToolboxCatalog.tools(on: shelf)
+                            if !tools.isEmpty {
+                                categoryBlock(
+                                    title: shelf.title,
+                                    tools: tools,
+                                    delay: Double(index) * 0.04
+                                )
                             }
                         }
                     }
@@ -72,7 +88,7 @@ struct ToolGridView: View {
             }
             .navigationTitle("Beckify")
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $query, prompt: "Ohm, receptacle, 4–20 mA, modbus…")
+            .searchable(text: $query, prompt: "Search Field and Toolkit…")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
@@ -110,6 +126,15 @@ struct ToolGridView: View {
 
     // MARK: - Header
 
+    private var areaPicker: some View {
+        Picker("Home area", selection: $homeArea) {
+            Text(ToolHomeArea.field.title).tag(ToolHomeArea.field)
+            Text(ToolHomeArea.toolkit.title).tag(ToolHomeArea.toolkit)
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("homeAreaPicker")
+    }
+
     private var homeHeader: some View {
         ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
@@ -129,10 +154,14 @@ struct ToolGridView: View {
                         .stroke(Color.white.opacity(0.14), lineWidth: Theme.Stroke.hairline)
                 )
                 .overlay(alignment: .trailing) {
-                    IconWell(toolID: .ohmsLaw, size: 92, selected: true)
-                        .opacity(0.28)
-                        .padding(.trailing, 16)
-                        .accessibilityHidden(true)
+                    IconWell(
+                        toolID: homeArea == .field ? .voltageDrop : .ohmsLaw,
+                        size: 92,
+                        selected: true
+                    )
+                    .opacity(0.28)
+                    .padding(.trailing, 16)
+                    .accessibilityHidden(true)
                 }
                 .brandGlow(radius: 18, opacity: 0.18)
 
@@ -141,17 +170,17 @@ struct ToolGridView: View {
                     .font(Theme.TypeRole.hud)
                     .tracking(2.4)
                     .foregroundStyle(Color.white.opacity(0.72))
-                Text("Field EE Toolbox")
+                Text(homeArea.headline)
                     .font(Theme.TypeRole.heroBrand)
                     .foregroundStyle(Color.white)
-                Text("Calculators and sensors for the job site and the bench.")
+                Text(homeArea.blurb)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Color.white.opacity(0.82))
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 8) {
-                    headerChip("\(ToolboxCatalog.tools.count) tools")
-                    headerChip("\(ToolCategory.allCases.count) shelves")
+                    headerChip("\(ToolboxCatalog.tools(in: homeArea).count) in \(homeArea.title)")
+                    headerChip("\(ToolboxCatalog.tools.count) total")
                 }
                 .padding(.top, 4)
             }
@@ -159,7 +188,7 @@ struct ToolGridView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 168)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Beckify. Field EE Toolbox. \(ToolboxCatalog.tools.count) tools.")
+        .accessibilityLabel("Beckify. \(homeArea.headline). \(homeArea.blurb) \(ToolboxCatalog.tools(in: homeArea).count) tools in \(homeArea.title).")
         .accessibilityIdentifier("homeHeader")
     }
 
@@ -213,7 +242,12 @@ struct ToolGridView: View {
     }
 
     @ViewBuilder
-    private func categoryBlock(title: String, tools: [ToolDefinition], delay: Double) -> some View {
+    private func categoryBlock(
+        title: String,
+        tools: [ToolDefinition],
+        delay: Double,
+        showAreaBadge: Bool = false
+    ) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
             HStack(spacing: 8) {
                 Capsule(style: .continuous)
@@ -233,7 +267,11 @@ struct ToolGridView: View {
             LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(tools) { tool in
                     NavigationLink(value: tool.id) {
-                        ToolTile(tool: tool, isFavorite: favorites.isFavorite(tool.id))
+                        ToolTile(
+                            tool: tool,
+                            isFavorite: favorites.isFavorite(tool.id),
+                            showArea: showAreaBadge
+                        )
                     }
                     .buttonStyle(ToolTileButtonStyle())
                     .contextMenu {
@@ -264,8 +302,10 @@ struct ToolGridView: View {
 struct ToolTile: View {
     let tool: ToolDefinition
     var isFavorite: Bool
+    var showArea: Bool = false
 
     private var category: ToolCategory? { ToolboxCatalog.category(of: tool.id) }
+    private var area: ToolHomeArea { ToolboxCatalog.area(of: tool.id) }
     private var borderTint: Color {
         category.map { Theme.categoryColors($0).primary } ?? Theme.accent
     }
@@ -293,6 +333,9 @@ struct ToolTile: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
+                if showArea {
+                    HomeAreaBadge(area: area)
+                }
                 Text(tool.subtitle)
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
@@ -309,7 +352,7 @@ struct ToolTile: View {
         .glassCard(corner: Theme.Radius.tile, tint: borderTint)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(tool.title)
+        .accessibilityLabel(showArea ? "\(tool.title), \(area.title)" : tool.title)
         .accessibilityHint(tool.subtitle)
         .accessibilityIdentifier("toolTile.\(tool.id.rawValue)")
     }

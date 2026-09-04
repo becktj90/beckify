@@ -2,7 +2,9 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode.
+Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments.
+
+This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode. Website toolbox IA is a follow-up, not this app.
 
 ## Design system
 
@@ -30,15 +32,13 @@ ios/
   docs/APP_STORE.md      Listing copy and App Store Connect checklist
 ```
 
-## Calculators (v1)
+## Field (jobsite — opens first)
 
-- Ohm's Law
 - Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
 - Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff)
 - Conduit Fill (THHN / EMT, Chapter 9 Table 1)
 - Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
 - Tap-Changer Calculator (DETC tap from measured secondary)
-- 555 Timer (astable / monostable)
 - Motor FLA (430.248 / 430.250)
 - Motor Speed & Torque (sync RPM, slip, shaft torque)
 - Motor Nameplate Analyzer (430.32 overload, Table 430.52 SCPD, 430.22 conductor, code-letter LRA)
@@ -53,35 +53,39 @@ ios/
 - EMP / EMC Shielding (skin depth, sheet SE, Faraday loop, aperture — protection-side educational)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
-- Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
-- Reactance & Resonance, Power Factor Correction, Short-Circuit Current
-- Circular Mils, Load & Demand Factors
-- RF Power & Link, Battery Bank Sizing, Magnetic Circuit
-- Linear / LDO Regulator (LM317-style Vout, dropout, Pd, θJA → Tj)
+- Power Factor Correction, Short-Circuit Current, Circular Mils, Load & Demand Factors
+- Battery Bank Sizing
+- Solar Design Wizard (PV sizing, phone IMU/compass aim, optional storage)
 - Signal Scaling, Modbus Address, PLC Timer Preset
-- Number Base Converter, E-Bus / Rack Current, ADC / DAC & Sampling
+- E-Bus / Rack Current
 - Panel Directory (paste/OCR schedule text)
-- Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
 
-## Homework calculators
+## Toolkit (basics, bench / homework, reference)
 
+- Ohm's Law
 - Voltage Divider (Vout, or solve R1/R2)
 - Series / Parallel R and C
 - Resistor Color Code (4-band and 5-band, decode + encode)
-- Phasor Diagram (2–3 phasors + sum; balanced 3Ø tap)
 - Frequency / period / wavelength and LC resonance
 - LED current-limit R and RC τ (555 astable/monostable stays in 555 Timer)
+- Unit Converter (SI prefixes, dB, °C/°F, m/ft, mils/mm)
+- 555 Timer (astable / monostable)
+- Reactance & Resonance, Phasor Diagram, Magnetic Circuit
 - Transient Circuits (RC/RL charge/discharge + curve)
 - Fiber Link / NA (numerical aperture, acceptance angle, V-number)
 - Gaussian Beam (Rayleigh range, divergence, beam radius)
 - Semiconductor I-V (Shockley forward current + I–V curve)
 - Analog Design Workbench (op-amp golden-rule stages, RC / Sallen–Key filters, ideal Bode sketch)
 - Noise & SNR (Johnson, optional shot, amp e_n / i_n, SNR, rough NF)
+- Linear / LDO Regulator (LM317-style Vout, dropout, Pd, θJA → Tj)
 - Instrumentation Amp (3-op-amp G = 1 + 2R/Rg, or 4-resistor difference amp)
+- ADC / DAC & Sampling (LSB, quantization SNR, Nyquist, optional DAC code-to-voltage)
+- RF Power & Link, Number Base Converter
+- Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
 
 Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, and Analog Design Workbench Bode magnitude. This is not a new tool list.
 
-## Sensors (public APIs only)
+## Instruments (Field subsection — public APIs only)
 
 - Wi-Fi Path (`NWPathMonitor` + `NEHotspotNetwork.signalStrength` 0…1 heatmap). **No Wi-Fi dBm** — iOS does not expose RSSI to third-party apps.
 - BLE Scanner (CoreBluetooth)
@@ -93,12 +97,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 - Position (location requested in-tool, not at launch)
 - Device battery / thermal diagnostics
 
-## Power / energy planning
-
-- Solar Design Wizard — PV sizing from residential to utility scale, phone IMU/compass panel aim, optional battery storage (autonomy / peak-shave / self-consumption)
-- Battery Bank (series/parallel runtime planning)
-
-Local **Saved Jobs** are on-device homework / field notes, not a projects product. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, and can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups). Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
+Local **Saved Jobs** are on-device homework / field notes, not a projects product. Field jobs sort first. Opening a job restores matching inputs into the tool when they still map — it does not block if some fields cannot be restored. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, and can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups). Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
 
 ## Linux (this repo)
 

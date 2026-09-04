@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import BeckifyMath
 
 private struct OpenRelatedToolKey: EnvironmentKey {
     static let defaultValue: (ToolID) -> Void = { _ in }
@@ -442,6 +443,26 @@ struct ToolEmptyState: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Theme.border, lineWidth: 1)
         )
+    }
+}
+
+/// Compact Field / Toolkit chip for search results and saved jobs.
+struct HomeAreaBadge: View {
+    let area: ToolHomeArea
+
+    private var tint: Color {
+        area == .field ? Theme.energized : Theme.good
+    }
+
+    var body: some View {
+        Text(area.title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(tint.opacity(0.14), in: Capsule(style: .continuous))
+            .accessibilityLabel(area.title)
+            .accessibilityIdentifier("homeAreaBadge.\(area.rawValue)")
     }
 }
 

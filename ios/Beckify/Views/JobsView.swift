@@ -1,7 +1,20 @@
 import SwiftUI
+import BeckifyMath
 
 struct JobsView: View {
     @EnvironmentObject private var jobs: JobStore
+
+    private var fieldJobs: [SavedJob] {
+        jobs.jobs
+            .filter { ToolboxCatalog.area(of: $0.toolID) == .field }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    private var toolkitJobs: [SavedJob] {
+        jobs.jobs
+            .filter { ToolboxCatalog.area(of: $0.toolID) != .field }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
 
     var body: some View {
         NavigationStack {
@@ -10,27 +23,34 @@ struct JobsView: View {
                     ContentUnavailableView(
                         "No saved jobs",
                         systemImage: "note.text",
-                        description: Text("Save a calculator result or a sensor snapshot as a lightweight on-device note for homework or field work. This is not a project gallery and nothing is uploaded.")
+                        description: Text("Save a calculator result or a sensor snapshot as a lightweight on-device note for homework or field work. Field tools sort first. This is not a project gallery and nothing is uploaded.")
                     )
                 } else {
                     List {
-                        ForEach(jobs.jobs) { job in
-                            NavigationLink {
-                                JobDetailView(job: job)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(job.name).font(.headline)
-                                    Text(ToolboxCatalog.tool(job.toolID).title)
-                                        .font(.caption)
-                                        .foregroundStyle(Theme.accent)
-                                    Text(job.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.caption2)
-                                        .foregroundStyle(Theme.muted)
+                        if !fieldJobs.isEmpty {
+                            Section {
+                                ForEach(fieldJobs) { job in
+                                    SavedJobRow(job: job)
                                 }
+                                .onDelete { offsets in
+                                    delete(jobs: fieldJobs, at: offsets)
+                                }
+                            } header: {
+                                Text(ToolHomeArea.field.title)
                             }
-                            .accessibilityLabel("Saved note \(job.name), \(ToolboxCatalog.tool(job.toolID).title)")
                         }
-                        .onDelete(perform: jobs.delete)
+                        if !toolkitJobs.isEmpty {
+                            Section {
+                                ForEach(toolkitJobs) { job in
+                                    SavedJobRow(job: job)
+                                }
+                                .onDelete { offsets in
+                                    delete(jobs: toolkitJobs, at: offsets)
+                                }
+                            } header: {
+                                Text(ToolHomeArea.toolkit.title)
+                            }
+                        }
                     }
                     .scrollContentBackground(.hidden)
                 }
@@ -40,16 +60,66 @@ struct JobsView: View {
             .background(Theme.ambientBackground.ignoresSafeArea())
         }
     }
+
+    private func delete(jobs list: [SavedJob], at offsets: IndexSet) {
+        for index in offsets {
+            self.jobs.delete(list[index])
+        }
+    }
+}
+
+private struct SavedJobRow: View {
+    let job: SavedJob
+
+    private var area: ToolHomeArea { ToolboxCatalog.area(of: job.toolID) }
+
+    var body: some View {
+        NavigationLink {
+            JobDetailView(job: job)
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(job.name).font(.headline)
+                    HomeAreaBadge(area: area)
+                }
+                Text(ToolboxCatalog.tool(job.toolID).title)
+                    .font(.caption)
+                    .foregroundStyle(Theme.accent)
+                Text(job.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .accessibilityLabel("Saved note \(job.name), \(ToolboxCatalog.tool(job.toolID).title), \(area.title)")
+    }
 }
 
 struct JobDetailView: View {
     let job: SavedJob
     @EnvironmentObject private var jobs: JobStore
 
+    private var area: ToolHomeArea { ToolboxCatalog.area(of: job.toolID) }
+
     var body: some View {
         List {
             Section("Tool") {
-                Text(ToolboxCatalog.tool(job.toolID).title)
+                HStack {
+                    Text(ToolboxCatalog.tool(job.toolID).title)
+                    Spacer()
+                    HomeAreaBadge(area: area)
+                }
+            }
+            Section {
+                NavigationLink {
+                    JobRestoreHost(job: job)
+                } label: {
+                    Label(
+                        "Open in \(ToolboxCatalog.tool(job.toolID).title)",
+                        systemImage: "wrench.and.screwdriver"
+                    )
+                }
+                .accessibilityIdentifier("openInToolButton")
+                .accessibilityHint("Restores saved inputs into the tool when they still match. Opens the tool even if some fields cannot be restored.")
             }
             Section("Inputs") {
                 ForEach(job.inputs.keys.sorted(), id: \.self) { key in
@@ -83,6 +153,7 @@ struct JobDetailView: View {
         var lines = [
             job.name,
             ToolboxCatalog.tool(job.toolID).title,
+            area.title,
         ]
         if !job.inputs.isEmpty {
             lines.append("Inputs")
@@ -100,5 +171,19 @@ struct JobDetailView: View {
             lines.append("Notes: \(job.notes)")
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+/// Restores whatever saved fields still map, then opens the tool. Never blocks.
+private struct JobRestoreHost: View {
+    let job: SavedJob
+
+    init(job: SavedJob) {
+        self.job = job
+        ToolInputStore.restore(from: job)
+    }
+
+    var body: some View {
+        CalculatorHostView(toolID: job.toolID)
     }
 }

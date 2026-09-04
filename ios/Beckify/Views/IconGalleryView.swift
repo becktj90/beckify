@@ -1,7 +1,8 @@
 import SwiftUI
+import BeckifyMath
 
 /// Design-review gallery of the Beckify instrument glyph set — category shelf
-/// marks plus every per-tool schematic.
+/// marks plus every per-tool schematic, grouped Field then Toolkit.
 struct IconGalleryView: View {
     private let columns = [
         GridItem(.adaptive(minimum: 108, maximum: 140), spacing: Theme.Space.sm),
@@ -11,7 +12,19 @@ struct IconGalleryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Space.lg) {
                 categorySection
-                toolSection
+                ForEach(ToolHomeArea.allCases, id: \.self) { area in
+                    VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                        Text(area.title.uppercased())
+                            .font(Theme.TypeRole.sectionLabel)
+                            .tracking(0.8)
+                            .foregroundStyle(Theme.muted)
+                        LazyVGrid(columns: columns, spacing: Theme.Space.md) {
+                            ForEach(ToolboxCatalog.tools(in: area)) { tool in
+                                IconGalleryCell(tool: tool)
+                            }
+                        }
+                    }
+                }
             }
             .padding(Theme.Space.md)
         }
@@ -34,21 +47,6 @@ struct IconGalleryView: View {
             }
         }
     }
-
-    private var toolSection: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.sm) {
-            Text("TOOLS")
-                .font(Theme.TypeRole.sectionLabel)
-                .tracking(0.8)
-                .foregroundStyle(Theme.muted)
-
-            LazyVGrid(columns: columns, spacing: Theme.Space.md) {
-                ForEach(ToolboxCatalog.tools) { tool in
-                    IconGalleryCell(tool: tool)
-                }
-            }
-        }
-    }
 }
 
 private struct CategoryGalleryCell: View {
@@ -64,7 +62,7 @@ private struct CategoryGalleryCell: View {
                     }
                 }
 
-            Text(category.rawValue)
+            Text(category.displayName)
                 .font(Theme.TypeRole.sectionLabel)
                 .foregroundStyle(Theme.foreground)
                 .multilineTextAlignment(.center)
@@ -78,6 +76,8 @@ private struct CategoryGalleryCell: View {
 
 private struct IconGalleryCell: View {
     let tool: ToolDefinition
+
+    private var area: ToolHomeArea { ToolboxCatalog.area(of: tool.id) }
 
     var body: some View {
         VStack(spacing: Theme.Space.xs) {
@@ -95,6 +95,8 @@ private struct IconGalleryCell: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
+
+            HomeAreaBadge(area: area)
 
             Text(tool.id.rawValue)
                 .font(.caption2.monospaced())
