@@ -81,6 +81,10 @@ final class CellularPathModel: ObservableObject {
     private let historyCap = 12
 
     func start() {
+        // Tear down prior observers first. SwiftUI can call onAppear again
+        // without onDisappear (split view, tab reuse), and stopMonitors()
+        // alone would leave NotificationCenter tokens stacked.
+        removeRadioObservers()
         stopMonitors()
         pathGeneration += 1
         let generation = pathGeneration
@@ -120,32 +124,26 @@ final class CellularPathModel: ObservableObject {
         refreshRadio()
 
         let center = NotificationCenter.default
-        observers.append(center.addObserver(
-            forName: Notification.Name("CTServiceRadioAccessTechnologyDidChangeNotification"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in self?.refreshRadio() }
-        })
-        observers.append(center.addObserver(
-            forName: Notification.Name("CTRadioAccessTechnologyDidChangeNotification"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in self?.refreshRadio() }
-        })
-        observers.append(center.addObserver(
-            forName: CTTelephonyNetworkInfo.dataServiceIdentifierDidChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in self?.refreshRadio() }
-        })
+        for name in Self.radioChangeNotifications {
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.refreshRadio() }
+            })
+        }
     }
 
     func stop() {
         stopMonitors()
         cancelRTT()
+        removeRadioObservers()
+    }
+
+    /// Typed CoreTelephony names — a string typo would silently stop radio refresh.
+    private static let radioChangeNotifications: [Notification.Name] = [
+        .CTServiceRadioAccessTechnologyDidChange,
+        CTTelephonyNetworkInfo.dataServiceIdentifierDidChangeNotification,
+    ]
+
+    private func removeRadioObservers() {
         for observer in observers {
             NotificationCenter.default.removeObserver(observer)
         }
@@ -395,7 +393,7 @@ final class CellularPathModel: ObservableObject {
         var seen = Set<String>()
         var hosts: [String] = []
         for endpoint in path.gateways {
-            guard let host = WiFiRTTClient.endpointSummary(endpoint) ?? hostOnly(endpoint) else { continue }
+            guard let host = hostOnly(endpoint) else { continue }
             if seen.insert(host).inserted {
                 hosts.append(host)
             }
