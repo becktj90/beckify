@@ -453,11 +453,11 @@ public enum NameplateFieldParser {
     }
 
     private static func parsePhase(_ raw: String) -> String? {
-        let upper = normalize(raw)
-        if upper.contains("3") { return "3" }
-        if upper.contains("1") { return "1" }
-        if upper.contains("THREE") { return "3" }
-        if upper.contains("SINGLE") { return "1" }
+        let token = tokenize(raw).first.map(normalize) ?? normalize(raw)
+        if token == "3" || token == "3.0" || token.hasPrefix("3PH") || token.hasPrefix("3P") { return "3" }
+        if token == "1" || token == "1.0" || token.hasPrefix("1PH") || token.hasPrefix("1P") { return "1" }
+        if token.contains("THREE") { return "3" }
+        if token.contains("SINGLE") { return "1" }
         return nil
     }
 
@@ -647,12 +647,43 @@ public enum NameplateFieldParser {
     }
 
     private static func rangeOfLabel(_ needle: String, in upper: String) -> Range<String.Index>? {
-        guard let range = upper.range(of: needle) else { return nil }
-        let beforeOK = range.lowerBound == upper.startIndex
-            || !upper[upper.index(before: range.lowerBound)].isLetter
-        let afterOK = range.upperBound == upper.endIndex
-            || !upper[range.upperBound].isLetter
-        return beforeOK && afterOK ? range : nil
+        var searchFrom = upper.startIndex
+        while searchFrom < upper.endIndex,
+              let range = upper.range(of: needle, range: searchFrom..<upper.endIndex)
+        {
+            let beforeOK = isLabelBoundary(before: range.lowerBound, in: upper)
+            let afterOK = range.upperBound == upper.endIndex
+                || !upper[range.upperBound].isLetter
+            if beforeOK && afterOK { return range }
+            searchFrom = range.upperBound
+        }
+        return nil
+    }
+
+    /// Labels must be their own token. Rejects `10HP-215` (HP glued inside a
+    /// model) and `10 HP 1750 RPM` (HP is a unit suffix). Allows `215T  SF`.
+    private static func isLabelBoundary(before index: String.Index, in upper: String) -> Bool {
+        guard index > upper.startIndex else { return true }
+        let immediate = upper[upper.index(before: index)]
+        if immediate.isLetter || immediate.isNumber { return false }
+
+        var cursor = upper.index(before: index)
+        while cursor > upper.startIndex, upper[cursor].isWhitespace {
+            cursor = upper.index(before: cursor)
+        }
+        if upper[cursor].isWhitespace { return true }
+
+        var tokenStart = cursor
+        while tokenStart > upper.startIndex {
+            let previous = upper.index(before: tokenStart)
+            if upper[previous].isWhitespace { break }
+            tokenStart = previous
+        }
+        let prior = String(upper[tokenStart...cursor])
+        if Double(prior) != nil || MotorFLA.horsepowerValue(prior) != nil {
+            return false
+        }
+        return true
     }
 
     private static func firstNumericToken(_ raw: String, allowingFraction: Bool) -> String? {
