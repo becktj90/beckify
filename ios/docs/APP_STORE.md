@@ -104,7 +104,7 @@ Bench:
 Reference:
 
 • Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
-• Panel Directory — paste or on-device OCR of a panel schedule / sticker into circuit, name, trip, and poles
+• Panel Directory — camera or photo library (preview stays on screen), on-device Vision, heuristic extract into an editable schedule (circuit, name, trip, poles, class — value + confidence + reviewed). Confirm marks reviewed. Demand and capacity-to-add use breaker trip as a conservative connected-amp estimate through the same NEC 220.42 worksheet as Load Calculation Worksheet — not a stamped load calc. No cloud upload.
 • Load Calculation Worksheet — NEC 220.42 lighting demand plus motor/continuous VA totals
 • Cable Schedule Generator — sequential cable IDs from a type catalog with CSV copy
 
@@ -129,7 +129,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect build — no binary uploaded):**
-**Look Check** is now a first-class Jobsite tool: take or choose a photo, preview it on device, then tap **Analyze Look** to upload for a playful good-or-bad verdict plus lighting / framing / expression / sharpness metrics. Entertainment only — not medical or dating advice. Taking or choosing a photo does not upload it. The Wi-Fi / Cellular connectivity probe is labeled **Online / Captive** so it is not confused with this photo product. iOS still cannot read Wi-Fi or cellular dBm — this build does not invent RSSI/RSRP. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+**Panel Directory** now shows the schedule photo, runs on-device Vision plus a heuristic agent (confidence + reviewed — confirm before trusting rows), fills an editable circuit table, and computes demand / capacity-to-add from those cleaned rows using the same NEC 220.42 worksheet as Load Calculation Worksheet. Trip is not measured load; this is a design aid, not a stamped calc. Photos stay on device. Catalog **Look Check** remains the photo-verdict tool; Wi-Fi / Cellular still say **Online / Captive**. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -188,7 +188,7 @@ Take 3–8 screens per size. Suggested shots:
 2. Toolkit home (Basics / Bench / Reference)
 3. Search results labeled Field vs Toolkit
 4. Wire Size & Ampacity waterfall, Conductor Cost Optimizer ranking, or Voltage Drop with parallels + handoff
-5. Motor Nameplate OCR review (photo + highlighted fields) or Motor Nameplate Analyzer result card
+5. Motor Nameplate OCR review (photo + highlighted fields) or Panel Directory (schedule photo + editable rows + demand / capacity-to-add)
 6. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
 7. Saved Jobs list (Field jobs first; Open in tool)
 8. Favorites list (starred tools pinned for one-tap access)

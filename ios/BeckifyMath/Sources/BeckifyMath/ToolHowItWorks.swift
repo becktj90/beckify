@@ -342,11 +342,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Paste or on-device OCR a panel schedule / sticker into circuit, name, trip, and poles.",
-            context: "Directory photo or typed legend — then you verify the rows.",
+            summary: "Photograph a panel schedule; on-device Vision fills an editable table (value + confidence + reviewed). Confirm, then demand and capacity-to-add.",
+            context: "Directory photo or typed legend — verify rows before trusting amps.",
             bullets: [
-                "Vision stays on this device. OCR can invent or drop circuits.",
-                "Trip and poles are optional. Two-up odd/even lines are split when recognized.",
+                "Vision stays on this device. OCR can invent or drop circuits; yellow rows are guesses.",
+                "Trip is not measured load. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
+                "Capacity-to-add is remaining main amps after that demand — a design aid, not a stamped calc.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(
