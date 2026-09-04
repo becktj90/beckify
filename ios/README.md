@@ -36,7 +36,8 @@ ios/
 
 - Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
 - Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff)
-- Conduit Fill (THHN / EMT, Chapter 9 Table 1)
+- Conductor Cost Optimizer (compliant size × parallel-run ranking with planning $/kft and optional I²R energy — not a live quote)
+- Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways)
 - Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
 - Tap-Changer Calculator (DETC tap from measured secondary)
 - Motor FLA (430.248 / 430.250)

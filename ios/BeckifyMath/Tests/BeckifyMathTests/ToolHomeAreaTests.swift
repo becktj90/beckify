@@ -14,7 +14,7 @@ final class ToolHomeAreaTests: XCTestCase {
 
     func testHeuristicFieldJobsiteTools() {
         let field = [
-            "voltageDrop", "wireAmpacity", "conduitFill", "transformer",
+            "voltageDrop", "wireAmpacity", "conductorCost", "conduitFill", "transformer",
             "motorFLA", "power", "powerWizard", "receptacleSelector",
             "panelDirectory", "circularMils", "loadFactors", "shortCircuit",
             "motorSpeed", "isLoopVerifier", "signalScaling", "modbusAddress",

@@ -32,7 +32,8 @@ Field — jobsite calculators, wizards, and instruments:
 
 • Power — DC identities (P=VI, I²R, V²/R) and 1Ø / 3Ø kVA, kW, kVAR (saved Power Wizard jobs still open)
 • Voltage Drop — K-factor VD with parallels, target %, ampacity check, and optional ampacity→VD handoff
-• Conduit fill for THHN in EMT (NEC Chapter 9 Table 1)
+• Conductor Cost Optimizer — compares compliant sizes and parallel runs using a user-entered or default planning $/kft and optional I²R energy. Planning allowance only — not LME or a bid
+• Conduit fill — same-size or mixed conductor sizes; Chapter 9 Table 1 vs Table 4 raceways and Table 5 areas (EMT, IMC, RMC, PVC, ENT, FMC, LFMC)
 • Transformer sizing and overcurrent protection (NEC 450.3(B), including Note 1)
 • Tap-Changer Calculator — DETC tap recommendation from measured secondary voltage
 • Motor full-load current from NEC Tables 430.248 and 430.250
@@ -92,7 +93,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search Field and Toolkit (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “conductor cost”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -100,7 +101,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pv,opamp,snr,adc
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Home is Field vs Toolkit — jobsite tools open first; basics, bench homework, and the reference library live in Toolkit. Sensors sit under Field → Instruments. Search covers both and labels the area. Saved Jobs prefer Field and can Open in tool with a best-effort restore. Motor Nameplate OCR: photograph or pick a plate, on-device Vision, shared schema (value + confidence + reviewed; confirm sets reviewed). MOCP/LRA are never FLA. Optional seed into Motor FLA / Nameplate Analyzer / Speed. Photos stay on device; cloud VLM is off. Analyzer remains the NEC 430 calculator. Facility tools and Solar Design Wizard stay in Field. AoE analog lives in Toolkit → Bench. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Field Jobsite adds Conductor Cost Optimizer: compare compliant sizes and parallel runs (1/0+) with planning $/kft and optional I²R energy. Not a live quote. Conduit Fill now has Same size | Mixed sizes, sums Chapter 9 Table 5 areas, and checks EMT plus other Table 4 raceways against Table 1 (and nipple Note 4). Handoff into Voltage Drop / Wire Ampacity / Conduit Fill. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -153,7 +154,7 @@ Take 3–8 screens per size. Suggested shots:
 1. Field home (Jobsite / Power / Controls / Instruments) with Field | Toolkit control
 2. Toolkit home (Basics / Bench / Reference)
 3. Search results labeled Field vs Toolkit
-4. Wire Size & Ampacity waterfall or Voltage Drop with parallels + handoff
+4. Wire Size & Ampacity waterfall, Conductor Cost Optimizer ranking, or Voltage Drop with parallels + handoff
 5. Motor Nameplate OCR review (photo + highlighted fields) or Motor Nameplate Analyzer result card
 6. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
 7. Saved Jobs list (Field jobs first; Open in tool)
