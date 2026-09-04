@@ -87,15 +87,15 @@ Measure with public Apple APIs (not private APIs):
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search the toolbox (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
+Search the toolbox (try “ampacity”, “tap”, “THD”, “UPS”, “nameplate”, “heater”, “solar”, “pv”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”). Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor
+electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ohm,motor,solar,pv
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule, and Solenoid Design Wizard with B/force/axial plots. Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded.
+Facility tools: Tap-Changer, Harmonics (THD), UPS / On-site Power, Motor Nameplate, Heater Design, EMP/EMC Shielding, NEC Circuit, Load Worksheet, Cable Schedule, Solenoid Design Wizard with B/force/axial plots, and Solar Design Wizard (PV sizing with phone IMU/compass aim and optional storage). Wire Ampacity and Voltage Drop use ambient/CCC/termination derating with optional handoff. Selected calculators keep engineer plots (Swift Charts) with Share/save PNG. Still a design aid. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -154,6 +154,7 @@ Take 3–8 screens per size. Suggested shots:
 7. Wi-Fi Path gauge (Apple 0…1, not dBm) and coverage heatmap
 8. Saved Jobs list (on-device notes) or Favorites (starred tools)
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
+10. Solar Design Wizard — panel aim readouts (tilt/heading) and/or a sizing result with optional storage (do not claim sensors were live in Simulator if they were not)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
 
