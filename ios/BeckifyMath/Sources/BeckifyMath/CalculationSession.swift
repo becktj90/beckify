@@ -175,7 +175,7 @@ public enum ToolCalculationPolicy {
     /// Every catalog tool id that should appear on the home grid (and hidden deep-link ids).
     public static let knownToolIDs: [String] = [
         "ohmsLaw", "power", "powerWizard", "voltageDrop", "conduitFill", "transformer",
-        "timer555", "motorFLA", "wireAmpacity", "voltageDivider", "seriesParallel",
+        "timer555", "motorFLA", "wireAmpacity", "conductorCost", "voltageDivider", "seriesParallel",
         "resistorColor", "unitConverter", "frequencyWave", "ledRC", "wifiStatus",
         "bluetoothScan", "noiseMeter", "bubbleLevel", "magnetometer", "barometer",
         "motionSnapshot", "fieldPosition", "deviceHealth", "receptacleSelector",

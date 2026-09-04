@@ -339,6 +339,7 @@ extension GlyphKind {
         case .powerWizard: return .powerWizard
         case .voltageDrop: return .voltageDrop
         case .conduitFill: return .conduitFill
+        case .conductorCost: return .conductorCost
         case .transformer: return .transformer
         case .timer555: return .timer555
         case .motorFLA: return .motorFLA
@@ -413,6 +414,7 @@ enum GlyphKind {
     case powerWizard
     case voltageDrop
     case conduitFill
+    case conductorCost
     case transformer
     case timer555
     case motorFLA
@@ -486,6 +488,7 @@ enum GlyphKind {
         case .powerWizard: return Self.powerWizard(rect)
         case .voltageDrop: return Self.voltageDrop(rect)
         case .conduitFill: return Self.conduitFill(rect)
+        case .conductorCost: return Self.conductorCost(rect)
         case .transformer: return Self.transformer(rect)
         case .timer555: return Self.timer555(rect)
         case .motorFLA: return Self.motorFLA(rect)
@@ -662,6 +665,34 @@ enum GlyphKind {
         }
         path.move(to: CGPoint(x: r.midX - radius * 0.18, y: r.midY - radius * 0.18))
         path.addLine(to: CGPoint(x: r.midX + radius * 0.18, y: r.midY + radius * 0.18))
+        return path
+    }
+
+    private static func conductorCost(_ r: CGRect) -> Path {
+        var path = Path()
+        let left = r.minX + r.width * 0.12
+        let right = r.maxX - r.width * 0.34
+        for index in 0..<3 {
+            let y = r.minY + r.height * (0.28 + 0.22 * CGFloat(index))
+            path.move(to: CGPoint(x: left, y: y))
+            path.addLine(to: CGPoint(x: right, y: y))
+            path.addEllipse(in: CGRect(x: left - r.width * 0.04, y: y - r.height * 0.04, width: r.width * 0.08, height: r.height * 0.08))
+        }
+        let tag = CGRect(
+            x: r.maxX - r.width * 0.30,
+            y: r.midY - r.height * 0.22,
+            width: r.width * 0.22,
+            height: r.height * 0.44
+        )
+        path.addRoundedRect(in: tag, cornerSize: CGSize(width: 3, height: 3))
+        path.move(to: CGPoint(x: tag.midX, y: tag.minY + tag.height * 0.22))
+        path.addLine(to: CGPoint(x: tag.midX, y: tag.maxY - tag.height * 0.18))
+        path.addEllipse(in: CGRect(
+            x: tag.midX - tag.width * 0.18,
+            y: tag.minY + tag.height * 0.28,
+            width: tag.width * 0.36,
+            height: tag.height * 0.28
+        ))
         return path
     }
 

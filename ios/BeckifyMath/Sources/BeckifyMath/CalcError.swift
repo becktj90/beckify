@@ -68,6 +68,46 @@ public enum ConductorMaterial: String, Codable, CaseIterable, Sendable, Hashable
     }
 }
 
+/// Chapter 9 Table 4 raceway families transcribed for fill checks.
+public enum RacewayKind: String, Codable, CaseIterable, Sendable, Hashable {
+    case emt
+    case imc
+    case rmc
+    case pvc40
+    case pvc80
+    case ent
+    case fmc
+    case lfmc
+
+    public var displayName: String {
+        switch self {
+        case .emt: return "EMT"
+        case .imc: return "IMC"
+        case .rmc: return "RMC"
+        case .pvc40: return "PVC Sch 40"
+        case .pvc80: return "PVC Sch 80"
+        case .ent: return "ENT"
+        case .fmc: return "FMC"
+        case .lfmc: return "LFMC"
+        }
+    }
+}
+
+/// Chapter 9 Table 5 insulation families used for conductor area.
+public enum ConductorInsulationKind: String, Codable, CaseIterable, Sendable, Hashable {
+    case thhn
+    case xhhw
+    case rhw
+
+    public var displayName: String {
+        switch self {
+        case .thhn: return "THHN / THWN-2"
+        case .xhhw: return "XHHW / XHHW-2"
+        case .rhw: return "RHH / RHW / RHW-2"
+        }
+    }
+}
+
 public enum Positive {
     public static func require(_ value: Double, name: String) throws -> Double {
         guard value.isFinite, value > 0 else { throw CalcError.nonPositive(name) }
