@@ -298,9 +298,9 @@ extension AnalogFilterResult {
 /// Passive RC and equal-component Sallen–Key / Twin-T starting points.
 public enum AnalogFilter {
     /// Butterworth Q for a 2nd-order section (1/√2).
-    public static let butterworthQ = 1 / Double.sqrt(2)
+    public static let butterworthQ = 1 / (2.0).squareRoot()
     /// Equal-R, equal-C Sallen–Key K that yields Butterworth Q: K = 3 − 1/Q.
-    public static let butterworthSallenKeyK = 3 - Double.sqrt(2)
+    public static let butterworthSallenKeyK = 3 - (2.0).squareRoot()
 
     public static func cornerHz(resistance: Double, capacitance: Double) throws -> Double {
         let r = try Positive.require(resistance, name: "R")
@@ -681,7 +681,7 @@ public enum LinearRegulator {
         let vout: Double
         if solveResistors {
             let target = try Positive.require(voutOrTarget, name: "Vout")
-            r2Ω = try r2(forVout: target, vref: vrefV, r1: r1Ω, iadj: iadjA)
+            r2Ω = try Self.r2(forVout: target, vref: vrefV, r1: r1Ω, iadj: iadjA)
             vout = try Self.vout(vref: vrefV, r1: r1Ω, r2: r2Ω, iadj: iadjA)
         } else {
             r2Ω = try Positive.require(r2 ?? .nan, name: "R2")

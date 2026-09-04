@@ -203,7 +203,7 @@ final class LinearRegulatorTests: XCTestCase {
 final class InstrumentationAmpTests: XCTestCase {
     func testClassicThreeOpAmpGain() throws {
         XCTAssertEqual(try InstrumentationAmp.threeOpAmpGain(r: 25_000, rg: 1_000), 51, accuracy: 1e-12)
-        XCTAssertEqual(try InstrumentationAmp.threeOpAmpGain(r: 25_000, rg: 490.196), 102.96, accuracy: 0.01)
+        XCTAssertEqual(try InstrumentationAmp.threeOpAmpGain(r: 25_000, rg: 500), 101, accuracy: 1e-12)
     }
 
     func testDifferenceGainAndSwing() throws {
