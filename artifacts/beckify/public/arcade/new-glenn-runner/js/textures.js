@@ -259,83 +259,128 @@ function drawIlt(ctx, x, groundY) {
   ctx.restore();
 }
 
-/** First-stage booster: gold crown + four solid black strakes. No grid fins. */
-export function makeBooster() {
-  const cv = canvas(80, 240);
+/**
+ * NG-2 recovery silhouette (hard constraint):
+ * metallic gold upper ring, four LARGE solid black strakes just below it,
+ * tall white cylinder, optional BLUE ORIGIN. No lattice grid fins.
+ * Legs stay hidden in the fireball; `legs=true` reveals them after smoke thins.
+ */
+export function makeBooster(legs = false) {
+  const cv = canvas(96, 268);
   const ctx = cv.getContext('2d');
-  ctx.translate(40, 12);
-  const gold = ctx.createLinearGradient(-22, 0, 22, 36);
-  gold.addColorStop(0, '#e8c36a');
-  gold.addColorStop(0.5, '#c48a2a');
-  gold.addColorStop(1, '#8a5a12');
+  ctx.translate(48, 10);
+
+  const gold = ctx.createLinearGradient(-24, 0, 24, 52);
+  gold.addColorStop(0, '#f3d58a');
+  gold.addColorStop(0.35, '#d4a43a');
+  gold.addColorStop(0.7, '#b47a18');
+  gold.addColorStop(1, '#7a4e0e');
   ctx.fillStyle = gold;
-  ctx.fillRect(-22, 0, 44, 34);
+  ctx.fillRect(-24, 0, 48, 50);
+  ctx.fillStyle = 'rgba(255,236,180,0.35)';
+  ctx.fillRect(-22, 4, 10, 42);
+
   ctx.fillStyle = '#f4f7fb';
-  ctx.fillRect(-20, 34, 40, 150);
-  ctx.fillStyle = '#111318';
-  [[-28, 46], [16, 46], [-28, 78], [16, 78]].forEach(([x, y]) => {
+  ctx.fillRect(-22, 50, 44, 168);
+
+  ctx.fillStyle = '#0b0d12';
+  [[-38, 52], [22, 52], [-36, 86], [20, 86]].forEach(([x, y], i) => {
+    const w = i < 2 ? 18 : 16;
+    const h = i < 2 ? 30 : 26;
     ctx.beginPath();
-    ctx.moveTo(x < 0 ? -20 : 20, y);
+    ctx.moveTo(x < 0 ? -22 : 22, y + 4);
     ctx.lineTo(x, y + 8);
-    ctx.lineTo(x, y + 26);
-    ctx.lineTo(x < 0 ? -20 : 20, y + 18);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x < 0 ? -22 : 22, y + h - 8);
     ctx.closePath();
     ctx.fill();
+    ctx.fillStyle = '#1a1d24';
+    ctx.fillRect(x < 0 ? x + 2 : 22, y + 10, 3, h - 14);
+    ctx.fillStyle = '#0b0d12';
   });
+
   ctx.fillStyle = '#0b0d12';
-  ctx.font = 'bold 8px "IBM Plex Mono", ui-monospace, monospace';
+  ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
   ctx.save();
-  ctx.translate(-6, 120);
+  ctx.translate(-7, 148);
   ctx.rotate(-Math.PI / 2);
   ctx.fillText('BLUE ORIGIN', 0, 0);
   ctx.restore();
+
   ctx.fillStyle = '#c48a2a';
-  ctx.fillRect(-22, 176, 44, 12);
+  ctx.fillRect(-24, 206, 48, 12);
+
+  if (legs) {
+    ctx.fillStyle = '#2a3038';
+    [[-40, 198], [28, 198], [-34, 210], [22, 210]].forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.moveTo(x < 0 ? -22 : 22, 200);
+      ctx.lineTo(x, y + 18);
+      ctx.lineTo(x + (x < 0 ? 8 : -8), y + 18);
+      ctx.lineTo(x < 0 ? -20 : 20, 206);
+      ctx.closePath();
+      ctx.fill();
+    });
+  }
+
   for (let i = 0; i < 7; i++) {
     const x = -18 + i * 6;
     ctx.fillStyle = '#2b3038';
     ctx.beginPath();
-    ctx.ellipse(x, 202, 3.2, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, 232, 3.2, 7, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   return cv;
 }
 
-/** Jacklyn: dark deck between white bow/stern bookends. No ASDS circle-X. */
+/** Jacklyn: dark deck between white multi-story bow/stern bookends. No ASDS circle-X. */
 export function makeJacklyn() {
-  const cv = canvas(560, 180);
+  const cv = canvas(640, 220);
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#0a2a3c';
-  ctx.fillRect(0, 150, 560, 30);
-  ctx.fillStyle = '#141a20';
-  ctx.fillRect(86, 108, 388, 44);
-  ctx.fillStyle = '#1c242c';
-  ctx.fillRect(100, 96, 360, 16);
-  ctx.fillStyle = '#f4f7fb';
-  ctx.fillRect(12, 48, 86, 106);
-  ctx.fillRect(462, 40, 86, 114);
-  ctx.fillStyle = '#dfe6ee';
-  ctx.fillRect(20, 56, 70, 28);
-  ctx.fillRect(470, 48, 70, 28);
+  ctx.fillStyle = '#063044';
+  ctx.fillRect(0, 188, 640, 32);
+  ctx.fillStyle = '#12181e';
+  ctx.fillRect(118, 142, 404, 50);
+  ctx.fillStyle = '#1a222a';
+  ctx.fillRect(132, 128, 376, 18);
+
+  const bookend = (x, w, h, roof) => {
+    ctx.fillStyle = '#f4f7fb';
+    ctx.fillRect(x, roof, w, h);
+    ctx.fillStyle = '#dfe6ee';
+    ctx.fillRect(x + 8, roof + 10, w - 16, 26);
+    ctx.fillStyle = '#9aa6b2';
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 3; col++) {
+        ctx.fillRect(x + 12 + col * 18, roof + 44 + row * 18, 10, 10);
+      }
+    }
+  };
+  bookend(16, 108, 148, 44);
+  bookend(516, 108, 156, 36);
+
   ctx.fillStyle = '#c5ced6';
   ctx.beginPath();
-  ctx.arc(55, 44, 16, 0, Math.PI * 2);
-  ctx.arc(505, 36, 18, 0, Math.PI * 2);
+  ctx.arc(70, 36, 18, 0, Math.PI * 2);
+  ctx.arc(570, 28, 20, 0, Math.PI * 2);
+  ctx.arc(94, 30, 10, 0, Math.PI * 2);
   ctx.fill();
+
   ctx.strokeStyle = '#ffcf5d';
   ctx.lineWidth = 3;
   ctx.setLineDash([8, 6]);
-  ctx.strokeRect(210, 98, 140, 18);
+  ctx.strokeRect(246, 132, 148, 20);
   ctx.setLineDash([]);
   ctx.beginPath();
-  ctx.moveTo(250, 114);
-  ctx.lineTo(280, 98);
-  ctx.lineTo(310, 114);
+  ctx.moveTo(286, 152);
+  ctx.lineTo(320, 132);
+  ctx.lineTo(354, 152);
   ctx.stroke();
+
   ctx.fillStyle = '#0b0d12';
-  ctx.font = 'bold 22px "IBM Plex Mono", ui-monospace, monospace';
+  ctx.font = 'bold 26px "IBM Plex Mono", ui-monospace, monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('JACKLYN', 280, 148);
+  ctx.fillText('JACKLYN', 320, 184);
   return cv;
 }
 
@@ -343,22 +388,69 @@ export function makeOcean() {
   const cv = canvas(1280, 720);
   const ctx = cv.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, 720);
-  sky.addColorStop(0, '#0a1020');
-  sky.addColorStop(0.45, '#16324a');
-  sky.addColorStop(0.7, '#1b5a78');
-  sky.addColorStop(1, '#0d3a4e');
+  sky.addColorStop(0, '#061018');
+  sky.addColorStop(0.4, '#0c2438');
+  sky.addColorStop(0.68, '#0e3a55');
+  sky.addColorStop(1, '#072838');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, 1280, 720);
-  ctx.fillStyle = '#0a2a3a';
-  ctx.fillRect(0, 430, 1280, 290);
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  for (let y = 450; y < 700; y += 16) {
-    ctx.fillRect(0, y + Math.sin(y) * 2, 1280, 2);
+  const sea = ctx.createLinearGradient(0, 410, 0, 720);
+  sea.addColorStop(0, '#0a3a52');
+  sea.addColorStop(0.45, '#072c40');
+  sea.addColorStop(1, '#041c2a');
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, 410, 1280, 310);
+  ctx.fillStyle = 'rgba(180,220,240,0.06)';
+  for (let y = 430; y < 700; y += 22) {
+    ctx.fillRect(0, y, 1280, 2);
   }
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  for (let i = 0; i < 40; i++) {
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  for (let i = 0; i < 36; i++) {
     ctx.fillRect((i * 97) % 1280, (i * 53) % 380, 2, 2);
   }
+  return cv;
+}
+
+/** Blinding landing bloom — orange/yellow, ADD-blended. */
+export function makeBloom() {
+  const cv = canvas(220, 220);
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(110, 110, 8, 110, 110, 108);
+  g.addColorStop(0, '#fff6c8');
+  g.addColorStop(0.18, '#ffe056');
+  g.addColorStop(0.45, '#ff9a18');
+  g.addColorStop(0.75, 'rgba(255,80,0,0.45)');
+  g.addColorStop(1, 'rgba(120,20,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 220, 220);
+  return cv;
+}
+
+/** Thick brownish-orange smoke bank that hides ship + lower booster. */
+export function makeSmokeBank() {
+  const cv = canvas(460, 210);
+  const ctx = cv.getContext('2d');
+  const blobs = [
+    [80, 130, 90, '#5a3010'],
+    [180, 120, 110, '#6e3a14'],
+    [280, 124, 100, '#4a240c'],
+    [360, 132, 88, '#7a4218'],
+    [230, 150, 120, '#3d1c0a'],
+    [140, 160, 80, '#8a4a1c'],
+    [320, 168, 86, '#5c2c10'],
+  ];
+  blobs.forEach(([x, y, r, color]) => {
+    const g = ctx.createRadialGradient(x, y, 8, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(0.55, color);
+    g.addColorStop(1, 'rgba(40,16,4,0)');
+    ctx.fillStyle = g;
+    ctx.globalAlpha = 0.88;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
   return cv;
 }
 
@@ -456,10 +548,12 @@ export function installTextures(scene) {
     scene.textures.addCanvas(key, cv);
   };
   add('rocket', makeRocket(true));
-  add('booster', makeBooster());
-  add('bloom', makeDot('#ffb020', 80, 80));
-  add('rcs', makeDot('#f4fbff', 12, 12));
-  add('soot', makeDot('#6a3a18', 22, 22));
+  add('booster', makeBooster(false));
+  add('booster-legs', makeBooster(true));
+  add('bloom', makeBloom());
+  add('rcs', makeDot('#f4fbff', 16, 16));
+  add('soot', makeDot('#6a3a18', 36, 36));
+  add('smoke-bank', makeSmokeBank());
   MISSIONS.forEach((mission) => {
     add(`rocket-${mission.id}`, makeRocket(true, mission));
   });

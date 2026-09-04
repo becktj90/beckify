@@ -70,6 +70,8 @@ export default class MissionScene extends Phaser.Scene {
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.bgOcean = this.add.image(W / 2, H / 2, 'ocean').setVisible(false).setDepth(0);
     this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
+    this.smokeBank = this.add.image(W / 2, 620, 'smoke-bank').setVisible(false).setDepth(7).setAlpha(0);
+    this.bloomFlash = this.add.image(W / 2, 620, 'bloom').setVisible(false).setDepth(8).setBlendMode('ADD').setAlpha(0);
     this.deck = this.matter.add.image(-2400, 2400, 'deck-pad', null, {
       isStatic: true,
       isSensor: true,
@@ -114,14 +116,14 @@ export default class MissionScene extends Phaser.Scene {
     }
     try {
       this.bloomFx = this.add.particles(0, 0, 'bloom', {
-        lifespan: 220,
-        speed: { min: 10, max: 40 },
-        scale: { start: 1.6, end: 0.2 },
+        lifespan: 520,
+        speed: { min: 8, max: 70 },
+        scale: { start: 1.1, end: 0.15 },
         emitting: false,
         blendMode: 'ADD',
-        frequency: 20,
-        quantity: 2,
-        alpha: { start: 0.9, end: 0.1 },
+        frequency: 12,
+        quantity: 4,
+        alpha: { start: 1, end: 0 },
       });
     } catch {
       this.bloomFx = noopEmitter;
@@ -139,13 +141,13 @@ export default class MissionScene extends Phaser.Scene {
     }
     try {
       this.sootFx = this.add.particles(0, 0, 'soot', {
-        lifespan: 900,
-        speed: { min: 8, max: 28 },
-        scale: { start: 0.8, end: 2.2 },
+        lifespan: 1400,
+        speed: { min: 12, max: 46 },
+        scale: { start: 1.2, end: 3.4 },
         emitting: false,
-        frequency: 30,
-        quantity: 2,
-        alpha: { start: 0.7, end: 0 },
+        frequency: 18,
+        quantity: 5,
+        alpha: { start: 0.85, end: 0 },
       });
     } catch {
       this.sootFx = { emitParticleAt() {} };
@@ -329,6 +331,7 @@ export default class MissionScene extends Phaser.Scene {
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.jacklyn.setVisible(false);
+    this.hideLandingFx();
     this.parkRecovery();
     this.applyRocketSkin();
     this.rocket.setPosition(560, 430);
@@ -363,6 +366,7 @@ export default class MissionScene extends Phaser.Scene {
       this.bgOcean.setVisible(false);
       this.bgOcean.clearTint();
       this.jacklyn.setVisible(false);
+      this.hideLandingFx();
       this.parkRecovery();
       this.applyRocketSkin();
       this.rocket.setPosition(560, 430);
@@ -406,19 +410,21 @@ export default class MissionScene extends Phaser.Scene {
     this.bgOcean.setTint(flight.seaTint || 0xffffff);
     this.jacklyn.setVisible(true);
     this.placeRecovery();
+    this.hideLandingFx();
     this.rocket.setTexture('booster');
+    this.rocket.setDepth(5);
     const side = flight.lzOffset >= 0 ? -1 : 1;
-    this.session.jacklynReadyAt = this.nowSec + 0.7;
+    this.session.jacklynReadyAt = this.nowSec + 0.85;
     this.session.jacklynElapsed = 0;
     this.rocket.setFrictionAir(0.05);
-    this.rocket.setPosition(W / 2 + side * 480, 90);
-    this.rocket.setVelocity(side * -3.6, 1.6);
-    this.rocket.setAngle(side * -28);
+    this.rocket.setPosition(W / 2 + side * 520, 40);
+    this.rocket.setVelocity(side * -3.2, 1.35);
+    this.rocket.setAngle(side * -34);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, 0.34);
+    this.matter.world.setGravity(0, 0.32);
     this.cameras.main.stopFollow();
-    this.cameras.main.setZoom(0.82);
-    this.cameras.main.centerOn(W / 2, 300);
+    this.cameras.main.setZoom(0.72);
+    this.cameras.main.centerOn(W / 2, 260);
     if (flight.objective?.id === 'clean' && this.session.hits === 0) this.completeObjective();
     AudioApi.play('meco', this.settings);
     setBanner('JACKLYN — slide in, RCS straighten, brake the deck', 'warn', 2800);
@@ -527,18 +533,19 @@ export default class MissionScene extends Phaser.Scene {
     }
 
     const alt = this.jacklyn.y - 50 - this.rocket.y;
-    if (alt < 150 && this.session.jacklynPhase === 'slide') {
+    if (alt < 95 && this.session.jacklynPhase === 'slide') {
       this.session.jacklynPhase = 'straighten';
       this.emitRcs();
       setBanner('RCS — straighten for the deck', 'info', 1400);
     }
-    if (alt < 110) this.session.jacklynPhase = 'settle';
+    if (alt < 55) this.session.jacklynPhase = 'settle';
 
     const wantAngle = this.session.jacklynPhase === 'slide'
-      ? clamp(this.rocket.body.velocity.x * 2.2, -20, 20)
+      ? clamp(this.rocket.body.velocity.x * 2.6, -34, 34)
       : 0;
     const nowAngle = this.rocket.angle || 0;
-    const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * 4);
+    const slew = this.session.jacklynPhase === 'slide' ? 2.2 : 5.2;
+    const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * slew);
     if (Math.abs(nextAngle - nowAngle) > 0.8) this.emitRcs();
     this.rocket.setAngularVelocity(0);
     this.rocket.setAngle(nextAngle);
@@ -603,21 +610,13 @@ export default class MissionScene extends Phaser.Scene {
       this.session.combo += 2;
       this.session.bestCombo = Math.max(this.session.bestCombo, this.session.combo);
       this.session.radio = RADIO.RECOVERED;
-      this.rocket.setPosition(this.jacklyn.x, this.jacklyn.y - 92);
+      this.rocket.setPosition(this.jacklyn.x, this.jacklyn.y - 118);
       this.rocket.setAngle(0);
-      this.emitBloom();
-      if (this.sootFx) this.sootFx.emitParticleAt(this.jacklyn.x, this.jacklyn.y - 10, 28);
-      if (!this.settings.reducedMotion) {
-        this.cameras.main.shake(180, 0.004);
-        this.cameras.main.zoomTo(1.12, 500);
-        this.time.timeScale = 0.55;
-        this.time.delayedCall(400, () => { this.time.timeScale = 1; });
-      }
-      this.steam.emitParticleAt(this.rocket.x, this.jacklyn.y - 20, 16);
+      this.playRecoveredSpectacle();
       AudioApi.play('touchdown', this.settings);
-      setBanner(`BOOSTER RECOVERED — ${this.currentFlight().jacklyn.recovered}`, 'go', 3200);
+      setBanner(`BOOSTER RECOVERED — ${this.currentFlight().jacklyn.recovered}`, 'go', 3600);
       this.vibrate([40, 30, 40]);
-      this.time.delayedCall(1400, () => this.endMission('recovered'));
+      this.time.delayedCall(2200, () => this.endMission('recovered'));
       return;
     }
 
@@ -760,20 +759,72 @@ export default class MissionScene extends Phaser.Scene {
 
   emitPlume(power) {
     if (this.settings.reducedMotion) return;
-    const n = power > 0.7 ? 3 : 1;
-    this.plume.emitParticleAt(this.rocket.x, this.rocket.y + 88, n);
+    const n = power > 0.7 ? 4 : 1;
+    this.plume.emitParticleAt(this.rocket.x, this.rocket.y + 108, n);
   }
 
   emitRcs() {
     if (this.settings.reducedMotion || !this.rcsFx) return;
-    this.rcsFx.emitParticleAt(this.rocket.x + 18, this.rocket.y - 70, 2);
-    this.rcsFx.emitParticleAt(this.rocket.x - 18, this.rocket.y - 70, 2);
+    this.rcsFx.emitParticleAt(this.rocket.x + 22, this.rocket.y - 96, 3);
+    this.rcsFx.emitParticleAt(this.rocket.x - 22, this.rocket.y - 96, 3);
   }
 
   emitBloom() {
     if (!this.bloomFx) return;
-    this.bloomFx.emitParticleAt(this.rocket.x, this.rocket.y + 70, this.settings.reducedMotion ? 2 : 6);
-    if (this.sootFx) this.sootFx.emitParticleAt(this.rocket.x, this.jacklyn.y - 8, 4);
+    const n = this.settings.reducedMotion ? 3 : 14;
+    this.bloomFx.emitParticleAt(this.rocket.x, this.rocket.y + 90, n);
+    if (this.sootFx) this.sootFx.emitParticleAt(this.jacklyn.x, this.jacklyn.y - 8, this.settings.reducedMotion ? 6 : 22);
+  }
+
+  hideLandingFx() {
+    if (this.smokeBank) {
+      this.smokeBank.setVisible(false).setAlpha(0);
+    }
+    if (this.bloomFlash) {
+      this.bloomFlash.setVisible(false).setAlpha(0).setScale(1);
+    }
+  }
+
+  playRecoveredSpectacle() {
+    this.emitBloom();
+    if (this.bloomFlash) {
+      this.bloomFlash.setPosition(this.jacklyn.x, this.jacklyn.y - 20);
+      this.bloomFlash.setVisible(true).setAlpha(1).setScale(2.4);
+      this.tweens.add({
+        targets: this.bloomFlash,
+        alpha: 0,
+        scale: 3.2,
+        duration: this.settings.reducedMotion ? 280 : 700,
+        onComplete: () => this.bloomFlash.setVisible(false),
+      });
+    }
+    if (this.smokeBank) {
+      this.smokeBank.setPosition(this.jacklyn.x, this.jacklyn.y - 28);
+      this.smokeBank.setVisible(true).setAlpha(0).setScale(1.05);
+      this.tweens.add({
+        targets: this.smokeBank,
+        alpha: this.settings.reducedMotion ? 0.55 : 0.96,
+        scale: 1.18,
+        duration: 220,
+      });
+    }
+    if (this.sootFx) this.sootFx.emitParticleAt(this.jacklyn.x, this.jacklyn.y - 10, 28);
+    if (!this.settings.reducedMotion) {
+      this.cameras.main.shake(220, 0.005);
+      this.time.timeScale = 0.55;
+      this.time.delayedCall(360, () => { this.time.timeScale = 1; });
+    }
+    this.time.delayedCall(900, () => {
+      if (this.textures.exists('booster-legs')) this.rocket.setTexture('booster-legs');
+      if (!this.settings.reducedMotion) this.cameras.main.zoomTo(1.16, 640);
+      if (this.smokeBank) {
+        this.tweens.add({
+          targets: this.smokeBank,
+          alpha: 0.35,
+          duration: 700,
+        });
+      }
+    });
   }
 
   completeObjective() {
