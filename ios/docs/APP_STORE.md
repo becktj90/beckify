@@ -4,7 +4,7 @@ Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor 
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
-**Five-star / review-risk plan:** [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) — competitor 1★ patterns, Connect checklist, respectful `requestReview` timing, and honesty constraints (no fake Wi‑Fi/cellular dBm). Use the ITMS-90382 cooldown to finish that list before the next upload.
+**Five-star / review-risk plan:** [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) — competitor 1★ patterns, first-open/trust punch list, Connect checklist, respectful `requestReview` timing, and honesty constraints (no fake Wi‑Fi/cellular dBm). Use the ITMS-90382 cooldown to finish that list before the next upload.
 
 ## Listing copy
 

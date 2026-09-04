@@ -76,6 +76,8 @@ struct ToolboxView: View {
                         Text(ToolHomeArea.toolkit.title).tag(ToolHomeArea.toolkit)
                     }
                     .pickerStyle(.segmented)
+                    .controlSize(.large)
+                    .frame(minHeight: Theme.touchTarget)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .accessibilityIdentifier("homeAreaPicker")

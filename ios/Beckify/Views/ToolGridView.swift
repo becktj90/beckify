@@ -124,6 +124,8 @@ struct ToolGridView: View {
             Text(ToolHomeArea.toolkit.title).tag(ToolHomeArea.toolkit)
         }
         .pickerStyle(.segmented)
+        .controlSize(.large)
+        .frame(minHeight: Theme.touchTarget)
         .accessibilityIdentifier("homeAreaPicker")
     }
 

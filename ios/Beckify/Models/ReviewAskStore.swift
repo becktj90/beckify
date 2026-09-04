@@ -33,6 +33,10 @@ final class ReviewAskStore: ObservableObject {
 
     @Published private(set) var pendingAsk = false
 
+    /// Session-only. A permission deny is not a win and must not be followed
+    /// by Apple’s review sheet (Ugly’s-style 1★ pattern).
+    private var deniedPermissionThisSession = false
+
     private var savedJobCount: Int
     private var successfulCalcCount: Int
     private var distinctSessionDays: Int
@@ -65,6 +69,10 @@ final class ReviewAskStore: ObservableObject {
         }
     }
 
+    func notePermissionDenied() {
+        deniedPermissionThisSession = true
+    }
+
     func recordSavedJob() {
         savedJobCount += 1
         defaults.set(savedJobCount, forKey: Key.savedJobs)
@@ -88,6 +96,7 @@ final class ReviewAskStore: ObservableObject {
     /// present Apple’s system sheet after a short pause. Caller must be at
     /// Field home (or switching back to Toolbox) — never first-launch onAppear.
     func presentIfEligible(_ requestReview: RequestReviewAction, currentVersion: String) {
+        guard !deniedPermissionThisSession else { return }
         guard pendingAsk, ReviewAskPolicy.shouldRequest(snapshot(currentVersion: currentVersion)) else {
             return
         }

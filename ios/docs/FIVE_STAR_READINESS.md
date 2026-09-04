@@ -32,6 +32,22 @@ Public sources only. No App Store Connect scrape. No password.
 
 ---
 
+## First-open / trust punch list (App Design)
+
+Folded from the optional 5★ first-open list. Status is against **this branch** (on top of latest `main`). Do not block the competitor crawl on more design input.
+
+| # | Gate | Status | Where / what’s left |
+| --- | --- | --- | --- |
+| 1 | **No review prompt** on first launch, after a permission deny, or mid-Calculate. Gate on a clear win (saved job). | **Done** | `ReviewAskPolicy` + `ReviewAskStore`: 2 session days, ≥12 h, 2 saved jobs. Never from `onAppear`, Save, or Calculate. `SettingsLinkButton` / deny path calls `notePermissionDenied()` and **blocks the sheet for the rest of that session**. Mac: confirm first launch is silent (dev builds always *can* show the sheet if called). |
+| 2 | **Cold start useful, not empty theater.** Recents hidden until used. | **Done** (PR #87, verified) | `ToolGridView`: Recents render only when `!recents.tools.isEmpty`. `RecentToolsStore` does not seed fake tools. First-open Field home is the jobsite grid. Favorites + Jobs empty states have **Browse Field**. |
+| 3 | **Sensor honesty before the big number** + screenshot honesty (no fake Wi‑Fi/cellular dBm/RSRP). | **Done** in-app / **Todo** shots | Cellular already had a banner above the gauges. Wi‑Fi Path now uses the same `RFHonestyBanner` **above** `WiFiStrengthGauge`. Listing/What’s New/Review notes already forbid invented dBm. **Todo (Mac):** screenshots must show the honesty line, not a crop that looks like a field-strength meter. |
+| 4 | **Permissions on tool open only**; denied → Settings; don’t block Toolbox home. | **Done** | No permission call in `BeckifyApp` / Field home. Mic, BT, location (Position, Wi‑Fi Path), camera (OCR) request in-tool. Deny states use `ToolEmptyState` + `SettingsLinkButton`. Solar latitude deny now also offers Settings and still accepts typed lat. Toolbox home stays usable if every instrument is denied. **Todo (Mac):** deny each sheet once and confirm Field home still opens. LAN RTT copy mentions Local Network; public hosts (1.1.1.1) skip that sheet. |
+| 5 | **Jobsite friction:** Done keyboard, 44pt segments, outdoor contrast. | **Mostly done** / **Todo** listing | `Theme.touchTarget` = 44. Field \| Toolkit segments are `.controlSize(.large)` + `minHeight: 44`. `NumberField` uses decimal pad; `ToolScaffold` now has a keyboard **Done** bar (decimal pad has no system Done). Tokens are built for bright field light + dark shop. **Todo:** do **not** claim a dedicated outdoor/high-contrast mode on the listing. Optional device check: Settings → Display → Increase Contrast. |
+| 6 | **Icon / listing match chrome.** No outdoor, calibrated, or Jobs-restore claims unless true. | **Done** in copy / **Todo** Connect | Icon: white tunnel on black (`APP_STORE.md`). Jobs: “Open in tool” restores **matching** inputs and **does not block** if some fields cannot map (`JobsView` hint). Noise Meter / sensors: uncalibrated. **Todo (Connect):** screenshots and What’s New must match — no “calibrated SLM,” no “full job restore,” no outdoor mode. |
+| 7 | **Design-aid disclaimer on calculators**, not only About. | **Done** | There is no About screen. `ToolScaffold` defaults to `Theme.disclaimer` (“Design aid only — not a PE stamp…”). Sensors use `Theme.sensorDisclaimer`. Extra honesty on OCR, conduit/cost/length, Control Systems, e-bike pack, etc. Reference Library is the intentional `.none` (it’s a table, not a calc). |
+
+---
+
 ## 1. Competitor complaints → Beckify mitigations
 
 Crawled public App Store review pages and review-mirror sites for Southwire Conduit Fill Calc, Ugly’s Electrical References, Electrical Calc Elite, Electric Toolkit, and Electrician’s Helper (2026-09-04). Themes below are what field EEs actually write.
@@ -138,7 +154,7 @@ Beckify implementation (this PR):
 | Clear win (policy) | **2 saved jobs**, or **1 save + 5 successful Calculate**, or **8 successful Calculate** with no save. |
 | Clear win (v1 wiring) | **Saved jobs only** — `JobStore.save` increments the counter. Calculate-without-save does not arm a prompt (that would fire from a button tap). Calc-count thresholds stay in the policy for a later hook. |
 | When the sheet is considered | Operator **returns to Field home** (pops the tool stack) or **switches back to the Toolbox tab** — end of a sequence. 2 s delay. |
-| When it never fires | First `onAppear`, first calendar session, first 12 hours, Save tap, Calculate tap, TestFlight (Apple no-ops there). |
+| When it never fires | First `onAppear`, first calendar session, first 12 hours, Save tap, Calculate tap, **this session after a permission deny** (`notePermissionDenied`), TestFlight (Apple no-ops there). |
 
 `import StoreKit` is for `RequestReviewAction` only. There is still **no** IAP target and **no** StoreKit product.
 
@@ -177,11 +193,7 @@ Keep these. They are product, listing, and Review armor:
 
 ## 6. First-open bounce
 
-Cold Field home already avoids empty Recents and fake shelf totals (`ToolGridView`). Favorites empty state already has **Browse Field**.
-
-This PR: Jobs empty state matches that — short copy plus **Browse Field**, so the first Jobs tap is not a dead end.
-
-Do not add an onboarding carousel. Field EE brand is instrument panel, not tutorial chrome.
+See **First-open / trust punch list** above (items 2, 4, 7). Cold Field home hides Recents until used. Favorites and Jobs empty states send the operator back to Field. Do not add an onboarding carousel. Field EE brand is instrument panel, not tutorial chrome.
 
 ---
 

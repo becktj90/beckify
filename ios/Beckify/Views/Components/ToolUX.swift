@@ -68,6 +68,21 @@ struct ToolScaffold<Content: View>: View {
             }
         }
         .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
+                }
+                .font(.body.weight(.semibold))
+                .frame(minHeight: Theme.touchTarget)
+                .accessibilityLabel("Done")
+                .accessibilityHint("Dismisses the keyboard so you can Calculate or copy.")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
                     favorites.toggle(toolID)
