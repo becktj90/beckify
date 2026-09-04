@@ -56,12 +56,14 @@ assert.equal(noHz.filled, 3);
 const mocp = api.parseMotorNameplate('MOCP 30 FLA 14.5 HP 10');
 assert.equal(mocp.fields.fla, '14.5');
 assert.equal(mocp.fields.hp, '10');
+assert.equal(mocp.fields.mocp, '30');
 assert.notEqual(mocp.fields.fla, '30');
 
 const lra = api.parseMotorNameplate('LRA 84 HP 10 VOLTS 460');
 assert.equal(lra.fields.hp, '10');
 assert.equal(lra.fields.volts, '460');
 assert.equal(lra.fields.fla, '');
+assert.equal(lra.fields.lra, '84');
 assert.notEqual(lra.fields.fla, '84');
 
 const dual = api.parseMotorNameplate('230/460V 28/14 FLA');

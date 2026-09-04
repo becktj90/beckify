@@ -2255,6 +2255,18 @@ body.report-open { overflow: hidden; }
   color: var(--fg);
 }
 .review-check input { width: auto; margin-top: 3px; accent-color: var(--violet); }
+.vlm-settings {
+  border: 1px solid rgba(139, 123, 255, 0.35);
+  background: rgba(139, 123, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin: 0 0 14px;
+}
+.vlm-settings .note { margin-top: 0; }
+.photo-privacy.is-upload {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.08);
+}
 
 /* ── NEMA wiring field reference ── */
 .nema-picker {

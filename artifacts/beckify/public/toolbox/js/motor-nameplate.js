@@ -195,7 +195,13 @@
     };
   }
 
-  var PARSED_FIELD_IDS = ['mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_hz', 'mnp_phase', 'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise'];
+  var PARSED_FIELD_IDS = [
+    'mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_hz', 'mnp_phase',
+    'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise',
+    'mnp_mfr', 'mnp_model', 'mnp_encl', 'mnp_poles', 'mnp_eff', 'mnp_pf',
+    'mnp_mocp', 'mnp_lra', 'mnp_sfa', 'mnp_notes',
+  ];
+  var lastDraft = null;
 
   function clearParsedFields() {
     for (var i = 0; i < PARSED_FIELD_IDS.length; i++) {
@@ -219,6 +225,38 @@
     setVal('mnp_insul', fields.insulation);
     setVal('mnp_code', fields.code);
     setVal('mnp_rise', fields.riseC);
+    setVal('mnp_mfr', fields.manufacturer);
+    setVal('mnp_model', fields.model);
+    setVal('mnp_encl', fields.enclosure);
+    setVal('mnp_poles', fields.poles);
+    setVal('mnp_eff', fields.nomEff);
+    setVal('mnp_pf', fields.pf);
+    setVal('mnp_mocp', fields.mocp);
+    setVal('mnp_lra', fields.lra);
+    setVal('mnp_sfa', fields.serviceFactorAmps);
+    setVal('mnp_notes', fields.notes);
+  }
+
+  function applyDraft(draft) {
+    lastDraft = draft || null;
+    var Schema = global.BeckifyNameplateSchema;
+    var fields = Schema && draft ? Schema.toLegacyFields(draft) : (draft && draft.fields) || {};
+    applyFields(fields);
+    var conf = el('mnp_conf');
+    if (!conf) return;
+    var lows = Schema && draft && typeof Schema.lowConfidenceFields === 'function'
+      ? Schema.lowConfidenceFields(draft, 0.6)
+      : [];
+    if (lows.length) {
+      conf.hidden = false;
+      conf.textContent = 'Low-confidence draft fields: ' + lows.join(', ') + '. Correct them before NEC math.';
+    } else if (draft && draft.warnings && draft.warnings.length) {
+      conf.hidden = false;
+      conf.textContent = draft.warnings.join(' ');
+    } else {
+      conf.hidden = true;
+      conf.textContent = '';
+    }
   }
 
   function setStatus(msg) {
@@ -319,7 +357,66 @@
     if (img) { img.src = photoUrl; img.hidden = false; }
     el('mnp_file')._file = file;
     clearReview();
-    setStatus('Photo is on this device only. Click Read nameplate to run on-device OCR, then correct every field.');
+    setStatus(enhanceOn()
+      ? 'Photo is ready on this device. Read nameplate will upload it only because Enhance with AI is on. Correct every field afterward.'
+      : 'Photo is on this device only. Click Read nameplate to run on-device OCR, then correct every field.');
+  }
+
+  function enhanceOn() {
+    return !!(el('mnp_enhance') && el('mnp_enhance').checked);
+  }
+
+  function syncVlmUi() {
+    var on = enhanceOn();
+    var settings = el('mnp_vlm_settings');
+    if (settings) settings.hidden = !on;
+    var banner = el('mnp_privacy');
+    if (banner) {
+      banner.classList.toggle('is-upload', on);
+      banner.textContent = '';
+      var strong = document.createElement('strong');
+      strong.textContent = 'Privacy:';
+      banner.append(strong, document.createTextNode(on
+        ? ' Enhance with AI is on. The photo will leave this device only when you click Read nameplate. Default Tesseract stays available if you turn this off.'
+        : ' the default path is on-device Tesseract.js. The photo stays here and is never uploaded unless you turn on Enhance with AI and then click Read nameplate. The photo is not saved after you leave or reset.'));
+    }
+    var Vlm = global.BeckifyVlmOcr;
+    if (Vlm && el('mnp_vlm_endpoint') && !el('mnp_vlm_endpoint').dataset.hydrated) {
+      var saved = Vlm.loadSettings();
+      if (saved.endpoint) el('mnp_vlm_endpoint').value = saved.endpoint;
+      if (saved.token && el('mnp_vlm_token')) el('mnp_vlm_token').value = saved.token;
+      el('mnp_vlm_endpoint').dataset.hydrated = '1';
+    }
+    if (Vlm && on) {
+      if (el('mnp_vlm_endpoint')) Vlm.saveSettings({ endpoint: el('mnp_vlm_endpoint').value });
+      if (el('mnp_vlm_token')) Vlm.saveSettings({ token: el('mnp_vlm_token').value });
+    }
+    var configNote = el('mnp_vlm_config');
+    if (configNote && Vlm) {
+      var cfg = Vlm.resolveConfig(on);
+      if (!on) configNote.textContent = 'Enhance is off. On-device Tesseract is the default.';
+      else if (cfg.mode === 'custom') configNote.textContent = 'Custom HTTPS endpoint will receive the photo when you click Read nameplate.';
+      else if (cfg.mode === 'proxy') configNote.textContent = 'Beckify proxy (' + cfg.proxyUrl + '/api/analyze-nameplate) will receive the photo when you click Read nameplate.';
+      else configNote.textContent = 'No HTTPS endpoint is configured. Read nameplate will stay on-device Tesseract.';
+    }
+  }
+
+  function applyTesseractResult(out) {
+    if (el('mnp_raw')) el('mnp_raw').value = out.text || '';
+    var draft = global.BeckifyOcr.toNameplateDraft
+      ? global.BeckifyOcr.toNameplateDraft(out.text || '', out.confidence)
+      : null;
+    if (draft && draft.fields && draft.fields.ratedHP) applyDraft(draft);
+    else {
+      var parsed = global.BeckifyOcr.parseMotorNameplate(out.text || '');
+      applyFields(parsed.fields);
+    }
+    clearReview();
+    var filled = draft && typeof draft.filled === 'number' ? draft.filled : (out.text ? 'some' : 0);
+    var msg = out.failed
+      ? 'OCR found no usable text. Fill the fields manually — you are not blocked.'
+      : (out.lowConfidence ? 'OCR confidence is low (' + out.confidence.toFixed(0) + '%). Treat every field as a draft and correct it.' : 'On-device OCR filled ' + filled + ' field(s) as a draft. Correct them, then check the review box.');
+    setStatus(msg);
   }
 
   function runOcr() {
@@ -328,22 +425,43 @@
     if (!global.BeckifyOcr) { setStatus('OCR helper did not load. Fill the fields manually.'); return; }
     var btn = el('mnp_ocr');
     if (btn) btn.disabled = true;
+    var Vlm = global.BeckifyVlmOcr;
+    var useVlm = enhanceOn() && Vlm && Vlm.shouldUpload(true);
+    if (enhanceOn() && Vlm && !useVlm) {
+      setStatus('Enhance with AI is on but no HTTPS endpoint is configured. Using on-device Tesseract instead.');
+    }
+    if (useVlm) {
+      setStatus('Uploading photo for optional AI enhance…');
+      Vlm.analyzeNameplate(file, {
+        enhanceOn: true,
+        onProgress: function (ratio, status) {
+          var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+          setStatus((status || 'Enhancing…') + ' ' + pct + '%');
+        },
+      }).then(function (out) {
+        if (el('mnp_raw')) el('mnp_raw').value = out.rawText || '';
+        applyDraft(out.draft);
+        clearReview();
+        var extra = (out.warnings && out.warnings.length) ? ' ' + out.warnings.join(' ') : '';
+        setStatus('AI draft filled ' + ((out.draft && out.draft.filled) || 0) + ' field(s). This is not perfect OCR and not an AI electrician. Correct every field, then check the review box.' + extra);
+      }).catch(function (err) {
+        setStatus(((err && err.message) ? err.message : 'AI enhance failed.') + ' Falling back to on-device OCR.');
+        return global.BeckifyOcr.recognize(file, {
+          onProgress: function (ratio, status) {
+            var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+            setStatus((global.BeckifyOcr.humanizeStatus(status) || 'Reading…') + ' ' + pct + '%');
+          },
+        }).then(applyTesseractResult);
+      }).then(function () { if (btn) btn.disabled = false; }, function () { if (btn) btn.disabled = false; });
+      return;
+    }
     setStatus('Starting on-device OCR…');
     global.BeckifyOcr.recognize(file, {
       onProgress: function (ratio, status) {
         var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
         setStatus((global.BeckifyOcr.humanizeStatus(status) || 'Reading…') + ' ' + pct + '%');
       },
-    }).then(function (out) {
-      if (el('mnp_raw')) el('mnp_raw').value = out.text || '';
-      var parsed = global.BeckifyOcr.parseMotorNameplate(out.text || '');
-      applyFields(parsed.fields);
-      clearReview();
-      var msg = out.failed
-        ? 'OCR found no usable text. Fill the fields manually — you are not blocked.'
-        : (out.lowConfidence ? 'OCR confidence is low (' + out.confidence.toFixed(0) + '%). Treat every field as a draft and correct it.' : 'OCR filled ' + parsed.filled + ' field(s) as a draft. Correct them, then check the review box.');
-      setStatus(msg);
-    }).catch(function (err) {
+    }).then(applyTesseractResult).catch(function (err) {
       setStatus((err && err.message) ? err.message + ' Fill the fields manually.' : 'OCR failed. Fill the fields manually — you are not blocked.');
     }).then(function () { if (btn) btn.disabled = false; });
   }
@@ -371,6 +489,21 @@
     if (ocrBtn) ocrBtn.addEventListener('click', runOcr);
     var calcBtn = el('mnp_calc');
     if (calcBtn) calcBtn.addEventListener('click', runCalc);
+    var enhance = el('mnp_enhance');
+    if (enhance) enhance.addEventListener('change', syncVlmUi);
+    ['mnp_vlm_endpoint', 'mnp_vlm_token'].forEach(function (id) {
+      var n = el(id);
+      if (!n) return;
+      n.addEventListener('change', syncVlmUi);
+      n.addEventListener('blur', syncVlmUi);
+    });
+    var reviewed = el('mnp_reviewed');
+    if (reviewed) {
+      reviewed.addEventListener('change', function () {
+        if (!lastDraft || !global.BeckifyNameplateSchema) return;
+        lastDraft = global.BeckifyNameplateSchema.markReviewed(lastDraft, reviewed.checked);
+      });
+    }
     var resetBtn = el('mnp_reset');
     if (resetBtn) resetBtn.addEventListener('click', function () {
       revokePhoto();
@@ -378,6 +511,8 @@
       var img = el('mnp_preview');
       if (img) { img.removeAttribute('src'); img.hidden = true; }
       if (el('mnp_raw')) el('mnp_raw').value = '';
+      if (el('mnp_conf')) { el('mnp_conf').hidden = true; el('mnp_conf').textContent = ''; }
+      lastDraft = null;
       clearReview();
       clearParsedFields();
       if (el('mnp_hz')) el('mnp_hz').value = '60';
@@ -390,6 +525,7 @@
       n.addEventListener('input', clearReview);
       n.addEventListener('change', clearReview);
     });
+    syncVlmUi();
     window.addEventListener('pagehide', revokePhoto);
     if (typeof registerUrlState === 'function') registerUrlState('sec-motor-nameplate', 'motor-nameplate', null);
     if (typeof bindLastUsed === 'function') bindLastUsed('sec-motor-nameplate', 'motor-nameplate');
@@ -409,5 +545,7 @@
     parsePhase: parsePhase,
     CODE_LETTER: CODE_LETTER,
     analyze: analyze,
+    applyDraft: applyDraft,
+    applyFields: applyFields,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

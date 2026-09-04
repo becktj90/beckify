@@ -2775,7 +2775,7 @@
     <section id="sec-motor-nameplate" class="section">
       <div class="section-header">
         <h2>Motor Nameplate Analyzer</h2>
-        <p>Photograph a nameplate, correct the OCR draft, then estimate overload, branch-circuit SCPD, and conductor size from NEC 430.32, Table 430.52, and 430.22.</p>
+        <p>Photograph a nameplate, correct the OCR draft, then estimate overload, branch-circuit SCPD, and conductor size from NEC 430.32, Table 430.52, and 430.22. On-device Tesseract is the default. Optional AI enhance is a draft — not perfect OCR and not an AI electrician.</p>
         <details class="section-info">
           <summary>ℹ More Info — Citations and limits</summary>
           <div class="section-info-body">
@@ -2791,11 +2791,29 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Optional nameplate photo</div>
           <div class="card-body">
-            <div class="photo-privacy"><strong>Privacy:</strong> the photo stays on this device. It is never uploaded to Beckify or any server. On-device Tesseract.js reads it in the browser. The photo is not saved after you leave or reset.</div>
-            <div class="photo-safety"><strong>Before you pick a photo:</strong> square the nameplate to the camera, fill the frame, use even light, and avoid glare on the metal. Accuracy on messy or curved plates is weak — treat OCR as a draft you must correct. You can skip the photo and type every field by hand.</div>
+            <div id="mnp_privacy" class="photo-privacy"><strong>Privacy:</strong> the default path is on-device Tesseract.js. The photo stays here and is never uploaded unless you turn on Enhance with AI and then click Read nameplate. The photo is not saved after you leave or reset.</div>
+            <div class="photo-safety"><strong>Before you pick a photo:</strong> square the nameplate to the camera, fill the frame, use even light, and avoid glare on the metal. OCR is not perfect and this is not an AI electrician — treat every filled field as a draft you must correct. You can skip the photo and type every field by hand.</div>
+            <label class="review-check" for="mnp_enhance">
+              <input id="mnp_enhance" type="checkbox" data-no-persist>
+              Enhance with AI (optional). Uploads this photo to a VLM endpoint you choose or the Beckify proxy. Off by default. Still a draft — not verified input.
+            </label>
+            <div id="mnp_vlm_settings" class="vlm-settings" hidden>
+              <p class="note">Configure a HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-nameplate</code>.</p>
+              <div class="input-group">
+                <div>
+                  <label for="mnp_vlm_endpoint">Custom VLM endpoint (optional)</label>
+                  <input id="mnp_vlm_endpoint" type="url" inputmode="url" autocomplete="off" data-no-persist placeholder="https://your-proxy.example/ocr" spellcheck="false">
+                </div>
+                <div>
+                  <label for="mnp_vlm_token">Bearer token for that endpoint (optional)</label>
+                  <input id="mnp_vlm_token" type="password" autocomplete="off" data-no-persist placeholder="not sent to Beckify">
+                </div>
+              </div>
+              <p id="mnp_vlm_config" class="note">No custom URL yet. If the Beckify API base is injected at deploy, that proxy will be used. Otherwise Read nameplate stays on-device.</p>
+            </div>
             <label id="mnp_drop" class="ocr-drop" for="mnp_file">
               <strong>Drop a nameplate photo or tap to choose</strong>
-              <span>PNG, JPG, or WEBP. Nothing leaves this device.</span>
+              <span>JPG, PNG, WEBP, HEIC/HEIF, GIF, BMP, or TIFF. Choosing a file does not upload it.</span>
             </label>
             <input id="mnp_file" class="iol-file" type="file" accept="image/*" data-no-persist>
             <img id="mnp_preview" class="ocr-preview" alt="Nameplate preview" hidden>
@@ -2803,7 +2821,7 @@
               <button class="btn" type="button" id="mnp_ocr">Read nameplate</button>
               <button class="btn btn-secondary" type="button" id="mnp_reset">Clear photo</button>
             </div>
-            <p id="mnp_status" class="note" role="status" aria-live="polite">No photo required. Fill the fields below, or choose a photo after reading the privacy note.</p>
+            <p id="mnp_status" class="note" role="status" aria-live="polite">No photo required. Fill the fields below, or choose a photo after reading the privacy note. On-device OCR is the default.</p>
             <label class="field-block" style="display:block;margin-top:10px">
               <span>Raw OCR text (editable draft)</span>
               <textarea id="mnp_raw" rows="4" data-no-persist placeholder="OCR output appears here so you can fix it."></textarea>
@@ -2845,9 +2863,31 @@
               <div><label for="mnp_insul">Insulation class</label><input id="mnp_insul" type="text" placeholder="F" autocomplete="off"></div>
               <div><label for="mnp_code">NEMA code letter (LRA)</label><input id="mnp_code" type="text" maxlength="1" placeholder="G" autocomplete="off"></div>
             </div>
-            <div class="input-group single">
+            <div class="input-group">
+              <div><label for="mnp_mfr">Manufacturer</label><input id="mnp_mfr" type="text" autocomplete="off" placeholder="e.g. Baldor"></div>
+              <div><label for="mnp_model">Model</label><input id="mnp_model" type="text" autocomplete="off" placeholder="catalog / model"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_encl">Enclosure</label><input id="mnp_encl" type="text" autocomplete="off" placeholder="e.g. TEFC"></div>
+              <div><label for="mnp_poles">Poles</label><input id="mnp_poles" type="number" min="0" step="1" placeholder="e.g. 4"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_eff">Nom. efficiency (%)</label><input id="mnp_eff" type="number" min="0" step="any" placeholder="optional"></div>
+              <div><label for="mnp_pf">Power factor</label><input id="mnp_pf" type="number" min="0" step="any" placeholder="optional"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_mocp">MOCP (A) — not FLA</label><input id="mnp_mocp" type="number" min="0" step="any" placeholder="do not use as FLA"></div>
+              <div><label for="mnp_lra">LRA (A) — not FLA</label><input id="mnp_lra" type="number" min="0" step="any" placeholder="do not use as FLA"></div>
+            </div>
+            <div class="input-group">
+              <div><label for="mnp_sfa">Service-factor amps</label><input id="mnp_sfa" type="number" min="0" step="any" placeholder="optional"></div>
               <div><label for="mnp_rise">Temperature rise (°C)</label><input id="mnp_rise" type="number" min="0" step="1" placeholder="optional"></div>
             </div>
+            <label class="field-block" style="display:block;margin-top:10px">
+              <span>Notes</span>
+              <textarea id="mnp_notes" rows="2" placeholder="Dual FLA warnings and other OCR notes"></textarea>
+            </label>
+            <p id="mnp_conf" class="note" hidden></p>
             <label class="review-check">
               <input id="mnp_reviewed" type="checkbox" data-no-persist>
               I reviewed these values. OCR is a draft, not verified input.
@@ -11507,7 +11547,9 @@
 <script src="js/nema-wiring.js"></script>
 <script src="js/battery-bank.js"></script>
 <script src="js/cable-schedule.js"></script>
+<script src="js/nameplate-schema.js"></script>
 <script src="js/ocr-helper.js"></script>
+<script src="js/vlm-ocr.js"></script>
 <script src="js/motor-nameplate.js"></script>
 <script src="js/tdr-analyzer.js"></script>
 <script src="js/local-store.js"></script>
