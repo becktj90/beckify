@@ -11,6 +11,14 @@ const state = {
 
 const elements = {};
 
+window.addEventListener('pagehide', () => {
+  if (state.imageUrl) {
+    URL.revokeObjectURL(state.imageUrl);
+    state.imageUrl = '';
+  }
+  state.file = null;
+});
+
 window.addEventListener('DOMContentLoaded', () => {
   cacheElements();
   bindEvents();
@@ -46,6 +54,8 @@ function cacheElements() {
   elements.fillSlotsButton = document.getElementById('fillSlotsButton');
   elements.saveJsonButton = document.getElementById('saveJsonButton');
   elements.editorTableBody = document.getElementById('editorTableBody');
+  elements.reviewedSchedule = document.getElementById('reviewedSchedule');
+  elements.openPanelCaution = document.getElementById('openPanelCaution');
   elements.printButton = document.getElementById('printButton');
   elements.sheetPanelName = document.getElementById('sheetPanelName');
   elements.sheetVoltage = document.getElementById('sheetVoltage');
@@ -91,11 +101,13 @@ function bindEvents() {
 
   elements.addRowButton.addEventListener('click', () => {
     state.rows.push(createEmptyRow());
+    clearReview();
     renderAll();
   });
 
   elements.fillSlotsButton.addEventListener('click', () => {
     seedRows(positionCount());
+    clearReview();
     renderAll();
     setStatus(`Seeded ${positionCount()} editable circuit rows for manual entry.`);
   });
@@ -115,14 +127,36 @@ function bindEvents() {
     input.addEventListener('input', renderAll);
     input.addEventListener('change', renderAll);
   });
+  if (elements.reviewedSchedule) {
+    elements.reviewedSchedule.addEventListener('change', renderAll);
+  }
 }
 
 function positionCount() {
   return Math.max(1, Number(elements.panelPositions.value) || DEFAULT_CIRCUIT_SLOTS);
 }
 
+function isLikelyImageFile(file) {
+  if (window.BeckifyOcr && typeof window.BeckifyOcr.isLikelyImageFile === 'function') {
+    return window.BeckifyOcr.isLikelyImageFile(file);
+  }
+  if (!file) return false;
+  const type = String(file.type || '');
+  if (type.startsWith('image/')) return true;
+  if (type) return false;
+  return /\.(jpe?g|png|webp|gif|bmp|tif{1,2}|heic|heif)$/i.test(String(file.name || ''));
+}
+
+function clearReview() {
+  if (elements.reviewedSchedule) elements.reviewedSchedule.checked = false;
+}
+
+function isScheduleReviewed() {
+  return !!(elements.reviewedSchedule && elements.reviewedSchedule.checked);
+}
+
 function handleFileSelection(file) {
-  if (!file || !file.type.startsWith('image/')) {
+  if (!file || !isLikelyImageFile(file)) {
     setStatus('Please choose a valid image file.');
     return;
   }
@@ -139,45 +173,58 @@ function handleFileSelection(file) {
   elements.previewFrame.classList.add('has-image');
   elements.fileName.textContent = file.name;
   elements.processButton.disabled = false;
+  clearReview();
   resetProgress();
-  setStatus('Image ready. Click “Read Schedule” to run OCR.');
+  setStatus('Image ready. Click “Read Schedule” to run on-device OCR.');
 }
 
 async function runOcr() {
   if (!state.file) {
-    setStatus('Upload an image before starting OCR.');
+    setStatus('Choose a directory photo, or fill the table manually — you are not blocked.');
     return;
   }
 
-  if (!window.Tesseract) {
-    setStatus('Tesseract.js failed to load. Check your network connection and try again.');
+  if (!window.BeckifyOcr) {
+    setStatus('On-device OCR helper did not load. Fill the table manually — you are not blocked.');
     return;
   }
 
   elements.processButton.disabled = true;
-  updateProgress(0, 'Starting OCR…');
+  updateProgress(0, 'Starting on-device OCR…');
 
-  let worker;
   try {
-    worker = await Tesseract.createWorker('eng', 1, {
-      logger: message => {
-        const ratio = typeof message.progress === 'number' ? message.progress : 0;
-        updateProgress(ratio, humanizeStatus(message.status));
+    const out = await window.BeckifyOcr.recognize(state.file, {
+      onProgress: (ratio, status) => {
+        updateProgress(ratio, (window.BeckifyOcr.humanizeStatus && window.BeckifyOcr.humanizeStatus(status)) || humanizeStatus(status));
       }
     });
-
-    const result = await worker.recognize(state.file);
-    const text = result?.data?.text || '';
+    const text = out.text || '';
     state.rawText = text;
     elements.rawText.value = text;
+    clearReview();
+    if (elements.openPanelCaution) {
+      elements.openPanelCaution.hidden = !out.looksLikeOpenPanel;
+    }
+    if (out.looksLikeOpenPanel) {
+      setStatus('This photo looks like an open panel interior. Do not work inside a live panel. OCR will still try to help — photograph the directory with the door closed if you can.');
+    }
+    if (out.failed) {
+      setStatus('OCR found no usable text. Fill the table manually — you are not blocked.');
+      updateProgress(0, 'OCR found no text');
+      renderAll();
+      return;
+    }
     parseAndApplyText(text, true);
-    updateProgress(1, 'OCR complete. Verify fields, then print or save.');
+    if (out.lowConfidence) {
+      setStatus(`OCR confidence is low (${out.confidence.toFixed(0)}%). Treat every circuit row as a draft and correct it. You are not blocked from typing the directory by hand.`);
+    } else if (!out.looksLikeOpenPanel) {
+      updateProgress(1, 'OCR complete. Review the table before using the estimates.');
+    }
   } catch (error) {
     console.error(error);
-    setStatus('OCR failed. Try a sharper image or edit text manually.');
+    setStatus((error && error.message ? `${error.message} ` : '') + 'OCR failed. Fill the table manually — you are not blocked.');
     updateProgress(0, 'OCR failed');
   } finally {
-    if (worker) await worker.terminate();
     elements.processButton.disabled = false;
   }
 }
@@ -429,6 +476,7 @@ function normalizeRows(rows) {
       circuitClass: CIRCUIT_CLASSES.includes(row.circuitClass) ? row.circuitClass : inferCircuitClass(row.description),
       loadType: LOAD_TYPES.includes(row.loadType) ? row.loadType : inferLoadType(row.description),
       loadAmps: normalizeLoadAmps(row.loadAmps, row.trip),
+      loadAmpsCopiedFromTrip: row.loadAmpsCopiedFromTrip === true || isLoadAmpsCopiedFromTrip(row.loadAmps, row.trip),
       demandFactor: normalizeDemandFactor(row.demandFactor)
     }))
     .filter(row => row.circuit || row.description || row.trip || row.poles || row.loadAmps || row.breakerSeries)
@@ -465,6 +513,13 @@ function normalizeLoadAmps(value, trip) {
   if (text && Number.isFinite(number) && number >= 0) return String(number);
   const fallback = tripAmps(trip);
   return fallback > 0 ? String(fallback) : '';
+}
+
+function isLoadAmpsCopiedFromTrip(value, trip) {
+  const text = String(value ?? '').trim();
+  const number = Number(text);
+  if (text && Number.isFinite(number) && number >= 0) return false;
+  return tripAmps(trip) > 0;
 }
 
 function normalizeDemandFactor(value) {
@@ -558,6 +613,7 @@ function renderEditorTable() {
     const circuitClass = CIRCUIT_CLASSES.includes(row.circuitClass) ? row.circuitClass : inferCircuitClass(row.description);
     const loadAmps = normalizeLoadAmps(row.loadAmps, row.trip);
     const demandFactor = normalizeDemandFactor(row.demandFactor);
+    const copied = row.loadAmpsCopiedFromTrip === true || isLoadAmpsCopiedFromTrip(row.loadAmps, row.trip);
     const breakerSeries = String(row.breakerSeries || defaultSeries || '').toUpperCase();
     return `
       <tr>
@@ -575,7 +631,7 @@ function renderEditorTable() {
         </td>
         <td><select data-field="circuitClass" data-index="${index}" aria-label="Circuit class for circuit ${escapeHtml(row.circuit || String(index + 1))}">${CIRCUIT_CLASSES.map(option => `<option value="${escapeHtml(option)}" ${circuitClass === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
         <td><select data-field="loadType" data-index="${index}" aria-label="Load type for circuit ${escapeHtml(row.circuit || String(index + 1))}">${LOAD_TYPES.map(option => `<option value="${escapeHtml(option)}" ${type === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
-        <td><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA"></td>
+        <td class="${copied ? 'is-trip-copy' : ''}"><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA" aria-describedby="${copied ? `trip-copy-${index}` : ''}">${copied ? `<small id="trip-copy-${index}" class="trip-copy-flag">copied from trip — edit me</small>` : ''}</td>
         <td><input type="number" min="0" step="0.01" data-field="demandFactor" data-index="${index}" value="${escapeHtml(demandFactor)}" aria-label="Demand factor for circuit ${escapeHtml(row.circuit || String(index + 1))}"></td>
         <td><button class="btn btn-row-delete" type="button" data-delete-index="${index}">Delete</button></td>
       </tr>
@@ -591,6 +647,7 @@ function renderEditorTable() {
     button.addEventListener('click', () => {
       const index = Number(button.dataset.deleteIndex);
       state.rows.splice(index, 1);
+      clearReview();
       renderAll();
     });
   });
@@ -605,9 +662,13 @@ function handleRowEdit(event) {
     state.rows[index][field] = normalizeCircuit(event.target.value);
   } else if (field === 'trip') {
     state.rows[index][field] = normalizeTrip(event.target.value);
-    if (!state.rows[index].loadAmps) state.rows[index].loadAmps = normalizeLoadAmps('', event.target.value);
+    if (!String(state.rows[index].loadAmps || '').trim() || state.rows[index].loadAmpsCopiedFromTrip) {
+      state.rows[index].loadAmps = normalizeLoadAmps('', event.target.value);
+      state.rows[index].loadAmpsCopiedFromTrip = isLoadAmpsCopiedFromTrip('', event.target.value);
+    }
   } else if (field === 'loadAmps') {
     state.rows[index][field] = normalizeLoadAmps(event.target.value, '');
+    state.rows[index].loadAmpsCopiedFromTrip = false;
   } else if (field === 'demandFactor') {
     state.rows[index][field] = normalizeDemandFactor(event.target.value);
   } else if (field === 'loadType') {
@@ -620,6 +681,7 @@ function handleRowEdit(event) {
     state.rows[index][field] = String(event.target.value || '').trim();
   }
 
+  clearReview();
   renderPrintSheet();
   renderLoadAnalysis();
 }
@@ -660,6 +722,11 @@ function summaryMetric(label, value, detail = '') {
 
 function renderLoadAnalysis() {
   if (!elements.analysisGrid || !elements.analysisGuidance) return;
+  if (!isScheduleReviewed()) {
+    elements.analysisGrid.innerHTML = summaryMetric('Waiting for review', 'Check the box', 'OCR is a draft. Power-study metrics stay hidden until you confirm the table. Breaker trip is not a reviewed load.');
+    elements.analysisGuidance.innerHTML = '<p>Check “I reviewed every circuit row” after correcting the table. You can still type every field by hand with no photo.</p>';
+    return;
+  }
 
   const rows = normalizeRows(state.rows).filter(row => row.description || Number(row.loadAmps) > 0);
   const phase = Number(elements.panelPhase.value) || 3;
@@ -695,12 +762,12 @@ function renderLoadAnalysis() {
   }, {});
 
   elements.analysisGrid.innerHTML = [
-    summaryMetric('Connected load', knownVoltage ? `${formatKva(connectedVa)} kVA` : 'Needs voltage', `${rows.length} reviewed circuit${rows.length === 1 ? '' : 's'}`),
+    summaryMetric('Connected load', knownVoltage ? `${formatKva(connectedVa)} kVA` : 'Needs voltage', `${rows.length} circuit${rows.length === 1 ? '' : 's'} in the table`),
     summaryMetric('After circuit demand factors', knownVoltage ? `${formatKva(demandAdjustedVa)} kVA` : 'Needs voltage', 'before diversity'),
     summaryMetric('Estimated coincident demand', knownVoltage ? `${formatKva(coincidentVa)} kVA` : 'Needs voltage', `input diversity ${diversityInput.toFixed(2)}`),
     summaryMetric('Estimated panel FLA', knownVoltage ? `${formatNumber(equivalentAmps)} A` : 'Needs voltage', phase === 3 ? `${formatNumber(voltage.lineToLine)} V 3Ø` : `${formatNumber(voltage.lineToLine)} V 1Ø`),
-    summaryMetric('Demand factor (coincident ÷ connected)', connectedVa > 0 ? `${formatPercent(effectiveDemandFactor)}` : 'Not calculated', 'calculated from reviewed values'),
-    summaryMetric('Diversity factor (connected ÷ coincident)', connectedVa > 0 ? `${formatNumber(achievedDiversity)}` : 'Not calculated', 'calculated from reviewed values'),
+    summaryMetric('Demand factor (coincident ÷ connected)', connectedVa > 0 ? `${formatPercent(effectiveDemandFactor)}` : 'Not calculated', 'from the table after review'),
+    summaryMetric('Diversity factor (connected ÷ coincident)', connectedVa > 0 ? `${formatNumber(achievedDiversity)}` : 'Not calculated', 'from the table after review'),
     summaryMetric('Main capacity', capacityVa ? `${formatKva(capacityVa)} kVA` : 'Not entered', mainRatingAmps ? `${formatNumber(mainRatingAmps)} A` : 'enter main rating'),
     summaryMetric('Room for expansion', capacityVa ? `${formatKva(remainingVa)} kVA` : 'Not calculated', capacityVa ? `${formatPercent(expansionPercent / 100)} of capacity` : ''),
     summaryMetric('Panel positions used', `${Math.min(occupiedPositions, positions)} / ${positions}`, `${freePositions} open position${freePositions === 1 ? '' : 's'}`)
@@ -816,6 +883,7 @@ function createEmptyRow() {
     circuitClass: 'General',
     loadType: 'General',
     loadAmps: '',
+    loadAmpsCopiedFromTrip: false,
     demandFactor: '1'
   };
 }
@@ -831,6 +899,7 @@ function seedRows(count) {
     circuitClass: 'General',
     loadType: 'General',
     loadAmps: '',
+    loadAmpsCopiedFromTrip: false,
     demandFactor: '1'
   }));
 }
@@ -858,12 +927,15 @@ function resetApp() {
   elements.previewFrame.classList.remove('has-image');
   elements.fileName.textContent = 'No file selected';
   elements.processButton.disabled = true;
+  clearReview();
+  if (elements.openPanelCaution) elements.openPanelCaution.hidden = true;
   resetProgress();
   setStatus('Reset complete. Upload a new schedule image to begin again.');
   renderAll();
 }
 
 function handleParseText() {
+  clearReview();
   parseAndApplyText(elements.rawText.value, false);
 }
 
@@ -896,6 +968,10 @@ function defaultPrintDate() {
 }
 
 function handlePrint() {
+  if (!isScheduleReviewed()) {
+    setStatus('Check “I reviewed every circuit row” before printing. OCR is a draft, not a finished schedule.');
+    return;
+  }
   if (!state.rows.some(row => row.description || row.trip || row.poles || row.breakerSeries)) {
     setStatus('Add or parse at least one circuit row before printing.');
     return;
@@ -905,6 +981,10 @@ function handlePrint() {
 }
 
 function saveStudyData() {
+  if (!isScheduleReviewed()) {
+    setStatus('Check “I reviewed every circuit row” before exporting. OCR is a draft, not verified input.');
+    return;
+  }
   const data = {
     panel: {
       name: elements.panelName.value.trim(),
@@ -958,6 +1038,9 @@ if (typeof window !== 'undefined' && window.__ENABLE_PANEL_POWER_STUDY_TEST_API_
     panelVoltageInfo,
     rowLoadVa,
     normalizeLoadAmps,
+    isLoadAmpsCopiedFromTrip,
+    isScheduleReviewed,
+    isLikelyImageFile,
     normalizeDemandFactor,
     positionCount
   };

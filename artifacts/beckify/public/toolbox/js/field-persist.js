@@ -68,4 +68,10 @@
   }
 
   global.bindLastUsed = bindLastUsed;
+  global.__fieldPersistTestApi = {
+    fields: fields,
+    save: save,
+    restore: restore,
+    PREFIX: PREFIX,
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
