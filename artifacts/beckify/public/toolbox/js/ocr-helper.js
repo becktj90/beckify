@@ -147,7 +147,7 @@
     opts = opts || {};
     if (!file) return Promise.reject(new Error('Choose a photo first.'));
     if (file.size > MAX_BYTES) return Promise.reject(new Error('Please choose an image smaller than 12 MB.'));
-    if (!isLikelyImageFile(file)) return Promise.reject(new Error('Please choose a photo (PNG, JPG, or WEBP).'));
+    if (!isLikelyImageFile(file)) return Promise.reject(new Error('Please choose a photo (PNG, JPG, HEIC/HEIF, or WEBP).'));
 
     var onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : function () {};
     return loadScript().then(function (Tesseract) {

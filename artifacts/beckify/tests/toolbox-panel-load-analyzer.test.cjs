@@ -105,6 +105,8 @@ assert.match(panelSrc, /pagehide/);
 assert.match(panelSrc, /cacheElements\(\)/);
 assert.match(panelSrc, /bindEvents\(\)/);
 assert.match(panelSrc, /copied from trip — edit me/);
+assert.equal(panelSrc.includes('aria-describedby=""'), false);
+assert.match(panelSrc, /aria-describedby="trip-copy-\$\{index\}"/);
 assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*isScheduleReviewed/);
 assert.match(panelSrc, /function handlePrint[\s\S]*isScheduleReviewed/);
 assert.match(panelSrc, /Breaker trip is not a reviewed load/);

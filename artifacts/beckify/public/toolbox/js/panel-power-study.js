@@ -631,7 +631,7 @@ function renderEditorTable() {
         </td>
         <td><select data-field="circuitClass" data-index="${index}" aria-label="Circuit class for circuit ${escapeHtml(row.circuit || String(index + 1))}">${CIRCUIT_CLASSES.map(option => `<option value="${escapeHtml(option)}" ${circuitClass === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
         <td><select data-field="loadType" data-index="${index}" aria-label="Load type for circuit ${escapeHtml(row.circuit || String(index + 1))}">${LOAD_TYPES.map(option => `<option value="${escapeHtml(option)}" ${type === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></td>
-        <td class="${copied ? 'is-trip-copy' : ''}"><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA" aria-describedby="${copied ? `trip-copy-${index}` : ''}">${copied ? `<small id="trip-copy-${index}" class="trip-copy-flag">copied from trip — edit me</small>` : ''}</td>
+        <td class="${copied ? 'is-trip-copy' : ''}"><input type="number" min="0" step="any" data-field="loadAmps" data-index="${index}" value="${escapeHtml(loadAmps)}" placeholder="edit FLA"${copied ? ` aria-describedby="trip-copy-${index}"` : ''}>${copied ? `<small id="trip-copy-${index}" class="trip-copy-flag">copied from trip — edit me</small>` : ''}</td>
         <td><input type="number" min="0" step="0.01" data-field="demandFactor" data-index="${index}" value="${escapeHtml(demandFactor)}" aria-label="Demand factor for circuit ${escapeHtml(row.circuit || String(index + 1))}"></td>
         <td><button class="btn btn-row-delete" type="button" data-delete-index="${index}">Delete</button></td>
       </tr>

@@ -117,6 +117,8 @@ const panelSrc = fs.readFileSync(path.join(root, 'panel-power-study.js'), 'utf8'
 assert.match(panelSrc, /BeckifyOcr/);
 assert.doesNotMatch(panelSrc, /window\.Tesseract/);
 assert.match(panelSrc, /copied from trip — edit me/);
+assert.equal(panelSrc.includes('aria-describedby=""'), false);
+assert.match(panelSrc, /aria-describedby="trip-copy-\$\{index\}"/);
 assert.match(panelSrc, /function renderLoadAnalysis[\s\S]*isScheduleReviewed/);
 assert.match(panelSrc, /function handlePrint[\s\S]*isScheduleReviewed/);
 assert.match(panelSrc, /function saveStudyData[\s\S]*isScheduleReviewed/);

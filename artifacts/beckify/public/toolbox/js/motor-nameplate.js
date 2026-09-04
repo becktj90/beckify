@@ -308,7 +308,7 @@
   function handleFile(file) {
     if (!file) return;
     if (file.size > 12 * 1024 * 1024) { setStatus('Please choose an image smaller than 12 MB.'); return; }
-    if (!isLikelyImageFile(file)) { setStatus('Please choose a photo (PNG, JPG, HEIC, or WEBP).'); return; }
+    if (!isLikelyImageFile(file)) { setStatus('Please choose a photo (PNG, JPG, HEIC/HEIF, or WEBP).'); return; }
     revokePhoto();
     photoUrl = URL.createObjectURL(file);
     var img = el('mnp_preview');
