@@ -406,6 +406,8 @@ enum BeckifyMotion {
     static let calculateSuccess = Animation.easeOut(duration: 0.22)
     static let navigation = Animation.easeInOut(duration: 0.28)
     static let staleReveal = Animation.easeInOut(duration: 0.18)
+    static let homeReveal = Animation.easeInOut(duration: 0.36)
+    static let tilePress = Animation.easeOut(duration: 0.16)
 
     static func withOptionalAnimation<Result>(
         _ animation: Animation?,

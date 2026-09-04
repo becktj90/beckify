@@ -52,28 +52,9 @@ struct ToolGridView: View {
                     }
 
                     if isSearching {
-                        ForEach(Array(ToolHomeArea.allCases.enumerated()), id: \.element) { index, area in
-                            let tools = searchResults.filter { ToolboxCatalog.area(of: $0.id) == area }
-                            if !tools.isEmpty {
-                                categoryBlock(
-                                    title: area.title,
-                                    tools: tools,
-                                    delay: Double(index) * 0.04,
-                                    showAreaBadge: true
-                                )
-                            }
-                        }
+                        searchResultSections
                     } else {
-                        ForEach(Array(ToolShelfKind.shelves(in: homeArea).enumerated()), id: \.element) { index, shelf in
-                            let tools = ToolboxCatalog.tools(on: shelf)
-                            if !tools.isEmpty {
-                                categoryBlock(
-                                    title: shelf.title,
-                                    tools: tools,
-                                    delay: Double(index) * 0.04
-                                )
-                            }
-                        }
+                        homeShelfSections
                     }
                 }
                 .padding(.horizontal, 18)
@@ -203,6 +184,48 @@ struct ToolGridView: View {
     }
 
     // MARK: - Strips & sections
+
+    /// Search hits grouped by home area. Split out of `body` so the type checker
+    /// does not have to solve the filter + ForEach in one expression.
+    @ViewBuilder
+    private var searchResultSections: some View {
+        ForEach(Array(ToolHomeArea.allCases.enumerated()), id: \.element) { index, area in
+            searchAreaBlock(index: index, area: area)
+        }
+    }
+
+    /// Field / Toolkit shelves for the selected home area.
+    @ViewBuilder
+    private var homeShelfSections: some View {
+        ForEach(Array(ToolShelfKind.shelves(in: homeArea).enumerated()), id: \.element) { index, shelf in
+            homeShelfBlock(index: index, shelf: shelf)
+        }
+    }
+
+    @ViewBuilder
+    private func searchAreaBlock(index: Int, area: ToolHomeArea) -> some View {
+        let tools = searchResults.filter { ToolboxCatalog.area(of: $0.id) == area }
+        if !tools.isEmpty {
+            categoryBlock(
+                title: area.title,
+                tools: tools,
+                delay: Double(index) * 0.04,
+                showAreaBadge: true
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func homeShelfBlock(index: Int, shelf: ToolShelfKind) -> some View {
+        let tools = ToolboxCatalog.tools(on: shelf)
+        if !tools.isEmpty {
+            categoryBlock(
+                title: shelf.title,
+                tools: tools,
+                delay: Double(index) * 0.04
+            )
+        }
+    }
 
     @ViewBuilder
     private func avatarStrip(title: String, tools: [ToolDefinition]) -> some View {
