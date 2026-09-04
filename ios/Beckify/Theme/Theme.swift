@@ -62,6 +62,10 @@ enum Theme {
         light: UIColor(red: 168 / 255, green: 98 / 255, blue: 42 / 255, alpha: 1),
         dark: UIColor(red: 224 / 255, green: 156 / 255, blue: 86 / 255, alpha: 1)
     )
+    /// Named copper token used by facility / ampacity / voltage-drop tools.
+    /// Same swatch as `energized` — keep both so glass chrome and calculator
+    /// result rows stay on one conductor color.
+    static let copper = energized
     static let good = Color.adaptive(
         light: UIColor(red: 8 / 255, green: 128 / 255, blue: 92 / 255, alpha: 1),
         dark: UIColor(red: 86 / 255, green: 214 / 255, blue: 164 / 255, alpha: 1)
