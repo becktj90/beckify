@@ -24,7 +24,7 @@ SIZE = 1024
 # Canvas edge → outer stroke outer-edge. 10% sits in the 8–12% squircle safe band.
 MARGIN_FRAC = 0.10
 # Outer first. Outer 48–64px; inners never hairline (≥16–24px).
-STROKES = (56, 40, 28, 20)
+STROKES = (56, 40, 28, 24)
 # Innermost midline radius — small enough to recede, large enough at 60pt.
 INNER_RADIUS = 64.0
 
