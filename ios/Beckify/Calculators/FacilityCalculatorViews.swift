@@ -15,6 +15,22 @@ struct TapChangerView: View {
     private let tapChoices = TapChanger.defaultTapPercents
     private var inputFingerprint: String { "\(measured)|\(currentTap)" }
 
+    /// Snap a persisted tap string onto a tagged menu Double and rewrite storage as `%g`
+    /// so values like `"0.0"` never leave the Picker in an unmatched selection state.
+    private func canonicalizeCurrentTap() {
+        let value = currentTap.parsedDouble ?? 0
+        let matched = tapChoices.first { abs($0 - value) < 1e-9 } ?? 0
+        let canonical = String(format: "%g", matched)
+        if currentTap != canonical {
+            currentTap = canonical
+        }
+    }
+
+    private var menuTapPercent: Double {
+        let value = currentTap.parsedDouble ?? 0
+        return tapChoices.first { abs($0 - value) < 1e-9 } ?? 0
+    }
+
     var body: some View {
         ToolScaffold(
             toolID: .tapChanger,
@@ -34,10 +50,7 @@ struct TapChangerView: View {
             MenuField(
                 title: "Current tap",
                 selection: Binding(
-                    get: {
-                        let value = currentTap.parsedDouble ?? 0
-                        return tapChoices.first { abs($0 - value) < 1e-9 } ?? 0
-                    },
+                    get: { menuTapPercent },
                     set: { currentTap = String(format: "%g", $0) }
                 ),
                 options: tapChoices
@@ -51,12 +64,12 @@ struct TapChangerView: View {
                 onCalculate: calculate,
                 onReset: {
                     measured = ""
-                    currentTap = "0"
+                    currentTap = String(format: "%g", 0.0)
                     session.reset()
                 },
                 onExample: {
                     measured = "456"
-                    currentTap = "0"
+                    currentTap = String(format: "%g", 0.0)
                     session.prepareForNewInputs()
                 },
                 exampleTitle: "456 V on 0% tap → recommend −5%"
@@ -104,15 +117,17 @@ struct TapChangerView: View {
                 }
             }
         }
+        .onAppear { canonicalizeCurrentTap() }
         .onChange(of: inputFingerprint) { _, _ in session.markInputsChanged() }
         .sensoryFeedback(.success, trigger: successTick)
     }
 
     private func calculate() {
+        canonicalizeCurrentTap()
         session.calculate {
             try TapChanger.solve(
                 measuredSecondaryVolts: measured.parsedDouble ?? .nan,
-                currentTapPercent: currentTap.parsedDouble ?? .nan
+                currentTapPercent: menuTapPercent
             )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion { successTick += 1 }
