@@ -165,8 +165,10 @@ function StatusChips({
   return (
     <span className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
       {role ? <span className="text-[var(--foreground)]/70">{role}</span> : null}
-      {budget || item.budget ? (
+      {budget ? (
         <span className="rounded-full bg-amber-300/10 px-2 py-0.5 text-amber-200">Budget alt</span>
+      ) : item.budget && !role ? (
+        <span className="rounded-full bg-amber-300/10 px-2 py-0.5 text-amber-200">Budget pick</span>
       ) : null}
       {item.usaMade ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-blue-300/10 px-2 py-0.5 text-blue-100">
