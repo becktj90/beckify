@@ -377,7 +377,7 @@
       var strong = document.createElement('strong');
       strong.textContent = 'Privacy:';
       banner.append(strong, document.createTextNode(on
-        ? ' Enhance with AI is on. The photo will leave this device only when you click Read nameplate. Default Tesseract stays available if you turn this off.'
+        ? ' Enhance with AI is on. The photo will leave this device only when you click Read nameplate. If you use the Beckify proxy, the photo may be forwarded to OpenAI and/or Anthropic. Default Tesseract stays available if you turn this off.'
         : ' the default path is on-device Tesseract.js. The photo stays here and is never uploaded unless you turn on Enhance with AI and then click Read nameplate. The photo is not saved after you leave or reset.'));
     }
     var Vlm = global.BeckifyVlmOcr;
@@ -388,15 +388,23 @@
       el('mnp_vlm_endpoint').dataset.hydrated = '1';
     }
     if (Vlm && on) {
-      if (el('mnp_vlm_endpoint')) Vlm.saveSettings({ endpoint: el('mnp_vlm_endpoint').value });
-      if (el('mnp_vlm_token')) Vlm.saveSettings({ token: el('mnp_vlm_token').value });
+      var savedForm = Vlm.saveFormSettings
+        ? Vlm.saveFormSettings(el('mnp_vlm_endpoint') && el('mnp_vlm_endpoint').value, el('mnp_vlm_token') && el('mnp_vlm_token').value)
+        : Vlm.saveSettings({
+          endpoint: el('mnp_vlm_endpoint') && el('mnp_vlm_endpoint').value,
+          token: el('mnp_vlm_token') && el('mnp_vlm_token').value,
+        });
+      if (savedForm && savedForm.tokenCleared && el('mnp_vlm_token')) el('mnp_vlm_token').value = '';
     }
     var configNote = el('mnp_vlm_config');
     if (configNote && Vlm) {
       var cfg = Vlm.resolveConfig(on);
       if (!on) configNote.textContent = 'Enhance is off. On-device Tesseract is the default.';
       else if (cfg.mode === 'custom') configNote.textContent = 'Custom HTTPS endpoint will receive the photo when you click Read nameplate.';
-      else if (cfg.mode === 'proxy') configNote.textContent = 'Beckify proxy (' + cfg.proxyUrl + '/api/analyze-nameplate) will receive the photo when you click Read nameplate.';
+      else if (cfg.mode === 'proxy') {
+        configNote.textContent = 'Beckify proxy (' + cfg.proxyUrl + '/api/analyze-nameplate) will receive the photo when you click Read nameplate. '
+          + (Vlm.PROXY_DOWNSTREAM_NOTE || 'The Beckify proxy may forward the photo to OpenAI and/or Anthropic.');
+      }
       else configNote.textContent = 'No HTTPS endpoint is configured. Read nameplate will stay on-device Tesseract.';
     }
   }
@@ -451,7 +459,11 @@
             var pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
             setStatus((global.BeckifyOcr.humanizeStatus(status) || 'Reading…') + ' ' + pct + '%');
           },
-        }).then(applyTesseractResult);
+        }).then(applyTesseractResult).catch(function (fallbackErr) {
+          setStatus((fallbackErr && fallbackErr.message)
+            ? fallbackErr.message + ' Fill the fields manually.'
+            : 'OCR failed. Fill the fields manually — you are not blocked.');
+        });
       }).then(function () { if (btn) btn.disabled = false; }, function () { if (btn) btn.disabled = false; });
       return;
     }

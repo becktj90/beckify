@@ -218,9 +218,10 @@ export default function PrivacyPage() {
               {" "}
               or{" "}
               <code className="font-mono text-[0.9em]">/api/analyze-panel</code>
-              ). A personal API key stays in session storage on this device and is not sent to Beckify. The result
-              is an assistive draft for you to review — not perfect OCR and not an AI electrician. NEC math and
-              directory metrics still wait for the review checkbox.
+              ). The Beckify proxy may forward that photo to OpenAI and/or Anthropic (the configured downstream
+              vision providers). A personal API key stays in session storage on this device and is not sent to
+              Beckify. The result is an assistive draft for you to review — not perfect OCR and not an AI
+              electrician. NEC math and directory metrics still wait for the review checkbox.
             </p>
             <p className="text-base leading-relaxed">
               Megger TDR Analyzer and Look Check are cloud vision tools. Choosing a photo still does not upload
@@ -229,8 +230,9 @@ export default function PrivacyPage() {
               {" "}
               or{" "}
               <code className="font-mono text-[0.9em]">/api/analyze-look</code>
-              ). Look Check is entertainment only — not medical or dating advice — and will not rate a photo if
-              anyone appears under 18.
+              ). The Beckify proxy may forward those photos to OpenAI and/or Anthropic. Look Check is
+              entertainment only — not medical or dating advice — and will not rate a photo if anyone appears
+              under 18.
             </p>
           </section>
 

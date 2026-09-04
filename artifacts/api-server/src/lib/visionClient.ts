@@ -9,7 +9,12 @@ export const MAX_IN_FLIGHT_PER_CLIENT = 2;
 export const PROVIDER_TIMEOUT_MS = 45_000;
 export const PANEL_PROVIDER_TIMEOUT_MS = 90_000;
 export const PANEL_MAX_OUTPUT_TOKENS = 8192;
+export const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const DEFAULT_MODEL: Record<VisionProvider, string> = {
+  openai: "gpt-4o",
+  anthropic: "claude-3-5-sonnet-latest",
+};
 
 export class ProviderTimeoutError extends Error {
   constructor() {
@@ -26,10 +31,19 @@ export function configuredProvider(envName = "NAMEPLATE_VISION_PROVIDER"): Visio
   return provider;
 }
 
+export function modelFitsProvider(provider: VisionProvider, model: string): boolean {
+  const name = String(model || "").toLowerCase();
+  if (!name) return false;
+  if (provider === "anthropic") return name.includes("claude");
+  return !name.includes("claude");
+}
+
 export function configuredModel(provider: VisionProvider, envName = "NAMEPLATE_VISION_MODEL"): string {
-  return process.env[envName]
-    || process.env["TDR_VISION_MODEL"]
-    || (provider === "anthropic" ? "claude-3-5-sonnet-latest" : "gpt-4o");
+  const explicit = process.env[envName];
+  if (explicit) return explicit;
+  const tdrModel = process.env["TDR_VISION_MODEL"];
+  if (tdrModel && modelFitsProvider(provider, tdrModel)) return tdrModel;
+  return DEFAULT_MODEL[provider];
 }
 
 export function getClientKey(req: Request): string {
@@ -52,7 +66,8 @@ export function consumeRateLimit(
       if (value.resetAt <= now) buckets.delete(key);
     }
   }
-  return { ...bucket, allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW };
+  // Mutate the stored object so callers can increment inFlight on the Map entry.
+  return Object.assign(bucket, { allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW });
 }
 
 export function validateImage(
@@ -60,11 +75,8 @@ export function validateImage(
   requestedMimeType?: string,
 ): { ok: true; base64: string; mimeType: string } | { ok: false; status: 400 | 413; error: string } {
   const dataUrlMatch = /^data:([^;,]+);base64,([A-Za-z0-9+/=\s]+)$/.exec(rawImage.trim());
-  const mimeType = dataUrlMatch?.[1] || requestedMimeType || "image/jpeg";
+  const declaredMime = dataUrlMatch?.[1] || requestedMimeType || "image/jpeg";
   const base64 = (dataUrlMatch?.[2] || rawImage).replace(/\s/g, "");
-  if (!SUPPORTED_IMAGE_TYPES.has(mimeType)) {
-    return { ok: false, status: 400, error: "Only JPEG, PNG, GIF, and WebP images are supported." };
-  }
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64) || base64.length % 4 === 1) {
     return { ok: false, status: 400, error: "The image is not valid base64 data." };
   }
@@ -72,17 +84,29 @@ export function validateImage(
   if (byteLength <= 0) return { ok: false, status: 400, error: "The image is empty." };
   if (byteLength > MAX_IMAGE_BYTES) return { ok: false, status: 413, error: "The image must be 8 MiB or smaller." };
   const bytes = Buffer.from(base64, "base64");
+  // Prefer magic-byte type so a JPEG re-encode of HEIC/BMP/TIFF still passes
+  // even if the client sent the original picker MIME.
+  const mimeType = sniffImageType(bytes) || (SUPPORTED_IMAGE_TYPES.has(declaredMime) ? declaredMime : "");
+  if (!mimeType || !SUPPORTED_IMAGE_TYPES.has(mimeType)) {
+    return { ok: false, status: 400, error: "Only JPEG, PNG, GIF, and WebP images are supported. Convert HEIC, HEIF, BMP, or TIFF before upload." };
+  }
   if (!hasImageSignature(bytes, mimeType)) {
     return { ok: false, status: 400, error: "The image data does not match its declared type." };
   }
   return { ok: true, base64, mimeType };
 }
 
+function sniffImageType(bytes: Buffer): string | null {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  const gif = bytes.subarray(0, 6).toString("ascii");
+  if (gif === "GIF87a" || gif === "GIF89a") return "image/gif";
+  if (bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
+  return null;
+}
+
 function hasImageSignature(bytes: Buffer, mimeType: string): boolean {
-  if (mimeType === "image/jpeg") return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (mimeType === "image/png") return bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-  if (mimeType === "image/gif") return bytes.subarray(0, 6).toString("ascii") === "GIF87a" || bytes.subarray(0, 6).toString("ascii") === "GIF89a";
-  return bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
+  return sniffImageType(bytes) === mimeType;
 }
 
 function stripDataUrl(image: string): string {
@@ -133,11 +157,14 @@ export async function analyzeWithOpenAI(args: {
       },
     ],
   };
-  if (typeof args.maxTokens === "number" && args.maxTokens > 0) {
-    body.max_tokens = args.maxTokens;
-  }
+  body.max_tokens = typeof args.maxTokens === "number" && args.maxTokens > 0
+    ? args.maxTokens
+    : DEFAULT_MAX_OUTPUT_TOKENS;
 
-  const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+  const { ok, status, payload } = await fetchJsonWithTimeout<{
+    choices?: Array<{ message?: { content?: string | null } }>;
+    error?: { message?: string };
+  }>("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -146,11 +173,7 @@ export async function analyzeWithOpenAI(args: {
     body: JSON.stringify(body),
   }, args.timeoutMs);
 
-  const payload = await response.json() as {
-    choices?: Array<{ message?: { content?: string | null } }>;
-    error?: { message?: string };
-  };
-  if (!response.ok) throw new Error(payload.error?.message || `OpenAI request failed with HTTP ${response.status}.`);
+  if (!ok) throw new Error(payload.error?.message || `OpenAI request failed with HTTP ${status}.`);
   const content = payload.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenAI returned no analysis content.");
   return extractJsonObject(content);
@@ -168,7 +191,10 @@ export async function analyzeWithAnthropic(args: {
   const apiKey = process.env["ANTHROPIC_API_KEY"];
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is required for Anthropic vision analysis.");
 
-  const response = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
+  const { ok, status, payload } = await fetchJsonWithTimeout<{
+    content?: Array<{ text?: string }>;
+    error?: { message?: string };
+  }>("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -177,7 +203,9 @@ export async function analyzeWithAnthropic(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      max_tokens: typeof args.maxTokens === "number" && args.maxTokens > 0 ? args.maxTokens : 1600,
+      max_tokens: typeof args.maxTokens === "number" && args.maxTokens > 0
+        ? args.maxTokens
+        : DEFAULT_MAX_OUTPUT_TOKENS,
       temperature: 0,
       system: args.system,
       messages: [
@@ -195,21 +223,25 @@ export async function analyzeWithAnthropic(args: {
     }),
   }, args.timeoutMs);
 
-  const payload = await response.json() as {
-    content?: Array<{ text?: string }>;
-    error?: { message?: string };
-  };
-  if (!response.ok) throw new Error(payload.error?.message || `Anthropic request failed with HTTP ${response.status}.`);
+  if (!ok) throw new Error(payload.error?.message || `Anthropic request failed with HTTP ${status}.`);
   const content = payload.content?.find((part) => typeof part.text === "string")?.text;
   if (!content) throw new Error("Anthropic returned no analysis content.");
   return extractJsonObject(content);
 }
 
-async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS): Promise<Response> {
+async function fetchJsonWithTimeout<T>(
+  input: string,
+  init: RequestInit,
+  timeoutMs = PROVIDER_TIMEOUT_MS,
+): Promise<{ ok: boolean; status: number; payload: T }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(input, { ...init, signal: controller.signal });
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    // Keep the abort timer active while the body streams — a stall after
+    // headers should still become ProviderTimeoutError / 504.
+    const payload = await response.json() as T;
+    return { ok: response.ok, status: response.status, payload };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new ProviderTimeoutError();
     throw error;

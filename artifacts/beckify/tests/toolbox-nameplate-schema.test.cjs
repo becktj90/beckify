@@ -75,6 +75,19 @@ const unlabeledMocp = schema.normalizeDraft({
 }, { rawText: 'MOCP 30 HP 10' });
 assert.equal(unlabeledMocp.fields.fla.value, null);
 
+const topLevelDual = schema.normalizeDraft({
+  fields: { fla: { value: null, confidence: 0.4 }, voltage: { value: '230/460', confidence: 0.9 } },
+  dualFla: '28/14',
+  insulation: 'F',
+  riseC: '40',
+}, { source: 'vlm-test' });
+assert.equal(topLevelDual.fields.fla.value, null);
+assert.equal(topLevelDual.extras.dualFla, '28/14');
+assert.equal(topLevelDual.extras.flaDisplay, '28/14');
+assert.equal(topLevelDual.extras.insulation, 'F');
+assert.equal(topLevelDual.extras.riseC, '40');
+assert.match(topLevelDual.fields.notes.value || '', /Dual FLA 28\/14/);
+
 const dual = schema.fromLegacyParse({ volts: '230/460', fla: '28/14', hp: '10', phase: '' });
 assert.equal(dual.fields.voltage.value, '230/460');
 assert.equal(dual.fields.fla.value, null);

@@ -2816,10 +2816,10 @@
             <div class="photo-safety"><strong>Before you pick a photo:</strong> square the nameplate to the camera, fill the frame, use even light, and avoid glare on the metal. OCR is not perfect and this is not an AI electrician — treat every filled field as a draft you must correct. You can skip the photo and type every field by hand.</div>
             <label class="review-check" for="mnp_enhance">
               <input id="mnp_enhance" type="checkbox" data-no-persist>
-              Enhance with AI (optional). Uploads this photo to a VLM endpoint you choose or the Beckify proxy. Off by default. Still a draft — not verified input.
+              Enhance with AI (optional). Uploads this photo to a VLM endpoint you choose, or to the Beckify proxy which may forward it to OpenAI and/or Anthropic. Off by default. Still a draft — not verified input.
             </label>
             <div id="mnp_vlm_settings" class="vlm-settings" hidden>
-              <p class="note">Configure a HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-nameplate</code>.</p>
+              <p class="note">Configure a HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-nameplate</code>.</p>
               <div class="input-group">
                 <div>
                   <label for="mnp_vlm_endpoint">Custom VLM endpoint (optional)</label>
@@ -10091,7 +10091,7 @@
             <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
             <div class="photo-safety"><strong>Entertainment only.</strong> Kind-honest notes about light, angle, and the shot — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
             <div id="look_vlm_settings" class="vlm-settings">
-              <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
+              <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
               <div class="input-group">
                 <div>
                   <label for="look-vlm-endpoint">Custom VLM endpoint (optional)</label>
