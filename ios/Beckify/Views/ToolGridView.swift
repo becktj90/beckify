@@ -315,12 +315,14 @@ struct ToolTile: View {
     }
 }
 
-/// Press feedback without spring noise.
+/// Press feedback without spring noise. Honors Reduce Motion.
 private struct ToolTileButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(BeckifyMotion.tilePress, value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : BeckifyMotion.tilePress, value: configuration.isPressed)
     }
 }
 
