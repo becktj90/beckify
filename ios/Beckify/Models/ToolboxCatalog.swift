@@ -60,6 +60,11 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case cableSchedule
     case solenoidDesign
     case solarDesign
+    case analogWorkbench
+    case noiseSNR
+    case linearRegulator
+    case instrumentationAmp
+    case adcDac
 
     var id: String { rawValue }
 }
@@ -582,6 +587,46 @@ enum ToolboxCatalog {
             symbol: "sun.max.fill",
             synonyms: ["solar", "photovoltaic", "pv", "panel tilt", "azimuth", "peak sun hours", "battery storage", "bess", "array", "orientation"]
         ),
+        ToolDefinition(
+            id: .analogWorkbench,
+            kind: .homework,
+            title: "Analog Design Workbench",
+            subtitle: "Op-amp golden-rule stages and RC / Sallen–Key filters with an ideal magnitude Bode sketch.",
+            symbol: "triangle",
+            synonyms: ["op amp", "op-amp", "inverting", "noninverting", "follower", "summing", "integrator", "differentiator", "sallen key", "sallen-key", "filter", "bode", "analog"]
+        ),
+        ToolDefinition(
+            id: .noiseSNR,
+            kind: .homework,
+            title: "Noise & SNR",
+            subtitle: "Johnson and optional shot noise, amp e_n / i_n, total referred noise, SNR, and a rough NF.",
+            symbol: "waveform.path.ecg",
+            synonyms: ["johnson", "thermal noise", "shot noise", "snr", "noise figure", "en", "in", "kT", "bandwidth"]
+        ),
+        ToolDefinition(
+            id: .linearRegulator,
+            kind: .calculator,
+            title: "Linear / LDO Regulator",
+            subtitle: "LM317-style Vout from R1/R2, dropout, Pd, and a θJA junction-temperature estimate.",
+            symbol: "rectangle.portrait.and.arrow.right",
+            synonyms: ["lm317", "ldo", "linear regulator", "dropout", "heatsink", "theta ja", "junction", "vout", "r1 r2"]
+        ),
+        ToolDefinition(
+            id: .instrumentationAmp,
+            kind: .homework,
+            title: "Instrumentation Amp",
+            subtitle: "3-op-amp InAmp gain from Rg, or a 4-resistor difference amp, plus swing vs rails.",
+            symbol: "plusminus",
+            synonyms: ["inamp", "instrumentation", "difference amp", "differential", "cmrr", "rg", "ad620", "ina"]
+        ),
+        ToolDefinition(
+            id: .adcDac,
+            kind: .calculator,
+            title: "ADC / DAC & Sampling",
+            subtitle: "LSB, code count, ideal quantization SNR, Nyquist, and an optional DAC code-to-voltage.",
+            symbol: "square.stack.3d.up",
+            synonyms: ["adc", "dac", "lsb", "nyquist", "sampling", "quantization", "enob", "anti alias", "bits", "full scale"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -595,13 +640,15 @@ enum ToolboxCatalog {
         .power: [
             .ohmsLaw, .power, .transformer, .tapChanger, .reactance, .powerFactor, .harmonicsTHD,
             .rfLink, .batteryBank, .solarDesign, .upsSizing, .heaterDesign, .solenoidDesign, .magneticCircuit, .empEmc,
+            .linearRegulator,
         ],
         .controls: [
-            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent,
+            .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase, .rackCurrent, .adcDac,
         ],
         .homework: [
             .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
             .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam, .transientCircuit, .diodeIV,
+            .analogWorkbench, .noiseSNR, .instrumentationAmp,
         ],
         .sensors: [
             .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
@@ -708,5 +755,10 @@ enum ToolboxCatalog {
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
         .cableSchedule: [.wireAmpacity, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
+        .analogWorkbench: [.voltageDivider, .frequencyWave, .instrumentationAmp],
+        .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],
+        .linearRegulator: [.voltageDivider, .power, .ledRC],
+        .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
+        .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
     ]
 }

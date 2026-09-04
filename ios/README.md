@@ -57,8 +57,9 @@ ios/
 - Reactance & Resonance, Power Factor Correction, Short-Circuit Current
 - Circular Mils, Load & Demand Factors
 - RF Power & Link, Battery Bank Sizing, Magnetic Circuit
+- Linear / LDO Regulator (LM317-style Vout, dropout, Pd, θJA → Tj)
 - Signal Scaling, Modbus Address, PLC Timer Preset
-- Number Base Converter, E-Bus / Rack Current
+- Number Base Converter, E-Bus / Rack Current, ADC / DAC & Sampling
 - Panel Directory (paste/OCR schedule text)
 - Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
 
@@ -74,8 +75,11 @@ ios/
 - Fiber Link / NA (numerical aperture, acceptance angle, V-number)
 - Gaussian Beam (Rayleigh range, divergence, beam radius)
 - Semiconductor I-V (Shockley forward current + I–V curve)
+- Analog Design Workbench (op-amp golden-rule stages, RC / Sallen–Key filters, ideal Bode sketch)
+- Noise & SNR (Johnson, optional shot, amp e_n / i_n, SNR, rough NF)
+- Instrumentation Amp (3-op-amp G = 1 + 2R/Rg, or 4-resistor difference amp)
 
-Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, and 555 Timer monostable capacitor charge. This is not a new tool list.
+Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, and Analog Design Workbench Bode magnitude. This is not a new tool list.
 
 ## Sensors (public APIs only)
 

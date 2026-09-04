@@ -187,6 +187,7 @@ public enum ToolCalculationPolicy {
         "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate", "heaterDesign",
         "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
         "solarDesign",
+        "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
     ]
 
     public static var liveToolIDs: [String] {

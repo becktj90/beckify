@@ -184,6 +184,11 @@ struct CalculatorHostView: View {
             case .cableSchedule: CableScheduleView()
             case .solenoidDesign: SolenoidDesignView()
             case .solarDesign: SolarDesignWizardView()
+            case .analogWorkbench: AnalogDesignWorkbenchView()
+            case .noiseSNR: NoiseSNRView()
+            case .linearRegulator: LinearRegulatorView()
+            case .instrumentationAmp: InstrumentationAmpView()
+            case .adcDac: ADCDACView()
             }
         }
     }
