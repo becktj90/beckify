@@ -41,6 +41,10 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case phasorDiagram
     case numberBase
     case batteryBank
+    case referenceLibrary
+    case magneticCircuit
+    case fiberLink
+    case gaussianBeam
 
     var id: String { rawValue }
 }
@@ -52,6 +56,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     case controls = "Controls"
     case homework = "Homework"
     case sensors = "Sensors"
+    case reference = "Reference"
 
     var id: String { rawValue }
 }
@@ -410,6 +415,38 @@ enum ToolboxCatalog {
             symbol: "minus.plus.batteryblock",
             synonyms: ["battery", "bank", "series", "parallel", "amp hours", "ah", "runtime", "depth of discharge", "dod", "cells"]
         ),
+        ToolDefinition(
+            id: .referenceLibrary,
+            kind: .calculator,
+            title: "Reference Library",
+            subtitle: "NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes.",
+            symbol: "books.vertical",
+            synonyms: ["nema", "ip rating", "enclosure", "conductor color", "wire color", "hazardous", "classified", "insulation", "thhn", "torque", "bolt", "conduit", "fittings", "standard sizes", "reference", "table"]
+        ),
+        ToolDefinition(
+            id: .magneticCircuit,
+            kind: .calculator,
+            title: "Magnetic Circuit",
+            subtitle: "Reluctance, flux, and flux density from mmf, path length, area, and µr.",
+            symbol: "atom",
+            synonyms: ["magnetic circuit", "reluctance", "flux", "flux density", "mmf", "permeability", "core"]
+        ),
+        ToolDefinition(
+            id: .fiberLink,
+            kind: .homework,
+            title: "Fiber Link / NA",
+            subtitle: "Numerical aperture and acceptance angle from core/cladding index, plus V-number.",
+            symbol: "line.diagonal",
+            synonyms: ["fiber", "fibre", "optic", "numerical aperture", "na", "acceptance angle", "single mode", "multimode", "v number"]
+        ),
+        ToolDefinition(
+            id: .gaussianBeam,
+            kind: .homework,
+            title: "Gaussian Beam",
+            subtitle: "Rayleigh range, divergence, and beam radius at distance from a waist.",
+            symbol: "smallcircle.filled.circle",
+            synonyms: ["gaussian beam", "laser", "rayleigh range", "divergence", "waist", "beam radius", "photonics"]
+        ),
     ]
 
     /// Grid grouping for the home screen. Order inside a section is the order
@@ -420,18 +457,21 @@ enum ToolboxCatalog {
             .receptacleSelector, .panelDirectory, .shortCircuit, .circularMils, .loadFactors,
         ],
         .power: [
-            .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank,
+            .ohmsLaw, .power, .transformer, .reactance, .powerFactor, .rfLink, .batteryBank, .magneticCircuit,
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .timer555, .numberBase,
         ],
         .homework: [
             .voltageDivider, .seriesParallel, .resistorColor, .phasorDiagram,
-            .frequencyWave, .ledRC, .unitConverter,
+            .frequencyWave, .ledRC, .unitConverter, .fiberLink, .gaussianBeam,
         ],
         .sensors: [
             .wifiStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
             .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
+        ],
+        .reference: [
+            .referenceLibrary,
         ],
     ]
 
@@ -512,5 +552,9 @@ enum ToolboxCatalog {
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
         .batteryBank: [.power, .unitConverter, .ohmsLaw],
+        .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector],
+        .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
+        .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],
+        .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],
     ]
 }

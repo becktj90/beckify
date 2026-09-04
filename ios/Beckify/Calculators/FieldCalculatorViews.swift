@@ -1428,3 +1428,499 @@ struct BatteryBankView: View {
         ))
     }
 }
+
+// MARK: - Reference library
+
+struct ReferenceLibraryView: View {
+    @State private var query = ""
+
+    private var topics: [ReferenceTopic] {
+        ReferenceLibrary.matching(query)
+    }
+
+    var body: some View {
+        ToolScaffold(toolID: .referenceLibrary, disclaimer: .none) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("SEARCH")
+                    .font(Theme.TypeRole.fieldLabel)
+                    .tracking(0.6)
+                    .foregroundStyle(Theme.muted)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(Theme.muted)
+                    TextField("4X, THHN, torque, hazardous…", text: $query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .foregroundStyle(Theme.foreground)
+                        .accessibilityLabel("Search the reference library")
+                }
+                .padding(.horizontal, 14)
+                .frame(minHeight: Theme.touchTarget)
+                .background(Theme.inputFill, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                        .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+                )
+            }
+
+            if topics.isEmpty {
+                ToolEmptyState(
+                    title: "No match",
+                    detail: "Nothing in the reference library matches “\(query)”. Try a code (4X, IP67), a material (THHN), or a topic (hazardous, torque).",
+                    systemImage: "magnifyingglass"
+                )
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(topics) { topic in
+                        NavigationLink {
+                            ReferenceTopicDetailView(topic: topic)
+                        } label: {
+                            ReferenceTopicRow(topic: topic)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ReferenceTopicRow: View {
+    let topic: ReferenceTopic
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(topic.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                Text(topic.purpose)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Text("\(topic.entries.count)")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(Theme.muted)
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+        }
+        .padding(12)
+        .frame(minHeight: Theme.touchTarget)
+        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(topic.title), \(topic.entries.count) entries")
+        .accessibilityHint(topic.purpose)
+    }
+}
+
+struct ReferenceTopicDetailView: View {
+    let topic: ReferenceTopic
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(topic.purpose)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                VStack(spacing: 8) {
+                    ForEach(topic.entries) { entry in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(entry.code)
+                                    .font(.subheadline.weight(.bold).monospaced())
+                                    .foregroundStyle(Theme.accent)
+                                Spacer(minLength: 8)
+                                Text(entry.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Theme.foreground)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                            Text(entry.detail)
+                                .font(.footnote)
+                                .foregroundStyle(Theme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                                .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+                        )
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(entry.code): \(entry.title)")
+                        .accessibilityHint(entry.detail)
+                    }
+                }
+                Text("Source: \(topic.source)")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+            }
+            .padding(Theme.Space.lg)
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle(topic.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Magnetic circuit
+
+struct MagneticCircuitView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.magneticCircuit, "mmf", default: "500") private var mmf
+    @StoredInput(.magneticCircuit, "length", default: "0.2") private var length
+    @StoredInput(.magneticCircuit, "area", default: "1") private var areaCm2
+    @StoredInput(.magneticCircuit, "muR", default: "1000") private var muR
+    @StoredInput(.magneticCircuit, "jobName", default: "Magnetic circuit") private var jobName
+    @State private var session = ExplicitCalculationState<MagneticCircuitResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Entered in cm² since that is how core cross-sections are usually spec'd.
+    private var areaSquareMetres: Double { (areaCm2.parsedDouble ?? .nan) * 1e-4 }
+
+    private var inputFingerprint: String { "\(mmf)|\(length)|\(areaCm2)|\(muR)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .magneticCircuit,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .magneticCircuit,
+                symbolic: "R = l / (µ₀ µᵣ A)     Φ = mmf / R     B = Φ / A",
+                substituted: substituted,
+                meaning: "This is Ohm's law for a magnetic path: mmf plays the role of voltage, flux plays current, reluctance plays resistance. A higher µᵣ core (more iron, less air gap) means less reluctance and more flux for the same mmf."
+            )
+            TryExampleButton(title: "500 At, 20 cm path, 1 cm², µᵣ 1000") {
+                mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Magnetomotive force", unit: "At", text: $mmf, fieldID: "mmf", onSubmit: calculate)
+            NumberField(title: "Path length", unit: "m", text: $length, fieldID: "length", onSubmit: calculate)
+            NumberField(title: "Cross-sectional area", unit: "cm²", text: $areaCm2, fieldID: "area", onSubmit: calculate)
+            NumberField(title: "Relative permeability µᵣ", unit: "", text: $muR, fieldID: "muR", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Small relay-sized core"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Reluctance", value: "\(Format.number(r.reluctance, digits: 0)) At/Wb", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Flux", value: "\(Format.number(r.flux * 1000, digits: 4)) mWb")
+                    ResultRow(label: "Flux density B", value: "\(Format.number(r.fluxDensity, digits: 3)) T", emphasis: true)
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try MagneticCircuit.solve(
+                magnetomotiveForce: mmf.parsedDouble ?? .nan,
+                pathLength: length.parsedDouble ?? .nan,
+                crossSectionalArea: areaSquareMetres,
+                relativePermeability: muR.parsedDouble ?? .nan
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        mmf = ""; length = ""; areaCm2 = ""; muR = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "R \(Format.number(r.reluctance, digits: 0)) At/Wb  →  B \(Format.number(r.fluxDensity, digits: 3)) T"
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "B \(Format.number(r.fluxDensity, digits: 3)) T  ·  Φ \(Format.number(r.flux * 1000, digits: 4)) mWb"
+    }
+
+    private func save(_ r: MagneticCircuitResult) {
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .magneticCircuit,
+            inputs: ["mmf": "\(mmf) At", "l": "\(length) m", "A": "\(areaCm2) cm²", "muR": muR],
+            outputs: ["B": "\(Format.number(r.fluxDensity, digits: 3)) T", "flux": "\(Format.number(r.flux * 1000, digits: 4)) mWb"]
+        ))
+    }
+}
+
+// MARK: - Fiber link / numerical aperture
+
+struct FiberLinkView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.fiberLink, "n1", default: "1.48") private var coreIndex
+    @StoredInput(.fiberLink, "n2", default: "1.46") private var claddingIndex
+    @StoredInput(.fiberLink, "radius", default: "4.5") private var coreRadius
+    @StoredInput(.fiberLink, "wavelength", default: "1310") private var wavelength
+    @StoredToggle(.fiberLink, "checkMode", default: true) private var checkMode
+    @StoredInput(.fiberLink, "jobName", default: "Fiber link") private var jobName
+    @State private var session = ExplicitCalculationState<FiberLinkResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { "\(coreIndex)|\(claddingIndex)|\(coreRadius)|\(wavelength)|\(checkMode)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .fiberLink,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .fiberLink,
+                symbolic: "NA = √(n₁² − n₂²)     θ = arcsin(NA)     V = 2π a NA / λ",
+                substituted: substituted,
+                meaning: "NA sets the acceptance cone — how much of a light source's spread the fiber can actually capture. The V-number below 2.405 is the textbook single-mode cutoff for step-index fiber."
+            )
+            TryExampleButton(title: "62.5/125 µm multimode at 1310 nm") {
+                coreIndex = "1.48"; claddingIndex = "1.46"
+                coreRadius = "4.5"; wavelength = "1310"
+                checkMode = true
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Core index n₁", unit: "", text: $coreIndex, fieldID: "n1", onSubmit: calculate)
+            NumberField(title: "Cladding index n₂", unit: "", text: $claddingIndex, fieldID: "n2", onSubmit: calculate)
+
+            Toggle("Check single-mode cutoff", isOn: $checkMode)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+            if checkMode {
+                NumberField(title: "Core radius", unit: "µm", text: $coreRadius, fieldID: "radius", onSubmit: calculate)
+                NumberField(title: "Wavelength", unit: "nm", text: $wavelength, fieldID: "wavelength", onSubmit: calculate)
+            }
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    coreIndex = "1.48"; claddingIndex = "1.46"
+                    coreRadius = "4.5"; wavelength = "1310"
+                    checkMode = true
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "Common multimode fiber"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Numerical aperture", value: Format.number(r.numericalAperture, digits: 4), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Acceptance angle", value: Format.degrees(r.acceptanceAngleDegrees))
+                    if let v = r.vNumber {
+                        ResultRow(label: "V-number", value: Format.number(v, digits: 3))
+                    }
+                    if let singleMode = r.isSingleMode {
+                        ResultRow(
+                            label: "Mode",
+                            value: singleMode ? "single-mode" : "multimode",
+                            emphasis: true,
+                            tone: singleMode ? Theme.good : Theme.warn
+                        )
+                    }
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try FiberLink.solve(
+                coreIndex: coreIndex.parsedDouble ?? .nan,
+                claddingIndex: claddingIndex.parsedDouble ?? .nan,
+                coreRadiusMicrons: checkMode ? (coreRadius.parsedDouble ?? .nan) : nil,
+                wavelengthNanometers: checkMode ? (wavelength.parsedDouble ?? .nan) : nil
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        coreIndex = ""; claddingIndex = ""; coreRadius = ""; wavelength = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        var line = "NA \(Format.number(r.numericalAperture, digits: 4))  →  θ \(Format.degrees(r.acceptanceAngleDegrees))"
+        if let v = r.vNumber {
+            line += "  →  V \(Format.number(v, digits: 3))"
+        }
+        return line
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "NA \(Format.number(r.numericalAperture, digits: 4))  ·  \(Format.degrees(r.acceptanceAngleDegrees))"
+    }
+
+    private func save(_ r: FiberLinkResult) {
+        var outputs = ["NA": Format.number(r.numericalAperture, digits: 4), "angle": Format.degrees(r.acceptanceAngleDegrees)]
+        if let v = r.vNumber { outputs["V"] = Format.number(v, digits: 3) }
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .fiberLink,
+            inputs: ["n1": coreIndex, "n2": claddingIndex],
+            outputs: outputs
+        ))
+    }
+}
+
+// MARK: - Gaussian beam
+
+struct GaussianBeamView: View {
+    @EnvironmentObject private var jobs: JobStore
+    @StoredInput(.gaussianBeam, "waist", default: "0.5") private var waist
+    @StoredInput(.gaussianBeam, "wavelength", default: "633") private var wavelength
+    @StoredInput(.gaussianBeam, "distance", default: "") private var distance
+    @StoredInput(.gaussianBeam, "jobName", default: "Gaussian beam") private var jobName
+    @State private var session = ExplicitCalculationState<GaussianBeamResult>()
+    @State private var successTick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var inputFingerprint: String { "\(waist)|\(wavelength)|\(distance)" }
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .gaussianBeam,
+            stickyAnswer: sticky,
+            copyText: sticky,
+            isResultStale: session.isStale
+        ) {
+            ShowWorkCard(
+                toolID: .gaussianBeam,
+                symbolic: "z_R = π w₀² / λ     θ = λ / (π w₀)     w(z) = w₀√(1 + (z/z_R)²)",
+                substituted: substituted,
+                meaning: "A real laser beam never stays parallel — it spreads at a rate set entirely by the wavelength and how tightly it's focused at the waist. A tighter waist diverges faster; that trade-off is fixed by the physics, not the laser's power."
+            )
+            TryExampleButton(title: "0.5 mm waist, 633 nm HeNe") {
+                waist = "0.5"; wavelength = "633"; distance = ""
+                session.prepareForNewInputs()
+            }
+
+            NumberField(title: "Waist radius w₀", unit: "mm", text: $waist, fieldID: "waist", onSubmit: calculate)
+            NumberField(title: "Wavelength", unit: "nm", text: $wavelength, fieldID: "wavelength", onSubmit: calculate)
+            NumberField(title: "Distance from waist", unit: "mm", text: $distance, optional: true, fieldID: "distance", onSubmit: calculate)
+
+            CalculatorActionBar(
+                onCalculate: calculate,
+                onReset: reset,
+                onExample: {
+                    waist = "0.5"; wavelength = "633"; distance = ""
+                    session.prepareForNewInputs()
+                },
+                exampleTitle: "HeNe bench laser"
+            )
+
+            if let error = session.lastValidationError ?? session.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = session.displayedResult {
+                ResultCard(copyText: sticky) {
+                    ResultRow(label: "Rayleigh range", value: "\(Format.number(r.rayleighRange, digits: 2)) mm", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Divergence half-angle", value: "\(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad")
+                    if let radius = r.radiusAtDistance {
+                        ResultRow(label: "Radius at distance", value: "\(Format.number(radius, digits: 4)) mm", emphasis: true)
+                    }
+                }
+                .opacity(session.isStale ? 0.72 : 1)
+                SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
+            }
+        }
+        .onChange(of: inputFingerprint) { _, _ in
+            session.markInputsChanged()
+        }
+        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func calculate() {
+        session.calculate {
+            try GaussianBeam.solve(
+                waistRadius: waist.parsedDouble ?? .nan,
+                wavelengthNanometers: wavelength.parsedDouble ?? .nan,
+                propagationDistance: distance.parsedDouble
+            )
+        }
+        if session.displayedResult != nil, !session.isStale, !reduceMotion {
+            successTick += 1
+        }
+    }
+
+    private func reset() {
+        waist = ""; wavelength = ""; distance = ""
+        session.reset()
+    }
+
+    private var substituted: String? {
+        guard let r = session.displayedResult else { return nil }
+        var line = "z_R \(Format.number(r.rayleighRange, digits: 2)) mm  →  θ \(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"
+        if let radius = r.radiusAtDistance {
+            line += "  →  w(z) \(Format.number(radius, digits: 4)) mm"
+        }
+        return line
+    }
+
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        return "z_R \(Format.number(r.rayleighRange, digits: 2)) mm  ·  θ \(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"
+    }
+
+    private func save(_ r: GaussianBeamResult) {
+        var outputs = ["zR": "\(Format.number(r.rayleighRange, digits: 2)) mm", "theta": "\(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"]
+        if let radius = r.radiusAtDistance { outputs["w(z)"] = "\(Format.number(radius, digits: 4)) mm" }
+        jobs.save(SavedJob(
+            name: jobName,
+            toolID: .gaussianBeam,
+            inputs: ["w0": "\(waist) mm", "lambda": "\(wavelength) nm"],
+            outputs: outputs
+        ))
+    }
+}

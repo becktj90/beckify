@@ -169,6 +169,10 @@ struct CalculatorHostView: View {
             case .phasorDiagram: PhasorDiagramView()
             case .numberBase: NumberBaseView()
             case .batteryBank: BatteryBankView()
+            case .referenceLibrary: ReferenceLibraryView()
+            case .magneticCircuit: MagneticCircuitView()
+            case .fiberLink: FiberLinkView()
+            case .gaussianBeam: GaussianBeamView()
             }
         }
     }

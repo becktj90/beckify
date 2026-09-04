@@ -121,6 +121,19 @@ enum Theme {
                     dark: UIColor(red: 210 / 255, green: 150 / 255, blue: 240 / 255, alpha: 1)
                 )
             )
+        case .reference:
+            // Slate — a table you read, not a value you compute. Deliberately
+            // the quietest family so it doesn't compete with the calculators.
+            return (
+                Color.adaptive(
+                    light: UIColor(red: 88 / 255, green: 100 / 255, blue: 116 / 255, alpha: 1),
+                    dark: UIColor(red: 168 / 255, green: 180 / 255, blue: 196 / 255, alpha: 1)
+                ),
+                Color.adaptive(
+                    light: UIColor(red: 60 / 255, green: 72 / 255, blue: 88 / 255, alpha: 1),
+                    dark: UIColor(red: 140 / 255, green: 154 / 255, blue: 172 / 255, alpha: 1)
+                )
+            )
         }
     }
 
