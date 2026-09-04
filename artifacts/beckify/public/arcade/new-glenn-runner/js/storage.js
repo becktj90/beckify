@@ -57,6 +57,8 @@ function normalize(merged) {
   next.hiScore = Number(next.hiScore) || 0;
   next.missionCount = Number(next.missionCount) || 0;
   next.engine = 'phaser4';
+  const volume = Number(next.volume);
+  next.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0.72;
   return normalizeMissions(next);
 }
 

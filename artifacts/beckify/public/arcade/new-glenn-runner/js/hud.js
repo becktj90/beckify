@@ -154,6 +154,9 @@ export function syncSettingsForm(settings) {
   form.querySelectorAll('[data-set]').forEach((input) => {
     const key = input.getAttribute('data-set');
     if (input.type === 'checkbox') input.checked = Boolean(settings[key]);
+    if (input.type === 'range' && key === 'volume') {
+      input.value = String(Math.round((Number(settings.volume) || 0.72) * 100));
+    }
   });
 }
 

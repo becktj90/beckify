@@ -45,8 +45,13 @@ export default class MissionScene extends Phaser.Scene {
     super('mission');
   }
 
+  preload() {
+    AudioApi.preload(this);
+  }
+
   create() {
     this.settings = loadSettings();
+    AudioApi.attach(this);
     this.inputState = createInput();
     this.status = 'MENU';
     this.paused = false;
@@ -208,9 +213,14 @@ export default class MissionScene extends Phaser.Scene {
     syncSettingsForm(this.settings);
     const form = document.getElementById('ng-settings');
     if (form) {
-      form.addEventListener('change', () => {
+      form.addEventListener('input', () => {
         form.querySelectorAll('[data-set]').forEach((input) => {
-          this.settings[input.getAttribute('data-set')] = input.checked;
+          const key = input.getAttribute('data-set');
+          if (input.type === 'range' && key === 'volume') {
+            this.settings.volume = Number(input.value) / 100;
+          } else if (input.type === 'checkbox') {
+            this.settings[key] = input.checked;
+          }
         });
         saveSettings(this.settings);
         AudioApi.setMute(this.settings);
@@ -330,6 +340,7 @@ export default class MissionScene extends Phaser.Scene {
     const settingsPanel = document.getElementById('ng-settings');
     if (settingsPanel) settingsPanel.hidden = true;
     this.syncMatterPause();
+    AudioApi.stopBeds();
     this.menuLayer.setVisible(false);
     setOverlay('ng-summary', false);
     setOverlay('ng-pause', false);
@@ -399,6 +410,7 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(80, 40);
     if (!this.settings.reducedMotion) this.cameras.main.shake(220, 0.006);
     AudioApi.play('liftoff', this.settings);
+    AudioApi.setBed('roar', true, this.settings, 0.4);
     setBanner('LIFTOFF', 'go', 1600);
     this.vibrate(30);
   }
@@ -433,7 +445,9 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.setZoom(0.72);
     this.cameras.main.centerOn(W / 2, 260);
     if (flight.objective?.id === 'clean' && this.session.hits === 0) this.completeObjective();
+    AudioApi.stopBeds();
     AudioApi.play('meco', this.settings);
+    AudioApi.play('whoosh', this.settings);
     setBanner('JACKLYN — slide in, RCS straighten, brake the deck', 'warn', 2800);
   }
 
@@ -505,6 +519,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.session.altitudeKm > 12 && this.session.stage === 'ASCENT') {
       this.session.stage = 'MAX-Q';
       this.session.radio = RADIO.MAXQ;
+      AudioApi.play('maxq', this.settings);
       setBanner('MAX-Q', 'warn', 1400);
     }
 
@@ -563,11 +578,13 @@ export default class MissionScene extends Phaser.Scene {
       this.session.throttle = 1;
       this.emitPlume(1);
       if (alt < 180) this.emitBloom();
+      AudioApi.setBed('burn', true, this.settings, 0.38);
       if (alt > 110 && this.rocket.body.velocity.y < 2.4) this.rocket.setVelocityY(2.4);
       else if (alt > 18 && this.rocket.body.velocity.y < 0.85) this.rocket.setVelocityY(0.85);
     } else {
       this.rocket.applyForce({ x: axis * 0.01, y: 0.006 });
       this.session.throttle = 0.12;
+      AudioApi.setBed('burn', false, this.settings);
     }
     if (this.session.jacklynElapsed < 1.6 && this.rocket.body.velocity.y > 3.6) {
       this.rocket.setVelocityY(3.6);
@@ -620,7 +637,9 @@ export default class MissionScene extends Phaser.Scene {
       this.rocket.setPosition(this.jacklyn.x, this.jacklyn.y - 118);
       this.rocket.setAngle(0);
       this.playRecoveredSpectacle();
+      AudioApi.stopBeds();
       AudioApi.play('touchdown', this.settings);
+      AudioApi.play('recovered', this.settings);
       setBanner(`BOOSTER RECOVERED — ${this.currentFlight().jacklyn.recovered}`, 'go', 3600);
       this.vibrate([40, 30, 40]);
       this.time.delayedCall(2200, () => this.endMission('recovered'));
@@ -633,6 +652,7 @@ export default class MissionScene extends Phaser.Scene {
       this.session.combo = 0;
       this.session.radio = RADIO.SALVAGE;
       this.rocket.setPosition(this.jacklyn.x + clamp(this.rocket.x - this.jacklyn.x, -40, 40), this.jacklyn.y - 74);
+      AudioApi.stopBeds();
       AudioApi.play('hit', this.settings);
       setBanner(this.currentFlight().jacklyn.salvage, 'warn', 2800);
       this.time.delayedCall(1300, () => this.endMission('salvage'));
@@ -643,6 +663,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.score = Math.max(0, this.session.score - SPLASH_PENALTY);
     this.session.combo = 0;
     this.session.radio = RADIO.SPLASH;
+    AudioApi.stopBeds();
     AudioApi.play('splash', this.settings);
     setBanner(this.currentFlight().jacklyn.splash, 'fail', 2800);
     this.time.delayedCall(1200, () => this.endMission('splash'));
@@ -886,6 +907,7 @@ export default class MissionScene extends Phaser.Scene {
           ? this.currentFlight().jacklyn.salvage
           : 'MISSION ABORT';
     const extra = unlockedNext ? `  ·  ${nxt} UNLOCKED` : '';
+    AudioApi.stopBeds();
     AudioApi.play(reason === 'rud' ? 'rud' : 'success', this.settings);
     setBanner(`${this.currentFlight().id}  ${headline}   SCORE ${points.toLocaleString()}${extra}`, reason === 'rud' ? 'fail' : 'go', 0);
     setSummaryCopy(
@@ -923,6 +945,7 @@ export default class MissionScene extends Phaser.Scene {
     this.paused = !this.paused;
     this.pausedForSettings = false;
     this.syncMatterPause();
+    AudioApi.setPaused(this.paused);
     setOverlay('ng-pause', this.paused);
     setBanner(this.paused ? 'PAUSED' : 'RESUMED', 'info', 900);
     this.refreshHud();
@@ -945,10 +968,12 @@ export default class MissionScene extends Phaser.Scene {
       this.paused = true;
       this.pausedForSettings = true;
       this.syncMatterPause();
+      AudioApi.setPaused(true);
     } else if (!this.settingsOpen && this.pausedForSettings) {
       this.pausedForSettings = false;
       this.paused = false;
       this.syncMatterPause();
+      AudioApi.setPaused(false);
       setOverlay('ng-pause', false);
     }
   }
@@ -1065,6 +1090,7 @@ export default class MissionScene extends Phaser.Scene {
         ? `${flight.id}  ${flight.payload}  ·  PB ${best.toLocaleString()}  ·  LAST ${last.toLocaleString()}  ·  ${this.settings.difficulty}`
         : `${flight.id}  ${flight.payload}  ·  NO MISSIONS FLOWN  ·  ${this.settings.difficulty}`,
     });
+    AudioApi.applyMix(this.settings);
     document.body.dataset.phase = this.status;
     if (boosting && this.status === 'ASCENT' && !this.settings.reducedMotion) {
       /* plume handled in update */

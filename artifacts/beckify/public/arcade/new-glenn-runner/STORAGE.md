@@ -11,6 +11,8 @@ The Phaser 4 runner owns settings, NG-n unlocks, and personal bests.
 
 V5 does **not** delete older keys, so a leftover canvas bookmark can still see its own record. After migration, new flights only update V5.
 
+Audio prefs (`sound`, `music`, `muted`, `volume` 0–1) live on the same V5 blob. Mute is the master switch; `prefers-reduced-motion` does not mute.
+
 Unlock rule: finishing Jacklyn (soft recover, salvage, or splash — not RUD) unlocks the next NG-n. Difficulty stays KID / CADET / PAD RAT *inside* a flight.
 
 `recordGameScore('new-glenn-runner', points)` still writes the toolbox cross-game best via `local-store.js`.
