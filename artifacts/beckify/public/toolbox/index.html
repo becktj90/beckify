@@ -270,7 +270,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Analyzer</button>
-      <button class="nav-btn" data-target="sec-look-check" data-keywords="look check photo verdict good bad selfie appearance camera metrics entertainment vision brogpt roast">Look Check</button>
+      <button class="nav-btn" data-target="sec-look-check" data-keywords="look check photo verdict good bad selfie appearance camera metrics entertainment vision roast">Look Check</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -10112,12 +10112,12 @@
     <section id="sec-look-check" class="section">
       <div class="section-header">
         <h2>Look Check</h2>
-        <p>Take a camera photo of a person, then get lighting / framing / expression scores, a brief how-you-look summary, and a BroGPT roast. Entertainment only — AI comedy, not medical advice, not dating advice, and not a beauty contest.</p>
+        <p>Take a camera photo of a person, then get lighting / framing / expression scores, a brief how-you-look summary, and a roast. Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
         <details class="section-info">
           <summary>ℹ More Info — Look Check</summary>
           <div class="section-info-body">
             This is a bonus vision tool. It rates lighting, angle, expression, sharpness, and framing — not your worth —
-            and adds a BroGPT roast (AI comedy) of the shot.
+            and adds a roast of the shot.
             Anyone who appears under 18 is not rated and gets no roast. Cloud-only: there is no on-device Tesseract path.
             Taking or choosing a photo does not upload it. Analyze Look sends an upright copy to a HTTPS vision endpoint.
           </div>
@@ -10128,7 +10128,7 @@
           <div class="card-title">Take or choose a photo</div>
           <div class="card-body">
             <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
-            <div class="photo-safety"><strong>Entertainment only.</strong> Photo notes plus a BroGPT roast (AI comedy) — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
+            <div class="photo-safety"><strong>Entertainment only.</strong> Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
             <div id="look_vlm_settings" class="vlm-settings">
               <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
               <div class="input-group">
@@ -10203,7 +10203,7 @@
               </div>
               <p id="look-summary" class="look-summary" hidden></p>
               <figure id="look-roast" class="look-roast" hidden>
-                <figcaption class="look-roast-label">BroGPT / Roast</figcaption>
+                <figcaption class="look-roast-label">Roast</figcaption>
                 <blockquote id="look-roast-text" class="look-roast-text"></blockquote>
               </figure>
               <div id="look-metrics" class="look-metrics" hidden></div>
@@ -10228,7 +10228,7 @@
               </div>
             </div>
             <div class="note" style="margin-top:12px">
-              Roast is AI comedy. If the model declines, that is the right answer — especially for anyone who looks under 18.
+              If the model declines, that is the right answer — especially for anyone who looks under 18.
             </div>
           </div>
         </div>

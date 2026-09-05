@@ -142,7 +142,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         let head = displayHeadline.trimmingCharacters(in: .whitespacesAndNewlines)
         if !head.isEmpty { parts.append(head) }
         let roastText = roast.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !roastText.isEmpty { parts.append("BroGPT: \(roastText)") }
+        if !roastText.isEmpty { parts.append("Roast: \(roastText)") }
         return parts.joined(separator: " · ")
     }
 }
@@ -159,7 +159,7 @@ public enum PhotoLookCheck {
     public static let maxUploadBytes = 8 * 1024 * 1024
     public static let maxUploadEdge = 2048
     public static let disclaimer =
-        "Entertainment only — BroGPT roast is AI comedy, not medical or dating advice. Photos upload only when you tap Analyze Look."
+        "Entertainment only — not medical or dating advice. Photos upload only when you tap Analyze Look."
 
     public static func defaultAnalyzeURL() -> URL? {
         analyzeURL(customEndpoint: nil, apiBase: defaultAPIBase)

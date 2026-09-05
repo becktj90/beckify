@@ -42,7 +42,7 @@ Jobsite:
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA (typed or seeded from a confirmed OCR review)
 • Motor Nameplate OCR — camera or photo library, on-device Vision first, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Optional **Analyze** POSTs the photo to `/api/analyze-nameplate` only when you tap it. Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed.
-• Look Check — camera or photo library, then Analyze Look for a playful good-or-bad verdict plus lighting / framing / expression / sharpness metrics. Entertainment only — not medical or dating advice. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Not the Wi-Fi / Cellular Online / Captive connectivity card.
+• Look Check — camera or photo library, then Analyze Look for a playful look verdict plus lighting / framing / expression / sharpness metrics and a roast. Entertainment only — not medical or dating advice. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Not the Wi-Fi / Cellular Online / Captive connectivity card.
 • Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
 • Short-circuit current, circular mils, load & demand factors
@@ -121,7 +121,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
 
-Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “milliohm”, “shorted parallel”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “look check”, “analyze look”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”, “captive”, “cellular”, “lte”, “5g”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Every catalog tool also has a short **How it works** note (toolbar About / collapsed disclosure — open by default on homework tools) covering what it computes, when to use it, and honesty limits. Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
+Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “milliohm”, “shorted parallel”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “look check”, “analyze look”, “roast”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”, “captive”, “cellular”, “lte”, “5g”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Every catalog tool also has a short **How it works** note (toolbar About / collapsed disclosure — open by default on homework tools) covering what it computes, when to use it, and honesty limits. Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
 This app is a design aid. It is not a PE stamp, permit, inspection, calibrated instrument, or a substitute for the National Electrical Code or a qualified engineer.
 
@@ -129,7 +129,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Look Check **Analyze Look** now includes a roast when the subject appears 18+ and is rated; roast is empty when declined or no person. Anyone who appears under 18 is not rated and gets no roast. Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -197,7 +197,7 @@ Take 3–8 screens per size. Suggested shots:
 11. Toolkit → Bench e-bike tools — Torque/RPM, Sprocket Ratio, Range Estimator, or Pack Designer result (design-aid framing visible; not Field)
 12. Cellular Path — Online / Captive verdict plus color arc gauges for radio generation (2G…5G from RAT) and TCP RTT ms, plus the carrier / RAT chip board (do not imply RSRP/dBm; this is a suggested shot, not a captured screenshot)
 13. Wi-Fi Path — Online / Captive first (no captive portal / local only / captive), Apple strength %/bars when available, no dBm row (suggested shot, not captured)
-14. Look Check — photo preview plus Analyze Look metrics (entertainment disclaimer visible)
+14. Look Check — photo preview plus Analyze Look metrics and roast (entertainment disclaimer visible)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
 

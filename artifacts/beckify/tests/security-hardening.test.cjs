@@ -81,7 +81,7 @@ ok("Panel and schema CSV cells neutralize formula prefixes", /function csvCell/.
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped after Look Check BroGPT roast", /CACHE_VERSION = 'v44'/.test(sw));
+ok("Toolbox SW cache version bumped after Look Check roast copy", /CACHE_VERSION = 'v45'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),
