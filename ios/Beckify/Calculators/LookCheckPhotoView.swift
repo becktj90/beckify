@@ -33,7 +33,7 @@ struct LookCheckPhotoView: View {
                 toolID: .lookCheck,
                 symbolic: "photo (on device) → Analyze Look → /api/analyze-look → verdict + metrics",
                 substituted: substituted,
-                meaning: "Taking or choosing a photo does not upload it. Analyze Look sends an upright JPEG to the Beckify HTTPS look API (or your custom endpoint). Entertainment only — not medical, dating, or beauty authority.",
+                meaning: "Taking or choosing a photo does not upload it. Analyze Look sends an upright JPEG to the Beckify HTTPS look API (or your custom endpoint). Entertainment only — BroGPT roast is AI comedy, not medical, dating, or beauty authority.",
                 citation: "Same JSON contract as the website Look Check: POST { imageBase64, mimeType, task: \"look\" }."
             )
 
@@ -54,7 +54,7 @@ struct LookCheckPhotoView: View {
             } else if preview == nil {
                 ToolEmptyState(
                     title: "Take or choose a photo",
-                    detail: "The image stays on this device until you tap Analyze Look. Entertainment only — not medical or dating advice. Do not use this on photos of children.",
+                    detail: "The image stays on this device until you tap Analyze Look. Entertainment only — BroGPT roast is AI comedy, not medical or dating advice. Do not use this on photos of children.",
                     systemImage: "person.crop.rectangle"
                 )
             } else {
@@ -97,7 +97,7 @@ struct LookCheckPhotoView: View {
             Text("Privacy: this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you tap Analyze Look. Anyone who appears under 18 is not rated.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
-            Text("Entertainment only. Kind-honest notes about light, angle, and the shot — not medical, dating, or beauty authority. Do not use this on photos of children.")
+            Text("Entertainment only. Photo notes plus a BroGPT roast (AI comedy) — not medical, dating, or beauty authority. Do not use this on photos of children.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
         }
@@ -267,6 +267,26 @@ struct LookCheckPhotoView: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.foreground)
                     .padding(.top, 4)
+            }
+            if draft.showsRoast {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("BroGPT / Roast")
+                        .font(.caption.weight(.semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(Theme.warn)
+                    Text(draft.roast)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(Theme.foreground)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.warn.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Theme.warn.opacity(0.35), lineWidth: 1)
+                )
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("BroGPT roast. \(draft.roast)")
             }
             if draft.showsScore, let score = draft.score {
                 ResultRow(label: "Score", value: "\(score)", emphasis: true, tone: verdictTone(draft.verdict))

@@ -170,7 +170,7 @@ export const TOOLS = [
   ["battery-bank", "Battery Bank Calculator", "Size a battery bank from load and backup duration, or reverse-solve runtime from series/parallel strings, with chemistry presets and a continuous C-rate flag.", "sec-battery-bank"],
   ["panel-schedule", "Panel Schedule", "Read a panel schedule image and estimate circuit demand, breaker layout, diversity, panel FLA, and remaining expansion capacity. Load-analyzer and power-study modes.", "sec-panel-schedule"],
   ["megger-tdr-analyzer", "Megger TDR Trace Analyzer", "Analyze a Megger TDR500 screen image for velocity factor, range, impedance, and cable fault reflections.", "sec-tdr"],
-  ["look-check", "Look Check", "Upload any photo for a playful good-or-bad look verdict. Entertainment only — not medical or dating advice. Photos upload only when you click Analyze Look.", "sec-look-check"],
+  ["look-check", "Look Check", "Upload any photo for a playful look verdict plus a BroGPT roast. Entertainment only — AI comedy, not medical or dating advice. Photos upload only when you click Analyze Look.", "sec-look-check"],
   ["smith-chart", "Smith Chart Tool", "Explore transmission-line impedance matching, reflection coefficient, VSWR, and return loss.", "sec-smith-chart"],
   ["emp-emc-shielding", "EMP / EMC Shielding Calculator", "Educational Faraday-loop, aperture-leakage, and skin-depth estimates for cages, seams, and cable-entry protection. Protection-side physics only — not a pulse-source designer.", "sec-emp-emc"],
   ["heater-wizard", "Heater Design Wizard", "Size industrial resistive heaters across voltage, phase, and wye or delta wiring, and design custom Nichrome or Kanthal heating elements by wire gauge and length.", "sec-heater-wizard"],

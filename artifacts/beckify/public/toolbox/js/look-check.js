@@ -1,7 +1,7 @@
 /*
- * Look Check — camera or file photo, then metrics plus a brief how-you-look summary.
+ * Look Check — camera or file photo, then metrics plus a BroGPT roast.
  * Cloud-only. Taking or choosing a photo does not upload it; Analyze Look does.
- * Entertainment only. Not medical or dating advice.
+ * Entertainment only — AI comedy. Not medical or dating advice.
  */
 
 'use strict';
@@ -108,6 +108,33 @@ function lookDefaultHeadline(verdict) {
   return 'Some things work. Some things to retake.';
 }
 
+function lookCopyLine(draft) {
+  if (!draft) return '';
+  const parts = ['Look Check: ' + lookBadge(draft.verdict)];
+  if (draft.verdict !== 'declined' && draft.score != null) {
+    parts.push('score ' + draft.score);
+  }
+  const head = String(draft.headline || lookDefaultHeadline(draft.verdict)).trim();
+  if (head) parts.push(head);
+  const roast = String(draft.roast || '').trim();
+  if (roast) parts.push('BroGPT: ' + roast);
+  return parts.join(' · ');
+}
+
+function lookCopyDraft() {
+  const text = lookCopyLine(lookState.draft);
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (typeof window.showToast === 'function') window.showToast('Result copied to clipboard');
+    }).catch(() => {
+      if (typeof window.showToast === 'function') window.showToast('Could not copy — try selecting manually');
+    });
+  } else if (typeof window.showToast === 'function') {
+    window.showToast('Clipboard not available in this context');
+  }
+}
+
 const LOOK_METRIC_ROWS = [
   { key: 'lighting', label: 'Lighting' },
   { key: 'framing', label: 'Framing' },
@@ -165,6 +192,7 @@ function lookRenderDraft(draft) {
   lookState.draft = draft;
   if (!lookEl.verdictCard || !draft) {
     if (lookEl.verdictCard) lookEl.verdictCard.hidden = true;
+    if (lookEl.roast) lookEl.roast.hidden = true;
     return;
   }
   lookEl.verdictCard.hidden = false;
@@ -176,6 +204,9 @@ function lookRenderDraft(draft) {
     lookEl.summary.hidden = !summary;
     lookEl.summary.textContent = summary;
   }
+  const roast = String(draft.roast || '').trim();
+  if (lookEl.roast) lookEl.roast.hidden = !roast;
+  if (lookEl.roastText) lookEl.roastText.textContent = roast;
   lookRenderMetrics(draft);
   const showScore = draft.verdict !== 'declined' && draft.score != null;
   if (lookEl.scoreWrap) lookEl.scoreWrap.hidden = !showScore;
@@ -380,6 +411,7 @@ function lookBindEvents() {
   }
   if (lookEl.analyzeBtn) lookEl.analyzeBtn.addEventListener('click', lookRunAnalysis);
   if (lookEl.resetBtn) lookEl.resetBtn.addEventListener('click', lookReset);
+  if (lookEl.copyBtn) lookEl.copyBtn.addEventListener('click', lookCopyDraft);
   if (lookEl.endpoint) lookEl.endpoint.addEventListener('change', lookSyncSettings);
   if (lookEl.token) lookEl.token.addEventListener('change', lookSyncSettings);
 }
@@ -406,6 +438,9 @@ function lookCacheElements() {
   lookEl.badge = document.getElementById('look-verdict-badge');
   lookEl.headline = document.getElementById('look-headline');
   lookEl.summary = document.getElementById('look-summary');
+  lookEl.roast = document.getElementById('look-roast');
+  lookEl.roastText = document.getElementById('look-roast-text');
+  lookEl.copyBtn = document.getElementById('look-copy-btn');
   lookEl.metrics = document.getElementById('look-metrics');
   lookEl.score = document.getElementById('look-score');
   lookEl.scoreWrap = document.getElementById('look-score-wrap');

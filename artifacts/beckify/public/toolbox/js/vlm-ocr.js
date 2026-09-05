@@ -344,6 +344,11 @@
     return metrics;
   }
 
+  function normalizeLookRoast(raw, verdict) {
+    if (verdict === 'declined' || verdict === 'no_person') return '';
+    return String((raw && raw.roast) || '').trim();
+  }
+
   function normalizeLookDraft(raw) {
     var allowed = { looks_good: 1, mixed: 1, looks_bad: 1, no_person: 1, declined: 1 };
     var verdict = String((raw && raw.verdict) || '').toLowerCase();
@@ -358,6 +363,7 @@
       score: score,
       headline: String((raw && raw.headline) || ''),
       summary: summary,
+      roast: normalizeLookRoast(raw, verdict),
       metrics: normalizeLookMetrics(raw, score, verdict),
       reasons: Array.isArray(raw && raw.reasons) ? raw.reasons.map(String) : [],
       fixes: Array.isArray(raw && raw.fixes) ? raw.fixes.map(String) : [],
@@ -603,6 +609,7 @@
     analyzeTdr: analyzeTdr,
     analyzeLook: analyzeLook,
     normalizeLookDraft: normalizeLookDraft,
+    normalizeLookRoast: normalizeLookRoast,
     asLookScore: asLookScore,
     extractJsonObject: extractJsonObject,
     safeExtractJsonObject: safeExtractJsonObject,
