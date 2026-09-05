@@ -40,11 +40,15 @@ const game = new Phaser.Game({
     },
   },
   scale: {
+    // FIT + CENTER_BOTH keeps the 16:9 world. Parent fills the iframe/cabinet so
+    // there is no chrome letterbox. RESIZE would stretch Matter space; we refresh
+    // FIT on viewport / fullscreen / orientation instead.
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     parent,
     width: W,
     height: H,
+    expandParent: false,
   },
   input: {
     activePointers: 3,
@@ -55,6 +59,21 @@ const game = new Phaser.Game({
   },
   scene: [MissionScene],
 });
+
+function refreshScale() {
+  try {
+    game.scale.refresh();
+  } catch {
+    /* game not ready */
+  }
+}
+
+window.addEventListener('resize', refreshScale);
+window.addEventListener('orientationchange', refreshScale);
+document.addEventListener('fullscreenchange', refreshScale);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', refreshScale);
+}
 
 window.NEW_GLENN_ENGINE = 'phaser4';
 window.__ngGame = game;

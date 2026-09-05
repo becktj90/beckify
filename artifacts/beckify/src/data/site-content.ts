@@ -220,7 +220,7 @@ export const GAMES: Game[] = [
   {
     name: "New Glenn Runner",
     description:
-      "A Phaser 4 launch arcade: charge liftoff at LC-36, dodge the corridor, then recover first stage on barge Jacklyn.",
+      "A Phaser 4 launch arcade: fly NG-n from LC-36, hear the real sequence of events, then recover first stage on barge Jacklyn.",
     url: "/games/new-glenn-runner",
   },
 ];

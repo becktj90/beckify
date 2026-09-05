@@ -43,4 +43,4 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 
 ## Stage
 
-Internal resolution is **1280×720**. The React embed (`NewGlennRunner.tsx`) and the standalone cabinet must stay wide enough for that landscape frame.
+Internal resolution is **1280×720**. The React embed (`NewGlennRunner.tsx`) is `aspect-video` (16:9) max 1280. Phaser `Scale.FIT` + `CENTER_BOTH` fills that frame; the cabinet parent is 100% of the iframe so chrome does not letterbox the playfield. Refresh FIT on resize / fullscreen / orientation. Do not use `Scale.RESIZE` for the Matter world.

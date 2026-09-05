@@ -6,8 +6,9 @@
  *   newGlennRunnerStateV3     — canvas Jacklyn / feel-pass scores
  *   newGlennRunnerStateV4     — Phaser 4 vertical slice
  *   newGlennRunnerStateV5     — NG-n missions, payload unlocks, per-flight bests
+ *   newGlennRunnerStateV6     — SFX/music volume split, control hints, sequence HUD
  *
- * V5 copies scores and prefs from V4/V3/V2 on first load, then writes V5 only.
+ * V6 copies scores and prefs from V5/V4/V3/V2 on first load, then writes V6 only.
  * Old keys are left in place so a player can still open a canvas bookmark.
  */
 import { DEFAULT_SETTINGS, LEGACY_KEYS, STORAGE_KEY } from './config.js';
@@ -21,6 +22,11 @@ function parse(raw) {
   } catch {
     return null;
   }
+}
+
+function clamp01(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : fallback;
 }
 
 function normalizeMissions(next) {
@@ -57,8 +63,10 @@ function normalize(merged) {
   next.hiScore = Number(next.hiScore) || 0;
   next.missionCount = Number(next.missionCount) || 0;
   next.engine = 'phaser4';
-  const volume = Number(next.volume);
-  next.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0.72;
+  next.volume = clamp01(next.volume, 0.72);
+  next.sfxVolume = clamp01(next.sfxVolume, 1);
+  next.musicVolume = clamp01(next.musicVolume, 0.85);
+  next.controlHints = next.controlHints !== false;
   return normalizeMissions(next);
 }
 
