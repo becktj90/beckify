@@ -271,5 +271,16 @@ final class ConductorLengthTests: XCTestCase {
             circularMils: 105_600,
             densityGPerCm3: 8.89
         ))
+        XCTAssertThrowsError(try ConductorLength.metalMass(
+            lengthFt: 0,
+            circularMils: 4110,
+            material: .copperAnnealed
+        )) { error in
+            guard let calc = error as? CalcError, case .outOfRange(let message) = calc else {
+                return XCTFail("expected outOfRange, got \(error)")
+            }
+            XCTAssertTrue(message.contains("Length and conductor area"))
+            XCTAssertFalse(message.contains("density"))
+        }
     }
 }

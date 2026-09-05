@@ -309,7 +309,7 @@ public enum ConductorLength {
     ) throws -> (kg: Double, lb: Double) {
         guard lengthFt.isFinite, lengthFt > 0,
               circularMils.isFinite, circularMils > 0 else {
-            throw CalcError.outOfRange("Length, conductor area, and density must be greater than zero.")
+            throw CalcError.outOfRange("Length and conductor area must be greater than zero.")
         }
         let lb = bookLbPerKft(circularMils: circularMils, material: material) * lengthFt / 1000
         return (kg: lb * gramsPerPound / 1000, lb: lb)
