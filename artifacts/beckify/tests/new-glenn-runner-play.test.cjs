@@ -155,6 +155,7 @@ assert.match(textures, /drawLaunchTable/);
 assert.match(textures, /drawGse/);
 assert.doesNotMatch(textures, /leftTowerX/);
 assert.doesNotMatch(textures, /rightTowerX/);
+assert.match(textures, /function makeAscentSky\(/);
 assert.match(textures, /function drawIlt\(/);
 assert.match(textures, /function makeBooster\(/);
 assert.match(textures, /function makeSmokeBank\(/);

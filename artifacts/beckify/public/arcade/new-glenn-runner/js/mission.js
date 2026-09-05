@@ -89,6 +89,7 @@ export default class MissionScene extends Phaser.Scene {
     this.matter.world.setGravity(0, 0);
     this.matter.world.setBounds(0, -4000, W, 5200, 32, false, false, false, false);
 
+    this.bgSky = this.add.image(W / 2, -1480, 'ascent-sky').setDepth(-1);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.bgOcean = this.add.image(W / 2, H / 2, 'ocean').setVisible(false).setDepth(0);
     this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
@@ -115,6 +116,7 @@ export default class MissionScene extends Phaser.Scene {
       frictionAir: 0.02,
       density: 0.002,
     });
+    this.rocket.setScale(1.18);
     this.bindRocketBody();
     this.rocket.setIgnoreGravity(true);
 
@@ -341,6 +343,7 @@ export default class MissionScene extends Phaser.Scene {
     hideScreens();
     this.clearActors();
     this.clearDebris();
+    this.bgSky.setVisible(true);
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.jacklyn.setVisible(false);
@@ -387,6 +390,7 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.stopFollow();
     this.cameras.main.setZoom(1);
     this.cameras.main.centerOn(W / 2, H / 2);
+    this.bgSky.setVisible(true);
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.bgOcean.clearTint();
@@ -411,8 +415,9 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setIgnoreGravity(false);
     this.matter.world.setGravity(0, 0.22);
     if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup());
-    this.cameras.main.startFollow(this.rocket, true, 0.1, 0.14);
-    this.cameras.main.setDeadzone(70, 36);
+    this.cameras.main.startFollow(this.rocket, true, 0.12, 0.16);
+    this.cameras.main.setDeadzone(40, 24);
+    this.cameras.main.setZoom(this.settings.reducedMotion ? 1 : 0.92);
     if (!this.settings.reducedMotion) this.cameras.main.shake(260, 0.007);
     AudioApi.play('liftoff', this.settings);
     AudioApi.setBed('roar', true, this.settings, 0.42);
@@ -429,6 +434,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.landingLock = false;
     this.session.jacklynPhase = 'slide';
     this.clearActors();
+    this.bgSky.setVisible(false);
     this.bgPad.setVisible(false);
     this.bgOcean.setVisible(true);
     this.bgOcean.setTint(flight.seaTint || 0xffffff);
@@ -526,8 +532,9 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.x = clamp(this.rocket.x, 80, W - 80);
 
     const vy = this.rocket.body.velocity.y;
-    this.session.velocity = Math.max(0, Math.round((-vy) * 110 + this.session.altitudeKm * 16));
-    this.session.altitudeKm = clamp((PAD_ROCKET_Y - this.rocket.y) / 78, 0, 90);
+    this.session.velocity = Math.max(0, Math.round((-vy) * 110 + this.session.tClock * 28));
+    this.session.altitudeKm = clamp(this.session.tClock * 1.65, 0, 85);
+    this.bgPad.setVisible(this.rocket.y > 80);
     this.session.score += Math.max(0, (-vy) * 26 * dt * (1 + this.session.combo * 0.1));
 
     this.session.spawnAt -= dt;

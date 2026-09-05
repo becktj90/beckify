@@ -503,6 +503,47 @@ export function makeJacklyn() {
   return cv;
 }
 
+/** Tall climb backdrop so the camera never falls into a black void. */
+export function makeAscentSky() {
+  const w = 1280;
+  const h = 4400;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, '#02060c');
+  sky.addColorStop(0.28, '#061018');
+  sky.addColorStop(0.48, '#0a2040');
+  sky.addColorStop(0.66, '#163a68');
+  sky.addColorStop(0.8, '#3a7eb4');
+  sky.addColorStop(0.9, '#6fb4e8');
+  sky.addColorStop(1, '#8ec6e6');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for (let i = 0; i < 160; i++) {
+    const y = (i * 97) % Math.floor(h * 0.72);
+    ctx.globalAlpha = 0.25 + (i % 5) * 0.12;
+    ctx.fillRect((i * 137) % w, y, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.ellipse((i * 190 + 80) % w, h * 0.78 + (i % 3) * 28, 70, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255,207,93,0.18)';
+  ctx.setLineDash([8, 14]);
+  ctx.beginPath();
+  ctx.moveTo(w * 0.28, h * 0.12);
+  ctx.lineTo(w * 0.34, h);
+  ctx.moveTo(w * 0.72, h * 0.12);
+  ctx.lineTo(w * 0.66, h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  return cv;
+}
+
 export function makeOcean() {
   const cv = canvas(1280, 720);
   const ctx = cv.getContext('2d');
@@ -681,6 +722,7 @@ export function installTextures(scene) {
     add(`rocket-${mission.id}`, makeRocket(true, mission));
   });
   add('pad', makePad());
+  add('ascent-sky', makeAscentSky());
   add('ocean', makeOcean());
   add('jacklyn', makeJacklyn());
   add('bird', makeHazard('bird'));
@@ -692,5 +734,5 @@ export function installTextures(scene) {
   add('pickup-boost', makePickup('boost'));
   add('spark', makeSpark());
   add('steam', makeDot('rgba(230,240,255,0.9)', 16, 16));
-  add('deck-pad', canvas(168, 28));
+  add('deck-pad', canvas(280, 32));
 }
