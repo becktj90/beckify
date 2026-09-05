@@ -4,7 +4,7 @@ import { SchemaHead } from "@/components/seo/SchemaHead";
 
 export default function NewGlennRunnerPage() {
   return (
-    <Layout showAds={false}>
+    <Layout showAds={false} variant="cabinet">
       <SchemaHead
         title="New Glenn Runner | Beckify Games"
         description="Play New Glenn Runner, a Phaser 4 LC-36 launch arcade with KID, CADET, and PAD RAT difficulty, Jacklyn recovery, rocket pickups, local personal bests, and fullscreen play."

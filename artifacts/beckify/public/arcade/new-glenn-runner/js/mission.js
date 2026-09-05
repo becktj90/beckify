@@ -23,16 +23,18 @@ import {
   readSettingsForm,
   renderHud,
   setBanner,
+  setCardFlight,
   setDifficultyButtons,
   setMissionButtons,
   setOverlay,
+  setSummaryBreakdown,
   setSummaryCopy,
   showScreen,
   syncSettingsForm,
 } from './hud.js';
-import { bindKeyboard, createInput, isBoosting, setBoostHeld, steerAxis } from './input.js';
+import { bindKeyboard, clearFlightHolds, createInput, isBoosting, setBoostHeld, steerAxis } from './input.js';
 import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
-import { beatsFor, currentBeat, formatClock, T0_LEAD } from './sequence.js';
+import { beatsFor, currentBeat, formatClock, phaseChip, T0_LEAD } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures } from './textures.js';
 
@@ -227,6 +229,9 @@ export default class MissionScene extends Phaser.Scene {
       resetRecord: () => this.resetMissionRecord(),
       continueSummary: () => this.onPrimary(),
       play: () => this.startMission(),
+      hold: () => this.holdStandby(),
+      restart: () => this.restartMission(),
+      nextFlight: () => this.flyNextMission(),
       openMissions: () => this.openScreen('missions'),
       openHowto: () => this.openScreen('howto'),
       backToMenu: () => this.backToMenu(),
@@ -256,7 +261,11 @@ export default class MissionScene extends Phaser.Scene {
     }
 
     document.body.classList.add('is-cabinet');
-    if (isEmbedded()) document.body.classList.add('is-embedded');
+    if (isEmbedded()) {
+      document.body.classList.add('is-embedded');
+      const fsBtn = document.getElementById('arcade-fullscreen-btn');
+      if (fsBtn) fsBtn.hidden = true;
+    }
 
     this.input.on('pointerdown', (pointer) => {
       AudioApi.unlock(this.settings);
@@ -334,6 +343,7 @@ export default class MissionScene extends Phaser.Scene {
       sepDone: false,
       upperDone: false,
       hintUntil: 3.2,
+      ascentScore: 0,
     };
   }
 
@@ -369,6 +379,10 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.setZoom(1);
     this.cameras.main.centerOn(W / 2, H / 2);
     this.bgOcean.clearTint();
+    if (!this.settings.launchTipSeen) {
+      this.settings.launchTipSeen = true;
+      saveSettings(this.settings);
+    }
     setBanner('TERMINAL COUNT — hold climb through ignition', 'info', 2400);
     AudioApi.play('countdown', this.settings);
     this.refreshHud();
@@ -438,6 +452,7 @@ export default class MissionScene extends Phaser.Scene {
   enterJacklyn() {
     const flight = this.currentFlight();
     this.status = 'JACKLYN';
+    this.session.ascentScore = Math.round(this.session.ascentScore || this.session.score);
     this.session.stage = 'JACKLYN';
     this.session.radio = RADIO.JACKLYN;
     this.session.landingLock = false;
@@ -657,7 +672,10 @@ export default class MissionScene extends Phaser.Scene {
       setBanner(beat.banner, beat.kind, beat.id === 'deploy' ? 2800 : 1600);
     }
     if (beat.juice === 'maxq') AudioApi.play('maxq', this.settings);
-    if (beat.juice === 'meco') AudioApi.play('meco', this.settings);
+    if (beat.juice === 'meco') {
+      this.session.ascentScore = Math.round(this.session.score);
+      AudioApi.play('meco', this.settings);
+    }
     if (beat.juice === 'ignition') {
       AudioApi.play('liftoff', this.settings);
       if (!this.settings.reducedMotion) this.cameras.main.shake(180, 0.004);
@@ -1065,6 +1083,7 @@ export default class MissionScene extends Phaser.Scene {
       mission: this.currentFlight().id,
       payload: this.currentFlight().payload,
     };
+    const prevBest = this.settings.missionBests?.[this.currentFlight().id]?.score || 0;
     recordMissionResult(this.settings, this.currentFlight().id, points, this.session.recovered);
     const nxt = reason === 'rud' ? null : nextMissionId(this.currentFlight().id);
     const unlockedNext = nxt && !this.settings.unlockedMissions.includes(nxt);
@@ -1082,12 +1101,32 @@ export default class MissionScene extends Phaser.Scene {
           ? this.currentFlight().jacklyn.salvage
           : 'MISSION ABORT';
     const extra = unlockedNext ? `  ·  ${nxt} UNLOCKED` : '';
+    const ascent = Math.round(this.session.ascentScore || (reason === 'rud' ? points : 0));
+    const jacklynPts = points - ascent;
+    const jacklynKind = reason === 'recovered'
+      ? 'soft'
+      : reason === 'salvage'
+        ? 'salvage'
+        : reason === 'splash'
+          ? 'splash'
+          : 'abort';
+    const delta = points - prevBest;
+    const deltaLine = prevBest
+      ? `Best delta  ${delta >= 0 ? '+' : ''}${delta.toLocaleString()}  vs PB ${prevBest.toLocaleString()}`
+      : `First flight on ${this.currentFlight().id}  ·  ${points.toLocaleString()} is the mark`;
+    const nextFlight = nxt ? getMission(nxt) : null;
     AudioApi.stopBeds();
     AudioApi.play(reason === 'rud' ? 'rud' : 'success', this.settings);
     setBanner(`${this.currentFlight().id}  ${headline}   SCORE ${points.toLocaleString()}${extra}`, reason === 'rud' ? 'fail' : 'go', 0);
     setSummaryCopy(
       `${this.currentFlight().id}  ${headline}`,
       `${this.currentFlight().payload}\nScore ${points.toLocaleString()}  ·  Combo peak ×${this.session.bestCombo}${extra}\n${this.session.upperDone ? 'SECO + payload deploy — good flight.\n' : ''}Tap continue or press Space`,
+    );
+    setSummaryBreakdown(
+      `Ascent  ${ascent.toLocaleString()}`,
+      `Jacklyn ${jacklynKind}  ${jacklynPts >= 0 ? '+' : ''}${jacklynPts.toLocaleString()}`,
+      deltaLine,
+      nextFlight ? `NEXT · ${nextFlight.id} ${nextFlight.mark}` : '',
     );
     hideScreens();
     setOverlay('ng-summary', true);
@@ -1126,9 +1165,11 @@ export default class MissionScene extends Phaser.Scene {
     this.syncMatterPause();
     AudioApi.setPaused(this.paused);
     if (this.paused) {
+      clearFlightHolds(this.inputState);
       hideScreens();
       setOverlay('ng-pause', true);
     } else {
+      clearFlightHolds(this.inputState);
       setOverlay('ng-pause', false);
       setOverlay('ng-howto', false);
     }
@@ -1138,6 +1179,7 @@ export default class MissionScene extends Phaser.Scene {
 
   toggleMute() {
     this.settings.muted = !this.settings.muted;
+    this.settings.sound = !this.settings.muted;
     AudioApi.setMute(this.settings);
     saveSettings(this.settings);
     syncSettingsForm(this.settings);
@@ -1152,6 +1194,7 @@ export default class MissionScene extends Phaser.Scene {
       if (this.inFlight() && this.paused !== true) {
         this.paused = true;
         this.pausedForSettings = true;
+        clearFlightHolds(this.inputState);
         this.syncMatterPause();
         AudioApi.setPaused(true);
       }
@@ -1210,8 +1253,29 @@ export default class MissionScene extends Phaser.Scene {
     this.paused = false;
     this.pausedForSettings = false;
     this.settingsOpen = false;
+    clearFlightHolds(this.inputState);
     this.syncMatterPause();
     this.returnToMenu();
+  }
+
+  restartMission() {
+    this.paused = false;
+    this.pausedForSettings = false;
+    this.settingsOpen = false;
+    clearFlightHolds(this.inputState);
+    this.syncMatterPause();
+    AudioApi.setPaused(false);
+    this.startMission();
+  }
+
+  holdStandby() {
+    setBanner('HOLD — standing by on LC-36', 'info', 1400);
+  }
+
+  flyNextMission() {
+    const nxt = nextMissionId(this.currentFlight().id);
+    if (nxt && isUnlocked(this.settings, nxt)) this.setMission(nxt);
+    this.startMission();
   }
 
   toggleFullscreen() {
@@ -1237,6 +1301,7 @@ export default class MissionScene extends Phaser.Scene {
 
   refreshMenuCopy() {
     const flight = this.currentFlight();
+    setCardFlight(flight);
     const blurb = document.getElementById('ng-menu-blurb');
     if (blurb) blurb.textContent = `${flight.id}  //  ${flight.payload} — ${flight.blurb}`;
   }
@@ -1321,10 +1386,11 @@ export default class MissionScene extends Phaser.Scene {
         ? `CHG ${(s.charge * 100).toFixed(0)}%`
         : `THR ${(s.throttle * 100).toFixed(0)}%`,
       fuel: `${s.fuel.toFixed(0)}`,
-      stage: s.stage,
+      shield: `${s.shield}/${SHIELD_MAX}`,
+      stage: this.status === 'MENU' ? 'STANDBY' : (this.status === 'SUMMARY' ? 'SUMMARY' : (s.stage && s.stage !== 'MENU' ? s.stage : 'STANDBY')),
       score: Math.max(0, Math.round(s.score)).toLocaleString(),
       best: (missionBest || best).toLocaleString(),
-      combo: `×${s.combo}  SHLD ${s.shield}`,
+      combo: `×${s.combo}`,
       radio: s.radio,
       mission: flight.id,
       payload: `${flight.mark}  ${flight.payload}`,
@@ -1333,10 +1399,12 @@ export default class MissionScene extends Phaser.Scene {
         : '',
       clock: formatClock(s.tClock),
       tapeId: beat?.id || '',
+      phase: this.status === 'MENU' ? 'STANDBY' : phaseChip(beat?.id),
       muted: this.settings.muted,
       paused: this.paused,
       boostLabel: this.status === 'JACKLYN' ? 'HOLD TO BRAKE' : 'HOLD TO CLIMB',
       hints: this.hintLine(),
+      launchTip: this.status === 'MENU' && !this.settings.launchTipSeen,
       recordLine: best || last
         ? `${flight.id}  ${flight.payload}  ·  PB ${best.toLocaleString()}  ·  LAST ${last.toLocaleString()}  ·  ${this.settings.difficulty}`
         : `${flight.id}  ${flight.payload}  ·  NO MISSIONS FLOWN  ·  ${this.settings.difficulty}`,

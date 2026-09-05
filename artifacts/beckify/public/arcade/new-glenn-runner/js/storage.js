@@ -67,6 +67,9 @@ function normalize(merged) {
   next.sfxVolume = clamp01(next.sfxVolume, 1);
   next.musicVolume = clamp01(next.musicVolume, 0.85);
   next.controlHints = next.controlHints !== false;
+  next.launchTipSeen = Boolean(next.launchTipSeen);
+  next.sound = next.muted ? false : next.sound !== false;
+  next.muted = next.muted === true || next.sound === false;
   return normalizeMissions(next);
 }
 
