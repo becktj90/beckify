@@ -242,9 +242,8 @@ public protocol PanelAgent: Sendable {
     func extract(lines: [PanelOCRLine]) async throws -> PanelScheduleExtraction
 }
 
-/// Policy for which agent runs. Cloud upload stays compiled-in as a stub and
-/// is never enabled here — a future build would still require an explicit
-/// user action before anything left the device.
+/// Default extract is the on-device heuristic. Optional cloud Analyze lives
+/// in the iOS view and runs only after an explicit tap.
 public enum PanelAgentPolicy {
     public static let cloudVLMEnabled = false
     public static let cloudVLMRequiresExplicitUserAction = true
@@ -270,7 +269,7 @@ public struct HeuristicPanelAgent: PanelAgent {
     }
 }
 
-/// Reserved cloud VLM hook. Throws rather than inventing model output.
+/// Reserved line-only hook. The live photo Analyze path is `PanelCloudAnalyze`.
 public struct CloudPanelAgent: PanelAgent {
     public let id = "cloud-vlm-disabled"
     public let leavesDevice = true

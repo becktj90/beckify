@@ -70,6 +70,7 @@
 		BECF00000000000000000096 /* LookCheckClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000095 /* LookCheckClient.swift */; };
 		BECF00000000000000000098 /* LookCheckPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000097 /* LookCheckPhotoView.swift */; };
 		BECF0000000000000000009A /* PanelScheduleHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000099 /* PanelScheduleHandoff.swift */; };
+		BECF0000000000000000009C /* BeckifyVisionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000009B /* BeckifyVisionClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -136,6 +137,7 @@
 		BECF00000000000000000095 /* LookCheckClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckClient.swift; sourceTree = "<group>"; };
 		BECF00000000000000000097 /* LookCheckPhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckPhotoView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000099 /* PanelScheduleHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelScheduleHandoff.swift; sourceTree = "<group>"; };
+		BECF0000000000000000009B /* BeckifyVisionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyVisionClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -279,6 +281,7 @@
 				BECF00000000000000000051 /* DeviceHealthView.swift */,
 				BECF00000000000000000053 /* SensorSupport.swift */,
 				BECF00000000000000000095 /* LookCheckClient.swift */,
+				BECF0000000000000000009B /* BeckifyVisionClient.swift */,
 			);
 			path = Sensors;
 			sourceTree = "<group>";
@@ -388,6 +391,7 @@
 				BECF00000000000000000052 /* DeviceHealthView.swift in Sources */,
 				BECF00000000000000000054 /* SensorSupport.swift in Sources */,
 				BECF00000000000000000096 /* LookCheckClient.swift in Sources */,
+				BECF0000000000000000009C /* BeckifyVisionClient.swift in Sources */,
 				BECF00000000000000000056 /* VoltageDividerView.swift in Sources */,
 				BECF00000000000000000058 /* SeriesParallelView.swift in Sources */,
 				BECF0000000000000000005A /* ResistorColorView.swift in Sources */,
