@@ -265,10 +265,12 @@ export default class MissionScene extends Phaser.Scene {
     window.arcadeFullscreen = () => this.toggleFullscreen();
     window.arcadeReset = () => this.resetMissionRecord();
 
-    this.scale.on('resize', () => this.scale.refresh());
-
     if (this.qaBeat === 'jacklyn') {
       this.session = this.freshSession();
+      this.session.tClock = 36.5;
+      for (const beat of this.session.beats) {
+        if (beat.t < 36) this.session.fired[beat.id] = true;
+      }
       this.paused = false;
       this.pausedForSettings = false;
       this.syncMatterPause();

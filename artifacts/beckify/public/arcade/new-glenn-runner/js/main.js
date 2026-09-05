@@ -60,20 +60,21 @@ const game = new Phaser.Game({
   scene: [MissionScene],
 });
 
+let scaleLock = false;
 function refreshScale() {
+  if (scaleLock || !game.scale) return;
+  scaleLock = true;
   try {
     game.scale.refresh();
   } catch {
     /* game not ready */
   }
+  window.setTimeout(() => { scaleLock = false; }, 0);
 }
 
 window.addEventListener('resize', refreshScale);
 window.addEventListener('orientationchange', refreshScale);
 document.addEventListener('fullscreenchange', refreshScale);
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', refreshScale);
-}
 
 window.NEW_GLENN_ENGINE = 'phaser4';
 window.__ngGame = game;
