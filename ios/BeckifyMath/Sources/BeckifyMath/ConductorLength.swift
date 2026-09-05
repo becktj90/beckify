@@ -77,6 +77,23 @@ public enum ConductorLengthMaterial: String, Codable, CaseIterable, Sendable, Ha
     public var conductorMaterial: ConductorMaterial {
         self == .aluminum ? .aluminum : .copper
     }
+
+    /// Result-row / copy label. Copper (annealed or hard-drawn) stays "Copper weight".
+    public var weightLabel: String {
+        self == .aluminum ? "Aluminum weight" : "Copper weight"
+    }
+
+    public var metalDisplayName: String {
+        self == .aluminum ? "Aluminum" : "Copper"
+    }
+
+    /// Soft copper ~8.89 g/cm³; commercial aluminum ~2.70 g/cm³.
+    /// These are book densities for a volume estimate, not a scale reading.
+    public var densityGPerCm3: Double {
+        self == .aluminum
+            ? ConductorLength.aluminumDensityGPerCm3
+            : ConductorLength.copperDensityGPerCm3
+    }
 }
 
 /// Resistivity reference temperature. Raw values match the website select.
@@ -120,6 +137,8 @@ public struct ConductorLengthInput: Equatable, Sendable {
     public var referenceTempC: Double
     public var alpha: Double
     public var rho: Double
+    /// Selects copper vs aluminum density for the metal-mass estimate.
+    public var material: ConductorLengthMaterial
 
     public init(
         resistance: Double,
@@ -130,7 +149,8 @@ public struct ConductorLengthInput: Equatable, Sendable {
         temperatureUnit: ConductorLengthTempUnit = .celsius,
         referenceTempC: Double,
         alpha: Double,
-        rho: Double
+        rho: Double,
+        material: ConductorLengthMaterial = .copperAnnealed
     ) {
         self.resistance = resistance
         self.resistanceUnit = resistanceUnit
@@ -141,6 +161,7 @@ public struct ConductorLengthInput: Equatable, Sendable {
         self.referenceTempC = referenceTempC
         self.alpha = alpha
         self.rho = rho
+        self.material = material
     }
 }
 
@@ -158,12 +179,35 @@ public struct ConductorLengthResult: Equatable, Sendable {
     public var rho: Double
     public var alpha: Double
     public var formula: String
+    public var metalMass: ConductorMetalMass
+}
+
+/// Estimated metal mass from nominal density × volume (length × CM area).
+/// Not a scale reading — insulation, compounds, and temperature are ignored.
+public struct ConductorMetalMass: Equatable, Sendable {
+    public var label: String
+    public var metalName: String
+    public var densityGPerCm3: Double
+    public var oneWayLb: Double
+    public var oneWayKg: Double
+    public var totalPathLb: Double
+    public var totalPathKg: Double
 }
 
 /// Estimate one-way conductor distance from measured resistance.
 /// Same identity as the website toolbox: L = R_ref × CM / ρ, with linear α
 /// compensation to the resistivity reference temperature.
 public enum ConductorLength {
+    /// Soft (annealed) copper book density used for metal-mass estimates.
+    /// 8.89 g/cm³ is the common electrical-copper figure — not a weigh-scale.
+    public static let copperDensityGPerCm3 = 8.89
+    /// Commercial aluminum ~2.70 g/cm³.
+    public static let aluminumDensityGPerCm3 = 2.70
+    /// avoirdupois pound.
+    public static let gramsPerPound = 453.59237
+    /// 1 in³ = (2.54 cm)³.
+    public static let cubicInchesToCubicCm = 16.387064
+
     /// Website `CLR_MATERIAL_PRESETS`. Hard-drawn copper starts from the
     /// annealed copper book; edit ρ when you have manufacturer data.
     public static let presets: [ConductorLengthMaterial: ConductorLengthPreset] = [
@@ -204,6 +248,37 @@ public enum ConductorLength {
         unit == .fahrenheit ? (temperature - 32) * 5 / 9 : temperature
     }
 
+    /// Mass from length × circular-mil area × book density.
+    /// 1 cmil is the area of a 1-mil-diameter circle: (π/4)×10⁻⁶ in² — the same
+    /// CM the resistivity length solve already used (`CircularMils.squareInches`).
+    public static func metalMass(
+        lengthFt: Double,
+        circularMils: Double,
+        densityGPerCm3: Double
+    ) throws -> (kg: Double, lb: Double) {
+        guard lengthFt.isFinite, lengthFt > 0,
+              circularMils.isFinite, circularMils > 0,
+              densityGPerCm3.isFinite, densityGPerCm3 > 0 else {
+            throw CalcError.outOfRange("Length, conductor area, and density must be greater than zero.")
+        }
+        let areaIn2 = try CircularMils.squareInches(fromCircularMils: circularMils)
+        let volumeCm3 = areaIn2 * lengthFt * 12 * cubicInchesToCubicCm
+        let massG = volumeCm3 * densityGPerCm3
+        return (kg: massG / 1000, lb: massG / gramsPerPound)
+    }
+
+    public static func metalMass(
+        lengthFt: Double,
+        circularMils: Double,
+        material: ConductorLengthMaterial
+    ) throws -> (kg: Double, lb: Double) {
+        try metalMass(
+            lengthFt: lengthFt,
+            circularMils: circularMils,
+            densityGPerCm3: material.densityGPerCm3
+        )
+    }
+
     /// Port of `conductorLengthByResistanceModel` in toolbox `app.js`.
     public static func calculate(_ input: ConductorLengthInput) throws -> ConductorLengthResult {
         let resistanceOhms = resistanceToOhms(input.resistance, unit: input.resistanceUnit)
@@ -231,6 +306,25 @@ public enum ConductorLength {
         let resistanceAtRefTemp = resistanceOhms / denom
         let totalLengthFt = resistanceAtRefTemp * cmil / rho
         let oneWayLengthFt = totalLengthFt / pathFactor
+        let oneWay = try Self.metalMass(
+            lengthFt: oneWayLengthFt,
+            circularMils: cmil,
+            material: input.material
+        )
+        let totalPath = try Self.metalMass(
+            lengthFt: totalLengthFt,
+            circularMils: cmil,
+            material: input.material
+        )
+        let estimatedMass = ConductorMetalMass(
+            label: input.material.weightLabel,
+            metalName: input.material.metalDisplayName,
+            densityGPerCm3: input.material.densityGPerCm3,
+            oneWayLb: oneWay.lb,
+            oneWayKg: oneWay.kg,
+            totalPathLb: totalPath.lb,
+            totalPathKg: totalPath.kg
+        )
 
         return ConductorLengthResult(
             resistanceOhms: resistanceOhms,
@@ -245,7 +339,8 @@ public enum ConductorLength {
             circularMils: cmil,
             rho: rho,
             alpha: alpha,
-            formula: "L = R_ref × CM / ρ    R_ref = R / [1 + α × (T − T_ref)]"
+            formula: "L = R_ref × CM / ρ    R_ref = R / [1 + α × (T − T_ref)]",
+            metalMass: estimatedMass
         )
     }
 }

@@ -44,15 +44,15 @@ struct ConductorLengthView: View {
             toolID: .conductorLength,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .designAidExtra("Uses R = ρL/CM with a linear α compensation. Contact resistance, stranding, and manufacturer ρ will shift the estimate — not a cable locator, TDR, or a bid length."),
+            disclaimer: .designAidExtra("Uses R = ρL/CM with a linear α compensation. Contact resistance, stranding, and manufacturer ρ will shift the estimate — not a cable locator, TDR, or a bid length. Metal weight is nominal density × volume, not a scale reading."),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .conductorLength,
                 symbolic: "L = (R_ref × CM) / ρ    R_ref = R / [1 + α × (T − T_ref)]",
                 substituted: substituted,
-                meaning: "Measured resistance is first corrected to the resistivity reference temperature, then solved for total conductor path. End-to-end reports that path. Short-to-parallel and 3-phase far-end short divide it by two so the sticky number is distance to the short.",
-                citation: "NEC Chapter 9 Table 8 circular mils · Cu ρ 10.371 / 12.9 Ω·cmil/ft · Al ρ 17.02 / 21.2 · α_Cu 0.00393 / α_Al 0.00403.",
+                meaning: "Measured resistance is first corrected to the resistivity reference temperature, then solved for total conductor path. End-to-end reports that path. Short-to-parallel and 3-phase far-end short divide it by two so the sticky number is distance to the short. Metal weight is that one-way length × circular-mil area × book density.",
+                citation: "NEC Chapter 9 Table 8 circular mils · Cu ρ 10.371 / 12.9 Ω·cmil/ft · Al ρ 17.02 / 21.2 · α_Cu 0.00393 / α_Al 0.00403 · Cu 8.89 g/cm³ · Al 2.70 g/cm³.",
                 referenceTool: .circularMils
             )
 
@@ -160,6 +160,11 @@ struct ConductorLengthView: View {
                         tone: Theme.good
                     )
                     ResultRow(
+                        label: r.metalMass.label,
+                        value: "\(Format.number(r.metalMass.oneWayLb, digits: 2)) lb  ·  \(Format.number(r.metalMass.oneWayKg, digits: 2)) kg",
+                        emphasis: true
+                    )
+                    ResultRow(
                         label: "Total conductor path",
                         value: "\(Format.number(r.totalLengthFt, digits: 2)) ft  ·  \(Format.meters(r.totalLengthM))"
                     )
@@ -174,6 +179,11 @@ struct ConductorLengthView: View {
                         value: "\(material.displayName) — \(Format.number(r.rho, digits: 4)) Ω·cmil/ft"
                     )
                     ResultRow(label: "Method", value: method.detail, tone: Theme.muted)
+                    ResultRow(
+                        label: "Weight basis",
+                        value: "Nominal \(r.metalMass.metalName.lowercased()) density × volume (length × CM). Not a scale reading.",
+                        tone: Theme.muted
+                    )
                 }
                 .opacity(session.isStale ? 0.72 : 1)
 
@@ -211,6 +221,7 @@ struct ConductorLengthView: View {
                                 "oneWay": "\(Format.number(r.oneWayLengthFt, digits: 2)) ft",
                                 "total": "\(Format.number(r.totalLengthFt, digits: 2)) ft",
                                 "Rref": "\(Format.number(r.resistanceAtRefTemp, digits: 6)) Ω",
+                                "weight": "\(Format.number(r.metalMass.oneWayLb, digits: 2)) lb",
                             ]
                         ))
                     }
@@ -256,7 +267,8 @@ struct ConductorLengthView: View {
                 temperatureUnit: temperatureUnit,
                 referenceTempC: refTemp.celsius,
                 alpha: alpha.parsedDouble ?? .nan,
-                rho: rho.parsedDouble ?? .nan
+                rho: rho.parsedDouble ?? .nan,
+                material: material
             ))
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
@@ -295,7 +307,7 @@ struct ConductorLengthView: View {
     private var sticky: String? {
         guard let r = session.displayedResult else { return nil }
         let phrase = method == .single ? "end-to-end" : "to short"
-        return "\(Format.number(r.oneWayLengthFt, digits: 2)) ft \(phrase)  ·  \(Format.meters(r.oneWayLengthM))"
+        return "\(Format.number(r.oneWayLengthFt, digits: 2)) ft \(phrase)  ·  \(Format.meters(r.oneWayLengthM))  ·  \(r.metalMass.label) \(Format.number(r.metalMass.oneWayLb, digits: 2)) lb (\(Format.number(r.metalMass.oneWayKg, digits: 2)) kg)"
     }
 
     private var copyText: String? { sticky }

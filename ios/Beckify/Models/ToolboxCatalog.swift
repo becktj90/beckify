@@ -328,7 +328,7 @@ enum ToolboxCatalog {
             id: .conductorLength,
             kind: .calculator,
             title: "Conductor Length by Resistance",
-            subtitle: "Length from a milliohm (mΩ) reading — end-to-end or short-to-parallel.",
+            subtitle: "Length from a milliohm (mΩ) reading — end-to-end or short-to-parallel — plus estimated copper or aluminum weight.",
             symbol: "ruler",
             synonyms: [
                 "conductor length", "length from resistance", "length from r", "resistance length",
@@ -336,6 +336,7 @@ enum ToolboxCatalog {
                 "shorted parallel", "short to parallel", "shorted to parallel",
                 "fault location resistance", "end to end", "end-to-end",
                 "kelvin", "duct bank", "circular mils", "awg", "copper", "aluminum",
+                "copper weight", "aluminum weight", "conductor weight",
             ]
         ),
         ToolDefinition(

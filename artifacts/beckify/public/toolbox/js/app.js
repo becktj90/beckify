@@ -910,6 +910,39 @@ function clrPathFactor(method) {
   return method === 'single' ? 1 : 2;
 }
 
+/* Soft copper ~8.89 g/cm³; commercial aluminum ~2.70 g/cm³.
+   Volume = length × circular-mil area (the same CM the R→L solve used).
+   1 cmil = area of a 1-mil-diameter circle = (π/4)×10⁻⁶ in².
+   Not a scale reading — insulation, compounds, and temperature are ignored. */
+const CLR_COPPER_DENSITY_G_CM3 = 8.89;
+const CLR_ALUMINUM_DENSITY_G_CM3 = 2.70;
+const CLR_G_PER_LB = 453.59237;
+const CLR_IN3_TO_CM3 = 2.54 * 2.54 * 2.54;
+
+function clrIsAluminum(material) {
+  return material === 'al';
+}
+
+function conductorMetalMassFromLength(lengthFt, circularMils, material) {
+  if (!isPos(lengthFt, circularMils)) {
+    throw new Error('Length and conductor area must be greater than zero.');
+  }
+  const aluminum = clrIsAluminum(material);
+  const densityGPerCm3 = aluminum ? CLR_ALUMINUM_DENSITY_G_CM3 : CLR_COPPER_DENSITY_G_CM3;
+  const areaIn2 = circularMils * Math.PI / 4e6;
+  const volumeCm3 = areaIn2 * lengthFt * 12 * CLR_IN3_TO_CM3;
+  const massG = volumeCm3 * densityGPerCm3;
+  return {
+    metalName: aluminum ? 'Aluminum' : 'Copper',
+    weightLabel: aluminum ? 'Aluminum Weight' : 'Copper Weight',
+    densityGPerCm3: densityGPerCm3,
+    massKg: massG / 1000,
+    massLb: massG / CLR_G_PER_LB
+  };
+}
+
+window.conductorMetalMassFromLength = conductorMetalMassFromLength;
+
 function clrMethodCopy(method) {
   if (method === 'single') {
     return {
@@ -958,6 +991,8 @@ function conductorLengthByResistanceModel(input) {
   const resistanceAtRefTemp = resistanceOhms / denom;
   const totalLengthFt = resistanceAtRefTemp * cmil / rho;
   const oneWayLengthFt = totalLengthFt / pathFactor;
+  const oneWayMass = conductorMetalMassFromLength(oneWayLengthFt, cmil, input.material);
+  const totalMass = conductorMetalMassFromLength(totalLengthFt, cmil, input.material);
 
   return {
     resistanceOhms: resistanceOhms,
@@ -967,7 +1002,14 @@ function conductorLengthByResistanceModel(input) {
     oneWayLengthFt: oneWayLengthFt,
     totalLengthM: totalLengthFt * 0.3048,
     oneWayLengthM: oneWayLengthFt * 0.3048,
-    pathFactor: pathFactor
+    pathFactor: pathFactor,
+    metalName: oneWayMass.metalName,
+    weightLabel: oneWayMass.weightLabel,
+    densityGPerCm3: oneWayMass.densityGPerCm3,
+    oneWayMassLb: oneWayMass.massLb,
+    oneWayMassKg: oneWayMass.massKg,
+    totalPathMassLb: totalMass.massLb,
+    totalPathMassKg: totalMass.massKg
   };
 }
 
@@ -1048,12 +1090,14 @@ window.calcConductorLengthByResistance = function () {
     const copy = clrMethodCopy(method);
     showResult('clr_result', [
       [copy.primaryLabel, fmt(result.oneWayLengthFt, 2) + ' ft (' + fmt(result.oneWayLengthM, 2) + ' m)'],
+      [result.weightLabel, fmt(result.oneWayMassLb, 2) + ' lb (' + fmt(result.oneWayMassKg, 2) + ' kg)'],
       ['Total Conductor Path', fmt(result.totalLengthFt, 2) + ' ft (' + fmt(result.totalLengthM, 2) + ' m)'],
       ['Temperature-Corrected Resistance @ ' + fmt(referenceTempC, 0) + '°C', fmt(result.resistanceAtRefTemp, 6) + ' Ω'],
       ['Resistance Used', fmt(result.resistanceOhms, 6) + ' Ω'],
       ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
       ['Material / ρ', materialLabel + ' — ' + fmt(rho, 4) + ' Ω·cmil/ft'],
-      ["What's Shorted?", copy.setupLabel]
+      ["What's Shorted?", copy.setupLabel],
+      ['Weight Basis', 'Nominal ' + result.metalName.toLowerCase() + ' density × volume (length × CM). Not a scale reading.']
     ]);
   } catch (err) {
     showError('clr_result', err && err.message ? err.message : 'Could not solve conductor length.');

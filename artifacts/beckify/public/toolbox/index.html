@@ -2435,14 +2435,15 @@
     <section id="sec-conductor-length" class="section">
       <div class="section-header">
         <h2>📏 Conductor Length by Resistance</h2>
-        <p>Estimate length from a milliohm (mΩ) reading — end-to-end or shorted to a parallel.</p>
+        <p>Estimate length from a milliohm (mΩ) reading — end-to-end or shorted to a parallel — then estimated copper or aluminum weight.</p>
         <details class="section-info">
           <summary>ℹ More Info — Conductor Length by Resistance</summary>
           <div class="section-info-body">
             This tool solves conductor length from the resistivity relationship <strong>R = ρ × L / CM</strong>, rearranged as <strong>L = R × CM / ρ</strong>.<br><br>
             Use a milliohm / Kelvin reading. <strong>End-to-end</strong> is one conductor measured from end to end (distance = solved path). <strong>Short to parallel</strong> is a measurement between two parallels that are shorted or bonded somewhere along the run (distance to the short = path ÷ 2). <strong>3-phase far-end short</strong> is the same ÷2 rule on a symmetrical far-end short. Not a cable locator or TDR — contact resistance and stranding shift the estimate.<br><br>
             <strong>Temperature compensation:</strong> R<sub>T2</sub> = R<sub>T1</sub> × [1 + α × (T2 − T1)]<br>
-            The calculator uses this form to convert measured resistance at ambient temperature to the selected reference temperature before solving length.
+            The calculator uses this form to convert measured resistance at ambient temperature to the selected reference temperature before solving length.<br><br>
+            After length is solved, <strong>estimated metal weight</strong> is nominal density × volume (that one-way length × the same circular-mil area). Soft copper is 8.89 g/cm³; aluminum is 2.70 g/cm³. This is not a scale reading — insulation, compounds, and temperature are ignored.
           </div>
         </details>
       </div>
