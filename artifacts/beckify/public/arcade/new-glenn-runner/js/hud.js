@@ -51,12 +51,12 @@ export function renderHud(snapshot) {
   }
   const mute = el('arcade-mute-btn');
   if (mute) {
-    mute.textContent = snapshot.muted ? '🔇' : '🔊';
+    mute.textContent = snapshot.muted ? 'MUTED' : 'SOUND';
     mute.setAttribute('aria-pressed', snapshot.muted ? 'true' : 'false');
   }
   const pause = el('arcade-pause-btn');
   if (pause) {
-    pause.textContent = snapshot.paused ? '▶' : '⏸';
+    pause.textContent = snapshot.paused ? 'RESUME' : 'PAUSE';
     pause.setAttribute('aria-pressed', snapshot.paused ? 'true' : 'false');
   }
   const climb = el('atb-boost');

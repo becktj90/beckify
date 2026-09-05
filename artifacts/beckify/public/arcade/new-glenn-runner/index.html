@@ -75,18 +75,19 @@
       pointer-events: none;
     }
     .mc-panel {
-      background: rgba(6, 10, 22, 0.78);
-      border: 1px solid rgba(140, 224, 255, 0.45);
+      background: rgba(4, 8, 16, 0.88);
+      border: 1px solid rgba(180, 236, 255, 0.7);
       border-radius: 0.7rem;
-      padding: 6px 10px 8px;
+      padding: 8px 12px 10px;
       min-width: 0;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
     .mc-panel table {
       width: 100%;
       border-collapse: collapse;
       font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
-      font-size: clamp(0.62rem, 1.55cqi, 0.76rem);
+      font-size: clamp(0.74rem, 1.85cqi, 0.9rem);
       color: var(--cyan);
     }
     .mc-panel th {
@@ -120,7 +121,7 @@
     #ng-banner[data-kind="warn"] { background: var(--amber); }
     #t-radio, #t-payload, #t-clock {
       font-family: var(--font-mono);
-      font-size: clamp(0.62rem, 1.45cqi, 0.74rem);
+      font-size: clamp(0.72rem, 1.7cqi, 0.86rem);
       color: var(--fg);
       text-align: center;
       text-shadow: 0 1px 2px #000;
@@ -133,9 +134,9 @@
     }
     #t-payload { color: var(--cyan); }
     #ng-phase {
-      padding: 5px 14px;
+      padding: 7px 16px;
       border-radius: 999px;
-      font: 800 clamp(0.62rem, 1.55cqi, 0.8rem)/1.2 var(--font-mono);
+      font: 800 clamp(0.72rem, 1.8cqi, 0.95rem)/1.2 var(--font-mono);
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: #041014;
@@ -158,14 +159,15 @@
       gap: 6px;
     }
     .hud-btns button {
-      min-width: 44px;
-      min-height: 36px;
-      padding: 6px 8px;
+      min-width: 48px;
+      min-height: 44px;
+      padding: 8px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(183,171,255,.7);
-      background: rgba(8,8,24,.82);
-      color: var(--violet);
-      font: 700 0.72rem/1 var(--font-main);
+      border: 1px solid rgba(200,190,255,.85);
+      background: rgba(8,8,24,.92);
+      color: var(--fg);
+      font: 800 0.68rem/1 var(--font-main);
+      letter-spacing: 0.06em;
       cursor: pointer;
       touch-action: manipulation;
     }
@@ -177,7 +179,7 @@
       pointer-events: none;
       user-select: none;
     }
-    @media (hover: none), (pointer: coarse) {
+    @media (hover: none), (pointer: coarse), (max-width: 900px) {
       #arcade-touch-btns { display: block; }
     }
     #arcade-touch-btns button {
@@ -537,10 +539,10 @@
         </div>
       </div>
       <div class="hud-btns">
-        <button id="arcade-mute-btn" type="button" title="Toggle mute" aria-label="Toggle mute" aria-pressed="false">🔊</button>
-        <button id="arcade-pause-btn" type="button" title="Pause mission" aria-label="Pause mission" aria-pressed="false">⏸</button>
-        <button id="arcade-settings-btn" type="button" title="Mission settings" aria-label="Mission settings">⚙</button>
-        <button id="arcade-fullscreen-btn" type="button" title="Play fullscreen" aria-label="Play fullscreen">⛶</button>
+        <button id="arcade-mute-btn" type="button" title="Toggle mute" aria-label="Toggle mute" aria-pressed="false">SOUND</button>
+        <button id="arcade-pause-btn" type="button" title="Pause mission" aria-label="Pause mission" aria-pressed="false">PAUSE</button>
+        <button id="arcade-settings-btn" type="button" title="Mission settings" aria-label="Mission settings">SET</button>
+        <button id="arcade-fullscreen-btn" type="button" title="Play fullscreen" aria-label="Play fullscreen">FULL</button>
       </div>
       <div id="ng-menu" class="ng-screen">
         <div class="ng-card">

@@ -91,6 +91,7 @@ export default class MissionScene extends Phaser.Scene {
     this.matter.world.setGravity(0, 0);
     this.matter.world.setBounds(0, -4000, W, 5200, 32, false, false, false, false);
 
+    this.padGlow = this.add.graphics().setDepth(5);
     this.bgWash = this.add.graphics().setDepth(-2);
     this.bgWash.fillStyle(0x02060c, 1);
     this.bgWash.fillRect(0, -3600, W, 2200);
@@ -441,7 +442,8 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.rocket, true, 0.12, 0.16);
     this.cameras.main.setDeadzone(40, 24);
     this.cameras.main.setZoom(this.settings.reducedMotion ? 1 : 0.92);
-    if (!this.settings.reducedMotion) this.cameras.main.shake(260, 0.007);
+    if (!this.settings.reducedMotion) this.cameras.main.shake(420, 0.012);
+    this.flashPad(0.55);
     AudioApi.play('liftoff', this.settings);
     AudioApi.setBed('roar', true, this.settings, 0.42);
     setBanner('LIFTOFF', 'go', 1500);
@@ -510,9 +512,14 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y - this.session.charge * 6);
     this.rocket.setVelocity(0, 0);
     if (this.session.fired.deluge && this.steam) {
-      this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 118, this.settings.reducedMotion ? 1 : 3);
+      this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 118, this.settings.reducedMotion ? 2 : 8);
+      this.steam.emitParticleAt(PAD_ROCKET_X - 36, PAD_ROCKET_Y + 124, this.settings.reducedMotion ? 1 : 5);
+      this.steam.emitParticleAt(PAD_ROCKET_X + 36, PAD_ROCKET_Y + 124, this.settings.reducedMotion ? 1 : 5);
     }
-    if (this.session.fired.ignition) this.emitPlume(0.55);
+    if (this.session.fired.ignition) {
+      this.emitPlume(0.85);
+      this.flashPad(0.28);
+    }
     if (this.session.tClock >= 0 && this.session.fired.ignition) this.liftoff();
     else if (this.session.tClock >= 0.35) this.liftoff();
   }
@@ -678,10 +685,12 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (beat.juice === 'ignition') {
       AudioApi.play('liftoff', this.settings);
-      if (!this.settings.reducedMotion) this.cameras.main.shake(180, 0.004);
+      if (!this.settings.reducedMotion) this.cameras.main.shake(280, 0.008);
+      this.flashPad(0.4);
     }
     if (beat.juice === 'deluge' && this.steam) {
-      this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 120, 8);
+      this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 120, 16);
+      this.flashPad(0.12);
     }
     if (beat.juice === 'fairing') this.playFairingJettison();
     if (beat.juice === 'ses') this.spawnUpperStage();
@@ -967,10 +976,23 @@ export default class MissionScene extends Phaser.Scene {
     });
   }
 
+  flashPad(alpha) {
+    if (!this.padGlow || this.settings.reducedFlashes) return;
+    this.padGlow.clear();
+    this.padGlow.fillStyle(0xff9a28, alpha);
+    this.padGlow.fillEllipse(PAD_ROCKET_X, PAD_ROCKET_Y + 122, 220, 56);
+    this.time.delayedCall(this.settings.reducedMotion ? 80 : 160, () => {
+      if (this.padGlow) this.padGlow.clear();
+    });
+  }
+
   emitPlume(power) {
     if (this.settings.reducedMotion) return;
-    const n = power > 0.7 ? 4 : 1;
+    const n = power > 0.7 ? 8 : 3;
     this.plume.emitParticleAt(this.rocket.x, this.rocket.y + 108, n);
+    if (this.steam && power > 0.4) {
+      this.steam.emitParticleAt(this.rocket.x, this.rocket.y + 118, 2);
+    }
   }
 
   emitRcs() {
