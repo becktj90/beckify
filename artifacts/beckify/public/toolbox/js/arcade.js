@@ -3180,6 +3180,11 @@
   }
 
   function drawReady(ctx) {
+    // Phaser 4 mission-control card is the live start UX. Never paint the
+    // legacy TAP / SPACE / PREFLIGHT chrome when that menu exists.
+    if (document.documentElement.dataset.ngEngine === 'phaser4' || document.getElementById('ng-menu') || document.getElementById('ng-phaser-root')) {
+      return;
+    }
     drawBackground(ctx, 0);
     drawLaunchPad(ctx);
     drawRocket(ctx, CW / 2, CH - 104, 0, 'main', { fairingGone: false });
