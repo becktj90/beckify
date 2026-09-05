@@ -40,10 +40,10 @@ const game = new Phaser.Game({
     },
   },
   scale: {
-    // FIT + CENTER_BOTH keeps the 16:9 world. Parent fills the iframe/cabinet so
-    // there is no chrome letterbox. RESIZE would stretch Matter space; we refresh
-    // FIT on viewport / fullscreen / orientation instead.
-    mode: Phaser.Scale.FIT,
+    // Design world is 16:9. Phaser.Scale.FIT letterboxes on 16:10/DevTools
+    // parents; ENVELOP covers the cabinet (crops edges) so the playfield fills.
+    // RESIZE would stretch Matter space — do not use it.
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     parent,
     width: W,

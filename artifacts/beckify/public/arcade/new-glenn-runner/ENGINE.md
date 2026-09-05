@@ -23,7 +23,7 @@ physics: {
     debug: false,         // true only behind ?debug=1
   },
 },
-scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+scale: { mode: Phaser.Scale.ENVELOP, autoCenter: Phaser.Scale.CENTER_BOTH }, // FIT letterboxes; ENVELOP fills
 ```
 
 Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** construct a standalone `Matter.Engine` outside Phaser.
@@ -43,4 +43,4 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 
 ## Stage
 
-Internal resolution is **1280×720**. The React embed (`NewGlennRunner.tsx`) is `aspect-video` (16:9) max 1280. Phaser `Scale.FIT` + `CENTER_BOTH` fills that frame; the cabinet parent is 100% of the iframe so chrome does not letterbox the playfield. Refresh FIT on resize / fullscreen / orientation. Do not use `Scale.RESIZE` for the Matter world.
+Internal resolution is **1280×720**. The React embed (`NewGlennRunner.tsx`) is `aspect-video` (16:9) max 1280. Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent (FIT letterboxes on 16:10 / DevTools). The cabinet parent is 100% of the iframe so chrome does not steal the playfield. Do not use `Scale.RESIZE` for the Matter world.

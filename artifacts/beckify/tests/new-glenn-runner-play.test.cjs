@@ -88,6 +88,7 @@ assert.match(input, /Escape/);
 assert.match(mainJs, /physics:\s*\{[\s\S]*default:\s*'matter'/);
 assert.match(mainJs, /enableSleeping:\s*true/);
 assert.match(mainJs, /Phaser\.Scale\.FIT/);
+assert.match(mainJs, /Phaser\.Scale\.ENVELOP/);
 assert.match(mainJs, /Phaser\.Scale\.CENTER_BOTH/);
 assert.match(mainJs, /Phaser\.WEBGL/);
 assert.match(mainJs, /get\('debug'\) === '1'/);
