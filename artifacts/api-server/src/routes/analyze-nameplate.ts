@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
 import { NAMEPLATE_VISION_SYSTEM_PROMPT } from "../prompts/nameplateVisionPrompt.js";
 import {
-  ProviderTimeoutError,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
   configuredModel,
@@ -9,6 +8,7 @@ import {
   consumeRateLimit,
   getClientKey,
   pickImage,
+  visionProviderFailure,
 } from "../lib/visionClient.js";
 
 interface AnalyzeBody {
@@ -73,13 +73,9 @@ router.post("/analyze-nameplate", async (req, res) => {
       analysis: result,
     });
   } catch (error) {
-    const isTimeout = error instanceof ProviderTimeoutError;
+    const failure = visionProviderFailure(error);
     console.error("Nameplate vision provider request failed", error);
-    return res.status(isTimeout ? 504 : 502).json({
-      error: isTimeout
-        ? "The vision provider timed out. Please try again."
-        : "The vision provider could not analyze this image.",
-    });
+    return res.status(failure.status).json({ error: failure.error });
   } finally {
     bucket.inFlight -= 1;
   }

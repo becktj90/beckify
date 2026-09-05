@@ -33,6 +33,16 @@ function lookApiUrl(path) {
   }
 }
 
+function lookFormatHttpError(status, payload) {
+  if (status === 404 || status === 405) {
+    return 'The Beckify look-check API is unavailable (HTTP ' + status + '). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com (meta beckify-api-base-url) or a custom HTTPS endpoint.';
+  }
+  if (status === 503) {
+    return (payload && payload.error) || 'The Beckify vision API is not configured (missing provider key).';
+  }
+  return (payload && payload.error) || ('Look check failed with HTTP ' + status + '.');
+}
+
 function lookSetStatus(message) {
   if (lookEl.status) lookEl.status.textContent = message;
 }
@@ -226,7 +236,7 @@ async function lookRunSameOrigin(file) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `Look check failed with HTTP ${response.status}.`);
+    throw new Error(lookFormatHttpError(response.status, payload));
   }
   const Vlm = window.BeckifyVlmOcr;
   const raw = payload.analysis || payload.draft || payload;

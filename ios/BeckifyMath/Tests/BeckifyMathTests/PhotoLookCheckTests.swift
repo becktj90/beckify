@@ -157,7 +157,7 @@ final class PhotoLookCheckTests: XCTestCase {
     func testHTTPSEndpointRules() {
         XCTAssertEqual(
             PhotoLookCheck.analyzeURL(customEndpoint: nil)?.absoluteString,
-            "https://beckify.com/api/analyze-look"
+            "https://api.beckify.com/api/analyze-look"
         )
         XCTAssertEqual(
             PhotoLookCheck.analyzeURL(customEndpoint: "https://proxy.example/ocr")?.absoluteString,
@@ -183,6 +183,13 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertEqual(
             PhotoLookCheck.formatVisionError(status: 502, message: "The vision provider could not analyze this image."),
             "The vision provider could not analyze this image."
+        )
+        XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 404, message: nil).contains("api.beckify.com"))
+        XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 405, message: nil).contains("GitHub Pages"))
+        XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 503, message: nil).localizedCaseInsensitiveContains("not configured"))
+        XCTAssertEqual(
+            PhotoLookCheck.formatVisionError(status: 503, message: "The vision provider key is missing (OPENAI_API_KEY)."),
+            "The vision provider key is missing (OPENAI_API_KEY)."
         )
     }
 

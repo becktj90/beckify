@@ -142,7 +142,9 @@ public struct PhotoLookDraft: Equatable, Sendable {
 /// Parsing lives here so Linux tests can lock the web-compatible draft shape.
 public enum PhotoLookCheck {
     public static let task = "look"
-    public static let defaultAPIBase = "https://beckify.com"
+    /// Same host the website injects via `meta[name="beckify-api-base-url"]`.
+    /// Do not use `https://beckify.com` — GitHub Pages cannot POST (`405`).
+    public static let defaultAPIBase = "https://api.beckify.com"
     public static let analyzePath = "/api/analyze-look"
     public static let maxPickBytes = 12 * 1024 * 1024
     public static let maxUploadBytes = 8 * 1024 * 1024
@@ -278,6 +280,14 @@ public enum PhotoLookCheck {
         }
         if status == 504 {
             return "The vision provider timed out. Please try again."
+        }
+        if status == 404 || status == 405 {
+            return "The Beckify look-check API is unavailable (HTTP \(status)). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com or a custom HTTPS endpoint."
+        }
+        if status == 503 {
+            return message?.isEmpty == false
+                ? message!
+                : "The Beckify vision API is not configured (missing provider key)."
         }
         if let message, !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return message

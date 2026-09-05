@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
 import { LOOK_VISION_SYSTEM_PROMPT } from "../prompts/lookVisionPrompt.js";
 import {
-  ProviderTimeoutError,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
   configuredModel,
@@ -9,6 +8,7 @@ import {
   consumeRateLimit,
   getClientKey,
   pickImage,
+  visionProviderFailure,
 } from "../lib/visionClient.js";
 
 interface AnalyzeBody {
@@ -71,13 +71,9 @@ router.post("/analyze-look", async (req, res) => {
       analysis: result,
     });
   } catch (error) {
-    const isTimeout = error instanceof ProviderTimeoutError;
+    const failure = visionProviderFailure(error);
     console.error("Look vision provider request failed", error);
-    return res.status(isTimeout ? 504 : 502).json({
-      error: isTimeout
-        ? "The vision provider timed out. Please try again."
-        : "The vision provider could not analyze this image.",
-    });
+    return res.status(failure.status).json({ error: failure.error });
   } finally {
     bucket.inFlight -= 1;
   }

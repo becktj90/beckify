@@ -23,6 +23,35 @@ export class ProviderTimeoutError extends Error {
   }
 }
 
+export class MissingProviderKeyError extends Error {
+  readonly envName: string;
+  constructor(envName: string) {
+    super(`The vision provider key is missing (${envName}). Photos cannot be analyzed until that secret is set on the API host.`);
+    this.name = "MissingProviderKeyError";
+    this.envName = envName;
+  }
+}
+
+export const VISION_POST_PATHS = [
+  "/api/analyze-look",
+  "/api/analyze-nameplate",
+  "/api/analyze-panel",
+  "/api/analyze-tdr",
+] as const;
+
+export function visionProviderFailure(error: unknown): { status: number; error: string } {
+  if (error instanceof MissingProviderKeyError) {
+    return { status: 503, error: error.message };
+  }
+  if (error instanceof ProviderTimeoutError) {
+    return { status: 504, error: "The vision provider timed out. Please try again." };
+  }
+  return {
+    status: 502,
+    error: "The vision provider could not analyze this image.",
+  };
+}
+
 export function configuredProvider(envName = "NAMEPLATE_VISION_PROVIDER"): VisionProvider {
   const provider = (process.env[envName] ?? process.env["TDR_VISION_PROVIDER"] ?? "openai").toLowerCase();
   if (provider !== "openai" && provider !== "anthropic") {
@@ -140,7 +169,7 @@ export async function analyzeWithOpenAI(args: {
   timeoutMs?: number;
 }): Promise<unknown> {
   const apiKey = process.env["OPENAI_API_KEY"];
-  if (!apiKey) throw new Error("OPENAI_API_KEY is required for OpenAI vision analysis.");
+  if (!apiKey) throw new MissingProviderKeyError("OPENAI_API_KEY");
 
   const body: Record<string, unknown> = {
     model: args.model,
@@ -189,7 +218,7 @@ export async function analyzeWithAnthropic(args: {
   timeoutMs?: number;
 }): Promise<unknown> {
   const apiKey = process.env["ANTHROPIC_API_KEY"];
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is required for Anthropic vision analysis.");
+  if (!apiKey) throw new MissingProviderKeyError("ANTHROPIC_API_KEY");
 
   const { ok, status, payload } = await fetchJsonWithTimeout<{
     content?: Array<{ text?: string }>;

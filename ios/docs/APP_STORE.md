@@ -167,7 +167,7 @@ Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral,
 
 ## Export compliance
 
-The app uses HTTPS for optional links the user taps (beckify.com, mailto) and for Look Check **Analyze Look** (`https://beckify.com/api/analyze-look` or a user-entered HTTPS endpoint). **Online / Captive** also opens a cleartext HTTP GET to Apple’s public captive-portal detect host (`captive.apple.com`) — the standard hotspot-detect technique; the request carries no user content. It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
+The app uses HTTPS for optional links the user taps (beckify.com, mailto) and for Look Check **Analyze Look** (`https://api.beckify.com/api/analyze-look` or a user-entered HTTPS endpoint). **Online / Captive** also opens a cleartext HTTP GET to Apple’s public captive-portal detect host (`captive.apple.com`) — the standard hotspot-detect technique; the request carries no user content. It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
 
 ## Screenshots (required sizes)
 

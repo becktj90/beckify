@@ -24,6 +24,7 @@ ok("live policy is not a draft", !/Status:\s*Draft/i.test(privacyMd) && !/not pu
 ok("policy names Trevor Beck and contact email", /Trevor Beck/.test(privacyMd) && /trevorjohnbeck@gmail.com/.test(privacyMd));
 ok("policy URL is https://beckify.com/privacy", /https:\/\/beckify.com\/privacy/.test(privacyMd));
 ok("nutrition label documents Look Check photo upload", /Analyze Look/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd));
+ok("Look Check posts to api.beckify.com, not GitHub Pages", /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyMd) && /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyPage) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyMd) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyPage));
 ok("sensors and Saved Jobs stay on device", /Saved Jobs stay on the device/.test(privacyMd));
 ok("no analytics, ads, tracking, or accounts", /No analytics/.test(privacyMd) && /No ads/.test(privacyMd) && /no tracking/.test(privacyMd) && /No user accounts/.test(privacyMd));
 ok("permissions only when tools are used", /only when the related tool is used/.test(privacyMd));

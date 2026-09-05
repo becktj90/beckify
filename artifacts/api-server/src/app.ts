@@ -50,11 +50,13 @@ app.use(
   }),
 );
 app.use(cors({
+  // iOS URLSession sends no Origin — allow those requests.
+  // Safari on beckify.com sends Origin: https://beckify.com (allow-listed).
   origin(origin, callback) {
     callback(null, !origin || corsOrigins.has(origin));
   },
   methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   maxAge: 86400,
 }));
 // Keep the large parser scoped to the image endpoint. Other routes do not need
