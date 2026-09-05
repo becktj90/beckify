@@ -594,6 +594,10 @@ struct MotorNameplateOCRView: View {
                 recognizeError = "Could not read that photo."
                 return
             }
+            if data.count > BeckifyVisionAPI.maxPickBytes {
+                recognizeError = "Please choose an image smaller than 12 MB."
+                return
+            }
             isRecognizing = true
             capturedImage = image
         } catch {

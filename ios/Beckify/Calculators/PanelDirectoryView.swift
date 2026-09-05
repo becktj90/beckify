@@ -775,6 +775,10 @@ struct PanelDirectoryView: View {
                 guard let data = try await item.loadTransferable(type: Data.self),
                       let image = UIImage(data: data)
                 else { continue }
+                if data.count > BeckifyVisionAPI.maxPickBytes {
+                    recognizeError = "Please choose an image smaller than 12 MB."
+                    return
+                }
                 images.append(image)
             } catch {
                 continue

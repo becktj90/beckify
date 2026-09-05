@@ -9,8 +9,9 @@ struct VisionHTTPError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-/// Shared URLSession client for `/api/analyze-look`, `/api/analyze-nameplate`,
-/// and `/api/analyze-panel`. Photos are encoded only after the user taps Analyze.
+/// URLSession client for `/api/analyze-nameplate` and `/api/analyze-panel`.
+/// JPEG encode matches Look Check (8 MB / 2048 edge). Look Check keeps its
+/// own `PhotoLookCheckClient`. Photos are encoded only after Analyze.
 enum BeckifyVisionClient {
     struct PreparedUpload: Equatable {
         var dataURL: String
@@ -60,7 +61,7 @@ enum BeckifyVisionClient {
             mimeType: prepared.mimeType,
             task: task
         )
-        try await postJSON(
+        return try await postJSON(
             url: url,
             body: body,
             token: BeckifyVisionAPI.authorizationToken(customEndpoint: customEndpoint, token: token),
@@ -150,5 +151,3 @@ enum BeckifyVisionClient {
         }
     }
 }
-
-typealias PhotoLookHTTPError = VisionHTTPError

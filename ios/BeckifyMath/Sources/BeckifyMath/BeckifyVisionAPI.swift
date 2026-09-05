@@ -1,24 +1,28 @@
 import Foundation
 
 /// User-initiated cloud vision tasks that POST to `api.beckify.com`.
-/// Look Check, Motor Nameplate, and Panel Directory share this host and
-/// `{ imageBase64, mimeType, task }` body. Nothing uploads until Analyze.
+/// Nameplate and panel Analyze use this type. Look Check keeps `PhotoLookCheck`
+/// (`.look` exists so the POST body and path stay aligned with that contract).
 public enum BeckifyVisionTask: String, Equatable, Sendable {
     case look
     case nameplate
     case panel
 }
 
-/// Shared HTTPS contract with the live Beckify vision API.
-/// Parsing for each task lives next to that tool (`PhotoLookCheck`,
-/// `NameplateCloudAnalyze`, `PanelCloudAnalyze`) so Linux tests can lock it.
+/// HTTPS contract for Motor Nameplate OCR and Panel Directory cloud Analyze.
+///
+/// Mirrors `PhotoLookCheck` (`imageBase64` + `mimeType` + `task`, HTTPS-only,
+/// default `https://api.beckify.com`). Limits and host rules alias that type
+/// so Look Check stays the source of truth. Do not rewrite Look Check to use
+/// this surface. Photos leave the device only when the user taps Analyze.
+/// Never use `beckify.com` (GitHub Pages returns 405).
 public enum BeckifyVisionAPI {
-    /// Same host the website injects via `meta[name="beckify-api-base-url"]`.
-    /// Do not use `https://beckify.com` — GitHub Pages cannot POST (`405`).
-    public static let defaultAPIBase = "https://api.beckify.com"
-    public static let maxPickBytes = 12 * 1024 * 1024
-    public static let maxUploadBytes = 8 * 1024 * 1024
-    public static let maxUploadEdge = 2048
+    public static let defaultAPIBase = PhotoLookCheck.defaultAPIBase
+    public static let maxPickBytes = PhotoLookCheck.maxPickBytes
+    public static let maxUploadBytes = PhotoLookCheck.maxUploadBytes
+    public static let maxUploadEdge = PhotoLookCheck.maxUploadEdge
+    public static let disclaimer =
+        "Photos upload only when you tap Analyze."
 
     public static func analyzePath(for task: BeckifyVisionTask) -> String {
         switch task {
@@ -47,18 +51,7 @@ public enum BeckifyVisionAPI {
     }
 
     public static func httpsBase(_ raw: String?) -> String? {
-        let trimmed = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(), scheme == "https" else {
-            return nil
-        }
-        var path = url.path
-        if path.hasSuffix("/") { path.removeLast() }
-        var out = url.scheme! + "://" + (url.host ?? "")
-        if let port = url.port { out += ":\(port)" }
-        out += path
-        if let query = url.query, !query.isEmpty { out += "?" + query }
-        return out
+        PhotoLookCheck.httpsBase(raw)
     }
 
     /// POST body matching website `analyzeLook` / nameplate / panel helpers.
@@ -87,22 +80,12 @@ public enum BeckifyVisionAPI {
 
     /// Apex GitHub Pages host only — not `api.beckify.com`.
     public static func hostIsGitHubPages(_ raw: String?) -> Bool {
-        let trimmed = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        let host: String
-        if let url = URL(string: trimmed), let urlHost = url.host, !urlHost.isEmpty {
-            host = urlHost
-        } else {
-            host = trimmed
-        }
-        let folded = host.lowercased()
-        return folded == "beckify.com" || folded == "www.beckify.com"
+        PhotoLookCheck.hostIsGitHubPages(raw)
     }
 
     /// Custom-endpoint Bearer tokens stay off the default Beckify proxy.
     public static func authorizationToken(customEndpoint: String?, token: String) -> String {
-        guard httpsBase(customEndpoint) != nil else { return "" }
-        return token.trimmingCharacters(in: .whitespacesAndNewlines)
+        PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
     }
 
     public static func formatVisionError(
@@ -152,16 +135,11 @@ public enum BeckifyVisionAPI {
     }
 
     public static func dataURL(jpegBase64: String) -> String {
-        "data:image/jpeg;base64,\(jpegBase64)"
+        PhotoLookCheck.dataURL(jpegBase64: jpegBase64)
     }
 
     public static func mimeType(fromDataURL dataURL: String, fallback: String = "image/jpeg") -> String {
-        if dataURL.hasPrefix("data:image/png") { return "image/png" }
-        if dataURL.hasPrefix("data:image/webp") { return "image/webp" }
-        if dataURL.hasPrefix("data:image/jpeg") || dataURL.hasPrefix("data:image/jpg") {
-            return "image/jpeg"
-        }
-        return fallback
+        PhotoLookCheck.mimeType(fromDataURL: dataURL, fallback: fallback)
     }
 
     /// Unwrap `{ analysis | draft | raw }` the way website `visionDraftInput` does.

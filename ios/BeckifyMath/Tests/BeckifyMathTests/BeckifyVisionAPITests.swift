@@ -24,6 +24,22 @@ final class BeckifyVisionAPITests: XCTestCase {
         XCTAssertNil(BeckifyVisionAPI.analyzeURL(task: .panel, customEndpoint: nil, apiBase: "http://beckify.com"))
     }
 
+    func testUploadLimitsAndLookBodyMatchPhotoLookCheck() {
+        XCTAssertEqual(BeckifyVisionAPI.defaultAPIBase, PhotoLookCheck.defaultAPIBase)
+        XCTAssertEqual(BeckifyVisionAPI.maxPickBytes, PhotoLookCheck.maxPickBytes)
+        XCTAssertEqual(BeckifyVisionAPI.maxUploadBytes, PhotoLookCheck.maxUploadBytes)
+        XCTAssertEqual(BeckifyVisionAPI.maxUploadEdge, PhotoLookCheck.maxUploadEdge)
+        XCTAssertEqual(
+            BeckifyVisionAPI.requestBody(imageBase64: "x", mimeType: "image/jpeg", task: .look),
+            PhotoLookCheck.requestBody(imageBase64: "x", mimeType: "image/jpeg")
+        )
+        XCTAssertEqual(
+            BeckifyVisionAPI.analyzeURL(task: .look, customEndpoint: nil)?.absoluteString,
+            PhotoLookCheck.analyzeURL(customEndpoint: nil)?.absoluteString
+        )
+        XCTAssertTrue(BeckifyVisionAPI.disclaimer.localizedCaseInsensitiveContains("tap Analyze"))
+    }
+
     func testRequestBodyMatchesLookCheckContract() throws {
         let body = BeckifyVisionAPI.requestBody(
             imageBase64: "data:image/jpeg;base64,abc",
