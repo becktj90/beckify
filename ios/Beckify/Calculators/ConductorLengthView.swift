@@ -44,14 +44,14 @@ struct ConductorLengthView: View {
             toolID: .conductorLength,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .designAidExtra("Uses R = ρL/CM with a linear α compensation. Contact resistance, stranding, and manufacturer ρ will shift the estimate — not a cable locator, TDR, or a bid length. Metal weight is nominal density × volume, not a scale reading."),
+            disclaimer: .designAidExtra("Uses R = ρL/CM with a linear α compensation. Contact resistance, stranding, and manufacturer ρ will shift the estimate — not a cable locator, TDR, or a bid length. Metal weight is book lb/kft × one-way length, not a scale reading."),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .conductorLength,
                 symbolic: "L = (R_ref × CM) / ρ    R_ref = R / [1 + α × (T − T_ref)]",
                 substituted: substituted,
-                meaning: "Measured resistance is first corrected to the resistivity reference temperature, then solved for total conductor path. End-to-end reports that path. Short-to-parallel and 3-phase far-end short divide it by two so the sticky number is distance to the short. Metal weight is that one-way length × circular-mil area × book density.",
+                meaning: "Measured resistance is first corrected to the resistivity reference temperature, then solved for total conductor path. End-to-end reports that path. Short-to-parallel and 3-phase far-end short divide it by two so the sticky number is distance to the short. Metal weight is published lb/kft × that one-way length.",
                 citation: "NEC Chapter 9 Table 8 circular mils · Cu ρ 10.371 / 12.9 Ω·cmil/ft · Al ρ 17.02 / 21.2 · α_Cu 0.00393 / α_Al 0.00403 · Cu 8.89 g/cm³ · Al 2.70 g/cm³.",
                 referenceTool: .circularMils
             )
@@ -181,7 +181,7 @@ struct ConductorLengthView: View {
                     ResultRow(label: "Method", value: method.detail, tone: Theme.muted)
                     ResultRow(
                         label: "Weight basis",
-                        value: "Nominal \(r.metalMass.metalName.lowercased()) density × volume (length × CM). Not a scale reading.",
+                        value: "\(Format.number(r.metalMass.lbPerKft, digits: 2)) lb/kft × one-way length (distance to short / end-to-end). Bare \(r.metalMass.metalName.lowercased()) book — not a scale reading.",
                         tone: Theme.muted
                     )
                 }

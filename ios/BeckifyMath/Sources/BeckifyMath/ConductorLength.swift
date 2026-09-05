@@ -182,12 +182,15 @@ public struct ConductorLengthResult: Equatable, Sendable {
     public var metalMass: ConductorMetalMass
 }
 
-/// Estimated metal mass from nominal density × volume (length × CM area).
+/// Estimated metal mass from published bare-metal lb/kft × length.
+/// Displayed weight is always **one-way** (distance to short / end-to-end).
 /// Not a scale reading — insulation, compounds, and temperature are ignored.
 public struct ConductorMetalMass: Equatable, Sendable {
     public var label: String
     public var metalName: String
     public var densityGPerCm3: Double
+    /// Published / book pounds per 1000 ft for this CM and metal.
+    public var lbPerKft: Double
     public var oneWayLb: Double
     public var oneWayKg: Double
     public var totalPathLb: Double
@@ -198,7 +201,7 @@ public struct ConductorMetalMass: Equatable, Sendable {
 /// Same identity as the website toolbox: L = R_ref × CM / ρ, with linear α
 /// compensation to the resistivity reference temperature.
 public enum ConductorLength {
-    /// Soft (annealed) copper book density used for metal-mass estimates.
+    /// Soft (annealed) copper book density used for custom-CM fallback.
     /// 8.89 g/cm³ is the common electrical-copper figure — not a weigh-scale.
     public static let copperDensityGPerCm3 = 8.89
     /// Commercial aluminum ~2.70 g/cm³.
@@ -207,6 +210,19 @@ public enum ConductorLength {
     public static let gramsPerPound = 453.59237
     /// 1 in³ = (2.54 cm)³.
     public static let cubicInchesToCubicCm = 16.387064
+    /// Industry identity that generates the solid-bare-copper books:
+    /// W = 0.003027 lb per circular mil per 1000 ft at 8.89 g/cm³.
+    /// Used for kcmil and custom circular mils that are not in the AWG table.
+    public static let copperLbPerCmilPerKft = 0.003027
+    /// Solid bare copper lb/1000 ft — Standard Wire & Cable Co.
+    /// “Wire Data – Solid Bare Copper” (ASTM B3 family).
+    /// 14 AWG is published as **12.43 lb/kft** (4,107 CM in that book;
+    /// NEC Chapter 9 Table 8 lists 14 AWG as 4,110 CM).
+    public static let copperBookLbPerKft: [String: Double] = [
+        "14": 12.43, "12": 19.77, "10": 31.43, "8": 49.99,
+        "6": 79.47, "4": 126.3, "3": 159.3, "2": 200.9,
+        "1": 253.3, "1/0": 319.5, "2/0": 402.7, "3/0": 508.0, "4/0": 640.5,
+    ]
 
     /// Website `CLR_MATERIAL_PRESETS`. Hard-drawn copper starts from the
     /// annealed copper book; edit ρ when you have manufacturer data.
@@ -248,9 +264,27 @@ public enum ConductorLength {
         unit == .fahrenheit ? (temperature - 32) * 5 / 9 : temperature
     }
 
-    /// Mass from length × circular-mil area × book density.
-    /// 1 cmil is the area of a 1-mil-diameter circle: (π/4)×10⁻⁶ in² — the same
-    /// CM the resistivity length solve already used (`CircularMils.squareInches`).
+    /// Published bare-metal lb/1000 ft for a circular-mil area.
+    /// Catalog AWG 14–4/0 uses Standard Wire solid-bare-copper book values.
+    /// Other CM (kcmil / custom) uses 0.003027 × CM. Aluminum scales by 2.70/8.89.
+    public static func bookLbPerKft(
+        circularMils: Double,
+        material: ConductorLengthMaterial
+    ) -> Double {
+        let copper: Double
+        if let size = NECTables.circularMils.first(where: { abs($0.value - circularMils) < 0.5 })?.key,
+           let published = copperBookLbPerKft[size] {
+            copper = published
+        } else {
+            copper = circularMils * copperLbPerCmilPerKft
+        }
+        return material == .aluminum
+            ? copper * aluminumDensityGPerCm3 / copperDensityGPerCm3
+            : copper
+    }
+
+    /// Density × volume identity (CM → in² → cm³ × g/cm³). Kept as the
+    /// custom-density primitive and as a cross-check against the book table.
     public static func metalMass(
         lengthFt: Double,
         circularMils: Double,
@@ -267,16 +301,18 @@ public enum ConductorLength {
         return (kg: massG / 1000, lb: massG / gramsPerPound)
     }
 
+    /// Book lb/kft × length / 1000. This is the displayed weight path.
     public static func metalMass(
         lengthFt: Double,
         circularMils: Double,
         material: ConductorLengthMaterial
     ) throws -> (kg: Double, lb: Double) {
-        try metalMass(
-            lengthFt: lengthFt,
-            circularMils: circularMils,
-            densityGPerCm3: material.densityGPerCm3
-        )
+        guard lengthFt.isFinite, lengthFt > 0,
+              circularMils.isFinite, circularMils > 0 else {
+            throw CalcError.outOfRange("Length, conductor area, and density must be greater than zero.")
+        }
+        let lb = bookLbPerKft(circularMils: circularMils, material: material) * lengthFt / 1000
+        return (kg: lb * gramsPerPound / 1000, lb: lb)
     }
 
     /// Port of `conductorLengthByResistanceModel` in toolbox `app.js`.
@@ -306,6 +342,7 @@ public enum ConductorLength {
         let resistanceAtRefTemp = resistanceOhms / denom
         let totalLengthFt = resistanceAtRefTemp * cmil / rho
         let oneWayLengthFt = totalLengthFt / pathFactor
+        let lbPerKft = bookLbPerKft(circularMils: cmil, material: input.material)
         let oneWay = try Self.metalMass(
             lengthFt: oneWayLengthFt,
             circularMils: cmil,
@@ -320,6 +357,7 @@ public enum ConductorLength {
             label: input.material.weightLabel,
             metalName: input.material.metalDisplayName,
             densityGPerCm3: input.material.densityGPerCm3,
+            lbPerKft: lbPerKft,
             oneWayLb: oneWay.lb,
             oneWayKg: oneWay.kg,
             totalPathLb: totalPath.lb,

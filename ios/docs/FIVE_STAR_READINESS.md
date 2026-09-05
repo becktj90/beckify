@@ -105,7 +105,7 @@ Use the draft already in `APP_STORE.md`. Keep all four honesty clauses:
 
 1. Cellular Path gauges are **radio generation + TCP RTT**, not RSRP/dBm.
 2. Wi‑Fi Path is **percent/bars + TCP RTT**, not dBm.
-3. Conductor Length is a milliohm estimate — **not a TDR**. Metal weight is density × volume, not a scale reading.
+3. Conductor Length is a milliohm estimate — **not a TDR**. Metal weight is book lb/kft × one-way length, not a scale reading.
 4. Control Systems Ziegler–Nichols is educational — **not commissioning**.
 
 ### Screenshots

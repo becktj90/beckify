@@ -129,13 +129,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "conductorLength": ToolHowItWorks(
-            summary: "Estimates conductor length from a milliohm reading — end-to-end or short-to-parallel — plus metal weight from density × volume.",
-            context: "Field length or distance-to-short from a Kelvin / milliohm meter; weight is a density estimate.",
+            summary: "Estimates conductor length from a milliohm reading — end-to-end or short-to-parallel — plus metal weight from book lb/kft.",
+            context: "Field length or distance-to-short from a Kelvin / milliohm meter; weight is one-way book mass.",
             bullets: [
                 "R = ρL/CM with a linear α temperature compensation.",
                 "Short-to-parallel: path to the short is length ÷ 2.",
                 "Not a TDR, cable locator, or bid length — contact R and stranding shift the number.",
-                "Metal weight is density × volume (length × CM area). Cu 8.89 g/cm³, Al 2.70. Estimate — not a scale reading.",
+                "Weight is book lb/kft × one-way length. Cu 8.89 g/cm³, Al 2.70. Not a scale reading.",
             ]
         ),
         "voltageDivider": ToolHowItWorks(

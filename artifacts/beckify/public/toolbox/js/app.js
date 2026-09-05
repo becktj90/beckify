@@ -918,9 +918,36 @@ const CLR_COPPER_DENSITY_G_CM3 = 8.89;
 const CLR_ALUMINUM_DENSITY_G_CM3 = 2.70;
 const CLR_G_PER_LB = 453.59237;
 const CLR_IN3_TO_CM3 = 2.54 * 2.54 * 2.54;
+/* Industry identity: 0.003027 lb per CM per 1000 ft at 8.89 g/cm³. */
+const CLR_COPPER_LB_PER_CMIL_KFT = 0.003027;
+/* Standard Wire & Cable Co. “Wire Data – Solid Bare Copper” (ASTM B3).
+   14 AWG is published as 12.43 lb/kft. */
+const CLR_COPPER_BOOK_LB_KFT = {
+  '14': 12.43, '12': 19.77, '10': 31.43, '8': 49.99,
+  '6': 79.47, '4': 126.3, '3': 159.3, '2': 200.9,
+  '1': 253.3, '1/0': 319.5, '2/0': 402.7, '3/0': 508.0, '4/0': 640.5
+};
 
 function clrIsAluminum(material) {
   return material === 'al';
+}
+
+function clrCatalogSizeForCmil(circularMils) {
+  const sizes = Object.keys(CLR_SIZE_CMIL);
+  for (let i = 0; i < sizes.length; i++) {
+    if (Math.abs(CLR_SIZE_CMIL[sizes[i]] - circularMils) < 0.5) return sizes[i];
+  }
+  return '';
+}
+
+function clrBookLbPerKft(circularMils, material) {
+  const size = clrCatalogSizeForCmil(circularMils);
+  const copper = (size && CLR_COPPER_BOOK_LB_KFT[size] != null)
+    ? CLR_COPPER_BOOK_LB_KFT[size]
+    : circularMils * CLR_COPPER_LB_PER_CMIL_KFT;
+  return clrIsAluminum(material)
+    ? copper * CLR_ALUMINUM_DENSITY_G_CM3 / CLR_COPPER_DENSITY_G_CM3
+    : copper;
 }
 
 function conductorMetalMassFromLength(lengthFt, circularMils, material) {
@@ -929,15 +956,15 @@ function conductorMetalMassFromLength(lengthFt, circularMils, material) {
   }
   const aluminum = clrIsAluminum(material);
   const densityGPerCm3 = aluminum ? CLR_ALUMINUM_DENSITY_G_CM3 : CLR_COPPER_DENSITY_G_CM3;
-  const areaIn2 = circularMils * Math.PI / 4e6;
-  const volumeCm3 = areaIn2 * lengthFt * 12 * CLR_IN3_TO_CM3;
-  const massG = volumeCm3 * densityGPerCm3;
+  const lbPerKft = clrBookLbPerKft(circularMils, material);
+  const massLb = lbPerKft * lengthFt / 1000;
   return {
     metalName: aluminum ? 'Aluminum' : 'Copper',
     weightLabel: aluminum ? 'Aluminum Weight' : 'Copper Weight',
     densityGPerCm3: densityGPerCm3,
-    massKg: massG / 1000,
-    massLb: massG / CLR_G_PER_LB
+    lbPerKft: lbPerKft,
+    massKg: massLb * CLR_G_PER_LB / 1000,
+    massLb: massLb
   };
 }
 
@@ -1006,6 +1033,7 @@ function conductorLengthByResistanceModel(input) {
     metalName: oneWayMass.metalName,
     weightLabel: oneWayMass.weightLabel,
     densityGPerCm3: oneWayMass.densityGPerCm3,
+    lbPerKft: oneWayMass.lbPerKft,
     oneWayMassLb: oneWayMass.massLb,
     oneWayMassKg: oneWayMass.massKg,
     totalPathMassLb: totalMass.massLb,
@@ -1014,6 +1042,7 @@ function conductorLengthByResistanceModel(input) {
 }
 
 window.conductorLengthByResistanceModel = conductorLengthByResistanceModel;
+window.clrBookLbPerKft = clrBookLbPerKft;
 
 window.conductorLengthSizeChange = function () {
   const sizeEl = document.getElementById('clr_size');
@@ -1097,7 +1126,7 @@ window.calcConductorLengthByResistance = function () {
       ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
       ['Material / ρ', materialLabel + ' — ' + fmt(rho, 4) + ' Ω·cmil/ft'],
       ["What's Shorted?", copy.setupLabel],
-      ['Weight Basis', 'Nominal ' + result.metalName.toLowerCase() + ' density × volume (length × CM). Not a scale reading.']
+      ['Weight Basis', fmt(result.lbPerKft, 2) + ' lb/kft × one-way length (distance to short / end-to-end). Bare ' + result.metalName.toLowerCase() + ' book — not a scale reading.']
     ]);
   } catch (err) {
     showError('clr_result', err && err.message ? err.message : 'Could not solve conductor length.');
