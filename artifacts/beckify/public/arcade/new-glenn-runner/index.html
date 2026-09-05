@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Glenn Runner</title>
   <meta name="robots" content="noindex">
+  <meta name="arcade-asset-version" content="ios-hold-1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -180,13 +181,31 @@
       cursor: pointer;
       touch-action: manipulation;
     }
+    /* iOS Safari: long-press on the stage or hold/steer pads must not
+       start the text-selection magnifier or callout. Labels are painted
+       via ::after so the hit target is not a selectable text node. */
+    #arcade-fs-wrapper,
+    #ng-phaser-root,
+    #ng-phaser-root canvas,
+    #arcade-touch-btns,
+    #arcade-touch-btns button {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #ng-phaser-root,
+    #ng-phaser-root canvas,
+    #arcade-touch-btns,
+    #arcade-touch-btns button {
+      touch-action: none;
+    }
     #arcade-touch-btns {
       position: absolute;
       inset: 0;
       z-index: 10;
       display: none;
       pointer-events: none;
-      user-select: none;
     }
     @media (hover: none), (pointer: coarse), (max-width: 900px) {
       #arcade-touch-btns { display: block; }
@@ -202,7 +221,14 @@
       color: var(--violet);
       font: 800 0.82rem/1 var(--font-main);
       cursor: pointer;
-      touch-action: none;
+      -webkit-user-drag: none;
+    }
+    #arcade-touch-btns button::after {
+      content: attr(data-label);
+      pointer-events: none;
+      display: block;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #atb-left,
     #atb-right {
@@ -707,9 +733,9 @@ P or Escape pauses. M mutes. O opens settings.</p>
         <li data-beat="touchdown" data-order="14">DECK</li>
       </ol>
       <div id="arcade-touch-btns">
-        <button id="atb-left" type="button" aria-label="Steer left">◀</button>
-        <button id="atb-boost" type="button" aria-label="Hold boost to climb">HOLD TO CLIMB</button>
-        <button id="atb-right" type="button" aria-label="Steer right">▶</button>
+        <button id="atb-left" type="button" aria-label="Steer left" data-label="◀" draggable="false"></button>
+        <button id="atb-boost" type="button" aria-label="Hold boost to climb" data-label="HOLD TO CLIMB" draggable="false"></button>
+        <button id="atb-right" type="button" aria-label="Steer right" data-label="▶" draggable="false"></button>
       </div>
     </div>
     <p class="help">Pick an unlocked NG-n flight (each has its own payload). Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, slide the booster onto barge Jacklyn — not a vertical drop. Soft deck = BOOSTER RECOVERED; splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
