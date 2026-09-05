@@ -59,11 +59,20 @@
     #ng-phaser-root {
       position: absolute;
       inset: 0;
+      z-index: 0;
       width: 100%;
       height: 100%;
+      overflow: hidden;
     }
     #ng-phaser-root canvas {
       display: block;
+      pointer-events: inherit;
+    }
+    /* Menu / sheets own the pointer. Phaser must not sit on top of LAUNCH. */
+    body[data-phase="MENU"] #ng-phaser-root,
+    body[data-phase="SUMMARY"] #ng-phaser-root,
+    body.is-sheet-open #ng-phaser-root {
+      pointer-events: none;
     }
     .mc-hud {
       position: absolute;
@@ -154,7 +163,7 @@
       position: absolute;
       top: 8px;
       right: 8px;
-      z-index: 14;
+      z-index: 22;
       display: flex;
       gap: 6px;
     }
@@ -267,13 +276,17 @@
       text-align: center;
       pointer-events: none;
     }
+    body[data-phase="MENU"] #ng-hints {
+      display: none !important;
+    }
     .ng-screen {
       position: absolute;
       inset: 0;
-      z-index: 12;
+      z-index: 16;
       display: grid;
       place-items: center;
-      background: linear-gradient(180deg, rgba(4,8,16,0.28), rgba(4,8,16,0.72));
+      isolation: isolate;
+      background: rgba(4, 8, 16, 0.78);
       color: var(--fg);
     }
     .ng-screen[hidden],
@@ -282,15 +295,21 @@
     #ng-banner[hidden],
     #ng-hints[hidden],
     #ng-launch-tip[hidden],
-    #ng-sum-next[hidden] { display: none !important; }
+    #ng-sum-next[hidden] {
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+    }
     .ng-card {
+      position: relative;
+      z-index: 1;
       width: min(520px, 94%);
       max-height: min(94dvh, 720px);
       overflow: auto;
       padding: 22px 22px 18px;
       border-radius: 1.1rem;
       border: 1px solid rgba(125,255,176,.55);
-      background: rgba(4, 8, 16, 0.88);
+      background: #070b14;
       text-align: center;
     }
     #ng-card-flight {
@@ -307,13 +326,34 @@
       font: 600 0.74rem/1.35 var(--font-mono);
       color: var(--amber);
     }
-    .cta-row {
+    .cta-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      position: relative;
+      z-index: 2;
+    }
+    .cta-stack #ng-play {
+      position: relative;
+      z-index: 3;
+      isolation: isolate;
+      min-block-size: 52px;
+      font-size: 1.05rem;
+    }
+    .cta-secondary {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      position: relative;
+      z-index: 1;
     }
-    .cta-row #ng-play { grid-column: 1 / -1; min-height: 52px; font-size: 1.05rem; }
-    .cta-row #ng-open-howto { grid-column: 1 / -1; }
+    .cta-stack #ng-open-howto,
+    .cta-secondary button {
+      position: relative;
+      z-index: 1;
+      min-block-size: 44px;
+    }
     .manifest {
       display: grid;
       gap: 6px;
@@ -365,6 +405,10 @@
       gap: 8px;
       margin-top: 14px;
     }
+    .cta-stack.ng-nav {
+      display: flex;
+      flex-direction: column;
+    }
     .btn, .ng-nav button, .diff-row button {
       min-height: 44px;
       padding: 8px 14px;
@@ -410,7 +454,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      z-index: 13;
+      z-index: 18;
       width: min(440px, 90%);
       padding: 18px 20px 16px;
       border-radius: 1rem;
@@ -424,7 +468,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      z-index: 14;
+      z-index: 20;
       width: min(400px, 92%);
       max-height: min(92%, 620px);
       overflow: auto;
@@ -556,10 +600,12 @@
             <button type="button" data-diff="CADET">CADET</button>
             <button type="button" data-diff="PAD_RAT">PAD RAT</button>
           </div>
-          <div class="cta-row ng-nav">
+          <div class="cta-stack ng-nav">
             <button type="button" class="btn-go" id="ng-play">LAUNCH</button>
-            <button type="button" id="ng-hold">HOLD</button>
-            <button type="button" id="ng-open-settings">Settings</button>
+            <div class="cta-secondary">
+              <button type="button" id="ng-hold">HOLD</button>
+              <button type="button" id="ng-open-settings">Settings</button>
+            </div>
             <button type="button" id="ng-open-howto">How to play</button>
           </div>
           <p id="ng-launch-tip">Hold climb · after MECO slide onto Jacklyn</p>

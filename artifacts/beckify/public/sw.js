@@ -2,10 +2,10 @@
    ROOT SERVICE WORKER — offline app shell for the React site
    ============================================================================
    Scope is / but this worker only acts on the React shell itself. It bails
-   out immediately on /toolbox/, /games/, /projects/ and /demos/ so it never
-   competes with the toolbox's own service worker (scoped to /toolbox/) and
-   never caches static game/project content that changes independently of
-   this app's deploys.
+   out immediately on /toolbox/, /games/, /projects/, /demos/, and /arcade/
+   so it never competes with the toolbox's own service worker (scoped to
+   /toolbox/) and never caches static game/project content that changes
+   independently of this app's deploys.
 
    No build-time asset list: Vite content-hashes every JS/CSS chunk, so
    stale-while-revalidate on same-origin GETs is enough — each hashed file
@@ -18,10 +18,10 @@
    CACHE_VERSION must be bumped whenever this file's caching logic changes.
    ============================================================================ */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = 'beckify-shell-' + CACHE_VERSION;
 
-const EXCLUDED_PREFIXES = ['/toolbox/', '/games/', '/projects/', '/demos/'];
+const EXCLUDED_PREFIXES = ['/toolbox/', '/games/', '/projects/', '/demos/', '/arcade/'];
 
 function isExcluded(pathname) {
   return EXCLUDED_PREFIXES.some(function (p) { return pathname.indexOf(p) === 0; });

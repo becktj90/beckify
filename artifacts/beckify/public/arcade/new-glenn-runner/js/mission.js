@@ -207,6 +207,7 @@ export default class MissionScene extends Phaser.Scene {
 
     this.menuLayer = this.add.container(0, 0).setDepth(20);
     this.buildMenu();
+    this.syncCanvasInput();
 
     this.matter.world.on('collisionstart', (event) => this.onCollision(event));
 
@@ -305,8 +306,16 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   buildMenu() {
-    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x05060f, 0.18);
+    // HTML mission-control card is the only start UX. Never paint leftover
+    // canvas start prompts — they read through the card and double the menu.
+    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x05060f, 0.55);
+    shade.setName('menu-scrim');
     this.menuLayer.add([shade]);
+  }
+
+  syncCanvasInput() {
+    const menuUp = this.status === 'MENU' || this.status === 'SUMMARY' || this.settingsOpen || this.paused;
+    if (this.input && 'enabled' in this.input) this.input.enabled = !menuUp;
   }
 
   freshSession() {
@@ -360,6 +369,7 @@ export default class MissionScene extends Phaser.Scene {
     this.syncMatterPause();
     AudioApi.stopBeds();
     this.menuLayer.setVisible(false);
+    this.syncCanvasInput();
     hideScreens();
     this.clearActors();
     this.clearDebris();
@@ -1433,6 +1443,7 @@ export default class MissionScene extends Phaser.Scene {
     });
     AudioApi.applyMix(this.settings);
     document.body.dataset.phase = this.status === 'PRELAUNCH' ? 'PAD' : this.status;
+    this.syncCanvasInput();
     if (boosting && this.status === 'ASCENT' && !this.settings.reducedMotion) {
       /* plume handled in update */
     }

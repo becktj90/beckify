@@ -86,24 +86,37 @@ export function renderTape(activeId) {
   });
 }
 
+const SHEET_IDS = ['ng-menu', 'ng-missions', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'];
+
+export function syncPlayfieldPointers() {
+  const sheetOpen = SHEET_IDS.some((id) => {
+    const node = el(id);
+    return Boolean(node) && !node.hidden;
+  });
+  document.body.classList.toggle('is-sheet-open', sheetOpen);
+}
+
 export function setOverlay(id, open) {
   const node = el(id);
   if (!node) return;
   node.hidden = !open;
+  syncPlayfieldPointers();
 }
 
 export function showScreen(id) {
-  ['ng-menu', 'ng-missions', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'].forEach((key) => {
+  SHEET_IDS.forEach((key) => {
     const node = el(key);
     if (node) node.hidden = key !== id;
   });
+  syncPlayfieldPointers();
 }
 
 export function hideScreens() {
-  ['ng-menu', 'ng-missions', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'].forEach((key) => {
+  SHEET_IDS.forEach((key) => {
     const node = el(key);
     if (node) node.hidden = true;
   });
+  syncPlayfieldPointers();
 }
 
 export function setSummaryCopy(title, body) {
@@ -138,9 +151,10 @@ export function bindChrome(handlers) {
   ];
   clicks.forEach(([id, fn]) => {
     const node = el(id);
-    if (node && fn) node.addEventListener('click', (event) => {
+    if (node && fn)     node.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation();
       fn();
     });
   });
@@ -168,6 +182,7 @@ export function bindChrome(handlers) {
   hold('atb-left', () => handlers.steer(-1, true), () => handlers.steer(-1, false));
   hold('atb-right', () => handlers.steer(1, true), () => handlers.steer(1, false));
   hold('atb-boost', () => handlers.boost(true), () => handlers.boost(false));
+  syncPlayfieldPointers();
 }
 
 export function setMissionButtons(settings, onPick) {
