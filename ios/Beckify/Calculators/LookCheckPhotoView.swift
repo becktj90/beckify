@@ -378,7 +378,7 @@ struct LookCheckPhotoView: View {
     private func analyze() async {
         guard let preview, !busy else { return }
         guard let url = PhotoLookCheck.analyzeURL(customEndpoint: customEndpoint) else {
-            errorMessage = "Analyze Look needs an HTTPS endpoint. Leave the custom URL blank to use beckify.com, or enter a https:// URL."
+            errorMessage = "Analyze Look needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com, or enter a https:// URL."
             return
         }
         busy = true
@@ -401,7 +401,7 @@ struct LookCheckPhotoView: View {
                 dataURL: prepared.dataURL,
                 mimeType: prepared.mimeType,
                 url: url,
-                token: token
+                token: PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
             )
             progress = 0.92
             status = "Reading the verdict…"
@@ -494,7 +494,8 @@ enum PhotoLookCheckClient {
             let message = PhotoLookCheck.formatVisionError(
                 status: status,
                 message: payload["error"] as? String,
-                retryAfter: retry
+                retryAfter: retry,
+                endpoint: url.absoluteString
             )
             throw PhotoLookHTTPError(status: status, message: message)
         }

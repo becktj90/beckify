@@ -108,7 +108,11 @@ try {
     );
     assert(
       /missing/i.test(missingKey.json?.error || ""),
-      "missing-key 503 must name the missing secret",
+      "missing-key 503 must say the provider key is missing",
+    );
+    assert(
+      /(?:OPENAI_API_KEY|ANTHROPIC_API_KEY)/.test(missingKey.json?.error || ""),
+      "missing-key 503 must name OPENAI_API_KEY or ANTHROPIC_API_KEY",
     );
   }
 

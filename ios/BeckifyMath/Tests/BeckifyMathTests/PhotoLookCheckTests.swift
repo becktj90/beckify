@@ -185,7 +185,24 @@ final class PhotoLookCheckTests: XCTestCase {
             "The vision provider could not analyze this image."
         )
         XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 404, message: nil).contains("api.beckify.com"))
-        XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 405, message: nil).contains("GitHub Pages"))
+        XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 405, message: nil).contains("stale or missing"))
+        XCTAssertFalse(PhotoLookCheck.formatVisionError(status: 405, message: nil).contains("GitHub Pages"))
+        XCTAssertTrue(
+            PhotoLookCheck.formatVisionError(
+                status: 405,
+                message: nil,
+                endpoint: "https://beckify.com/api/analyze-look"
+            ).contains("GitHub Pages")
+        )
+        XCTAssertFalse(PhotoLookCheck.hostIsGitHubPages("https://api.beckify.com/api/analyze-look"))
+        XCTAssertEqual(
+            PhotoLookCheck.authorizationToken(customEndpoint: nil, token: "secret-token"),
+            ""
+        )
+        XCTAssertEqual(
+            PhotoLookCheck.authorizationToken(customEndpoint: "https://proxy.example/ocr", token: "secret-token"),
+            "secret-token"
+        )
         XCTAssertTrue(PhotoLookCheck.formatVisionError(status: 503, message: nil).localizedCaseInsensitiveContains("not configured"))
         XCTAssertEqual(
             PhotoLookCheck.formatVisionError(status: 503, message: "The vision provider key is missing (OPENAI_API_KEY)."),

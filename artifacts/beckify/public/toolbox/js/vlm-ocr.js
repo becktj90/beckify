@@ -263,12 +263,22 @@
     }
   }
 
-  function VisionHttpError(message, status, retryAfter) {
+  function VisionHttpError(message, status, retryAfter, url) {
     var err = new Error(message);
     err.name = 'VisionHttpError';
     err.status = status || 0;
     err.retryAfter = retryAfter || 0;
+    err.url = url || '';
     return err;
+  }
+
+  function hostIsGitHubPages(url) {
+    try {
+      var host = new URL(url, 'https://api.beckify.com').hostname.toLowerCase();
+      return host === 'beckify.com' || host === 'www.beckify.com';
+    } catch (_) {
+      return false;
+    }
   }
 
   function parseRetryAfter(response, payload) {
@@ -295,7 +305,10 @@
     if (status === 413) return err.message || 'The photo is too large for AI enhance (8 MB after JPEG encode).';
     if (status === 504) return 'The vision provider timed out. On-device OCR is still available.';
     if (status === 404 || status === 405) {
-      return 'The Beckify vision API is unavailable (HTTP ' + status + '). Use https://api.beckify.com or a custom HTTPS endpoint — not GitHub Pages. A stale or missing vision route also returns this.';
+      if (hostIsGitHubPages(err.url)) {
+        return 'The Beckify vision API is unavailable (HTTP ' + status + '). GitHub Pages cannot accept this POST. Use https://api.beckify.com or a custom HTTPS endpoint.';
+      }
+      return 'The Beckify vision API is unavailable (HTTP ' + status + '). A stale or missing vision route also returns this. Use https://api.beckify.com or a custom HTTPS endpoint.';
     }
     if (status === 503) return err.message || 'The vision provider is not configured on the API host.';
     return err.message || 'Vision request failed.';
@@ -385,7 +398,8 @@
             throw VisionHttpError(
               payload.error || ('Vision request failed with HTTP ' + response.status + '.'),
               response.status,
-              parseRetryAfter(response, payload)
+              parseRetryAfter(response, payload),
+              url
             );
           }
           return payload;

@@ -307,14 +307,18 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(lookJs, /lookFormatHttpError/);
   assert.match(lookJs, /api\.beckify\.com/);
   assert.match(lookJs, /stale or missing \/api\/analyze-look/);
-  assert.match(lookJs, /not GitHub Pages/);
+  assert.match(lookJs, /lookHostIsGitHubPages/);
   assert.match(lookJs, /lookIsImageFile/);
   assert.match(
     api.formatVisionError(api.VisionHttpError('Cannot POST /api/analyze-look', 404)),
-    /api\.beckify\.com/,
+    /stale or missing/,
+  );
+  assert.doesNotMatch(
+    api.formatVisionError(api.VisionHttpError('Method Not Allowed', 405)),
+    /GitHub Pages/,
   );
   assert.match(
-    api.formatVisionError(api.VisionHttpError('Method Not Allowed', 405)),
+    api.formatVisionError(api.VisionHttpError('Method Not Allowed', 405, 0, 'https://beckify.com/api/analyze-look')),
     /GitHub Pages/,
   );
   assert.match(

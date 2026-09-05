@@ -263,7 +263,27 @@ public enum PhotoLookCheck {
         )
     }
 
-    public static func formatVisionError(status: Int, message: String?, retryAfter: Int = 0) -> String {
+    /// Apex GitHub Pages host only — not `api.beckify.com`.
+    public static func hostIsGitHubPages(_ raw: String?) -> Bool {
+        let trimmed = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let host: String
+        if let url = URL(string: trimmed), let urlHost = url.host, !urlHost.isEmpty {
+            host = urlHost
+        } else {
+            host = trimmed
+        }
+        let folded = host.lowercased()
+        return folded == "beckify.com" || folded == "www.beckify.com"
+    }
+
+    /// Custom-endpoint Bearer tokens stay off the default Beckify proxy.
+    public static func authorizationToken(customEndpoint: String?, token: String) -> String {
+        guard httpsBase(customEndpoint) != nil else { return "" }
+        return token.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public static func formatVisionError(status: Int, message: String?, retryAfter: Int = 0, endpoint: String? = nil) -> String {
         if status == 429 {
             if retryAfter >= 60 {
                 return "Too many look checks. Try again in about \((retryAfter + 59) / 60) min."
@@ -282,7 +302,10 @@ public enum PhotoLookCheck {
             return "The vision provider timed out. Please try again."
         }
         if status == 404 || status == 405 {
-            return "The Beckify look-check API is unavailable (HTTP \(status)). Use https://api.beckify.com or a custom HTTPS endpoint — not GitHub Pages. A stale or missing /api/analyze-look route also returns this."
+            if hostIsGitHubPages(endpoint) {
+                return "The Beckify look-check API is unavailable (HTTP \(status)). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com or a custom HTTPS endpoint."
+            }
+            return "The Beckify look-check API is unavailable (HTTP \(status)). A stale or missing /api/analyze-look route also returns this. Use https://api.beckify.com or a custom HTTPS endpoint."
         }
         if status == 503 {
             return message?.isEmpty == false
