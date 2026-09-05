@@ -430,7 +430,7 @@
     svg.appendChild(svgElement('circle', { cx: 548, cy: 92, r: 12, fill: PALETTE.yellow }));
     text(svg, 92, 126, 'test lead', { fill: PALETTE.green, 'font-size': 10, 'text-anchor': 'middle' });
     text(svg, 548, 126, 'short / far end', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
-    text(svg, 320, 151, 'milliohm reading × conductor area, then density × volume for metal weight', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 151, 'milliohm reading × conductor area, then book lb/kft × one-way length for metal weight', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
   }
 
   function loadFactors(svg) {

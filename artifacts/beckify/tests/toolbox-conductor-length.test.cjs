@@ -27,8 +27,8 @@ sandbox.window.addEventListener = () => {};
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(dir + 'app.js', 'utf8'), sandbox, { filename: 'app.js' });
 
-const { conductorLengthByResistanceModel, conductorMetalMassFromLength, ebPowerToWatts, ebWheelSpeedMph } =
-  vm.runInContext('({ conductorLengthByResistanceModel, conductorMetalMassFromLength, ebPowerToWatts, ebWheelSpeedMph })', sandbox);
+const { conductorLengthByResistanceModel, conductorMetalMassFromLength, clrBookLbPerKft, ebPowerToWatts, ebWheelSpeedMph } =
+  vm.runInContext('({ conductorLengthByResistanceModel, conductorMetalMassFromLength, clrBookLbPerKft, ebPowerToWatts, ebWheelSpeedMph })', sandbox);
 
 let failures = 0;
 const ok = (name, got, want, tol) => {
@@ -54,7 +54,8 @@ let r = conductorLengthByResistanceModel({
 });
 ok('single path total length (ft)', r.totalLengthFt, 2545.56, 0.5);
 ok('single path one-way equals total', r.oneWayLengthFt, 2545.56, 0.5);
-ok('single path copper weight (lb)', r.oneWayMassLb, 813.7, 1.0);
+ok('single path copper weight (lb)', r.oneWayMassLb, 813.3, 1.0);
+ok('single path copper book lb/kft', r.lbPerKft, 319.5, 1e-9);
 ok('single path copper weight equals total-path weight', r.oneWayMassLb, r.totalPathMassLb, 1e-9);
 
 // Same run measured hot at 75C should be corrected down at 20C.
@@ -87,6 +88,29 @@ r = conductorLengthByResistanceModel({
 ok('loop total path length (ft)', r.totalLengthFt, 2010.78, 0.5);
 ok('loop one-way distance (ft)', r.oneWayLengthFt, 1005.39, 0.5);
 ok('loop aluminum one-way weight is half of path weight', r.oneWayMassLb, r.totalPathMassLb / 2, 1e-9);
+ok('loop displayed weight is book lb/kft × one-way ft', r.oneWayMassLb, r.lbPerKft * r.oneWayLengthFt / 1000, 1e-9);
+
+// Screenshot: 14 AWG / 4110 CM, 49.54 ft one-way. Standard Wire 12.43 lb/kft.
+const shot = conductorMetalMassFromLength(49.54, 4110, 'cu-annealed');
+ok('14 AWG book lb/kft (Standard Wire 12.43)', clrBookLbPerKft(4110, 'cu-annealed'), 12.43, 1e-9);
+ok('14 AWG × 49.54 ft one-way copper lb', shot.massLb, 12.43 * 49.54 / 1000, 1e-9);
+ok('14 AWG screenshot one-way copper ~0.62 lb', shot.massLb, 0.6158, 0.005);
+
+r = conductorLengthByResistanceModel({
+  resistance: 250,
+  resistanceUnit: 'mohm',
+  circularMils: 4110,
+  method: 'loop2',
+  temperature: 20,
+  temperatureUnit: 'c',
+  referenceTempC: 20,
+  alpha: 0.00393,
+  rho: 10.371,
+  material: 'cu-annealed'
+});
+ok('14 AWG loop2 one-way ~49.54 ft', r.oneWayLengthFt, 49.51, 0.05);
+ok('14 AWG loop2 weight is one-way book mass', r.oneWayMassLb, 12.43 * r.oneWayLengthFt / 1000, 1e-9);
+ok('14 AWG loop2 displayed copper ~0.62 lb', r.oneWayMassLb, 0.62, 0.01);
 
 // 3-phase loop follows product requirement: one-way is solved length / 2.
 r = conductorLengthByResistanceModel({
@@ -104,7 +128,7 @@ ok('3-phase loop one-way uses ÷2 factor', r.oneWayLengthFt, r.totalLengthFt / 2
 
 const cuKft = conductorMetalMassFromLength(1000, 105600, 'cu-annealed');
 const alKft = conductorMetalMassFromLength(1000, 105600, 'al');
-ok('1/0 copper ~320 lb per 1000 ft at 8.89 g/cm³', cuKft.massLb, 319.7, 0.4);
+ok('1/0 copper 319.5 lb/kft (Standard Wire book)', cuKft.massLb, 319.5, 0.4);
 ok('aluminum mass scales by 2.70/8.89', alKft.massLb, cuKft.massLb * 2.70 / 8.89, 1e-9);
 
 const html = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
@@ -129,8 +153,8 @@ assert('iOS catalog subtitle mentions estimated copper or aluminum weight',
 assert('iOS catalog synonyms include shorted parallel and kelvin',
   catalog.includes('"shorted parallel"') && catalog.includes('"kelvin"') && catalog.includes('"mohm"'));
 assert('iOS catalog synonyms include copper weight', catalog.includes('"copper weight"'));
-assert('HTML more-info documents density × volume weight',
-  html.includes('estimated metal weight') && html.includes('8.89 g/cm³') && html.includes('2.70 g/cm³'));
+assert('HTML more-info documents book lb/kft × one-way weight',
+  html.includes('estimated metal weight') && html.includes('12.43') && html.includes('one-way length') && html.includes('8.89 g/cm³') && html.includes('2.70 g/cm³'));
 
 console.log('\n--- E-bike helpers ---');
 ok('2 kW to watts', ebPowerToWatts(2, 'kw'), 2000, 0);
