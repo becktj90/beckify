@@ -496,7 +496,7 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "lookCheck": ToolHowItWorks(
-            summary: "Camera or library photo, then Analyze Look for a playful good-or-bad verdict, lighting metrics, and a roast.",
+            summary: "Camera or library photo, then Analyze Look for a playful look verdict, lighting metrics, and a roast.",
             context: "Entertainment only. The photo stays on this device until you tap Analyze Look.",
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",

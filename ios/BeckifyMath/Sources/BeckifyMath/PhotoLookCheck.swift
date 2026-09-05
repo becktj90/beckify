@@ -159,7 +159,7 @@ public enum PhotoLookCheck {
     public static let maxUploadBytes = 8 * 1024 * 1024
     public static let maxUploadEdge = 2048
     public static let disclaimer =
-        "Entertainment only — not medical or dating advice. Photos upload only when you tap Analyze Look."
+        "Entertainment only — not medical, dating, or beauty authority. Photos upload only when you tap Analyze Look."
 
     public static func defaultAnalyzeURL() -> URL? {
         analyzeURL(customEndpoint: nil, apiBase: defaultAPIBase)
