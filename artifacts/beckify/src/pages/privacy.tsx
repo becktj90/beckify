@@ -196,7 +196,7 @@ export default function PrivacyPage() {
               upload it. <strong>Analyze Look</strong> POSTs an upright JPEG to{" "}
               <code className="font-mono text-[0.9em]">https://api.beckify.com/api/analyze-look</code> (or a
               HTTPS endpoint you enter). The Beckify API may forward that photo to OpenAI and/or Anthropic.
-              Entertainment only — BroGPT roast is AI comedy, not medical or dating advice. Anyone who
+              Entertainment only — not medical or dating advice. Anyone who
               appears under 18 is not rated and gets no roast. The photo is not saved in Saved Jobs.
             </p>
           </section>
@@ -263,7 +263,7 @@ export default function PrivacyPage() {
               or{" "}
               <code className="font-mono text-[0.9em]">/api/analyze-look</code>
               ). The Beckify proxy may forward those photos to OpenAI and/or Anthropic. Look Check is
-              entertainment only — BroGPT roast is AI comedy, not medical or dating advice — and will not
+              entertainment only — not medical or dating advice — and will not
               rate a photo or write a roast if anyone appears under 18.
             </p>
           </section>

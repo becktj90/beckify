@@ -704,12 +704,12 @@ enum ToolboxCatalog {
             id: .lookCheck,
             kind: .calculator,
             title: "Look Check",
-            subtitle: "Upload any photo for a playful look verdict plus a BroGPT roast. Entertainment only.",
+            subtitle: "Upload any photo for a playful look verdict plus a roast. Entertainment only.",
             symbol: "person.crop.rectangle",
             synonyms: [
                 "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",
                 "analyze look", "camera", "lighting", "framing", "expression", "entertainment",
-                "brogpt", "roast",
+                "roast",
             ]
         ),
         ToolDefinition(

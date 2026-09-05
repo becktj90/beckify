@@ -496,8 +496,8 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "lookCheck": ToolHowItWorks(
-            summary: "Camera or library photo, then Analyze Look for a playful good-or-bad verdict, lighting metrics, and a BroGPT roast.",
-            context: "Entertainment only — BroGPT roast is AI comedy. The photo stays on this device until you tap Analyze Look.",
+            summary: "Camera or library photo, then Analyze Look for a playful good-or-bad verdict, lighting metrics, and a roast.",
+            context: "Entertainment only. The photo stays on this device until you tap Analyze Look.",
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
                 "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",

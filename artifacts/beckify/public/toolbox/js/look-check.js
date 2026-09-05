@@ -1,7 +1,7 @@
 /*
- * Look Check — camera or file photo, then metrics plus a BroGPT roast.
+ * Look Check — camera or file photo, then metrics plus a roast.
  * Cloud-only. Taking or choosing a photo does not upload it; Analyze Look does.
- * Entertainment only — AI comedy. Not medical or dating advice.
+ * Entertainment only. Not medical or dating advice.
  */
 
 'use strict';
@@ -117,7 +117,7 @@ function lookCopyLine(draft) {
   const head = String(draft.headline || lookDefaultHeadline(draft.verdict)).trim();
   if (head) parts.push(head);
   const roast = String(draft.roast || '').trim();
-  if (roast) parts.push('BroGPT: ' + roast);
+  if (roast) parts.push('Roast: ' + roast);
   return parts.join(' · ');
 }
 

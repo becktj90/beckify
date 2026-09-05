@@ -43,7 +43,7 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertTrue(draft.showsScore)
         XCTAssertEqual(draft.verdict.badge, "Looks good")
         XCTAssertTrue(draft.copyLine.contains("Look Check: Looks good"))
-        XCTAssertTrue(draft.copyLine.contains("BroGPT: Chin up like you billed overtime for that jawline."))
+        XCTAssertTrue(draft.copyLine.contains("Roast: Chin up like you billed overtime for that jawline."))
     }
 
     func testNormalizeRoastPresentAndAbsent() {
@@ -54,7 +54,7 @@ final class PhotoLookCheckTests: XCTestCase {
         ] as [String: Any])
         XCTAssertEqual(withRoast.roast, "Lighting said maybe. That fit said absolutely not.")
         XCTAssertTrue(withRoast.showsRoast)
-        XCTAssertTrue(withRoast.copyLine.contains("BroGPT:"))
+        XCTAssertTrue(withRoast.copyLine.contains("Roast:"))
 
         let absent = PhotoLookCheck.normalizeDraft([
             "verdict": "looks_good",
@@ -62,7 +62,7 @@ final class PhotoLookCheckTests: XCTestCase {
         ] as [String: Any])
         XCTAssertEqual(absent.roast, "")
         XCTAssertFalse(absent.showsRoast)
-        XCTAssertFalse(absent.copyLine.contains("BroGPT:"))
+        XCTAssertFalse(absent.copyLine.contains("Roast:"))
 
         let declined = PhotoLookCheck.normalizeDraft([
             "verdict": "declined",
