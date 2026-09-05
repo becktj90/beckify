@@ -35,7 +35,7 @@ function lookApiUrl(path) {
 
 function lookFormatHttpError(status, payload) {
   if (status === 404 || status === 405) {
-    return 'The Beckify look-check API is unavailable (HTTP ' + status + '). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com (meta beckify-api-base-url) or a custom HTTPS endpoint.';
+    return 'The Beckify look-check API is unavailable (HTTP ' + status + '). Use https://api.beckify.com (meta beckify-api-base-url) or a custom HTTPS endpoint — not GitHub Pages. A stale or missing /api/analyze-look route also returns this.';
   }
   if (status === 503) {
     return (payload && payload.error) || 'The Beckify vision API is not configured (missing provider key).';

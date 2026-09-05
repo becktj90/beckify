@@ -282,7 +282,7 @@ public enum PhotoLookCheck {
             return "The vision provider timed out. Please try again."
         }
         if status == 404 || status == 405 {
-            return "The Beckify look-check API is unavailable (HTTP \(status)). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com or a custom HTTPS endpoint."
+            return "The Beckify look-check API is unavailable (HTTP \(status)). Use https://api.beckify.com or a custom HTTPS endpoint — not GitHub Pages. A stale or missing /api/analyze-look route also returns this."
         }
         if status == 503 {
             return message?.isEmpty == false
