@@ -645,43 +645,30 @@ html {
 }
 
 /* Native fullscreen needs explicit sizing; Safari/iPhone falls back to the
-   component's fixed immersive mode when arbitrary element fullscreen is not supported. */
-.game-stage:fullscreen {
+   component's fixed immersive mode when arbitrary element fullscreen is not supported.
+   No letterbox padding — the playfield fills the safe viewport. */
+.game-stage:fullscreen,
+.game-stage.is-immersive {
   width: 100vw;
   max-width: none !important;
   height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 0.75rem;
+  display: block;
+  padding: 0;
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #082018;
+  background: #05050d;
 }
 
 .game-stage:fullscreen canvas,
-.game-stage.is-immersive canvas {
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.game-stage.is-immersive {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: grid;
-  place-items: center;
-  width: 100vw;
-  max-width: none !important;
-  height: 100dvh;
-  padding: 0.75rem;
-  overflow: hidden;
-  border: 0;
-  border-radius: 0;
-  background: #082018;
+.game-stage.is-immersive canvas,
+.game-stage:fullscreen iframe,
+.game-stage.is-immersive iframe {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: unset;
 }
 
 .game-playfield {
@@ -692,19 +679,24 @@ html {
 
 .game-stage.is-immersive .game-playfield,
 .game-stage:fullscreen .game-playfield {
-  width: auto;
-  max-width: 100%;
-  max-height: calc(100dvh - 1.5rem);
-  display: flex;
-  justify-content: center;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: 100%;
 }
 
-.game-stage.is-immersive .game-playfield canvas,
-.game-stage:fullscreen .game-playfield canvas {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: calc(100dvh - 1.5rem);
+.ng-playfield {
+  width: min(100%, 1280px, calc((100dvh - 6.25rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  max-height: calc(100dvh - 6.25rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+
+.game-stage.is-immersive.ng-playfield,
+.game-stage:fullscreen.ng-playfield {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
 }
 
 /* Game surfaces use cabinet-like edge lighting without adding permanent UI

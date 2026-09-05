@@ -107,6 +107,7 @@ export const DEFAULT_SETTINGS = {
   sfxVolume: 1,
   musicVolume: 0.85,
   controlHints: true,
+  launchTipSeen: false,
   difficulty: 'CADET',
   engineerPanel: false,
   hiScore: 0,

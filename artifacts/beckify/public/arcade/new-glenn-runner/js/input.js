@@ -35,6 +35,15 @@ export function steerAxis(input) {
   return (input.right ? 1 : 0) - (input.left ? 1 : 0);
 }
 
+export function clearFlightHolds(input) {
+  input.left = false;
+  input.right = false;
+  input.boostHeld = false;
+  input.boostUntil = 0;
+  input.boostBufferedUntil = 0;
+  input.pointerX = null;
+}
+
 export function bindKeyboard(input, hooks) {
   const down = (event) => {
     hooks.unlock();

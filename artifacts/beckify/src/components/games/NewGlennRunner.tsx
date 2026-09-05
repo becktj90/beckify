@@ -9,14 +9,11 @@ export function NewGlennRunner() {
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
 
   return (
-    <section className="space-y-6" aria-labelledby="new-glenn-title">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
-          <h1 id="new-glenn-title" className="font-display text-3xl font-bold tracking-tight">New Glenn Runner</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            Phaser 4 flights from LC-36: pick an NG-n stack with its own payload, ride terminal count on the Integrated Launch Tower, steer the corridor, then slide first stage onto barge Jacklyn. Keyboard and touch. Difficulty stays on the cabinet — KID, CADET, or PAD RAT.
-          </p>
+    <section className="flex min-h-0 flex-1 flex-col gap-2" aria-labelledby="new-glenn-title">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="min-w-0">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
+          <h1 id="new-glenn-title" className="font-display text-xl font-bold tracking-tight sm:text-2xl">New Glenn Runner</h1>
         </div>
         <button
           type="button"
@@ -30,7 +27,7 @@ export function NewGlennRunner() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-video max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
+        className={`game-stage ng-playfield relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] is-immersive rounded-none border-0" : "w-full min-w-0 aspect-video max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
       >
         <iframe
           src={RUNNER_SRC}
@@ -48,15 +45,6 @@ export function NewGlennRunner() {
             <Minimize2 size={18} />
           </button>
         ) : null}
-      </div>
-
-      <div className="mx-auto max-w-[1280px] text-sm leading-6 text-[var(--muted)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">How to fly</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Keyboard: A/D or arrows steer, Space holds boost (brake on Jacklyn), P or Escape pauses, M mutes.</li>
-          <li>Touch: hold CLIMB / BRAKE, tap ◀ ▶, or drag on the canvas. Same-origin iframe — it plays embedded on beckify.com.</li>
-          <li>Missions are NG-1 through NG-5, each with a named payload on the fairing and HUD. Finish Jacklyn to unlock the next flight. Soft deck = BOOSTER RECOVERED bonus. Splash costs score, not the whole run. Personal bests stay in this browser.</li>
-        </ul>
       </div>
     </section>
   );

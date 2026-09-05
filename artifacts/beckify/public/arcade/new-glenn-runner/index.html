@@ -67,7 +67,7 @@
     }
     .mc-hud {
       position: absolute;
-      inset: 8px 8px auto 8px;
+      inset: 48px 8px auto 8px;
       z-index: 8;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
@@ -132,6 +132,16 @@
       letter-spacing: 0.08em;
     }
     #t-payload { color: var(--cyan); }
+    #ng-phase {
+      padding: 5px 14px;
+      border-radius: 999px;
+      font: 800 clamp(0.62rem, 1.55cqi, 0.8rem)/1.2 var(--font-mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #041014;
+      background: var(--cyan);
+    }
+    #ng-phase[hidden] { display: none !important; }
     .mc-obj {
       font-family: var(--font-mono);
       font-size: clamp(0.58rem, 1.3cqi, 0.66rem);
@@ -161,16 +171,19 @@
     }
     #arcade-touch-btns {
       position: absolute;
-      left: 10px;
-      right: 10px;
-      bottom: 36px;
+      inset: 0;
       z-index: 10;
-      display: flex;
-      gap: 8px;
+      display: none;
+      pointer-events: none;
       user-select: none;
     }
+    @media (hover: none), (pointer: coarse) {
+      #arcade-touch-btns { display: block; }
+    }
     #arcade-touch-btns button {
-      flex: 1 1 0;
+      pointer-events: auto;
+      position: absolute;
+      min-width: 64px;
       min-height: 52px;
       border-radius: 0.85rem;
       border: 1px solid rgba(183,171,255,.65);
@@ -180,11 +193,28 @@
       cursor: pointer;
       touch-action: none;
     }
-    #atb-boost { flex: 2 1 0; border-width: 2px; }
+    #atb-left,
+    #atb-right {
+      top: 50%;
+      width: 72px;
+      height: 140px;
+      transform: translateY(-50%);
+    }
+    #atb-left { left: max(8px, env(safe-area-inset-left, 0px)); }
+    #atb-right { right: max(8px, env(safe-area-inset-right, 0px)); }
+    #atb-boost {
+      left: 50%;
+      bottom: max(12px, env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      min-width: 168px;
+      min-height: 52px;
+      border-width: 2px;
+    }
     body[data-phase="MENU"] #arcade-touch-btns,
     body[data-phase="SUMMARY"] #arcade-touch-btns {
       display: none;
     }
+    body.is-embedded #arcade-fullscreen-btn { display: none !important; }
     #ng-tape {
       position: absolute;
       left: 8px;
@@ -248,15 +278,67 @@
     .ng-overlay[hidden],
     #ng-settings[hidden],
     #ng-banner[hidden],
-    #ng-hints[hidden] { display: none !important; }
+    #ng-hints[hidden],
+    #ng-launch-tip[hidden],
+    #ng-sum-next[hidden] { display: none !important; }
     .ng-card {
-      width: min(460px, 92%);
+      width: min(520px, 94%);
+      max-height: min(94dvh, 720px);
+      overflow: auto;
       padding: 22px 22px 18px;
       border-radius: 1.1rem;
       border: 1px solid rgba(125,255,176,.55);
-      background: rgba(4, 8, 16, 0.92);
+      background: rgba(4, 8, 16, 0.88);
       text-align: center;
     }
+    #ng-card-flight {
+      margin: 0 0 4px;
+      font: 800 1.02rem/1.25 var(--font-main);
+      color: var(--fg);
+    }
+    #ng-card-blurb {
+      margin: 0 0 12px;
+      color: var(--cyan);
+    }
+    #ng-launch-tip {
+      margin: 8px 0 0;
+      font: 600 0.74rem/1.35 var(--font-mono);
+      color: var(--amber);
+    }
+    .cta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .cta-row #ng-play { grid-column: 1 / -1; min-height: 52px; font-size: 1.05rem; }
+    .cta-row #ng-open-howto { grid-column: 1 / -1; }
+    .manifest {
+      display: grid;
+      gap: 6px;
+      margin-top: 14px;
+      text-align: left;
+    }
+    .manifest-row {
+      display: grid;
+      grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 44px;
+      padding: 8px 12px;
+      border-radius: 0.7rem;
+      border: 1px solid rgba(183,171,255,.35);
+      background: rgba(8, 10, 22, 0.55);
+      color: var(--fg);
+      font: 700 0.78rem/1.2 var(--font-mono);
+      text-align: left;
+    }
+    .manifest-row .mf-name { color: var(--fg-muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .manifest-row .mf-state { color: var(--amber); letter-spacing: 0.06em; }
+    .manifest-row.is-active { border-color: var(--go); }
+    .manifest-row.is-active .mf-state { color: var(--go); }
+    .manifest-row.is-locked { opacity: 0.78; }
+    .manifest-row.is-locked .mf-state { color: var(--fg-muted); }
     .ng-kicker {
       margin: 0 0 6px;
       font: 600 0.68rem/1 var(--font-mono);
@@ -313,6 +395,14 @@
       margin-top: 10px;
     }
     .mission-grid button { width: 100%; }
+    .sum-break {
+      margin: 0 0 8px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: var(--cyan);
+      text-align: left;
+    }
     .ng-overlay {
       position: absolute;
       left: 50%;
@@ -374,10 +464,15 @@
       white-space: nowrap !important;
     }
     @media (max-width: 700px) {
-      .mc-hud { grid-template-columns: 1fr 1fr; }
+      .mc-hud { grid-template-columns: 1fr; }
       .mc-center { grid-column: 1 / -1; }
       .cabinet { max-width: 100%; }
       #ng-tape li { font-size: 0.4rem; }
+    }
+    @container cabinet (max-width: 820px) {
+      .mc-hud { grid-template-columns: 1fr; }
+      .mc-hud .mc-panel { display: none; }
+      #ng-tape { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       html, body { scroll-behavior: auto; }
@@ -420,9 +515,11 @@
             <tr><th scope="row">VEL</th><td id="t-vel">0 m/s</td></tr>
             <tr><th scope="row">THR</th><td id="t-thr">THR 0%</td></tr>
             <tr><th scope="row">FUEL</th><td id="t-fuel">100</td></tr>
+            <tr><th scope="row">SHLD</th><td id="t-shield">0/2</td></tr>
           </table>
         </div>
         <div class="mc-center">
+          <div id="ng-phase">STANDBY</div>
           <div id="ng-banner" hidden data-kind="info"></div>
           <div id="t-clock">T-0:08.0</div>
           <div id="t-payload">BRP  Blue Ring Pathfinder</div>
@@ -432,7 +529,7 @@
         <div class="mc-panel">
           <table>
             <caption class="visually-hidden">Score and stage</caption>
-            <tr><th scope="row">STAGE</th><td id="t-stage">MENU</td></tr>
+            <tr><th scope="row">STAGE</th><td id="t-stage">STANDBY</td></tr>
             <tr><th scope="row">SCORE</th><td id="t-score">0</td></tr>
             <tr><th scope="row">BEST</th><td id="t-best">0</td></tr>
             <tr><th scope="row">COMBO</th><td id="t-combo">×0</td></tr>
@@ -447,14 +544,30 @@
       </div>
       <div id="ng-menu" class="ng-screen">
         <div class="ng-card">
-          <p class="ng-kicker">LC-36  ·  Cape Canaveral</p>
+          <p class="ng-kicker">BLUE ORIGIN · LC-36</p>
           <h1>NEW GLENN RUNNER</h1>
-          <p id="ng-menu-blurb">Hold climb. Steer the corridor. Slide onto Jacklyn.</p>
-          <div class="ng-nav">
-            <button type="button" class="btn-go" id="ng-play">PLAY</button>
-            <button type="button" id="ng-open-missions">MISSIONS</button>
-            <button type="button" id="ng-open-settings">SETTINGS</button>
-            <button type="button" id="ng-open-howto">HOW TO PLAY</button>
+          <p id="ng-card-flight">NG-1 · Blue Ring Pathfinder</p>
+          <p id="ng-card-blurb">Demo stack. Prove the corridor.</p>
+          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Steer the corridor. Slide onto Jacklyn.</p>
+          <div class="diff-row" role="group" aria-label="Difficulty">
+            <button type="button" data-diff="KID">KID</button>
+            <button type="button" data-diff="CADET">CADET</button>
+            <button type="button" data-diff="PAD_RAT">PAD RAT</button>
+          </div>
+          <div class="cta-row ng-nav">
+            <button type="button" class="btn-go" id="ng-play">LAUNCH</button>
+            <button type="button" id="ng-hold">HOLD</button>
+            <button type="button" id="ng-open-settings">Settings</button>
+            <button type="button" id="ng-open-howto">How to play</button>
+          </div>
+          <p id="ng-launch-tip">Hold climb · after MECO slide onto Jacklyn</p>
+          <div class="manifest" role="group" aria-label="Flight manifest">
+            <p class="ng-kicker" id="ng-open-missions">FLIGHT MANIFEST</p>
+            <button type="button" class="manifest-row" data-mission="NG-1" data-label="NG-1 · BRP"><span class="mf-id">NG-1</span><span class="mf-name">Blue Ring Pathfinder</span><span class="mf-state">READY</span></button>
+            <button type="button" class="manifest-row" data-mission="NG-2" data-label="NG-2 · ESC"><span class="mf-id">NG-2</span><span class="mf-name">ESCAPADE Pair</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="NG-3" data-label="NG-3 · BB1"><span class="mf-id">NG-3</span><span class="mf-name">BlueBird Block 1</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="NG-4" data-label="NG-4 · LSK"><span class="mf-id">NG-4</span><span class="mf-name">Lightspeed Ka</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="NG-5" data-label="NG-5 · BRT"><span class="mf-id">NG-5</span><span class="mf-name">Blue Ring Tug</span><span class="mf-state">LOCKED</span></button>
           </div>
           <div id="arcade-hi-score" class="mc-obj" style="margin-top:12px">NO MISSIONS FLOWN</div>
         </div>
@@ -489,12 +602,12 @@ P or Escape pauses. M mutes. O opens settings.</p>
       </div>
       <form id="ng-settings" hidden aria-label="Mission settings">
         <h2>Settings</h2>
+        <p class="ng-kicker">Difficulty is the source of truth</p>
         <div class="diff-row" role="group" aria-label="Difficulty">
           <button type="button" data-diff="KID">KID</button>
           <button type="button" data-diff="CADET">CADET</button>
           <button type="button" data-diff="PAD_RAT">PAD RAT</button>
         </div>
-        <label>Mute <input type="checkbox" data-set="muted"></label>
         <label>Sound <input type="checkbox" data-set="sound" checked></label>
         <label>Music / engine bed <input type="checkbox" data-set="music" checked></label>
         <label>Master <input type="range" min="0" max="100" value="72" data-set="volume" aria-label="Master volume"></label>
@@ -507,20 +620,26 @@ P or Escape pauses. M mutes. O opens settings.</p>
         <button class="btn" id="arcade-reset-btn" type="button">Reset mission record</button>
         <button class="btn" id="ng-settings-back" type="button">BACK</button>
       </form>
-      <div id="ng-pause" class="ng-overlay" hidden role="status">
-        <h2>PAUSED</h2>
-        <p>P or Escape resumes. M mutes. O opens settings.</p>
+      <div id="ng-pause" class="ng-overlay" hidden role="dialog" aria-labelledby="ng-pause-title">
+        <h2 id="ng-pause-title">PAUSED</h2>
+        <p>P or Escape resumes. Boost holds are frozen.</p>
         <div class="ng-nav">
           <button type="button" class="btn-go" id="ng-pause-resume">RESUME</button>
+          <button type="button" id="ng-pause-restart">RESTART</button>
           <button type="button" id="ng-pause-settings">SETTINGS</button>
-          <button type="button" id="ng-pause-howto">HOW TO PLAY</button>
           <button type="button" id="ng-pause-abort">ABORT TO MENU</button>
         </div>
       </div>
       <div id="ng-summary" class="ng-overlay" hidden role="dialog" aria-labelledby="ng-summary-title">
         <h2 id="ng-summary-title">MISSION COMPLETE</h2>
         <p id="ng-summary-body"></p>
-        <button class="btn" id="ng-summary-continue" type="button">CONTINUE</button>
+        <div id="ng-sum-ascent" class="sum-break"></div>
+        <div id="ng-sum-jacklyn" class="sum-break"></div>
+        <div id="ng-sum-delta" class="sum-break"></div>
+        <div class="ng-nav">
+          <button class="btn btn-go" id="ng-sum-next" type="button" hidden>NEXT FLIGHT</button>
+          <button class="btn" id="ng-summary-continue" type="button">CONTINUE</button>
+        </div>
       </div>
       <div id="ng-hints" hidden>HOLD CLIMB  ·  STEER A/D</div>
       <ol id="ng-tape" aria-label="Mission sequence">

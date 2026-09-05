@@ -195,3 +195,26 @@ export function currentBeat(beats, tClock) {
   }
   return last;
 }
+
+const PHASE_CHIP = {
+  terminal: 'TERMINAL COUNT',
+  tankpress: 'TERMINAL COUNT',
+  internal: 'TERMINAL COUNT',
+  deluge: 'TERMINAL COUNT',
+  ignition: 'TERMINAL COUNT',
+  liftoff: 'TERMINAL COUNT',
+  maxq: 'MAX-Q',
+  meco: 'MECO',
+  sep: 'STAGE SEP',
+  ses1: 'STAGE SEP',
+  fairing: 'FAIRING',
+  entry: 'JACKLYN',
+  landing: 'JACKLYN',
+  touchdown: 'JACKLYN',
+  seco: 'JACKLYN',
+  deploy: 'JACKLYN',
+};
+
+export function phaseChip(beatId) {
+  return PHASE_CHIP[beatId] || 'TERMINAL COUNT';
+}

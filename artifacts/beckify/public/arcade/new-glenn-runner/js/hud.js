@@ -34,6 +34,7 @@ export function renderHud(snapshot) {
     't-vel': snapshot.vel,
     't-thr': snapshot.throttle,
     't-fuel': snapshot.fuel,
+    't-shield': snapshot.shield,
     't-stage': snapshot.stage,
     't-score': snapshot.score,
     't-best': snapshot.best,
@@ -67,6 +68,13 @@ export function renderHud(snapshot) {
     hint.hidden = !snapshot.hints;
     if (snapshot.hints) hint.textContent = snapshot.hints;
   }
+  const phase = el('ng-phase');
+  if (phase && snapshot.phase) {
+    phase.hidden = false;
+    phase.textContent = snapshot.phase;
+  }
+  const tip = el('ng-launch-tip');
+  if (tip && snapshot.launchTip != null) tip.hidden = !snapshot.launchTip;
   renderTape(snapshot.tapeId);
 }
 
@@ -114,6 +122,7 @@ export function bindChrome(handlers) {
     ['arcade-reset-btn', handlers.resetRecord],
     ['ng-summary-continue', handlers.continueSummary],
     ['ng-play', handlers.play],
+    ['ng-hold', handlers.hold],
     ['ng-open-missions', handlers.openMissions],
     ['ng-open-settings', handlers.toggleSettings],
     ['ng-open-howto', handlers.openHowto],
@@ -121,9 +130,11 @@ export function bindChrome(handlers) {
     ['ng-howto-back', handlers.backToMenu],
     ['ng-settings-back', handlers.closeSettings],
     ['ng-pause-resume', handlers.togglePause],
+    ['ng-pause-restart', handlers.restart],
     ['ng-pause-settings', handlers.toggleSettings],
     ['ng-pause-howto', handlers.openHowto],
     ['ng-pause-abort', handlers.abortToMenu],
+    ['ng-sum-next', handlers.nextFlight],
   ];
   clicks.forEach(([id, fn]) => {
     const node = el(id);
@@ -167,8 +178,17 @@ export function setMissionButtons(settings, onPick) {
     const active = settings.currentMission === id;
     const best = settings.missionBests?.[id]?.score || 0;
     btn.disabled = false;
-    const bestBit = best ? ` · ${best.toLocaleString()}` : '';
-    btn.textContent = unlocked ? `${label}${bestBit}` : `${id} · LOCKED`;
+    const state = !unlocked ? 'LOCKED' : active ? 'SELECTED' : (best ? `PB ${best.toLocaleString()}` : 'READY');
+    const name = btn.querySelector('.mf-name');
+    const stateNode = btn.querySelector('.mf-state');
+    const idNode = btn.querySelector('.mf-id');
+    if (stateNode) {
+      if (idNode) idNode.textContent = id;
+      stateNode.textContent = state;
+    } else {
+      const bestBit = best ? ` · ${best.toLocaleString()}` : '';
+      btn.textContent = unlocked ? `${label}${bestBit}` : `${id} · LOCKED`;
+    }
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     btn.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
     btn.classList.toggle('is-active', active);
@@ -205,7 +225,11 @@ export function syncSettingsForm(settings) {
   if (!form) return;
   form.querySelectorAll('[data-set]').forEach((input) => {
     const key = input.getAttribute('data-set');
-    if (input.type === 'checkbox') input.checked = Boolean(settings[key]);
+    if (input.type === 'checkbox') {
+      if (key === 'sound') input.checked = !settings.muted && settings.sound !== false;
+      else if (key === 'muted') input.checked = Boolean(settings.muted);
+      else input.checked = Boolean(settings[key]);
+    }
     if (input.type === 'range') {
       const raw = Number(settings[key]);
       const value = Number.isFinite(raw) ? raw : 0.72;
@@ -223,9 +247,32 @@ export function readSettingsForm(settings) {
       settings[key] = Number(input.value) / 100;
     } else if (input.type === 'checkbox') {
       settings[key] = input.checked;
+      if (key === 'sound') settings.muted = !input.checked;
+      if (key === 'muted') settings.sound = !input.checked;
     }
   });
   return settings;
+}
+
+export function setSummaryBreakdown(ascent, jacklyn, delta, nextLabel) {
+  const a = el('ng-sum-ascent');
+  const j = el('ng-sum-jacklyn');
+  const d = el('ng-sum-delta');
+  const next = el('ng-sum-next');
+  if (a) a.textContent = ascent || '';
+  if (j) j.textContent = jacklyn || '';
+  if (d) d.textContent = delta || '';
+  if (next) {
+    next.hidden = !nextLabel;
+    if (nextLabel) next.textContent = nextLabel;
+  }
+}
+
+export function setCardFlight(flight) {
+  const title = el('ng-card-flight');
+  const blurb = el('ng-card-blurb');
+  if (title) title.textContent = `${flight.id} · ${flight.payload}`;
+  if (blurb) blurb.textContent = flight.blurb || '';
 }
 
 export function isEmbedded() {

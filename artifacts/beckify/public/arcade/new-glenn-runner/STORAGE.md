@@ -12,7 +12,7 @@ The Phaser 4 runner owns settings, NG-n unlocks, and personal bests.
 
 V6 does **not** delete older keys, so a leftover canvas bookmark can still see its own record. After migration, new flights only update V6.
 
-Audio prefs (`sound`, `music`, `muted`, `volume` 0–1, `sfxVolume` 0–1, `musicVolume` 0–1) live on the same V6 blob. Mute is the master switch; `prefers-reduced-motion` does not mute.
+Audio prefs (`sound`, `music`, `muted`, `volume` 0–1, `sfxVolume` 0–1, `musicVolume` 0–1) live on the same V6 blob. Mute is the master switch and stays in lockstep with Settings → Sound (`muted === !sound`); `prefers-reduced-motion` does not mute. `launchTipSeen` dismisses the one-line tip under LAUNCH after the first flight.
 
 Unlock rule: finishing Jacklyn (soft recover, salvage, or splash — not RUD) unlocks the next NG-n. Difficulty stays KID / CADET / PAD RAT *inside* a flight.
 
