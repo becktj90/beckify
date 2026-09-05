@@ -40,7 +40,18 @@ function resolveBasePath(
   return rawBasePath;
 }
 
-export default defineConfig(async ({ command }) => {
+const cartographerPlugins =
+  process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined
+    ? [
+        await import("@replit/vite-plugin-cartographer").then((m) =>
+          m.cartographer({
+            root: path.resolve(import.meta.dirname, ".."),
+          }),
+        ),
+      ]
+    : [];
+
+export default defineConfig(({ command }) => {
   // PORT / BASE_PATH are Replit preview-server settings. Requiring them at
   // module load made `vite build` fail on Vercel/CI where those vars are unset.
   const requirePreviewEnv = command === "serve";
@@ -54,16 +65,7 @@ export default defineConfig(async ({ command }) => {
       react(),
       tailwindcss(),
       runtimeErrorOverlay(),
-      ...(process.env.NODE_ENV !== "production" &&
-      process.env.REPL_ID !== undefined
-        ? [
-            await import("@replit/vite-plugin-cartographer").then((m) =>
-              m.cartographer({
-                root: path.resolve(import.meta.dirname, ".."),
-              }),
-            ),
-          ]
-        : []),
+      ...cartographerPlugins,
     ],
     resolve: {
       alias: {
