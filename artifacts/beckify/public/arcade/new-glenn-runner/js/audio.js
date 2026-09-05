@@ -52,6 +52,18 @@ const AudioApi = {
     return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.72;
   },
 
+  sfxGain(settings) {
+    const value = Number(settings?.sfxVolume);
+    const sfx = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
+    return this.masterVolume(settings) * sfx;
+  },
+
+  musicGain(settings) {
+    const value = Number(settings?.musicVolume);
+    const music = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.85;
+    return this.masterVolume(settings) * music;
+  },
+
   silenced(settings) {
     return Boolean(settings?.muted) || settings?.sound === false;
   },
@@ -77,7 +89,7 @@ const AudioApi = {
     const silent = this.silenced(settings);
     sound.mute = silent;
     if (typeof sound.setMute === 'function') sound.setMute(silent);
-    const vol = this.masterVolume(settings);
+    const vol = this.sfxGain(settings);
     sound.volume = vol;
     if (typeof sound.setVolume === 'function') sound.setVolume(vol);
     if (!this.bedsAllowed(settings)) this.stopBeds();
@@ -87,7 +99,7 @@ const AudioApi = {
     this.applyMix(settings);
     if (this.master) {
       this.master.gain.setTargetAtTime(
-        this.silenced(settings) ? 0.0001 : 0.16 * this.masterVolume(settings),
+        this.silenced(settings) ? 0.0001 : 0.16 * this.sfxGain(settings),
         this.now(),
         0.04,
       );
@@ -110,7 +122,7 @@ const AudioApi = {
     const key = spec ? `ng-${spec.file}` : null;
     if (spec && sound && this.scene.cache?.audio?.exists(key)) {
       try {
-        sound.play(key, { volume: spec.vol, loop: false });
+        sound.play(key, { volume: spec.vol * this.sfxGain(settings), loop: false });
         return;
       } catch {
         /* fallback */
@@ -134,7 +146,7 @@ const AudioApi = {
       return;
     }
     let bed = this.beds[name];
-    const target = volume == null ? spec.vol : volume;
+    const target = (volume == null ? spec.vol : volume) * this.musicGain(settings);
     if (bed?.isPlaying || bed?.isPaused) {
       if (bed.isPaused) bed.resume();
       if (typeof bed.setVolume === 'function') bed.setVolume(target);

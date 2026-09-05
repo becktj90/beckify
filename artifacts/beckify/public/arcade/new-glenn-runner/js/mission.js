@@ -1,12 +1,13 @@
 import Phaser from './phaser-global.js';
 import {
-  ASCENT_TARGET_KM,
   DIFFICULTY,
   FUEL_MAX,
   H,
   JACKLYN_BONUS,
   JACKLYN_SALVAGE,
   OVERDRIVE_SEC,
+  PAD_ROCKET_X,
+  PAD_ROCKET_Y,
   PICKUP_TYPES,
   RADIO,
   SHIELD_MAX,
@@ -15,9 +16,23 @@ import {
   W,
 } from './config.js';
 import AudioApi from './audio.js';
-import { bindChrome, isEmbedded, renderHud, setBanner, setDifficultyButtons, setMissionButtons, setOverlay, setSummaryCopy, syncSettingsForm } from './hud.js';
+import {
+  bindChrome,
+  hideScreens,
+  isEmbedded,
+  readSettingsForm,
+  renderHud,
+  setBanner,
+  setDifficultyButtons,
+  setMissionButtons,
+  setOverlay,
+  setSummaryCopy,
+  showScreen,
+  syncSettingsForm,
+} from './hud.js';
 import { bindKeyboard, createInput, isBoosting, setBoostHeld, steerAxis } from './input.js';
 import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
+import { beatsFor, currentBeat, formatClock, T0_LEAD } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures } from './textures.js';
 
@@ -57,6 +72,7 @@ export default class MissionScene extends Phaser.Scene {
     this.paused = false;
     this.pausedForSettings = false;
     this.settingsOpen = false;
+    this.screen = 'menu';
     this.nowSec = 0;
     this.tip = pick(TIPS);
     this.qaBeat = new URLSearchParams(window.location.search).get('beat');
@@ -73,6 +89,16 @@ export default class MissionScene extends Phaser.Scene {
     this.matter.world.setGravity(0, 0);
     this.matter.world.setBounds(0, -4000, W, 5200, 32, false, false, false, false);
 
+    this.bgWash = this.add.graphics().setDepth(-2);
+    this.bgWash.fillStyle(0x02060c, 1);
+    this.bgWash.fillRect(0, -3600, W, 2200);
+    this.bgWash.fillStyle(0x0a2040, 1);
+    this.bgWash.fillRect(0, -1400, W, 1200);
+    this.bgWash.fillStyle(0x3a7eb4, 1);
+    this.bgWash.fillRect(0, -200, W, 500);
+    this.bgWash.fillStyle(0x6fb4e8, 1);
+    this.bgWash.fillRect(0, 300, W, 500);
+    this.bgSky = this.add.image(W / 2, -1480, 'ascent-sky').setDepth(-1).setDisplaySize(W, 4400);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.bgOcean = this.add.image(W / 2, H / 2, 'ocean').setVisible(false).setDepth(0);
     this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
@@ -94,11 +120,12 @@ export default class MissionScene extends Phaser.Scene {
     });
     this.water.collisionFilter = { category: CAT_WATER, mask: CAT_ROCKET };
 
-    this.rocket = this.matter.add.image(560, 430, 'rocket', null, {
+    this.rocket = this.matter.add.image(PAD_ROCKET_X, PAD_ROCKET_Y, 'rocket', null, {
       label: 'rocket',
-      frictionAir: 0.035,
+      frictionAir: 0.02,
       density: 0.002,
     });
+    this.rocket.setScale(1.18);
     this.bindRocketBody();
     this.rocket.setIgnoreGravity(true);
 
@@ -173,6 +200,7 @@ export default class MissionScene extends Phaser.Scene {
     this.hazards = [];
     this.pickups = [];
     this.floaters = [];
+    this.debrisBits = [];
 
     this.menuLayer = this.add.container(0, 0).setDepth(20);
     this.buildMenu();
@@ -198,6 +226,12 @@ export default class MissionScene extends Phaser.Scene {
       toggleFullscreen: () => this.toggleFullscreen(),
       resetRecord: () => this.resetMissionRecord(),
       continueSummary: () => this.onPrimary(),
+      play: () => this.startMission(),
+      openMissions: () => this.openScreen('missions'),
+      openHowto: () => this.openScreen('howto'),
+      backToMenu: () => this.backToMenu(),
+      closeSettings: () => this.closeSettings(),
+      abortToMenu: () => this.abortToMenu(),
       steer: (dir, down) => {
         if (dir < 0) this.inputState.left = down;
         if (dir > 0) this.inputState.right = down;
@@ -214,27 +248,20 @@ export default class MissionScene extends Phaser.Scene {
     const form = document.getElementById('ng-settings');
     if (form) {
       form.addEventListener('input', () => {
-        form.querySelectorAll('[data-set]').forEach((input) => {
-          const key = input.getAttribute('data-set');
-          if (input.type === 'range' && key === 'volume') {
-            this.settings.volume = Number(input.value) / 100;
-          } else if (input.type === 'checkbox') {
-            this.settings[key] = input.checked;
-          }
-        });
+        readSettingsForm(this.settings);
         saveSettings(this.settings);
         AudioApi.setMute(this.settings);
+        this.refreshHud();
       });
     }
 
-    if (isEmbedded()) {
-      document.body.classList.add('is-embedded');
-    }
+    document.body.classList.add('is-cabinet');
+    if (isEmbedded()) document.body.classList.add('is-embedded');
 
     this.input.on('pointerdown', (pointer) => {
       AudioApi.unlock(this.settings);
-      if (this.status === 'MENU' || this.status === 'SUMMARY') this.onPrimary();
-      else this.inputState.pointerX = pointer.worldX;
+      if (this.status === 'SUMMARY') this.onPrimary();
+      else if (this.status !== 'MENU') this.inputState.pointerX = pointer.worldX;
     });
     this.input.on('pointermove', (pointer) => {
       if (pointer.isDown) this.inputState.pointerX = pointer.worldX;
@@ -251,56 +278,29 @@ export default class MissionScene extends Phaser.Scene {
 
     if (this.qaBeat === 'jacklyn') {
       this.session = this.freshSession();
+      this.session.tClock = 36.5;
+      for (const beat of this.session.beats) {
+        if (beat.t < 36) this.session.fired[beat.id] = true;
+      }
       this.paused = false;
       this.pausedForSettings = false;
       this.syncMatterPause();
       this.menuLayer.setVisible(false);
-      setOverlay('ng-summary', false);
-      setOverlay('ng-pause', false);
+      hideScreens();
       this.enterJacklyn();
     }
 
+    this.refreshMenuCopy();
     this.refreshHud();
   }
 
   buildMenu() {
-    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x05060f, 0.42);
-    const flight = this.currentFlight();
-    const title = this.add.text(W / 2, 70, `${flight.id}  //  ${flight.payload.toUpperCase()}`, {
-      fontFamily: '"Exo 2", system-ui, sans-serif',
-      fontSize: '32px',
-      fontStyle: 'bold',
-      color: '#e8fff4',
-    }).setOrigin(0.5);
-    const sub = this.add.text(W / 2, 112, flight.blurb, {
-      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-      fontSize: '16px',
-      color: flight.accent,
-    }).setOrigin(0.5);
-    const tip = this.add.text(W / 2, 148, this.tip, {
-      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-      fontSize: '15px',
-      color: '#ffcf5d',
-    }).setOrigin(0.5);
-    this.menuTitle = title;
-    this.menuSub = sub;
-    const start = this.add.text(W / 2, 220, 'TAP OR PRESS SPACE TO START PREFLIGHT', {
-      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-      fontSize: '20px',
-      fontStyle: 'bold',
-      color: '#041014',
-      backgroundColor: '#ffcf5d',
-      padding: { x: 16, y: 10 },
-    }).setOrigin(0.5);
-    const help = this.add.text(W / 2, 278, 'Hold boost to climb. A/D or ◀ ▶ steer. Land the booster on Jacklyn.', {
-      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-      fontSize: '15px',
-      color: '#d5def0',
-    }).setOrigin(0.5);
-    this.menuLayer.add([shade, title, sub, tip, start, help]);
+    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x05060f, 0.18);
+    this.menuLayer.add([shade]);
   }
 
   freshSession() {
+    const beats = beatsFor(this.currentFlight());
     return {
       score: 0,
       combo: 0,
@@ -320,7 +320,7 @@ export default class MissionScene extends Phaser.Scene {
       splash: false,
       salvage: false,
       hits: 0,
-      spawnAt: 1.6,
+      spawnAt: 1.8,
       flightTime: 0,
       landingLock: false,
       jacklynPhase: 'slide',
@@ -328,91 +328,111 @@ export default class MissionScene extends Phaser.Scene {
       jacklynElapsed: 0,
       objectiveDone: false,
       comboReady: false,
+      tClock: -T0_LEAD,
+      beats,
+      fired: Object.create(null),
+      sepDone: false,
+      upperDone: false,
+      hintUntil: 3.2,
     };
   }
 
   startMission() {
+    AudioApi.unlock(this.settings);
     this.session = this.freshSession();
-    this.status = 'PAD';
+    this.status = 'PRELAUNCH';
+    this.session.stage = 'TERMINAL COUNT';
     this.paused = false;
     this.pausedForSettings = false;
     this.settingsOpen = false;
-    const settingsPanel = document.getElementById('ng-settings');
-    if (settingsPanel) settingsPanel.hidden = true;
+    this.screen = 'play';
     this.syncMatterPause();
     AudioApi.stopBeds();
     this.menuLayer.setVisible(false);
-    setOverlay('ng-summary', false);
-    setOverlay('ng-pause', false);
+    hideScreens();
     this.clearActors();
+    this.clearDebris();
+    this.bgSky.setVisible(true);
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.jacklyn.setVisible(false);
     this.hideLandingFx();
     this.parkRecovery();
     this.applyRocketSkin();
-    this.rocket.setPosition(560, 430);
+    this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y);
     this.rocket.setVelocity(0, 0);
-    this.rocket.setFrictionAir(0.035);
+    this.rocket.setAngle(0);
+    this.rocket.setFrictionAir(0.02);
     this.rocket.setIgnoreGravity(true);
     this.matter.world.setGravity(0, 0);
     this.cameras.main.stopFollow();
     this.cameras.main.setZoom(1);
     this.cameras.main.centerOn(W / 2, H / 2);
     this.bgOcean.clearTint();
-    setBanner('PREFLIGHT — hold boost to charge', 'info', 2600);
-    AudioApi.play('ui', this.settings);
+    setBanner('TERMINAL COUNT — hold climb through ignition', 'info', 2400);
+    AudioApi.play('countdown', this.settings);
     this.refreshHud();
   }
 
   onPrimary() {
     AudioApi.unlock(this.settings);
     if (this.status === 'MENU') {
-      this.startMission();
+      if (this.screen === 'menu' && !this.settingsOpen) this.startMission();
       return;
     }
     if (this.status === 'SUMMARY') {
-      this.status = 'MENU';
-      this.menuLayer.setVisible(true);
-      setOverlay('ng-summary', false);
-      this.tip = pick(TIPS);
-      this.cameras.main.stopFollow();
-      this.cameras.main.setZoom(1);
-      this.cameras.main.centerOn(W / 2, H / 2);
-      this.bgPad.setVisible(true);
-      this.bgOcean.setVisible(false);
-      this.bgOcean.clearTint();
-      this.jacklyn.setVisible(false);
-      this.hideLandingFx();
-      this.parkRecovery();
-      this.applyRocketSkin();
-      this.rocket.setPosition(560, 430);
-      this.rocket.setAngle(0);
-      this.rocket.setVelocity(0, 0);
-      this.refreshMenuCopy();
-      this.refreshHud();
-      return;
-    }
-    if (this.status === 'PAD' && this.session.charge >= 0.92) {
-      this.liftoff();
+      this.returnToMenu();
     }
   }
 
+  returnToMenu() {
+    this.status = 'MENU';
+    this.screen = 'menu';
+    this.paused = false;
+    this.pausedForSettings = false;
+    this.settingsOpen = false;
+    this.syncMatterPause();
+    this.menuLayer.setVisible(true);
+    hideScreens();
+    showScreen('ng-menu');
+    this.tip = pick(TIPS);
+    this.cameras.main.stopFollow();
+    this.cameras.main.setZoom(1);
+    this.cameras.main.centerOn(W / 2, H / 2);
+    this.bgSky.setVisible(true);
+    this.bgPad.setVisible(true);
+    this.bgOcean.setVisible(false);
+    this.bgOcean.clearTint();
+    this.jacklyn.setVisible(false);
+    this.hideLandingFx();
+    this.parkRecovery();
+    this.applyRocketSkin();
+    this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y);
+    this.rocket.setAngle(0);
+    this.rocket.setVelocity(0, 0);
+    this.refreshMenuCopy();
+    this.refreshHud();
+  }
+
   liftoff() {
+    if (this.status === 'ASCENT') return;
     this.status = 'ASCENT';
-    this.session.stage = 'ASCENT';
+    this.session.stage = 'LIFTOFF';
     this.session.radio = RADIO.LIFTOFF;
     this.session.throttle = 1;
+    this.session.tClock = Math.max(this.session.tClock, 0);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, 0.38);
-    if (this.session.grace > 1.2) this.time.delayedCall(400, () => this.spawnPickup());
-    this.cameras.main.startFollow(this.rocket, true, 0.08, 0.1);
-    this.cameras.main.setDeadzone(80, 40);
-    if (!this.settings.reducedMotion) this.cameras.main.shake(220, 0.006);
+    this.matter.world.setGravity(0, 0.12);
+    if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup());
+    this.cameras.main.startFollow(this.rocket, true, 0.12, 0.16);
+    this.cameras.main.setDeadzone(40, 24);
+    this.cameras.main.setZoom(this.settings.reducedMotion ? 1 : 0.92);
+    if (!this.settings.reducedMotion) this.cameras.main.shake(260, 0.007);
     AudioApi.play('liftoff', this.settings);
-    AudioApi.setBed('roar', true, this.settings, 0.4);
-    setBanner('LIFTOFF', 'go', 1600);
+    AudioApi.setBed('roar', true, this.settings, 0.42);
+    setBanner('LIFTOFF', 'go', 1500);
     this.vibrate(30);
+    this.tickCombo(1, 'LIFTOFF');
   }
 
   enterJacklyn() {
@@ -423,6 +443,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.landingLock = false;
     this.session.jacklynPhase = 'slide';
     this.clearActors();
+    this.bgSky.setVisible(false);
     this.bgPad.setVisible(false);
     this.bgOcean.setVisible(true);
     this.bgOcean.setTint(flight.seaTint || 0xffffff);
@@ -435,12 +456,12 @@ export default class MissionScene extends Phaser.Scene {
     const side = flight.lzOffset >= 0 ? -1 : 1;
     this.session.jacklynReadyAt = this.nowSec + 0.85;
     this.session.jacklynElapsed = 0;
-    this.rocket.setFrictionAir(0.05);
+    this.rocket.setFrictionAir(0.045);
     this.rocket.setPosition(W / 2 + side * 520, 40);
-    this.rocket.setVelocity(side * -3.2, 1.35);
+    this.rocket.setVelocity(side * -3.4, 1.45);
     this.rocket.setAngle(side * -34);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, 0.32);
+    this.matter.world.setGravity(0, 0.28);
     this.cameras.main.stopFollow();
     this.cameras.main.setZoom(0.72);
     this.cameras.main.centerOn(W / 2, 260);
@@ -448,7 +469,7 @@ export default class MissionScene extends Phaser.Scene {
     AudioApi.stopBeds();
     AudioApi.play('meco', this.settings);
     AudioApi.play('whoosh', this.settings);
-    setBanner('JACKLYN — slide in, RCS straighten, brake the deck', 'warn', 2800);
+    setBanner('JACKLYN — slide in, RCS straighten, brake the deck', 'warn', 2600);
   }
 
   update(_time, delta) {
@@ -458,25 +479,27 @@ export default class MissionScene extends Phaser.Scene {
       this.refreshHud();
       return;
     }
-    if (this.status === 'PAD') this.updatePad(dt);
+    if (this.status === 'PRELAUNCH') this.updatePrelaunch(dt);
     else if (this.status === 'ASCENT') this.updateAscent(dt);
     else if (this.status === 'JACKLYN') this.updateJacklyn(dt);
     this.updateFloaters(dt);
     this.refreshHud();
   }
 
-  updatePad(dt) {
+  updatePrelaunch(dt) {
+    this.session.tClock += dt;
+    this.fireDueBeats();
     const boosting = isBoosting(this.inputState, this.nowSec);
-    this.session.charge = clamp(
-      this.session.charge + (boosting ? dt * 0.55 : -dt * 0.22),
-      0,
-      1,
-    );
+    this.session.charge = clamp(this.session.charge + (boosting ? dt * 0.7 : dt * 0.12), 0, 1);
     this.session.throttle = this.session.charge;
-    this.rocket.setPosition(560, 430 - this.session.charge * 8);
+    this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y - this.session.charge * 6);
     this.rocket.setVelocity(0, 0);
-    if (boosting) this.emitPlume(0.35);
-    if (this.session.charge >= 1) this.liftoff();
+    if (this.session.fired.deluge && this.steam) {
+      this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 118, this.settings.reducedMotion ? 1 : 3);
+    }
+    if (this.session.fired.ignition) this.emitPlume(0.55);
+    if (this.session.tClock >= 0 && this.session.fired.ignition) this.liftoff();
+    else if (this.session.tClock >= 0.35) this.liftoff();
   }
 
   updateAscent(dt) {
@@ -484,64 +507,81 @@ export default class MissionScene extends Phaser.Scene {
     this.session.flightTime += dt;
     this.session.grace = Math.max(0, this.session.grace - dt);
     this.session.overdrive = Math.max(0, this.session.overdrive - dt);
+    this.session.tClock += dt;
+    this.fireDueBeats();
 
     const boosting = isBoosting(this.inputState, this.nowSec);
+    const kick = (this.session.overdrive > 0 ? 1.28 : 1) * (mode.thrust || 1);
     if (boosting && this.session.fuel > 0) {
-      this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 22 * dt);
-      this.session.throttle = clamp(this.session.throttle + dt * 2.4, 0.2, 1);
+      this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 20 * dt);
+      this.session.throttle = clamp(this.session.throttle + dt * 3.2, 0.28, 1);
     } else {
-      this.session.throttle = clamp(this.session.throttle - dt * 1.1, 0, 0.15);
+      this.session.throttle = clamp(this.session.throttle - dt * 1.4, 0, 0.12);
     }
 
     let axis = steerAxis(this.inputState);
     if (this.inputState.pointerX != null) {
       axis = clamp((this.inputState.pointerX - this.rocket.x) / 140, -1, 1);
     }
-    const kick = this.session.overdrive > 0 ? 1.28 : 1;
     const thrust = this.session.throttle * kick;
     if (thrust > 0.08 && this.session.fuel > 0) {
-      this.rocket.applyForce({ x: axis * 0.016, y: -0.038 * thrust });
+      this.rocket.applyForce({ x: axis * 0.02, y: -0.052 * thrust });
+      const vy = this.rocket.body.velocity.y;
+      if (vy > -1.35) this.rocket.setVelocityY(-1.35);
+      if (vy < -6.4) this.rocket.setVelocityY(-6.4);
       this.emitPlume(thrust);
       AudioApi.rumble(0.35 + thrust * 0.4, this.settings);
     } else {
-      this.rocket.applyForce({ x: axis * 0.004, y: 0.006 });
+      this.rocket.applyForce({ x: axis * 0.006, y: this.session.flightTime < 9 ? -0.008 : 0.004 });
+      if (this.rocket.body.velocity.y > 1.6) this.rocket.setVelocityY(1.6);
+      if (this.session.flightTime < 9 && this.rocket.body.velocity.y > -0.7) {
+        this.rocket.setVelocityY(-0.7);
+      }
     }
+    this.rocket.y = Math.min(this.rocket.y, PAD_ROCKET_Y + 36);
 
     this.rocket.setAngularVelocity(0);
     this.rocket.setAngle(clamp(this.rocket.body.velocity.x * 4 + axis * 6, -18, 18));
     this.rocket.x = clamp(this.rocket.x, 80, W - 80);
 
     const vy = this.rocket.body.velocity.y;
-    this.session.velocity = Math.max(0, Math.round((-vy) * 90 + this.session.altitudeKm * 18));
-    this.session.altitudeKm = clamp((430 - this.rocket.y) / 80, 0, 80);
-    this.session.score += Math.max(0, (-vy) * 22 * dt * (1 + this.session.combo * 0.08));
-
-    if (this.session.altitudeKm > 12 && this.session.stage === 'ASCENT') {
-      this.session.stage = 'MAX-Q';
-      this.session.radio = RADIO.MAXQ;
-      AudioApi.play('maxq', this.settings);
-      setBanner('MAX-Q', 'warn', 1400);
-    }
+    this.session.velocity = Math.max(0, Math.round((-vy) * 110 + this.session.tClock * 28));
+    this.session.altitudeKm = clamp(this.session.tClock * 1.65, 0, 85);
+    this.bgPad.setVisible(this.rocket.y > 80);
+    this.session.score += Math.max(0, (-vy) * 26 * dt * (1 + this.session.combo * 0.1));
 
     this.session.spawnAt -= dt;
-    if (this.session.spawnAt <= 0 && this.session.grace <= 0) {
+    if (this.session.spawnAt <= 0 && this.session.grace <= 0 && !this.session.fired.meco) {
       this.spawnHazard();
-      if (Math.random() < 0.28 * mode.pickupMul) this.spawnPickup();
-      this.session.spawnAt = rand(0.7, 1.35) / (mode.spawnMul * this.currentFlight().spawnMul);
+      if (Math.random() < 0.3 * mode.pickupMul) this.spawnPickup();
+      this.session.spawnAt = rand(0.62, 1.2) / (mode.spawnMul * this.currentFlight().spawnMul);
     }
-    this.advanceActors(dt, 1);
+    this.advanceActors();
 
-    if (this.session.altitudeKm >= ASCENT_TARGET_KM) {
-      this.session.radio = RADIO.MECO;
-      setBanner('MECO — booster RTLS', 'go', 1600);
-      this.enterJacklyn();
+    if (this.session.fired.meco && !this.session.sepDone) {
+      this.session.sepDone = true;
+      this.playStageSep();
+    }
+
+    if (this.rocket.y > 620 && this.session.altitudeKm < 1.2 && this.session.flightTime > 2.4) {
+      this.session.failReason = 'Lost the corridor — fell back toward the pad';
+      this.session.radio = RADIO.RUD;
+      AudioApi.play('rud', this.settings);
+      setBanner(`RUD — ${this.session.failReason}`, 'fail', 0);
+      this.endMission('rud');
     }
   }
 
   updateJacklyn(dt) {
-    if (this.session.landingLock) return;
+    if (this.session.landingLock) {
+      this.session.tClock += dt;
+      this.fireDueBeats();
+      return;
+    }
     const mode = DIFFICULTY[this.settings.difficulty];
     this.session.jacklynElapsed = (this.session.jacklynElapsed || 0) + dt;
+    this.session.tClock += dt;
+    this.fireDueBeats();
     const boosting = isBoosting(this.inputState, this.nowSec);
     let axis = steerAxis(this.inputState);
     if (this.inputState.pointerX != null) {
@@ -573,28 +613,112 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setAngle(nextAngle);
 
     if (boosting && this.session.fuel > 0) {
-      this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 18 * dt);
-      this.rocket.applyForce({ x: axis * 0.02, y: -0.04 });
+      this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 16 * dt);
+      this.rocket.applyForce({ x: axis * 0.022, y: -0.05 });
       this.session.throttle = 1;
       this.emitPlume(1);
       if (alt < 180) this.emitBloom();
       AudioApi.setBed('burn', true, this.settings, 0.38);
-      if (alt > 110 && this.rocket.body.velocity.y < 2.4) this.rocket.setVelocityY(2.4);
-      else if (alt > 18 && this.rocket.body.velocity.y < 0.85) this.rocket.setVelocityY(0.85);
+      if (alt > 110 && this.rocket.body.velocity.y < 2.2) this.rocket.setVelocityY(2.2);
+      else if (alt > 18 && this.rocket.body.velocity.y < 0.75) this.rocket.setVelocityY(0.75);
     } else {
-      this.rocket.applyForce({ x: axis * 0.01, y: 0.006 });
+      this.rocket.applyForce({ x: axis * 0.01, y: 0.008 });
       this.session.throttle = 0.12;
       AudioApi.setBed('burn', false, this.settings);
     }
-    if (this.session.jacklynElapsed < 1.6 && this.rocket.body.velocity.y > 3.6) {
-      this.rocket.setVelocityY(3.6);
+    if (this.session.jacklynElapsed < 1.6 && this.rocket.body.velocity.y > 3.4) {
+      this.rocket.setVelocityY(3.4);
     }
-    if (this.rocket.body.velocity.y > 9) this.rocket.setVelocityY(9);
-    if (this.rocket.body.velocity.y < -1.2) this.rocket.setVelocityY(-1.2);
+    if (this.rocket.body.velocity.y > 8.4) this.rocket.setVelocityY(8.4);
+    if (this.rocket.body.velocity.y < -1.1) this.rocket.setVelocityY(-1.1);
     this.rocket.x = clamp(this.rocket.x, 80, W - 80);
     this.session.velocity = Math.round(this.rocket.body.velocity.y * 42);
     this.session.altitudeKm = clamp(alt / 90, 0, 8);
     if (this.rocket.y > 720) this.resolveLanding('water');
+  }
+
+  fireDueBeats() {
+    if (!this.session?.beats) return;
+    for (const beat of this.session.beats) {
+      if (this.session.fired[beat.id]) continue;
+      if (this.session.tClock + 0.02 < beat.t) continue;
+      if (beat.id === 'liftoff' && this.status === 'PRELAUNCH') continue;
+      if (beat.id === 'touchdown' && !this.session.landingLock) continue;
+      if ((beat.id === 'seco' || beat.id === 'deploy') && !this.session.landingLock) continue;
+      this.session.fired[beat.id] = true;
+      this.onBeat(beat);
+    }
+  }
+
+  onBeat(beat) {
+    this.session.stage = beat.stage;
+    this.session.radio = beat.radio;
+    if (beat.id !== 'touchdown') {
+      setBanner(beat.banner, beat.kind, beat.id === 'deploy' ? 2800 : 1600);
+    }
+    if (beat.juice === 'maxq') AudioApi.play('maxq', this.settings);
+    if (beat.juice === 'meco') AudioApi.play('meco', this.settings);
+    if (beat.juice === 'ignition') {
+      AudioApi.play('liftoff', this.settings);
+      if (!this.settings.reducedMotion) this.cameras.main.shake(180, 0.004);
+    }
+    if (beat.juice === 'deluge' && this.steam) {
+      this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 120, 8);
+    }
+    if (beat.juice === 'fairing') this.playFairingJettison();
+    if (beat.juice === 'ses') this.spawnUpperStage();
+    if (beat.id !== 'liftoff' && beat.id !== 'touchdown') this.tickCombo(1, beat.banner);
+    if (beat.id === 'deploy') this.session.upperDone = true;
+  }
+
+  playStageSep() {
+    this.spawnUpperStage();
+    this.playFairingJettison();
+    this.time.delayedCall(420, () => {
+      if (this.status === 'ASCENT') this.enterJacklyn();
+    });
+  }
+
+  spawnUpperStage() {
+    if (this.upperStage && this.upperStage.active) return;
+    const x = this.rocket.x;
+    const y = this.rocket.y - 90;
+    this.upperStage = this.add.image(x, y, 'upper-stage').setDepth(4);
+    this.tweens.add({
+      targets: this.upperStage,
+      y: y - 420,
+      x: x + 40,
+      alpha: 0.15,
+      duration: this.settings.reducedMotion ? 400 : 1100,
+      onComplete: () => this.upperStage?.destroy(),
+    });
+  }
+
+  playFairingJettison() {
+    const x = this.rocket.x;
+    const y = this.rocket.y - 70;
+    const left = this.add.image(x - 8, y, 'fairing-l').setDepth(5);
+    const right = this.add.image(x + 8, y, 'fairing-r').setDepth(5);
+    this.debrisBits.push(left, right);
+    this.tweens.add({
+      targets: left,
+      x: x - 160,
+      y: y + 80,
+      angle: -50,
+      alpha: 0,
+      duration: this.settings.reducedMotion ? 280 : 900,
+      onComplete: () => left.destroy(),
+    });
+    this.tweens.add({
+      targets: right,
+      x: x + 160,
+      y: y + 80,
+      angle: 50,
+      alpha: 0,
+      duration: this.settings.reducedMotion ? 280 : 900,
+      onComplete: () => right.destroy(),
+    });
+    AudioApi.play('whoosh', this.settings);
   }
 
   onCollision(event) {
@@ -642,7 +766,9 @@ export default class MissionScene extends Phaser.Scene {
       AudioApi.play('recovered', this.settings);
       setBanner(`BOOSTER RECOVERED — ${this.currentFlight().jacklyn.recovered}`, 'go', 3600);
       this.vibrate([40, 30, 40]);
-      this.time.delayedCall(2200, () => this.endMission('recovered'));
+      this.session.tClock = Math.max(this.session.tClock, 51.5);
+      this.session.fired.touchdown = true;
+      this.time.delayedCall(2400, () => this.finishUpper());
       return;
     }
 
@@ -655,7 +781,7 @@ export default class MissionScene extends Phaser.Scene {
       AudioApi.stopBeds();
       AudioApi.play('hit', this.settings);
       setBanner(this.currentFlight().jacklyn.salvage, 'warn', 2800);
-      this.time.delayedCall(1300, () => this.endMission('salvage'));
+      this.time.delayedCall(1400, () => this.finishUpper());
       return;
     }
 
@@ -666,7 +792,19 @@ export default class MissionScene extends Phaser.Scene {
     AudioApi.stopBeds();
     AudioApi.play('splash', this.settings);
     setBanner(this.currentFlight().jacklyn.splash, 'fail', 2800);
-    this.time.delayedCall(1200, () => this.endMission('splash'));
+    this.time.delayedCall(1300, () => this.finishUpper());
+  }
+
+  finishUpper() {
+    if (this.status === 'SUMMARY') return;
+    this.session.tClock = Math.max(this.session.tClock, 54);
+    this.fireDueBeats();
+    this.time.delayedCall(900, () => {
+      this.session.tClock = Math.max(this.session.tClock, 57.4);
+      this.fireDueBeats();
+      const reason = this.session.recovered ? 'recovered' : this.session.salvage ? 'salvage' : 'splash';
+      this.time.delayedCall(700, () => this.endMission(reason));
+    });
   }
 
   spawnHazard() {
@@ -736,7 +874,7 @@ export default class MissionScene extends Phaser.Scene {
       obj.destroy();
       this.session.combo = 0;
       AudioApi.play('hit', this.settings);
-      setBanner('CLOSE CALL', 'warn', 900);
+      setBanner('CLOSE CALL — KID mode keeps you flying', 'warn', 900);
       return;
     }
     this.session.hits += 1;
@@ -760,12 +898,12 @@ export default class MissionScene extends Phaser.Scene {
   collectPickup(obj) {
     if (!obj) return;
     const kind = obj.pickupKind || 'fuel';
+    const x = obj.x;
+    const y = obj.y;
     obj.destroy();
-    this.session.combo += 1;
-    this.session.bestCombo = Math.max(this.session.bestCombo, this.session.combo);
+    this.tickCombo(1, 'COMBO');
     this.session.score += 180 * this.session.combo;
-    this.session.radio = `COMBO ×${this.session.combo}`;
-    if (this.session.combo === 1) setBanner('COMBO — keep grabbing without getting hit', 'info', 1400);
+    this.addFloater(x, y, `+${180 * this.session.combo}`, '#ffcf5d');
     const objectiveId = this.currentFlight().objective?.id;
     if (objectiveId === 'combo4' && this.session.combo >= 4) this.completeObjective();
     if (objectiveId === 'recover-combo' && this.session.combo >= 3) this.session.comboReady = true;
@@ -783,6 +921,32 @@ export default class MissionScene extends Phaser.Scene {
       AudioApi.play('overdrive', this.settings);
       setBanner('BE-4 KICK', 'go', 900);
     }
+  }
+
+  tickCombo(n, label) {
+    this.session.combo += n;
+    this.session.bestCombo = Math.max(this.session.bestCombo, this.session.combo);
+    this.session.score += 80 * this.session.combo;
+    if (this.session.combo === 1 && label === 'COMBO') {
+      setBanner('COMBO — stay clean and keep the tape green', 'info', 1200);
+    }
+  }
+
+  addFloater(x, y, text, color) {
+    const node = this.add.text(x, y, text, {
+      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+      fontSize: '16px',
+      fontStyle: 'bold',
+      color,
+    }).setOrigin(0.5).setDepth(12);
+    this.floaters.push(node);
+    this.tweens.add({
+      targets: node,
+      y: y - 46,
+      alpha: 0,
+      duration: this.settings.reducedMotion ? 240 : 700,
+      onComplete: () => node.destroy(),
+    });
   }
 
   emitPlume(power) {
@@ -861,12 +1025,23 @@ export default class MissionScene extends Phaser.Scene {
     setBanner(`SECONDARY — ${this.currentFlight().objective.label}`, 'go', 1600);
   }
 
-  updateFloaters() {}
+  updateFloaters() {
+    this.floaters = this.floaters.filter((node) => node.active);
+  }
 
   clearActors() {
     [...this.hazards, ...this.pickups].forEach((item) => item.destroy());
     this.hazards = [];
     this.pickups = [];
+  }
+
+  clearDebris() {
+    this.debrisBits.forEach((bit) => bit.destroy());
+    this.debrisBits = [];
+    if (this.upperStage) {
+      this.upperStage.destroy();
+      this.upperStage = null;
+    }
   }
 
   endMission(reason) {
@@ -912,9 +1087,9 @@ export default class MissionScene extends Phaser.Scene {
     setBanner(`${this.currentFlight().id}  ${headline}   SCORE ${points.toLocaleString()}${extra}`, reason === 'rud' ? 'fail' : 'go', 0);
     setSummaryCopy(
       `${this.currentFlight().id}  ${headline}`,
-      `${this.currentFlight().payload}\nScore ${points.toLocaleString()}  ·  Combo peak ×${this.session.bestCombo}${extra}\nTap continue or press Space`,
+      `${this.currentFlight().payload}\nScore ${points.toLocaleString()}  ·  Combo peak ×${this.session.bestCombo}${extra}\n${this.session.upperDone ? 'SECO + payload deploy — good flight.\n' : ''}Tap continue or press Space`,
     );
-    setOverlay('ng-pause', false);
+    hideScreens();
     setOverlay('ng-summary', true);
     this.cameras.main.stopFollow();
     this.refreshHud();
@@ -934,10 +1109,14 @@ export default class MissionScene extends Phaser.Scene {
    * Re-apply after any reshape. Positions are center-of-mass.
    */
   bindRocketBody() {
-    this.rocket.setFrictionAir(0.035);
+    this.rocket.setFrictionAir(0.02);
     this.rocket.setCollisionCategory(CAT_ROCKET);
     this.rocket.setCollidesWith(CAT_DECK | CAT_WATER | CAT_HAZARD | CAT_PICKUP);
     this.rocket.setFixedRotation();
+  }
+
+  inFlight() {
+    return this.status === 'PRELAUNCH' || this.status === 'ASCENT' || this.status === 'JACKLYN';
   }
 
   togglePause() {
@@ -946,7 +1125,13 @@ export default class MissionScene extends Phaser.Scene {
     this.pausedForSettings = false;
     this.syncMatterPause();
     AudioApi.setPaused(this.paused);
-    setOverlay('ng-pause', this.paused);
+    if (this.paused) {
+      hideScreens();
+      setOverlay('ng-pause', true);
+    } else {
+      setOverlay('ng-pause', false);
+      setOverlay('ng-howto', false);
+    }
     setBanner(this.paused ? 'PAUSED' : 'RESUMED', 'info', 900);
     this.refreshHud();
   }
@@ -955,27 +1140,78 @@ export default class MissionScene extends Phaser.Scene {
     this.settings.muted = !this.settings.muted;
     AudioApi.setMute(this.settings);
     saveSettings(this.settings);
+    syncSettingsForm(this.settings);
     this.refreshHud();
   }
 
   toggleSettings() {
     this.settingsOpen = !this.settingsOpen;
-    const panel = document.getElementById('ng-settings');
-    if (panel) panel.hidden = !this.settingsOpen;
-    if (this.settingsOpen) syncSettingsForm(this.settings);
-    const inFlight = this.status === 'PAD' || this.status === 'ASCENT' || this.status === 'JACKLYN';
-    if (this.settingsOpen && inFlight && this.paused !== true) {
-      this.paused = true;
-      this.pausedForSettings = true;
-      this.syncMatterPause();
-      AudioApi.setPaused(true);
-    } else if (!this.settingsOpen && this.pausedForSettings) {
+    if (this.settingsOpen) {
+      syncSettingsForm(this.settings);
+      setOverlay('ng-settings', true);
+      if (this.inFlight() && this.paused !== true) {
+        this.paused = true;
+        this.pausedForSettings = true;
+        this.syncMatterPause();
+        AudioApi.setPaused(true);
+      }
+    } else {
+      this.closeSettings();
+    }
+  }
+
+  closeSettings() {
+    this.settingsOpen = false;
+    setOverlay('ng-settings', false);
+    if (this.pausedForSettings) {
       this.pausedForSettings = false;
       this.paused = false;
       this.syncMatterPause();
       AudioApi.setPaused(false);
       setOverlay('ng-pause', false);
+    } else if (this.status === 'MENU') {
+      showScreen(this.screen === 'missions' ? 'ng-missions' : this.screen === 'howto' ? 'ng-howto' : 'ng-menu');
+    } else if (this.paused) {
+      setOverlay('ng-pause', true);
     }
+  }
+
+  openScreen(name) {
+    AudioApi.unlock(this.settings);
+    this.screen = name;
+    if (name === 'howto' && this.inFlight()) {
+      if (this.paused !== true) {
+        this.paused = true;
+        this.pausedForSettings = false;
+        this.syncMatterPause();
+        AudioApi.setPaused(true);
+      }
+      hideScreens();
+      setOverlay('ng-howto', true);
+      return;
+    }
+    if (name === 'missions') showScreen('ng-missions');
+    else if (name === 'howto') showScreen('ng-howto');
+    else showScreen('ng-menu');
+  }
+
+  backToMenu() {
+    if (this.inFlight()) {
+      setOverlay('ng-howto', false);
+      setOverlay('ng-pause', true);
+      return;
+    }
+    this.screen = 'menu';
+    showScreen('ng-menu');
+  }
+
+  abortToMenu() {
+    AudioApi.stopBeds();
+    this.paused = false;
+    this.pausedForSettings = false;
+    this.settingsOpen = false;
+    this.syncMatterPause();
+    this.returnToMenu();
   }
 
   toggleFullscreen() {
@@ -986,6 +1222,7 @@ export default class MissionScene extends Phaser.Scene {
     else wrap.requestFullscreen?.();
     wrap.classList.toggle('arcade-immersive', !active);
     document.documentElement.classList.toggle('arcade-immersive-open', !active);
+    this.time.delayedCall(80, () => this.scale.refresh());
   }
 
   currentFlight() {
@@ -1000,11 +1237,8 @@ export default class MissionScene extends Phaser.Scene {
 
   refreshMenuCopy() {
     const flight = this.currentFlight();
-    if (this.menuTitle) this.menuTitle.setText(`${flight.id}  //  ${flight.payload.toUpperCase()}`);
-    if (this.menuSub) {
-      this.menuSub.setText(flight.blurb);
-      this.menuSub.setColor(flight.accent);
-    }
+    const blurb = document.getElementById('ng-menu-blurb');
+    if (blurb) blurb.textContent = `${flight.id}  //  ${flight.payload} — ${flight.blurb}`;
   }
 
   setMission(id) {
@@ -1060,6 +1294,18 @@ export default class MissionScene extends Phaser.Scene {
     this.water.position.y = 780;
   }
 
+  hintLine() {
+    if (!this.settings.controlHints || !this.session) return '';
+    if (this.status === 'PRELAUNCH') return 'HOLD CLIMB through ignition';
+    if (this.status === 'ASCENT' && this.session.flightTime < (this.session.hintUntil || 0)) {
+      return 'HOLD CLIMB  ·  STEER A/D';
+    }
+    if (this.status === 'JACKLYN' && this.session.jacklynElapsed < 3.2) {
+      return 'SLIDE IN  ·  HOLD BRAKE over the deck';
+    }
+    return '';
+  }
+
   refreshHud() {
     const s = this.session || this.freshSession();
     const boosting = isBoosting(this.inputState, this.nowSec);
@@ -1067,12 +1313,14 @@ export default class MissionScene extends Phaser.Scene {
     const last = this.settings.lastArcadeScore || 0;
     const flight = this.currentFlight();
     const missionBest = this.settings.missionBests?.[flight.id]?.score || 0;
+    const beat = currentBeat(s.beats || beatsFor(flight), s.tClock);
     renderHud({
       alt: `${s.altitudeKm.toFixed(1)} km`,
       vel: `${Math.round(s.velocity)} m/s`,
-      throttle: this.status === 'PAD'
+      throttle: this.status === 'PRELAUNCH'
         ? `CHG ${(s.charge * 100).toFixed(0)}%`
-        : `THR ${(s.throttle * 100).toFixed(0)}%  FUEL ${s.fuel.toFixed(0)}`,
+        : `THR ${(s.throttle * 100).toFixed(0)}%`,
+      fuel: `${s.fuel.toFixed(0)}`,
       stage: s.stage,
       score: Math.max(0, Math.round(s.score)).toLocaleString(),
       best: (missionBest || best).toLocaleString(),
@@ -1083,15 +1331,18 @@ export default class MissionScene extends Phaser.Scene {
       objective: flight.objective?.label
         ? `${s.objectiveDone ? 'DONE · ' : 'OBJ · '}${flight.objective.label}`
         : '',
+      clock: formatClock(s.tClock),
+      tapeId: beat?.id || '',
       muted: this.settings.muted,
       paused: this.paused,
       boostLabel: this.status === 'JACKLYN' ? 'HOLD TO BRAKE' : 'HOLD TO CLIMB',
+      hints: this.hintLine(),
       recordLine: best || last
         ? `${flight.id}  ${flight.payload}  ·  PB ${best.toLocaleString()}  ·  LAST ${last.toLocaleString()}  ·  ${this.settings.difficulty}`
         : `${flight.id}  ${flight.payload}  ·  NO MISSIONS FLOWN  ·  ${this.settings.difficulty}`,
     });
     AudioApi.applyMix(this.settings);
-    document.body.dataset.phase = this.status;
+    document.body.dataset.phase = this.status === 'PRELAUNCH' ? 'PAD' : this.status;
     if (boosting && this.status === 'ASCENT' && !this.settings.reducedMotion) {
       /* plume handled in update */
     }

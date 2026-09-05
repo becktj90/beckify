@@ -33,6 +33,7 @@ export function renderHud(snapshot) {
     't-alt': snapshot.alt,
     't-vel': snapshot.vel,
     't-thr': snapshot.throttle,
+    't-fuel': snapshot.fuel,
     't-stage': snapshot.stage,
     't-score': snapshot.score,
     't-best': snapshot.best,
@@ -41,10 +42,11 @@ export function renderHud(snapshot) {
     't-mission': snapshot.mission,
     't-payload': snapshot.payload,
     't-obj': snapshot.objective,
+    't-clock': snapshot.clock,
   };
   for (const [id, value] of Object.entries(map)) {
     const node = el(id);
-    if (node && node.textContent !== value) node.textContent = value;
+    if (node && value != null && node.textContent !== value) node.textContent = value;
   }
   const mute = el('arcade-mute-btn');
   if (mute) {
@@ -60,12 +62,40 @@ export function renderHud(snapshot) {
   if (climb) climb.textContent = snapshot.boostLabel;
   const record = el('arcade-hi-score');
   if (record) record.textContent = snapshot.recordLine;
+  const hint = el('ng-hints');
+  if (hint) {
+    hint.hidden = !snapshot.hints;
+    if (snapshot.hints) hint.textContent = snapshot.hints;
+  }
+  renderTape(snapshot.tapeId);
+}
+
+export function renderTape(activeId) {
+  document.querySelectorAll('#ng-tape [data-beat]').forEach((node) => {
+    const id = node.getAttribute('data-beat');
+    node.classList.toggle('is-now', id === activeId);
+    node.classList.toggle('is-done', Boolean(activeId) && node.dataset.order < (document.querySelector(`#ng-tape [data-beat="${activeId}"]`)?.dataset.order || 0));
+  });
 }
 
 export function setOverlay(id, open) {
   const node = el(id);
   if (!node) return;
   node.hidden = !open;
+}
+
+export function showScreen(id) {
+  ['ng-menu', 'ng-missions', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'].forEach((key) => {
+    const node = el(key);
+    if (node) node.hidden = key !== id;
+  });
+}
+
+export function hideScreens() {
+  ['ng-menu', 'ng-missions', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'].forEach((key) => {
+    const node = el(key);
+    if (node) node.hidden = true;
+  });
 }
 
 export function setSummaryCopy(title, body) {
@@ -83,11 +113,23 @@ export function bindChrome(handlers) {
     ['arcade-fullscreen-btn', handlers.toggleFullscreen],
     ['arcade-reset-btn', handlers.resetRecord],
     ['ng-summary-continue', handlers.continueSummary],
+    ['ng-play', handlers.play],
+    ['ng-open-missions', handlers.openMissions],
+    ['ng-open-settings', handlers.toggleSettings],
+    ['ng-open-howto', handlers.openHowto],
+    ['ng-missions-back', handlers.backToMenu],
+    ['ng-howto-back', handlers.backToMenu],
+    ['ng-settings-back', handlers.closeSettings],
+    ['ng-pause-resume', handlers.togglePause],
+    ['ng-pause-settings', handlers.toggleSettings],
+    ['ng-pause-howto', handlers.openHowto],
+    ['ng-pause-abort', handlers.abortToMenu],
   ];
   clicks.forEach(([id, fn]) => {
     const node = el(id);
     if (node && fn) node.addEventListener('click', (event) => {
       event.preventDefault();
+      event.stopPropagation();
       fn();
     });
   });
@@ -123,15 +165,21 @@ export function setMissionButtons(settings, onPick) {
     const label = btn.getAttribute('data-label') || id;
     const unlocked = (settings.unlockedMissions || []).includes(id);
     const active = settings.currentMission === id;
+    const best = settings.missionBests?.[id]?.score || 0;
     btn.disabled = false;
-    btn.textContent = unlocked ? label : `${id} · LOCKED`;
+    const bestBit = best ? ` · ${best.toLocaleString()}` : '';
+    btn.textContent = unlocked ? `${label}${bestBit}` : `${id} · LOCKED`;
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     btn.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
     btn.classList.toggle('is-active', active);
     btn.classList.toggle('is-locked', !unlocked);
     if (!btn._bound) {
       btn._bound = true;
-      btn.addEventListener('click', () => onPick(id));
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onPick(id);
+      });
     }
   });
 }
@@ -143,7 +191,11 @@ export function setDifficultyButtons(active, onPick) {
     btn.classList.toggle('is-active', mode === active);
     if (!btn._bound) {
       btn._bound = true;
-      btn.addEventListener('click', () => onPick(mode));
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onPick(mode);
+      });
     }
   });
 }
@@ -154,10 +206,26 @@ export function syncSettingsForm(settings) {
   form.querySelectorAll('[data-set]').forEach((input) => {
     const key = input.getAttribute('data-set');
     if (input.type === 'checkbox') input.checked = Boolean(settings[key]);
-    if (input.type === 'range' && key === 'volume') {
-      input.value = String(Math.round((Number(settings.volume) || 0.72) * 100));
+    if (input.type === 'range') {
+      const raw = Number(settings[key]);
+      const value = Number.isFinite(raw) ? raw : 0.72;
+      input.value = String(Math.round(value * 100));
     }
   });
+}
+
+export function readSettingsForm(settings) {
+  const form = el('ng-settings');
+  if (!form) return settings;
+  form.querySelectorAll('[data-set]').forEach((input) => {
+    const key = input.getAttribute('data-set');
+    if (input.type === 'range') {
+      settings[key] = Number(input.value) / 100;
+    } else if (input.type === 'checkbox') {
+      settings[key] = input.checked;
+    }
+  });
+  return settings;
 }
 
 export function isEmbedded() {

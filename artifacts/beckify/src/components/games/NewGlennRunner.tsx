@@ -15,7 +15,7 @@ export function NewGlennRunner() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Launch arcade</p>
           <h1 id="new-glenn-title" className="font-display text-3xl font-bold tracking-tight">New Glenn Runner</h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            Phaser 4 flights from LC-36: pick an NG-n stack with its own payload, charge liftoff on the Integrated Launch Tower, steer the corridor, then slide first stage onto barge Jacklyn. Keyboard and touch. Difficulty stays on the cabinet — KID, CADET, or PAD RAT.
+            Phaser 4 flights from LC-36: pick an NG-n stack with its own payload, ride terminal count on the Integrated Launch Tower, steer the corridor, then slide first stage onto barge Jacklyn. Keyboard and touch. Difficulty stays on the cabinet — KID, CADET, or PAD RAT.
           </p>
         </div>
         <button
@@ -30,12 +30,12 @@ export function NewGlennRunner() {
 
       <div
         ref={stageRef}
-        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-video min-h-[min(360px,56dvh)] max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
+        className={`game-stage relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] rounded-none border-0" : "w-full min-w-0 aspect-video max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
       >
         <iframe
           src={RUNNER_SRC}
           title="New Glenn Runner"
-          className="block h-full min-h-[min(360px,56dvh)] w-full border-0 bg-black"
+          className="absolute inset-0 block h-full w-full border-0 bg-black"
           allow="fullscreen; gamepad; autoplay"
         />
         {immersive ? (

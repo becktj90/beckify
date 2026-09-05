@@ -7,11 +7,12 @@ The Phaser 4 runner owns settings, NG-n unlocks, and personal bests.
 | `newGlennRunnerSettingsV2` | Canvas (legacy) | Early settings blob. Read once, never written. |
 | `newGlennRunnerStateV3` | Canvas Jacklyn / feel pass | Scores and prefs. Read once, never written by Phaser. |
 | `newGlennRunnerStateV4` | Phaser 4 first vertical slice | Scores and prefs. Read once, never written after V5. |
-| `newGlennRunnerStateV5` | **Phaser 4 (current)** | NG-n flight unlocks, payload identity, per-mission bests. Migrates hi-score, last score, difficulty, mute/motion/haptics, mission count, and best-flight summary from V4/V3/V2 on first launch. |
+| `newGlennRunnerStateV5` | Phaser 4 NG-n missions | Unlocks and per-mission bests. Read once, never written after V6. |
+| `newGlennRunnerStateV6` | **Phaser 4 (current)** | SFX/music volume split, control hints, sequence HUD. Migrates hi-score, last score, difficulty, mute/motion/haptics, mission count, unlocks, and best-flight summary from V5/V4/V3/V2 on first launch. |
 
-V5 does **not** delete older keys, so a leftover canvas bookmark can still see its own record. After migration, new flights only update V5.
+V6 does **not** delete older keys, so a leftover canvas bookmark can still see its own record. After migration, new flights only update V6.
 
-Audio prefs (`sound`, `music`, `muted`, `volume` 0–1) live on the same V5 blob. Mute is the master switch; `prefers-reduced-motion` does not mute.
+Audio prefs (`sound`, `music`, `muted`, `volume` 0–1, `sfxVolume` 0–1, `musicVolume` 0–1) live on the same V6 blob. Mute is the master switch; `prefers-reduced-motion` does not mute.
 
 Unlock rule: finishing Jacklyn (soft recover, salvage, or splash — not RUD) unlocks the next NG-n. Difficulty stays KID / CADET / PAD RAT *inside* a flight.
 

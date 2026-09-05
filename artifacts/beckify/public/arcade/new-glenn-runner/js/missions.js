@@ -19,9 +19,9 @@ export const MISSIONS = [
     seaTint: 0xffffff,
     objective: { id: 'shield', label: 'Grab an aero shield' },
     jacklyn: {
-      recovered: 'NG-1 on Jacklyn — history rewritten.',
-      salvage: 'NG-1 hard catch. Pathfinder still uphill.',
-      splash: 'NG-1 splash. Jacklyn waits for the next flight.',
+      recovered: 'On Jacklyn — history rewritten.',
+      salvage: 'Hard catch. Pathfinder still uphill.',
+      splash: 'Splash. Jacklyn waits for the next flight.',
     },
   },
   {
@@ -36,9 +36,9 @@ export const MISSIONS = [
     seaTint: 0xe8f4ff,
     objective: { id: 'recover', label: 'Soft catch on Jacklyn' },
     jacklyn: {
-      recovered: 'NG-2 BOOSTER RECOVERED — reuse is real.',
-      salvage: 'NG-2 on deck, hard. Probes still go.',
-      splash: 'NG-2 splash. Probes are fine; the barge is not.',
+      recovered: 'BOOSTER RECOVERED — reuse is real.',
+      salvage: 'On deck, hard. Probes still go.',
+      splash: 'Splash. Probes are fine; the barge is not.',
     },
   },
   {
@@ -53,9 +53,9 @@ export const MISSIONS = [
     seaTint: 0xffe8d0,
     objective: { id: 'combo4', label: 'Hold a ×4 combo' },
     jacklyn: {
-      recovered: 'NG-3 recovered. BlueBird is on its way.',
-      salvage: 'NG-3 salvage. Sat deployed, barge scuffed.',
-      splash: 'NG-3 splash. Customer sat still coasts.',
+      recovered: 'Recovered. BlueBird is on its way.',
+      salvage: 'Salvage. Sat deployed, barge scuffed.',
+      splash: 'Splash. Customer sat still coasts.',
     },
   },
   {
@@ -70,9 +70,9 @@ export const MISSIONS = [
     seaTint: 0xd8d0ff,
     objective: { id: 'clean', label: 'No structural hits' },
     jacklyn: {
-      recovered: 'NG-4 on Jacklyn. Ka-band is live.',
-      salvage: 'NG-4 hard catch. Lightspeed still talks.',
-      splash: 'NG-4 splash. Payload does not care.',
+      recovered: 'On Jacklyn. Ka-band is live.',
+      salvage: 'Hard catch. Lightspeed still talks.',
+      splash: 'Splash. Payload does not care.',
     },
   },
   {
@@ -87,9 +87,9 @@ export const MISSIONS = [
     seaTint: 0xc8ffe0,
     objective: { id: 'recover-combo', label: 'Recover + ×3 combo' },
     jacklyn: {
-      recovered: 'NG-5 recovered. Tug is on its own now.',
-      salvage: 'NG-5 salvage. Tug separated anyway.',
-      splash: 'NG-5 splash. Cadence still counts.',
+      recovered: 'Recovered. Tug is on its own now.',
+      salvage: 'Salvage. Tug separated anyway.',
+      splash: 'Splash. Cadence still counts.',
     },
   },
 ];

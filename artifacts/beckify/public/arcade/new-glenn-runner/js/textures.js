@@ -24,73 +24,137 @@ function featherPath(ctx, x, y, s) {
 }
 
 export function makeRocket(fairing, payload) {
-  const cv = canvas(72, 220);
+  const cv = canvas(78, 236);
   const ctx = cv.getContext('2d');
-  ctx.translate(36, 18);
+  ctx.translate(39, 16);
 
   if (fairing) {
-    const g = ctx.createLinearGradient(0, 0, 0, 52);
+    const g = ctx.createLinearGradient(0, 0, 0, 58);
     g.addColorStop(0, '#ffffff');
-    g.addColorStop(1, '#e8eef6');
+    g.addColorStop(0.55, '#f4f7fb');
+    g.addColorStop(1, '#e4ebf2');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(16, 8, 20, 28, 20, 52);
-    ctx.lineTo(-20, 52);
-    ctx.bezierCurveTo(-20, 28, -16, 8, 0, 0);
+    ctx.bezierCurveTo(18, 10, 23, 30, 22, 58);
+    ctx.lineTo(-22, 58);
+    ctx.bezierCurveTo(-23, 30, -18, 10, 0, 0);
     ctx.fill();
     ctx.fillStyle = payload?.accent || '#d5dde6';
-    ctx.fillRect(-20, 50, 40, 5);
+    ctx.fillRect(-22, 56, 44, 5);
     if (payload?.mark) {
       ctx.fillStyle = payload.accent || '#3ec6ff';
       ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(payload.mark, 0, 44);
+      ctx.fillText(payload.mark, 0, 50);
     }
   } else {
     ctx.fillStyle = '#f4f7fb';
-    ctx.fillRect(-16, 28, 32, 26);
+    ctx.fillRect(-18, 30, 36, 28);
     ctx.fillStyle = '#c5ced8';
-    ctx.fillRect(-10, 24, 20, 8);
+    ctx.fillRect(-12, 26, 24, 8);
   }
 
   ctx.fillStyle = '#f7fbff';
-  ctx.fillRect(-20, 54, 40, 118);
+  ctx.fillRect(-20, 61, 40, 28);
 
-  ctx.fillStyle = '#c48a2a';
-  ctx.fillRect(-20, 96, 40, 10);
-  ctx.fillStyle = '#a56b16';
-  ctx.fillRect(-20, 148, 40, 14);
+  const goldTop = ctx.createLinearGradient(-22, 88, 22, 102);
+  goldTop.addColorStop(0, '#e8c36a');
+  goldTop.addColorStop(0.45, '#c48a2a');
+  goldTop.addColorStop(1, '#8a5a12');
+  ctx.fillStyle = goldTop;
+  ctx.fillRect(-21, 88, 42, 12);
 
-  ctx.fillStyle = '#e8eef4';
-  ctx.fillRect(-22, 160, 44, 18);
-  ctx.fillStyle = '#c48a2a';
-  ctx.fillRect(-24, 176, 48, 10);
+  ctx.fillStyle = '#f4f7fb';
+  ctx.fillRect(-21, 100, 42, 86);
 
-  featherPath(ctx, 0, 128, 0.72);
+  featherPath(ctx, 0, 142, 0.78);
 
   ctx.fillStyle = '#fff';
-  ctx.fillRect(10, 72, 10, 6);
+  ctx.fillRect(9, 112, 11, 7);
   ctx.fillStyle = '#b22234';
-  ctx.fillRect(10, 72, 10, 2);
-  ctx.fillRect(10, 76, 10, 2);
+  ctx.fillRect(9, 112, 11, 2);
+  ctx.fillRect(9, 117, 11, 2);
   ctx.fillStyle = '#3c3b6e';
-  ctx.fillRect(10, 72, 4, 6);
+  ctx.fillRect(9, 112, 4, 7);
+
+  const goldBase = ctx.createLinearGradient(-24, 186, 24, 206);
+  goldBase.addColorStop(0, '#e0b85a');
+  goldBase.addColorStop(0.5, '#c48a2a');
+  goldBase.addColorStop(1, '#7a4e0e');
+  ctx.fillStyle = goldBase;
+  ctx.fillRect(-23, 186, 46, 16);
+
+  ctx.fillStyle = '#0b0d12';
+  [[-34, 196], [22, 196], [-32, 208], [20, 208]].forEach(([x, y], i) => {
+    ctx.beginPath();
+    ctx.moveTo(x < 0 ? -21 : 21, y);
+    ctx.lineTo(x, y + 3);
+    ctx.lineTo(x, y + (i < 2 ? 16 : 12));
+    ctx.lineTo(x < 0 ? -21 : 21, y + (i < 2 ? 12 : 8));
+    ctx.closePath();
+    ctx.fill();
+  });
 
   for (let i = 0; i < 7; i++) {
     const x = -18 + i * 6;
     ctx.fillStyle = '#2b3038';
     ctx.beginPath();
-    ctx.ellipse(x, 196, 3.2, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, 214, 3.2, 6, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#6d7380';
     ctx.beginPath();
-    ctx.ellipse(x, 194, 1.6, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, 212, 1.6, 3, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  ctx.strokeStyle = 'rgba(20,28,40,0.18)';
-  ctx.strokeRect(-20, 54, 40, 118);
+  ctx.strokeStyle = 'rgba(20,28,40,0.16)';
+  ctx.strokeRect(-21, 100, 42, 86);
+  return cv;
+}
+
+export function makeUpperStage() {
+  const cv = canvas(64, 120);
+  const ctx = cv.getContext('2d');
+  ctx.translate(32, 8);
+  const g = ctx.createLinearGradient(0, 0, 0, 40);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(1, '#e8eef6');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(14, 8, 18, 22, 18, 40);
+  ctx.lineTo(-18, 40);
+  ctx.bezierCurveTo(-18, 22, -14, 8, 0, 0);
+  ctx.fill();
+  ctx.fillStyle = '#f4f7fb';
+  ctx.fillRect(-18, 40, 36, 56);
+  ctx.fillStyle = '#c48a2a';
+  ctx.fillRect(-18, 88, 36, 8);
+  ctx.fillStyle = '#2b3038';
+  ctx.fillRect(-8, 96, 6, 12);
+  ctx.fillRect(2, 96, 6, 12);
+  return cv;
+}
+
+export function makeFairingHalf(side) {
+  const cv = canvas(40, 70);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#f4f7fb';
+  ctx.beginPath();
+  if (side < 0) {
+    ctx.moveTo(38, 4);
+    ctx.bezierCurveTo(8, 10, 4, 30, 6, 66);
+    ctx.lineTo(38, 66);
+  } else {
+    ctx.moveTo(2, 4);
+    ctx.bezierCurveTo(32, 10, 36, 30, 34, 66);
+    ctx.lineTo(2, 66);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(20,28,40,0.2)';
+  ctx.stroke();
   return cv;
 }
 
@@ -101,60 +165,85 @@ export function makePad() {
   const ctx = cv.getContext('2d');
 
   const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, '#6fb4e8');
-  sky.addColorStop(0.42, '#8ec6e6');
-  sky.addColorStop(0.62, '#c5d8c4');
-  sky.addColorStop(0.78, '#d7c9a4');
-  sky.addColorStop(1, '#b9c3b0');
+  sky.addColorStop(0, '#5aa0d4');
+  sky.addColorStop(0.28, '#7eb7dc');
+  sky.addColorStop(0.48, '#c8c4a4');
+  sky.addColorStop(0.62, '#e2c48a');
+  sky.addColorStop(0.78, '#c9b48a');
+  sky.addColorStop(1, '#9aa48c');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
-  ctx.fillStyle = '#1d5f8a';
-  ctx.fillRect(0, 430, w, 80);
-  const ocean = ctx.createLinearGradient(0, 430, 0, 510);
-  ocean.addColorStop(0, '#2a7aaa');
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(180, 70, 90, 16, -0.2, 0, Math.PI * 2);
+  ctx.ellipse(320, 58, 70, 12, 0.1, 0, Math.PI * 2);
+  ctx.ellipse(980, 64, 110, 14, 0.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  const ocean = ctx.createLinearGradient(0, 368, 0, 478);
+  ocean.addColorStop(0, '#1d5f8a');
+  ocean.addColorStop(0.35, '#2a7aaa');
   ocean.addColorStop(1, '#164862');
   ctx.fillStyle = ocean;
-  ctx.fillRect(0, 448, w, 62);
+  ctx.fillRect(0, 368, w, 112);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  for (let x = 0; x < w; x += 28) {
+    ctx.fillRect(x, 392 + Math.sin(x * 0.04) * 3, 16, 1.5);
+  }
 
-  ctx.fillStyle = '#5d7a48';
+  ctx.fillStyle = '#6a7f4a';
   ctx.beginPath();
-  ctx.moveTo(0, 508);
-  for (let x = 0; x <= w; x += 18) {
-    ctx.lineTo(x, 500 + Math.sin(x * 0.04) * 6 + (x % 36 === 0 ? 4 : 0));
+  ctx.moveTo(0, 470);
+  for (let x = 0; x <= w; x += 16) {
+    ctx.lineTo(x, 464 + Math.sin(x * 0.035) * 7 + ((x * 13) % 19 === 0 ? 5 : 0));
   }
-  ctx.lineTo(w, 560);
-  ctx.lineTo(0, 560);
+  ctx.lineTo(w, 548);
+  ctx.lineTo(0, 548);
   ctx.fill();
-  ctx.fillStyle = '#6e8a52';
-  for (let i = 0; i < 40; i++) {
-    const x = (i * 37) % w;
-    ctx.fillRect(x, 512 + (i % 5) * 3, 3, 10);
+  ctx.fillStyle = '#7a8f52';
+  for (let i = 0; i < 70; i++) {
+    const x = (i * 31 + 11) % w;
+    ctx.fillRect(x, 486 + (i % 7) * 4, 2 + (i % 3), 9 + (i % 5));
+  }
+  ctx.fillStyle = '#8a6a3a';
+  for (let i = 0; i < 18; i++) {
+    ctx.fillRect((i * 71 + 20) % (w - 40), 500 + (i % 4) * 6, 5, 3);
   }
 
-  ctx.fillStyle = '#9aa3a8';
-  ctx.fillRect(0, 548, w, 172);
-  ctx.fillStyle = '#8b9499';
-  for (let y = 560; y < h; y += 36) ctx.fillRect(0, y, w, 2);
-  for (let x = 0; x < w; x += 48) ctx.fillRect(x, 548, 2, 172);
+  ctx.fillStyle = '#8f979c';
+  ctx.fillRect(0, 536, w, 184);
   ctx.fillStyle = '#7e868c';
-  ctx.fillRect(0, 548, w, 8);
+  ctx.fillRect(0, 536, w, 10);
+  ctx.fillStyle = '#9aa3a8';
+  for (let y = 556; y < h; y += 34) ctx.fillRect(0, y, w, 2);
+  for (let x = 0; x < w; x += 46) ctx.fillRect(x, 536, 2, 184);
+  ctx.fillStyle = '#6f777c';
+  ctx.fillRect(120, 548, 8, 160);
+  ctx.fillRect(200, 548, 8, 160);
+  ctx.fillRect(360, 548, 6, 160);
+  ctx.fillRect(920, 548, 8, 160);
+  ctx.fillStyle = 'rgba(12,16,22,0.28)';
+  ctx.fillRect(430, 540, 160, 12);
 
-  drawGse(ctx, 210, 548);
-  drawLaunchTable(ctx, 560, 548);
-  drawIlt(ctx, 760, 548);
-
-  ctx.fillStyle = 'rgba(12,16,22,0.35)';
-  ctx.fillRect(430, 536, 260, 14);
+  drawGse(ctx, 214, 536);
+  drawLaunchTable(ctx, 508, 536);
+  drawIlt(ctx, 742, 536);
 
   ctx.fillStyle = '#cfd6dc';
-  ctx.fillRect(40, 620, 70, 28);
-  ctx.fillRect(118, 628, 36, 18);
+  ctx.fillRect(36, 628, 78, 30);
+  ctx.fillRect(118, 636, 40, 20);
   ctx.fillStyle = '#2a3138';
   ctx.beginPath();
-  ctx.arc(62, 650, 7, 0, Math.PI * 2);
-  ctx.arc(98, 650, 7, 0, Math.PI * 2);
+  ctx.arc(58, 660, 7, 0, Math.PI * 2);
+  ctx.arc(96, 660, 7, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.fillStyle = 'rgba(8,12,18,0.45)';
+  ctx.font = 'bold 13px "IBM Plex Mono", ui-monospace, monospace';
+  ctx.fillText('LC-36', 40, 580);
+  ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
+  ctx.fillText('CAPE CANAVERAL', 40, 596);
 
   return cv;
 }
@@ -162,100 +251,148 @@ export function makePad() {
 function drawLaunchTable(ctx, x, groundY) {
   ctx.save();
   ctx.translate(x, groundY);
-  ctx.fillStyle = '#5c636b';
-  ctx.fillRect(-90, -18, 180, 18);
   ctx.fillStyle = '#3d444c';
-  ctx.fillRect(-70, -34, 140, 16);
+  ctx.fillRect(-78, 0, 22, 18);
+  ctx.fillRect(56, 0, 22, 18);
+  ctx.fillRect(-18, 0, 36, 18);
   ctx.strokeStyle = '#1c2128';
   ctx.lineWidth = 3;
-  ctx.strokeRect(-70, -34, 140, 16);
   ctx.beginPath();
-  ctx.moveTo(-70, -34);
-  ctx.lineTo(-50, -18);
-  ctx.moveTo(70, -34);
-  ctx.lineTo(50, -18);
+  ctx.moveTo(-70, -38);
+  ctx.lineTo(-56, 0);
+  ctx.moveTo(70, -38);
+  ctx.lineTo(56, 0);
+  ctx.moveTo(-28, -38);
+  ctx.lineTo(-18, 0);
+  ctx.moveTo(28, -38);
+  ctx.lineTo(18, 0);
   ctx.stroke();
+  ctx.fillStyle = '#5c636b';
+  ctx.fillRect(-96, -18, 192, 18);
+  ctx.fillStyle = '#4a5158';
+  ctx.fillRect(-80, -38, 160, 22);
+  ctx.strokeStyle = '#1c2128';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-80, -38, 160, 22);
+  ctx.fillStyle = '#9aa3aa';
+  ctx.fillRect(-80, -44, 160, 6);
   ctx.fillStyle = '#2a3038';
-  ctx.fillRect(-28, -8, 56, 8);
+  ctx.fillRect(-86, -52, 6, 20);
+  ctx.fillRect(80, -52, 6, 20);
+  ctx.fillRect(-86, -52, 172, 4);
+  ctx.fillStyle = '#2a3038';
+  ctx.fillRect(-30, -8, 60, 8);
   ctx.restore();
 }
 
 function drawGse(ctx, x, groundY) {
   ctx.save();
   ctx.translate(x, groundY);
-  ctx.fillStyle = '#4a5158';
-  ctx.fillRect(-70, -118, 150, 118);
-  ctx.fillStyle = '#3a4046';
-  ctx.fillRect(-78, -128, 166, 14);
-  ctx.strokeStyle = '#1e242b';
-  ctx.lineWidth = 2;
-  for (let y = -108; y < 0; y += 16) {
+  const tanks = [
+    { x: -86, y: -36, w: 92, h: 36 },
+    { x: 14, y: -34, w: 86, h: 34 },
+    { x: -40, y: -70, w: 78, h: 28 },
+  ];
+  tanks.forEach((t) => {
+    const g = ctx.createLinearGradient(t.x, 0, t.x, t.y + t.h);
+    g.addColorStop(0, '#f4f7fb');
+    g.addColorStop(0.5, '#d8dee6');
+    g.addColorStop(1, '#b8c0c8');
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.moveTo(-66, y);
-    ctx.lineTo(76, y);
+    if (typeof ctx.roundRect === 'function') ctx.roundRect(t.x, t.y, t.w, t.h, t.h / 2);
+    else ctx.rect(t.x, t.y, t.w, t.h);
+    ctx.fill();
+    ctx.strokeStyle = '#8a929a';
     ctx.stroke();
-  }
+    ctx.fillStyle = '#c48a2a';
+    ctx.fillRect(t.x + 10, t.y + 6, 8, t.h - 12);
+  });
+  ctx.fillStyle = '#4a5158';
+  ctx.fillRect(96, -88, 54, 88);
+  ctx.fillStyle = '#3a4046';
+  ctx.fillRect(92, -96, 62, 10);
   ctx.fillStyle = '#2f353c';
-  ctx.fillRect(-86, -70, 22, 70);
-  ctx.fillRect(86, -88, 18, 88);
+  ctx.fillRect(-110, -48, 16, 48);
+  ctx.fillStyle = '#6d767e';
+  ctx.fillRect(-108, -18, 210, 6);
   ctx.fillStyle = '#c9a227';
-  ctx.fillRect(-8, -142, 10, 14);
+  ctx.fillRect(118, -108, 8, 12);
   ctx.restore();
 }
 
+/**
+ * Integrated Launch Tower only. No separate lightning-protection towers
+ * on the pad. White fully enclosed service platforms extend toward the
+ * vehicle, matching the LC-36 ILT photo.
+ */
 function drawIlt(ctx, x, groundY) {
-  const height = 430;
+  const height = 392;
   ctx.save();
   ctx.translate(x, groundY);
-  ctx.strokeStyle = '#2b3036';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(-42, 0);
-  ctx.lineTo(-28, -height);
-  ctx.moveTo(42, 0);
-  ctx.lineTo(28, -height);
-  ctx.moveTo(0, 0);
-  ctx.lineTo(0, -height);
-  ctx.stroke();
   ctx.strokeStyle = '#3a4048';
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(-48, 0);
+  ctx.lineTo(-30, -height);
+  ctx.moveTo(48, 0);
+  ctx.lineTo(32, -height);
+  ctx.stroke();
+  ctx.strokeStyle = '#2b3036';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-8, 0);
+  ctx.lineTo(-4, -height);
+  ctx.moveTo(8, 0);
+  ctx.lineTo(4, -height);
+  ctx.stroke();
+  ctx.strokeStyle = '#4a515a';
   ctx.lineWidth = 2;
-  for (let y = -18; y > -height + 10; y -= 22) {
-    const taper = 8 * (1 + y / height);
+  for (let y = -16; y > -height + 8; y -= 20) {
+    const taper = 10 * (1 + y / height);
     ctx.beginPath();
-    ctx.moveTo(-38 + taper, y);
-    ctx.lineTo(38 - taper, y - 14);
-    ctx.moveTo(38 - taper, y);
-    ctx.lineTo(-38 + taper, y - 14);
+    ctx.moveTo(-46 + taper, y);
+    ctx.lineTo(46 - taper, y - 12);
+    ctx.moveTo(46 - taper, y);
+    ctx.lineTo(-46 + taper, y - 12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-46 + taper, y);
+    ctx.lineTo(46 - taper, y);
     ctx.stroke();
   }
+
   const platforms = [
-    { y: -90, w: 118, h: 36 },
-    { y: -190, w: 110, h: 34 },
-    { y: -286, w: 102, h: 32 },
-    { y: -368, w: 88, h: 28 },
+    { y: -96, w: 168, h: 40, extend: -78 },
+    { y: -188, w: 176, h: 44, extend: -92 },
   ];
   platforms.forEach((p) => {
-    ctx.fillStyle = '#1a1e24';
-    ctx.fillRect(-p.w * 0.55, p.y, p.w, p.h);
+    const left = -p.w * 0.22 + p.extend;
+    ctx.fillStyle = '#e8eef4';
+    ctx.fillRect(left, p.y, p.w, p.h);
+    ctx.fillStyle = '#c5ced6';
+    ctx.fillRect(left + 5, p.y + 5, p.w - 10, p.h - 10);
+    ctx.fillStyle = '#f7fbff';
+    ctx.fillRect(left + 8, p.y + 8, p.w * 0.42, p.h - 16);
+    ctx.strokeStyle = '#6d767e';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(left, p.y, p.w, p.h);
+    ctx.fillStyle = '#5c636b';
+    ctx.fillRect(left, p.y + p.h - 6, p.w + 18, 6);
     ctx.fillStyle = '#2a3038';
-    ctx.fillRect(-p.w * 0.55 + 4, p.y + 4, p.w - 8, p.h - 8);
-    ctx.strokeStyle = '#0d1014';
-    ctx.strokeRect(-p.w * 0.55, p.y, p.w, p.h);
-    ctx.fillStyle = '#6d767e';
-    ctx.fillRect(-p.w * 0.55, p.y + p.h - 5, p.w + 36, 5);
-    ctx.fillStyle = '#11151b';
-    ctx.fillRect(p.w * 0.12, p.y + 6, 22, p.h - 12);
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(left + 14 + i * 22, p.y + 10, 8, 8);
+    }
   });
+
+  ctx.fillStyle = '#3a4048';
+  ctx.fillRect(-36, -height - 10, 72, 14);
   ctx.strokeStyle = '#2b3036';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, -height);
-  ctx.lineTo(0, -height - 46);
+  ctx.lineTo(0, -height - 28);
   ctx.stroke();
-  ctx.fillStyle = '#d24a4a';
-  ctx.beginPath();
-  ctx.arc(0, -height - 48, 3, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
 }
 
@@ -366,6 +503,47 @@ export function makeJacklyn() {
   return cv;
 }
 
+/** Climb backdrop. Keep the canvas small — software WebGL maxes out near 2048. */
+export function makeAscentSky() {
+  const w = 640;
+  const h = 1024;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, '#02060c');
+  sky.addColorStop(0.28, '#061018');
+  sky.addColorStop(0.48, '#0a2040');
+  sky.addColorStop(0.66, '#163a68');
+  sky.addColorStop(0.8, '#3a7eb4');
+  sky.addColorStop(0.9, '#6fb4e8');
+  sky.addColorStop(1, '#8ec6e6');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for (let i = 0; i < 160; i++) {
+    const y = (i * 97) % Math.floor(h * 0.72);
+    ctx.globalAlpha = 0.25 + (i % 5) * 0.12;
+    ctx.fillRect((i * 137) % w, y, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.ellipse((i * 190 + 80) % w, h * 0.78 + (i % 3) * 28, 70, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255,207,93,0.18)';
+  ctx.setLineDash([8, 14]);
+  ctx.beginPath();
+  ctx.moveTo(w * 0.28, h * 0.12);
+  ctx.lineTo(w * 0.34, h);
+  ctx.moveTo(w * 0.72, h * 0.12);
+  ctx.lineTo(w * 0.66, h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  return cv;
+}
+
 export function makeOcean() {
   const cv = canvas(1280, 720);
   const ctx = cv.getContext('2d');
@@ -390,6 +568,8 @@ export function makeOcean() {
   for (let i = 0; i < 36; i++) {
     ctx.fillRect((i * 97) % 1280, (i * 53) % 380, 2, 2);
   }
+  ctx.fillStyle = 'rgba(220,200,140,0.12)';
+  ctx.fillRect(0, 404, 1280, 6);
   return cv;
 }
 
@@ -531,6 +711,9 @@ export function installTextures(scene) {
   };
   add('rocket', makeRocket(true));
   add('booster', makeBooster());
+  add('upper-stage', makeUpperStage());
+  add('fairing-l', makeFairingHalf(-1));
+  add('fairing-r', makeFairingHalf(1));
   add('bloom', makeBloom());
   add('rcs', makeDot('#f4fbff', 16, 16));
   add('soot', makeDot('#6a3a18', 36, 36));
@@ -539,6 +722,7 @@ export function installTextures(scene) {
     add(`rocket-${mission.id}`, makeRocket(true, mission));
   });
   add('pad', makePad());
+  add('ascent-sky', makeAscentSky());
   add('ocean', makeOcean());
   add('jacklyn', makeJacklyn());
   add('bird', makeHazard('bird'));
@@ -550,5 +734,5 @@ export function installTextures(scene) {
   add('pickup-boost', makePickup('boost'));
   add('spark', makeSpark());
   add('steam', makeDot('rgba(230,240,255,0.9)', 16, 16));
-  add('deck-pad', canvas(168, 28));
+  add('deck-pad', canvas(280, 32));
 }

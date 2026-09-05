@@ -40,11 +40,15 @@ const game = new Phaser.Game({
     },
   },
   scale: {
-    mode: Phaser.Scale.FIT,
+    // Design world is 16:9. Phaser.Scale.FIT letterboxes on 16:10/DevTools
+    // parents; ENVELOP covers the cabinet (crops edges) so the playfield fills.
+    // RESIZE would stretch Matter space — do not use it.
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     parent,
     width: W,
     height: H,
+    expandParent: false,
   },
   input: {
     activePointers: 3,
@@ -55,6 +59,22 @@ const game = new Phaser.Game({
   },
   scene: [MissionScene],
 });
+
+let scaleLock = false;
+function refreshScale() {
+  if (scaleLock || !game.scale) return;
+  scaleLock = true;
+  try {
+    game.scale.refresh();
+  } catch {
+    /* game not ready */
+  }
+  window.setTimeout(() => { scaleLock = false; }, 0);
+}
+
+window.addEventListener('resize', refreshScale);
+window.addEventListener('orientationchange', refreshScale);
+document.addEventListener('fullscreenchange', refreshScale);
 
 window.NEW_GLENN_ENGINE = 'phaser4';
 window.__ngGame = game;
