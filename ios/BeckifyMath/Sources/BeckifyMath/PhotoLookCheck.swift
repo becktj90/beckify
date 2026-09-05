@@ -84,6 +84,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
     public var score: Int?
     public var headline: String
     public var summary: String
+    public var roast: String
     public var metrics: PhotoLookMetrics
     public var reasons: [String]
     public var fixes: [String]
@@ -96,6 +97,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         score: Int? = nil,
         headline: String = "",
         summary: String = "",
+        roast: String = "",
         metrics: PhotoLookMetrics = PhotoLookMetrics(),
         reasons: [String] = [],
         fixes: [String] = [],
@@ -107,6 +109,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         self.score = score
         self.headline = headline
         self.summary = summary
+        self.roast = roast
         self.metrics = metrics
         self.reasons = reasons
         self.fixes = fixes
@@ -127,6 +130,10 @@ public struct PhotoLookDraft: Equatable, Sendable {
         verdict != .declined && score != nil
     }
 
+    public var showsRoast: Bool {
+        !roast.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     public var copyLine: String {
         var parts = ["Look Check: \(verdict.badge)"]
         if showsScore, let score {
@@ -134,6 +141,8 @@ public struct PhotoLookDraft: Equatable, Sendable {
         }
         let head = displayHeadline.trimmingCharacters(in: .whitespacesAndNewlines)
         if !head.isEmpty { parts.append(head) }
+        let roastText = roast.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !roastText.isEmpty { parts.append("BroGPT: \(roastText)") }
         return parts.joined(separator: " · ")
     }
 }
@@ -150,7 +159,7 @@ public enum PhotoLookCheck {
     public static let maxUploadBytes = 8 * 1024 * 1024
     public static let maxUploadEdge = 2048
     public static let disclaimer =
-        "Entertainment only — not medical or dating advice. Photos upload only when you tap Analyze Look."
+        "Entertainment only — BroGPT roast is AI comedy, not medical or dating advice. Photos upload only when you tap Analyze Look."
 
     public static func defaultAnalyzeURL() -> URL? {
         analyzeURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -221,12 +230,18 @@ public enum PhotoLookCheck {
             summary = stringValue(object["headline"]) ?? ""
         }
 
+        var roast = (stringValue(object["roast"]) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if verdict == .declined || verdict == .noPerson {
+            roast = ""
+        }
+
         return PhotoLookDraft(
             task: task,
             verdict: verdict,
             score: score,
             headline: stringValue(object["headline"]) ?? "",
             summary: summary.trimmingCharacters(in: .whitespacesAndNewlines),
+            roast: roast,
             metrics: normalizeMetrics(object, overallScore: score, verdict: verdict),
             reasons: stringList(object["reasons"]),
             fixes: stringList(object["fixes"]),

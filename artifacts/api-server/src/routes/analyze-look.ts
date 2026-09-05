@@ -44,7 +44,7 @@ router.post("/analyze-look", async (req, res) => {
   }
   bucket.inFlight += 1;
 
-  const userText = "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary of how they look. Follow the JSON shape.";
+  const userText = "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary and a BroGPT roast of how they look in this frame. If no_person or declined, roast must be an empty string. Follow the JSON shape.";
 
   try {
     const result = serverProvider === "anthropic"

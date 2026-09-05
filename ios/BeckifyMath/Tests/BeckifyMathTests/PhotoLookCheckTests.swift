@@ -23,6 +23,7 @@ final class PhotoLookCheckTests: XCTestCase {
           "score": 88.4,
           "headline": "Strong light",
           "summary": "You look sharp in this frame.",
+          "roast": "  Chin up like you billed overtime for that jawline.  ",
           "metrics": { "lighting": 90.2, "framing": 70, "expression": 84, "sharpness": 88 },
           "reasons": ["Even light"],
           "fixes": ["Smile"]
@@ -33,6 +34,8 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertEqual(draft.verdict, .looksGood)
         XCTAssertEqual(draft.score, 88)
         XCTAssertEqual(draft.summary, "You look sharp in this frame.")
+        XCTAssertEqual(draft.roast, "Chin up like you billed overtime for that jawline.")
+        XCTAssertTrue(draft.showsRoast)
         XCTAssertEqual(draft.headline, "Strong light")
         XCTAssertEqual(draft.metrics.lighting, 90)
         XCTAssertEqual(draft.metrics.overall, 88)
@@ -40,6 +43,40 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertTrue(draft.showsScore)
         XCTAssertEqual(draft.verdict.badge, "Looks good")
         XCTAssertTrue(draft.copyLine.contains("Look Check: Looks good"))
+        XCTAssertTrue(draft.copyLine.contains("BroGPT: Chin up like you billed overtime for that jawline."))
+    }
+
+    func testNormalizeRoastPresentAndAbsent() {
+        let withRoast = PhotoLookCheck.normalizeDraft([
+            "verdict": "mixed",
+            "score": 61,
+            "roast": "Lighting said maybe. That fit said absolutely not.",
+        ] as [String: Any])
+        XCTAssertEqual(withRoast.roast, "Lighting said maybe. That fit said absolutely not.")
+        XCTAssertTrue(withRoast.showsRoast)
+        XCTAssertTrue(withRoast.copyLine.contains("BroGPT:"))
+
+        let absent = PhotoLookCheck.normalizeDraft([
+            "verdict": "looks_good",
+            "score": 80,
+        ] as [String: Any])
+        XCTAssertEqual(absent.roast, "")
+        XCTAssertFalse(absent.showsRoast)
+        XCTAssertFalse(absent.copyLine.contains("BroGPT:"))
+
+        let declined = PhotoLookCheck.normalizeDraft([
+            "verdict": "declined",
+            "roast": "should be stripped",
+        ] as [String: Any])
+        XCTAssertEqual(declined.roast, "")
+        XCTAssertFalse(declined.showsRoast)
+
+        let noPerson = PhotoLookCheck.normalizeDraft([
+            "verdict": "no_person",
+            "roast": "nope",
+        ] as [String: Any])
+        XCTAssertEqual(noPerson.roast, "")
+        XCTAssertFalse(noPerson.showsRoast)
     }
 
     func testNormalizeWrappedAnalysisPayload() throws {

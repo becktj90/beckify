@@ -253,6 +253,7 @@ sandbox.BECKIFY_API_BASE_URL = '';
     score: 88.4,
     headline: 'Strong light',
     summary: 'You look sharp in this frame.',
+    roast: '  Chin up like you billed overtime for that jawline.  ',
     metrics: { lighting: 90.2, framing: 70, expression: 84, sharpness: 88 },
     reasons: ['Even light'],
     fixes: ['Smile'],
@@ -261,18 +262,32 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(lookGood.verdict, 'looks_good');
   assert.equal(lookGood.score, 88);
   assert.equal(lookGood.summary, 'You look sharp in this frame.');
+  assert.equal(lookGood.roast, 'Chin up like you billed overtime for that jawline.');
   assert.equal(lookGood.metrics.lighting, 90);
   assert.equal(lookGood.metrics.overall, 88);
   const lookDeclined = api.normalizeLookDraft({
     verdict: 'declined',
     score: 12,
     headline: 'No',
+    roast: 'should be stripped',
     metrics: { lighting: 80, overall: 90 },
   });
   assert.equal(lookDeclined.verdict, 'declined');
   assert.equal(lookDeclined.score, null);
   assert.equal(lookDeclined.metrics.lighting, null);
   assert.equal(lookDeclined.metrics.overall, null);
+  assert.equal(lookDeclined.roast, '');
+  const lookRoastAbsent = api.normalizeLookDraft({
+    verdict: 'looks_good',
+    score: 80,
+  });
+  assert.equal(lookRoastAbsent.roast, '');
+  const lookNoPersonRoast = api.normalizeLookDraft({
+    verdict: 'no_person',
+    score: 55,
+    roast: 'nope',
+  });
+  assert.equal(lookNoPersonRoast.roast, '');
   const lookUnknown = api.analyzePayload({ verdict: 'amazing', score: 200 }, 'look');
   assert.equal(lookUnknown.verdict, 'mixed');
   assert.equal(lookUnknown.score, 100);
@@ -295,6 +310,8 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(html, /Analyze Look/);
   assert.match(html, /id="look-camera-input"[^>]*capture="user"/);
   assert.match(html, /id="look-summary"/);
+  assert.match(html, /id="look-roast"/);
+  assert.match(html, /BroGPT \/ Roast/);
   assert.match(html, /id="look-metrics"/);
   assert.match(html, /js\/look-check\.js/);
   assert.match(html, /id="tdr_privacy"/);
@@ -327,6 +344,13 @@ sandbox.BECKIFY_API_BASE_URL = '';
   );
   assert.match(lookJs, /look-camera/);
   assert.match(lookJs, /lookRenderMetrics/);
+  assert.match(lookJs, /lookCopyLine/);
+  assert.match(lookJs, /BroGPT/);
+  const lookPrompt = fs.readFileSync(path.join(__dirname, '..', '..', 'api-server', 'src', 'prompts', 'lookVisionPrompt.ts'), 'utf8');
+  assert.match(lookPrompt, /"roast"/);
+  assert.match(lookPrompt, /BroGPT/);
+  assert.doesNotMatch(lookPrompt, /Never be cruel/);
+  assert.doesNotMatch(lookPrompt, /Prefer kind-honest/);
   assert.match(html, /look-verdict-card\[hidden\]/);
   const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
   assert.match(tdrJs, /prepareUploadDataUrl/);
