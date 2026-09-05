@@ -46,7 +46,7 @@ ios/
 - Motor FLA (430.248 / 430.250)
 - Motor Speed & Torque (sync RPM, slip, shaft torque)
 - Motor Nameplate Analyzer (430.32 overload, Table 430.52 SCPD, 430.22 conductor, code-letter LRA)
-- Motor Nameplate OCR (camera or library photo, on-device Vision, heuristic field extract into the shared nameplate schema — value + confidence + reviewed; human confirm sets reviewed. MOCP and LRA are never treated as FLA. Cloud VLM protocol is off. Optional seed into FLA / Analyzer / Speed)
+- Motor Nameplate OCR (camera or library photo, on-device Vision first, heuristic field extract into the shared nameplate schema — value + confidence + reviewed; human confirm sets reviewed. Optional Analyze POSTs to `/api/analyze-nameplate` only when you tap it. MOCP and LRA are never treated as FLA. Optional seed into FLA / Analyzer / Speed)
 - Look Check (camera or library photo, then Analyze Look for a playful good-or-bad verdict plus lighting / framing / expression / sharpness metrics. Entertainment only — not medical or dating advice. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Distinct from the Wi-Fi / Cellular **Online / Captive** hotspot-detect card.)
 - Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load)
 - Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
@@ -109,7 +109,7 @@ ios/
 ### Reference
 
 - Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
-- Panel Directory (camera or library photo stays on screen; on-device Vision + heuristic extract into an editable schedule — circuit, name, trip, poles, class — value + confidence + reviewed; confirm, then demand / capacity-to-add via the same 220.42 worksheet as Load Calculation Worksheet. Trip is not measured load. Cloud VLM is off. Optional seed into Load Calculation Worksheet)
+- Panel Directory (camera or library photo stays on screen; on-device Vision first, then heuristic extract into an editable schedule — circuit, name, trip, poles, class — value + confidence + reviewed; optional Analyze POSTs to `/api/analyze-panel` only when you tap it; confirm, then demand / capacity-to-add via the same 220.42 worksheet as Load Calculation Worksheet. Trip is not measured load. Optional seed into Load Calculation Worksheet)
 - Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
 - Cable Schedule Generator (sequential IDs + CSV copy)
 

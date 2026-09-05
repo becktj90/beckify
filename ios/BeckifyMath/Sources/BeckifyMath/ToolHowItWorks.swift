@@ -343,12 +343,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Photograph a panel schedule; on-device Vision fills an editable table (value + confidence + reviewed). Confirm, then demand and capacity-to-add.",
-            context: "Directory photo or typed legend — verify rows before trusting amps.",
+            summary: "Photograph a panel schedule; on-device Vision fills an editable table. Optional Analyze, then confirm demand.",
+            context: "Directory photo or typed legend — verify rows. Analyze uploads only if you tap it.",
             bullets: [
-                "Vision stays on this device. OCR can invent or drop circuits; yellow rows are guesses.",
+                "Vision stays on this device unless you tap Analyze. Yellow rows are guesses.",
+                "Analyze POSTs to /api/analyze-panel. Confirm marks reviewed before demand.",
                 "Trip is not measured load. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
-                "Capacity-to-add is remaining main amps after that demand — a design aid, not a stamped calc.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(
@@ -488,10 +488,10 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "motorNameplateOCR": ToolHowItWorks(
-            summary: "Photograph a plate; on-device Vision fills a shared schema (value + confidence). You confirm.",
-            context: "Seed FLA / Analyzer / Speed after you review the fields. Nothing leaves the phone.",
+            summary: "Photograph a plate; on-device Vision fills a shared schema. Optional Analyze, then you confirm.",
+            context: "Seed FLA / Analyzer / Speed after you review. Analyze uploads only if you tap it.",
             bullets: [
-                "Heuristic extract. Confirm marks reviewed. Cloud VLM is off.",
+                "Heuristic extract first. Confirm marks reviewed. Analyze POSTs to /api/analyze-nameplate.",
                 "MOCP and LRA are never used as FLA. Recognition can misread a stamped plate.",
             ]
         ),

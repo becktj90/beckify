@@ -552,9 +552,9 @@ enum ToolboxCatalog {
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
-            subtitle: "Photo a schedule; confirm the editable rows; then demand and capacity-to-add.",
+            subtitle: "Photo a schedule; Vision first, optional Analyze, then confirm demand.",
             symbol: "list.bullet.rectangle",
-            synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm"]
+            synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm", "analyze"]
         ),
         ToolDefinition(
             id: .motorSpeed,
@@ -696,9 +696,9 @@ enum ToolboxCatalog {
             id: .motorNameplateOCR,
             kind: .calculator,
             title: "Motor Nameplate OCR",
-            subtitle: "Photograph a plate; Vision + shared-schema fields, then you confirm.",
+            subtitle: "Photograph a plate; Vision first, optional Analyze, then you confirm.",
             symbol: "text.viewfinder",
-            synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan"]
+            synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan", "analyze"]
         ),
         ToolDefinition(
             id: .lookCheck,

@@ -8,7 +8,7 @@ import BeckifyMath
 /// Photograph or pick a panel schedule / directory sticker, run on-device
 /// Vision, then map lines into an editable circuit table. A human must
 /// confirm before Saved Jobs or demand numbers are treated as reviewed.
-/// Cloud VLM is compiled as a gated-off protocol — this view never uploads.
+/// Optional cloud Analyze POSTs only after the user taps the button.
 struct PanelDirectoryView: View {
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.openRelatedTool) private var openRelated
@@ -22,6 +22,7 @@ struct PanelDirectoryView: View {
     @StoredInput(.panelDirectory, "mainAmps", default: "") private var mainAmps
     @StoredInput(.panelDirectory, "occ", default: "other") private var occupancy
     @StoredInput(.panelDirectory, "spare", default: "0") private var spare
+    @StoredInput(.panelDirectory, "endpoint", default: "") private var customEndpoint
 
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var capturedImages: [UIImage] = []
@@ -35,6 +36,12 @@ struct PanelDirectoryView: View {
     @State private var successTick = 0
     @State private var cameraUnavailable = false
     @State private var recognizedLines: [PanelOCRLine] = []
+    @State private var token = ""
+    @State private var analyzing = false
+    @State private var analyzeProgress: Double = 0
+    @State private var analyzeStatus = ""
+    @State private var analyzeError: String?
+    @State private var cloudWarnings: [String] = []
 
     private var inputFingerprint: String { text }
 
@@ -60,16 +67,16 @@ struct PanelDirectoryView: View {
             stickyAnswer: sticky,
             copyText: copyText,
             disclaimer: .designAidExtra(
-                "Vision and the structured parser stay on this device. Recognition can invent or drop circuits — confirm every row against the photo before trusting demand or capacity-to-add. Breaker trip is not measured load. A future cloud VLM path is off by default and would leave the device only if you chose that action."
+                "On-device Vision is the default. Recognition can invent or drop circuits — confirm every row against the photo before trusting demand or capacity-to-add. Breaker trip is not measured load. The photo leaves this device only if you tap Analyze."
             ),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .panelDirectory,
-                symbolic: "Vision lines → circuit · name · trip · poles → confirm → 220.42 demand / remaining A",
+                symbolic: "Vision lines → circuit · name · trip · poles → optional Analyze → confirm → 220.42 demand / remaining A",
                 substituted: substituted,
-                meaning: "On-device text recognition is evidence, not the sticker. The heuristic agent maps lines into an editable schedule (value + confidence + reviewed) and guesses common hard-to-read tokens. Confirm marks reviewed. Demand treats trip as a conservative connected-amp estimate, then uses the same NEC 220.42 worksheet as Load Calculation Worksheet. Capacity-to-add is remaining main amps after that demand. Design aid — not a PE stamp.",
-                citation: "Apple Vision on-device. Parser is a heuristic agent, not a cloud model. NEC Table 220.42 as coded in Load Worksheet."
+                meaning: "On-device text recognition is evidence, not the sticker. The heuristic agent maps lines into an editable schedule (value + confidence + reviewed) and guesses common hard-to-read tokens. Optional Analyze POSTs upright JPEGs to /api/analyze-panel and fills empty rows. Confirm marks reviewed. Demand treats trip as a conservative connected-amp estimate, then uses the same NEC 220.42 worksheet as Load Calculation Worksheet. Capacity-to-add is remaining main amps after that demand. Design aid — not a PE stamp.",
+                citation: "Apple Vision on-device. Optional cloud Analyze uses the same JSON contract as the website. Parser is a heuristic agent unless you tap Analyze. NEC Table 220.42 as coded in Load Worksheet."
             )
 
             photoBlock
@@ -94,7 +101,7 @@ struct PanelDirectoryView: View {
                             .stroke(Theme.border, lineWidth: 1)
                     )
                     .accessibilityLabel("Panel schedule text")
-                    .accessibilityHint("Paste recognized text from a panel sticker or type circuit rows. Nothing is uploaded.")
+                    .accessibilityHint("Paste recognized text from a panel sticker or type circuit rows. Analyze uploads only if you tap it.")
             }
 
             captureButtons
@@ -102,6 +109,24 @@ struct PanelDirectoryView: View {
             if let recognizeError {
                 ErrorText(message: recognizeError)
             }
+            if let analyzeError {
+                ErrorText(message: analyzeError)
+            }
+
+            CloudVisionAnalyzeChrome(
+                title: "Analyze panel",
+                defaultPath: BeckifyVisionAPI.analyzePath(for: .panel),
+                accessibilityID: "analyzePanelButton",
+                busy: analyzing,
+                enabled: !capturedImages.isEmpty,
+                progress: analyzeProgress,
+                status: analyzeStatus,
+                endpointFieldID: "panelEndpoint",
+                tokenFieldID: "panelToken",
+                customEndpoint: $customEndpoint,
+                token: $token,
+                onAnalyze: { Task { await analyzeCloud() } }
+            )
 
             CalculatorActionBar(
                 onCalculate: calculate,
@@ -117,7 +142,7 @@ struct PanelDirectoryView: View {
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ToolEmptyState(
                     title: "Photograph or pick a schedule",
-                    detail: "Use the camera or photo library. Photos stay on screen. Vision reads them on this device, then Calculate maps lines into rows you can correct.",
+                    detail: "Use the camera or photo library. Photos stay on screen. Vision reads them on this device, then Calculate maps lines into rows you can correct. Analyze is optional and uploads only if you tap it.",
                     systemImage: "list.bullet.rectangle"
                 )
             } else if session.displayedResult == nil {
@@ -141,6 +166,7 @@ struct PanelDirectoryView: View {
             restoreSavedReviewIfNeeded()
         }
         .onChange(of: inputFingerprint) { _, _ in
+            guard !analyzing else { return }
             session.markInputsChanged()
             confirmed = false
         }
@@ -190,7 +216,7 @@ struct PanelDirectoryView: View {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .stroke(Theme.border, lineWidth: 1)
                                 )
-                                .accessibilityLabel("Panel schedule photo \(index + 1) of \(capturedImages.count), used for on-device recognition")
+                                .accessibilityLabel("Panel schedule photo \(index + 1) of \(capturedImages.count). On-device unless you tap Analyze.")
                         }
                     }
                 }
@@ -212,8 +238,8 @@ struct PanelDirectoryView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Theme.accent)
-            .disabled(isRecognizing)
-            .accessibilityHint("Opens the camera. The photo stays on this device.")
+            .disabled(isRecognizing || analyzing)
+            .accessibilityHint("Opens the camera. The photo stays on this device until you tap Analyze.")
 
             PhotosPicker(selection: $photoItems, maxSelectionCount: 6, matching: .images, photoLibrary: .shared()) {
                 Label(
@@ -224,7 +250,7 @@ struct PanelDirectoryView: View {
             }
             .buttonStyle(.bordered)
             .tint(Theme.accent)
-            .disabled(isRecognizing)
+            .disabled(isRecognizing || analyzing)
 
             if !text.isEmpty || !capturedImages.isEmpty {
                 Button {
@@ -275,6 +301,13 @@ struct PanelDirectoryView: View {
                 Text("\(lowCount) row\(lowCount == 1 ? "" : "s") flagged for a closer look.")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.warn)
+            }
+            if !cloudWarnings.isEmpty {
+                ForEach(Array(cloudWarnings.enumerated()), id: \.offset) { _, warning in
+                    Text(warning)
+                        .font(.caption)
+                        .foregroundStyle(Theme.warn)
+                }
             }
 
             ForEach(Array(draft.enumerated()), id: \.element.id) { index, _ in
@@ -581,6 +614,10 @@ struct PanelDirectoryView: View {
     private func reset() {
         text = ""
         recognizeError = nil
+        analyzeError = nil
+        analyzeProgress = 0
+        analyzeStatus = ""
+        cloudWarnings = []
         capturedImages = []
         photoItems = []
         pendingCameraImage = nil
@@ -590,9 +627,74 @@ struct PanelDirectoryView: View {
         session.reset()
     }
 
+    @MainActor
+    private func analyzeCloud() async {
+        guard !capturedImages.isEmpty, !analyzing else { return }
+        analyzing = true
+        analyzeError = nil
+        recognizeError = nil
+        analyzeProgress = 0.12
+        analyzeStatus = "Preparing photo…"
+        defer { analyzing = false }
+        do {
+            var merged: PanelScheduleExtraction?
+            var warnings: [String] = []
+            var rawParts: [String] = []
+            let total = capturedImages.count
+            for (index, image) in capturedImages.enumerated() {
+                let start = Double(index) / Double(total)
+                analyzeProgress = min(0.9, start + 0.2 / Double(total))
+                analyzeStatus = total == 1
+                    ? "Sending upright photo for a panel draft…"
+                    : "Sending photo \(index + 1) of \(total)…"
+                let payload = try await BeckifyVisionClient.analyze(
+                    image: image,
+                    task: .panel,
+                    customEndpoint: customEndpoint,
+                    token: token,
+                    timeout: 90
+                )
+                let cloud = PanelCloudAnalyze.normalize(payload)
+                warnings.append(contentsOf: cloud.warnings)
+                if !cloud.rawOCR.isEmpty { rawParts.append(cloud.rawOCR) }
+                merged = merged.map { PanelCloudAnalyze.merge($0, cloud.extraction) } ?? cloud.extraction
+            }
+            guard var extracted = merged, !extracted.circuits.isEmpty else {
+                analyzeError = "Need circuit rows with a number and a name."
+                analyzeProgress = 0
+                analyzeStatus = "Panel analysis failed"
+                return
+            }
+            if let current = session.displayedResult?.applying(draft: draft) {
+                extracted = PanelCloudAnalyze.merge(existing: current, incoming: extracted)
+            }
+            if !rawParts.isEmpty {
+                text = rawParts.joined(separator: "\n")
+                recognizedLines = []
+            }
+            session.calculate { extracted }
+            if let result = session.displayedResult, !session.isStale {
+                apply(result)
+            }
+            cloudWarnings = warnings
+            confirmed = false
+            analyzeProgress = 1
+            analyzeStatus = "Cloud draft ready. Confirm every row against the photo."
+            if !reduceMotion { successTick += 1 }
+        } catch {
+            analyzeError = error.localizedDescription
+            analyzeProgress = 0
+            analyzeStatus = "Panel analysis failed"
+        }
+    }
+
     private func loadExample() {
         capturedImages = []
         recognizedLines = []
+        analyzeError = nil
+        analyzeProgress = 0
+        analyzeStatus = ""
+        cloudWarnings = []
         text = """
         Panel: LP-1
         Voltage: 208Y/120V

@@ -6,8 +6,8 @@ import ImageIO
 import BeckifyMath
 
 /// Photograph or pick a motor nameplate, run on-device Vision, then map lines
-/// into editable fields. A human must confirm before Saved Jobs. Cloud VLM is
-/// compiled as a gated-off protocol — this view never uploads.
+/// into editable fields. A human must confirm before Saved Jobs. Optional
+/// cloud Analyze POSTs only after the user taps the button.
 struct MotorNameplateOCRView: View {
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.openRelatedTool) private var openRelated
@@ -15,6 +15,7 @@ struct MotorNameplateOCRView: View {
 
     @StoredInput(.motorNameplateOCR, "text", default: "") private var text
     @StoredInput(.motorNameplateOCR, "jobName", default: "Motor nameplate") private var jobName
+    @StoredInput(.motorNameplateOCR, "endpoint", default: "") private var customEndpoint
 
     @State private var photoItem: PhotosPickerItem?
     @State private var capturedImage: UIImage?
@@ -30,6 +31,12 @@ struct MotorNameplateOCRView: View {
     /// Vision lines with `VNRecognizedText.confidence`. Used by extract so
     /// low-confidence fields stay highlighted instead of the parser default.
     @State private var recognizedLines: [NameplateOCRLine] = []
+    @State private var token = ""
+    @State private var analyzing = false
+    @State private var analyzeProgress: Double = 0
+    @State private var analyzeStatus = ""
+    @State private var analyzeError: String?
+    @State private var cloudWarnings: [String] = []
 
     private var inputFingerprint: String { text }
 
@@ -45,16 +52,16 @@ struct MotorNameplateOCRView: View {
             stickyAnswer: sticky,
             copyText: copyText,
             disclaimer: .designAidExtra(
-                "Vision and the structured parser stay on this device. Recognition can misread a stamped plate — confirm every field against the photo before saving. A future cloud VLM path is off by default and would leave the device only if you chose that action."
+                "On-device Vision is the default. Recognition can misread a stamped plate — confirm every field against the photo before saving. The photo leaves this device only if you tap Analyze."
             ),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .motorNameplateOCR,
-                symbolic: "Vision lines → nameplate fields (HP, RPM, V, A, …) → human confirm",
+                symbolic: "Vision lines → nameplate fields (HP, RPM, V, A, …) → optional Analyze → human confirm",
                 substituted: substituted,
-                meaning: "On-device text recognition is evidence, not the nameplate. The heuristic agent maps labeled lines into the shared nameplate schema (value + confidence + reviewed). Confirm marks reviewed. MOCP and LRA are never used as FLA. Then optionally seed Motor FLA, Motor Nameplate Analyzer, or Motor Speed. Design aid — not a PE stamp.",
-                citation: "Apple Vision on-device. Shared schema with website OCR. Parser is a heuristic agent, not a cloud model. NEC math stays in Motor Nameplate Analyzer."
+                meaning: "On-device text recognition is evidence, not the nameplate. The heuristic agent maps labeled lines into the shared nameplate schema (value + confidence + reviewed). Optional Analyze POSTs an upright JPEG to /api/analyze-nameplate and fills empty fields. Confirm marks reviewed. MOCP and LRA are never used as FLA. Then optionally seed Motor FLA, Motor Nameplate Analyzer, or Motor Speed. Design aid — not a PE stamp.",
+                citation: "Apple Vision on-device. Optional cloud Analyze uses the same JSON contract as the website. Parser is a heuristic agent unless you tap Analyze. NEC math stays in Motor Nameplate Analyzer."
             )
 
             photoBlock
@@ -77,7 +84,7 @@ struct MotorNameplateOCRView: View {
                             .stroke(Theme.border, lineWidth: 1)
                     )
                     .accessibilityLabel("Recognized nameplate text")
-                    .accessibilityHint("Edit Vision text before extracting fields. Nothing is uploaded.")
+                    .accessibilityHint("Edit Vision text before extracting fields. Analyze uploads only if you tap it.")
             }
 
             captureButtons
@@ -85,6 +92,24 @@ struct MotorNameplateOCRView: View {
             if let recognizeError {
                 ErrorText(message: recognizeError)
             }
+            if let analyzeError {
+                ErrorText(message: analyzeError)
+            }
+
+            CloudVisionAnalyzeChrome(
+                title: "Analyze nameplate",
+                defaultPath: BeckifyVisionAPI.analyzePath(for: .nameplate),
+                accessibilityID: "analyzeNameplateButton",
+                busy: analyzing,
+                enabled: capturedImage != nil,
+                progress: analyzeProgress,
+                status: analyzeStatus,
+                endpointFieldID: "nameplateEndpoint",
+                tokenFieldID: "nameplateToken",
+                customEndpoint: $customEndpoint,
+                token: $token,
+                onAnalyze: { Task { await analyzeCloud() } }
+            )
 
             CalculatorActionBar(
                 onCalculate: calculate,
@@ -100,7 +125,7 @@ struct MotorNameplateOCRView: View {
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ToolEmptyState(
                     title: "Photograph or pick a nameplate",
-                    detail: "Use the camera or photo library. Vision reads the plate on this device, then Extract maps lines into fields you can correct.",
+                    detail: "Use the camera or photo library. Vision reads the plate on this device, then Calculate maps lines into fields you can correct. Analyze is optional and uploads only if you tap it.",
                     systemImage: "text.viewfinder"
                 )
             } else if session.displayedResult == nil {
@@ -117,6 +142,7 @@ struct MotorNameplateOCRView: View {
             restoreSavedReviewIfNeeded()
         }
         .onChange(of: inputFingerprint) { _, _ in
+            guard !analyzing else { return }
             session.markInputsChanged()
             confirmed = false
         }
@@ -161,7 +187,7 @@ struct MotorNameplateOCRView: View {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(Theme.border, lineWidth: 1)
                     )
-                    .accessibilityLabel("Nameplate photo used for on-device recognition")
+                    .accessibilityLabel("Nameplate photo. On-device unless you tap Analyze.")
             }
         }
     }
@@ -180,8 +206,8 @@ struct MotorNameplateOCRView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Theme.accent)
-            .disabled(isRecognizing)
-            .accessibilityHint("Opens the camera. The photo stays on this device.")
+            .disabled(isRecognizing || analyzing)
+            .accessibilityHint("Opens the camera. The photo stays on this device until you tap Analyze.")
 
             PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
                 Label(
@@ -192,7 +218,7 @@ struct MotorNameplateOCRView: View {
             }
             .buttonStyle(.bordered)
             .tint(Theme.accent)
-            .disabled(isRecognizing)
+            .disabled(isRecognizing || analyzing)
 
             if !text.isEmpty || capturedImage != nil {
                 Button {
@@ -223,6 +249,13 @@ struct MotorNameplateOCRView: View {
                 Text("\(lowCount) field\(lowCount == 1 ? "" : "s") flagged for a closer look.")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.warn)
+            }
+            if !cloudWarnings.isEmpty {
+                ForEach(Array(cloudWarnings.enumerated()), id: \.offset) { _, warning in
+                    Text(warning)
+                        .font(.caption)
+                        .foregroundStyle(Theme.warn)
+                }
             }
 
             ForEach(reviewFields, id: \.self) { id in
@@ -417,6 +450,10 @@ struct MotorNameplateOCRView: View {
     private func reset() {
         text = ""
         recognizeError = nil
+        analyzeError = nil
+        analyzeProgress = 0
+        analyzeStatus = ""
+        cloudWarnings = []
         capturedImage = nil
         photoItem = nil
         draft = [:]
@@ -424,6 +461,55 @@ struct MotorNameplateOCRView: View {
         recognizedLines = []
         confirmed = false
         session.reset()
+    }
+
+    @MainActor
+    private func analyzeCloud() async {
+        guard let capturedImage, !analyzing else { return }
+        analyzing = true
+        analyzeError = nil
+        recognizeError = nil
+        analyzeProgress = 0.16
+        analyzeStatus = "Preparing photo…"
+        defer { analyzing = false }
+        do {
+            analyzeProgress = 0.42
+            analyzeStatus = "Sending upright photo for a nameplate draft…"
+            let payload = try await BeckifyVisionClient.analyze(
+                image: capturedImage,
+                task: .nameplate,
+                customEndpoint: customEndpoint,
+                token: token
+            )
+            analyzeProgress = 0.86
+            analyzeStatus = "Reading the cloud draft…"
+            let cloud = NameplateCloudAnalyze.normalize(payload)
+            let existing = session.displayedResult?.applying(draft: draft, confidence: confidence)
+            let merged = NameplateCloudAnalyze.merge(existing: existing, incoming: cloud.extraction)
+            guard merged.populatedCount > 0 else {
+                analyzeError = "Need nameplate fields — check the photo or edit the recognized text."
+                analyzeProgress = 0
+                analyzeStatus = "Nameplate analysis failed"
+                return
+            }
+            if !cloud.rawOCR.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                text = cloud.rawOCR
+                recognizedLines = []
+            }
+            session.calculate { merged }
+            if let extracted = session.displayedResult, !session.isStale {
+                apply(extracted)
+            }
+            cloudWarnings = cloud.warnings
+            confirmed = false
+            analyzeProgress = 1
+            analyzeStatus = "Cloud draft ready. Confirm every field against the photo."
+            if !reduceMotion { successTick += 1 }
+        } catch {
+            analyzeError = error.localizedDescription
+            analyzeProgress = 0
+            analyzeStatus = "Nameplate analysis failed"
+        }
     }
 
     private func invalidateConfirmedReview() {
@@ -438,6 +524,10 @@ struct MotorNameplateOCRView: View {
     private func loadExample() {
         capturedImage = nil
         recognizedLines = []
+        analyzeError = nil
+        analyzeProgress = 0
+        analyzeStatus = ""
+        cloudWarnings = []
         text = """
         EXAMPLE MOTORS
         MODEL 10HP-215

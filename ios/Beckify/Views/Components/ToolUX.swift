@@ -671,3 +671,96 @@ struct ThumbButtonRow<Content: View>: View {
         }
     }
 }
+
+/// Optional user-initiated cloud Analyze — same chrome as Look Check.
+/// Photos stay on device until the button is tapped.
+struct CloudVisionAnalyzeChrome: View {
+    var title: String
+    var defaultPath: String
+    var accessibilityID: String
+    var busy: Bool
+    var enabled: Bool
+    var progress: Double
+    var status: String
+    var endpointFieldID: String
+    var tokenFieldID: String
+    @Binding var customEndpoint: String
+    @Binding var token: String
+    var onAnalyze: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DisclosureGroup("Optional custom HTTPS endpoint") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Leave blank to use the Beckify API (`https://api.beckify.com\(defaultPath)`). A personal token stays in this session and is never sent to Beckify unless you set it on your own endpoint. The Beckify proxy may forward the photo to OpenAI and/or Anthropic.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                    TextField("https://your-proxy.example/ocr", text: $customEndpoint)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .font(.body.monospaced())
+                        .formFieldFocus(endpointFieldID)
+                        .padding(12)
+                        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Theme.border, lineWidth: 1)
+                        )
+                        .accessibilityLabel("Custom HTTPS Analyze endpoint")
+                    SecureField("Bearer token for that endpoint (optional)", text: $token)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .font(.body.monospaced())
+                        .formFieldFocus(tokenFieldID)
+                        .padding(12)
+                        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Theme.border, lineWidth: 1)
+                        )
+                        .accessibilityLabel("Optional bearer token for the custom endpoint")
+                    Text(endpointNote)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+                .padding(.top, 8)
+            }
+            .font(.subheadline.weight(.semibold))
+
+            HStack(spacing: 10) {
+                ProgressView(value: progress, total: 1)
+                    .tint(Theme.accent)
+                Text("\(Int((progress * 100).rounded()))%")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(Theme.muted)
+                    .frame(minWidth: 40, alignment: .trailing)
+            }
+            .accessibilityLabel("Analyze progress \(Int((progress * 100).rounded())) percent")
+
+            if !status.isEmpty {
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+            }
+
+            Button(action: onAnalyze) {
+                Text(busy ? "Analyzing…" : title)
+                    .font(.headline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .disabled(busy || !enabled)
+            .accessibilityIdentifier(accessibilityID)
+            .accessibilityHint("Uploads the photo for a cloud draft. Taking or choosing a photo does not upload it.")
+        }
+    }
+
+    private var endpointNote: String {
+        if BeckifyVisionAPI.httpsBase(customEndpoint) != nil {
+            return "Custom HTTPS endpoint will receive the photo when you tap \(title)."
+        }
+        return "No custom URL yet. \(title) uses https://api.beckify.com\(defaultPath)."
+    }
+}

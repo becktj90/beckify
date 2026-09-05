@@ -57,9 +57,8 @@ public protocol NameplateAgent: Sendable {
     func extract(lines: [NameplateOCRLine]) async throws -> NameplateExtraction
 }
 
-/// Policy for which agent runs. Cloud upload stays compiled-in as a stub and
-/// is never enabled here — a future build would still require an explicit
-/// user action before anything left the device.
+/// Default extract is the on-device heuristic. Optional cloud Analyze lives
+/// in the iOS view and runs only after an explicit tap.
 public enum NameplateAgentPolicy {
     public static let cloudVLMEnabled = false
     public static let cloudVLMRequiresExplicitUserAction = true
@@ -85,7 +84,7 @@ public struct HeuristicNameplateAgent: NameplateAgent {
     }
 }
 
-/// Reserved cloud VLM hook. Throws rather than inventing model output.
+/// Reserved line-only hook. The live photo Analyze path is `NameplateCloudAnalyze`.
 public struct CloudNameplateAgent: NameplateAgent {
     public let id = "cloud-vlm-disabled"
     public let leavesDevice = true

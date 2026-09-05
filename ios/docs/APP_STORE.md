@@ -41,7 +41,7 @@ Jobsite:
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP
 • Motor Nameplate Analyzer — overload (430.32), Table 430.52 SCPD, 430.22 conductor, code-letter LRA (typed or seeded from a confirmed OCR review)
-• Motor Nameplate OCR — camera or photo library, on-device Vision, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed. No cloud upload.
+• Motor Nameplate OCR — camera or photo library, on-device Vision first, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Optional **Analyze** POSTs the photo to `/api/analyze-nameplate` only when you tap it. Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed.
 • Look Check — camera or photo library, then Analyze Look for a playful good-or-bad verdict plus lighting / framing / expression / sharpness metrics. Entertainment only — not medical or dating advice. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Not the Wi-Fi / Cellular Online / Captive connectivity card.
 • Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
 • Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
@@ -104,7 +104,7 @@ Bench:
 Reference:
 
 • Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
-• Panel Directory — camera or photo library (preview stays on screen), on-device Vision, heuristic extract into an editable schedule (circuit, name, trip, poles, class — value + confidence + reviewed). Confirm marks reviewed. Demand and capacity-to-add use breaker trip as a conservative connected-amp estimate through the same NEC 220.42 worksheet as Load Calculation Worksheet — not a stamped load calc. No cloud upload.
+• Panel Directory — camera or photo library (preview stays on screen), on-device Vision first, heuristic extract into an editable schedule (circuit, name, trip, poles, class — value + confidence + reviewed). Optional **Analyze** POSTs the photo to `/api/analyze-panel` only when you tap it. Confirm marks reviewed. Demand and capacity-to-add use breaker trip as a conservative connected-amp estimate through the same NEC 220.42 worksheet as Load Calculation Worksheet — not a stamped load calc.
 • Load Calculation Worksheet — NEC 220.42 lighting demand plus motor/continuous VA totals
 • Cable Schedule Generator — sequential cable IDs from a type catalog with CSV copy
 
@@ -129,14 +129,14 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect build — no binary uploaded):**
-**Panel Directory** now shows the schedule photo, runs on-device Vision plus a heuristic agent (confidence + reviewed — confirm before trusting rows), fills an editable circuit table, and computes demand / capacity-to-add from those cleaned rows using the same NEC 220.42 worksheet as Load Calculation Worksheet. Trip is not measured load; this is a design aid, not a stamped calc. Photos stay on device. Catalog **Look Check** remains the photo-verdict tool; Wi-Fi / Cellular still say **Online / Captive**. No tools removed. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
-**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md). Look Check Analyze Look is a user-initiated photo upload; update the App Privacy nutrition label to Photos (App Functionality, not linked, not tracking).
+**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md). Look Check **Analyze Look**, Motor Nameplate **Analyze**, and Panel Directory **Analyze** are user-initiated photo uploads; the App Privacy nutrition label is Photos (App Functionality, not linked, not tracking).
 
 ## Cellular App Store limitation (honest)
 
@@ -148,7 +148,7 @@ Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple 
 
 ## App privacy (nutrition label)
 
-Data collection: **Photos** only when the user taps **Analyze Look** in Look Check (see [`PRIVACY.md`](PRIVACY.md)). Not linked to identity. Not used for tracking.
+Data collection: **Photos** only when the user taps **Analyze Look** in Look Check, **Analyze** in Motor Nameplate OCR, or **Analyze** in Panel Directory (see [`PRIVACY.md`](PRIVACY.md)). Not linked to identity. Not used for tracking.
 
 - No analytics
 - No tracking
@@ -156,7 +156,7 @@ Data collection: **Photos** only when the user taps **Analyze Look** in Look Che
 - No account
 - Saved jobs and last-used tool inputs use on-device storage only (`UserDefaults`)
 - Microphone, Bluetooth, location, and CoreTelephony radio identity are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
-- Look Check photos stay on device until Analyze Look; Motor Nameplate OCR and Panel Directory photos never upload
+- Look Check, Motor Nameplate OCR, and Panel Directory photos stay on device until the user taps Analyze / Analyze Look
 
 Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
 - `NSPrivacyTracking` = false  
@@ -167,7 +167,7 @@ Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral,
 
 ## Export compliance
 
-The app uses HTTPS for optional links the user taps (beckify.com, mailto) and for Look Check **Analyze Look** (`https://api.beckify.com/api/analyze-look` or a user-entered HTTPS endpoint). **Online / Captive** also opens a cleartext HTTP GET to Apple’s public captive-portal detect host (`captive.apple.com`) — the standard hotspot-detect technique; the request carries no user content. It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
+The app uses HTTPS for optional links the user taps (beckify.com, mailto) and for user-initiated Analyze calls (`https://api.beckify.com/api/analyze-look`, `/api/analyze-nameplate`, `/api/analyze-panel`, or a user-entered HTTPS endpoint). **Online / Captive** also opens a cleartext HTTP GET to Apple’s public captive-portal detect host (`captive.apple.com`) — the standard hotspot-detect technique; the request carries no user content. It does not implement custom cryptography. Info.plist includes `ITSAppUsesNonExemptEncryption = NO`. In App Store Connect, answer **No** to “Does your app use encryption?” except the standard HTTPS exemption if the form still appears.
 
 ## Screenshots (required sizes)
 
