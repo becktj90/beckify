@@ -503,10 +503,10 @@ export function makeJacklyn() {
   return cv;
 }
 
-/** Tall climb backdrop so the camera never falls into a black void. */
+/** Climb backdrop. Keep the canvas small — software WebGL maxes out near 2048. */
 export function makeAscentSky() {
-  const w = 1280;
-  const h = 4400;
+  const w = 640;
+  const h = 1024;
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, h);

@@ -89,7 +89,16 @@ export default class MissionScene extends Phaser.Scene {
     this.matter.world.setGravity(0, 0);
     this.matter.world.setBounds(0, -4000, W, 5200, 32, false, false, false, false);
 
-    this.bgSky = this.add.image(W / 2, -1480, 'ascent-sky').setDepth(-1);
+    this.bgWash = this.add.graphics().setDepth(-2);
+    this.bgWash.fillStyle(0x02060c, 1);
+    this.bgWash.fillRect(0, -3600, W, 2200);
+    this.bgWash.fillStyle(0x0a2040, 1);
+    this.bgWash.fillRect(0, -1400, W, 1200);
+    this.bgWash.fillStyle(0x3a7eb4, 1);
+    this.bgWash.fillRect(0, -200, W, 500);
+    this.bgWash.fillStyle(0x6fb4e8, 1);
+    this.bgWash.fillRect(0, 300, W, 500);
+    this.bgSky = this.add.image(W / 2, -1480, 'ascent-sky').setDepth(-1).setDisplaySize(W, 4400);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.bgOcean = this.add.image(W / 2, H / 2, 'ocean').setVisible(false).setDepth(0);
     this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
