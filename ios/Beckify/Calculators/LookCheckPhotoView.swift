@@ -181,7 +181,7 @@ struct LookCheckPhotoView: View {
     private var endpointBlock: some View {
         DisclosureGroup("Optional custom HTTPS endpoint") {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Leave blank to use the Beckify API (`https://beckify.com/api/analyze-look`). A personal token stays in this session and is never sent to Beckify unless you set it on your own endpoint. The Beckify proxy may forward the photo to OpenAI and/or Anthropic.")
+                Text("Leave blank to use the Beckify API (`https://api.beckify.com/api/analyze-look`). A personal token stays in this session and is never sent to Beckify unless you set it on your own endpoint. The Beckify proxy may forward the photo to OpenAI and/or Anthropic.")
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
                 TextField("https://your-proxy.example/ocr", text: $customEndpoint)
@@ -378,7 +378,7 @@ struct LookCheckPhotoView: View {
     private func analyze() async {
         guard let preview, !busy else { return }
         guard let url = PhotoLookCheck.analyzeURL(customEndpoint: customEndpoint) else {
-            errorMessage = "Analyze Look needs an HTTPS endpoint. Leave the custom URL blank to use beckify.com, or enter a https:// URL."
+            errorMessage = "Analyze Look needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com, or enter a https:// URL."
             return
         }
         busy = true
@@ -401,7 +401,7 @@ struct LookCheckPhotoView: View {
                 dataURL: prepared.dataURL,
                 mimeType: prepared.mimeType,
                 url: url,
-                token: token
+                token: PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
             )
             progress = 0.92
             status = "Reading the verdict…"
@@ -420,7 +420,7 @@ struct LookCheckPhotoView: View {
         if PhotoLookCheck.httpsBase(customEndpoint) != nil {
             return "Custom HTTPS endpoint will receive the photo when you tap Analyze Look."
         }
-        return "No custom URL yet. Analyze Look uses https://beckify.com/api/analyze-look."
+        return "No custom URL yet. Analyze Look uses https://api.beckify.com/api/analyze-look."
     }
 
     private var sticky: String? {
@@ -494,7 +494,8 @@ enum PhotoLookCheckClient {
             let message = PhotoLookCheck.formatVisionError(
                 status: status,
                 message: payload["error"] as? String,
-                retryAfter: retry
+                retryAfter: retry,
+                endpoint: url.absoluteString
             )
             throw PhotoLookHTTPError(status: status, message: message)
         }

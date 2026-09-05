@@ -1,0 +1,50 @@
+# API server (Express vision routes)
+
+# Typecheck + dry-POST smoke. This is not a Vercel production deploy.
+
+name: API server
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/**"
+      - ".github/workflows/api-server.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "artifacts/api-server/**"
+      - ".github/workflows/api-server.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: typecheck + vision route smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck API
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Smoke vision routes
+        run: pnpm --filter @workspace/api-server run smoke

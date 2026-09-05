@@ -75,6 +75,16 @@ assert.equal(rejected.ok, false);
 assert.equal(rejected.status, 400);
 
 assert.ok(api.DEFAULT_MAX_OUTPUT_TOKENS >= 4096);
+assert.ok(api.VISION_POST_PATHS.includes('/api/analyze-look'));
+assert.ok(api.VISION_POST_PATHS.includes('/api/analyze-nameplate'));
+const missing = new api.MissingProviderKeyError('OPENAI_API_KEY');
+const missingHttp = api.visionProviderFailure(missing);
+assert.equal(missingHttp.status, 503);
+assert.match(missingHttp.error, /OPENAI_API_KEY/);
+const timeoutHttp = api.visionProviderFailure(new api.ProviderTimeoutError());
+assert.equal(timeoutHttp.status, 504);
+const unknownHttp = api.visionProviderFailure(new Error('provider blew up'));
+assert.equal(unknownHttp.status, 502);
 assert.match(source, /fetchJsonWithTimeout/);
 assert.match(source, /Keep the abort timer active while the body streams/);
 assert.doesNotMatch(source, /max_tokens: 1600/);
