@@ -422,7 +422,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.throttle = 1;
     this.session.tClock = Math.max(this.session.tClock, 0);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, 0.22);
+    this.matter.world.setGravity(0, 0.12);
     if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup());
     this.cameras.main.startFollow(this.rocket, true, 0.12, 0.16);
     this.cameras.main.setDeadzone(40, 24);
@@ -532,9 +532,13 @@ export default class MissionScene extends Phaser.Scene {
       this.emitPlume(thrust);
       AudioApi.rumble(0.35 + thrust * 0.4, this.settings);
     } else {
-      this.rocket.applyForce({ x: axis * 0.006, y: 0.01 });
-      if (this.rocket.body.velocity.y > 4.2) this.rocket.setVelocityY(4.2);
+      this.rocket.applyForce({ x: axis * 0.006, y: this.session.flightTime < 9 ? -0.008 : 0.004 });
+      if (this.rocket.body.velocity.y > 1.6) this.rocket.setVelocityY(1.6);
+      if (this.session.flightTime < 9 && this.rocket.body.velocity.y > -0.7) {
+        this.rocket.setVelocityY(-0.7);
+      }
     }
+    this.rocket.y = Math.min(this.rocket.y, PAD_ROCKET_Y + 36);
 
     this.rocket.setAngularVelocity(0);
     this.rocket.setAngle(clamp(this.rocket.body.velocity.x * 4 + axis * 6, -18, 18));
