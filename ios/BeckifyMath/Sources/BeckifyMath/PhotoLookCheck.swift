@@ -142,7 +142,9 @@ public struct PhotoLookDraft: Equatable, Sendable {
 /// Parsing lives here so Linux tests can lock the web-compatible draft shape.
 public enum PhotoLookCheck {
     public static let task = "look"
-    public static let defaultAPIBase = "https://beckify.com"
+    /// Same host the website injects via `meta[name="beckify-api-base-url"]`.
+    /// Do not use `https://beckify.com` — GitHub Pages cannot POST (`405`).
+    public static let defaultAPIBase = "https://api.beckify.com"
     public static let analyzePath = "/api/analyze-look"
     public static let maxPickBytes = 12 * 1024 * 1024
     public static let maxUploadBytes = 8 * 1024 * 1024
@@ -261,7 +263,27 @@ public enum PhotoLookCheck {
         )
     }
 
-    public static func formatVisionError(status: Int, message: String?, retryAfter: Int = 0) -> String {
+    /// Apex GitHub Pages host only — not `api.beckify.com`.
+    public static func hostIsGitHubPages(_ raw: String?) -> Bool {
+        let trimmed = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let host: String
+        if let url = URL(string: trimmed), let urlHost = url.host, !urlHost.isEmpty {
+            host = urlHost
+        } else {
+            host = trimmed
+        }
+        let folded = host.lowercased()
+        return folded == "beckify.com" || folded == "www.beckify.com"
+    }
+
+    /// Custom-endpoint Bearer tokens stay off the default Beckify proxy.
+    public static func authorizationToken(customEndpoint: String?, token: String) -> String {
+        guard httpsBase(customEndpoint) != nil else { return "" }
+        return token.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public static func formatVisionError(status: Int, message: String?, retryAfter: Int = 0, endpoint: String? = nil) -> String {
         if status == 429 {
             if retryAfter >= 60 {
                 return "Too many look checks. Try again in about \((retryAfter + 59) / 60) min."
@@ -278,6 +300,17 @@ public enum PhotoLookCheck {
         }
         if status == 504 {
             return "The vision provider timed out. Please try again."
+        }
+        if status == 404 || status == 405 {
+            if hostIsGitHubPages(endpoint) {
+                return "The Beckify look-check API is unavailable (HTTP \(status)). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com or a custom HTTPS endpoint."
+            }
+            return "The Beckify look-check API is unavailable (HTTP \(status)). A stale or missing /api/analyze-look route also returns this. Use https://api.beckify.com or a custom HTTPS endpoint."
+        }
+        if status == 503 {
+            return message?.isEmpty == false
+                ? message!
+                : "The Beckify vision API is not configured (missing provider key)."
         }
         if let message, !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return message

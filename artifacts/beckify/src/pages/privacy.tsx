@@ -194,7 +194,7 @@ export default function PrivacyPage() {
               Catalog Look Check is the website photo product — not the Wi-Fi / Cellular{" "}
               <strong>Online / Captive</strong> hotspot-detect card. Taking or choosing a photo does not
               upload it. <strong>Analyze Look</strong> POSTs an upright JPEG to{" "}
-              <code className="font-mono text-[0.9em]">https://beckify.com/api/analyze-look</code> (or a
+              <code className="font-mono text-[0.9em]">https://api.beckify.com/api/analyze-look</code> (or a
               HTTPS endpoint you enter). The Beckify API may forward that photo to OpenAI and/or Anthropic.
               Entertainment only — not medical or dating advice. Anyone who appears under 18 is not rated.
               The photo is not saved in Saved Jobs.

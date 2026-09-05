@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "echo Vercel uses the Express function entrypoint",
+  "buildCommand": "echo Vercel uses src/index.ts — registers /api/healthz /api/analyze-look /api/analyze-nameplate /api/analyze-panel /api/analyze-tdr",
   "functions": {
     "src/index.ts": {
       "maxDuration": 60,

@@ -33,6 +33,28 @@ function lookApiUrl(path) {
   }
 }
 
+function lookHostIsGitHubPages(url) {
+  try {
+    const host = new URL(url, typeof location !== 'undefined' ? location.href : 'https://api.beckify.com').hostname.toLowerCase();
+    return host === 'beckify.com' || host === 'www.beckify.com';
+  } catch (_) {
+    return false;
+  }
+}
+
+function lookFormatHttpError(status, payload, url) {
+  if (status === 404 || status === 405) {
+    if (lookHostIsGitHubPages(url)) {
+      return 'The Beckify look-check API is unavailable (HTTP ' + status + '). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com (meta beckify-api-base-url) or a custom HTTPS endpoint.';
+    }
+    return 'The Beckify look-check API is unavailable (HTTP ' + status + '). A stale or missing /api/analyze-look route also returns this. Use https://api.beckify.com (meta beckify-api-base-url) or a custom HTTPS endpoint.';
+  }
+  if (status === 503) {
+    return (payload && payload.error) || 'The Beckify vision API is not configured (missing provider key).';
+  }
+  return (payload && payload.error) || ('Look check failed with HTTP ' + status + '.');
+}
+
 function lookSetStatus(message) {
   if (lookEl.status) lookEl.status.textContent = message;
 }
@@ -215,7 +237,8 @@ async function lookRunSameOrigin(file) {
   const mimeType = String(dataUrl).indexOf('data:image/png') === 0
     ? 'image/png'
     : (file.type || 'image/jpeg');
-  const response = await fetch(lookApiUrl('/api/analyze-look'), {
+  const url = lookApiUrl('/api/analyze-look');
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -226,7 +249,7 @@ async function lookRunSameOrigin(file) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `Look check failed with HTTP ${response.status}.`);
+    throw new Error(lookFormatHttpError(response.status, payload, url));
   }
   const Vlm = window.BeckifyVlmOcr;
   const raw = payload.analysis || payload.draft || payload;

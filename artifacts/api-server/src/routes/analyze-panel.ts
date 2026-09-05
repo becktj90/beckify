@@ -3,7 +3,6 @@ import { BREAKER_VISION_SYSTEM_PROMPT, PANEL_VISION_SYSTEM_PROMPT } from "../pro
 import {
   PANEL_MAX_OUTPUT_TOKENS,
   PANEL_PROVIDER_TIMEOUT_MS,
-  ProviderTimeoutError,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
   configuredModel,
@@ -11,6 +10,7 @@ import {
   consumeRateLimit,
   getClientKey,
   pickImage,
+  visionProviderFailure,
 } from "../lib/visionClient.js";
 
 interface AnalyzeBody {
@@ -98,13 +98,9 @@ router.post("/analyze-panel", async (req, res) => {
       analysis: result,
     });
   } catch (error) {
-    const isTimeout = error instanceof ProviderTimeoutError;
+    const failure = visionProviderFailure(error);
     console.error("Panel vision provider request failed", error);
-    return res.status(isTimeout ? 504 : 502).json({
-      error: isTimeout
-        ? "The vision provider timed out. Please try again."
-        : "The vision provider could not analyze this image.",
-    });
+    return res.status(failure.status).json({ error: failure.error });
   } finally {
     bucket.inFlight -= 1;
   }

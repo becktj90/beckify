@@ -3,7 +3,12 @@ import {
   TDR_VISION_SYSTEM_PROMPT,
   type TdrVisionAnalysis,
 } from "../prompts/tdrVisionPrompt.js";
-import { pickImage } from "../lib/visionClient.js";
+import {
+  MissingProviderKeyError,
+  ProviderTimeoutError,
+  pickImage,
+  visionProviderFailure,
+} from "../lib/visionClient.js";
 
 type VisionProvider = "openai" | "anthropic";
 
@@ -60,22 +65,13 @@ router.post("/analyze-tdr", async (req, res) => {
       analysis: parsed,
     });
   } catch (error) {
-    const isTimeout = error instanceof ProviderTimeoutError;
+    const failure = visionProviderFailure(error);
     console.error("TDR vision provider request failed", error);
-    return res.status(isTimeout ? 504 : 502).json({
-      error: isTimeout ? "The vision provider timed out. Please try again." : "The vision provider could not analyze this image.",
-    });
+    return res.status(failure.status).json({ error: failure.error });
   } finally {
     bucket.inFlight -= 1;
   }
 });
-
-class ProviderTimeoutError extends Error {
-  constructor() {
-    super("Vision provider request timed out.");
-    this.name = "ProviderTimeoutError";
-  }
-}
 
 function configuredProvider(): VisionProvider {
   const provider = (process.env["TDR_VISION_PROVIDER"] ?? "openai").toLowerCase();
@@ -181,7 +177,7 @@ function toNullableNumber(value: unknown): number | null {
 async function analyzeWithOpenAI(args: { image: string; mimeType: string; model: string; }): Promise<unknown> {
   const apiKey = process.env["OPENAI_API_KEY"];
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is required for OpenAI vision analysis.");
+    throw new MissingProviderKeyError("OPENAI_API_KEY");
   }
 
   const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
@@ -239,7 +235,7 @@ async function analyzeWithOpenAI(args: { image: string; mimeType: string; model:
 async function analyzeWithAnthropic(args: { image: string; mimeType: string; model: string; }): Promise<unknown> {
   const apiKey = process.env["ANTHROPIC_API_KEY"];
   if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY is required for Anthropic vision analysis.");
+    throw new MissingProviderKeyError("ANTHROPIC_API_KEY");
   }
 
   const response = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
