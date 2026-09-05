@@ -55,7 +55,9 @@ function Router() {
         <Route path="/control-systems" component={ControlSystemsPage} />
         <Route path="/games" component={GamesPage} />
         <Route path="/games/kestrel-heavy" component={KestrelHeavyPage} />
+        <Route path="/games/kestrel-heavy/" component={KestrelHeavyPage} />
         <Route path="/games/new-glenn-runner">{() => <Redirect to="/games/kestrel-heavy" />}</Route>
+        <Route path="/games/new-glenn-runner/">{() => <Redirect to="/games/kestrel-heavy" />}</Route>
         <Route path="/sitemap" component={SiteMapPage} />
         <Route component={NotFound} />
       </Switch>

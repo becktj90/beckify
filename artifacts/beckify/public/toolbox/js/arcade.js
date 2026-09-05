@@ -42,7 +42,7 @@
     'Heavy lift. Soft catch.',
     'Seven core engines on first stage. Hold the corridor.',
     'Upper-stage vacuum engines light after sep. Two of them.',
-    'Kestrel Heavy payload: 13 t to GTO, 45 t to LEO.',
+    'KH-1 flies Aether Scout. Later stacks unlock Ember Pair, Harbor Eye, Nightglass, and Lumen Tug.',
     'KH-1 reached orbit on first try.',
     'KH-2 landed the booster on Haven — reuse is the point.',
     'The fairing volume is twice that of a 5-meter class fairing.',
