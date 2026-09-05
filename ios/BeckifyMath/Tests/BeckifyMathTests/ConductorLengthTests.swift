@@ -24,6 +24,12 @@ final class ConductorLengthTests: XCTestCase {
         XCTAssertEqual(result.resistanceOhms, 0.25, accuracy: 1e-12)
         XCTAssertEqual(result.totalLengthM, result.totalLengthFt * 0.3048, accuracy: 1e-12)
         XCTAssertEqual(result.oneWayLengthM, result.oneWayLengthFt * 0.3048, accuracy: 1e-12)
+        XCTAssertEqual(result.metalMass.label, "Copper weight")
+        XCTAssertEqual(result.metalMass.densityGPerCm3, 8.89, accuracy: 1e-12)
+        XCTAssertEqual(result.metalMass.oneWayLb, result.metalMass.totalPathLb, accuracy: 1e-12)
+        // 1/0 Cu is ~320 lb/kft at 8.89 g/cm³; 2545.56 ft ≈ 814 lb.
+        XCTAssertEqual(result.metalMass.oneWayLb, 813.7, accuracy: 1.0)
+        XCTAssertEqual(result.metalMass.oneWayKg, result.metalMass.oneWayLb * 453.59237 / 1000, accuracy: 1e-9)
     }
 
     func testHotMeasurementCompensatesDownToReferenceTemp() throws {
@@ -54,7 +60,8 @@ final class ConductorLengthTests: XCTestCase {
             temperatureUnit: .fahrenheit,
             referenceTempC: 75,
             alpha: 0.00403,
-            rho: 21.2
+            rho: 21.2,
+            material: .aluminum
         ))
 
         XCTAssertEqual(result.measuredTempC, 20, accuracy: 1e-9)
@@ -62,6 +69,9 @@ final class ConductorLengthTests: XCTestCase {
         XCTAssertEqual(result.oneWayLengthFt, 1005.39, accuracy: 0.5)
         XCTAssertEqual(result.oneWayLengthFt, result.totalLengthFt / 2, accuracy: 1e-12)
         XCTAssertEqual(result.pathFactor, 2, accuracy: 1e-12)
+        XCTAssertEqual(result.metalMass.label, "Aluminum weight")
+        XCTAssertEqual(result.metalMass.densityGPerCm3, 2.70, accuracy: 1e-12)
+        XCTAssertEqual(result.metalMass.oneWayLb, result.metalMass.totalPathLb / 2, accuracy: 1e-12)
     }
 
     func testThreePhaseLoopUsesDivideByTwo() throws {
@@ -167,5 +177,46 @@ final class ConductorLengthTests: XCTestCase {
             }
             XCTAssertTrue(message.contains("invalid resistance factor"))
         }
+    }
+
+    func testCopperWeightFromLengthAndCircularMils() throws {
+        let mass = try ConductorLength.metalMass(
+            lengthFt: 1000,
+            circularMils: 105_600,
+            material: .copperAnnealed
+        )
+        // 1 cmil × 1000 ft × 8.89 g/cm³ ≈ 0.003027 lb; 1/0 = 105,600 cmil ≈ 319.7 lb/kft.
+        XCTAssertEqual(mass.lb, 319.7, accuracy: 0.4)
+        XCTAssertEqual(mass.kg, mass.lb * ConductorLength.gramsPerPound / 1000, accuracy: 1e-9)
+        XCTAssertEqual(ConductorLengthMaterial.copperHardDrawn.weightLabel, "Copper weight")
+        XCTAssertEqual(ConductorLengthMaterial.copperHardDrawn.densityGPerCm3, 8.89, accuracy: 1e-12)
+    }
+
+    func testAluminumWeightUsesAluminumDensityNotCopper() throws {
+        let copper = try ConductorLength.metalMass(
+            lengthFt: 1000,
+            circularMils: 105_600,
+            material: .copperAnnealed
+        )
+        let aluminum = try ConductorLength.metalMass(
+            lengthFt: 1000,
+            circularMils: 105_600,
+            material: .aluminum
+        )
+        XCTAssertEqual(
+            aluminum.lb,
+            copper.lb * ConductorLength.aluminumDensityGPerCm3 / ConductorLength.copperDensityGPerCm3,
+            accuracy: 1e-12
+        )
+        XCTAssertEqual(ConductorLengthMaterial.aluminum.weightLabel, "Aluminum weight")
+        XCTAssertLessThan(aluminum.lb, copper.lb)
+    }
+
+    func testMetalMassRejectsNonPositiveInputs() {
+        XCTAssertThrowsError(try ConductorLength.metalMass(
+            lengthFt: 0,
+            circularMils: 105_600,
+            densityGPerCm3: 8.89
+        ))
     }
 }

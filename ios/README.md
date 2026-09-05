@@ -41,7 +41,7 @@ ios/
 
 - Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff)
 - Conductor Cost Optimizer (compliant size × parallel-run ranking with planning $/kft and optional I²R energy — not a live quote)
-- Conductor Length by Resistance (length from a milliohm / mΩ reading — end-to-end or short-to-parallel; Cu/Al α compensation)
+- Conductor Length by Resistance (length from a milliohm / mΩ reading — end-to-end or short-to-parallel; Cu/Al α compensation; estimated metal weight)
 - Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways)
 - Motor FLA (430.248 / 430.250)
 - Motor Speed & Torque (sync RPM, slip, shaft torque)

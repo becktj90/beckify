@@ -430,7 +430,7 @@
     svg.appendChild(svgElement('circle', { cx: 548, cy: 92, r: 12, fill: PALETTE.yellow }));
     text(svg, 92, 126, 'test lead', { fill: PALETTE.green, 'font-size': 10, 'text-anchor': 'middle' });
     text(svg, 548, 126, 'short / far end', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'middle' });
-    text(svg, 320, 151, 'milliohm reading × conductor area — end-to-end or short-to-parallel', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    text(svg, 320, 151, 'milliohm reading × conductor area, then density × volume for metal weight', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
   }
 
   function loadFactors(svg) {
@@ -474,7 +474,7 @@
     const id = section.id;
     if (id === 'sec-ohm') return ohms(shell(result, 'Ohm\'s law relationship between voltage, current, and resistance'));
     if (id === 'sec-555') return waveform(shell(result, '555 timer output waveform over time'), '555 OUTPUT', PALETTE.accent);
-    if (id === 'sec-conductor-length') return conductorLength(shell(result, 'Length from a milliohm reading — end-to-end or short-to-parallel'));
+    if (id === 'sec-conductor-length') return conductorLength(shell(result, 'Length and estimated metal weight from a milliohm reading — end-to-end or short-to-parallel'));
     if (id === 'sec-vdrop') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((_value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
     if (id === 'sec-conduit' || id === 'sec-conduit-adv') return conduitSection(shell(result, 'Conduit cross-section and conductor fill envelope'));
     if (id === 'sec-power-dc') return energyBars(shell(result, 'DC power load and capacity relationship'), 'DC POWER BALANCE');

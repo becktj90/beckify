@@ -36,7 +36,7 @@ Jobsite:
 
 • Voltage Drop — K-factor VD with parallels, target %, ampacity check, and optional ampacity→VD handoff
 • Conductor Cost Optimizer — compares compliant sizes and parallel runs using a user-entered or default planning $/kft and optional I²R energy. Planning allowance only — not LME or a bid
-• Conductor Length by Resistance — estimate length from a milliohm (mΩ) reading, end-to-end or short-to-parallel, with copper/aluminum temperature compensation and AWG/kcmil or custom circular mils
+• Conductor Length by Resistance — estimate length from a milliohm (mΩ) reading, end-to-end or short-to-parallel, with copper/aluminum temperature compensation, AWG/kcmil or custom circular mils, and estimated copper or aluminum weight (density × volume, not a scale reading)
 • Conduit fill — same-size or mixed conductor sizes; Chapter 9 Table 1 vs Table 4 raceways and Table 5 areas (EMT, IMC, RMC, PVC, ENT, FMC, LFMC)
 • Motor full-load current from NEC Tables 430.248 and 430.250
 • Motor Speed & Torque — synchronous RPM, slip from a nameplate, and shaft torque from HP

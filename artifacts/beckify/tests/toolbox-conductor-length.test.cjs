@@ -27,8 +27,8 @@ sandbox.window.addEventListener = () => {};
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(dir + 'app.js', 'utf8'), sandbox, { filename: 'app.js' });
 
-const { conductorLengthByResistanceModel, ebPowerToWatts, ebWheelSpeedMph } =
-  vm.runInContext('({ conductorLengthByResistanceModel, ebPowerToWatts, ebWheelSpeedMph })', sandbox);
+const { conductorLengthByResistanceModel, conductorMetalMassFromLength, ebPowerToWatts, ebWheelSpeedMph } =
+  vm.runInContext('({ conductorLengthByResistanceModel, conductorMetalMassFromLength, ebPowerToWatts, ebWheelSpeedMph })', sandbox);
 
 let failures = 0;
 const ok = (name, got, want, tol) => {
@@ -54,6 +54,8 @@ let r = conductorLengthByResistanceModel({
 });
 ok('single path total length (ft)', r.totalLengthFt, 2545.56, 0.5);
 ok('single path one-way equals total', r.oneWayLengthFt, 2545.56, 0.5);
+ok('single path copper weight (lb)', r.oneWayMassLb, 813.7, 1.0);
+ok('single path copper weight equals total-path weight', r.oneWayMassLb, r.totalPathMassLb, 1e-9);
 
 // Same run measured hot at 75C should be corrected down at 20C.
 r = conductorLengthByResistanceModel({
@@ -79,10 +81,12 @@ r = conductorLengthByResistanceModel({
   temperatureUnit: 'f',
   referenceTempC: 75,
   alpha: 0.00403,
-  rho: 21.2
+  rho: 21.2,
+  material: 'al'
 });
 ok('loop total path length (ft)', r.totalLengthFt, 2010.78, 0.5);
 ok('loop one-way distance (ft)', r.oneWayLengthFt, 1005.39, 0.5);
+ok('loop aluminum one-way weight is half of path weight', r.oneWayMassLb, r.totalPathMassLb / 2, 1e-9);
 
 // 3-phase loop follows product requirement: one-way is solved length / 2.
 r = conductorLengthByResistanceModel({
@@ -98,12 +102,19 @@ r = conductorLengthByResistanceModel({
 });
 ok('3-phase loop one-way uses ÷2 factor', r.oneWayLengthFt, r.totalLengthFt / 2, 1e-9);
 
+const cuKft = conductorMetalMassFromLength(1000, 105600, 'cu-annealed');
+const alKft = conductorMetalMassFromLength(1000, 105600, 'al');
+ok('1/0 copper ~320 lb per 1000 ft at 8.89 g/cm³', cuKft.massLb, 319.7, 0.4);
+ok('aluminum mass scales by 2.70/8.89', alKft.massLb, cuKft.massLb * 2.70 / 8.89, 1e-9);
+
 const html = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
 const catalog = fs.readFileSync(require('path').join(__dirname, '..', '..', '..', 'ios', 'Beckify', 'Models', 'ToolboxCatalog.swift'), 'utf8');
 const assert = (name, condition) => {
   if (!condition) failures++;
   console.log((condition ? '  PASS  ' : '  FAIL  ') + name);
 };
+assert('copper weight label', cuKft.weightLabel === 'Copper Weight');
+assert('aluminum weight label', alKft.weightLabel === 'Aluminum Weight');
 const optionLabel = (value) => {
   const match = html.match(new RegExp('<option value="' + value + '">([^<]+)</option>'));
   return match ? match[1] : '';
@@ -113,8 +124,13 @@ assert('HTML option: end-to-end', /^End-to-end\b/.test(optionLabel('single')));
 assert('HTML option: 3-phase far-end short', /^3-phase far-end short\b/.test(optionLabel('loop3')));
 assert('iOS catalog subtitle mentions milliohm and short-to-parallel',
   catalog.includes('milliohm (mΩ)') && catalog.includes('short-to-parallel'));
+assert('iOS catalog subtitle mentions estimated copper or aluminum weight',
+  catalog.includes('estimated copper or aluminum weight'));
 assert('iOS catalog synonyms include shorted parallel and kelvin',
   catalog.includes('"shorted parallel"') && catalog.includes('"kelvin"') && catalog.includes('"mohm"'));
+assert('iOS catalog synonyms include copper weight', catalog.includes('"copper weight"'));
+assert('HTML more-info documents density × volume weight',
+  html.includes('estimated metal weight') && html.includes('8.89 g/cm³') && html.includes('2.70 g/cm³'));
 
 console.log('\n--- E-bike helpers ---');
 ok('2 kW to watts', ebPowerToWatts(2, 'kw'), 2000, 0);

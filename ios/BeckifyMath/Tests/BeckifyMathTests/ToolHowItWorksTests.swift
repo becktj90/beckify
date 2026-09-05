@@ -66,6 +66,13 @@ final class ToolHowItWorksTests: XCTestCase {
         XCTAssertFalse(ToolHowItWorksCatalog.defaultExpanded(forToolID: "ohmsLaw"))
     }
 
+    func testConductorLengthHowItWorksMentionsMetalWeight() {
+        let copy = ToolHowItWorksCatalog.copy(forToolID: "conductorLength")
+        XCTAssertTrue(copy?.summary.localizedCaseInsensitiveContains("weight") == true)
+        XCTAssertTrue(copy?.bullets.contains(where: { $0.contains("8.89") && $0.contains("2.70") }) == true)
+        XCTAssertTrue(copy?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("scale") }) == true)
+    }
+
     func testUnknownIDHasNoCopy() {
         XCTAssertNil(ToolHowItWorksCatalog.copy(forToolID: "notARealTool"))
     }
