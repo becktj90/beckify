@@ -60,7 +60,13 @@ export function renderHud(snapshot) {
     pause.setAttribute('aria-pressed', snapshot.paused ? 'true' : 'false');
   }
   const climb = el('atb-boost');
-  if (climb) climb.textContent = snapshot.boostLabel;
+  if (climb && snapshot.boostLabel) {
+    climb.dataset.label = snapshot.boostLabel;
+    climb.setAttribute(
+      'aria-label',
+      snapshot.boostLabel === 'HOLD TO BRAKE' ? 'Hold to brake' : 'Hold boost to climb',
+    );
+  }
   const record = el('arcade-hi-score');
   if (record) record.textContent = snapshot.recordLine;
   const hint = el('ng-hints');
@@ -162,8 +168,12 @@ export function bindChrome(handlers) {
   const hold = (id, down, up) => {
     const node = el(id);
     if (!node) return;
+    let held = false;
     const onDown = (event) => {
       event.preventDefault();
+      if (event.button != null && event.button !== 0) return;
+      if (held) return;
+      held = true;
       if (node.setPointerCapture && event.pointerId !== undefined) {
         node.setPointerCapture(event.pointerId);
       }
@@ -171,12 +181,23 @@ export function bindChrome(handlers) {
     };
     const onUp = (event) => {
       event.preventDefault();
+      if (!held) return;
+      held = false;
       up();
+    };
+    const suppressCallout = (event) => {
+      event.preventDefault();
     };
     node.addEventListener('pointerdown', onDown, { passive: false });
     node.addEventListener('pointerup', onUp, { passive: false });
     node.addEventListener('pointercancel', onUp, { passive: false });
     node.addEventListener('pointerleave', onUp, { passive: false });
+    // iOS Safari starts the text magnifier from the native touch, not pointerdown.
+    node.addEventListener('touchstart', onDown, { passive: false });
+    node.addEventListener('touchend', onUp, { passive: false });
+    node.addEventListener('touchcancel', onUp, { passive: false });
+    node.addEventListener('contextmenu', suppressCallout);
+    node.addEventListener('selectstart', suppressCallout);
   };
 
   hold('atb-left', () => handlers.steer(-1, true), () => handlers.steer(-1, false));

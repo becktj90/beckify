@@ -16,9 +16,13 @@
    a stale shell; the cached index.html is only a fallback for being offline.
 
    CACHE_VERSION must be bumped whenever this file's caching logic changes.
+   Arcade cabinet CSS is not stored here (/arcade/ is excluded). When that
+   cabinet CSS changes, bump `arcade-asset-version` on the Phaser page and
+   the matching iframe query so iOS Safari does not keep a stale hold-control
+   stylesheet. v3 drops the prior shell cache after that cabinet bust landed.
    ============================================================================ */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = 'beckify-shell-' + CACHE_VERSION;
 
 const EXCLUDED_PREFIXES = ['/toolbox/', '/games/', '/projects/', '/demos/', '/arcade/'];

@@ -710,6 +710,18 @@ html {
   box-sizing: border-box;
 }
 
+.game-stage.ng-playfield,
+.game-stage.ng-playfield iframe {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game-stage.ng-playfield iframe {
+  touch-action: none;
+}
+
 .game-stage:not(:fullscreen)::after {
   content: "";
   position: absolute;

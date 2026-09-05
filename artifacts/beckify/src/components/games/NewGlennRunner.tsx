@@ -2,7 +2,8 @@ import { useRef } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
-const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/new-glenn-runner/index.html`.replace(/([^:]\/)\/+/g, "$1");
+const ARCADE_ASSET_VERSION = "ios-hold-1";
+const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/new-glenn-runner/index.html?v=${ARCADE_ASSET_VERSION}`.replace(/([^:]\/)\/+/g, "$1");
 
 export function NewGlennRunner() {
   const stageRef = useRef<HTMLDivElement>(null);
