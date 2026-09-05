@@ -129,7 +129,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect build — no binary uploaded):**
-Look Check **Analyze Look** now includes a roast when an adult is rated; roast is empty when declined or no person. Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+Look Check **Analyze Look** now includes a roast when the subject appears 18+ and is rated; roast is empty when declined or no person. Anyone who appears under 18 is not rated and gets no roast. Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
