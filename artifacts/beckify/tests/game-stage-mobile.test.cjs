@@ -12,7 +12,7 @@ const nonImmersiveStage = (source) => {
   return match[1];
 };
 
-const glenn = nonImmersiveStage(fs.readFileSync(path.join(gamesDir, 'NewGlennRunner.tsx'), 'utf8'));
+const glenn = nonImmersiveStage(fs.readFileSync(path.join(gamesDir, 'KestrelHeavy.tsx'), 'utf8'));
 
 assert.match(glenn, /\bw-full\b/);
 assert.match(glenn, /\bmin-w-0\b/);
@@ -24,4 +24,4 @@ assert.match(css, /\.game-stage\.ng-playfield iframe[\s\S]*touch-action:\s*none/
 assert.doesNotMatch(css, /minmax\(280px,\s*540px\)/, 'old Cosmic Cadet column min-width overflowed phones');
 assert.doesNotMatch(css, /minmax\(360px,\s*550px\)/);
 
-console.log('New Glenn game-stage mobile overflow guards passed');
+console.log('Kestrel Heavy game-stage mobile overflow guards passed');

@@ -13,7 +13,7 @@ const FEATURED = {
 };
 
 /**
- * Public games hub. Beckify ships one playable title: New Glenn Runner.
+ * Public games hub. Beckify ships one playable title: Kestrel Heavy.
  */
 export const Games = () => {
   const game = GAMES[0];
@@ -34,7 +34,7 @@ export const Games = () => {
           <div>
             <p className="type-label text-[var(--accent)]">The arcade brief</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-              New Glenn Runner is the public game on Beckify. Charge liftoff at LC-36, steer the corridor, then land the booster on Jacklyn. Chase a local best on this device.
+              Kestrel Heavy is the public game on Beckify. Charge liftoff at Pier 7, steer the corridor, then land the booster on Haven. Chase a local best on this device.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">

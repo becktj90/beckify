@@ -465,7 +465,7 @@ export default class MissionScene extends Phaser.Scene {
     const flight = this.currentFlight();
     this.status = 'JACKLYN';
     this.session.ascentScore = Math.round(this.session.ascentScore || this.session.score);
-    this.session.stage = 'JACKLYN';
+    this.session.stage = 'HAVEN';
     this.session.radio = RADIO.JACKLYN;
     this.session.landingLock = false;
     this.session.jacklynPhase = 'slide';
@@ -496,7 +496,7 @@ export default class MissionScene extends Phaser.Scene {
     AudioApi.stopBeds();
     AudioApi.play('meco', this.settings);
     AudioApi.play('whoosh', this.settings);
-    setBanner('JACKLYN — slide in, RCS straighten, brake the deck', 'warn', 2600);
+    setBanner('HAVEN — slide in, RCS straighten, brake the deck', 'warn', 2600);
   }
 
   update(_time, delta) {
@@ -956,7 +956,7 @@ export default class MissionScene extends Phaser.Scene {
     } else {
       this.session.overdrive = OVERDRIVE_SEC;
       AudioApi.play('overdrive', this.settings);
-      setBanner('BE-4 KICK', 'go', 900);
+      setBanner('CORE KICK', 'go', 900);
     }
   }
 
@@ -1123,7 +1123,7 @@ export default class MissionScene extends Phaser.Scene {
     saveSettings(this.settings);
     setMissionButtons(this.settings, (id) => this.setMission(id));
     if (typeof window.recordGameScore === 'function') {
-      window.recordGameScore('new-glenn-runner', points);
+      window.recordGameScore('kestrel-heavy', points);
     }
     const headline = reason === 'recovered'
       ? this.currentFlight().jacklyn.recovered
@@ -1156,7 +1156,7 @@ export default class MissionScene extends Phaser.Scene {
     );
     setSummaryBreakdown(
       `Ascent  ${ascent.toLocaleString()}`,
-      `Jacklyn ${jacklynKind}  ${jacklynPts >= 0 ? '+' : ''}${jacklynPts.toLocaleString()}`,
+      `Haven ${jacklynKind}  ${jacklynPts >= 0 ? '+' : ''}${jacklynPts.toLocaleString()}`,
       deltaLine,
       nextFlight ? `NEXT · ${nextFlight.id} ${nextFlight.mark}` : '',
     );
@@ -1301,7 +1301,7 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   holdStandby() {
-    setBanner('HOLD — standing by on LC-36', 'info', 1400);
+    setBanner('HOLD — standing by on Pier 7', 'info', 1400);
   }
 
   flyNextMission() {
@@ -1342,7 +1342,7 @@ export default class MissionScene extends Phaser.Scene {
     const flight = getMission(id);
     if (flight.id !== id) return;
     if (!isUnlocked(this.settings, id)) {
-      setBanner(`Clear ${this.currentFlight().id} on Jacklyn to unlock ${id}`, 'warn', 2200);
+      setBanner(`Clear ${this.currentFlight().id} on Haven to unlock ${id}`, 'warn', 2200);
       return;
     }
     this.settings.currentMission = id;

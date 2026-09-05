@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Glenn Runner</title>
+  <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-  <meta name="arcade-asset-version" content="ios-hold-1">
+  <meta name="arcade-asset-version" content="kestrel-1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -577,12 +577,12 @@
   <main id="sec-arcade" class="cabinet">
     <div id="arcade-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
     <div id="arcade-fs-wrapper">
-      <div id="ng-phaser-root" role="application" aria-label="New Glenn Runner flight. Hold boost to climb, steer around hazards, then land on Jacklyn."></div>
+      <div id="ng-phaser-root" role="application" aria-label="Kestrel Heavy flight. Hold boost to climb, steer around hazards, then land on Haven."></div>
       <div class="mc-hud" aria-hidden="false">
         <div class="mc-panel">
           <table>
             <caption class="visually-hidden">Mission telemetry</caption>
-            <tr><th scope="row">FLT</th><td id="t-mission">NG-1</td></tr>
+            <tr><th scope="row">FLT</th><td id="t-mission">KH-1</td></tr>
             <tr><th scope="row">ALT</th><td id="t-alt">0.0 km</td></tr>
             <tr><th scope="row">VEL</th><td id="t-vel">0 m/s</td></tr>
             <tr><th scope="row">THR</th><td id="t-thr">THR 0%</td></tr>
@@ -594,8 +594,8 @@
           <div id="ng-phase">STANDBY</div>
           <div id="ng-banner" hidden data-kind="info"></div>
           <div id="t-clock">T-0:08.0</div>
-          <div id="t-payload">BRP  Blue Ring Pathfinder</div>
-          <div id="t-radio">LC-36 standing by.</div>
+          <div id="t-payload">AES  Aether Scout</div>
+          <div id="t-radio">Pier 7 standing by.</div>
           <div id="t-obj" class="mc-obj">Grab an aero shield</div>
         </div>
         <div class="mc-panel">
@@ -616,11 +616,11 @@
       </div>
       <div id="ng-menu" class="ng-screen">
         <div class="ng-card">
-          <p class="ng-kicker">BLUE ORIGIN · LC-36</p>
-          <h1>NEW GLENN RUNNER</h1>
-          <p id="ng-card-flight">NG-1 · Blue Ring Pathfinder</p>
+          <p class="ng-kicker">KESTREL HEAVY · PIER 7</p>
+          <h1>KESTREL HEAVY</h1>
+          <p id="ng-card-flight">KH-1 · Aether Scout</p>
           <p id="ng-card-blurb">Demo stack. Prove the corridor.</p>
-          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Steer the corridor. Slide onto Jacklyn.</p>
+          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Steer the corridor. Slide onto Haven.</p>
           <div class="diff-row" role="group" aria-label="Difficulty">
             <button type="button" data-diff="KID">KID</button>
             <button type="button" data-diff="CADET">CADET</button>
@@ -634,14 +634,14 @@
             </div>
             <button type="button" id="ng-open-howto">How to play</button>
           </div>
-          <p id="ng-launch-tip">Hold climb · after MECO slide onto Jacklyn</p>
+          <p id="ng-launch-tip">Hold climb · after MECO slide onto Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
             <p class="ng-kicker" id="ng-open-missions">FLIGHT MANIFEST</p>
-            <button type="button" class="manifest-row" data-mission="NG-1" data-label="NG-1 · BRP"><span class="mf-id">NG-1</span><span class="mf-name">Blue Ring Pathfinder</span><span class="mf-state">READY</span></button>
-            <button type="button" class="manifest-row" data-mission="NG-2" data-label="NG-2 · ESC"><span class="mf-id">NG-2</span><span class="mf-name">ESCAPADE Pair</span><span class="mf-state">LOCKED</span></button>
-            <button type="button" class="manifest-row" data-mission="NG-3" data-label="NG-3 · BB1"><span class="mf-id">NG-3</span><span class="mf-name">BlueBird Block 1</span><span class="mf-state">LOCKED</span></button>
-            <button type="button" class="manifest-row" data-mission="NG-4" data-label="NG-4 · LSK"><span class="mf-id">NG-4</span><span class="mf-name">Lightspeed Ka</span><span class="mf-state">LOCKED</span></button>
-            <button type="button" class="manifest-row" data-mission="NG-5" data-label="NG-5 · BRT"><span class="mf-id">NG-5</span><span class="mf-name">Blue Ring Tug</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="KH-1" data-label="KH-1 · AES"><span class="mf-id">KH-1</span><span class="mf-name">Aether Scout</span><span class="mf-state">READY</span></button>
+            <button type="button" class="manifest-row" data-mission="KH-2" data-label="KH-2 · EMB"><span class="mf-id">KH-2</span><span class="mf-name">Ember Pair</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="KH-3" data-label="KH-3 · HBE"><span class="mf-id">KH-3</span><span class="mf-name">Harbor Eye</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="KH-4" data-label="KH-4 · NGL"><span class="mf-id">KH-4</span><span class="mf-name">Nightglass</span><span class="mf-state">LOCKED</span></button>
+            <button type="button" class="manifest-row" data-mission="KH-5" data-label="KH-5 · LUT"><span class="mf-id">KH-5</span><span class="mf-name">Lumen Tug</span><span class="mf-state">LOCKED</span></button>
           </div>
           <div id="arcade-hi-score" class="mc-obj" style="margin-top:12px">NO MISSIONS FLOWN</div>
         </div>
@@ -650,13 +650,13 @@
         <div class="ng-card">
           <p class="ng-kicker">Flight manifest</p>
           <h2>MISSIONS</h2>
-          <p>Each NG-n flies a different payload. Finish Jacklyn to unlock the next stack.</p>
+          <p>Each KH-n flies a different payload. Finish Haven to unlock the next stack.</p>
           <div class="mission-grid" role="group" aria-label="Flight manifest">
-            <button type="button" data-mission="NG-1" data-label="NG-1 · BRP">NG-1 · BRP</button>
-            <button type="button" data-mission="NG-2" data-label="NG-2 · ESC">NG-2 · ESC</button>
-            <button type="button" data-mission="NG-3" data-label="NG-3 · BB1">NG-3 · BB1</button>
-            <button type="button" data-mission="NG-4" data-label="NG-4 · LSK">NG-4 · LSK</button>
-            <button type="button" data-mission="NG-5" data-label="NG-5 · BRT">NG-5 · BRT</button>
+            <button type="button" data-mission="KH-1" data-label="KH-1 · AES">KH-1 · AES</button>
+            <button type="button" data-mission="KH-2" data-label="KH-2 · EMB">KH-2 · EMB</button>
+            <button type="button" data-mission="KH-3" data-label="KH-3 · HBE">KH-3 · HBE</button>
+            <button type="button" data-mission="KH-4" data-label="KH-4 · NGL">KH-4 · NGL</button>
+            <button type="button" data-mission="KH-5" data-label="KH-5 · LUT">KH-5 · LUT</button>
           </div>
           <button class="btn" id="ng-missions-back" type="button">BACK</button>
         </div>
@@ -667,7 +667,7 @@
           <h2>HOW TO PLAY</h2>
           <p>HOLD SPACE / CLIMB to throttle.
 A D or ◀ ▶ to steer.
-Land the booster on JACKLYN — slide in, do not drop.
+Land the booster on HAVEN — slide in, do not drop.
 Soft deck = BOOSTER RECOVERED. Splash costs score, not the run.
 Difficulty stays KID / CADET / PAD RAT.
 P or Escape pauses. M mutes. O opens settings.</p>
@@ -738,7 +738,7 @@ P or Escape pauses. M mutes. O opens settings.</p>
         <button id="atb-right" type="button" aria-label="Steer right" data-label="▶" draggable="false"></button>
       </div>
     </div>
-    <p class="help">Pick an unlocked NG-n flight (each has its own payload). Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, slide the booster onto barge Jacklyn — not a vertical drop. Soft deck = BOOSTER RECOVERED; splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, slide the booster onto barge Haven — not a vertical drop. Soft deck = BOOSTER RECOVERED; splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>

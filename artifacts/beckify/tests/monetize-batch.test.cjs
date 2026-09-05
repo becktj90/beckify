@@ -1,4 +1,4 @@
-/* Monetize-without-wrecking-quality batch: photos, affiliate tags, counts, New Glenn route. */
+/* Monetize-without-wrecking-quality batch: photos, affiliate tags, counts, Kestrel Heavy route. */
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -13,7 +13,7 @@ const houseAds = fs.readFileSync(path.join(root, "src/components/ads/MinimalAdUn
 const sitemapGen = fs.readFileSync(path.join(root, "scripts/generate-sitemap.mjs"), "utf8");
 const staticRoutes = fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8");
 const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/index.html"), "utf8");
-const arcadeHtml = fs.readFileSync(path.join(root, "public/arcade/new-glenn-runner/index.html"), "utf8");
+const arcadeHtml = fs.readFileSync(path.join(root, "public/arcade/kestrel-heavy/index.html"), "utf8");
 const appSrc = fs.readFileSync(path.join(root, "src/App.tsx"), "utf8");
 
 let failures = 0;
@@ -82,7 +82,7 @@ ok("sitemap chips deep-link via /toolbox/#", sitemapSrc.includes("href={`/toolbo
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser game"));
 ok("toolbox header uses the shared calculator count", toolboxHtml.includes(`${PUBLIC_CALCULATOR_COUNT} calculators plus reference tables`));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
-ok("sitemap games line includes New Glenn Runner", sitemapSrc.includes("New Glenn Runner") && !sitemapSrc.includes("Toot Troopers"));
+ok("sitemap games line includes Kestrel Heavy", sitemapSrc.includes("Kestrel Heavy") && !sitemapSrc.includes("Toot Troopers"));
 ok("sitemap lists EMP/EMC with a working hash link", sitemapSrc.includes('t("EMP / EMC Shielding", "sec-emp-emc")'));
 ok("sitemap lists LP optimizer with a working hash link", sitemapSrc.includes('t("Linear Programming Optimizer", "sec-lp-optimizer")'));
 ok("sitemap lists phone sensor field tools", [
@@ -105,18 +105,18 @@ ok("sitemap lists the homework EE set", [
   't("Fiber Link / NA", "sec-fiber-link")',
   't("Gaussian Beam", "sec-gaussian-beam")',
 ].every((entry) => sitemapSrc.includes(entry)));
-const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["New Glenn Runner"].includes(name));
+const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]).filter((name) => ["Kestrel Heavy"].includes(name));
 ok("site-content lists 1 game", gameNames.length === 1, gameNames.join(", "));
 ok("removed titles are not listed", !["Cosmic Cadet", "Booty Butt Scooter", "Finger Runner", "Toot Troopers", "Apollo & Rocco Run", "Pup Planet"].some((name) => siteContent.includes(`name: "${name}"`)));
 ok("HexGL is not listed", !/name: "HexGL"/.test(siteContent));
 
-console.log("\n--- New Glenn route ---");
-ok("hub Play Now points at /games/new-glenn-runner", /name: "New Glenn Runner"[\s\S]{0,400}url: "\/games\/new-glenn-runner"/.test(siteContent));
-ok("React route exists", appSrc.includes('path="/games/new-glenn-runner"'));
+console.log("\n--- Kestrel Heavy route ---");
+ok("hub Play Now points at /games/kestrel-heavy", /name: "Kestrel Heavy"[\s\S]{0,400}url: "\/games\/kestrel-heavy"/.test(siteContent));
+ok("React route exists", appSrc.includes('path="/games/kestrel-heavy"'));
 ok("standalone arcade page exists", arcadeHtml.includes("ng-phaser-root") && arcadeHtml.includes("data-arcade-standalone"));
 ok("standalone page keeps difficulty copy", arcadeHtml.includes("KID / CADET / PAD RAT"));
 ok("toolbox no longer embeds the full arcade canvas", !/id="arcadeCanvas"/.test(toolboxHtml));
-ok("toolbox keeps a games-page link", toolboxHtml.includes("/games/new-glenn-runner/"));
+ok("toolbox keeps a games-page link", toolboxHtml.includes("/games/kestrel-heavy/"));
 ok("toolbox no longer loads arcade.js", !/src="js\/arcade\.js"/.test(toolboxHtml));
 
 console.log("\n--- E-bike Battery Pack Designer ---");

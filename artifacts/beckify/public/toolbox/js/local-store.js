@@ -250,7 +250,8 @@ function applyUnitSystem(system) {
    --------------------------------------------------------------------------- */
 
 const GAME_NAMES = {
-  'new-glenn-runner': '🚀 New Glenn Runner',
+  'kestrel-heavy': '🚀 Kestrel Heavy',
+  'new-glenn-runner': '🚀 Kestrel Heavy',
 };
 
 function recordGameScore(gameId, score) {

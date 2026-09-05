@@ -372,7 +372,7 @@ function refreshGameStats() {
       const p = document.createElement('p');
       p.className = 'proj-empty';
       p.textContent = 'No games finished yet on this device. ' +
-        'New Glenn Runner records a best score and a play count here.';
+        'Kestrel Heavy records a best score and a play count here.';
       host.appendChild(p);
       return;
     }

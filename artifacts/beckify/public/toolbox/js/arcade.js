@@ -34,22 +34,22 @@
     ['CALL BEFORE MOVING', 'HEAVIER THAN IT LOOKS', 'PROP OF FACILITIES', 'BLOCK ZULU', 'TBD']
   ];
   const LOADING_TIPS = [
-    'New Glenn is 7 m wide. Yes, that wide.',
-    'BE-4 burns liquid methane and LOX. Cleaner than kerosene.',
-    'BE-3U burns hydrogen. The plume is nearly invisible in daylight.',
-    'The rocket is named for John Glenn — first American in orbit, 1962.',
-    "It's 9 miles from the factory to the pad. Driving to work, basically.",
-    'Gradatim ferociter — step by step, ferociously.',
-    'BE-4 thrust: 640,000 lbf at sea level. New Glenn has seven of them.',
-    'BE-3U vacuum thrust: 200,000 lbf each. Two of them on upper stage.',
-    'New Glenn payload: 13 t to GTO, 45 t to LEO.',
-    'NG-1 reached orbit on first try, January 16, 2025.',
-    'NG-2 landed the booster on Jacklyn — reusable orbital rocket history.',
+    'Kestrel Heavy is 7 m wide. Yes, that wide.',
+    'Core engines burn liquid methane and LOX. Cleaner than kerosene.',
+    'The upper-stage plume is nearly invisible in daylight.',
+    'Kestrel Heavy is a fictional heavy-lift stack. Fly the corridor.',
+    "It's 9 miles from the hangar to Pier 7. Driving to work, basically.",
+    'Heavy lift. Soft catch.',
+    'Seven core engines on first stage. Hold the corridor.',
+    'Upper-stage vacuum engines light after sep. Two of them.',
+    'KH-1 flies Aether Scout. Later stacks unlock Ember Pair, Harbor Eye, Nightglass, and Lumen Tug.',
+    'KH-1 reached orbit on first try.',
+    'KH-2 landed the booster on Haven — reuse is the point.',
     'The fairing volume is twice that of a 5-meter class fairing.',
-    'LC-36 lightning towers are 600 feet tall.',
+    'Pier 7 lightning towers are 600 feet tall.',
     'Booster lands ~620 miles (1,000 km) downrange in the Atlantic.',
     'It took 10+ years from program announcement to first orbital flight.',
-    'BE-4 burns methane — cleaner than kerosene and easier to reuse.'
+    'Methane cores burn cleaner than kerosene and are easier to reuse.'
   ];
   const DIFFICULTY = {
     KID:     { spawnMul: 0.25, hitboxScale: 0.42, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false, gimbalSlewRate: 0.032, gimbalDriftBias: 0,     pickupMul: 1.35 },
@@ -74,10 +74,10 @@
     SUPERSONIC: 'Tower clear. Roll program.',
     STAGE_SEP: 'MECO confirmed. Stage sep nominal. Booster heading home.',
     KARMAN: 'S-band lock. Telemetry green.',
-    BOOSTER_RTLS: 'GS-1 on the deck. Pad rats earned their pay.',
+    BOOSTER_RTLS: 'First stage on the deck. Pad rats earned their pay.',
     ORBIT_INSERT: 'SECO guidance is live. Enjoy the easy green band.',
     PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.',
-    BOOSTER_WIN: 'Landed on Jacklyn. Sea state nominal. Coffee earned.'
+    BOOSTER_WIN: 'Landed on Haven. Sea state nominal. Coffee earned.'
   };
   const LEVEL_ORDER = ['PAD', 'ASCENT', 'MAX_Q', 'SUPERSONIC', 'STAGE_SEP', 'KARMAN', 'BOOSTER_RTLS', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
   const LEVEL_TARGETS = {
@@ -91,7 +91,7 @@
     ORBIT_INSERT: 4700,
     PAYLOAD_DEPLOY: 5200
   };
-  const PAYLOADS = ['Blue Ring Pathfinder', 'Twin Probes', 'BlueBird Satellite'];
+  const PAYLOADS = ['Aether Scout', 'Ember Pair', 'Harbor Eye'];
   const PHASES = {
     PAD:            { label: 'LEVEL 1: PAD OPS',          start: 0,    end: 30  },
     ASCENT:         { label: 'LEVEL 2: LIFTOFF & ASCENT', start: 30,   end: 115 },
@@ -722,7 +722,7 @@
       input: { left: false, right: false, pointerX: CW / 2, boostHeld: false, boostPressed: false, boostCoyote: 0, boostBuffer: 0, konami: [], pointerDown: false },
       ui: {
         settingsOpen: false,
-        radio: 'Gradatim ferociter.',
+        radio: 'Heavy lift. Soft catch.',
         radioTimer: 2,
         countdownStarted: false,
         countdown: 10,
@@ -760,7 +760,7 @@
       },
       session: {
         missionNo: settings.missionCount + 1,
-        missionName: `NG-${settings.missionCount + 1}`,
+        missionName: `KH-${settings.missionCount + 1}`,
         totalElapsed: 0,
         phaseElapsed: 0,
         phaseGrace: 0,
@@ -965,8 +965,8 @@
       state.session.overdrive = OVERDRIVE_SEC;
       state.session.scoreMult = OVERDRIVE_SCORE;
       Audio.play('overdrive', state.settings);
-      addFloatScore(p.x, p.y, 'BE-4 KICK', '#ffb300');
-      announce('BE-4 kick — extra thrust');
+      addFloatScore(p.x, p.y, 'CORE KICK', '#ffb300');
+      announce('Core kick — extra thrust');
     }
     Particles.burst(state.settings.reducedMotion ? 8 : 20, () => ({
       kind: 'flash',
@@ -1038,7 +1038,7 @@
     ctx.fillStyle = `rgba(${color},0.95)`;
     ctx.font = 'bold 8px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(p.type === 'shield' ? 'SHLD' : p.type === 'fuel' ? 'LOX' : 'BE-4', 0, 3);
+    ctx.fillText(p.type === 'shield' ? 'SHLD' : p.type === 'fuel' ? 'LOX' : 'CORE', 0, 3);
     ctx.restore();
   }
 
@@ -1167,7 +1167,7 @@
     state.status = 'READY';
     state.lastTs = 0;
     state.ui.settingsOpen = false;
-    state.ui.radio = 'Gradatim ferociter.';
+    state.ui.radio = 'Heavy lift. Soft catch.';
     state.ui.radioTimer = 3;
     state.ui.countdownStarted = false;
     state.ui.countdown = 3;
@@ -1203,7 +1203,7 @@
     state.ui.liveStatus = '';
     state.session = {
       missionNo: state.settings.missionCount + 1,
-      missionName: `NG-${state.settings.missionCount + 1}`,
+      missionName: `KH-${state.settings.missionCount + 1}`,
       totalElapsed: 0,
       phaseElapsed: 0,
       phaseGrace: 0,
@@ -1787,7 +1787,7 @@
     const points = arcadeScore();
     state.settings.lastArcadeScore = points;
     if (typeof window.recordGameScore === 'function') {
-      window.recordGameScore('new-glenn-runner', points);
+      window.recordGameScore('kestrel-heavy', points);
     }
     const medal = missionMedal(state.session.score);
     const record = {
@@ -2279,7 +2279,7 @@
         state.session.boosterRecovered = true;
         Audio.play('landing_touchdown', state.settings);
         setRadio(RADIO.BOOSTER_WIN, 2.5);
-        showOverlayMessage(`Landed on Jacklyn (${formatMissionTime(splitActual)})`, 3);
+        showOverlayMessage(`Landed on Haven (${formatMissionTime(splitActual)})`, 3);
         addShake(4.5, 0.5);
         vibrate([40]);
       } else {
@@ -2882,11 +2882,11 @@
     ctx.fillStyle = '#1d2632';
     ctx.font = 'bold 5px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('NG-7', 0, -66);
+    ctx.fillText('KH-7', 0, -66);
     ctx.save();
     ctx.translate(0, -38);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText('BLUE ORIGIN', 0, 0);
+    ctx.fillText('KESTREL', 0, 0);
     ctx.restore();
     ctx.textAlign = 'left';
     if (!opts.fairingGone) {
@@ -2981,7 +2981,7 @@
     ctx.fillStyle = '#ffcf5d';
     ctx.font = '8px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('JACKLYN', 0, -16);
+    ctx.fillText('HAVEN', 0, -16);
     ctx.restore();
   }
 
@@ -3020,7 +3020,7 @@
       ctx.fillStyle = '#8ce0ff';
       const chips = [];
       if (state.session.shield > 0) chips.push(`SHLD×${state.session.shield}`);
-      if (state.session.overdrive > 0) chips.push(`BE-4 ${state.session.overdrive.toFixed(1)}s`);
+      if (state.session.overdrive > 0) chips.push(`CORE ${state.session.overdrive.toFixed(1)}s`);
       if (state.session.phaseGrace > 0) chips.push('GRACE');
       ctx.fillText(chips.join('  ·  '), 10, 116);
     }
@@ -3158,7 +3158,7 @@
     drawFairingSplit(ctx);
     ctx.fillStyle = '#ffcf5d';
     ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('UPPER STAGE — BE-3U', 12, 302);
+    ctx.fillText('UPPER STAGE — KH-VAC', 12, 302);
     ctx.restore();
 
     const boosterAlt = timelineValue(BOOSTER_TIMELINE, 'altitude', clamp(state.session.totalElapsed, PHASES.KARMAN.start, PHASES.BOOSTER_RTLS.end));
@@ -3193,11 +3193,11 @@
     ctx.fillStyle = '#33ff33';
     ctx.textAlign = 'center';
     ctx.font = '20px "Exo 2", "Sora", system-ui, sans-serif';
-    ctx.fillText('NEW GLENN // FLIGHT MISSION', CW / 2, 124);
+    ctx.fillText('KESTREL HEAVY // FLIGHT MISSION', CW / 2, 124);
     ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillStyle = '#8ce0ff';
     ctx.fillText('FIRST NEWLY-BUILT ORBITAL PAD SINCE THE 1960s', CW / 2, 154);
-    ctx.fillText('LC-36 | Gradatim Ferociter', CW / 2, 174);
+    ctx.fillText('PIER 7 | Heavy lift. Soft catch.', CW / 2, 174);
     ctx.fillStyle = '#ffcf5d';
     const tip = state.ui.tip || '';
     if (tip.length > 46) {
@@ -3227,7 +3227,7 @@
     ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('HOLD BOOST TO CLIMB. A/D OR ◀▶ STEER.', CW / 2, 346);
     ctx.fillText('BRIEF BOOST GAPS ARE FORGIVEN. TAP EARLY STILL COUNTS.', CW / 2, 362);
-    ctx.fillText('CATCH SHIELD · LOX · BE-4 KICK. GOLD PROMPTS FOR BURNS.', CW / 2, 378);
+    ctx.fillText('CATCH SHIELD · LOX · CORE KICK. GOLD PROMPTS FOR BURNS.', CW / 2, 378);
     ctx.fillText('KID = FRIENDLY | CADET = CLASSIC | PAD RAT = HARD', CW / 2, 394);
     const pb = state.settings.hiArcadeScore || 0;
     const last = state.settings.lastArcadeScore || 0;
@@ -3269,7 +3269,7 @@
     ctx.font = 'bold 14px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('STAGE SEPARATION CONFIRMED', CW / 2, 262);
     ctx.font = '12px "IBM Plex Mono", ui-monospace, monospace';
-    ctx.fillText('Gradatim Ferociter', CW / 2, 286);
+    ctx.fillText('Heavy lift. Soft catch.', CW / 2, 286);
     ctx.restore();
   }
 
@@ -3317,7 +3317,7 @@
       ascent: 'VEHICLE LOST DURING ASCENT — Investigation board convened.',
       maxq: 'STRUCTURAL FAILURE AT MAX-Q — She wasn\'t ready for that maneuver.',
       orbit: 'VEHICLE LOST IN UPPER ASCENT — Orbital debris won that round.',
-      offorbit: 'PROPELLANT DEPLETED — Payload in off-nominal orbit. (Welcome to the NG-3 club.)'
+      offorbit: 'PROPELLANT DEPLETED — Payload in off-nominal orbit. (Welcome to the KH-3 club.)'
     };
     ctx.fillText(map[state.effects.quickMessage] || 'VEHICLE LOST.', CW / 2, 244);
     ctx.fillStyle = '#33ff33';
@@ -3565,7 +3565,7 @@
       state.rocket.y = CH * 0.58;
       Audio.setMood('orbital', state.settings);
     } else if (key === 'share') {
-      const text = `🚀 ${state.session.missionName} | ALT ${Math.round(state.session.maxAltitude / 1000)} km | T+13:00 | Booster ${state.session.boosterRecovered ? '✅' : '❌'} | Payload ${state.session.payloadDeployed ? '✅' : '❌'} | Gradatim ferociter.`;
+      const text = `🚀 ${state.session.missionName} | ALT ${Math.round(state.session.maxAltitude / 1000)} km | T+13:00 | Booster ${state.session.boosterRecovered ? '✅' : '❌'} | Payload ${state.session.payloadDeployed ? '✅' : '❌'} | Heavy lift. Soft catch.`;
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text);
       showOverlayMessage('Mission summary copied to clipboard.', 1.5);
     }
@@ -3744,7 +3744,7 @@
   }
 
   function init() {
-    // Phaser 4.2.1 + Matter is the live New Glenn Runner. Keep this 420×640
+    // Phaser 4.2.1 + Matter is the live Kestrel Heavy. Keep this 420×640
     // canvas path inert whenever data-ng-engine="phaser4" or #ng-phaser-root is present.
     if (document.documentElement.dataset.ngEngine === 'phaser4' || document.getElementById('ng-phaser-root')) {
       return;

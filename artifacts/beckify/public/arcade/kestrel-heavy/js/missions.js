@@ -1,16 +1,16 @@
 /**
- * Flight designations. Each NG-n is a different launch with a different payload.
+ * Flight designations. Each KH-n is a different launch with a different payload.
  *
  * Difficulty scheme (documented for the PR):
  *   KID / CADET / PAD RAT is the skill slider *inside* a mission.
- *   NG-n only changes payload, fairing mark, Jacklyn flavor, and a light spawn nudge.
- *   Completing Jacklyn (soft, salvage, or splash — not RUD) unlocks the next NG-n.
+ *   KH-n only changes payload, fairing mark, Haven flavor, and a light spawn nudge.
+ *   Completing Haven (soft, salvage, or splash — not RUD) unlocks the next KH-n.
  */
 export const MISSIONS = [
   {
-    id: 'NG-1',
-    payload: 'Blue Ring Pathfinder',
-    mark: 'BRP',
+    id: 'KH-1',
+    payload: 'Aether Scout',
+    mark: 'AES',
     accent: '#3ec6ff',
     blurb: 'Demo stack. Prove the corridor.',
     spawnMul: 1,
@@ -19,66 +19,66 @@ export const MISSIONS = [
     seaTint: 0xffffff,
     objective: { id: 'shield', label: 'Grab an aero shield' },
     jacklyn: {
-      recovered: 'On Jacklyn — history rewritten.',
-      salvage: 'Hard catch. Pathfinder still uphill.',
-      splash: 'Splash. Jacklyn waits for the next flight.',
+      recovered: 'On Haven — first catch in the book.',
+      salvage: 'Hard catch. Scout still uphill.',
+      splash: 'Splash. Haven waits for the next flight.',
     },
   },
   {
-    id: 'NG-2',
-    payload: 'ESCAPADE Pair',
-    mark: 'ESC',
+    id: 'KH-2',
+    payload: 'Ember Pair',
+    mark: 'EMB',
     accent: '#ff7a3c',
-    blurb: 'Twin Mars probes. Land the booster.',
+    blurb: 'Twin weather-watch microsats. Land the booster.',
     spawnMul: 1.08,
     hazards: ['balloon', 'ice', 'bird'],
     lzOffset: 0,
     seaTint: 0xe8f4ff,
-    objective: { id: 'recover', label: 'Soft catch on Jacklyn' },
+    objective: { id: 'recover', label: 'Soft catch on Haven' },
     jacklyn: {
       recovered: 'BOOSTER RECOVERED — reuse is real.',
-      salvage: 'On deck, hard. Probes still go.',
-      splash: 'Splash. Probes are fine; the barge is not.',
+      salvage: 'On deck, hard. Pair still go.',
+      splash: 'Splash. Sats are fine; the barge is not.',
     },
   },
   {
-    id: 'NG-3',
-    payload: 'BlueBird Block 1',
-    mark: 'BB1',
+    id: 'KH-3',
+    payload: 'Harbor Eye',
+    mark: 'HBE',
     accent: '#ffcf5d',
-    blurb: 'Commercial sat. Corridor gets busy.',
+    blurb: 'Coastal imaging sat. Corridor gets busy.',
     spawnMul: 1.16,
     hazards: ['ice', 'balloon', 'debris'],
     lzOffset: 80,
     seaTint: 0xffe8d0,
     objective: { id: 'combo4', label: 'Hold a ×4 combo' },
     jacklyn: {
-      recovered: 'Recovered. BlueBird is on its way.',
+      recovered: 'Recovered. Harbor Eye is on its way.',
       salvage: 'Salvage. Sat deployed, barge scuffed.',
       splash: 'Splash. Customer sat still coasts.',
     },
   },
   {
-    id: 'NG-4',
-    payload: 'Lightspeed Ka',
-    mark: 'LSK',
+    id: 'KH-4',
+    payload: 'Nightglass',
+    mark: 'NGL',
     accent: '#b7abff',
-    blurb: 'Ka-band bird. Tight TVC.',
+    blurb: 'Comms array. Tight TVC.',
     spawnMul: 1.24,
     hazards: ['debris', 'ice', 'ice'],
     lzOffset: -40,
     seaTint: 0xd8d0ff,
     objective: { id: 'clean', label: 'No structural hits' },
     jacklyn: {
-      recovered: 'On Jacklyn. Ka-band is live.',
-      salvage: 'Hard catch. Lightspeed still talks.',
+      recovered: 'On Haven. Nightglass is live.',
+      salvage: 'Hard catch. Nightglass still talks.',
       splash: 'Splash. Payload does not care.',
     },
   },
   {
-    id: 'NG-5',
-    payload: 'Blue Ring Tug',
-    mark: 'BRT',
+    id: 'KH-5',
+    payload: 'Lumen Tug',
+    mark: 'LUT',
     accent: '#7dffb0',
     blurb: 'Tug + cargo. Long climb, same pad.',
     spawnMul: 1.32,

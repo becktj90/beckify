@@ -1,5 +1,5 @@
 /**
- * New Glenn Runner — Phaser 4.2.1 full build + built-in Matter.
+ * Kestrel Heavy — Phaser 4.2.1 full build + built-in Matter.
  * Vendor file is vendor/phaser.min.js (same as jsDelivr phaser@4.2.1/dist/phaser.min.js).
  * Never swap in phaser-arcade-physics or a standalone Matter.Engine.
  */

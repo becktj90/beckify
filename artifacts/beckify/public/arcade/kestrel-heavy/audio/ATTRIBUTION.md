@@ -1,6 +1,6 @@
-# New Glenn Runner audio attribution
+# Kestrel Heavy audio attribution
 
-Arcade clips are **short trims** (about 0.4–3.4 s) of NASA public mission audio, plus a few tiny generated one-shots. No Blue Origin, commercial trailer, or YouTube rips.
+Arcade clips are **short trims** (about 0.4–3.4 s) of NASA public mission audio, plus a few tiny generated one-shots. No commercial trailer or YouTube rips.
 
 NASA material is used under NASA’s media usage guidelines. **No NASA endorsement is implied.** No extra permission is required when those guidelines are followed.
 
