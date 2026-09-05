@@ -7,7 +7,7 @@ export default function GamesPage() {
     <Layout showAds={false}>
       <SchemaHead
         title="Browser Games | Beckify"
-        description="Play New Glenn Runner, Beckify's on-site launch arcade. No ads."
+        description="Play Kestrel Heavy, Beckify's on-site launch arcade. No ads."
         path="/games"
       />
       <GamesSection />

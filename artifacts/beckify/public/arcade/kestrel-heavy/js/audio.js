@@ -1,5 +1,5 @@
 /**
- * Phaser Sound Manager mix for New Glenn Runner.
+ * Phaser Sound Manager mix for Kestrel Heavy.
  * Web Audio preferred. Unlock on first gesture. Mute button is authoritative —
  * prefers-reduced-motion never mutes on its own.
  *

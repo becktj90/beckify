@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Home from "@/pages/home";
 
@@ -16,7 +16,7 @@ const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
 const GamesPage = lazy(() => import("@/pages/games"));
 const SiteMapPage = lazy(() => import("@/pages/sitemap"));
-const NewGlennRunnerPage = lazy(() => import("@/pages/new-glenn-runner"));
+const KestrelHeavyPage = lazy(() => import("@/pages/kestrel-heavy"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const HondaXR650RPage = lazy(() => import("@/pages/honda-xr650r"));
 const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
@@ -54,7 +54,8 @@ function Router() {
         <Route path="/projects/honda-xr650r" component={HondaXR650RPage} />
         <Route path="/control-systems" component={ControlSystemsPage} />
         <Route path="/games" component={GamesPage} />
-        <Route path="/games/new-glenn-runner" component={NewGlennRunnerPage} />
+        <Route path="/games/kestrel-heavy" component={KestrelHeavyPage} />
+        <Route path="/games/new-glenn-runner">{() => <Redirect to="/games/kestrel-heavy" />}</Route>
         <Route path="/sitemap" component={SiteMapPage} />
         <Route component={NotFound} />
       </Switch>

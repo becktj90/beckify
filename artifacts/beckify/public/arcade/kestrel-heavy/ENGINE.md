@@ -1,4 +1,4 @@
-# New Glenn Runner — engine lock
+# Kestrel Heavy — engine lock
 
 **Phaser `4.2.1` + built-in Matter only.** Do not swap in Babylon, Three, Unity, or `phaser-arcade-physics`.
 
@@ -35,7 +35,7 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - `setBody` / `setRectangle` wipe mass, friction, and collision filters — re-apply after any reshape.
 - Pause with `this.matter.pause()` / `this.matter.resume()` (delegates to the Phaser Matter world). Physics pauses only when `paused === true`.
 - Collision categories + sensors: deck paint and water are sensors (water is not a solid floor). Pickups and hazards are sensors.
-- Jacklyn is a diagonal slide-in, then RCS straighten, then a soft-land velocity check (`landingVy`). No Falcon grid fins, A-frame legs, or ASDS circle-X.
+- Haven is a diagonal slide-in, then RCS straighten, then a soft-land velocity check (`landingVy`). No Falcon grid fins, A-frame legs, or ASDS circle-X.
 
 ## Old canvas path
 
@@ -43,4 +43,4 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 
 ## Stage
 
-Internal resolution is **1280×720**. The React embed (`NewGlennRunner.tsx`) is `aspect-video` (16:9) max 1280. Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent (FIT letterboxes on 16:10 / DevTools). The cabinet parent is 100% of the iframe so chrome does not steal the playfield. Do not use `Scale.RESIZE` for the Matter world.
+Internal resolution is **1280×720**. The React embed (`KestrelHeavy.tsx`) is `aspect-video` (16:9) max 1280. Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent (FIT letterboxes on 16:10 / DevTools). The cabinet parent is 100% of the iframe so chrome does not steal the playfield. Do not use `Scale.RESIZE` for the Matter world.

@@ -3,9 +3,9 @@
  *
  * Storage key history (document bumps here when the schema changes):
  *   newGlennRunnerSettingsV2  — early canvas settings blob
- *   newGlennRunnerStateV3     — canvas Jacklyn / feel-pass scores
+ *   newGlennRunnerStateV3     — canvas Haven / feel-pass scores
  *   newGlennRunnerStateV4     — Phaser 4 vertical slice
- *   newGlennRunnerStateV5     — NG-n missions, payload unlocks, per-flight bests
+ *   newGlennRunnerStateV5     — KH-n missions, payload unlocks, per-flight bests
  *   newGlennRunnerStateV6     — SFX/music volume split, control hints, sequence HUD
  *
  * V6 copies scores and prefs from V5/V4/V3/V2 on first load, then writes V6 only.
@@ -29,10 +29,22 @@ function clamp01(value, fallback) {
   return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : fallback;
 }
 
+function remapMissionId(id) {
+  const match = String(id || '').match(/^NG-(\d+)$/i);
+  return match ? `KH-${match[1]}` : id;
+}
+
 function normalizeMissions(next) {
   const known = new Set(MISSIONS.map((m) => m.id));
+  next.currentMission = remapMissionId(next.currentMission);
+  const remappedBests = {};
+  if (next.missionBests && typeof next.missionBests === 'object') {
+    for (const [id, row] of Object.entries(next.missionBests)) {
+      remappedBests[remapMissionId(id)] = row;
+    }
+  }
   let unlocked = Array.isArray(next.unlockedMissions)
-    ? next.unlockedMissions.filter((id) => known.has(id))
+    ? next.unlockedMissions.map(remapMissionId).filter((id) => known.has(id))
     : [];
   if (!unlocked.includes(FIRST_MISSION)) unlocked = [FIRST_MISSION, ...unlocked];
   next.unlockedMissions = [...new Set(unlocked)];
@@ -40,9 +52,7 @@ function normalizeMissions(next) {
   if (!next.unlockedMissions.includes(next.currentMission)) {
     next.currentMission = FIRST_MISSION;
   }
-  const bests = next.missionBests && typeof next.missionBests === 'object'
-    ? next.missionBests
-    : {};
+  const bests = remappedBests;
   next.missionBests = {};
   for (const id of known) {
     const row = bests[id] || {};

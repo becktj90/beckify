@@ -88,7 +88,7 @@ export const HOME_NAV_CARDS: HubCard[] = [
   },
   {
     title: "Games",
-    description: "New Glenn Runner — a launch arcade in the browser. No ads.",
+    description: "Kestrel Heavy — a launch arcade in the browser. No ads.",
     href: "/games",
     icon: Gamepad2,
   },
@@ -117,9 +117,9 @@ export const SITE = {
  * -------------------------------------------------------------------- */
 export const PROFILE = {
   name: "Trevor Beck",
-  title: "Electrical Engineer @ Blue Origin",
+  title: "Electrical Engineer in Aerospace",
   education: "B.S. Electrical Engineering, Cal Poly",
-  bio: "Electrical engineer at Blue Origin with a diverse background across aerospace, energy, and hands-on fabrication. Married to Sara, with two sons — Apollo and Rocco.",
+  bio: "Electrical engineer in aerospace with a diverse background across launch vehicles, energy, and hands-on fabrication. Married to Sara, with two sons — Apollo and Rocco.",
 };
 
 /** ------------------------------------------------------------------------
@@ -218,10 +218,10 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
-    name: "New Glenn Runner",
+    name: "Kestrel Heavy",
     description:
-      "A Phaser 4 launch arcade: fly NG-n from LC-36, hear the real sequence of events, then recover first stage on barge Jacklyn.",
-    url: "/games/new-glenn-runner",
+      "A Phaser 4 launch arcade: fly KH-n from Pier 7, hear the sequence of events, then recover first stage on barge Haven.",
+    url: "/games/kestrel-heavy",
   },
 ];
 

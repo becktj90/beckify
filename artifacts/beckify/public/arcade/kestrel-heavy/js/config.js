@@ -1,6 +1,6 @@
 /**
- * New Glenn Runner — Phaser 4.2.1 + built-in Matter (pad → ascent → Jacklyn).
- * Arcade-tuned constants. Real NG telemetry is compressed, not simulated.
+ * Kestrel Heavy — Phaser 4.2.1 + built-in Matter (pad → ascent → Haven).
+ * Arcade-tuned constants. Real orbital telemetry is compressed, not simulated.
  * Matter forces are 0.01–0.1; velocities are ~1–15 per step, not pixels/sec.
  */
 export const W = 1280;
@@ -71,24 +71,24 @@ export const SPLASH_PENALTY = 800;
 export const PICKUP_TYPES = ['shield', 'fuel', 'boost'];
 
 export const TIPS = [
-  'New Glenn is 7 m wide. Yes, that wide.',
-  'BE-4 burns liquid methane and LOX.',
-  'NG-2 landed the booster on Jacklyn.',
-  'Gradatim ferociter — step by step, ferociously.',
-  'LC-36 is the first newly built orbital pad since the 1960s.',
-  'The Integrated Launch Tower carries fully enclosed service platforms.',
-  'Jacklyn is the landing barge. Soft deck = BOOSTER RECOVERED.',
-  'BE-4 sea-level thrust: 640,000 lbf. Seven of them on first stage.',
+  'Kestrel Heavy is 7 m wide. Yes, that wide.',
+  'Core engines burn liquid methane and LOX.',
+  'KH-2 landed the booster on Haven.',
+  'Heavy lift. Soft catch.',
+  'Pier 7 is a coastal launch complex — scrub, wind, and ocean.',
+  'The service tower carries fully enclosed work platforms.',
+  'Haven is the landing barge. Soft deck = BOOSTER RECOVERED.',
+  'Seven core engines on first stage. Hold the corridor.',
 ];
 
 export const RADIO = {
-  PAD: 'LC-36 standing by. Terminal count is armed.',
-  LIFTOFF: 'Liftoff. New Glenn clearing the tower.',
+  PAD: 'Pier 7 standing by. Terminal count is armed.',
+  LIFTOFF: 'Liftoff. Kestrel Heavy clearing the tower.',
   ASCENT: 'Vehicle flying nominally. Steer the corridor.',
   MAXQ: 'Max-Q. Hold the line.',
   MECO: 'MECO. Booster heading home.',
-  JACKLYN: 'Jacklyn in sight. Slide in. Brake the painted deck.',
-  RECOVERED: 'Landed on Jacklyn. Sea state nominal. Coffee earned.',
+  JACKLYN: 'Haven in sight. Slide in. Brake the painted deck.',
+  RECOVERED: 'Landed on Haven. Sea state nominal. Coffee earned.',
   SPLASH: 'Splash. Combo reset — upper stage still flies.',
   SALVAGE: 'Hard catch. Booster on deck, score clipped.',
   RUD: 'RUD. Range safe. Read the fail banner, then retry.',
@@ -119,7 +119,7 @@ export const DEFAULT_SETTINGS = {
   achievements: [],
   patches: [],
   engine: 'phaser4',
-  currentMission: 'NG-1',
-  unlockedMissions: ['NG-1'],
+  currentMission: 'KH-1',
+  unlockedMissions: ['KH-1'],
   missionBests: {},
 };

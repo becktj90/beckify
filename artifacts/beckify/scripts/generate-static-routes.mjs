@@ -13,8 +13,9 @@ const staticRoutes = [
   ["projects/vespa-p200e", "Vespa P200E EV Conversion | Beckify", "An engineering case study of a 1979 Vespa P200E electric conversion: 20S10P battery, protection, motor control, hub motor and custom swingarm."],
   ["projects/honda-xr650r", "Honda XR650R Electric Conversion | Beckify", "A public workshop journal for a Honda XR650R electric motorcycle conversion — 76 V pack, QS 4 kW V3 mid-drive, Votol EM-200/2. Build in progress."],
   ["control-systems", "Control System Toolbox | Beckify", "Undergraduate servo analysis: plant modeling, open- vs closed-loop P control, root locus, lead compensators, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, and state-feedback pole placement."],
-  ["games", "Browser Games | Beckify", "Play New Glenn Runner, Beckify's on-site launch arcade."],
-  ["games/new-glenn-runner", "New Glenn Runner Browser Game | Beckify", "Play New Glenn Runner, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
+  ["games", "Browser Games | Beckify", "Play Kestrel Heavy, Beckify's on-site launch arcade."],
+  ["games/kestrel-heavy", "Kestrel Heavy Browser Game | Beckify", "Play Kestrel Heavy, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
+  ["games/new-glenn-runner", "Kestrel Heavy Browser Game | Beckify", "Play Kestrel Heavy, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];
 

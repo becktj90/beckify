@@ -1,4 +1,4 @@
-/** Procedural LC-36 / New Glenn / Jacklyn sprites. Pad uses the ILT only. */
+/** Procedural Pier 7 / Kestrel Heavy / Haven sprites. Pad uses the service tower only. */
 import { MISSIONS } from './missions.js';
 
 function canvas(w, h) {
@@ -301,9 +301,9 @@ export function makePad() {
 
   ctx.fillStyle = 'rgba(8,12,18,0.55)';
   ctx.font = 'bold 13px "IBM Plex Mono", ui-monospace, monospace';
-  ctx.fillText('LC-36', 40, 572);
+  ctx.fillText('PIER 7', 40, 572);
   ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
-  ctx.fillText('CAPE CANAVERAL', 40, 588);
+  ctx.fillText('COASTAL COMPLEX', 40, 588);
 
   return cv;
 }
@@ -405,7 +405,7 @@ function drawGse(ctx, x, groundY) {
 /**
  * Integrated Launch Tower only. No separate lightning-protection towers
  * on the pad. White fully enclosed service platforms extend toward the
- * vehicle, matching the LC-36 ILT photo.
+ * vehicle, matching the Pier 7 service-tower photo.
  */
 function drawIlt(ctx, x, groundY) {
   const height = 400;
@@ -493,9 +493,9 @@ function drawIlt(ctx, x, groundY) {
 }
 
 /**
- * Authentic New Glenn recovery silhouette (hard constraint):
+ * Kestrel Heavy recovery silhouette (hard constraint):
  * metallic gold upper ring, four LARGE solid black strakes just below it,
- * tall white cylinder, optional BLUE ORIGIN.
+ * tall white cylinder, optional KESTREL mark.
  * REJECT Falcon cues: lattice grid fins, A-frame landing legs,
  * 3-1 landing-burn language, ASDS circle-X droneship.
  */
@@ -544,7 +544,7 @@ export function makeBooster() {
   ctx.save();
   ctx.translate(-7, 148);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText('BLUE ORIGIN', 0, 0);
+  ctx.fillText('KESTREL', 0, 0);
   ctx.restore();
 
   ctx.fillStyle = '#c48a2a';
@@ -560,7 +560,7 @@ export function makeBooster() {
   return cv;
 }
 
-/** Jacklyn: dark deck between white multi-story bow/stern bookends. Not an ASDS circle-X droneship. */
+/** Haven: dark deck between white multi-story bow/stern bookends. Not an ASDS circle-X droneship. */
 export function makeJacklyn() {
   const cv = canvas(640, 220);
   const ctx = cv.getContext('2d');
@@ -602,7 +602,7 @@ export function makeJacklyn() {
   ctx.fillStyle = '#0b0d12';
   ctx.font = 'bold 26px "IBM Plex Mono", ui-monospace, monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('JACKLYN', 320, 184);
+  ctx.fillText('HAVEN', 320, 184);
   return cv;
 }
 

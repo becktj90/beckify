@@ -84,24 +84,24 @@ for (const slug of ['cosmic-cadet', 'booty-butt-scooter', 'finger-runner', 'toot
   assert.equal(fs.existsSync(path.join(root, 'src/pages', `${slug}.tsx`)), false, `${slug} page must be deleted`);
 }
 
-assert.ok(fs.existsSync(path.join(gamesDir, 'NewGlennRunner.tsx')), 'New Glenn Runner component must stay');
-assert.ok(fs.existsSync(path.join(root, 'src/pages/new-glenn-runner.tsx')), 'New Glenn Runner page must stay');
-assert.ok(fs.existsSync(path.join(root, 'public/arcade/new-glenn-runner/index.html')), 'New Glenn arcade assets must stay');
+assert.ok(fs.existsSync(path.join(gamesDir, 'KestrelHeavy.tsx')), 'Kestrel Heavy component must stay');
+assert.ok(fs.existsSync(path.join(root, 'src/pages/kestrel-heavy.tsx')), 'Kestrel Heavy page must stay');
+assert.ok(fs.existsSync(path.join(root, 'public/arcade/kestrel-heavy/index.html')), 'Kestrel Heavy arcade assets must stay');
 
 const siteStats = fs.readFileSync(path.join(root, 'src/data/site-stats.ts'), 'utf8');
 assert.match(siteStats, /PUBLIC_GAME_COUNT = 1/);
 
 const siteContent = fs.readFileSync(path.join(root, 'src/data/site-content.ts'), 'utf8');
-assert.match(siteContent, /name: "New Glenn Runner"/);
-assert.match(siteContent, /url: "\/games\/new-glenn-runner"/);
+assert.match(siteContent, /name: "Kestrel Heavy"/);
+assert.match(siteContent, /url: "\/games\/kestrel-heavy"/);
 const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)]
   .map((m) => m[1])
-  .filter((name) => name === 'New Glenn Runner');
-assert.equal(gameNames.length, 1, 'site-content must list only New Glenn Runner');
+  .filter((name) => name === 'Kestrel Heavy');
+assert.equal(gameNames.length, 1, 'site-content must list only Kestrel Heavy');
 
 const appSrc = fs.readFileSync(path.join(root, 'src/App.tsx'), 'utf8');
-assert.match(appSrc, /path="\/games\/new-glenn-runner"/);
-assert.doesNotMatch(appSrc, /path="\/games\/(?!new-glenn-runner)/);
+assert.match(appSrc, /path="\/games\/kestrel-heavy"/);
+assert.doesNotMatch(appSrc, /path="\/games\/(?!kestrel-heavy|new-glenn-runner)/);
 
 const gameSources = walk(gamesDir).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 assert.doesNotMatch(gameSources, /games\/kids\/apollo\.png/);
@@ -113,7 +113,7 @@ assert.doesNotMatch(gameSources, /label:\s*"Apollo"/);
 assert.doesNotMatch(gameSources, /label:\s*"Rocco"/);
 assert.doesNotMatch(gameSources, /temple run/i);
 assert.doesNotMatch(gameSources, /imangi/i);
-assert.match(gameSources, /New Glenn Runner/);
+assert.match(gameSources, /Kestrel Heavy/);
 assert.match(fs.readFileSync(path.join(root, 'src/index.css'), 'utf8'), /\.game-stage\.is-immersive/);
 assert.doesNotMatch(fs.readFileSync(path.join(root, 'src/index.css'), 'utf8'), /\.cosmic-cadet|\.kid-hud/);
 
@@ -129,6 +129,6 @@ assert.doesNotMatch(hubCopy, /Play as Apollo/);
 assert.doesNotMatch(hubCopy, /pick Apollo or Rocco/i);
 assert.doesNotMatch(hubCopy, /seven original/i);
 assert.doesNotMatch(hubCopy, /Seven on-site/);
-assert.match(hubCopy, /New Glenn Runner/);
+assert.match(hubCopy, /Kestrel Heavy/);
 
-console.log('New Glenn is the sole public game; HexGL and kid-photo playables stay gone');
+console.log('Kestrel Heavy is the sole public game; HexGL and kid-photo playables stay gone');

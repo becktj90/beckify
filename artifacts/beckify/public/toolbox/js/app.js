@@ -2654,7 +2654,7 @@ function setupSplash() {
   };
   window.splashEnterGame = () => {
     dismiss();
-    location.href = '/games/new-glenn-runner/';
+    location.href = '/games/kestrel-heavy/';
   };
 
   modal.hidden = false;

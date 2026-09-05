@@ -1,12 +1,12 @@
 /**
- * Arcade-compressed New Glenn sequence of events.
- * Spine is an NG-2-class Spaceflight Now / NSF commentary board:
+ * Arcade-compressed Kestrel Heavy sequence of events.
+ * Spine is a commentary board:
  * Terminal Count → Tank Press → Internal Power → Water Deluge → Ignition →
  * Liftoff → Max-Q → MECO → Stage Sep → SES-1 → Fairing Jettison →
- * Entry Burn → Landing Burn → Jacklyn Touchdown (~T+9 compressed) →
+ * Entry Burn → Landing Burn → Haven Touchdown (~T+9 compressed) →
  * SECO → payload deploy.
  *
- * Real NG-2 times are hours and minutes. Here T-8s … T+58s so a stranger
+ * Real orbital times are hours and minutes. Here T-8s … T+58s so a stranger
  * hears every callout in one run. Per-mission copy swaps {id}/{payload}/{mark}.
  */
 export const T0_LEAD = 8;
@@ -19,7 +19,7 @@ export const SPINE = [
     stage: 'TERMINAL COUNT',
     banner: 'TERMINAL COUNT',
     kind: 'info',
-    radio: 'LC-36 terminal count. {id} on the pad. Range is green.',
+    radio: 'Pier 7 terminal count. {id} on the pad. Range is green.',
     juice: 'none',
   },
   {
@@ -55,7 +55,7 @@ export const SPINE = [
     stage: 'IGNITION',
     banner: 'IGNITION',
     kind: 'warn',
-    radio: 'Ignition. Seven BE-4s at startup.',
+    radio: 'Ignition. Seven core engines at startup.',
     juice: 'ignition',
   },
   {
@@ -82,7 +82,7 @@ export const SPINE = [
     stage: 'MECO',
     banner: 'MECO',
     kind: 'go',
-    radio: 'MECO. First-stage BE-4s shutdown. Booster heading home.',
+    radio: 'MECO. First-stage cores shutdown. Booster heading home.',
     juice: 'meco',
   },
   {
@@ -100,7 +100,7 @@ export const SPINE = [
     stage: 'SES-1',
     banner: 'SES-1',
     kind: 'info',
-    radio: 'SES-1. Upper-stage BE-3U is lit. {payload} still coasting under the fairing.',
+    radio: 'SES-1. Upper-stage engine is lit. {payload} still coasting under the fairing.',
     juice: 'ses',
   },
   {
@@ -118,7 +118,7 @@ export const SPINE = [
     stage: 'ENTRY BURN',
     banner: 'ENTRY BURN',
     kind: 'warn',
-    radio: 'Entry burn. Jacklyn is downrange. Slide in diagonal.',
+    radio: 'Entry burn. Haven is downrange. Slide in diagonal.',
     juice: 'entry',
   },
   {
@@ -133,8 +133,8 @@ export const SPINE = [
   {
     id: 'touchdown',
     t: 51.5,
-    stage: 'JACKLYN',
-    banner: 'JACKLYN TOUCHDOWN',
+    stage: 'HAVEN',
+    banner: 'HAVEN TOUCHDOWN',
     kind: 'go',
     radio: 'Touchdown. BOOSTER RECOVERED. Sea state nominal.',
     juice: 'touchdown',
@@ -208,11 +208,11 @@ const PHASE_CHIP = {
   sep: 'STAGE SEP',
   ses1: 'STAGE SEP',
   fairing: 'FAIRING',
-  entry: 'JACKLYN',
-  landing: 'JACKLYN',
-  touchdown: 'JACKLYN',
-  seco: 'JACKLYN',
-  deploy: 'JACKLYN',
+  entry: 'HAVEN',
+  landing: 'HAVEN',
+  touchdown: 'HAVEN',
+  seco: 'HAVEN',
+  deploy: 'HAVEN',
 };
 
 export function phaseChip(beatId) {
