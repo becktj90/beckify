@@ -170,11 +170,18 @@ public enum PanelCloudAnalyze {
         guard !circuit.isEmpty || !name.isEmpty || !trip.isEmpty || !poles.isEmpty else {
             return nil
         }
-        let confidence = min(
-            BeckifyVisionAPI.unwrapConfidence(src["circuit"]),
-            BeckifyVisionAPI.unwrapConfidence(src["description"] ?? src["name"]),
-            name.isEmpty ? 1 : BeckifyVisionAPI.unwrapConfidence(src["description"] ?? src["name"])
-        )
+        var scores: [Double] = []
+        if !circuit.isEmpty { scores.append(BeckifyVisionAPI.unwrapConfidence(src["circuit"])) }
+        if !name.isEmpty {
+            if src["description"] != nil || src["name"] != nil {
+                scores.append(BeckifyVisionAPI.unwrapConfidence(src["description"] ?? src["name"]))
+            } else if src["notes"] != nil {
+                scores.append(BeckifyVisionAPI.unwrapConfidence(src["notes"]))
+            }
+        }
+        if !trip.isEmpty { scores.append(BeckifyVisionAPI.unwrapConfidence(src["trip"])) }
+        if !poles.isEmpty { scores.append(BeckifyVisionAPI.unwrapConfidence(src["poles"])) }
+        let confidence = scores.min() ?? BeckifyVisionAPI.unwrapConfidence(nil)
         return PanelCircuitDraft(
             circuit: circuit,
             name: name,

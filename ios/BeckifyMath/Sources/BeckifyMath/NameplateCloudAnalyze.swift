@@ -73,8 +73,11 @@ public enum NameplateCloudAnalyze {
         take(.lra, payload["lra"], formatted: numberCell(payload["lra"]))
         take(.serviceFactorAmps, payload["serviceFactorAmps"], formatted: numberCell(payload["serviceFactorAmps"]))
 
-        let insulation = stringCell(payload["insulationClass"] ?? payload["insulation"] ?? envelope["insulationClass"] ?? envelope["insulation"])
-        take(.insulationClass, payload["insulationClass"] ?? payload["insulation"] ?? envelope["insulation"], formatted: insulation)
+        let insulationRaw = payload["insulationClass"]
+            ?? payload["insulation"]
+            ?? envelope["insulationClass"]
+            ?? envelope["insulation"]
+        take(.insulationClass, insulationRaw, formatted: stringCell(insulationRaw))
 
         var notes = stringCell(payload["notes"]) ?? ""
         let riseC = stringCell(payload["riseC"] ?? envelope["riseC"])

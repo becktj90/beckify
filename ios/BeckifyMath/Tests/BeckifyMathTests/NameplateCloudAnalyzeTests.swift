@@ -62,6 +62,16 @@ final class NameplateCloudAnalyzeTests: XCTestCase {
         XCTAssertEqual(draft.extraction.value(.ratedHP), "5")
     }
 
+    func testEnvelopeInsulationClassKeepsConfidence() {
+        let draft = NameplateCloudAnalyze.normalize([
+            "insulationClass": ["value": "F", "confidence": 0.93],
+            "ratedHP": ["value": 10, "confidence": 0.9],
+        ] as [String: Any])
+        XCTAssertEqual(draft.extraction.value(.insulationClass), "F")
+        XCTAssertEqual(draft.extraction.field(.insulationClass)?.confidence ?? 0, 0.93, accuracy: 0.001)
+        XCTAssertEqual(draft.extraction.field(.insulationClass)?.source, .vlm)
+    }
+
     func testPowerFactorPercentBecomesFraction() {
         let draft = NameplateCloudAnalyze.normalize(["pf": 82] as [String: Any])
         XCTAssertEqual(draft.extraction.value(.pf), "0.82")

@@ -68,6 +68,13 @@ final class BeckifyVisionAPITests: XCTestCase {
             BeckifyVisionAPI.authorizationToken(customEndpoint: "https://proxy.example/ocr", token: "secret-token"),
             "secret-token"
         )
+        XCTAssertEqual(
+            BeckifyVisionAPI.authorizationToken(
+                customEndpoint: "https://api.beckify.com/api/analyze-nameplate",
+                token: "secret-token"
+            ),
+            ""
+        )
     }
 
     func testVisionErrorCopyIsTaskAware() {

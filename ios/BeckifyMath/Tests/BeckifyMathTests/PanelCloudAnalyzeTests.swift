@@ -51,6 +51,26 @@ final class PanelCloudAnalyzeTests: XCTestCase {
         XCTAssertEqual(draft.warnings, ["Bottom of the card is cropped."])
     }
 
+    func testCircuitOnlyRowIgnoresMissingNameConfidence() {
+        let draft = PanelCloudAnalyze.normalize([
+            "circuits": [[
+                "circuit": ["value": "7", "confidence": 0.92],
+                "trip": ["value": 20, "confidence": 0.8],
+            ]],
+        ] as [String: Any])
+        XCTAssertEqual(draft.extraction.circuits.count, 1)
+        XCTAssertEqual(draft.extraction.circuits[0].circuit, "7")
+        XCTAssertTrue(draft.extraction.circuits[0].name.isEmpty)
+        XCTAssertEqual(draft.extraction.circuits[0].confidence, 0.8, accuracy: 0.001)
+
+        let circuitOnly = PanelCloudAnalyze.normalize([
+            "circuits": [[
+                "circuit": ["value": "9", "confidence": 0.92],
+            ]],
+        ] as [String: Any])
+        XCTAssertEqual(circuitOnly.extraction.circuits[0].confidence, 0.92, accuracy: 0.001)
+    }
+
     func testIgnoresLoadAmpsAndNormalizesCircuitKeys() {
         let draft = PanelCloudAnalyze.normalize([
             "circuits": [

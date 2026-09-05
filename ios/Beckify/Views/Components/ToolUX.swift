@@ -692,7 +692,7 @@ struct CloudVisionAnalyzeChrome: View {
         VStack(alignment: .leading, spacing: 12) {
             DisclosureGroup("Optional custom HTTPS endpoint") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Leave blank to use the Beckify API (`https://api.beckify.com\(defaultPath)`). A personal token stays in this session and is never sent to Beckify unless you set it on your own endpoint. The Beckify proxy may forward the photo to OpenAI and/or Anthropic.")
+                    Text("Leave blank to use the Beckify API (`https://api.beckify.com\(defaultPath)`). A personal token stays in this session and is sent only to a different HTTPS endpoint you enter — never to api.beckify.com, even if you paste that host. The Beckify proxy may forward the photo to OpenAI and/or Anthropic.")
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
                     TextField("https://your-proxy.example/ocr", text: $customEndpoint)

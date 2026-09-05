@@ -83,9 +83,15 @@ public enum BeckifyVisionAPI {
         PhotoLookCheck.hostIsGitHubPages(raw)
     }
 
-    /// Custom-endpoint Bearer tokens stay off the default Beckify proxy.
+    /// Bearer tokens stay off the default Beckify host, even if that host is
+    /// pasted as a "custom" URL. Look Check keeps its own PhotoLookCheck rule.
     public static func authorizationToken(customEndpoint: String?, token: String) -> String {
-        PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
+        guard let custom = httpsBase(customEndpoint) else { return "" }
+        if hostIsGitHubPages(custom) { return "" }
+        if let host = URL(string: custom)?.host?.lowercased(), host == "api.beckify.com" {
+            return ""
+        }
+        return token.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func formatVisionError(

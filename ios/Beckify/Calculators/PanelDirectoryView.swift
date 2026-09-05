@@ -93,6 +93,7 @@ struct PanelDirectoryView: View {
                     .foregroundStyle(Theme.foreground)
                     .scrollContentBackground(.hidden)
                     .formFieldFocus("scheduleText")
+                    .disabled(analyzing)
                     .frame(minHeight: 140)
                     .padding(12)
                     .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -101,7 +102,7 @@ struct PanelDirectoryView: View {
                             .stroke(Theme.border, lineWidth: 1)
                     )
                     .accessibilityLabel("Panel schedule text")
-                    .accessibilityHint("Paste recognized text from a panel sticker or type circuit rows. Analyze uploads only if you tap it.")
+                    .accessibilityHint("Paste recognized text from a panel sticker or type circuit rows. Locked while Analyze is running so the cloud draft cannot overwrite your edits. Analyze uploads only if you tap it.")
             }
 
             captureButtons

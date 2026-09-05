@@ -76,6 +76,7 @@ struct MotorNameplateOCRView: View {
                     .foregroundStyle(Theme.foreground)
                     .scrollContentBackground(.hidden)
                     .formFieldFocus("recognizedText")
+                    .disabled(analyzing)
                     .frame(minHeight: 120)
                     .padding(12)
                     .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -84,7 +85,7 @@ struct MotorNameplateOCRView: View {
                             .stroke(Theme.border, lineWidth: 1)
                     )
                     .accessibilityLabel("Recognized nameplate text")
-                    .accessibilityHint("Edit Vision text before extracting fields. Analyze uploads only if you tap it.")
+                    .accessibilityHint("Edit Vision text before extracting fields. Locked while Analyze is running so the cloud draft cannot overwrite your edits. Analyze uploads only if you tap it.")
             }
 
             captureButtons
