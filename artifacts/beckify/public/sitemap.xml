@@ -6,42 +6,42 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://beckify.com/about</loc>
+    <loc>https://beckify.com/about/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://beckify.com/privacy</loc>
+    <loc>https://beckify.com/privacy/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://beckify.com/games</loc>
+    <loc>https://beckify.com/games/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://beckify.com/games/kestrel-heavy</loc>
+    <loc>https://beckify.com/games/kestrel-heavy/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://beckify.com/projects</loc>
+    <loc>https://beckify.com/projects/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/projects/vespa-p200e</loc>
+    <loc>https://beckify.com/projects/vespa-p200e/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/projects/honda-xr650r</loc>
+    <loc>https://beckify.com/projects/honda-xr650r/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beckify.com/control-systems</loc>
+    <loc>https://beckify.com/control-systems/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -51,7 +51,7 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://beckify.com/sitemap</loc>
+    <loc>https://beckify.com/sitemap/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

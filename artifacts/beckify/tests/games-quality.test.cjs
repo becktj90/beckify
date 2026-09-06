@@ -102,8 +102,9 @@ assert.equal(gameNames.length, 1, 'site-content must list only Kestrel Heavy');
 const appSrc = fs.readFileSync(path.join(root, 'src/App.tsx'), 'utf8');
 assert.match(appSrc, /path="\/games\/kestrel-heavy"/);
 assert.match(appSrc, /path="\/games\/kestrel-heavy\/"/);
+assert.match(appSrc, /path="\/games\/"/);
 assert.match(appSrc, /path="\/games\/new-glenn-runner\/"/);
-assert.doesNotMatch(appSrc, /path="\/games\/(?!kestrel-heavy|new-glenn-runner)/);
+assert.doesNotMatch(appSrc, /path="\/games\/(?!kestrel-heavy|new-glenn-runner)[^"]+/);
 
 const gameSources = walk(gamesDir).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 assert.doesNotMatch(gameSources, /games\/kids\/apollo\.png/);

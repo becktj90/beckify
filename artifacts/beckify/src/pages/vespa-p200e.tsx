@@ -2,7 +2,7 @@ import { ArrowDown, Download } from "lucide-react";
 import { Link } from "wouter";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
-import { SchemaHead, SITE_URL } from "@/components/seo/SchemaHead";
+import { SchemaHead, toCanonicalUrl } from "@/components/seo/SchemaHead";
 import {
   HubMotorVisual,
   PowerElectronicsMap,
@@ -61,7 +61,7 @@ export default function VespaP200EPage() {
           "@context": "https://schema.org",
           "@type": ["TechArticle", "HowTo"],
           name: "Electric Conversion of a 1979 Vespa P200E",
-          url: `${SITE_URL}/projects/vespa-p200e`,
+          url: toCanonicalUrl("/projects/vespa-p200e"),
           author: { "@type": "Person", name: "Trevor Beck" },
         }}
       />

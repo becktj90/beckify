@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+import { SITE_ORIGIN, toCanonicalUrl } from "@/lib/canonical-url.mjs";
 
-const SITE_URL = "https://beckify.com";
+const SITE_URL = SITE_ORIGIN;
 const DEFAULT_IMAGE = `${SITE_URL}/opengraph.jpg`;
 
 export interface SeoProps {
@@ -32,7 +33,7 @@ const upsertMeta = (selector: string, attributes: Record<string, string>, conten
 
 export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMAGE, type = "website", schema, robots = "index,follow,max-image-preview:large" }: SeoProps) {
   useEffect(() => {
-    const canonicalUrl = new URL(path, SITE_URL).toString();
+    const canonicalUrl = toCanonicalUrl(path);
     document.title = title;
 
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -64,7 +65,7 @@ export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMA
         name: title,
         description,
         url: canonicalUrl,
-        isPartOf: { "@type": "WebSite", name: "Beckify", url: SITE_URL },
+        isPartOf: { "@type": "WebSite", name: "Beckify", url: toCanonicalUrl("/") },
       },
       ...(schema ? (Array.isArray(schema) ? schema : [schema]) : []),
     ];
@@ -90,11 +91,11 @@ export const webApplicationSchema = (name: string, description: string, path: st
   "@type": ["SoftwareApplication", "WebApplication"],
   name,
   description,
-  url: new URL(path, SITE_URL).toString(),
+  url: toCanonicalUrl(path),
   operatingSystem: "All",
   applicationCategory: "EngineeringApplication",
   isAccessibleForFree: true,
-  publisher: { "@type": "Organization", name: "Beckify", url: SITE_URL },
+  publisher: { "@type": "Organization", name: "Beckify", url: toCanonicalUrl("/") },
 });
 
-export { SITE_URL };
+export { SITE_URL, toCanonicalUrl };

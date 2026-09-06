@@ -1,13 +1,14 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { TOOLS as tools, CATEGORIES as categories, TOOL_ALIASES as aliases } from "../src/data/toolbox-tools.mjs";
+import { SITE_ORIGIN, toCanonicalPath, toCanonicalUrl } from "../src/lib/canonical-url.mjs";
 
 const root = resolve(import.meta.dirname, "..");
-const siteUrl = "https://beckify.com";
+const siteUrl = SITE_ORIGIN;
 
 const escapeXml = (value) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
 const page = ({ title, description, path, toolPath, eyebrow = "Beckify Electrical Engineering Toolbox", showAds = true, kind = "tool" }) => {
-  const canonicalUrl = `${siteUrl}${path}`;
+  const canonicalUrl = toCanonicalUrl(path);
   const schema = [
     {
       "@context": "https://schema.org",
@@ -50,7 +51,15 @@ const urls = [
   ...tools.map(([slug]) => [`/toolbox/${slug}/`, slug === "digital-logic-workbench" ? "weekly" : "monthly", slug === "digital-logic-workbench" ? "0.9" : "0.8"]),
   ...aliases.map(([slug]) => [`/toolbox/${slug}/`, "monthly", "0.5"]),
 ];
-const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([path, changefreq, priority]) => `  <url>\n    <loc>${escapeXml(`${siteUrl}${path}`)}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`).join("\n")}\n</urlset>\n`;
+const seen = new Set();
+const uniqueUrls = [];
+for (const [path, changefreq, priority] of urls) {
+  const canonicalPath = toCanonicalPath(path);
+  if (seen.has(canonicalPath)) continue;
+  seen.add(canonicalPath);
+  uniqueUrls.push([canonicalPath, changefreq, priority]);
+}
+const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${uniqueUrls.map(([path, changefreq, priority]) => `  <url>\n    <loc>${escapeXml(toCanonicalUrl(path))}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`).join("\n")}\n</urlset>\n`;
 await writeFile(resolve(root, "public/sitemap.xml"), xml);
 
 if (process.argv.includes("--dist")) {
