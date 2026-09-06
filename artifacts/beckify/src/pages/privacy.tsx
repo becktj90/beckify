@@ -2,9 +2,9 @@ import { Shield } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
-import { SchemaHead, SITE_URL } from "@/components/seo/SchemaHead";
+import { SchemaHead, SITE_URL, toCanonicalUrl } from "@/components/seo/SchemaHead";
 
-const PRIVACY_URL = `${SITE_URL}/privacy`;
+const PRIVACY_URL = toCanonicalUrl("/privacy");
 const CONTACT_EMAIL = "trevorjohnbeck@gmail.com";
 
 const pageSchema = {

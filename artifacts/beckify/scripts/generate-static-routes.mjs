@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { toCanonicalPath, toCanonicalUrl } from "../src/lib/canonical-url.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist/public");
@@ -19,10 +20,37 @@ const staticRoutes = [
   ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
 ];
 
+// Legacy game slug: keep a directory so GitHub Pages 301s the no-slash URL,
+// then immediately send crawlers to Kestrel Heavy. Do not list this in sitemap.xml.
+const redirectRoutes = new Map([
+  ["games/new-glenn-runner", "/games/kestrel-heavy/"],
+]);
+
 // The app sets page metadata after hydration, but route-specific static HTML
 // lets crawlers and link previews identify the requested page before JavaScript.
+const redirectShell = (targetPath, title) => {
+  const canonicalUrl = toCanonicalUrl(targetPath);
+  const localPath = toCanonicalPath(targetPath);
+  const encodedTitle = escapeHtml(title);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=${canonicalUrl}">
+  <link rel="canonical" href="${canonicalUrl}">
+  <meta name="robots" content="noindex,follow">
+  <title>${encodedTitle}</title>
+  <script>location.replace(${JSON.stringify(localPath)});</script>
+</head>
+<body>
+  <p><a href="${canonicalUrl}">${encodedTitle}</a></p>
+</body>
+</html>
+`;
+};
+
 const routeShell = (source, route, title, description) => {
-  const canonicalUrl = `https://beckify.com/${route}`;
+  const canonicalUrl = toCanonicalUrl(`/${route}`);
   const encodedTitle = escapeHtml(title);
   const encodedDescription = escapeHtml(description);
   const schema = JSON.stringify({
@@ -52,7 +80,9 @@ const appShell = await readFile(shell, "utf8");
 await Promise.all(staticRoutes.map(async ([route, title, description]) => {
   const directory = resolve(dist, route);
   await mkdir(directory, { recursive: true });
-  await writeFile(resolve(directory, "index.html"), routeShell(appShell, route, title, description));
+  const redirectTo = redirectRoutes.get(route);
+  const html = redirectTo ? redirectShell(redirectTo, title) : routeShell(appShell, route, title, description);
+  await writeFile(resolve(directory, "index.html"), html);
 }));
 
 // App Store Connect needs a public HTTPS policy that is readable even if a

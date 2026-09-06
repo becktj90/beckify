@@ -47,18 +47,25 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/about" component={AboutPage} />
+        <Route path="/about/" component={AboutPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/privacy/" component={PrivacyPage} />
         <Route path="/projects" component={ProjectsPage} />
+        <Route path="/projects/" component={ProjectsPage} />
         <Route path="/projects/vespa-p200e" component={VespaP200EPage} />
+        <Route path="/projects/vespa-p200e/" component={VespaP200EPage} />
         <Route path="/projects/honda-xr650r" component={HondaXR650RPage} />
+        <Route path="/projects/honda-xr650r/" component={HondaXR650RPage} />
         <Route path="/control-systems" component={ControlSystemsPage} />
+        <Route path="/control-systems/" component={ControlSystemsPage} />
         <Route path="/games" component={GamesPage} />
+        <Route path="/games/" component={GamesPage} />
         <Route path="/games/kestrel-heavy" component={KestrelHeavyPage} />
         <Route path="/games/kestrel-heavy/" component={KestrelHeavyPage} />
-        <Route path="/games/new-glenn-runner">{() => <Redirect to="/games/kestrel-heavy" />}</Route>
-        <Route path="/games/new-glenn-runner/">{() => <Redirect to="/games/kestrel-heavy" />}</Route>
+        <Route path="/games/new-glenn-runner">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
+        <Route path="/games/new-glenn-runner/">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
         <Route path="/sitemap" component={SiteMapPage} />
+        <Route path="/sitemap/" component={SiteMapPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

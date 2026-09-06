@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { About as AboutSection } from "@/components/sections/About";
 import { Contact } from "@/components/sections/Contact";
-import { SchemaHead, SITE_URL } from "@/components/seo/SchemaHead";
+import { SchemaHead, SITE_URL, toCanonicalUrl } from "@/components/seo/SchemaHead";
 import { PROFILE } from "@/data/site-content";
 
 export default function AboutPage() {
@@ -15,7 +15,7 @@ export default function AboutPage() {
           "@context": "https://schema.org",
           "@type": ["Organization", "Person"],
           name: PROFILE.name,
-          url: `${SITE_URL}/about`,
+          url: toCanonicalUrl("/about"),
           jobTitle: PROFILE.title,
           description: PROFILE.bio,
           worksFor: { "@type": "Organization", name: "Beckify", url: SITE_URL },
