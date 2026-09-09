@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify
 
-Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists** (status **Prepare for Submission**). No binary has been uploaded. This is **not** TestFlight and **not** an App Store submit.
+Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. App Review rejected **1.0 (113)** on **2026-09-09** (Guideline 2.1, Barometer crash). Next Connect upload is **1.0 (120)**. This is **not** TestFlight and **not** an App Store approval.
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
@@ -13,7 +13,7 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 **App ID (Apple ID):** `6807908745`  
 **Bundle ID:** `com.beckify.toolbox`  
 **SKU:** `beckify-toolbox`  
-**Connect status:** Prepare for Submission (no binary uploaded)  
+**Connect status:** Prepare for Submission — Review rejected 1.0 (113); next binary 1.0 (120)  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M` (Apple auto-filled at identifier registration; set on the Beckify target Debug and Release in `ios/Beckify.xcodeproj`)  
 **Devices:** iPhone and iPad (Xcode `TARGETED_DEVICE_FAMILY` 1,2)  
 **Category:** Productivity  
@@ -116,7 +116,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
 • Magnetometer: heading and |B| in µT
-• Barometer / relative altitude
+• Barometer / relative altitude — unavailable empty state (no crash) if the sensor is missing, Motion & Fitness is off, or Core Motion errors
 • g-force snapshot
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
@@ -128,8 +128,8 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 **Keywords (100 characters max, comma-separated draft):**
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
-**What's New (draft for next Connect build — no binary uploaded):**
-Look Check **Analyze Look** now includes a roast when the subject appears 18+ and is rated; roast is empty when declined or no person. Anyone who appears under 18 is not rated and gets no roast. Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+**What's New (draft for next Connect upload — 1.0 build 120):**
+Barometer no longer crashes on App Review (Guideline 2.1). Added the Motion & Fitness usage string. If there is no barometer or Motion & Fitness is off, Barometer shows an unavailable empty state and stays running. Submit **1.0 (120)** — must be above rejected **1.0 (113)**. Free, no IAP, no ads. Not TestFlight. Not App Store approved.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -163,7 +163,7 @@ Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`
 - Photos or Videos collected for App Functionality, not linked, not used for tracking  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera — see the Beckify target build settings. Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
+Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion** (`NSMotionUsageDescription` — Barometer / relative altitude, Bubble Level, Magnetometer, g-Force Snapshot, optional Solar Design Wizard panel aim). Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location. Build **113** crashed in App Review (`TCC` / `kTCCServiceMotion`) because this Motion key was missing.
 
 ## Export compliance
 
@@ -209,7 +209,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 
 ## Remaining steps (Mac + App Store Connect)
 
-**Next binary / App Store upload:** `CURRENT_PROJECT_VERSION` (CFBundleVersion) must be **≥ 79**. App Store Connect rejected **1.0 build 78** on **2026-09-04** with **ITMS-90382** (daily upload limit). Next upload after ~2026-09-05. Wait **one day** between upload storms. Xcode Cloud has been minting high numbers independently of the old pbxproj `1`; if a Cloud workflow start build number exists in ASC, set it to **79** so Cloud does not collide. This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
+**Next binary / App Store upload:** `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **120** (`MARKETING_VERSION` stays **1.0**). App Review rejected **1.0 (113)** on **2026-09-09** (Guideline 2.1, Barometer crash on iPad Air 11-inch M3 / iPadOS 26.6). The next Connect upload must be **> 113**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 
@@ -218,7 +218,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Field | Value |
 | --- | --- |
 | Status | Prepare for Submission |
-| Binary | None uploaded |
+| Binary | 1.0 (113) rejected by Review (Guideline 2.1, 2026-09-09); next upload 1.0 (120) |
 | App ID (Apple ID) | `6807908745` |
 | Bundle ID | `com.beckify.toolbox` |
 | SKU | `beckify-toolbox` |
@@ -226,7 +226,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Team prefix | `9TR6R5LV8M` |
 | Price | Free ($0), no IAP, no ads (Trevor’s v1 decision) |
 
-The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. This repository does **not** claim TestFlight, a signed archive, or App Store submit.
+The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. Connect already received **1.0 (113)** (rejected). This Linux environment did not compile, sign, or upload **1.0 (120)**. Not TestFlight. Not App Store approved.
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
@@ -236,9 +236,9 @@ Still needed (Mac + Trevor; not done in this Linux environment):
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
 5. Capture screenshots at the sizes below. Do **not** ship website screenshots.
 6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled (`DEVELOPMENT_TEAM` `9TR6R5LV8M`).
-7. Upload the signed archive (Organizer or Transporter). Wait for processing. Upload is still outstanding; that is not TestFlight distribution and not App Store submit.
+7. Upload a signed **1.0 (120)** archive (Organizer or Transporter). Wait for processing. Do not re-upload rejected **1.0 (113)**. That upload is not TestFlight distribution and not App Store approval.
 8. Attach screenshots, review the encryption and content-rights questions, then submit for review (not done).
-9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
-10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382 (~2026-09-05), upload a **new** version/build tuple once — do not retry the same binary.
+9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location/Motion strings, or “design aid” disclaimers.
+10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382, upload the **new** 1.0 / 120 tuple once — do not retry 113.
 
-Until those steps are done, there is **no** uploaded binary. The app is **not** on TestFlight and **not** on the App Store.
+Connect already has rejected **1.0 (113)**. The next binary to upload is **1.0 (120)**. The app is **not** on TestFlight and **not** App Store approved. This Linux environment did not compile, sign, or upload 120.

@@ -6,37 +6,142 @@ import SwiftUI
 final class BarometerModel: ObservableObject {
     @Published var kPa: Double?
     @Published var relativeMeters: Double?
-    @Published var available = CMAltimeter.isRelativeAltitudeAvailable()
+    @Published var available = false
+    @Published var permissionDenied = false
     @Published var status = "Waiting for altimeter…"
 
-    private let altimeter = CMAltimeter()
+    /// Owned session so deinit can stop only if start actually ran. Creating
+    /// CMAltimeter just to call stop trips TCC on iPadOS 26.
+    private var session: AltimeterSession?
+    private var generation: UInt64 = 0
+    private var wantsRunning = false
+    private let updateQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "Beckify.Barometer"
+        queue.maxConcurrentOperationCount = 1
+        queue.qualityOfService = .userInitiated
+        return queue
+    }()
 
     func start() {
-        guard CMAltimeter.isRelativeAltitudeAvailable() else {
-            available = false
-            status = "Relative altitude is not available on this hardware."
-            return
-        }
-        altimeter.startRelativeAltitudeUpdates(to: .main) { [weak self] data, error in
-            guard let self else { return }
-            if let error {
-                self.status = error.localizedDescription
-                return
-            }
-            guard let data else { return }
-            self.relativeMeters = data.relativeAltitude.doubleValue
-            self.kPa = data.pressure.doubleValue
-            self.status = "CMAltimeter relative to session start"
-        }
+        wantsRunning = true
+        beginIfPossible()
     }
 
     func stop() {
+        wantsRunning = false
+        session?.stop()
+        session = nil
+    }
+
+    /// Relative altitude / pressure only. Do not call
+    /// `isAbsoluteAltitudeAvailable()` or `startAbsoluteAltitudeUpdates`.
+    private func beginIfPossible() {
+        guard wantsRunning else { return }
+        if session?.isUpdating == true { return }
+
+        guard CMAltimeter.isRelativeAltitudeAvailable() else {
+            markUnavailable(
+                "This device does not have a barometer. Pressure and relative altitude are unavailable."
+            )
+            return
+        }
+
+        switch CMAltimeter.authorizationStatus() {
+        case .denied:
+            permissionDenied = true
+            markUnavailable("Motion & Fitness permission is off. Pressure and relative altitude stay unavailable.")
+            return
+        case .restricted:
+            permissionDenied = true
+            markUnavailable("Motion & Fitness access is restricted on this device. Pressure and relative altitude are unavailable.")
+            return
+        case .authorized, .notDetermined:
+            break
+        @unknown default:
+            break
+        }
+
+        available = true
+        permissionDenied = false
+        status = "Waiting for altimeter…"
+
+        generation += 1
+        let token = generation
+        let next = AltimeterSession()
+        session = next
+        next.start(queue: updateQueue) { [weak self] data, error in
+            Task { @MainActor in
+                guard let self, self.wantsRunning, self.generation == token else { return }
+                if let error {
+                    self.applyUpdateError(error)
+                    return
+                }
+                guard let data else { return }
+                let pressure = data.pressure.doubleValue
+                let delta = data.relativeAltitude.doubleValue
+                guard pressure.isFinite, delta.isFinite else { return }
+                self.relativeMeters = delta
+                self.kPa = pressure
+                self.available = true
+                self.permissionDenied = false
+                self.status = "CMAltimeter relative to session start"
+            }
+        }
+    }
+
+    private func markUnavailable(_ message: String) {
+        available = false
+        kPa = nil
+        relativeMeters = nil
+        status = message
+    }
+
+    private func applyUpdateError(_ error: Error) {
+        stop()
+        switch CMAltimeter.authorizationStatus() {
+        case .denied, .restricted:
+            permissionDenied = true
+            markUnavailable("Motion & Fitness permission is off. Pressure and relative altitude stay unavailable.")
+        default:
+            if !CMAltimeter.isRelativeAltitudeAvailable() {
+                permissionDenied = false
+                markUnavailable("This device does not have a barometer. Pressure and relative altitude are unavailable.")
+            } else {
+                markUnavailable(error.localizedDescription)
+            }
+        }
+    }
+}
+
+/// Starts relative updates only after hardware/auth checks. Stop is a no-op
+/// unless start ran — required on iPadOS 26 TCC.
+private final class AltimeterSession {
+    private let altimeter = CMAltimeter()
+    private(set) var isUpdating = false
+
+    func start(queue: OperationQueue, handler: @escaping CMAltitudeHandler) {
+        guard !isUpdating else { return }
+        isUpdating = true
+        altimeter.startRelativeAltitudeUpdates(to: queue, withHandler: handler)
+    }
+
+    func stop() {
+        guard isUpdating else { return }
+        isUpdating = false
         altimeter.stopRelativeAltitudeUpdates()
+    }
+
+    deinit {
+        if isUpdating {
+            altimeter.stopRelativeAltitudeUpdates()
+        }
     }
 }
 
 struct BarometerView: View {
     @EnvironmentObject private var jobs: JobStore
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = BarometerModel()
     @StoredInput(.barometer, "jobName", default: "Barometer") private var jobName
     @State private var notes = ""
@@ -55,7 +160,12 @@ struct BarometerView: View {
                 meaning: "Relative altitude is from the start of this session, not sea-level elevation."
             )
             if !model.available {
-                ToolEmptyState(title: "No barometer", detail: model.status, systemImage: "barometer")
+                ToolEmptyState(
+                    title: model.permissionDenied ? "Motion access is off" : "No barometer",
+                    detail: model.status,
+                    systemImage: "barometer",
+                    showsSettings: model.permissionDenied
+                )
             }
             ResultCard(title: "Atmosphere", copyText: copyText) {
                 ResultRow(
@@ -71,10 +181,20 @@ struct BarometerView: View {
                 )
                 ResultRow(label: "Source", value: model.status)
             }
-            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.available) { save() }
+            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.kPa != nil) { save() }
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                model.start()
+            case .background:
+                model.stop()
+            default:
+                break
+            }
+        }
     }
 
     private var sticky: String? {
