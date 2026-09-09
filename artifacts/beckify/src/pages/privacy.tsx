@@ -64,7 +64,7 @@ export default function PrivacyPage() {
               </a>
             </dd>
             <dt className="text-[var(--muted)]">Last updated</dt>
-            <dd>5 September 2026</dd>
+            <dd>9 September 2026</dd>
           </dl>
 
           <p className="text-base leading-relaxed text-[var(--muted)]">
@@ -166,19 +166,29 @@ export default function PrivacyPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3 align-top">Camera</td>
-                    <td className="p-3 align-top">Motor Nameplate OCR; Look Check</td>
-                    <td className="p-3 align-top">
+                    <td className="border-b border-[var(--border)] p-3 align-top">Camera</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">Motor Nameplate OCR; Look Check</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">
                       Nameplate photos stay on this device. A Look Check photo uploads only when you tap
                       Analyze Look.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 align-top">Motion &amp; Fitness</td>
+                    <td className="p-3 align-top">Barometer</td>
+                    <td className="p-3 align-top">
+                      Barometric pressure and relative altitude from the phone barometer. Requested only when
+                      you open the Barometer tool. Not uploaded. Devices without a barometer show unavailable
+                      instead of crashing.
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="text-base leading-relaxed">
-              CoreMotion (level, magnetometer, barometer, g-force) does not use those permission strings.
-              Battery and thermal state are local diagnostics.
+              Barometer uses the Motion &amp; Fitness permission string. Level, magnetometer, and g-force use
+              on-device motion and do not prompt for that permission. Battery and thermal state are local
+              diagnostics.
             </p>
             <p className="text-base leading-relaxed">
               iOS does <strong>not</strong> give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool leads

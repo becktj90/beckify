@@ -209,7 +209,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 
 ## Remaining steps (Mac + App Store Connect)
 
-**Next binary / App Store upload:** `CURRENT_PROJECT_VERSION` (CFBundleVersion) must be **≥ 79**. App Store Connect rejected **1.0 build 78** on **2026-09-04** with **ITMS-90382** (daily upload limit). Next upload after ~2026-09-05. Wait **one day** between upload storms. Xcode Cloud has been minting high numbers independently of the old pbxproj `1`; if a Cloud workflow start build number exists in ASC, set it to **79** so Cloud does not collide. This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
+**Next binary / App Store upload:** `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **100** (`MARKETING_VERSION` stays **1.0**). Pick a number above whatever App Store Connect last accepted (repo used to say 79 while Connect had already minted 97+). Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 

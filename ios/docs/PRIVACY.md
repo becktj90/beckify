@@ -5,7 +5,7 @@
 **Developer:** Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com  
 **Public URL:** https://beckify.com/privacy  
-**Last updated:** 5 September 2026
+**Last updated:** 9 September 2026
 
 This is the privacy policy for the native Beckify iOS and iPadOS app. It is hosted at https://beckify.com/privacy (and https://beckify.com/privacy/). It describes the app, not the beckify.com website.
 
@@ -35,6 +35,7 @@ Permissions are requested only when the related tool is used, not at launch (exc
 | Location (When In Use) | Position; Wi-Fi Path; Solar Design Wizard (optional latitude) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples, optional latitude for PV tilt advice. Not used at launch. Not uploaded. |
 | Local Network | Wi-Fi Path (optional); Cellular Path (optional) | TCP connect timing to a LAN or default-gateway host the user chooses. Used only when measuring **link quality (RTT)** to a private/LAN host. Not uploaded. Public hosts such as 1.1.1.1, and **Online / Captive** to `captive.apple.com`, do not need this permission. |
 | Camera | Motor Nameplate OCR; Panel Directory; Look Check | A still photo. On-device Vision runs first for nameplate and panel. Taking or choosing a photo does not upload it. A photo leaves this device only after you tap **Analyze** / **Analyze Look**. Photos are not kept as images in Saved Jobs. |
+| Motion & Fitness | Barometer | Barometric pressure (kPa) and relative altitude from `CMAltimeter`. Requested only when you open the Barometer tool. Not uploaded. This is not a calibrated altimeter. Devices without a barometer, or with Motion & Fitness off, show an unavailable state instead of crashing. |
 
 Photo Library full access is **not** requested. Look Check, Panel Directory, and Motor Nameplate OCR can use the system photo picker (`PhotosPicker`) so you choose one or more images. Motor Nameplate OCR, Panel Directory, and Look Check can also use the camera for a still photo. Taking or choosing a photo does not upload it. A photo leaves this device only after you tap **Analyze** (nameplate / panel) or **Analyze Look**.
 
@@ -46,7 +47,7 @@ Structured nameplate fields and panel-schedule rows use the same honesty pattern
 
 Share on an engineer plot renders a PNG on this device and opens the system share sheet (Save Image, Files, AirDrop, and so on). The image is written to a temporary file, or held as an in-memory `UIImage` if that write fails. Nothing is uploaded. Choosing Save Image in the system sheet does not require the app to request Photo Library full access.
 
-CoreMotion (level, magnetometer, barometer, g-force) does not use those permission strings. Battery and thermal state are local diagnostics.
+Barometer uses the Motion & Fitness (`NSMotionUsageDescription`) string. Level, magnetometer, and g-force use `CMMotionManager` on device and do not prompt for that permission. Battery and thermal state are local diagnostics.
 
 iOS does **not** give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool leads with **Online / Captive**: an HTTP GET to Apple’s public `http://captive.apple.com/hotspot-detect.html`. A `Success` body means no captive splash; a redirect or login page is called a captive portal; a satisfied path that cannot reach that host is “local only.” The request carries no user content and is not uploaded to Beckify. Optional **local IPv4** is the Network.framework `localEndpoint` of that probe when it is an IPv4 address — not a public-IP lookup and not RSSI. The tool also shows Apple’s public 0…1 `signalStrength` (percent and bars) when `NEHotspotNetwork` returns it, an on-device coverage sketch, and TCP **link quality (RTT)** to a gateway or chosen host. It does not invent dBm. App Store apps cannot send ICMP ping; a failed or permission-blocked probe stays blank.
 
