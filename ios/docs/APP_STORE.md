@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify
 
-Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists** (status **Prepare for Submission**). No binary has been uploaded. This is **not** TestFlight and **not** an App Store submit.
+Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. App Review rejected **1.0 (113)** on **2026-09-09** (Guideline 2.1, Barometer crash). Next Connect upload is **1.0 (120)**. This is **not** TestFlight and **not** an App Store approval.
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
@@ -13,7 +13,7 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 **App ID (Apple ID):** `6807908745`  
 **Bundle ID:** `com.beckify.toolbox`  
 **SKU:** `beckify-toolbox`  
-**Connect status:** Prepare for Submission (no binary uploaded)  
+**Connect status:** Prepare for Submission — Review rejected 1.0 (113); next binary 1.0 (120)  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M` (Apple auto-filled at identifier registration; set on the Beckify target Debug and Release in `ios/Beckify.xcodeproj`)  
 **Devices:** iPhone and iPad (Xcode `TARGETED_DEVICE_FAMILY` 1,2)  
 **Category:** Productivity  
@@ -116,7 +116,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
 • Magnetometer: heading and |B| in µT
-• Barometer / relative altitude
+• Barometer / relative altitude — unavailable empty state (no crash) if the sensor is missing, Motion & Fitness is off, or Core Motion errors
 • g-force snapshot
 • Position (GPS) when that tool is opened — not at launch
 • Device battery and thermal diagnostics
@@ -128,8 +128,8 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 **Keywords (100 characters max, comma-separated draft):**
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
-**What's New (draft for next Connect build — no binary uploaded):**
-Look Check **Analyze Look** now includes a roast when the subject appears 18+ and is rated; roast is empty when declined or no person. Anyone who appears under 18 is not rated and gets no roast. Motor Nameplate OCR and Panel Directory keep on-device Vision as the default. Optional **Analyze** (user-initiated only) POSTs a photo to `api.beckify.com` the same way Look Check **Analyze Look** already does. Confirm still required. No always-on upload. No ads, no IAP. Not TestFlight; no binary uploaded; not App Store submit.
+**What's New (draft for next Connect upload — 1.0 build 120):**
+Fixed a crash when opening Barometer (Guideline 2.1). The app now includes a Motion & Fitness usage string. If the barometer is missing, Motion & Fitness is off, or Core Motion returns an error, Barometer shows an unavailable state and stays running. Updates stop when you leave the tool or background the app. Free, no ads, no IAP. Not TestFlight. Not App Store approved.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -163,7 +163,7 @@ Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`
 - Photos or Videos collected for App Functionality, not linked, not used for tracking  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion** (`NSMotionUsageDescription` — Barometer / relative altitude, Bubble Level, Magnetometer, g-Force Snapshot, optional Solar Design Wizard panel aim). Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location. Build **113** crashed in App Review (`TCC` / `kTCCServiceMotion`) because this Motion key was missing.
+Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion & Fitness** (`NSMotionUsageDescription`) for **Barometer** only (pressure and relative altitude). Bubble Level / plumb, Magnetometer, and g-force still use `CMMotionManager` on device and do not prompt for that permission. Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
 
 ## Export compliance
 
@@ -218,7 +218,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Field | Value |
 | --- | --- |
 | Status | Prepare for Submission |
-| Binary | None uploaded |
+| Binary | 1.0 (113) rejected by Review (Guideline 2.1, 2026-09-09); next upload 1.0 (120) |
 | App ID (Apple ID) | `6807908745` |
 | Bundle ID | `com.beckify.toolbox` |
 | SKU | `beckify-toolbox` |
