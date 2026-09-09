@@ -10,10 +10,11 @@ final class BarometerModel: ObservableObject {
     @Published var permissionDenied = false
     @Published var status = "Waiting for altimeter…"
 
-    /// Created only after hardware + authorization checks pass. Never instantiate
-    /// CMAltimeter just to call stop — that can trip TCC on recent iOS.
-    private var altimeter: CMAltimeter?
-    private var isUpdating = false
+    /// Owned session so deinit can stop only if start actually ran. Creating
+    /// CMAltimeter just to call stop trips TCC on iPadOS 26.
+    private var session: AltimeterSession?
+    private var generation: UInt64 = 0
+    private var wantsRunning = false
     private let updateQueue: OperationQueue = {
         let queue = OperationQueue()
         queue.name = "Beckify.Barometer"
@@ -23,7 +24,21 @@ final class BarometerModel: ObservableObject {
     }()
 
     func start() {
-        if isUpdating { return }
+        wantsRunning = true
+        beginIfPossible()
+    }
+
+    func stop() {
+        wantsRunning = false
+        session?.stop()
+        session = nil
+    }
+
+    /// Relative altitude / pressure only. Do not call
+    /// `isAbsoluteAltitudeAvailable()` or `startAbsoluteAltitudeUpdates`.
+    private func beginIfPossible() {
+        guard wantsRunning else { return }
+        if session?.isUpdating == true { return }
 
         guard CMAltimeter.isRelativeAltitudeAvailable() else {
             markUnavailable(
@@ -51,30 +66,28 @@ final class BarometerModel: ObservableObject {
         permissionDenied = false
         status = "Waiting for altimeter…"
 
-        let sensor = altimeter ?? CMAltimeter()
-        altimeter = sensor
-        isUpdating = true
-        sensor.startRelativeAltitudeUpdates(to: updateQueue) { [weak self] data, error in
+        generation += 1
+        let token = generation
+        let next = AltimeterSession()
+        session = next
+        next.start(queue: updateQueue) { [weak self] data, error in
             Task { @MainActor in
-                guard let self else { return }
+                guard let self, self.wantsRunning, self.generation == token else { return }
                 if let error {
                     self.applyUpdateError(error)
                     return
                 }
                 guard let data else { return }
-                self.relativeMeters = data.relativeAltitude.doubleValue
-                self.kPa = data.pressure.doubleValue
+                let pressure = data.pressure.doubleValue
+                let delta = data.relativeAltitude.doubleValue
+                guard pressure.isFinite, delta.isFinite else { return }
+                self.relativeMeters = delta
+                self.kPa = pressure
                 self.available = true
                 self.permissionDenied = false
                 self.status = "CMAltimeter relative to session start"
             }
         }
-    }
-
-    func stop() {
-        guard isUpdating else { return }
-        isUpdating = false
-        altimeter?.stopRelativeAltitudeUpdates()
     }
 
     private func markUnavailable(_ message: String) {
@@ -101,8 +114,34 @@ final class BarometerModel: ObservableObject {
     }
 }
 
+/// Starts relative updates only after hardware/auth checks. Stop is a no-op
+/// unless start ran — required on iPadOS 26 TCC.
+private final class AltimeterSession {
+    private let altimeter = CMAltimeter()
+    private(set) var isUpdating = false
+
+    func start(queue: OperationQueue, handler: @escaping CMAltitudeHandler) {
+        guard !isUpdating else { return }
+        isUpdating = true
+        altimeter.startRelativeAltitudeUpdates(to: queue, withHandler: handler)
+    }
+
+    func stop() {
+        guard isUpdating else { return }
+        isUpdating = false
+        altimeter.stopRelativeAltitudeUpdates()
+    }
+
+    deinit {
+        if isUpdating {
+            altimeter.stopRelativeAltitudeUpdates()
+        }
+    }
+}
+
 struct BarometerView: View {
     @EnvironmentObject private var jobs: JobStore
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = BarometerModel()
     @StoredInput(.barometer, "jobName", default: "Barometer") private var jobName
     @State private var notes = ""
@@ -146,6 +185,16 @@ struct BarometerView: View {
         }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                model.start()
+            case .background:
+                model.stop()
+            default:
+                break
+            }
+        }
     }
 
     private var sticky: String? {

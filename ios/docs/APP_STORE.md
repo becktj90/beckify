@@ -209,7 +209,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 
 ## Remaining steps (Mac + App Store Connect)
 
-**Next binary / App Store upload:** `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **100** (`MARKETING_VERSION` stays **1.0**). Pick a number above whatever App Store Connect last accepted (repo used to say 79 while Connect had already minted 97+). Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
+**Next binary / App Store upload:** `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **120** (`MARKETING_VERSION` stays **1.0**). App Review rejected **1.0 (113)** on **2026-09-09** (Guideline 2.1, Barometer crash on iPad Air 11-inch M3 / iPadOS 26.6). The next Connect upload must be **> 113**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 
