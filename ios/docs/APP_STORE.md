@@ -129,7 +129,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect upload — 1.0 build 120):**
-Fixed a crash when opening Barometer (Guideline 2.1). The app now includes a Motion & Fitness usage string. If the barometer is missing, Motion & Fitness is off, or Core Motion returns an error, Barometer shows an unavailable state and stays running. Updates stop when you leave the tool or background the app. Free, no ads, no IAP. Not TestFlight. Not App Store approved.
+Barometer no longer crashes on App Review (Guideline 2.1). Added the Motion & Fitness usage string. If there is no barometer or Motion & Fitness is off, Barometer shows an unavailable empty state and stays running. Submit **1.0 (120)** — must be above rejected **1.0 (113)**. Free, no IAP, no ads. Not TestFlight. Not App Store approved.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -163,7 +163,7 @@ Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`
 - Photos or Videos collected for App Functionality, not linked, not used for tracking  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion & Fitness** (`NSMotionUsageDescription`) for **Barometer** only (pressure and relative altitude). Bubble Level / plumb, Magnetometer, and g-force still use `CMMotionManager` on device and do not prompt for that permission. Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
+Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion** (`NSMotionUsageDescription` — Barometer / relative altitude, Bubble Level, Magnetometer, g-Force Snapshot, optional Solar Design Wizard panel aim). Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location. Build **113** crashed in App Review (`TCC` / `kTCCServiceMotion`) because this Motion key was missing.
 
 ## Export compliance
 
