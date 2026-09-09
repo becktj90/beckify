@@ -163,7 +163,7 @@ Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`
 - Photos or Videos collected for App Functionality, not linked, not used for tracking  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs and last-used inputs)
 
-Usage strings (generated Info.plist): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera — see the Beckify target build settings. Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location.
+Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion** (`NSMotionUsageDescription` — Barometer / relative altitude, Bubble Level, Magnetometer, g-Force Snapshot, optional Solar Design Wizard panel aim). Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location. Build **113** crashed in App Review (`TCC` / `kTCCServiceMotion`) because this Motion key was missing.
 
 ## Export compliance
 
