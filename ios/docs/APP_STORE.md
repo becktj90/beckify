@@ -226,7 +226,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Team prefix | `9TR6R5LV8M` |
 | Price | Free ($0), no IAP, no ads (Trevor’s v1 decision) |
 
-The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. This repository does **not** claim TestFlight, a signed archive, or App Store submit.
+The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. Connect already received **1.0 (113)** (rejected). This Linux environment did not compile, sign, or upload **1.0 (120)**. Not TestFlight. Not App Store approved.
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
@@ -236,9 +236,9 @@ Still needed (Mac + Trevor; not done in this Linux environment):
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
 5. Capture screenshots at the sizes below. Do **not** ship website screenshots.
 6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled (`DEVELOPMENT_TEAM` `9TR6R5LV8M`).
-7. Upload the signed archive (Organizer or Transporter). Wait for processing. Upload is still outstanding; that is not TestFlight distribution and not App Store submit.
+7. Upload a signed **1.0 (120)** archive (Organizer or Transporter). Wait for processing. Do not re-upload rejected **1.0 (113)**. That upload is not TestFlight distribution and not App Store approval.
 8. Attach screenshots, review the encryption and content-rights questions, then submit for review (not done).
-9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location strings, or “design aid” disclaimers.
-10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382 (~2026-09-05), upload a **new** version/build tuple once — do not retry the same binary.
+9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location/Motion strings, or “design aid” disclaimers.
+10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382, upload the **new** 1.0 / 120 tuple once — do not retry 113.
 
-Until those steps are done, there is **no** uploaded binary. The app is **not** on TestFlight and **not** on the App Store.
+Connect already has rejected **1.0 (113)**. The next binary to upload is **1.0 (120)**. The app is **not** on TestFlight and **not** App Store approved. This Linux environment did not compile, sign, or upload 120.
