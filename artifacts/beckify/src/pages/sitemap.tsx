@@ -5,6 +5,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SchemaHead } from "@/components/seo/SchemaHead";
 import { PUBLIC_CALCULATOR_COUNT } from "@/data/site-stats";
+import { FEATURED_TOOLS, PAGE_SEO, toolboxPermalink } from "@/data/seo-copy.mjs";
 
 /**
  * Fixed-order categorical palette (validated for CVD-safety + contrast on
@@ -206,8 +207,8 @@ export default function SiteMapPage() {
   return (
     <Layout>
       <SchemaHead
-        title="Beckify Site Map | Engineering Tools and Projects"
-        description="Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."
+        title={PAGE_SEO["/sitemap"].title}
+        description={PAGE_SEO["/sitemap"].description}
         path="/sitemap"
       />
       <FadeIn>
@@ -249,6 +250,28 @@ export default function SiteMapPage() {
                 <p className="text-xs text-[var(--muted)] leading-relaxed mt-1">{description}</p>
               </div>
             </Link>
+          ))}
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={0.08}>
+        <div className="mb-4">
+          <h2 className="font-display text-xl font-bold tracking-tight text-[var(--foreground)] mb-1">
+            Featured calculators
+          </h2>
+          <p className="text-sm text-[var(--muted)]">
+            Canonical toolbox pages for the calculations people look up first.
+          </p>
+        </div>
+        <div className="mb-10 flex flex-wrap gap-2">
+          {FEATURED_TOOLS.map(({ slug, label }) => (
+            <a
+              key={slug}
+              href={toolboxPermalink(slug)}
+              className="text-sm px-3 py-1.5 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--accent)]/50"
+            >
+              {label}
+            </a>
           ))}
         </div>
       </FadeIn>

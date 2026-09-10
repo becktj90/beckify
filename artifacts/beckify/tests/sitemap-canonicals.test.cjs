@@ -43,9 +43,10 @@ async function main() {
   ok("no-slash /about is not listed", !locs.includes("https://beckify.com/about"));
 
   const staticRoutes = fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8");
+  const seoCopy = fs.readFileSync(path.join(root, "src/data/seo-copy.mjs"), "utf8");
   console.log("\n--- Static route canonicals ---");
   ok("static route shells use toCanonicalUrl", staticRoutes.includes("toCanonicalUrl(`/${route}`)"));
-  ok("new-glenn-runner stays a static directory", staticRoutes.includes('["games/new-glenn-runner"'));
+  ok("new-glenn-runner stays a static directory", seoCopy.includes('"games/new-glenn-runner"'));
   ok("new-glenn-runner redirects to kestrel-heavy/", staticRoutes.includes('["games/new-glenn-runner", "/games/kestrel-heavy/"]'));
 
   const schemaHead = fs.readFileSync(path.join(root, "src/components/seo/SchemaHead.tsx"), "utf8");

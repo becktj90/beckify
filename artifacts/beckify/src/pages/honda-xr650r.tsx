@@ -1,7 +1,8 @@
 import { ArrowDown, BatteryCharging, Cable, Download, Gauge, Wrench } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { Layout } from "@/components/Layout";
-import { SchemaHead } from "@/components/seo/SchemaHead";
+import { SchemaHead, breadcrumbListSchema, techArticleSchema } from "@/components/seo/SchemaHead";
+import { PAGE_SEO } from "@/data/seo-copy.mjs";
 
 /**
  * Honda XR650R electric conversion — public workshop journal.
@@ -79,10 +80,22 @@ export default function HondaXR650RPage() {
   return (
     <Layout className="xr-journal" showAds={false}>
       <SchemaHead
-        title="Honda XR650R Electric Conversion | Beckify"
-        description="A public workshop journal for a Honda XR650R electric motorcycle conversion — 76 V pack, QS 4 kW V3 mid-drive, Votol EM-200/2. Build in progress."
+        title={PAGE_SEO["/projects/honda-xr650r"].title}
+        description={PAGE_SEO["/projects/honda-xr650r"].description}
         path="/projects/honda-xr650r"
         type="article"
+        schema={[
+          techArticleSchema(
+            "Honda XR650R Electric Conversion",
+            PAGE_SEO["/projects/honda-xr650r"].description,
+            "/projects/honda-xr650r",
+          ),
+          breadcrumbListSchema([
+            { name: "Beckify", path: "/" },
+            { name: "Projects", path: "/projects" },
+            { name: "Honda XR650R conversion", path: "/projects/honda-xr650r" },
+          ]),
+        ]}
       />
       <style>{`
         .xr-journal{--xr-red:#f43f38;--xr-red-dark:#8e1714;--xr-cream:#f0eadf;--xr-ink:#151718;--xr-muted:#666b69;--xr-line:color-mix(in srgb,var(--foreground) 20%,transparent);background:var(--background);color:var(--foreground);overflow-x:hidden}

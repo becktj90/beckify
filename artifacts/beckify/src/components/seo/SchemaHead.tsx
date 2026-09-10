@@ -86,6 +86,26 @@ export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMA
   return null;
 }
 
+export const organizationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${toCanonicalUrl("/")}#organization`,
+  name: "Beckify",
+  url: toCanonicalUrl("/"),
+  logo: DEFAULT_IMAGE,
+  founder: { "@type": "Person", name: "Trevor Beck" },
+});
+
+export const websiteSchema = (description: string) => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${toCanonicalUrl("/")}#website`,
+  name: "Beckify",
+  url: toCanonicalUrl("/"),
+  description,
+  publisher: { "@id": `${toCanonicalUrl("/")}#organization` },
+});
+
 export const webApplicationSchema = (name: string, description: string, path: string) => ({
   "@context": "https://schema.org",
   "@type": ["SoftwareApplication", "WebApplication"],
@@ -94,6 +114,42 @@ export const webApplicationSchema = (name: string, description: string, path: st
   url: toCanonicalUrl(path),
   operatingSystem: "All",
   applicationCategory: "EngineeringApplication",
+  isAccessibleForFree: true,
+  publisher: { "@type": "Organization", name: "Beckify", url: toCanonicalUrl("/") },
+});
+
+export const breadcrumbListSchema = (crumbs: { name: string; path: string }[]) => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: crumbs.map((crumb, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: crumb.name,
+    item: toCanonicalUrl(crumb.path),
+  })),
+});
+
+export const techArticleSchema = (name: string, description: string, path: string, image = DEFAULT_IMAGE) => ({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  headline: name,
+  name,
+  description,
+  url: toCanonicalUrl(path),
+  image,
+  author: { "@type": "Person", name: "Trevor Beck" },
+  publisher: { "@type": "Organization", name: "Beckify", url: toCanonicalUrl("/") },
+});
+
+export const videoGameSchema = (name: string, description: string, path: string) => ({
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  name,
+  description,
+  url: toCanonicalUrl(path),
+  applicationCategory: "GameApplication",
+  gamePlatform: "Web browser",
+  playMode: "SinglePlayer",
   isAccessibleForFree: true,
   publisher: { "@type": "Organization", name: "Beckify", url: toCanonicalUrl("/") },
 });
