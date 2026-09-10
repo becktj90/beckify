@@ -1,22 +1,25 @@
 import { Layout } from "@/components/Layout";
 import { Projects as ProjectsSection } from "@/components/sections/Projects";
 import { SchemaHead, toCanonicalUrl } from "@/components/seo/SchemaHead";
+import { PAGE_SEO } from "@/data/seo-copy.mjs";
 
 export default function ProjectsPage() {
   return (
     <Layout>
       <SchemaHead
-        title="Projects & Build Logs | Beckify"
-        description="Explore Beckify project logs covering electric vehicles, experimental web projects, fabrication, and practical engineering work."
+        title={PAGE_SEO["/projects"].title}
+        description={PAGE_SEO["/projects"].description}
         path="/projects"
-        type="article"
         schema={{
           "@context": "https://schema.org",
-          "@type": ["TechArticle", "HowTo"],
-          name: "Beckify Engineering Projects and Build Logs",
-          description: "Technical build logs and project notes from Beckify.",
+          "@type": "CollectionPage",
+          name: PAGE_SEO["/projects"].title,
+          description: PAGE_SEO["/projects"].description,
           url: toCanonicalUrl("/projects"),
-          author: { "@type": "Person", name: "Trevor Beck" },
+          hasPart: [
+            { "@type": "TechArticle", name: "1979 Vespa P200E electric conversion", url: toCanonicalUrl("/projects/vespa-p200e") },
+            { "@type": "TechArticle", name: "Honda XR650R electric conversion", url: toCanonicalUrl("/projects/honda-xr650r") },
+          ],
         }}
       />
       <ProjectsSection />

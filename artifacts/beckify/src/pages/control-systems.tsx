@@ -3,7 +3,8 @@ import { Activity, BrainCircuit, Lightbulb, SlidersHorizontal, Spline } from "lu
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
-import { SchemaHead } from "@/components/seo/SchemaHead";
+import { SchemaHead, webApplicationSchema } from "@/components/seo/SchemaHead";
+import { PAGE_SEO } from "@/data/seo-copy.mjs";
 import { BodePlot } from "@/components/control/BodePlot";
 import { LeadCompensator } from "@/components/control/LeadCompensator";
 import { LQRStudio } from "@/components/control/LQRStudio";
@@ -146,9 +147,14 @@ export default function ControlSystemsPage() {
   return (
     <Layout>
       <SchemaHead
-        title="Control System Toolbox | Beckify"
-        description="Undergraduate servo analysis: pick an example plant or enter your own G(s), then tune PID, Bode margins, root locus, lead compensators, and state-feedback."
+        title={PAGE_SEO["/control-systems"].title}
+        description={PAGE_SEO["/control-systems"].description}
         path="/control-systems"
+        schema={webApplicationSchema(
+          "Control System Toolbox",
+          PAGE_SEO["/control-systems"].description,
+          "/control-systems",
+        )}
       />
       <FadeIn>
         <SectionHeader

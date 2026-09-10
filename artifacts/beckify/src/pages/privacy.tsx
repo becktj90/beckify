@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SchemaHead, SITE_URL, toCanonicalUrl } from "@/components/seo/SchemaHead";
+import { PAGE_SEO } from "@/data/seo-copy.mjs";
 
 const PRIVACY_URL = toCanonicalUrl("/privacy");
 const CONTACT_EMAIL = "trevorjohnbeck@gmail.com";
@@ -27,8 +28,8 @@ export default function PrivacyPage() {
   return (
     <Layout showAds={false}>
       <SchemaHead
-        title="Privacy Policy | Beckify iOS"
-        description="Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Look Check uploads a photo only when you tap Analyze Look. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts."
+        title={PAGE_SEO["/privacy"].title}
+        description={PAGE_SEO["/privacy"].description}
         path="/privacy"
         type="article"
         schema={pageSchema}

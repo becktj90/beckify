@@ -38,7 +38,11 @@ ok("React privacy page is a live policy", /Analyze Look/.test(privacyPage) && /c
 ok("React routes cover /privacy and /privacy/", appSrc.includes('path="/privacy"') && appSrc.includes('path="/privacy/"'));
 ok("sitemap All pages lists Privacy", /href: "\/privacy", label: "Privacy"/.test(sitemapSrc));
 ok("footer links Privacy", footerSrc.includes('href="/privacy"') && footerSrc.includes("Privacy"));
-ok("static route generator includes privacy", staticRoutes.includes('["privacy", "Privacy Policy | Beckify iOS"'));
+ok("static route generator includes privacy", staticRoutes.includes("seo-copy") && staticRoutes.includes("privacy"));
+ok("privacy SEO copy stays honest about Look Check and the bundle ID", (() => {
+  const seoCopy = fs.readFileSync(path.join(siteRoot, "src/data/seo-copy.mjs"), "utf8");
+  return /Look Check/.test(seoCopy) && /com\.beckify\.toolbox/.test(seoCopy) && /No analytics/.test(seoCopy);
+})());
 ok("xml sitemap generator includes /privacy", /\["\/privacy\/?", "monthly", "0.7"\]/.test(sitemapGen));
 ok("privacy page keeps the remaining game listed", sitemapSrc.includes("Kestrel Heavy") && !sitemapSrc.includes("Cosmic Cadet") && !sitemapSrc.includes("Apollo & Rocco Run"));
 ok("HexGL stays off the sitemap and routes", !/hexgl/i.test(sitemapSrc) && !appSrc.includes('path="/games/hexgl"') && !/hexgl/i.test(sitemapGen));

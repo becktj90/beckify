@@ -10,8 +10,9 @@ import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
 import { PUBLIC_CALCULATOR_COUNT, PUBLIC_GAME_COUNT } from "@/data/site-stats";
 import beckifyMark from "@/assets/beckify-mark-white.png";
-import { SchemaHead } from "@/components/seo/SchemaHead";
+import { SchemaHead, organizationSchema, websiteSchema } from "@/components/seo/SchemaHead";
 import { MinimalAdUnit } from "@/components/ads/MinimalAdUnit";
+import { PAGE_SEO, homeToolboxLinks, toolboxPermalink } from "@/data/seo-copy.mjs";
 
 /**
  * Home — Bento-style hub. Asymmetric multi-column grid on desktop,
@@ -23,9 +24,10 @@ export default function Home() {
   return (
     <div className="relative min-h-[100dvh]">
       <SchemaHead
-        title="Beckify | Engineering Tools, References & Builds"
-        description="Beckify brings practical electrical engineering calculators, NEC references, field tools, hands-on builds, and Kestrel Heavy together in one fast resource."
+        title={PAGE_SEO["/"].title}
+        description={PAGE_SEO["/"].description}
         path="/"
+        schema={[websiteSchema(PAGE_SEO["/"].description), organizationSchema()]}
       />
       <Starfield showPenrose={false} />
       <div className="relative z-10">
@@ -139,6 +141,15 @@ export default function Home() {
                   </div>
                 </a>
                 <div className="relative z-10 mt-3 flex flex-wrap gap-1.5">
+                  {homeToolboxLinks().map(({ slug, label }) => (
+                    <a
+                      key={slug}
+                      href={toolboxPermalink(slug)}
+                      className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]"
+                    >
+                      {label}
+                    </a>
+                  ))}
                   {[
                     { href: "/toolbox/#sec-emp-emc", label: "EMP / EMC" },
                     { href: "/toolbox/#sec-magnetic-circuit", label: "Magnetic circuit" },
@@ -149,25 +160,11 @@ export default function Home() {
                     { href: "/toolbox/#sec-gaussian-beam", label: "Gaussian beam" },
                     { href: "/toolbox/#sec-lp-optimizer", label: "LP optimizer" },
                     { href: "/toolbox/#sec-base-converter", label: "Number-base" },
-                    { href: "/toolbox/#sec-io-list-generator", label: "I/O list" },
-                    { href: "/toolbox/#sec-signal-scaling", label: "Signal scaling" },
-                    { href: "/toolbox/#sec-ebus-budget", label: "E-bus budget" },
-                    { href: "/toolbox/#sec-modbus-address", label: "Modbus address" },
-                    { href: "/toolbox/#sec-plc-timer-preset", label: "PLC timer" },
+                    { href: "/toolbox/#sec-ebike-tools", label: "Battery pack designer" },
                     { href: "/toolbox/#sec-pitch-hum", label: "Pitch / hum" },
                     { href: "/toolbox/#sec-audio-spectrum", label: "Audio spectrum" },
                     { href: "/toolbox/#sec-sound-level", label: "Sound level" },
                     { href: "/toolbox/#sec-lux-meter", label: "Lux meter" },
-                    { href: "/toolbox/#sec-cable-schedule", label: "Cable schedule" },
-                    { href: "/toolbox/#sec-nema-wiring", label: "NEMA wiring" },
-                    { href: "/toolbox/#sec-solar-wizard", label: "Solar design" },
-                    { href: "/toolbox/#sec-battery-bank", label: "Battery bank" },
-                    { href: "/toolbox/#sec-ebike-tools", label: "Battery pack designer" },
-                    { href: "/toolbox/#sec-motor-nameplate", label: "Motor nameplate" },
-                    { href: "/toolbox/#sec-look-check", label: "Look Check" },
-                    { href: "/toolbox/#sec-torque-lookup", label: "Torque lookup" },
-                    { href: "/toolbox/#sec-bldg-load", label: "Load worksheet" },
-                    { href: "/toolbox/#sec-wire-colors", label: "Wire colors" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}

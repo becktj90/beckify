@@ -1,24 +1,18 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { toCanonicalPath, toCanonicalUrl } from "../src/lib/canonical-url.mjs";
+import { STATIC_ROUTE_PATHS, seoForStaticRoute } from "../src/data/seo-copy.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist/public");
 const shell = resolve(dist, "index.html");
 
 const escapeHtml = (value) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-const staticRoutes = [
-  ["about", "About Trevor Beck | Beckify", "Electrical engineering background, hands-on builds, and the purpose behind Beckify's practical engineering resources."],
-  ["privacy", "Privacy Policy | Beckify iOS", "Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Data Not Collected. Sensor readings and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts."],
-  ["projects", "Engineering Projects and Build Logs | Beckify", "Engineering projects, conversion build logs, prototypes, and practical maker work from Beckify."],
-  ["projects/vespa-p200e", "Vespa P200E EV Conversion | Beckify", "An engineering case study of a 1979 Vespa P200E electric conversion: 20S10P battery, protection, motor control, hub motor and custom swingarm."],
-  ["projects/honda-xr650r", "Honda XR650R Electric Conversion | Beckify", "A public workshop journal for a Honda XR650R electric motorcycle conversion — 76 V pack, QS 4 kW V3 mid-drive, Votol EM-200/2. Build in progress."],
-  ["control-systems", "Control System Toolbox | Beckify", "Undergraduate servo analysis: plant modeling, open- vs closed-loop P control, root locus, lead compensators, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, and state-feedback pole placement."],
-  ["games", "Browser Games | Beckify", "Play Kestrel Heavy, Beckify's on-site launch arcade."],
-  ["games/kestrel-heavy", "Kestrel Heavy Browser Game | Beckify", "Play Kestrel Heavy, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
-  ["games/new-glenn-runner", "Kestrel Heavy Browser Game | Beckify", "Play Kestrel Heavy, a stylized vertical launch arcade with KID, CADET, and PAD RAT difficulty and local scoring."],
-  ["sitemap", "Beckify Site Map | Engineering Tools and Projects", "Browse every Beckify page, electrical engineering calculator, reference table, field test tool, project, and game."],
-];
+const staticRoutes = STATIC_ROUTE_PATHS.map((route) => {
+  const seo = seoForStaticRoute(route);
+  if (!seo) throw new Error(`Missing PAGE_SEO for static route ${route}`);
+  return [route, seo.title, seo.description];
+});
 
 // Legacy game slug: keep a directory so GitHub Pages 301s the no-slash URL,
 // then immediately send crawlers to Kestrel Heavy. Do not list this in sitemap.xml.
