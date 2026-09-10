@@ -25,7 +25,7 @@ const img = {
   harness: "/projects/vespa/journal/em100-harness.jpg",
   cad: "/projects/vespa/journal/swingarm-cad-render.jpg",
   weld: "/projects/vespa/journal/swingarm-weld.jpg",
-  wiring: "/projects/vespa/powertrain-wiring-diagram.jpg",
+  wiring: "/projects/vespa/72v-controller-wiring.png",
 } as const;
 
 function DownloadLink({ href, children }: { href: string; children: string }) {
@@ -520,26 +520,30 @@ export default function VespaP200EPage() {
               </p>
             </div>
             <figure className="wiring-figure">
-              <a href={img.wiring} target="_blank" rel="noopener noreferrer" aria-label="Open the full-size powertrain wiring diagram">
+              <a href={img.wiring} target="_blank" rel="noopener noreferrer" aria-label="Open the full-size 72V controller wiring diagram">
                 <img
                   src={img.wiring}
-                  alt="Wiring diagram of the 72V BLDC powertrain: battery pack with BMS, breaker, contactor, precharge resistor, DC-DC converter, fuse panel, VOTOL controller, hub motor phases, Hall sensors, throttle, and key switch"
+                  alt="72V controller wiring diagram for the Vespa EV conversion: 72V 20Ah 20S10P pack, Daly BMS 20S 200A, pre-charge and C1 contactor, DC-DC converter, 12V fuse block, 4kW BLDC motor phases, Hall sensors, throttle, and programming link"
+                  width={1800}
+                  height={1120}
                   loading="lazy"
+                  decoding="async"
                 />
               </a>
               <figcaption className="photo-caption">
-                Left to right: the 20S10P pack and its integrated BMS, the
-                breaker and contactor, the precharge resistor assembly, the
-                step-down converter and 12V fuse panel, then the EM-100 and the
-                three motor phases with Hall feedback returning. The colour key
-                on the sheet separates the 72V traction path, the motor phases,
-                the 12V branch, logic and control, Hall sensors, throttle, and
-                the programming link. Tap the diagram for full size.
+                Vespa EV conversion — 72V controller wiring. The sheet shows the
+                20S10P pack and Daly 20S 200A BMS, pre-charge and C1 contactor,
+                DC-DC converter and 12V fuse block, then the controller driving
+                the 4kW BLDC phases with Hall feedback, throttle, and the
+                programming link. Colour key: 72V traction, motor phases, 12V
+                branch, control, current sense, Hall, throttle, and programming.
+                Redrawn from controller-wiring-reference. Educational build
+                notes — tap the diagram for full size.
               </figcaption>
             </figure>
             <div className="downloads">
               <DownloadLink href={img.wiring}>
-                Download powertrain wiring diagram
+                Download 72V controller wiring diagram
               </DownloadLink>
               <DownloadLink href="/projects/vespa/documents/em100-wiring-harness.pdf">
                 EM-100 wiring harness sheet
