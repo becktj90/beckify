@@ -17,6 +17,23 @@ function getHashSectionId() {
   return location.hash.slice(1).split('?')[0];
 }
 
+/**
+ * Offline, the service worker serves the toolbox shell for any /toolbox/<slug>/
+ * navigation. Without a hash, that used to open sec-home. Map the permalink
+ * slug (and an explicit hash, which wins) so featured calculator links keep
+ * their target when the network is gone.
+ */
+function getPathnameSectionId() {
+  const parts = String(location.pathname || '').replace(/\/+$/, '').split('/');
+  if (parts[1] !== 'toolbox' || !parts[2] || parts[2] === 'category') return '';
+  const map = window.BECKIFY_TOOL_PERMALINKS || {};
+  return map[parts[2]] || '';
+}
+
+function getRequestedSectionId() {
+  return getHashSectionId() || getPathnameSectionId();
+}
+
 /* The header is sticky, so the mobile drawer has to start below it. Publish the
    measured height as a CSS variable rather than hard-coding a guess. */
 function syncHeaderHeight() {
@@ -2773,9 +2790,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('hashchange', () => {
-    setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID, { scroll: false });
+    setActiveSection(getRequestedSectionId() || DEFAULT_SECTION_ID, { scroll: false });
   });
-  setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
+  setActiveSection(getRequestedSectionId() || DEFAULT_SECTION_ID);
 
   /* ── Mobile sidebar hamburger ── */
   const sidebarToggle = document.getElementById('sidebar-toggle');
