@@ -1,3 +1,5 @@
+import { resolveToolSlug } from "./toolbox-tools.mjs";
+
 /**
  * Discoverability copy: unique document titles and meta descriptions.
  *
@@ -165,7 +167,9 @@ export function categoryDocumentTitle(slug, fallbackTitle) {
 }
 
 export function toolboxPermalink(slug) {
-  return `/toolbox/${slug}/`;
+  const resolved = resolveToolSlug(slug);
+  const path = `/toolbox/${slug}/`;
+  return resolved?.anchor ? `${path}#${resolved.anchor}` : path;
 }
 
 export function homeToolboxLinks() {

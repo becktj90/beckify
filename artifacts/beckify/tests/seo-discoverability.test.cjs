@@ -63,14 +63,26 @@ async function main() {
   );
   ok(
     "home toolbox links include every featured slug",
-    seo.FEATURED_TOOLS.every((tool) => seo.homeToolboxLinks().some((link) => link.slug === tool.slug && seo.toolboxPermalink(tool.slug) === `/toolbox/${tool.slug}/`)),
+    seo.FEATURED_TOOLS.every((tool) => seo.homeToolboxLinks().some((link) => link.slug === tool.slug && seo.toolboxPermalink(tool.slug).startsWith(`/toolbox/${tool.slug}/`))),
+  );
+  ok(
+    "featured permalinks keep a section hash for offline SW fallback",
+    seo.FEATURED_TOOLS.every((tool) => /#sec-/.test(seo.toolboxPermalink(tool.slug))),
   );
   ok("toolbox hub has a featured row", toolboxHtml.includes("home-featured") && toolboxHtml.includes("/toolbox/ohms-law/"));
+  ok("toolbox hub featured Ohm's Law keeps its section hash", toolboxHtml.includes("/toolbox/ohms-law/#sec-ohm"));
+  const appJs = fs.readFileSync(path.join(root, "public/toolbox/js/app.js"), "utf8");
+  ok("toolbox router reads permalink slugs when hash is missing", appJs.includes("getPathnameSectionId") && appJs.includes("BECKIFY_TOOL_PERMALINKS"));
   ok("Vespa links related calculators", vespa.includes("VESPA_RELATED_TOOLS") && vespa.includes("toolboxPermalink"));
   ok("noindex is not applied to toolbox tools", !toolboxHtml.includes("noindex") && !fs.readFileSync(path.join(root, "scripts/generate-sitemap.mjs"), "utf8").includes("noindex"));
 
   console.log("\n--- Sitemap still trailing-slash only ---");
   execFileSync(process.execPath, [path.join(root, "scripts/generate-sitemap.mjs")], { cwd: root });
+  const permalinkMap = fs.readFileSync(path.join(root, "public/toolbox/js/permalink-map.js"), "utf8");
+  ok(
+    "permalink map covers featured slugs",
+    seo.FEATURED_TOOLS.every((tool) => permalinkMap.includes(`"${tool.slug}"`)),
+  );
   const xml = fs.readFileSync(path.join(root, "public/sitemap.xml"), "utf8");
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
   ok("every loc ends with /", locs.every((loc) => loc.endsWith("/")));
