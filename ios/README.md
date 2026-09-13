@@ -2,6 +2,8 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
+A second App Store product lives in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Mean|Nice roast, Analyze. Not this toolbox. See [`LookCheck/README.md`](LookCheck/README.md) and [`LookCheck/docs/APP_STORE.md`](LookCheck/docs/APP_STORE.md).
+
 Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
 This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode. Website toolbox IA is a follow-up, not this app.
@@ -26,10 +28,11 @@ Session state (`ExplicitCalculationState`, `LiveCalculationState`) is pure Swift
 
 ```text
 ios/
-  Beckify.xcodeproj/     Xcode 15+ project (open this on a Mac)
-  Beckify/               SwiftUI app (Calculators + Sensors)
-  BeckifyMath/           Pure-Swift math + NEC tables + XCTest
-  docs/APP_STORE.md            Listing copy and App Store Connect checklist
+  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify and LookCheck
+  Beckify/               SwiftUI Toolbox app (Calculators + Sensors)
+  LookCheck/             Standalone Look Check App Store app (`com.beckify.lookcheck`)
+  BeckifyMath/           Pure-Swift math + NEC tables + look-check JSON + XCTest
+  docs/APP_STORE.md            Toolbox listing copy and App Store Connect checklist
   docs/FIVE_STAR_READINESS.md  Competitor 1★ patterns, review-ask policy, pre-submit gate
 ```
 
@@ -145,9 +148,10 @@ You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth o
 
 1. Install Xcode 15 or later.
 2. Open `ios/Beckify.xcodeproj`.
-3. Select an iPhone or iPad simulator.
-4. Signing: Beckify Debug and Release set `DEVELOPMENT_TEAM` to `9TR6R5LV8M` (Apple’s team prefix at identifier registration). Confirm that Team in Signing & Capabilities on a Mac.
-5. Run.
+3. Select the **Beckify** scheme (Toolbox) or **LookCheck** (standalone roast app).
+4. Select an iPhone or iPad simulator.
+5. Signing: Debug and Release set `DEVELOPMENT_TEAM` to `9TR6R5LV8M` (Apple’s team prefix at identifier registration). Confirm that Team in Signing & Capabilities on a Mac.
+6. Run.
 
 ### xcodebuild (unsigned compile check)
 
@@ -157,6 +161,19 @@ xcodebuild \
   -project Beckify.xcodeproj \
   -destination 'generic/platform=iOS Simulator' \
   -scheme Beckify \
+  -configuration Debug \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Standalone Look Check (same project, **LookCheck** scheme):
+
+```bash
+cd ios
+xcodebuild \
+  -project Beckify.xcodeproj \
+  -destination 'generic/platform=iOS Simulator' \
+  -scheme LookCheck \
   -configuration Debug \
   CODE_SIGNING_ALLOWED=NO \
   build

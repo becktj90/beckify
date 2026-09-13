@@ -71,6 +71,14 @@
 		BECF00000000000000000098 /* LookCheckPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000097 /* LookCheckPhotoView.swift */; };
 		BECF0000000000000000009A /* PanelScheduleHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000099 /* PanelScheduleHandoff.swift */; };
 		BECF0000000000000000009C /* BeckifyVisionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000009B /* BeckifyVisionClient.swift */; };
+		AECF0000000000000000000A /* LookCheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000001 /* LookCheckApp.swift */; };
+		AECF0000000000000000000B /* LookCheckRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000002 /* LookCheckRootView.swift */; };
+		AECF0000000000000000000C /* LookCheckTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000003 /* LookCheckTheme.swift */; };
+		AECF0000000000000000000D /* LookCheckCameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000004 /* LookCheckCameraPicker.swift */; };
+		AECF0000000000000000000E /* LookCheckClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000005 /* LookCheckClient.swift */; };
+		AECF0000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000006 /* Assets.xcassets */; };
+		AECF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000007 /* PrivacyInfo.xcprivacy */; };
+		AECF00000000000000000011 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = AECF00000000000000000009 /* BeckifyMath */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -138,6 +146,14 @@
 		BECF00000000000000000097 /* LookCheckPhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckPhotoView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000099 /* PanelScheduleHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelScheduleHandoff.swift; sourceTree = "<group>"; };
 		BECF0000000000000000009B /* BeckifyVisionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyVisionClient.swift; sourceTree = "<group>"; };
+		AECF00000000000000000001 /* LookCheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckApp.swift; sourceTree = "<group>"; };
+		AECF00000000000000000002 /* LookCheckRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckRootView.swift; sourceTree = "<group>"; };
+		AECF00000000000000000003 /* LookCheckTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckTheme.swift; sourceTree = "<group>"; };
+		AECF00000000000000000004 /* LookCheckCameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckCameraPicker.swift; sourceTree = "<group>"; };
+		AECF00000000000000000005 /* LookCheckClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckClient.swift; sourceTree = "<group>"; };
+		AECF00000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AECF00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AECF00000000000000000008 /* LookCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LookCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,6 +165,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AECF00000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AECF00000000000000000011 /* BeckifyMath in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -156,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				BECF0000000000000000002D /* Beckify */,
+				AECF00000000000000000016 /* LookCheck */,
 				BECF0000000000000000002C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -164,8 +189,23 @@
 			isa = PBXGroup;
 			children = (
 				BECF00000000000000000027 /* Beckify.app */,
+				AECF00000000000000000008 /* LookCheck.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AECF00000000000000000016 /* LookCheck */ = {
+			isa = PBXGroup;
+			children = (
+				AECF00000000000000000001 /* LookCheckApp.swift */,
+				AECF00000000000000000002 /* LookCheckRootView.swift */,
+				AECF00000000000000000003 /* LookCheckTheme.swift */,
+				AECF00000000000000000004 /* LookCheckCameraPicker.swift */,
+				AECF00000000000000000005 /* LookCheckClient.swift */,
+				AECF00000000000000000006 /* Assets.xcassets */,
+				AECF00000000000000000007 /* PrivacyInfo.xcprivacy */,
+			);
+			path = LookCheck;
 			sourceTree = "<group>";
 		};
 		BECF0000000000000000002D /* Beckify */ = {
@@ -309,6 +349,26 @@
 			productReference = BECF00000000000000000027 /* Beckify.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AECF00000000000000000015 /* LookCheck */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AECF00000000000000000019 /* Build configuration list for PBXNativeTarget "LookCheck" */;
+			buildPhases = (
+				AECF00000000000000000013 /* Sources */,
+				AECF00000000000000000012 /* Frameworks */,
+				AECF00000000000000000014 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LookCheck;
+			packageProductDependencies = (
+				AECF00000000000000000009 /* BeckifyMath */,
+			);
+			productName = LookCheck;
+			productReference = AECF00000000000000000008 /* LookCheck.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -320,6 +380,9 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					BECF00000000000000000033 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					AECF00000000000000000015 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -341,6 +404,7 @@
 			projectRoot = "";
 			targets = (
 				BECF00000000000000000033 /* Beckify */,
+				AECF00000000000000000015 /* LookCheck */,
 			);
 		};
 /* End PBXProject section */
@@ -352,6 +416,15 @@
 			files = (
 				BECF00000000000000000024 /* Assets.xcassets in Resources */,
 				BECF00000000000000000026 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AECF00000000000000000014 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AECF0000000000000000000F /* Assets.xcassets in Resources */,
+				AECF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,6 +496,18 @@
 				BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */,
 				BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */,
 				BECF00000000000000000090 /* ConductorLengthView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AECF00000000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AECF0000000000000000000A /* LookCheckApp.swift in Sources */,
+				AECF0000000000000000000B /* LookCheckRootView.swift in Sources */,
+				AECF0000000000000000000C /* LookCheckTheme.swift in Sources */,
+				AECF0000000000000000000D /* LookCheckCameraPicker.swift in Sources */,
+				AECF0000000000000000000E /* LookCheckClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -582,6 +667,76 @@
 			};
 			name = Release;
 		};
+		AECF00000000000000000017 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Look Check";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Look Check uses the camera to take a photo for a look verdict and roast. The photo stays on this device until you tap Analyze.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.lookcheck;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AECF00000000000000000018 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Look Check";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Look Check uses the camera to take a photo for a look verdict and roast. The photo stays on this device until you tap Analyze.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.lookcheck;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -603,6 +758,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AECF00000000000000000019 /* Build configuration list for PBXNativeTarget "LookCheck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AECF00000000000000000017 /* Debug */,
+				AECF00000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -614,6 +778,11 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		BECF00000000000000000028 /* BeckifyMath */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */;
+			productName = BeckifyMath;
+		};
+		AECF00000000000000000009 /* BeckifyMath */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */;
 			productName = BeckifyMath;

@@ -1,5 +1,30 @@
 import Foundation
 
+/// Roast tone for `/api/analyze-look`. Website and Toolbox omit this and the
+/// API defaults to `bro` (short BroGPT one-liner). The standalone Look Check
+/// app sends `mean` or `nice` for a longer exaggerated roast.
+public enum LookRoastMode: String, Equatable, Sendable, CaseIterable {
+    case mean
+    case nice
+    case bro
+
+    public var label: String {
+        switch self {
+        case .mean: return "Mean"
+        case .nice: return "Nice"
+        case .bro: return "Bro"
+        }
+    }
+
+    /// Standalone Look Check product: Mean vs Nice only.
+    public static let standaloneTones: [LookRoastMode] = [.mean, .nice]
+
+    public static func parse(_ raw: String?) -> LookRoastMode {
+        let folded = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return LookRoastMode(rawValue: folded) ?? .bro
+    }
+}
+
 /// Playful photo verdict from the website Look Check product.
 /// Distinct from the Wi-Fi / Cellular **Online / Captive** hotspot-detect probe
 /// (`LookCheck`). Entertainment only — not medical or dating advice.
@@ -85,6 +110,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
     public var headline: String
     public var summary: String
     public var roast: String
+    public var roastMode: LookRoastMode
     public var metrics: PhotoLookMetrics
     public var reasons: [String]
     public var fixes: [String]
@@ -98,6 +124,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         headline: String = "",
         summary: String = "",
         roast: String = "",
+        roastMode: LookRoastMode = .bro,
         metrics: PhotoLookMetrics = PhotoLookMetrics(),
         reasons: [String] = [],
         fixes: [String] = [],
@@ -110,6 +137,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         self.headline = headline
         self.summary = summary
         self.roast = roast
+        self.roastMode = roastMode
         self.metrics = metrics
         self.reasons = reasons
         self.fixes = fixes
@@ -136,6 +164,9 @@ public struct PhotoLookDraft: Equatable, Sendable {
 
     public var copyLine: String {
         var parts = ["Look Check: \(verdict.badge)"]
+        if roastMode != .bro {
+            parts.append(roastMode.label)
+        }
         if showsScore, let score {
             parts.append("score \(score)")
         }
@@ -144,6 +175,30 @@ public struct PhotoLookDraft: Equatable, Sendable {
         let roastText = roast.trimmingCharacters(in: .whitespacesAndNewlines)
         if !roastText.isEmpty { parts.append("Roast: \(roastText)") }
         return parts.joined(separator: " · ")
+    }
+
+    public var shareCardText: String {
+        var lines = ["Look Check · \(verdict.badge)"]
+        if roastMode != .bro {
+            lines[0] += " · \(roastMode.label)"
+        }
+        if showsScore, let score {
+            lines.append("Score \(score)")
+        }
+        let head = displayHeadline.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !head.isEmpty { lines.append(head) }
+        let summaryText = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !summaryText.isEmpty, summaryText != head {
+            lines.append(summaryText)
+        }
+        let roastText = roast.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !roastText.isEmpty {
+            lines.append("")
+            lines.append(roastText)
+        }
+        lines.append("")
+        lines.append("Entertainment only — not medical, dating, or beauty authority.")
+        return lines.joined(separator: "\n")
     }
 }
 
@@ -160,6 +215,8 @@ public enum PhotoLookCheck {
     public static let maxUploadEdge = 2048
     public static let disclaimer =
         "Entertainment only — not medical, dating, or beauty authority. Photos upload only when you tap Analyze Look."
+    public static let standaloneBundleID = "com.beckify.lookcheck"
+    public static let standaloneDisplayName = "Look Check"
 
     public static func defaultAnalyzeURL() -> URL? {
         analyzeURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -218,6 +275,7 @@ public enum PhotoLookCheck {
     /// Accepts the website payload (`analysis` / `draft` / raw object) or a JSON string.
     public static func normalizeDraft(_ raw: Any?) -> PhotoLookDraft {
         let object = visionDraftInput(raw)
+        let wrapper = raw as? [String: Any]
         let verdict = parseVerdict(stringValue(object["verdict"]))
         var score = asLookScore(object["score"])
         if verdict == .declined { score = nil }
@@ -235,6 +293,13 @@ public enum PhotoLookCheck {
             roast = ""
         }
 
+        let roastMode = LookRoastMode.parse(
+            firstNonEmpty(
+                stringValue(wrapper?["roastMode"] ?? wrapper?["roast_mode"]),
+                stringValue(object["roastMode"] ?? object["roast_mode"])
+            )
+        )
+
         return PhotoLookDraft(
             task: task,
             verdict: verdict,
@@ -242,6 +307,7 @@ public enum PhotoLookCheck {
             headline: stringValue(object["headline"]) ?? "",
             summary: summary.trimmingCharacters(in: .whitespacesAndNewlines),
             roast: roast,
+            roastMode: roastMode,
             metrics: normalizeMetrics(object, overallScore: score, verdict: verdict),
             reasons: stringList(object["reasons"]),
             fixes: stringList(object["fixes"]),
@@ -263,17 +329,27 @@ public enum PhotoLookCheck {
     }
 
     /// POST body matching website `analyzeLook` / `lookRunSameOrigin`.
-    public static func requestBody(imageBase64: String, mimeType: String) -> [String: String] {
+    /// `roastMode` defaults to `bro` so Toolbox and the website stay on the short roast.
+    public static func requestBody(
+        imageBase64: String,
+        mimeType: String,
+        roastMode: LookRoastMode = .bro
+    ) -> [String: String] {
         [
             "imageBase64": imageBase64,
             "mimeType": mimeType,
             "task": task,
+            "roastMode": roastMode.rawValue,
         ]
     }
 
-    public static func requestJSON(imageBase64: String, mimeType: String) throws -> Data {
+    public static func requestJSON(
+        imageBase64: String,
+        mimeType: String,
+        roastMode: LookRoastMode = .bro
+    ) throws -> Data {
         try JSONSerialization.data(
-            withJSONObject: requestBody(imageBase64: imageBase64, mimeType: mimeType),
+            withJSONObject: requestBody(imageBase64: imageBase64, mimeType: mimeType, roastMode: roastMode),
             options: []
         )
     }

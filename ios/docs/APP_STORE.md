@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify
 
-Listing copy for the native SwiftUI Beckify app (iPhone + iPad, no ads). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. App Review rejected **1.0 (113)** on **2026-09-09** (Guideline 2.1, Barometer crash). Next Connect upload is **1.0 (120)**. This is **not** TestFlight and **not** an App Store approval.
+Listing copy for the native SwiftUI **Beckify Toolbox** app (iPhone + iPad, no ads). Standalone **Look Check** (`com.beckify.lookcheck`) is a separate product — see [`../LookCheck/docs/APP_STORE.md`](../LookCheck/docs/APP_STORE.md). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. App Review rejected **1.0 (113)** on **2026-09-09** (Guideline 2.1, Barometer crash). Next Connect upload is **1.0 (120)**. This is **not** TestFlight and **not** an App Store approval.
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
