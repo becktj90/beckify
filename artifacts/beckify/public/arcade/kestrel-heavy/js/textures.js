@@ -145,23 +145,66 @@ export function makeUpperStage() {
 }
 
 export function makeFairingHalf(side) {
-  const cv = canvas(40, 70);
+  const cv = canvas(44, 78);
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#f4f7fb';
+  const g = ctx.createLinearGradient(side < 0 ? 8 : 36, 0, side < 0 ? 40 : 4, 0);
+  g.addColorStop(0, '#8a929a');
+  g.addColorStop(0.28, '#f7fbff');
+  g.addColorStop(0.72, '#e4ebf2');
+  g.addColorStop(1, '#6e767e');
+  ctx.fillStyle = g;
   ctx.beginPath();
   if (side < 0) {
-    ctx.moveTo(38, 4);
-    ctx.bezierCurveTo(8, 10, 4, 30, 6, 66);
-    ctx.lineTo(38, 66);
+    ctx.moveTo(40, 3);
+    ctx.bezierCurveTo(10, 10, 5, 32, 7, 74);
+    ctx.lineTo(40, 74);
   } else {
-    ctx.moveTo(2, 4);
-    ctx.bezierCurveTo(32, 10, 36, 30, 34, 66);
-    ctx.lineTo(2, 66);
+    ctx.moveTo(4, 3);
+    ctx.bezierCurveTo(34, 10, 39, 32, 37, 74);
+    ctx.lineTo(4, 74);
   }
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = 'rgba(20,28,40,0.2)';
+  ctx.strokeStyle = 'rgba(8,10,14,0.55)';
+  ctx.lineWidth = 1.4;
   ctx.stroke();
+  ctx.fillStyle = '#c48a2a';
+  ctx.fillRect(side < 0 ? 8 : 6, 70, 30, 4);
+  return cv;
+}
+
+/** Interstage ring + strut shards — readable silhouettes, not clutter. */
+export function makeSepShard(kind) {
+  const cv = canvas(36, 28);
+  const ctx = cv.getContext('2d');
+  ctx.translate(18, 14);
+  if (kind === 'ring') {
+    ctx.strokeStyle = '#c5ced6';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 14, 6, 0.2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = '#2b3038';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  } else if (kind === 'strut') {
+    ctx.fillStyle = '#1a1d24';
+    ctx.rotate(-0.4);
+    ctx.fillRect(-12, -3, 24, 6);
+    ctx.fillStyle = '#c48a2a';
+    ctx.fillRect(-12, -1, 24, 2);
+  } else {
+    ctx.fillStyle = '#9aa3aa';
+    ctx.beginPath();
+    ctx.moveTo(-10, -6);
+    ctx.lineTo(12, -4);
+    ctx.lineTo(8, 8);
+    ctx.lineTo(-8, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(8,10,14,0.5)';
+    ctx.stroke();
+  }
   return cv;
 }
 
@@ -613,29 +656,48 @@ export function makeAscentSky() {
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, '#02060c');
-  sky.addColorStop(0.28, '#061018');
-  sky.addColorStop(0.48, '#0a2040');
-  sky.addColorStop(0.66, '#163a68');
-  sky.addColorStop(0.8, '#3a7eb4');
-  sky.addColorStop(0.9, '#6fb4e8');
-  sky.addColorStop(1, '#8ec6e6');
+  sky.addColorStop(0, '#010208');
+  sky.addColorStop(0.12, '#040814');
+  sky.addColorStop(0.26, '#07101e');
+  sky.addColorStop(0.4, '#0a1a38');
+  sky.addColorStop(0.54, '#123058');
+  sky.addColorStop(0.66, '#1c4a82');
+  sky.addColorStop(0.76, '#3a7eb4');
+  sky.addColorStop(0.86, '#6fb4e8');
+  sky.addColorStop(0.93, '#9ad0ee');
+  sky.addColorStop(1, '#c8dce8');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  for (let i = 0; i < 160; i++) {
-    const y = (i * 97) % Math.floor(h * 0.72);
-    ctx.globalAlpha = 0.25 + (i % 5) * 0.12;
-    ctx.fillRect((i * 137) % w, y, 2, 2);
+
+  const airglow = ctx.createLinearGradient(0, h * 0.42, 0, h * 0.58);
+  airglow.addColorStop(0, 'rgba(80,180,255,0)');
+  airglow.addColorStop(0.5, 'rgba(90,200,255,0.16)');
+  airglow.addColorStop(1, 'rgba(80,180,255,0)');
+  ctx.fillStyle = airglow;
+  ctx.fillRect(0, h * 0.42, w, h * 0.16);
+
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 220; i++) {
+    const y = (i * 97) % Math.floor(h * 0.62);
+    const size = 1 + (i % 7 === 0 ? 1.6 : 0);
+    ctx.globalAlpha = 0.18 + (i % 6) * 0.12;
+    ctx.fillRect((i * 137) % w, y, size, size);
   }
   ctx.globalAlpha = 1;
-  ctx.fillStyle = 'rgba(255,255,255,0.16)';
-  for (let i = 0; i < 8; i++) {
+
+  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  for (let i = 0; i < 10; i++) {
     ctx.beginPath();
-    ctx.ellipse((i * 190 + 80) % w, h * 0.78 + (i % 3) * 28, 70, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse((i * 190 + 80) % w, h * 0.78 + (i % 3) * 28, 78, 13, 0.04 * (i % 2 ? 1 : -1), 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.strokeStyle = 'rgba(255,207,93,0.18)';
+  const haze = ctx.createLinearGradient(0, h * 0.7, 0, h);
+  haze.addColorStop(0, 'rgba(200,210,230,0)');
+  haze.addColorStop(1, 'rgba(180,198,214,0.28)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, h * 0.7, w, h * 0.3);
+
+  ctx.strokeStyle = 'rgba(255,207,93,0.16)';
   ctx.setLineDash([8, 14]);
   ctx.beginPath();
   ctx.moveTo(w * 0.28, h * 0.12);
@@ -647,32 +709,92 @@ export function makeAscentSky() {
   return cv;
 }
 
+export function makeStarfield() {
+  const w = 640;
+  const h = 720;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 280; i++) {
+    const x = (i * 131 + 17) % w;
+    const y = (i * 89 + 9) % h;
+    const s = i % 11 === 0 ? 2.2 : i % 4 === 0 ? 1.4 : 1;
+    ctx.globalAlpha = 0.22 + (i % 7) * 0.1;
+    ctx.fillRect(x, y, s, s);
+  }
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#c8dcff';
+  ctx.fillRect(80, 40, 2, 2);
+  ctx.fillRect(410, 120, 2, 2);
+  ctx.fillRect(520, 300, 3, 3);
+  ctx.globalAlpha = 1;
+  return cv;
+}
+
+export function makeCloudSheet(seed = 1) {
+  const w = 640;
+  const h = 220;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  for (let i = 0; i < 14; i++) {
+    const x = (i * 97 * seed + 40) % w;
+    const y = 40 + (i * 37 * seed) % 120;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 70 + (i % 5) * 12, 12 + (i % 3) * 4, -0.08 + (i % 4) * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return cv;
+}
+
+export function makeHazeBand() {
+  const w = 640;
+  const h = 180;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, 'rgba(180,200,220,0)');
+  g.addColorStop(0.45, 'rgba(170,190,210,0.22)');
+  g.addColorStop(1, 'rgba(160,180,200,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  return cv;
+}
+
 export function makeOcean() {
   const cv = canvas(1280, 720);
   const ctx = cv.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, 720);
-  sky.addColorStop(0, '#061018');
-  sky.addColorStop(0.4, '#0c2438');
+  sky.addColorStop(0, '#04080e');
+  sky.addColorStop(0.28, '#081828');
+  sky.addColorStop(0.5, '#0c2a42');
   sky.addColorStop(0.68, '#0e3a55');
   sky.addColorStop(1, '#072838');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, 1280, 720);
-  const sea = ctx.createLinearGradient(0, 410, 0, 720);
-  sea.addColorStop(0, '#0a3a52');
-  sea.addColorStop(0.45, '#072c40');
-  sea.addColorStop(1, '#041c2a');
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  for (let i = 0; i < 48; i++) {
+    ctx.globalAlpha = 0.2 + (i % 5) * 0.1;
+    ctx.fillRect((i * 97) % 1280, (i * 53) % 360, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  const sea = ctx.createLinearGradient(0, 400, 0, 720);
+  sea.addColorStop(0, '#0c4a64');
+  sea.addColorStop(0.2, '#0a3a52');
+  sea.addColorStop(0.55, '#072c40');
+  sea.addColorStop(1, '#03141e');
   ctx.fillStyle = sea;
-  ctx.fillRect(0, 410, 1280, 310);
-  ctx.fillStyle = 'rgba(180,220,240,0.06)';
-  for (let y = 430; y < 700; y += 22) {
-    ctx.fillRect(0, y, 1280, 2);
+  ctx.fillRect(0, 400, 1280, 320);
+  ctx.fillStyle = 'rgba(180,220,240,0.07)';
+  for (let y = 418; y < 700; y += 16) {
+    ctx.fillRect(0, y + ((y * 3) % 5), 1280, 1.4);
   }
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let i = 0; i < 36; i++) {
-    ctx.fillRect((i * 97) % 1280, (i * 53) % 380, 2, 2);
+  ctx.fillStyle = 'rgba(220,236,248,0.12)';
+  for (let i = 0; i < 22; i++) {
+    ctx.fillRect((i * 113) % 1280, 430 + (i % 7) * 28, 40 + (i % 5) * 10, 1.6);
   }
-  ctx.fillStyle = 'rgba(220,200,140,0.12)';
-  ctx.fillRect(0, 404, 1280, 6);
+  ctx.fillStyle = 'rgba(220,200,140,0.16)';
+  ctx.fillRect(0, 398, 1280, 5);
   return cv;
 }
 
@@ -764,10 +886,18 @@ export function makeHazard(kind) {
     ctx.fill();
     ctx.stroke();
   } else {
-    ctx.fillStyle = '#8a9098';
-    ctx.fillRect(-10, -6, 20, 12);
+    ctx.fillStyle = '#6e747c';
+    ctx.beginPath();
+    ctx.moveTo(-12, -5);
+    ctx.lineTo(11, -7);
+    ctx.lineTo(10, 7);
+    ctx.lineTo(-10, 6);
+    ctx.closePath();
+    ctx.fill();
     ctx.fillStyle = '#c48a2a';
-    ctx.fillRect(-10, -2, 20, 4);
+    ctx.fillRect(-10, -1, 20, 3);
+    ctx.strokeStyle = 'rgba(8,10,14,0.55)';
+    ctx.stroke();
   }
   return cv;
 }
@@ -826,6 +956,13 @@ export function installTextures(scene) {
   });
   add('pad', makePad());
   add('ascent-sky', makeAscentSky());
+  add('stars', makeStarfield());
+  add('clouds-far', makeCloudSheet(1));
+  add('clouds-near', makeCloudSheet(2));
+  add('haze', makeHazeBand());
+  add('sep-ring', makeSepShard('ring'));
+  add('sep-strut', makeSepShard('strut'));
+  add('sep-plate', makeSepShard('plate'));
   add('ocean', makeOcean());
   add('jacklyn', makeJacklyn());
   add('bird', makeHazard('bird'));

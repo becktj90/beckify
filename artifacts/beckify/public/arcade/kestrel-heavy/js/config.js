@@ -32,6 +32,10 @@ export const DIFFICULTY = {
     fuelDrain: 0.032,
     assist: 0.62,
     thrust: 1.08,
+    wind: 0.14,
+    sepAlignDeg: 14,
+    sepAlignVx: 1.65,
+    sepWindow: 7.4,
   },
   CADET: {
     spawnMul: 0.72,
@@ -44,6 +48,10 @@ export const DIFFICULTY = {
     fuelDrain: 0.058,
     assist: 0.52,
     thrust: 1,
+    wind: 0.32,
+    sepAlignDeg: 8,
+    sepAlignVx: 1.1,
+    sepWindow: 5.8,
   },
   PAD_RAT: {
     spawnMul: 1.05,
@@ -56,7 +64,50 @@ export const DIFFICULTY = {
     fuelDrain: 0.084,
     assist: 0,
     thrust: 0.96,
+    wind: 0.52,
+    sepAlignDeg: 5,
+    sepAlignVx: 0.72,
+    sepWindow: 4.2,
   },
+};
+
+/** Compressed MET spine. A clean run is ~T+100, not a 50s sprint. */
+export const PACE = {
+  MAXQ: 18.6,
+  MECO: 38.4,
+  SEP: 40.2,
+  SES1: 51.8,
+  FAIRING: 55.6,
+  ENTRY: 64.0,
+  LANDING: 84.8,
+  TOUCHDOWN: 96.5,
+  SECO: 99.8,
+  DEPLOY: 103.6,
+};
+
+/** MECO → stage sep is a playable beat, not a 400ms cutscene. */
+export const SEP = {
+  coastSec: 3.4,
+  clearSec: 6.4,
+  alignHold: 0.55,
+  widePenalty: 400,
+  contactPenalty: 650,
+};
+
+/** Zoomed-out Haven approach — barge reads small; closing speed stays slow. */
+export const HAVEN = {
+  startY: -340,
+  startLat: 820,
+  bargeY: 690,
+  zoomFar: 0.38,
+  zoomNear: 0.54,
+  gravity: 0.155,
+  frictionAir: 0.058,
+  maxVyEarly: 1.85,
+  maxVy: 4.2,
+  earlySec: 5.2,
+  landingFuel: 24,
+  swellAmp: 14,
 };
 
 export const BOOST_COYOTE_SEC = 0.14;
@@ -65,9 +116,10 @@ export const SHIELD_MAX = 2;
 export const FUEL_MAX = 100;
 export const OVERDRIVE_SEC = 4.2;
 export const ASCENT_TARGET_KM = 42;
-export const JACKLYN_BONUS = 2500;
-export const JACKLYN_SALVAGE = 900;
-export const SPLASH_PENALTY = 800;
+export const JACKLYN_BONUS = 2800;
+export const JACKLYN_SALVAGE = 650;
+export const SPLASH_PENALTY = 1200;
+export const TIP_PENALTY = 450;
 export const PICKUP_TYPES = ['shield', 'fuel', 'boost'];
 
 export const TIPS = [
@@ -86,11 +138,14 @@ export const RADIO = {
   LIFTOFF: 'Liftoff. Kestrel Heavy clearing the tower.',
   ASCENT: 'Vehicle flying nominally. Steer the corridor.',
   MAXQ: 'Max-Q. Hold the line.',
-  MECO: 'MECO. Booster heading home.',
-  JACKLYN: 'Haven in sight. Slide in. Brake the painted deck.',
+  MECO: 'MECO. Hold attitude. Sep window is coming.',
+  SEP: 'Stage sep. Steer ALIGN green, then tap climb to fire.',
+  SEP_CLEAR: 'Booster clear. Keep the relative motion wide of the stack.',
+  JACKLYN: 'Haven downrange. Long slide-in. Brake the painted deck.',
   RECOVERED: 'Landed on Haven. Sea state nominal. Coffee earned.',
   SPLASH: 'Splash. Combo reset — upper stage still flies.',
   SALVAGE: 'Hard catch. Booster on deck, score clipped.',
+  TIP: 'Tip on deck. Gold ring kissed steel — score clipped.',
   RUD: 'RUD. Range safe. Read the fail banner, then retry.',
 };
 

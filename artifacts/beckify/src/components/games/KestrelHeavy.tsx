@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
-const ARCADE_ASSET_VERSION = "kestrel-1";
+const ARCADE_ASSET_VERSION = "kestrel-2";
 const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/kestrel-heavy/index.html?v=${ARCADE_ASSET_VERSION}`.replace(/([^:]\/)\/+/g, "$1");
 
 export function KestrelHeavy() {

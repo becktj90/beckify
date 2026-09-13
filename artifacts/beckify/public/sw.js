@@ -19,10 +19,10 @@
    Arcade cabinet CSS is not stored here (/arcade/ is excluded). When that
    cabinet CSS changes, bump `arcade-asset-version` on the Phaser page and
    the matching iframe query so iOS Safari does not keep a stale hold-control
-   stylesheet. v3 drops the prior shell cache after that cabinet bust landed.
+   stylesheet. v4 drops the prior shell cache after the Kestrel Heavy depth pass.
    ============================================================================ */
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = 'beckify-shell-' + CACHE_VERSION;
 
 const EXCLUDED_PREFIXES = ['/toolbox/', '/games/', '/projects/', '/demos/', '/arcade/'];

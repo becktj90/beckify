@@ -64,7 +64,11 @@ export function renderHud(snapshot) {
     climb.dataset.label = snapshot.boostLabel;
     climb.setAttribute(
       'aria-label',
-      snapshot.boostLabel === 'HOLD TO BRAKE' ? 'Hold to brake' : 'Hold boost to climb',
+      snapshot.boostLabel === 'HOLD TO BRAKE'
+        ? 'Hold to brake'
+        : snapshot.boostLabel === 'TAP TO SEP'
+          ? 'Tap climb to stage sep'
+          : 'Hold boost to climb',
     );
   }
   const record = el('arcade-hi-score');
