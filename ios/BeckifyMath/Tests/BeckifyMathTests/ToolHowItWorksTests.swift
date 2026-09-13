@@ -76,4 +76,22 @@ final class ToolHowItWorksTests: XCTestCase {
     func testUnknownIDHasNoCopy() {
         XCTAssertNil(ToolHowItWorksCatalog.copy(forToolID: "notARealTool"))
     }
+
+    func testOCRCopyUsesHumanPhotoLanguage() {
+        for id in ["panelDirectory", "motorNameplateOCR", "lookCheck"] {
+            guard let copy = ToolHowItWorksCatalog.copy(forToolID: id) else {
+                XCTFail("missing \(id)")
+                continue
+            }
+            let blobs = ([copy.summary, copy.context] + copy.bullets).joined(separator: " ")
+            XCTAssertFalse(
+                blobs.localizedCaseInsensitiveContains("photograph"),
+                "\(id) how-it-works still says photograph"
+            )
+        }
+        let plate = ToolHowItWorksCatalog.copy(forToolID: "motorNameplateOCR")
+        XCTAssertTrue(plate?.summary.localizedCaseInsensitiveContains("take a picture") == true)
+        let panel = ToolHowItWorksCatalog.copy(forToolID: "panelDirectory")
+        XCTAssertTrue(panel?.summary.localizedCaseInsensitiveContains("take a picture") == true)
+    }
 }

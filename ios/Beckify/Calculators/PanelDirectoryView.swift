@@ -5,7 +5,7 @@ import ImageIO
 @preconcurrency import Vision
 import BeckifyMath
 
-/// Photograph or pick a panel schedule / directory sticker, run on-device
+/// Take a photo or pick a panel schedule / directory sticker, run on-device
 /// Vision, then map lines into an editable circuit table. A human must
 /// confirm before Saved Jobs or demand numbers are treated as reviewed.
 /// Optional cloud Analyze POSTs only after the user taps the button.
@@ -142,7 +142,7 @@ struct PanelDirectoryView: View {
 
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ToolEmptyState(
-                    title: "Photograph or pick a schedule",
+                    title: "Take a photo or pick a schedule",
                     detail: "Use the camera or photo library. Photos stay on screen. Vision reads them on this device, then Calculate maps lines into rows you can correct. Analyze is optional and uploads only if you tap it.",
                     systemImage: "list.bullet.rectangle"
                 )
@@ -234,7 +234,7 @@ struct PanelDirectoryView: View {
                     cameraUnavailable = true
                 }
             } label: {
-                Label("Take photo", systemImage: "camera")
+                Label("Take a photo", systemImage: "camera")
                     .frame(minHeight: Theme.touchTarget)
             }
             .buttonStyle(.borderedProminent)
@@ -244,7 +244,7 @@ struct PanelDirectoryView: View {
 
             PhotosPicker(selection: $photoItems, maxSelectionCount: 6, matching: .images, photoLibrary: .shared()) {
                 Label(
-                    isRecognizing ? "Reading…" : "Choose photo",
+                    isRecognizing ? "Reading…" : "Choose a photo",
                     systemImage: "photo.on.rectangle"
                 )
                 .frame(minHeight: Theme.touchTarget)

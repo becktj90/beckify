@@ -3,19 +3,43 @@ import SwiftUI
 // MARK: - Beckify Instrument Glyph Set (app-only)
 //
 // Original schematic linework for the Field EE Toolbox — vector Canvas paths,
-// no image assets, dual-stroke depth, category-colored wells.
+// no image assets, outline-only strokes on quiet category wells.
+// SF Symbols stay on chrome (favorites, system buttons), not in tool wells.
 //
 // Units:
 //   • `ToolGlyph`     — per-tool schematic (`GlyphKind`, 1:1 with `ToolID`)
 //   • `CategoryGlyph` — shelf mark for each `ToolCategory`
-//   • `IconWell`      — pastel well + crisp glyph (grid / list / headers)
+//   • `IconWell`      — tinted well + crisp glyph (grid / list / headers)
+
+/// One stroke-weight curve for every schematic. 44pt is the reference size
+/// (`Theme.Stroke.icon`). Selected is a slight weight bump, not a new language.
+/// A floor keeps 22pt related-row marks engraved instead of hairline.
+enum GlyphStroke {
+    static let referenceSize: CGFloat = 44
+    static let selectedWeight: CGFloat = 1.08
+    static let minimum: CGFloat = 1.55
+
+    static func lineWidth(size: CGFloat, selected: Bool) -> CGFloat {
+        let scaled = Theme.Stroke.icon * (size / referenceSize)
+        let base = max(minimum, scaled)
+        return selected ? base * selectedWeight : base
+    }
+
+    static func underWidth(for lineWidth: CGFloat) -> CGFloat {
+        lineWidth * Theme.Stroke.iconUnderRatio
+    }
+
+    static func underOpacity(selected: Bool) -> Double {
+        selected ? 0.10 : 0.08
+    }
+}
 
 /// Schematic stroke for one toolbox tool. Drawn as vector paths so it stays
 /// crisp at any size, follows the theme, and ships no image assets.
 ///
 /// Each `ToolID` maps 1:1 to a distinct `GlyphKind` — no unrelated tools share
 /// the same schematic. When `toolID` is supplied the stroke is a
-/// category-colored gradient with a small per-tool hue nudge.
+/// category-colored gradient. Glyphs are stroke-only (no fills).
 struct ToolGlyph: View {
     let kind: GlyphKind
     var size: CGFloat = 44
@@ -32,27 +56,25 @@ struct ToolGlyph: View {
     private var strokeColor: Color { selected ? Theme.accent : Theme.muted }
 
     private var lineWidth: CGFloat {
-        let base = max(Theme.Stroke.icon, size * 0.052)
-        return selected ? base * 1.12 : base
+        GlyphStroke.lineWidth(size: size, selected: selected)
     }
 
     private var underWidth: CGFloat {
-        max(Theme.Stroke.iconUnder * (size / 44), lineWidth * 1.85)
+        GlyphStroke.underWidth(for: lineWidth)
     }
 
     var body: some View {
         Canvas { context, canvasSize in
-            // Slightly tighter inset so schematics read larger at tile sizes.
+            // Same 12% inset on every glyph so tile density stays even.
             let rect = CGRect(origin: .zero, size: canvasSize)
                 .insetBy(dx: canvasSize.width * 0.12, dy: canvasSize.height * 0.12)
             let path = kind.path(in: rect)
             let mainStyle = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
             let underStyle = StrokeStyle(lineWidth: underWidth, lineCap: .round, lineJoin: .round)
 
-            // Soft understroke — second ink pass for body without fill blobs.
             context.stroke(
                 path,
-                with: .color(Color.black.opacity(selected ? 0.22 : 0.12)),
+                with: .color(Color.black.opacity(GlyphStroke.underOpacity(selected: selected))),
                 style: underStyle
             )
 
@@ -68,7 +90,6 @@ struct ToolGlyph: View {
                 context.stroke(path, with: .color(strokeColor), style: mainStyle)
             }
         }
-        .hueRotation(toolID.map(Theme.toolHueNudge) ?? .zero)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
@@ -103,14 +124,14 @@ struct IconWell: View {
     private var category: ToolCategory? { ToolboxCatalog.category(of: toolID) }
     private var size: CGFloat { scaledSize }
     private var resolvedGlyph: CGFloat {
-        let glyphBase = glyphSize ?? baseSize * 0.58
+        let glyphBase = glyphSize ?? baseSize * 0.64
         let scale = baseSize > 0 ? scaledSize / baseSize : 1
         return glyphBase * scale
     }
     private var corner: CGFloat {
         if circular { return size / 2 }
-        // Scale the well radius with size so large grid tiles stay soft, not boxy.
-        return min(Theme.Radius.tile, max(Theme.Radius.well * 0.75, size * 0.22))
+        // Fixed control-band radius on square wells. Circles stay on Quick strip.
+        return Theme.Radius.control
     }
 
     var body: some View {
@@ -152,18 +173,17 @@ struct CategoryGlyph: View {
     var selected: Bool = true
 
     private var lineWidth: CGFloat {
-        let base = max(Theme.Stroke.icon, size * 0.06)
-        return selected ? base * 1.1 : base
+        GlyphStroke.lineWidth(size: size, selected: selected)
     }
 
     private var underWidth: CGFloat {
-        max(Theme.Stroke.iconUnder * (size / 28), lineWidth * 1.7)
+        GlyphStroke.underWidth(for: lineWidth)
     }
 
     var body: some View {
         Canvas { context, canvasSize in
             let rect = CGRect(origin: .zero, size: canvasSize)
-                .insetBy(dx: canvasSize.width * 0.14, dy: canvasSize.height * 0.14)
+                .insetBy(dx: canvasSize.width * 0.12, dy: canvasSize.height * 0.12)
             let path = CategoryGlyphKind(category).path(in: rect)
             let colors = Theme.categoryColors(category)
             let shading = GraphicsContext.Shading.linearGradient(
@@ -173,7 +193,7 @@ struct CategoryGlyph: View {
             )
             context.stroke(
                 path,
-                with: .color(Color.black.opacity(0.18)),
+                with: .color(Color.black.opacity(GlyphStroke.underOpacity(selected: selected))),
                 style: StrokeStyle(lineWidth: underWidth, lineCap: .round, lineJoin: .round)
             )
             context.stroke(
@@ -193,7 +213,7 @@ struct CategoryWell: View {
     var size: CGFloat = 28
 
     private var corner: CGFloat {
-        min(Theme.Radius.tile, max(Theme.Radius.well * 0.65, size * 0.22))
+        Theme.Radius.control
     }
 
     var body: some View {
@@ -697,8 +717,6 @@ enum GlyphKind {
                 width: inner * 2, height: inner * 2
             ))
         }
-        path.move(to: CGPoint(x: r.midX - radius * 0.18, y: r.midY - radius * 0.18))
-        path.addLine(to: CGPoint(x: r.midX + radius * 0.18, y: r.midY + radius * 0.18))
         return path
     }
 
@@ -983,16 +1001,14 @@ enum GlyphKind {
         let baseY = r.maxY - r.height * 0.12
         path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: baseY))
         path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: baseY))
-        let heights: [CGFloat] = [0.22, 0.48, 0.36, 0.62, 0.44, 0.78]
-        let barW = r.width * 0.1
+        let heights: [CGFloat] = [0.32, 0.58, 0.44, 0.72]
+        let barW = r.width * 0.14
         let gap = (r.width * 0.84 - barW * CGFloat(heights.count)) / CGFloat(heights.count - 1)
         for (index, height) in heights.enumerated() {
             let x = r.minX + r.width * 0.08 + (barW + gap) * CGFloat(index)
             let bar = CGRect(x: x, y: baseY - r.height * height, width: barW, height: r.height * height)
             path.addRoundedRect(in: bar, cornerSize: CGSize(width: barW * 0.2, height: barW * 0.2))
         }
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.16))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.28))
         return path
     }
 
@@ -1413,7 +1429,6 @@ enum GlyphKind {
         return path
     }
 
-    // Placeholder glyphs — icon art agent will refine.
     private static func tapChanger(_ r: CGRect) -> Path {
         var path = transformer(r)
         path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.08))
@@ -1433,8 +1448,18 @@ enum GlyphKind {
         return path
     }
 
+    /// Battery plates plus a small bolt — UPS, not the series bank.
     private static func upsSizing(_ r: CGRect) -> Path {
-        batteryBank(r)
+        var path = batteryBank(r)
+        let bolt = [
+            CGPoint(x: r.midX + r.width * 0.06, y: r.minY + r.height * 0.10),
+            CGPoint(x: r.midX - r.width * 0.02, y: r.minY + r.height * 0.22),
+            CGPoint(x: r.midX + r.width * 0.04, y: r.minY + r.height * 0.22),
+            CGPoint(x: r.midX - r.width * 0.04, y: r.minY + r.height * 0.36),
+        ]
+        path.move(to: bolt[0])
+        for point in bolt.dropFirst() { path.addLine(to: point) }
+        return path
     }
 
     private static func motorNameplate(_ r: CGRect) -> Path {
@@ -1497,11 +1522,6 @@ enum GlyphKind {
             to: CGPoint(x: r.minX + r.width * 0.70, y: r.minY + r.height * 0.70),
             control: CGPoint(x: r.minX + r.width * 0.50, y: r.minY + r.height * 0.52)
         )
-        let arm = min(r.width, r.height) * 0.10
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.08 + arm, y: r.minY + r.height * 0.12))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12 + arm))
         return path
     }
 
@@ -1519,16 +1539,54 @@ enum GlyphKind {
         return path
     }
 
+    /// Shield outline with two leak arcs — EMC, not the IS checkmark.
     private static func empEmc(_ r: CGRect) -> Path {
-        isLoopVerifier(r)
+        var path = Path()
+        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.10)
+        let left = CGPoint(x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.24)
+        let right = CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.24)
+        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.10)
+        path.move(to: top)
+        path.addLine(to: right)
+        path.addLine(to: bottom)
+        path.addLine(to: left)
+        path.closeSubpath()
+        let source = CGPoint(x: r.midX, y: r.midY + r.height * 0.02)
+        for ring in 1...2 {
+            let radius = r.width * (0.12 + 0.10 * CGFloat(ring))
+            for step in 0...10 {
+                let t = CGFloat(step) / 10
+                let rad = (200 + 140 * t) * .pi / 180
+                let point = CGPoint(x: source.x + cos(rad) * radius, y: source.y + sin(rad) * radius)
+                if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+            }
+        }
+        return path
     }
 
+    /// Conductor plus a small code-table tick — NEC circuit, not ampacity heat.
     private static func necCircuit(_ r: CGRect) -> Path {
-        wireAmpacity(r)
+        var path = wireAmpacity(r)
+        let tab = CGRect(
+            x: r.minX + r.width * 0.08,
+            y: r.minY + r.height * 0.12,
+            width: r.width * 0.22,
+            height: r.height * 0.28
+        )
+        path.addRoundedRect(in: tab, cornerSize: CGSize(width: 2, height: 2))
+        path.move(to: CGPoint(x: tab.minX + tab.width * 0.22, y: tab.minY + tab.height * 0.38))
+        path.addLine(to: CGPoint(x: tab.maxX - tab.width * 0.22, y: tab.minY + tab.height * 0.38))
+        path.move(to: CGPoint(x: tab.minX + tab.width * 0.22, y: tab.minY + tab.height * 0.62))
+        path.addLine(to: CGPoint(x: tab.maxX - tab.width * 0.38, y: tab.minY + tab.height * 0.62))
+        return path
     }
 
+    /// Directory rows with a bottom total bar — worksheet, not the panel sticker.
     private static func loadWorksheet(_ r: CGRect) -> Path {
-        panelDirectory(r)
+        var path = panelDirectory(r)
+        path.move(to: CGPoint(x: r.minX + r.width * 0.14, y: r.maxY - r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.14, y: r.maxY - r.height * 0.08))
+        return path
     }
 
     private static func cableSchedule(_ r: CGRect) -> Path {
@@ -1567,8 +1625,8 @@ enum GlyphKind {
         let sunR = min(r.width, r.height) * 0.14
         let sunC = CGPoint(x: r.minX + r.width * 0.72, y: r.minY + r.height * 0.28)
         path.addEllipse(in: CGRect(x: sunC.x - sunR, y: sunC.y - sunR, width: sunR * 2, height: sunR * 2))
-        for i in 0..<8 {
-            let a = CGFloat(i) * .pi / 4
+        for i in 0..<4 {
+            let a = CGFloat(i) * .pi / 2
             let inner = sunR * 1.25
             let outer = sunR * 1.85
             path.move(to: CGPoint(x: sunC.x + cos(a) * inner, y: sunC.y + sin(a) * inner))
@@ -1629,16 +1687,6 @@ enum GlyphKind {
         }
         path.addLine(to: CGPoint(x: start + zig, y: midY))
         path.addLine(to: CGPoint(x: r.maxX, y: midY))
-
-        let noiseY = r.minY + r.height * 0.28
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: noiseY))
-        let samples = 8
-        for i in 1...samples {
-            let t = CGFloat(i) / CGFloat(samples)
-            let x = r.minX + r.width * 0.08 + r.width * 0.84 * t
-            let amp: CGFloat = (i.isMultiple(of: 2) ? -1 : 1) * r.height * (0.06 + CGFloat(i % 3) * 0.03)
-            path.addLine(to: CGPoint(x: x, y: noiseY + amp))
-        }
         return path
     }
 
@@ -1818,12 +1866,6 @@ enum GlyphKind {
         path.addLine(to: CGPoint(x: r.midX + gap / 2, y: r.midY + plateH / 2))
         path.move(to: CGPoint(x: r.midX + gap / 2, y: r.midY))
         path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.52, y: r.minY + r.height * 0.2))
-        for step in 0...20 {
-            let t = CGFloat(step) / 20
-            let y = r.minY + r.height * 0.34 - sin(t * .pi * 3) * r.height * 0.12
-            path.addLine(to: CGPoint(x: r.minX + r.width * (0.52 + 0.4 * t), y: y))
-        }
         return path
     }
 
@@ -1849,12 +1891,6 @@ enum GlyphKind {
         path.addLine(to: CGPoint(x: capX + r.width * 0.08, y: r.midY + plateH / 2))
         path.move(to: CGPoint(x: capX + r.width * 0.08, y: r.midY))
         path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.58, y: r.maxY - r.height * 0.16))
-        for step in 0...16 {
-            let t = CGFloat(step) / 16
-            let y = r.maxY - r.height * (0.16 + 0.42 * (1 - exp(-4 * t)))
-            path.addLine(to: CGPoint(x: r.minX + r.width * (0.58 + 0.34 * t), y: y))
-        }
         return path
     }
 
@@ -2106,7 +2142,7 @@ enum GlyphKind {
     /// Six cell circles in a 3×2 pack grid.
     private static func eBikePackDesigner(_ r: CGRect) -> Path {
         var path = Path()
-        let cols = 3
+        let cols = 2
         let rows = 2
         let cell = min(r.width, r.height) * 0.2
         let gap = r.width * 0.06

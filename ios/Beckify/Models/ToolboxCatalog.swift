@@ -552,7 +552,7 @@ enum ToolboxCatalog {
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
-            subtitle: "Photo a schedule; Vision first, optional Analyze, then confirm demand.",
+            subtitle: "Take a picture of a schedule; Vision first, optional Analyze, then confirm demand.",
             symbol: "list.bullet.rectangle",
             synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm", "analyze"]
         ),
@@ -696,7 +696,7 @@ enum ToolboxCatalog {
             id: .motorNameplateOCR,
             kind: .calculator,
             title: "Motor Nameplate OCR",
-            subtitle: "Photograph a plate; Vision first, optional Analyze, then you confirm.",
+            subtitle: "Take a picture of a plate; Vision first, optional Analyze, then you confirm.",
             symbol: "text.viewfinder",
             synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan", "analyze"]
         ),
@@ -704,7 +704,7 @@ enum ToolboxCatalog {
             id: .lookCheck,
             kind: .calculator,
             title: "Look Check",
-            subtitle: "Upload any photo for a playful look verdict plus a roast. Entertainment only.",
+            subtitle: "Take or choose a photo for a playful look verdict plus a roast. Entertainment only.",
             symbol: "person.crop.rectangle",
             synonyms: [
                 "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",
