@@ -104,7 +104,9 @@ export default class MissionScene extends Phaser.Scene {
     this.cloudsNear = this.add.image(W / 2, 220, 'clouds-near').setDepth(-0.4).setDisplaySize(W + 200, 280).setAlpha(0.55);
     this.hazeBand = this.add.image(W / 2, 360, 'haze').setDepth(-0.2).setDisplaySize(W + 40, 240).setAlpha(0.8);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
-    this.bgOcean = this.add.image(W / 2, H / 2, 'ocean').setVisible(false).setDepth(0);
+    this.oceanWash = this.add.graphics().setDepth(-1).setVisible(false);
+    this.paintOceanWash();
+    this.bgOcean = this.add.image(W / 2, 280, 'ocean').setVisible(false).setDepth(0).setDisplaySize(3600, 2400);
     this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
     this.smokeBank = this.add.image(W / 2, 620, 'smoke-bank').setVisible(false).setDepth(7).setAlpha(0);
     this.bloomFlash = this.add.image(W / 2, 620, 'bloom').setVisible(false).setDepth(8).setBlendMode('ADD').setAlpha(0);
@@ -293,8 +295,11 @@ export default class MissionScene extends Phaser.Scene {
       this.bootQaFlight(PACE.ENTRY - 0.2, () => this.enterJacklyn());
     } else if (this.qaBeat === 'sep') {
       this.bootQaFlight(PACE.MECO - 0.05, () => {
-        this.rocket.setPosition(W / 2, 40);
-        this.rocket.setVelocity(0, -0.4);
+        this.session.altitudeKm = 54;
+        this.bgPad.setVisible(false);
+        this.rocket.setPosition(W / 2, -1480);
+        this.rocket.setVelocity(0.2, -0.35);
+        this.cameras.main.centerOn(W / 2, -1480);
         this.enterSep();
       });
     }
@@ -521,7 +526,9 @@ export default class MissionScene extends Phaser.Scene {
     this.clearActors();
     this.showAscentSky(false);
     this.bgPad.setVisible(false);
+    if (this.oceanWash) this.oceanWash.setVisible(true);
     this.bgOcean.setVisible(true);
+    this.bgOcean.setDisplaySize(3600, 2400);
     this.bgOcean.setTint(flight.seaTint || 0xffffff);
     this.jacklyn.setVisible(true);
     this.placeRecovery();
@@ -1434,6 +1441,19 @@ export default class MissionScene extends Phaser.Scene {
     if (this.cloudsNear) this.cloudsNear.setVisible(on);
     if (this.hazeBand) this.hazeBand.setVisible(on);
     if (this.bgWash) this.bgWash.setVisible(on);
+    if (this.oceanWash) this.oceanWash.setVisible(!on && this.status === 'JACKLYN');
+    if (this.bgOcean && on) this.bgOcean.setVisible(false);
+  }
+
+  paintOceanWash() {
+    if (!this.oceanWash) return;
+    this.oceanWash.clear();
+    this.oceanWash.fillStyle(0x04080e, 1);
+    this.oceanWash.fillRect(-2200, -2000, 5600, 2800);
+    this.oceanWash.fillStyle(0x072838, 1);
+    this.oceanWash.fillRect(-2200, 200, 5600, 2200);
+    this.oceanWash.fillStyle(0x0a3a52, 1);
+    this.oceanWash.fillRect(-2200, 420, 5600, 2000);
   }
 
   updateSkyLayers() {
