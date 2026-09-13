@@ -424,9 +424,12 @@ enum ToolboxCatalog {
             id: .bluetoothScan,
             kind: .sensor,
             title: "BLE Scanner",
-            subtitle: "CoreBluetooth names, identifiers, RSSI, advertised services.",
+            subtitle: "CoreBluetooth names, RSSI, services, plus RSSI radar. Estimate, not bearing.",
             symbol: "dot.radiowaves.left.and.right",
-            synonyms: ["bluetooth", "ble", "corebluetooth", "peripheral", "rssi", "beacon"]
+            synonyms: [
+                "bluetooth", "ble", "corebluetooth", "peripheral", "rssi", "beacon",
+                "radar", "proximity", "layout",
+            ]
         ),
         ToolDefinition(
             id: .noiseMeter,

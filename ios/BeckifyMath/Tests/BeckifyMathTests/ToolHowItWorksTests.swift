@@ -50,6 +50,11 @@ final class ToolHowItWorksTests: XCTestCase {
 
         let ble = ToolHowItWorksCatalog.copy(forToolID: "bluetoothScan")
         XCTAssertTrue(ble?.summary.localizedCaseInsensitiveContains("CoreBluetooth") == true)
+        XCTAssertTrue(ble?.summary.localizedCaseInsensitiveContains("radar") == true)
+        XCTAssertTrue(ble?.context.localizedCaseInsensitiveContains("estimate") == true)
+        XCTAssertTrue(ble?.context.localizedCaseInsensitiveContains("bearing") == true)
+        XCTAssertTrue(ble?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("angle-of-arrival") || $0.localizedCaseInsensitiveContains("AoA") }) == true)
+        XCTAssertTrue(ble?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("ranging") || $0.localizedCaseInsensitiveContains("estimate") }) == true)
 
         let noise = ToolHowItWorksCatalog.copy(forToolID: "noiseMeter")
         XCTAssertTrue(noise?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("SLM") }) == true)
