@@ -41,6 +41,16 @@ import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions
 import { beatsFor, currentBeat, formatClock, phaseChip, T0_LEAD } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures } from './textures.js';
+import {
+  bindFullscreenChrome,
+  exitNativeFullscreen,
+  isLetterboxed,
+  nativeFullscreenElement,
+  requestNativeFullscreen,
+  setArcadeCssImmersive,
+  shouldAttemptNativeFullscreen,
+  syncFullscreenButton,
+} from './fullscreen.js';
 
 const CAT_ROCKET = 0x0001;
 const CAT_WORLD = 0x0002;
@@ -272,6 +282,8 @@ export default class MissionScene extends Phaser.Scene {
       const fsBtn = document.getElementById('arcade-fullscreen-btn');
       if (fsBtn) fsBtn.hidden = true;
     }
+    const fsWrap = document.getElementById('arcade-fs-wrapper');
+    if (fsWrap) bindFullscreenChrome(fsWrap, () => this.scale.refresh());
 
     this.input.on('pointerdown', (pointer) => {
       AudioApi.unlock(this.settings);
@@ -1638,14 +1650,32 @@ export default class MissionScene extends Phaser.Scene {
     this.startMission();
   }
 
-  toggleFullscreen() {
+  async toggleFullscreen() {
     const wrap = document.getElementById('arcade-fs-wrapper');
     if (!wrap) return;
-    const active = document.fullscreenElement === wrap;
-    if (active) document.exitFullscreen?.();
-    else wrap.requestFullscreen?.();
-    wrap.classList.toggle('arcade-immersive', !active);
-    document.documentElement.classList.toggle('arcade-immersive-open', !active);
+    const cssOn = wrap.classList.contains('arcade-immersive');
+    const nativeOn = nativeFullscreenElement() === wrap;
+    if (cssOn || nativeOn) {
+      try { await exitNativeFullscreen(); } catch { /* ignore */ }
+      setArcadeCssImmersive(wrap, false);
+      this.time.delayedCall(80, () => this.scale.refresh());
+      return;
+    }
+    if (shouldAttemptNativeFullscreen()) {
+      try {
+        await requestNativeFullscreen(wrap);
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (nativeFullscreenElement() === wrap && !isLetterboxed(wrap)) {
+          syncFullscreenButton(true);
+          this.time.delayedCall(80, () => this.scale.refresh());
+          return;
+        }
+        await exitNativeFullscreen();
+      } catch {
+        /* iPhone / rejected native FS → CSS fill */
+      }
+    }
+    setArcadeCssImmersive(wrap, true);
     this.time.delayedCall(80, () => this.scale.refresh());
   }
 

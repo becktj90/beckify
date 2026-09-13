@@ -21,6 +21,8 @@ assert.doesNotMatch(glenn, /min-h-\[480px\]/);
 assert.match(css, /\.game-stage \{[^}]*min-width:\s*0/s);
 assert.match(css, /\.game-stage\.ng-playfield[\s\S]*-webkit-touch-callout:\s*none/);
 assert.match(css, /\.game-stage\.ng-playfield iframe[\s\S]*touch-action:\s*none/);
+assert.match(css, /html\.game-immersive-open/);
+assert.match(css, /--game-vv-height/);
 assert.doesNotMatch(css, /minmax\(280px,\s*540px\)/, 'old Cosmic Cadet column min-width overflowed phones');
 assert.doesNotMatch(css, /minmax\(360px,\s*550px\)/);
 

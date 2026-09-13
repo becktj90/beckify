@@ -1,43 +1,98 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  activeFullscreenElement,
+  applyVisualViewportVars,
+  ensureViewportFitCover,
+  exitNativeFullscreen,
+  isLetterboxedElement,
+  nativeFullscreenEnabled,
+  requestNativeFullscreen,
+  shouldAttemptNativeFullscreen,
+  waitAnimationFrames,
+} from "@/lib/game-fullscreen";
 
 /**
- * The Fullscreen API is not available for arbitrary elements in iOS Safari.
- * When it is unavailable (or rejected), use an app-owned immersive mode so
- * every game still has a reliable full-screen control on phones.
+ * Desktop / Android: native Fullscreen API.
+ * iPhone (and any native-FS letterbox): CSS pseudo-fullscreen that fills
+ * the visual viewport, hides site nav, and only then labels the control EXIT.
  */
 export function useGameFullscreen() {
-  const [immersive, setImmersive] = useState(false);
+  const [cssImmersive, setCssImmersive] = useState(false);
+  const [nativeOn, setNativeOn] = useState(false);
+  const immersive = cssImmersive || nativeOn;
 
   useEffect(() => {
-    const sync = () => setImmersive(Boolean(document.fullscreenElement));
+    const sync = () => setNativeOn(Boolean(activeFullscreenElement()));
+    sync();
     document.addEventListener("fullscreenchange", sync);
-    return () => document.removeEventListener("fullscreenchange", sync);
+    document.addEventListener("webkitfullscreenchange", sync);
+    return () => {
+      document.removeEventListener("fullscreenchange", sync);
+      document.removeEventListener("webkitfullscreenchange", sync);
+    };
   }, []);
 
-  const toggleFullscreen = async (element: HTMLElement | null) => {
-    if (!element) return;
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("game-immersive-open", immersive);
+    if (immersive) ensureViewportFitCover();
+    const syncVv = () => applyVisualViewportVars(root, immersive);
+    syncVv();
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", syncVv);
+    vv?.addEventListener("scroll", syncVv);
+    window.addEventListener("resize", syncVv);
+    window.addEventListener("orientationchange", syncVv);
+    return () => {
+      root.classList.remove("game-immersive-open");
+      applyVisualViewportVars(root, false);
+      vv?.removeEventListener("resize", syncVv);
+      vv?.removeEventListener("scroll", syncVv);
+      window.removeEventListener("resize", syncVv);
+      window.removeEventListener("orientationchange", syncVv);
+    };
+  }, [immersive]);
 
-    if (document.fullscreenElement) {
-      await document.exitFullscreen?.();
-      return;
-    }
-
+  const exitFullscreen = useCallback(async () => {
     try {
-      if (element.requestFullscreen) {
-        await element.requestFullscreen();
+      await exitNativeFullscreen();
+    } catch {
+      /* ignore rejected exit */
+    }
+    setCssImmersive(false);
+  }, []);
+
+  const toggleFullscreen = useCallback(
+    async (element: HTMLElement | null) => {
+      if (!element) return;
+
+      if (cssImmersive || nativeOn || activeFullscreenElement()) {
+        await exitFullscreen();
         return;
       }
-    } catch {
-      // Safari on iPhone rejects this for non-video elements. Fall through.
-    }
 
-    setImmersive((current) => !current);
-  };
+      if (
+        shouldAttemptNativeFullscreen({
+          userAgent: navigator.userAgent,
+          fullscreenEnabled: nativeFullscreenEnabled(),
+        })
+      ) {
+        try {
+          await requestNativeFullscreen(element);
+          await waitAnimationFrames(2);
+          if (activeFullscreenElement() && !isLetterboxedElement(element)) {
+            return;
+          }
+          await exitNativeFullscreen();
+        } catch {
+          // iPad / desktop rejection → CSS fallback.
+        }
+      }
 
-  const exitFullscreen = async () => {
-    if (document.fullscreenElement) await document.exitFullscreen?.();
-    setImmersive(false);
-  };
+      setCssImmersive(true);
+    },
+    [cssImmersive, exitFullscreen, nativeOn],
+  );
 
-  return { immersive, toggleFullscreen, exitFullscreen };
+  return { immersive, cssImmersive, toggleFullscreen, exitFullscreen };
 }

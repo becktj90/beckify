@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
-const ARCADE_ASSET_VERSION = "kestrel-3";
+const ARCADE_ASSET_VERSION = "kestrel-4";
 const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/kestrel-heavy/index.html?v=${ARCADE_ASSET_VERSION}`.replace(/([^:]\/)\/+/g, "$1");
 
 export function KestrelHeavy() {
@@ -14,7 +14,7 @@ export function KestrelHeavy() {
       <h1 id="kestrel-heavy-title" className="sr-only">Kestrel Heavy</h1>
       <div
         ref={stageRef}
-        className={`game-stage ng-playfield relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[70] is-immersive rounded-none border-0" : "w-full min-w-0 aspect-video max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
+        className={`game-stage ng-playfield relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[80] is-immersive rounded-none border-0" : "w-full min-w-0 aspect-video max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
       >
         <iframe
           src={RUNNER_SRC}
@@ -24,9 +24,10 @@ export function KestrelHeavy() {
         />
         <button
           type="button"
-          className="absolute right-3 top-3 z-10 min-h-11 rounded-md border border-white/40 bg-[#0a0f24]/90 px-3 text-xs font-bold tracking-wide text-white shadow-lg"
+          className="game-fs-toggle absolute right-3 top-3 z-10 inline-flex min-h-11 items-center rounded-md border border-white/40 bg-[#0a0f24]/90 px-3 text-xs font-bold tracking-wide text-white shadow-lg"
           onClick={() => (immersive ? exitFullscreen() : toggleFullscreen(stageRef.current))}
           aria-label={immersive ? "Exit fullscreen" : "Play fullscreen"}
+          aria-pressed={immersive}
         >
           {immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           <span className="ml-1.5">{immersive ? "EXIT" : "FULL"}</span>
