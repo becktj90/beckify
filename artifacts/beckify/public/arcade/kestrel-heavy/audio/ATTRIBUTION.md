@@ -22,4 +22,6 @@ NASA material is used under NASA’s media usage guidelines. **No NASA endorseme
 | `quindar` | Quindar tone (Historical Sounds) | https://www.nasa.gov/wp-content/uploads/2015/01/578628main_hskquindar.mp3 | First ~0.45 s for UI select |
 | `pickup` `hit` `rud` | Generated in-repo (ffmpeg `aevalsrc`) | (this repository) | Procedural arcade juice; no third-party pack |
 
-Each clip ships as `.ogg` and `.mp3` (22.05 kHz mono) so browsers can pick one. Total audio budget is well under 1 MB.
+| `theme` | Suno-generated instrumental “Kestrel Heavy” by trevorjohnbeck | https://suno.com/s/nQE6Wpy3HGO0uYbH | Looping game BGM (~3:48). Clip id `9d457ba9-2ff4-40b1-9bfa-9eed22f90743`. Not a NASA clip. |
+
+Each one-shot ships as `.ogg` and `.mp3` (22.05 kHz mono) so browsers can pick one. The Suno theme is a longer stereo loop (`theme.ogg` / `theme.mp3`) and stays quieter than SFX.
