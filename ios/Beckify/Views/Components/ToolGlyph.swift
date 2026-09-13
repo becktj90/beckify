@@ -4,6 +4,7 @@ import SwiftUI
 //
 // Original schematic linework for the Field EE Toolbox — vector Canvas paths,
 // no image assets, outline-only strokes on quiet category wells.
+// Each mark is one readable metaphor for what that tool computes.
 // SF Symbols stay on chrome (favorites, system buttons), not in tool wells.
 //
 // Units:
@@ -610,1322 +611,1163 @@ enum GlyphKind {
         }
     }
 
-    // MARK: - Power & field calculators
+    // MARK: - Stroke helpers
 
-    private static func ohmsLaw(_ r: CGRect) -> Path {
-        var path = Path()
-        let midY = r.midY
-        let nodeR = r.width * 0.05
-
-        path.move(to: CGPoint(x: r.minX, y: midY))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.14, y: midY))
-        path.addEllipse(in: CGRect(x: r.minX - nodeR, y: midY - nodeR, width: nodeR * 2, height: nodeR * 2))
-
-        let zigStart = r.minX + r.width * 0.18
-        let zigWidth = r.width * 0.44
-        let step = zigWidth / 6
-        let peak = r.height * 0.2
-        path.move(to: CGPoint(x: zigStart, y: midY))
-        for index in 0..<6 {
-            let x = zigStart + step * (CGFloat(index) + 0.5)
-            path.addLine(to: CGPoint(x: x, y: midY + (index.isMultiple(of: 2) ? -peak : peak)))
-        }
-        path.addLine(to: CGPoint(x: zigStart + zigWidth, y: midY))
-
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.14, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: midY))
-        path.addEllipse(in: CGRect(x: r.maxX - nodeR, y: midY - nodeR, width: nodeR * 2, height: nodeR * 2))
-
-        let mark = r.width * 0.07
-        path.move(to: CGPoint(x: r.minX + r.width * 0.04, y: midY - r.height * 0.28))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.04, y: midY - r.height * 0.28 + mark))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.04 - mark, y: midY - r.height * 0.28))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.04, y: midY - r.height * 0.28))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.04, y: midY - r.height * 0.28 + mark))
-        return path
+    private static func line(_ path: inout Path, _ a: CGPoint, _ b: CGPoint) {
+        path.move(to: a)
+        path.addLine(to: b)
     }
 
-    private static func power(_ r: CGRect) -> Path {
-        var path = Path()
-        let apex = CGPoint(x: r.midX, y: r.minY + r.height * 0.08)
-        let baseLeft = CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.08)
-        let baseRight = CGPoint(x: r.maxX - r.width * 0.12, y: r.maxY - r.height * 0.08)
-        path.move(to: apex)
-        path.addLine(to: baseLeft)
-        path.addLine(to: baseRight)
-        path.closeSubpath()
-
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.maxY - r.height * 0.08))
-
-        let waveY = r.midY + r.height * 0.08
-        path.move(to: CGPoint(x: r.minX + r.width * 0.18, y: waveY))
-        for step in 0...24 {
-            let t = CGFloat(step) / 24
-            let y = waveY - sin(t * .pi * 2) * r.height * 0.12
-            path.addLine(to: CGPoint(x: r.minX + r.width * (0.18 + 0.64 * t), y: y))
-        }
-        return path
-    }
-
-    private static func powerWizard(_ r: CGRect) -> Path {
-        var path = power(r)
-        let tip = CGPoint(x: r.midX + r.width * 0.22, y: r.minY + r.height * 0.18)
-        path.move(to: CGPoint(x: r.midX + r.width * 0.06, y: r.minY + r.height * 0.34))
-        path.addLine(to: tip)
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.14, y: r.minY + r.height * 0.1))
-        path.move(to: tip)
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.3, y: r.minY + r.height * 0.26))
-        return path
-    }
-
-    private static func voltageDrop(_ r: CGRect) -> Path {
-        var path = Path()
-        let runY = r.midY
-        path.move(to: CGPoint(x: r.minX, y: runY))
-        path.addLine(to: CGPoint(x: r.maxX, y: runY))
-
-        for index in 0..<4 {
-            let x = r.minX + r.width * (0.18 + 0.2 * CGFloat(index))
-            let tickTop = runY - r.height * (0.34 - 0.06 * CGFloat(index))
-            path.move(to: CGPoint(x: x, y: runY))
-            path.addLine(to: CGPoint(x: x, y: tickTop))
-            path.addLine(to: CGPoint(x: x + r.width * 0.08, y: tickTop))
-        }
-
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: runY - r.height * 0.36))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: runY - r.height * 0.14))
-        return path
-    }
-
-    private static func conduitFill(_ r: CGRect) -> Path {
-        var path = Path()
-        let radius = min(r.width, r.height) * 0.42
+    private static func circle(_ path: inout Path, _ center: CGPoint, _ radius: CGFloat) {
         path.addEllipse(in: CGRect(
-            x: r.midX - radius, y: r.midY - radius,
+            x: center.x - radius, y: center.y - radius,
             width: radius * 2, height: radius * 2
         ))
-        let inner = radius * 0.26
-        for angle in stride(from: CGFloat(0), to: CGFloat(360), by: CGFloat(120)) {
-            let radians = angle * .pi / 180
-            let center = CGPoint(
-                x: r.midX + cos(radians) * radius * 0.42,
-                y: r.midY + sin(radians) * radius * 0.42
+    }
+
+    private static func arrow(_ path: inout Path, from: CGPoint, to: CGPoint, head: CGFloat) {
+        path.move(to: from)
+        path.addLine(to: to)
+        let dx = to.x - from.x
+        let dy = to.y - from.y
+        let length = max(hypot(dx, dy), 0.001)
+        let ux = dx / length
+        let uy = dy / length
+        path.move(to: to)
+        path.addLine(to: CGPoint(
+            x: to.x - ux * head - uy * head * 0.42,
+            y: to.y - uy * head + ux * head * 0.42
+        ))
+        path.move(to: to)
+        path.addLine(to: CGPoint(
+            x: to.x - ux * head + uy * head * 0.42,
+            y: to.y - uy * head - ux * head * 0.42
+        ))
+    }
+
+    private static func wave(
+        _ path: inout Path,
+        x0: CGFloat, x1: CGFloat, y: CGFloat, amp: CGFloat,
+        cycles: CGFloat, steps: Int = 18
+    ) {
+        path.move(to: CGPoint(x: x0, y: y))
+        for step in 1...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            path.addLine(to: CGPoint(x: x0 + (x1 - x0) * t, y: y - sin(t * .pi * 2 * cycles) * amp))
+        }
+    }
+
+    // MARK: - Jobsite / power
+
+    /// Schematic resistor — V = I × R.
+    private static func ohmsLaw(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.18, y: y))
+        let zig0 = r.minX + r.width * 0.18
+        let zigW = r.width * 0.52
+        let step = zigW / 5
+        path.move(to: CGPoint(x: zig0, y: y))
+        for index in 0..<5 {
+            let x = zig0 + step * (CGFloat(index) + 0.5)
+            path.addLine(to: CGPoint(x: x, y: y + (index.isMultiple(of: 2) ? -r.height * 0.22 : r.height * 0.22)))
+        }
+        path.addLine(to: CGPoint(x: zig0 + zigW, y: y))
+        line(&path, CGPoint(x: zig0 + zigW, y: y), CGPoint(x: r.maxX, y: y))
+        // Ω cue — small horseshoe under the body
+        path.addArc(
+            center: CGPoint(x: r.midX, y: r.maxY - r.height * 0.10),
+            radius: r.width * 0.10,
+            startAngle: .degrees(200),
+            endAngle: .degrees(340),
+            clockwise: false
+        )
+        return path
+    }
+
+    /// Lightning bolt — watts / kVA / kW.
+    private static func power(_ r: CGRect) -> Path {
+        var path = Path()
+        let pts = [
+            CGPoint(x: r.midX + r.width * 0.10, y: r.minY),
+            CGPoint(x: r.midX - r.width * 0.22, y: r.midY + r.height * 0.04),
+            CGPoint(x: r.midX - r.width * 0.04, y: r.midY + r.height * 0.04),
+            CGPoint(x: r.midX - r.width * 0.14, y: r.maxY),
+            CGPoint(x: r.midX + r.width * 0.24, y: r.midY - r.height * 0.02),
+            CGPoint(x: r.midX + r.width * 0.04, y: r.midY - r.height * 0.02),
+        ]
+        path.move(to: pts[0])
+        for point in pts.dropFirst() { path.addLine(to: point) }
+        path.closeSubpath()
+        return path
+    }
+
+    /// Same bolt with a solve-for spark — Power Wizard deep link.
+    private static func powerWizard(_ r: CGRect) -> Path {
+        var path = power(r)
+        let star = CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.16)
+        line(&path, CGPoint(x: star.x, y: star.y - r.height * 0.12), CGPoint(x: star.x, y: star.y + r.height * 0.12))
+        line(&path, CGPoint(x: star.x - r.width * 0.10, y: star.y), CGPoint(x: star.x + r.width * 0.10, y: star.y))
+        return path
+    }
+
+    /// Feeder run with voltage sagging along the length.
+    private static func voltageDrop(_ r: CGRect) -> Path {
+        var path = Path()
+        line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.28), CGPoint(x: r.maxX, y: r.minY + r.height * 0.28))
+        line(&path, CGPoint(x: r.minX, y: r.maxY - r.height * 0.28), CGPoint(x: r.maxX, y: r.maxY - r.height * 0.28))
+        let heights: [CGFloat] = [0.22, 0.34, 0.48, 0.64]
+        for (index, h) in heights.enumerated() {
+            let x = r.minX + r.width * (0.18 + 0.22 * CGFloat(index))
+            line(&path, CGPoint(x: x, y: r.minY + r.height * 0.28), CGPoint(x: x, y: r.minY + r.height * (0.28 + h * 0.42)))
+        }
+        arrow(
+            &path,
+            from: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.08),
+            to: CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.08),
+            head: r.width * 0.10
+        )
+        return path
+    }
+
+    /// Conduit cross-section packed with three conductors.
+    private static func conduitFill(_ r: CGRect) -> Path {
+        var path = Path()
+        let radius = min(r.width, r.height) * 0.46
+        circle(&path, CGPoint(x: r.midX, y: r.midY), radius)
+        let inner = radius * 0.22
+        for angle in [90.0, 210.0, 330.0] {
+            let rad = angle * .pi / 180
+            circle(
+                &path,
+                CGPoint(x: r.midX + cos(rad) * radius * 0.42, y: r.midY + sin(rad) * radius * 0.42),
+                inner
             )
-            path.addEllipse(in: CGRect(
-                x: center.x - inner, y: center.y - inner,
-                width: inner * 2, height: inner * 2
-            ))
         }
         return path
     }
 
+    /// Cable run with a $ tag — first-cost optimizer.
     private static func conductorCost(_ r: CGRect) -> Path {
         var path = Path()
-        let left = r.minX + r.width * 0.12
-        let right = r.maxX - r.width * 0.34
-        for index in 0..<3 {
-            let y = r.minY + r.height * (0.28 + 0.22 * CGFloat(index))
-            path.move(to: CGPoint(x: left, y: y))
-            path.addLine(to: CGPoint(x: right, y: y))
-            path.addEllipse(in: CGRect(x: left - r.width * 0.04, y: y - r.height * 0.04, width: r.width * 0.08, height: r.height * 0.08))
-        }
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.maxX - r.width * 0.38, y: y))
+        circle(&path, CGPoint(x: r.minX + r.width * 0.06, y: y), r.width * 0.05)
         let tag = CGRect(
-            x: r.maxX - r.width * 0.30,
-            y: r.midY - r.height * 0.22,
-            width: r.width * 0.22,
-            height: r.height * 0.44
+            x: r.maxX - r.width * 0.36, y: r.midY - r.height * 0.28,
+            width: r.width * 0.32, height: r.height * 0.56
         )
         path.addRoundedRect(in: tag, cornerSize: CGSize(width: 3, height: 3))
-        path.move(to: CGPoint(x: tag.midX, y: tag.minY + tag.height * 0.22))
-        path.addLine(to: CGPoint(x: tag.midX, y: tag.maxY - tag.height * 0.18))
-        path.addEllipse(in: CGRect(
-            x: tag.midX - tag.width * 0.18,
-            y: tag.minY + tag.height * 0.28,
-            width: tag.width * 0.36,
-            height: tag.height * 0.28
-        ))
+        // $ stem + S
+        path.addArc(
+            center: CGPoint(x: tag.midX, y: tag.midY - tag.height * 0.10),
+            radius: tag.width * 0.22,
+            startAngle: .degrees(30),
+            endAngle: .degrees(210),
+            clockwise: false
+        )
+        path.addArc(
+            center: CGPoint(x: tag.midX, y: tag.midY + tag.height * 0.12),
+            radius: tag.width * 0.22,
+            startAngle: .degrees(210),
+            endAngle: .degrees(30),
+            clockwise: false
+        )
+        line(
+            &path,
+            CGPoint(x: tag.midX, y: tag.minY + tag.height * 0.12),
+            CGPoint(x: tag.midX, y: tag.maxY - tag.height * 0.12)
+        )
         return path
     }
 
-    /// DMM on a run with a length rule — distinct from voltage-drop ticks
-    /// and from the conductor-cost price tag.
+    /// Tape measure on a cable — length from milliohms.
     private static func conductorLength(_ r: CGRect) -> Path {
         var path = Path()
-        let meter = CGRect(
-            x: r.minX + r.width * 0.04,
-            y: r.midY - r.height * 0.28,
-            width: r.width * 0.30,
-            height: r.height * 0.48
+        let y = r.minY + r.height * 0.32
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.maxX, y: y))
+        circle(&path, CGPoint(x: r.minX + r.width * 0.06, y: y), r.width * 0.05)
+        circle(&path, CGPoint(x: r.maxX - r.width * 0.06, y: y), r.width * 0.05)
+        let tape = CGRect(
+            x: r.minX + r.width * 0.10, y: r.maxY - r.height * 0.42,
+            width: r.width * 0.80, height: r.height * 0.26
         )
-        path.addRoundedRect(in: meter, cornerSize: CGSize(width: 3, height: 3))
-        path.move(to: CGPoint(x: meter.minX + meter.width * 0.18, y: meter.minY + meter.height * 0.32))
-        path.addLine(to: CGPoint(x: meter.maxX - meter.width * 0.18, y: meter.minY + meter.height * 0.32))
-        path.move(to: CGPoint(x: meter.minX + meter.width * 0.18, y: meter.minY + meter.height * 0.55))
-        path.addLine(to: CGPoint(x: meter.maxX - meter.width * 0.42, y: meter.minY + meter.height * 0.55))
-
-        let wireY = r.midY - r.height * 0.08
-        path.move(to: CGPoint(x: meter.maxX, y: wireY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.10, y: wireY))
-        path.addEllipse(in: CGRect(
-            x: r.maxX - r.width * 0.14,
-            y: wireY - r.height * 0.05,
-            width: r.width * 0.10,
-            height: r.height * 0.10
-        ))
-
-        let ruleY = r.maxY - r.height * 0.20
-        path.move(to: CGPoint(x: meter.maxX + r.width * 0.02, y: ruleY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: ruleY))
+        path.addRoundedRect(in: tape, cornerSize: CGSize(width: 2, height: 2))
         for index in 0..<5 {
-            let x = meter.maxX + r.width * 0.02 + r.width * 0.13 * CGFloat(index)
-            let tick = index % 2 == 0 ? r.height * 0.12 : r.height * 0.07
-            path.move(to: CGPoint(x: x, y: ruleY))
-            path.addLine(to: CGPoint(x: x, y: ruleY - tick))
+            let x = tape.minX + tape.width * (0.12 + 0.19 * CGFloat(index))
+            let tick = index.isMultiple(of: 2) ? tape.height * 0.55 : tape.height * 0.32
+            line(&path, CGPoint(x: x, y: tape.maxY), CGPoint(x: x, y: tape.maxY - tick))
         }
         return path
     }
 
+    /// Transformer: two coils on a core.
     private static func transformer(_ r: CGRect) -> Path {
         var path = Path()
-        let coreLeft = r.midX - r.width * 0.04
-        let coreRight = r.midX + r.width * 0.04
-        path.move(to: CGPoint(x: coreLeft, y: r.minY))
-        path.addLine(to: CGPoint(x: coreLeft, y: r.maxY))
-        path.move(to: CGPoint(x: coreRight, y: r.minY))
-        path.addLine(to: CGPoint(x: coreRight, y: r.maxY))
-
-        let humpRadius = r.height * 0.13
+        line(&path, CGPoint(x: r.midX - r.width * 0.05, y: r.minY), CGPoint(x: r.midX - r.width * 0.05, y: r.maxY))
+        line(&path, CGPoint(x: r.midX + r.width * 0.05, y: r.minY), CGPoint(x: r.midX + r.width * 0.05, y: r.maxY))
+        let hump = r.height * 0.13
         for index in 0..<3 {
-            let y = r.minY + r.height * (0.26 + 0.24 * CGFloat(index))
+            let y = r.minY + r.height * (0.24 + 0.26 * CGFloat(index))
             path.addArc(
-                center: CGPoint(x: coreLeft, y: y),
-                radius: humpRadius,
+                center: CGPoint(x: r.midX - r.width * 0.05, y: y),
+                radius: hump,
                 startAngle: .degrees(90),
                 endAngle: .degrees(270),
                 clockwise: false
             )
             path.addArc(
-                center: CGPoint(x: coreRight, y: y),
-                radius: humpRadius,
+                center: CGPoint(x: r.midX + r.width * 0.05, y: y),
+                radius: hump,
                 startAngle: .degrees(270),
                 endAngle: .degrees(90),
                 clockwise: false
             )
         }
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.midY))
-        path.addLine(to: CGPoint(x: coreLeft - humpRadius, y: r.midY))
-        path.move(to: CGPoint(x: coreRight + humpRadius, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.midY))
         return path
     }
 
+    /// 8-pin DIP + square wave — 555 timer.
     private static func timer555(_ r: CGRect) -> Path {
         var path = Path()
-        let body = r.insetBy(dx: r.width * 0.14, dy: r.height * 0.18)
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: r.width * 0.06, height: r.width * 0.06))
+        let body = r.insetBy(dx: r.width * 0.22, dy: r.height * 0.22)
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
         for index in 0..<3 {
-            let y = body.minY + body.height * (0.25 + 0.25 * CGFloat(index))
-            path.move(to: CGPoint(x: body.minX, y: y))
-            path.addLine(to: CGPoint(x: r.minX, y: y))
-            path.move(to: CGPoint(x: body.maxX, y: y))
-            path.addLine(to: CGPoint(x: r.maxX, y: y))
+            let y = body.minY + body.height * (0.22 + 0.28 * CGFloat(index))
+            line(&path, CGPoint(x: body.minX, y: y), CGPoint(x: r.minX + r.width * 0.08, y: y))
+            line(&path, CGPoint(x: body.maxX, y: y), CGPoint(x: r.maxX - r.width * 0.08, y: y))
         }
-        let waveY = r.midY
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.28, y: waveY + r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.18, y: waveY + r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.18, y: waveY - r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: waveY - r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: waveY + r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.maxX, y: waveY + r.height * 0.14))
+        let wy = r.maxY - r.height * 0.08
+        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: wy))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.28, y: wy))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.28, y: wy - r.height * 0.16))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.52, y: wy - r.height * 0.16))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.52, y: wy))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.72, y: wy))
         return path
     }
 
+    /// IEC motor circle with M — table FLA, not a nameplate.
     private static func motorFLA(_ r: CGRect) -> Path {
         var path = Path()
-        let radius = min(r.width, r.height) * 0.38
-        path.addEllipse(in: CGRect(
-            x: r.midX - radius, y: r.midY - radius,
-            width: radius * 2, height: radius * 2
-        ))
-        let inset = radius * 0.55
-        path.move(to: CGPoint(x: r.midX - inset, y: r.midY + inset * 0.75))
-        path.addLine(to: CGPoint(x: r.midX - inset, y: r.midY - inset * 0.75))
-        path.addLine(to: CGPoint(x: r.midX, y: r.midY + inset * 0.15))
-        path.addLine(to: CGPoint(x: r.midX + inset, y: r.midY - inset * 0.75))
-        path.addLine(to: CGPoint(x: r.midX + inset, y: r.midY + inset * 0.75))
-        for index in 0..<3 {
-            let angle = CGFloat(index) * .pi / 3 - .pi / 2
-            path.move(to: CGPoint(x: r.midX, y: r.midY))
-            path.addLine(to: CGPoint(
-                x: r.midX + cos(angle) * radius * 0.72,
-                y: r.midY + sin(angle) * radius * 0.72
-            ))
-        }
+        let radius = min(r.width, r.height) * 0.42
+        circle(&path, CGPoint(x: r.midX, y: r.midY), radius)
+        // M
+        let left = r.midX - radius * 0.42
+        let right = r.midX + radius * 0.42
+        let top = r.midY - radius * 0.38
+        let bot = r.midY + radius * 0.38
+        path.move(to: CGPoint(x: left, y: bot))
+        path.addLine(to: CGPoint(x: left, y: top))
+        path.addLine(to: CGPoint(x: r.midX, y: r.midY + radius * 0.08))
+        path.addLine(to: CGPoint(x: right, y: top))
+        path.addLine(to: CGPoint(x: right, y: bot))
         return path
     }
 
+    /// End-on conductor: copper + insulation — wire size / 310.16.
     private static func wireAmpacity(_ r: CGRect) -> Path {
         var path = Path()
-        let conductor = CGRect(
-            x: r.midX - r.width * 0.08,
-            y: r.minY + r.height * 0.12,
-            width: r.width * 0.16,
-            height: r.height * 0.76
-        )
-        path.addRoundedRect(in: conductor, cornerSize: CGSize(width: r.width * 0.04, height: r.width * 0.04))
-        for index in 0..<3 {
-            let y = r.minY + r.height * (0.22 + 0.18 * CGFloat(index))
-            path.move(to: CGPoint(x: conductor.maxX + r.width * 0.06, y: y))
-            path.addQuadCurve(
-                to: CGPoint(x: conductor.maxX + r.width * 0.22, y: y - r.height * 0.04),
-                control: CGPoint(x: conductor.maxX + r.width * 0.14, y: y - r.height * 0.1)
+        let outer = min(r.width, r.height) * 0.40
+        circle(&path, CGPoint(x: r.midX, y: r.midY), outer)
+        circle(&path, CGPoint(x: r.midX, y: r.midY), outer * 0.55)
+        // Ampacity heat ticks
+        for angle in [40.0, 90.0, 140.0] {
+            let rad = angle * .pi / 180
+            let inner = outer * 1.12
+            let tip = outer * 1.32
+            line(
+                &path,
+                CGPoint(x: r.midX + cos(rad) * inner, y: r.midY - sin(rad) * inner),
+                CGPoint(x: r.midX + cos(rad) * tip, y: r.midY - sin(rad) * tip)
             )
         }
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.18))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.22, y: r.maxY - r.height * 0.18))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.17, y: r.maxY - r.height * 0.24))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.17, y: r.maxY - r.height * 0.12))
         return path
     }
 
+    /// NEMA 5-15 duplex face.
     private static func receptacleSelector(_ r: CGRect) -> Path {
         var path = Path()
-        let radius = min(r.width, r.height) * 0.4
-        path.addEllipse(in: CGRect(
-            x: r.midX - radius, y: r.midY - radius,
-            width: radius * 2, height: radius * 2
-        ))
-        let slot = radius * 0.4
-        path.move(to: CGPoint(x: r.midX - radius * 0.38, y: r.midY - slot))
-        path.addLine(to: CGPoint(x: r.midX - radius * 0.38, y: r.midY + slot * 0.15))
-        path.move(to: CGPoint(x: r.midX + radius * 0.38, y: r.midY - slot))
-        path.addLine(to: CGPoint(x: r.midX + radius * 0.38, y: r.midY + slot * 0.15))
-        path.addEllipse(in: CGRect(
-            x: r.midX - slot * 0.32, y: r.midY + slot * 0.42,
-            width: slot * 0.64, height: slot * 0.64
-        ))
-        path.move(to: CGPoint(x: r.midX - radius, y: r.midY))
-        path.addLine(to: CGPoint(x: r.midX - radius * 0.62, y: r.midY))
-        path.move(to: CGPoint(x: r.midX + radius * 0.62, y: r.midY))
-        path.addLine(to: CGPoint(x: r.midX + radius, y: r.midY))
+        let radius = min(r.width, r.height) * 0.44
+        circle(&path, CGPoint(x: r.midX, y: r.midY), radius)
+        let slotH = radius * 0.42
+        line(
+            &path,
+            CGPoint(x: r.midX - radius * 0.32, y: r.midY - slotH * 0.55),
+            CGPoint(x: r.midX - radius * 0.32, y: r.midY + slotH * 0.15)
+        )
+        line(
+            &path,
+            CGPoint(x: r.midX + radius * 0.32, y: r.midY - slotH * 0.55),
+            CGPoint(x: r.midX + radius * 0.32, y: r.midY + slotH * 0.15)
+        )
+        circle(&path, CGPoint(x: r.midX, y: r.midY + slotH * 0.55), radius * 0.12)
         return path
     }
 
+    /// Coil + capacitor plates — reactance / resonance, not a generic sine.
     private static func reactance(_ r: CGRect) -> Path {
         var path = Path()
-        let topY = r.midY - r.height * 0.18
-        let bottomY = r.midY + r.height * 0.18
-        path.move(to: CGPoint(x: r.minX, y: topY))
-        for step in 0...32 {
-            let t = CGFloat(step) / 32
-            let y = topY - sin(t * .pi * 2) * r.height * 0.14
-            path.addLine(to: CGPoint(x: r.minX + r.width * t, y: y))
-        }
-        path.move(to: CGPoint(x: r.minX, y: bottomY))
-        for step in 0...32 {
-            let t = CGFloat(step) / 32
-            let y = bottomY - sin(t * .pi * 2 + .pi / 3) * r.height * 0.14
-            path.addLine(to: CGPoint(x: r.minX + r.width * t, y: y))
-        }
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: topY - r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.12, y: bottomY + r.height * 0.14))
-        return path
-    }
-
-    private static func powerFactor(_ r: CGRect) -> Path {
-        var path = Path()
-        let origin = CGPoint(x: r.minX + r.width * 0.14, y: r.maxY - r.height * 0.12)
-        let pEnd = CGPoint(x: r.maxX - r.width * 0.1, y: origin.y)
-        let sEnd = CGPoint(x: origin.x, y: r.minY + r.height * 0.12)
-        path.move(to: origin)
-        path.addLine(to: pEnd)
-        path.addLine(to: sEnd)
-        path.closeSubpath()
-        path.addArc(
-            center: origin,
-            radius: r.width * 0.18,
-            startAngle: .degrees(0),
-            endAngle: .degrees(-55),
-            clockwise: true
-        )
-        path.move(to: CGPoint(x: origin.x + r.width * 0.2, y: origin.y - r.height * 0.02))
-        path.addLine(to: CGPoint(x: pEnd.x - r.width * 0.12, y: sEnd.y + r.height * 0.08))
-        return path
-    }
-
-    private static func shortCircuit(_ r: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.18, y: r.maxY - r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.14, y: r.minY + r.height * 0.2))
-        path.move(to: CGPoint(x: r.midX + r.width * 0.16, y: r.maxY - r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.maxY - r.height * 0.12))
-
-        let bolt = [
-            CGPoint(x: r.midX - r.width * 0.02, y: r.minY + r.height * 0.22),
-            CGPoint(x: r.midX - r.width * 0.12, y: r.midY),
-            CGPoint(x: r.midX + r.width * 0.02, y: r.midY - r.height * 0.04),
-            CGPoint(x: r.midX - r.width * 0.04, y: r.maxY - r.height * 0.22),
-            CGPoint(x: r.midX + r.width * 0.12, y: r.midY - r.height * 0.08),
-            CGPoint(x: r.midX, y: r.midY - r.height * 0.12),
-        ]
-        path.move(to: bolt[0])
-        for point in bolt.dropFirst() { path.addLine(to: point) }
-        return path
-    }
-
-    private static func circularMils(_ r: CGRect) -> Path {
-        var path = Path()
-        let radius = min(r.width, r.height) * 0.28
-        path.addEllipse(in: CGRect(
-            x: r.midX - radius, y: r.midY - radius * 0.2,
-            width: radius * 2, height: radius * 2
-        ))
-        path.move(to: CGPoint(x: r.midX - radius, y: r.midY - radius * 0.2))
-        path.addLine(to: CGPoint(x: r.midX - radius, y: r.maxY - r.height * 0.08))
-        path.move(to: CGPoint(x: r.midX + radius, y: r.midY - radius * 0.2))
-        path.addLine(to: CGPoint(x: r.midX + radius, y: r.maxY - r.height * 0.08))
-        path.move(to: CGPoint(x: r.midX - radius - r.width * 0.06, y: r.maxY - r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.midX + radius + r.width * 0.06, y: r.maxY - r.height * 0.08))
-        for tick in [-1.0, 1.0] as [CGFloat] {
-            let x = r.midX + tick * (radius + r.width * 0.06)
-            path.move(to: CGPoint(x: x, y: r.maxY - r.height * 0.08))
-            path.addLine(to: CGPoint(x: x, y: r.maxY - r.height * 0.14))
-        }
-        return path
-    }
-
-    private static func loadFactors(_ r: CGRect) -> Path {
-        var path = Path()
-        let baseY = r.maxY - r.height * 0.12
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: baseY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: baseY))
-        let heights: [CGFloat] = [0.32, 0.58, 0.44, 0.72]
-        let barW = r.width * 0.14
-        let gap = (r.width * 0.84 - barW * CGFloat(heights.count)) / CGFloat(heights.count - 1)
-        for (index, height) in heights.enumerated() {
-            let x = r.minX + r.width * 0.08 + (barW + gap) * CGFloat(index)
-            let bar = CGRect(x: x, y: baseY - r.height * height, width: barW, height: r.height * height)
-            path.addRoundedRect(in: bar, cornerSize: CGSize(width: barW * 0.2, height: barW * 0.2))
-        }
-        return path
-    }
-
-    private static func signalScaling(_ r: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: r.minX, y: r.maxY))
-        path.addLine(to: CGPoint(x: r.minX, y: r.minY))
-        path.move(to: CGPoint(x: r.minX, y: r.maxY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
-        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.2))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.08))
-        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.2))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.06, y: r.maxY - r.height * 0.2))
-        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.2))
-        path.addLine(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.26))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.08))
-        return path
-    }
-
-    private static func modbusAddress(_ r: CGRect) -> Path {
-        var path = Path()
-        let cell = r.width * 0.2
-        for row in 0..<2 {
-            for col in 0..<3 {
-                let rect = CGRect(
-                    x: r.minX + r.width * 0.1 + CGFloat(col) * (cell + r.width * 0.04),
-                    y: r.minY + r.height * (0.18 + 0.28 * CGFloat(row)),
-                    width: cell,
-                    height: r.height * 0.22
-                )
-                path.addRoundedRect(in: rect, cornerSize: CGSize(width: r.width * 0.03, height: r.width * 0.03))
-            }
-        }
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.16))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.28, y: r.maxY - r.height * 0.16))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.34, y: r.maxY - r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.34, y: r.maxY - r.height * 0.1))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.42, y: r.maxY - r.height * 0.16))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.1, y: r.maxY - r.height * 0.16))
-        return path
-    }
-
-    private static func plcTimer(_ r: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.18, y: r.midY))
-        let block = CGRect(
-            x: r.minX + r.width * 0.18,
-            y: r.midY - r.height * 0.18,
-            width: r.width * 0.34,
-            height: r.height * 0.36
-        )
-        path.addRoundedRect(in: block, cornerSize: CGSize(width: r.width * 0.04, height: r.width * 0.04))
-        path.move(to: CGPoint(x: block.maxX, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        path.move(to: CGPoint(x: block.minX + r.width * 0.08, y: block.minY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: block.minX + r.width * 0.08, y: block.maxY - r.height * 0.1))
-        path.move(to: CGPoint(x: block.maxX - r.width * 0.08, y: block.minY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: block.maxX - r.width * 0.08, y: block.maxY - r.height * 0.1))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.18))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.18))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.34))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.26))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.26))
-        return path
-    }
-
-    private static func panelDirectory(_ r: CGRect) -> Path {
-        var path = Path()
-        path.addRoundedRect(in: r, cornerSize: CGSize(width: r.width * 0.08, height: r.width * 0.08))
-        for index in 0..<4 {
-            let y = r.minY + r.height * (0.24 + 0.16 * CGFloat(index))
-            path.move(to: CGPoint(x: r.minX + r.width * 0.14, y: y))
-            path.addLine(to: CGPoint(x: r.minX + r.width * 0.26, y: y))
-            path.move(to: CGPoint(x: r.minX + r.width * 0.32, y: y))
-            path.addLine(to: CGPoint(x: r.midX - r.width * 0.04, y: y))
-            path.move(to: CGPoint(x: r.midX + r.width * 0.06, y: y))
-            path.addLine(to: CGPoint(x: r.maxX - r.width * 0.14, y: y))
-        }
-        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.1))
-        return path
-    }
-
-    // MARK: - Expansion pack
-
-    /// Tachometer: an open gauge arc, five ticks, and a needle past center.
-    private static func motorSpeed(_ r: CGRect) -> Path {
-        var path = Path()
-        let center = CGPoint(x: r.midX, y: r.midY + r.height * 0.08)
-        let radius = min(r.width, r.height) * 0.4
-        let startDeg: CGFloat = 200
-        let endDeg: CGFloat = -20
-        let steps = 24
-
-        for step in 0...steps {
-            let t = CGFloat(step) / CGFloat(steps)
-            let rad = (startDeg + (endDeg - startDeg) * t) * .pi / 180
-            let point = CGPoint(x: center.x + cos(rad) * radius, y: center.y - sin(rad) * radius)
-            if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
-        }
-
-        for tick in 0...4 {
-            let t = CGFloat(tick) / 4
-            let rad = (startDeg + (endDeg - startDeg) * t) * .pi / 180
-            let outer = CGPoint(x: center.x + cos(rad) * radius, y: center.y - sin(rad) * radius)
-            let inner = CGPoint(x: center.x + cos(rad) * radius * 0.8, y: center.y - sin(rad) * radius * 0.8)
-            path.move(to: inner)
-            path.addLine(to: outer)
-        }
-
-        let needleRad: CGFloat = 55 * .pi / 180
-        path.move(to: center)
-        path.addLine(to: CGPoint(x: center.x + cos(needleRad) * radius * 0.68, y: center.y - sin(needleRad) * radius * 0.68))
-
-        let hub = radius * 0.09
-        path.addEllipse(in: CGRect(x: center.x - hub, y: center.y - hub, width: hub * 2, height: hub * 2))
-        return path
-    }
-
-    /// A transmitter dot with three arcs of "radio waves" fanning upward from it.
-    private static func rfLink(_ r: CGRect) -> Path {
-        var path = Path()
-        let source = CGPoint(x: r.midX, y: r.maxY - r.height * 0.14)
-
-        let dot = r.width * 0.045
-        path.addEllipse(in: CGRect(x: source.x - dot, y: source.y - dot, width: dot * 2, height: dot * 2))
-
-        for ring in 1...3 {
-            let radius = r.height * 0.17 * CGFloat(ring)
-            let steps = 16
-            for step in 0...steps {
-                let t = CGFloat(step) / CGFloat(steps)
-                let rad = (200 + 140 * t) * .pi / 180
-                let point = CGPoint(x: source.x + cos(rad) * radius, y: source.y + sin(rad) * radius)
-                if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
-            }
-        }
-        return path
-    }
-
-    /// A dial circle with three arrows from center, at different angles and
-    /// lengths — a phasor diagram, not a balanced-set illustration.
-    private static func phasorDiagram(_ r: CGRect) -> Path {
-        var path = Path()
-        let center = CGPoint(x: r.midX, y: r.midY)
-        let radius = min(r.width, r.height) * 0.38
-
-        path.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
-
-        let vectors: [(angleDeg: CGFloat, length: CGFloat)] = [
-            (-90, radius * 0.92),
-            (30, radius * 0.68),
-            (150, radius * 0.78),
-        ]
-        for vector in vectors {
-            let rad = vector.angleDeg * .pi / 180
-            let tip = CGPoint(x: center.x + cos(rad) * vector.length, y: center.y + sin(rad) * vector.length)
-            path.move(to: center)
-            path.addLine(to: tip)
-
-            let arrowLength = radius * 0.16
-            let spread: CGFloat = 24 * .pi / 180
-            for sign: CGFloat in [-1, 1] {
-                let backRad = rad + .pi + sign * spread
-                path.move(to: tip)
-                path.addLine(to: CGPoint(x: tip.x + cos(backRad) * arrowLength, y: tip.y + sin(backRad) * arrowLength))
-            }
-        }
-        return path
-    }
-
-    /// A four-cell register outline with a literal 1-0-1-0 bit pattern inside.
-    private static func numberBase(_ r: CGRect) -> Path {
-        var path = Path()
-        let boxWidth = r.width * 0.86
-        let boxHeight = r.height * 0.42
-        let box = CGRect(x: r.midX - boxWidth / 2, y: r.midY - boxHeight / 2, width: boxWidth, height: boxHeight)
-        path.addRoundedRect(in: box, cornerSize: CGSize(width: r.width * 0.05, height: r.width * 0.05))
-
-        for i in 1...3 {
-            let x = box.minX + boxWidth * CGFloat(i) / 4
-            path.move(to: CGPoint(x: x, y: box.minY))
-            path.addLine(to: CGPoint(x: x, y: box.maxY))
-        }
-
-        let bits = [true, false, true, false]
-        for (index, isOne) in bits.enumerated() where isOne {
-            let x = box.minX + boxWidth * (CGFloat(index) + 0.5) / 4
-            path.move(to: CGPoint(x: x, y: box.midY - boxHeight * 0.24))
-            path.addLine(to: CGPoint(x: x, y: box.midY + boxHeight * 0.24))
-        }
-        return path
-    }
-
-    /// Two schematic battery cells (long/short plate pairs) wired in series.
-    private static func batteryBank(_ r: CGRect) -> Path {
-        var path = Path()
-        let midY = r.midY
-        let gap = r.width * 0.16
-        let firstLongX = r.midX - gap * 1.5
-        let firstShortX = firstLongX + gap * 0.5
-        let secondLongX = firstLongX + gap * 2
-        let secondShortX = secondLongX + gap * 0.5
-
-        for longX in [firstLongX, secondLongX] {
-            path.move(to: CGPoint(x: longX, y: midY - r.height * 0.22))
-            path.addLine(to: CGPoint(x: longX, y: midY + r.height * 0.22))
-        }
-        for shortX in [firstShortX, secondShortX] {
-            path.move(to: CGPoint(x: shortX, y: midY - r.height * 0.1))
-            path.addLine(to: CGPoint(x: shortX, y: midY + r.height * 0.1))
-        }
-
-        path.move(to: CGPoint(x: firstShortX, y: midY))
-        path.addLine(to: CGPoint(x: secondLongX, y: midY))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.06, y: midY))
-        path.addLine(to: CGPoint(x: firstLongX, y: midY))
-        path.move(to: CGPoint(x: secondShortX, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: midY))
-        return path
-    }
-
-    /// An open book — two pages meeting at a spine, with a couple of text lines.
-    private static func referenceLibrary(_ r: CGRect) -> Path {
-        var path = Path()
-        let spineX = r.midX
-        let baseY = r.maxY - r.height * 0.16
-        let topY = r.minY + r.height * 0.14
-
-        path.move(to: CGPoint(x: spineX, y: topY))
-        path.addLine(to: CGPoint(x: r.minX, y: topY + r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.minX, y: baseY))
-        path.addLine(to: CGPoint(x: spineX, y: baseY - r.height * 0.06))
-        path.closeSubpath()
-
-        path.move(to: CGPoint(x: spineX, y: topY))
-        path.addLine(to: CGPoint(x: r.maxX, y: topY + r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.maxX, y: baseY))
-        path.addLine(to: CGPoint(x: spineX, y: baseY - r.height * 0.06))
-        path.closeSubpath()
-
-        for index in 0..<2 {
-            let y = topY + r.height * (0.3 + 0.14 * CGFloat(index))
-            path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: y))
-            path.addLine(to: CGPoint(x: spineX - r.width * 0.06, y: y))
-            path.move(to: CGPoint(x: spineX + r.width * 0.06, y: y))
-            path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: y))
-        }
-        return path
-    }
-
-    /// A laminated core with a closed flux loop and a direction arrow.
-    private static func magneticCircuit(_ r: CGRect) -> Path {
-        var path = Path()
-        let coreWidth = r.width * 0.26
-        let coreHeight = r.height * 0.58
-        let coreRect = CGRect(x: r.midX - coreWidth / 2, y: r.midY - coreHeight / 2, width: coreWidth, height: coreHeight)
-        path.addRoundedRect(in: coreRect, cornerSize: CGSize(width: r.width * 0.03, height: r.width * 0.03))
-
-        let loopRect = CGRect(x: r.minX + r.width * 0.04, y: r.minY + r.height * 0.08, width: r.width * 0.92, height: r.height * 0.84)
-        path.addEllipse(in: loopRect)
-
-        let arrowSize = r.width * 0.07
-        let apex = CGPoint(x: r.midX, y: loopRect.minY)
-        path.move(to: CGPoint(x: apex.x - arrowSize, y: apex.y + arrowSize))
-        path.addLine(to: apex)
-        path.addLine(to: CGPoint(x: apex.x + arrowSize, y: apex.y + arrowSize))
-        return path
-    }
-
-    /// A fiber tip with its acceptance cone and one incoming ray.
-    private static func fiberLink(_ r: CGRect) -> Path {
-        var path = Path()
-        let apex = CGPoint(x: r.minX + r.width * 0.12, y: r.midY)
-        let coneHeight = r.height * 0.34
-
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.08, y: apex.y - coneHeight))
-        path.addLine(to: apex)
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: apex.y + coneHeight))
-
-        path.move(to: apex)
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: apex.y))
-
-        path.move(to: CGPoint(x: r.minX, y: apex.y - r.height * 0.4))
-        path.addLine(to: apex)
-        return path
-    }
-
-    /// A beam-waist silhouette — narrow at center, flaring at both edges.
-    private static func gaussianBeam(_ r: CGRect) -> Path {
-        var path = Path()
-        let waistX = r.midX
-        let maxHalfHeight = r.height * 0.4
-        let waistHalfHeight = r.height * 0.08
-        let steps = 20
-
-        func halfHeight(at x: CGFloat) -> CGFloat {
-            let normalized = abs(x - waistX) / (r.width / 2)
-            return waistHalfHeight + (maxHalfHeight - waistHalfHeight) * (normalized * normalized)
-        }
-
-        path.move(to: CGPoint(x: r.minX, y: r.midY - halfHeight(at: r.minX)))
-        for step in 0...steps {
-            let x = r.minX + r.width * CGFloat(step) / CGFloat(steps)
-            path.addLine(to: CGPoint(x: x, y: r.midY - halfHeight(at: x)))
-        }
-        path.move(to: CGPoint(x: r.minX, y: r.midY + halfHeight(at: r.minX)))
-        for step in 0...steps {
-            let x = r.minX + r.width * CGFloat(step) / CGFloat(steps)
-            path.addLine(to: CGPoint(x: x, y: r.midY + halfHeight(at: x)))
-        }
-        path.move(to: CGPoint(x: waistX, y: r.midY - waistHalfHeight))
-        path.addLine(to: CGPoint(x: waistX, y: r.midY + waistHalfHeight))
-        return path
-    }
-
-    /// A rising exponential charging curve against axes.
-    private static func transientCircuit(_ r: CGRect) -> Path {
-        var path = Path()
-        let baseY = r.maxY - r.height * 0.14
-        let topY = r.minY + r.height * 0.1
-
-        path.move(to: CGPoint(x: r.minX, y: topY))
-        path.addLine(to: CGPoint(x: r.minX, y: baseY))
-        path.addLine(to: CGPoint(x: r.maxX, y: baseY))
-
-        let steps = 20
-        path.move(to: CGPoint(x: r.minX, y: baseY))
-        for step in 0...steps {
-            let t = CGFloat(step) / CGFloat(steps)
-            let x = r.minX + r.width * 0.94 * t
-            let rise = 1 - exp(-3 * Double(t))
-            let y = baseY - (baseY - topY) * 0.8 * CGFloat(rise)
-            path.addLine(to: CGPoint(x: x, y: y))
-        }
-        return path
-    }
-
-    /// A rack rail with device ticks feeding off it.
-    private static func rackCurrent(_ r: CGRect) -> Path {
-        var path = Path()
-        let railY = r.midY
-        path.move(to: CGPoint(x: r.minX, y: railY))
-        path.addLine(to: CGPoint(x: r.maxX, y: railY))
-
-        let deviceXs: [CGFloat] = [0.2, 0.42, 0.64, 0.86].map { r.minX + r.width * $0 }
-        let heights: [CGFloat] = [0.5, 0.3, 0.4, 0.22]
-        for (x, h) in zip(deviceXs, heights) {
-            path.move(to: CGPoint(x: x, y: railY))
-            path.addLine(to: CGPoint(x: x, y: railY + r.height * h))
-        }
-        return path
-    }
-
-    /// The diode schematic symbol (triangle + cathode bar) with a small
-    /// rising I-V curve alongside it.
-    private static func diodeIV(_ r: CGRect) -> Path {
-        var path = Path()
-        let midY = r.midY
-        let triLeft = r.minX + r.width * 0.14
-        let triRight = r.midX - r.width * 0.1
-        let barHeight = r.height * 0.3
-
-        path.move(to: CGPoint(x: r.minX, y: midY))
-        path.addLine(to: CGPoint(x: triLeft, y: midY))
-
-        path.move(to: CGPoint(x: triLeft, y: midY - r.height * 0.18))
-        path.addLine(to: CGPoint(x: triRight, y: midY))
-        path.addLine(to: CGPoint(x: triLeft, y: midY + r.height * 0.18))
-        path.closeSubpath()
-
-        path.move(to: CGPoint(x: triRight, y: midY - barHeight / 2))
-        path.addLine(to: CGPoint(x: triRight, y: midY + barHeight / 2))
-
-        path.move(to: CGPoint(x: triRight, y: midY))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.02, y: midY))
-
-        let curveBaseX = r.midX + r.width * 0.12
-        let curveBaseY = r.maxY - r.height * 0.16
-        let curveTopY = r.minY + r.height * 0.14
-        path.move(to: CGPoint(x: curveBaseX, y: curveBaseY))
-        let steps = 10
-        for step in 0...steps {
-            let t = CGFloat(step) / CGFloat(steps)
-            let x = curveBaseX + (r.maxX - curveBaseX) * t
-            let rise = t * t * t
-            let y = curveBaseY - (curveBaseY - curveTopY) * rise
-            path.addLine(to: CGPoint(x: x, y: y))
-        }
-        return path
-    }
-
-    /// A shield outline with a checkmark — the loop either passes or it doesn't.
-    private static func isLoopVerifier(_ r: CGRect) -> Path {
-        var path = Path()
-        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.08)
-        let leftTop = CGPoint(x: r.minX + r.width * 0.1, y: r.minY + r.height * 0.22)
-        let rightTop = CGPoint(x: r.maxX - r.width * 0.1, y: r.minY + r.height * 0.22)
-        let leftMid = CGPoint(x: r.minX + r.width * 0.1, y: r.midY + r.height * 0.06)
-        let rightMid = CGPoint(x: r.maxX - r.width * 0.1, y: r.midY + r.height * 0.06)
-        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.06)
-
-        path.move(to: top)
-        path.addLine(to: rightTop)
-        path.addLine(to: rightMid)
-        path.addLine(to: bottom)
-        path.addLine(to: leftMid)
-        path.addLine(to: leftTop)
-        path.closeSubpath()
-
-        path.move(to: CGPoint(x: r.midX - r.width * 0.14, y: r.midY))
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.02, y: r.midY + r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: r.midY - r.height * 0.14))
-        return path
-    }
-
-    private static func tapChanger(_ r: CGRect) -> Path {
-        var path = transformer(r)
-        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.18, y: r.minY + r.height * 0.18))
-        path.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.28))
-        return path
-    }
-
-    private static func harmonicsTHD(_ r: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        for step in 0...24 {
-            let t = CGFloat(step) / 24
-            let y = r.midY - sin(t * .pi * 2) * r.height * 0.22 - sin(t * .pi * 6) * r.height * 0.08
-            path.addLine(to: CGPoint(x: r.minX + r.width * t, y: y))
-        }
-        return path
-    }
-
-    /// Battery plates plus a small bolt — UPS, not the series bank.
-    private static func upsSizing(_ r: CGRect) -> Path {
-        var path = batteryBank(r)
-        let bolt = [
-            CGPoint(x: r.midX + r.width * 0.06, y: r.minY + r.height * 0.10),
-            CGPoint(x: r.midX - r.width * 0.02, y: r.minY + r.height * 0.22),
-            CGPoint(x: r.midX + r.width * 0.04, y: r.minY + r.height * 0.22),
-            CGPoint(x: r.midX - r.width * 0.04, y: r.minY + r.height * 0.36),
-        ]
-        path.move(to: bolt[0])
-        for point in bolt.dropFirst() { path.addLine(to: point) }
-        return path
-    }
-
-    private static func motorNameplate(_ r: CGRect) -> Path {
-        var path = motorFLA(r)
-        path.addRect(CGRect(x: r.minX + r.width * 0.62, y: r.minY + r.height * 0.18, width: r.width * 0.28, height: r.height * 0.36))
-        return path
-    }
-
-    /// Nameplate card with viewfinder corners — sibling to the analyzer glyph.
-    private static func motorNameplateOCR(_ r: CGRect) -> Path {
-        var path = Path()
-        let plate = CGRect(
-            x: r.minX + r.width * 0.20,
-            y: r.minY + r.height * 0.30,
-            width: r.width * 0.60,
-            height: r.height * 0.44
-        )
-        path.addRoundedRect(in: plate, cornerSize: CGSize(width: 3, height: 3))
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.10, y: y))
+        let coil0 = r.minX + r.width * 0.10
+        let hump = r.width * 0.10
+        path.move(to: CGPoint(x: coil0, y: y))
         for index in 0..<3 {
-            let y = plate.minY + plate.height * (0.30 + 0.20 * CGFloat(index))
-            path.move(to: CGPoint(x: plate.minX + plate.width * 0.16, y: y))
-            path.addLine(to: CGPoint(x: plate.maxX - plate.width * 0.16, y: y))
-        }
-        let arm = min(r.width, r.height) * 0.12
-        let corners: [(CGPoint, CGFloat, CGFloat)] = [
-            (CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12), 1, 1),
-            (CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.12), -1, 1),
-            (CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.12), 1, -1),
-            (CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.12), -1, -1),
-        ]
-        for (origin, dx, dy) in corners {
-            path.move(to: origin)
-            path.addLine(to: CGPoint(x: origin.x + arm * dx, y: origin.y))
-            path.move(to: origin)
-            path.addLine(to: CGPoint(x: origin.x, y: origin.y + arm * dy))
-        }
-        return path
-    }
-
-    /// Camera frame with a person silhouette — catalog Look Check, not the
-    /// Online / Captive connectivity card.
-    private static func lookCheck(_ r: CGRect) -> Path {
-        var path = Path()
-        let frame = CGRect(
-            x: r.minX + r.width * 0.16,
-            y: r.minY + r.height * 0.22,
-            width: r.width * 0.68,
-            height: r.height * 0.58
-        )
-        path.addRoundedRect(in: frame, cornerSize: CGSize(width: 4, height: 4))
-        let head = CGRect(
-            x: r.minX + r.width * 0.40,
-            y: r.minY + r.height * 0.32,
-            width: r.width * 0.20,
-            height: r.height * 0.18
-        )
-        path.addEllipse(in: head)
-        path.move(to: CGPoint(x: r.minX + r.width * 0.30, y: r.minY + r.height * 0.70))
-        path.addQuadCurve(
-            to: CGPoint(x: r.minX + r.width * 0.70, y: r.minY + r.height * 0.70),
-            control: CGPoint(x: r.minX + r.width * 0.50, y: r.minY + r.height * 0.52)
-        )
-        return path
-    }
-
-    private static func heaterDesign(_ r: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.2))
-        path.addCurve(
-            to: CGPoint(x: r.maxX - r.width * 0.12, y: r.maxY - r.height * 0.2),
-            control1: CGPoint(x: r.minX + r.width * 0.3, y: r.minY + r.height * 0.1),
-            control2: CGPoint(x: r.maxX - r.width * 0.3, y: r.minY + r.height * 0.1)
-        )
-        path.move(to: CGPoint(x: r.midX - r.width * 0.08, y: r.maxY - r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.02))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.08, y: r.maxY - r.height * 0.12))
-        return path
-    }
-
-    /// Shield outline with two leak arcs — EMC, not the IS checkmark.
-    private static func empEmc(_ r: CGRect) -> Path {
-        var path = Path()
-        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.10)
-        let left = CGPoint(x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.24)
-        let right = CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.24)
-        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.10)
-        path.move(to: top)
-        path.addLine(to: right)
-        path.addLine(to: bottom)
-        path.addLine(to: left)
-        path.closeSubpath()
-        let source = CGPoint(x: r.midX, y: r.midY + r.height * 0.02)
-        for ring in 1...2 {
-            let radius = r.width * (0.12 + 0.10 * CGFloat(ring))
-            for step in 0...10 {
-                let t = CGFloat(step) / 10
-                let rad = (200 + 140 * t) * .pi / 180
-                let point = CGPoint(x: source.x + cos(rad) * radius, y: source.y + sin(rad) * radius)
-                if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
-            }
-        }
-        return path
-    }
-
-    /// Conductor plus a small code-table tick — NEC circuit, not ampacity heat.
-    private static func necCircuit(_ r: CGRect) -> Path {
-        var path = wireAmpacity(r)
-        let tab = CGRect(
-            x: r.minX + r.width * 0.08,
-            y: r.minY + r.height * 0.12,
-            width: r.width * 0.22,
-            height: r.height * 0.28
-        )
-        path.addRoundedRect(in: tab, cornerSize: CGSize(width: 2, height: 2))
-        path.move(to: CGPoint(x: tab.minX + tab.width * 0.22, y: tab.minY + tab.height * 0.38))
-        path.addLine(to: CGPoint(x: tab.maxX - tab.width * 0.22, y: tab.minY + tab.height * 0.38))
-        path.move(to: CGPoint(x: tab.minX + tab.width * 0.22, y: tab.minY + tab.height * 0.62))
-        path.addLine(to: CGPoint(x: tab.maxX - tab.width * 0.38, y: tab.minY + tab.height * 0.62))
-        return path
-    }
-
-    /// Directory rows with a bottom total bar — worksheet, not the panel sticker.
-    private static func loadWorksheet(_ r: CGRect) -> Path {
-        var path = panelDirectory(r)
-        path.move(to: CGPoint(x: r.minX + r.width * 0.14, y: r.maxY - r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.14, y: r.maxY - r.height * 0.08))
-        return path
-    }
-
-    private static func cableSchedule(_ r: CGRect) -> Path {
-        var path = Path()
-        for i in 0..<4 {
-            let y = r.minY + r.height * (0.2 + 0.18 * CGFloat(i))
-            path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: y))
-            path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: y))
-        }
-        return path
-    }
-
-    private static func solenoidDesign(_ r: CGRect) -> Path {
-        var path = Path()
-        let left = r.minX + r.width * 0.22
-        let right = r.maxX - r.width * 0.22
-        let top = r.minY + r.height * 0.18
-        let bottom = r.maxY - r.height * 0.18
-        path.addRoundedRect(
-            in: CGRect(x: left, y: top, width: right - left, height: bottom - top),
-            cornerSize: CGSize(width: 6, height: 6)
-        )
-        for i in 0..<5 {
-            let y = top + (bottom - top) * (0.15 + 0.15 * CGFloat(i))
-            path.move(to: CGPoint(x: left + 4, y: y))
-            path.addLine(to: CGPoint(x: right - 4, y: y))
-        }
-        path.move(to: CGPoint(x: r.midX, y: bottom + 2))
-        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.04))
-        return path
-    }
-
-    private static func solarDesign(_ r: CGRect) -> Path {
-        var path = Path()
-        // Sun
-        let sunR = min(r.width, r.height) * 0.14
-        let sunC = CGPoint(x: r.minX + r.width * 0.72, y: r.minY + r.height * 0.28)
-        path.addEllipse(in: CGRect(x: sunC.x - sunR, y: sunC.y - sunR, width: sunR * 2, height: sunR * 2))
-        for i in 0..<4 {
-            let a = CGFloat(i) * .pi / 2
-            let inner = sunR * 1.25
-            let outer = sunR * 1.85
-            path.move(to: CGPoint(x: sunC.x + cos(a) * inner, y: sunC.y + sin(a) * inner))
-            path.addLine(to: CGPoint(x: sunC.x + cos(a) * outer, y: sunC.y + sin(a) * outer))
-        }
-        // Tilted panel parallelogram
-        let p0 = CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.22)
-        let p1 = CGPoint(x: r.minX + r.width * 0.55, y: r.maxY - r.height * 0.18)
-        let p2 = CGPoint(x: r.minX + r.width * 0.68, y: r.minY + r.height * 0.42)
-        let p3 = CGPoint(x: r.minX + r.width * 0.25, y: r.minY + r.height * 0.38)
-        path.move(to: p0); path.addLine(to: p1); path.addLine(to: p2); path.addLine(to: p3); path.closeSubpath()
-        path.move(to: CGPoint(x: (p0.x+p3.x)/2, y: (p0.y+p3.y)/2))
-        path.addLine(to: CGPoint(x: (p1.x+p2.x)/2, y: (p1.y+p2.y)/2))
-        path.move(to: CGPoint(x: (p0.x+p1.x)/2, y: (p0.y+p1.y)/2))
-        path.addLine(to: CGPoint(x: (p3.x+p2.x)/2, y: (p3.y+p2.y)/2))
-        return path
-    }
-
-    /// Single op-amp triangle with +/− inputs and an output lead.
-    private static func analogWorkbench(_ r: CGRect) -> Path {
-        var path = Path()
-        let left = r.minX + r.width * 0.18
-        let right = r.maxX - r.width * 0.16
-        let top = r.minY + r.height * 0.16
-        let bottom = r.maxY - r.height * 0.16
-        path.move(to: CGPoint(x: left, y: top))
-        path.addLine(to: CGPoint(x: right, y: r.midY))
-        path.addLine(to: CGPoint(x: left, y: bottom))
-        path.closeSubpath()
-        path.move(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.34))
-        path.addLine(to: CGPoint(x: left, y: r.minY + r.height * 0.34))
-        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.34))
-        path.addLine(to: CGPoint(x: left, y: r.maxY - r.height * 0.34))
-        path.move(to: CGPoint(x: right, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        let plusY = r.minY + r.height * 0.34
-        path.move(to: CGPoint(x: left + r.width * 0.08, y: plusY))
-        path.addLine(to: CGPoint(x: left + r.width * 0.18, y: plusY))
-        path.move(to: CGPoint(x: left + r.width * 0.13, y: plusY - r.height * 0.05))
-        path.addLine(to: CGPoint(x: left + r.width * 0.13, y: plusY + r.height * 0.05))
-        path.move(to: CGPoint(x: left + r.width * 0.08, y: r.maxY - r.height * 0.34))
-        path.addLine(to: CGPoint(x: left + r.width * 0.18, y: r.maxY - r.height * 0.34))
-        return path
-    }
-
-    /// Resistor zigzag with a noisy scribble above it.
-    private static func noiseSNR(_ r: CGRect) -> Path {
-        var path = Path()
-        let midY = r.midY + r.height * 0.12
-        path.move(to: CGPoint(x: r.minX, y: midY))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.16, y: midY))
-        let zig = r.width * 0.48
-        let step = zig / 6
-        let start = r.minX + r.width * 0.16
-        for index in 0..<6 {
-            let x = start + step * (CGFloat(index) + 0.5)
-            path.addLine(to: CGPoint(x: x, y: midY + (index.isMultiple(of: 2) ? -r.height * 0.12 : r.height * 0.12)))
-        }
-        path.addLine(to: CGPoint(x: start + zig, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: midY))
-        return path
-    }
-
-    /// Three-terminal regulator block with in / adj / out leads.
-    private static func linearRegulator(_ r: CGRect) -> Path {
-        var path = Path()
-        let box = CGRect(
-            x: r.minX + r.width * 0.22,
-            y: r.minY + r.height * 0.22,
-            width: r.width * 0.46,
-            height: r.height * 0.56
-        )
-        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        path.addLine(to: CGPoint(x: box.minX, y: r.midY))
-        path.move(to: CGPoint(x: box.maxX, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        path.move(to: CGPoint(x: box.midX, y: box.maxY))
-        path.addLine(to: CGPoint(x: box.midX, y: r.maxY))
-        path.move(to: CGPoint(x: box.midX - r.width * 0.08, y: r.maxY - r.height * 0.08))
-        path.addLine(to: CGPoint(x: box.midX + r.width * 0.08, y: r.maxY - r.height * 0.08))
-        return path
-    }
-
-    /// Three small op-amp triangles in the classic InAmp arrangement.
-    private static func instrumentationAmp(_ r: CGRect) -> Path {
-        var path = Path()
-        func triangle(at origin: CGPoint, width: CGFloat, height: CGFloat) {
-            path.move(to: CGPoint(x: origin.x, y: origin.y))
-            path.addLine(to: CGPoint(x: origin.x + width, y: origin.y + height / 2))
-            path.addLine(to: CGPoint(x: origin.x, y: origin.y + height))
-            path.closeSubpath()
-        }
-        let w = r.width * 0.28
-        let h = r.height * 0.28
-        triangle(at: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.12), width: w, height: h)
-        triangle(at: CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.12 - h), width: w, height: h)
-        triangle(at: CGPoint(x: r.midX + r.width * 0.04, y: r.midY - h / 2), width: w, height: h)
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08 + w, y: r.minY + r.height * 0.12 + h / 2))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.04, y: r.midY - h * 0.18))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08 + w, y: r.maxY - r.height * 0.12 - h / 2))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.04, y: r.midY + h * 0.18))
-        return path
-    }
-
-    /// ADC stairstep from a rising analog slope.
-    private static func adcDac(_ r: CGRect) -> Path {
-        var path = Path()
-        let baseY = r.maxY - r.height * 0.14
-        path.move(to: CGPoint(x: r.minX, y: baseY))
-        let steps = 4
-        for i in 0..<steps {
-            let x0 = r.minX + r.width * CGFloat(i) / CGFloat(steps)
-            let x1 = r.minX + r.width * CGFloat(i + 1) / CGFloat(steps)
-            let y = baseY - r.height * 0.16 * CGFloat(i + 1)
-            path.addLine(to: CGPoint(x: x0 + r.width * 0.02, y: y))
-            path.addLine(to: CGPoint(x: x1, y: y))
-        }
-        path.move(to: CGPoint(x: r.minX, y: baseY))
-        path.addLine(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.1))
-        return path
-    }
-
-    // MARK: - Homework
-
-    private static func voltageDivider(_ r: CGRect) -> Path {
-        var path = Path()
-        let top = r.minY + r.height * 0.18
-        let bottom = r.maxY - r.height * 0.18
-        let tapY = r.midY
-        path.move(to: CGPoint(x: r.midX, y: top))
-        path.addLine(to: CGPoint(x: r.midX, y: top + r.height * 0.18))
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.16, y: top + r.height * 0.26))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: top + r.height * 0.26))
-        path.addLine(to: CGPoint(x: r.midX, y: top + r.height * 0.34))
-        path.addLine(to: CGPoint(x: r.midX, y: tapY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.1, y: tapY))
-        path.addLine(to: CGPoint(x: r.midX, y: tapY))
-        path.addLine(to: CGPoint(x: r.midX, y: bottom - r.height * 0.34))
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.16, y: bottom - r.height * 0.26))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: bottom - r.height * 0.26))
-        path.addLine(to: CGPoint(x: r.midX, y: bottom - r.height * 0.18))
-        path.addLine(to: CGPoint(x: r.midX, y: bottom))
-        return path
-    }
-
-    private static func seriesParallel(_ r: CGRect) -> Path {
-        var path = Path()
-        let leftMid = r.minX + r.width * 0.22
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        path.addLine(to: CGPoint(x: leftMid - r.width * 0.08, y: r.midY))
-        path.addRect(CGRect(x: leftMid - r.width * 0.08, y: r.midY - r.height * 0.1, width: r.width * 0.16, height: r.height * 0.2))
-        path.move(to: CGPoint(x: leftMid + r.width * 0.08, y: r.midY))
-        path.addLine(to: CGPoint(x: leftMid + r.width * 0.14, y: r.midY))
-        path.addRect(CGRect(x: leftMid + r.width * 0.14, y: r.midY - r.height * 0.1, width: r.width * 0.16, height: r.height * 0.2))
-        path.move(to: CGPoint(x: leftMid + r.width * 0.3, y: r.midY))
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.04, y: r.midY))
-
-        let rightX = r.midX + r.width * 0.12
-        path.move(to: CGPoint(x: rightX, y: r.midY - r.height * 0.22))
-        path.addLine(to: CGPoint(x: rightX + r.width * 0.12, y: r.midY - r.height * 0.22))
-        path.addRect(CGRect(x: rightX + r.width * 0.12, y: r.midY - r.height * 0.3, width: r.width * 0.14, height: r.height * 0.16))
-        path.move(to: CGPoint(x: rightX + r.width * 0.26, y: r.midY - r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY - r.height * 0.22))
-
-        path.move(to: CGPoint(x: rightX, y: r.midY + r.height * 0.22))
-        path.addLine(to: CGPoint(x: rightX + r.width * 0.12, y: r.midY + r.height * 0.22))
-        path.addRect(CGRect(x: rightX + r.width * 0.12, y: r.midY + r.height * 0.14, width: r.width * 0.14, height: r.height * 0.16))
-        path.move(to: CGPoint(x: rightX + r.width * 0.26, y: r.midY + r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY + r.height * 0.22))
-        return path
-    }
-
-    private static func resistorColor(_ r: CGRect) -> Path {
-        var path = Path()
-        let body = CGRect(x: r.minX + r.width * 0.12, y: r.midY - r.height * 0.16, width: r.width * 0.76, height: r.height * 0.32)
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: r.width * 0.06, height: r.width * 0.06))
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        path.addLine(to: CGPoint(x: body.minX, y: r.midY))
-        path.move(to: CGPoint(x: body.maxX, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        let bands = [0.22, 0.38, 0.54, 0.7]
-        for fraction in bands {
-            let x = body.minX + body.width * fraction
-            path.move(to: CGPoint(x: x, y: body.minY))
-            path.addLine(to: CGPoint(x: x, y: body.maxY))
-        }
-        return path
-    }
-
-    private static func unitConverter(_ r: CGRect) -> Path {
-        var path = Path()
-        let midY = r.midY
-        path.move(to: CGPoint(x: r.minX + r.width * 0.18, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.18, y: midY))
-        let head = r.width * 0.1
-        path.move(to: CGPoint(x: r.minX + r.width * 0.18, y: midY))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.28, y: midY - head * 0.45))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.18, y: midY))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.28, y: midY + head * 0.45))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.18, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.28, y: midY - head * 0.45))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.18, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.28, y: midY + head * 0.45))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.34))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.34))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.22))
-        return path
-    }
-
-    private static func frequencyWave(_ r: CGRect) -> Path {
-        var path = Path()
-        let coilStart = r.minX + r.width * 0.06
-        let coilWidth = r.width * 0.22
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        path.addLine(to: CGPoint(x: coilStart, y: r.midY))
-        let humps = 3
-        let humpW = coilWidth / CGFloat(humps)
-        for index in 0..<humps {
-            let x = coilStart + humpW * CGFloat(index)
             path.addArc(
-                center: CGPoint(x: x + humpW / 2, y: r.midY),
-                radius: humpW / 2,
+                center: CGPoint(x: coil0 + hump * (CGFloat(index) + 0.5), y: y),
+                radius: hump / 2,
                 startAngle: .degrees(180),
                 endAngle: .degrees(0),
                 clockwise: false
             )
         }
-        let gap = r.width * 0.1
-        path.move(to: CGPoint(x: coilStart + coilWidth, y: r.midY))
-        path.addLine(to: CGPoint(x: r.midX - gap / 2, y: r.midY))
-        let plateH = r.height * 0.34
-        path.move(to: CGPoint(x: r.midX - gap / 2, y: r.midY - plateH / 2))
-        path.addLine(to: CGPoint(x: r.midX - gap / 2, y: r.midY + plateH / 2))
-        path.move(to: CGPoint(x: r.midX + gap / 2, y: r.midY - plateH / 2))
-        path.addLine(to: CGPoint(x: r.midX + gap / 2, y: r.midY + plateH / 2))
-        path.move(to: CGPoint(x: r.midX + gap / 2, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        let gap = r.width * 0.10
+        let plate = r.minX + r.width * 0.52
+        line(&path, CGPoint(x: coil0 + hump * 3, y: y), CGPoint(x: plate, y: y))
+        line(&path, CGPoint(x: plate, y: y - r.height * 0.22), CGPoint(x: plate, y: y + r.height * 0.22))
+        line(&path, CGPoint(x: plate + gap, y: y - r.height * 0.22), CGPoint(x: plate + gap, y: y + r.height * 0.22))
+        line(&path, CGPoint(x: plate + gap, y: y), CGPoint(x: r.maxX, y: y))
         return path
     }
 
-    private static func ledRC(_ r: CGRect) -> Path {
+    /// P-Q triangle with a capacitor on the Q side — PF correction.
+    private static func powerFactor(_ r: CGRect) -> Path {
         var path = Path()
-        let ledX = r.minX + r.width * 0.2
-        path.move(to: CGPoint(x: r.minX, y: r.midY))
-        path.addLine(to: CGPoint(x: ledX, y: r.midY))
-        path.addLine(to: CGPoint(x: ledX + r.width * 0.14, y: r.midY - r.height * 0.18))
-        path.addLine(to: CGPoint(x: ledX + r.width * 0.14, y: r.midY + r.height * 0.18))
+        let origin = CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.14)
+        let pEnd = CGPoint(x: r.maxX - r.width * 0.28, y: origin.y)
+        let qEnd = CGPoint(x: origin.x, y: r.minY + r.height * 0.16)
+        path.move(to: origin)
+        path.addLine(to: pEnd)
+        path.addLine(to: qEnd)
         path.closeSubpath()
-        path.move(to: CGPoint(x: ledX + r.width * 0.14, y: r.midY - r.height * 0.1))
-        path.addLine(to: CGPoint(x: ledX + r.width * 0.24, y: r.midY - r.height * 0.18))
-        path.move(to: CGPoint(x: ledX + r.width * 0.14, y: r.midY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: ledX + r.width * 0.24, y: r.midY + r.height * 0.18))
-        let capX = r.midX + r.width * 0.08
-        path.move(to: CGPoint(x: ledX + r.width * 0.24, y: r.midY))
-        path.addLine(to: CGPoint(x: capX, y: r.midY))
-        let plateH = r.height * 0.3
-        path.move(to: CGPoint(x: capX, y: r.midY - plateH / 2))
-        path.addLine(to: CGPoint(x: capX, y: r.midY + plateH / 2))
-        path.move(to: CGPoint(x: capX + r.width * 0.08, y: r.midY - plateH / 2))
-        path.addLine(to: CGPoint(x: capX + r.width * 0.08, y: r.midY + plateH / 2))
-        path.move(to: CGPoint(x: capX + r.width * 0.08, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        path.addArc(
+            center: origin,
+            radius: r.width * 0.18,
+            startAngle: .degrees(0),
+            endAngle: .degrees(-50),
+            clockwise: true
+        )
+        let capX = r.maxX - r.width * 0.12
+        line(&path, CGPoint(x: capX, y: r.minY + r.height * 0.22), CGPoint(x: capX, y: r.maxY - r.height * 0.22))
+        line(&path, CGPoint(x: capX + r.width * 0.08, y: r.minY + r.height * 0.22), CGPoint(x: capX + r.width * 0.08, y: r.maxY - r.height * 0.22))
         return path
     }
 
-    // MARK: - Sensors
-
-    private static func cellularStatus(_ r: CGRect) -> Path {
+    /// Fault into a bus — short-circuit current.
+    private static func shortCircuit(_ r: CGRect) -> Path {
         var path = Path()
-        let mastTop = CGPoint(x: r.minX + r.width * 0.38, y: r.minY + r.height * 0.14)
-        let mastBot = CGPoint(x: r.minX + r.width * 0.38, y: r.maxY - r.height * 0.12)
-        path.move(to: CGPoint(x: mastTop.x - r.width * 0.12, y: mastTop.y + r.height * 0.12))
-        path.addLine(to: mastTop)
-        path.addLine(to: CGPoint(x: mastTop.x + r.width * 0.12, y: mastTop.y + r.height * 0.12))
-        path.move(to: mastTop)
-        path.addLine(to: mastBot)
-        path.move(to: CGPoint(x: mastBot.x - r.width * 0.16, y: mastBot.y))
-        path.addLine(to: CGPoint(x: mastBot.x + r.width * 0.16, y: mastBot.y))
-        let bars: [CGFloat] = [0.22, 0.36, 0.52]
-        for (index, height) in bars.enumerated() {
-            let x = r.minX + r.width * (0.62 + 0.12 * CGFloat(index))
-            path.move(to: CGPoint(x: x, y: r.maxY - r.height * 0.16))
-            path.addLine(to: CGPoint(x: x, y: r.maxY - r.height * (0.16 + height)))
+        line(&path, CGPoint(x: r.minX, y: r.maxY - r.height * 0.18), CGPoint(x: r.maxX, y: r.maxY - r.height * 0.18))
+        let bolt = [
+            CGPoint(x: r.midX + r.width * 0.06, y: r.minY + r.height * 0.08),
+            CGPoint(x: r.midX - r.width * 0.14, y: r.midY + r.height * 0.02),
+            CGPoint(x: r.midX + r.width * 0.02, y: r.midY + r.height * 0.02),
+            CGPoint(x: r.midX - r.width * 0.08, y: r.maxY - r.height * 0.22),
+        ]
+        path.move(to: bolt[0])
+        for point in bolt.dropFirst() { path.addLine(to: point) }
+        return path
+    }
+
+    /// Round conductor with a diameter dimension — circular mils.
+    private static func circularMils(_ r: CGRect) -> Path {
+        var path = Path()
+        let radius = min(r.width, r.height) * 0.32
+        circle(&path, CGPoint(x: r.midX, y: r.midY - r.height * 0.06), radius)
+        let dimY = r.maxY - r.height * 0.10
+        line(&path, CGPoint(x: r.midX - radius, y: dimY), CGPoint(x: r.midX + radius, y: dimY))
+        line(&path, CGPoint(x: r.midX - radius, y: dimY - r.height * 0.08), CGPoint(x: r.midX - radius, y: dimY + r.height * 0.08))
+        line(&path, CGPoint(x: r.midX + radius, y: dimY - r.height * 0.08), CGPoint(x: r.midX + radius, y: dimY + r.height * 0.08))
+        return path
+    }
+
+    /// Connected vs demand — one tall bar, one shorter used bar.
+    private static func loadFactors(_ r: CGRect) -> Path {
+        var path = Path()
+        let base = r.maxY - r.height * 0.10
+        let connected = CGRect(
+            x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.08,
+            width: r.width * 0.28, height: base - (r.minY + r.height * 0.08)
+        )
+        let demand = CGRect(
+            x: r.midX + r.width * 0.08, y: r.minY + r.height * 0.38,
+            width: r.width * 0.28, height: base - (r.minY + r.height * 0.38)
+        )
+        path.addRoundedRect(in: connected, cornerSize: CGSize(width: 3, height: 3))
+        path.addRoundedRect(in: demand, cornerSize: CGSize(width: 3, height: 3))
+        line(&path, CGPoint(x: r.minX + r.width * 0.08, y: base), CGPoint(x: r.maxX - r.width * 0.08, y: base))
+        return path
+    }
+
+    /// 4–20 mA current loop with scale ticks.
+    private static func signalScaling(_ r: CGRect) -> Path {
+        var path = Path()
+        let loop = CGRect(
+            x: r.minX + r.width * 0.10, y: r.minY + r.height * 0.18,
+            width: r.width * 0.80, height: r.height * 0.52
+        )
+        path.addEllipse(in: loop)
+        line(&path, CGPoint(x: loop.minX + loop.width * 0.18, y: loop.maxY), CGPoint(x: loop.minX + loop.width * 0.18, y: r.maxY - r.height * 0.08))
+        line(&path, CGPoint(x: loop.maxX - loop.width * 0.18, y: loop.maxY), CGPoint(x: loop.maxX - loop.width * 0.18, y: r.maxY - r.height * 0.08))
+        line(&path, CGPoint(x: loop.minX + loop.width * 0.18, y: r.maxY - r.height * 0.08), CGPoint(x: loop.maxX - loop.width * 0.18, y: r.maxY - r.height * 0.08))
+        // 4 and 20 ticks
+        line(&path, CGPoint(x: loop.minX + loop.width * 0.18, y: r.maxY - r.height * 0.08), CGPoint(x: loop.minX + loop.width * 0.18, y: r.maxY))
+        line(&path, CGPoint(x: loop.maxX - loop.width * 0.18, y: r.maxY - r.height * 0.08), CGPoint(x: loop.maxX - loop.width * 0.18, y: r.maxY))
+        return path
+    }
+
+    /// Holding-register cells — Modbus 4xxxx.
+    private static func modbusAddress(_ r: CGRect) -> Path {
+        var path = Path()
+        let cell = r.width * 0.28
+        for col in 0..<2 {
+            let box = CGRect(
+                x: r.minX + r.width * 0.14 + CGFloat(col) * (cell + r.width * 0.08),
+                y: r.minY + r.height * 0.18,
+                width: cell, height: r.height * 0.38
+            )
+            path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
+        }
+        // 40001-style prefix
+        line(&path, CGPoint(x: r.minX + r.width * 0.18, y: r.maxY - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.38, y: r.maxY - r.height * 0.22))
+        line(&path, CGPoint(x: r.minX + r.width * 0.46, y: r.maxY - r.height * 0.30), CGPoint(x: r.minX + r.width * 0.46, y: r.maxY - r.height * 0.14))
+        line(&path, CGPoint(x: r.minX + r.width * 0.54, y: r.maxY - r.height * 0.22), CGPoint(x: r.maxX - r.width * 0.14, y: r.maxY - r.height * 0.22))
+        return path
+    }
+
+    /// TON block with a clock — PLC timer preset.
+    private static func plcTimer(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY + r.height * 0.06
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.16, y: y))
+        let box = CGRect(
+            x: r.minX + r.width * 0.16, y: y - r.height * 0.20,
+            width: r.width * 0.40, height: r.height * 0.40
+        )
+        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
+        line(&path, CGPoint(x: box.maxX, y: y), CGPoint(x: r.maxX, y: y))
+        let clock = CGPoint(x: r.maxX - r.width * 0.20, y: r.minY + r.height * 0.28)
+        circle(&path, clock, r.width * 0.16)
+        line(&path, clock, CGPoint(x: clock.x, y: clock.y - r.height * 0.10))
+        line(&path, clock, CGPoint(x: clock.x + r.width * 0.08, y: clock.y + r.height * 0.02))
+        return path
+    }
+
+    /// Two-up panel door directory card.
+    private static func panelDirectory(_ r: CGRect) -> Path {
+        var path = Path()
+        path.addRoundedRect(in: r.insetBy(dx: r.width * 0.04, dy: r.height * 0.04), cornerSize: CGSize(width: 4, height: 4))
+        line(&path, CGPoint(x: r.midX, y: r.minY + r.height * 0.14), CGPoint(x: r.midX, y: r.maxY - r.height * 0.14))
+        for index in 0..<4 {
+            let y = r.minY + r.height * (0.26 + 0.16 * CGFloat(index))
+            line(&path, CGPoint(x: r.minX + r.width * 0.16, y: y), CGPoint(x: r.midX - r.width * 0.08, y: y))
+            line(&path, CGPoint(x: r.midX + r.width * 0.08, y: y), CGPoint(x: r.maxX - r.width * 0.16, y: y))
         }
         return path
     }
 
+    // MARK: - Expansion / specialist
+
+    /// Tachometer — motor speed & torque.
+    private static func motorSpeed(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY + r.height * 0.12)
+        let radius = min(r.width, r.height) * 0.42
+        path.addArc(
+            center: center, radius: radius,
+            startAngle: .degrees(200), endAngle: .degrees(-20),
+            clockwise: false
+        )
+        for tick in 0...4 {
+            let t = CGFloat(tick) / 4
+            let rad = (200 + (-20 - 200) * t) * .pi / 180
+            line(
+                &path,
+                CGPoint(x: center.x + cos(rad) * radius * 0.78, y: center.y - sin(rad) * radius * 0.78),
+                CGPoint(x: center.x + cos(rad) * radius, y: center.y - sin(rad) * radius)
+            )
+        }
+        arrow(
+            &path,
+            from: center,
+            to: CGPoint(x: center.x + cos(55 * .pi / 180) * radius * 0.68, y: center.y - sin(55 * .pi / 180) * radius * 0.68),
+            head: r.width * 0.10
+        )
+        return path
+    }
+
+    /// Dipole / yagi radiating — RF power & path loss, not Wi-Fi.
+    private static func rfLink(_ r: CGRect) -> Path {
+        var path = Path()
+        line(&path, CGPoint(x: r.minX + r.width * 0.08, y: r.midY), CGPoint(x: r.minX + r.width * 0.42, y: r.midY))
+        line(&path, CGPoint(x: r.minX + r.width * 0.25, y: r.minY + r.height * 0.22), CGPoint(x: r.minX + r.width * 0.25, y: r.maxY - r.height * 0.22))
+        let source = CGPoint(x: r.minX + r.width * 0.46, y: r.midY)
+        for ring in 1...3 {
+            let radius = r.width * 0.14 * CGFloat(ring)
+            path.addArc(
+                center: source, radius: radius,
+                startAngle: .degrees(-50), endAngle: .degrees(50),
+                clockwise: false
+            )
+        }
+        return path
+    }
+
+    /// Three phasors from one origin.
+    private static func phasorDiagram(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY)
+        let radius = min(r.width, r.height) * 0.40
+        circle(&path, center, radius)
+        let vectors: [(CGFloat, CGFloat)] = [(-90, 0.92), (28, 0.70), (150, 0.78)]
+        for (deg, length) in vectors {
+            let rad = deg * .pi / 180
+            arrow(
+                &path,
+                from: center,
+                to: CGPoint(x: center.x + cos(rad) * radius * length, y: center.y + sin(rad) * radius * length),
+                head: radius * 0.16
+            )
+        }
+        return path
+    }
+
+    /// 1-0-1-0 register — number bases.
+    private static func numberBase(_ r: CGRect) -> Path {
+        var path = Path()
+        let box = CGRect(
+            x: r.minX + r.width * 0.06, y: r.midY - r.height * 0.22,
+            width: r.width * 0.88, height: r.height * 0.44
+        )
+        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
+        for index in 1...3 {
+            let x = box.minX + box.width * CGFloat(index) / 4
+            line(&path, CGPoint(x: x, y: box.minY), CGPoint(x: x, y: box.maxY))
+        }
+        for (index, isOne) in [true, false, true, false].enumerated() where isOne {
+            let x = box.minX + box.width * (CGFloat(index) + 0.5) / 4
+            line(&path, CGPoint(x: x, y: box.midY - box.height * 0.28), CGPoint(x: x, y: box.midY + box.height * 0.28))
+        }
+        return path
+    }
+
+    /// Series cell plates — battery bank sizing.
+    private static func batteryBank(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        let longs: [CGFloat] = [0.22, 0.58]
+        for fraction in longs {
+            let x = r.minX + r.width * fraction
+            line(&path, CGPoint(x: x, y: y - r.height * 0.24), CGPoint(x: x, y: y + r.height * 0.24))
+            line(&path, CGPoint(x: x + r.width * 0.12, y: y - r.height * 0.12), CGPoint(x: x + r.width * 0.12, y: y + r.height * 0.12))
+        }
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.22, y: y))
+        line(&path, CGPoint(x: r.minX + r.width * 0.34, y: y), CGPoint(x: r.minX + r.width * 0.58, y: y))
+        line(&path, CGPoint(x: r.minX + r.width * 0.70, y: y), CGPoint(x: r.maxX, y: y))
+        return path
+    }
+
+    /// Open handbook — reference tables.
+    private static func referenceLibrary(_ r: CGRect) -> Path {
+        var path = Path()
+        let spine = r.midX
+        path.move(to: CGPoint(x: spine, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.06, y: r.minY + r.height * 0.20))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.06, y: r.maxY - r.height * 0.14))
+        path.addLine(to: CGPoint(x: spine, y: r.maxY - r.height * 0.20))
+        path.closeSubpath()
+        path.move(to: CGPoint(x: spine, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.20))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.maxY - r.height * 0.14))
+        path.addLine(to: CGPoint(x: spine, y: r.maxY - r.height * 0.20))
+        path.closeSubpath()
+        return path
+    }
+
+    /// Laminated core + flux loop.
+    private static func magneticCircuit(_ r: CGRect) -> Path {
+        var path = Path()
+        let core = CGRect(
+            x: r.midX - r.width * 0.14, y: r.midY - r.height * 0.28,
+            width: r.width * 0.28, height: r.height * 0.56
+        )
+        path.addRoundedRect(in: core, cornerSize: CGSize(width: 2, height: 2))
+        path.addEllipse(in: r.insetBy(dx: r.width * 0.06, dy: r.height * 0.08))
+        return path
+    }
+
+    /// Fiber tip + acceptance cone.
+    private static func fiberLink(_ r: CGRect) -> Path {
+        var path = Path()
+        let apex = CGPoint(x: r.minX + r.width * 0.14, y: r.midY)
+        path.move(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.16))
+        path.addLine(to: apex)
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.maxY - r.height * 0.16))
+        line(&path, apex, CGPoint(x: r.maxX - r.width * 0.06, y: r.midY))
+        line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.22), apex)
+        return path
+    }
+
+    /// Beam waist — Gaussian beam.
+    private static func gaussianBeam(_ r: CGRect) -> Path {
+        var path = Path()
+        let steps = 16
+        func half(_ x: CGFloat) -> CGFloat {
+            let n = abs(x - r.midX) / (r.width / 2)
+            return r.height * (0.08 + 0.32 * n * n)
+        }
+        path.move(to: CGPoint(x: r.minX, y: r.midY - half(r.minX)))
+        for step in 0...steps {
+            let x = r.minX + r.width * CGFloat(step) / CGFloat(steps)
+            path.addLine(to: CGPoint(x: x, y: r.midY - half(x)))
+        }
+        path.move(to: CGPoint(x: r.minX, y: r.midY + half(r.minX)))
+        for step in 0...steps {
+            let x = r.minX + r.width * CGFloat(step) / CGFloat(steps)
+            path.addLine(to: CGPoint(x: x, y: r.midY + half(x)))
+        }
+        line(&path, CGPoint(x: r.midX, y: r.midY - r.height * 0.10), CGPoint(x: r.midX, y: r.midY + r.height * 0.10))
+        return path
+    }
+
+    /// RC charge curve on axes.
+    private static func transientCircuit(_ r: CGRect) -> Path {
+        var path = Path()
+        let base = r.maxY - r.height * 0.12
+        let top = r.minY + r.height * 0.12
+        line(&path, CGPoint(x: r.minX + r.width * 0.08, y: top), CGPoint(x: r.minX + r.width * 0.08, y: base))
+        line(&path, CGPoint(x: r.minX + r.width * 0.08, y: base), CGPoint(x: r.maxX, y: base))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: base))
+        for step in 0...16 {
+            let t = CGFloat(step) / 16
+            let y = base - (base - top) * 0.82 * CGFloat(1 - exp(-3 * Double(t)))
+            path.addLine(to: CGPoint(x: r.minX + r.width * 0.08 + r.width * 0.86 * t, y: y))
+        }
+        return path
+    }
+
+    /// Rack U-slots on a current bus.
+    private static func rackCurrent(_ r: CGRect) -> Path {
+        var path = Path()
+        let rail = r.minX + r.width * 0.18
+        line(&path, CGPoint(x: rail, y: r.minY + r.height * 0.08), CGPoint(x: rail, y: r.maxY - r.height * 0.08))
+        for index in 0..<4 {
+            let y = r.minY + r.height * (0.18 + 0.18 * CGFloat(index))
+            let width: CGFloat = [0.62, 0.40, 0.54, 0.32][index]
+            line(&path, CGPoint(x: rail, y: y), CGPoint(x: rail + r.width * width, y: y))
+        }
+        return path
+    }
+
+    /// Diode schematic — semiconductor I-V.
+    private static func diodeIV(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.22, y: y))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.22, y: y - r.height * 0.22))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.06, y: y))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.22, y: y + r.height * 0.22))
+        path.closeSubpath()
+        line(
+            &path,
+            CGPoint(x: r.midX + r.width * 0.06, y: y - r.height * 0.24),
+            CGPoint(x: r.midX + r.width * 0.06, y: y + r.height * 0.24)
+        )
+        line(&path, CGPoint(x: r.midX + r.width * 0.06, y: y), CGPoint(x: r.maxX, y: y))
+        return path
+    }
+
+    /// Intrinsic-safety barrier + check.
+    private static func isLoopVerifier(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.minY + r.height * 0.24))
+        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.minX + r.width * 0.12, y: r.minY + r.height * 0.24))
+        path.closeSubpath()
+        path.move(to: CGPoint(x: r.midX - r.width * 0.16, y: r.midY + r.height * 0.02))
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.02, y: r.midY + r.height * 0.16))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.20, y: r.midY - r.height * 0.12))
+        return path
+    }
+
+    /// Transformer plus a tap switch.
+    private static func tapChanger(_ r: CGRect) -> Path {
+        var path = transformer(r)
+        path.move(to: CGPoint(x: r.midX + r.width * 0.18, y: r.minY + r.height * 0.12))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.28))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.18, y: r.minY + r.height * 0.44))
+        return path
+    }
+
+    /// Distorted sine — THD.
+    private static func harmonicsTHD(_ r: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX, y: r.midY))
+        for step in 0...24 {
+            let t = CGFloat(step) / 24
+            let y = r.midY - sin(t * .pi * 2) * r.height * 0.28 - sin(t * .pi * 6) * r.height * 0.10
+            path.addLine(to: CGPoint(x: r.minX + r.width * t, y: y))
+        }
+        return path
+    }
+
+    /// UPS cabinet with an outlet and a battery brick.
+    private static func upsSizing(_ r: CGRect) -> Path {
+        var path = Path()
+        let cabinet = CGRect(
+            x: r.minX + r.width * 0.12, y: r.minY + r.height * 0.08,
+            width: r.width * 0.76, height: r.height * 0.54
+        )
+        path.addRoundedRect(in: cabinet, cornerSize: CGSize(width: 3, height: 3))
+        line(
+            &path,
+            CGPoint(x: cabinet.minX + cabinet.width * 0.28, y: cabinet.midY - cabinet.height * 0.18),
+            CGPoint(x: cabinet.minX + cabinet.width * 0.28, y: cabinet.midY + cabinet.height * 0.06)
+        )
+        line(
+            &path,
+            CGPoint(x: cabinet.maxX - cabinet.width * 0.28, y: cabinet.midY - cabinet.height * 0.18),
+            CGPoint(x: cabinet.maxX - cabinet.width * 0.28, y: cabinet.midY + cabinet.height * 0.06)
+        )
+        circle(&path, CGPoint(x: cabinet.midX, y: cabinet.midY + cabinet.height * 0.18), cabinet.width * 0.07)
+        let brick = CGRect(
+            x: r.minX + r.width * 0.22, y: r.maxY - r.height * 0.30,
+            width: r.width * 0.56, height: r.height * 0.18
+        )
+        path.addRoundedRect(in: brick, cornerSize: CGSize(width: 2, height: 2))
+        return path
+    }
+
+    /// Motor M plus a stamped nameplate card.
+    private static func motorNameplate(_ r: CGRect) -> Path {
+        var path = Path()
+        let radius = min(r.width, r.height) * 0.28
+        let motor = CGPoint(x: r.minX + r.width * 0.34, y: r.midY)
+        circle(&path, motor, radius)
+        path.move(to: CGPoint(x: motor.x - radius * 0.40, y: motor.y + radius * 0.38))
+        path.addLine(to: CGPoint(x: motor.x - radius * 0.40, y: motor.y - radius * 0.38))
+        path.addLine(to: CGPoint(x: motor.x, y: motor.y + radius * 0.06))
+        path.addLine(to: CGPoint(x: motor.x + radius * 0.40, y: motor.y - radius * 0.38))
+        path.addLine(to: CGPoint(x: motor.x + radius * 0.40, y: motor.y + radius * 0.38))
+        let plate = CGRect(
+            x: r.maxX - r.width * 0.46, y: r.minY + r.height * 0.18,
+            width: r.width * 0.40, height: r.height * 0.40
+        )
+        path.addRoundedRect(in: plate, cornerSize: CGSize(width: 2, height: 2))
+        line(&path, CGPoint(x: plate.minX + plate.width * 0.18, y: plate.minY + plate.height * 0.38), CGPoint(x: plate.maxX - plate.width * 0.18, y: plate.minY + plate.height * 0.38))
+        line(&path, CGPoint(x: plate.minX + plate.width * 0.18, y: plate.minY + plate.height * 0.62), CGPoint(x: plate.maxX - plate.width * 0.28, y: plate.minY + plate.height * 0.62))
+        return path
+    }
+
+    /// Nameplate in a camera viewfinder — OCR, not the analyzer.
+    private static func motorNameplateOCR(_ r: CGRect) -> Path {
+        var path = Path()
+        let plate = CGRect(
+            x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.30,
+            width: r.width * 0.56, height: r.height * 0.40
+        )
+        path.addRoundedRect(in: plate, cornerSize: CGSize(width: 3, height: 3))
+        line(&path, CGPoint(x: plate.minX + plate.width * 0.16, y: plate.minY + plate.height * 0.38), CGPoint(x: plate.maxX - plate.width * 0.16, y: plate.minY + plate.height * 0.38))
+        line(&path, CGPoint(x: plate.minX + plate.width * 0.16, y: plate.minY + plate.height * 0.62), CGPoint(x: plate.maxX - plate.width * 0.16, y: plate.minY + plate.height * 0.62))
+        let arm = min(r.width, r.height) * 0.14
+        let corners = [
+            (CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.10), 1.0, 1.0),
+            (CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.10), -1.0, 1.0),
+            (CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.10), 1.0, -1.0),
+            (CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.10), -1.0, -1.0),
+        ]
+        for (origin, dx, dy) in corners {
+            line(&path, origin, CGPoint(x: origin.x + arm * dx, y: origin.y))
+            line(&path, origin, CGPoint(x: origin.x, y: origin.y + arm * dy))
+        }
+        return path
+    }
+
+    /// Face in a photo frame — Look Check verdict.
+    private static func lookCheck(_ r: CGRect) -> Path {
+        var path = Path()
+        let frame = CGRect(
+            x: r.minX + r.width * 0.14, y: r.minY + r.height * 0.18,
+            width: r.width * 0.72, height: r.height * 0.64
+        )
+        path.addRoundedRect(in: frame, cornerSize: CGSize(width: 4, height: 4))
+        circle(&path, CGPoint(x: r.midX, y: r.minY + r.height * 0.40), r.width * 0.11)
+        path.move(to: CGPoint(x: r.minX + r.width * 0.30, y: r.minY + r.height * 0.70))
+        path.addQuadCurve(
+            to: CGPoint(x: r.maxX - r.width * 0.30, y: r.minY + r.height * 0.70),
+            control: CGPoint(x: r.midX, y: r.minY + r.height * 0.54)
+        )
+        return path
+    }
+
+    /// Nichrome heating coil — heater design.
+    private static func heaterDesign(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.12, y: y))
+        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: y))
+        for index in 0..<5 {
+            let x0 = r.minX + r.width * (0.12 + 0.14 * CGFloat(index))
+            path.addCurve(
+                to: CGPoint(x: x0 + r.width * 0.14, y: y),
+                control1: CGPoint(x: x0 + r.width * 0.04, y: y - r.height * 0.32),
+                control2: CGPoint(x: x0 + r.width * 0.10, y: y + r.height * 0.32)
+            )
+        }
+        line(&path, CGPoint(x: r.maxX - r.width * 0.18, y: y), CGPoint(x: r.maxX, y: y))
+        return path
+    }
+
+    /// Faraday cage grid — EMP / EMC shielding.
+    private static func empEmc(_ r: CGRect) -> Path {
+        var path = Path()
+        let cage = r.insetBy(dx: r.width * 0.08, dy: r.height * 0.10)
+        path.addRoundedRect(in: cage, cornerSize: CGSize(width: 3, height: 3))
+        line(&path, CGPoint(x: cage.midX, y: cage.minY), CGPoint(x: cage.midX, y: cage.maxY))
+        line(&path, CGPoint(x: cage.minX, y: cage.midY), CGPoint(x: cage.maxX, y: cage.midY))
+        return path
+    }
+
+    /// Code book with a circuit tick — NEC one-pass calculator.
+    private static func necCircuit(_ r: CGRect) -> Path {
+        var path = Path()
+        let book = CGRect(
+            x: r.minX + r.width * 0.10, y: r.minY + r.height * 0.12,
+            width: r.width * 0.50, height: r.height * 0.76
+        )
+        path.addRoundedRect(in: book, cornerSize: CGSize(width: 3, height: 3))
+        line(&path, CGPoint(x: book.minX + book.width * 0.18, y: book.minY + book.height * 0.28), CGPoint(x: book.maxX - book.width * 0.18, y: book.minY + book.height * 0.28))
+        line(&path, CGPoint(x: book.minX + book.width * 0.18, y: book.minY + book.height * 0.48), CGPoint(x: book.maxX - book.width * 0.18, y: book.minY + book.height * 0.48))
+        line(&path, CGPoint(x: book.minX + book.width * 0.18, y: book.minY + book.height * 0.68), CGPoint(x: book.maxX - book.width * 0.30, y: book.minY + book.height * 0.68))
+        line(&path, CGPoint(x: book.maxX, y: r.midY), CGPoint(x: r.maxX - r.width * 0.08, y: r.midY))
+        circle(&path, CGPoint(x: r.maxX - r.width * 0.08, y: r.midY), r.width * 0.07)
+        return path
+    }
+
+    /// Single-column worksheet with a Σ total — NEC 220 load calc.
+    private static func loadWorksheet(_ r: CGRect) -> Path {
+        var path = Path()
+        let sheet = r.insetBy(dx: r.width * 0.14, dy: r.height * 0.08)
+        path.addRoundedRect(in: sheet, cornerSize: CGSize(width: 3, height: 3))
+        for index in 0..<3 {
+            let y = sheet.minY + sheet.height * (0.22 + 0.18 * CGFloat(index))
+            line(&path, CGPoint(x: sheet.minX + sheet.width * 0.16, y: y), CGPoint(x: sheet.maxX - sheet.width * 0.16, y: y))
+        }
+        line(&path, CGPoint(x: sheet.minX + sheet.width * 0.16, y: sheet.maxY - sheet.height * 0.16), CGPoint(x: sheet.maxX - sheet.width * 0.16, y: sheet.maxY - sheet.height * 0.16))
+        // Σ
+        path.move(to: CGPoint(x: sheet.minX + sheet.width * 0.16, y: sheet.maxY - sheet.height * 0.28))
+        path.addLine(to: CGPoint(x: sheet.minX + sheet.width * 0.34, y: sheet.maxY - sheet.height * 0.22))
+        path.addLine(to: CGPoint(x: sheet.minX + sheet.width * 0.16, y: sheet.maxY - sheet.height * 0.16))
+        return path
+    }
+
+    /// Numbered cable tags C-1 C-2 — schedule generator.
+    private static func cableSchedule(_ r: CGRect) -> Path {
+        var path = Path()
+        for index in 0..<3 {
+            let y = r.minY + r.height * (0.16 + 0.28 * CGFloat(index))
+            let tag = CGRect(x: r.minX + r.width * 0.10, y: y, width: r.width * 0.28, height: r.height * 0.20)
+            path.addRoundedRect(in: tag, cornerSize: CGSize(width: 2, height: 2))
+            line(&path, CGPoint(x: tag.maxX, y: tag.midY), CGPoint(x: r.maxX - r.width * 0.10, y: tag.midY))
+        }
+        return path
+    }
+
+    /// Coil with a plunger — solenoid design.
+    private static func solenoidDesign(_ r: CGRect) -> Path {
+        var path = Path()
+        let body = CGRect(
+            x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.16,
+            width: r.width * 0.56, height: r.height * 0.56
+        )
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: 4, height: 4))
+        for index in 0..<4 {
+            let y = body.minY + body.height * (0.20 + 0.20 * CGFloat(index))
+            line(&path, CGPoint(x: body.minX + 3, y: y), CGPoint(x: body.maxX - 3, y: y))
+        }
+        line(&path, CGPoint(x: r.midX, y: body.maxY), CGPoint(x: r.midX, y: r.maxY - r.height * 0.04))
+        line(
+            &path,
+            CGPoint(x: r.midX - r.width * 0.10, y: r.maxY - r.height * 0.12),
+            CGPoint(x: r.midX + r.width * 0.10, y: r.maxY - r.height * 0.12)
+        )
+        return path
+    }
+
+    /// Tilted PV module + sun.
+    private static func solarDesign(_ r: CGRect) -> Path {
+        var path = Path()
+        let sun = CGPoint(x: r.maxX - r.width * 0.22, y: r.minY + r.height * 0.22)
+        circle(&path, sun, r.width * 0.12)
+        for index in 0..<4 {
+            let a = CGFloat(index) * .pi / 2
+            line(
+                &path,
+                CGPoint(x: sun.x + cos(a) * r.width * 0.16, y: sun.y + sin(a) * r.width * 0.16),
+                CGPoint(x: sun.x + cos(a) * r.width * 0.24, y: sun.y + sin(a) * r.width * 0.24)
+            )
+        }
+        let p0 = CGPoint(x: r.minX + r.width * 0.10, y: r.maxY - r.height * 0.18)
+        let p1 = CGPoint(x: r.minX + r.width * 0.58, y: r.maxY - r.height * 0.14)
+        let p2 = CGPoint(x: r.minX + r.width * 0.72, y: r.minY + r.height * 0.42)
+        let p3 = CGPoint(x: r.minX + r.width * 0.24, y: r.minY + r.height * 0.38)
+        path.move(to: p0)
+        path.addLine(to: p1)
+        path.addLine(to: p2)
+        path.addLine(to: p3)
+        path.closeSubpath()
+        line(&path, CGPoint(x: (p0.x + p3.x) / 2, y: (p0.y + p3.y) / 2), CGPoint(x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2))
+        return path
+    }
+
+    /// Single op-amp — analog workbench.
+    private static func analogWorkbench(_ r: CGRect) -> Path {
+        var path = Path()
+        let left = r.minX + r.width * 0.20
+        path.move(to: CGPoint(x: left, y: r.minY + r.height * 0.14))
+        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.midY))
+        path.addLine(to: CGPoint(x: left, y: r.maxY - r.height * 0.14))
+        path.closeSubpath()
+        line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.32), CGPoint(x: left, y: r.minY + r.height * 0.32))
+        line(&path, CGPoint(x: r.minX, y: r.maxY - r.height * 0.32), CGPoint(x: left, y: r.maxY - r.height * 0.32))
+        line(&path, CGPoint(x: r.maxX - r.width * 0.12, y: r.midY), CGPoint(x: r.maxX, y: r.midY))
+        let plusY = r.minY + r.height * 0.32
+        line(&path, CGPoint(x: left + r.width * 0.08, y: plusY), CGPoint(x: left + r.width * 0.18, y: plusY))
+        line(&path, CGPoint(x: left + r.width * 0.13, y: plusY - r.height * 0.05), CGPoint(x: left + r.width * 0.13, y: plusY + r.height * 0.05))
+        line(&path, CGPoint(x: left + r.width * 0.08, y: r.maxY - r.height * 0.32), CGPoint(x: left + r.width * 0.18, y: r.maxY - r.height * 0.32))
+        return path
+    }
+
+    /// Clean sine vs noisy scribble — SNR, not Ohm's law.
+    private static func noiseSNR(_ r: CGRect) -> Path {
+        var path = Path()
+        wave(&path, x0: r.minX, x1: r.maxX, y: r.minY + r.height * 0.32, amp: r.height * 0.14, cycles: 1.5)
+        path.move(to: CGPoint(x: r.minX, y: r.maxY - r.height * 0.28))
+        for step in 0...12 {
+            let t = CGFloat(step) / 12
+            let jitter: CGFloat = (step.isMultiple(of: 2) ? -1 : 1) * r.height * (0.06 + CGFloat(step % 3) * 0.04)
+            path.addLine(to: CGPoint(x: r.minX + r.width * t, y: r.maxY - r.height * 0.28 + jitter))
+        }
+        return path
+    }
+
+    /// TO-220 / 3-pin regulator.
+    private static func linearRegulator(_ r: CGRect) -> Path {
+        var path = Path()
+        let tab = CGRect(
+            x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.08,
+            width: r.width * 0.56, height: r.height * 0.22
+        )
+        path.addRoundedRect(in: tab, cornerSize: CGSize(width: 2, height: 2))
+        let body = CGRect(
+            x: r.minX + r.width * 0.22, y: tab.maxY,
+            width: r.width * 0.56, height: r.height * 0.36
+        )
+        path.addRect(body)
+        for index in 0..<3 {
+            let x = body.minX + body.width * (0.22 + 0.28 * CGFloat(index))
+            line(&path, CGPoint(x: x, y: body.maxY), CGPoint(x: x, y: r.maxY - r.height * 0.08))
+        }
+        return path
+    }
+
+    /// Classic 3-op-amp InAmp.
+    private static func instrumentationAmp(_ r: CGRect) -> Path {
+        var path = Path()
+        func triangle(at origin: CGPoint, width: CGFloat, height: CGFloat) {
+            path.move(to: origin)
+            path.addLine(to: CGPoint(x: origin.x + width, y: origin.y + height / 2))
+            path.addLine(to: CGPoint(x: origin.x, y: origin.y + height))
+            path.closeSubpath()
+        }
+        let w = r.width * 0.30
+        let h = r.height * 0.28
+        triangle(at: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.10), width: w, height: h)
+        triangle(at: CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.10 - h), width: w, height: h)
+        triangle(at: CGPoint(x: r.midX + r.width * 0.02, y: r.midY - h / 2), width: w, height: h)
+        line(&path, CGPoint(x: r.minX + r.width * 0.08 + w, y: r.minY + r.height * 0.10 + h / 2), CGPoint(x: r.midX + r.width * 0.02, y: r.midY - h * 0.18))
+        line(&path, CGPoint(x: r.minX + r.width * 0.08 + w, y: r.maxY - r.height * 0.10 - h / 2), CGPoint(x: r.midX + r.width * 0.02, y: r.midY + h * 0.18))
+        return path
+    }
+
+    /// ADC stairstep.
+    private static func adcDac(_ r: CGRect) -> Path {
+        var path = Path()
+        let base = r.maxY - r.height * 0.12
+        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: base))
+        for index in 0..<4 {
+            let x0 = r.minX + r.width * 0.08 + r.width * 0.22 * CGFloat(index)
+            let x1 = x0 + r.width * 0.22
+            let y = base - r.height * 0.16 * CGFloat(index + 1)
+            path.addLine(to: CGPoint(x: x0, y: y))
+            path.addLine(to: CGPoint(x: x1, y: y))
+        }
+        line(&path, CGPoint(x: r.minX + r.width * 0.08, y: base), CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.10))
+        return path
+    }
+
+    // MARK: - Homework / bench
+
+    /// Two resistors with a tap — voltage divider.
+    private static func voltageDivider(_ r: CGRect) -> Path {
+        var path = Path()
+        let x = r.midX - r.width * 0.10
+        line(&path, CGPoint(x: x, y: r.minY), CGPoint(x: x, y: r.minY + r.height * 0.18))
+        path.move(to: CGPoint(x: x, y: r.minY + r.height * 0.18))
+        path.addLine(to: CGPoint(x: x - r.width * 0.16, y: r.minY + r.height * 0.28))
+        path.addLine(to: CGPoint(x: x + r.width * 0.16, y: r.minY + r.height * 0.28))
+        path.addLine(to: CGPoint(x: x, y: r.minY + r.height * 0.38))
+        line(&path, CGPoint(x: x, y: r.minY + r.height * 0.38), CGPoint(x: x, y: r.midY))
+        arrow(&path, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: r.maxX - r.width * 0.06, y: r.midY), head: r.width * 0.10)
+        path.move(to: CGPoint(x: x, y: r.midY))
+        path.addLine(to: CGPoint(x: x, y: r.maxY - r.height * 0.38))
+        path.addLine(to: CGPoint(x: x - r.width * 0.16, y: r.maxY - r.height * 0.28))
+        path.addLine(to: CGPoint(x: x + r.width * 0.16, y: r.maxY - r.height * 0.28))
+        path.addLine(to: CGPoint(x: x, y: r.maxY - r.height * 0.18))
+        line(&path, CGPoint(x: x, y: r.maxY - r.height * 0.18), CGPoint(x: x, y: r.maxY))
+        return path
+    }
+
+    /// Series pair on the left, parallel pair on the right.
+    private static func seriesParallel(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.10, y: y))
+        path.addRect(CGRect(x: r.minX + r.width * 0.10, y: y - r.height * 0.10, width: r.width * 0.16, height: r.height * 0.20))
+        line(&path, CGPoint(x: r.minX + r.width * 0.26, y: y), CGPoint(x: r.minX + r.width * 0.32, y: y))
+        path.addRect(CGRect(x: r.minX + r.width * 0.32, y: y - r.height * 0.10, width: r.width * 0.16, height: r.height * 0.20))
+        line(&path, CGPoint(x: r.minX + r.width * 0.48, y: y), CGPoint(x: r.midX, y: y))
+        let rail = r.midX + r.width * 0.06
+        line(&path, CGPoint(x: r.midX, y: y), CGPoint(x: rail, y: y))
+        line(&path, CGPoint(x: rail, y: y - r.height * 0.22), CGPoint(x: rail, y: y + r.height * 0.22))
+        path.addRect(CGRect(x: rail + r.width * 0.08, y: y - r.height * 0.32, width: r.width * 0.20, height: r.height * 0.16))
+        path.addRect(CGRect(x: rail + r.width * 0.08, y: y + r.height * 0.16, width: r.width * 0.20, height: r.height * 0.16))
+        line(&path, CGPoint(x: rail, y: y - r.height * 0.22), CGPoint(x: rail + r.width * 0.08, y: y - r.height * 0.24))
+        line(&path, CGPoint(x: rail, y: y + r.height * 0.22), CGPoint(x: rail + r.width * 0.08, y: y + r.height * 0.24))
+        let out = rail + r.width * 0.28
+        line(&path, CGPoint(x: out, y: y - r.height * 0.24), CGPoint(x: r.maxX - r.width * 0.08, y: y - r.height * 0.24))
+        line(&path, CGPoint(x: out, y: y + r.height * 0.24), CGPoint(x: r.maxX - r.width * 0.08, y: y + r.height * 0.24))
+        line(&path, CGPoint(x: r.maxX - r.width * 0.08, y: y - r.height * 0.24), CGPoint(x: r.maxX - r.width * 0.08, y: y + r.height * 0.24))
+        line(&path, CGPoint(x: r.maxX - r.width * 0.08, y: y), CGPoint(x: r.maxX, y: y))
+        return path
+    }
+
+    /// Resistor body with color bands.
+    private static func resistorColor(_ r: CGRect) -> Path {
+        var path = Path()
+        let body = CGRect(
+            x: r.minX + r.width * 0.14, y: r.midY - r.height * 0.16,
+            width: r.width * 0.72, height: r.height * 0.32
+        )
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: r.width * 0.06, height: r.width * 0.06))
+        line(&path, CGPoint(x: r.minX, y: r.midY), CGPoint(x: body.minX, y: r.midY))
+        line(&path, CGPoint(x: body.maxX, y: r.midY), CGPoint(x: r.maxX, y: r.midY))
+        for fraction in [0.22, 0.40, 0.58, 0.78] as [CGFloat] {
+            let x = body.minX + body.width * fraction
+            line(&path, CGPoint(x: x, y: body.minY), CGPoint(x: x, y: body.maxY))
+        }
+        return path
+    }
+
+    /// Two unit boxes with a swap — SI / °C / mils converter.
+    private static func unitConverter(_ r: CGRect) -> Path {
+        var path = Path()
+        let a = CGRect(x: r.minX + r.width * 0.04, y: r.minY + r.height * 0.22, width: r.width * 0.36, height: r.height * 0.56)
+        let b = CGRect(x: r.maxX - r.width * 0.40, y: r.minY + r.height * 0.22, width: r.width * 0.36, height: r.height * 0.56)
+        path.addRoundedRect(in: a, cornerSize: CGSize(width: 3, height: 3))
+        path.addRoundedRect(in: b, cornerSize: CGSize(width: 3, height: 3))
+        arrow(
+            &path,
+            from: CGPoint(x: a.maxX + r.width * 0.04, y: r.midY - r.height * 0.10),
+            to: CGPoint(x: b.minX - r.width * 0.04, y: r.midY - r.height * 0.10),
+            head: r.width * 0.08
+        )
+        arrow(
+            &path,
+            from: CGPoint(x: b.minX - r.width * 0.04, y: r.midY + r.height * 0.10),
+            to: CGPoint(x: a.maxX + r.width * 0.04, y: r.midY + r.height * 0.10),
+            head: r.width * 0.08
+        )
+        return path
+    }
+
+    /// LC tank — frequency / resonance.
+    private static func frequencyWave(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.10, y: y))
+        let coil0 = r.minX + r.width * 0.10
+        let hump = r.width * 0.11
+        path.move(to: CGPoint(x: coil0, y: y))
+        for index in 0..<3 {
+            path.addArc(
+                center: CGPoint(x: coil0 + hump * (CGFloat(index) + 0.5), y: y),
+                radius: hump / 2,
+                startAngle: .degrees(180),
+                endAngle: .degrees(0),
+                clockwise: false
+            )
+        }
+        let plate = r.midX + r.width * 0.08
+        line(&path, CGPoint(x: coil0 + hump * 3, y: y), CGPoint(x: plate, y: y))
+        line(&path, CGPoint(x: plate, y: y - r.height * 0.22), CGPoint(x: plate, y: y + r.height * 0.22))
+        line(&path, CGPoint(x: plate + r.width * 0.10, y: y - r.height * 0.22), CGPoint(x: plate + r.width * 0.10, y: y + r.height * 0.22))
+        line(&path, CGPoint(x: plate + r.width * 0.10, y: y), CGPoint(x: r.maxX, y: y))
+        return path
+    }
+
+    /// LED + current-limit resistor.
+    private static func ledRC(_ r: CGRect) -> Path {
+        var path = Path()
+        let y = r.midY
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.16, y: y))
+        let zig0 = r.minX + r.width * 0.16
+        path.move(to: CGPoint(x: zig0, y: y))
+        for index in 0..<3 {
+            path.addLine(to: CGPoint(
+                x: zig0 + r.width * 0.10 * (CGFloat(index) + 0.5),
+                y: y + (index.isMultiple(of: 2) ? -r.height * 0.12 : r.height * 0.12)
+            ))
+        }
+        path.addLine(to: CGPoint(x: zig0 + r.width * 0.30, y: y))
+        let led = zig0 + r.width * 0.34
+        path.move(to: CGPoint(x: led, y: y - r.height * 0.20))
+        path.addLine(to: CGPoint(x: led + r.width * 0.18, y: y))
+        path.addLine(to: CGPoint(x: led, y: y + r.height * 0.20))
+        path.closeSubpath()
+        line(&path, CGPoint(x: led + r.width * 0.18, y: y - r.height * 0.16), CGPoint(x: led + r.width * 0.30, y: y - r.height * 0.26))
+        line(&path, CGPoint(x: led + r.width * 0.18, y: y + r.height * 0.06), CGPoint(x: led + r.width * 0.30, y: y - r.height * 0.04))
+        line(&path, CGPoint(x: led + r.width * 0.18, y: y), CGPoint(x: r.maxX, y: y))
+        return path
+    }
+
+    // MARK: - Instruments
+
+    /// Cell tower + bars — cellular path.
+    private static func cellularStatus(_ r: CGRect) -> Path {
+        var path = Path()
+        let mast = CGPoint(x: r.minX + r.width * 0.34, y: r.minY + r.height * 0.12)
+        line(&path, CGPoint(x: mast.x - r.width * 0.14, y: mast.y + r.height * 0.14), mast)
+        line(&path, mast, CGPoint(x: mast.x + r.width * 0.14, y: mast.y + r.height * 0.14))
+        line(&path, mast, CGPoint(x: mast.x, y: r.maxY - r.height * 0.10))
+        line(&path, CGPoint(x: mast.x - r.width * 0.16, y: r.maxY - r.height * 0.10), CGPoint(x: mast.x + r.width * 0.16, y: r.maxY - r.height * 0.10))
+        for (index, height) in [0.22, 0.38, 0.54].enumerated() {
+            let x = r.minX + r.width * (0.62 + 0.12 * CGFloat(index))
+            line(&path, CGPoint(x: x, y: r.maxY - r.height * 0.14), CGPoint(x: x, y: r.maxY - r.height * (0.14 + height)))
+        }
+        return path
+    }
+
+    /// Wi-Fi fan from a node.
     private static func wifiStatus(_ r: CGRect) -> Path {
         var path = Path()
-        let base = CGPoint(x: r.midX, y: r.maxY - r.height * 0.1)
-        path.move(to: base)
-        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.18))
+        let base = CGPoint(x: r.midX, y: r.maxY - r.height * 0.12)
+        circle(&path, base, r.width * 0.05)
         for index in 1...3 {
-            let radius = r.width * 0.12 * CGFloat(index)
             path.addArc(
                 center: base,
-                radius: radius,
+                radius: r.width * 0.14 * CGFloat(index),
                 startAngle: .degrees(205),
                 endAngle: .degrees(335),
                 clockwise: false
@@ -1934,278 +1776,247 @@ enum GlyphKind {
         return path
     }
 
+    /// Bluetooth rune inside a radar ping — BLE scanner + RSSI radar.
     private static func bluetoothScan(_ r: CGRect) -> Path {
         var path = Path()
-        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.1)
-        let midLeft = CGPoint(x: r.midX - r.width * 0.18, y: r.midY)
-        let midRight = CGPoint(x: r.midX + r.width * 0.18, y: r.midY)
-        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.1)
+        let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.16)
+        let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.16)
         path.move(to: top)
-        path.addLine(to: midLeft)
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.04, y: r.midY - r.height * 0.08))
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.16, y: r.midY))
         path.addLine(to: bottom)
-        path.move(to: bottom)
-        path.addLine(to: CGPoint(x: r.midX - r.width * 0.04, y: r.midY + r.height * 0.08))
-        path.addLine(to: midRight)
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: r.midY + r.height * 0.16))
         path.addLine(to: top)
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.14, y: r.midY - r.height * 0.16))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.midY - r.height * 0.16))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.1, y: r.midY - r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.1, y: r.midY - r.height * 0.1))
-        return path
-    }
-
-    private static func noiseMeter(_ r: CGRect) -> Path {
-        var path = Path()
-        let mic = CGRect(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.22, width: r.width * 0.22, height: r.height * 0.42)
-        path.addRoundedRect(in: mic, cornerSize: CGSize(width: mic.width * 0.4, height: mic.width * 0.4))
-        path.move(to: CGPoint(x: mic.midX, y: mic.maxY))
-        path.addLine(to: CGPoint(x: mic.midX, y: r.maxY - r.height * 0.14))
-        path.addLine(to: CGPoint(x: mic.midX - r.width * 0.08, y: r.maxY - r.height * 0.08))
-        path.move(to: CGPoint(x: mic.midX, y: r.maxY - r.height * 0.14))
-        path.addLine(to: CGPoint(x: mic.midX + r.width * 0.08, y: r.maxY - r.height * 0.08))
-        let bars: [CGFloat] = [0.18, 0.32, 0.48, 0.28, 0.42]
-        for (index, height) in bars.enumerated() {
-            let x = r.minX + r.width * (0.42 + 0.1 * CGFloat(index))
-            path.move(to: CGPoint(x: x, y: r.maxY - r.height * 0.12))
-            path.addLine(to: CGPoint(x: x, y: r.maxY - r.height * (0.12 + height)))
-        }
-        return path
-    }
-
-    private static func bubbleLevel(_ r: CGRect) -> Path {
-        var path = Path()
-        let tube = CGRect(x: r.minX + r.width * 0.08, y: r.midY - r.height * 0.12, width: r.width * 0.84, height: r.height * 0.24)
-        path.addRoundedRect(in: tube, cornerSize: CGSize(width: tube.height / 2, height: tube.height / 2))
-        let bubbleR = r.height * 0.07
-        path.addEllipse(in: CGRect(x: r.midX - bubbleR, y: r.midY - bubbleR, width: bubbleR * 2, height: bubbleR * 2))
-        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.midX, y: tube.minY - r.height * 0.04))
-        path.move(to: CGPoint(x: r.midX - r.width * 0.06, y: r.minY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.04))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.06, y: r.minY + r.height * 0.1))
-        return path
-    }
-
-    private static func magnetometer(_ r: CGRect) -> Path {
-        var path = Path()
-        let radius = min(r.width, r.height) * 0.38
-        path.addEllipse(in: CGRect(x: r.midX - radius, y: r.midY - radius, width: radius * 2, height: radius * 2))
-        path.move(to: CGPoint(x: r.midX, y: r.midY - radius * 0.72))
-        path.addLine(to: CGPoint(x: r.midX, y: r.midY + radius * 0.72))
-        path.move(to: CGPoint(x: r.midX, y: r.midY - radius * 0.72))
-        path.addLine(to: CGPoint(x: r.midX - radius * 0.18, y: r.midY - radius * 0.36))
-        path.move(to: CGPoint(x: r.midX, y: r.midY - radius * 0.72))
-        path.addLine(to: CGPoint(x: r.midX + radius * 0.18, y: r.midY - radius * 0.36))
-        for angle in stride(from: CGFloat(45), to: CGFloat(360), by: CGFloat(90)) {
-            let rad = angle * .pi / 180
-            path.move(to: CGPoint(x: r.midX + cos(rad) * radius * 0.55, y: r.midY + sin(rad) * radius * 0.55))
-            path.addLine(to: CGPoint(x: r.midX + cos(rad) * radius * 0.78, y: r.midY + sin(rad) * radius * 0.78))
-        }
-        return path
-    }
-
-    private static func barometer(_ r: CGRect) -> Path {
-        var path = Path()
-        let radius = min(r.width, r.height) * 0.42
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.16, y: r.midY - r.height * 0.16))
+        path.addLine(to: bottom)
         path.addArc(
-            center: CGPoint(x: r.midX, y: r.maxY - r.height * 0.08),
-            radius: radius,
+            center: CGPoint(x: r.midX, y: r.midY),
+            radius: min(r.width, r.height) * 0.48,
             startAngle: .degrees(200),
             endAngle: .degrees(340),
             clockwise: false
         )
-        path.move(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.08))
-        path.addLine(to: CGPoint(x: r.midX + radius * 0.55, y: r.maxY - r.height * 0.42))
-        for index in 0..<5 {
-            let angle = CGFloat(210 + index * 30) * .pi / 180
-            let inner = radius * 0.82
-            let outer = radius * 0.92
-            let cx = r.midX
-            let cy = r.maxY - r.height * 0.08
-            path.move(to: CGPoint(x: cx + cos(angle) * inner, y: cy + sin(angle) * inner))
-            path.addLine(to: CGPoint(x: cx + cos(angle) * outer, y: cy + sin(angle) * outer))
+        return path
+    }
+
+    /// Microphone + level bars — noise meter.
+    private static func noiseMeter(_ r: CGRect) -> Path {
+        var path = Path()
+        let mic = CGRect(
+            x: r.minX + r.width * 0.10, y: r.minY + r.height * 0.16,
+            width: r.width * 0.28, height: r.height * 0.46
+        )
+        path.addRoundedRect(in: mic, cornerSize: CGSize(width: mic.width * 0.45, height: mic.width * 0.45))
+        line(&path, CGPoint(x: mic.midX, y: mic.maxY), CGPoint(x: mic.midX, y: r.maxY - r.height * 0.14))
+        line(&path, CGPoint(x: mic.midX - r.width * 0.10, y: r.maxY - r.height * 0.08), CGPoint(x: mic.midX + r.width * 0.10, y: r.maxY - r.height * 0.08))
+        for (index, height) in [0.22, 0.40, 0.56].enumerated() {
+            let x = r.minX + r.width * (0.52 + 0.14 * CGFloat(index))
+            line(&path, CGPoint(x: x, y: r.maxY - r.height * 0.14), CGPoint(x: x, y: r.maxY - r.height * (0.14 + height)))
         }
         return path
     }
 
-    private static func motionSnapshot(_ r: CGRect) -> Path {
+    /// Spirit-level vial.
+    private static func bubbleLevel(_ r: CGRect) -> Path {
         var path = Path()
-        let origin = CGPoint(x: r.minX + r.width * 0.22, y: r.maxY - r.height * 0.22)
-        path.move(to: origin)
-        path.addLine(to: CGPoint(x: origin.x + r.width * 0.42, y: origin.y))
-        path.move(to: origin)
-        path.addLine(to: CGPoint(x: origin.x, y: origin.y - r.height * 0.42))
-        path.move(to: origin)
-        path.addLine(to: CGPoint(x: origin.x - r.width * 0.12, y: origin.y - r.width * 0.12))
-        path.move(to: CGPoint(x: r.midX + r.width * 0.12, y: r.minY + r.height * 0.2))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.22, y: r.minY + r.height * 0.34))
-        path.move(to: CGPoint(x: r.midX + r.width * 0.12, y: r.minY + r.height * 0.34))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.22, y: r.minY + r.height * 0.2))
-        path.addEllipse(in: CGRect(x: r.midX + r.width * 0.08, y: r.minY + r.height * 0.24, width: r.width * 0.16, height: r.width * 0.16))
+        let tube = CGRect(
+            x: r.minX + r.width * 0.06, y: r.midY - r.height * 0.14,
+            width: r.width * 0.88, height: r.height * 0.28
+        )
+        path.addRoundedRect(in: tube, cornerSize: CGSize(width: tube.height / 2, height: tube.height / 2))
+        circle(&path, CGPoint(x: r.midX, y: r.midY), r.height * 0.08)
+        line(&path, CGPoint(x: r.midX, y: r.minY + r.height * 0.12), CGPoint(x: r.midX, y: tube.minY - r.height * 0.04))
         return path
     }
 
+    /// Compass rose — magnetometer heading.
+    private static func magnetometer(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY)
+        let radius = min(r.width, r.height) * 0.42
+        circle(&path, center, radius)
+        arrow(
+            &path,
+            from: CGPoint(x: center.x, y: center.y + radius * 0.55),
+            to: CGPoint(x: center.x, y: center.y - radius * 0.72),
+            head: r.width * 0.12
+        )
+        return path
+    }
+
+    /// Aneroid gauge — barometer / altitude.
+    private static func barometer(_ r: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.maxY - r.height * 0.10)
+        let radius = min(r.width, r.height) * 0.72
+        path.addArc(center: center, radius: radius, startAngle: .degrees(200), endAngle: .degrees(340), clockwise: false)
+        arrow(
+            &path,
+            from: center,
+            to: CGPoint(x: center.x + radius * 0.48, y: center.y - radius * 0.42),
+            head: r.width * 0.10
+        )
+        return path
+    }
+
+    /// Bold g with a motion dash — g-force snapshot.
+    private static func motionSnapshot(_ r: CGRect) -> Path {
+        var path = Path()
+        let oval = CGRect(
+            x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.12,
+            width: r.width * 0.56, height: r.height * 0.76
+        )
+        path.addEllipse(in: oval)
+        path.addArc(
+            center: CGPoint(x: oval.midX, y: oval.midY + oval.height * 0.08),
+            radius: oval.width * 0.22,
+            startAngle: .degrees(200),
+            endAngle: .degrees(20),
+            clockwise: false
+        )
+        line(&path, CGPoint(x: oval.midX, y: oval.midY + oval.height * 0.08), CGPoint(x: oval.maxX - oval.width * 0.18, y: oval.midY + oval.height * 0.08))
+        line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.22), CGPoint(x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.22))
+        line(&path, CGPoint(x: r.minX, y: r.midY), CGPoint(x: r.minX + r.width * 0.12, y: r.midY))
+        return path
+    }
+
+    /// Map pin on a crosshair — GPS position.
     private static func fieldPosition(_ r: CGRect) -> Path {
         var path = Path()
         let tip = CGPoint(x: r.midX, y: r.maxY - r.height * 0.08)
-        let left = CGPoint(x: r.midX - r.width * 0.2, y: r.minY + r.height * 0.34)
-        let right = CGPoint(x: r.midX + r.width * 0.2, y: r.minY + r.height * 0.34)
         path.move(to: tip)
-        path.addLine(to: left)
-        path.addLine(to: right)
+        path.addLine(to: CGPoint(x: r.midX - r.width * 0.22, y: r.minY + r.height * 0.36))
+        path.addLine(to: CGPoint(x: r.midX + r.width * 0.22, y: r.minY + r.height * 0.36))
         path.closeSubpath()
-        path.addEllipse(in: CGRect(x: r.midX - r.width * 0.1, y: r.minY + r.height * 0.18, width: r.width * 0.2, height: r.width * 0.2))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.midY))
-        path.move(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.28))
+        circle(&path, CGPoint(x: r.midX, y: r.minY + r.height * 0.30), r.width * 0.10)
+        line(&path, CGPoint(x: r.minX + r.width * 0.10, y: r.midY + r.height * 0.06), CGPoint(x: r.maxX - r.width * 0.10, y: r.midY + r.height * 0.06))
         return path
     }
 
+    /// Phone battery + thermal tick — device health.
     private static func deviceHealth(_ r: CGRect) -> Path {
         var path = Path()
-        let body = CGRect(x: r.minX + r.width * 0.14, y: r.midY - r.height * 0.2, width: r.width * 0.52, height: r.height * 0.4)
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: r.width * 0.05, height: r.width * 0.05))
-        path.addRect(CGRect(x: body.maxX, y: body.midY - r.height * 0.08, width: r.width * 0.06, height: r.height * 0.16))
-        path.move(to: CGPoint(x: body.minX + r.width * 0.1, y: body.minY + r.height * 0.1))
-        path.addLine(to: CGPoint(x: body.maxX - r.width * 0.14, y: body.minY + r.height * 0.1))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.22))
+        let body = CGRect(
+            x: r.minX + r.width * 0.14, y: r.midY - r.height * 0.18,
+            width: r.width * 0.52, height: r.height * 0.36
+        )
+        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
+        path.addRect(CGRect(x: body.maxX, y: body.midY - r.height * 0.08, width: r.width * 0.07, height: r.height * 0.16))
         path.addArc(
-            center: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.34),
-            radius: r.width * 0.1,
-            startAngle: .degrees(220),
-            endAngle: .degrees(320),
+            center: CGPoint(x: r.maxX - r.width * 0.14, y: r.minY + r.height * 0.28),
+            radius: r.width * 0.12,
+            startAngle: .degrees(210),
+            endAngle: .degrees(330),
             clockwise: false
         )
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.24))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.44))
+        line(
+            &path,
+            CGPoint(x: r.maxX - r.width * 0.14, y: r.minY + r.height * 0.18),
+            CGPoint(x: r.maxX - r.width * 0.14, y: r.minY + r.height * 0.40)
+        )
         return path
     }
 
-    /// Motor circle with a torque arc and a radial shaft tick.
+    // MARK: - E-bike
+
+    /// Crank / torque arc — e-bike torque & RPM.
     private static func eBikeTorqueRPM(_ r: CGRect) -> Path {
         var path = Path()
-        let radius = min(r.width, r.height) * 0.32
-        path.addEllipse(in: CGRect(x: r.midX - radius, y: r.midY - radius, width: radius * 2, height: radius * 2))
-        path.addEllipse(in: CGRect(x: r.midX - radius * 0.28, y: r.midY - radius * 0.28, width: radius * 0.56, height: radius * 0.56))
-        path.addArc(
-            center: CGPoint(x: r.midX, y: r.midY),
-            radius: radius * 1.28,
-            startAngle: .degrees(-20),
-            endAngle: .degrees(110),
-            clockwise: false
+        let center = CGPoint(x: r.midX, y: r.midY)
+        let radius = min(r.width, r.height) * 0.28
+        circle(&path, center, radius)
+        circle(&path, center, radius * 0.28)
+        path.addArc(center: center, radius: radius * 1.35, startAngle: .degrees(-15), endAngle: .degrees(120), clockwise: false)
+        arrow(
+            &path,
+            from: center,
+            to: CGPoint(x: center.x + radius * 0.92, y: center.y - radius * 0.18),
+            head: r.width * 0.10
         )
-        let tip = CGPoint(
-            x: r.midX + cos(110 * .pi / 180) * radius * 1.28,
-            y: r.midY + sin(110 * .pi / 180) * radius * 1.28
-        )
-        path.move(to: tip)
-        path.addLine(to: CGPoint(x: tip.x + r.width * 0.06, y: tip.y + r.height * 0.04))
-        path.move(to: tip)
-        path.addLine(to: CGPoint(x: tip.x - r.width * 0.02, y: tip.y + r.height * 0.08))
-        path.move(to: CGPoint(x: r.midX, y: r.midY))
-        path.addLine(to: CGPoint(x: r.midX + radius * 0.85, y: r.midY - radius * 0.2))
         return path
     }
 
-    /// Small drive sprocket and larger driven sprocket on a chain line.
+    /// Drive and driven sprockets on a chain.
     private static func eBikeSprocket(_ r: CGRect) -> Path {
         var path = Path()
-        let drive = CGRect(x: r.minX + r.width * 0.08, y: r.midY - r.height * 0.14, width: r.width * 0.28, height: r.width * 0.28)
-        let driven = CGRect(x: r.maxX - r.width * 0.46, y: r.midY - r.height * 0.26, width: r.width * 0.4, height: r.width * 0.4)
-        path.addEllipse(in: drive)
-        path.addEllipse(in: driven)
-        path.addEllipse(in: drive.insetBy(dx: drive.width * 0.28, dy: drive.height * 0.28))
-        path.addEllipse(in: driven.insetBy(dx: driven.width * 0.3, dy: driven.height * 0.3))
-        path.move(to: CGPoint(x: drive.midX, y: drive.minY))
-        path.addLine(to: CGPoint(x: driven.midX, y: driven.minY + driven.height * 0.08))
-        path.move(to: CGPoint(x: drive.midX, y: drive.maxY))
-        path.addLine(to: CGPoint(x: driven.midX, y: driven.maxY - driven.height * 0.08))
+        let drive = CGPoint(x: r.minX + r.width * 0.26, y: r.midY)
+        let driven = CGPoint(x: r.maxX - r.width * 0.28, y: r.midY)
+        circle(&path, drive, r.width * 0.16)
+        circle(&path, drive, r.width * 0.06)
+        circle(&path, driven, r.width * 0.24)
+        circle(&path, driven, r.width * 0.08)
+        line(&path, CGPoint(x: drive.x, y: drive.y - r.width * 0.16), CGPoint(x: driven.x, y: driven.y - r.width * 0.24))
+        line(&path, CGPoint(x: drive.x, y: drive.y + r.width * 0.16), CGPoint(x: driven.x, y: driven.y + r.width * 0.24))
         return path
     }
 
-    /// Battery block with a range arrow.
+    /// Pack + road arrow — range estimator.
     private static func eBikeRange(_ r: CGRect) -> Path {
         var path = Path()
-        let body = CGRect(x: r.minX + r.width * 0.1, y: r.minY + r.height * 0.18, width: r.width * 0.36, height: r.height * 0.28)
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: r.width * 0.04, height: r.width * 0.04))
-        path.addRect(CGRect(x: body.maxX, y: body.midY - r.height * 0.06, width: r.width * 0.05, height: r.height * 0.12))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.28))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.maxY - r.height * 0.28))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.26, y: r.maxY - r.height * 0.38))
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.16, y: r.maxY - r.height * 0.28))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.26, y: r.maxY - r.height * 0.18))
+        let pack = CGRect(
+            x: r.minX + r.width * 0.10, y: r.minY + r.height * 0.14,
+            width: r.width * 0.40, height: r.height * 0.28
+        )
+        path.addRoundedRect(in: pack, cornerSize: CGSize(width: 3, height: 3))
+        path.addRect(CGRect(x: pack.maxX, y: pack.midY - r.height * 0.06, width: r.width * 0.06, height: r.height * 0.12))
+        arrow(
+            &path,
+            from: CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.24),
+            to: CGPoint(x: r.maxX - r.width * 0.10, y: r.maxY - r.height * 0.24),
+            head: r.width * 0.12
+        )
         return path
     }
 
-    /// Six cell circles in a 3×2 pack grid.
+    /// Cylindrical cells in a pack outline.
     private static func eBikePackDesigner(_ r: CGRect) -> Path {
         var path = Path()
-        let cols = 2
-        let rows = 2
-        let cell = min(r.width, r.height) * 0.2
-        let gap = r.width * 0.06
-        let totalW = CGFloat(cols) * cell + CGFloat(cols - 1) * gap
-        let totalH = CGFloat(rows) * cell + CGFloat(rows - 1) * gap
-        let originX = r.midX - totalW / 2
-        let originY = r.midY - totalH / 2
-        for row in 0..<rows {
-            for col in 0..<cols {
-                let x = originX + CGFloat(col) * (cell + gap)
-                let y = originY + CGFloat(row) * (cell + gap)
-                path.addEllipse(in: CGRect(x: x, y: y, width: cell, height: cell))
+        let pack = r.insetBy(dx: r.width * 0.10, dy: r.height * 0.16)
+        path.addRoundedRect(in: pack, cornerSize: CGSize(width: 4, height: 4))
+        let cell = min(r.width, r.height) * 0.16
+        for row in 0..<2 {
+            for col in 0..<2 {
+                let x = pack.minX + pack.width * (0.28 + 0.44 * CGFloat(col))
+                let y = pack.minY + pack.height * (0.30 + 0.40 * CGFloat(row))
+                circle(&path, CGPoint(x: x, y: y), cell / 2)
             }
         }
         return path
     }
 
-    /// Flat strip with thickness ticks.
+    /// Flat nickel strip with thickness ticks.
     private static func nickelStrip(_ r: CGRect) -> Path {
         var path = Path()
-        let strip = CGRect(x: r.minX + r.width * 0.12, y: r.midY - r.height * 0.1, width: r.width * 0.76, height: r.height * 0.2)
+        let strip = CGRect(
+            x: r.minX + r.width * 0.14, y: r.midY - r.height * 0.10,
+            width: r.width * 0.72, height: r.height * 0.20
+        )
         path.addRect(strip)
-        path.move(to: CGPoint(x: strip.minX - r.width * 0.02, y: strip.minY))
-        path.addLine(to: CGPoint(x: strip.minX - r.width * 0.08, y: strip.minY))
-        path.move(to: CGPoint(x: strip.minX - r.width * 0.02, y: strip.maxY))
-        path.addLine(to: CGPoint(x: strip.minX - r.width * 0.08, y: strip.maxY))
-        path.move(to: CGPoint(x: strip.minX - r.width * 0.05, y: strip.minY))
-        path.addLine(to: CGPoint(x: strip.minX - r.width * 0.05, y: strip.maxY))
+        line(&path, CGPoint(x: strip.minX - r.width * 0.06, y: strip.minY), CGPoint(x: strip.minX - r.width * 0.06, y: strip.maxY))
+        line(&path, CGPoint(x: strip.minX - r.width * 0.10, y: strip.minY), CGPoint(x: strip.minX - r.width * 0.02, y: strip.minY))
+        line(&path, CGPoint(x: strip.minX - r.width * 0.10, y: strip.maxY), CGPoint(x: strip.minX - r.width * 0.02, y: strip.maxY))
         return path
     }
 
-    /// Unity-feedback loop: summing junction, plant block, forward and return paths.
+    /// Unity-feedback loop — control systems lab.
     private static func controlSystems(_ r: CGRect) -> Path {
         var path = Path()
-        let midY = r.midY
-        let sumR = min(r.width, r.height) * 0.11
-        let sumC = CGPoint(x: r.minX + r.width * 0.22, y: midY)
-        path.addEllipse(in: CGRect(x: sumC.x - sumR, y: sumC.y - sumR, width: sumR * 2, height: sumR * 2))
-        path.move(to: CGPoint(x: sumC.x - sumR * 0.45, y: sumC.y))
-        path.addLine(to: CGPoint(x: sumC.x + sumR * 0.45, y: sumC.y))
-        path.move(to: CGPoint(x: sumC.x, y: sumC.y - sumR * 0.45))
-        path.addLine(to: CGPoint(x: sumC.x, y: sumC.y + sumR * 0.45))
-
+        let y = r.midY
+        let sum = CGPoint(x: r.minX + r.width * 0.24, y: y)
+        circle(&path, sum, r.width * 0.11)
+        line(&path, CGPoint(x: sum.x - r.width * 0.05, y: y), CGPoint(x: sum.x + r.width * 0.05, y: y))
+        line(&path, CGPoint(x: sum.x, y: y - r.height * 0.05), CGPoint(x: sum.x, y: y + r.height * 0.05))
         let box = CGRect(
-            x: r.minX + r.width * 0.48,
-            y: r.minY + r.height * 0.28,
-            width: r.width * 0.32,
-            height: r.height * 0.32
+            x: r.minX + r.width * 0.48, y: r.minY + r.height * 0.28,
+            width: r.width * 0.32, height: r.height * 0.32
         )
         path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
-
-        path.move(to: CGPoint(x: r.minX, y: midY))
-        path.addLine(to: CGPoint(x: sumC.x - sumR, y: midY))
-        path.move(to: CGPoint(x: sumC.x + sumR, y: midY))
-        path.addLine(to: CGPoint(x: box.minX, y: midY))
-        path.move(to: CGPoint(x: box.maxX, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX, y: midY))
-
-        let returnY = r.maxY - r.height * 0.16
-        path.move(to: CGPoint(x: r.maxX - r.width * 0.08, y: midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.08, y: returnY))
-        path.addLine(to: CGPoint(x: sumC.x, y: returnY))
-        path.addLine(to: CGPoint(x: sumC.x, y: sumC.y + sumR))
+        line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: sum.x - r.width * 0.11, y: y))
+        line(&path, CGPoint(x: sum.x + r.width * 0.11, y: y), CGPoint(x: box.minX, y: y))
+        line(&path, CGPoint(x: box.maxX, y: y), CGPoint(x: r.maxX, y: y))
+        let ret = r.maxY - r.height * 0.14
+        line(&path, CGPoint(x: r.maxX - r.width * 0.08, y: y), CGPoint(x: r.maxX - r.width * 0.08, y: ret))
+        line(&path, CGPoint(x: r.maxX - r.width * 0.08, y: ret), CGPoint(x: sum.x, y: ret))
+        line(&path, CGPoint(x: sum.x, y: ret), CGPoint(x: sum.x, y: sum.y + r.width * 0.11))
         return path
     }
 }
