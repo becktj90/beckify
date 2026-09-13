@@ -1,6 +1,6 @@
 # Five-star readiness — Beckify iOS
 
-Jobsite-first checklist for App Store v1. Soft launch / **Prepare for Submission**. App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** (retry after ~2026-09-05 with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple) to finish this list — do not burn the cooldown on a duplicate binary.
+Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **≥122**. App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary or on closed-train **1.0**.
 
 Listing copy, nutrition-label facts, and screenshot sizes stay in [`APP_STORE.md`](APP_STORE.md). Privacy text stays in [`PRIVACY.md`](PRIVACY.md). This file is the **rating and review-risk** plan.
 
@@ -138,7 +138,7 @@ Suggested block:
 ### Binary / ITMS-90382
 
 - [ ] After ~2026-09-05, upload **once** with a unique version/build. ITMS-90382 here is Apple’s “upload limit reached — wait 1 day,” usually from repeating the same tuple or hammering Transporter.
-- [ ] Do not bump marketing version just to spam uploads. `1.0` / `CURRENT_PROJECT_VERSION` increment is enough if 1.0 (1) already consumed the limit.
+- [ ] Do not bump marketing version just to spam uploads. **1.0 is approved and closed** — the next train must be **1.0.1** / `CURRENT_PROJECT_VERSION` **≥122**. Do not retry **1.0 (121)**.
 - [ ] This is still **not** TestFlight distribution and **not** Submit for Review until screenshots + notes are attached.
 
 ---
