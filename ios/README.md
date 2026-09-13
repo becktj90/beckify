@@ -2,7 +2,7 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-A second App Store product lives in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Mean|Nice roast, Analyze. Not this toolbox. See [`LookCheck/README.md`](LookCheck/README.md) and [`LookCheck/docs/APP_STORE.md`](LookCheck/docs/APP_STORE.md).
+A second App Store product lives in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast. Not this toolbox. See [`LookCheck/README.md`](LookCheck/README.md) and [`LookCheck/docs/APP_STORE.md`](LookCheck/docs/APP_STORE.md).
 
 Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 

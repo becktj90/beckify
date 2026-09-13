@@ -2,7 +2,8 @@ import Foundation
 
 /// Roast tone for `/api/analyze-look`. Website and Toolbox omit this and the
 /// API defaults to `bro` (short BroGPT one-liner). The standalone Look Check
-/// app sends `mean` or `nice` for a longer exaggerated roast.
+/// app secretly coins `mean` or `nice` on each Analyze for a longer roast.
+/// That choice is not shown in Look Check UI or share copy.
 public enum LookRoastMode: String, Equatable, Sendable, CaseIterable {
     case mean
     case nice
@@ -16,8 +17,21 @@ public enum LookRoastMode: String, Equatable, Sendable, CaseIterable {
         }
     }
 
-    /// Standalone Look Check product: Mean vs Nice only.
+    /// Standalone Look Check product: hidden mean vs nice only.
     public static let standaloneTones: [LookRoastMode] = [.mean, .nice]
+
+    /// Fair coin between `mean` and `nice`. Look Check calls this on Analyze;
+    /// the result must not appear in user-facing strings.
+    public static func randomStandaloneTone() -> LookRoastMode {
+        var generator = SystemRandomNumberGenerator()
+        return randomStandaloneTone(using: &generator)
+    }
+
+    public static func randomStandaloneTone<G: RandomNumberGenerator>(
+        using generator: inout G
+    ) -> LookRoastMode {
+        Bool.random(using: &generator) ? .mean : .nice
+    }
 
     public static func parse(_ raw: String?) -> LookRoastMode {
         let folded = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -164,9 +178,6 @@ public struct PhotoLookDraft: Equatable, Sendable {
 
     public var copyLine: String {
         var parts = ["Look Check: \(verdict.badge)"]
-        if roastMode != .bro {
-            parts.append(roastMode.label)
-        }
         if showsScore, let score {
             parts.append("score \(score)")
         }
@@ -179,9 +190,6 @@ public struct PhotoLookDraft: Equatable, Sendable {
 
     public var shareCardText: String {
         var lines = ["Look Check · \(verdict.badge)"]
-        if roastMode != .bro {
-            lines[0] += " · \(roastMode.label)"
-        }
         if showsScore, let score {
             lines.append("Score \(score)")
         }

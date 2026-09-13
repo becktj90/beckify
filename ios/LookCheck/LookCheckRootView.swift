@@ -3,14 +3,14 @@ import SwiftUI
 import UIKit
 import BeckifyMath
 
-/// One-screen Look Check: pick/take photo → Mean|Nice → Analyze → verdict + roast card.
+/// One-screen Look Check: pick/take photo → Analyze → verdict + surprise roast.
+/// Roast tone (mean vs nice) is coined on Analyze and never shown.
 /// The photo stays on this device until the user taps Analyze.
 struct LookCheckRootView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var preview: UIImage?
     @State private var showCamera = false
     @State private var cameraUnavailable = false
-    @State private var tone: LookCheckTone = .mean
     @State private var status = "Ready. Taking or choosing a photo does not upload it."
     @State private var progress: Double = 0
     @State private var busy = false
@@ -26,7 +26,6 @@ struct LookCheckRootView: View {
                     privacyNote
                     photoStage
                     captureRow
-                    tonePicker
                     analyzeBar
                     if let errorMessage {
                         Text(errorMessage)
@@ -41,7 +40,7 @@ struct LookCheckRootView: View {
                     } else if preview == nil {
                         emptyHint(
                             title: "Take or choose a photo",
-                            detail: "Then pick Mean or Nice and tap Analyze. Entertainment only. Do not use this on photos of children."
+                            detail: "Then tap Analyze. Entertainment only. Do not use this on photos of children."
                         )
                     } else {
                         emptyHint(
@@ -93,8 +92,8 @@ struct LookCheckRootView: View {
             Text("LOOK CHECK")
                 .font(.caption.weight(.bold))
                 .tracking(1.4)
-                .foregroundStyle(LookTheme.tone(tone))
-            Text("Pick a photo. Pick a tone. Get a verdict and a detailed roast.")
+                .foregroundStyle(LookTheme.accent)
+            Text("Pick a photo. Tap Analyze. Get a verdict and a surprise roast.")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(LookTheme.foreground)
             Text("AI comedy. Not medical, dating, or beauty authority.")
@@ -142,7 +141,7 @@ struct LookCheckRootView: View {
                         VStack(spacing: 8) {
                             Image(systemName: "person.crop.rectangle")
                                 .font(.system(size: 36, weight: .medium))
-                                .foregroundStyle(LookTheme.tone(tone))
+                                .foregroundStyle(LookTheme.accent)
                             Text("No photo yet")
                                 .font(.headline)
                                 .foregroundStyle(LookTheme.foreground)
@@ -169,7 +168,7 @@ struct LookCheckRootView: View {
                     .foregroundStyle(LookTheme.muted)
             }
             ProgressView(value: progress, total: 1)
-                .tint(LookTheme.tone(tone))
+                .tint(LookTheme.accent)
                 .accessibilityLabel("Analyze progress \(Int((progress * 100).rounded())) percent")
         }
     }
@@ -187,7 +186,7 @@ struct LookCheckRootView: View {
                     .frame(maxWidth: .infinity, minHeight: LookTheme.touchTarget)
             }
             .buttonStyle(.borderedProminent)
-            .tint(LookTheme.tone(tone))
+            .tint(LookTheme.accent)
             .disabled(busy)
             .accessibilityHint("Opens the camera. The photo stays on this device until Analyze.")
 
@@ -202,49 +201,6 @@ struct LookCheckRootView: View {
         }
     }
 
-    private var tonePicker: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("ROAST TONE")
-                .font(.caption.weight(.semibold))
-                .tracking(0.8)
-                .foregroundStyle(LookTheme.muted)
-            HStack(spacing: 10) {
-                ForEach(LookCheckTone.allCases) { option in
-                    Button {
-                        tone = option
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(option.title)
-                                .font(.headline.weight(.semibold))
-                            Text(option.subtitle)
-                                .font(.caption)
-                                .foregroundStyle(tone == option ? LookTheme.foreground.opacity(0.9) : LookTheme.muted)
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                        .background(
-                            tone == option ? LookTheme.tone(option).opacity(0.22) : LookTheme.surface,
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(tone == option ? LookTheme.tone(option) : LookTheme.border, lineWidth: tone == option ? 2 : 1)
-                        )
-                        .foregroundStyle(LookTheme.foreground)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(tone == option ? .isSelected : [])
-                    .accessibilityLabel("\(option.title). \(option.subtitle)")
-                }
-            }
-            if draft != nil {
-                Text("Tone applies the next time you tap Analyze. Change it and analyze again for a new roast.")
-                    .font(.caption)
-                    .foregroundStyle(LookTheme.muted)
-            }
-        }
-    }
-
     private var analyzeBar: some View {
         HStack(spacing: 10) {
             Button {
@@ -255,7 +211,7 @@ struct LookCheckRootView: View {
                     .frame(maxWidth: .infinity, minHeight: LookTheme.touchTarget)
             }
             .buttonStyle(.borderedProminent)
-            .tint(LookTheme.tone(tone))
+            .tint(LookTheme.accent)
             .disabled(busy || preview == nil)
             .accessibilityIdentifier("lookCheckAnalyzeButton")
             .accessibilityHint("Uploads the photo for a look verdict and roast. Taking or choosing a photo does not upload it.")
@@ -282,15 +238,6 @@ struct LookCheckRootView: View {
                     .padding(.vertical, 6)
                     .background(verdictColor(draft.verdict).opacity(0.18), in: Capsule())
                     .foregroundStyle(verdictColor(draft.verdict))
-                if draft.roastMode != .bro {
-                    Text(draft.roastMode.label.uppercased())
-                        .font(.caption.weight(.bold))
-                        .tracking(0.6)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(LookTheme.tone(toneFor(draft.roastMode)).opacity(0.18), in: Capsule())
-                        .foregroundStyle(LookTheme.tone(toneFor(draft.roastMode)))
-                }
                 Spacer()
                 if draft.showsScore, let score = draft.score {
                     Text("\(score)")
@@ -368,7 +315,7 @@ struct LookCheckRootView: View {
                     Capsule(style: .continuous)
                         .fill(LookTheme.border)
                     Capsule(style: .continuous)
-                        .fill(LookTheme.tone(tone))
+                        .fill(LookTheme.accent)
                         .frame(width: geo.size.width * CGFloat(value ?? 0) / 100)
                 }
             }
@@ -469,13 +416,13 @@ struct LookCheckRootView: View {
             return
         }
         progress = 0.42
-        status = "Sending upright photo for a \(tone.title.lowercased()) roast…"
+        status = "Sending upright photo…"
         do {
             let result = try await LookCheckVisionClient.analyze(
                 dataURL: prepared.dataURL,
                 mimeType: prepared.mimeType,
                 url: url,
-                roastMode: tone.roastMode
+                roastMode: LookRoastMode.randomStandaloneTone()
             )
             progress = 0.92
             status = "Reading the verdict…"
@@ -497,10 +444,6 @@ struct LookCheckRootView: View {
         case .declined, .noPerson, .mixed: return LookTheme.warn
         }
     }
-
-    private func toneFor(_ mode: LookRoastMode) -> LookCheckTone {
-        mode == .nice ? .nice : .mean
-    }
 }
 
 struct LookCheckRoastCard: View {
@@ -509,10 +452,10 @@ struct LookCheckRoastCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(draft.roastMode == .nice ? "NICE ROAST" : "MEAN ROAST")
+                Text("ROAST")
                     .font(.caption.weight(.bold))
                     .tracking(0.8)
-                    .foregroundStyle(LookTheme.tone(draft.roastMode == .nice ? .nice : .mean))
+                    .foregroundStyle(LookTheme.gold)
                 Spacer()
                 ShareLink(item: draft.shareCardText) {
                     Label("Share", systemImage: "square.and.arrow.up")
@@ -534,10 +477,10 @@ struct LookCheckRoastCard: View {
         .background(LookTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(LookTheme.tone(draft.roastMode == .nice ? .nice : .mean).opacity(0.45), lineWidth: 1)
+                .stroke(LookTheme.gold.opacity(0.45), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(draft.roastMode.label) roast. \(draft.roast)")
+        .accessibilityLabel("Roast. \(draft.roast)")
     }
 }
 
