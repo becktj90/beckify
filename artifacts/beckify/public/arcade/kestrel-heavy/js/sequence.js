@@ -3,12 +3,15 @@
  * Spine is a commentary board:
  * Terminal Count → Tank Press → Internal Power → Water Deluge → Ignition →
  * Liftoff → Max-Q → MECO → Stage Sep → SES-1 → Fairing Jettison →
- * Entry Burn → Landing Burn → Haven Touchdown (~T+9 compressed) →
+ * Entry Burn → Landing Burn → Haven Touchdown (~T+96 compressed) →
  * SECO → payload deploy.
  *
- * Real orbital times are hours and minutes. Here T-8s … T+58s so a stranger
- * hears every callout in one run. Per-mission copy swaps {id}/{payload}/{mark}.
+ * Real orbital times are hours and minutes. Here T-8s … T+104s so a stranger
+ * hears every callout in one longer, more deliberate run. Per-mission copy
+ * swaps {id}/{payload}/{mark}.
  */
+import { PACE } from './config.js';
+
 export const T0_LEAD = 8;
 
 /** Compressed MET seconds. Negative = count. */
@@ -69,7 +72,7 @@ export const SPINE = [
   },
   {
     id: 'maxq',
-    t: 11.2,
+    t: PACE.MAXQ,
     stage: 'MAX-Q',
     banner: 'MAX-Q',
     kind: 'warn',
@@ -78,25 +81,25 @@ export const SPINE = [
   },
   {
     id: 'meco',
-    t: 24,
+    t: PACE.MECO,
     stage: 'MECO',
     banner: 'MECO',
     kind: 'go',
-    radio: 'MECO. First-stage cores shutdown. Booster heading home.',
+    radio: 'MECO. First-stage cores shutdown. Hold attitude for sep.',
     juice: 'meco',
   },
   {
     id: 'sep',
-    t: 25.1,
+    t: PACE.SEP,
     stage: 'STAGE SEP',
-    banner: 'STAGE SEP',
+    banner: 'STAGE SEP — ALIGN then TAP CLIMB',
     kind: 'go',
-    radio: 'Stage sep confirmed. Booster pitching downrange.',
+    radio: 'Sep window. ALIGN green, then tap climb to fire the pyros.',
     juice: 'sep',
   },
   {
     id: 'ses1',
-    t: 26.4,
+    t: PACE.SES1,
     stage: 'SES-1',
     banner: 'SES-1',
     kind: 'info',
@@ -105,7 +108,7 @@ export const SPINE = [
   },
   {
     id: 'fairing',
-    t: 29.4,
+    t: PACE.FAIRING,
     stage: 'FAIRING JETTISON',
     banner: 'FAIRING JETTISON',
     kind: 'info',
@@ -114,7 +117,7 @@ export const SPINE = [
   },
   {
     id: 'entry',
-    t: 36.5,
+    t: PACE.ENTRY,
     stage: 'ENTRY BURN',
     banner: 'ENTRY BURN',
     kind: 'warn',
@@ -123,7 +126,7 @@ export const SPINE = [
   },
   {
     id: 'landing',
-    t: 45.2,
+    t: PACE.LANDING,
     stage: 'LANDING BURN',
     banner: 'LANDING BURN',
     kind: 'warn',
@@ -132,7 +135,7 @@ export const SPINE = [
   },
   {
     id: 'touchdown',
-    t: 51.5,
+    t: PACE.TOUCHDOWN,
     stage: 'HAVEN',
     banner: 'HAVEN TOUCHDOWN',
     kind: 'go',
@@ -141,7 +144,7 @@ export const SPINE = [
   },
   {
     id: 'seco',
-    t: 54.2,
+    t: PACE.SECO,
     stage: 'SECO',
     banner: 'SECO',
     kind: 'go',
@@ -150,7 +153,7 @@ export const SPINE = [
   },
   {
     id: 'deploy',
-    t: 57.4,
+    t: PACE.DEPLOY,
     stage: 'PAYLOAD DEPLOY',
     banner: 'PAYLOAD DEPLOY',
     kind: 'go',

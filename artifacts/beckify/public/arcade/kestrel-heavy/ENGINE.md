@@ -35,7 +35,19 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - `setBody` / `setRectangle` wipe mass, friction, and collision filters — re-apply after any reshape.
 - Pause with `this.matter.pause()` / `this.matter.resume()` (delegates to the Phaser Matter world). Physics pauses only when `paused === true`.
 - Collision categories + sensors: deck paint and water are sensors (water is not a solid floor). Pickups and hazards are sensors.
-- Haven is a diagonal slide-in, then RCS straighten, then a soft-land velocity check (`landingVy`). No Falcon grid fins, A-frame legs, or ASDS circle-X.
+- Haven is a long zoomed-out diagonal slide-in, then RCS straighten, then a soft-land check (`landingVy` + `landingTol`). No Falcon grid fins, A-frame legs, or ASDS circle-X.
+- MECO → stage sep is a playable beat (`SEP` status): hold attitude, tap climb when ALIGN is green, then clear the stack. It is not a 400ms cutscene.
+
+## QA beats
+
+Append to the cabinet URL (iframe `src` or standalone `index.html`):
+
+| Flag | Starts at |
+| --- | --- |
+| `?beat=haven` | Zoomed-out Haven approach |
+| `?beat=jacklyn` | Same as `haven` (legacy alias) |
+| `?beat=sep` | MECO / stage-sep window |
+| `?debug=1` | Matter debug outlines |
 
 ## Old canvas path
 
