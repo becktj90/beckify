@@ -13,7 +13,7 @@ The playable website stays at https://beckify.com/games/kestrel-heavy.
 | Bundle ID | `com.beckify.kestrelheavy` |
 | SKU (ASC stub) | `kestrel-heavy` |
 | Team prefix | `9TR6R5LV8M` (same Apple Developer team as Beckify Toolbox and Look Check) |
-| Deployment | iOS 17+, iPhone + iPad |
+| Deployment | iOS 17+, iPhone + iPad, **landscape only** |
 | Price | Free, no IAP, no ads (v1) |
 
 **Why `com.beckify.kestrelheavy` and not `com.kestrelheavy.app`:** Beckify Toolbox is already `com.beckify.toolbox` on the same team; Look Check is `com.beckify.lookcheck`. A `com.beckify.*` sibling identifier keeps signing, App Store Connect, and the privacy URL under one developer record.
@@ -34,7 +34,8 @@ Do **not** point Toolbox Archive-iOS at **KestrelHeavy** or **LookCheck**. Keep 
 
 - SwiftUI shell (`KestrelHeavyApp`, full-bleed `WKWebView`).
 - Packed Phaser 4 cabinet from `artifacts/beckify/public/arcade/kestrel-heavy` → `ios/KestrelHeavy/Game/`.
-- Offline: vendor Phaser, ES modules, NASA/Suno audio. Scores stay in WKWebView `localStorage`.
+- Offline: vendor Phaser, ES modules, NASA/Suno audio served from `kestrel-heavy://game/` (not `file://`). Scores stay in WKWebView `localStorage`.
+- Landscape only — the Phaser world is 1280×720 `ENVELOP`. Portrait would crop the corridor.
 - Fictional **Kestrel Heavy / Pier 7 / Haven** branding. No Blue Origin or New Glenn marks.
 
 ## How to run (Mac + Xcode)
@@ -45,7 +46,7 @@ Linux CI can test `BeckifyMath` only. This environment cannot compile SwiftUI or
 2. Open `ios/Beckify.xcodeproj`.
 3. Select the **KestrelHeavy** scheme (not Beckify, not LookCheck).
 4. Signing: confirm Team `9TR6R5LV8M` on the KestrelHeavy target.
-5. Run on an iPhone / iPad simulator or device.
+5. Run on an iPhone / iPad simulator or device (rotate to landscape).
 
 Refresh the local game pack after arcade changes (the KestrelHeavy target also runs this before compile):
 

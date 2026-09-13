@@ -155,6 +155,8 @@ assert.match(input, /function isBoosting\(/);
 assert.match(input, /function consumeBoostTap\(/);
 assert.match(input, /function clearFlightHolds\(/);
 assert.match(input, /Escape/);
+assert.match(input, /visibilitychange/);
+assert.match(input, /blur/);
 
 assert.match(mainJs, /physics:\s*\{[\s\S]*default:\s*'matter'/);
 assert.match(mainJs, /enableSleeping:\s*true/);
@@ -216,6 +218,7 @@ assert.match(mission, /beatsFor/);
 assert.match(mission, /formatClock/);
 assert.match(mission, /phaseChip/);
 assert.match(mission, /clearFlightHolds/);
+assert.match(mission, /kestrelHaptics/);
 assert.match(mission, /restartMission/);
 assert.match(mission, /ascentScore/);
 assert.match(mission, /launchTipSeen/);
@@ -390,6 +393,13 @@ assert.ok(fs.existsSync(path.join(iosGame, 'audio/theme.mp3')), 'iOS pack must i
 const pbx = fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/project.pbxproj'), 'utf8');
 assert.match(pbx, /PRODUCT_BUNDLE_IDENTIFIER = com\.beckify\.kestrelheavy/);
 assert.match(pbx, /name = KestrelHeavy/);
+assert.match(pbx, /KestrelHeavySchemeHandler\.swift/);
+assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameView.swift'), 'utf8'), /setURLSchemeHandler/);
+assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameView.swift'), 'utf8'), /webViewWebContentProcessDidTerminate/);
+assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavySchemeHandler.swift'), 'utf8'), /kestrel-heavy:\/\/game\/index\.html/);
+const khConfigs = pbx.split('KHCF00000000000000000013 /* Debug */')[1].split('/* End XCBuildConfiguration')[0];
+assert.match(khConfigs, /UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight/);
+assert.doesNotMatch(khConfigs, /UIInterfaceOrientationPortrait /);
 assert.match(fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/xcshareddata/xcschemes/KestrelHeavy.xcscheme'), 'utf8'), /KestrelHeavy\.app/);
 assert.doesNotMatch(fs.readFileSync(path.join(iosRoot, 'Beckify/Models/ToolboxCatalog.swift'), 'utf8'), /kestrel/i);
 

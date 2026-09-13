@@ -78,10 +78,20 @@ export function bindKeyboard(input, hooks) {
     if (event.code === 'ArrowRight' || event.code === 'KeyD') input.right = false;
     if (event.code === 'Space') setBoostHeld(input, false, hooks.now());
   };
+  const loseFocus = () => {
+    clearFlightHolds(input);
+  };
+  const onVisibility = () => {
+    if (document.hidden) loseFocus();
+  };
   window.addEventListener('keydown', down);
   window.addEventListener('keyup', up);
+  window.addEventListener('blur', loseFocus);
+  document.addEventListener('visibilitychange', onVisibility);
   return () => {
     window.removeEventListener('keydown', down);
     window.removeEventListener('keyup', up);
+    window.removeEventListener('blur', loseFocus);
+    document.removeEventListener('visibilitychange', onVisibility);
   };
 }

@@ -82,6 +82,7 @@
 		KHCF00000000000000000008 /* KestrelHeavyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000001 /* KestrelHeavyApp.swift */; };
 		KHCF00000000000000000009 /* KestrelHeavyRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000002 /* KestrelHeavyRootView.swift */; };
 		KHCF0000000000000000000A /* KestrelHeavyGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000003 /* KestrelHeavyGameView.swift */; };
+		KHCF00000000000000000018 /* KestrelHeavySchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */; };
 		KHCF0000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000004 /* Assets.xcassets */; };
 		KHCF0000000000000000000C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */; };
 		KHCF0000000000000000000D /* Game in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000006 /* Game */; };
@@ -163,6 +164,7 @@
 		KHCF00000000000000000001 /* KestrelHeavyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavyApp.swift; sourceTree = "<group>"; };
 		KHCF00000000000000000002 /* KestrelHeavyRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavyRootView.swift; sourceTree = "<group>"; };
 		KHCF00000000000000000003 /* KestrelHeavyGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavyGameView.swift; sourceTree = "<group>"; };
+		KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavySchemeHandler.swift; sourceTree = "<group>"; };
 		KHCF00000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		KHCF00000000000000000006 /* Game */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Game; sourceTree = "<group>"; };
@@ -236,6 +238,7 @@
 				KHCF00000000000000000001 /* KestrelHeavyApp.swift */,
 				KHCF00000000000000000002 /* KestrelHeavyRootView.swift */,
 				KHCF00000000000000000003 /* KestrelHeavyGameView.swift */,
+				KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */,
 				KHCF00000000000000000004 /* Assets.xcassets */,
 				KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */,
 				KHCF00000000000000000006 /* Game */,
@@ -587,6 +590,7 @@
 				KHCF00000000000000000008 /* KestrelHeavyApp.swift in Sources */,
 				KHCF00000000000000000009 /* KestrelHeavyRootView.swift in Sources */,
 				KHCF0000000000000000000A /* KestrelHeavyGameView.swift in Sources */,
+				KHCF00000000000000000018 /* KestrelHeavySchemeHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -856,8 +860,9 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -892,8 +897,9 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

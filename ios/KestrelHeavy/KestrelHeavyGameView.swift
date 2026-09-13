@@ -1,20 +1,13 @@
 import SwiftUI
+import UIKit
 import WebKit
 
 /// WKWebView shell for the packed Phaser 4 game.
-/// Loads `Game/index.html` from the app bundle with directory read access
-/// so ES modules, vendor/phaser.min.js, and audio/ resolve offline.
+/// Loads `kestrel-heavy://game/index.html` through `KestrelHeavySchemeHandler`
+/// so ES modules, vendor/phaser.min.js, and audio/ share one origin.
 struct KestrelHeavyGameView: UIViewRepresentable {
-    let indexURL: URL
-
-    static func bundledIndexURL() -> URL? {
-        if let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "Game") {
-            return url
-        }
-        let fallback = Bundle.main.bundleURL
-            .appendingPathComponent("Game", isDirectory: true)
-            .appendingPathComponent("index.html")
-        return FileManager.default.fileExists(atPath: fallback.path) ? fallback : nil
+    static func packAvailable() -> Bool {
+        KestrelHeavyOrigin.packRoot() != nil
     }
 
     func makeCoordinator() -> Coordinator {
@@ -29,6 +22,7 @@ struct KestrelHeavyGameView: UIViewRepresentable {
         config.allowsPictureInPictureMediaPlayback = false
         config.suppressesIncrementalRendering = false
         config.dataDetectorTypes = []
+        config.setURLSchemeHandler(context.coordinator.schemeHandler, forURLScheme: KestrelHeavyOrigin.scheme)
 
         let page = WKWebpagePreferences()
         page.allowsContentJavaScript = true
@@ -41,6 +35,7 @@ struct KestrelHeavyGameView: UIViewRepresentable {
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         ))
+        controller.add(context.coordinator, name: "kestrelHaptics")
         config.userContentController = controller
 
         let webView = ArcadeWebView(frame: .zero, configuration: config)
@@ -65,15 +60,18 @@ struct KestrelHeavyGameView: UIViewRepresentable {
         }
         #endif
 
-        let access = indexURL.deletingLastPathComponent()
-        webView.loadFileURL(indexURL, allowingReadAccessTo: access)
+        context.coordinator.loadCabinet(webView)
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         if webView.url == nil {
-            webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
+            context.coordinator.loadCabinet(webView)
         }
+    }
+
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "kestrelHaptics")
     }
 
     private static let bootScript = """
@@ -83,7 +81,19 @@ struct KestrelHeavyGameView: UIViewRepresentable {
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
     """
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+        let schemeHandler = KestrelHeavySchemeHandler()
+        private let light = UIImpactFeedbackGenerator(style: .light)
+        private let medium = UIImpactFeedbackGenerator(style: .medium)
+
+        func loadCabinet(_ webView: WKWebView) {
+            webView.load(URLRequest(url: KestrelHeavyOrigin.index))
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            loadCabinet(webView)
+        }
+
         func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction,
@@ -94,7 +104,7 @@ struct KestrelHeavyGameView: UIViewRepresentable {
                 return
             }
             let scheme = url.scheme?.lowercased() ?? ""
-            if url.isFileURL || scheme == "about" || scheme == "blob" {
+            if scheme == KestrelHeavyOrigin.scheme || scheme == "about" || scheme == "blob" {
                 decisionHandler(.allow)
                 return
             }
@@ -111,6 +121,50 @@ struct KestrelHeavyGameView: UIViewRepresentable {
             completionHandler: @escaping (UIContextMenuConfiguration?) -> Void
         ) {
             completionHandler(nil)
+        }
+
+        func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            guard message.name == "kestrelHaptics" else { return }
+            light.prepare()
+            medium.prepare()
+            fire(pattern: message.body)
+        }
+
+        private func fire(pattern: Any) {
+            if let value = pattern as? Int {
+                impact(milliseconds: value)
+                return
+            }
+            if let value = pattern as? Double {
+                impact(milliseconds: Int(value))
+                return
+            }
+            if let values = pattern as? [Int] {
+                var delay: TimeInterval = 0
+                for (index, value) in values.enumerated() {
+                    if index % 2 == 0 {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                            self?.impact(milliseconds: value)
+                        }
+                    }
+                    delay += TimeInterval(max(value, 0)) / 1000
+                }
+                return
+            }
+            if let values = pattern as? [Any] {
+                fire(pattern: values.compactMap { $0 as? Int })
+            }
+        }
+
+        private func impact(milliseconds: Int) {
+            if milliseconds >= 40 {
+                medium.impactOccurred()
+            } else {
+                light.impactOccurred()
+            }
         }
     }
 }

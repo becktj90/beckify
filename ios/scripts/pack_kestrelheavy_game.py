@@ -69,7 +69,7 @@ def patch_index(html: str) -> str:
     )
     html = html.replace(
         'content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' https://fonts.gstatic.com data:; img-src \'self\' data: blob:; connect-src \'self\'; worker-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
-        'content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data: blob:; connect-src \'self\'; worker-src \'self\' blob:; media-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
+        'content="default-src \'self\' kestrel-heavy:; script-src \'self\' \'unsafe-inline\' kestrel-heavy:; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data: blob:; connect-src \'self\' kestrel-heavy:; worker-src \'self\' blob:; media-src \'self\' blob: kestrel-heavy:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
     )
     html = html.replace(
         '  <link rel="preconnect" href="https://fonts.googleapis.com">\n'

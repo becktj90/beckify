@@ -1700,7 +1700,13 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   vibrate(pattern) {
-    if (!this.settings.haptics || !('vibrate' in navigator)) return;
+    if (!this.settings.haptics) return;
+    const bridge = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.kestrelHaptics;
+    if (bridge && typeof bridge.postMessage === 'function') {
+      try { bridge.postMessage(pattern); } catch { /* ignore */ }
+      return;
+    }
+    if (!('vibrate' in navigator)) return;
     try { navigator.vibrate(pattern); } catch { /* ignore */ }
   }
 

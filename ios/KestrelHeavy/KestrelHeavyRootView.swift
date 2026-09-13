@@ -3,15 +3,13 @@ import SwiftUI
 /// Full-bleed Phaser 4 cabinet. Play happens in the bundled `Game/` pack,
 /// not on beckify.com. Safe-area padding lives in the cabinet CSS.
 struct KestrelHeavyRootView: View {
-    private let indexURL = KestrelHeavyGameView.bundledIndexURL()
-
     var body: some View {
         ZStack {
             Color(red: 5 / 255, green: 5 / 255, blue: 13 / 255)
                 .ignoresSafeArea()
 
-            if let indexURL {
-                KestrelHeavyGameView(indexURL: indexURL)
+            if KestrelHeavyGameView.packAvailable() {
+                KestrelHeavyGameView()
                     .ignoresSafeArea()
             } else {
                 VStack(spacing: 12) {
