@@ -501,6 +501,8 @@ export default class MissionScene extends Phaser.Scene {
     this.session.sepDone = false;
     this.session.ascentScore = Math.round(this.session.ascentScore || this.session.score);
     this.clearActors();
+    this.bgPad.setVisible(false);
+    this.session.altitudeKm = Math.max(this.session.altitudeKm, 48);
     this.rocket.setFrictionAir(0.034);
     this.rocket.setIgnoreGravity(false);
     this.matter.world.setGravity(0, 0.035);
