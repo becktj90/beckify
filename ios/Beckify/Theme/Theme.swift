@@ -226,8 +226,9 @@ enum Theme {
     enum Stroke {
         static let hairline: CGFloat = 1
         static let emphasis: CGFloat = 1.5
-        /// Reserved icon-weight token. Tool wells are solid-fill pictograms;
-        /// hairline is used only for well rims.
+        /// Stroke pictogram weight at the 44pt `ToolGlyph` reference size.
+        /// Wells are stroke-only outlines, not solid-fill silhouettes.
+        /// Scales with `size / 44`; `GlyphStroke` floors tiny related-row marks at 1.8.
         static let icon: CGFloat = 2.6
     }
 
