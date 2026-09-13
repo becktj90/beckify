@@ -16,10 +16,11 @@ export function announce(message) {
 export function setBanner(text, kind = 'info', holdMs = 2200) {
   const banner = el('ng-banner');
   if (!banner) return;
+  const same = Boolean(text) && banner.textContent === text && !banner.hidden;
   banner.hidden = !text;
   banner.textContent = text || '';
   banner.dataset.kind = kind;
-  if (text) announce(text);
+  if (text && !same) announce(text);
   if (banner._hide) window.clearTimeout(banner._hide);
   if (text && holdMs > 0) {
     banner._hide = window.setTimeout(() => {
@@ -44,6 +45,12 @@ export function renderHud(snapshot) {
     't-payload': snapshot.payload,
     't-obj': snapshot.objective,
     't-clock': snapshot.clock,
+    't-mach': snapshot.mach,
+    't-q': snapshot.q,
+    't-acc': snapshot.acc,
+    't-twr': snapshot.twr,
+    't-fpa': snapshot.fpa,
+    't-sci': snapshot.sci,
   };
   for (const [id, value] of Object.entries(map)) {
     const node = el(id);
@@ -85,7 +92,18 @@ export function renderHud(snapshot) {
   }
   const tip = el('ng-launch-tip');
   if (tip && snapshot.launchTip != null) tip.hidden = !snapshot.launchTip;
+  const pauseHint = el('ng-pause-hint');
+  if (pauseHint && snapshot.pauseHint) pauseHint.textContent = snapshot.pauseHint;
+  if (snapshot.diff) document.body.dataset.diff = snapshot.diff;
+  document.body.classList.toggle('is-kid', snapshot.diff === 'KID');
   renderTape(snapshot.tapeId);
+}
+
+export function setSummaryWhy(text) {
+  const node = el('ng-sum-why');
+  if (!node) return;
+  node.hidden = !text;
+  node.textContent = text || '';
 }
 
 export function renderTape(activeId) {
