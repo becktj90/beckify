@@ -10,7 +10,7 @@
   - `artifacts/beckify/` — main site (bento grid home, toolbox, games, about, projects)
   - `artifacts/api-server/` — lightweight Express API
   - `artifacts/mockup-sandbox/` — canvas component preview server
-  - `ios/` — native SwiftUI Field EE calculator app (Field vs Toolkit home; not a site wrapper). See `ios/README.md`.
+  - `ios/` — native SwiftUI apps: **Beckify Toolbox** (`com.beckify.toolbox`) and standalone **Look Check** (`com.beckify.lookcheck`). See `ios/README.md` and `ios/LookCheck/README.md`.
 
   ## Running locally
 

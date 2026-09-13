@@ -182,13 +182,47 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertEqual(body["imageBase64"], "data:image/jpeg;base64,abc")
         XCTAssertEqual(body["mimeType"], "image/jpeg")
         XCTAssertEqual(body["task"], "look")
+        XCTAssertEqual(body["roastMode"], "bro")
+
+        let mean = PhotoLookCheck.requestBody(
+            imageBase64: "data:image/jpeg;base64,abc",
+            mimeType: "image/jpeg",
+            roastMode: .mean
+        )
+        XCTAssertEqual(mean["roastMode"], "mean")
 
         let data = try PhotoLookCheck.requestJSON(
             imageBase64: "data:image/jpeg;base64,abc",
-            mimeType: "image/jpeg"
+            mimeType: "image/jpeg",
+            roastMode: .nice
         )
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
         XCTAssertEqual(object["task"], "look")
+        XCTAssertEqual(object["roastMode"], "nice")
+    }
+
+    func testRoastModeParseAndShareCard() {
+        XCTAssertEqual(LookRoastMode.parse("MEAN"), .mean)
+        XCTAssertEqual(LookRoastMode.parse("nice"), .nice)
+        XCTAssertEqual(LookRoastMode.parse(nil), .bro)
+        XCTAssertEqual(LookRoastMode.parse("nope"), .bro)
+        XCTAssertEqual(LookRoastMode.standaloneTones, [.mean, .nice])
+        XCTAssertEqual(PhotoLookCheck.standaloneBundleID, "com.beckify.lookcheck")
+
+        let wrapped = PhotoLookCheck.normalizeDraft([
+            "roastMode": "mean",
+            "analysis": [
+                "verdict": "looks_good",
+                "score": 80,
+                "headline": "Sharp",
+                "summary": "Light is doing you a favor.",
+                "roast": "That jawline filed overtime and still asked for a bonus. The shirt is trying. The angle is winning.",
+            ],
+        ] as [String: Any])
+        XCTAssertEqual(wrapped.roastMode, .mean)
+        XCTAssertTrue(wrapped.copyLine.contains("Mean"))
+        XCTAssertTrue(wrapped.shareCardText.contains("Look Check · Looks good · Mean"))
+        XCTAssertTrue(wrapped.shareCardText.contains("Entertainment only"))
     }
 
     func testHTTPSEndpointRules() {

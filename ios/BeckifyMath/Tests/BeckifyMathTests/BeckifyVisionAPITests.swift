@@ -29,8 +29,10 @@ final class BeckifyVisionAPITests: XCTestCase {
         XCTAssertEqual(BeckifyVisionAPI.maxPickBytes, PhotoLookCheck.maxPickBytes)
         XCTAssertEqual(BeckifyVisionAPI.maxUploadBytes, PhotoLookCheck.maxUploadBytes)
         XCTAssertEqual(BeckifyVisionAPI.maxUploadEdge, PhotoLookCheck.maxUploadEdge)
+        let lookBody = BeckifyVisionAPI.requestBody(imageBase64: "x", mimeType: "image/jpeg", task: .look)
+        XCTAssertEqual(lookBody["roastMode"], "bro")
         XCTAssertEqual(
-            BeckifyVisionAPI.requestBody(imageBase64: "x", mimeType: "image/jpeg", task: .look),
+            lookBody,
             PhotoLookCheck.requestBody(imageBase64: "x", mimeType: "image/jpeg")
         )
         XCTAssertEqual(
@@ -57,6 +59,15 @@ final class BeckifyVisionAPITests: XCTestCase {
         )
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
         XCTAssertEqual(object["task"], "panel")
+        XCTAssertNil(object["roastMode"])
+
+        let look = BeckifyVisionAPI.requestBody(
+            imageBase64: "data:image/jpeg;base64,abc",
+            mimeType: "image/jpeg",
+            task: .look
+        )
+        XCTAssertEqual(look["task"], "look")
+        XCTAssertEqual(look["roastMode"], "bro")
     }
 
     func testAuthorizationTokenStaysOffDefaultHost() {

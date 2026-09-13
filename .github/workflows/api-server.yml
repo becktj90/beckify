@@ -46,5 +46,8 @@ jobs:
       - name: Typecheck API
         run: pnpm --filter @workspace/api-server run typecheck
 
+      - name: Look roast-mode contract
+        run: pnpm --filter @workspace/api-server run test
+
       - name: Smoke vision routes
         run: pnpm --filter @workspace/api-server run smoke

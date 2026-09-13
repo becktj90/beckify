@@ -14,6 +14,23 @@ Registered POST routes (must be present after every production deploy):
 
 GitHub Pages (`https://beckify.com`) cannot accept these POSTs (`405`). Clients must use `https://api.beckify.com`.
 
+### `POST /api/analyze-look` roast modes
+
+Body (existing clients unchanged):
+
+```json
+{
+  "imageBase64": "data:image/jpeg;base64,…",
+  "mimeType": "image/jpeg",
+  "task": "look",
+  "roastMode": "mean"
+}
+```
+
+`roastMode` is `mean` | `nice` | `bro`. Omitted, blank, or unknown values default to **`bro`** (short BroGPT one-liner used by the website and Beckify Toolbox). The standalone **Look Check** iOS app (`com.beckify.lookcheck`) sends `mean` or `nice` for a longer, exaggerated roast (several sentences). Safety rails are the same in every mode: anyone who appears under 18 is `declined` with no roast and no appearance rating; no sexual/graphic content; no race, disability, or body-shaming. Success JSON includes `roastMode` next to `analysis`.
+
+Redeploy `artifacts/api-server` on Vercel after merge so `api.beckify.com` serves the new field. Old clients that omit `roastMode` keep the BroGPT prompt.
+
 ## Local
 
 ```bash

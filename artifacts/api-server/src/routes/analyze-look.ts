@@ -1,5 +1,10 @@
 import { Router, type IRouter } from "express";
-import { LOOK_VISION_SYSTEM_PROMPT } from "../prompts/lookVisionPrompt.js";
+import {
+  lookVisionMaxTokens,
+  lookVisionSystemPrompt,
+  lookVisionUserText,
+  parseLookRoastMode,
+} from "../prompts/lookVisionPrompt.js";
 import {
   analyzeWithAnthropic,
   analyzeWithOpenAI,
@@ -19,6 +24,8 @@ interface AnalyzeBody {
   provider?: string;
   model?: string;
   task?: string;
+  roastMode?: string;
+  roast_mode?: string;
 }
 
 const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
@@ -31,6 +38,7 @@ router.post("/analyze-look", async (req, res) => {
   const picked = pickImage(body);
   if ("error" in picked) return res.status(picked.status).json({ error: picked.error });
 
+  const roastMode = parseLookRoastMode(body.roastMode ?? body.roast_mode);
   const clientKey = getClientKey(req);
   const bucket = consumeRateLimit(rateBuckets, clientKey);
   if (!bucket.allowed) {
@@ -44,7 +52,9 @@ router.post("/analyze-look", async (req, res) => {
   }
   bucket.inFlight += 1;
 
-  const userText = "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary and a BroGPT roast of how they look in this frame. If no_person or declined, roast must be an empty string. Follow the JSON shape.";
+  const system = lookVisionSystemPrompt(roastMode);
+  const userText = lookVisionUserText(roastMode);
+  const maxTokens = lookVisionMaxTokens(roastMode);
 
   try {
     const result = serverProvider === "anthropic"
@@ -52,22 +62,23 @@ router.post("/analyze-look", async (req, res) => {
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
-        system: LOOK_VISION_SYSTEM_PROMPT,
+        system,
         userText,
-        maxTokens: 1600,
+        maxTokens,
       })
       : await analyzeWithOpenAI({
         image: picked.image.base64,
         mimeType: picked.image.mimeType,
         model: serverModel,
-        system: LOOK_VISION_SYSTEM_PROMPT,
+        system,
         userText,
-        maxTokens: 1600,
+        maxTokens,
       });
 
     return res.json({
       provider: serverProvider,
       model: serverModel,
+      roastMode,
       analysis: result,
     });
   } catch (error) {

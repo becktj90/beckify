@@ -421,7 +421,8 @@ struct LookCheckPhotoView: View {
                 dataURL: prepared.dataURL,
                 mimeType: prepared.mimeType,
                 url: url,
-                token: PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
+                token: PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token),
+                roastMode: .bro
             )
             progress = 0.92
             status = "Reading the verdict…"
@@ -483,9 +484,14 @@ enum PhotoLookCheckClient {
         dataURL: String,
         mimeType: String,
         url: URL,
-        token: String
+        token: String,
+        roastMode: LookRoastMode = .bro
     ) async throws -> PhotoLookDraft {
-        let body = try PhotoLookCheck.requestJSON(imageBase64: dataURL, mimeType: mimeType)
+        let body = try PhotoLookCheck.requestJSON(
+            imageBase64: dataURL,
+            mimeType: mimeType,
+            roastMode: roastMode
+        )
         do {
             return try await post(url: url, body: body, token: token)
         } catch let error as PhotoLookHTTPError where error.status == 502 || error.status == 504 {

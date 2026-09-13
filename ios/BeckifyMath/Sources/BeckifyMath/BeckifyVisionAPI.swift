@@ -55,12 +55,22 @@ public enum BeckifyVisionAPI {
     }
 
     /// POST body matching website `analyzeLook` / nameplate / panel helpers.
+    /// Look Check includes `roastMode` (default `bro`) so this stays equal to
+    /// `PhotoLookCheck.requestBody`.
     public static func requestBody(
         imageBase64: String,
         mimeType: String,
-        task: BeckifyVisionTask
+        task: BeckifyVisionTask,
+        roastMode: LookRoastMode = .bro
     ) -> [String: String] {
-        [
+        if task == .look {
+            return PhotoLookCheck.requestBody(
+                imageBase64: imageBase64,
+                mimeType: mimeType,
+                roastMode: roastMode
+            )
+        }
+        return [
             "imageBase64": imageBase64,
             "mimeType": mimeType,
             "task": task.rawValue,
@@ -70,10 +80,16 @@ public enum BeckifyVisionAPI {
     public static func requestJSON(
         imageBase64: String,
         mimeType: String,
-        task: BeckifyVisionTask
+        task: BeckifyVisionTask,
+        roastMode: LookRoastMode = .bro
     ) throws -> Data {
         try JSONSerialization.data(
-            withJSONObject: requestBody(imageBase64: imageBase64, mimeType: mimeType, task: task),
+            withJSONObject: requestBody(
+                imageBase64: imageBase64,
+                mimeType: mimeType,
+                task: task,
+                roastMode: roastMode
+            ),
             options: []
         )
     }
