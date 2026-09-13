@@ -381,6 +381,8 @@ export default class MissionScene extends Phaser.Scene {
     this.syncMatterPause();
     this.menuLayer.setVisible(false);
     hideScreens();
+    AudioApi.unlock(this.settings);
+    AudioApi.setTheme(true, this.settings);
     enter();
   }
 
@@ -395,6 +397,7 @@ export default class MissionScene extends Phaser.Scene {
     this.screen = 'play';
     this.syncMatterPause();
     AudioApi.stopBeds();
+    AudioApi.setTheme(true, this.settings);
     this.menuLayer.setVisible(false);
     this.syncCanvasInput();
     hideScreens();
@@ -449,6 +452,7 @@ export default class MissionScene extends Phaser.Scene {
     hideScreens();
     showScreen('ng-menu');
     this.tip = pick(TIPS);
+    AudioApi.setTheme(false, this.settings);
     this.cameras.main.stopFollow();
     this.cameras.main.setZoom(1);
     this.cameras.main.centerOn(W / 2, H / 2);

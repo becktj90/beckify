@@ -49,6 +49,8 @@ Append to the cabinet URL (iframe `src` or standalone `index.html`):
 | `?beat=sep` | MECO / stage-sep window |
 | `?debug=1` | Matter debug outlines |
 
+Looping BGM is the Suno instrumental “Kestrel Heavy” (`audio/theme.ogg` / `.mp3`), started on launch via `AudioApi.setTheme`. Mute / SOUND / Music settings apply. Theme volume stays under SFX; critical callouts duck it.
+
 ## Old canvas path
 
 `index.html` sets `data-ng-engine="phaser4"` and mounts `#ng-phaser-root`. If `public/toolbox/js/arcade.js` is ever included, `init()` returns immediately so the 420×640 canvas path cannot fight Phaser.

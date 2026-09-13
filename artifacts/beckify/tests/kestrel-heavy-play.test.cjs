@@ -72,10 +72,10 @@ assert.doesNotMatch(mission, /TAP OR PRESS/);
 assert.match(hudJs, /function syncPlayfieldPointers/);
 assert.match(mission, /syncCanvasInput/);
 assert.match(arcadeJs, /getElementById\('ng-menu'\)/);
-assert.match(rootSw, /CACHE_VERSION = 'v4'/);
+assert.match(rootSw, /CACHE_VERSION = 'v5'/);
 assert.match(rootSw, /\/arcade\//);
 assert.match(rootSw, /EXCLUDED_PREFIXES[\s\S]*\/arcade\//);
-assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-2"/);
+assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-3"/);
 assert.match(arcadeHtml, /-webkit-touch-callout:\s*none/);
 assert.match(arcadeHtml, /-webkit-user-select:\s*none/);
 assert.match(arcadeHtml, /user-select:\s*none/);
@@ -95,7 +95,7 @@ assert.match(hudJs, /passive:\s*false/);
 assert.match(hudJs, /dataset\.label = snapshot\.boostLabel/);
 assert.match(input, /event\.code === 'Space'/);
 assert.match(input, /event\.code === 'KeyA'/);
-assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-2"/);
+assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-3"/);
 assert.match(host, /index\.html\?v=\$\{ARCADE_ASSET_VERSION\}/);
 assert.match(arcadeHtml, /id="ng-tape"/);
 assert.match(arcadeHtml, /id="ng-phase"/);
@@ -292,6 +292,7 @@ const audioDir = path.join(arcadeDir, 'audio');
 const audioClips = [
   'roar-loop', 'liftoff', 'maxq', 'meco', 'whoosh', 'burn-loop',
   'touchdown', 'recovered', 'splash', 'quindar', 'pickup', 'hit', 'rud',
+  'theme',
 ];
 for (const clip of audioClips) {
   assert.ok(fs.existsSync(path.join(audioDir, `${clip}.ogg`)), `${clip}.ogg`);
@@ -299,11 +300,19 @@ for (const clip of audioClips) {
 }
 assert.match(audioJs, /preload\(scene\)/);
 assert.match(audioJs, /scene\.load\.audio/);
+assert.match(audioJs, /audio\/\$\{THEME\.file\}\.ogg|audio\/theme\.ogg/);
+assert.match(audioJs, /ng-\$\{THEME\.file\}|ng-theme/);
+assert.match(audioJs, /setTheme/);
+assert.match(audioJs, /duckTheme/);
 assert.match(audioJs, /sound\.unlock/);
 assert.match(audioJs, /sound\.setMute/);
 assert.match(audioJs, /prefers-reduced-motion never mutes/);
 assert.doesNotMatch(audioJs, /blue origin|youtube/i);
 assert.match(mission, /AudioApi\.preload\(this\)/);
+assert.match(mission, /setTheme\(true/);
+assert.match(audioAttr, /suno\.com\/s\/nQE6Wpy3HGO0uYbH/);
+assert.match(audioAttr, /trevorjohnbeck/);
+assert.match(audioAttr, /9d457ba9-2ff4-40b1-9bfa-9eed22f90743/);
 assert.match(mission, /setBed\('roar'/);
 assert.match(mission, /setBed\('burn'/);
 assert.match(mission, /play\('whoosh'/);

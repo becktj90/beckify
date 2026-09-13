@@ -4,6 +4,7 @@
  * prefers-reduced-motion never mutes on its own.
  *
  * NASA trims live in ./audio/ (see ATTRIBUTION.md). Procedural tones are fallback only.
+ * Theme: Suno instrumental "Kestrel Heavy" by trevorjohnbeck — looping BGM, quieter than SFX.
  */
 const KEYS = {
   roar: { file: 'roar-loop', loop: true, vol: 0.36 },
@@ -27,19 +28,26 @@ const KEYS = {
 };
 
 const BEDS = new Set(['roar', 'burn']);
+const THEME = { file: 'theme', vol: 0.2 };
+const CRITICAL_SFX = new Set([
+  'liftoff', 'maxq', 'meco', 'whoosh', 'touchdown', 'recovered',
+  'splash', 'rud', 'success',
+]);
 
 const AudioApi = {
   scene: null,
-  beds: { roar: null, burn: null },
+  beds: { roar: null, burn: null, theme: null },
   unlocked: false,
   ctx: null,
   master: null,
+  unduckTimer: 0,
 
   preload(scene) {
     const files = [...new Set(Object.values(KEYS).map((spec) => spec.file))];
     files.forEach((file) => {
       scene.load.audio(`ng-${file}`, [`./audio/${file}.ogg`, `./audio/${file}.mp3`]);
     });
+    scene.load.audio(`ng-${THEME.file}`, [`./audio/${THEME.file}.ogg`, `./audio/${THEME.file}.mp3`]);
   },
 
   attach(scene) {
@@ -92,7 +100,12 @@ const AudioApi = {
     const vol = this.sfxGain(settings);
     sound.volume = vol;
     if (typeof sound.setVolume === 'function') sound.setVolume(vol);
-    if (!this.bedsAllowed(settings)) this.stopBeds();
+    if (!this.bedsAllowed(settings)) {
+      this.stopBeds();
+      this.stopTheme();
+    } else {
+      this.mixTheme(settings);
+    }
   },
 
   setMute(settings) {
@@ -117,6 +130,7 @@ const AudioApi = {
   play(name, settings) {
     if (!settings || this.silenced(settings)) return;
     this.unlock(settings);
+    if (CRITICAL_SFX.has(name)) this.duckTheme(settings);
     const spec = KEYS[name];
     const sound = this.scene?.sound;
     const key = spec ? `ng-${spec.file}` : null;
@@ -172,6 +186,71 @@ const AudioApi = {
   stopBeds() {
     this.stopBed('roar');
     this.stopBed('burn');
+  },
+
+  themeKey() {
+    return `ng-${THEME.file}`;
+  },
+
+  themeVolume(settings, mul = 1) {
+    return THEME.vol * mul * this.musicGain(settings);
+  },
+
+  mixTheme(settings) {
+    const bed = this.beds.theme;
+    if (!bed || !this.bedsAllowed(settings)) return;
+    const target = this.themeVolume(settings);
+    if (typeof bed.setVolume === 'function') bed.setVolume(target);
+  },
+
+  setTheme(on, settings) {
+    if (!on || !this.bedsAllowed(settings)) {
+      this.stopTheme();
+      return;
+    }
+    this.unlock(settings);
+    const sound = this.scene?.sound;
+    const key = this.themeKey();
+    if (!sound || !this.scene.cache?.audio?.exists(key)) return;
+    let bed = this.beds.theme;
+    const target = this.themeVolume(settings);
+    if (bed?.isPlaying || bed?.isPaused) {
+      if (bed.isPaused) bed.resume();
+      if (typeof bed.setVolume === 'function') bed.setVolume(target);
+      return;
+    }
+    try {
+      bed = sound.add(key, { loop: true, volume: target });
+      this.beds.theme = bed;
+      bed.play();
+    } catch {
+      this.beds.theme = null;
+    }
+  },
+
+  duckTheme(settings) {
+    const bed = this.beds.theme;
+    if (!bed || !this.bedsAllowed(settings)) return;
+    const ducked = this.themeVolume(settings, 0.28);
+    if (typeof bed.setVolume === 'function') bed.setVolume(ducked);
+    if (this.unduckTimer && this.scene?.time) {
+      this.scene.time.removeEvent(this.unduckTimer);
+      this.unduckTimer = 0;
+    }
+    if (this.scene?.time) {
+      this.unduckTimer = this.scene.time.delayedCall(780, () => {
+        this.mixTheme(settings);
+        this.unduckTimer = 0;
+      });
+    }
+  },
+
+  stopTheme() {
+    if (this.unduckTimer && this.scene?.time) {
+      this.scene.time.removeEvent(this.unduckTimer);
+      this.unduckTimer = 0;
+    }
+    this.stopBed('theme');
   },
 
   rumble(level, settings) {
