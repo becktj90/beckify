@@ -141,25 +141,12 @@ enum Theme {
         }
     }
 
-    /// A small, deterministic per-tool hue nudge so tiles in the same category
-    /// aren't perfectly identical — individual without leaving the family.
-    /// Uses a fixed string hash rather than `String.hashValue`, which Swift
-    /// re-seeds every process launch and would make the nudge flicker between
-    /// app opens instead of staying put on a given tool's tile.
-    static func toolHueNudge(_ id: ToolID) -> Angle {
-        var hash: UInt64 = 5381
-        for byte in id.rawValue.utf8 {
-            hash = (hash &* 33) &+ UInt64(byte)
-        }
-        let bucket = hash % 9
-        return .degrees(Double(bucket) * 3.2 - 12.8)
-    }
-
-    /// Soft tinted fill for a category-colored icon tile.
+    /// Soft tinted fill for a category-colored icon tile. Keep saturation low
+    /// so the well is a shelf tint, not a candy-colored badge.
     static func categoryIconGradient(_ category: ToolCategory) -> LinearGradient {
         let colors = categoryColors(category)
         return LinearGradient(
-            colors: [colors.primary.opacity(0.30), colors.secondary.opacity(0.16)],
+            colors: [colors.primary.opacity(0.16), colors.secondary.opacity(0.07)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -239,9 +226,10 @@ enum Theme {
     enum Stroke {
         static let hairline: CGFloat = 1
         static let emphasis: CGFloat = 1.5
-        static let icon: CGFloat = 1.75
-        /// Faint understroke behind glyph linework for optical depth.
-        static let iconUnder: CGFloat = 3.2
+        /// Main schematic stroke at the 44pt `ToolGlyph` reference size.
+        static let icon: CGFloat = 2.15
+        /// Understroke as a multiple of the main stroke — engraved edge, not a halo.
+        static let iconUnderRatio: CGFloat = 1.42
     }
 
     // MARK: Typography roles — scientific / instrument hierarchy.
@@ -278,11 +266,11 @@ enum Theme {
         endPoint: .bottomTrailing
     )
 
-    /// Soft tinted fill for icon badges.
+    /// Soft tinted fill for icon badges (fallback when a well has no category).
     static let iconGradient = LinearGradient(
         colors: [
-            accent.opacity(0.22),
-            accent2.opacity(0.10),
+            accent.opacity(0.12),
+            accent2.opacity(0.06),
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing

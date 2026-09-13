@@ -343,7 +343,7 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Photograph a panel schedule; on-device Vision fills an editable table. Optional Analyze, then confirm demand.",
+            summary: "Take a picture of a panel schedule; on-device Vision fills an editable table. Optional Analyze, then confirm demand.",
             context: "Directory photo or typed legend — verify rows. Analyze uploads only if you tap it.",
             bullets: [
                 "Vision stays on this device unless you tap Analyze. Yellow rows are guesses.",
@@ -488,7 +488,7 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "motorNameplateOCR": ToolHowItWorks(
-            summary: "Photograph a plate; on-device Vision fills a shared schema. Optional Analyze, then you confirm.",
+            summary: "Take a picture of a plate; on-device Vision fills a shared schema. Optional Analyze, then you confirm.",
             context: "Seed FLA / Analyzer / Speed after you review. Analyze uploads only if you tap it.",
             bullets: [
                 "Heuristic extract first. Confirm marks reviewed. Analyze POSTs to /api/analyze-nameplate.",

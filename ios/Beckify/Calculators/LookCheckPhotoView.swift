@@ -159,7 +159,7 @@ struct LookCheckPhotoView: View {
                     cameraUnavailable = true
                 }
             } label: {
-                Label("Take photo", systemImage: "camera")
+                Label("Take a photo", systemImage: "camera")
                     .frame(minHeight: Theme.touchTarget)
             }
             .buttonStyle(.borderedProminent)
@@ -168,7 +168,7 @@ struct LookCheckPhotoView: View {
             .accessibilityHint("Opens the camera. The photo stays on this device until Analyze Look.")
 
             PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
-                Label("Choose photo", systemImage: "photo.on.rectangle")
+                Label("Choose a photo", systemImage: "photo.on.rectangle")
                     .frame(minHeight: Theme.touchTarget)
             }
             .buttonStyle(.bordered)

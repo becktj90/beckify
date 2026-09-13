@@ -5,7 +5,7 @@ import ImageIO
 @preconcurrency import Vision
 import BeckifyMath
 
-/// Photograph or pick a motor nameplate, run on-device Vision, then map lines
+/// Take a photo or pick a motor nameplate, run on-device Vision, then map lines
 /// into editable fields. A human must confirm before Saved Jobs. Optional
 /// cloud Analyze POSTs only after the user taps the button.
 struct MotorNameplateOCRView: View {
@@ -125,7 +125,7 @@ struct MotorNameplateOCRView: View {
 
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ToolEmptyState(
-                    title: "Photograph or pick a nameplate",
+                    title: "Take a photo or pick a nameplate",
                     detail: "Use the camera or photo library. Vision reads the plate on this device, then Calculate maps lines into fields you can correct. Analyze is optional and uploads only if you tap it.",
                     systemImage: "text.viewfinder"
                 )
@@ -202,7 +202,7 @@ struct MotorNameplateOCRView: View {
                     cameraUnavailable = true
                 }
             } label: {
-                Label("Take photo", systemImage: "camera")
+                Label("Take a photo", systemImage: "camera")
                     .frame(minHeight: Theme.touchTarget)
             }
             .buttonStyle(.borderedProminent)
@@ -212,7 +212,7 @@ struct MotorNameplateOCRView: View {
 
             PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
                 Label(
-                    isRecognizing ? "Reading…" : "Choose photo",
+                    isRecognizing ? "Reading…" : "Choose a photo",
                     systemImage: "photo.on.rectangle"
                 )
                 .frame(minHeight: Theme.touchTarget)
