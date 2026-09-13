@@ -95,6 +95,6 @@ Suggested 3–6 shots:
 3. Open `ios/Beckify.xcodeproj`, scheme **LookCheck**, confirm Signing & Capabilities.
 4. Run on a physical device at least once.
 5. Capture screenshots at required sizes.
-6. Archive LookCheck (not Beckify), upload, attach listing copy, submit.
+6. Archive LookCheck (not Beckify), upload, attach listing copy, submit. Xcode Cloud Archive for this product uses scheme **LookCheck**; do not point Toolbox Archive-iOS at this scheme.
 
 This repository does **not** submit anything to the App Store.
