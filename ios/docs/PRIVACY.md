@@ -9,6 +9,8 @@
 
 This is the privacy policy for the native Beckify iOS and iPadOS app. It is hosted at https://beckify.com/privacy (and https://beckify.com/privacy/). It describes the app, not the beckify.com website.
 
+Sibling App Store products on the same team (`9TR6R5LV8M`) are **Look Check** (`com.beckify.lookcheck`) and **Kestrel Heavy** (`com.beckify.kestrelheavy`). Kestrel Heavy is a standalone arcade, not a Toolbox catalog game; v1 collects no play data. See `ios/KestrelHeavy/docs/PRIVACY.md`.
+
 Apple’s App Privacy nutrition label for this app is **Photos** (App Functionality) when you tap **Analyze** in Look Check, Motor Nameplate OCR, or Panel Directory. That upload is user-initiated, not linked to an account, and not used for tracking. There is no always-on upload. Sensor readings and Saved Jobs stay on the device.
 
 ## What the app does not collect

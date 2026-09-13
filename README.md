@@ -10,7 +10,7 @@
   - `artifacts/beckify/` — main site (bento grid home, toolbox, games, about, projects)
   - `artifacts/api-server/` — lightweight Express API
   - `artifacts/mockup-sandbox/` — canvas component preview server
-  - `ios/` — native SwiftUI apps: **Beckify Toolbox** (`com.beckify.toolbox`) and standalone **Look Check** (`com.beckify.lookcheck`). See `ios/README.md` and `ios/LookCheck/README.md`.
+  - `ios/` — native SwiftUI apps: **Beckify Toolbox** (`com.beckify.toolbox`), standalone **Look Check** (`com.beckify.lookcheck`), and standalone **Kestrel Heavy** (`com.beckify.kestrelheavy`). See `ios/README.md`, `ios/LookCheck/README.md`, and `ios/KestrelHeavy/README.md`. Toolbox Archive / Xcode Cloud stays on scheme **Beckify** only.
 
   ## Running locally
 

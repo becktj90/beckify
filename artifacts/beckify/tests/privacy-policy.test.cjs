@@ -35,6 +35,7 @@ ok("remaining Mac steps still listed", /Archive in Xcode/.test(appStoreMd) && /A
 ok("bundle ID, name, devices, price, age stay honest", /com\.beckify\.toolbox/.test(appStoreMd) && /\*\*Name:\*\* Beckify/.test(appStoreMd) && /iPhone and iPad/.test(appStoreMd) && /no in-app purchases, no ads/.test(appStoreMd) && /4\+/.test(appStoreMd));
 ok("support and marketing URLs are beckify.com", /\*\*Support URL:\*\* https:\/\/beckify.com/.test(appStoreMd) && /\*\*Marketing URL:\*\* https:\/\/beckify.com/.test(appStoreMd));
 ok("React privacy page is a live policy", /Analyze Look/.test(privacyPage) && /com.beckify.toolbox/.test(privacyPage) && !/not published/.test(privacyPage));
+ok("Kestrel Heavy standalone iOS app is on the public privacy page", /com\.beckify\.kestrelheavy/.test(privacyPage) && /does not collect/.test(privacyPage) && /\/games\/kestrel-heavy/.test(privacyPage));
 ok("React routes cover /privacy and /privacy/", appSrc.includes('path="/privacy"') && appSrc.includes('path="/privacy/"'));
 ok("sitemap All pages lists Privacy", /href: "\/privacy", label: "Privacy"/.test(sitemapSrc));
 ok("footer links Privacy", footerSrc.includes('href="/privacy"') && footerSrc.includes("Privacy"));

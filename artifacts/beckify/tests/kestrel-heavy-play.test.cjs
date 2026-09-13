@@ -377,4 +377,20 @@ assert.match(hudJs, /t-mach/);
 assert.match(hudJs, /function setSummaryWhy/);
 assert.match(hudJs, /if \(text && !same\) announce/);
 
+const iosRoot = path.join(root, '../../ios');
+const iosGame = path.join(iosRoot, 'KestrelHeavy/Game');
+assert.ok(fs.existsSync(path.join(iosGame, 'index.html')), 'iOS Game pack must ship index.html');
+const iosHtml = fs.readFileSync(path.join(iosGame, 'index.html'), 'utf8');
+assert.doesNotMatch(iosHtml, /\/toolbox\/js\//);
+assert.match(iosHtml, /viewport-fit=cover/);
+assert.match(iosHtml, /is-ios-app/);
+assert.doesNotMatch(iosHtml, /fonts\.googleapis\.com/);
+assert.ok(fs.existsSync(path.join(iosGame, 'vendor/phaser.min.js')), 'iOS pack must vendor Phaser');
+assert.ok(fs.existsSync(path.join(iosGame, 'audio/theme.mp3')), 'iOS pack must include theme BGM');
+const pbx = fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/project.pbxproj'), 'utf8');
+assert.match(pbx, /PRODUCT_BUNDLE_IDENTIFIER = com\.beckify\.kestrelheavy/);
+assert.match(pbx, /name = KestrelHeavy/);
+assert.match(fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/xcshareddata/xcschemes/KestrelHeavy.xcscheme'), 'utf8'), /KestrelHeavy\.app/);
+assert.doesNotMatch(fs.readFileSync(path.join(iosRoot, 'Beckify/Models/ToolboxCatalog.swift'), 'utf8'), /kestrel/i);
+
 console.log('Kestrel Heavy Phaser 4 path, Haven recovery, and iframe host checks passed');

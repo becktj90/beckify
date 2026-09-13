@@ -2,9 +2,9 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-A second App Store product lives in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast. Not this toolbox. See [`LookCheck/README.md`](LookCheck/README.md) and [`LookCheck/docs/APP_STORE.md`](LookCheck/docs/APP_STORE.md).
+Two more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — and **Kestrel Heavy** (`com.beckify.kestrelheavy`) — a native SwiftUI shell that plays the Phaser 4 arcade from a local bundle. Neither is this toolbox. See [`LookCheck/README.md`](LookCheck/README.md) and [`KestrelHeavy/README.md`](KestrelHeavy/README.md).
 
-> **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive with scheme **LookCheck** for the Toolbox ASC app. LookCheck is a separate ASC app (`com.beckify.lookcheck`) with its own scheme — keep Archive workflows separate.
+> **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive Toolbox with scheme **LookCheck** or **KestrelHeavy**. Those are separate ASC apps with their own Archive schemes. Keep Archive workflows separate. Kestrel Heavy is not a Toolbox catalog game; the website `/games/kestrel-heavy` stays.
 
 Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
@@ -30,9 +30,10 @@ Session state (`ExplicitCalculationState`, `LiveCalculationState`) is pure Swift
 
 ```text
 ios/
-  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify and LookCheck
+  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, LookCheck, KestrelHeavy
   Beckify/               SwiftUI Toolbox app (Calculators + Sensors)
   LookCheck/             Standalone Look Check App Store app (`com.beckify.lookcheck`)
+  KestrelHeavy/          Standalone Kestrel Heavy App Store app (`com.beckify.kestrelheavy`)
   BeckifyMath/           Pure-Swift math + NEC tables + look-check JSON + XCTest
   docs/APP_STORE.md            Toolbox listing copy and App Store Connect checklist
   docs/FIVE_STAR_READINESS.md  Competitor 1★ patterns, review-ask policy, pre-submit gate
@@ -150,7 +151,7 @@ You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth o
 
 1. Install Xcode 15 or later.
 2. Open `ios/Beckify.xcodeproj`.
-3. Select the **Beckify** scheme (Toolbox) or **LookCheck** (standalone roast app).
+3. Select the **Beckify** scheme (Toolbox), **LookCheck** (standalone roast app), or **KestrelHeavy** (standalone arcade).
 4. Select an iPhone or iPad simulator.
 5. Signing: Debug and Release set `DEVELOPMENT_TEAM` to `9TR6R5LV8M` (Apple’s team prefix at identifier registration). Confirm that Team in Signing & Capabilities on a Mac.
 6. Run.
@@ -181,9 +182,28 @@ xcodebuild \
   build
 ```
 
+Standalone Kestrel Heavy (same project, **KestrelHeavy** scheme — local Phaser pack, not beckify.com):
+
+```bash
+cd ios
+xcodebuild \
+  -project Beckify.xcodeproj \
+  -destination 'generic/platform=iOS Simulator' \
+  -scheme KestrelHeavy \
+  -configuration Debug \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Refresh the packed cabinet after arcade changes:
+
+```bash
+python3 ios/scripts/pack_kestrelheavy_game.py
+```
+
 ### Archive (signed, on a Mac; upload still outstanding)
 
-**Xcode Cloud / Archive-iOS must pin scheme Beckify.** Archiving **LookCheck** ships `com.beckify.lookcheck`, not Toolbox (`com.beckify.toolbox`), and will fail App Store Connect prepare for the Toolbox record. LookCheck has its own Archive workflow — do not share one.
+**Xcode Cloud / Archive-iOS must pin scheme Beckify.** Archiving **LookCheck** or **KestrelHeavy** ships `com.beckify.lookcheck` or `com.beckify.kestrelheavy`, not Toolbox (`com.beckify.toolbox`), and will fail App Store Connect prepare for the Toolbox record. Each product has its own Archive workflow — do not share one.
 
 ```bash
 cd ios
@@ -206,7 +226,7 @@ xcodebuild \
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). Next Connect version is **1.0.1**, build **≥122**. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck. LookCheck stays 1.0 / 1. This Linux environment did not compile, sign, or upload 122.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). Next Connect version is **1.0.1**, build **≥122**. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck and Kestrel Heavy stay 1.0 / 1. This Linux environment did not compile, sign, or upload 122.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac
