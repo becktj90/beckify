@@ -235,7 +235,7 @@ Still needed (Mac + Trevor; not done in this Linux environment):
 3. Run on a physical device at least once if not already done (capability / provisioning / sensor check). This Linux CI job does not do that.
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
 5. Capture screenshots at the sizes below. Do **not** ship website screenshots.
-6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled (`DEVELOPMENT_TEAM` `9TR6R5LV8M`).
+6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled (`DEVELOPMENT_TEAM` `9TR6R5LV8M`). Xcode Cloud Archive-iOS must pin scheme **Beckify** (`com.beckify.toolbox`); do not archive Toolbox with **LookCheck**.
 7. In App Store Connect, **create or select version 1.0.1** (the 1.0 train is closed). Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck. Upload a signed **1.0.1 (122)** archive (Organizer or Transporter). Wait for processing. Do not re-upload **1.0 (121)** or rejected **1.0 (113)**.
 8. Attach screenshots, review the encryption and content-rights questions, then submit for review (not done).
 9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location/Motion strings, or “design aid” disclaimers.
