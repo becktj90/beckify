@@ -292,6 +292,7 @@ const audioDir = path.join(arcadeDir, 'audio');
 const audioClips = [
   'roar-loop', 'liftoff', 'maxq', 'meco', 'whoosh', 'burn-loop',
   'touchdown', 'recovered', 'splash', 'quindar', 'pickup', 'hit', 'rud',
+  'theme',
 ];
 for (const clip of audioClips) {
   assert.ok(fs.existsSync(path.join(audioDir, `${clip}.ogg`)), `${clip}.ogg`);
