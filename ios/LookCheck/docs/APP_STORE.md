@@ -7,7 +7,7 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 ## Listing copy (stub)
 
 **Name:** Look Check  
-**Subtitle:** Mean or nice photo roast  
+**Subtitle:** Surprise photo roast  
 **Bundle ID:** `com.beckify.lookcheck`  
 **SKU:** `look-check`  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M`  
@@ -20,13 +20,13 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 Create the App Store Connect record on a Mac (this repo does not). There is no Apple ID / Connect status for Look Check yet.
 
 **Promotional text (170 characters, draft):**
-Take a photo. Pick Mean or Nice. Get a verdict and a detailed comedy roast of this frame. Entertainment only — not a beauty contest.
+Take a photo. Get a verdict and a detailed comedy roast of this frame. Entertainment only — not a beauty contest.
 
 **Description (draft):**
 
-Look Check is a one-screen photo roast. Take a picture or pick one from your library, choose **Mean** (savage, detailed comedy) or **Nice** (over-the-top complimentary hype), then tap Analyze.
+Look Check is a one-screen photo roast. Take a picture or pick one from your library, then tap Analyze.
 
-You get an honest photo verdict — lighting, framing, expression, sharpness — plus a longer roast of the look, vibe, fit, angle, and lighting in *this* frame. Share the roast card.
+You get an honest photo verdict — lighting, framing, expression, sharpness — plus a longer roast of the look, vibe, fit, angle, and lighting in *this* frame. Each Analyze picks a surprise roast tone. Share the roast card.
 
 Entertainment only. Not medical advice, not dating advice, not beauty authority.
 
@@ -35,10 +35,10 @@ Safety: anyone who appears under 18 is not rated. No roast. No appearance score.
 Free. No ads. No account. No in-app purchases.
 
 **Keywords (100 characters max, draft):**
-photo roast,look check,selfie,comedy,mean,nice,lighting,verdict,camera
+photo roast,look check,selfie,comedy,surprise,lighting,verdict,camera
 
 **What's New (1.0):**
-First release. Mean and Nice roast modes. Camera or library. Shareable roast card. Free, no IAP, no ads.
+First release. Surprise comedy roast. Camera or library. Shareable roast card. Free, no IAP, no ads.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -77,10 +77,10 @@ Not captured in this repository. On a Mac with Xcode, capture Simulator shots. D
 
 Suggested 3–6 shots:
 
-1. Empty state — camera / library, Mean | Nice, privacy line visible
-2. Photo loaded, Mean selected, Analyze enabled
-3. Mean result — verdict, score, long roast card, Share
-4. Same photo, Nice result
+1. Empty state — camera / library, privacy line visible (no roast-tone picker)
+2. Photo loaded, Analyze enabled
+3. Result — verdict, score, long roast card, Share (no Mean/Nice badge)
+4. Same photo analyzed again — a different surprise roast
 5. Declined / under-18 empty roast (do not use a real minor; use the declined UI with copy only if you can do so without a child photo)
 6. iPad layout of the same one-screen flow
 

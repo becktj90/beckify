@@ -220,9 +220,71 @@ final class PhotoLookCheckTests: XCTestCase {
             ],
         ] as [String: Any])
         XCTAssertEqual(wrapped.roastMode, .mean)
-        XCTAssertTrue(wrapped.copyLine.contains("Mean"))
-        XCTAssertTrue(wrapped.shareCardText.contains("Look Check · Looks good · Mean"))
-        XCTAssertTrue(wrapped.shareCardText.contains("Entertainment only"))
+        XCTAssertEqual(
+            wrapped.copyLine,
+            "Look Check: Looks good · score 80 · Sharp · Roast: That jawline filed overtime and still asked for a bonus. The shirt is trying. The angle is winning."
+        )
+        XCTAssertFalse(wrapped.copyLine.contains("Mean"))
+        XCTAssertFalse(wrapped.copyLine.contains("Nice"))
+        XCTAssertEqual(
+            wrapped.shareCardText,
+            """
+            Look Check · Looks good
+            Score 80
+            Sharp
+            Light is doing you a favor.
+
+            That jawline filed overtime and still asked for a bonus. The shirt is trying. The angle is winning.
+
+            Entertainment only — not medical, dating, or beauty authority.
+            """
+        )
+        XCTAssertFalse(wrapped.shareCardText.contains("Mean"))
+        XCTAssertFalse(wrapped.shareCardText.contains("Nice"))
+
+        let nice = PhotoLookCheck.normalizeDraft([
+            "roastMode": "nice",
+            "analysis": [
+                "verdict": "mixed",
+                "score": 61,
+                "headline": "Some things work",
+                "roast": "The light is doing charity work and still looks proud of it.",
+            ],
+        ] as [String: Any])
+        XCTAssertEqual(nice.roastMode, .nice)
+        XCTAssertFalse(nice.copyLine.contains("Nice"))
+        XCTAssertFalse(nice.copyLine.contains("Mean"))
+        XCTAssertFalse(nice.shareCardText.contains("Nice"))
+        XCTAssertFalse(nice.shareCardText.contains("Mean"))
+        XCTAssertTrue(nice.copyLine.hasPrefix("Look Check: Mixed"))
+        XCTAssertTrue(nice.shareCardText.hasPrefix("Look Check · Mixed"))
+    }
+
+    func testRandomStandaloneToneIsHiddenFairCoin() {
+        XCTAssertEqual(Set(LookRoastMode.standaloneTones), [.mean, .nice])
+
+        var seen: Set<LookRoastMode> = []
+        for _ in 0..<80 {
+            let mode = LookRoastMode.randomStandaloneTone()
+            XCTAssertTrue(LookRoastMode.standaloneTones.contains(mode))
+            XCTAssertNotEqual(mode, .bro)
+            seen.insert(mode)
+        }
+        XCTAssertEqual(seen, Set(LookRoastMode.standaloneTones))
+
+        var first = LCGRandomNumberGenerator(seed: 42)
+        var second = LCGRandomNumberGenerator(seed: 42)
+        XCTAssertEqual(
+            LookRoastMode.randomStandaloneTone(using: &first),
+            LookRoastMode.randomStandaloneTone(using: &second)
+        )
+
+        var low = ConstantRandomNumberGenerator(value: 0)
+        var high = ConstantRandomNumberGenerator(value: .max)
+        XCTAssertNotEqual(
+            LookRoastMode.randomStandaloneTone(using: &low),
+            LookRoastMode.randomStandaloneTone(using: &high)
+        )
     }
 
     func testHTTPSEndpointRules() {
@@ -303,4 +365,19 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertTrue(v.copyLine.contains("Online / Captive: No captive portal"))
         XCTAssertFalse(v.copyLine.localizedCaseInsensitiveContains("Look Check"))
     }
+}
+
+private struct LCGRandomNumberGenerator: RandomNumberGenerator {
+    var seed: UInt64
+
+    mutating func next() -> UInt64 {
+        seed = seed &* 6_364_136_223_846_793_005 &+ 1
+        return seed
+    }
+}
+
+private struct ConstantRandomNumberGenerator: RandomNumberGenerator {
+    let value: UInt64
+
+    mutating func next() -> UInt64 { value }
 }

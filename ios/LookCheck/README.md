@@ -1,6 +1,6 @@
 # Look Check (standalone iOS app)
 
-Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen: take or choose a photo, pick **Mean** or **Nice**, tap **Analyze**, get a useful verdict plus a long exaggerated roast.
+Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen: take or choose a photo, tap **Analyze**, get a useful verdict plus a long exaggerated roast. Roast tone is a hidden surprise — the app never shows which one it picked.
 
 This is not a website wrapper and not a second copy of the Field EE toolbox.
 
@@ -22,9 +22,8 @@ The shared contract lives in `ios/BeckifyMath` (`PhotoLookCheck`, `LookRoastMode
 ## Core loop
 
 1. Camera or photo library — the image stays on device.
-2. Toggle **Mean** (savage comedy) or **Nice** (over-the-top hype) before or after a result.
-3. **Analyze** POSTs an upright JPEG to `https://api.beckify.com/api/analyze-look` with `roastMode: "mean" | "nice"`.
-4. Result: verdict, photo metrics, detailed roast card, Share.
+2. **Analyze** secretly coins `mean` or `nice` (fair coin) and POSTs an upright JPEG to `https://api.beckify.com/api/analyze-look` with that `roastMode`. The user never sees the choice — no toggle, badge, or share-card label.
+3. Result: verdict, photo metrics, detailed roast card, Share.
 
 Toolbox / website clients omit `roastMode` (or send `bro`) and keep the short BroGPT one-liner.
 
@@ -33,7 +32,7 @@ Toolbox / website clients omit `roastMode` (or send `bro`) and keep the short Br
 - Anyone who appears under 18 → `declined`, empty roast, no appearance rating.
 - No sexual or graphic content.
 - No race, disability, or body-shaming. Roast style, vibe, grooming, angle, lighting, photo quality.
-- Mean mode is savage comedy, not hate speech.
+- The long roast is comedy, not hate speech — same safety rails in every hidden tone.
 
 ## How to run (Mac + Xcode)
 
