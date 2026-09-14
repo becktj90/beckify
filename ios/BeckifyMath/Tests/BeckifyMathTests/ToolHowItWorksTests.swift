@@ -59,6 +59,12 @@ final class ToolHowItWorksTests: XCTestCase {
         let noise = ToolHowItWorksCatalog.copy(forToolID: "noiseMeter")
         XCTAssertTrue(noise?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("SLM") }) == true)
         XCTAssertTrue(noise?.summary.localizedCaseInsensitiveContains("dBFS") == true)
+
+        let health = ToolHowItWorksCatalog.copy(forToolID: "deviceHealth")
+        XCTAssertTrue(health?.summary.localizedCaseInsensitiveContains("Low Power") == true)
+        XCTAssertTrue(health?.summary.localizedCaseInsensitiveContains("storage") == true)
+        XCTAssertTrue(health?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("Battery Health") }) == true)
+        XCTAssertTrue(health?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("invent") }) == true)
     }
 
     func testHomeworkDefaultsOpenFieldDefaultsCollapsed() {

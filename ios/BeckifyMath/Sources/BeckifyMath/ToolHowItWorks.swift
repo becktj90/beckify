@@ -264,11 +264,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "deviceHealth": ToolHowItWorks(
-            summary: "Battery level and thermal state from public UIDevice / ProcessInfo APIs.",
-            context: "Diagnostics only — why the phone is throttling, not a pack designer.",
+            summary: "Charge, Low Power Mode, thermal throttle band, free storage, model / iOS, and uptime from public APIs.",
+            context: "Why the phone is slow, hot, or almost full — not a charger tester or pack health %.",
             bullets: [
-                "Not a battery-health percentage (Apple does not give that to third-party apps).",
-                "Readings stay on device unless you save a numeric snapshot.",
+                "Not Apple Battery Health (Maximum Capacity). Third-party apps cannot read that.",
+                "Thermal is Apple’s throttle band, not a thermometer. Storage is FileManager volume capacity.",
+                "Simulator often reports batteryLevel −1. Unavailable rows stay blank rather than inventing a value.",
             ]
         ),
         "receptacleSelector": ToolHowItWorks(

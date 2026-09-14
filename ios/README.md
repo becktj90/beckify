@@ -132,7 +132,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 - Barometer / relative altitude
 - g-Force snapshot
 - Position (location requested in-tool, not at launch)
-- Device battery / thermal diagnostics
+- Device Health (charge, Low Power Mode, thermal meaning, free storage, model / iOS, uptime — not Battery Health %)
 
 Local **Saved Jobs** are on-device homework / field notes, not a projects product. Field jobs sort first. Opening a job restores matching inputs into the tool when they still map — it does not block if some fields cannot be restored. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, can show the formula with your numbers plugged in (expanded on homework tools, collapsed on field lookups), and has a short **How it works** note (toolbar About / collapsed disclosure) for what it computes and its limits. Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
 
@@ -226,7 +226,7 @@ xcodebuild \
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). Next Connect version is **1.0.1**, build **≥122**. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck and Kestrel Heavy stay 1.0 / 1. This Linux environment did not compile, sign, or upload 122.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). Next Connect version is **1.0.1**, build **≥123**. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck and Kestrel Heavy stay 1.0 / 1. This Linux environment did not compile, sign, or upload 123.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac
