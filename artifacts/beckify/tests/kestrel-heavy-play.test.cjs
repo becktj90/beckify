@@ -117,7 +117,7 @@ assert.match(arcadeHtml, /viewport-fit=cover/);
 assert.match(arcadeHtml, /--game-vv-height/);
 assert.match(arcadeHtml, /aspect-ratio:\s*unset/);
 assert.match(arcadeHtml, /arcade-host-fill/);
-assert.match(arcadeHtml, /body\.is-embedded \.hud-btns/);
+assert.match(arcadeHtml, /body\[data-phase="MENU"\] \.mc-hud/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /isIosPhone/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /isLetterboxed/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /usableViewportHeight/);
