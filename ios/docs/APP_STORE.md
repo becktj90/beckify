@@ -119,7 +119,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 • Barometer / relative altitude — unavailable empty state (no crash) if the sensor is missing, Motion & Fitness is off, or Core Motion errors
 • g-force snapshot
 • Position (GPS) when that tool is opened — not at launch
-• Device battery and thermal diagnostics
+• Device Health — charge, Low Power Mode, free storage, model / iOS, uptime, and a one-line thermal meaning. Diagnostics only — not Apple Battery Health %, not a charger tester, not a health score
 
 Search Field and Toolkit (try “ampacity”, “ebike”, “sprocket”, “range”, “18650”, “conductor cost”, “conductor length”, “milliohm”, “shorted parallel”, “conduit”, “tap”, “THD”, “UPS”, “nameplate”, “ocr”, “look check”, “analyze look”, “roast”, “heater”, “solar”, “pv”, “op amp”, “lm317”, “snr”, “adc”, “pid”, “bode”, “receptacle”, “motor”, “phasor”, “fiber”, “LED”, “wifi”, “captive”, “cellular”, “lte”, “5g”). Results show which area a tool lives in. Each existing tool keeps last-used inputs on this device, copies a numeric result, can show the formula with your numbers plugged in, and lists related tools from the same toolbox. Every catalog tool also has a short **How it works** note (toolbar About / collapsed disclosure — open by default on homework tools) covering what it computes, when to use it, and honesty limits. Instruments state public-API limits (no invented Wi‑Fi/cellular dBm). Selected existing calculators show engineer plots (Swift Charts) and can Share or save a PNG through the system share sheet. Save named jobs on device as homework or field notes; Field jobs sort first, and Open in tool restores matching inputs when they still map. No account, no ads, no analytics, no tracking.
 
@@ -198,6 +198,7 @@ Take 3–8 screens per size. Suggested shots:
 12. Cellular Path — Online / Captive verdict plus color arc gauges for radio generation (2G…5G from RAT) and TCP RTT ms, plus the carrier / RAT chip board (do not imply RSRP/dBm; this is a suggested shot, not a captured screenshot)
 13. Wi-Fi Path — Online / Captive first (no captive portal / local only / captive), Apple strength %/bars when available, no dBm row (suggested shot, not captured)
 14. Look Check — photo preview plus Analyze Look metrics and roast (entertainment disclaimer visible)
+15. Device Health — charge, Low Power Mode, free storage, model / iOS, uptime, and thermal meaning (do not imply Apple Battery Health % or a charger tester; suggested shot, not captured)
 
 Pick a 3–8 subset and include the plot + Share shot if you have room.
 
