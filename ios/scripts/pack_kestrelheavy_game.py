@@ -63,10 +63,20 @@ SKIP_NAMES = {
 
 
 def patch_index(html: str) -> str:
-    html = html.replace(
-        'content="width=device-width, initial-scale=1.0"',
-        'content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"',
+    ios_viewport = (
+        'content="width=device-width, initial-scale=1.0, viewport-fit=cover, '
+        'maximum-scale=1.0, user-scalable=no"'
     )
+    if ios_viewport not in html:
+        html = html.replace(
+            'content="width=device-width, initial-scale=1.0, viewport-fit=cover"',
+            ios_viewport,
+        )
+    if ios_viewport not in html:
+        html = html.replace(
+            'content="width=device-width, initial-scale=1.0"',
+            ios_viewport,
+        )
     html = html.replace(
         'content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' https://fonts.gstatic.com data:; img-src \'self\' data: blob:; connect-src \'self\'; worker-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
         'content="default-src \'self\' kestrel-heavy:; script-src \'self\' \'unsafe-inline\' kestrel-heavy:; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data: blob:; connect-src \'self\' kestrel-heavy:; worker-src \'self\' blob:; media-src \'self\' blob: kestrel-heavy:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
@@ -117,12 +127,21 @@ def copy_tree() -> None:
         encoding="utf-8",
     )
 
-    if "/toolbox/js/" in index_path.read_text():
+    packed = index_path.read_text()
+    if "/toolbox/js/" in packed:
         raise SystemExit("Pack left an absolute /toolbox/js path in index.html")
+    if packed.count("viewport-fit=cover") != 1:
+        raise SystemExit("Pack viewport-fit=cover missing or duplicated")
     if not (DEST / "vendor" / "phaser.min.js").is_file():
         raise SystemExit("Pack missing vendor/phaser.min.js")
     if not (DEST / "js" / "main.js").is_file():
         raise SystemExit("Pack missing js/main.js")
+    if not (DEST / "js" / "voice.js").is_file():
+        raise SystemExit("Pack missing js/voice.js")
+    if not (DEST / "js" / "telemetry.js").is_file():
+        raise SystemExit("Pack missing js/telemetry.js")
+    if not (DEST / "js" / "fullscreen.js").is_file():
+        raise SystemExit("Pack missing js/fullscreen.js")
 
 
 def main() -> None:

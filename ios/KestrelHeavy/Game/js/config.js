@@ -99,8 +99,8 @@ export const HAVEN = {
   startY: -340,
   startLat: 820,
   bargeY: 690,
-  zoomFar: 0.38,
-  zoomNear: 0.54,
+  zoomFar: 0.34,
+  zoomNear: 0.46,
   gravity: 0.155,
   frictionAir: 0.058,
   maxVyEarly: 1.85,
@@ -108,6 +108,17 @@ export const HAVEN = {
   earlySec: 5.2,
   landingFuel: 24,
   swellAmp: 14,
+};
+
+/** Wider default framing so the corridor, sep stack, and Haven read as space. */
+export const CAM = {
+  ascentStart: 0.56,
+  ascentHigh: 0.50,
+  sep: 0.48,
+  reduced: 0.58,
+  recovered: 0.82,
+  deadzoneX: 96,
+  deadzoneY: 72,
 };
 
 export const BOOST_COYOTE_SEC = 0.14;
