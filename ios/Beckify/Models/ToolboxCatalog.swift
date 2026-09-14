@@ -343,9 +343,12 @@ enum ToolboxCatalog {
             id: .receptacleSelector,
             kind: .calculator,
             title: "Receptacle Selector",
-            subtitle: "NEMA / IEC 60309 best-fit faces, pinout, public PNs.",
+            subtitle: "NEMA, IEC 60309, household, and Meltric faces through 400 A — schematic pinout and cited PNs.",
             symbol: "poweroutlet.type.b",
-            synonyms: ["receptacle", "outlet", "NEMA", "L5-30", "pin and sleeve", "Meltric", "Hubbell", "twist lock", "IEC 60309"]
+            synonyms: [
+                "receptacle", "outlet", "NEMA", "L5-30", "pin and sleeve", "Meltric", "Decontactor",
+                "Hubbell", "twist lock", "IEC 60309", "Schuko", "BS 1363", "Type F", "Type E", "Type I",
+            ]
         ),
         ToolDefinition(
             id: .voltageDivider,

@@ -166,12 +166,12 @@ final class ReceptacleSelectorTests: XCTestCase {
     func testCurrentAboveTableLimitUsesMatchingGuard() {
         XCTAssertThrowsError(
             try ReceptacleSelector.select(
-                ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 150)
+                ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 450)
             )
         ) { error in
             XCTAssertEqual(
                 error as? CalcError,
-                .outOfRange("This selector’s tables stop at 125 A. Confirm current catalog above that.")
+                .outOfRange("This selector’s tables stop at 400 A. Confirm current catalog above that.")
             )
         }
         XCTAssertNoThrow(
@@ -184,6 +184,125 @@ final class ReceptacleSelectorTests: XCTestCase {
                 )
             )
         )
+        XCTAssertNoThrow(
+            try ReceptacleSelector.select(
+                ReceptacleQuery(
+                    volts: 480,
+                    phase: .threePhase,
+                    amps: 400,
+                    family: .switchedDisconnect,
+                    neutral: .none
+                )
+            )
+        )
+    }
+
+    func testAmpPresetsAndStandardAmpsReach400() {
+        XCTAssertEqual(ReceptacleSelector.standardAmps.last, 400)
+        XCTAssertTrue(ReceptacleSelector.standardAmps.contains(150))
+        XCTAssertTrue(ReceptacleSelector.standardAmps.contains(200))
+        XCTAssertTrue(ReceptacleSelector.standardAmps.contains(315))
+        XCTAssertEqual(ReceptacleAmpPreset.a400.amps, 400)
+        XCTAssertEqual(ReceptacleAmpPreset.a13.amps, 13)
+        XCTAssertEqual(ReceptacleVoltagePreset.v230.volts, 230)
+        XCTAssertEqual(ReceptacleVoltagePreset.v400.volts, 400)
+    }
+
+    func testCatalogIDsAreUnique() {
+        let ids = ReceptacleSelector.allConfigs.map(\.id)
+        XCTAssertEqual(ids.count, Set(ids).count)
+    }
+
+    func test480VThreePhase200APrefersMeltricDecontactor() throws {
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 480,
+                phase: .threePhase,
+                amps: 200,
+                family: .switchedDisconnect,
+                neutral: .none
+            )
+        )
+        XCTAssertTrue(matches.contains { $0.config.code.contains("DS200 3P+G") && $0.config.amps == 200 })
+        XCTAssertTrue(matches.contains { $0.catalog.contains { $0.partNumber == "37-24043" } })
+        XCTAssertEqual(matches[0].config.family, .switchedDisconnect)
+        XCTAssertGreaterThanOrEqual(matches[0].config.amps, 200)
+    }
+
+    func test480VThreePhase400AMatchesMeltricDR400() throws {
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 480,
+                phase: .threePhase,
+                amps: 400,
+                family: .switchedDisconnect,
+                neutral: .none
+            )
+        )
+        XCTAssertTrue(matches.contains { $0.config.code.contains("DR400 3P+G") })
+        XCTAssertTrue(matches.contains { $0.catalog.contains { $0.partNumber == "39-44043-172" } })
+        XCTAssertTrue(matches[0].caveats.contains { $0.localizedCaseInsensitiveContains("not a switch-rated") })
+    }
+
+    func test480VThreePhase200AAnyFamilyReturnsMeltricOrIEC() throws {
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 480,
+                phase: .threePhase,
+                amps: 200,
+                family: .any,
+                neutral: .none
+            )
+        )
+        XCTAssertTrue(matches.contains { $0.config.family == .switchedDisconnect })
+        XCTAssertTrue(matches.contains { $0.config.family == .iec60309 && $0.config.amps >= 200 })
+        XCTAssertEqual(matches[0].config.family, .switchedDisconnect)
+    }
+
+    func test230V16AHouseholdIncludesSchuko() throws {
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 230,
+                phase: .singlePhase2Wire,
+                amps: 16,
+                environment: .indoorDry,
+                family: .household,
+                frequencyHz: 50
+            )
+        )
+        XCTAssertFalse(matches.isEmpty)
+        XCTAssertEqual(matches[0].config.family, .internationalHousehold)
+        XCTAssertTrue(matches.contains { $0.config.code.localizedCaseInsensitiveContains("Schuko") })
+        XCTAssertTrue(matches.contains { $0.config.code.contains("Type E") })
+        XCTAssertFalse(matches.contains { $0.config.code.contains("BS 1363") })
+        XCTAssertTrue(matches[0].catalog.isEmpty)
+        XCTAssertEqual(
+            matches[0].catalogFallback,
+            "Confirm current catalog — no public part number is cited for this configuration."
+        )
+    }
+
+    func test230V13ABS1363Household() throws {
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 230,
+                phase: .singlePhase2Wire,
+                amps: 13,
+                family: .household,
+                frequencyHz: 50
+            )
+        )
+        XCTAssertTrue(matches.contains { $0.config.code.contains("BS 1363") })
+        XCTAssertGreaterThanOrEqual(matches[0].config.amps, 13)
+    }
+
+    func testMeltricCitedPNsUseSeriesCatalogURLs() {
+        let ds60 = ReceptacleSelector.allConfigs.first { $0.id == "meltric-ds60-3P+G-480" }
+        XCTAssertEqual(ds60?.catalog.first?.partNumber, "33-64043")
+        XCTAssertTrue(ds60?.catalog.first?.sourceURL.contains("meltric-catalog-ds60-en.pdf") == true)
+        let dsn150 = ReceptacleSelector.allConfigs.first { $0.id == "meltric-dsn150-3P+G-480" }
+        XCTAssertEqual(dsn150?.catalog.first?.partNumber, "63-94043")
+        XCTAssertTrue(dsn150?.catalog.first?.sourceURL.contains("meltric-catalog-dsn150-en.pdf") == true)
     }
 
     func testIECFacePutsEarthOnRequestedHour() {

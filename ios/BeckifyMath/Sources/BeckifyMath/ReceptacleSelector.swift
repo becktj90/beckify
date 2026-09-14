@@ -38,6 +38,7 @@ public enum ReceptacleFamily: String, Codable, CaseIterable, Sendable, Hashable 
     case nemaStraight
     case nemaLocking
     case iec60309
+    case internationalHousehold
     case switchedDisconnect
 
     public var displayName: String {
@@ -45,7 +46,8 @@ public enum ReceptacleFamily: String, Codable, CaseIterable, Sendable, Hashable 
         case .nemaStraight: return "NEMA straight-blade"
         case .nemaLocking: return "NEMA locking"
         case .iec60309: return "IEC 60309 pin-and-sleeve"
-        case .switchedDisconnect: return "Switched disconnect (Meltric-style)"
+        case .internationalHousehold: return "International household"
+        case .switchedDisconnect: return "Switched disconnect (Meltric)"
         }
     }
 }
@@ -55,15 +57,17 @@ public enum ReceptacleFamilyFilter: String, Codable, CaseIterable, Sendable, Has
     case straight
     case locking
     case iecPinSleeve
+    case household
     case switchedDisconnect
 
     public var displayName: String {
         switch self {
         case .any: return "Any family"
-        case .straight: return "Straight-blade"
+        case .straight: return "Straight-blade (NEMA)"
         case .locking: return "Locking / twist-lock"
         case .iecPinSleeve: return "IEC 60309"
-        case .switchedDisconnect: return "Switched disconnect"
+        case .household: return "International household"
+        case .switchedDisconnect: return "Meltric / switched disconnect"
         }
     }
 
@@ -73,6 +77,7 @@ public enum ReceptacleFamilyFilter: String, Codable, CaseIterable, Sendable, Has
         case .straight: return family == .nemaStraight
         case .locking: return family == .nemaLocking
         case .iecPinSleeve: return family == .iec60309
+        case .household: return family == .internationalHousehold
         case .switchedDisconnect: return family == .switchedDisconnect
         }
     }
@@ -129,8 +134,10 @@ public struct ReceptacleQuery: Equatable, Sendable {
 public enum ReceptacleVoltagePreset: String, CaseIterable, Sendable, Hashable {
     case v120 = "120"
     case v208 = "208"
+    case v230 = "230"
     case v240 = "240"
     case v277 = "277"
+    case v400 = "400"
     case v480 = "480"
     case v600 = "600"
     case custom = "Custom"
@@ -144,6 +151,8 @@ public enum ReceptacleVoltagePreset: String, CaseIterable, Sendable, Hashable {
 }
 
 public enum ReceptacleAmpPreset: String, CaseIterable, Sendable, Hashable {
+    case a10 = "10"
+    case a13 = "13"
     case a15 = "15"
     case a16 = "16"
     case a20 = "20"
@@ -154,6 +163,13 @@ public enum ReceptacleAmpPreset: String, CaseIterable, Sendable, Hashable {
     case a63 = "63"
     case a100 = "100"
     case a125 = "125"
+    case a150 = "150"
+    case a200 = "200"
+    case a250 = "250"
+    case a300 = "300"
+    case a315 = "315"
+    case a350 = "350"
+    case a400 = "400"
     case custom = "Custom"
 
     public var amps: Double? {
@@ -198,9 +214,15 @@ public enum PinShape: String, Codable, Sendable, Hashable {
     case slotVertical
     case slotHorizontal
     case slotT
+    case slotSlantedLeft
+    case slotSlantedRight
     case uGround
     case round
     case roundLarge
+    /// Schuko (Type F) earth clips at the rim — schematic, not a listing drawing.
+    case earthClip
+    /// Rectangular pin used on BS 1363 (Type G).
+    case slotRect
 }
 
 public struct FacePin: Equatable, Sendable, Hashable {
@@ -235,6 +257,7 @@ public enum FaceKind: String, Codable, Sendable, Hashable {
     case nemaLocking
     case iecClock
     case pinSleeve
+    case household
 }
 
 public struct FaceDiagram: Equatable, Sendable, Hashable {
@@ -301,8 +324,11 @@ public struct ReceptacleConfig: Equatable, Sendable, Identifiable, Hashable {
     public var polesWiresLabel: String { "\(poles)P\(wires)W" }
 
     public var summary: String {
-        if family == .iec60309, let poles = iecPolesLabel, let hour = iecEarthHour {
-            return "IEC 60309 \(poles) \(FormatAmps.amps(amps)) \(hour)h"
+        if family == .iec60309, let poles = iecPolesLabel {
+            if let hour = iecEarthHour {
+                return "IEC 60309 \(poles) \(FormatAmps.amps(amps)) \(hour)h"
+            }
+            return "IEC 60309-1 \(poles) \(FormatAmps.amps(amps))"
         }
         return code
     }
@@ -392,8 +418,8 @@ public enum IEC60309 {
 // MARK: - Selector
 
 public enum ReceptacleSelector {
-    public static let standardVoltages = [120.0, 208, 240, 277, 480, 600]
-    public static let standardAmps = [15.0, 16, 20, 30, 32, 50, 60, 63, 100, 125]
+    public static let standardVoltages = [120.0, 208, 230, 240, 277, 400, 480, 600]
+    public static let standardAmps = [10.0, 13, 15, 16, 20, 30, 32, 50, 60, 63, 100, 125, 150, 200, 250, 300, 315, 350, 400]
 
     public static var allConfigs: [ReceptacleConfig] { catalog }
 
@@ -403,8 +429,8 @@ public enum ReceptacleSelector {
         guard volts <= 1000 else {
             throw CalcError.outOfRange("This selector covers utilization voltages through 600 V class, not medium voltage.")
         }
-        guard amps <= 125 else {
-            throw CalcError.outOfRange("This selector’s tables stop at 125 A. Confirm current catalog above that.")
+        guard amps <= 400 else {
+            throw CalcError.outOfRange("This selector’s tables stop at 400 A. Confirm current catalog above that.")
         }
 
         var matches: [ReceptacleMatch] = []
@@ -431,7 +457,7 @@ public enum ReceptacleSelector {
 
         if matches.isEmpty {
             throw CalcError.notListed(
-                "No NEMA / IEC row in this table for \(trim(volts)) V \(query.phase.displayName) \(trim(amps)) A. Try another family, poles/neutral, or confirm current catalog."
+                "No NEMA / IEC / household / Meltric row in this table for \(trim(volts)) V \(query.phase.displayName) \(trim(amps)) A. Try another family, poles/neutral, or confirm current catalog."
             )
         }
         return Array(matches.prefix(8))
@@ -494,6 +520,13 @@ extension ReceptacleSelector {
         if query.family != .any && query.family.matches(config.family) {
             score += 25
         }
+        // High-amp industrial: Meltric Decontactors are the usual North American answer above NEMA locking.
+        if config.family == .switchedDisconnect && amps >= 60 {
+            score += 12
+        }
+        if query.family == .switchedDisconnect && config.family == .switchedDisconnect {
+            score += 10
+        }
 
         // Typical North American 3Ø: 480/600 motors are 3P+E; 208Y is 3P+N+E.
         if query.phase == .threePhase {
@@ -506,20 +539,25 @@ extension ReceptacleSelector {
         case .indoorDry:
             if config.family == .nemaStraight { score += 16 }
             if config.family == .nemaLocking { score += 12 }
+            if config.family == .internationalHousehold { score += 18 }
         case .damp:
             if config.family == .iec60309 || config.family == .switchedDisconnect { score += 10 }
+            if config.family == .internationalHousehold {
+                score -= 6
+                caveats.append("Damp location: household faces need a listed enclosure / IP rating. This app does not pick a weatherproof box.")
+            }
             caveats.append("Damp location: use a damp-listed or WR device and a listed cover. This app does not pick a weatherproof box.")
         case .wetOutdoor:
             if config.family == .iec60309 { score += 22 }
             if config.family == .switchedDisconnect { score += 20 }
-            if config.family == .nemaStraight || config.family == .nemaLocking {
+            if config.family == .nemaStraight || config.family == .nemaLocking || config.family == .internationalHousehold {
                 score -= 8
-                caveats.append("NEMA straight/locking outdoors needs a listed weatherproof cover — not selected here.")
+                caveats.append("NEMA / household faces outdoors need a listed weatherproof cover — not selected here.")
             }
         case .washdown:
             if config.family == .iec60309 { score += 24 }
             if config.id.contains("dsn") { score += 8 }
-            if config.family == .nemaStraight { score -= 20 }
+            if config.family == .nemaStraight || config.family == .internationalHousehold { score -= 20 }
             caveats.append("Washdown: prefer a watertight IEC 60309 or Type 4X switch-rated inlet. Confirm IP / Type rating on the listing.")
         case .hazardous:
             score -= 5
@@ -528,9 +566,21 @@ extension ReceptacleSelector {
 
         if config.gfciApplies && (query.preferGFCI || query.environment == .damp || query.environment == .wetOutdoor) {
             score += 6
-            caveats.append("GFCI often applies on 125 V receptacles in damp/wet/kitchen/garage locations. Specify a listed GFCI device; this tool does not invent a GFCI SKU.")
+            if config.family == .internationalHousehold {
+                caveats.append("Personnel RCD/RCBO often applies on household sockets. This tool does not invent an RCD SKU — specify a listed device.")
+            } else {
+                caveats.append("GFCI often applies on 125 V receptacles in damp/wet/kitchen/garage locations. Specify a listed GFCI device; this tool does not invent a GFCI SKU.")
+            }
         } else if query.preferGFCI && !config.gfciApplies {
             caveats.append("Personnel GFCI is not a standard NEMA/IEC face option at this voltage. Use a listed GFCI breaker or a listed 250 V GFCI product and confirm current catalog.")
+        }
+
+        if config.family == .switchedDisconnect, config.id.contains("meltric-dr") {
+            caveats.append("Meltric DR is standard-duty pin-and-sleeve — not a switch-rated disconnect. Do not make or break under load. Confirm current catalog.")
+        }
+
+        if config.family == .iec60309, config.iecEarthHour == nil {
+            caveats.append("IEC 60309-2 clock-face devices typically stop at 125 A. This row is a high-current IEC 60309-1 match — confirm the current manufacturer catalog.")
         }
 
         if let hour = config.iecEarthHour {
@@ -577,6 +627,7 @@ extension ReceptacleSelector {
         case 30, 32: return 32
         case 60, 63: return 63
         case 100, 125: return 125
+        case 300, 315: return 315
         default: return amps
         }
     }
@@ -732,6 +783,14 @@ enum ReceptacleFaces {
     }
 
     static func meltric(hasNeutral: Bool, hots: Int) -> FaceDiagram {
+        pinSleeve(
+            hasNeutral: hasNeutral,
+            hots: hots,
+            caption: "Switch-rated pin-and-sleeve schematic (Meltric Decontactor). Not manufacturer artwork — confirm terminal markings."
+        )
+    }
+
+    static func pinSleeve(hasNeutral: Bool, hots: Int, caption: String) -> FaceDiagram {
         var pins: [FacePin] = [
             FacePin(kind: .ground, label: "G", x: 0, y: -0.55, shape: .roundLarge),
         ]
@@ -750,7 +809,115 @@ enum ReceptacleFaces {
         return FaceDiagram(
             kind: .pinSleeve,
             pins: pins,
-            caption: "Switch-rated pin-and-sleeve schematic (Meltric-style). Not manufacturer artwork — confirm terminal markings."
+            caption: caption
+        )
+    }
+
+    static func householdTypeC() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .line1, label: "L", x: 0.28, y: 0.05, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: -0.28, y: 0.05, shape: .round),
+            ],
+            caption: "Type C / CEE 7/16 Europlug — two round pins, no earth. Schematic, not manufacturer artwork. Typical 2.5 A."
+        )
+    }
+
+    static func householdSchuko() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .line1, label: "L", x: 0.32, y: 0.02, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: -0.32, y: 0.02, shape: .round),
+                FacePin(kind: .ground, label: "E", x: 0, y: 0.78, shape: .earthClip),
+                FacePin(kind: .ground, label: "E", x: 0, y: -0.78, shape: .earthClip),
+            ],
+            caption: "Type F Schuko (CEE 7/3) socket view — L/N round, earth clips at the rim. Schematic, not a listing drawing."
+        )
+    }
+
+    static func householdTypeE() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .line1, label: "L", x: 0.32, y: 0.08, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: -0.32, y: 0.08, shape: .round),
+                FacePin(kind: .ground, label: "E", x: 0, y: -0.48, shape: .roundLarge),
+            ],
+            caption: "Type E (CEE 7/5) socket view — earth pin projects from the socket. Schematic, not a listing drawing."
+        )
+    }
+
+    static func householdBS1363() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .ground, label: "E", x: 0, y: 0.42, shape: .slotRect),
+                FacePin(kind: .neutral, label: "N", x: -0.36, y: -0.22, shape: .slotRect),
+                FacePin(kind: .line1, label: "L", x: 0.36, y: -0.22, shape: .slotRect),
+            ],
+            caption: "BS 1363 Type G socket view — E up, N left, L right (UK). Schematic, not a listing drawing. 13 A fused plug."
+        )
+    }
+
+    static func householdTypeI() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .ground, label: "E", x: 0, y: 0.42, shape: .slotVertical),
+                FacePin(kind: .line1, label: "L", x: -0.32, y: -0.28, shape: .slotSlantedLeft),
+                FacePin(kind: .neutral, label: "N", x: 0.32, y: -0.28, shape: .slotSlantedRight),
+            ],
+            caption: "AS/NZS 3112 Type I socket view — earth up, L/N slanted. Schematic, not a listing drawing."
+        )
+    }
+
+    static func householdTypeJ() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .line1, label: "L", x: 0.30, y: 0.12, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: -0.30, y: 0.12, shape: .round),
+                FacePin(kind: .ground, label: "E", x: 0, y: -0.42, shape: .round),
+            ],
+            caption: "SEV 1011 Type J (Switzerland) socket view — three round contacts, earth offset. Schematic, not a listing drawing."
+        )
+    }
+
+    static func householdTypeK() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .line1, label: "L", x: 0.30, y: 0.10, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: -0.30, y: 0.10, shape: .round),
+                FacePin(kind: .ground, label: "E", x: 0, y: -0.48, shape: .roundLarge),
+            ],
+            caption: "Type K (Denmark DS 60884-2-D1) socket view — half-round earth at the bottom. Schematic, not a listing drawing."
+        )
+    }
+
+    static func householdTypeL() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .line1, label: "L", x: -0.38, y: 0, shape: .round),
+                FacePin(kind: .ground, label: "E", x: 0, y: 0, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: 0.38, y: 0, shape: .round),
+            ],
+            caption: "CEI 23-50 Type L socket view — three in a line, earth center. Schematic, not a listing drawing."
+        )
+    }
+
+    static func householdTypeM() -> FaceDiagram {
+        FaceDiagram(
+            kind: .household,
+            pins: [
+                FacePin(kind: .ground, label: "E", x: 0, y: 0.42, shape: .roundLarge),
+                FacePin(kind: .line1, label: "L", x: -0.38, y: -0.28, shape: .round),
+                FacePin(kind: .neutral, label: "N", x: 0.38, y: -0.28, shape: .round),
+            ],
+            caption: "BS 546 Type M socket view — large round pins, earth up. Schematic, not a listing drawing."
         )
     }
 }
@@ -777,11 +944,20 @@ extension ReceptacleSelector {
     private static let hubbell430R7 = "https://evecsa.com/wp-content/uploads/2020/02/Page_G-8-G-19.pdf"
     private static let hubbell530R9 = "https://www.hubbell.com/wiringdevice-kellems/en/products/heavy-duty-products-iec-pin-and-sleeve-devices-industrial-grade-female-receptacle-30a-3-phase-wye-120208v-ac-watertight/p/162443"
     private static let hubbell530R7 = "https://www.hubbell.com/wiringdevice-kellems/en/products/heavy-duty-products-iec-pin-and-sleeve-devices-industrial-grade-female-receptacle-30a-3-phase-wye-277480v-ac-4-pole-5-wire-grounding-watertight/p/162442"
+    private static let meltricDS20 = "https://meltric.com/media/contentmanager/content/meltric-catalog-ds20-en.pdf"
     private static let meltricDS30 = "https://meltric.com/media/contentmanager/content/meltric-catalog-ds30-en.pdf"
+    private static let meltricDS60 = "https://meltric.com/media/contentmanager/content/meltric-catalog-ds60-en.pdf"
+    private static let meltricDS100 = "https://meltric.com/media/contentmanager/content/meltric-catalog-ds100-en.pdf"
+    private static let meltricDS200 = "https://meltric.com/media/contentmanager/content/meltric-catalog-ds200-en.pdf"
+    private static let meltricDSN20 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dsn20-en.pdf"
     private static let meltricDSN30 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dsn30-en.pdf"
-    private static let meltricDS = "https://meltric.com/media/contentmanager/content/meltric-catalog-ds-en.pdf"
+    private static let meltricDSN60 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dsn60-en.pdf"
+    private static let meltricDSN100 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dsn100-en.pdf"
+    private static let meltricDSN150 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dsn150-en.pdf"
+    private static let meltricDR250 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dr250-en.pdf"
+    private static let meltricDR400 = "https://meltric.com/media/contentmanager/content/meltric-catalog-dr400-en.pdf"
 
-    static var catalog: [ReceptacleConfig] { nemaStraight + nemaLocking + iecRows + meltricRows }
+    static var catalog: [ReceptacleConfig] { nemaStraight + nemaLocking + iecRows + householdRows + meltricRows }
 
     static var nemaStraight: [ReceptacleConfig] {
         var rows: [ReceptacleConfig] = []
@@ -1052,6 +1228,42 @@ extension ReceptacleSelector {
                 ))
             }
         }
+
+        // IEC 60309-1 preferred high-current steps. Clock-face (60309-2) typically stops at 125 A.
+        // No SKUs — manufacturer high-current catalogs differ. Dual 300/315 as published industrially.
+        let highCurrent = [200.0, 250, 315, 400]
+        for a in highCurrent {
+            for face in faces {
+                let id = "iec-hc-\(face.poles.rawValue)-\(int(a))A-\(int(face.lo))v"
+                let code = "IEC 60309-1 \(face.poles.rawValue) \(int(a))A \(face.label)"
+                rows.append(ReceptacleConfig(
+                    id: id,
+                    code: code,
+                    family: .iec60309,
+                    voltsLow: face.lo,
+                    voltsHigh: face.hi,
+                    voltageLabel: face.label,
+                    phase: face.phase,
+                    poles: face.poleCount,
+                    wires: face.wireCount,
+                    hasNeutral: face.hasN,
+                    hasGround: true,
+                    amps: a,
+                    iecEarthHour: nil,
+                    iecPolesLabel: face.poles.rawValue,
+                    iecColor: face.color,
+                    frequencyHz: face.freq,
+                    face: ReceptacleFaces.pinSleeve(
+                        hasNeutral: face.hasN,
+                        hots: face.poleCount >= 3 ? 3 : (face.hasN ? 1 : 2),
+                        caption: "IEC 60309-1 high-current pin-and-sleeve schematic. Clock-face 60309-2 typically stops at 125 A. Confirm terminal markings and current catalog."
+                    ),
+                    catalog: [],
+                    isolatedGroundCatalog: [],
+                    gfciApplies: false
+                ))
+            }
+        }
         return rows
     }
 
@@ -1094,6 +1306,123 @@ extension ReceptacleSelector {
         return []
     }
 
+    static var householdRows: [ReceptacleConfig] {
+        func row(
+            id: String,
+            code: String,
+            lo: Double, hi: Double, label: String,
+            amps: Double,
+            face: FaceDiagram,
+            poles: Int = 2,
+            wires: Int = 3,
+            hasN: Bool = true
+        ) -> ReceptacleConfig {
+            ReceptacleConfig(
+                id: id,
+                code: code,
+                family: .internationalHousehold,
+                voltsLow: lo,
+                voltsHigh: hi,
+                voltageLabel: label,
+                phase: .singlePhase2Wire,
+                poles: poles,
+                wires: wires,
+                hasNeutral: hasN,
+                hasGround: wires >= 3,
+                amps: amps,
+                iecEarthHour: nil,
+                iecPolesLabel: nil,
+                iecColor: nil,
+                frequencyHz: nil,
+                face: face,
+                catalog: [],
+                isolatedGroundCatalog: [],
+                gfciApplies: true
+            )
+        }
+
+        return [
+            row(
+                id: "hh-type-c-europlug",
+                code: "Type C (CEE 7/16 Europlug)",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 2.5,
+                face: ReceptacleFaces.householdTypeC(),
+                wires: 2, hasN: true
+            ),
+            row(
+                id: "hh-type-f-schuko",
+                code: "Type F Schuko (CEE 7/3)",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 16,
+                face: ReceptacleFaces.householdSchuko()
+            ),
+            row(
+                id: "hh-type-e-french",
+                code: "Type E (CEE 7/5)",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 16,
+                face: ReceptacleFaces.householdTypeE()
+            ),
+            row(
+                id: "hh-type-g-bs1363",
+                code: "Type G BS 1363",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 13,
+                face: ReceptacleFaces.householdBS1363()
+            ),
+            row(
+                id: "hh-type-i-10",
+                code: "Type I AS/NZS 3112 10 A",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 10,
+                face: ReceptacleFaces.householdTypeI()
+            ),
+            row(
+                id: "hh-type-i-15",
+                code: "Type I AS/NZS 3112 15 A",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 15,
+                face: ReceptacleFaces.householdTypeI()
+            ),
+            row(
+                id: "hh-type-j-sev",
+                code: "Type J SEV 1011",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 10,
+                face: ReceptacleFaces.householdTypeJ()
+            ),
+            row(
+                id: "hh-type-k-dk",
+                code: "Type K (DS 60884-2-D1)",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 16,
+                face: ReceptacleFaces.householdTypeK()
+            ),
+            row(
+                id: "hh-type-l-10",
+                code: "Type L CEI 23-50 10 A",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 10,
+                face: ReceptacleFaces.householdTypeL()
+            ),
+            row(
+                id: "hh-type-l-16",
+                code: "Type L CEI 23-50 16 A",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 16,
+                face: ReceptacleFaces.householdTypeL()
+            ),
+            row(
+                id: "hh-type-m-bs546",
+                code: "Type M BS 546 15 A",
+                lo: 220, hi: 250, label: "220–250 V",
+                amps: 15,
+                face: ReceptacleFaces.householdTypeM()
+            ),
+        ]
+    }
+
     static var meltricRows: [ReceptacleConfig] {
         func row(
             id: String,
@@ -1127,64 +1456,135 @@ extension ReceptacleSelector {
             )
         }
 
-        return [
-            row(
-                id: "meltric-ds30-1P+N+G-125",
-                code: "Meltric DS30 1P+N+G 125 V",
-                lo: 110, hi: 125, label: "125 V",
-                phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: true, hots: 1,
-                amps: 30,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "33-34075", note: "DS30 receptacle", sourceURL: meltricDS30)]
-            ),
-            row(
-                id: "meltric-ds20-3P+G-480",
-                code: "Meltric DS20 3P+G 480 V",
-                lo: 440, hi: 480, label: "480 V 3Ø",
-                phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3,
-                amps: 20,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "33-14043", note: "DS20 receptacle", sourceURL: meltricDS)]
-            ),
-            row(
-                id: "meltric-ds30-3P+G-480",
-                code: "Meltric DS30 3P+G 480 V",
-                lo: 440, hi: 480, label: "480 V 3Ø",
-                phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3,
-                amps: 30,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "33-34043", note: "DS30 receptacle", sourceURL: meltricDS30)]
-            ),
-            row(
-                id: "meltric-dsn30-3P+G-480",
-                code: "Meltric DSN30 3P+G 480 V",
-                lo: 440, hi: 480, label: "480 V 3Ø",
-                phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3,
-                amps: 30,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "63-34043", note: "DSN30 Type 4X receptacle", sourceURL: meltricDSN30)]
-            ),
-            row(
-                id: "meltric-ds30-3P+N+G-480",
-                code: "Meltric DS30 3P+N+G 480 V",
-                lo: 460, hi: 480, label: "277/480 V 3ØY",
-                phase: .threePhase, poles: 4, wires: 5, hasN: true, hots: 3,
-                amps: 30,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "33-34047", note: "DS30 receptacle", sourceURL: meltricDS30)]
-            ),
-            row(
-                id: "meltric-ds30-3P+G-250",
-                code: "Meltric DS30 3P+G 250 V",
-                lo: 208, hi: 250, label: "250 V 3Ø",
-                phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3,
-                amps: 30,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "33-34073", note: "DS30 receptacle", sourceURL: meltricDS30)]
-            ),
-            row(
-                id: "meltric-ds30-3P+G-600",
-                code: "Meltric DS30 3P+G 600 V",
-                lo: 550, hi: 600, label: "600 V 3Ø",
-                phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3,
-                amps: 30,
-                parts: [CatalogPartNumber(maker: "Meltric", partNumber: "33-34143", note: "DS30 receptacle", sourceURL: meltricDS30)]
-            ),
+        struct MeltricFace {
+            var key: String
+            var polesLabel: String
+            var configCode: String
+            var lo: Double
+            var hi: Double
+            var label: String
+            var phase: ReceptaclePhaseKind
+            var poles: Int
+            var wires: Int
+            var hasN: Bool
+            var hots: Int
+            var voltsTag: String
+        }
+
+        // North American UL/CSA grid published on DS / DSN series catalog pages.
+        let faces: [MeltricFace] = [
+            MeltricFace(key: "1P+N+G-120", polesLabel: "1P+N+G", configCode: "165", lo: 110, hi: 120, label: "120 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: true, hots: 1, voltsTag: "120 V"),
+            MeltricFace(key: "3P+N+G-208", polesLabel: "3P+N+G", configCode: "167", lo: 200, hi: 208, label: "120/208 V 3ØY", phase: .threePhase, poles: 4, wires: 5, hasN: true, hots: 3, voltsTag: "208 V"),
+            MeltricFace(key: "1P+N+G-125", polesLabel: "1P+N+G", configCode: "075", lo: 110, hi: 125, label: "125 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: true, hots: 1, voltsTag: "125 V"),
+            MeltricFace(key: "2P+N+G-250", polesLabel: "2P+N+G", configCode: "076", lo: 220, hi: 250, label: "125/250 V", phase: .singlePhase3Wire, poles: 3, wires: 4, hasN: true, hots: 2, voltsTag: "250 V"),
+            MeltricFace(key: "2P+G-208", polesLabel: "2P+G", configCode: "162", lo: 200, hi: 220, label: "208 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: false, hots: 2, voltsTag: "208 V"),
+            MeltricFace(key: "3P+G-208", polesLabel: "3P+G", configCode: "163", lo: 200, hi: 220, label: "208 V 3Ø", phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3, voltsTag: "208 V"),
+            MeltricFace(key: "2P+G-250", polesLabel: "2P+G", configCode: "072", lo: 220, hi: 250, label: "250 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: false, hots: 2, voltsTag: "250 V"),
+            MeltricFace(key: "3P+G-250", polesLabel: "3P+G", configCode: "073", lo: 208, hi: 250, label: "250 V 3Ø", phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3, voltsTag: "250 V"),
+            MeltricFace(key: "1P+N+G-277", polesLabel: "1P+N+G", configCode: "045", lo: 265, hi: 277, label: "277 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: true, hots: 1, voltsTag: "277 V"),
+            MeltricFace(key: "3P+N+G-480", polesLabel: "3P+N+G", configCode: "047", lo: 460, hi: 480, label: "277/480 V 3ØY", phase: .threePhase, poles: 4, wires: 5, hasN: true, hots: 3, voltsTag: "480 V"),
+            MeltricFace(key: "3P+N+G-600", polesLabel: "3P+N+G", configCode: "147", lo: 550, hi: 600, label: "347/600 V 3ØY", phase: .threePhase, poles: 4, wires: 5, hasN: true, hots: 3, voltsTag: "600 V"),
+            MeltricFace(key: "2P+G-480", polesLabel: "2P+G", configCode: "042", lo: 440, hi: 480, label: "480 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: false, hots: 2, voltsTag: "480 V"),
+            MeltricFace(key: "3P+G-480", polesLabel: "3P+G", configCode: "043", lo: 440, hi: 480, label: "480 V 3Ø", phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3, voltsTag: "480 V"),
+            MeltricFace(key: "2P+G-600", polesLabel: "2P+G", configCode: "142", lo: 550, hi: 600, label: "600 V", phase: .singlePhase2Wire, poles: 2, wires: 3, hasN: false, hots: 2, voltsTag: "600 V"),
+            MeltricFace(key: "3P+G-600", polesLabel: "3P+G", configCode: "143", lo: 550, hi: 600, label: "600 V 3Ø", phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3, voltsTag: "600 V"),
         ]
+
+        struct Series {
+            var slug: String
+            var name: String
+            var amps: Double
+            var prefix: String
+            var ampDigit: String
+            var url: String
+            var note: String
+            /// DSN20 120/208 rows use different suffixes + -K16 on the public page.
+            var configOverride: [String: String] = [:]
+        }
+
+        let seriesList: [Series] = [
+            Series(slug: "ds20", name: "DS20", amps: 20, prefix: "33", ampDigit: "1", url: meltricDS20, note: "DS20 receptacle"),
+            Series(slug: "ds30", name: "DS30", amps: 30, prefix: "33", ampDigit: "3", url: meltricDS30, note: "DS30 receptacle"),
+            Series(slug: "ds60", name: "DS60", amps: 60, prefix: "33", ampDigit: "6", url: meltricDS60, note: "DS60 receptacle"),
+            Series(slug: "ds100", name: "DS100", amps: 100, prefix: "33", ampDigit: "9", url: meltricDS100, note: "DS100 receptacle"),
+            Series(slug: "ds200", name: "DS200", amps: 200, prefix: "37", ampDigit: "2", url: meltricDS200, note: "DS200 metal receptacle"),
+            Series(
+                slug: "dsn20", name: "DSN20", amps: 20, prefix: "63", ampDigit: "1", url: meltricDSN20, note: "DSN20 Type 4X receptacle",
+                configOverride: [
+                    "165": "125-K16",
+                    "167": "127-K16",
+                    "162": "122-K16",
+                    "163": "123-K16",
+                ]
+            ),
+            Series(slug: "dsn30", name: "DSN30", amps: 30, prefix: "63", ampDigit: "3", url: meltricDSN30, note: "DSN30 Type 4X receptacle"),
+            Series(slug: "dsn60", name: "DSN60", amps: 60, prefix: "63", ampDigit: "6", url: meltricDSN60, note: "DSN60 Type 4X receptacle"),
+            Series(slug: "dsn100", name: "DSN100", amps: 100, prefix: "63", ampDigit: "8", url: meltricDSN100, note: "DSN100 Type 4X receptacle"),
+            Series(slug: "dsn150", name: "DSN150", amps: 150, prefix: "63", ampDigit: "9", url: meltricDSN150, note: "DSN150 Type 4X receptacle"),
+        ]
+
+        var rows: [ReceptacleConfig] = []
+        for series in seriesList {
+            for face in faces {
+                let body = series.configOverride[face.configCode] ?? face.configCode
+                let pn = "\(series.prefix)-\(series.ampDigit)4\(body)"
+                rows.append(row(
+                    id: "meltric-\(series.slug)-\(face.key)",
+                    code: "Meltric \(series.name) \(face.polesLabel) \(face.voltsTag)",
+                    lo: face.lo, hi: face.hi, label: face.label,
+                    phase: face.phase, poles: face.poles, wires: face.wires, hasN: face.hasN, hots: face.hots,
+                    amps: series.amps,
+                    parts: [CatalogPartNumber(maker: "Meltric", partNumber: pn, note: series.note, sourceURL: series.url)]
+                ))
+            }
+        }
+
+        // DR250 / DR400 — related high-amp series. PNs only as printed (suffixes included).
+        let dr250: [(String, String, Double, Double, String, ReceptaclePhaseKind, Int, Int, Bool, Int, String)] = [
+            ("1P+N+G-125", "1P+N+G", 110, 125, "125 V", .singlePhase2Wire, 2, 3, true, 1, "39-24035-K07"),
+            ("2P+N+G-250", "2P+N+G", 220, 250, "125/250 V", .singlePhase3Wire, 3, 4, true, 2, "39-24036-K07"),
+            ("2P+G-208", "2P+G", 200, 220, "208 V", .singlePhase2Wire, 2, 3, false, 2, "39-24232-K16"),
+            ("3P+G-208", "3P+G", 200, 220, "208 V 3Ø", .threePhase, 3, 4, false, 3, "39-24233-K16"),
+            ("2P+G-250", "2P+G", 220, 250, "250 V", .singlePhase2Wire, 2, 3, false, 2, "39-24032-K07"),
+            ("3P+G-250", "3P+G", 208, 250, "250 V 3Ø", .threePhase, 3, 4, false, 3, "39-24033-K07"),
+            ("1P+N+G-277", "1P+N+G", 265, 277, "277 V", .singlePhase2Wire, 2, 3, true, 1, "39-24245-K04"),
+            ("3P+N+G-480", "3P+N+G", 460, 480, "277/480 V 3ØY", .threePhase, 4, 5, true, 3, "39-24247-K04"),
+            ("3P+N+G-600", "3P+N+G", 550, 600, "347/600 V 3ØY", .threePhase, 4, 5, true, 3, "39-24027-K14"),
+            ("2P+G-480", "2P+G", 440, 480, "480 V", .singlePhase2Wire, 2, 3, false, 2, "39-24242-K04"),
+            ("3P+G-480", "3P+G", 440, 480, "480 V 3Ø", .threePhase, 3, 4, false, 3, "39-24243-K04"),
+            ("2P+G-600", "2P+G", 550, 600, "600 V", .singlePhase2Wire, 2, 3, false, 2, "39-24022-K14"),
+            ("3P+G-600", "3P+G", 550, 600, "600 V 3Ø", .threePhase, 3, 4, false, 3, "39-24023-K14"),
+        ]
+        for item in dr250 {
+            let voltsTag = item.4.replacingOccurrences(of: " 3ØY", with: "").replacingOccurrences(of: " 3Ø", with: "")
+            rows.append(row(
+                id: "meltric-dr250-\(item.0)",
+                code: "Meltric DR250 \(item.1) \(voltsTag)",
+                lo: item.2, hi: item.3, label: item.4,
+                phase: item.5, poles: item.6, wires: item.7, hasN: item.8, hots: item.9,
+                amps: 250,
+                parts: [CatalogPartNumber(maker: "Meltric", partNumber: item.10, note: "DR250 receptacle (not switch-rated)", sourceURL: meltricDR250)]
+            ))
+        }
+
+        let dr400: [(String, String, Double, Double, String, String)] = [
+            ("3P+G-208", "208 V 3Ø", 200, 220, "39-44163-172", "208 V"),
+            ("3P+G-250", "250 V 3Ø", 208, 250, "39-44073-172", "250 V"),
+            ("3P+G-480", "480 V 3Ø", 440, 480, "39-44043-172", "480 V"),
+            ("3P+G-600", "600 V 3Ø", 550, 600, "39-44143-172", "600 V"),
+        ]
+        for item in dr400 {
+            rows.append(row(
+                id: "meltric-dr400-\(item.0)",
+                code: "Meltric DR400 3P+G \(item.5)",
+                lo: item.2, hi: item.3, label: item.1,
+                phase: .threePhase, poles: 3, wires: 4, hasN: false, hots: 3,
+                amps: 400,
+                parts: [CatalogPartNumber(maker: "Meltric", partNumber: item.4, note: "DR400 3P+G + 2 pilot (as listed)", sourceURL: meltricDR400)]
+            ))
+        }
+
+        return rows
     }
 
     static func nema(
