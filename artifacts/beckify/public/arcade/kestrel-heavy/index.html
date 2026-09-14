@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-  <meta name="arcade-asset-version" content="kestrel-4">
+      <meta name="arcade-asset-version" content="kestrel-5">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,12 +25,14 @@
     }
     html, body {
       margin: 0;
+      width: 100%;
       height: 100%;
       background: #05050d;
       color: var(--fg);
       font-family: var(--font-main);
     }
     body {
+      min-height: 100%;
       min-height: 100dvh;
       overflow: hidden;
     }
@@ -256,6 +258,9 @@
     }
     body[data-phase="MENU"] #arcade-touch-btns,
     body[data-phase="SUMMARY"] #arcade-touch-btns {
+      display: none;
+    }
+    body[data-phase="MENU"] .mc-hud {
       display: none;
     }
     body.is-embedded #arcade-fullscreen-btn { display: none !important; }
@@ -558,7 +563,16 @@
     @media (prefers-reduced-motion: reduce) {
       html, body { scroll-behavior: auto; }
     }
-    html.arcade-immersive-open, html.arcade-immersive-open body { overflow: hidden; overscroll-behavior: none; }
+    html.arcade-immersive-open,
+    html.arcade-immersive-open body,
+    html.arcade-immersive-open .cabinet {
+      overflow: hidden;
+      overscroll-behavior: none;
+      max-width: none;
+      width: var(--game-vv-width, 100%);
+      height: var(--game-vv-height, 100dvh);
+      min-height: var(--game-vv-height, 100dvh);
+    }
     #arcade-fs-wrapper.arcade-immersive {
       position: fixed !important;
       top: var(--game-vv-top, 0px);
@@ -566,22 +580,49 @@
       right: auto;
       bottom: auto;
       z-index: 10000;
-      aspect-ratio: auto;
-      width: var(--game-vv-width, 100vw);
-      height: var(--game-vv-height, 100dvh);
+      aspect-ratio: unset;
+      width: var(--game-vv-width, 100vw) !important;
+      height: var(--game-vv-height, 100dvh) !important;
+      min-width: var(--game-vv-width, 100vw);
+      min-height: var(--game-vv-height, 100dvh);
+      max-width: none;
+      max-height: none;
       border-radius: 0;
     }
     body.is-embedded .cabinet,
     body.is-cabinet .cabinet {
       max-width: none;
+      width: 100%;
       height: 100%;
+      min-height: 100%;
     }
     body.is-embedded #arcade-fs-wrapper,
     body.is-cabinet #arcade-fs-wrapper {
       flex: 1;
-      aspect-ratio: auto;
-      min-height: 0;
+      aspect-ratio: unset;
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      max-height: none;
       border-radius: 0;
+    }
+    body.arcade-host-fill,
+    body.arcade-host-fill .cabinet,
+    body.arcade-host-fill #arcade-fs-wrapper {
+      width: var(--game-vv-width, 100%) !important;
+      height: var(--game-vv-height, 100%) !important;
+      min-height: var(--game-vv-height, 100%) !important;
+      max-height: none !important;
+      aspect-ratio: unset;
+    }
+    body.is-embedded .hud-btns {
+      right: max(5.75rem, calc(env(safe-area-inset-right, 0px) + 5.25rem));
+    }
+    body.is-embedded .ng-screen,
+    html.arcade-immersive-open .ng-screen {
+      padding-top: max(3.5rem, calc(env(safe-area-inset-top, 0px) + 3.25rem));
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+      align-content: center;
     }
   </style>
 </head>

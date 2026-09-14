@@ -19,6 +19,7 @@ import {
 export function useGameFullscreen() {
   const [cssImmersive, setCssImmersive] = useState(false);
   const [nativeOn, setNativeOn] = useState(false);
+  const [viewportTick, setViewportTick] = useState(0);
   const immersive = cssImmersive || nativeOn;
 
   useEffect(() => {
@@ -36,7 +37,10 @@ export function useGameFullscreen() {
     const root = document.documentElement;
     root.classList.toggle("game-immersive-open", immersive);
     if (immersive) ensureViewportFitCover();
-    const syncVv = () => applyVisualViewportVars(root, immersive);
+    const syncVv = () => {
+      applyVisualViewportVars(root, immersive);
+      setViewportTick((n) => n + 1);
+    };
     syncVv();
     const vv = window.visualViewport;
     vv?.addEventListener("resize", syncVv);
@@ -89,10 +93,12 @@ export function useGameFullscreen() {
         }
       }
 
+      ensureViewportFitCover();
+      applyVisualViewportVars(document.documentElement, true);
       setCssImmersive(true);
     },
     [cssImmersive, exitFullscreen, nativeOn],
   );
 
-  return { immersive, cssImmersive, toggleFullscreen, exitFullscreen };
+  return { immersive, cssImmersive, toggleFullscreen, exitFullscreen, viewportTick };
 }

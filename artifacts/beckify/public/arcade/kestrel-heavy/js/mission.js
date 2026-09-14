@@ -57,6 +57,7 @@ import {
   exitNativeFullscreen,
   isLetterboxed,
   nativeFullscreenElement,
+  requestHostViewport,
   requestNativeFullscreen,
   setArcadeCssImmersive,
   shouldAttemptNativeFullscreen,
@@ -296,6 +297,7 @@ export default class MissionScene extends Phaser.Scene {
     }
     const fsWrap = document.getElementById('arcade-fs-wrapper');
     if (fsWrap) bindFullscreenChrome(fsWrap, () => this.scale.refresh());
+    if (isEmbedded()) requestHostViewport();
 
     this.input.on('pointerdown', (pointer) => {
       AudioApi.unlock(this.settings);
