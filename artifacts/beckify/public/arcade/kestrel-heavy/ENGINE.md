@@ -11,6 +11,8 @@
 
 The arcade iframe CSP is `script-src 'self'`. Load the vendor file same-origin. Never put a Phaser CDN tag in `index.html`.
 
+iOS App Store shell: `ios/KestrelHeavy/` packs this directory via `ios/scripts/pack_kestrelheavy_game.py` (scheme **KestrelHeavy**, bundle `com.beckify.kestrelheavy`). Re-pack after arcade changes. Toolbox Archive / Xcode Cloud stays on scheme **Beckify**.
+
 ## Game config (required)
 
 ```js

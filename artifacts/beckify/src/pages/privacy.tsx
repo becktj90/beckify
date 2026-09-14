@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               </a>
             </dd>
             <dt className="text-[var(--muted)]">Last updated</dt>
-            <dd>9 September 2026</dd>
+            <dd>13 September 2026</dd>
           </dl>
 
           <p className="text-base leading-relaxed text-[var(--muted)]">
@@ -209,6 +209,21 @@ export default function PrivacyPage() {
               HTTPS endpoint you enter). The Beckify API may forward that photo to OpenAI and/or Anthropic.
               Entertainment only — not medical or dating advice. Anyone who
               appears under 18 is not rated and gets no roast. The photo is not saved in Saved Jobs.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-xl font-bold tracking-tight">Kestrel Heavy (standalone iOS game)</h2>
+            <p className="text-base leading-relaxed">
+              The standalone <strong>Kestrel Heavy</strong> app (bundle ID{" "}
+              <code className="font-mono text-[0.9em]">com.beckify.kestrelheavy</code>) is a separate App Store
+              product from Beckify Toolbox. It plays the Phaser 4 Pier 7 arcade from a local bundle inside a
+              native SwiftUI shell. v1 does not collect, upload, or track play data. Scores and settings stay
+              on the device. It does not load beckify.com in the web view. The website game at{" "}
+              <a className="text-[var(--accent)] underline-offset-4 hover:underline" href="/games/kestrel-heavy">
+                /games/kestrel-heavy
+              </a>{" "}
+              remains a browser title and is not part of the Toolbox catalog.
             </p>
           </section>
 

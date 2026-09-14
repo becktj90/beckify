@@ -79,6 +79,13 @@
 		AECF0000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000006 /* Assets.xcassets */; };
 		AECF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000007 /* PrivacyInfo.xcprivacy */; };
 		AECF00000000000000000011 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = AECF00000000000000000009 /* BeckifyMath */; };
+		KHCF00000000000000000008 /* KestrelHeavyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000001 /* KestrelHeavyApp.swift */; };
+		KHCF00000000000000000009 /* KestrelHeavyRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000002 /* KestrelHeavyRootView.swift */; };
+		KHCF0000000000000000000A /* KestrelHeavyGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000003 /* KestrelHeavyGameView.swift */; };
+		KHCF00000000000000000018 /* KestrelHeavySchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */; };
+		KHCF0000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000004 /* Assets.xcassets */; };
+		KHCF0000000000000000000C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */; };
+		KHCF0000000000000000000D /* Game in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000006 /* Game */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -154,6 +161,14 @@
 		AECF00000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AECF00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AECF00000000000000000008 /* LookCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LookCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		KHCF00000000000000000001 /* KestrelHeavyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavyApp.swift; sourceTree = "<group>"; };
+		KHCF00000000000000000002 /* KestrelHeavyRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavyRootView.swift; sourceTree = "<group>"; };
+		KHCF00000000000000000003 /* KestrelHeavyGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavyGameView.swift; sourceTree = "<group>"; };
+		KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KestrelHeavySchemeHandler.swift; sourceTree = "<group>"; };
+		KHCF00000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		KHCF00000000000000000006 /* Game */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Game; sourceTree = "<group>"; };
+		KHCF00000000000000000007 /* KestrelHeavy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KestrelHeavy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -173,6 +188,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		KHCF0000000000000000000E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -181,6 +203,7 @@
 			children = (
 				BECF0000000000000000002D /* Beckify */,
 				AECF00000000000000000016 /* LookCheck */,
+				KHCF00000000000000000011 /* KestrelHeavy */,
 				BECF0000000000000000002C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -190,6 +213,7 @@
 			children = (
 				BECF00000000000000000027 /* Beckify.app */,
 				AECF00000000000000000008 /* LookCheck.app */,
+				KHCF00000000000000000007 /* KestrelHeavy.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -206,6 +230,20 @@
 				AECF00000000000000000007 /* PrivacyInfo.xcprivacy */,
 			);
 			path = LookCheck;
+			sourceTree = "<group>";
+		};
+		KHCF00000000000000000011 /* KestrelHeavy */ = {
+			isa = PBXGroup;
+			children = (
+				KHCF00000000000000000001 /* KestrelHeavyApp.swift */,
+				KHCF00000000000000000002 /* KestrelHeavyRootView.swift */,
+				KHCF00000000000000000003 /* KestrelHeavyGameView.swift */,
+				KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */,
+				KHCF00000000000000000004 /* Assets.xcassets */,
+				KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */,
+				KHCF00000000000000000006 /* Game */,
+			);
+			path = KestrelHeavy;
 			sourceTree = "<group>";
 		};
 		BECF0000000000000000002D /* Beckify */ = {
@@ -369,6 +407,26 @@
 			productReference = AECF00000000000000000008 /* LookCheck.app */;
 			productType = "com.apple.product-type.application";
 		};
+		KHCF00000000000000000012 /* KestrelHeavy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = KHCF00000000000000000015 /* Build configuration list for PBXNativeTarget "KestrelHeavy" */;
+			buildPhases = (
+				KHCF00000000000000000016 /* Pack Kestrel Heavy game */,
+				KHCF0000000000000000000F /* Sources */,
+				KHCF0000000000000000000E /* Frameworks */,
+				KHCF00000000000000000010 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KestrelHeavy;
+			packageProductDependencies = (
+			);
+			productName = KestrelHeavy;
+			productReference = KHCF00000000000000000007 /* KestrelHeavy.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -383,6 +441,9 @@
 						CreatedOnToolsVersion = 15.0;
 					};
 					AECF00000000000000000015 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					KHCF00000000000000000012 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -405,6 +466,7 @@
 			targets = (
 				BECF00000000000000000033 /* Beckify */,
 				AECF00000000000000000015 /* LookCheck */,
+				KHCF00000000000000000012 /* KestrelHeavy */,
 			);
 		};
 /* End PBXProject section */
@@ -425,6 +487,16 @@
 			files = (
 				AECF0000000000000000000F /* Assets.xcassets in Resources */,
 				AECF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		KHCF00000000000000000010 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				KHCF0000000000000000000B /* Assets.xcassets in Resources */,
+				KHCF0000000000000000000C /* PrivacyInfo.xcprivacy in Resources */,
+				KHCF0000000000000000000D /* Game in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -511,7 +583,40 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		KHCF0000000000000000000F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				KHCF00000000000000000008 /* KestrelHeavyApp.swift in Sources */,
+				KHCF00000000000000000009 /* KestrelHeavyRootView.swift in Sources */,
+				KHCF0000000000000000000A /* KestrelHeavyGameView.swift in Sources */,
+				KHCF00000000000000000018 /* KestrelHeavySchemeHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		KHCF00000000000000000016 /* Pack Kestrel Heavy game */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Pack Kestrel Heavy game";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "python3 \"$SRCROOT/scripts/pack_kestrelheavy_game.py\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		BECF0000000000000000003A /* Debug */ = {
@@ -737,6 +842,80 @@
 			};
 			name = Release;
 		};
+		KHCF00000000000000000013 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kestrel Heavy";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.kestrelheavy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		KHCF00000000000000000014 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kestrel Heavy";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.kestrelheavy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -763,6 +942,15 @@
 			buildConfigurations = (
 				AECF00000000000000000017 /* Debug */,
 				AECF00000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		KHCF00000000000000000015 /* Build configuration list for PBXNativeTarget "KestrelHeavy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				KHCF00000000000000000013 /* Debug */,
+				KHCF00000000000000000014 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
