@@ -431,6 +431,10 @@ export default class MissionScene extends Phaser.Scene {
 
   syncScience(dt) {
     if (!this.session) return null;
+    if (this._sciStatus !== this.status) {
+      this.session.prevVelMs = null;
+      this._sciStatus = this.status;
+    }
     const sci = computeTelemetry({
       status: this.status,
       tClock: this.session.tClock,

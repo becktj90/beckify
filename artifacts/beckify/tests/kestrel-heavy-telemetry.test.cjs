@@ -10,6 +10,9 @@ test('ascent science evolves through Max-Q and MECO', async () => {
   const early = computeTelemetry({ status: 'ASCENT', tClock: 6, throttle: 1, fuel: 88 });
   const maxq = computeTelemetry({ status: 'ASCENT', tClock: 18.6, throttle: 0.92, fuel: 62 });
   const meco = computeTelemetry({ status: 'ASCENT', tClock: 38.4, throttle: 0.2, fuel: 18 });
+  const sep = computeTelemetry({
+    status: 'SEP', tClock: 40, throttle: 0.2, fuel: 18, altitudeKm: 54, sepPhase: 'coast', prevVelMs: 400,
+  });
   const haven = computeTelemetry({
     status: 'JACKLYN', tClock: 70, throttle: 1, fuel: 24, altitudeKm: 4, vy: 1.6,
   });
@@ -22,6 +25,7 @@ test('ascent science evolves through Max-Q and MECO', async () => {
   assert.ok(meco.velMs > 2000, 'MECO velocity is science-shaped, not fluff');
   assert.ok(meco.altKm > maxq.altKm);
   assert.ok(meco.twr < maxq.twr || meco.chamberPct < 30);
+  assert.ok(sep.accG < 0.5, 'MECO/sep must not inherit a fake g spike');
   assert.ok(haven.fpaDeg < 0, 'Haven is a descent');
   assert.ok(haven.mach < 0.5);
 

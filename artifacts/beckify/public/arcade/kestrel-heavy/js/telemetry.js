@@ -99,7 +99,9 @@ export function computeTelemetry(sample) {
   const twr = mass > 1 ? thrust / (mass * G0) : 0;
 
   let accG;
-  if (prevVelMs != null && Number.isFinite(prevVelMs)) {
+  if (status === 'SEP') {
+    accG = sepPhase === 'clear' ? 0.05 : 0.12;
+  } else if (prevVelMs != null && Number.isFinite(prevVelMs)) {
     const dv = (velMs - prevVelMs) / dt;
     accG = clamp(dv / G0 + (status === 'JACKLYN' ? -0.15 : 0), -1.2, 6.2);
   } else if (status === 'ASCENT') {
