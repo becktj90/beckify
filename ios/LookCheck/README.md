@@ -4,7 +4,7 @@ Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen:
 
 This is not a website wrapper and not a second copy of the Field EE toolbox.
 
-> **Archive / Xcode Cloud:** LookCheck Archive workflows use scheme **LookCheck** (`com.beckify.lookcheck`). Do **not** point Toolbox Archive-iOS / Xcode Cloud Archive at this scheme — that workflow must stay on **Beckify** (`com.beckify.toolbox`). Keep Archive workflows separate.
+> **Archive / Xcode Cloud:** LookCheck Archive workflows use scheme **LookCheck** (`com.beckify.lookcheck`). Keep Archive workflows separate — Toolbox = **Beckify** (`com.beckify.toolbox`), Look Check = **LookCheck**, Kestrel Heavy = **KestrelHeavy** (`com.beckify.kestrelheavy`).
 
 ## Bundle ID (picked)
 
