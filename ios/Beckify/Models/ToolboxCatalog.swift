@@ -483,9 +483,9 @@ enum ToolboxCatalog {
             id: .deviceHealth,
             kind: .sensor,
             title: "Device Health",
-            subtitle: "Battery level and thermal state. Diagnostics only.",
+            subtitle: "Battery, thermal, storage, and uptime. Diagnostics only.",
             symbol: "battery.100",
-            synonyms: ["battery", "thermal", "diagnostics", "temperature", "charge"]
+            synonyms: ["battery", "thermal", "diagnostics", "temperature", "charge", "storage", "uptime", "low power", "disk", "brightness"]
         ),
         ToolDefinition(
             id: .reactance,
