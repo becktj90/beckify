@@ -55,7 +55,7 @@ ios/
 - Motor Nameplate OCR (camera or library photo, on-device Vision first, heuristic field extract into the shared nameplate schema — value + confidence + reviewed; human confirm sets reviewed. Optional Analyze POSTs to `/api/analyze-nameplate` only when you tap it. MOCP and LRA are never treated as FLA. Optional seed into FLA / Analyzer / Speed)
 - Look Check (camera or library photo, then Analyze Look for a playful look verdict plus lighting / framing / expression / sharpness metrics and a roast. Entertainment only — not medical, dating, or beauty authority. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Distinct from the Wi-Fi / Cellular **Online / Captive** hotspot-detect card.)
 - Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load)
-- Receptacle Selector (NEMA / IEC 60309 best-fit, schematic pinout, public catalog PNs when cited)
+- Receptacle Selector (NEMA / IEC 60309 / international household / Meltric through 400 A, schematic pinout, cited public PNs — design aid)
 - Short-Circuit Current, Circular Mils, Load & Demand Factors
 - NEC Circuit Calculator (design current, derated conductor, VD, OCPD — live one-shot calc, not paperwork)
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
