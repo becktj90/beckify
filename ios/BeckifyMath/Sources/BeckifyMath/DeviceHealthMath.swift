@@ -37,6 +37,9 @@ public struct DeviceHealthSnapshot: Equatable, Sendable {
     public var freeImportant: String
     public var freeOpportunistic: String
     public var volumeTotal: String
+    public var usedStorage: String
+    public var storageUsedFraction: Double?
+    public var batteryFraction: Double?
     public var model: String
     public var identifier: String
     public var system: String
@@ -64,6 +67,9 @@ public struct DeviceHealthSnapshot: Equatable, Sendable {
         freeImportant: String,
         freeOpportunistic: String,
         volumeTotal: String,
+        usedStorage: String,
+        storageUsedFraction: Double?,
+        batteryFraction: Double?,
         model: String,
         identifier: String,
         system: String,
@@ -89,6 +95,9 @@ public struct DeviceHealthSnapshot: Equatable, Sendable {
         self.freeImportant = freeImportant
         self.freeOpportunistic = freeOpportunistic
         self.volumeTotal = volumeTotal
+        self.usedStorage = usedStorage
+        self.storageUsedFraction = storageUsedFraction
+        self.batteryFraction = batteryFraction
         self.model = model
         self.identifier = identifier
         self.system = system
@@ -120,9 +129,13 @@ public struct DeviceHealthSnapshot: Equatable, Sendable {
     public var copyText: String {
         var parts: [String] = []
         parts.append("\(model), \(system)")
+        if !identifierCaption.isEmpty {
+            parts.append("Identifier \(identifier) is not the product name")
+        }
         parts.append("Battery \(battery), \(charge), Low Power \(lowPower)")
+        parts.append(DeviceHealthMath.batteryHealthUnavailableNote)
         parts.append("Thermal \(thermal) — \(thermalMeaning)")
-        parts.append("Free \(freeImportant) of \(volumeTotal)")
+        parts.append("Available \(freeImportant) of \(volumeTotal) capacity (\(usedStorage) used)")
         parts.append("Up \(uptime)")
         if brightness != "—" {
             parts.append("Brightness \(brightness)")
@@ -135,11 +148,13 @@ public struct DeviceHealthSnapshot: Equatable, Sendable {
             "battery": battery,
             "charge": charge,
             "low power": lowPower,
+            "battery health": DeviceHealthMath.batteryHealthUnavailableValue,
             "thermal": thermal,
             "thermal meaning": thermalMeaning,
             "free important": freeImportant,
             "free caches": freeOpportunistic,
             "volume": volumeTotal,
+            "used": usedStorage,
             "model": model,
             "identifier": identifier,
             "system": system,
@@ -152,10 +167,23 @@ public struct DeviceHealthSnapshot: Equatable, Sendable {
             "processors": processors,
         ]
     }
+
+    public var identifierCaption: String {
+        DeviceHealthMath.identifierCaption(identifier: identifier)
+    }
 }
 
 /// Formatting for Device Health. Reads no hardware — the iOS view supplies public API values.
 public enum DeviceHealthMath {
+    /// Apple does not expose Maximum Capacity / SoH / cycle count to third-party apps.
+    public static let batteryHealthUnavailableValue = "Not available to apps"
+    public static let batteryHealthUnavailableNote =
+        "Maximum Capacity / SoH: not available to apps — see Settings → Battery → Battery Health"
+    public static let publicBatterySignalsNote =
+        "Public: charge %, state, Low Power Mode, thermal band. Not pack health, cycle count, or Maximum Capacity."
+    public static let storageCaption =
+        "Capacity is FileManager volumeTotalCapacity (decimal GB). Settings → General → About may round that to the marketing size (for example 256 GB). Available is volumeAvailableCapacityForImportantUsage — space for user files, closer to About’s Available, and can include purgeable space. Free (caches) is opportunistic capacity. Not a SMART disk test."
+
     /// `UIDevice.batteryLevel` is 0…1, or −1 when unknown (Simulator).
     public static func batteryPercentText(level: Double) -> String {
         guard level.isFinite, level >= 0 else { return "—" }
@@ -263,7 +291,28 @@ public enum DeviceHealthMath {
 
     public static func formatStorageBytes(_ bytes: Int64?) -> String {
         guard let bytes, bytes >= 0 else { return "—" }
-        return byteString(bytes, style: .file)
+        return decimalStorageString(bytes)
+    }
+
+    /// Used = volume total − important free, clamped. Nil when either side is missing.
+    public static func storageUsedBytes(total: Int64?, freeImportant: Int64?) -> Int64? {
+        guard let total, total >= 0, let free = freeImportant, free >= 0 else { return nil }
+        let clampedFree = min(free, total)
+        return total - clampedFree
+    }
+
+    /// 0…1 used fraction for the storage bar. Nil when total is missing or zero.
+    public static func storageUsedFraction(total: Int64?, freeImportant: Int64?) -> Double? {
+        guard let total, total > 0, let used = storageUsedBytes(total: total, freeImportant: freeImportant) else {
+            return nil
+        }
+        return min(1, max(0, Double(used) / Double(total)))
+    }
+
+    /// `UIDevice.batteryLevel` 0…1, or nil when unknown.
+    public static func batteryFraction(level: Double) -> Double? {
+        guard level.isFinite, level >= 0 else { return nil }
+        return min(1, max(0, level))
     }
 
     public static func formatMemoryBytes(_ bytes: UInt64?) -> String {
@@ -304,6 +353,7 @@ public enum DeviceHealthMath {
     }
 
     /// Marketing name when the identifier is in the table; otherwise nil (do not guess).
+    /// Never derive a product name by parsing the number out of `iPhoneN,M`.
     public static func marketingName(identifier: String) -> String? {
         let id = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         if id.isEmpty { return nil }
@@ -311,18 +361,29 @@ public enum DeviceHealthMath {
         return marketingNames[id]
     }
 
-    /// Field label: "iPhone 14 Pro (iPhone15,2)" or "iPhone (iPhone15,2)".
+    /// Primary field label: marketing name when known. Unknown ids stay as the
+    /// UIDevice family (`iPhone`) or the raw identifier — never `iPhone (iPhone18,1)`,
+    /// which readers treat as product “iPhone 18”.
     public static func modelDisplay(identifier: String, udiModel: String) -> String {
         let id = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let udi = udiModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        if id.isEmpty { return udi.isEmpty ? "—" : udi }
         if let name = marketingName(identifier: id) {
-            if simulatorIdentifiers.contains(id) { return name }
-            return "\(name) (\(id))"
+            return name
         }
-        if udi.isEmpty { return id }
-        if udi == id { return id }
-        return "\(udi) (\(id))"
+        if id.isEmpty { return udi.isEmpty ? "—" : udi }
+        if udi.isEmpty || udi == id { return id }
+        return udi
+    }
+
+    /// Honest caption so `iPhone18,1` is not read as the product name.
+    public static func identifierCaption(identifier: String) -> String {
+        let id = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        if id.isEmpty { return "" }
+        if simulatorIdentifiers.contains(id) { return "" }
+        if marketingName(identifier: id) != nil {
+            return "Identifier `\(id)` is not the product name."
+        }
+        return "Identifier `\(id)` is not the product name. No public marketing name in this table."
     }
 
     public static func snapshot(
@@ -358,6 +419,9 @@ public enum DeviceHealthMath {
             freeImportant: formatStorageBytes(freeImportantBytes),
             freeOpportunistic: formatStorageBytes(freeOpportunisticBytes),
             volumeTotal: formatStorageBytes(volumeTotalBytes),
+            usedStorage: formatStorageBytes(storageUsedBytes(total: volumeTotalBytes, freeImportant: freeImportantBytes)),
+            storageUsedFraction: storageUsedFraction(total: volumeTotalBytes, freeImportant: freeImportantBytes),
+            batteryFraction: batteryFraction(level: batteryLevel),
             model: modelDisplay(identifier: identifier, udiModel: udiModel),
             identifier: identifier.isEmpty ? "—" : identifier,
             system: system,
@@ -395,6 +459,46 @@ public enum DeviceHealthMath {
         return formatter.string(from: NSNumber(value: value.rounded())) ?? "—"
     }
 
+    /// Decimal (1000) units, closer to Settings → About than 1024-based “GiB”.
+    /// ≥100 GB/TB print as whole units so 255.88 GB reads as 256 GB; smaller
+    /// values keep two fraction digits (About’s 55.98 GB available).
+    private static func decimalStorageString(_ bytes: Int64) -> String {
+        let value = Double(bytes)
+        let tb = 1_000_000_000_000.0
+        let gb = 1_000_000_000.0
+        let mb = 1_000_000.0
+        let kb = 1_000.0
+        let amount: Double
+        let unit: String
+        let fractionDigits: Int
+        if value >= tb {
+            amount = value / tb
+            unit = "TB"
+            fractionDigits = amount >= 100 ? 0 : 2
+        } else if value >= gb {
+            amount = value / gb
+            unit = "GB"
+            fractionDigits = amount >= 100 ? 0 : 2
+        } else if value >= mb {
+            amount = value / mb
+            unit = "MB"
+            fractionDigits = amount >= 100 ? 0 : 1
+        } else if value >= kb {
+            amount = value / kb
+            unit = "KB"
+            fractionDigits = 0
+        } else {
+            return "\(bytes) B"
+        }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = fractionDigits
+        formatter.minimumFractionDigits = fractionDigits
+        let number = formatter.string(from: NSNumber(value: amount)) ?? "—"
+        return "\(number) \(unit)"
+    }
+
     private static func byteString(_ bytes: Int64, style: ByteCountFormatter.CountStyle) -> String {
         let formatter = ByteCountFormatter()
         formatter.countStyle = style
@@ -408,7 +512,7 @@ public enum DeviceHealthMath {
         "i386", "x86_64", "arm64",
     ]
 
-    /// Known public `utsname.machine` identifiers. Unknown ids stay as the raw string.
+    /// Known public `utsname.machine` identifiers. Unknown ids are left unmapped.
     private static let marketingNames: [String: String] = [
         "iPhone10,1": "iPhone 8",
         "iPhone10,4": "iPhone 8",
@@ -446,6 +550,16 @@ public enum DeviceHealthMath {
         "iPhone17,3": "iPhone 16",
         "iPhone17,4": "iPhone 16 Plus",
         "iPhone17,5": "iPhone 16e",
+        // iPhone 17 lineup: Apple’s `utsname.machine` uses the iPhone18,* family
+        // (same off-by-one as iPhone17,* = iPhone 16). Do not invent “iPhone 18”
+        // by parsing that number. Public identifiers from The Apple Wiki
+        // Models/iPhone table: https://theapplewiki.com/wiki/Models/iPhone
+        // (also AppleDB / EveryMac). Unlisted ids stay unmapped.
+        "iPhone18,1": "iPhone 17 Pro",
+        "iPhone18,2": "iPhone 17 Pro Max",
+        "iPhone18,3": "iPhone 17",
+        "iPhone18,4": "iPhone Air",
+        "iPhone18,5": "iPhone 17e",
         "iPad13,18": "iPad (10th gen)",
         "iPad13,19": "iPad (10th gen)",
         "iPad14,8": "iPad Air 11-inch (M2)",

@@ -268,6 +268,7 @@ public enum ToolHowItWorksCatalog {
             context: "Why the phone is slow, hot, or almost full — not a charger tester or pack health %.",
             bullets: [
                 "Not Apple Battery Health (Maximum Capacity). Third-party apps cannot read that.",
+                "utsname.machine is Apple’s internal code — iPhone18,1 is iPhone 17 Pro, not “iPhone 18”. Unmapped ids stay raw.",
                 "Thermal is Apple’s throttle band, not a thermometer. Storage is FileManager volume capacity.",
                 "Simulator often reports batteryLevel −1. Unavailable rows stay blank rather than inventing a value.",
             ]

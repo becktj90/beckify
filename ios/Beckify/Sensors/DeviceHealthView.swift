@@ -155,45 +155,83 @@ struct DeviceHealthView: View {
             toolID: .deviceHealth,
             stickyAnswer: snap.sticky,
             copyText: snap.copyText,
-            disclaimer: .sensor(extra: "Charge is not Apple Battery Health (Maximum Capacity). Thermal is a throttle band, not °C. Storage is FileManager volume capacity. Not a charger tester.")
+            disclaimer: .sensor(extra: "Charge is not Apple Battery Health (Maximum Capacity). Thermal is a throttle band, not °C. Storage is FileManager volume capacity. The hardware identifier is not the product name. Not a charger tester.")
         ) {
             ShowWorkCard(
                 toolID: .deviceHealth,
                 symbolic: "UIDevice.batteryLevel + batteryState + ProcessInfo.thermalState + isLowPowerModeEnabled + FileManager volume + utsname + kern.boottime",
                 substituted: snap.copyText,
-                meaning: "Public snapshot for field notes. Charge is not pack health. Thermal is Apple’s throttle band, not a thermometer. Unavailable values stay blank — this tool will not invent them."
+                meaning: "Public snapshot for field notes. Charge is not pack health. Thermal is Apple’s throttle band, not a thermometer. utsname.machine is an internal identifier, not the marketing name. Unavailable values stay blank — this tool will not invent them."
             )
             ResultCard(title: "Battery", copyText: snap.copyText) {
-                ResultRow(label: "Charge", value: snap.battery, emphasis: true, tone: tone(snap.batteryTone))
+                batteryHero
+                if let fraction = snap.batteryFraction {
+                    DeviceHealthFillBar(
+                        fraction: fraction,
+                        fill: tone(snap.batteryTone),
+                        accessibilityLabel: "Charge \(snap.battery)"
+                    )
+                    .padding(.vertical, 6)
+                }
                 ResultRow(label: "State", value: snap.charge, tone: tone(snap.chargeTone))
                 ResultRow(label: "Low Power Mode", value: snap.lowPower, tone: tone(snap.lowPowerTone))
-                Text(snap.chargeNote)
-                    .font(.caption)
+                ResultRow(
+                    label: "Battery Health",
+                    value: DeviceHealthMath.batteryHealthUnavailableValue,
+                    tone: Theme.muted
+                )
+                Text("\(DeviceHealthMath.batteryHealthUnavailableNote).")
+                    .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, 4)
+                Text(DeviceHealthMath.publicBatterySignalsNote)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                Text(snap.chargeNote)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
                 Text(snap.lowPowerNote)
-                    .font(.caption)
+                    .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
             }
             ResultCard(title: "Thermal") {
                 ResultRow(label: "State", value: snap.thermal, emphasis: true, tone: tone(snap.thermalTone))
                 Text(snap.thermalMeaning)
-                    .font(.caption)
+                    .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, 4)
             }
             ResultCard(title: "Storage") {
-                ResultRow(label: "Free (user files)", value: snap.freeImportant, emphasis: true)
+                if let used = snap.storageUsedFraction {
+                    DeviceHealthStorageBar(usedFraction: used)
+                        .padding(.bottom, 8)
+                    HStack {
+                        Text("Used \(snap.usedStorage)")
+                        Spacer(minLength: 8)
+                        Text("Available \(snap.freeImportant)")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                    .padding(.bottom, 4)
+                    .accessibilityElement(children: .combine)
+                }
+                ResultRow(label: "Capacity (volume)", value: snap.volumeTotal, emphasis: true)
+                ResultRow(label: "Available (user files)", value: snap.freeImportant)
                 ResultRow(label: "Free (caches)", value: snap.freeOpportunistic)
-                ResultRow(label: "Volume", value: snap.volumeTotal)
-                Text("FileManager volume capacity. User-files free can include space iOS would purge. Not a SMART disk test.")
-                    .font(.caption)
+                Text(DeviceHealthMath.storageCaption)
+                    .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, 4)
             }
             ResultCard(title: "Phone") {
                 ResultRow(label: "Model", value: snap.model, emphasis: true)
                 ResultRow(label: "Identifier", value: snap.identifier)
+                if !snap.identifierCaption.isEmpty {
+                    Text(snap.identifierCaption)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .padding(.bottom, 4)
+                }
                 ResultRow(label: "System", value: snap.system)
                 ResultRow(label: snap.uptimeLabel, value: snap.uptime)
                 ResultRow(label: "Booted", value: snap.booted)
@@ -234,6 +272,26 @@ struct DeviceHealthView: View {
 
     private var snap: DeviceHealthSnapshot { model.snapshot }
 
+    private var batteryHero: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Space.md) {
+            Text(snap.battery)
+                .font(Theme.TypeRole.numericHero)
+                .foregroundStyle(tone(snap.batteryTone))
+                .accessibilityLabel("Charge \(snap.battery)")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(snap.charge)
+                    .font(Theme.TypeRole.lead)
+                    .foregroundStyle(tone(snap.chargeTone))
+                Text("Charge level — not pack health")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+
     private func tone(_ value: DeviceHealthTone) -> Color {
         switch value {
         case .good: return Theme.good
@@ -253,5 +311,49 @@ struct DeviceHealthView: View {
             ],
             outputs: snap.saveOutputs
         ))
+    }
+}
+
+private struct DeviceHealthFillBar: View {
+    var fraction: Double
+    var fill: Color
+    var accessibilityLabel: String
+
+    var body: some View {
+        let clamped = min(1, max(0, fraction))
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Theme.surfaceRaised)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(fill)
+                    .frame(width: max(clamped > 0 ? 4 : 0, geo.size.width * CGFloat(clamped)))
+            }
+        }
+        .frame(height: 10)
+        .accessibilityElement()
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
+private struct DeviceHealthStorageBar: View {
+    var usedFraction: Double
+
+    var body: some View {
+        let used = min(1, max(0, usedFraction))
+        GeometryReader { geo in
+            let gap: CGFloat = (used > 0 && used < 1) ? 2 : 0
+            let usedWidth = max(used > 0 ? 4 : 0, (geo.size.width - gap) * CGFloat(used))
+            HStack(spacing: gap) {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Theme.accent)
+                    .frame(width: usedWidth)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Theme.good.opacity(0.45))
+            }
+        }
+        .frame(height: 12)
+        .accessibilityElement()
+        .accessibilityLabel("Storage used \(Int((used * 100).rounded())) percent")
     }
 }
