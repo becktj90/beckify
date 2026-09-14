@@ -75,6 +75,8 @@ function refreshScale() {
 window.addEventListener('resize', refreshScale);
 window.addEventListener('orientationchange', refreshScale);
 document.addEventListener('fullscreenchange', refreshScale);
+window.visualViewport?.addEventListener('resize', refreshScale);
+window.visualViewport?.addEventListener('scroll', refreshScale);
 
 window.NEW_GLENN_ENGINE = 'phaser4';
 window.__ngGame = game;
