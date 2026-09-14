@@ -58,10 +58,22 @@ final class DeviceHealthMathTests: XCTestCase {
     func testStorageAndMemoryFormatting() {
         XCTAssertEqual(DeviceHealthMath.formatStorageBytes(nil), "—")
         XCTAssertEqual(DeviceHealthMath.formatMemoryBytes(nil), "—")
-        let disk = DeviceHealthMath.formatStorageBytes(5_000_000_000)
-        XCTAssertTrue(disk.contains("GB") || disk.contains("5"), disk)
+        XCTAssertEqual(DeviceHealthMath.formatStorageBytes(256_000_000_000), "256 GB")
+        XCTAssertEqual(DeviceHealthMath.formatStorageBytes(55_980_000_000), "55.98 GB")
+        XCTAssertEqual(DeviceHealthMath.formatStorageBytes(5_000_000_000), "5.00 GB")
         let ram = DeviceHealthMath.formatMemoryBytes(8 * 1024 * 1024 * 1024)
         XCTAssertTrue(ram.contains("GB") || ram.contains("8"), ram)
+        XCTAssertEqual(
+            DeviceHealthMath.storageUsedBytes(total: 256_000_000_000, freeImportant: 55_980_000_000),
+            200_020_000_000
+        )
+        XCTAssertNil(DeviceHealthMath.storageUsedBytes(total: nil, freeImportant: 1))
+        let fraction = DeviceHealthMath.storageUsedFraction(total: 256_000_000_000, freeImportant: 55_980_000_000)
+        XCTAssertNotNil(fraction)
+        XCTAssertEqual(fraction!, 200_020_000_000.0 / 256_000_000_000.0, accuracy: 1e-9)
+        XCTAssertTrue(DeviceHealthMath.storageCaption.localizedCaseInsensitiveContains("About"))
+        XCTAssertTrue(DeviceHealthMath.storageCaption.localizedCaseInsensitiveContains("ImportantUsage")
+            || DeviceHealthMath.storageCaption.localizedCaseInsensitiveContains("user files"))
     }
 
     func testBrightnessAndProcessors() {
@@ -78,13 +90,75 @@ final class DeviceHealthMathTests: XCTestCase {
         XCTAssertNil(DeviceHealthMath.marketingName(identifier: "iPhone99,1"))
         XCTAssertEqual(
             DeviceHealthMath.modelDisplay(identifier: "iPhone15,2", udiModel: "iPhone"),
-            "iPhone 14 Pro (iPhone15,2)"
+            "iPhone 14 Pro"
         )
         XCTAssertEqual(
             DeviceHealthMath.modelDisplay(identifier: "iPhone99,1", udiModel: "iPhone"),
-            "iPhone (iPhone99,1)"
+            "iPhone"
         )
         XCTAssertEqual(DeviceHealthMath.modelDisplay(identifier: "arm64", udiModel: "iPhone"), "Simulator")
+        XCTAssertEqual(
+            DeviceHealthMath.identifierCaption(identifier: "iPhone15,2"),
+            "Identifier `iPhone15,2` is not the product name."
+        )
+        XCTAssertEqual(DeviceHealthMath.identifierCaption(identifier: "arm64"), "")
+    }
+
+    func testIPhone17LineupMapsFromIPhone18Identifiers() {
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone18,1"), "iPhone 17 Pro")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone18,2"), "iPhone 17 Pro Max")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone18,3"), "iPhone 17")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone18,4"), "iPhone Air")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone18,5"), "iPhone 17e")
+        XCTAssertEqual(
+            DeviceHealthMath.modelDisplay(identifier: "iPhone18,1", udiModel: "iPhone"),
+            "iPhone 17 Pro"
+        )
+        XCTAssertFalse(
+            DeviceHealthMath.modelDisplay(identifier: "iPhone18,1", udiModel: "iPhone")
+                .localizedCaseInsensitiveContains("iPhone 18")
+        )
+        XCTAssertEqual(
+            DeviceHealthMath.identifierCaption(identifier: "iPhone18,1"),
+            "Identifier `iPhone18,1` is not the product name."
+        )
+    }
+
+    func testExistingIPhone14Through16Mappings() {
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone15,2"), "iPhone 14 Pro")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone15,3"), "iPhone 14 Pro Max")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone15,4"), "iPhone 15")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone15,5"), "iPhone 15 Plus")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone16,1"), "iPhone 15 Pro")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone16,2"), "iPhone 15 Pro Max")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone17,1"), "iPhone 16 Pro")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone17,2"), "iPhone 16 Pro Max")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone17,3"), "iPhone 16")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone17,4"), "iPhone 16 Plus")
+        XCTAssertEqual(DeviceHealthMath.marketingName(identifier: "iPhone17,5"), "iPhone 16e")
+        XCTAssertEqual(
+            DeviceHealthMath.modelDisplay(identifier: "iPhone17,1", udiModel: "iPhone"),
+            "iPhone 16 Pro"
+        )
+        XCTAssertNotEqual(DeviceHealthMath.marketingName(identifier: "iPhone17,1"), "iPhone 17")
+        XCTAssertNotEqual(DeviceHealthMath.marketingName(identifier: "iPhone18,1"), "iPhone 18")
+    }
+
+    func testUnknownIPhone18FamilyDoesNotBecomeIPhone18() {
+        XCTAssertNil(DeviceHealthMath.marketingName(identifier: "iPhone18,9"))
+        XCTAssertNil(DeviceHealthMath.marketingName(identifier: "iPhone19,1"))
+        let unknown = DeviceHealthMath.modelDisplay(identifier: "iPhone18,9", udiModel: "iPhone")
+        XCTAssertEqual(unknown, "iPhone")
+        XCTAssertFalse(unknown.contains("iPhone 18"))
+        XCTAssertFalse(unknown.contains("iPhone18"))
+        let caption = DeviceHealthMath.identifierCaption(identifier: "iPhone18,9")
+        XCTAssertTrue(caption.contains("`iPhone18,9`"))
+        XCTAssertTrue(caption.localizedCaseInsensitiveContains("not the product name"))
+        XCTAssertTrue(caption.localizedCaseInsensitiveContains("No public marketing name"))
+        XCTAssertFalse(caption.contains("iPhone 18"))
+        let rawOnly = DeviceHealthMath.modelDisplay(identifier: "iPhone18,9", udiModel: "")
+        XCTAssertEqual(rawOnly, "iPhone18,9")
+        XCTAssertNotEqual(rawOnly, "iPhone 18")
     }
 
     func testSnapshotCopySaveAndStickyStayHonest() {
@@ -119,19 +193,68 @@ final class DeviceHealthMathTests: XCTestCase {
         XCTAssertEqual(snap.system, "iOS 18.6")
         XCTAssertEqual(snap.uptime, "2d 3h")
         XCTAssertEqual(snap.uptimeLabel, "Since boot")
-        XCTAssertTrue(snap.model.contains("iPhone 14 Pro"))
+        XCTAssertEqual(snap.model, "iPhone 14 Pro")
+        XCTAssertEqual(snap.identifier, "iPhone15,2")
+        XCTAssertEqual(snap.identifierCaption, "Identifier `iPhone15,2` is not the product name.")
+        XCTAssertEqual(snap.volumeTotal, "128 GB")
+        XCTAssertEqual(snap.freeImportant, "32.00 GB")
+        XCTAssertEqual(snap.usedStorage, "96.00 GB")
+        XCTAssertEqual(snap.batteryFraction, 0.64)
+        XCTAssertNotNil(snap.storageUsedFraction)
         XCTAssertTrue(snap.sticky.contains("64 %"))
         XCTAssertTrue(snap.sticky.contains("Fair"))
         XCTAssertTrue(snap.sticky.contains("LPM on"))
         XCTAssertTrue(snap.copyText.contains("Low Power On"))
         XCTAssertTrue(snap.copyText.contains("Thermal Fair"))
+        XCTAssertTrue(snap.copyText.contains("Identifier iPhone15,2 is not the product name"))
+        XCTAssertTrue(snap.copyText.contains("Maximum Capacity / SoH"))
+        XCTAssertTrue(snap.copyText.localizedCaseInsensitiveContains("Battery Health"))
         XCTAssertFalse(snap.copyText.localizedCaseInsensitiveContains("health score"))
+        XCTAssertFalse(snap.copyText.contains("iPhone 18"))
         XCTAssertEqual(snap.saveOutputs["battery"], "64 %")
         XCTAssertEqual(snap.saveOutputs["thermal"], "Fair")
         XCTAssertEqual(snap.saveOutputs["low power"], "On")
         XCTAssertEqual(snap.saveOutputs["identifier"], "iPhone15,2")
+        XCTAssertEqual(snap.saveOutputs["model"], "iPhone 14 Pro")
+        XCTAssertEqual(snap.saveOutputs["battery health"], DeviceHealthMath.batteryHealthUnavailableValue)
         XCTAssertNotNil(snap.saveOutputs["free important"])
         XCTAssertNotNil(snap.saveOutputs["app headroom"])
+        XCTAssertNotNil(snap.saveOutputs["used"])
+    }
+
+    func testIPhone17ProSnapshotUsesMarketingNameNotIPhone18() {
+        let snap = DeviceHealthMath.snapshot(
+            batteryLevel: 0.42,
+            charge: .unplugged,
+            lowPower: false,
+            thermal: .nominal,
+            freeImportantBytes: 55_980_000_000,
+            freeOpportunisticBytes: 40_000_000_000,
+            volumeTotalBytes: 256_000_000_000,
+            identifier: "iPhone18,1",
+            udiModel: "iPhone",
+            systemName: "iOS",
+            systemVersion: "26.7",
+            uptimeSeconds: 3600,
+            bootDate: nil,
+            brightness: 0.5,
+            physicalMemoryBytes: 8 * 1024 * 1024 * 1024,
+            appHeadroomBytes: 800 * 1024 * 1024,
+            activeProcessors: 6,
+            installedProcessors: 6
+        )
+        XCTAssertEqual(snap.model, "iPhone 17 Pro")
+        XCTAssertEqual(snap.identifier, "iPhone18,1")
+        XCTAssertEqual(snap.system, "iOS 26.7")
+        XCTAssertEqual(snap.battery, "42 %")
+        XCTAssertEqual(snap.volumeTotal, "256 GB")
+        XCTAssertEqual(snap.freeImportant, "55.98 GB")
+        XCTAssertFalse(snap.model.contains("iPhone 18"))
+        XCTAssertFalse(snap.copyText.contains("iPhone 18"))
+        XCTAssertTrue(snap.copyText.contains("iPhone 17 Pro"))
+        XCTAssertTrue(snap.identifierCaption.contains("`iPhone18,1`"))
+        XCTAssertTrue(snap.copyText.contains(DeviceHealthMath.batteryHealthUnavailableNote))
+        XCTAssertFalse(snap.copyText.contains("% SoH") || snap.copyText.contains("Maximum Capacity 8"))
     }
 
     func testUnavailableSnapshotDoesNotInventBattery() {
