@@ -106,8 +106,9 @@
       letter-spacing: 0.08em;
       color: var(--amber);
       padding: 1px 8px 1px 0;
-      width: 4.4rem;
+      width: 3.8rem;
     }
+    body.is-kid .sci-pro { display: none; }
     .mc-panel td { text-align: right; }
     .mc-center {
       display: flex;
@@ -129,7 +130,7 @@
     #ng-banner[data-kind="go"] { background: var(--go); }
     #ng-banner[data-kind="fail"] { background: var(--fail); color: #1a0604; }
     #ng-banner[data-kind="warn"] { background: var(--amber); }
-    #t-radio, #t-payload, #t-clock {
+    #t-radio, #t-payload, #t-clock, #t-sci {
       font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.7cqi, 0.86rem);
       color: var(--fg);
@@ -143,6 +144,12 @@
       letter-spacing: 0.08em;
     }
     #t-payload { color: var(--cyan); }
+    #t-sci {
+      color: var(--go);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      max-width: 36rem;
+    }
     #ng-phase {
       padding: 7px 16px;
       border-radius: 999px;
@@ -321,6 +328,7 @@
     #ng-banner[hidden],
     #ng-hints[hidden],
     #ng-launch-tip[hidden],
+    #ng-sum-why[hidden],
     #ng-sum-next[hidden] {
       display: none !important;
       pointer-events: none !important;
@@ -475,6 +483,7 @@
       color: var(--cyan);
       text-align: left;
     }
+    .sum-why { color: var(--amber); }
     .ng-overlay {
       position: absolute;
       left: 50%;
@@ -588,8 +597,12 @@
             <tr><th scope="row">FLT</th><td id="t-mission">KH-1</td></tr>
             <tr><th scope="row">ALT</th><td id="t-alt">0.0 km</td></tr>
             <tr><th scope="row">VEL</th><td id="t-vel">0 m/s</td></tr>
-            <tr><th scope="row">THR</th><td id="t-thr">THR 0%</td></tr>
-            <tr><th scope="row">FUEL</th><td id="t-fuel">100</td></tr>
+            <tr class="sci-pro"><th scope="row">MACH</th><td id="t-mach">0.00</td></tr>
+            <tr class="sci-pro"><th scope="row">Q</th><td id="t-q">0.0 kPa</td></tr>
+            <tr class="sci-pro"><th scope="row">ACC</th><td id="t-acc">0.0 g</td></tr>
+            <tr class="sci-pro"><th scope="row">FPA</th><td id="t-fpa">90°</td></tr>
+            <tr><th scope="row">CHAM</th><td id="t-thr">0%</td></tr>
+            <tr><th scope="row">PROP</th><td id="t-fuel">100%</td></tr>
             <tr><th scope="row">SHLD</th><td id="t-shield">0/2</td></tr>
           </table>
         </div>
@@ -598,6 +611,7 @@
           <div id="ng-banner" hidden data-kind="info"></div>
           <div id="t-clock">T-0:08.0</div>
           <div id="t-payload">AES  Aether Scout</div>
+          <div id="t-sci">0.0 km · 0 m/s · 0% thr</div>
           <div id="t-radio">Pier 7 standing by.</div>
           <div id="t-obj" class="mc-obj">Grab an aero shield</div>
         </div>
@@ -605,6 +619,7 @@
           <table>
             <caption class="visually-hidden">Score and stage</caption>
             <tr><th scope="row">STAGE</th><td id="t-stage">STANDBY</td></tr>
+            <tr class="sci-pro"><th scope="row">TWR</th><td id="t-twr">0.00</td></tr>
             <tr><th scope="row">SCORE</th><td id="t-score">0</td></tr>
             <tr><th scope="row">BEST</th><td id="t-best">0</td></tr>
             <tr><th scope="row">COMBO</th><td id="t-combo">×0</td></tr>
@@ -637,7 +652,7 @@
             </div>
             <button type="button" id="ng-open-howto">How to play</button>
           </div>
-          <p id="ng-launch-tip">Hold climb · time stage sep · long slide onto Haven</p>
+          <p id="ng-launch-tip">Hold climb · steer the corridor · ALIGN then tap sep · brake Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
             <p class="ng-kicker" id="ng-open-missions">FLIGHT MANIFEST</p>
             <button type="button" class="manifest-row" data-mission="KH-1" data-label="KH-1 · AES"><span class="mf-id">KH-1</span><span class="mf-name">Aether Scout</span><span class="mf-state">READY</span></button>
@@ -668,12 +683,11 @@
         <div class="ng-card">
           <p class="ng-kicker">Readable in 3 seconds</p>
           <h2>HOW TO PLAY</h2>
-          <p>HOLD SPACE / CLIMB to throttle.
-A D or ◀ ▶ to steer.
-After MECO, hold attitude and TAP CLIMB when ALIGN is green — stage sep is a skill beat.
+          <p>HOLD SPACE / CLIMB to throttle. A D or ◀ ▶ to steer the corridor.
+After MECO, straighten until ALIGN is green, then TAP CLIMB once — that is stage sep.
 Then a long zoomed-out slide onto HAVEN. Soft painted deck = BOOSTER RECOVERED.
-Tip or splash clips score and combo — not a wipe. Difficulty stays KID / CADET / PAD RAT.
-P or Escape pauses. M mutes. O opens settings.</p>
+Tip, hard catch, or splash clips score — not a wipe. A RUD ends the flight and names the reason.
+KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p>
           <button class="btn" id="ng-howto-back" type="button">BACK</button>
         </div>
       </div>
@@ -700,6 +714,7 @@ P or Escape pauses. M mutes. O opens settings.</p>
       <div id="ng-pause" class="ng-overlay" hidden role="dialog" aria-labelledby="ng-pause-title">
         <h2 id="ng-pause-title">PAUSED</h2>
         <p>P or Escape resumes. Boost holds are frozen.</p>
+        <p id="ng-pause-hint" class="sum-break">HOLD climb. Steer the corridor. After MECO, ALIGN green then TAP climb. Brake Haven’s paint.</p>
         <div class="ng-nav">
           <button type="button" class="btn-go" id="ng-pause-resume">RESUME</button>
           <button type="button" id="ng-pause-restart">RESTART</button>
@@ -710,6 +725,7 @@ P or Escape pauses. M mutes. O opens settings.</p>
       <div id="ng-summary" class="ng-overlay" hidden role="dialog" aria-labelledby="ng-summary-title">
         <h2 id="ng-summary-title">MISSION COMPLETE</h2>
         <p id="ng-summary-body"></p>
+        <div id="ng-sum-why" class="sum-break sum-why" hidden></div>
         <div id="ng-sum-ascent" class="sum-break"></div>
         <div id="ng-sum-jacklyn" class="sum-break"></div>
         <div id="ng-sum-delta" class="sum-break"></div>
