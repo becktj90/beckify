@@ -226,10 +226,10 @@ enum Theme {
     enum Stroke {
         static let hairline: CGFloat = 1
         static let emphasis: CGFloat = 1.5
-        /// Main schematic stroke at the 44pt `ToolGlyph` reference size.
-        static let icon: CGFloat = 2.15
-        /// Understroke as a multiple of the main stroke — engraved edge, not a halo.
-        static let iconUnderRatio: CGFloat = 1.42
+        /// Stroke pictogram weight at the 44pt `ToolGlyph` reference size.
+        /// Wells are stroke-only outlines, not solid-fill silhouettes.
+        /// Scales with `size / 44`; `GlyphStroke` floors tiny related-row marks at 1.8.
+        static let icon: CGFloat = 2.6
     }
 
     // MARK: Typography roles — scientific / instrument hierarchy.
