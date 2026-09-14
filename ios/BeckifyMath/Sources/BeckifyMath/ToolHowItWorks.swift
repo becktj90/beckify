@@ -274,11 +274,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "receptacleSelector": ToolHowItWorks(
-            summary: "Best-fit NEMA or IEC 60309 face from volts, amps, poles, and phase — with pinout and public PNs.",
+            summary: "Best-fit NEMA, IEC 60309, household, or Meltric face from volts, amps, poles, and phase — schematic pinout and cited PNs.",
             context: "Which receptacle family matches the circuit, before you order.",
             bullets: [
-                "Public catalog PNs when cited. Not a UL listing or a distributor cross.",
-                "Not a classified-area stamp. Confirm the current catalog before you buy.",
+                "Amp presets through 400 A. Public Meltric/Hubbell PNs only when a catalog page is cited.",
+                "Household faces are schematic (Schuko, BS 1363, Type I), not manufacturer artwork.",
+                "Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog.",
             ]
         ),
         "reactance": ToolHowItWorks(

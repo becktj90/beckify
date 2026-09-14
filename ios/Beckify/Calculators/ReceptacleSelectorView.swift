@@ -65,7 +65,7 @@ struct ReceptacleSelectorView: View {
         ) {
             ShowWorkCard(
                 toolID: .receptacleSelector,
-                symbolic: "Match V · Ø · A · poles/wires to a NEMA or IEC 60309 face",
+                symbolic: "Match V · Ø · A · poles/wires to a NEMA, IEC 60309, household, or Meltric face",
                 substituted: substituted,
                 meaning: "Best-fit is a configuration match, not a listing. Hazardous is a flag only — not a classified-area stamp. Isolated ground and GFCI are callouts, not a different face."
             )
@@ -119,7 +119,7 @@ struct ReceptacleSelectorView: View {
                     Text("50 Hz").tag(50.0)
                 }
                 .segmentedControlStyle()
-                Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA faces do not change.")
+                Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA, household, and Meltric faces do not change.")
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
             }
@@ -479,6 +479,17 @@ struct ReceptacleFaceView: View {
                     let h = CGRect(x: px - 18, y: py - 6, width: 36, height: 12)
                     context.fill(Path(roundedRect: v, cornerRadius: 3), with: .color(color))
                     context.fill(Path(roundedRect: h, cornerRadius: 3), with: .color(color))
+                case .slotSlantedLeft, .slotSlantedRight:
+                    let slant: CGFloat = pin.shape == .slotSlantedLeft ? 0.45 : -0.45
+                    var slot = Path(roundedRect: CGRect(x: -6, y: -18, width: 12, height: 36), cornerRadius: 3)
+                    slot = slot.applying(CGAffineTransform(a: 1, b: slant, c: 0, d: 1, tx: px, ty: py))
+                    context.fill(slot, with: .color(color))
+                case .slotRect:
+                    let rect = CGRect(x: px - 7, y: py - 16, width: 14, height: 32)
+                    context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
+                case .earthClip:
+                    let rect = CGRect(x: px - 16, y: py - 4, width: 32, height: 8)
+                    context.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(color))
                 case .uGround:
                     var u = Path()
                     u.addArc(center: CGPoint(x: px, y: py), radius: 11, startAngle: .degrees(20), endAngle: .degrees(160), clockwise: false)
