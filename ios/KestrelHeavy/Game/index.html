@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-7">
+      <meta name="arcade-asset-version" content="kestrel-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' kestrel-heavy:; script-src 'self' 'unsafe-inline' kestrel-heavy:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' kestrel-heavy:; worker-src 'self' blob:; media-src 'self' blob: kestrel-heavy:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
@@ -48,13 +48,14 @@
       overflow: hidden;
       border-radius: 0;
       background: #05050d;
-      container: cabinet / inline-size;
+      container: cabinet / size;
       aspect-ratio: 16 / 9;
       width: 100%;
     }
     @supports (height: 100dvh) {
       #arcade-fs-wrapper {
         aspect-ratio: auto;
+        height: 100%;
       }
     }
     #ng-phaser-root {
@@ -648,6 +649,20 @@
       .mc-callout .mc-obj,
       .mc-next { text-align: center; }
       #ng-tape { display: none; }
+    }
+    @media (max-height: 500px) {
+      .mc-callout {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: 4px 12px;
+        padding-block: 5px;
+      }
+      #t-radio {
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+      }
     }
     @container cabinet (max-block-size: 500px) {
       .mc-callout {
