@@ -7,43 +7,51 @@ import SwiftUI
 //
 // Default ink: solid monochrome fill = category primary, with even-odd holes
 // punched through to the well tint (`context.fill(..., eoFill: true)`).
-// Open-only marks stay stroke at `Theme.Stroke.icon` / `iconOpen` (3.2 @ 44pt):
-// voltage-drop sag, Ω, Wi-Fi arcs, sines, arrows. Never stroke large hollow
-// roundedRect frames. No SF Symbols in wells, no Meshy, no dual under-ink.
-// Each `ToolID` maps 1:1 to a `GlyphKind`. Design grid is 24×24 with a 10%
-// canvas inset (~2pt on 24). SF Symbols stay on chrome (favorites, nav) only.
+// Never stroke large hollow roundedRect frames.
+// Open-only marks stay stroke at dedicated `Theme.Stroke.iconOpen` (3.2 @ 44pt,
+// floor 2.2) — voltage-drop sag, Ω, Wi-Fi arcs, sines, arrows. Overlay strokes
+// on filled silhouettes keep `Theme.Stroke.icon` at 2.6 (not a global bump).
+// P0: receptacle, nec/paperwork, pack, battery/UPS, power, ampacity, conduit,
+// motorFLA — then the rest of the shelves.
+// No SF Symbols in wells, no Meshy, no dual under-ink. 1:1 ToolID→GlyphKind.
+// Design grid is 24×24 with a 10% canvas inset. SF stays on chrome only.
 
-/// Open-mark stroke curve. 44pt is the reference size (`Theme.Stroke.icon` =
-/// 3.2). Selected is a slight weight bump, not a new language. A 1.8 floor
-/// keeps 22pt related-row marks engraved. Closed silhouettes do not use this.
+/// Stroke curve for pictogram linework. 44pt is the reference size.
+/// Open-only marks use `iconOpen` (3.2, floor 2.2). Overlay ticks on filled
+/// silhouettes use `icon` (2.6, floor 1.8). Selected is a slight weight bump.
 enum GlyphStroke {
     static let referenceSize: CGFloat = 44
     static let selectedWeight: CGFloat = 1.06
-    static let minimum: CGFloat = 1.8
+    static let overlayMinimum: CGFloat = 1.8
+    static let openMinimum: CGFloat = 2.2
 
-    static func lineWidth(size: CGFloat, selected: Bool) -> CGFloat {
-        let scaled = Theme.Stroke.icon * (size / referenceSize)
-        let base = max(minimum, scaled)
+    static func lineWidth(size: CGFloat, selected: Bool, openMark: Bool) -> CGFloat {
+        let token = openMark ? Theme.Stroke.iconOpen : Theme.Stroke.icon
+        let floor = openMark ? openMinimum : overlayMinimum
+        let scaled = token * (size / referenceSize)
+        let base = max(floor, scaled)
         return selected ? base * selectedWeight : base
     }
 }
 
-/// Fill path (even-odd holes) plus optional open-mark stroke, both the same
-/// category primary. Fill first so holes cut through to the well tint.
+/// Fill path (even-odd holes) plus optional stroke, both the same category
+/// primary. Fill first so holes cut through to the well tint. `openMark`
+/// selects `iconOpen` (3.2 / floor 2.2) vs overlay `icon` (2.6 / floor 1.8).
 struct GlyphArtwork {
     var fill: Path?
     var stroke: Path?
+    var openMark: Bool
 
     static func fill(_ path: Path) -> GlyphArtwork {
-        GlyphArtwork(fill: path, stroke: nil)
+        GlyphArtwork(fill: path, stroke: nil, openMark: false)
     }
 
     static func stroke(_ path: Path) -> GlyphArtwork {
-        GlyphArtwork(fill: nil, stroke: path)
+        GlyphArtwork(fill: nil, stroke: path, openMark: true)
     }
 
-    static func both(fill: Path, stroke: Path) -> GlyphArtwork {
-        GlyphArtwork(fill: fill, stroke: stroke)
+    static func both(fill: Path, stroke: Path, openMark: Bool = false) -> GlyphArtwork {
+        GlyphArtwork(fill: fill, stroke: stroke, openMark: openMark)
     }
 }
 
@@ -73,10 +81,6 @@ struct ToolGlyph: View {
         return selected ? Theme.foreground : Theme.muted
     }
 
-    private var lineWidth: CGFloat {
-        GlyphStroke.lineWidth(size: size, selected: selected)
-    }
-
     var body: some View {
         Canvas { context, canvasSize in
             let rect = CGRect(origin: .zero, size: canvasSize)
@@ -90,7 +94,11 @@ struct ToolGlyph: View {
                 context.stroke(
                     stroke,
                     with: shading,
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(
+                        lineWidth: GlyphStroke.lineWidth(size: size, selected: selected, openMark: artwork.openMark),
+                        lineCap: .round,
+                        lineJoin: .round
+                    )
                 )
             }
         }
@@ -175,10 +183,6 @@ struct CategoryGlyph: View {
     var size: CGFloat = 28
     var selected: Bool = true
 
-    private var lineWidth: CGFloat {
-        GlyphStroke.lineWidth(size: size, selected: selected)
-    }
-
     var body: some View {
         Canvas { context, canvasSize in
             let rect = CGRect(origin: .zero, size: canvasSize)
@@ -192,7 +196,11 @@ struct CategoryGlyph: View {
                 context.stroke(
                     stroke,
                     with: shading,
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(
+                        lineWidth: GlyphStroke.lineWidth(size: size, selected: selected, openMark: artwork.openMark),
+                        lineCap: .round,
+                        lineJoin: .round
+                    )
                 )
             }
         }
@@ -280,7 +288,7 @@ enum CategoryGlyphKind {
         var stroke = Path()
         Glyph.line(&stroke, c, CGPoint(x: c.x, y: c.y - rad * 0.52))
         Glyph.line(&stroke, c, CGPoint(x: c.x + rad * 0.38, y: c.y + rad * 0.08))
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Closed notebook — filled cover + line holes.
@@ -661,7 +669,7 @@ enum GlyphKind {
                 clockwise: false
             )
         }
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled conduit ring + inner conductor (even-odd restores the core).
@@ -816,7 +824,7 @@ enum GlyphKind {
             toward: CGPoint(x: shaft.x + r.width * 0.18, y: shaft.y - r.height * 0.16),
             size: r.width * 0.10
         )
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled plate + two data-line holes.
@@ -888,7 +896,7 @@ enum GlyphKind {
         let star = CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.14)
         Glyph.line(&stroke, CGPoint(x: star.x, y: star.y - r.height * 0.12), CGPoint(x: star.x, y: star.y + r.height * 0.12))
         Glyph.line(&stroke, CGPoint(x: star.x - r.width * 0.12, y: star.y), CGPoint(x: star.x + r.width * 0.12, y: star.y))
-        return .both(fill: Glyph.bolt(r), stroke: stroke)
+        return .both(fill: Glyph.bolt(r), stroke: stroke, openMark: true)
     }
 
     /// Two filled coil rings + core bar stroke.
@@ -924,7 +932,7 @@ enum GlyphKind {
             to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.34),
             head: r.width * 0.10
         )
-        return .both(fill: base.fill ?? Path(), stroke: stroke)
+        return .both(fill: base.fill ?? Path(), stroke: stroke, openMark: true)
     }
 
     /// Filled right triangle.
@@ -975,7 +983,7 @@ enum GlyphKind {
         var stroke = Path()
         let sun = CGPoint(x: r.maxX - r.width * 0.22, y: r.minY + r.height * 0.22)
         stroke.addArc(center: sun, radius: r.width * 0.16, startAngle: .degrees(200), endAngle: .degrees(20), clockwise: false)
-        return .both(fill: panel, stroke: stroke)
+        return .both(fill: panel, stroke: stroke, openMark: true)
     }
 
     /// Filled battery + gap hole + shield arc stroke.
@@ -1000,7 +1008,7 @@ enum GlyphKind {
             endAngle: .degrees(330),
             clockwise: false
         )
-        return .both(fill: Glyph.punched(fill, gap), stroke: stroke)
+        return .both(fill: Glyph.punched(fill, gap), stroke: stroke, openMark: true)
     }
 
     // MARK: - Field · Controls
@@ -1043,7 +1051,7 @@ enum GlyphKind {
         var stroke = Path()
         Glyph.line(&stroke, c, CGPoint(x: c.x, y: c.y - r.height * 0.26))
         Glyph.line(&stroke, c, CGPoint(x: c.x + r.width * 0.22, y: c.y + r.height * 0.06))
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled rack unit + two rail holes.
@@ -1123,7 +1131,7 @@ enum GlyphKind {
                 clockwise: false
             )
         }
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled capsule + offset bubble hole.
@@ -1156,7 +1164,7 @@ enum GlyphKind {
         let fill = Glyph.punched(Glyph.circlePath(c, rad), Glyph.circlePath(c, rad * 0.62))
         var stroke = Path()
         Glyph.line(&stroke, c, CGPoint(x: c.x + r.width * 0.22, y: c.y - r.height * 0.22))
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled phone + double-headed vertical arrow.
@@ -1170,7 +1178,7 @@ enum GlyphKind {
         let x = r.maxX - r.width * 0.18
         Glyph.arrow(&stroke, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.minY + r.height * 0.12), head: r.width * 0.10)
         Glyph.arrow(&stroke, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.maxY - r.height * 0.12), head: r.width * 0.10)
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled map-pin teardrop + inner hole.
@@ -1305,7 +1313,7 @@ enum GlyphKind {
         var stroke = Path()
         Glyph.arrow(&stroke, from: CGPoint(x: r.minX + r.width * 0.36, y: r.midY - r.height * 0.10), to: CGPoint(x: r.maxX - r.width * 0.36, y: r.midY - r.height * 0.10), head: r.width * 0.08)
         Glyph.arrow(&stroke, from: CGPoint(x: r.maxX - r.width * 0.36, y: r.midY + r.height * 0.10), to: CGPoint(x: r.minX + r.width * 0.36, y: r.midY + r.height * 0.10), head: r.width * 0.08)
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// One sine period — open mark.
@@ -1555,7 +1563,7 @@ enum GlyphKind {
         let gauge = CGPoint(x: r.midX, y: r.maxY - r.height * 0.12)
         stroke.addArc(center: gauge, radius: r.width * 0.36, startAngle: .degrees(200), endAngle: .degrees(340), clockwise: false)
         Glyph.line(&stroke, gauge, CGPoint(x: gauge.x + r.width * 0.18, y: gauge.y - r.height * 0.22))
-        return .both(fill: fill, stroke: stroke)
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     /// Filled pack + 2×3 cell holes.
@@ -1962,7 +1970,7 @@ private struct GlyphPassPreview: View {
     }
 }
 
-#Preview("Quick circles 52") {
+#Preview("QA — Field Quick 52") {
     GlyphPassPreview(
         ids: [.voltageDrop, .wireAmpacity, .motorFLA, .receptacleSelector, .wifiStatus, .conduitFill],
         circular: true,
@@ -1970,22 +1978,16 @@ private struct GlyphPassPreview: View {
     )
 }
 
-#Preview("Grid 72 — Quick + Jobsite") {
+#Preview("QA — Jobsite 4-across 72") {
     GlyphPassPreview(
-        ids: [
-            .voltageDrop, .wireAmpacity, .motorFLA, .receptacleSelector, .wifiStatus, .conduitFill,
-            .necCircuit, .shortCircuit, .motorNameplate, .lookCheck,
-        ],
+        ids: [.receptacleSelector, .necCircuit, .wireAmpacity, .conduitFill],
         well: 72
     )
 }
 
-#Preview("Grid 72 — Power / Bench") {
+#Preview("QA — Toolkit Bench 72") {
     GlyphPassPreview(
-        ids: [
-            .ohmsLaw, .power, .batteryBank, .upsSizing, .eBikePackDesigner,
-            .heaterDesign, .solenoidDesign, .analogWorkbench, .empEmc, .nickelStrip,
-        ],
+        ids: [.eBikePackDesigner, .heaterDesign, .solenoidDesign, .analogWorkbench],
         well: 72
     )
 }

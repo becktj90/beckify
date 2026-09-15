@@ -147,8 +147,13 @@ class Well:
         return x, y, w, h
 
     def lw(self, proposed: bool) -> int:
-        weight = 3.2 if proposed else 2.6
-        return max(2, round(weight * (self.glyph_px / 44)))
+        # Dedicated iconOpen 3.2 / floor 2.2 for open-only marks. Overlay and
+        # #151 current stay on icon 2.6 / floor 1.8 — not a global bump.
+        if proposed and getattr(self, "open_mark", False):
+            weight, floor_pt = 3.2, 2.2
+        else:
+            weight, floor_pt = 2.6, 1.8
+        return max(round(floor_pt * self.scale), round(weight * (self.glyph_px / 44)))
 
     def stroke_draw(self):
         return ImageDraw.Draw(self.im)
@@ -201,6 +206,7 @@ def draw_glyph(well: Well, kind: str, proposed: bool):
     x, y, w, h = well.r
     mx, my = x + w / 2, y + h / 2
     p = proposed
+    well.open_mark = p and kind in {"voltageDrop", "ohmsLaw", "wifiStatus"}
 
     if kind == "voltageDrop":
         yy = y + h * 0.28
@@ -520,7 +526,7 @@ def row(im, title, items, y, well_size, circular, proposed, scale, label_font, t
 def render(out: Path):
     scale = 3
     width = 1100 * scale
-    height = 1680 * scale
+    height = 1400 * scale
     im = Image.new("RGB", (width, height), BG)
     title_font = load_font(int(18 * scale), bold=True)
     section_font = load_font(int(14 * scale), bold=True)
@@ -529,53 +535,48 @@ def render(out: Path):
     d = ImageDraw.Draw(im)
     d.text(
         (48 * scale, 36 * scale),
-        "Beckify ToolGlyph — App Design visual pass 2026-09-15",
+        "Beckify ToolGlyph — App Design visual pass 2026-09-15  (token lock)",
         font=title_font,
         fill=FG,
     )
     d.text(
         (48 * scale, 64 * scale),
-        "Overturns #151 stroke-only. A/B = current hollow wireframes. C/D = solid fill + even-odd holes (open marks stay stroke ~3.2 @44).",
+        "Overturns #151 stroke-only. Closed = fill + eoFill holes. Open-only marks use dedicated iconOpen 3.2 @44 (floor 2.2) — not a bump of icon 2.6.",
         font=note_font,
         fill=MUTED,
     )
     d.text(
         (48 * scale, 84 * scale),
-        "Ink = real shelf primary (Jobsite copper, Instruments magenta, Power teal, Bench green). Linux raster of Swift geometry — App Design must re-check on device before merge.",
+        "QA surfaces: Field Quick · Jobsite 4-across · Toolkit Bench. Linux raster of Swift geometry — App Design must re-check on device; do not waive visual.",
         font=note_font,
         fill=MUTED,
     )
 
-    quick = [g for g in GLYPHS if g[3] == "quick"]
-    sheet11 = quick + [
-        next(g for g in GLYPHS if g[0] == "ohmsLaw"),
-        next(g for g in GLYPHS if g[0] == "power"),
-        next(g for g in GLYPHS if g[0] == "necCircuit"),
-        next(g for g in GLYPHS if g[0] == "batteryBank"),
-        next(g for g in GLYPHS if g[0] == "eBikePackDesigner"),
-    ]
-    jobsite = [g for g in GLYPHS if g[0] in ("necCircuit", "shortCircuit", "motorNameplate", "lookCheck")]
-    bench = [g for g in GLYPHS if g[0] in ("heaterDesign", "eBikePackDesigner", "solenoidDesign", "analogWorkbench", "upsSizing")]
+    by_id = {g[0]: g for g in GLYPHS}
+    quick = [by_id[k] for k in ("voltageDrop", "wireAmpacity", "motorFLA", "receptacleSelector", "wifiStatus", "conduitFill")]
+    jobsite4 = [by_id[k] for k in ("receptacleSelector", "necCircuit", "wireAmpacity", "conduitFill")]
+    bench4 = [by_id[k] for k in ("eBikePackDesigner", "heaterDesign", "solenoidDesign", "analogWorkbench")]
+    power4 = [by_id[k] for k in ("power", "batteryBank", "upsSizing", "ohmsLaw")]
 
     y = 120 * scale
-    y = row(im, "A  CURRENT  —  stroke-only Quick ~52 (circles)", sheet11, y, 52 * scale, True, False, scale, note_font, section_font)
-    y += 18 * scale
-    y = row(im, "B  CURRENT  —  stroke-only grid ~72", sheet11, y, 72 * scale, False, False, scale, note_font, section_font)
+    y = row(im, "A  CURRENT  —  Field Quick ~52  (stroke-only #151)", quick, y, 52 * scale, True, False, scale, note_font, section_font)
+    y += 14 * scale
+    y = row(im, "B  PROPOSED  —  Field Quick ~52  (fill+holes · iconOpen 3.2 on VD / Wi-Fi)", quick, y, 52 * scale, True, True, scale, note_font, section_font)
     y += 22 * scale
-    y = row(im, "C  PROPOSED  —  solid fill + even-odd holes  ·  Quick ~52", sheet11, y, 52 * scale, True, True, scale, note_font, section_font)
-    y += 18 * scale
-    y = row(im, "D  PROPOSED  —  same marks at grid ~72", sheet11, y, 72 * scale, False, True, scale, note_font, section_font)
-    y += 28 * scale
-    y = row(im, "E  Jobsite metaphors  —  CURRENT stroke  ~72", jobsite, y, 72 * scale, False, False, scale, note_font, section_font)
+    y = row(im, "C  CURRENT  —  Jobsite 4-across ~72", jobsite4, y, 72 * scale, False, False, scale, note_font, section_font)
     y += 12 * scale
-    y = row(im, "F  Jobsite metaphors  —  PROPOSED fill+holes  ~72", jobsite, y, 72 * scale, False, True, scale, note_font, section_font)
-    y += 28 * scale
-    y = row(im, "G  Bench / UPS metaphors  —  CURRENT stroke  ~72", bench, y, 72 * scale, False, False, scale, note_font, section_font)
+    y = row(im, "D  PROPOSED  —  Jobsite 4-across ~72  (P0: receptacle, NEC/paperwork, ampacity, conduit)", jobsite4, y, 72 * scale, False, True, scale, note_font, section_font)
+    y += 22 * scale
+    y = row(im, "E  CURRENT  —  Toolkit Bench 4-across ~72", bench4, y, 72 * scale, False, False, scale, note_font, section_font)
     y += 12 * scale
-    y = row(im, "H  Bench / UPS metaphors  —  PROPOSED fill+holes  ~72", bench, y, 72 * scale, False, True, scale, note_font, section_font)
+    y = row(im, "F  PROPOSED  —  Toolkit Bench 4-across ~72  (P0 pack, then heater / solenoid / op-amp)", bench4, y, 72 * scale, False, True, scale, note_font, section_font)
+    y += 22 * scale
+    y = row(im, "G  CURRENT  —  P0 Power / Ω  ~72", power4, y, 72 * scale, False, False, scale, note_font, section_font)
+    y += 12 * scale
+    y = row(im, "H  PROPOSED  —  P0 Power / Ω  ~72  (filled bolt, battery+UPS gaps, Ω at iconOpen)", power4, y, 72 * scale, False, True, scale, note_font, section_font)
 
     # Crop unused bottom
-    im = im.crop((0, 0, width, min(height, y + 40 * scale)))
+    im = im.crop((0, 0, width, min(height, y + 56 * scale)))
     im = im.filter(ImageFilter.UnsharpMask(radius=0.6, percent=40, threshold=2))
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG", optimize=True)
