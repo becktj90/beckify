@@ -93,8 +93,9 @@ test('corridor rails are play bounds and beat goals stay readable', async () => 
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /corridor/);
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /aero shield/);
   assert.match(playGoal('ASCENT', { tClock: 18.6 }, mission), /Max-Q/);
-  assert.match(playGoal('SEP', { sepPhase: 'window' }, mission), /TAP climb/);
-  assert.match(playGoal('JACKLYN', { jacklynElapsed: 1 }, mission), /Haven/);
+  assert.match(playGoal('SEP', { sepPhase: 'window' }, mission), /SEPARATE/);
+  assert.match(playGoal('JACKLYN', { jacklynPhase: 'glide', jacklynElapsed: 1 }, mission), /glide|STRAKES/i);
+  assert.match(playGoal('JACKLYN', { jacklynPhase: 'burn', jacklynElapsed: 8 }, mission), /landing burn/i);
 
   const beats = beatsFor(mission);
   const next = nextCoachBeat(beats, -7);

@@ -45,18 +45,18 @@ export const LINES = {
   ],
   meco: [
     'MECO. First-stage cores shutdown. Hold attitude for sep.',
-    'MECO confirmed. Cores are out. Stand by for sep.',
-    'Main engine cutoff. Hold the stack. Sep window incoming.',
+    'MECO confirmed. Cores are out. Stand by for the sep zone.',
+    'Main engine cutoff. Hold the stack. Sep zone incoming.',
   ],
   sep: [
-    'Sep window. ALIGN green, then tap climb to fire the pyros.',
-    'Stage sep is a skill beat. Straighten, then tap climb.',
-    'Sep window live. Green ALIGN, then a single climb tap.',
+    'Sep zone. ALIGN green, then press SEPARATE.',
+    'Stage sep is a skill beat. Stay in the band, then SEPARATE.',
+    'Sep zone live. Green ALIGN, then press SEPARATE.',
   ],
   'align-green': [
-    'ALIGN green. Tap climb to fire sep.',
-    'Attitude is in. Tap climb.',
-    'Green board. One tap — pyros.',
+    'ALIGN green. Press SEPARATE.',
+    'Attitude is in. Press SEPARATE.',
+    'Green board. SEPARATE — pyros.',
   ],
   'align-wide': [
     'ALIGN wide. Straighten, then tap.',
@@ -113,9 +113,9 @@ export const LINES = {
     'Spacecraft sep. {id} is in the book.',
   ],
   'haven-slide': [
-    'Haven downrange. Long slide-in. Brake the painted deck.',
-    'Haven is the barge — small on purpose. Slide, then brake.',
-    'Long approach. RCS later. Do not dive the deck.',
+    'Haven downrange. Strakes out. Glide the diagonal. Do not burn yet.',
+    'Haven is the barge — small on purpose. Glide, then fire the landing burn.',
+    'Long approach. Hold the glide. Engines wait for the burn window.',
   ],
   'haven-straighten': [
     'RCS — straighten for the painted deck.',
@@ -139,12 +139,24 @@ export const LINES = {
     'Grab the shield before Max-Q if you can.',
   ],
   'hint-sep': [
-    'After MECO: hold attitude. ALIGN green, then tap climb.',
-    'Sep is a tap, not a hold. Wait for green.',
+    'After MECO: hold attitude. Stay in the SEP ZONE, then press SEPARATE.',
+    'Sep is a press, not a hold. Wait for the band, then SEPARATE.',
   ],
   'hint-haven': [
-    'Haven is far and small. Slide in, then hold brake over the paint.',
-    'Do not dive. Long approach, then brake the deck.',
+    'Strakes out. Glide the diagonal. Do not burn until the window.',
+    'Hold the glide. Fire engines for the landing burn, then straighten.',
+  ],
+  'haven-strakes': [
+    'Strakes deployed. Aero control is live. Hold the glide.',
+    'Strakes out. Ride the diagonal into Haven.',
+  ],
+  'haven-burn': [
+    'Landing burn. HOLD climb. Kill sink over the paint.',
+    'Engines for the deck. Hold burn, then straighten.',
+  ],
+  'press-ok': [
+    'Hold confirmed. Cores coming up.',
+    'Climb hold is in. Throttle is yours.',
   ],
   'pickup-shield': [
     'Aero shield on the stack.',
@@ -301,7 +313,7 @@ export const ABORTS = {
       'Sep geometry was dirty. Stack fouled. Range safe.',
       'Hot sep, bad angle. Stages kissed. Flight over.',
     ],
-    coach: 'Wait for ALIGN green, then a single tap. A cocked sep fouls the stack.',
+    coach: 'Stay in the SEP ZONE, ALIGN green, then press SEPARATE. A cocked sep fouls the stack.',
   },
   recontact: {
     id: 'recontact',
@@ -341,7 +353,7 @@ export const ABORTS = {
       'Splash. Combo reset — upper stage still flies.',
       'Off the barge. Booster is in the drink.',
     ],
-    coach: 'Haven is small and downrange. Slide in diagonally, then hold brake over the paint.',
+    coach: 'Haven is small and downrange. Glide the diagonal, then fire the landing burn over the paint.',
   },
   fuelHaven: {
     id: 'fuelHaven',
@@ -361,7 +373,8 @@ const ONCE = new Set([
   'liftoff', 'maxq', 'meco', 'sep', 'ses1', 'fairing',
   'entry', 'landing', 'touchdown', 'seco', 'deploy',
   'terminal', 'tankpress', 'internal', 'deluge', 'ignition',
-  'haven-slide', 'haven-straighten',
+  'haven-slide', 'haven-straighten', 'haven-strakes', 'haven-burn',
+  'press-ok',
 ]);
 
 const COOLDOWN = {
@@ -487,12 +500,12 @@ export function pauseHintFor(status, sepPhase) {
   if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition. Stay between the dotted corridor rails.';
   if (status === 'ASCENT') return 'HOLD climb. Stay between the dotted rails. Grab the aero shield. Steer around junk.';
   if (status === 'SEP') {
-    if (sepPhase === 'window') return 'ALIGN green, then TAP climb once. A hold is not a sep.';
+    if (sepPhase === 'window') return 'Stay in the SEP ZONE. ALIGN green, then press SEPARATE.';
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
-    return 'MECO. Hold attitude. Sep window is coming — straighten for ALIGN.';
+    return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Haven is the small barge. Slide in, straighten, HOLD brake over the paint.';
-  return 'HOLD climb. Steer the corridor. After MECO, ALIGN then tap. Brake Haven.';
+  if (status === 'JACKLYN') return 'Strakes out. Glide the diagonal, then HOLD climb for the landing burn.';
+  return 'HOLD climb. Steer the corridor. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
 }
 
 export function hazardAbortId(kind, atMaxQ) {

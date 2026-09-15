@@ -94,17 +94,18 @@ export const SPINE = [
     kind: 'go',
     radio: 'MECO. First-stage cores shutdown. Hold attitude for sep.',
     juice: 'meco',
-    coach: 'Hold attitude — sep window incoming',
+    coach: 'Hold attitude — sep zone incoming',
   },
   {
     id: 'sep',
     t: PACE.SEP,
     stage: 'STAGE SEP',
-    banner: 'STAGE SEP — ALIGN then TAP CLIMB',
+    banner: 'STAGE SEP — SEP ZONE then SEPARATE',
     kind: 'go',
-    radio: 'Sep window. ALIGN green, then tap climb to fire the pyros.',
+    radio: 'Sep zone. ALIGN green, then press SEPARATE.',
     juice: 'sep',
-    coach: 'ALIGN green, then TAP climb',
+    quiet: true,
+    coach: 'SEP ZONE · press SEPARATE',
   },
   {
     id: 'ses1',
@@ -132,9 +133,9 @@ export const SPINE = [
     stage: 'ENTRY BURN',
     banner: 'ENTRY BURN',
     kind: 'warn',
-    radio: 'Entry burn. Haven is downrange. Slide in diagonal.',
+    radio: 'Entry burn. Haven is downrange. Strakes out. Glide the diagonal.',
     juice: 'entry',
-    coach: 'Slide in on Haven · do not dive',
+    coach: 'Glide on Haven · do not burn yet',
   },
   {
     id: 'landing',
@@ -142,9 +143,9 @@ export const SPINE = [
     stage: 'LANDING BURN',
     banner: 'LANDING BURN',
     kind: 'warn',
-    radio: 'Landing burn. Brake for the painted deck.',
+    radio: 'Landing burn. HOLD climb. Kill sink over the paint.',
     juice: 'landing',
-    coach: 'HOLD BRAKE over the painted deck',
+    coach: 'HOLD CLIMB for the landing burn',
   },
   {
     id: 'touchdown',
@@ -256,13 +257,16 @@ export function playGoal(status, session = {}, flight = {}) {
     return 'Hold climb to MECO';
   }
   if (status === 'SEP') {
-    if (session.sepPhase === 'window') return 'ALIGN green, then TAP climb';
+    if (session.sepPhase === 'window') return 'SEP ZONE  ·  press SEPARATE';
     if (session.sepPhase === 'clear') return 'Open the gap, then Haven';
-    return 'Hold attitude — sep window incoming';
+    return 'Hold attitude — sep zone incoming';
   }
   if (status === 'JACKLYN') {
-    if ((session.jacklynElapsed || 0) > 5.2) return 'HOLD BRAKE over the painted deck';
-    return 'Slide in on Haven · do not dive';
+    const phase = session.jacklynPhase || 'glide';
+    if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
+      return 'HOLD CLIMB for the landing burn · straighten for the deck';
+    }
+    return 'STRAKES OUT  ·  glide the diagonal  ·  do not burn yet';
   }
   return '';
 }
