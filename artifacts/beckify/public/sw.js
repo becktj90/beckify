@@ -21,7 +21,7 @@
    the matching iframe query so iOS Safari does not keep a stale hold-control
    stylesheet. v6 drops the prior shell cache after the Kestrel Heavy
    mobile Safari pseudo-fullscreen fill. Cabinet HUD/CSS cache-busts with
-   `arcade-asset-version` (kestrel-8 = size container for short-cabinet HUD).
+   `arcade-asset-version` (kestrel-9 = sep zone + SEPARATE, Haven glide/burn, playtest camera).
    ============================================================================ */
 
 const CACHE_VERSION = 'v6';

@@ -37,9 +37,10 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - `setBody` / `setRectangle` wipe mass, friction, and collision filters — re-apply after any reshape.
 - Pause with `this.matter.pause()` / `this.matter.resume()` (delegates to the Phaser Matter world). Physics pauses only when `paused === true`.
 - Collision categories + sensors: deck paint and water are sensors (water is not a solid floor). Pickups and hazards are sensors.
-- Haven is a long zoomed-out diagonal slide-in, then RCS straighten, then a soft-land check (`landingVy` + `landingTol`). No Falcon grid fins, A-frame legs, or ASDS circle-X.
+- Haven recovery (arcade-compressed): **reentry pitch-over** → **strakes deployed** → diagonal **glide** (descent max-Q) → player **landing burn** → RCS straighten (`landingVy` + `landingTol`). Solid black strakes, not lattice grid fins. No A-frame legs or ASDS circle-X.
+- After SEPARATE the camera stays on the booster. SES-1 and fairing jettison play as off-booster beats, then Haven.
 - Ascent dotted rails are the **flight corridor** (Phaser graphics, not sky decoration). Stay between them or abort; KID is bounced back inside.
-- MECO → stage sep is a playable beat (`SEP` status): hold attitude, tap climb when ALIGN is green, then clear the stack. It is not a 400ms cutscene.
+- MECO → stage sep is a playable beat (`SEP` status) in a marked **SEP ZONE** with an on-screen **SEPARATE** button. Camera stays locked on the stack. It is not a 400ms cutscene.
 
 ## QA beats
 

@@ -57,6 +57,10 @@ export function bindKeyboard(input, hooks) {
     }
     if (event.code === 'Space') {
       event.preventDefault();
+      if (event.repeat) {
+        setBoostHeld(input, true, hooks.now());
+        return;
+      }
       if (hooks.onBoostTap) hooks.onBoostTap();
       setBoostHeld(input, true, hooks.now());
     }

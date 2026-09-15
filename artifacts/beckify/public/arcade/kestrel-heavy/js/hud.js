@@ -4,9 +4,16 @@ function el(id) {
   return document.getElementById(id);
 }
 
+let lastAnnounce = '';
+let lastAnnounceAt = 0;
+
 export function announce(message) {
   const live = el('arcade-live');
-  if (!live) return;
+  if (!live || !message) return;
+  const now = Date.now();
+  if (message === lastAnnounce && now - lastAnnounceAt < 1400) return;
+  lastAnnounce = message;
+  lastAnnounceAt = now;
   live.textContent = '';
   window.requestAnimationFrame(() => {
     live.textContent = message;
@@ -27,6 +34,15 @@ export function setBanner(text, kind = 'info', holdMs = 2200) {
       banner.hidden = true;
     }, holdMs);
   }
+}
+
+export function flashIgnite() {
+  const climb = el('atb-boost');
+  if (!climb) return;
+  climb.classList.remove('is-flash');
+  void climb.offsetWidth;
+  climb.classList.add('is-flash');
+  window.setTimeout(() => climb.classList.remove('is-flash'), 340);
 }
 
 export function renderHud(snapshot) {
@@ -70,14 +86,24 @@ export function renderHud(snapshot) {
   const climb = el('atb-boost');
   if (climb && snapshot.boostLabel) {
     climb.dataset.label = snapshot.boostLabel;
+    climb.classList.toggle('is-held', Boolean(snapshot.boostHeld));
     climb.setAttribute(
       'aria-label',
-      snapshot.boostLabel === 'HOLD TO BRAKE'
-        ? 'Hold to brake'
-        : snapshot.boostLabel === 'TAP TO SEP'
-          ? 'Tap climb to stage sep'
-          : 'Hold boost to climb',
+      snapshot.boostLabel === 'HOLD TO BURN'
+        ? 'Hold to fire the landing burn'
+        : snapshot.boostLabel === 'GLIDE'
+          ? 'Glide — do not burn yet'
+          : snapshot.boostLabel === 'SEPARATE'
+            ? 'Press to separate stages'
+            : 'Hold boost to climb',
     );
+  }
+  const sepBtn = el('ng-sep-btn');
+  if (sepBtn) {
+    const show = Boolean(snapshot.sepReady || snapshot.sepArmed);
+    sepBtn.hidden = !show;
+    sepBtn.classList.toggle('is-ready', Boolean(snapshot.sepReady));
+    sepBtn.setAttribute('aria-disabled', snapshot.sepReady ? 'false' : 'true');
   }
   const record = el('arcade-hi-score');
   if (record) record.textContent = snapshot.recordLine;
@@ -191,6 +217,7 @@ export function bindChrome(handlers) {
     ['ng-pause-howto', handlers.openHowto],
     ['ng-pause-abort', handlers.abortToMenu],
     ['ng-sum-next', handlers.nextFlight],
+    ['ng-sep-btn', handlers.separate],
   ];
   clicks.forEach(([id, fn]) => {
     const node = el(id);
