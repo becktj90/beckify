@@ -226,10 +226,13 @@ enum Theme {
     enum Stroke {
         static let hairline: CGFloat = 1
         static let emphasis: CGFloat = 1.5
-        /// Stroke pictogram weight at the 44pt `ToolGlyph` reference size.
-        /// Wells are stroke-only outlines, not solid-fill silhouettes.
-        /// Scales with `size / 44`; `GlyphStroke` floors tiny related-row marks at 1.8.
+        /// Overlay stroke on *filled* silhouettes (shafts, pins, I/O stubs)
+        /// at the 44pt `ToolGlyph` reference size. Left at the #151 2.6 weight
+        /// on purpose — do not bump this to 3.2; open-only marks use `iconOpen`.
         static let icon: CGFloat = 2.6
+        /// Dedicated open-only mark weight at 44pt (voltage-drop sag, Ω,
+        /// Wi-Fi arcs, sines, arrows). `GlyphStroke` floors tiny open marks at 2.2.
+        static let iconOpen: CGFloat = 3.2
     }
 
     // MARK: Typography roles — scientific / instrument hierarchy.

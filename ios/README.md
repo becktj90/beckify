@@ -226,7 +226,7 @@ xcodebuild \
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). Next Connect version is **1.0.1**, build **≥123**. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck and Kestrel Heavy stay 1.0 / 1. This Linux environment did not compile, sign, or upload 123.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). Next Connect version is **1.0.1**, build **≥124**. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck and Kestrel Heavy stay 1.0 / 1. This Linux environment did not compile, sign, or upload 124.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac
