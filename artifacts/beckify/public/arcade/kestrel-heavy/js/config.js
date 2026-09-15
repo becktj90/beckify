@@ -116,25 +116,30 @@ export const PHYS = {
   vxDamp: 1.65,
 };
 
-/** Zoomed-out Haven approach — strake glide, then a player-fired landing burn. */
+/**
+ * Zoomed-out Haven approach, compressed from public first-stage recovery
+ * language: reentry pitch-over → strakes → diagonal glide → player landing burn.
+ */
 export const HAVEN = {
-  startY: -560,
-  startLat: 1040,
+  startY: -620,
+  startLat: 1180,
   bargeY: 690,
-  zoomFar: 0.32,
-  zoomNear: 0.48,
+  zoomFar: 0.3,
+  zoomNear: 0.52,
   gravity: 0.142,
-  glideGravity: 0.07,
+  glideGravity: 0.068,
+  reentryGravity: 0.09,
   frictionAir: 0.048,
   glideAir: 0.034,
   maxVyEarly: 1.42,
   maxVy: 3.7,
-  earlySec: 6.6,
+  earlySec: 7.4,
   landingFuel: 28,
   swellAmp: 14,
   burnAlt: 268,
-  strakeSec: 1.15,
-  glideMinSec: 3.4,
+  reentrySec: 1.85,
+  strakeSec: 1.2,
+  glideMinSec: 4.8,
 };
 
 /** Dotted rails are the climb corridor. Stay between them or the stack aborts. */
@@ -192,7 +197,7 @@ export const RADIO = {
   MECO: 'MECO. Hold attitude. Sep zone incoming.',
   SEP: 'Sep zone. ALIGN green, then press SEPARATE.',
   SEP_CLEAR: 'Booster clear. Keep the relative motion wide of the stack.',
-  JACKLYN: 'Haven downrange. Strakes out. Glide, then burn the painted deck.',
+  JACKLYN: 'Haven downrange. Pitch over, strakes out, glide, then burn the painted deck.',
   RECOVERED: 'Landed on Haven. Sea state nominal. Coffee earned.',
   SPLASH: 'Splash. Combo reset — upper stage still flies.',
   SALVAGE: 'Hard catch. Booster on deck, score clipped.',

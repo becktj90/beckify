@@ -693,9 +693,11 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setFrictionAir(PHYS.airAtmo);
     if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup('shield'));
     this.lockVehicleCamera(CAM.followLerpX, CAM.followLerpY);
-    this.setZoomWant(this.flightZoom('ascent'), this.settings.reducedMotion ? 12 : CAM.zoomLiftRate);
+    this.setZoomWant(CAM.pad, CAM.zoomClimbRate);
     this.time.delayedCall(Math.round(CAM.zoomLiftDelay * 1000), () => {
-      if (this.status === 'ASCENT') this.setZoomWant(this.flightZoom('ascent'), CAM.zoomClimbRate);
+      if (this.status === 'ASCENT') {
+        this.setZoomWant(this.flightZoom('ascent'), this.settings.reducedMotion ? 12 : CAM.zoomLiftRate);
+      }
     });
     if (!this.settings.reducedMotion) this.cameras.main.shake(420, 0.012);
     this.flashPad(0.55);
@@ -755,9 +757,9 @@ export default class MissionScene extends Phaser.Scene {
     const flight = this.currentFlight();
     this.status = 'JACKLYN';
     this.session.ascentScore = Math.round(this.session.ascentScore || this.session.score);
-    this.session.stage = 'HAVEN';
+    this.session.stage = 'ENTRY BURN';
     this.session.landingLock = false;
-    this.session.jacklynPhase = 'strakes';
+    this.session.jacklynPhase = 'reentry';
     this.session.tClock = Math.max(this.session.tClock, PACE.ENTRY);
     this.session.swellT = 0;
     this.session.fuel = Math.min(FUEL_MAX, Math.max(this.session.fuel, HAVEN.landingFuel));
@@ -769,7 +771,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.oceanWash) this.oceanWash.setVisible(true);
     this.bgOcean.setVisible(true);
     this.bgOcean.setDisplaySize(3600, 2400);
-    this.bgOcean.setTint(flight.seaTint || 0xffffff);
+    this.bgOcean.setTint(0xffc090);
     this.jacklyn.setVisible(true);
     this.placeRecovery();
     this.session.havenHomeX = this.jacklyn.x;
@@ -778,14 +780,15 @@ export default class MissionScene extends Phaser.Scene {
     this.bindRocketBody();
     this.rocket.setDepth(5);
     const side = flight.lzOffset >= 0 ? -1 : 1;
-    this.session.jacklynReadyAt = this.nowSec + 3.2;
+    this.session.havenSide = side;
+    this.session.jacklynReadyAt = this.nowSec + 4.6;
     this.session.jacklynElapsed = 0;
     this.rocket.setFrictionAir(HAVEN.glideAir);
     this.rocket.setPosition(this.session.havenHomeX + side * HAVEN.startLat, HAVEN.startY);
-    this.rocket.setVelocity(side * -1.32, 0.58);
-    this.rocket.setAngle(side * -32);
+    this.rocket.setVelocity(side * -1.05, 0.72);
+    this.rocket.setAngle(side * -48);
     this.rocket.setIgnoreGravity(false);
-    this.matter.world.setGravity(0, HAVEN.glideGravity);
+    this.matter.world.setGravity(0, HAVEN.reentryGravity);
     this.cameras.main.stopFollow();
     const zoom = this.settings.reducedMotion ? CAM.reduced : HAVEN.zoomFar;
     this.setZoomWant(zoom, 2.2);
@@ -794,17 +797,25 @@ export default class MissionScene extends Phaser.Scene {
     if (flight.objective?.id === 'clean' && this.session.hits === 0) this.completeObjective();
     AudioApi.stopBeds();
     AudioApi.play('whoosh', this.settings);
-    this.callout('haven-strakes', {
-      banner: 'STRAKES DEPLOYED — glide the diagonal. Do not burn yet.',
+    this.callout('haven-reentry', {
+      banner: 'PITCH OVER — reentry. Strakes stand by. Do not burn yet.',
       kind: 'warn',
-      holdMs: 3200,
+      holdMs: 2400,
     });
-    this.time.delayedCall(Math.round(HAVEN.strakeSec * 1000), () => {
+    this.time.delayedCall(Math.round(HAVEN.reentrySec * 1000), () => {
       if (this.status !== 'JACKLYN' || !this.rocket) return;
+      this.session.jacklynPhase = 'strakes';
+      this.session.stage = 'HAVEN';
       this.rocket.setTexture('booster-glide');
       this.bindRocketBody();
+      if (this.bgOcean) this.bgOcean.setTint(flight.seaTint || 0xffffff);
+      this.callout('haven-strakes', {
+        banner: 'STRAKES DEPLOYED — glide the diagonal. Do not burn yet.',
+        kind: 'warn',
+        holdMs: 3200,
+      });
     });
-    this.time.delayedCall(2800, () => {
+    this.time.delayedCall(Math.round((HAVEN.reentrySec + 2.6) * 1000), () => {
       if (this.status === 'JACKLYN') this.callout('hint-haven');
     });
   }
@@ -1082,7 +1093,10 @@ export default class MissionScene extends Phaser.Scene {
     }
 
     const alt = this.jacklyn.y - 50 - this.rocket.y;
-    if (this.session.jacklynPhase === 'strakes' && this.session.jacklynElapsed >= HAVEN.strakeSec) {
+    if (this.session.jacklynPhase === 'reentry' && this.session.jacklynElapsed >= HAVEN.reentrySec) {
+      this.session.jacklynPhase = 'strakes';
+    }
+    if (this.session.jacklynPhase === 'strakes' && this.session.jacklynElapsed >= HAVEN.reentrySec + HAVEN.strakeSec) {
       this.session.jacklynPhase = 'glide';
     }
     const burnOpen = alt < HAVEN.burnAlt && this.session.jacklynElapsed >= HAVEN.glideMinSec;
@@ -1097,21 +1111,35 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (alt < 95) this.session.jacklynPhase = 'settle';
 
+    const reentry = this.session.jacklynPhase === 'reentry';
     const gliding = this.session.jacklynPhase === 'strakes' || this.session.jacklynPhase === 'glide';
-    this.matter.world.setGravity(0, gliding ? HAVEN.glideGravity : HAVEN.gravity);
-    this.rocket.setFrictionAir(gliding ? HAVEN.glideAir : HAVEN.frictionAir);
+    this.matter.world.setGravity(0, reentry ? HAVEN.reentryGravity : (gliding ? HAVEN.glideGravity : HAVEN.gravity));
+    this.rocket.setFrictionAir((reentry || gliding) ? HAVEN.glideAir : HAVEN.frictionAir);
 
-    const wantAngle = gliding
-      ? clamp(this.rocket.body.velocity.x * 3.1, -34, 34)
-      : 0;
+    const side = this.session.havenSide || -1;
+    const wantAngle = reentry
+      ? side * -46
+      : gliding
+        ? clamp(this.rocket.body.velocity.x * 3.1, -34, 34)
+        : 0;
     const nowAngle = this.rocket.angle || 0;
-    const slew = gliding ? 1.5 : 4.4;
+    const slew = reentry ? 2.2 : gliding ? 1.5 : 4.4;
     const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * slew);
     if (Math.abs(nextAngle - nowAngle) > 0.7) this.emitRcs();
     this.rocket.setAngularVelocity(0);
     this.rocket.setAngle(nextAngle);
 
-    if (gliding) {
+    if (reentry) {
+      this.rocket.applyForce({ x: axis * 0.006 + (mode.wind || 0) * 0.0008, y: -0.016 });
+      this.session.throttle = 0.72;
+      this.emitPlume(0.7);
+      if (this.bloomFx) this.bloomFx.emitParticleAt(this.rocket.x, this.rocket.y + 96, this.settings.reducedMotion ? 1 : 3);
+      AudioApi.setBed('burn', true, this.settings, 0.22);
+      if (boosting && !this.session.earlyBurnWarned) {
+        this.session.earlyBurnWarned = true;
+        setBanner('TOO EARLY — hold the glide', 'warn', 1400);
+      }
+    } else if (gliding) {
       this.rocket.applyForce({ x: axis * 0.008 + (mode.wind || 0) * 0.0012, y: 0.002 });
       this.session.throttle = 0.08;
       AudioApi.setBed('burn', false, this.settings);
@@ -1129,6 +1157,13 @@ export default class MissionScene extends Phaser.Scene {
       this.session.throttle = 1;
       this.emitPlume(0.9);
       if (alt < 240) this.emitBloom();
+      if (alt < 160 && this.smokeBank && !this.smokeBank.visible) {
+        this.smokeBank.setPosition(this.jacklyn.x, this.jacklyn.y - 28);
+        this.smokeBank.setVisible(true).setAlpha(0.35).setScale(0.92);
+      } else if (alt < 160 && this.smokeBank) {
+        this.smokeBank.setAlpha(Math.min(0.85, (this.smokeBank.alpha || 0.35) + dt * 0.8));
+        this.smokeBank.setPosition(this.jacklyn.x, this.jacklyn.y - 28);
+      }
       AudioApi.setBed('burn', true, this.settings, 0.38);
       if (alt > 220 && this.rocket.body.velocity.y < 1.15) this.rocket.setVelocityY(1.15);
       else if (alt > 40 && this.rocket.body.velocity.y < 0.48) this.rocket.setVelocityY(0.48);
@@ -1158,6 +1193,7 @@ export default class MissionScene extends Phaser.Scene {
       if (beat.id === 'touchdown' && !this.session.landingLock) continue;
       if ((beat.id === 'seco' || beat.id === 'deploy') && !this.session.landingLock) continue;
       if (beat.id === 'sep') continue;
+      if ((beat.id === 'entry' || beat.id === 'landing') && this.status === 'JACKLYN') continue;
       this.session.fired[beat.id] = true;
       this.onBeat(beat);
     }
@@ -1226,7 +1262,7 @@ export default class MissionScene extends Phaser.Scene {
       }
     } else {
       this.tickCombo(1, 'STAGE SEP');
-      this.callout('sep-clear', { banner: 'SEP CONFIRMED — clear the stack, then Haven', kind: 'go', holdMs: 2200 });
+      this.callout('sep-clear', { banner: 'SEP CONFIRMED — booster pitching over. Haven next', kind: 'go', holdMs: 2200 });
     }
     AudioApi.play('whoosh', this.settings);
     if (!this.settings.reducedMotion) this.cameras.main.shake(260, 0.007);
@@ -1944,7 +1980,11 @@ export default class MissionScene extends Phaser.Scene {
   frameHavenCamera(dt) {
     if (!this.jacklyn || !this.rocket) return;
     const alt = this.jacklyn.y - this.rocket.y;
-    const t = clamp(1 - alt / 1100, 0, 1);
+    const pulling = this.session?.jacklynPhase === 'burn'
+      || this.session?.jacklynPhase === 'straighten'
+      || this.session?.jacklynPhase === 'settle'
+      || this.session?.landingLock;
+    const t = pulling ? clamp(1 - alt / 900, 0, 1) : 0;
     const want = this.settings.reducedMotion
       ? CAM.reduced
       : HAVEN.zoomFar + (HAVEN.zoomNear - HAVEN.zoomFar) * t * t;

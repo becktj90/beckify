@@ -25,99 +25,130 @@ function chevronMark(ctx, x, y, s, color) {
   ctx.restore();
 }
 
+/** Solid black wing-strakes. Never lattice / grid fins. */
+function drawStrakes(ctx, bodyHalf, deployed, forwardY, aftY) {
+  ctx.fillStyle = '#0b0d12';
+  const fSpan = deployed ? 18 : 12;
+  const fH = deployed ? 20 : 16;
+  [-1, 1].forEach((side) => {
+    const tip = side * (bodyHalf + fSpan);
+    ctx.beginPath();
+    ctx.moveTo(side * bodyHalf, forwardY + 3);
+    ctx.lineTo(tip, forwardY + 5);
+    ctx.lineTo(tip, forwardY + fH);
+    ctx.lineTo(side * bodyHalf, forwardY + fH - 4);
+    ctx.closePath();
+    ctx.fill();
+  });
+  const aftSpan = deployed ? 30 : 18;
+  const aftH = deployed ? 44 : 32;
+  [-1, 1].forEach((side) => {
+    const tip = side * (bodyHalf + aftSpan);
+    ctx.beginPath();
+    ctx.moveTo(side * bodyHalf, aftY);
+    ctx.lineTo(tip, aftY + 10);
+    ctx.lineTo(tip + side * (deployed ? 6 : 2), aftY + aftH);
+    ctx.lineTo(side * bodyHalf, aftY + aftH - 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#1a1d24';
+    ctx.fillRect(side < 0 ? tip + 2 : bodyHalf, aftY + 12, 3, aftH - 18);
+    ctx.fillStyle = '#0b0d12';
+  });
+}
+
 export function makeRocket(fairing, payload) {
-  const cv = canvas(76, 252);
+  const cv = canvas(92, 268);
   const ctx = cv.getContext('2d');
-  ctx.translate(38, 10);
+  ctx.translate(46, 8);
 
   if (fairing) {
-    const g = ctx.createLinearGradient(0, 0, 0, 58);
-    g.addColorStop(0, '#ffffff');
-    g.addColorStop(0.5, '#f4f7fb');
-    g.addColorStop(1, '#e4ebf2');
+    const g = ctx.createLinearGradient(0, 0, 0, 62);
+    g.addColorStop(0, '#fff6d0');
+    g.addColorStop(0.16, '#f3d58a');
+    g.addColorStop(0.48, '#d4a43a');
+    g.addColorStop(0.78, '#b47a18');
+    g.addColorStop(1, '#7a4e0e');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(16, 10, 21, 30, 20, 58);
-    ctx.lineTo(-20, 58);
-    ctx.bezierCurveTo(-21, 30, -16, 10, 0, 0);
+    ctx.bezierCurveTo(17, 11, 22, 32, 21, 62);
+    ctx.lineTo(-21, 62);
+    ctx.bezierCurveTo(-22, 32, -17, 11, 0, 0);
     ctx.fill();
-    ctx.fillStyle = payload?.accent || '#d5dde6';
-    ctx.fillRect(-20, 56, 40, 5);
+    ctx.fillStyle = 'rgba(255,236,180,0.38)';
+    ctx.beginPath();
+    ctx.moveTo(-6, 8);
+    ctx.bezierCurveTo(-14, 22, -16, 40, -14, 58);
+    ctx.lineTo(-8, 58);
+    ctx.bezierCurveTo(-10, 36, -8, 18, -2, 10);
+    ctx.fill();
+    ctx.fillStyle = payload?.accent || '#8a5a12';
+    ctx.fillRect(-21, 60, 42, 5);
     if (payload?.mark) {
-      ctx.fillStyle = payload.accent || '#3ec6ff';
+      ctx.fillStyle = '#1a1408';
       ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(payload.mark, 0, 50);
+      ctx.fillText(payload.mark, 0, 52);
     }
   } else {
     ctx.fillStyle = '#f4f7fb';
-    ctx.fillRect(-16, 28, 32, 30);
+    ctx.fillRect(-16, 32, 32, 30);
     ctx.fillStyle = '#c5ced8';
-    ctx.fillRect(-11, 24, 22, 8);
+    ctx.fillRect(-11, 28, 22, 8);
   }
 
-  const goldTop = ctx.createLinearGradient(-20, 61, 20, 78);
+  const goldTop = ctx.createLinearGradient(-21, 65, 21, 84);
   goldTop.addColorStop(0, '#f3d58a');
   goldTop.addColorStop(0.45, '#c48a2a');
   goldTop.addColorStop(1, '#8a5a12');
   ctx.fillStyle = goldTop;
-  ctx.fillRect(-20, 61, 40, 16);
+  ctx.fillRect(-21, 65, 42, 16);
 
-  const body = ctx.createLinearGradient(-19, 76, 19, 76);
+  const body = ctx.createLinearGradient(-20, 80, 20, 80);
   body.addColorStop(0, '#b8c2ca');
   body.addColorStop(0.22, '#f7fbff');
   body.addColorStop(0.55, '#e8eef4');
   body.addColorStop(1, '#8e979e');
   ctx.fillStyle = body;
-  ctx.fillRect(-19, 76, 38, 102);
+  ctx.fillRect(-20, 80, 40, 118);
   ctx.fillStyle = 'rgba(20,28,40,0.08)';
-  for (let y = 84; y < 170; y += 13) ctx.fillRect(-17, y, 34, 1);
+  for (let y = 88; y < 188; y += 13) ctx.fillRect(-18, y, 36, 1);
 
-  chevronMark(ctx, 0, 128, 0.62, '#1c2834');
+  chevronMark(ctx, 0, 136, 0.62, '#1c2834');
 
   ctx.fillStyle = '#fff';
-  ctx.fillRect(8, 92, 10, 6);
+  ctx.fillRect(8, 98, 10, 6);
   ctx.fillStyle = '#b22234';
-  ctx.fillRect(8, 92, 10, 2);
-  ctx.fillRect(8, 96, 10, 2);
+  ctx.fillRect(8, 98, 10, 2);
+  ctx.fillRect(8, 102, 10, 2);
   ctx.fillStyle = '#3c3b6e';
-  ctx.fillRect(8, 92, 4, 6);
+  ctx.fillRect(8, 98, 4, 6);
 
-  ctx.fillStyle = '#0b0d12';
-  [[-34, 150], [20, 150], [-32, 176], [18, 176]].forEach(([x, y], i) => {
-    const h = i < 2 ? 28 : 24;
-    ctx.beginPath();
-    ctx.moveTo(x < 0 ? -19 : 19, y + 3);
-    ctx.lineTo(x, y + 7);
-    ctx.lineTo(x, y + h);
-    ctx.lineTo(x < 0 ? -19 : 19, y + h - 7);
-    ctx.closePath();
-    ctx.fill();
-  });
+  drawStrakes(ctx, 20, false, 92, 176);
 
-  const copper = ctx.createLinearGradient(-22, 198, 22, 226);
+  const copper = ctx.createLinearGradient(-22, 210, 22, 238);
   copper.addColorStop(0, '#e0b85a');
   copper.addColorStop(0.35, '#c48a2a');
   copper.addColorStop(0.7, '#8a4e12');
   copper.addColorStop(1, '#5a320c');
   ctx.fillStyle = copper;
-  ctx.fillRect(-21, 198, 42, 22);
+  ctx.fillRect(-22, 210, 44, 22);
 
   for (let i = 0; i < 7; i++) {
     const x = -16 + i * 5.4;
     ctx.fillStyle = '#2b3038';
     ctx.beginPath();
-    ctx.ellipse(x, 232, 3, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, 246, 3, 7, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#6d7380';
     ctx.beginPath();
-    ctx.ellipse(x, 230, 1.5, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, 244, 1.5, 3, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
   ctx.strokeStyle = 'rgba(20,28,40,0.16)';
-  ctx.strokeRect(-19, 76, 38, 102);
+  ctx.strokeRect(-20, 80, 40, 118);
   return cv;
 }
 
@@ -149,10 +180,11 @@ export function makeFairingHalf(side) {
   const cv = canvas(44, 78);
   const ctx = cv.getContext('2d');
   const g = ctx.createLinearGradient(side < 0 ? 8 : 36, 0, side < 0 ? 40 : 4, 0);
-  g.addColorStop(0, '#8a929a');
-  g.addColorStop(0.28, '#f7fbff');
-  g.addColorStop(0.72, '#e4ebf2');
-  g.addColorStop(1, '#6e767e');
+  g.addColorStop(0, '#8a5a12');
+  g.addColorStop(0.28, '#f3d58a');
+  g.addColorStop(0.55, '#d4a43a');
+  g.addColorStop(0.82, '#b47a18');
+  g.addColorStop(1, '#7a4e0e');
   ctx.fillStyle = g;
   ctx.beginPath();
   if (side < 0) {
@@ -570,9 +602,9 @@ function drawIlt(ctx, x, groundY) {
  * 3-1 landing-burn language, ASDS circle-X droneship.
  */
 export function makeBooster(deployed = false) {
-  const cv = canvas(110, 268);
+  const cv = canvas(124, 268);
   const ctx = cv.getContext('2d');
-  ctx.translate(55, 10);
+  ctx.translate(62, 10);
 
   const gold = ctx.createLinearGradient(-22, 0, 22, 48);
   gold.addColorStop(0, '#f3d58a');
@@ -594,22 +626,7 @@ export function makeBooster(deployed = false) {
   ctx.fillStyle = 'rgba(20,28,40,0.08)';
   for (let y = 56; y < 188; y += 16) ctx.fillRect(-18, y, 36, 1);
 
-  const span = deployed ? 54 : 38;
-  const thick = deployed ? 16 : 12;
-  ctx.fillStyle = '#0b0d12';
-  [[-span, 50], [span - thick, 50], [-span + 2, 88], [span - thick - 2, 88]].forEach(([x, y], i) => {
-    const h = i < 2 ? (deployed ? 36 : 30) : (deployed ? 32 : 26);
-    ctx.beginPath();
-    ctx.moveTo(x < 0 ? -20 : 20, y + 4);
-    ctx.lineTo(x, y + (deployed ? 10 : 8));
-    ctx.lineTo(x, y + h);
-    ctx.lineTo(x < 0 ? -20 : 20, y + h - 8);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#1a1d24';
-    ctx.fillRect(x < 0 ? x + 2 : 20, y + 10, 3, h - 14);
-    ctx.fillStyle = '#0b0d12';
-  });
+  drawStrakes(ctx, 20, deployed, 54, 150);
 
   ctx.fillStyle = '#0b0d12';
   ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';

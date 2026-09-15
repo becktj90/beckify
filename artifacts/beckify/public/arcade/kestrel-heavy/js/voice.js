@@ -113,9 +113,13 @@ export const LINES = {
     'Spacecraft sep. {id} is in the book.',
   ],
   'haven-slide': [
-    'Haven downrange. Strakes out. Glide the diagonal. Do not burn yet.',
+    'Haven downrange. Pitch over, then strakes. Glide the diagonal. Do not burn yet.',
     'Haven is the barge — small on purpose. Glide, then fire the landing burn.',
-    'Long approach. Hold the glide. Engines wait for the burn window.',
+    'Long approach. Hold the glide. Engines wait for the landing burn.',
+  ],
+  'haven-reentry': [
+    'Pitch over. Reentry. Strakes stand by — do not burn yet.',
+    'Reentry. Hold attitude. Aero strakes next.',
   ],
   'haven-straighten': [
     'RCS — straighten for the painted deck.',
@@ -374,7 +378,7 @@ const ONCE = new Set([
   'entry', 'landing', 'touchdown', 'seco', 'deploy',
   'terminal', 'tankpress', 'internal', 'deluge', 'ignition',
   'haven-slide', 'haven-straighten', 'haven-strakes', 'haven-burn',
-  'press-ok',
+  'haven-reentry', 'press-ok',
 ]);
 
 const COOLDOWN = {
@@ -504,7 +508,7 @@ export function pauseHintFor(status, sepPhase) {
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Strakes out. Glide the diagonal, then HOLD climb for the landing burn.';
+  if (status === 'JACKLYN') return 'Pitch over, strakes out. Glide the diagonal, then HOLD climb for the landing burn.';
   return 'HOLD climb. Steer the corridor. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
 }
 

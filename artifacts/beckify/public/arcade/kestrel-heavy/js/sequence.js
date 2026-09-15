@@ -133,9 +133,9 @@ export const SPINE = [
     stage: 'ENTRY BURN',
     banner: 'ENTRY BURN',
     kind: 'warn',
-    radio: 'Entry burn. Haven is downrange. Strakes out. Glide the diagonal.',
+    radio: 'Entry burn. Pitch over. Haven is downrange. Strakes next — then glide.',
     juice: 'entry',
-    coach: 'Glide on Haven · do not burn yet',
+    coach: 'Pitch over · strakes · glide · then burn',
   },
   {
     id: 'landing',
@@ -263,6 +263,7 @@ export function playGoal(status, session = {}, flight = {}) {
   }
   if (status === 'JACKLYN') {
     const phase = session.jacklynPhase || 'glide';
+    if (phase === 'reentry') return 'PITCH OVER  ·  reentry  ·  strakes stand by';
     if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
       return 'HOLD CLIMB for the landing burn · straighten for the deck';
     }
