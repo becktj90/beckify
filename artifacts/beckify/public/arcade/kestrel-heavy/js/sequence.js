@@ -113,7 +113,6 @@ export const SPINE = [
     kind: 'info',
     radio: 'SES-1. Upper-stage engine is lit. {payload} still coasting under the fairing.',
     juice: 'ses',
-    quiet: true,
   },
   {
     id: 'fairing',
@@ -123,7 +122,6 @@ export const SPINE = [
     kind: 'info',
     radio: 'Fairing jettison. {mark} — {payload} is free of the stack.',
     juice: 'fairing',
-    quiet: true,
   },
   {
     id: 'entry',

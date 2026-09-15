@@ -485,9 +485,13 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status !== 'SEP' || !this.session || this.session.sepDone) return;
     if (this.session.sepPhase !== 'window') return;
     if (!this.inSepZone()) {
-      setBanner('NOT IN SEP ZONE', 'warn', 900);
-      AudioApi.play('ui', this.settings);
-      return;
+      const near = this.session.sepZoneY != null
+        && Math.abs(this.rocket.y - this.session.sepZoneY) <= SEP.zoneH * 0.72;
+      if (!near) {
+        setBanner('NOT IN SEP ZONE', 'warn', 900);
+        AudioApi.play('ui', this.settings);
+        return;
+      }
     }
     const aligned = this.session.sepAlignHold >= SEP.alignHold;
     this.fireSep(aligned);
@@ -1030,6 +1034,7 @@ export default class MissionScene extends Phaser.Scene {
     }
 
     if (this.session.sepPhase === 'window' && !this.session.sepDone) {
+      this.session.sepZoneY = this.rocket.y;
       if (this.session.sepNeedRelease && !this.inputState.boostHeld) this.session.sepNeedRelease = false;
       if (this.session.sepElapsed >= SEP.lateSec && !this.session.sepLate) {
         this.session.sepLate = true;
