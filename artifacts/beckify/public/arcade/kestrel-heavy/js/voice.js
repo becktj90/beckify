@@ -88,14 +88,14 @@ export const LINES = {
     '{mark} fairing jettison confirmed.',
   ],
   entry: [
-    'Entry burn. Haven is downrange. Slide in diagonal.',
-    'Entry burn. Long approach. Haven is the small deck.',
-    'Boostback is compressed. Ride the diagonal into Haven.',
+    'Entry burn. Pitch over. Haven is downrange. Strakes next.',
+    'Reentry. Long approach. Strakes, then glide the diagonal.',
+    'Entry burn. Hold the pitch. Engines wait for the landing burn.',
   ],
   landing: [
-    'Landing burn. Brake for the painted deck.',
-    'Landing burn. Kill sink over the paint.',
-    'Soot on the water. Brake now.',
+    'Landing burn. HOLD climb. Kill sink over the paint.',
+    'Landing burn. Fire engines, then straighten for the deck.',
+    'Engines for the deck. Hold burn, then settle.',
   ],
   touchdown: [
     'Touchdown. BOOSTER RECOVERED. Sea state nominal.',

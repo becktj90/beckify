@@ -1089,7 +1089,8 @@ export default class MissionScene extends Phaser.Scene {
     const assist = this.isHavenQa() ? Math.max(mode.assist, 0.42) : mode.assist;
     if (assist > 0) {
       const err = (deckX - this.rocket.x) / 340;
-      axis = clamp(axis + err * assist * 0.72, -1, 1);
+      const mix = (this.session.jacklynPhase === 'burn' || this.session.jacklynPhase === 'straighten' || this.session.jacklynPhase === 'settle') ? 0.72 : 0.26;
+      axis = clamp(axis + err * assist * mix, -1, 1);
     }
 
     const alt = this.jacklyn.y - 50 - this.rocket.y;
@@ -1120,7 +1121,7 @@ export default class MissionScene extends Phaser.Scene {
     const wantAngle = reentry
       ? side * -46
       : gliding
-        ? clamp(this.rocket.body.velocity.x * 3.1, -34, 34)
+        ? clamp(side * -28 + this.rocket.body.velocity.x * 1.4, -38, 38)
         : 0;
     const nowAngle = this.rocket.angle || 0;
     const slew = reentry ? 2.2 : gliding ? 1.5 : 4.4;
@@ -1140,7 +1141,10 @@ export default class MissionScene extends Phaser.Scene {
         setBanner('TOO EARLY — hold the glide', 'warn', 1400);
       }
     } else if (gliding) {
-      this.rocket.applyForce({ x: axis * 0.008 + (mode.wind || 0) * 0.0012, y: 0.002 });
+      this.rocket.applyForce({
+        x: axis * 0.008 + (mode.wind || 0) * 0.0012 + side * -0.0035,
+        y: 0.0018,
+      });
       this.session.throttle = 0.08;
       AudioApi.setBed('burn', false, this.settings);
       if (boosting) {
@@ -1193,7 +1197,7 @@ export default class MissionScene extends Phaser.Scene {
       if (beat.id === 'touchdown' && !this.session.landingLock) continue;
       if ((beat.id === 'seco' || beat.id === 'deploy') && !this.session.landingLock) continue;
       if (beat.id === 'sep') continue;
-      if ((beat.id === 'entry' || beat.id === 'landing') && this.status === 'JACKLYN') continue;
+      if ((beat.id === 'entry' || beat.id === 'landing') && (this.status === 'JACKLYN' || this.status === 'SEP')) continue;
       this.session.fired[beat.id] = true;
       this.onBeat(beat);
     }

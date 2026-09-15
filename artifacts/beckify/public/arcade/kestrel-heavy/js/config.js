@@ -124,7 +124,7 @@ export const HAVEN = {
   startY: -620,
   startLat: 1180,
   bargeY: 690,
-  zoomFar: 0.3,
+  zoomFar: 0.34,
   zoomNear: 0.52,
   gravity: 0.142,
   glideGravity: 0.068,

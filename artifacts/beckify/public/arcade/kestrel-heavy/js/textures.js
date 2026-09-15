@@ -28,8 +28,8 @@ function chevronMark(ctx, x, y, s, color) {
 /** Solid black wing-strakes. Never lattice / grid fins. */
 function drawStrakes(ctx, bodyHalf, deployed, forwardY, aftY) {
   ctx.fillStyle = '#0b0d12';
-  const fSpan = deployed ? 18 : 12;
-  const fH = deployed ? 20 : 16;
+  const fSpan = deployed ? 22 : 16;
+  const fH = deployed ? 22 : 18;
   [-1, 1].forEach((side) => {
     const tip = side * (bodyHalf + fSpan);
     ctx.beginPath();
@@ -40,8 +40,8 @@ function drawStrakes(ctx, bodyHalf, deployed, forwardY, aftY) {
     ctx.closePath();
     ctx.fill();
   });
-  const aftSpan = deployed ? 30 : 18;
-  const aftH = deployed ? 44 : 32;
+  const aftSpan = deployed ? 36 : 24;
+  const aftH = deployed ? 48 : 36;
   [-1, 1].forEach((side) => {
     const tip = side * (bodyHalf + aftSpan);
     ctx.beginPath();
