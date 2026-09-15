@@ -121,6 +121,10 @@ export const LINES = {
     'Pitch over. Reentry. Strakes stand by — do not burn yet.',
     'Reentry. Hold attitude. Aero strakes next.',
   ],
+  'haven-maxq': [
+    'Descent max-Q. Strakes are working. Hold the glide.',
+    'Through descent max-Q. Ride the diagonal into Haven.',
+  ],
   'haven-straighten': [
     'RCS — straighten for the painted deck.',
     'Straighten. Paint is the catch zone.',
@@ -378,7 +382,7 @@ const ONCE = new Set([
   'entry', 'landing', 'touchdown', 'seco', 'deploy',
   'terminal', 'tankpress', 'internal', 'deluge', 'ignition',
   'haven-slide', 'haven-straighten', 'haven-strakes', 'haven-burn',
-  'haven-reentry', 'press-ok',
+  'haven-reentry', 'haven-maxq', 'press-ok',
 ]);
 
 const COOLDOWN = {

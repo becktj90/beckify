@@ -8,8 +8,8 @@ test('ascent science evolves through Max-Q and MECO', async () => {
   const { computeTelemetry, formatScience } = await import(path.join(arcade, 'telemetry.js'));
   const pad = computeTelemetry({ status: 'PRELAUNCH', tClock: -4, throttle: 0.2, fuel: 100, charge: 0.4 });
   const early = computeTelemetry({ status: 'ASCENT', tClock: 6, throttle: 1, fuel: 88 });
-  const maxq = computeTelemetry({ status: 'ASCENT', tClock: 18.6, throttle: 0.92, fuel: 62 });
-  const meco = computeTelemetry({ status: 'ASCENT', tClock: 38.4, throttle: 0.2, fuel: 18 });
+  const maxq = computeTelemetry({ status: 'ASCENT', tClock: 21.6, throttle: 0.92, fuel: 62 });
+  const meco = computeTelemetry({ status: 'ASCENT', tClock: 38.8, throttle: 0.2, fuel: 18 });
   const sep = computeTelemetry({
     status: 'SEP', tClock: 40, throttle: 0.2, fuel: 18, altitudeKm: 54, sepPhase: 'coast', prevVelMs: 400,
   });

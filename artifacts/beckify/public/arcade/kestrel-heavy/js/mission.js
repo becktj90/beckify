@@ -761,6 +761,8 @@ export default class MissionScene extends Phaser.Scene {
     this.session.landingLock = false;
     this.session.jacklynPhase = 'reentry';
     this.session.tClock = Math.max(this.session.tClock, PACE.ENTRY);
+    this.session.fired.ses1 = true;
+    this.session.fired.fairing = true;
     this.session.swellT = 0;
     this.session.fuel = Math.min(FUEL_MAX, Math.max(this.session.fuel, HAVEN.landingFuel));
     this.session.earlyBurnWarned = false;
@@ -813,6 +815,15 @@ export default class MissionScene extends Phaser.Scene {
         banner: 'STRAKES DEPLOYED — glide the diagonal. Do not burn yet.',
         kind: 'warn',
         holdMs: 3200,
+      });
+      this.time.delayedCall(1500, () => {
+        if (this.status === 'JACKLYN') {
+          this.callout('haven-maxq', {
+            banner: 'DESCENT MAX-Q — strakes working. Hold the glide',
+            kind: 'info',
+            holdMs: 1800,
+          });
+        }
       });
     });
     this.time.delayedCall(Math.round((HAVEN.reentrySec + 2.6) * 1000), () => {
@@ -1197,6 +1208,7 @@ export default class MissionScene extends Phaser.Scene {
       if (beat.id === 'touchdown' && !this.session.landingLock) continue;
       if ((beat.id === 'seco' || beat.id === 'deploy') && !this.session.landingLock) continue;
       if (beat.id === 'sep') continue;
+      if ((beat.id === 'ses1' || beat.id === 'fairing') && !this.session.sepDone) continue;
       if ((beat.id === 'entry' || beat.id === 'landing') && (this.status === 'JACKLYN' || this.status === 'SEP')) continue;
       this.session.fired[beat.id] = true;
       this.onBeat(beat);
@@ -1231,7 +1243,7 @@ export default class MissionScene extends Phaser.Scene {
       this.steam.emitParticleAt(PAD_ROCKET_X, PAD_ROCKET_Y + 120, 16);
       this.flashPad(0.12);
     }
-    if (beat.juice === 'fairing' && !this.session.sepDone) this.playFairingJettison();
+    if (beat.juice === 'fairing' && this.session.sepDone) this.playFairingJettison();
     if (beat.juice === 'ses' && !this.session.sepDone) this.spawnUpperStage();
     if (beat.id !== 'liftoff' && beat.id !== 'touchdown') this.tickCombo(1, beat.banner);
     if (beat.id === 'deploy') this.session.upperDone = true;
@@ -1250,11 +1262,12 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setTexture('booster');
     this.bindRocketBody();
     this.spawnUpperStage();
-    this.playFairingJettison();
     this.spawnSepDebris();
     this.rocket.setVelocity(this.rocket.body.velocity.x + (clean ? 0.18 : 1.15), 1.35);
     this.lockVehicleCamera(CAM.sepLerpX, CAM.sepLerpY);
     this.setZoomWant(this.flightZoom('sep'), 1.2);
+    this.time.delayedCall(Math.round(SEP.sesDelaySec * 1000), () => this.notePostSep('ses1'));
+    this.time.delayedCall(Math.round(SEP.fairingDelaySec * 1000), () => this.notePostSep('fairing'));
     if (!clean) {
       this.session.sepWide = true;
       this.session.combo = 0;
@@ -1266,10 +1279,17 @@ export default class MissionScene extends Phaser.Scene {
       }
     } else {
       this.tickCombo(1, 'STAGE SEP');
-      this.callout('sep-clear', { banner: 'SEP CONFIRMED — booster pitching over. Haven next', kind: 'go', holdMs: 2200 });
+      this.callout('sep-clear', { banner: 'SEP CONFIRMED — camera on the booster. Upper lighting next', kind: 'go', holdMs: 2200 });
     }
     AudioApi.play('whoosh', this.settings);
     if (!this.settings.reducedMotion) this.cameras.main.shake(260, 0.007);
+  }
+
+  notePostSep(id) {
+    if (this.status !== 'SEP' || !this.session || this.session.fired[id]) return;
+    this.session.fired[id] = true;
+    const beat = (this.session.beats || []).find((item) => item.id === id);
+    if (beat) this.onBeat(beat);
   }
 
   sepContact() {
@@ -1339,8 +1359,13 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   playFairingJettison() {
-    const x = this.rocket.x;
-    const y = this.rocket.y - 70;
+    if (this.session?.fairingFlown) return;
+    if (this.session) this.session.fairingFlown = true;
+    const origin = this.upperStage?.active
+      ? this.upperStage
+      : { x: this.rocket.x + 70, y: this.rocket.y - 180 };
+    const x = origin.x;
+    const y = origin.y;
     const left = this.add.image(x - 8, y, 'fairing-l').setDepth(5);
     const right = this.add.image(x + 8, y, 'fairing-r').setDepth(5);
     this.debrisBits.push(left, right);

@@ -1,14 +1,12 @@
 /**
  * Arcade-compressed Kestrel Heavy sequence of events.
- * Spine is a commentary board:
- * Terminal Count → Tank Press → Internal Power → Water Deluge → Ignition →
- * Liftoff → Max-Q → MECO → Stage Sep → SES-1 → Fairing Jettison →
- * Entry Burn → Landing Burn → Haven Touchdown (~T+96 compressed) →
- * SECO → payload deploy.
+ * Spine is a commentary board, chapter-ordered like public launch→landing
+ * cuts: Terminal Count → Ignition → Liftoff → Max-Q → MECO → Stage Sep →
+ * SES-1 → Fairing Jettison → Entry Burn → Landing Burn → Haven Touchdown
+ * (~T+96 compressed) → SECO → payload deploy.
  *
- * Real orbital times are hours and minutes. Here T-8s … T+104s so a stranger
- * hears every callout in one longer, more deliberate run. Per-mission copy
- * swaps {id}/{payload}/{mark}.
+ * Real orbital times are minutes. Here T-8s … T+104s so a stranger hears
+ * every callout in one run. Per-mission copy swaps {id}/{payload}/{mark}.
  */
 import { PACE } from './config.js';
 

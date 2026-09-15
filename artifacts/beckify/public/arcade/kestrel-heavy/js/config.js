@@ -71,24 +71,30 @@ export const DIFFICULTY = {
   },
 };
 
-/** Compressed MET spine. A clean run is ~T+100, not a 50s sprint. */
+/**
+ * Compressed MET spine. Chapter order matches public launch→landing cuts
+ * (liftoff → Max-Q → MECO → sep → SES-1 → fairing → reentry → landing burn
+ * → touchdown), scaled to ~T+96 so a stranger hears every beat in one run.
+ */
 export const PACE = {
-  MAXQ: 18.6,
-  MECO: 38.4,
-  SEP: 40.2,
-  SES1: 51.8,
-  FAIRING: 55.6,
-  ENTRY: 64.0,
-  LANDING: 84.8,
+  MAXQ: 21.6,
+  MECO: 38.8,
+  SEP: 40.8,
+  SES1: 43.0,
+  FAIRING: 49.4,
+  ENTRY: 69.2,
+  LANDING: 89.8,
   TOUCHDOWN: 96.5,
-  SECO: 99.8,
-  DEPLOY: 103.6,
+  SECO: 100.2,
+  DEPLOY: 104.0,
 };
 
 /** MECO → stage sep is a playable beat, not a 400ms cutscene. */
 export const SEP = {
   coastSec: 2.4,
-  clearSec: 6.8,
+  clearSec: 7.6,
+  sesDelaySec: 2.2,
+  fairingDelaySec: 5.8,
   alignHold: 0.4,
   widePenalty: 400,
   contactPenalty: 650,
