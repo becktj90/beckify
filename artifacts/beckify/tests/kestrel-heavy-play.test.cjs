@@ -85,7 +85,7 @@ assert.match(arcadeJs, /getElementById\('ng-menu'\)/);
 assert.match(rootSw, /CACHE_VERSION = 'v6'/);
 assert.match(rootSw, /\/arcade\//);
 assert.match(rootSw, /EXCLUDED_PREFIXES[\s\S]*\/arcade\//);
-assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-9"/);
+assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-10"/);
 assert.match(arcadeHtml, /-webkit-touch-callout:\s*none/);
 assert.match(arcadeHtml, /-webkit-user-select:\s*none/);
 assert.match(arcadeHtml, /user-select:\s*none/);
@@ -93,19 +93,26 @@ assert.match(arcadeHtml, /-webkit-tap-highlight-color:\s*transparent/);
 assert.match(arcadeHtml, /#arcade-touch-btns button \{\s*[\s\S]*?touch-action:\s*none/);
 assert.match(arcadeHtml, /#ng-phaser-root[\s\S]*?touch-action:\s*none/);
 assert.match(arcadeHtml, /content:\s*attr\(data-label\)/);
-assert.match(arcadeHtml, /id="atb-boost"[^>]*aria-label="Hold boost to climb"/);
-assert.match(arcadeHtml, /id="atb-boost"[^>]*data-label="HOLD TO CLIMB"/);
+assert.match(arcadeHtml, /id="atb-boost"[^>]*aria-label="Hold to climb, drag left or right to steer"/);
+assert.match(arcadeHtml, /id="atb-boost"[^>]*data-label="HOLD · DRAG"/);
 assert.match(arcadeHtml, /id="atb-left"[^>]*data-label="◀"/);
 assert.match(arcadeHtml, /id="atb-right"[^>]*data-label="▶"/);
 assert.doesNotMatch(arcadeHtml, /id="atb-boost"[^>]*>HOLD TO CLIMB</);
+assert.match(arcadeHtml, /#atb-boost::before/);
+assert.match(arcadeHtml, /hold CLIMB and drag left\/right to steer with one thumb/);
 assert.match(hudJs, /addEventListener\('touchstart'/);
+assert.match(hudJs, /addEventListener\('touchmove'/);
+assert.match(hudJs, /addEventListener\('pointermove'/);
+assert.match(hudJs, /lostpointercapture/);
+assert.match(hudJs, /holdClimb/);
+assert.match(hudJs, /steerDrag/);
 assert.match(hudJs, /addEventListener\('contextmenu'/);
 assert.match(hudJs, /addEventListener\('selectstart'/);
 assert.match(hudJs, /passive:\s*false/);
 assert.match(hudJs, /dataset\.label = snapshot\.boostLabel/);
 assert.match(input, /event\.code === 'Space'/);
 assert.match(input, /event\.code === 'KeyA'/);
-assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-9"/);
+assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-10"/);
 assert.match(host, /index\.html\?v=\$\{ARCADE_ASSET_VERSION\}/);
 assert.match(arcadeHtml, /id="ng-tape"/);
 assert.match(arcadeHtml, /id="ng-phase"/);
@@ -186,6 +193,9 @@ assert.match(storage, /newGlennRunnerStateV3/);
 assert.match(input, /function isBoosting\(/);
 assert.match(input, /function consumeBoostTap\(/);
 assert.match(input, /function clearFlightHolds\(/);
+assert.match(input, /function setTouchSteer\(/);
+assert.match(input, /function flightAxis\(/);
+assert.match(input, /touchSteer/);
 assert.match(input, /Escape/);
 assert.match(input, /visibilitychange/);
 assert.match(input, /blur/);
@@ -421,6 +431,9 @@ assert.match(mission, /lockVehicleCamera/);
 assert.match(mission, /requestSep/);
 assert.match(mission, /updateSepZone/);
 assert.match(mission, /noteBoostPress/);
+assert.match(mission, /steerDrag/);
+assert.match(mission, /flightAxis/);
+assert.match(mission, /setTouchSteer/);
 assert.match(mission, /tickZoom/);
 assert.match(mission, /booster-glide/);
 assert.match(mission, /HOLD CONFIRMED/);
@@ -460,7 +473,16 @@ assert.ok(fs.existsSync(path.join(iosGame, 'index.html')), 'iOS Game pack must s
 const iosHtml = fs.readFileSync(path.join(iosGame, 'index.html'), 'utf8');
 assert.doesNotMatch(iosHtml, /\/toolbox\/js\//);
 assert.match(iosHtml, /viewport-fit=cover/);
-assert.match(iosHtml, /name="arcade-asset-version" content="kestrel-8"/);
+assert.equal(
+  iosHtml.match(/name="arcade-asset-version" content="([^"]+)"/)?.[1],
+  arcadeHtml.match(/name="arcade-asset-version" content="([^"]+)"/)?.[1],
+  'iOS Game pack asset version must match the arcade cabinet',
+);
+for (const rel of ['js/hud.js', 'js/input.js', 'js/mission.js']) {
+  const webJs = fs.readFileSync(path.join(arcadeDir, rel), 'utf8');
+  const iosJs = fs.readFileSync(path.join(iosGame, rel), 'utf8');
+  assert.equal(iosJs, webJs, `iOS pack ${rel} must match arcade source`);
+}
 assert.match(iosHtml, /container:\s*cabinet\s*\/\s*size/);
 assert.match(iosHtml, /is-ios-app/);
 assert.doesNotMatch(iosHtml, /fonts\.googleapis\.com/);

@@ -75,6 +75,43 @@ test('voice pools do not repeat the same line back-to-back', async () => {
   }
 });
 
+test('one-thumb climb drag arms analog steer without stealing pads', async () => {
+  const {
+    createInput,
+    setTouchSteer,
+    flightAxis,
+    steerAxis,
+    clearFlightHolds,
+    TOUCH_STEER_DEAD_PX,
+    TOUCH_STEER_FULL_PX,
+  } = await import(path.join(arcade, 'input.js'));
+
+  const input = createInput();
+  input.left = true;
+  setTouchSteer(input, TOUCH_STEER_DEAD_PX - 2);
+  assert.equal(input.touchSteer, null, 'inside deadzone, ◀ ▶ / canvas analog stay live');
+  assert.equal(flightAxis(input, 640, 140), -1);
+
+  setTouchSteer(input, TOUCH_STEER_FULL_PX);
+  assert.equal(input.touchSteer, 1);
+  assert.equal(flightAxis(input, 640, 140), 1, 'armed drag wins over digital pads');
+
+  setTouchSteer(input, -TOUCH_STEER_FULL_PX / 2);
+  assert.ok(input.touchSteer < 0 && input.touchSteer > -1);
+
+  input.pointerX = 900;
+  input.touchSteer = null;
+  input.touchSteerArmed = false;
+  assert.equal(flightAxis(input, 640, 140), 1);
+  input.pointerX = null;
+  assert.equal(flightAxis(input, 640, 140), steerAxis(input));
+
+  clearFlightHolds(input);
+  assert.equal(input.touchSteer, null);
+  assert.equal(input.touchSteerArmed, false);
+  assert.equal(input.left, false);
+});
+
 test('corridor rails are play bounds and beat goals stay readable', async () => {
   const { corridorBounds, corridorEdge, clampToCorridor } = await import(path.join(arcade, 'corridor.js'));
   const { playGoal, playNext, beatsFor, nextCoachBeat } = await import(path.join(arcade, 'sequence.js'));

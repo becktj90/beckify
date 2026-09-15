@@ -4,9 +4,16 @@ function el(id) {
   return document.getElementById(id);
 }
 
+let lastAnnounce = '';
+let lastAnnounceAt = 0;
+
 export function announce(message) {
   const live = el('arcade-live');
-  if (!live) return;
+  if (!live || !message) return;
+  const now = Date.now();
+  if (message === lastAnnounce && now - lastAnnounceAt < 1400) return;
+  lastAnnounce = message;
+  lastAnnounceAt = now;
   live.textContent = '';
   window.requestAnimationFrame(() => {
     live.textContent = message;
@@ -27,6 +34,15 @@ export function setBanner(text, kind = 'info', holdMs = 2200) {
       banner.hidden = true;
     }, holdMs);
   }
+}
+
+export function flashIgnite() {
+  const climb = el('atb-boost');
+  if (!climb) return;
+  climb.classList.remove('is-flash');
+  void climb.offsetWidth;
+  climb.classList.add('is-flash');
+  window.setTimeout(() => climb.classList.remove('is-flash'), 340);
 }
 
 export function renderHud(snapshot) {
@@ -70,14 +86,24 @@ export function renderHud(snapshot) {
   const climb = el('atb-boost');
   if (climb && snapshot.boostLabel) {
     climb.dataset.label = snapshot.boostLabel;
+    climb.classList.toggle('is-held', Boolean(snapshot.boostHeld));
     climb.setAttribute(
       'aria-label',
-      snapshot.boostLabel === 'HOLD TO BRAKE'
-        ? 'Hold to brake'
-        : snapshot.boostLabel === 'TAP TO SEP'
-          ? 'Tap climb to stage sep'
-          : 'Hold boost to climb',
+      snapshot.boostLabel === 'HOLD TO BURN'
+        ? 'Hold to fire the landing burn, drag left or right to steer'
+        : snapshot.boostLabel === 'GLIDE'
+          ? 'Glide — do not burn yet. Steer on the playfield or with the side pads'
+          : snapshot.boostLabel === 'SEPARATE'
+            ? 'Press to separate stages'
+            : 'Hold to climb, drag left or right to steer',
     );
+  }
+  const sepBtn = el('ng-sep-btn');
+  if (sepBtn) {
+    const show = Boolean(snapshot.sepReady || snapshot.sepArmed);
+    sepBtn.hidden = !show;
+    sepBtn.classList.toggle('is-ready', Boolean(snapshot.sepReady));
+    sepBtn.setAttribute('aria-disabled', snapshot.sepReady ? 'false' : 'true');
   }
   const record = el('arcade-hi-score');
   if (record) record.textContent = snapshot.recordLine;
@@ -191,6 +217,7 @@ export function bindChrome(handlers) {
     ['ng-pause-howto', handlers.openHowto],
     ['ng-pause-abort', handlers.abortToMenu],
     ['ng-sum-next', handlers.nextFlight],
+    ['ng-sep-btn', handlers.separate],
   ];
   clicks.forEach(([id, fn]) => {
     const node = el(id);
@@ -201,6 +228,24 @@ export function bindChrome(handlers) {
       fn();
     });
   });
+
+  const clientXOf = (event) => {
+    if (typeof event.clientX === 'number') return event.clientX;
+    const touch = event.changedTouches?.[0] || event.touches?.[0];
+    return touch ? touch.clientX : null;
+  };
+
+  const suppressCallout = (event) => {
+    event.preventDefault();
+  };
+
+  const bindHoldGuards = (node) => {
+    node.addEventListener('contextmenu', suppressCallout);
+    node.addEventListener('selectstart', suppressCallout);
+    // iOS Safari starts the text magnifier / scroll from the native touch.
+    node.addEventListener('touchstart', suppressCallout, { passive: false });
+    node.addEventListener('touchmove', suppressCallout, { passive: false });
+  };
 
   const hold = (id, down, up) => {
     const node = el(id);
@@ -222,24 +267,74 @@ export function bindChrome(handlers) {
       held = false;
       up();
     };
-    const suppressCallout = (event) => {
-      event.preventDefault();
-    };
     node.addEventListener('pointerdown', onDown, { passive: false });
     node.addEventListener('pointerup', onUp, { passive: false });
     node.addEventListener('pointercancel', onUp, { passive: false });
     node.addEventListener('pointerleave', onUp, { passive: false });
-    // iOS Safari starts the text magnifier from the native touch, not pointerdown.
+    node.addEventListener('lostpointercapture', onUp, { passive: false });
     node.addEventListener('touchstart', onDown, { passive: false });
     node.addEventListener('touchend', onUp, { passive: false });
     node.addEventListener('touchcancel', onUp, { passive: false });
-    node.addEventListener('contextmenu', suppressCallout);
-    node.addEventListener('selectstart', suppressCallout);
+    bindHoldGuards(node);
+  };
+
+  /**
+   * Primary one-thumb path: hold = climb/burn, drag horizontally = analog steer.
+   * Do not release on pointerleave — capture keeps the same finger after the pad.
+   * ◀ ▶ stay as optional second-finger pads.
+   */
+  const holdClimb = (id) => {
+    const node = el(id);
+    if (!node) return;
+    let held = false;
+    let originX = 0;
+    const endHold = () => {
+      if (!held) return;
+      held = false;
+      originX = 0;
+      if (handlers.steerDrag) handlers.steerDrag(null);
+      handlers.boost(false);
+    };
+    const onDown = (event) => {
+      event.preventDefault();
+      if (event.button != null && event.button !== 0) return;
+      if (held) return;
+      const x = clientXOf(event);
+      if (x == null) return;
+      held = true;
+      originX = x;
+      if (node.setPointerCapture && event.pointerId !== undefined) {
+        node.setPointerCapture(event.pointerId);
+      }
+      if (handlers.steerDrag) handlers.steerDrag(null);
+      handlers.boost(true);
+    };
+    const onMove = (event) => {
+      if (!held) return;
+      event.preventDefault();
+      const x = clientXOf(event);
+      if (x == null || !handlers.steerDrag) return;
+      handlers.steerDrag(x - originX);
+    };
+    const onUp = (event) => {
+      event.preventDefault();
+      endHold();
+    };
+    node.addEventListener('pointerdown', onDown, { passive: false });
+    node.addEventListener('pointermove', onMove, { passive: false });
+    node.addEventListener('pointerup', onUp, { passive: false });
+    node.addEventListener('pointercancel', onUp, { passive: false });
+    node.addEventListener('lostpointercapture', onUp, { passive: false });
+    node.addEventListener('touchstart', onDown, { passive: false });
+    node.addEventListener('touchmove', onMove, { passive: false });
+    node.addEventListener('touchend', onUp, { passive: false });
+    node.addEventListener('touchcancel', onUp, { passive: false });
+    bindHoldGuards(node);
   };
 
   hold('atb-left', () => handlers.steer(-1, true), () => handlers.steer(-1, false));
   hold('atb-right', () => handlers.steer(1, true), () => handlers.steer(1, false));
-  hold('atb-boost', () => handlers.boost(true), () => handlers.boost(false));
+  holdClimb('atb-boost');
   syncPlayfieldPointers();
 }
 

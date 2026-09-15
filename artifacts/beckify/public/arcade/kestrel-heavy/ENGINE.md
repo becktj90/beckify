@@ -39,6 +39,7 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - Collision categories + sensors: deck paint and water are sensors (water is not a solid floor). Pickups and hazards are sensors.
 - Haven recovery (arcade-compressed): **reentry pitch-over** → **strakes deployed** → diagonal **glide** (descent max-Q) → player **landing burn** → RCS straighten (`landingVy` + `landingTol`). Solid black strakes, not lattice grid fins. No A-frame legs or ASDS circle-X.
 - After SEPARATE the camera stays on the booster. SES-1 and fairing jettison play as off-booster beats, then Haven.
+- Mobile climb pad is one-thumb: **hold to climb/burn**, **drag left/right to steer**. Keyboard Space + A/D is unchanged. Optional ◀ ▶ pads stay as a second-finger path.
 - Ascent dotted rails are the **flight corridor** (Phaser graphics, not sky decoration). Stay between them or abort; KID is bounced back inside.
 - MECO → stage sep is a playable beat (`SEP` status) in a marked **SEP ZONE** with an on-screen **SEPARATE** button. Camera stays locked on the stack. It is not a 400ms cutscene.
 

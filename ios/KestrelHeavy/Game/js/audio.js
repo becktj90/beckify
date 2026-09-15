@@ -9,22 +9,23 @@
 const KEYS = {
   roar: { file: 'roar-loop', loop: true, vol: 0.36 },
   burn: { file: 'burn-loop', loop: true, vol: 0.32 },
-  liftoff: { file: 'liftoff', vol: 0.72 },
-  maxq: { file: 'maxq', vol: 0.58 },
-  meco: { file: 'meco', vol: 0.52 },
-  whoosh: { file: 'whoosh', vol: 0.5 },
-  touchdown: { file: 'touchdown', vol: 0.58 },
-  recovered: { file: 'recovered', vol: 0.64 },
-  splash: { file: 'splash', vol: 0.56 },
-  ui: { file: 'quindar', vol: 0.34 },
-  countdown: { file: 'quindar', vol: 0.28 },
-  pickup: { file: 'pickup', vol: 0.46 },
-  fuel: { file: 'pickup', vol: 0.4 },
-  shield: { file: 'pickup', vol: 0.4 },
-  overdrive: { file: 'maxq', vol: 0.34 },
-  hit: { file: 'hit', vol: 0.5 },
-  rud: { file: 'rud', vol: 0.62 },
-  success: { file: 'recovered', vol: 0.56 },
+  liftoff: { file: 'liftoff', vol: 0.72, lock: 3.2 },
+  maxq: { file: 'maxq', vol: 0.58, lock: 1.6 },
+  meco: { file: 'meco', vol: 0.52, lock: 2.1 },
+  whoosh: { file: 'whoosh', vol: 0.5, lock: 1.4 },
+  touchdown: { file: 'touchdown', vol: 0.58, lock: 1.8 },
+  recovered: { file: 'recovered', vol: 0.64, lock: 2.2 },
+  splash: { file: 'splash', vol: 0.56, lock: 1.6 },
+  ui: { file: 'quindar', vol: 0.34, lock: 0.28 },
+  countdown: { file: 'quindar', vol: 0.28, lock: 0.45 },
+  pickup: { file: 'pickup', vol: 0.46, lock: 0.35 },
+  fuel: { file: 'pickup', vol: 0.4, lock: 0.35 },
+  shield: { file: 'pickup', vol: 0.4, lock: 0.35 },
+  overdrive: { file: 'maxq', vol: 0.34, lock: 1.2 },
+  hit: { file: 'hit', vol: 0.5, lock: 0.4 },
+  rud: { file: 'rud', vol: 0.62, lock: 1.8 },
+  success: { file: 'recovered', vol: 0.56, lock: 2.2 },
+  ignite: { file: 'quindar', vol: 0.42, lock: 0.55 },
 };
 
 const BEDS = new Set(['roar', 'burn']);
@@ -41,6 +42,8 @@ const AudioApi = {
   ctx: null,
   master: null,
   unduckTimer: 0,
+  lastPlay: Object.create(null),
+  lastPlayAt: Object.create(null),
 
   preload(scene) {
     const files = [...new Set(Object.values(KEYS).map((spec) => spec.file))];
@@ -130,12 +133,18 @@ const AudioApi = {
   play(name, settings) {
     if (!settings || this.silenced(settings)) return;
     this.unlock(settings);
+    const spec = KEYS[name] || KEYS.ui;
+    const now = this.scene?.time?.now ? this.scene.time.now / 1000 : Date.now() / 1000;
+    const lock = spec.lock || 0.8;
+    if (now - (this.lastPlayAt[name] || 0) < lock) return;
+    this.lastPlayAt[name] = now;
     if (CRITICAL_SFX.has(name)) this.duckTheme(settings);
-    const spec = KEYS[name];
     const sound = this.scene?.sound;
     const key = spec ? `ng-${spec.file}` : null;
     if (spec && sound && this.scene.cache?.audio?.exists(key)) {
       try {
+        const existing = typeof sound.get === 'function' ? sound.get(key) : null;
+        if (existing?.isPlaying && lock >= 0.8) return;
         sound.play(key, { volume: spec.vol * this.sfxGain(settings), loop: false });
         return;
       } catch {

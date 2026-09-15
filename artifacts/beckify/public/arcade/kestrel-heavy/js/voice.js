@@ -505,15 +505,15 @@ export function abortRadio(voice, abort, mission) {
 }
 
 export function pauseHintFor(status, sepPhase) {
-  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition. Stay between the dotted corridor rails.';
-  if (status === 'ASCENT') return 'HOLD climb. Stay between the dotted rails. Grab the aero shield. Steer around junk.';
+  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition. Drag left/right to steer. Stay between the dotted corridor rails.';
+  if (status === 'ASCENT') return 'HOLD climb and drag to steer. Stay between the dotted rails. Grab the aero shield.';
   if (status === 'SEP') {
     if (sepPhase === 'window') return 'Stay in the SEP ZONE. ALIGN green, then press SEPARATE.';
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Pitch over, strakes out. Glide the diagonal, then HOLD climb for the landing burn.';
-  return 'HOLD climb. Steer the corridor. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
+  if (status === 'JACKLYN') return 'Pitch over, strakes out. Glide the diagonal, then HOLD + drag for the landing burn.';
+  return 'HOLD climb and drag to steer. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
 }
 
 export function hazardAbortId(kind, atMaxQ) {

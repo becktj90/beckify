@@ -56,7 +56,7 @@ import {
   pauseHintFor,
   speak,
 } from './voice.js';
-import { bindKeyboard, clearFlightHolds, createInput, isBoosting, setBoostHeld, steerAxis } from './input.js';
+import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, phaseChip, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
@@ -305,6 +305,9 @@ export default class MissionScene extends Phaser.Scene {
       steer: (dir, down) => {
         if (dir < 0) this.inputState.left = down;
         if (dir > 0) this.inputState.right = down;
+      },
+      steerDrag: (dx) => {
+        setTouchSteer(this.inputState, dx);
       },
       boost: (down) => {
         if (down) {
@@ -903,10 +906,7 @@ export default class MissionScene extends Phaser.Scene {
       this.session.throttle = clamp(this.session.throttle - dt * 1.8, 0, 0.08);
     }
 
-    let axis = steerAxis(this.inputState);
-    if (this.inputState.pointerX != null) {
-      axis = clamp((this.inputState.pointerX - this.rocket.x) / 140, -1, 1);
-    }
+    const axis = flightAxis(this.inputState, this.rocket.x, 140);
     const alt = this.session.altitudeKm || 0;
     const space = clamp((alt - 8) / 48, 0, 1);
     this.matter.world.setGravity(0, PHYS.ascentG * (1 - space * 0.82));
@@ -983,10 +983,7 @@ export default class MissionScene extends Phaser.Scene {
     this.fireDueBeats();
     this.lockVehicleCamera(CAM.sepLerpX, CAM.sepLerpY);
 
-    let axis = steerAxis(this.inputState);
-    if (this.inputState.pointerX != null) {
-      axis = clamp((this.inputState.pointerX - this.rocket.x) / 150, -1, 1);
-    }
+    let axis = flightAxis(this.inputState, this.rocket.x, 150);
     if (mode.assist > 0 && this.session.sepPhase !== 'clear') {
       axis = clamp(axis - this.rocket.body.velocity.x * 0.18 * mode.assist, -1, 1);
     }
@@ -1097,10 +1094,7 @@ export default class MissionScene extends Phaser.Scene {
     this.applyHavenDrift(dt, mode);
 
     const boosting = isBoosting(this.inputState, this.nowSec);
-    let axis = steerAxis(this.inputState);
-    if (this.inputState.pointerX != null) {
-      axis = clamp((this.inputState.pointerX - this.rocket.x) / 210, -1, 1);
-    }
+    let axis = flightAxis(this.inputState, this.rocket.x, 210);
     const deckX = this.deck.x;
     const assist = this.isHavenQa() ? Math.max(mode.assist, 0.42) : mode.assist;
     if (assist > 0) {
@@ -2270,9 +2264,9 @@ export default class MissionScene extends Phaser.Scene {
 
   hintLine() {
     if (!this.settings.controlHints || !this.session) return '';
-    if (this.status === 'PRELAUNCH') return 'HOLD CLIMB through ignition';
+    if (this.status === 'PRELAUNCH') return 'HOLD CLIMB through ignition  ·  drag to steer';
     if (this.status === 'ASCENT') {
-      if (this.session.flightTime < 6.4) return 'STAY INSIDE THE CORRIDOR  ·  HOLD CLIMB';
+      if (this.session.flightTime < 6.4) return 'STAY INSIDE THE CORRIDOR  ·  HOLD + DRAG';
       if (this.currentFlight().objective?.id === 'shield' && !this.session.objectiveDone && this.session.flightTime < 16) {
         return 'GRAB THE CYAN AERO SHIELD';
       }
@@ -2293,7 +2287,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status === 'JACKLYN') {
       const phase = this.session.jacklynPhase || 'glide';
       if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
-        return 'LANDING BURN  ·  HOLD CLIMB  ·  straighten for the deck';
+        return 'LANDING BURN  ·  HOLD + DRAG  ·  straighten for the deck';
       }
       return 'STRAKES OUT  ·  GLIDE the diagonal  ·  do not burn yet';
     }
@@ -2358,7 +2352,7 @@ export default class MissionScene extends Phaser.Scene {
           : 'GLIDE')
         : this.status === 'SEP' && s.sepPhase === 'window'
           ? 'SEPARATE'
-          : 'HOLD TO CLIMB',
+          : 'HOLD · DRAG',
       boostHeld: boosting,
       sepReady: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone && this.inSepZone(),
       sepArmed: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone,

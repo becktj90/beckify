@@ -240,7 +240,7 @@ export function nextCoachBeat(beats, tClock) {
 }
 
 export function playGoal(status, session = {}, flight = {}) {
-  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition';
+  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition · drag to steer';
   if (status === 'ASCENT') {
     const clock = Number(session.tClock) || 0;
     if (clock < PACE.MAXQ - 4) {
@@ -261,7 +261,7 @@ export function playGoal(status, session = {}, flight = {}) {
     const phase = session.jacklynPhase || 'glide';
     if (phase === 'reentry') return 'PITCH OVER  ·  reentry  ·  strakes stand by';
     if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
-      return 'HOLD CLIMB for the landing burn · straighten for the deck';
+      return 'HOLD CLIMB + drag for the landing burn · straighten for the deck';
     }
     return 'STRAKES OUT  ·  glide the diagonal  ·  do not burn yet';
   }
