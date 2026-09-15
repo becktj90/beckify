@@ -428,11 +428,12 @@ enum ToolboxCatalog {
             id: .bluetoothScan,
             kind: .sensor,
             title: "BLE Scanner",
-            subtitle: "Public ads: name, RSSI, manufacturer, kind hint, radar. Device count ≠ people.",
+            subtitle: "RF activity, room mix, churn, and radar. Device count ≠ people.",
             symbol: "dot.radiowaves.left.and.right",
             synonyms: [
                 "bluetooth", "ble", "corebluetooth", "peripheral", "rssi", "beacon",
                 "radar", "proximity", "layout", "manufacturer", "advertisement", "company id",
+                "activity", "churn", "density", "rf activity",
             ]
         ),
         ToolDefinition(

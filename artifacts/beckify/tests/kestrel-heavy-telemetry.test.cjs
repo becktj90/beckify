@@ -8,8 +8,8 @@ test('ascent science evolves through Max-Q and MECO', async () => {
   const { computeTelemetry, formatScience } = await import(path.join(arcade, 'telemetry.js'));
   const pad = computeTelemetry({ status: 'PRELAUNCH', tClock: -4, throttle: 0.2, fuel: 100, charge: 0.4 });
   const early = computeTelemetry({ status: 'ASCENT', tClock: 6, throttle: 1, fuel: 88 });
-  const maxq = computeTelemetry({ status: 'ASCENT', tClock: 18.6, throttle: 0.92, fuel: 62 });
-  const meco = computeTelemetry({ status: 'ASCENT', tClock: 38.4, throttle: 0.2, fuel: 18 });
+  const maxq = computeTelemetry({ status: 'ASCENT', tClock: 21.6, throttle: 0.92, fuel: 62 });
+  const meco = computeTelemetry({ status: 'ASCENT', tClock: 38.8, throttle: 0.2, fuel: 18 });
   const sep = computeTelemetry({
     status: 'SEP', tClock: 40, throttle: 0.2, fuel: 18, altitudeKm: 54, sepPhase: 'coast', prevVelMs: 400,
   });
@@ -93,8 +93,9 @@ test('corridor rails are play bounds and beat goals stay readable', async () => 
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /corridor/);
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /aero shield/);
   assert.match(playGoal('ASCENT', { tClock: 18.6 }, mission), /Max-Q/);
-  assert.match(playGoal('SEP', { sepPhase: 'window' }, mission), /TAP climb/);
-  assert.match(playGoal('JACKLYN', { jacklynElapsed: 1 }, mission), /Haven/);
+  assert.match(playGoal('SEP', { sepPhase: 'window' }, mission), /SEPARATE/);
+  assert.match(playGoal('JACKLYN', { jacklynPhase: 'glide', jacklynElapsed: 1 }, mission), /glide|STRAKES/i);
+  assert.match(playGoal('JACKLYN', { jacklynPhase: 'burn', jacklynElapsed: 8 }, mission), /landing burn/i);
 
   const beats = beatsFor(mission);
   const next = nextCoachBeat(beats, -7);

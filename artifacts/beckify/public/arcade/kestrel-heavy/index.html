@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-8">
+      <meta name="arcade-asset-version" content="kestrel-9">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -314,8 +314,49 @@
       min-height: 52px;
       border-width: 2px;
     }
+    #atb-boost.is-held {
+      border-color: var(--go);
+      color: var(--go);
+      box-shadow: 0 0 16px rgba(125, 255, 176, 0.45);
+    }
+    #atb-boost.is-flash {
+      animation: kh-ignite 0.28s ease-out;
+    }
+    @keyframes kh-ignite {
+      from { box-shadow: 0 0 0 2px rgba(255, 207, 93, 0.9); background: rgba(255, 207, 93, 0.28); }
+      to { box-shadow: 0 0 18px 0 rgba(255, 207, 93, 0); }
+    }
+    #ng-sep-btn {
+      position: absolute;
+      left: 50%;
+      bottom: max(4.7rem, calc(env(safe-area-inset-bottom, 0px) + 4.15rem));
+      transform: translateX(-50%);
+      z-index: 14;
+      min-width: 176px;
+      min-height: 52px;
+      padding: 8px 18px;
+      border-radius: 0.85rem;
+      border: 2px solid var(--amber);
+      background: rgba(8, 10, 22, 0.92);
+      color: var(--amber);
+      font: 800 0.92rem/1 var(--font-main);
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    #ng-sep-btn.is-ready {
+      background: var(--amber);
+      color: #041014;
+      box-shadow: 0 0 20px rgba(255, 207, 93, 0.55);
+    }
+    #ng-sep-btn[hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      #atb-boost.is-flash { animation: none; }
+    }
     body[data-phase="MENU"] #arcade-touch-btns,
-    body[data-phase="SUMMARY"] #arcade-touch-btns {
+    body[data-phase="SUMMARY"] #arcade-touch-btns,
+    body[data-phase="MENU"] #ng-sep-btn,
+    body[data-phase="SUMMARY"] #ng-sep-btn {
       display: none;
     }
     body[data-phase="MENU"] .mc-hud {
@@ -820,7 +861,7 @@
             </div>
             <button type="button" id="ng-open-howto">How to play</button>
           </div>
-          <p id="ng-launch-tip">Hold climb · stay between the dotted corridor rails · ALIGN then tap sep · brake Haven</p>
+          <p id="ng-launch-tip">Hold climb · stay between the dotted corridor rails · SEP ZONE then SEPARATE · glide then burn Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
             <p class="ng-kicker" id="ng-open-missions">FLIGHT MANIFEST</p>
             <button type="button" class="manifest-row" data-mission="KH-1" data-label="KH-1 · AES"><span class="mf-id">KH-1</span><span class="mf-name">Aether Scout</span><span class="mf-state">READY</span></button>
@@ -851,10 +892,10 @@
         <div class="ng-card">
           <p class="ng-kicker">Readable in 3 seconds</p>
           <h2>HOW TO PLAY</h2>
-          <p>HOLD SPACE / CLIMB to throttle. A D or ◀ ▶ to steer between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
+          <p>HOLD SPACE / CLIMB to throttle — the pad flashes when the hold registers. A D or ◀ ▶ to steer between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
 Grab the cyan aero shield when you can. Through MAX-Q, fly smooth.
-After MECO, straighten until ALIGN is green, then TAP CLIMB once — that is stage sep.
-Then a long zoomed-out slide onto HAVEN. Soft painted deck = BOOSTER RECOVERED.
+After MECO you are in space. Stay in the marked SEP ZONE, ALIGN green, then press SEPARATE.
+Haven is a strake glide: hold the diagonal, then HOLD CLIMB for the landing burn and straighten onto the painted deck. Soft deck = BOOSTER RECOVERED.
 Tip, hard catch, or splash clips score — not a wipe. A RUD ends the flight and names the reason.
 The bottom tape is the roadmap: NOW is this beat, NEXT is the one after.
 KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p>
@@ -884,7 +925,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
       <div id="ng-pause" class="ng-overlay" hidden role="dialog" aria-labelledby="ng-pause-title">
         <h2 id="ng-pause-title">PAUSED</h2>
         <p>P or Escape resumes. Boost holds are frozen.</p>
-        <p id="ng-pause-hint" class="sum-break">HOLD climb. Steer the corridor. After MECO, ALIGN green then TAP climb. Brake Haven’s paint.</p>
+        <p id="ng-pause-hint" class="sum-break">HOLD climb. Steer the corridor. After MECO, SEP ZONE then SEPARATE. Glide Haven, then burn.</p>
         <div class="ng-nav">
           <button type="button" class="btn-go" id="ng-pause-resume">RESUME</button>
           <button type="button" id="ng-pause-restart">RESTART</button>
@@ -926,8 +967,9 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
         <button id="atb-boost" type="button" aria-label="Hold boost to climb" data-label="HOLD TO CLIMB" draggable="false"></button>
         <button id="atb-right" type="button" aria-label="Steer right" data-label="▶" draggable="false"></button>
       </div>
+      <button id="ng-sep-btn" type="button" hidden aria-label="Separate stages">SEPARATE</button>
     </div>
-    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, time stage sep (ALIGN green, then tap climb), then slide the booster onto barge Haven — a long zoomed-out approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven and fire the landing burn — a long zoomed-out approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>

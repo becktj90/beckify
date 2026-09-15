@@ -168,7 +168,8 @@ final class BLEAdvertisementMathTests: XCTestCase {
         XCTAssertEqual(summary.topManufacturers.first?.count, 2)
         XCTAssertTrue(summary.stickyLine.contains("≠ people"))
         XCTAssertTrue(summary.copyLine.contains("Device count ≠ people"))
-        XCTAssertFalse(summary.copyLine.localizedCaseInsensitiveContains("occupancy"))
+        XCTAssertTrue(summary.copyLine.localizedCaseInsensitiveContains("not occupancy"))
+        XCTAssertFalse(summary.copyLine.localizedCaseInsensitiveContains("how many people"))
         XCTAssertEqual(BLEAdvertisementMath.displayName("  "), "Unnamed")
         XCTAssertFalse(BLEAdvertisementMath.isNamed("Unnamed"))
     }

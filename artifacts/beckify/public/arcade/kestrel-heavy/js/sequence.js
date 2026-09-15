@@ -1,14 +1,12 @@
 /**
  * Arcade-compressed Kestrel Heavy sequence of events.
- * Spine is a commentary board:
- * Terminal Count → Tank Press → Internal Power → Water Deluge → Ignition →
- * Liftoff → Max-Q → MECO → Stage Sep → SES-1 → Fairing Jettison →
- * Entry Burn → Landing Burn → Haven Touchdown (~T+96 compressed) →
- * SECO → payload deploy.
+ * Spine is a commentary board, chapter-ordered like public launch→landing
+ * cuts: Terminal Count → Ignition → Liftoff → Max-Q → MECO → Stage Sep →
+ * SES-1 → Fairing Jettison → Entry Burn → Landing Burn → Haven Touchdown
+ * (~T+96 compressed) → SECO → payload deploy.
  *
- * Real orbital times are hours and minutes. Here T-8s … T+104s so a stranger
- * hears every callout in one longer, more deliberate run. Per-mission copy
- * swaps {id}/{payload}/{mark}.
+ * Real orbital times are minutes. Here T-8s … T+104s so a stranger hears
+ * every callout in one run. Per-mission copy swaps {id}/{payload}/{mark}.
  */
 import { PACE } from './config.js';
 
@@ -94,17 +92,18 @@ export const SPINE = [
     kind: 'go',
     radio: 'MECO. First-stage cores shutdown. Hold attitude for sep.',
     juice: 'meco',
-    coach: 'Hold attitude — sep window incoming',
+    coach: 'Hold attitude — sep zone incoming',
   },
   {
     id: 'sep',
     t: PACE.SEP,
     stage: 'STAGE SEP',
-    banner: 'STAGE SEP — ALIGN then TAP CLIMB',
+    banner: 'STAGE SEP — SEP ZONE then SEPARATE',
     kind: 'go',
-    radio: 'Sep window. ALIGN green, then tap climb to fire the pyros.',
+    radio: 'Sep zone. ALIGN green, then press SEPARATE.',
     juice: 'sep',
-    coach: 'ALIGN green, then TAP climb',
+    quiet: true,
+    coach: 'SEP ZONE · press SEPARATE',
   },
   {
     id: 'ses1',
@@ -114,7 +113,6 @@ export const SPINE = [
     kind: 'info',
     radio: 'SES-1. Upper-stage engine is lit. {payload} still coasting under the fairing.',
     juice: 'ses',
-    quiet: true,
   },
   {
     id: 'fairing',
@@ -124,7 +122,6 @@ export const SPINE = [
     kind: 'info',
     radio: 'Fairing jettison. {mark} — {payload} is free of the stack.',
     juice: 'fairing',
-    quiet: true,
   },
   {
     id: 'entry',
@@ -132,9 +129,9 @@ export const SPINE = [
     stage: 'ENTRY BURN',
     banner: 'ENTRY BURN',
     kind: 'warn',
-    radio: 'Entry burn. Haven is downrange. Slide in diagonal.',
+    radio: 'Entry burn. Pitch over. Haven is downrange. Strakes next — then glide.',
     juice: 'entry',
-    coach: 'Slide in on Haven · do not dive',
+    coach: 'Pitch over · strakes · glide · then burn',
   },
   {
     id: 'landing',
@@ -142,9 +139,9 @@ export const SPINE = [
     stage: 'LANDING BURN',
     banner: 'LANDING BURN',
     kind: 'warn',
-    radio: 'Landing burn. Brake for the painted deck.',
+    radio: 'Landing burn. HOLD climb. Kill sink over the paint.',
     juice: 'landing',
-    coach: 'HOLD BRAKE over the painted deck',
+    coach: 'HOLD CLIMB for the landing burn',
   },
   {
     id: 'touchdown',
@@ -256,13 +253,17 @@ export function playGoal(status, session = {}, flight = {}) {
     return 'Hold climb to MECO';
   }
   if (status === 'SEP') {
-    if (session.sepPhase === 'window') return 'ALIGN green, then TAP climb';
+    if (session.sepPhase === 'window') return 'SEP ZONE  ·  press SEPARATE';
     if (session.sepPhase === 'clear') return 'Open the gap, then Haven';
-    return 'Hold attitude — sep window incoming';
+    return 'Hold attitude — sep zone incoming';
   }
   if (status === 'JACKLYN') {
-    if ((session.jacklynElapsed || 0) > 5.2) return 'HOLD BRAKE over the painted deck';
-    return 'Slide in on Haven · do not dive';
+    const phase = session.jacklynPhase || 'glide';
+    if (phase === 'reentry') return 'PITCH OVER  ·  reentry  ·  strakes stand by';
+    if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
+      return 'HOLD CLIMB for the landing burn · straighten for the deck';
+    }
+    return 'STRAKES OUT  ·  glide the diagonal  ·  do not burn yet';
   }
   return '';
 }

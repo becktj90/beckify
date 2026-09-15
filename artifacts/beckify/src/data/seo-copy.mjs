@@ -92,7 +92,8 @@ export const PAGE_SEO = {
   },
   "/games": {
     title: "Kestrel Heavy — Beckify browser games",
-    description: "Play Kestrel Heavy, Beckify's on-site Pier 7 launch arcade. No ads, no install, local scores in this browser.",
+    description:
+      "Play Kestrel Heavy, Beckify's on-site Pier 7 launch arcade. Keyboard or touch, no ads, no install, local scores in this browser.",
   },
   "/games/kestrel-heavy": {
     title: "Play Kestrel Heavy — Pier 7 launch arcade",
