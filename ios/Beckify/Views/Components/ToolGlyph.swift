@@ -2,15 +2,20 @@ import SwiftUI
 
 // MARK: - Beckify Flat Glyph System (app-only)
 //
-// Stroke-only Canvas pictograms for the Field EE Toolbox — no image assets,
-// no SF Symbols in wells, no fills, no gradient strokes, no dual under-ink.
-// Each `ToolID` maps 1:1 to a `GlyphKind`. Design grid is 24×24 with a 2pt
-// margin (10% canvas inset). Weight is `Theme.Stroke.icon` (2.6 @ 44pt).
-// SF Symbols stay on chrome (favorites, nav) only.
+// App Design visual pass 2026-09-15 overturns #151 stroke-only lock.
+// Stroke-only at 2.6pt read as hollow wireframes at Quick (~52) / grid (~72).
+//
+// Default ink: solid monochrome fill = category primary, with even-odd holes
+// punched through to the well tint (`context.fill(..., eoFill: true)`).
+// Open-only marks stay stroke at `Theme.Stroke.icon` / `iconOpen` (3.2 @ 44pt):
+// voltage-drop sag, Ω, Wi-Fi arcs, sines, arrows. Never stroke large hollow
+// roundedRect frames. No SF Symbols in wells, no Meshy, no dual under-ink.
+// Each `ToolID` maps 1:1 to a `GlyphKind`. Design grid is 24×24 with a 10%
+// canvas inset (~2pt on 24). SF Symbols stay on chrome (favorites, nav) only.
 
-/// One stroke-weight curve for every pictogram. 44pt is the reference size
-/// (`Theme.Stroke.icon` = 2.6). Selected is a slight weight bump, not a new
-/// language. A 1.8 floor keeps 22pt related-row marks engraved.
+/// Open-mark stroke curve. 44pt is the reference size (`Theme.Stroke.icon` =
+/// 3.2). Selected is a slight weight bump, not a new language. A 1.8 floor
+/// keeps 22pt related-row marks engraved. Closed silhouettes do not use this.
 enum GlyphStroke {
     static let referenceSize: CGFloat = 44
     static let selectedWeight: CGFloat = 1.06
@@ -23,11 +28,31 @@ enum GlyphStroke {
     }
 }
 
-/// Stroke pictogram for one toolbox tool. Drawn as vector paths so it stays
-/// crisp at any size, follows the theme, and ships no image assets.
+/// Fill path (even-odd holes) plus optional open-mark stroke, both the same
+/// category primary. Fill first so holes cut through to the well tint.
+struct GlyphArtwork {
+    var fill: Path?
+    var stroke: Path?
+
+    static func fill(_ path: Path) -> GlyphArtwork {
+        GlyphArtwork(fill: path, stroke: nil)
+    }
+
+    static func stroke(_ path: Path) -> GlyphArtwork {
+        GlyphArtwork(fill: nil, stroke: path)
+    }
+
+    static func both(fill: Path, stroke: Path) -> GlyphArtwork {
+        GlyphArtwork(fill: fill, stroke: stroke)
+    }
+}
+
+/// Solid-fill / open-stroke pictogram for one toolbox tool. Drawn as vector
+/// paths so it stays crisp at any size, follows the theme, and ships no
+/// image assets.
 ///
 /// Each `ToolID` maps 1:1 to a distinct `GlyphKind`. When a category is known
-/// the stroke is that shelf’s solid primary — never a gradient.
+/// the ink is that shelf’s solid primary — never a gradient.
 struct ToolGlyph: View {
     let kind: GlyphKind
     var size: CGFloat = 44
@@ -41,7 +66,7 @@ struct ToolGlyph: View {
         category ?? toolID.flatMap(ToolboxCatalog.category(of:))
     }
 
-    private var strokeColor: Color {
+    private var ink: Color {
         if let resolvedCategory {
             return Theme.categoryColors(resolvedCategory).primary
         }
@@ -56,12 +81,18 @@ struct ToolGlyph: View {
         Canvas { context, canvasSize in
             let rect = CGRect(origin: .zero, size: canvasSize)
                 .insetBy(dx: canvasSize.width * 0.10, dy: canvasSize.height * 0.10)
-            let path = kind.path(in: rect)
-            context.stroke(
-                path,
-                with: .color(strokeColor),
-                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
-            )
+            let artwork = kind.artwork(in: rect)
+            let shading = GraphicsContext.Shading.color(ink)
+            if let fill = artwork.fill {
+                context.fill(fill, with: shading, style: FillStyle(eoFill: true))
+            }
+            if let stroke = artwork.stroke {
+                context.stroke(
+                    stroke,
+                    with: shading,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                )
+            }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
@@ -69,7 +100,7 @@ struct ToolGlyph: View {
 }
 
 /// Soft colored well that frames a `ToolGlyph` — the graphic unit of the grid
-/// and list rows (quiet category tint + crisp stroke pictogram).
+/// and list rows (quiet category tint + solid/open pictogram).
 struct IconWell: View {
     let toolID: ToolID
     var glyphSize: CGFloat? = nil
@@ -138,7 +169,7 @@ struct IconWell: View {
     }
 }
 
-/// Shelf mark for a toolbox category — same single-stroke language as tools.
+/// Shelf mark for a toolbox category — same fill / open-stroke language as tools.
 struct CategoryGlyph: View {
     let category: ToolCategory
     var size: CGFloat = 28
@@ -152,12 +183,18 @@ struct CategoryGlyph: View {
         Canvas { context, canvasSize in
             let rect = CGRect(origin: .zero, size: canvasSize)
                 .insetBy(dx: canvasSize.width * 0.10, dy: canvasSize.height * 0.10)
-            let path = CategoryGlyphKind(category).path(in: rect)
-            context.stroke(
-                path,
-                with: .color(Theme.categoryColors(category).primary),
-                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
-            )
+            let artwork = CategoryGlyphKind(category).artwork(in: rect)
+            let shading = GraphicsContext.Shading.color(Theme.categoryColors(category).primary)
+            if let fill = artwork.fill {
+                context.fill(fill, with: shading, style: FillStyle(eoFill: true))
+            }
+            if let stroke = artwork.stroke {
+                context.stroke(
+                    stroke,
+                    with: shading,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                )
+            }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
@@ -205,7 +242,7 @@ enum CategoryGlyphKind {
         }
     }
 
-    func path(in rect: CGRect) -> Path {
+    func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
         case .field: return Self.field(rect)
         case .power: return Self.power(rect)
@@ -216,8 +253,8 @@ enum CategoryGlyphKind {
         }
     }
 
-    /// Two posts + sagging span — jobsite / field.
-    private static func field(_ r: CGRect) -> Path {
+    /// Two posts + sagging span — jobsite / field. Open mark.
+    private static func field(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let y = r.minY + r.height * 0.22
         Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.18, y: y), CGPoint(x: r.minX + r.width * 0.18, y: r.maxY - r.height * 0.08))
@@ -227,37 +264,38 @@ enum CategoryGlyphKind {
             to: CGPoint(x: r.maxX - r.width * 0.18, y: y),
             control: CGPoint(x: r.midX, y: r.minY + r.height * 0.72)
         )
-        return path
+        return .stroke(path)
     }
 
-    /// Lightning bolt.
-    private static func power(_ r: CGRect) -> Path {
-        Glyph.bolt(r)
+    /// Lightning bolt — closed silhouette, solid fill.
+    private static func power(_ r: CGRect) -> GlyphArtwork {
+        .fill(Glyph.bolt(r))
     }
 
-    /// Clock face — controls / PLC.
-    private static func controls(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Clock bezel + hands — filled ring, open hands.
+    private static func controls(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
         let rad = min(r.width, r.height) * 0.42
-        Glyph.circle(&path, c, rad)
-        Glyph.line(&path, c, CGPoint(x: c.x, y: c.y - rad * 0.52))
-        Glyph.line(&path, c, CGPoint(x: c.x + rad * 0.38, y: c.y + rad * 0.08))
-        return path
+        let fill = Glyph.punched(Glyph.circlePath(c, rad), Glyph.circlePath(c, rad * 0.62))
+        var stroke = Path()
+        Glyph.line(&stroke, c, CGPoint(x: c.x, y: c.y - rad * 0.52))
+        Glyph.line(&stroke, c, CGPoint(x: c.x + rad * 0.38, y: c.y + rad * 0.08))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Closed notebook.
-    private static func homework(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Closed notebook — filled cover + line holes.
+    private static func homework(_ r: CGRect) -> GlyphArtwork {
         let page = r.insetBy(dx: r.width * 0.16, dy: r.height * 0.10)
-        path.addRoundedRect(in: page, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.line(&path, CGPoint(x: page.minX + page.width * 0.18, y: page.minY + page.height * 0.32), CGPoint(x: page.maxX - page.width * 0.18, y: page.minY + page.height * 0.32))
-        Glyph.line(&path, CGPoint(x: page.minX + page.width * 0.18, y: page.minY + page.height * 0.52), CGPoint(x: page.maxX - page.width * 0.28, y: page.minY + page.height * 0.52))
-        return path
+        let body = Glyph.roundedRect(page, corner: 3)
+        let slotH = max(2.0, page.height * 0.07)
+        let slotW = page.width * 0.64
+        let a = Glyph.slot(CGRect(x: page.midX - slotW / 2, y: page.minY + page.height * 0.32 - slotH / 2, width: slotW, height: slotH))
+        let b = Glyph.slot(CGRect(x: page.minX + page.width * 0.18, y: page.minY + page.height * 0.52 - slotH / 2, width: slotW * 0.72, height: slotH))
+        return .fill(Glyph.punched(body, a, b))
     }
 
-    /// Two upward instrument arcs.
-    private static func sensors(_ r: CGRect) -> Path {
+    /// Two upward instrument arcs — open mark.
+    private static func sensors(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let base = CGPoint(x: r.midX, y: r.maxY - r.height * 0.16)
         Glyph.circle(&path, base, r.width * 0.06)
@@ -270,16 +308,20 @@ enum CategoryGlyphKind {
                 clockwise: false
             )
         }
-        return path
+        return .stroke(path)
     }
 
-    /// Book + spine.
-    private static func reference(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Book + spine hole.
+    private static func reference(_ r: CGRect) -> GlyphArtwork {
         let book = r.insetBy(dx: r.width * 0.16, dy: r.height * 0.10)
-        path.addRoundedRect(in: book, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.line(&path, CGPoint(x: book.minX + book.width * 0.18, y: book.minY), CGPoint(x: book.minX + book.width * 0.18, y: book.maxY))
-        return path
+        let body = Glyph.roundedRect(book, corner: 3)
+        let spine = Glyph.slot(CGRect(
+            x: book.minX + book.width * 0.16,
+            y: book.minY + book.height * 0.08,
+            width: max(2.0, book.width * 0.08),
+            height: book.height * 0.84
+        ))
+        return .fill(Glyph.punched(body, spine))
     }
 }
 
@@ -441,7 +483,7 @@ enum GlyphKind {
     case nickelStrip
     case controlSystems
 
-    func path(in rect: CGRect) -> Path {
+    func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
         case .voltageDrop: return Self.voltageDrop(rect)
         case .wireAmpacity: return Self.wireAmpacity(rect)
@@ -522,8 +564,8 @@ enum GlyphKind {
 
     // MARK: - Field Quick
 
-    /// Horizontal conductor with one sagging mid span.
-    private static func voltageDrop(_ r: CGRect) -> Path {
+    /// Horizontal conductor with one sagging mid span — open mark.
+    private static func voltageDrop(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let y = r.minY + r.height * 0.28
         let left = CGPoint(x: r.minX + r.width * 0.16, y: y)
@@ -537,200 +579,199 @@ enum GlyphKind {
         Glyph.line(&path, right, CGPoint(x: r.maxX, y: y))
         Glyph.line(&path, left, CGPoint(x: left.x, y: r.maxY - r.height * 0.06))
         Glyph.line(&path, right, CGPoint(x: right.x, y: r.maxY - r.height * 0.06))
-        return path
+        return .stroke(path)
     }
 
-    /// Three parallel conductors in a short sleeve.
-    private static func wireAmpacity(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled sleeve with three conductor slot holes.
+    private static func wireAmpacity(_ r: CGRect) -> GlyphArtwork {
         let sleeve = CGRect(
-            x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.22,
-            width: r.width * 0.56, height: r.height * 0.56
+            x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.16,
+            width: r.width * 0.68, height: r.height * 0.68
         )
-        path.addRoundedRect(in: sleeve, cornerSize: CGSize(width: sleeve.height * 0.22, height: sleeve.height * 0.22))
+        let body = Glyph.roundedRect(sleeve, corner: sleeve.height * 0.18)
+        let slotH = max(2.4, sleeve.height * 0.11)
+        let slotW = sleeve.width * 0.56
+        var holes: [Path] = []
         for index in 0..<3 {
-            let y = sleeve.minY + sleeve.height * (0.28 + 0.22 * CGFloat(index))
-            Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.06, y: y), CGPoint(x: r.maxX - r.width * 0.06, y: y))
+            let y = sleeve.minY + sleeve.height * (0.26 + 0.24 * CGFloat(index)) - slotH / 2
+            holes.append(Glyph.slot(CGRect(
+                x: sleeve.midX - slotW / 2, y: y, width: slotW, height: slotH
+            )))
         }
-        return path
+        return .fill(Glyph.punched(body, holes))
     }
 
-    /// Motor can + shaft stub + one current arc.
-    private static func motorFLA(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled motor can + end-bell hole + shaft stub.
+    private static func motorFLA(_ r: CGRect) -> GlyphArtwork {
         let can = CGRect(
-            x: r.minX + r.width * 0.06, y: r.minY + r.height * 0.22,
-            width: r.width * 0.62, height: r.height * 0.46
+            x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.24,
+            width: r.width * 0.62, height: r.height * 0.48
         )
-        path.addRoundedRect(in: can, cornerSize: CGSize(width: can.height * 0.18, height: can.height * 0.18))
-        path.addEllipse(in: CGRect(
-            x: can.minX - r.width * 0.04, y: can.minY + can.height * 0.12,
-            width: r.width * 0.12, height: can.height * 0.76
-        ))
+        let body = Glyph.roundedRect(can, corner: can.height * 0.22)
+        let bell = Glyph.circlePath(
+            CGPoint(x: can.minX + can.height * 0.22, y: can.midY),
+            can.height * 0.22
+        )
+        var stroke = Path()
         Glyph.line(
-            &path,
+            &stroke,
             CGPoint(x: can.maxX, y: can.midY),
             CGPoint(x: r.maxX - r.width * 0.06, y: can.midY)
         )
-        path.addArc(
-            center: CGPoint(x: r.midX - r.width * 0.04, y: r.maxY - r.height * 0.10),
-            radius: r.width * 0.28,
-            startAngle: .degrees(200),
-            endAngle: .degrees(340),
-            clockwise: false
-        )
-        return path
+        return .both(fill: Glyph.punched(body, bell), stroke: stroke)
     }
 
-    /// US duplex: two slots + round ground.
-    private static func receptacleSelector(_ r: CGRect) -> Path {
-        var path = Path()
+    /// US duplex: filled face + slot holes + ground hole.
+    private static func receptacleSelector(_ r: CGRect) -> GlyphArtwork {
         let face = r.insetBy(dx: r.width * 0.10, dy: r.height * 0.08)
-        path.addRoundedRect(in: face, cornerSize: CGSize(width: 5, height: 5))
+        let body = Glyph.roundedRect(face, corner: 5)
         let slotH = face.height * 0.28
+        let slotW = max(2.6, face.width * 0.11)
         let slotY = face.minY + face.height * 0.28
-        Glyph.line(&path, CGPoint(x: face.midX - face.width * 0.18, y: slotY), CGPoint(x: face.midX - face.width * 0.18, y: slotY + slotH))
-        Glyph.line(&path, CGPoint(x: face.midX + face.width * 0.18, y: slotY), CGPoint(x: face.midX + face.width * 0.18, y: slotY + slotH))
-        Glyph.circle(&path, CGPoint(x: face.midX, y: face.maxY - face.height * 0.22), face.width * 0.07)
-        return path
+        let left = Glyph.slot(CGRect(
+            x: face.midX - face.width * 0.18 - slotW / 2, y: slotY,
+            width: slotW, height: slotH
+        ))
+        let right = Glyph.slot(CGRect(
+            x: face.midX + face.width * 0.18 - slotW / 2, y: slotY,
+            width: slotW, height: slotH
+        ))
+        let ground = Glyph.circlePath(
+            CGPoint(x: face.midX, y: face.maxY - face.height * 0.22),
+            face.width * 0.09
+        )
+        return .fill(Glyph.punched(body, left, right, ground))
     }
 
-    /// AP slab + two upward arcs (CoS: 2 max).
-    private static func wifiStatus(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled AP slab + two upward arcs (open). CoS: 2 max on the waves.
+    private static func wifiStatus(_ r: CGRect) -> GlyphArtwork {
         let slab = CGRect(
-            x: r.minX + r.width * 0.16, y: r.maxY - r.height * 0.28,
-            width: r.width * 0.68, height: r.height * 0.20
+            x: r.minX + r.width * 0.20, y: r.maxY - r.height * 0.24,
+            width: r.width * 0.60, height: r.height * 0.16
         )
-        path.addRoundedRect(in: slab, cornerSize: CGSize(width: slab.height * 0.45, height: slab.height * 0.45))
-        Glyph.line(&path, CGPoint(x: slab.minX + slab.width * 0.22, y: slab.midY), CGPoint(x: slab.minX + slab.width * 0.38, y: slab.midY))
+        let fill = Glyph.roundedRect(slab, corner: slab.height * 0.45)
+        var stroke = Path()
         let origin = CGPoint(x: r.midX, y: slab.minY)
         for index in 1...2 {
-            path.addArc(
+            stroke.addArc(
                 center: origin,
-                radius: r.width * 0.22 * CGFloat(index),
+                radius: r.width * 0.24 * CGFloat(index),
                 startAngle: .degrees(210),
                 endAngle: .degrees(330),
                 clockwise: false
             )
         }
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Outer conduit + one inner conductor + fill chord.
-    private static func conduitFill(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled conduit ring + inner conductor (even-odd restores the core).
+    private static func conduitFill(_ r: CGRect) -> GlyphArtwork {
+        let c = CGPoint(x: r.midX, y: r.midY)
         let outer = min(r.width, r.height) * 0.46
-        Glyph.circle(&path, CGPoint(x: r.midX, y: r.midY), outer)
-        Glyph.circle(
-            &path,
-            CGPoint(x: r.midX, y: r.midY + outer * 0.22),
-            outer * 0.28
+        let body = Glyph.circlePath(c, outer)
+        let hole = Glyph.circlePath(c, outer * 0.62)
+        let conductor = Glyph.circlePath(
+            CGPoint(x: r.midX, y: r.midY + outer * 0.14),
+            outer * 0.24
         )
-        Glyph.line(
-            &path,
-            CGPoint(x: r.midX - outer * 0.72, y: r.midY - outer * 0.18),
-            CGPoint(x: r.midX + outer * 0.72, y: r.midY - outer * 0.18)
-        )
-        return path
+        return .fill(Glyph.punched(body, hole, conductor))
     }
 
     // MARK: - Field · Jobsite
 
-    /// Spool (circle + stand) + price tag outline — no $ letter.
-    private static func conductorCost(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled spool (annulus) + stand strokes + filled price tag.
+    private static func conductorCost(_ r: CGRect) -> GlyphArtwork {
         let hub = CGPoint(x: r.minX + r.width * 0.36, y: r.midY - r.height * 0.04)
-        Glyph.circle(&path, hub, r.width * 0.26)
-        Glyph.circle(&path, hub, r.width * 0.08)
-        Glyph.line(&path, CGPoint(x: hub.x - r.width * 0.16, y: r.maxY - r.height * 0.08), CGPoint(x: hub.x, y: hub.y + r.width * 0.26))
-        Glyph.line(&path, CGPoint(x: hub.x + r.width * 0.16, y: r.maxY - r.height * 0.08), CGPoint(x: hub.x, y: hub.y + r.width * 0.26))
-        let tag = CGRect(
-            x: r.maxX - r.width * 0.36, y: r.minY + r.height * 0.12,
-            width: r.width * 0.32, height: r.height * 0.28
+        let spool = Glyph.punched(
+            Glyph.circlePath(hub, r.width * 0.26),
+            Glyph.circlePath(hub, r.width * 0.10)
         )
-        path.addRoundedRect(in: tag, cornerSize: CGSize(width: 3, height: 3))
-        return path
+        let tag = Glyph.roundedRect(
+            CGRect(x: r.maxX - r.width * 0.36, y: r.minY + r.height * 0.12, width: r.width * 0.32, height: r.height * 0.28),
+            corner: 3
+        )
+        var fill = spool
+        fill.addPath(tag)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: hub.x - r.width * 0.16, y: r.maxY - r.height * 0.08), CGPoint(x: hub.x, y: hub.y + r.width * 0.26))
+        Glyph.line(&stroke, CGPoint(x: hub.x + r.width * 0.16, y: r.maxY - r.height * 0.08), CGPoint(x: hub.x, y: hub.y + r.width * 0.26))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Tape case + curved tape.
-    private static func conductorLength(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled tape case + curved tape stroke.
+    private static func conductorLength(_ r: CGRect) -> GlyphArtwork {
         let box = CGRect(
             x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.28,
             width: r.width * 0.42, height: r.height * 0.44
         )
-        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
-        path.move(to: CGPoint(x: box.maxX, y: box.midY))
-        path.addQuadCurve(
+        let fill = Glyph.roundedRect(box, corner: 3)
+        var stroke = Path()
+        stroke.move(to: CGPoint(x: box.maxX, y: box.midY))
+        stroke.addQuadCurve(
             to: CGPoint(x: r.maxX - r.width * 0.06, y: r.maxY - r.height * 0.16),
             control: CGPoint(x: r.maxX - r.width * 0.10, y: box.minY - r.height * 0.08)
         )
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Breaker block + vertical handle + one chevron.
-    private static func shortCircuit(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled breaker block + handle / chevron strokes.
+    private static func shortCircuit(_ r: CGRect) -> GlyphArtwork {
         let block = CGRect(
             x: r.minX + r.width * 0.28, y: r.minY + r.height * 0.38,
             width: r.width * 0.44, height: r.height * 0.44
         )
-        path.addRoundedRect(in: block, cornerSize: CGSize(width: 3, height: 3))
+        let fill = Glyph.roundedRect(block, corner: 3)
+        var stroke = Path()
         Glyph.line(
-            &path,
+            &stroke,
             CGPoint(x: r.midX, y: r.minY + r.height * 0.08),
             CGPoint(x: r.midX, y: block.minY)
         )
-        path.move(to: CGPoint(x: r.midX - r.width * 0.14, y: r.minY + r.height * 0.22))
-        path.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.10))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.14, y: r.minY + r.height * 0.22))
-        return path
+        stroke.move(to: CGPoint(x: r.midX - r.width * 0.14, y: r.minY + r.height * 0.22))
+        stroke.addLine(to: CGPoint(x: r.midX, y: r.minY + r.height * 0.10))
+        stroke.addLine(to: CGPoint(x: r.midX + r.width * 0.14, y: r.minY + r.height * 0.22))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Two concentric circles.
-    private static func circularMils(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled annulus.
+    private static func circularMils(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
         let outer = min(r.width, r.height) * 0.44
-        Glyph.circle(&path, c, outer)
-        Glyph.circle(&path, c, outer * 0.48)
-        return path
+        return .fill(Glyph.punched(Glyph.circlePath(c, outer), Glyph.circlePath(c, outer * 0.48)))
     }
 
-    /// Three ascending demand bars.
-    private static func loadFactors(_ r: CGRect) -> Path {
+    /// Three filled demand bars.
+    private static func loadFactors(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let heights: [CGFloat] = [0.36, 0.56, 0.78]
         for (index, height) in heights.enumerated() {
             let x = r.minX + r.width * (0.16 + 0.28 * CGFloat(index))
-            let bar = CGRect(
-                x: x, y: r.maxY - r.height * height,
-                width: r.width * 0.20, height: r.height * height
-            )
-            path.addRoundedRect(in: bar, cornerSize: CGSize(width: 2.5, height: 2.5))
+            path.addPath(Glyph.roundedRect(
+                CGRect(x: x, y: r.maxY - r.height * height, width: r.width * 0.20, height: r.height * height),
+                corner: 2.5
+            ))
         }
-        return path
+        return .fill(path)
     }
 
-    /// Panelboard + three breaker slots.
-    private static func necCircuit(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled panelboard + three breaker slot holes.
+    private static func necCircuit(_ r: CGRect) -> GlyphArtwork {
         let panel = r.insetBy(dx: r.width * 0.12, dy: r.height * 0.08)
-        path.addRoundedRect(in: panel, cornerSize: CGSize(width: 4, height: 4))
+        let body = Glyph.roundedRect(panel, corner: 4)
+        let slotH = max(2.4, panel.height * 0.10)
+        let slotW = panel.width * 0.64
+        var holes: [Path] = []
         for index in 0..<3 {
-            let y = panel.minY + panel.height * (0.28 + 0.22 * CGFloat(index))
-            Glyph.line(
-                &path,
-                CGPoint(x: panel.minX + panel.width * 0.18, y: y),
-                CGPoint(x: panel.maxX - panel.width * 0.18, y: y)
-            )
+            let y = panel.minY + panel.height * (0.26 + 0.22 * CGFloat(index)) - slotH / 2
+            holes.append(Glyph.slot(CGRect(
+                x: panel.midX - slotW / 2, y: y, width: slotW, height: slotH
+            )))
         }
-        return path
+        return .fill(Glyph.punched(body, holes))
     }
 
-    /// Loop with a break + probe tip.
-    private static func isLoopVerifier(_ r: CGRect) -> Path {
+    /// Loop with a break + probe tip — open mark.
+    private static func isLoopVerifier(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let loop = r.insetBy(dx: r.width * 0.10, dy: r.height * 0.16)
         let radius: CGFloat = 6
@@ -749,20 +790,20 @@ enum GlyphKind {
             CGPoint(x: loop.midX, y: r.minY),
             CGPoint(x: loop.midX, y: loop.minY + r.height * 0.12)
         )
-        return path
+        return .stroke(path)
     }
 
-    /// Motor can + curved arrow around the shaft.
-    private static func motorSpeed(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled motor can + shaft / rotation arrow strokes.
+    private static func motorSpeed(_ r: CGRect) -> GlyphArtwork {
         let can = CGRect(
             x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.28,
             width: r.width * 0.48, height: r.height * 0.36
         )
-        path.addRoundedRect(in: can, cornerSize: CGSize(width: 4, height: 4))
-        Glyph.line(&path, CGPoint(x: can.maxX, y: can.midY), CGPoint(x: r.maxX - r.width * 0.18, y: can.midY))
+        let fill = Glyph.roundedRect(can, corner: 4)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: can.maxX, y: can.midY), CGPoint(x: r.maxX - r.width * 0.18, y: can.midY))
         let shaft = CGPoint(x: r.maxX - r.width * 0.22, y: can.midY)
-        path.addArc(
+        stroke.addArc(
             center: shaft,
             radius: r.width * 0.28,
             startAngle: .degrees(-20),
@@ -770,87 +811,88 @@ enum GlyphKind {
             clockwise: false
         )
         Glyph.arrowHead(
-            &path,
+            &stroke,
             at: CGPoint(x: shaft.x + r.width * 0.26, y: shaft.y - r.height * 0.06),
             toward: CGPoint(x: shaft.x + r.width * 0.18, y: shaft.y - r.height * 0.16),
             size: r.width * 0.10
         )
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Rounded plate + two data lines.
-    private static func motorNameplate(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled plate + two data-line holes.
+    private static func motorNameplate(_ r: CGRect) -> GlyphArtwork {
         let plate = r.insetBy(dx: r.width * 0.10, dy: r.height * 0.18)
-        path.addRoundedRect(in: plate, cornerSize: CGSize(width: 4, height: 4))
-        Glyph.line(
-            &path,
-            CGPoint(x: plate.minX + plate.width * 0.16, y: plate.minY + plate.height * 0.38),
-            CGPoint(x: plate.maxX - plate.width * 0.16, y: plate.minY + plate.height * 0.38)
-        )
-        Glyph.line(
-            &path,
-            CGPoint(x: plate.minX + plate.width * 0.16, y: plate.minY + plate.height * 0.62),
-            CGPoint(x: plate.maxX - plate.width * 0.28, y: plate.minY + plate.height * 0.62)
-        )
-        return path
+        let body = Glyph.roundedRect(plate, corner: 4)
+        let slotH = max(2.0, plate.height * 0.10)
+        let a = Glyph.slot(CGRect(
+            x: plate.minX + plate.width * 0.16,
+            y: plate.minY + plate.height * 0.38 - slotH / 2,
+            width: plate.width * 0.68, height: slotH
+        ))
+        let b = Glyph.slot(CGRect(
+            x: plate.minX + plate.width * 0.16,
+            y: plate.minY + plate.height * 0.62 - slotH / 2,
+            width: plate.width * 0.56, height: slotH
+        ))
+        return .fill(Glyph.punched(body, a, b))
     }
 
-    /// Nameplate + camera L brackets.
-    private static func motorNameplateOCR(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled nameplate + camera L brackets (open).
+    private static func motorNameplateOCR(_ r: CGRect) -> GlyphArtwork {
         let plate = CGRect(
             x: r.minX + r.width * 0.20, y: r.minY + r.height * 0.26,
             width: r.width * 0.60, height: r.height * 0.48
         )
-        path.addRoundedRect(in: plate, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.line(
-            &path,
-            CGPoint(x: plate.minX + plate.width * 0.16, y: plate.midY),
-            CGPoint(x: plate.maxX - plate.width * 0.16, y: plate.midY)
-        )
+        let body = Glyph.roundedRect(plate, corner: 3)
+        let slotH = max(2.0, plate.height * 0.12)
+        let slot = Glyph.slot(CGRect(
+            x: plate.minX + plate.width * 0.16,
+            y: plate.midY - slotH / 2,
+            width: plate.width * 0.68, height: slotH
+        ))
+        var stroke = Path()
         let arm = min(r.width, r.height) * 0.16
-        Glyph.lBracket(&path, CGPoint(x: r.minX + r.width * 0.04, y: r.minY + r.height * 0.06), dx: arm, dy: arm)
-        Glyph.lBracket(&path, CGPoint(x: r.maxX - r.width * 0.04, y: r.minY + r.height * 0.06), dx: -arm, dy: arm)
-        Glyph.lBracket(&path, CGPoint(x: r.minX + r.width * 0.04, y: r.maxY - r.height * 0.06), dx: arm, dy: -arm)
-        Glyph.lBracket(&path, CGPoint(x: r.maxX - r.width * 0.04, y: r.maxY - r.height * 0.06), dx: -arm, dy: -arm)
-        return path
+        Glyph.lBracket(&stroke, CGPoint(x: r.minX + r.width * 0.04, y: r.minY + r.height * 0.06), dx: arm, dy: arm)
+        Glyph.lBracket(&stroke, CGPoint(x: r.maxX - r.width * 0.04, y: r.minY + r.height * 0.06), dx: -arm, dy: arm)
+        Glyph.lBracket(&stroke, CGPoint(x: r.minX + r.width * 0.04, y: r.maxY - r.height * 0.06), dx: arm, dy: -arm)
+        Glyph.lBracket(&stroke, CGPoint(x: r.maxX - r.width * 0.04, y: r.maxY - r.height * 0.06), dx: -arm, dy: -arm)
+        return .both(fill: Glyph.punched(body, slot), stroke: stroke)
     }
 
-    /// Almond eye + pupil — Look Check, not OCR.
-    private static func lookCheck(_ r: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: r.minX + r.width * 0.06, y: r.midY))
-        path.addQuadCurve(
+    /// Filled almond eye + pupil hole — Look Check, not OCR.
+    private static func lookCheck(_ r: CGRect) -> GlyphArtwork {
+        var eye = Path()
+        eye.move(to: CGPoint(x: r.minX + r.width * 0.06, y: r.midY))
+        eye.addQuadCurve(
             to: CGPoint(x: r.maxX - r.width * 0.06, y: r.midY),
             control: CGPoint(x: r.midX, y: r.minY + r.height * 0.08)
         )
-        path.addQuadCurve(
+        eye.addQuadCurve(
             to: CGPoint(x: r.minX + r.width * 0.06, y: r.midY),
             control: CGPoint(x: r.midX, y: r.maxY - r.height * 0.08)
         )
-        Glyph.circle(&path, CGPoint(x: r.midX, y: r.midY), r.width * 0.14)
-        return path
+        eye.closeSubpath()
+        let pupil = Glyph.circlePath(CGPoint(x: r.midX, y: r.midY), r.width * 0.14)
+        return .fill(Glyph.punched(eye, pupil))
     }
 
     // MARK: - Field · Power
 
-    private static func power(_ r: CGRect) -> Path {
-        Glyph.bolt(r)
+    private static func power(_ r: CGRect) -> GlyphArtwork {
+        .fill(Glyph.bolt(r))
     }
 
-    /// Bolt + two-ray star.
-    private static func powerWizard(_ r: CGRect) -> Path {
-        var path = Glyph.bolt(r)
+    /// Filled bolt + two-ray star (open).
+    private static func powerWizard(_ r: CGRect) -> GlyphArtwork {
+        var stroke = Path()
         let star = CGPoint(x: r.maxX - r.width * 0.08, y: r.minY + r.height * 0.14)
-        Glyph.line(&path, CGPoint(x: star.x, y: star.y - r.height * 0.12), CGPoint(x: star.x, y: star.y + r.height * 0.12))
-        Glyph.line(&path, CGPoint(x: star.x - r.width * 0.12, y: star.y), CGPoint(x: star.x + r.width * 0.12, y: star.y))
-        return path
+        Glyph.line(&stroke, CGPoint(x: star.x, y: star.y - r.height * 0.12), CGPoint(x: star.x, y: star.y + r.height * 0.12))
+        Glyph.line(&stroke, CGPoint(x: star.x - r.width * 0.12, y: star.y), CGPoint(x: star.x + r.width * 0.12, y: star.y))
+        return .both(fill: Glyph.bolt(r), stroke: stroke)
     }
 
-    /// Two vertical coil ovals + core bar.
-    private static func transformer(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Two filled coil rings + core bar stroke.
+    private static func transformer(_ r: CGRect) -> GlyphArtwork {
         let left = CGRect(
             x: r.minX + r.width * 0.10, y: r.minY + r.height * 0.12,
             width: r.width * 0.28, height: r.height * 0.76
@@ -859,171 +901,196 @@ enum GlyphKind {
             x: r.maxX - r.width * 0.38, y: r.minY + r.height * 0.12,
             width: r.width * 0.28, height: r.height * 0.76
         )
-        path.addEllipse(in: left)
-        path.addEllipse(in: right)
-        Glyph.line(&path, CGPoint(x: r.midX, y: r.minY + r.height * 0.10), CGPoint(x: r.midX, y: r.maxY - r.height * 0.10))
-        return path
+        var fill = Glyph.punched(
+            Path(ellipseIn: left),
+            Path(ellipseIn: left.insetBy(dx: left.width * 0.28, dy: left.height * 0.14))
+        )
+        fill.addPath(Glyph.punched(
+            Path(ellipseIn: right),
+            Path(ellipseIn: right.insetBy(dx: right.width * 0.28, dy: right.height * 0.14))
+        ))
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.midX, y: r.minY + r.height * 0.10), CGPoint(x: r.midX, y: r.maxY - r.height * 0.10))
+        return .both(fill: fill, stroke: stroke)
     }
 
     /// Transformer coils + tap arrow.
-    private static func tapChanger(_ r: CGRect) -> Path {
-        var path = transformer(r)
+    private static func tapChanger(_ r: CGRect) -> GlyphArtwork {
+        let base = transformer(r)
+        var stroke = base.stroke ?? Path()
         Glyph.arrow(
-            &path,
+            &stroke,
             from: CGPoint(x: r.midX + r.width * 0.08, y: r.minY + r.height * 0.18),
             to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.34),
             head: r.width * 0.10
         )
-        return path
+        return .both(fill: base.fill ?? Path(), stroke: stroke)
     }
 
-    /// Right triangle.
-    private static func powerFactor(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled right triangle.
+    private static func powerFactor(_ r: CGRect) -> GlyphArtwork {
         let origin = CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.12)
-        path.move(to: origin)
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.10, y: origin.y))
-        path.addLine(to: CGPoint(x: origin.x, y: r.minY + r.height * 0.12))
-        path.closeSubpath()
-        return path
+        return .fill(Glyph.triangle(
+            origin,
+            CGPoint(x: r.maxX - r.width * 0.10, y: origin.y),
+            CGPoint(x: origin.x, y: r.minY + r.height * 0.12)
+        ))
     }
 
-    /// Fundamental sine + higher-frequency ripple.
-    private static func harmonicsTHD(_ r: CGRect) -> Path {
+    /// Fundamental sine + higher-frequency ripple — open mark.
+    private static func harmonicsTHD(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         Glyph.sine(&path, in: r, y: r.midY, amplitude: r.height * 0.28, cycles: 1)
         Glyph.sine(&path, in: r, y: r.midY, amplitude: r.height * 0.10, cycles: 3)
-        return path
+        return .stroke(path)
     }
 
-    /// Battery + nub + two cell dividers.
-    private static func batteryBank(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled battery + nub + two cell-gap holes.
+    private static func batteryBank(_ r: CGRect) -> GlyphArtwork {
         let body = CGRect(
             x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.26,
             width: r.width * 0.72, height: r.height * 0.48
         )
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
-        path.addRoundedRect(
-            in: CGRect(x: body.maxX, y: body.midY - r.height * 0.10, width: r.width * 0.10, height: r.height * 0.20),
-            cornerSize: CGSize(width: 1.5, height: 1.5)
-        )
-        Glyph.line(&path, CGPoint(x: body.minX + body.width * 0.33, y: body.minY + 3), CGPoint(x: body.minX + body.width * 0.33, y: body.maxY - 3))
-        Glyph.line(&path, CGPoint(x: body.minX + body.width * 0.66, y: body.minY + 3), CGPoint(x: body.minX + body.width * 0.66, y: body.maxY - 3))
-        return path
+        var fill = Glyph.roundedRect(body, corner: 3)
+        fill.addPath(Glyph.roundedRect(
+            CGRect(x: body.maxX, y: body.midY - r.height * 0.10, width: r.width * 0.10, height: r.height * 0.20),
+            corner: 1.5
+        ))
+        let gapW = max(2.2, body.width * 0.08)
+        let gapH = body.height * 0.62
+        let gapY = body.midY - gapH / 2
+        let g1 = Glyph.slot(CGRect(x: body.minX + body.width * 0.30 - gapW / 2, y: gapY, width: gapW, height: gapH))
+        let g2 = Glyph.slot(CGRect(x: body.minX + body.width * 0.62 - gapW / 2, y: gapY, width: gapW, height: gapH))
+        return .fill(Glyph.punched(fill, g1, g2))
     }
 
-    /// Half sun over a tilted panel.
-    private static func solarDesign(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled tilted panel + sun arc stroke.
+    private static func solarDesign(_ r: CGRect) -> GlyphArtwork {
+        var panel = Path()
+        panel.move(to: CGPoint(x: r.minX + r.width * 0.10, y: r.maxY - r.height * 0.16))
+        panel.addLine(to: CGPoint(x: r.minX + r.width * 0.62, y: r.maxY - r.height * 0.12))
+        panel.addLine(to: CGPoint(x: r.minX + r.width * 0.78, y: r.minY + r.height * 0.42))
+        panel.addLine(to: CGPoint(x: r.minX + r.width * 0.26, y: r.minY + r.height * 0.38))
+        panel.closeSubpath()
+        var stroke = Path()
         let sun = CGPoint(x: r.maxX - r.width * 0.22, y: r.minY + r.height * 0.22)
-        path.addArc(center: sun, radius: r.width * 0.16, startAngle: .degrees(200), endAngle: .degrees(20), clockwise: false)
-        path.move(to: CGPoint(x: r.minX + r.width * 0.10, y: r.maxY - r.height * 0.16))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.62, y: r.maxY - r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.78, y: r.minY + r.height * 0.42))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.26, y: r.minY + r.height * 0.38))
-        path.closeSubpath()
-        return path
+        stroke.addArc(center: sun, radius: r.width * 0.16, startAngle: .degrees(200), endAngle: .degrees(20), clockwise: false)
+        return .both(fill: panel, stroke: stroke)
     }
 
-    /// Battery + shield arc.
-    private static func upsSizing(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled battery + gap hole + shield arc stroke.
+    private static func upsSizing(_ r: CGRect) -> GlyphArtwork {
         let body = CGRect(
             x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.32,
             width: r.width * 0.52, height: r.height * 0.40
         )
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
-        path.addRect(CGRect(x: body.maxX, y: body.midY - r.height * 0.08, width: r.width * 0.08, height: r.height * 0.16))
-        path.addArc(
+        var fill = Glyph.roundedRect(body, corner: 3)
+        fill.addPath(Path(CGRect(x: body.maxX, y: body.midY - r.height * 0.08, width: r.width * 0.08, height: r.height * 0.16)))
+        let gapW = max(2.2, body.width * 0.12)
+        let gapH = body.height * 0.58
+        let gap = Glyph.slot(CGRect(
+            x: body.midX - gapW / 2, y: body.midY - gapH / 2,
+            width: gapW, height: gapH
+        ))
+        var stroke = Path()
+        stroke.addArc(
             center: CGPoint(x: r.maxX - r.width * 0.22, y: r.minY + r.height * 0.28),
             radius: r.width * 0.28,
             startAngle: .degrees(210),
             endAngle: .degrees(330),
             clockwise: false
         )
-        return path
+        return .both(fill: Glyph.punched(fill, gap), stroke: stroke)
     }
 
     // MARK: - Field · Controls
 
-    /// Amp triangle with I/O stubs.
-    private static func signalScaling(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled amp triangle with I/O stubs.
+    private static func signalScaling(_ r: CGRect) -> GlyphArtwork {
         let left = r.minX + r.width * 0.22
-        path.move(to: CGPoint(x: left, y: r.minY + r.height * 0.14))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.12, y: r.midY))
-        path.addLine(to: CGPoint(x: left, y: r.maxY - r.height * 0.14))
-        path.closeSubpath()
-        Glyph.line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.32), CGPoint(x: left, y: r.minY + r.height * 0.32))
-        Glyph.line(&path, CGPoint(x: r.minX, y: r.maxY - r.height * 0.32), CGPoint(x: left, y: r.maxY - r.height * 0.32))
-        Glyph.line(&path, CGPoint(x: r.maxX - r.width * 0.12, y: r.midY), CGPoint(x: r.maxX, y: r.midY))
-        return path
+        let fill = Glyph.triangle(
+            CGPoint(x: left, y: r.minY + r.height * 0.14),
+            CGPoint(x: r.maxX - r.width * 0.12, y: r.midY),
+            CGPoint(x: left, y: r.maxY - r.height * 0.14)
+        )
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: r.minY + r.height * 0.32), CGPoint(x: left, y: r.minY + r.height * 0.32))
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: r.maxY - r.height * 0.32), CGPoint(x: left, y: r.maxY - r.height * 0.32))
+        Glyph.line(&stroke, CGPoint(x: r.maxX - r.width * 0.12, y: r.midY), CGPoint(x: r.maxX, y: r.midY))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Bus node + three pin ticks.
-    private static func modbusAddress(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled jack + three pin holes.
+    private static func modbusAddress(_ r: CGRect) -> GlyphArtwork {
         let jack = CGRect(
             x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.18,
-            width: r.width * 0.68, height: r.height * 0.46
+            width: r.width * 0.68, height: r.height * 0.64
         )
-        path.addRoundedRect(in: jack, cornerSize: CGSize(width: 3, height: 3))
+        let body = Glyph.roundedRect(jack, corner: 3)
+        var holes: [Path] = []
         for index in 0..<3 {
             let x = jack.minX + jack.width * (0.28 + 0.22 * CGFloat(index))
-            Glyph.circle(&path, CGPoint(x: x, y: jack.maxY + r.height * 0.14), r.width * 0.045)
+            holes.append(Glyph.circlePath(CGPoint(x: x, y: jack.minY + jack.height * 0.42), r.width * 0.055))
         }
-        return path
+        return .fill(Glyph.punched(body, holes))
     }
 
-    /// Clock + two hands.
-    private static func plcTimer(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled clock bezel + two hands.
+    private static func plcTimer(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
-        Glyph.circle(&path, c, min(r.width, r.height) * 0.44)
-        Glyph.line(&path, c, CGPoint(x: c.x, y: c.y - r.height * 0.26))
-        Glyph.line(&path, c, CGPoint(x: c.x + r.width * 0.22, y: c.y + r.height * 0.06))
-        return path
+        let rad = min(r.width, r.height) * 0.44
+        let fill = Glyph.punched(Glyph.circlePath(c, rad), Glyph.circlePath(c, rad * 0.62))
+        var stroke = Path()
+        Glyph.line(&stroke, c, CGPoint(x: c.x, y: c.y - r.height * 0.26))
+        Glyph.line(&stroke, c, CGPoint(x: c.x + r.width * 0.22, y: c.y + r.height * 0.06))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Rack unit + two rails.
-    private static func rackCurrent(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled rack unit + two rail holes.
+    private static func rackCurrent(_ r: CGRect) -> GlyphArtwork {
         let frame = r.insetBy(dx: r.width * 0.12, dy: r.height * 0.10)
-        path.addRoundedRect(in: frame, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.line(&path, CGPoint(x: frame.minX + frame.width * 0.18, y: frame.minY + frame.height * 0.32), CGPoint(x: frame.maxX - frame.width * 0.12, y: frame.minY + frame.height * 0.32))
-        Glyph.line(&path, CGPoint(x: frame.minX + frame.width * 0.18, y: frame.minY + frame.height * 0.62), CGPoint(x: frame.maxX - frame.width * 0.12, y: frame.minY + frame.height * 0.62))
-        return path
+        let body = Glyph.roundedRect(frame, corner: 3)
+        let slotH = max(2.0, frame.height * 0.10)
+        let slotW = frame.width * 0.70
+        let a = Glyph.slot(CGRect(
+            x: frame.minX + frame.width * 0.18, y: frame.minY + frame.height * 0.32 - slotH / 2,
+            width: slotW * 0.90, height: slotH
+        ))
+        let b = Glyph.slot(CGRect(
+            x: frame.minX + frame.width * 0.18, y: frame.minY + frame.height * 0.62 - slotH / 2,
+            width: slotW * 0.90, height: slotH
+        ))
+        return .fill(Glyph.punched(body, a, b))
     }
 
-    /// Feedback circle + one arrow.
-    private static func controlSystems(_ r: CGRect) -> Path {
+    /// Feedback circle + one arrow — open mark.
+    private static func controlSystems(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let c = CGPoint(x: r.midX, y: r.midY)
         let rad = min(r.width, r.height) * 0.40
         path.addArc(center: c, radius: rad, startAngle: .degrees(-10), endAngle: .degrees(300), clockwise: false)
         let tip = CGPoint(x: c.x + rad, y: c.y)
         Glyph.arrowHead(&path, at: tip, toward: CGPoint(x: tip.x, y: tip.y + r.height * 0.12), size: r.width * 0.12)
-        return path
+        return .stroke(path)
     }
 
     // MARK: - Field · Instruments
 
-    /// Phone slab + two bars.
-    private static func cellularStatus(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled phone + two bars.
+    private static func cellularStatus(_ r: CGRect) -> GlyphArtwork {
         let phone = CGRect(
             x: r.minX + r.width * 0.12, y: r.minY + r.height * 0.12,
             width: r.width * 0.40, height: r.height * 0.76
         )
-        path.addRoundedRect(in: phone, cornerSize: CGSize(width: 4, height: 4))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.64, y: r.maxY - r.height * 0.16), CGPoint(x: r.minX + r.width * 0.64, y: r.maxY - r.height * 0.42))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.80, y: r.maxY - r.height * 0.16), CGPoint(x: r.minX + r.width * 0.80, y: r.maxY - r.height * 0.68))
-        return path
+        let fill = Glyph.roundedRect(phone, corner: 4)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.64, y: r.maxY - r.height * 0.16), CGPoint(x: r.minX + r.width * 0.64, y: r.maxY - r.height * 0.42))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.80, y: r.maxY - r.height * 0.16), CGPoint(x: r.minX + r.width * 0.80, y: r.maxY - r.height * 0.68))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Geometric Bluetooth rune.
-    private static func bluetoothScan(_ r: CGRect) -> Path {
+    /// Geometric Bluetooth rune — open mark.
+    private static func bluetoothScan(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let top = CGPoint(x: r.midX, y: r.minY + r.height * 0.10)
         let bottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.10)
@@ -1034,21 +1101,21 @@ enum GlyphKind {
         path.addLine(to: CGPoint(x: r.midX + r.width * 0.22, y: r.midY + r.height * 0.18))
         path.addLine(to: CGPoint(x: r.midX - r.width * 0.18, y: r.midY - r.height * 0.06))
         Glyph.line(&path, top, bottom)
-        return path
+        return .stroke(path)
     }
 
-    /// Mic capsule + two sound arcs.
-    private static func noiseMeter(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled mic capsule + stem / sound arcs.
+    private static func noiseMeter(_ r: CGRect) -> GlyphArtwork {
         let mic = CGRect(
             x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.16,
             width: r.width * 0.32, height: r.height * 0.48
         )
-        path.addRoundedRect(in: mic, cornerSize: CGSize(width: mic.width * 0.48, height: mic.width * 0.48))
-        Glyph.line(&path, CGPoint(x: mic.midX, y: mic.maxY), CGPoint(x: mic.midX, y: r.maxY - r.height * 0.12))
+        let fill = Glyph.roundedRect(mic, corner: mic.width * 0.48)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: mic.midX, y: mic.maxY), CGPoint(x: mic.midX, y: r.maxY - r.height * 0.12))
         let origin = CGPoint(x: r.maxX - r.width * 0.28, y: r.midY - r.height * 0.06)
         for index in 1...2 {
-            path.addArc(
+            stroke.addArc(
                 center: origin,
                 radius: r.width * 0.16 * CGFloat(index),
                 startAngle: .degrees(-55),
@@ -1056,23 +1123,22 @@ enum GlyphKind {
                 clockwise: false
             )
         }
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Capsule + offset bubble.
-    private static func bubbleLevel(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled capsule + offset bubble hole.
+    private static func bubbleLevel(_ r: CGRect) -> GlyphArtwork {
         let tube = CGRect(
             x: r.minX + r.width * 0.04, y: r.midY - r.height * 0.16,
             width: r.width * 0.92, height: r.height * 0.32
         )
-        path.addRoundedRect(in: tube, cornerSize: CGSize(width: tube.height / 2, height: tube.height / 2))
-        Glyph.circle(&path, CGPoint(x: r.midX + r.width * 0.14, y: r.midY), r.height * 0.10)
-        return path
+        let body = Glyph.roundedRect(tube, corner: tube.height / 2)
+        let bubble = Glyph.circlePath(CGPoint(x: r.midX + r.width * 0.14, y: r.midY), r.height * 0.10)
+        return .fill(Glyph.punched(body, bubble))
     }
 
-    /// Horseshoe magnet.
-    private static func magnetometer(_ r: CGRect) -> Path {
+    /// Horseshoe magnet — open mark.
+    private static func magnetometer(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let c = CGPoint(x: r.midX, y: r.midY - r.height * 0.06)
         path.addArc(center: c, radius: r.width * 0.32, startAngle: .degrees(200), endAngle: .degrees(340), clockwise: false)
@@ -1080,72 +1146,75 @@ enum GlyphKind {
         let right = CGPoint(x: c.x + cos(340 * .pi / 180) * r.width * 0.32, y: c.y + sin(340 * .pi / 180) * r.width * 0.32)
         Glyph.line(&path, left, CGPoint(x: left.x, y: r.maxY - r.height * 0.08))
         Glyph.line(&path, right, CGPoint(x: right.x, y: r.maxY - r.height * 0.08))
-        return path
+        return .stroke(path)
     }
 
-    /// Circle + one needle.
-    private static func barometer(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled gauge bezel + needle.
+    private static func barometer(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
-        Glyph.circle(&path, c, min(r.width, r.height) * 0.44)
-        Glyph.line(&path, c, CGPoint(x: c.x + r.width * 0.22, y: c.y - r.height * 0.22))
-        return path
+        let rad = min(r.width, r.height) * 0.44
+        let fill = Glyph.punched(Glyph.circlePath(c, rad), Glyph.circlePath(c, rad * 0.62))
+        var stroke = Path()
+        Glyph.line(&stroke, c, CGPoint(x: c.x + r.width * 0.22, y: c.y - r.height * 0.22))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Phone + double-headed vertical arrow.
-    private static func motionSnapshot(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled phone + double-headed vertical arrow.
+    private static func motionSnapshot(_ r: CGRect) -> GlyphArtwork {
         let phone = CGRect(
             x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.08,
             width: r.width * 0.36, height: r.height * 0.84
         )
-        path.addRoundedRect(in: phone, cornerSize: CGSize(width: 4, height: 4))
+        let fill = Glyph.roundedRect(phone, corner: 4)
+        var stroke = Path()
         let x = r.maxX - r.width * 0.18
-        Glyph.arrow(&path, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.minY + r.height * 0.12), head: r.width * 0.10)
-        Glyph.arrow(&path, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.maxY - r.height * 0.12), head: r.width * 0.10)
-        return path
+        Glyph.arrow(&stroke, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.minY + r.height * 0.12), head: r.width * 0.10)
+        Glyph.arrow(&stroke, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.maxY - r.height * 0.12), head: r.width * 0.10)
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Map-pin teardrop.
-    private static func fieldPosition(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled map-pin teardrop + inner hole.
+    private static func fieldPosition(_ r: CGRect) -> GlyphArtwork {
+        var pin = Path()
         let tip = CGPoint(x: r.midX, y: r.maxY - r.height * 0.04)
-        path.move(to: tip)
-        path.addQuadCurve(
+        pin.move(to: tip)
+        pin.addQuadCurve(
             to: CGPoint(x: r.minX + r.width * 0.14, y: r.minY + r.height * 0.36),
             control: CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.28)
         )
-        path.addQuadCurve(
+        pin.addQuadCurve(
             to: CGPoint(x: r.maxX - r.width * 0.14, y: r.minY + r.height * 0.36),
             control: CGPoint(x: r.midX, y: r.minY + r.height * 0.02)
         )
-        path.addQuadCurve(
+        pin.addQuadCurve(
             to: tip,
             control: CGPoint(x: r.maxX - r.width * 0.08, y: r.maxY - r.height * 0.28)
         )
-        Glyph.circle(&path, CGPoint(x: r.midX, y: r.minY + r.height * 0.34), r.width * 0.12)
-        return path
+        pin.closeSubpath()
+        let hole = Glyph.circlePath(CGPoint(x: r.midX, y: r.minY + r.height * 0.34), r.width * 0.12)
+        return .fill(Glyph.punched(pin, hole))
     }
 
-    /// Heartbeat in a rounded rect.
-    private static func deviceHealth(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled monitor + heartbeat ribbon hole.
+    private static func deviceHealth(_ r: CGRect) -> GlyphArtwork {
         let frame = r.insetBy(dx: r.width * 0.06, dy: r.height * 0.18)
-        path.addRoundedRect(in: frame, cornerSize: CGSize(width: 4, height: 4))
+        let body = Glyph.roundedRect(frame, corner: 4)
         let y = frame.midY
-        path.move(to: CGPoint(x: frame.minX + frame.width * 0.10, y: y))
-        path.addLine(to: CGPoint(x: frame.minX + frame.width * 0.28, y: y))
-        path.addLine(to: CGPoint(x: frame.minX + frame.width * 0.38, y: y - frame.height * 0.32))
-        path.addLine(to: CGPoint(x: frame.minX + frame.width * 0.52, y: y + frame.height * 0.36))
-        path.addLine(to: CGPoint(x: frame.minX + frame.width * 0.64, y: y))
-        path.addLine(to: CGPoint(x: frame.maxX - frame.width * 0.10, y: y))
-        return path
+        let pulse = Glyph.ribbon([
+            CGPoint(x: frame.minX + frame.width * 0.10, y: y),
+            CGPoint(x: frame.minX + frame.width * 0.28, y: y),
+            CGPoint(x: frame.minX + frame.width * 0.38, y: y - frame.height * 0.32),
+            CGPoint(x: frame.minX + frame.width * 0.52, y: y + frame.height * 0.36),
+            CGPoint(x: frame.minX + frame.width * 0.64, y: y),
+            CGPoint(x: frame.maxX - frame.width * 0.10, y: y),
+        ], width: max(2.2, frame.height * 0.12))
+        return .fill(Glyph.punched(body, pulse))
     }
 
     // MARK: - Toolkit · Basics
 
-    /// Bold Ω — not a resistor zigzag.
-    private static func ohmsLaw(_ r: CGRect) -> Path {
+    /// Bold Ω — not a resistor zigzag. Open mark.
+    private static func ohmsLaw(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let c = CGPoint(x: r.midX, y: r.midY - r.height * 0.06)
         let rad = min(r.width, r.height) * 0.36
@@ -1163,101 +1232,119 @@ enum GlyphKind {
         Glyph.line(&path, CGPoint(x: left.x - r.width * 0.08, y: footY), CGPoint(x: left.x + r.width * 0.10, y: footY))
         Glyph.line(&path, right, CGPoint(x: right.x + r.width * 0.02, y: footY))
         Glyph.line(&path, CGPoint(x: right.x - r.width * 0.10, y: footY), CGPoint(x: right.x + r.width * 0.08, y: footY))
-        return path
+        return .stroke(path)
     }
 
-    /// Two bodies on a vertical run.
-    private static func voltageDivider(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Two filled bodies on a vertical run.
+    private static func voltageDivider(_ r: CGRect) -> GlyphArtwork {
         let x = r.midX
-        Glyph.line(&path, CGPoint(x: x, y: r.minY), CGPoint(x: x, y: r.maxY))
-        let top = CGRect(x: x - r.width * 0.22, y: r.minY + r.height * 0.16, width: r.width * 0.44, height: r.height * 0.18)
-        let bot = CGRect(x: x - r.width * 0.22, y: r.maxY - r.height * 0.34, width: r.width * 0.44, height: r.height * 0.18)
-        path.addRoundedRect(in: top, cornerSize: CGSize(width: 2, height: 2))
-        path.addRoundedRect(in: bot, cornerSize: CGSize(width: 2, height: 2))
-        Glyph.line(&path, CGPoint(x: x, y: r.midY), CGPoint(x: r.maxX - r.width * 0.06, y: r.midY))
-        return path
-    }
-
-    /// Series body left, parallel fork right.
-    private static func seriesParallel(_ r: CGRect) -> Path {
-        var path = Path()
-        let y = r.midY
-        Glyph.line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.10, y: y))
-        path.addRoundedRect(
-            in: CGRect(x: r.minX + r.width * 0.10, y: y - r.height * 0.10, width: r.width * 0.22, height: r.height * 0.20),
-            cornerSize: CGSize(width: 2, height: 2)
+        let top = Glyph.roundedRect(
+            CGRect(x: x - r.width * 0.22, y: r.minY + r.height * 0.16, width: r.width * 0.44, height: r.height * 0.18),
+            corner: 2
         )
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.32, y: y), CGPoint(x: r.minX + r.width * 0.46, y: y))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.46, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.46, y: y + r.height * 0.22))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.46, y: y - r.height * 0.22), CGPoint(x: r.maxX - r.width * 0.06, y: y - r.height * 0.22))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.46, y: y + r.height * 0.22), CGPoint(x: r.maxX - r.width * 0.06, y: y + r.height * 0.22))
-        return path
+        let bot = Glyph.roundedRect(
+            CGRect(x: x - r.width * 0.22, y: r.maxY - r.height * 0.34, width: r.width * 0.44, height: r.height * 0.18),
+            corner: 2
+        )
+        var fill = top
+        fill.addPath(bot)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: x, y: r.minY), CGPoint(x: x, y: r.maxY))
+        Glyph.line(&stroke, CGPoint(x: x, y: r.midY), CGPoint(x: r.maxX - r.width * 0.06, y: r.midY))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Capsule + three band ticks.
-    private static func resistorColor(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled series body, parallel fork stroke.
+    private static func seriesParallel(_ r: CGRect) -> GlyphArtwork {
+        let y = r.midY
+        let fill = Glyph.roundedRect(
+            CGRect(x: r.minX + r.width * 0.10, y: y - r.height * 0.10, width: r.width * 0.22, height: r.height * 0.20),
+            corner: 2
+        )
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.10, y: y))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.32, y: y), CGPoint(x: r.minX + r.width * 0.46, y: y))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.46, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.46, y: y + r.height * 0.22))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.46, y: y - r.height * 0.22), CGPoint(x: r.maxX - r.width * 0.06, y: y - r.height * 0.22))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.46, y: y + r.height * 0.22), CGPoint(x: r.maxX - r.width * 0.06, y: y + r.height * 0.22))
+        return .both(fill: fill, stroke: stroke)
+    }
+
+    /// Filled capsule + three band holes.
+    private static func resistorColor(_ r: CGRect) -> GlyphArtwork {
         let body = CGRect(
             x: r.minX + r.width * 0.12, y: r.midY - r.height * 0.16,
             width: r.width * 0.76, height: r.height * 0.32
         )
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: body.height / 2, height: body.height / 2))
+        let fill = Glyph.roundedRect(body, corner: body.height / 2)
+        let bandW = max(2.2, body.width * 0.08)
+        var holes: [Path] = []
         for fraction in [0.28, 0.50, 0.72] as [CGFloat] {
-            let x = body.minX + body.width * fraction
-            Glyph.line(&path, CGPoint(x: x, y: body.minY + 2), CGPoint(x: x, y: body.maxY - 2))
+            holes.append(Glyph.slot(CGRect(
+                x: body.minX + body.width * fraction - bandW / 2,
+                y: body.minY + 2,
+                width: bandW,
+                height: body.height - 4
+            )))
         }
-        return path
+        return .fill(Glyph.punched(fill, holes))
     }
 
-    /// Two unit blocks with a swap.
-    private static func unitConverter(_ r: CGRect) -> Path {
-        var path = Path()
-        let a = CGRect(x: r.minX, y: r.minY + r.height * 0.22, width: r.width * 0.32, height: r.height * 0.56)
-        let b = CGRect(x: r.maxX - r.width * 0.32, y: r.minY + r.height * 0.22, width: r.width * 0.32, height: r.height * 0.56)
-        path.addRoundedRect(in: a, cornerSize: CGSize(width: 3, height: 3))
-        path.addRoundedRect(in: b, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.arrow(&path, from: CGPoint(x: a.maxX + r.width * 0.04, y: r.midY - r.height * 0.10), to: CGPoint(x: b.minX - r.width * 0.04, y: r.midY - r.height * 0.10), head: r.width * 0.08)
-        Glyph.arrow(&path, from: CGPoint(x: b.minX - r.width * 0.04, y: r.midY + r.height * 0.10), to: CGPoint(x: a.maxX + r.width * 0.04, y: r.midY + r.height * 0.10), head: r.width * 0.08)
-        return path
+    /// Two filled unit blocks with a swap.
+    private static func unitConverter(_ r: CGRect) -> GlyphArtwork {
+        let a = Glyph.roundedRect(
+            CGRect(x: r.minX, y: r.minY + r.height * 0.22, width: r.width * 0.32, height: r.height * 0.56),
+            corner: 3
+        )
+        let b = Glyph.roundedRect(
+            CGRect(x: r.maxX - r.width * 0.32, y: r.minY + r.height * 0.22, width: r.width * 0.32, height: r.height * 0.56),
+            corner: 3
+        )
+        var fill = a
+        fill.addPath(b)
+        var stroke = Path()
+        Glyph.arrow(&stroke, from: CGPoint(x: r.minX + r.width * 0.36, y: r.midY - r.height * 0.10), to: CGPoint(x: r.maxX - r.width * 0.36, y: r.midY - r.height * 0.10), head: r.width * 0.08)
+        Glyph.arrow(&stroke, from: CGPoint(x: r.maxX - r.width * 0.36, y: r.midY + r.height * 0.10), to: CGPoint(x: r.minX + r.width * 0.36, y: r.midY + r.height * 0.10), head: r.width * 0.08)
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// One sine period.
-    private static func frequencyWave(_ r: CGRect) -> Path {
+    /// One sine period — open mark.
+    private static func frequencyWave(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         Glyph.sine(&path, in: r, y: r.midY, amplitude: r.height * 0.32, cycles: 1)
-        return path
+        return .stroke(path)
     }
 
-    /// Diode + capacitor plates.
-    private static func ledRC(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled diode + capacitor plates.
+    private static func ledRC(_ r: CGRect) -> GlyphArtwork {
         let y = r.midY
-        path.move(to: CGPoint(x: r.minX + r.width * 0.08, y: y - r.height * 0.20))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.36, y: y))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.08, y: y + r.height * 0.20))
-        path.closeSubpath()
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.36, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.36, y: y + r.height * 0.22))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.58, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.58, y: y + r.height * 0.22))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.70, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.70, y: y + r.height * 0.22))
-        return path
+        let fill = Glyph.triangle(
+            CGPoint(x: r.minX + r.width * 0.08, y: y - r.height * 0.20),
+            CGPoint(x: r.minX + r.width * 0.36, y: y),
+            CGPoint(x: r.minX + r.width * 0.08, y: y + r.height * 0.20)
+        )
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.36, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.36, y: y + r.height * 0.22))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.58, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.58, y: y + r.height * 0.22))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.70, y: y - r.height * 0.22), CGPoint(x: r.minX + r.width * 0.70, y: y + r.height * 0.22))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// DIP body + side pins.
-    private static func timer555(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled DIP body + side pins.
+    private static func timer555(_ r: CGRect) -> GlyphArtwork {
         let body = r.insetBy(dx: r.width * 0.22, dy: r.height * 0.16)
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
+        let fill = Glyph.roundedRect(body, corner: 3)
+        var stroke = Path()
         for index in 0..<3 {
             let y = body.minY + body.height * (0.22 + 0.28 * CGFloat(index))
-            Glyph.line(&path, CGPoint(x: body.minX, y: y), CGPoint(x: r.minX + r.width * 0.08, y: y))
-            Glyph.line(&path, CGPoint(x: body.maxX, y: y), CGPoint(x: r.maxX - r.width * 0.08, y: y))
+            Glyph.line(&stroke, CGPoint(x: body.minX, y: y), CGPoint(x: r.minX + r.width * 0.08, y: y))
+            Glyph.line(&stroke, CGPoint(x: body.maxX, y: y), CGPoint(x: r.maxX - r.width * 0.08, y: y))
         }
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Three-loop inductor.
-    private static func reactance(_ r: CGRect) -> Path {
+    /// Three-loop inductor — open mark.
+    private static func reactance(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let y = r.midY
         Glyph.line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.10, y: y))
@@ -1274,11 +1361,11 @@ enum GlyphKind {
             )
         }
         Glyph.line(&path, CGPoint(x: start + hump * 3, y: y), CGPoint(x: r.maxX, y: y))
-        return path
+        return .stroke(path)
     }
 
-    /// Origin + one phasor.
-    private static func phasorDiagram(_ r: CGRect) -> Path {
+    /// Origin + one phasor — open mark.
+    private static func phasorDiagram(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let origin = CGPoint(x: r.minX + r.width * 0.16, y: r.maxY - r.height * 0.16)
         Glyph.line(&path, CGPoint(x: origin.x, y: r.minY + r.height * 0.08), origin)
@@ -1289,40 +1376,44 @@ enum GlyphKind {
             to: CGPoint(x: r.minX + r.width * 0.72, y: r.minY + r.height * 0.22),
             head: r.width * 0.12
         )
-        return path
+        return .stroke(path)
     }
 
-    /// Two rounded squares.
-    private static func numberBase(_ r: CGRect) -> Path {
-        var path = Path()
-        let a = CGRect(x: r.minX + r.width * 0.06, y: r.minY + r.height * 0.22, width: r.width * 0.38, height: r.height * 0.56)
-        let b = CGRect(x: r.maxX - r.width * 0.44, y: r.minY + r.height * 0.22, width: r.width * 0.38, height: r.height * 0.56)
-        path.addRoundedRect(in: a, cornerSize: CGSize(width: 4, height: 4))
-        path.addRoundedRect(in: b, cornerSize: CGSize(width: 4, height: 4))
-        return path
+    /// Two filled rounded squares.
+    private static func numberBase(_ r: CGRect) -> GlyphArtwork {
+        var fill = Glyph.roundedRect(
+            CGRect(x: r.minX + r.width * 0.06, y: r.minY + r.height * 0.22, width: r.width * 0.38, height: r.height * 0.56),
+            corner: 4
+        )
+        fill.addPath(Glyph.roundedRect(
+            CGRect(x: r.maxX - r.width * 0.44, y: r.minY + r.height * 0.22, width: r.width * 0.38, height: r.height * 0.56),
+            corner: 4
+        ))
+        return .fill(fill)
     }
 
-    /// C-core with a gap.
-    private static func magneticCircuit(_ r: CGRect) -> Path {
+    /// C-core with a gap — open mark.
+    private static func magneticCircuit(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let c = CGPoint(x: r.midX - r.width * 0.06, y: r.midY)
         path.addArc(center: c, radius: r.width * 0.38, startAngle: .degrees(40), endAngle: .degrees(320), clockwise: false)
-        return path
+        return .stroke(path)
     }
 
-    /// Cable end + light cone.
-    private static func fiberLink(_ r: CGRect) -> Path {
-        var path = Path()
-        Glyph.circle(&path, CGPoint(x: r.minX + r.width * 0.22, y: r.midY), r.width * 0.16)
-        path.move(to: CGPoint(x: r.minX + r.width * 0.38, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.16))
-        path.move(to: CGPoint(x: r.minX + r.width * 0.38, y: r.midY))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.maxY - r.height * 0.16))
-        return path
+    /// Filled cable end + light cone.
+    private static func fiberLink(_ r: CGRect) -> GlyphArtwork {
+        let c = CGPoint(x: r.minX + r.width * 0.22, y: r.midY)
+        let fill = Glyph.punched(Glyph.circlePath(c, r.width * 0.16), Glyph.circlePath(c, r.width * 0.07))
+        var stroke = Path()
+        stroke.move(to: CGPoint(x: r.minX + r.width * 0.38, y: r.midY))
+        stroke.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.16))
+        stroke.move(to: CGPoint(x: r.minX + r.width * 0.38, y: r.midY))
+        stroke.addLine(to: CGPoint(x: r.maxX - r.width * 0.06, y: r.maxY - r.height * 0.16))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Beam waist.
-    private static func gaussianBeam(_ r: CGRect) -> Path {
+    /// Beam waist — open mark.
+    private static func gaussianBeam(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         path.move(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.16))
         path.addQuadCurve(
@@ -1334,36 +1425,37 @@ enum GlyphKind {
             to: CGPoint(x: r.maxX, y: r.maxY - r.height * 0.16),
             control: CGPoint(x: r.midX, y: r.midY + r.height * 0.06)
         )
-        return path
+        return .stroke(path)
     }
 
-    /// Rising exponential.
-    private static func transientCircuit(_ r: CGRect) -> Path {
+    /// Rising exponential — open mark.
+    private static func transientCircuit(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         path.move(to: CGPoint(x: r.minX + r.width * 0.06, y: r.maxY - r.height * 0.10))
         path.addQuadCurve(
             to: CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.16),
             control: CGPoint(x: r.minX + r.width * 0.42, y: r.minY + r.height * 0.22)
         )
-        return path
+        return .stroke(path)
     }
 
-    /// Diode triangle + bar.
-    private static func diodeIV(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled diode triangle + bar / leads.
+    private static func diodeIV(_ r: CGRect) -> GlyphArtwork {
         let y = r.midY
-        path.move(to: CGPoint(x: r.minX + r.width * 0.16, y: y - r.height * 0.24))
-        path.addLine(to: CGPoint(x: r.midX + r.width * 0.10, y: y))
-        path.addLine(to: CGPoint(x: r.minX + r.width * 0.16, y: y + r.height * 0.24))
-        path.closeSubpath()
-        Glyph.line(&path, CGPoint(x: r.midX + r.width * 0.10, y: y - r.height * 0.26), CGPoint(x: r.midX + r.width * 0.10, y: y + r.height * 0.26))
-        Glyph.line(&path, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.16, y: y))
-        Glyph.line(&path, CGPoint(x: r.midX + r.width * 0.10, y: y), CGPoint(x: r.maxX, y: y))
-        return path
+        let fill = Glyph.triangle(
+            CGPoint(x: r.minX + r.width * 0.16, y: y - r.height * 0.24),
+            CGPoint(x: r.midX + r.width * 0.10, y: y),
+            CGPoint(x: r.minX + r.width * 0.16, y: y + r.height * 0.24)
+        )
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.midX + r.width * 0.10, y: y - r.height * 0.26), CGPoint(x: r.midX + r.width * 0.10, y: y + r.height * 0.26))
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: y), CGPoint(x: r.minX + r.width * 0.16, y: y))
+        Glyph.line(&stroke, CGPoint(x: r.midX + r.width * 0.10, y: y), CGPoint(x: r.maxX, y: y))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Mast + two side broadcast arcs.
-    private static func rfLink(_ r: CGRect) -> Path {
+    /// Mast + two side broadcast arcs — open mark.
+    private static func rfLink(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.28, y: r.minY + r.height * 0.10), CGPoint(x: r.minX + r.width * 0.28, y: r.maxY - r.height * 0.08))
         Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.12, y: r.maxY - r.height * 0.08), CGPoint(x: r.minX + r.width * 0.44, y: r.maxY - r.height * 0.08))
@@ -1377,187 +1469,200 @@ enum GlyphKind {
                 clockwise: false
             )
         }
-        return path
+        return .stroke(path)
     }
 
     // MARK: - Toolkit · Bench
 
-    /// Two-peak zig inside a rect.
-    private static func heaterDesign(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled heater body + zigzag element hole.
+    private static func heaterDesign(_ r: CGRect) -> GlyphArtwork {
         let box = r.insetBy(dx: r.width * 0.08, dy: r.height * 0.18)
-        path.addRoundedRect(in: box, cornerSize: CGSize(width: 3, height: 3))
+        let body = Glyph.roundedRect(box, corner: 3)
         let y = box.midY
-        path.move(to: CGPoint(x: box.minX + box.width * 0.12, y: y))
-        path.addLine(to: CGPoint(x: box.minX + box.width * 0.32, y: y - box.height * 0.28))
-        path.addLine(to: CGPoint(x: box.minX + box.width * 0.52, y: y + box.height * 0.28))
-        path.addLine(to: CGPoint(x: box.minX + box.width * 0.72, y: y - box.height * 0.28))
-        path.addLine(to: CGPoint(x: box.maxX - box.width * 0.12, y: y))
-        return path
+        let zig = Glyph.ribbon([
+            CGPoint(x: box.minX + box.width * 0.12, y: y),
+            CGPoint(x: box.minX + box.width * 0.32, y: y - box.height * 0.28),
+            CGPoint(x: box.minX + box.width * 0.52, y: y + box.height * 0.28),
+            CGPoint(x: box.minX + box.width * 0.72, y: y - box.height * 0.28),
+            CGPoint(x: box.maxX - box.width * 0.12, y: y),
+        ], width: max(2.4, box.height * 0.12))
+        return .fill(Glyph.punched(body, zig))
     }
 
-    /// Coil cylinder + plunger.
-    private static func solenoidDesign(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled coil cylinder + plunger stroke.
+    private static func solenoidDesign(_ r: CGRect) -> GlyphArtwork {
         let body = CGRect(
             x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.22,
             width: r.width * 0.58, height: r.height * 0.56
         )
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: 4, height: 4))
-        Glyph.line(&path, CGPoint(x: body.maxX, y: body.midY), CGPoint(x: r.maxX - r.width * 0.06, y: body.midY))
+        let fill = Glyph.roundedRect(body, corner: 4)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: body.maxX, y: body.midY), CGPoint(x: r.maxX - r.width * 0.06, y: body.midY))
         Glyph.line(
-            &path,
+            &stroke,
             CGPoint(x: r.maxX - r.width * 0.18, y: body.midY - r.height * 0.12),
             CGPoint(x: r.maxX - r.width * 0.18, y: body.midY + r.height * 0.12)
         )
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Hex Faraday cage.
-    private static func empEmc(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled hex Faraday cage + inner hex hole.
+    private static func empEmc(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
         let rad = min(r.width, r.height) * 0.44
-        var points: [CGPoint] = []
-        for index in 0..<6 {
-            let angle = (CGFloat(index) * 60 - 90) * .pi / 180
-            points.append(CGPoint(x: c.x + cos(angle) * rad, y: c.y + sin(angle) * rad))
-        }
-        path.move(to: points[0])
-        for point in points.dropFirst() { path.addLine(to: point) }
-        path.closeSubpath()
-        return path
+        return .fill(Glyph.punched(
+            Glyph.regularPolygon(center: c, radius: rad, sides: 6),
+            Glyph.regularPolygon(center: c, radius: rad * 0.55, sides: 6)
+        ))
     }
 
-    /// Chainring + crank arm.
-    private static func eBikeTorqueRPM(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled chainring + crank arm.
+    private static func eBikeTorqueRPM(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
         let rad = min(r.width, r.height) * 0.34
-        Glyph.circle(&path, c, rad)
-        Glyph.circle(&path, c, rad * 0.28)
-        Glyph.line(&path, c, CGPoint(x: c.x + rad * 1.35, y: c.y + rad * 0.55))
-        return path
+        let fill = Glyph.punched(Glyph.circlePath(c, rad), Glyph.circlePath(c, rad * 0.28))
+        var stroke = Path()
+        Glyph.line(&stroke, c, CGPoint(x: c.x + rad * 1.35, y: c.y + rad * 0.55))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Circle + six teeth.
-    private static func eBikeSprocket(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled sprocket + six teeth.
+    private static func eBikeSprocket(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.midX, y: r.midY)
         let rad = min(r.width, r.height) * 0.34
-        Glyph.circle(&path, c, rad)
+        let fill = Glyph.punched(Glyph.circlePath(c, rad), Glyph.circlePath(c, rad * 0.28))
+        var stroke = Path()
         for index in 0..<6 {
             let angle = CGFloat(index) * .pi / 3
             Glyph.line(
-                &path,
+                &stroke,
                 CGPoint(x: c.x + cos(angle) * rad, y: c.y + sin(angle) * rad),
                 CGPoint(x: c.x + cos(angle) * rad * 1.28, y: c.y + sin(angle) * rad * 1.28)
             )
         }
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Battery + range gauge arc.
-    private static func eBikeRange(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled battery + range gauge arc.
+    private static func eBikeRange(_ r: CGRect) -> GlyphArtwork {
         let body = CGRect(
             x: r.minX + r.width * 0.10, y: r.minY + r.height * 0.18,
             width: r.width * 0.42, height: r.height * 0.28
         )
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
-        path.addRect(CGRect(x: body.maxX, y: body.midY - r.height * 0.06, width: r.width * 0.07, height: r.height * 0.12))
+        var fill = Glyph.roundedRect(body, corner: 3)
+        fill.addPath(Path(CGRect(x: body.maxX, y: body.midY - r.height * 0.06, width: r.width * 0.07, height: r.height * 0.12)))
+        var stroke = Path()
         let gauge = CGPoint(x: r.midX, y: r.maxY - r.height * 0.12)
-        path.addArc(center: gauge, radius: r.width * 0.36, startAngle: .degrees(200), endAngle: .degrees(340), clockwise: false)
-        Glyph.line(&path, gauge, CGPoint(x: gauge.x + r.width * 0.18, y: gauge.y - r.height * 0.22))
-        return path
+        stroke.addArc(center: gauge, radius: r.width * 0.36, startAngle: .degrees(200), endAngle: .degrees(340), clockwise: false)
+        Glyph.line(&stroke, gauge, CGPoint(x: gauge.x + r.width * 0.18, y: gauge.y - r.height * 0.22))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Pack outline with a 2×3 cell grid.
-    private static func eBikePackDesigner(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled pack + 2×3 cell holes.
+    private static func eBikePackDesigner(_ r: CGRect) -> GlyphArtwork {
         let pack = r.insetBy(dx: r.width * 0.10, dy: r.height * 0.16)
-        path.addRoundedRect(in: pack, cornerSize: CGSize(width: 4, height: 4))
-        Glyph.line(&path, CGPoint(x: pack.midX, y: pack.minY), CGPoint(x: pack.midX, y: pack.maxY))
-        Glyph.line(&path, CGPoint(x: pack.minX, y: pack.minY + pack.height / 3), CGPoint(x: pack.maxX, y: pack.minY + pack.height / 3))
-        Glyph.line(&path, CGPoint(x: pack.minX, y: pack.minY + pack.height * 2 / 3), CGPoint(x: pack.maxX, y: pack.minY + pack.height * 2 / 3))
-        return path
+        let body = Glyph.roundedRect(pack, corner: 4)
+        let insetX = pack.width * 0.10
+        let insetY = pack.height * 0.10
+        let gapX = pack.width * 0.08
+        let gapY = pack.height * 0.07
+        let cellW = (pack.width - insetX * 2 - gapX) / 2
+        let cellH = (pack.height - insetY * 2 - gapY * 2) / 3
+        var holes: [Path] = []
+        for row in 0..<3 {
+            for col in 0..<2 {
+                let x = pack.minX + insetX + CGFloat(col) * (cellW + gapX)
+                let y = pack.minY + insetY + CGFloat(row) * (cellH + gapY)
+                holes.append(Glyph.roundedRect(CGRect(x: x, y: y, width: cellW, height: cellH), corner: 2))
+            }
+        }
+        return .fill(Glyph.punched(body, holes))
     }
 
-    /// Long strip + tab.
-    private static func nickelStrip(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled long strip + tab.
+    private static func nickelStrip(_ r: CGRect) -> GlyphArtwork {
         let strip = CGRect(
             x: r.minX + r.width * 0.08, y: r.midY - r.height * 0.12,
             width: r.width * 0.72, height: r.height * 0.24
         )
-        path.addRoundedRect(in: strip, cornerSize: CGSize(width: 2, height: 2))
-        path.addRoundedRect(
-            in: CGRect(x: strip.maxX, y: strip.midY - r.height * 0.06, width: r.width * 0.12, height: r.height * 0.12),
-            cornerSize: CGSize(width: 1.5, height: 1.5)
-        )
-        return path
+        var fill = Glyph.roundedRect(strip, corner: 2)
+        fill.addPath(Glyph.roundedRect(
+            CGRect(x: strip.maxX, y: strip.midY - r.height * 0.06, width: r.width * 0.12, height: r.height * 0.12),
+            corner: 1.5
+        ))
+        return .fill(fill)
     }
 
-    /// Op-amp triangle with +/− stubs.
-    private static func analogWorkbench(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled op-amp triangle with +/− holes and I/O stubs.
+    private static func analogWorkbench(_ r: CGRect) -> GlyphArtwork {
         let left = r.minX + r.width * 0.22
-        path.move(to: CGPoint(x: left, y: r.minY + r.height * 0.12))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.10, y: r.midY))
-        path.addLine(to: CGPoint(x: left, y: r.maxY - r.height * 0.12))
-        path.closeSubpath()
-        Glyph.line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.30), CGPoint(x: left, y: r.minY + r.height * 0.30))
-        Glyph.line(&path, CGPoint(x: r.minX, y: r.maxY - r.height * 0.30), CGPoint(x: left, y: r.maxY - r.height * 0.30))
-        Glyph.line(&path, CGPoint(x: r.maxX - r.width * 0.10, y: r.midY), CGPoint(x: r.maxX, y: r.midY))
+        let triangle = Glyph.triangle(
+            CGPoint(x: left, y: r.minY + r.height * 0.12),
+            CGPoint(x: r.maxX - r.width * 0.10, y: r.midY),
+            CGPoint(x: left, y: r.maxY - r.height * 0.12)
+        )
         let plusY = r.minY + r.height * 0.30
-        Glyph.line(&path, CGPoint(x: left + r.width * 0.08, y: plusY), CGPoint(x: left + r.width * 0.18, y: plusY))
-        Glyph.line(&path, CGPoint(x: left + r.width * 0.13, y: plusY - r.height * 0.05), CGPoint(x: left + r.width * 0.13, y: plusY + r.height * 0.05))
-        Glyph.line(&path, CGPoint(x: left + r.width * 0.08, y: r.maxY - r.height * 0.30), CGPoint(x: left + r.width * 0.18, y: r.maxY - r.height * 0.30))
-        return path
+        let plus = Glyph.plus(
+            center: CGPoint(x: left + r.width * 0.13, y: plusY),
+            arm: r.width * 0.055,
+            thickness: max(1.8, r.width * 0.045)
+        )
+        let minus = Glyph.slot(CGRect(
+            x: left + r.width * 0.08,
+            y: r.maxY - r.height * 0.30 - max(1.2, r.height * 0.025),
+            width: r.width * 0.10,
+            height: max(2.0, r.height * 0.05)
+        ))
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: r.minY + r.height * 0.30), CGPoint(x: left, y: r.minY + r.height * 0.30))
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: r.maxY - r.height * 0.30), CGPoint(x: left, y: r.maxY - r.height * 0.30))
+        Glyph.line(&stroke, CGPoint(x: r.maxX - r.width * 0.10, y: r.midY), CGPoint(x: r.maxX, y: r.midY))
+        return .both(fill: Glyph.punched(triangle, plus, minus), stroke: stroke)
     }
 
-    /// Sine + sparse noise ticks.
-    private static func noiseSNR(_ r: CGRect) -> Path {
+    /// Sine + sparse noise ticks — open mark.
+    private static func noiseSNR(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         Glyph.sine(&path, in: r, y: r.midY - r.height * 0.08, amplitude: r.height * 0.22, cycles: 1)
         for fraction in [0.22, 0.48, 0.74] as [CGFloat] {
             let x = r.minX + r.width * fraction
             Glyph.line(&path, CGPoint(x: x, y: r.maxY - r.height * 0.12), CGPoint(x: x, y: r.maxY - r.height * 0.28))
         }
-        return path
+        return .stroke(path)
     }
 
-    /// IC + three-line ground rake.
-    private static func linearRegulator(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled IC + three-line ground rake.
+    private static func linearRegulator(_ r: CGRect) -> GlyphArtwork {
         let body = CGRect(
             x: r.minX + r.width * 0.18, y: r.minY + r.height * 0.10,
             width: r.width * 0.64, height: r.height * 0.48
         )
-        path.addRoundedRect(in: body, cornerSize: CGSize(width: 3, height: 3))
+        let fill = Glyph.roundedRect(body, corner: 3)
+        var stroke = Path()
         for index in 0..<3 {
             let x = body.minX + body.width * (0.22 + 0.28 * CGFloat(index))
-            Glyph.line(&path, CGPoint(x: x, y: body.maxY), CGPoint(x: x, y: r.maxY - r.height * 0.10))
+            Glyph.line(&stroke, CGPoint(x: x, y: body.maxY), CGPoint(x: x, y: r.maxY - r.height * 0.10))
         }
-        return path
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// One triangle + sense leads.
-    private static func instrumentationAmp(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled triangle + sense leads.
+    private static func instrumentationAmp(_ r: CGRect) -> GlyphArtwork {
         let left = r.minX + r.width * 0.28
-        path.move(to: CGPoint(x: left, y: r.minY + r.height * 0.16))
-        path.addLine(to: CGPoint(x: r.maxX - r.width * 0.10, y: r.midY))
-        path.addLine(to: CGPoint(x: left, y: r.maxY - r.height * 0.16))
-        path.closeSubpath()
-        Glyph.line(&path, CGPoint(x: r.minX, y: r.minY + r.height * 0.28), CGPoint(x: left, y: r.minY + r.height * 0.28))
-        Glyph.line(&path, CGPoint(x: r.minX, y: r.maxY - r.height * 0.28), CGPoint(x: left, y: r.maxY - r.height * 0.28))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.28), CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.28))
-        return path
+        let fill = Glyph.triangle(
+            CGPoint(x: left, y: r.minY + r.height * 0.16),
+            CGPoint(x: r.maxX - r.width * 0.10, y: r.midY),
+            CGPoint(x: left, y: r.maxY - r.height * 0.16)
+        )
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: r.minY + r.height * 0.28), CGPoint(x: left, y: r.minY + r.height * 0.28))
+        Glyph.line(&stroke, CGPoint(x: r.minX, y: r.maxY - r.height * 0.28), CGPoint(x: left, y: r.maxY - r.height * 0.28))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.28), CGPoint(x: r.minX + r.width * 0.08, y: r.maxY - r.height * 0.28))
+        return .both(fill: fill, stroke: stroke)
     }
 
-    /// Staircase into an arrow.
-    private static func adcDac(_ r: CGRect) -> Path {
+    /// Staircase into an arrow — open mark.
+    private static func adcDac(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let base = r.maxY - r.height * 0.16
         path.move(to: CGPoint(x: r.minX + r.width * 0.06, y: base))
@@ -1573,68 +1678,86 @@ enum GlyphKind {
             to: CGPoint(x: r.maxX - r.width * 0.04, y: base - r.height * 0.60),
             head: r.width * 0.10
         )
-        return path
+        return .stroke(path)
     }
 
     // MARK: - Toolkit · Reference
 
-    /// Book + spine.
-    private static func referenceLibrary(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled book + spine hole.
+    private static func referenceLibrary(_ r: CGRect) -> GlyphArtwork {
         let book = r.insetBy(dx: r.width * 0.14, dy: r.height * 0.10)
-        path.addRoundedRect(in: book, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.line(&path, CGPoint(x: book.minX + book.width * 0.18, y: book.minY), CGPoint(x: book.minX + book.width * 0.18, y: book.maxY))
-        return path
+        let body = Glyph.roundedRect(book, corner: 3)
+        let spine = Glyph.slot(CGRect(
+            x: book.minX + book.width * 0.16,
+            y: book.minY + book.height * 0.08,
+            width: max(2.0, book.width * 0.08),
+            height: book.height * 0.84
+        ))
+        return .fill(Glyph.punched(body, spine))
     }
 
-    /// Rect + three lines + checkbox.
-    private static func panelDirectory(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled card + three line holes + checkbox hole.
+    private static func panelDirectory(_ r: CGRect) -> GlyphArtwork {
         let card = r.insetBy(dx: r.width * 0.10, dy: r.height * 0.08)
-        path.addRoundedRect(in: card, cornerSize: CGSize(width: 4, height: 4))
+        let body = Glyph.roundedRect(card, corner: 4)
+        let slotH = max(2.0, card.height * 0.07)
+        var holes: [Path] = []
         for index in 0..<3 {
-            let y = card.minY + card.height * (0.30 + 0.20 * CGFloat(index))
-            Glyph.line(&path, CGPoint(x: card.minX + card.width * 0.16, y: y), CGPoint(x: card.maxX - card.width * 0.28, y: y))
+            let y = card.minY + card.height * (0.30 + 0.20 * CGFloat(index)) - slotH / 2
+            holes.append(Glyph.slot(CGRect(
+                x: card.minX + card.width * 0.16, y: y,
+                width: card.width * 0.56, height: slotH
+            )))
         }
         let box = CGRect(
             x: card.maxX - card.width * 0.22, y: card.minY + card.height * 0.22,
             width: card.width * 0.12, height: card.width * 0.12
         )
-        path.addRoundedRect(in: box, cornerSize: CGSize(width: 1.5, height: 1.5))
-        return path
+        holes.append(Glyph.roundedRect(box, corner: 1.5))
+        return .fill(Glyph.punched(body, holes))
     }
 
-    /// Page + 2×2 grid.
-    private static func loadWorksheet(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled page + 2×2 cell holes.
+    private static func loadWorksheet(_ r: CGRect) -> GlyphArtwork {
         let page = r.insetBy(dx: r.width * 0.12, dy: r.height * 0.08)
-        path.addRoundedRect(in: page, cornerSize: CGSize(width: 3, height: 3))
-        Glyph.line(&path, CGPoint(x: page.midX, y: page.minY + page.height * 0.18), CGPoint(x: page.midX, y: page.maxY - page.height * 0.12))
-        Glyph.line(&path, CGPoint(x: page.minX + page.width * 0.14, y: page.midY), CGPoint(x: page.maxX - page.width * 0.14, y: page.midY))
-        return path
+        let body = Glyph.roundedRect(page, corner: 3)
+        let inset = page.width * 0.12
+        let gap = page.width * 0.08
+        let cellW = (page.width - inset * 2 - gap) / 2
+        let cellH = (page.height - page.height * 0.18 - page.height * 0.12 - gap) / 2
+        let originY = page.minY + page.height * 0.18
+        var holes: [Path] = []
+        for row in 0..<2 {
+            for col in 0..<2 {
+                let x = page.minX + inset + CGFloat(col) * (cellW + gap)
+                let y = originY + CGFloat(row) * (cellH + gap)
+                holes.append(Glyph.roundedRect(CGRect(x: x, y: y, width: cellW, height: cellH), corner: 2))
+            }
+        }
+        return .fill(Glyph.punched(body, holes))
     }
 
-    /// Conductor end (circle + 3 dots) + list lines.
-    private static func cableSchedule(_ r: CGRect) -> Path {
-        var path = Path()
+    /// Filled conductor end with three strand holes + list lines.
+    private static func cableSchedule(_ r: CGRect) -> GlyphArtwork {
         let c = CGPoint(x: r.minX + r.width * 0.28, y: r.midY)
-        Glyph.circle(&path, c, r.width * 0.22)
+        var holes: [Path] = []
         for angle in [90.0, 210.0, 330.0] {
             let rad = angle * .pi / 180
-            Glyph.circle(
-                &path,
+            holes.append(Glyph.circlePath(
                 CGPoint(x: c.x + cos(rad) * r.width * 0.10, y: c.y + sin(rad) * r.width * 0.10),
-                r.width * 0.035
-            )
+                r.width * 0.045
+            ))
         }
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.58, y: r.minY + r.height * 0.28), CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.28))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.58, y: r.midY), CGPoint(x: r.maxX - r.width * 0.06, y: r.midY))
-        Glyph.line(&path, CGPoint(x: r.minX + r.width * 0.58, y: r.maxY - r.height * 0.28), CGPoint(x: r.maxX - r.width * 0.16, y: r.maxY - r.height * 0.28))
-        return path
+        let fill = Glyph.punched(Glyph.circlePath(c, r.width * 0.22), holes)
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.58, y: r.minY + r.height * 0.28), CGPoint(x: r.maxX - r.width * 0.06, y: r.minY + r.height * 0.28))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.58, y: r.midY), CGPoint(x: r.maxX - r.width * 0.06, y: r.midY))
+        Glyph.line(&stroke, CGPoint(x: r.minX + r.width * 0.58, y: r.maxY - r.height * 0.28), CGPoint(x: r.maxX - r.width * 0.16, y: r.maxY - r.height * 0.28))
+        return .both(fill: fill, stroke: stroke)
     }
 }
 
-// MARK: - Shared stroke primitives
+// MARK: - Shared fill / stroke primitives
 
 private enum Glyph {
     static func line(_ path: inout Path, _ a: CGPoint, _ b: CGPoint) {
@@ -1647,6 +1770,106 @@ private enum Glyph {
             x: center.x - radius, y: center.y - radius,
             width: radius * 2, height: radius * 2
         ))
+    }
+
+    static func circlePath(_ center: CGPoint, _ radius: CGFloat) -> Path {
+        Path(ellipseIn: CGRect(
+            x: center.x - radius, y: center.y - radius,
+            width: radius * 2, height: radius * 2
+        ))
+    }
+
+    static func roundedRect(_ rect: CGRect, corner: CGFloat) -> Path {
+        Path(roundedRect: rect, cornerSize: CGSize(width: corner, height: corner), style: .continuous)
+    }
+
+    static func slot(_ rect: CGRect) -> Path {
+        let corner = min(rect.width, rect.height) / 2
+        return Path(roundedRect: rect, cornerSize: CGSize(width: corner, height: corner), style: .continuous)
+    }
+
+    static func triangle(_ a: CGPoint, _ b: CGPoint, _ c: CGPoint) -> Path {
+        var path = Path()
+        path.move(to: a)
+        path.addLine(to: b)
+        path.addLine(to: c)
+        path.closeSubpath()
+        return path
+    }
+
+    static func regularPolygon(center: CGPoint, radius: CGFloat, sides: Int, rotationDeg: CGFloat = -90) -> Path {
+        var path = Path()
+        var points: [CGPoint] = []
+        for index in 0..<sides {
+            let angle = (CGFloat(index) * 360 / CGFloat(sides) + rotationDeg) * .pi / 180
+            points.append(CGPoint(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius))
+        }
+        path.move(to: points[0])
+        for point in points.dropFirst() { path.addLine(to: point) }
+        path.closeSubpath()
+        return path
+    }
+
+    /// Even-odd fill: solid `body` with `holes` punched through to the well tint.
+    static func punched(_ body: Path, _ holes: Path...) -> Path {
+        punched(body, holes)
+    }
+
+    static func punched(_ body: Path, _ holes: [Path]) -> Path {
+        var path = body
+        for hole in holes {
+            path.addPath(hole)
+        }
+        return path
+    }
+
+    static func plus(center: CGPoint, arm: CGFloat, thickness: CGFloat) -> Path {
+        let t = thickness / 2
+        let a = arm
+        let pts = [
+            CGPoint(x: center.x - t, y: center.y - a),
+            CGPoint(x: center.x + t, y: center.y - a),
+            CGPoint(x: center.x + t, y: center.y - t),
+            CGPoint(x: center.x + a, y: center.y - t),
+            CGPoint(x: center.x + a, y: center.y + t),
+            CGPoint(x: center.x + t, y: center.y + t),
+            CGPoint(x: center.x + t, y: center.y + a),
+            CGPoint(x: center.x - t, y: center.y + a),
+            CGPoint(x: center.x - t, y: center.y + t),
+            CGPoint(x: center.x - a, y: center.y + t),
+            CGPoint(x: center.x - a, y: center.y - t),
+            CGPoint(x: center.x - t, y: center.y - t),
+        ]
+        var path = Path()
+        path.move(to: pts[0])
+        for point in pts.dropFirst() { path.addLine(to: point) }
+        path.closeSubpath()
+        return path
+    }
+
+    /// Closed ribbon around a polyline — used as an even-odd hole.
+    static func ribbon(_ points: [CGPoint], width: CGFloat) -> Path {
+        guard points.count >= 2 else { return Path() }
+        let half = width / 2
+        var left: [CGPoint] = []
+        var right: [CGPoint] = []
+        for index in 0..<points.count {
+            let prev = index == 0 ? points[index] : points[index - 1]
+            let next = index == points.count - 1 ? points[index] : points[index + 1]
+            let dx = next.x - prev.x
+            let dy = next.y - prev.y
+            let length = max(hypot(dx, dy), 0.001)
+            let nx = -dy / length * half
+            let ny = dx / length * half
+            left.append(CGPoint(x: points[index].x + nx, y: points[index].y + ny))
+            right.append(CGPoint(x: points[index].x - nx, y: points[index].y - ny))
+        }
+        var path = Path()
+        path.move(to: left[0])
+        for point in left.dropFirst() { path.addLine(to: point) }
+        for point in right.reversed() { path.addLine(to: point) }
+        path.closeSubpath()
+        return path
     }
 
     static func lBracket(_ path: inout Path, _ origin: CGPoint, dx: CGFloat, dy: CGFloat) {
@@ -1712,3 +1935,58 @@ private enum Glyph {
         return path
     }
 }
+
+#if DEBUG
+private struct GlyphPassPreview: View {
+    let ids: [ToolID]
+    var circular: Bool = false
+    var well: CGFloat = 72
+
+    var body: some View {
+        let columns = [GridItem(.adaptive(minimum: well + 12), spacing: 12)]
+        LazyVGrid(columns: columns, spacing: 14) {
+            ForEach(ids, id: \.self) { id in
+                VStack(spacing: 6) {
+                    IconWell(toolID: id, size: well, circular: circular)
+                    Text(ToolboxCatalog.tools.first(where: { $0.id == id })?.title ?? id.rawValue)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .frame(width: well + 16)
+                }
+            }
+        }
+        .padding()
+        .background(Theme.background)
+    }
+}
+
+#Preview("Quick circles 52") {
+    GlyphPassPreview(
+        ids: [.voltageDrop, .wireAmpacity, .motorFLA, .receptacleSelector, .wifiStatus, .conduitFill],
+        circular: true,
+        well: 52
+    )
+}
+
+#Preview("Grid 72 — Quick + Jobsite") {
+    GlyphPassPreview(
+        ids: [
+            .voltageDrop, .wireAmpacity, .motorFLA, .receptacleSelector, .wifiStatus, .conduitFill,
+            .necCircuit, .shortCircuit, .motorNameplate, .lookCheck,
+        ],
+        well: 72
+    )
+}
+
+#Preview("Grid 72 — Power / Bench") {
+    GlyphPassPreview(
+        ids: [
+            .ohmsLaw, .power, .batteryBank, .upsSizing, .eBikePackDesigner,
+            .heaterDesign, .solenoidDesign, .analogWorkbench, .empEmc, .nickelStrip,
+        ],
+        well: 72
+    )
+}
+#endif

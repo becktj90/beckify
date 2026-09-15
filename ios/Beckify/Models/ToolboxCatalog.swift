@@ -214,7 +214,8 @@ struct ToolDefinition: Identifiable {
     var title: String
     var subtitle: String
     /// SF Symbol used only as a fallback / related-row chevron context — primary
-    /// artwork is the Beckify instrument glyph set (`IconWell` / `ToolGlyph`).
+    /// artwork is the Beckify instrument glyph set (`IconWell` / `ToolGlyph` —
+    /// solid fill + even-odd holes; open marks stay stroke).
     var symbol: String
     var synonyms: [String]
     /// Live converters update on valid input; explicit tools require Calculate.
