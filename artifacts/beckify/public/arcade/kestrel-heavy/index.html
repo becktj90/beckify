@@ -323,8 +323,8 @@
       position: absolute;
       left: 50%;
       bottom: 0;
-      width: min(92vw, 560px);
-      height: max(110px, 24%);
+      width: min(88vw, 520px);
+      height: max(96px, 18%);
       transform: translateX(-50%);
     }
     #atb-boost.is-held {
@@ -670,6 +670,16 @@
       padding: 0 !important;
       border: 0 !important;
       white-space: nowrap !important;
+    }
+    @media (hover: none), (pointer: coarse) {
+      .mc-hud {
+        inset: max(8px, env(safe-area-inset-top, 0px)) 8px auto 8px;
+      }
+      .mc-panel,
+      .mc-callout {
+        background: rgba(4, 8, 16, 0.52);
+        box-shadow: none;
+      }
     }
     @media (max-width: 700px) {
       .mc-hud {

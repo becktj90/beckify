@@ -161,6 +161,8 @@ export const CAM = {
   recovered: 0.82,
   deadzoneX: 42,
   deadzoneY: 36,
+  /** Ascent look-ahead: camera sits below the stack so incoming junk is on-screen. */
+  lookAheadY: 118,
   followLerpX: 0.18,
   followLerpY: 0.24,
   sepLerpX: 0.38,

@@ -464,6 +464,15 @@ export default class MissionScene extends Phaser.Scene {
     cam.startFollow(this.rocket, false, lerpX, lerpY);
     cam.setDeadzone(CAM.deadzoneX, CAM.deadzoneY);
     if (typeof cam.setLerp === 'function') cam.setLerp(lerpX, lerpY);
+    this.syncFollowOffset();
+  }
+
+  /** Keep more corridor above the stack during climb; SEP / Haven stay locked on. */
+  syncFollowOffset() {
+    const cam = this.cameras.main;
+    if (!cam || typeof cam.setFollowOffset !== 'function') return;
+    const ahead = this.status === 'ASCENT' ? (CAM.lookAheadY || 0) : 0;
+    cam.setFollowOffset(0, ahead);
   }
 
   setZoomWant(zoom, rate) {
@@ -1500,7 +1509,7 @@ export default class MissionScene extends Phaser.Scene {
     const kind = this.session.altitudeKm < 8 ? pick(['bird', 'balloon', mix[0]]) : pick(mix);
     const edge = corridorEdge(this.rocket.x, this.rocket.y);
     const x = clamp(this.rocket.x + rand(-200, 200), edge.left + 24, edge.right - 24);
-    const y = this.rocket.y - rand(340, 560);
+    const y = this.rocket.y - rand(420, 680);
     const img = this.matter.add.image(x, y, kind, null, {
       isSensor: true,
       label: `hazard-${kind}`,
