@@ -85,7 +85,7 @@ assert.match(arcadeJs, /getElementById\('ng-menu'\)/);
 assert.match(rootSw, /CACHE_VERSION = 'v6'/);
 assert.match(rootSw, /\/arcade\//);
 assert.match(rootSw, /EXCLUDED_PREFIXES[\s\S]*\/arcade\//);
-assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-5"/);
+assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-8"/);
 assert.match(arcadeHtml, /-webkit-touch-callout:\s*none/);
 assert.match(arcadeHtml, /-webkit-user-select:\s*none/);
 assert.match(arcadeHtml, /user-select:\s*none/);
@@ -105,7 +105,7 @@ assert.match(hudJs, /passive:\s*false/);
 assert.match(hudJs, /dataset\.label = snapshot\.boostLabel/);
 assert.match(input, /event\.code === 'Space'/);
 assert.match(input, /event\.code === 'KeyA'/);
-assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-5"/);
+assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-8"/);
 assert.match(host, /index\.html\?v=\$\{ARCADE_ASSET_VERSION\}/);
 assert.match(arcadeHtml, /id="ng-tape"/);
 assert.match(arcadeHtml, /id="ng-phase"/);
@@ -118,6 +118,30 @@ assert.match(arcadeHtml, /--game-vv-height/);
 assert.match(arcadeHtml, /aspect-ratio:\s*unset/);
 assert.match(arcadeHtml, /arcade-host-fill/);
 assert.match(arcadeHtml, /body\[data-phase="MENU"\] \.mc-hud/);
+assert.match(arcadeHtml, /container:\s*cabinet\s*\/\s*size/);
+assert.doesNotMatch(arcadeHtml, /container:\s*cabinet\s*\/\s*inline-size/);
+assert.match(arcadeHtml, /@supports \(height:\s*100dvh\)[\s\S]{0,180}height:\s*100%/);
+assert.match(arcadeHtml, /@container cabinet \(max-block-size:\s*500px\)/);
+assert.match(arcadeHtml, /@media \(max-height:\s*500px\) \{/);
+assert.doesNotMatch(arcadeHtml, /max-height:\s*500dvh/);
+assert.match(arcadeHtml, /grid-template-areas:[\s\S]*callout status score/);
+assert.match(arcadeHtml, /class="mc-status"/);
+assert.match(arcadeHtml, /class="mc-met"/);
+assert.match(arcadeHtml, /#ng-hints[\s\S]*?bottom:\s*max\(5\.5rem/);
+assert.doesNotMatch(arcadeHtml, /#ng-hints[\s\S]*?top:\s*46%/);
+assert.match(arcadeHtml, /line-clamp:\s*2/);
+assert.ok(
+  arcadeHtml.indexOf('id="t-radio"') > arcadeHtml.indexOf('class="mc-callout"'),
+  'voice radio must live in the offset callout, not the center MET stack',
+);
+assert.ok(
+  arcadeHtml.indexOf('id="t-obj"') > arcadeHtml.indexOf('class="mc-callout"'),
+  'objective must live in the offset callout, not the center MET stack',
+);
+assert.ok(
+  arcadeHtml.indexOf('id="t-radio"') < arcadeHtml.indexOf('class="hud-btns"'),
+  'callout radio stays inside the HUD overlay',
+);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /isIosPhone/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /isLetterboxed/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /usableViewportHeight/);
@@ -380,6 +404,17 @@ assert.match(mission, /failFlight/);
 assert.match(mission, /markOutcome/);
 assert.match(mission, /setSummaryWhy/);
 assert.match(mission, /callout\('hint-ascent'/);
+assert.match(mission, /callout\('hint-corridor'/);
+assert.match(mission, /from '\.\/corridor\.js'/);
+assert.match(fs.readFileSync(path.join(arcadeDir, 'js/corridor.js'), 'utf8'), /export function corridorEdge/);
+assert.match(arcadeHtml, /id="t-next"/);
+assert.match(arcadeHtml, /Stay inside the corridor/);
+assert.match(arcadeHtml, /#ng-tape li\.is-next/);
+assert.match(sequence, /quiet: true/);
+assert.match(sequence, /export function playGoal/);
+assert.match(voiceJs, /hint-corridor/);
+assert.match(voiceJs, /corridorEdge/);
+assert.match(hudJs, /renderTape\(snapshot\.tapeId, snapshot\.nextTapeId\)/);
 assert.match(mission, /callout\('hint-sep'/);
 assert.match(mission, /callout\('hint-haven'/);
 assert.match(mission, /CAM\.ascentStart/);
@@ -394,6 +429,8 @@ assert.ok(fs.existsSync(path.join(iosGame, 'index.html')), 'iOS Game pack must s
 const iosHtml = fs.readFileSync(path.join(iosGame, 'index.html'), 'utf8');
 assert.doesNotMatch(iosHtml, /\/toolbox\/js\//);
 assert.match(iosHtml, /viewport-fit=cover/);
+assert.match(iosHtml, /name="arcade-asset-version" content="kestrel-8"/);
+assert.match(iosHtml, /container:\s*cabinet\s*\/\s*size/);
 assert.match(iosHtml, /is-ios-app/);
 assert.doesNotMatch(iosHtml, /fonts\.googleapis\.com/);
 assert.ok(fs.existsSync(path.join(iosGame, 'vendor/phaser.min.js')), 'iOS pack must vendor Phaser');

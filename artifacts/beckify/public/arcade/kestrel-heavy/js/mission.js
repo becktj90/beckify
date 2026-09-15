@@ -20,6 +20,13 @@ import {
   TIPS,
   W,
 } from './config.js';
+import {
+  abortHoldFor,
+  clampToCorridor,
+  corridorEdge,
+  corridorVisibleSpan,
+  dashRail,
+} from './corridor.js';
 import AudioApi from './audio.js';
 import {
   bindChrome,
@@ -49,7 +56,7 @@ import {
 } from './voice.js';
 import { bindKeyboard, clearFlightHolds, consumeBoostTap, createInput, isBoosting, setBoostHeld, steerAxis } from './input.js';
 import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
-import { beatsFor, currentBeat, formatClock, phaseChip, T0_LEAD } from './sequence.js';
+import { beatsFor, currentBeat, formatClock, nextCoachBeat, phaseChip, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures } from './textures.js';
 import {
@@ -126,6 +133,18 @@ export default class MissionScene extends Phaser.Scene {
     this.cloudsFar = this.add.image(W / 2, 80, 'clouds-far').setDepth(-0.6).setDisplaySize(W + 120, 260).setAlpha(0.7);
     this.cloudsNear = this.add.image(W / 2, 220, 'clouds-near').setDepth(-0.4).setDisplaySize(W + 200, 280).setAlpha(0.55);
     this.hazeBand = this.add.image(W / 2, 360, 'haze').setDepth(-0.2).setDisplaySize(W + 40, 240).setAlpha(0.8);
+    this.corridorGfx = this.add.graphics().setDepth(0.45);
+    const railFont = {
+      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+      fontSize: '12px',
+      fontStyle: '800',
+      color: '#ffcf5d',
+      stroke: '#041014',
+      strokeThickness: 4,
+    };
+    this.corridorTagL = this.add.text(0, 0, 'CORRIDOR', railFont).setOrigin(0.5, 0.5).setDepth(4).setAngle(-90);
+    this.corridorTagR = this.add.text(0, 0, 'CORRIDOR', railFont).setOrigin(0.5, 0.5).setDepth(4).setAngle(90);
+    this.setCorridorVisible(false);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.oceanWash = this.add.graphics().setDepth(-1).setVisible(false);
     this.paintOceanWash();
@@ -395,6 +414,7 @@ export default class MissionScene extends Phaser.Scene {
       prevVelMs: null,
       science: null,
       attitudeHold: 0,
+      corridorHold: 0,
     };
   }
 
@@ -509,6 +529,7 @@ export default class MissionScene extends Phaser.Scene {
     this.clearActors();
     this.clearDebris();
     this.showAscentSky(true);
+    this.setCorridorVisible(true);
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.jacklyn.setVisible(false);
@@ -567,6 +588,7 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.setZoom(1);
     this.cameras.main.centerOn(W / 2, H / 2);
     this.showAscentSky(true);
+    this.setCorridorVisible(false);
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.bgOcean.clearTint();
@@ -590,7 +612,7 @@ export default class MissionScene extends Phaser.Scene {
     this.callout('liftoff', { banner: 'LIFTOFF', kind: 'go', holdMs: 1500 });
     this.rocket.setIgnoreGravity(false);
     this.matter.world.setGravity(0, 0.145);
-    if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup());
+    if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup('shield'));
     this.cameras.main.startFollow(this.rocket, true, 0.1, 0.13);
     this.cameras.main.setDeadzone(CAM.deadzoneX, CAM.deadzoneY);
     this.cameras.main.setZoom(this.flightZoom('ascent'));
@@ -600,7 +622,12 @@ export default class MissionScene extends Phaser.Scene {
     AudioApi.setBed('roar', true, this.settings, 0.42);
     this.vibrate(30);
     this.tickCombo(1, 'LIFTOFF');
-    this.time.delayedCall(1700, () => {
+    this.time.delayedCall(900, () => {
+      if (this.status === 'ASCENT') {
+        this.callout('hint-corridor', { banner: 'CORRIDOR — stay between the dotted rails', kind: 'warn', holdMs: 2400 });
+      }
+    });
+    this.time.delayedCall(2800, () => {
       if (this.status === 'ASCENT') this.callout('hint-ascent');
     });
   }
@@ -697,6 +724,7 @@ export default class MissionScene extends Phaser.Scene {
     else if (this.status === 'JACKLYN') this.updateJacklyn(dt);
     if (this.inFlight()) this.syncScience(dt);
     this.updateSkyLayers();
+    this.updateCorridor(dt);
     this.updateFloaters(dt);
     this.refreshHud();
   }
@@ -762,7 +790,8 @@ export default class MissionScene extends Phaser.Scene {
 
     this.rocket.setAngularVelocity(0);
     this.rocket.setAngle(clamp(this.rocket.body.velocity.x * 4 + axis * 6, -18, 18));
-    this.rocket.x = clamp(this.rocket.x, 80, W - 80);
+    this.enforceCorridor(dt);
+    if (this.status !== 'ASCENT') return;
 
     this.bgPad.setVisible(this.rocket.y > 80);
     const climbZoom = this.settings.reducedMotion
@@ -974,13 +1003,17 @@ export default class MissionScene extends Phaser.Scene {
 
   onBeat(beat) {
     this.session.stage = beat.stage;
-    const said = this.callout(beat.id, {
-      banner: beat.id === 'touchdown' ? '' : beat.banner,
-      kind: beat.kind,
-      holdMs: beat.id === 'deploy' ? 2800 : 1600,
-      radio: undefined,
-    });
-    if (!said && beat.radio) this.session.radio = beat.radio;
+    if (beat.quiet) {
+      setBanner(beat.banner, beat.kind, 1100);
+    } else {
+      const said = this.callout(beat.id, {
+        banner: beat.id === 'touchdown' ? '' : beat.banner,
+        kind: beat.kind,
+        holdMs: beat.id === 'deploy' ? 2800 : 1600,
+        radio: undefined,
+      });
+      if (!said && beat.radio) this.session.radio = beat.radio;
+    }
     if (beat.juice === 'maxq') AudioApi.play('maxq', this.settings);
     if (beat.juice === 'meco') {
       this.session.ascentScore = Math.round(this.session.score);
@@ -1236,7 +1269,8 @@ export default class MissionScene extends Phaser.Scene {
     const mode = DIFFICULTY[this.settings.difficulty];
     const mix = this.currentFlight().hazards || ['bird', 'balloon', 'ice'];
     const kind = this.session.altitudeKm < 8 ? pick(['bird', 'balloon', mix[0]]) : pick(mix);
-    const x = clamp(this.rocket.x + rand(-220, 220), 70, W - 70);
+    const edge = corridorEdge(this.rocket.x, this.rocket.y);
+    const x = clamp(this.rocket.x + rand(-200, 200), edge.left + 24, edge.right - 24);
     const y = this.rocket.y - rand(340, 560);
     const img = this.matter.add.image(x, y, kind, null, {
       isSensor: true,
@@ -1250,20 +1284,22 @@ export default class MissionScene extends Phaser.Scene {
     this.hazards.push(img);
   }
 
-  spawnPickup() {
-    const kind = pick(PICKUP_TYPES);
-    const x = clamp(this.rocket.x + rand(-180, 180), 80, W - 80);
+  spawnPickup(kind) {
+    const type = kind || pick(PICKUP_TYPES);
+    const edge = corridorEdge(this.rocket.x, this.rocket.y);
+    const x = clamp(this.rocket.x + rand(-140, 140), edge.left + 36, edge.right - 36);
     const y = this.rocket.y - rand(240, 380);
-    const img = this.matter.add.image(x, y, `pickup-${kind}`, null, {
+    const img = this.matter.add.image(x, y, `pickup-${type}`, null, {
       isSensor: true,
-      label: `pickup-${kind}`,
+      label: `pickup-${type}`,
     });
     img.setCollisionCategory(CAT_PICKUP);
     img.setCollidesWith(CAT_ROCKET);
     img.setIgnoreGravity(true);
     img.setVelocity(0, 0.7);
-    img.pickupKind = kind;
+    img.pickupKind = type;
     this.pickups.push(img);
+    if (type === 'shield') this.callout('hint-pickup');
   }
 
   advanceActors() {
@@ -1557,6 +1593,94 @@ export default class MissionScene extends Phaser.Scene {
     this.refreshHud();
   }
 
+  objectiveLine(session, flight) {
+    const now = playGoal(this.status, session, flight);
+    const label = flight.objective?.label || '';
+    const side = label
+      ? `${session.objectiveDone ? 'DONE · ' : 'OBJ · '}${label}`
+      : '';
+    if (!side) return now;
+    if (now && label && now.toLowerCase().includes(label.toLowerCase())) return now;
+    return [now, side].filter(Boolean).join(' · ');
+  }
+
+  setCorridorVisible(on) {
+    const show = Boolean(on);
+    if (this.corridorGfx) this.corridorGfx.setVisible(show);
+    if (this.corridorTagL) this.corridorTagL.setVisible(show);
+    if (this.corridorTagR) this.corridorTagR.setVisible(show);
+    if (!show && this.corridorGfx) this.corridorGfx.clear();
+  }
+
+  enforceCorridor(dt) {
+    if (!this.rocket || !this.session) return;
+    this.rocket.x = clamp(this.rocket.x, 80, W - 80);
+    const edge = corridorEdge(this.rocket.x, this.rocket.y);
+    const mode = DIFFICULTY[this.settings.difficulty];
+    if (edge.state !== 'out') {
+      this.session.corridorHold = 0;
+      if (edge.state === 'warn') {
+        this.callout('corridor-edge', { banner: 'CORRIDOR', kind: 'warn', holdMs: 900 });
+      }
+      return;
+    }
+    if (!mode.allowFail) {
+      this.rocket.x = clampToCorridor(this.rocket.x, this.rocket.y);
+      this.session.corridorHold = 0;
+      this.callout('corridor-edge', { banner: 'CORRIDOR', kind: 'warn', holdMs: 900 });
+      return;
+    }
+    this.session.corridorHold = (this.session.corridorHold || 0) + dt;
+    this.callout('corridor-edge', { banner: 'CORRIDOR EDGE — steer back in', kind: 'fail', holdMs: 1200 });
+    if (this.session.corridorHold >= abortHoldFor(this.settings.difficulty)) {
+      this.failFlight('corridorEdge');
+    }
+  }
+
+  updateCorridor() {
+    const live = this.status === 'PRELAUNCH' || this.status === 'ASCENT';
+    if (!this.corridorGfx || !this.rocket) {
+      this.setCorridorVisible(false);
+      return;
+    }
+    if (!live) {
+      this.setCorridorVisible(false);
+      return;
+    }
+    this.setCorridorVisible(true);
+    const edge = corridorEdge(this.rocket.x, this.rocket.y);
+    const { y0, y1 } = corridorVisibleSpan(this.rocket.y);
+    const warn = edge.state !== 'ok';
+    const pulse = this.settings.reducedMotion ? 1 : 0.72 + Math.sin(this.nowSec * 5.5) * 0.28;
+    const color = edge.state === 'out' ? 0xff8a6a : (warn ? 0xffcf5d : 0x8ce0ff);
+    const alpha = (warn ? 0.95 : 0.55) * (warn && !this.settings.reducedMotion ? pulse : 1);
+    this.corridorGfx.clear();
+    if (warn) {
+      this.corridorGfx.fillStyle(0xff8a6a, 0.08 + edge.t * 0.1);
+      this.corridorGfx.fillRect(-200, y1, edge.left + 200, y0 - y1);
+      this.corridorGfx.fillRect(edge.right, y1, W + 200 - edge.right, y0 - y1);
+    }
+    this.corridorGfx.lineStyle(3, color, alpha);
+    dashRail(this.corridorGfx, edge.left, y0, y1);
+    dashRail(this.corridorGfx, edge.right, y0, y1);
+    const teach = (this.session?.flightTime || 0) < 6.2 || warn;
+    const tag = warn ? 'CORRIDOR' : 'CORRIDOR';
+    const tagY = this.rocket.y - 8;
+    const tagAlpha = teach ? (warn ? 1 : 0.92) : 0.55;
+    if (this.corridorTagL) {
+      this.corridorTagL.setText(tag);
+      this.corridorTagL.setPosition(edge.left + 14, tagY);
+      this.corridorTagL.setColor(edge.state === 'out' ? '#ff8a6a' : '#ffcf5d');
+      this.corridorTagL.setAlpha(tagAlpha);
+    }
+    if (this.corridorTagR) {
+      this.corridorTagR.setText(tag);
+      this.corridorTagR.setPosition(edge.right - 14, tagY);
+      this.corridorTagR.setColor(edge.state === 'out' ? '#ff8a6a' : '#ffcf5d');
+      this.corridorTagR.setAlpha(tagAlpha);
+    }
+  }
+
   /**
    * Phaser MatterPhysics.pause/resume → world.enabled.
    * Physics stops only when paused === true (settings mid-flight sets that flag).
@@ -1601,6 +1725,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.cloudsFar) this.cloudsFar.setVisible(on);
     if (this.cloudsNear) this.cloudsNear.setVisible(on);
     if (this.hazeBand) this.hazeBand.setVisible(on);
+    this.setCorridorVisible(on && (this.status === 'PRELAUNCH' || this.status === 'ASCENT'));
     if (this.bgWash) this.bgWash.setVisible(on);
     if (this.oceanWash) this.oceanWash.setVisible(!on && this.status === 'JACKLYN');
     if (this.bgOcean && on) this.bgOcean.setVisible(false);
@@ -1901,8 +2026,15 @@ export default class MissionScene extends Phaser.Scene {
   hintLine() {
     if (!this.settings.controlHints || !this.session) return '';
     if (this.status === 'PRELAUNCH') return 'HOLD CLIMB through ignition';
-    if (this.status === 'ASCENT' && this.session.flightTime < (this.session.hintUntil || 0)) {
-      return 'HOLD CLIMB  ·  STEER A/D';
+    if (this.status === 'ASCENT') {
+      if (this.session.flightTime < 6.4) return 'STAY INSIDE THE CORRIDOR  ·  HOLD CLIMB';
+      if (this.currentFlight().objective?.id === 'shield' && !this.session.objectiveDone && this.session.flightTime < 16) {
+        return 'GRAB THE CYAN AERO SHIELD';
+      }
+      if (this.session.tClock > PACE.MAXQ - 4 && this.session.tClock < PACE.MAXQ + 4) {
+        return 'MAX-Q  ·  FLY SMOOTH  ·  stay in the rails';
+      }
+      return '';
     }
     if (this.status === 'SEP') {
       if (this.session.sepPhase === 'window') return 'ALIGN GREEN  ·  TAP CLIMB to sep';
@@ -1959,11 +2091,11 @@ export default class MissionScene extends Phaser.Scene {
       radio: s.radio,
       mission: flight.id,
       payload: `${flight.mark}  ${flight.payload}`,
-      objective: flight.objective?.label
-        ? `${s.objectiveDone ? 'DONE · ' : 'OBJ · '}${flight.objective.label}`
-        : '',
+      objective: this.objectiveLine(s, flight),
+      next: playNext(s.beats || beatsFor(flight), s.tClock, this.status),
       clock: formatClock(s.tClock),
       tapeId: beat?.id || '',
+      nextTapeId: TAPE_IDS[TAPE_IDS.indexOf(beat?.id) + 1] || nextCoachBeat(s.beats || beatsFor(flight), s.tClock)?.id || '',
       phase: this.status === 'MENU' ? 'STANDBY' : (this.status === 'SEP' ? (s.sepPhase === 'clear' ? 'STAGE SEP' : (s.sepPhase === 'window' ? 'STAGE SEP' : 'MECO')) : phaseChip(beat?.id)),
       muted: this.settings.muted,
       paused: this.paused,

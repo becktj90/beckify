@@ -64,7 +64,7 @@ test('voice pools do not repeat the same line back-to-back', async () => {
   assert.ok(alignA);
   assert.equal(alignB, null, 'align-green is on cooldown');
 
-  for (const id of ['corridor', 'fuel', 'hazard', 'maxq', 'attitude', 'sepFoul', 'recontact', 'tip', 'salvage', 'splash', 'fuelHaven']) {
+  for (const id of ['corridor', 'corridorEdge', 'fuel', 'hazard', 'maxq', 'attitude', 'sepFoul', 'recontact', 'tip', 'salvage', 'splash', 'fuelHaven']) {
     const abort = describeAbort(id);
     assert.ok(ABORTS[id], id);
     assert.ok(abort.reason, id);
@@ -73,4 +73,32 @@ test('voice pools do not repeat the same line back-to-back', async () => {
     assert.ok(abort.radio.length >= 1, id);
     assert.doesNotMatch(abort.reason, /Jacklyn|New Glenn|Blue Origin|LC-36/);
   }
+});
+
+test('corridor rails are play bounds and beat goals stay readable', async () => {
+  const { corridorBounds, corridorEdge, clampToCorridor } = await import(path.join(arcade, 'corridor.js'));
+  const { playGoal, playNext, beatsFor, nextCoachBeat } = await import(path.join(arcade, 'sequence.js'));
+  const { PAD_ROCKET_X, PAD_ROCKET_Y } = await import(path.join(arcade, 'config.js'));
+
+  const pad = corridorBounds(PAD_ROCKET_Y);
+  assert.ok(PAD_ROCKET_X > pad.left && PAD_ROCKET_X < pad.right, 'pad stack starts inside the rails');
+  assert.equal(corridorEdge(PAD_ROCKET_X, PAD_ROCKET_Y).state, 'ok');
+  assert.equal(corridorEdge(pad.left - 20, PAD_ROCKET_Y).state, 'out');
+  assert.equal(corridorEdge(pad.left + 8, PAD_ROCKET_Y).state, 'warn');
+  const bounced = clampToCorridor(0, PAD_ROCKET_Y);
+  assert.ok(bounced > pad.left);
+
+  const mission = { id: 'KH-1', payload: 'Aether Scout', mark: 'AES', objective: { id: 'shield', label: 'Grab an aero shield' } };
+  assert.match(playGoal('PRELAUNCH', { tClock: -4 }, mission), /HOLD CLIMB/);
+  assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /corridor/);
+  assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /aero shield/);
+  assert.match(playGoal('ASCENT', { tClock: 18.6 }, mission), /Max-Q/);
+  assert.match(playGoal('SEP', { sepPhase: 'window' }, mission), /TAP climb/);
+  assert.match(playGoal('JACKLYN', { jacklynElapsed: 1 }, mission), /Haven/);
+
+  const beats = beatsFor(mission);
+  const next = nextCoachBeat(beats, -7);
+  assert.ok(next);
+  assert.match(playNext(beats, -7, 'PRELAUNCH'), /NEXT ·/);
+  assert.ok(beats.filter((b) => b.quiet).length >= 4, 'filler beats stay quiet');
 });

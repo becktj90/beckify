@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-5">
+      <meta name="arcade-asset-version" content="kestrel-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,13 +50,14 @@
       overflow: hidden;
       border-radius: 0;
       background: #05050d;
-      container: cabinet / inline-size;
+      container: cabinet / size;
       aspect-ratio: 16 / 9;
       width: 100%;
     }
     @supports (height: 100dvh) {
       #arcade-fs-wrapper {
         aspect-ratio: auto;
+        height: 100%;
       }
     }
     #ng-phaser-root {
@@ -83,9 +84,17 @@
       z-index: 8;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
-      gap: 8px;
+      grid-template-areas:
+        "telem status score"
+        "callout status score";
+      align-items: start;
+      column-gap: 8px;
+      row-gap: 6px;
       pointer-events: none;
     }
+    .mc-telem { grid-area: telem; }
+    .mc-score { grid-area: score; }
+    .mc-callout { grid-area: callout; }
     .mc-panel {
       background: rgba(4, 8, 16, 0.88);
       border: 1px solid rgba(180, 236, 255, 0.7);
@@ -113,11 +122,38 @@
     body.is-kid .sci-pro { display: none; }
     .mc-panel td { text-align: right; }
     .mc-center {
+      grid-area: status;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      gap: 5px;
+      gap: 4px;
+      min-inline-size: 0;
+    }
+    .mc-status {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+    .mc-met {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .mc-callout {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-inline-size: 0;
+      max-inline-size: 100%;
+      padding: 7px 10px 8px;
+      border-radius: 0.7rem;
+      background: rgba(4, 8, 16, 0.88);
+      border: 1px solid rgba(180, 236, 255, 0.55);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
     #ng-banner {
       max-width: min(560px, 72cqi);
@@ -132,13 +168,26 @@
     #ng-banner[data-kind="go"] { background: var(--go); }
     #ng-banner[data-kind="fail"] { background: var(--fail); color: #1a0604; }
     #ng-banner[data-kind="warn"] { background: var(--amber); }
-    #t-radio, #t-payload, #t-clock, #t-sci {
+    #t-payload, #t-clock, #t-sci {
       font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.7cqi, 0.86rem);
       color: var(--fg);
       text-align: center;
       text-shadow: 0 1px 2px #000;
-      max-width: 34rem;
+      max-inline-size: 34rem;
+    }
+    #t-radio {
+      font-family: var(--font-mono);
+      font-size: clamp(0.68rem, 1.55cqi, 0.8rem);
+      line-height: 1.3;
+      color: var(--fg);
+      text-align: start;
+      text-shadow: 0 1px 2px #000;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: clip;
     }
     #t-clock {
       color: var(--amber);
@@ -167,6 +216,15 @@
       font-size: clamp(0.58rem, 1.3cqi, 0.66rem);
       color: var(--amber);
       text-align: center;
+      text-shadow: 0 1px 2px #000;
+    }
+    .mc-callout .mc-obj { text-align: start; }
+    .mc-next {
+      font-family: var(--font-mono);
+      font-size: clamp(0.56rem, 1.25cqi, 0.64rem);
+      color: var(--cyan);
+      text-align: start;
+      letter-spacing: 0.04em;
       text-shadow: 0 1px 2px #000;
     }
     .hud-btns {
@@ -294,16 +352,25 @@
       text-overflow: ellipsis;
     }
     #ng-tape li.is-now {
+      flex: 1.55 1 0;
       background: var(--amber);
       color: #041014;
+      font-weight: 800;
     }
+    #ng-tape li.is-now::before { content: "NOW "; }
+    #ng-tape li.is-next {
+      color: var(--cyan);
+      box-shadow: inset 0 0 0 1px var(--cyan);
+    }
+    #ng-tape li.is-next::before { content: "NEXT "; }
     #ng-tape li.is-done { color: var(--go); }
     body[data-phase="MENU"] #ng-tape { display: none; }
     #ng-hints {
       position: absolute;
       left: 50%;
-      top: 46%;
-      transform: translate(-50%, -50%);
+      top: auto;
+      bottom: max(5.5rem, calc(env(safe-area-inset-bottom, 0px) + 4.75rem));
+      transform: translateX(-50%);
       z-index: 9;
       padding: 8px 14px;
       border-radius: 999px;
@@ -334,7 +401,8 @@
     #ng-hints[hidden],
     #ng-launch-tip[hidden],
     #ng-sum-why[hidden],
-    #ng-sum-next[hidden] {
+    #ng-sum-next[hidden],
+    #t-next[hidden] {
       display: none !important;
       pointer-events: none !important;
       visibility: hidden !important;
@@ -550,15 +618,67 @@
       white-space: nowrap !important;
     }
     @media (max-width: 700px) {
-      .mc-hud { grid-template-columns: 1fr; }
-      .mc-center { grid-column: 1 / -1; }
+      .mc-hud {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "status"
+          "callout"
+          "telem"
+          "score";
+      }
+      .mc-center { grid-column: auto; }
+      .mc-callout,
+      .mc-callout .mc-obj,
+      .mc-next,
+      #t-radio { text-align: center; }
       .cabinet { max-width: 100%; }
       #ng-tape li { font-size: 0.4rem; }
     }
     @container cabinet (max-width: 820px) {
-      .mc-hud { grid-template-columns: 1fr; }
+      .mc-hud {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "status"
+          "callout";
+      }
       .mc-hud .mc-panel { display: none; }
+      .mc-callout {
+        justify-self: center;
+        max-inline-size: min(36rem, 92%);
+        text-align: center;
+      }
+      #t-radio,
+      .mc-callout .mc-obj,
+      .mc-next { text-align: center; }
       #ng-tape { display: none; }
+    }
+    @media (max-height: 500px) {
+      .mc-callout {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: 4px 12px;
+        padding-block: 5px;
+      }
+      #t-radio {
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+      }
+    }
+    @container cabinet (max-block-size: 500px) {
+      .mc-callout {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: 4px 12px;
+        padding-block: 5px;
+      }
+      #t-radio {
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       html, body { scroll-behavior: auto; }
@@ -632,7 +752,7 @@
     <div id="arcade-fs-wrapper">
       <div id="ng-phaser-root" role="application" aria-label="Kestrel Heavy flight. Hold boost to climb, steer around hazards, then land on Haven."></div>
       <div class="mc-hud" aria-hidden="false">
-        <div class="mc-panel">
+        <div class="mc-panel mc-telem">
           <table>
             <caption class="visually-hidden">Mission telemetry</caption>
             <tr><th scope="row">FLT</th><td id="t-mission">KH-1</td></tr>
@@ -648,15 +768,17 @@
           </table>
         </div>
         <div class="mc-center">
-          <div id="ng-phase">STANDBY</div>
-          <div id="ng-banner" hidden data-kind="info"></div>
-          <div id="t-clock">T-0:08.0</div>
-          <div id="t-payload">AES  Aether Scout</div>
-          <div id="t-sci">0.0 km · 0 m/s · 0% thr</div>
-          <div id="t-radio">Pier 7 standing by.</div>
-          <div id="t-obj" class="mc-obj">Grab an aero shield</div>
+          <div class="mc-status">
+            <div id="ng-phase">STANDBY</div>
+            <div id="ng-banner" hidden data-kind="info"></div>
+          </div>
+          <div class="mc-met">
+            <div id="t-clock">T-0:08.0</div>
+            <div id="t-payload">AES  Aether Scout</div>
+            <div id="t-sci">0.0 km · 0 m/s · 0% thr</div>
+          </div>
         </div>
-        <div class="mc-panel">
+        <div class="mc-panel mc-score">
           <table>
             <caption class="visually-hidden">Score and stage</caption>
             <tr><th scope="row">STAGE</th><td id="t-stage">STANDBY</td></tr>
@@ -665,6 +787,11 @@
             <tr><th scope="row">BEST</th><td id="t-best">0</td></tr>
             <tr><th scope="row">COMBO</th><td id="t-combo">×0</td></tr>
           </table>
+        </div>
+        <div class="mc-callout">
+          <div id="t-radio">Pier 7 standing by.</div>
+          <div id="t-obj" class="mc-obj">HOLD CLIMB through ignition</div>
+          <div id="t-next" class="mc-next">NEXT · LIFTOFF — Stay inside the corridor</div>
         </div>
       </div>
       <div class="hud-btns">
@@ -679,7 +806,7 @@
           <h1>KESTREL HEAVY</h1>
           <p id="ng-card-flight">KH-1 · Aether Scout</p>
           <p id="ng-card-blurb">Demo stack. Prove the corridor.</p>
-          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Steer the corridor. Slide onto Haven.</p>
+          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Stay between the dotted corridor rails. Slide onto Haven.</p>
           <div class="diff-row" role="group" aria-label="Difficulty">
             <button type="button" data-diff="KID">KID</button>
             <button type="button" data-diff="CADET">CADET</button>
@@ -693,7 +820,7 @@
             </div>
             <button type="button" id="ng-open-howto">How to play</button>
           </div>
-          <p id="ng-launch-tip">Hold climb · steer the corridor · ALIGN then tap sep · brake Haven</p>
+          <p id="ng-launch-tip">Hold climb · stay between the dotted corridor rails · ALIGN then tap sep · brake Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
             <p class="ng-kicker" id="ng-open-missions">FLIGHT MANIFEST</p>
             <button type="button" class="manifest-row" data-mission="KH-1" data-label="KH-1 · AES"><span class="mf-id">KH-1</span><span class="mf-name">Aether Scout</span><span class="mf-state">READY</span></button>
@@ -724,10 +851,12 @@
         <div class="ng-card">
           <p class="ng-kicker">Readable in 3 seconds</p>
           <h2>HOW TO PLAY</h2>
-          <p>HOLD SPACE / CLIMB to throttle. A D or ◀ ▶ to steer the corridor.
+          <p>HOLD SPACE / CLIMB to throttle. A D or ◀ ▶ to steer between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
+Grab the cyan aero shield when you can. Through MAX-Q, fly smooth.
 After MECO, straighten until ALIGN is green, then TAP CLIMB once — that is stage sep.
 Then a long zoomed-out slide onto HAVEN. Soft painted deck = BOOSTER RECOVERED.
 Tip, hard catch, or splash clips score — not a wipe. A RUD ends the flight and names the reason.
+The bottom tape is the roadmap: NOW is this beat, NEXT is the one after.
 KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p>
           <button class="btn" id="ng-howto-back" type="button">BACK</button>
         </div>
@@ -798,7 +927,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
         <button id="atb-right" type="button" aria-label="Steer right" data-label="▶" draggable="false"></button>
       </div>
     </div>
-    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, time stage sep (ALIGN green, then tap climb), then slide the booster onto barge Haven — a long zoomed-out approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, time stage sep (ALIGN green, then tap climb), then slide the booster onto barge Haven — a long zoomed-out approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>

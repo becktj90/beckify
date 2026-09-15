@@ -123,8 +123,20 @@ export const LINES = {
     'Kill the lean. Brake over the mark.',
   ],
   'hint-ascent': [
-    'Hold climb. Steer the corridor. Birds and ice will come.',
-    'Climb is hold, not tap. Steer around the junk.',
+    'Grab the cyan aero shield. Steer around birds and ice.',
+    'Pickups are free hits and fuel. Do not ignore them.',
+  ],
+  'hint-corridor': [
+    'Stay inside the corridor. Dotted rails are the bounds.',
+    'Those rails are the fly-out. Drift out and the stack aborts.',
+  ],
+  'corridor-edge': [
+    'Corridor edge. Steer back between the rails.',
+    'Outside the rails is a RUD. Nudge back in.',
+  ],
+  'hint-pickup': [
+    'Cyan pickup is an aero shield — one free hit.',
+    'Grab the shield before Max-Q if you can.',
   ],
   'hint-sep': [
     'After MECO: hold attitude. ALIGN green, then tap climb.',
@@ -200,6 +212,16 @@ export const ABORTS = {
       'Fuel hit zero. Cores flamed out. Range safe.',
     ],
     coach: 'Hold a steady climb and grab LOX pickups. An empty stack cannot fly the corridor.',
+  },
+  corridorEdge: {
+    id: 'corridorEdge',
+    reason: 'Left the flight corridor — outside the dotted rails',
+    banner: 'RUD — LEFT THE CORRIDOR',
+    radio: [
+      'Outside the rails. Range safe.',
+      'Left the corridor. Stack is lost.',
+    ],
+    coach: 'Stay between the dotted rails. They are the fly-out bounds, not decoration.',
   },
   hazard: {
     id: 'hazard',
@@ -335,6 +357,7 @@ export const ABORTS = {
 
 const ONCE = new Set([
   'hint-ascent', 'hint-sep', 'hint-haven', 'fuel-low',
+  'hint-corridor', 'hint-pickup',
   'liftoff', 'maxq', 'meco', 'sep', 'ses1', 'fairing',
   'entry', 'landing', 'touchdown', 'seco', 'deploy',
   'terminal', 'tankpress', 'internal', 'deluge', 'ignition',
@@ -351,6 +374,7 @@ const COOLDOWN = {
   'close-call': 2.4,
   'struct-warn': 2.2,
   'sep-contact': 3,
+  'corridor-edge': 2.8,
 };
 
 export function fillLine(text, mission) {
@@ -460,8 +484,8 @@ export function abortRadio(voice, abort, mission) {
 }
 
 export function pauseHintFor(status, sepPhase) {
-  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition. The count will not lift without throttle.';
-  if (status === 'ASCENT') return 'HOLD climb to throttle. A/D or ◀ ▶ steer around birds, ice, and debris.';
+  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition. Stay between the dotted corridor rails.';
+  if (status === 'ASCENT') return 'HOLD climb. Stay between the dotted rails. Grab the aero shield. Steer around junk.';
   if (status === 'SEP') {
     if (sepPhase === 'window') return 'ALIGN green, then TAP climb once. A hold is not a sep.';
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
