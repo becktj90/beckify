@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-5">
+      <meta name="arcade-asset-version" content="kestrel-6">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' kestrel-heavy:; script-src 'self' 'unsafe-inline' kestrel-heavy:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' kestrel-heavy:; worker-src 'self' blob:; media-src 'self' blob: kestrel-heavy:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
@@ -81,9 +81,17 @@
       z-index: 8;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
-      gap: 8px;
+      grid-template-areas:
+        "telem status score"
+        "callout status score";
+      align-items: start;
+      column-gap: 8px;
+      row-gap: 6px;
       pointer-events: none;
     }
+    .mc-telem { grid-area: telem; }
+    .mc-score { grid-area: score; }
+    .mc-callout { grid-area: callout; }
     .mc-panel {
       background: rgba(4, 8, 16, 0.88);
       border: 1px solid rgba(180, 236, 255, 0.7);
@@ -111,11 +119,38 @@
     body.is-kid .sci-pro { display: none; }
     .mc-panel td { text-align: right; }
     .mc-center {
+      grid-area: status;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      gap: 5px;
+      gap: 4px;
+      min-inline-size: 0;
+    }
+    .mc-status {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+    .mc-met {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .mc-callout {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-inline-size: 0;
+      max-inline-size: 100%;
+      padding: 7px 10px 8px;
+      border-radius: 0.7rem;
+      background: rgba(4, 8, 16, 0.88);
+      border: 1px solid rgba(180, 236, 255, 0.55);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
     #ng-banner {
       max-width: min(560px, 72cqi);
@@ -130,13 +165,26 @@
     #ng-banner[data-kind="go"] { background: var(--go); }
     #ng-banner[data-kind="fail"] { background: var(--fail); color: #1a0604; }
     #ng-banner[data-kind="warn"] { background: var(--amber); }
-    #t-radio, #t-payload, #t-clock, #t-sci {
+    #t-payload, #t-clock, #t-sci {
       font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.7cqi, 0.86rem);
       color: var(--fg);
       text-align: center;
       text-shadow: 0 1px 2px #000;
-      max-width: 34rem;
+      max-inline-size: 34rem;
+    }
+    #t-radio {
+      font-family: var(--font-mono);
+      font-size: clamp(0.68rem, 1.55cqi, 0.8rem);
+      line-height: 1.3;
+      color: var(--fg);
+      text-align: start;
+      text-shadow: 0 1px 2px #000;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: clip;
     }
     #t-clock {
       color: var(--amber);
@@ -167,6 +215,7 @@
       text-align: center;
       text-shadow: 0 1px 2px #000;
     }
+    .mc-callout .mc-obj { text-align: start; }
     .hud-btns {
       position: absolute;
       top: 8px;
@@ -300,8 +349,9 @@
     #ng-hints {
       position: absolute;
       left: 50%;
-      top: 46%;
-      transform: translate(-50%, -50%);
+      top: auto;
+      bottom: max(5.5rem, calc(env(safe-area-inset-bottom, 0px) + 4.75rem));
+      transform: translateX(-50%);
       z-index: 9;
       padding: 8px 14px;
       border-radius: 999px;
@@ -548,15 +598,51 @@
       white-space: nowrap !important;
     }
     @media (max-width: 700px) {
-      .mc-hud { grid-template-columns: 1fr; }
-      .mc-center { grid-column: 1 / -1; }
+      .mc-hud {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "status"
+          "callout"
+          "telem"
+          "score";
+      }
+      .mc-center { grid-column: auto; }
+      .mc-callout,
+      .mc-callout .mc-obj,
+      #t-radio { text-align: center; }
       .cabinet { max-width: 100%; }
       #ng-tape li { font-size: 0.4rem; }
     }
     @container cabinet (max-width: 820px) {
-      .mc-hud { grid-template-columns: 1fr; }
+      .mc-hud {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "status"
+          "callout";
+      }
       .mc-hud .mc-panel { display: none; }
+      .mc-callout {
+        justify-self: center;
+        max-inline-size: min(36rem, 92%);
+        text-align: center;
+      }
+      #t-radio,
+      .mc-callout .mc-obj { text-align: center; }
       #ng-tape { display: none; }
+    }
+    @container cabinet (max-block-size: 500px) {
+      .mc-callout {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: 4px 12px;
+        padding-block: 5px;
+      }
+      #t-radio {
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       html, body { scroll-behavior: auto; }
@@ -655,7 +741,7 @@
     <div id="arcade-fs-wrapper">
       <div id="ng-phaser-root" role="application" aria-label="Kestrel Heavy flight. Hold boost to climb, steer around hazards, then land on Haven."></div>
       <div class="mc-hud" aria-hidden="false">
-        <div class="mc-panel">
+        <div class="mc-panel mc-telem">
           <table>
             <caption class="visually-hidden">Mission telemetry</caption>
             <tr><th scope="row">FLT</th><td id="t-mission">KH-1</td></tr>
@@ -671,15 +757,17 @@
           </table>
         </div>
         <div class="mc-center">
-          <div id="ng-phase">STANDBY</div>
-          <div id="ng-banner" hidden data-kind="info"></div>
-          <div id="t-clock">T-0:08.0</div>
-          <div id="t-payload">AES  Aether Scout</div>
-          <div id="t-sci">0.0 km · 0 m/s · 0% thr</div>
-          <div id="t-radio">Pier 7 standing by.</div>
-          <div id="t-obj" class="mc-obj">Grab an aero shield</div>
+          <div class="mc-status">
+            <div id="ng-phase">STANDBY</div>
+            <div id="ng-banner" hidden data-kind="info"></div>
+          </div>
+          <div class="mc-met">
+            <div id="t-clock">T-0:08.0</div>
+            <div id="t-payload">AES  Aether Scout</div>
+            <div id="t-sci">0.0 km · 0 m/s · 0% thr</div>
+          </div>
         </div>
-        <div class="mc-panel">
+        <div class="mc-panel mc-score">
           <table>
             <caption class="visually-hidden">Score and stage</caption>
             <tr><th scope="row">STAGE</th><td id="t-stage">STANDBY</td></tr>
@@ -688,6 +776,10 @@
             <tr><th scope="row">BEST</th><td id="t-best">0</td></tr>
             <tr><th scope="row">COMBO</th><td id="t-combo">×0</td></tr>
           </table>
+        </div>
+        <div class="mc-callout">
+          <div id="t-radio">Pier 7 standing by.</div>
+          <div id="t-obj" class="mc-obj">Grab an aero shield</div>
         </div>
       </div>
       <div class="hud-btns">

@@ -85,7 +85,7 @@ assert.match(arcadeJs, /getElementById\('ng-menu'\)/);
 assert.match(rootSw, /CACHE_VERSION = 'v6'/);
 assert.match(rootSw, /\/arcade\//);
 assert.match(rootSw, /EXCLUDED_PREFIXES[\s\S]*\/arcade\//);
-assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-5"/);
+assert.match(arcadeHtml, /name="arcade-asset-version" content="kestrel-6"/);
 assert.match(arcadeHtml, /-webkit-touch-callout:\s*none/);
 assert.match(arcadeHtml, /-webkit-user-select:\s*none/);
 assert.match(arcadeHtml, /user-select:\s*none/);
@@ -105,7 +105,7 @@ assert.match(hudJs, /passive:\s*false/);
 assert.match(hudJs, /dataset\.label = snapshot\.boostLabel/);
 assert.match(input, /event\.code === 'Space'/);
 assert.match(input, /event\.code === 'KeyA'/);
-assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-5"/);
+assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-6"/);
 assert.match(host, /index\.html\?v=\$\{ARCADE_ASSET_VERSION\}/);
 assert.match(arcadeHtml, /id="ng-tape"/);
 assert.match(arcadeHtml, /id="ng-phase"/);
@@ -118,6 +118,25 @@ assert.match(arcadeHtml, /--game-vv-height/);
 assert.match(arcadeHtml, /aspect-ratio:\s*unset/);
 assert.match(arcadeHtml, /arcade-host-fill/);
 assert.match(arcadeHtml, /body\[data-phase="MENU"\] \.mc-hud/);
+assert.match(arcadeHtml, /class="mc-callout"/);
+assert.match(arcadeHtml, /grid-template-areas:[\s\S]*callout status score/);
+assert.match(arcadeHtml, /class="mc-status"/);
+assert.match(arcadeHtml, /class="mc-met"/);
+assert.match(arcadeHtml, /#ng-hints[\s\S]*?bottom:\s*max\(5\.5rem/);
+assert.doesNotMatch(arcadeHtml, /#ng-hints[\s\S]*?top:\s*46%/);
+assert.match(arcadeHtml, /line-clamp:\s*2/);
+assert.ok(
+  arcadeHtml.indexOf('id="t-radio"') > arcadeHtml.indexOf('class="mc-callout"'),
+  'voice radio must live in the offset callout, not the center MET stack',
+);
+assert.ok(
+  arcadeHtml.indexOf('id="t-obj"') > arcadeHtml.indexOf('class="mc-callout"'),
+  'objective must live in the offset callout, not the center MET stack',
+);
+assert.ok(
+  arcadeHtml.indexOf('id="t-radio"') < arcadeHtml.indexOf('class="hud-btns"'),
+  'callout radio stays inside the HUD overlay',
+);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /isIosPhone/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /isLetterboxed/);
 assert.match(fs.readFileSync(path.join(arcadeDir, 'js/fullscreen.js'), 'utf8'), /usableViewportHeight/);
