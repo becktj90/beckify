@@ -9,6 +9,7 @@ struct BLESighting: Identifiable, Equatable {
     var rssi: Int
     var serviceIDs: [String]
     var lastSeen: Date
+    var firstSeen: Date
     var companyID: UInt16?
     var companyName: String?
     var manufacturerPayloadBytes: Int
@@ -23,6 +24,20 @@ struct BLESighting: Identifiable, Equatable {
     var rowChip: String? { BLEAdvertisementMath.rowChip(kind: kindHint, companyID: companyID) }
     var tallyRow: BLEScanTallyRow {
         BLEScanTallyRow(name: name, rssi: rssi, companyID: companyID)
+    }
+
+    var insightSample: BLEInsightSample {
+        BLEInsightSample(
+            id: id,
+            name: name,
+            rssi: rssi,
+            companyID: companyID,
+            kind: kindHint,
+            isConnectable: isConnectable,
+            looksLikeIBeacon: looksLikeIBeacon,
+            firstSeen: firstSeen,
+            lastSeen: lastSeen
+        )
     }
 
     var companyIDCaption: String {
@@ -76,12 +91,15 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
     @Published var stateText = "Bluetooth starting…"
     @Published var scanning = false
     @Published var sightings: [BLESighting] = []
+    @Published var insights: BLEScanInsights = .empty
     @Published var unauthorized = false
 
     private var central: CBCentralManager?
-    private var seen: [UUID: BLESighting] = [:]
+    private var tracked: [UUID: BLESighting] = [:]
     private var publishTask: Task<Void, Never>?
-    private let retention: TimeInterval = 30
+    private var scanStarted: Date?
+    private let retention: TimeInterval = BLEInsightMath.liveWindowSeconds
+    private let historyRetention: TimeInterval = BLEInsightMath.churnWindowSeconds
     private let publishNanos: UInt64 = 250_000_000
 
     func start() {
@@ -99,8 +117,10 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
     }
 
     func clear() {
-        seen.removeAll()
+        tracked.removeAll()
         sightings = []
+        insights = .empty
+        scanStarted = scanning ? Date() : nil
     }
 
     nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -140,12 +160,15 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
         let id = peripheral.identifier
         let rssi = RSSI.intValue
         Task { @MainActor in
-            seen[id] = BLESighting(
+            let now = Date()
+            let firstSeen = tracked[id]?.firstSeen ?? now
+            tracked[id] = BLESighting(
                 id: id,
                 name: name,
                 rssi: rssi,
                 serviceIDs: services,
-                lastSeen: Date(),
+                lastSeen: now,
+                firstSeen: firstSeen,
                 companyID: manufacturer?.companyID,
                 companyName: manufacturer?.companyName,
                 manufacturerPayloadBytes: manufacturer?.payloadByteCount ?? 0,
@@ -164,6 +187,7 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
         case .poweredOn:
             stateText = "Scanning for BLE peripherals"
             scanning = true
+            if scanStarted == nil { scanStarted = Date() }
             startPublishLoop()
             central?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         case .poweredOff:
@@ -207,9 +231,19 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
     }
 
     private func flushSightings() {
-        let cutoff = Date().addingTimeInterval(-retention)
-        seen = seen.filter { $0.value.lastSeen >= cutoff }
-        sightings = seen.values.sorted { $0.rssi > $1.rssi }
+        let now = Date()
+        let historyCutoff = now.addingTimeInterval(-historyRetention)
+        let liveCutoff = now.addingTimeInterval(-retention)
+        tracked = tracked.filter { $0.value.lastSeen >= historyCutoff }
+        sightings = tracked.values
+            .filter { $0.lastSeen >= liveCutoff }
+            .sorted { $0.rssi > $1.rssi }
+        insights = BLEInsightMath.insights(
+            live: sightings.map(\.insightSample),
+            history: tracked.values.map(\.insightSample),
+            now: now,
+            scanStarted: scanStarted
+        )
     }
 }
 
@@ -222,36 +256,48 @@ struct BluetoothScannerView: View {
     @State private var notes = ""
     @State private var selectedID: UUID?
 
-    private var summary: BLEScanSummary {
-        BLEAdvertisementMath.summarize(model.sightings.map(\.tallyRow))
-    }
+    private var insights: BLEScanInsights { model.insights }
+    private var summary: BLEScanSummary { insights.summary }
 
     var body: some View {
         ToolScaffold(
             toolID: .bluetoothScan,
-            stickyAnswer: summary.stickyLine,
+            stickyAnswer: insights.stickyLine,
             copyText: copyText,
             disclaimer: .sensor(extra: "\(BLEAdvertisementMath.peopleCountDisclaimer) Radar meters are a log-distance estimate from advertisement RSSI, not a rangefinder. Angle is a layout slot from the identifier — not a compass bearing or angle-of-arrival.")
         ) {
             ShowWorkCard(
                 toolID: .bluetoothScan,
-                symbolic: "d ≈ 10^((P₀ − RSSI) / (10 n))    angle = hash(identifier)",
-                substituted: summary.stickyLine,
-                meaning: "Device count ≠ people — one person can carry many radios; cars, printers, and mesh inflate counts; Apple rotates identifiers. Public BLE only. Radar radius is an uncalibrated RSSI estimate. Angle is layout, not direction-finding. RSSI is advertisement RSSI, not Wi-Fi."
+                symbolic: "activity = Σ w(band, kind) → 0…100    churn = appeared − aged-out IDs",
+                substituted: insights.stickyLine,
+                meaning: "RF activity, mix, and churn are unique BLE advertisement IDs — not occupancy or a headcount. One person can carry many radios; cars, printers, and mesh inflate counts; Apple rotates identifiers. Public BLE only. Radar radius is an uncalibrated RSSI estimate. Angle is layout, not direction-finding. RSSI is advertisement RSSI, not Wi-Fi."
             )
             RFHonestyBanner(
-                title: "RSSI radar is a layout, not a bearing",
-                detail: "Radius is a rough near / mid / far band from advertisement RSSI — not calibrated ranging. Angle is a stable slot from the identifier. iOS does not give third-party apps BLE angle-of-arrival."
+                title: "RF density, not occupancy",
+                detail: "Activity, mix, and churn count unique advertisements. Device count ≠ people. Radar radius is a rough near / mid / far band from RSSI — not calibrated ranging. Angle is a stable slot from the identifier. iOS does not give third-party apps BLE angle-of-arrival."
             )
             ResultCard(title: "Scan summary", copyText: copyText) {
                 ResultRow(label: "State", value: model.stateText, emphasis: true)
+                ResultRow(
+                    label: "RF activity",
+                    value: insights.activity.indexCaption,
+                    emphasis: true,
+                    tone: activityTone
+                )
+                BLEActivityIndexBar(index: insights.activity.index, tone: activityTone)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        "RF activity index \(insights.activity.index) out of 100, \(insights.activity.caption.rawValue). Not a people count."
+                    )
                 ResultRow(label: "Devices", value: summary.deviceCountCaption, emphasis: true)
                 ResultRow(label: "Named / unnamed", value: summary.namedCaption)
                 ResultRow(label: "Near / mid / far", value: summary.bandCaption)
                 if summary.unknownBand > 0 {
                     ResultRow(label: "Unknown band", value: "\(summary.unknownBand)")
                 }
+                ResultRow(label: "Room mix", value: insights.mix.shareCaption)
                 ResultRow(label: "Top manufacturers", value: summary.manufacturersCaption)
+                ResultRow(label: "Churn", value: insights.churn.caption)
                 Text(BLEAdvertisementMath.peopleCountDisclaimer)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.warn)
@@ -329,8 +375,17 @@ struct BluetoothScannerView: View {
         return sizeClass == .regular ? 360 : 300
     }
 
+    private var activityTone: Color {
+        switch insights.activity.caption {
+        case .quiet: return Theme.muted
+        case .moderate: return Theme.good
+        case .busy: return Theme.warn
+        case .veryBusy: return Theme.accent
+        }
+    }
+
     private var copyText: String {
-        var text = summary.copyLine
+        var text = insights.copyLine
         if let top = model.sightings.first {
             var line = "\(top.name) \(top.rssi) dBm  \(top.band.rawValue)  \(top.estimateCaption)"
             if let chip = top.rowChip {
@@ -347,10 +402,13 @@ struct BluetoothScannerView: View {
         let top = model.sightings.prefix(8)
         var outputs: [String: String] = [
             "count": "\(summary.total)",
+            "activity": insights.activity.indexCaption,
             "named": "\(summary.named)",
             "unnamed": "\(summary.unnamed)",
             "bands": summary.bandCaption,
+            "mix": insights.mix.shareCaption,
             "manufacturers": summary.manufacturersCaption,
+            "churn": insights.churn.caption,
             "disclaimer": BLEAdvertisementMath.peopleCountDisclaimer,
         ]
         for (i, item) in top.enumerated() {
@@ -368,6 +426,7 @@ struct BluetoothScannerView: View {
             inputs: [
                 "mode": "BLE central scan",
                 "radar": "RSSI estimate layout, not AoA",
+                "insights": "RF activity / mix / churn from unique IDs, not occupancy",
                 "people": BLEAdvertisementMath.peopleCountDisclaimer,
             ],
             outputs: outputs
@@ -427,6 +486,26 @@ private struct BLEHintChip: View {
             .padding(.vertical, 2)
             .background(Theme.accent.opacity(0.14), in: Capsule(style: .continuous))
             .accessibilityHidden(true)
+    }
+}
+
+private struct BLEActivityIndexBar: View {
+    var index: Int
+    var tone: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let fraction = min(1, max(0, CGFloat(index) / 100))
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(Theme.hairline)
+                Capsule(style: .continuous)
+                    .fill(tone)
+                    .frame(width: max(4, geo.size.width * fraction))
+            }
+        }
+        .frame(height: 8)
+        .padding(.vertical, 4)
     }
 }
 

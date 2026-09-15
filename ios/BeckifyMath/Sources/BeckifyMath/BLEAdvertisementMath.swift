@@ -165,7 +165,7 @@ public enum BLEAdvertisementMath {
     public static let appleCompanyID: UInt16 = 0x004C
     public static let hexDumpLimit = 16
     public static let peopleCountDisclaimer =
-        "Device count ≠ people. One person can carry many radios; cars, printers, and mesh inflate counts. Apple rotates identifiers."
+        "Device count ≠ people. RF activity, mix, and churn are unique BLE IDs — not occupancy or a headcount. One person can carry many radios; cars, printers, and mesh inflate counts. Apple rotates identifiers."
 
     /// SIG Assigned Numbers §7 Company Identifiers — short labels, not the legal name.
     private static let knownCompanies: [UInt16: String] = [
