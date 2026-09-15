@@ -33,7 +33,7 @@ Permissions are requested only when the related tool is used, not at launch (exc
 | Permission | Tools | What happens |
 | --- | --- | --- |
 | Microphone | Noise Meter | Relative dBFS from live audio. Not recorded, not uploaded, not a calibrated SLM. |
-| Bluetooth | BLE Scanner | Nearby BLE advertisements (name, identifier, RSSI, advertised service UUIDs). Not uploaded. |
+| Bluetooth | BLE Scanner | Nearby BLE advertisements (name, identifier, RSSI, advertised service UUIDs, manufacturer company ID, TX power, connectable). Not uploaded. Device count is not a people count. |
 | Location (When In Use) | Position; Wi-Fi Path; Solar Design Wizard (optional latitude) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples, optional latitude for PV tilt advice. Not used at launch. Not uploaded. |
 | Local Network | Wi-Fi Path (optional); Cellular Path (optional) | TCP connect timing to a LAN or default-gateway host the user chooses. Used only when measuring **link quality (RTT)** to a private/LAN host. Not uploaded. Public hosts such as 1.1.1.1, and **Online / Captive** to `captive.apple.com`, do not need this permission. |
 | Camera | Motor Nameplate OCR; Panel Directory; Look Check | A still photo. On-device Vision runs first for nameplate and panel. Taking or choosing a photo does not upload it. A photo leaves this device only after you tap **Analyze** / **Analyze Look**. Photos are not kept as images in Saved Jobs. |

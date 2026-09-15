@@ -52,9 +52,23 @@ public enum BLERadarMath {
     public static let midRSSIFloor = -80
     public static let minPlotRadius = 0.22
     public static let maxPlotRadius = 0.92
+    /// Advertised TX Power Level is only used as P₀ when it looks like RSSI at 1 m.
+    public static let txPowerAsOneMeterMin = -90
+    public static let txPowerAsOneMeterMax = -20
 
     public static func isUsableRSSI(_ rssi: Int) -> Bool {
         rssi != unavailableRSSI && rssi >= -127 && rssi <= 20
+    }
+
+    /// CoreBluetooth `CBAdvertisementDataTxPowerLevelKey` is radiated TX, not always RSSI@1 m.
+    /// Only the typical measured-power band (−90…−20 dBm) replaces the homework P₀.
+    public static func usesTxPowerForDistance(_ txPowerDBm: Int?) -> Bool {
+        guard let tx = txPowerDBm else { return false }
+        return tx >= txPowerAsOneMeterMin && tx <= txPowerAsOneMeterMax
+    }
+
+    public static func distanceReferenceRSSI(txPowerDBm: Int?) -> Int {
+        usesTxPowerForDistance(txPowerDBm) ? txPowerDBm! : referenceRSSIAtOneMeter
     }
 
     public static func band(rssi: Int) -> BLERadarBand {
@@ -65,22 +79,25 @@ public enum BLERadarMath {
     }
 
     /// Log-distance estimate clamped to a displayable band. `nil` if RSSI is unusable.
-    public static func estimatedMeters(rssi: Int) -> Double? {
+    public static func estimatedMeters(rssi: Int, txPowerDBm: Int? = nil) -> Double? {
         guard isUsableRSSI(rssi) else { return nil }
-        let raw = pow(10, Double(referenceRSSIAtOneMeter - rssi) / (10 * pathLossExponent))
+        let p0 = Double(distanceReferenceRSSI(txPowerDBm: txPowerDBm))
+        let raw = pow(10, (p0 - Double(rssi)) / (10 * pathLossExponent))
         guard raw.isFinite else { return nil }
         return min(maxEstimateMeters, max(minEstimateMeters, raw))
     }
 
-    public static func estimatedMetersCaption(rssi: Int) -> String {
-        guard let meters = estimatedMeters(rssi: rssi) else { return "— est." }
+    public static func estimatedMetersCaption(rssi: Int, txPowerDBm: Int? = nil) -> String {
+        let usedTX = usesTxPowerForDistance(txPowerDBm)
+        guard let meters = estimatedMeters(rssi: rssi, txPowerDBm: txPowerDBm) else { return "— est." }
+        let suffix = usedTX ? " m est. · TX" : " m est."
         if meters <= minEstimateMeters + 0.001 {
-            return "< \(formatMeters(minEstimateMeters)) m est."
+            return "< \(formatMeters(minEstimateMeters))\(suffix)"
         }
         if meters >= maxEstimateMeters - 0.001 {
-            return "> \(formatMeters(maxEstimateMeters)) m est."
+            return "> \(formatMeters(maxEstimateMeters))\(suffix)"
         }
-        return "\(formatMeters(meters)) m est."
+        return "\(formatMeters(meters))\(suffix)"
     }
 
     /// 0 = center (stronger / nearer), 1 = outer ring. Unknown RSSI sits on the rim.

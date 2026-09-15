@@ -97,4 +97,22 @@ final class BLERadarMathTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(rows[0].angleDegrees, 0)
         XCTAssertLessThan(rows[0].angleDegrees, 360)
     }
+
+    func testTxPowerImprovesDistanceOnlyInMeasuredPowerBand() throws {
+        XCTAssertFalse(BLERadarMath.usesTxPowerForDistance(nil))
+        XCTAssertFalse(BLERadarMath.usesTxPowerForDistance(4))
+        XCTAssertFalse(BLERadarMath.usesTxPowerForDistance(-10))
+        XCTAssertTrue(BLERadarMath.usesTxPowerForDistance(-59))
+        XCTAssertEqual(BLERadarMath.distanceReferenceRSSI(txPowerDBm: 4), BLERadarMath.referenceRSSIAtOneMeter)
+
+        let rssiOnly = try XCTUnwrap(BLERadarMath.estimatedMeters(rssi: -59))
+        XCTAssertEqual(rssiOnly, 1, accuracy: 1e-9)
+        let sameWithRadiatedTX = try XCTUnwrap(BLERadarMath.estimatedMeters(rssi: -59, txPowerDBm: 4))
+        XCTAssertEqual(sameWithRadiatedTX, rssiOnly, accuracy: 1e-9)
+
+        let louderAtOneMeter = try XCTUnwrap(BLERadarMath.estimatedMeters(rssi: -59, txPowerDBm: -40))
+        XCTAssertGreaterThan(louderAtOneMeter, rssiOnly)
+        XCTAssertTrue(BLERadarMath.estimatedMetersCaption(rssi: -59, txPowerDBm: -40).contains("TX"))
+        XCTAssertFalse(BLERadarMath.estimatedMetersCaption(rssi: -59, txPowerDBm: 4).contains("TX"))
+    }
 }

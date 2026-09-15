@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify
 
-Listing copy for the native SwiftUI **Beckify Toolbox** app (iPhone + iPad, no ads). Standalone **Look Check** (`com.beckify.lookcheck`) and **Kestrel Heavy** (`com.beckify.kestrelheavy`) are separate products — see [`../LookCheck/docs/APP_STORE.md`](../LookCheck/docs/APP_STORE.md) and [`../KestrelHeavy/docs/APP_STORE.md`](../KestrelHeavy/docs/APP_STORE.md). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. **Version 1.0 is approved** — that pre-release train is closed. Transporter rejected **1.0 (121)** (**ITMS-90186** Invalid Pre-Release Train, **ITMS-90062** `CFBundleShortVersionString` must be higher than approved **1.0**). Next Connect version is **1.0.1**, build **≥124**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck or KestrelHeavy. Xcode Cloud Archive-iOS for Toolbox stays on **Beckify** only.
+Listing copy for the native SwiftUI **Beckify Toolbox** app (iPhone + iPad, no ads). Standalone **Look Check** (`com.beckify.lookcheck`) and **Kestrel Heavy** (`com.beckify.kestrelheavy`) are separate products — see [`../LookCheck/docs/APP_STORE.md`](../LookCheck/docs/APP_STORE.md) and [`../KestrelHeavy/docs/APP_STORE.md`](../KestrelHeavy/docs/APP_STORE.md). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. **Version 1.0 is approved** — that pre-release train is closed. Transporter rejected **1.0 (121)** (**ITMS-90186** Invalid Pre-Release Train, **ITMS-90062** `CFBundleShortVersionString` must be higher than approved **1.0**). Next Connect version is **1.0.1**, build **≥125**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck or KestrelHeavy. Xcode Cloud Archive-iOS for Toolbox stays on **Beckify** only.
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
@@ -13,7 +13,7 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 **App ID (Apple ID):** `6807908745`  
 **Bundle ID:** `com.beckify.toolbox`  
 **SKU:** `beckify-toolbox`  
-**Connect status:** **1.0 approved** (train closed). Next version **1.0.1** (create or select in Connect before upload); next binary **1.0.1 (123)**  
+**Connect status:** **1.0 approved** (train closed). Next version **1.0.1** (create or select in Connect before upload); next binary **1.0.1 (125)**  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M` (Apple auto-filled at identifier registration; set on the Beckify target Debug and Release in `ios/Beckify.xcodeproj`)  
 **Devices:** iPhone and iPad (Xcode `TARGETED_DEVICE_FAMILY` 1,2)  
 **Category:** Productivity  
@@ -112,7 +112,7 @@ Instruments (Field subsection) — measure with public Apple APIs (not private A
 
 • Wi-Fi path: **Online / Captive** first (HTTP GET to Apple’s `captive.apple.com/hotspot-detect.html` — Success means no captive portal; redirect/login HTML is called captive; a path that cannot reach that host is local-only). Then Apple’s public 0…1 `signalStrength` shown as percent/bars when `NEHotspotNetwork` returns it, optional local IPv4 from the probe’s Network `localEndpoint`, an on-device coverage heatmap (GPS walk or tap-on-floor), and **link quality (RTT)** via TCP connect time to the path gateway or a user-chosen host (1.1.1.1 / beckify.com). Raw path chrome (`en0`, `pdp_ip0`, expensive/constrained) is behind a collapsed Advanced path disclosure. iOS does not give third-party apps Wi-Fi RSSI in dBm; this tool will not invent dBm. RTT is not ICMP ping. A LAN/gateway target may prompt for Local Network. Online / Captive to Apple’s public host does not. Current SSID needs location plus, on a signed team, Access Wi-Fi Information. Catalog **Look Check** is a separate photo tool on Jobsite.
 • Cellular path (CoreTelephony + Network.framework): the same **Online / Captive** probe, then color arc gauges for **radio generation** (2G…5G from RAT — not signal bars and not RSRP) and **TCP RTT milliseconds**, plus a carrier / RAT chip board for the identified data service (type, generation, RAT, PLMN, MCC/MNC, carrier). Per-service carrier name, MCC/MNC, ISO country, radio-access technology (5G NR / LTE / 3G / …), data-service identity, default-path vs cellular-required path flags (collapsed under Advanced path), and optional **link quality (RTT)** via TCP connect while the default path uses cellular. iOS does not give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm; this tool will not invent those. CTCarrier is deprecated as of iOS 16 with no public replacement — empty subscriber fields stay blank. A collapsed reference sheet explains typical RSRP/RSRQ/SINR bands and is labeled as not measured on this device.
-• BLE scanner (CoreBluetooth): name, identifier, RSSI, advertised services, plus a live radar layout. Radius is a rough RSSI→distance estimate (not calibrated ranging). Angle is a stable layout slot, not angle-of-arrival — iOS does not expose BLE AoA to third-party apps.
+• BLE scanner (CoreBluetooth): name, identifier, RSSI, SIG manufacturer company ID, TX power, connectable, service-data UUIDs, kind hints, plus a live radar layout. Device count ≠ people. Radius is a rough RSSI→distance estimate (not calibrated ranging). Angle is a stable layout slot, not angle-of-arrival — iOS does not expose BLE AoA to third-party apps.
 • Noise meter (microphone): uncalibrated dBFS. Not an SLM, not OSHA legal
 • Bubble level / plumb (CoreMotion)
 • Magnetometer: heading and |B| in µT
@@ -128,8 +128,8 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 **Keywords (100 characters max, comma-separated draft):**
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
-**What's New (draft for next Connect upload — 1.0.1 build 123):**
-Device Health now shows Low Power Mode, free storage, model / iOS, uptime, brightness, RAM, and a one-line thermal meaning — still not Battery Health % or a charger tester. Receptacle Selector now matches NEMA / IEC 60309 / international household / Meltric faces through 400 A with schematic pinout and cited public PNs (design aid). Submit **1.0.1 (123)** — must be a new Connect version above approved **1.0**; do not retry closed-train **1.0 (121)**. Create or select **1.0.1** in Connect first. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. Free, no IAP, no ads.
+**What's New (draft for next Connect upload — 1.0.1 build 125):**
+BLE Scanner now shows public advertisement fields (SIG manufacturer company ID, TX power, connectable, service-data UUIDs, kind hints) plus a scan summary. Device count ≠ people. Device Health shows Low Power Mode, free storage, model / iOS, uptime, brightness, RAM, and a one-line thermal meaning — still not Battery Health % or a charger tester. Receptacle Selector matches NEMA / IEC 60309 / international household / Meltric faces through 400 A. Submit **1.0.1 (125)** — must be a new Connect version above approved **1.0**; do not retry closed-train **1.0 (121)**. Create or select **1.0.1** in Connect first. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. Free, no IAP, no ads.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -210,7 +210,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 
 ## Remaining steps (Mac + App Store Connect)
 
-**Next binary / App Store upload:** Toolbox `MARKETING_VERSION` (`CFBundleShortVersionString`) is **1.0.1**. `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **124**. **1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**). Transporter rejected **1.0 (121)** for that reason. The next Connect upload must be **1.0.1** with build **≥124**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck (`com.beckify.lookcheck`) and Kestrel Heavy (`com.beckify.kestrelheavy`) stay **1.0** / **1**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
+**Next binary / App Store upload:** Toolbox `MARKETING_VERSION` (`CFBundleShortVersionString`) is **1.0.1**. `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **125**. **1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**). Transporter rejected **1.0 (121)** for that reason. The next Connect upload must be **1.0.1** with build **≥125**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck (`com.beckify.lookcheck`) and Kestrel Heavy (`com.beckify.kestrelheavy`) stay **1.0** / **1**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 
@@ -219,7 +219,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Field | Value |
 | --- | --- |
 | Status | **1.0 approved** (train closed). Create or select **1.0.1** before the next upload |
-| Binary | 1.0 approved; 1.0 (113) was rejected by Review (Guideline 2.1, 2026-09-09); 1.0 (121) rejected by Transporter (ITMS-90186 / ITMS-90062). Next upload **1.0.1 (123)** |
+| Binary | 1.0 approved; 1.0 (113) was rejected by Review (Guideline 2.1, 2026-09-09); 1.0 (121) rejected by Transporter (ITMS-90186 / ITMS-90062). Next upload **1.0.1 (125)** |
 | App ID (Apple ID) | `6807908745` |
 | Bundle ID | `com.beckify.toolbox` |
 | SKU | `beckify-toolbox` |
@@ -227,7 +227,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Team prefix | `9TR6R5LV8M` |
 | Price | Free ($0), no IAP, no ads (Trevor’s v1 decision) |
 
-The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. **1.0 is approved.** Transporter rejected **1.0 (121)** because that train is closed. This Linux environment did not compile, sign, or upload **1.0.1 (123)**. Archive scheme **Beckify**, not LookCheck or KestrelHeavy.
+The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. **1.0 is approved.** Transporter rejected **1.0 (121)** because that train is closed. This Linux environment did not compile, sign, or upload **1.0.1 (125)**. Archive scheme **Beckify**, not LookCheck or KestrelHeavy.
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
