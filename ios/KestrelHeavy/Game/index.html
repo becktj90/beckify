@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-6">
+      <meta name="arcade-asset-version" content="kestrel-7">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' kestrel-heavy:; script-src 'self' 'unsafe-inline' kestrel-heavy:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' kestrel-heavy:; worker-src 'self' blob:; media-src 'self' blob: kestrel-heavy:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
@@ -216,6 +216,14 @@
       text-shadow: 0 1px 2px #000;
     }
     .mc-callout .mc-obj { text-align: start; }
+    .mc-next {
+      font-family: var(--font-mono);
+      font-size: clamp(0.56rem, 1.25cqi, 0.64rem);
+      color: var(--cyan);
+      text-align: start;
+      letter-spacing: 0.04em;
+      text-shadow: 0 1px 2px #000;
+    }
     .hud-btns {
       position: absolute;
       top: 8px;
@@ -341,9 +349,17 @@
       text-overflow: ellipsis;
     }
     #ng-tape li.is-now {
+      flex: 1.55 1 0;
       background: var(--amber);
       color: #041014;
+      font-weight: 800;
     }
+    #ng-tape li.is-now::before { content: "NOW "; }
+    #ng-tape li.is-next {
+      color: var(--cyan);
+      box-shadow: inset 0 0 0 1px var(--cyan);
+    }
+    #ng-tape li.is-next::before { content: "NEXT "; }
     #ng-tape li.is-done { color: var(--go); }
     body[data-phase="MENU"] #ng-tape { display: none; }
     #ng-hints {
@@ -382,7 +398,8 @@
     #ng-hints[hidden],
     #ng-launch-tip[hidden],
     #ng-sum-why[hidden],
-    #ng-sum-next[hidden] {
+    #ng-sum-next[hidden],
+    #t-next[hidden] {
       display: none !important;
       pointer-events: none !important;
       visibility: hidden !important;
@@ -609,6 +626,7 @@
       .mc-center { grid-column: auto; }
       .mc-callout,
       .mc-callout .mc-obj,
+      .mc-next,
       #t-radio { text-align: center; }
       .cabinet { max-width: 100%; }
       #ng-tape li { font-size: 0.4rem; }
@@ -627,7 +645,8 @@
         text-align: center;
       }
       #t-radio,
-      .mc-callout .mc-obj { text-align: center; }
+      .mc-callout .mc-obj,
+      .mc-next { text-align: center; }
       #ng-tape { display: none; }
     }
     @container cabinet (max-block-size: 500px) {
@@ -779,7 +798,8 @@
         </div>
         <div class="mc-callout">
           <div id="t-radio">Pier 7 standing by.</div>
-          <div id="t-obj" class="mc-obj">Grab an aero shield</div>
+          <div id="t-obj" class="mc-obj">HOLD CLIMB through ignition</div>
+          <div id="t-next" class="mc-next">NEXT · LIFTOFF — Stay inside the corridor</div>
         </div>
       </div>
       <div class="hud-btns">
@@ -794,7 +814,7 @@
           <h1>KESTREL HEAVY</h1>
           <p id="ng-card-flight">KH-1 · Aether Scout</p>
           <p id="ng-card-blurb">Demo stack. Prove the corridor.</p>
-          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Steer the corridor. Slide onto Haven.</p>
+          <p id="ng-menu-blurb" class="visually-hidden">Hold climb. Stay between the dotted corridor rails. Slide onto Haven.</p>
           <div class="diff-row" role="group" aria-label="Difficulty">
             <button type="button" data-diff="KID">KID</button>
             <button type="button" data-diff="CADET">CADET</button>
@@ -808,7 +828,7 @@
             </div>
             <button type="button" id="ng-open-howto">How to play</button>
           </div>
-          <p id="ng-launch-tip">Hold climb · steer the corridor · ALIGN then tap sep · brake Haven</p>
+          <p id="ng-launch-tip">Hold climb · stay between the dotted corridor rails · ALIGN then tap sep · brake Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
             <p class="ng-kicker" id="ng-open-missions">FLIGHT MANIFEST</p>
             <button type="button" class="manifest-row" data-mission="KH-1" data-label="KH-1 · AES"><span class="mf-id">KH-1</span><span class="mf-name">Aether Scout</span><span class="mf-state">READY</span></button>
@@ -839,10 +859,12 @@
         <div class="ng-card">
           <p class="ng-kicker">Readable in 3 seconds</p>
           <h2>HOW TO PLAY</h2>
-          <p>HOLD SPACE / CLIMB to throttle. A D or ◀ ▶ to steer the corridor.
+          <p>HOLD SPACE / CLIMB to throttle. A D or ◀ ▶ to steer between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
+Grab the cyan aero shield when you can. Through MAX-Q, fly smooth.
 After MECO, straighten until ALIGN is green, then TAP CLIMB once — that is stage sep.
 Then a long zoomed-out slide onto HAVEN. Soft painted deck = BOOSTER RECOVERED.
 Tip, hard catch, or splash clips score — not a wipe. A RUD ends the flight and names the reason.
+The bottom tape is the roadmap: NOW is this beat, NEXT is the one after.
 KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p>
           <button class="btn" id="ng-howto-back" type="button">BACK</button>
         </div>
@@ -913,7 +935,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
         <button id="atb-right" type="button" aria-label="Steer right" data-label="▶" draggable="false"></button>
       </div>
     </div>
-    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, time stage sep (ALIGN green, then tap climb), then slide the booster onto barge Haven — a long zoomed-out approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space holds boost, P or Escape pauses, M mutes. Touch: hold CLIMB / BRAKE and tap ◀ ▶. After MECO, time stage sep (ALIGN green, then tap climb), then slide the booster onto barge Haven — a long zoomed-out approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>

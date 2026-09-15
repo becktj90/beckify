@@ -696,16 +696,6 @@ export function makeAscentSky() {
   haze.addColorStop(1, 'rgba(180,198,214,0.28)');
   ctx.fillStyle = haze;
   ctx.fillRect(0, h * 0.7, w, h * 0.3);
-
-  ctx.strokeStyle = 'rgba(255,207,93,0.16)';
-  ctx.setLineDash([8, 14]);
-  ctx.beginPath();
-  ctx.moveTo(w * 0.28, h * 0.12);
-  ctx.lineTo(w * 0.34, h);
-  ctx.moveTo(w * 0.72, h * 0.12);
-  ctx.lineTo(w * 0.66, h);
-  ctx.stroke();
-  ctx.setLineDash([]);
   return cv;
 }
 

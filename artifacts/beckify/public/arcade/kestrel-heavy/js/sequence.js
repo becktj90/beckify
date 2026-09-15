@@ -24,6 +24,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'Pier 7 terminal count. {id} on the pad. Range is green.',
     juice: 'none',
+    coach: 'HOLD CLIMB through ignition',
   },
   {
     id: 'tankpress',
@@ -33,6 +34,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'Tank pressurization. LOX and LCH4 going flight pressure.',
     juice: 'none',
+    quiet: true,
   },
   {
     id: 'internal',
@@ -42,6 +44,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'Vehicle on internal power. Ground power is safed.',
     juice: 'none',
+    quiet: true,
   },
   {
     id: 'deluge',
@@ -51,6 +54,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Water deluge. Pad suppression is on.',
     juice: 'deluge',
+    quiet: true,
   },
   {
     id: 'ignition',
@@ -60,6 +64,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Ignition. Seven core engines at startup.',
     juice: 'ignition',
+    coach: 'HOLD CLIMB — do not tap',
   },
   {
     id: 'liftoff',
@@ -69,6 +74,7 @@ export const SPINE = [
     kind: 'go',
     radio: 'Liftoff. {id} clearing the tower.',
     juice: 'liftoff',
+    coach: 'Stay inside the corridor · hold climb',
   },
   {
     id: 'maxq',
@@ -78,6 +84,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Max-Q. Vehicle through the region of maximum dynamic pressure.',
     juice: 'maxq',
+    coach: 'Fly smooth through Max-Q',
   },
   {
     id: 'meco',
@@ -87,6 +94,7 @@ export const SPINE = [
     kind: 'go',
     radio: 'MECO. First-stage cores shutdown. Hold attitude for sep.',
     juice: 'meco',
+    coach: 'Hold attitude — sep window incoming',
   },
   {
     id: 'sep',
@@ -96,6 +104,7 @@ export const SPINE = [
     kind: 'go',
     radio: 'Sep window. ALIGN green, then tap climb to fire the pyros.',
     juice: 'sep',
+    coach: 'ALIGN green, then TAP climb',
   },
   {
     id: 'ses1',
@@ -105,6 +114,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'SES-1. Upper-stage engine is lit. {payload} still coasting under the fairing.',
     juice: 'ses',
+    quiet: true,
   },
   {
     id: 'fairing',
@@ -114,6 +124,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'Fairing jettison. {mark} — {payload} is free of the stack.',
     juice: 'fairing',
+    quiet: true,
   },
   {
     id: 'entry',
@@ -123,6 +134,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Entry burn. Haven is downrange. Slide in diagonal.',
     juice: 'entry',
+    coach: 'Slide in on Haven · do not dive',
   },
   {
     id: 'landing',
@@ -132,6 +144,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Landing burn. Brake for the painted deck.',
     juice: 'landing',
+    coach: 'HOLD BRAKE over the painted deck',
   },
   {
     id: 'touchdown',
@@ -141,6 +154,7 @@ export const SPINE = [
     kind: 'go',
     radio: 'Touchdown. BOOSTER RECOVERED. Sea state nominal.',
     juice: 'touchdown',
+    coach: 'Catch the painted deck',
   },
   {
     id: 'seco',
@@ -150,6 +164,7 @@ export const SPINE = [
     kind: 'go',
     radio: 'SECO. Upper stage shutdown. Insertion complete.',
     juice: 'seco',
+    quiet: true,
   },
   {
     id: 'deploy',
@@ -220,4 +235,41 @@ const PHASE_CHIP = {
 
 export function phaseChip(beatId) {
   return PHASE_CHIP[beatId] || 'TERMINAL COUNT';
+}
+
+export function nextCoachBeat(beats, tClock) {
+  const t = Number(tClock) || 0;
+  return (beats || []).find((beat) => beat.coach && t + 0.05 < beat.t) || null;
+}
+
+export function playGoal(status, session = {}, flight = {}) {
+  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition';
+  if (status === 'ASCENT') {
+    const clock = Number(session.tClock) || 0;
+    if (clock < PACE.MAXQ - 4) {
+      if (flight.objective?.id === 'shield' && !session.objectiveDone) {
+        return 'Stay inside the corridor · grab an aero shield';
+      }
+      return 'Stay inside the corridor · hold climb';
+    }
+    if (clock < PACE.MAXQ + 5) return 'Fly smooth through Max-Q';
+    return 'Hold climb to MECO';
+  }
+  if (status === 'SEP') {
+    if (session.sepPhase === 'window') return 'ALIGN green, then TAP climb';
+    if (session.sepPhase === 'clear') return 'Open the gap, then Haven';
+    return 'Hold attitude — sep window incoming';
+  }
+  if (status === 'JACKLYN') {
+    if ((session.jacklynElapsed || 0) > 5.2) return 'HOLD BRAKE over the painted deck';
+    return 'Slide in on Haven · do not dive';
+  }
+  return '';
+}
+
+export function playNext(beats, tClock, status) {
+  if (status === 'JACKLYN' || status === 'SUMMARY' || status === 'MENU') return '';
+  const next = nextCoachBeat(beats, tClock);
+  if (!next) return '';
+  return `NEXT · ${next.stage} — ${next.coach}`;
 }

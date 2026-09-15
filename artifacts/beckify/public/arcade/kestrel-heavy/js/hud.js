@@ -44,6 +44,7 @@ export function renderHud(snapshot) {
     't-mission': snapshot.mission,
     't-payload': snapshot.payload,
     't-obj': snapshot.objective,
+    't-next': snapshot.next,
     't-clock': snapshot.clock,
     't-mach': snapshot.mach,
     't-q': snapshot.q,
@@ -80,6 +81,11 @@ export function renderHud(snapshot) {
   }
   const record = el('arcade-hi-score');
   if (record) record.textContent = snapshot.recordLine;
+  const next = el('t-next');
+  if (next) {
+    next.hidden = !snapshot.next;
+    if (snapshot.next) next.textContent = snapshot.next;
+  }
   const hint = el('ng-hints');
   if (hint) {
     hint.hidden = !snapshot.hints;
@@ -96,7 +102,7 @@ export function renderHud(snapshot) {
   if (pauseHint && snapshot.pauseHint) pauseHint.textContent = snapshot.pauseHint;
   if (snapshot.diff) document.body.dataset.diff = snapshot.diff;
   document.body.classList.toggle('is-kid', snapshot.diff === 'KID');
-  renderTape(snapshot.tapeId);
+  renderTape(snapshot.tapeId, snapshot.nextTapeId);
 }
 
 export function setSummaryWhy(text) {
@@ -106,11 +112,20 @@ export function setSummaryWhy(text) {
   node.textContent = text || '';
 }
 
-export function renderTape(activeId) {
-  document.querySelectorAll('#ng-tape [data-beat]').forEach((node) => {
+export function renderTape(activeId, nextId) {
+  const nodes = [...document.querySelectorAll('#ng-tape [data-beat]')];
+  const active = nodes.find((node) => node.getAttribute('data-beat') === activeId);
+  const activeOrder = Number(active?.dataset.order || 0);
+  nodes.forEach((node) => {
     const id = node.getAttribute('data-beat');
-    node.classList.toggle('is-now', id === activeId);
-    node.classList.toggle('is-done', Boolean(activeId) && node.dataset.order < (document.querySelector(`#ng-tape [data-beat="${activeId}"]`)?.dataset.order || 0));
+    const order = Number(node.dataset.order || 0);
+    const isNow = id === activeId;
+    const isNext = Boolean(nextId) ? id === nextId : Boolean(activeId) && order === activeOrder + 1;
+    node.classList.toggle('is-now', isNow);
+    node.classList.toggle('is-next', isNext);
+    node.classList.toggle('is-done', Boolean(activeId) && order < activeOrder);
+    if (isNow) node.setAttribute('aria-current', 'step');
+    else node.removeAttribute('aria-current');
   });
 }
 

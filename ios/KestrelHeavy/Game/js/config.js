@@ -110,6 +110,9 @@ export const HAVEN = {
   swellAmp: 14,
 };
 
+/** Dotted rails are the climb corridor. Stay between them or the stack aborts. */
+export const CORRIDOR_TEACH_SEC = 5.4;
+
 /** Wider default framing so the corridor, sep stack, and Haven read as space. */
 export const CAM = {
   ascentStart: 0.56,

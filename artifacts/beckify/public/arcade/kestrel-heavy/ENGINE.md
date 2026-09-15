@@ -38,6 +38,7 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - Pause with `this.matter.pause()` / `this.matter.resume()` (delegates to the Phaser Matter world). Physics pauses only when `paused === true`.
 - Collision categories + sensors: deck paint and water are sensors (water is not a solid floor). Pickups and hazards are sensors.
 - Haven is a long zoomed-out diagonal slide-in, then RCS straighten, then a soft-land check (`landingVy` + `landingTol`). No Falcon grid fins, A-frame legs, or ASDS circle-X.
+- Ascent dotted rails are the **flight corridor** (Phaser graphics, not sky decoration). Stay between them or abort; KID is bounced back inside.
 - MECO → stage sep is a playable beat (`SEP` status): hold attitude, tap climb when ALIGN is green, then clear the stack. It is not a 400ms cutscene.
 
 ## QA beats
