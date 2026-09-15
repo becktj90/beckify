@@ -1213,7 +1213,7 @@ export default class MissionScene extends Phaser.Scene {
       if (beat.id === 'touchdown' && !this.session.landingLock) continue;
       if ((beat.id === 'seco' || beat.id === 'deploy') && !this.session.landingLock) continue;
       if (beat.id === 'sep') continue;
-      if ((beat.id === 'ses1' || beat.id === 'fairing') && !this.session.sepDone) continue;
+      if ((beat.id === 'ses1' || beat.id === 'fairing') && this.status === 'SEP') continue;
       if ((beat.id === 'entry' || beat.id === 'landing') && (this.status === 'JACKLYN' || this.status === 'SEP')) continue;
       this.session.fired[beat.id] = true;
       this.onBeat(beat);
