@@ -44,7 +44,7 @@ Jobsite:
 • Motor Nameplate OCR — camera or photo library, on-device Vision first, heuristic field extract into the shared nameplate schema (value + confidence + reviewed). Optional **Analyze** POSTs the photo to `/api/analyze-nameplate` only when you tap it. Confirm marks reviewed. MOCP and LRA are never used as FLA. Optional seed into Motor FLA / Analyzer / Speed.
 • Look Check — camera or photo library, then Analyze Look for a playful look verdict plus lighting / framing / expression / sharpness metrics and a roast. Entertainment only — not medical, dating, or beauty authority. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Not the Wi-Fi / Cellular Online / Captive connectivity card.
 • Wire Size & Ampacity — NEC Table 310.16 with ambient correction, CCC adjustment, termination cap, and continuous load
-• Receptacle Selector — NEMA straight/locking and IEC 60309 pin-and-sleeve best-fit faces (design aid; public catalog PNs when cited)
+• Receptacle Selector — NEMA / IEC 60309 / international household / Meltric best-fit faces through 400 A, schematic pinout, cited public PNs (design aid; not a UL listing or distributor cross)
 • Short-circuit current, circular mils, load & demand factors
 • NEC Circuit Calculator — design current, derated conductor, voltage drop, and OCPD in one pass (live one-shot calc, not paperwork)
 • IS Loop Verifier — Entity Concept check of barrier Voc/Isc/Ca/La against the field device and cable (design aid)
@@ -129,7 +129,7 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
 **What's New (draft for next Connect upload — 1.0.1 build 123):**
-Device Health now shows Low Power Mode, free storage, model / iOS, uptime, brightness, RAM, and a one-line thermal meaning — still not Battery Health % or a charger tester. Submit **1.0.1 (123)** — must be a new Connect version above approved **1.0**; do not retry closed-train **1.0 (121)**. Create or select **1.0.1** in Connect first. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. Free, no IAP, no ads.
+Device Health now shows Low Power Mode, free storage, model / iOS, uptime, brightness, RAM, and a one-line thermal meaning — still not Battery Health % or a charger tester. Receptacle Selector now matches NEMA / IEC 60309 / international household / Meltric faces through 400 A with schematic pinout and cited public PNs (design aid). Submit **1.0.1 (123)** — must be a new Connect version above approved **1.0**; do not retry closed-train **1.0 (121)**. Create or select **1.0.1** in Connect first. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. Free, no IAP, no ads.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -189,7 +189,7 @@ Take 3–8 screens per size. Suggested shots:
 3. Search results labeled Field vs Toolkit
 4. Wire Size & Ampacity waterfall, Conductor Cost Optimizer ranking, or Voltage Drop with parallels + handoff
 5. Motor Nameplate OCR review (photo + highlighted fields) or Panel Directory (schedule photo + editable rows + demand / capacity-to-add)
-6. Receptacle Selector (NEMA 5-15R or L16-30 pinout + public PNs)
+6. Receptacle Selector (NEMA 5-15R or L16-30, or Meltric / international household schematic pinout + cited public PNs)
 7. Saved Jobs list (Field jobs first; Open in tool)
 8. Favorites list (starred tools pinned for one-tap access)
 9. A calculator showing an engineer plot with the Share control (Ohm's Law V–I load line, LED/RC charge/discharge, Transient Circuits response, or Phasor Diagram)
