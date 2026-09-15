@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-10">
+      <meta name="arcade-asset-version" content="kestrel-11">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -673,12 +673,46 @@
     }
     @media (hover: none), (pointer: coarse) {
       .mc-hud {
-        inset: max(8px, env(safe-area-inset-top, 0px)) 8px auto 8px;
+        inset: max(6px, env(safe-area-inset-top, 0px)) 8px auto 8px;
       }
       .mc-panel,
       .mc-callout {
         background: rgba(4, 8, 16, 0.52);
         box-shadow: none;
+      }
+      /* Keep the incoming corridor clear — radio/obj/next stay in the DOM
+         for a11y/tests, but the card was hiding birds and ice. */
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-callout,
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) #t-payload,
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) #t-sci {
+        display: none;
+      }
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-center {
+        gap: 2px;
+      }
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) #ng-phase {
+        padding: 4px 10px;
+        letter-spacing: 0.08em;
+        font-size: 0.68rem;
+      }
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) #t-clock {
+        font-size: 0.7rem;
+      }
+      #ng-banner {
+        max-width: min(92vw, 22rem);
+        padding: 5px 10px;
+        font-size: 0.68rem;
+      }
+      #ng-hints {
+        bottom: max(4.4rem, calc(env(safe-area-inset-bottom, 0px) + 3.6rem));
+        padding: 5px 10px;
+        font-size: 0.64rem;
+        background: rgba(4, 8, 16, 0.42);
+      }
+      #atb-left,
+      #atb-right {
+        background: rgba(16, 12, 40, 0.32);
+        border-color: rgba(183, 171, 255, 0.32);
       }
     }
     @media (max-width: 700px) {

@@ -572,11 +572,19 @@ export default class MissionScene extends Phaser.Scene {
     return sci;
   }
 
+  isCoarsePointer() {
+    try {
+      return Boolean(window.matchMedia?.('(pointer: coarse), (hover: none)')?.matches);
+    } catch {
+      return false;
+    }
+  }
+
   flightZoom(kind) {
     if (this.settings.reducedMotion) return CAM.reduced;
     if (kind === 'sep') return CAM.sep;
     if (kind === 'high') return CAM.ascentHigh;
-    return CAM.ascentStart;
+    return this.isCoarsePointer() ? CAM.ascentMobile : CAM.ascentStart;
   }
 
   isHavenQa() {
@@ -942,9 +950,10 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status !== 'ASCENT') return;
 
     this.bgPad.setVisible(this.rocket.y > 80);
+    const zoomStart = this.isCoarsePointer() ? CAM.ascentMobile : CAM.ascentStart;
     const climbZoom = this.settings.reducedMotion
       ? CAM.reduced
-      : clamp(CAM.ascentStart - this.session.altitudeKm * 0.0014, CAM.ascentHigh, CAM.ascentStart);
+      : clamp(zoomStart - this.session.altitudeKm * 0.0014, CAM.ascentHigh, zoomStart);
     if (this.session.flightTime > CAM.zoomLiftDelay) this.setZoomWant(climbZoom, CAM.zoomClimbRate);
     const climbVy = this.rocket.body.velocity.y;
     this.session.score += Math.max(0, (-climbVy) * 26 * dt * (1 + this.session.combo * 0.1));
@@ -1901,7 +1910,7 @@ export default class MissionScene extends Phaser.Scene {
       this.corridorGfx.fillRect(-200, y1, edge.left + 200, y0 - y1);
       this.corridorGfx.fillRect(edge.right, y1, W + 200 - edge.right, y0 - y1);
     }
-    this.corridorGfx.lineStyle(3, color, alpha);
+    this.corridorGfx.lineStyle(this.isCoarsePointer() ? 5 : 3, color, alpha);
     dashRail(this.corridorGfx, edge.left, y0, y1);
     dashRail(this.corridorGfx, edge.right, y0, y1);
     const teach = (this.session?.flightTime || 0) < 6.2 || warn;

@@ -40,7 +40,7 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - Haven recovery (arcade-compressed): **reentry pitch-over** → **strakes deployed** → diagonal **glide** (descent max-Q) → player **landing burn** → RCS straighten (`landingVy` + `landingTol`). Solid black strakes, not lattice grid fins. No A-frame legs or ASDS circle-X.
 - After SEPARATE the camera stays on the booster. SES-1 and fairing jettison play as off-booster beats, then Haven.
 - Mobile climb pad is one-thumb: **hold to climb/burn**, **drag left/right to steer**. Keyboard Space + A/D is unchanged. Optional ◀ ▶ pads stay as a second-finger path.
-- Ascent camera uses `CAM.lookAheadY` so incoming corridor junk sits on-screen under the HUD. Hazard sprites carry an amber halo for phone contrast.
+- Ascent camera uses `CAM.lookAheadY` so incoming corridor junk sits on-screen under the HUD. On a phone the dense callout/sci stack hides during flight so the lane stays clear; fail banners still fire. Hazard sprites carry an amber halo.
 - Ascent dotted rails are the **flight corridor** (Phaser graphics, not sky decoration). Stay between them or abort; KID is bounced back inside.
 - MECO → stage sep is a playable beat (`SEP` status) in a marked **SEP ZONE** with an on-screen **SEPARATE** button. Camera stays locked on the stack. It is not a 400ms cutscene.
 
