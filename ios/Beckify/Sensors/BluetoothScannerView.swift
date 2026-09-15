@@ -19,7 +19,7 @@ struct BLESighting: Identifiable, Equatable {
     var kindHint: BLEKindHint
 
     var band: BLERadarBand { BLERadarMath.band(rssi: rssi) }
-    var estimateCaption: String { BLERadarMath.estimatedMetersCaption(rssi: rssi, txPowerDBm: txPowerDBm) }
+    var estimateCaption: String { BLERadarMath.estimatedMetersCaption(rssi: rssi) }
     var rowChip: String? { BLEAdvertisementMath.rowChip(kind: kindHint, companyID: companyID) }
     var tallyRow: BLEScanTallyRow {
         BLEScanTallyRow(name: name, rssi: rssi, companyID: companyID)
@@ -571,7 +571,7 @@ private struct BLERadarRings: View {
             cross.move(to: CGPoint(x: center.x - plotR, y: center.y))
             cross.addLine(to: CGPoint(x: center.x + plotR, y: center.y))
             cross.move(to: CGPoint(x: center.x, y: center.y - plotR))
-            cross.addLine(to: CGPoint(x: center.x + plotR, y: center.y + plotR))
+            cross.addLine(to: CGPoint(x: center.x, y: center.y + plotR))
             context.stroke(cross, with: .color(Theme.hairline), lineWidth: 1)
             for (scale, title) in rings {
                 let r = plotR * scale
@@ -650,7 +650,7 @@ private struct BLEDeviceDetailSheet: View {
                             ResultRow(label: "Manufacturer", value: item.manufacturerCaption)
                             ResultRow(label: "Company ID", value: item.companyIDCaption)
                             ResultRow(label: "Kind hint", value: item.kindHint.detailValue)
-                            ResultRow(label: "TX power", value: item.txPowerCaption)
+                            ResultRow(label: "TX (advertised)", value: item.txPowerCaption)
                             ResultRow(label: "Connectable", value: item.connectableCaption)
                             if item.looksLikeIBeacon {
                                 ResultRow(label: "iBeacon prefix", value: "Yes — public AD type, UUID not decoded")
@@ -682,7 +682,7 @@ private struct BLEDeviceDetailSheet: View {
                                 ResultRow(label: "Manufacturer payload", value: "\(item.manufacturerPayloadBytes) B — not decoded")
                             }
                         }
-                        Text("Kind is a hint from company ID and well-known service UUIDs, not identity. Estimate is a rough RSSI→distance band, not calibrated ranging. Radar angle is a stable layout slot from this identifier — not a compass bearing or angle-of-arrival. \(BLEAdvertisementMath.peopleCountDisclaimer)")
+                        Text("Kind is a hint from company ID and well-known service UUIDs, not identity. Estimate and radar radius are RSSI-only — advertised TX is radio output, not a 1 m calibration. Radar angle is a stable layout slot from this identifier — not a compass bearing or angle-of-arrival. \(BLEAdvertisementMath.peopleCountDisclaimer)")
                             .font(Theme.TypeRole.help)
                             .foregroundStyle(Theme.muted)
                             .fixedSize(horizontal: false, vertical: true)
