@@ -12,6 +12,12 @@ const FEATURED = {
   accent: "#8b7bff",
 };
 
+const ARCADE_FACTS = [
+  `${PUBLIC_GAME_COUNT} ${PUBLIC_GAME_COUNT === 1 ? "game" : "games"}`,
+  FEATURED.input,
+  "No ads",
+] as const;
+
 /**
  * Public games hub. Beckify ships one playable title: Kestrel Heavy.
  */
@@ -30,24 +36,23 @@ export const Games = () => {
       </FadeIn>
 
       <FadeIn delay={0.06}>
-        <div className="card-surface grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="card-surface space-y-4 p-5">
           <div>
             <p className="type-label text-[var(--accent)]">The arcade brief</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
               Kestrel Heavy is the public game on Beckify. Charge liftoff at Pier 7, steer the corridor, then land the booster on Haven. Chase a local best on this device.
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-3 text-center" aria-label="Arcade collection summary">
-            {[{ label: "Games", value: String(PUBLIC_GAME_COUNT).padStart(2, "0"), width: "100%" }, { label: "Input", value: "2", width: "76%" }, { label: "Ads", value: "0", width: "18%" }].map((stat) => (
-              <div key={stat.label} className="min-w-20">
-                <p className="font-display text-xl font-bold text-[var(--foreground)]">{stat.value}</p>
-                <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: stat.width }} />
-                </div>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{stat.label}</p>
-              </div>
+          <ul className="flex flex-wrap gap-2" aria-label="Arcade at a glance">
+            {ARCADE_FACTS.map((fact) => (
+              <li
+                key={fact}
+                className="rounded-full border border-[var(--border)] bg-black/20 px-3 py-1.5 text-sm text-[var(--foreground)]"
+              >
+                {fact}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </FadeIn>
 

@@ -134,4 +134,13 @@ assert.doesNotMatch(hubCopy, /seven original/i);
 assert.doesNotMatch(hubCopy, /Seven on-site/);
 assert.match(hubCopy, /Kestrel Heavy/);
 
+const gamesHub = fs.readFileSync(path.join(root, 'src/components/sections/Games.tsx'), 'utf8');
+assert.match(gamesHub, /The arcade brief/);
+assert.match(gamesHub, /Keyboard \+ touch/);
+assert.match(gamesHub, /No ads/);
+assert.doesNotMatch(gamesHub, /label:\s*"Input"/, 'arcade brief must not count input methods as a vanity integer');
+assert.doesNotMatch(gamesHub, /value:\s*"2"/, 'arcade brief must not show a cryptic "2" for controls');
+assert.doesNotMatch(gamesHub, /padStart\(2/, 'arcade brief must not zero-pad the game count like a dashboard');
+assert.doesNotMatch(gamesHub, /width:\s*"(100|76|18)%"/, 'arcade brief must not use fake progress bars');
+
 console.log('Kestrel Heavy is the sole public game; HexGL and kid-photo playables stay gone');
