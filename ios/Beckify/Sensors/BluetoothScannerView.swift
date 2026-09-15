@@ -9,9 +9,39 @@ struct BLESighting: Identifiable, Equatable {
     var rssi: Int
     var serviceIDs: [String]
     var lastSeen: Date
+    var companyID: UInt16?
+    var companyName: String?
+    var manufacturerPayloadBytes: Int
+    var looksLikeIBeacon: Bool
+    var txPowerDBm: Int?
+    var isConnectable: Bool?
+    var serviceData: [BLEServiceDataSummary]
+    var kindHint: BLEKindHint
 
     var band: BLERadarBand { BLERadarMath.band(rssi: rssi) }
-    var estimateCaption: String { BLERadarMath.estimatedMetersCaption(rssi: rssi) }
+    var estimateCaption: String { BLERadarMath.estimatedMetersCaption(rssi: rssi, txPowerDBm: txPowerDBm) }
+    var rowChip: String? { BLEAdvertisementMath.rowChip(kind: kindHint, companyID: companyID) }
+    var tallyRow: BLEScanTallyRow {
+        BLEScanTallyRow(name: name, rssi: rssi, companyID: companyID)
+    }
+
+    var companyIDCaption: String {
+        companyID.map(BLEAdvertisementMath.formatCompanyID) ?? "—"
+    }
+
+    var manufacturerCaption: String {
+        companyName ?? "—"
+    }
+
+    var connectableCaption: String {
+        guard let isConnectable else { return "—" }
+        return isConnectable ? "Yes" : "No"
+    }
+
+    var txPowerCaption: String {
+        guard let txPowerDBm else { return "Not advertised" }
+        return "\(txPowerDBm) dBm"
+    }
 
     var detailAccessibilityLabel: String {
         var parts = [
@@ -20,8 +50,22 @@ struct BLESighting: Identifiable, Equatable {
             "\(band.rawValue) band, \(estimateCaption)",
             "identifier \(id.uuidString)",
         ]
+        if let rowChip {
+            parts.append(rowChip)
+        }
+        parts.append(kindHint.detailValue)
+        if companyName != nil {
+            parts.append("manufacturer \(manufacturerCaption) \(companyIDCaption)")
+        }
+        parts.append("connectable \(connectableCaption)")
+        if txPowerDBm != nil {
+            parts.append("TX \(txPowerCaption)")
+        }
         if !serviceIDs.isEmpty {
             parts.append("services \(serviceIDs.joined(separator: ", "))")
+        }
+        if !serviceData.isEmpty {
+            parts.append("service data \(BLEAdvertisementMath.serviceDataCaption(serviceData))")
         }
         return parts.joined(separator: ", ")
     }
@@ -71,11 +115,28 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
-        let name = (advertisementData[CBAdvertisementDataLocalNameKey] as? String)
-            ?? peripheral.name
-            ?? "Unnamed"
+        let name = BLEAdvertisementMath.displayName(
+            (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? peripheral.name
+        )
         let services = ((advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID]) ?? [])
             .map(\.uuidString)
+        let manufacturer = (advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data)
+            .flatMap(BLEAdvertisementMath.parseManufacturerData)
+        let txPower = (advertisementData[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.intValue
+        let connectable = (advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
+        let serviceDataRaw = (advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data]) ?? [:]
+        let serviceData = serviceDataRaw
+            .map { entry in
+                BLEAdvertisementMath.summarizeServiceData(uuid: entry.key.uuidString, bytes: Array(entry.value))
+            }
+            .sorted { $0.uuid < $1.uuid }
+        let kind = BLEAdvertisementMath.kindHint(
+            name: name,
+            companyID: manufacturer?.companyID,
+            serviceIDs: services,
+            serviceDataUUIDs: serviceData.map(\.uuid),
+            looksLikeIBeacon: manufacturer?.looksLikeIBeacon ?? false
+        )
         let id = peripheral.identifier
         let rssi = RSSI.intValue
         Task { @MainActor in
@@ -84,7 +145,15 @@ final class BLEScannerModel: NSObject, ObservableObject, CBCentralManagerDelegat
                 name: name,
                 rssi: rssi,
                 serviceIDs: services,
-                lastSeen: Date()
+                lastSeen: Date(),
+                companyID: manufacturer?.companyID,
+                companyName: manufacturer?.companyName,
+                manufacturerPayloadBytes: manufacturer?.payloadByteCount ?? 0,
+                looksLikeIBeacon: manufacturer?.looksLikeIBeacon ?? false,
+                txPowerDBm: txPower,
+                isConnectable: connectable,
+                serviceData: serviceData,
+                kindHint: kind
             )
         }
     }
@@ -153,32 +222,47 @@ struct BluetoothScannerView: View {
     @State private var notes = ""
     @State private var selectedID: UUID?
 
+    private var summary: BLEScanSummary {
+        BLEAdvertisementMath.summarize(model.sightings.map(\.tallyRow))
+    }
+
     var body: some View {
         ToolScaffold(
             toolID: .bluetoothScan,
-            stickyAnswer: sticky,
+            stickyAnswer: summary.stickyLine,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Radar meters are a log-distance estimate from advertisement RSSI, not a rangefinder. Angle is a layout slot from the identifier — not a compass bearing or angle-of-arrival.")
+            disclaimer: .sensor(extra: "\(BLEAdvertisementMath.peopleCountDisclaimer) Radar meters are a log-distance estimate from advertisement RSSI, not a rangefinder. Angle is a layout slot from the identifier — not a compass bearing or angle-of-arrival.")
         ) {
             ShowWorkCard(
                 toolID: .bluetoothScan,
                 symbolic: "d ≈ 10^((P₀ − RSSI) / (10 n))    angle = hash(identifier)",
-                substituted: sticky,
-                meaning: "Public BLE only. No classic-Bluetooth sniffing. Radar radius is an uncalibrated RSSI estimate. Angle is layout, not direction-finding. RSSI is advertisement RSSI, not Wi-Fi."
+                substituted: summary.stickyLine,
+                meaning: "Device count ≠ people — one person can carry many radios; cars, printers, and mesh inflate counts; Apple rotates identifiers. Public BLE only. Radar radius is an uncalibrated RSSI estimate. Angle is layout, not direction-finding. RSSI is advertisement RSSI, not Wi-Fi."
             )
             RFHonestyBanner(
                 title: "RSSI radar is a layout, not a bearing",
                 detail: "Radius is a rough near / mid / far band from advertisement RSSI — not calibrated ranging. Angle is a stable slot from the identifier. iOS does not give third-party apps BLE angle-of-arrival."
             )
-            ResultCard(title: "Radio", copyText: copyText) {
+            ResultCard(title: "Scan summary", copyText: copyText) {
                 ResultRow(label: "State", value: model.stateText, emphasis: true)
-                ResultRow(label: "Devices", value: "\(model.sightings.count)")
-                ResultRow(label: "Near / mid / far", value: bandCounts)
+                ResultRow(label: "Devices", value: summary.deviceCountCaption, emphasis: true)
+                ResultRow(label: "Named / unnamed", value: summary.namedCaption)
+                ResultRow(label: "Near / mid / far", value: summary.bandCaption)
+                if summary.unknownBand > 0 {
+                    ResultRow(label: "Unknown band", value: "\(summary.unknownBand)")
+                }
+                ResultRow(label: "Top manufacturers", value: summary.manufacturersCaption)
+                Text(BLEAdvertisementMath.peopleCountDisclaimer)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.warn)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 6)
+                    .accessibilityLabel(BLEAdvertisementMath.peopleCountDisclaimer)
             }
             if model.unauthorized {
                 ToolEmptyState(
                     title: "Bluetooth permission denied",
-                    detail: "The scanner needs Bluetooth permission to list nearby BLE advertisements. Names, identifiers, and RSSI stay on this device.",
+                    detail: "The scanner needs Bluetooth permission to list nearby BLE advertisements. Names, identifiers, manufacturer IDs, and RSSI stay on this device.",
                     systemImage: "antenna.radiowaves.left.and.right.slash",
                     showsSettings: true
                 )
@@ -212,7 +296,7 @@ struct BluetoothScannerView: View {
                         .buttonStyle(.plain)
                         .frame(minHeight: Theme.touchTarget)
                         .accessibilityLabel(item.detailAccessibilityLabel)
-                        .accessibilityHint("Shows device detail. Radar angle is a layout slot, not a bearing.")
+                        .accessibilityHint("Shows device detail. Radar angle is a layout slot, not a bearing. Device count is not people.")
                     }
                 }
             }
@@ -245,29 +329,37 @@ struct BluetoothScannerView: View {
         return sizeClass == .regular ? 360 : 300
     }
 
-    private var bandCounts: String {
-        let rows = model.sightings
-        let near = rows.filter { $0.band == .near }.count
-        let mid = rows.filter { $0.band == .mid }.count
-        let far = rows.filter { $0.band == .far }.count
-        return "\(near) / \(mid) / \(far)"
-    }
-
-    private var sticky: String {
-        "\(model.sightings.count) device" + (model.sightings.count == 1 ? "" : "s")
-    }
     private var copyText: String {
+        var text = summary.copyLine
         if let top = model.sightings.first {
-            return "\(top.name) \(top.rssi) dBm  \(top.band.rawValue)  \(top.estimateCaption)"
+            var line = "\(top.name) \(top.rssi) dBm  \(top.band.rawValue)  \(top.estimateCaption)"
+            if let chip = top.rowChip {
+                line += "  \(chip)"
+            }
+            text += "\n\(line)"
+        } else {
+            text += "\n\(model.stateText)"
         }
-        return model.stateText
+        return text
     }
 
     private func save() {
         let top = model.sightings.prefix(8)
-        var outputs: [String: String] = ["count": "\(model.sightings.count)"]
+        var outputs: [String: String] = [
+            "count": "\(summary.total)",
+            "named": "\(summary.named)",
+            "unnamed": "\(summary.unnamed)",
+            "bands": summary.bandCaption,
+            "manufacturers": summary.manufacturersCaption,
+            "disclaimer": BLEAdvertisementMath.peopleCountDisclaimer,
+        ]
         for (i, item) in top.enumerated() {
-            outputs["\(i + 1)"] = "\(item.name)  \(item.rssi) dBm  \(item.band.rawValue)  \(item.estimateCaption)  \(item.id.uuidString)"
+            var line = "\(item.name)  \(item.rssi) dBm  \(item.band.rawValue)  \(item.estimateCaption)  \(item.kindHint.rawValue)"
+            if let company = item.companyName {
+                line += "  \(company) \(item.companyIDCaption)"
+            }
+            line += "  \(item.id.uuidString)"
+            outputs["\(i + 1)"] = line
         }
         jobs.save(SavedJob(
             name: jobName,
@@ -276,6 +368,7 @@ struct BluetoothScannerView: View {
             inputs: [
                 "mode": "BLE central scan",
                 "radar": "RSSI estimate layout, not AoA",
+                "people": BLEAdvertisementMath.peopleCountDisclaimer,
             ],
             outputs: outputs
         ))
@@ -299,6 +392,9 @@ private struct BLEPeripheralRow: View {
                         .foregroundStyle(BLERadarStyle.color(for: item.band))
                     Text(item.estimateCaption)
                         .foregroundStyle(Theme.muted)
+                    if let chip = item.rowChip {
+                        BLEHintChip(text: chip)
+                    }
                 }
                 .font(Theme.TypeRole.help)
                 Text(item.id.uuidString)
@@ -320,6 +416,20 @@ private struct BLEPeripheralRow: View {
     }
 }
 
+private struct BLEHintChip: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Theme.accent)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(Theme.accent.opacity(0.14), in: Capsule(style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
 private struct BLERadarLegend: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -328,7 +438,7 @@ private struct BLERadarLegend: View {
                 legendSwatch(.mid, title: "Mid")
                 legendSwatch(.far, title: "Far")
             }
-            Text("Meter labels are estimates from RSSI. Angle is layout, not a compass.")
+            Text("Meter labels are estimates from RSSI. Angle is layout, not a compass. Device count ≠ people.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -426,7 +536,7 @@ struct BLERadarMap: View {
     private var radarAccessibilitySummary: String {
         let count = sightings.count
         return "Radar layout of \(count) peripheral" + (count == 1 ? "" : "s")
-            + ". Radius is an RSSI distance estimate, not calibrated ranging. Angle is a stable layout slot, not direction."
+            + ". Radius is an RSSI distance estimate, not calibrated ranging. Angle is a stable layout slot, not direction. Device count is not people."
     }
 
     private func startPulse() {
@@ -461,7 +571,7 @@ private struct BLERadarRings: View {
             cross.move(to: CGPoint(x: center.x - plotR, y: center.y))
             cross.addLine(to: CGPoint(x: center.x + plotR, y: center.y))
             cross.move(to: CGPoint(x: center.x, y: center.y - plotR))
-            cross.addLine(to: CGPoint(x: center.x, y: center.y + plotR))
+            cross.addLine(to: CGPoint(x: center.x + plotR, y: center.y + plotR))
             context.stroke(cross, with: .color(Theme.hairline), lineWidth: 1)
             for (scale, title) in rings {
                 let r = plotR * scale
@@ -508,7 +618,7 @@ private struct BLERadarDot: View {
         .position(point)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: placement.normalizedRadius)
         .accessibilityLabel(item.detailAccessibilityLabel)
-        .accessibilityHint("Shows device detail. Angle is a layout slot, not a bearing.")
+        .accessibilityHint("Shows device detail. Angle is a layout slot, not a bearing. Device count is not people.")
         .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 
@@ -537,6 +647,14 @@ private struct BLEDeviceDetailSheet: View {
                             ResultRow(label: "RSSI", value: "\(item.rssi) dBm", emphasis: true, tone: BLERadarStyle.color(for: item.band))
                             ResultRow(label: "Band", value: item.band.rawValue, tone: BLERadarStyle.color(for: item.band))
                             ResultRow(label: "Estimate", value: item.estimateCaption)
+                            ResultRow(label: "Manufacturer", value: item.manufacturerCaption)
+                            ResultRow(label: "Company ID", value: item.companyIDCaption)
+                            ResultRow(label: "Kind hint", value: item.kindHint.detailValue)
+                            ResultRow(label: "TX power", value: item.txPowerCaption)
+                            ResultRow(label: "Connectable", value: item.connectableCaption)
+                            if item.looksLikeIBeacon {
+                                ResultRow(label: "iBeacon prefix", value: "Yes — public AD type, UUID not decoded")
+                            }
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Identifier")
                                     .font(.subheadline)
@@ -559,8 +677,12 @@ private struct BLEDeviceDetailSheet: View {
                                         .textSelection(.enabled)
                                 }
                             }
+                            serviceDataSection(item)
+                            if item.manufacturerPayloadBytes > 0 {
+                                ResultRow(label: "Manufacturer payload", value: "\(item.manufacturerPayloadBytes) B — not decoded")
+                            }
                         }
-                        Text("Estimate is a rough RSSI→distance band, not calibrated ranging. Radar angle is a stable layout slot from this identifier — not a compass bearing or angle-of-arrival.")
+                        Text("Kind is a hint from company ID and well-known service UUIDs, not identity. Estimate is a rough RSSI→distance band, not calibrated ranging. Radar angle is a stable layout slot from this identifier — not a compass bearing or angle-of-arrival. \(BLEAdvertisementMath.peopleCountDisclaimer)")
                             .font(Theme.TypeRole.help)
                             .foregroundStyle(Theme.muted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -585,5 +707,35 @@ private struct BLEDeviceDetailSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    @ViewBuilder
+    private func serviceDataSection(_ item: BLESighting) -> some View {
+        if item.serviceData.isEmpty {
+            ResultRow(label: "Service data", value: "None advertised")
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Service data")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                Text(BLEAdvertisementMath.serviceDataCaption(item.serviceData))
+                    .font(.caption.monospaced())
+                    .foregroundStyle(Theme.foreground)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(Array(item.serviceData.enumerated()), id: \.offset) { _, entry in
+                    if let hex = entry.previewHex {
+                        DisclosureGroup("\(entry.uuid) hex") {
+                            Text(hex)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(Theme.accent)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .font(.caption)
+                    }
+                }
+            }
+        }
     }
 }

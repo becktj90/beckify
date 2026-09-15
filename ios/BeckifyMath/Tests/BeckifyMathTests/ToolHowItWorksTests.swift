@@ -55,6 +55,7 @@ final class ToolHowItWorksTests: XCTestCase {
         XCTAssertTrue(ble?.context.localizedCaseInsensitiveContains("bearing") == true)
         XCTAssertTrue(ble?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("angle-of-arrival") || $0.localizedCaseInsensitiveContains("AoA") }) == true)
         XCTAssertTrue(ble?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("ranging") || $0.localizedCaseInsensitiveContains("estimate") }) == true)
+        XCTAssertTrue(ble?.bullets.contains(where: { $0.contains("Device count ≠ people") }) == true)
 
         let noise = ToolHowItWorksCatalog.copy(forToolID: "noiseMeter")
         XCTAssertTrue(noise?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("SLM") }) == true)

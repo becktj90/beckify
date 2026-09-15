@@ -207,12 +207,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "bluetoothScan": ToolHowItWorks(
-            summary: "CoreBluetooth scan: advertised name, identifier, RSSI, service UUIDs, and a live RSSI radar layout.",
-            context: "Find a nearby peripheral. Radar radius is an RSSI estimate; angle is layout, not bearing.",
+            summary: "CoreBluetooth scan: advertised name, identifier, RSSI, manufacturer company ID, kind hints, and a live RSSI radar layout.",
+            context: "Find a nearby peripheral. Radar radius is an RSSI estimate; angle is layout, not bearing. Device count ≠ people.",
             bullets: [
                 "RSSI is the phone’s BLE reading, uncalibrated, and hops with the radio. Meter bands are estimates, not ranging.",
                 "Radar angle is a stable slot from the identifier, not angle-of-arrival. iOS third-party BLE has no public AoA.",
-                "Names and services are only what the peripheral advertises. No private scan APIs.",
+                "Names, SIG company IDs, and services are advertised fields only. No private scan APIs or Continuity payload decoding.",
+                "Device count ≠ people. One person can carry many radios; cars, printers, and mesh inflate counts. Apple rotates identifiers.",
             ]
         ),
         "noiseMeter": ToolHowItWorks(
