@@ -30,6 +30,12 @@ import {
 } from './corridor.js';
 import { applyHit, applyScrape, healthKind, healthMaxFor } from './health.js';
 import {
+  BOOSTER_HIT,
+  ROCKET_HIT,
+  contactsHazard,
+  hazardRadius,
+} from './hit.js';
+import {
   LOADOUT_CATS,
   comboCount,
   grantPickupUnlock,
@@ -37,7 +43,7 @@ import {
   mergeUnlocks,
 } from './loadout.js';
 import { liveCameraTop, spawnYAboveCamera, SPAWN } from './spawn.js';
-import { missionTod } from './tod.js';
+import { lerpRgb, missionTod, skyLayerAlphas, spaceBlend } from './tod.js';
 import AudioApi from './audio.js';
 import {
   bindChrome,
@@ -808,12 +814,6 @@ export default class MissionScene extends Phaser.Scene {
     this.cameras.main.centerOn(this.rocket.x, this.rocket.y);
     this.lockVehicleCamera(CAM.sepLerpX, CAM.sepLerpY);
     this.setZoomWant(this.flightZoom('sep'), this.settings.reducedMotion ? 12 : 1.35);
-    this.paintSkyWash(1);
-    if (this.stars) this.stars.setAlpha(1);
-    if (this.bgSky) this.bgSky.setAlpha(0.1);
-    if (this.cloudsFar) this.cloudsFar.setAlpha(0);
-    if (this.cloudsNear) this.cloudsNear.setAlpha(0);
-    if (this.hazeBand) this.hazeBand.setAlpha(0);
     AudioApi.stopBeds();
     if (this.qaBeat === 'sep' && !this.session.fired.meco) AudioApi.play('meco', this.settings);
     this.callout('meco', { banner: 'MECO — hold attitude. Sep zone incoming.', kind: 'go', holdMs: 2400 });
@@ -836,6 +836,8 @@ export default class MissionScene extends Phaser.Scene {
     this.session.fuel = Math.min(FUEL_MAX, Math.max(this.session.fuel, HAVEN.landingFuel));
     this.session.earlyBurnWarned = false;
     this.session.burnLit = false;
+    this.session.burnWindow = false;
+    this.session.burnWindowCalled = false;
     this.clearActors();
     this.showAscentSky(false);
     this.bgPad.setVisible(false);
@@ -852,7 +854,7 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setDepth(5);
     const side = flight.lzOffset >= 0 ? -1 : 1;
     this.session.havenSide = side;
-    this.session.jacklynReadyAt = this.nowSec + 4.6;
+    this.session.jacklynReadyAt = this.nowSec + HAVEN.readySec;
     this.session.jacklynElapsed = 0;
     this.rocket.setFrictionAir(HAVEN.glideAir);
     this.rocket.setPosition(this.session.havenHomeX + side * HAVEN.startLat, HAVEN.startY);
@@ -895,7 +897,7 @@ export default class MissionScene extends Phaser.Scene {
         }
       });
     });
-    this.time.delayedCall(Math.round((HAVEN.reentrySec + 2.6) * 1000), () => {
+    this.time.delayedCall(Math.round((HAVEN.reentrySec + HAVEN.strakeSec + 1.2) * 1000), () => {
       if (this.status === 'JACKLYN') this.callout('hint-haven');
     });
   }
@@ -912,7 +914,7 @@ export default class MissionScene extends Phaser.Scene {
     else if (this.status === 'SEP') this.updateSep(dt);
     else if (this.status === 'JACKLYN') this.updateJacklyn(dt);
     if (this.inFlight()) this.syncScience(dt);
-    this.updateSkyLayers();
+    this.updateSkyLayers(dt);
     this.updateFlightFx(dt);
     this.updateCorridor(dt);
     this.updateSepZone();
@@ -971,7 +973,7 @@ export default class MissionScene extends Phaser.Scene {
 
     const axis = flightAxis(this.inputState, this.rocket.x, 140);
     const alt = this.session.altitudeKm || 0;
-    const space = clamp((alt - 8) / 48, 0, 1);
+    const space = spaceBlend(alt, this.status);
     this.matter.world.setGravity(0, PHYS.ascentG * (1 - space * 0.82));
     this.rocket.setFrictionAir(PHYS.airAtmo * (1 - space) + PHYS.airSpace * space);
     const thrust = this.session.throttle * kick;
@@ -1161,13 +1163,7 @@ export default class MissionScene extends Phaser.Scene {
     const boosting = isBoosting(this.inputState, this.nowSec);
     let axis = flightAxis(this.inputState, this.rocket.x, 210);
     const deckX = this.deck.x;
-    const assist = this.isHavenQa() ? Math.max(mode.assist, 0.42) : mode.assist;
-    if (assist > 0) {
-      const err = (deckX - this.rocket.x) / 340;
-      const mix = (this.session.jacklynPhase === 'burn' || this.session.jacklynPhase === 'straighten' || this.session.jacklynPhase === 'settle') ? 0.72 : 0.26;
-      axis = clamp(axis + err * assist * mix, -1, 1);
-    }
-
+    const assist = this.isHavenQa() ? Math.max(mode.assist, 0.28) : mode.assist;
     const alt = this.jacklyn.y - 50 - this.rocket.y;
     if (this.session.jacklynPhase === 'reentry' && this.session.jacklynElapsed >= HAVEN.reentrySec) {
       this.session.jacklynPhase = 'strakes';
@@ -1175,20 +1171,37 @@ export default class MissionScene extends Phaser.Scene {
     if (this.session.jacklynPhase === 'strakes' && this.session.jacklynElapsed >= HAVEN.reentrySec + HAVEN.strakeSec) {
       this.session.jacklynPhase = 'glide';
     }
-    const burnOpen = alt < HAVEN.burnAlt && this.session.jacklynElapsed >= HAVEN.glideMinSec;
-    if (burnOpen && (this.session.jacklynPhase === 'glide' || this.session.jacklynPhase === 'strakes')) {
-      this.session.jacklynPhase = 'burn';
-      this.callout('haven-burn', { banner: 'LANDING BURN — HOLD CLIMB', kind: 'warn', holdMs: 2200 });
+    const burnWindow = alt < HAVEN.burnAlt && this.session.jacklynElapsed >= HAVEN.glideMinSec;
+    this.session.burnWindow = burnWindow;
+    if (burnWindow && !this.session.burnWindowCalled) {
+      this.session.burnWindowCalled = true;
+      this.callout('haven-burn', {
+        banner: 'LANDING BURN — HOLD CLIMB and steer onto the paint',
+        kind: 'warn',
+        holdMs: 2600,
+      });
     }
-    if (alt < 210 && this.session.burnLit && this.session.jacklynPhase === 'burn') {
+    if (burnWindow && boosting && this.session.fuel > 0) {
+      this.session.jacklynPhase = 'burn';
+      this.session.burnLit = true;
+    }
+    if (alt < 200 && this.session.burnLit && this.session.jacklynPhase === 'burn') {
       this.session.jacklynPhase = 'straighten';
       this.emitRcs();
       this.callout('haven-straighten', { banner: 'RCS — straighten for the painted deck', kind: 'info', holdMs: 1600 });
     }
-    if (alt < 95) this.session.jacklynPhase = 'settle';
 
     const reentry = this.session.jacklynPhase === 'reentry';
     const gliding = this.session.jacklynPhase === 'strakes' || this.session.jacklynPhase === 'glide';
+    const burning = this.session.jacklynPhase === 'burn'
+      || this.session.jacklynPhase === 'straighten'
+      || this.session.jacklynPhase === 'settle';
+    if (assist > 0) {
+      const err = (deckX - this.rocket.x) / 420;
+      const mix = burning ? (mode.assist > 0.55 ? 0.3 : assist * 0.18) : assist * 0.16;
+      axis = clamp(axis + err * mix, -1, 1);
+    }
+
     this.matter.world.setGravity(0, reentry ? HAVEN.reentryGravity : (gliding ? HAVEN.glideGravity : HAVEN.gravity));
     this.rocket.setFrictionAir((reentry || gliding) ? HAVEN.glideAir : HAVEN.frictionAir);
 
@@ -1196,10 +1209,10 @@ export default class MissionScene extends Phaser.Scene {
     const wantAngle = reentry
       ? side * -46
       : gliding
-        ? clamp(side * -28 + this.rocket.body.velocity.x * 1.4, -38, 38)
-        : 0;
+        ? clamp(side * -30 + this.rocket.body.velocity.x * 1.4 + axis * 6, -40, 40)
+        : clamp(-axis * 18 + this.rocket.body.velocity.x * 1.1, -24, 24);
     const nowAngle = this.rocket.angle || 0;
-    const slew = reentry ? 2.2 : gliding ? 1.5 : 4.4;
+    const slew = reentry ? 2.2 : gliding ? 1.35 : 3.1;
     const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * slew);
     if (Math.abs(nextAngle - nowAngle) > 0.7) this.emitRcs();
     this.rocket.setAngularVelocity(0);
@@ -1217,12 +1230,12 @@ export default class MissionScene extends Phaser.Scene {
       }
     } else if (gliding) {
       this.rocket.applyForce({
-        x: axis * 0.008 + (mode.wind || 0) * 0.0012 + side * -0.0035,
-        y: 0.0018,
+        x: axis * 0.009 + (mode.wind || 0) * 0.0012 + side * -0.0028,
+        y: 0.0014,
       });
       this.session.throttle = 0.08;
       AudioApi.setBed('burn', false, this.settings);
-      if (boosting) {
+      if (boosting && !burnWindow) {
         if (!this.session.earlyBurnWarned) {
           this.session.earlyBurnWarned = true;
           setBanner('TOO EARLY — hold the glide', 'warn', 1400);
@@ -1232,7 +1245,7 @@ export default class MissionScene extends Phaser.Scene {
     } else if (boosting && this.session.fuel > 0) {
       this.session.burnLit = true;
       this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 9 * dt);
-      this.rocket.applyForce({ x: axis * 0.014, y: -0.034 });
+      this.rocket.applyForce({ x: axis * 0.016, y: -0.032 });
       this.session.throttle = 1;
       this.emitPlume(0.9);
       if (alt < 240) this.emitBloom();
@@ -1244,10 +1257,8 @@ export default class MissionScene extends Phaser.Scene {
         this.smokeBank.setPosition(this.jacklyn.x, this.jacklyn.y - 28);
       }
       AudioApi.setBed('burn', true, this.settings, 0.38);
-      if (alt > 220 && this.rocket.body.velocity.y < 1.15) this.rocket.setVelocityY(1.15);
-      else if (alt > 40 && this.rocket.body.velocity.y < 0.48) this.rocket.setVelocityY(0.48);
     } else {
-      this.rocket.applyForce({ x: axis * 0.006 + (mode.wind || 0) * 0.0018, y: 0.006 });
+      this.rocket.applyForce({ x: axis * 0.007 + (mode.wind || 0) * 0.0022, y: 0.01 });
       this.session.throttle = 0.12;
       AudioApi.setBed('burn', false, this.settings);
     }
@@ -1256,7 +1267,7 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (this.rocket.body.velocity.y > HAVEN.maxVy) this.rocket.setVelocityY(HAVEN.maxVy);
     if (this.rocket.body.velocity.y < -0.85) this.rocket.setVelocityY(-0.85);
-    this.rocket.x = clamp(this.rocket.x, -80, W + 80);
+    this.rocket.x = clamp(this.rocket.x, -1900, W + 1900);
     this.session.velocity = Math.round(this.rocket.body.velocity.y * 36);
     this.session.altitudeKm = clamp(alt / 140, 0, 12);
     this.frameHavenCamera(dt);
@@ -1560,7 +1571,6 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   spawnHazard() {
-    const mode = DIFFICULTY[this.settings.difficulty];
     const mix = this.currentFlight().hazards || ['bird', 'balloon', 'ice'];
     const kind = this.session.altitudeKm < 8 ? pick(['bird', 'balloon', mix[0]]) : pick(mix);
     const camTop = liveCameraTop(this.cameras.main, this.rocket.y, CAM.lookAheadY);
@@ -1570,12 +1580,16 @@ export default class MissionScene extends Phaser.Scene {
     const img = this.matter.add.image(x, y, kind, null, {
       isSensor: true,
       label: `hazard-${kind}`,
+      shape: { type: 'circle', radius: hazardRadius(kind) },
     });
+    img.setCircle(hazardRadius(kind));
+    img.setSensor(true);
     img.setCollisionCategory(CAT_HAZARD);
     img.setCollidesWith(CAT_ROCKET);
     img.setIgnoreGravity(true);
     img.setVelocity(rand(-0.4, 0.4), rand(0.6, 1.6));
-    img.setScale(mode.hitboxScale + 0.35);
+    img.setScale(1);
+    img.hazardKind = kind;
     this.hazards.push(img);
   }
 
@@ -1620,6 +1634,7 @@ export default class MissionScene extends Phaser.Scene {
       return;
     }
     const kind = String(label || obj.body?.label || obj.label || '').replace(/^hazard-/, '');
+    if (!contactsHazard(this.rocket, obj, kind, this.status === 'JACKLYN')) return;
     const atMaxQ = this.session.tClock >= PACE.MAXQ - 4 && this.session.tClock <= PACE.MAXQ + 8;
     const result = applyHit(this.session, kind, this.settings.difficulty);
     this.session.health = result.health;
@@ -2086,10 +2101,16 @@ export default class MissionScene extends Phaser.Scene {
    * Re-apply after any reshape. Positions are center-of-mass.
    */
   bindRocketBody() {
-    this.rocket.setFrictionAir(0.02);
+    const ignore = this.rocket.body?.ignoreGravity;
+    const haven = this.status === 'JACKLYN';
+    const box = haven ? BOOSTER_HIT : ROCKET_HIT;
+    this.rocket.setRectangle(box.width, box.height);
+    this.rocket.setDensity(0.002);
+    this.rocket.setFrictionAir(haven ? HAVEN.glideAir : 0.02);
     this.rocket.setCollisionCategory(CAT_ROCKET);
     this.rocket.setCollidesWith(CAT_DECK | CAT_WATER | CAT_HAZARD | CAT_PICKUP);
     this.rocket.setFixedRotation();
+    if (ignore) this.rocket.setIgnoreGravity(true);
   }
 
   inFlight() {
@@ -2100,14 +2121,17 @@ export default class MissionScene extends Phaser.Scene {
     if (!this.bgWash) return;
     const t = clamp(spaceT, 0, 1);
     const wash = missionTod(this.currentFlight()).wash;
+    const mid = lerpRgb(wash.mid, wash.space, t);
+    const near = lerpRgb(wash.horizon, wash.space, t * 0.92);
+    const lowA = Math.max(0, 0.92 - t * 0.92);
     this.bgWash.clear();
-    this.bgWash.fillStyle(wash.space, 1);
+    this.bgWash.fillStyle(wash.space, 0.35 + t * 0.65);
     this.bgWash.fillRect(-400, CAM.worldTop, W + 800, CAM.worldHeight * 0.62);
-    this.bgWash.fillStyle(t > 0.55 ? wash.space : wash.mid, 1);
+    this.bgWash.fillStyle(mid, 0.55 + t * 0.45);
     this.bgWash.fillRect(-400, -1800, W + 800, 1600);
-    this.bgWash.fillStyle(t > 0.78 ? wash.near : wash.horizon, 1);
+    this.bgWash.fillStyle(near, 1);
     this.bgWash.fillRect(-400, -220, W + 800, 520);
-    this.bgWash.fillStyle(wash.low, Math.max(0, 0.9 - t * 0.9));
+    this.bgWash.fillStyle(wash.low, lowA);
     this.bgWash.fillRect(-400, 300, W + 800, 500);
   }
 
@@ -2136,44 +2160,45 @@ export default class MissionScene extends Phaser.Scene {
     this.oceanWash.fillRect(-2200, 420, 5600, 2000);
   }
 
-  updateSkyLayers() {
+  updateSkyLayers(dt = 0.016) {
     if (!this.session || this.status === 'JACKLYN' || this.status === 'SUMMARY') return;
-    const sep = this.status === 'SEP';
-    const alt = this.session.altitudeKm || 0;
-    const space = sep ? 1 : clamp((alt - 10) / 48, 0, 1);
+    const target = spaceBlend(this.session.altitudeKm || 0, this.status);
+    const prev = Number.isFinite(this.session.spaceT) ? this.session.spaceT : target;
+    const rate = this.status === 'SEP' ? 0.85 : 2.2;
+    this.session.spaceT = prev + (target - prev) * Math.min(1, dt * rate);
+    const space = this.session.spaceT;
+    const layers = skyLayerAlphas(space);
     this.paintSkyWash(space);
     if (this.stars && this.rocket) {
-      this.stars.setAlpha(Math.max(space * 0.98, sep ? 1 : 0));
+      this.stars.setAlpha(layers.stars);
       this.stars.setPosition(this.rocket.x * 0.04 + W / 2, this.rocket.y * 0.08 - 1800);
       this.stars.setDisplaySize(W + 520, 3200);
     }
     if (this.milky && this.rocket) {
-      const milkyA = sep ? 0.72 : clamp((space - 0.18) / 0.55, 0, 0.7);
-      this.milky.setAlpha(milkyA);
+      this.milky.setAlpha(layers.milky);
       this.milky.setPosition(this.rocket.x * 0.03 + W / 2, this.rocket.y * 0.05 - 2100);
     }
     if (this.nebula && this.rocket) {
-      const dust = sep ? 0.55 : clamp((space - 0.28) / 0.5, 0, 0.5);
-      this.nebula.setAlpha(dust);
+      this.nebula.setAlpha(layers.nebula);
       this.nebula.setPosition(this.rocket.x * 0.05 + W / 2, this.rocket.y * 0.07 - 1900);
     }
     if (this.bgSky && this.rocket) {
       this.bgSky.y = -1480 + this.rocket.y * 0.06;
-      this.bgSky.setAlpha(sep ? 0.08 : 1 - space * 0.55);
+      this.bgSky.setAlpha(layers.sky);
     }
     if (this.cloudsFar && this.rocket) {
       this.cloudsFar.y = 80 + this.rocket.y * 0.16;
       this.cloudsFar.x = W / 2 + Math.sin((this.nowSec || 0) * 0.08) * 18;
-      this.cloudsFar.setAlpha(sep ? 0 : (1 - space) * 0.72);
+      this.cloudsFar.setAlpha(layers.clouds * 0.72);
     }
     if (this.cloudsNear && this.rocket) {
       this.cloudsNear.y = 220 + this.rocket.y * 0.3;
       this.cloudsNear.x = W / 2 + Math.sin((this.nowSec || 0) * 0.14) * 28;
-      this.cloudsNear.setAlpha(sep ? 0 : (1 - space) * 0.58);
+      this.cloudsNear.setAlpha(layers.clouds * 0.58);
     }
     if (this.hazeBand && this.rocket) {
       this.hazeBand.y = 340 + this.rocket.y * 0.2;
-      this.hazeBand.setAlpha(sep ? 0 : (1 - space * 0.9) * 0.8);
+      this.hazeBand.setAlpha(layers.haze * 0.8);
     }
   }
 
@@ -2506,10 +2531,10 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (this.status === 'JACKLYN') {
       const phase = this.session.jacklynPhase || 'glide';
-      if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
-        return 'LANDING BURN  ·  HOLD + DRAG  ·  straighten for the deck';
+      if (this.session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
+        return 'LANDING BURN  ·  HOLD + DRAG  ·  fly onto the painted deck';
       }
-      return 'STRAKES OUT  ·  GLIDE the diagonal  ·  do not burn yet';
+      return 'STRAKES OUT  ·  long GLIDE the diagonal  ·  do not burn yet';
     }
     return '';
   }
@@ -2575,7 +2600,7 @@ export default class MissionScene extends Phaser.Scene {
       muted: this.settings.muted,
       paused: this.paused,
       boostLabel: this.status === 'JACKLYN'
-        ? ((s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle')
+        ? ((s.burnWindow || s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle')
           ? 'HOLD TO BURN'
           : 'GLIDE')
         : this.status === 'SEP' && s.sepPhase === 'window'

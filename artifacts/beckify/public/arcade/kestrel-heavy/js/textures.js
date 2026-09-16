@@ -1074,10 +1074,13 @@ export function makeHazard(kind) {
   const cv = canvas(48, 48);
   const ctx = cv.getContext('2d');
   ctx.translate(24, 24);
-  // Amber halo so dark birds / gray debris read on night sky and small phones.
+  // Thin amber ring so dark birds read on night sky — not a fat glow pad.
   ctx.save();
-  ctx.shadowColor = 'rgba(255, 207, 93, 0.95)';
-  ctx.shadowBlur = 12;
+  ctx.strokeStyle = 'rgba(255, 207, 93, 0.7)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(0, 0, kind === 'balloon' ? 15 : 13, 0, Math.PI * 2);
+  ctx.stroke();
   if (kind === 'bird') {
     ctx.strokeStyle = '#ffcf5d';
     ctx.lineWidth = 5;
