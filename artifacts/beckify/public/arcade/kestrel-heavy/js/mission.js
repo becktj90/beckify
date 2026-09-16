@@ -309,6 +309,9 @@ export default class MissionScene extends Phaser.Scene {
       steerDrag: (dx) => {
         setTouchSteer(this.inputState, dx);
       },
+      thumb: (down) => {
+        this.inputState.thumbHeld = Boolean(down);
+      },
       boost: (down) => {
         if (down) {
           this.onPrimary();
@@ -2372,6 +2375,8 @@ export default class MissionScene extends Phaser.Scene {
           ? 'SEPARATE'
           : 'HOLD · DRAG',
       boostHeld: boosting,
+      thumbHeld: Boolean(this.inputState.thumbHeld),
+      touchSteer: this.inputState.touchSteer,
       sepReady: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone && this.inSepZone(),
       sepArmed: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone,
       hints: this.hintLine(),

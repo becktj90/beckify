@@ -1,5 +1,7 @@
 /** Mission-control telemetry overlay — tabular, high contrast, aria-live banners. */
 
+import { climbArmedFromLabel, paintThumbSteer, peekTouchSteer, TOUCH_STEER_DEAD_PX } from './input.js';
+
 function el(id) {
   return document.getElementById(id);
 }
@@ -86,13 +88,16 @@ export function renderHud(snapshot) {
   const climb = el('atb-boost');
   if (climb && snapshot.boostLabel) {
     climb.dataset.label = snapshot.boostLabel;
-    climb.classList.toggle('is-held', Boolean(snapshot.boostHeld));
+    climb.dataset.climb = climbArmedFromLabel(snapshot.boostLabel) ? 'on' : 'off';
+    climb.classList.toggle('is-held', Boolean(snapshot.boostHeld || snapshot.thumbHeld));
+    paintThumbSteer(climb, snapshot.touchSteer);
+    if (climb._syncClimb) climb._syncClimb();
     climb.setAttribute(
       'aria-label',
       snapshot.boostLabel === 'HOLD TO BURN'
         ? 'Hold to fire the landing burn, drag left or right to steer'
         : snapshot.boostLabel === 'GLIDE'
-          ? 'Glide — do not burn yet. Steer on the playfield or with the side pads'
+          ? 'Drag to steer the glide — do not burn yet'
           : snapshot.boostLabel === 'SEPARATE'
             ? 'Press to separate stages'
             : 'Hold to climb, drag left or right to steer',
@@ -288,12 +293,17 @@ export function bindChrome(handlers) {
     if (!node) return;
     let held = false;
     let originX = 0;
+    let armed = false;
+    const climbArmed = () => node.dataset.climb !== 'off';
     const endHold = () => {
       if (!held) return;
       held = false;
+      armed = false;
       originX = 0;
+      handlers.thumb?.(false);
       if (handlers.steerDrag) handlers.steerDrag(null);
       handlers.boost(false);
+      paintThumbSteer(node, 0);
     };
     const onDown = (event) => {
       event.preventDefault();
@@ -302,19 +312,29 @@ export function bindChrome(handlers) {
       const x = clientXOf(event);
       if (x == null) return;
       held = true;
+      armed = false;
       originX = x;
       if (node.setPointerCapture && event.pointerId !== undefined) {
         node.setPointerCapture(event.pointerId);
       }
+      handlers.thumb?.(true);
       if (handlers.steerDrag) handlers.steerDrag(null);
-      handlers.boost(true);
+      handlers.boost(climbArmed());
+      paintThumbSteer(node, 0);
     };
     const onMove = (event) => {
       if (!held) return;
       event.preventDefault();
       const x = clientXOf(event);
       if (x == null || !handlers.steerDrag) return;
-      handlers.steerDrag(x - originX);
+      const dx = x - originX;
+      handlers.steerDrag(dx);
+      if (!armed && Math.abs(dx) >= TOUCH_STEER_DEAD_PX) armed = true;
+      paintThumbSteer(node, peekTouchSteer(dx, armed));
+    };
+    node._syncClimb = () => {
+      if (!held) return;
+      handlers.boost(climbArmed());
     };
     const onUp = (event) => {
       event.preventDefault();
