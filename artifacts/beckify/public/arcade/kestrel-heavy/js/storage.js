@@ -7,12 +7,14 @@
  *   newGlennRunnerStateV4     — Phaser 4 vertical slice
  *   newGlennRunnerStateV5     — KH-n missions, payload unlocks, per-flight bests
  *   newGlennRunnerStateV6     — SFX/music volume split, control hints, sequence HUD
+ *   newGlennRunnerStateV7     — hangar loadouts, part unlocks, integrity HUD
  *
- * V6 copies scores and prefs from V5/V4/V3/V2 on first load, then writes V6 only.
+ * V7 copies scores and prefs from V6/V5/V4/V3/V2 on first load, then writes V7 only.
  * Old keys are left in place so a player can still open a canvas bookmark.
  */
 import { DEFAULT_SETTINGS, LEGACY_KEYS, STORAGE_KEY } from './config.js';
 import { FIRST_MISSION, MISSIONS, getMission } from './missions.js';
+import { clampLoadout, evaluateUnlocks, mergeUnlocks } from './loadout.js';
 
 function parse(raw) {
   if (!raw) return null;
@@ -80,7 +82,10 @@ function normalize(merged) {
   next.launchTipSeen = Boolean(next.launchTipSeen);
   next.sound = next.muted ? false : next.sound !== false;
   next.muted = next.muted === true || next.sound === false;
-  return normalizeMissions(next);
+  const withMissions = normalizeMissions(next);
+  withMissions.unlockedParts = evaluateUnlocks(withMissions);
+  withMissions.loadout = clampLoadout(withMissions.loadout, withMissions.unlockedParts);
+  return withMissions;
 }
 
 export function loadSettings() {
@@ -97,7 +102,7 @@ export function loadSettings() {
   } catch {
     /* private mode / blocked storage */
   }
-  return { ...DEFAULT_SETTINGS, missionBests: { ...DEFAULT_SETTINGS.missionBests } };
+  return normalize({ ...DEFAULT_SETTINGS });
 }
 
 export function saveSettings(settings) {
@@ -117,9 +122,12 @@ export function resetRecord(settings) {
   settings.currentMission = FIRST_MISSION;
   settings.unlockedMissions = [FIRST_MISSION];
   settings.missionBests = {};
+  settings.loadout = { ...DEFAULT_SETTINGS.loadout };
+  settings.unlockedParts = { ...DEFAULT_SETTINGS.unlockedParts };
   for (const mission of MISSIONS) {
     settings.missionBests[mission.id] = { score: 0, recovered: false };
   }
+  mergeUnlocks(settings);
   saveSettings(settings);
   return settings;
 }

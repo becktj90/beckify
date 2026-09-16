@@ -1,5 +1,7 @@
 /** Procedural Pier 7 / Kestrel Heavy / Haven sprites. Pad uses the service tower only. */
+import { DEFAULT_LOADOUT, accentColor, paintSpec } from './loadout.js';
 import { MISSIONS } from './missions.js';
+import { todPalette } from './tod.js';
 
 function canvas(w, h) {
   const cv = document.createElement('canvas');
@@ -26,22 +28,25 @@ function chevronMark(ctx, x, y, s, color) {
 }
 
 /** Solid black wing-strakes. Never lattice / grid fins. */
-function drawStrakes(ctx, bodyHalf, deployed, forwardY, aftY) {
+function drawStrakes(ctx, bodyHalf, deployed, forwardY, aftY, style = 'black') {
   ctx.fillStyle = '#0b0d12';
-  const fSpan = deployed ? 22 : 16;
-  const fH = deployed ? 22 : 18;
-  [-1, 1].forEach((side) => {
-    const tip = side * (bodyHalf + fSpan);
-    ctx.beginPath();
-    ctx.moveTo(side * bodyHalf, forwardY + 3);
-    ctx.lineTo(tip, forwardY + 5);
-    ctx.lineTo(tip, forwardY + fH);
-    ctx.lineTo(side * bodyHalf, forwardY + fH - 4);
-    ctx.closePath();
-    ctx.fill();
-  });
-  const aftSpan = deployed ? 36 : 24;
-  const aftH = deployed ? 48 : 36;
+  const wide = style === 'wide' ? 1.28 : style === 'stub' ? 0.72 : 1;
+  const fSpan = (deployed ? 22 : 16) * wide;
+  const fH = (deployed ? 22 : 18) * (style === 'stub' ? 0.7 : 1);
+  if (style !== 'aft') {
+    [-1, 1].forEach((side) => {
+      const tip = side * (bodyHalf + fSpan);
+      ctx.beginPath();
+      ctx.moveTo(side * bodyHalf, forwardY + 3);
+      ctx.lineTo(tip, forwardY + 5);
+      ctx.lineTo(tip, forwardY + fH);
+      ctx.lineTo(side * bodyHalf, forwardY + fH - 4);
+      ctx.closePath();
+      ctx.fill();
+    });
+  }
+  const aftSpan = (deployed ? 36 : 24) * wide;
+  const aftH = (deployed ? 48 : 36) * (style === 'stub' ? 0.68 : 1);
   [-1, 1].forEach((side) => {
     const tip = side * (bodyHalf + aftSpan);
     ctx.beginPath();
@@ -54,15 +59,69 @@ function drawStrakes(ctx, bodyHalf, deployed, forwardY, aftY) {
     ctx.fillStyle = '#1a1d24';
     ctx.fillRect(side < 0 ? tip + 2 : bodyHalf, aftY + 12, 3, aftH - 18);
     ctx.fillStyle = '#0b0d12';
+    if (style === 'gold-edge') {
+      ctx.strokeStyle = '#c48a2a';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    }
   });
 }
 
-export function makeRocket(fairing, payload) {
-  const cv = canvas(92, 268);
-  const ctx = cv.getContext('2d');
-  ctx.translate(46, 8);
-
-  if (fairing) {
+function drawNose(ctx, kind, accent, payload) {
+  const goldHi = accent === '#c48a2a' ? '#fff6d0' : accent;
+  const goldMid = accent === '#c48a2a' ? '#f3d58a' : accent;
+  if (kind === 'white-needle') {
+    const g = ctx.createLinearGradient(0, 0, 0, 62);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.5, '#e8eef6');
+    g.addColorStop(1, goldMid);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, -4);
+    ctx.bezierCurveTo(12, 8, 18, 32, 18, 62);
+    ctx.lineTo(-18, 62);
+    ctx.bezierCurveTo(-18, 32, -12, 8, 0, -4);
+    ctx.fill();
+  } else if (kind === 'black-ogive') {
+    const g = ctx.createLinearGradient(0, 0, 0, 62);
+    g.addColorStop(0, '#1a1d24');
+    g.addColorStop(0.7, '#2a3038');
+    g.addColorStop(1, goldMid);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(17, 11, 22, 32, 21, 62);
+    ctx.lineTo(-21, 62);
+    ctx.bezierCurveTo(-22, 32, -17, 11, 0, 0);
+    ctx.fill();
+  } else if (kind === 'blunt-gold') {
+    const g = ctx.createLinearGradient(0, 8, 0, 62);
+    g.addColorStop(0, goldHi);
+    g.addColorStop(0.45, goldMid);
+    g.addColorStop(1, '#7a4e0e');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, 8);
+    ctx.bezierCurveTo(18, 16, 22, 36, 21, 62);
+    ctx.lineTo(-21, 62);
+    ctx.bezierCurveTo(-22, 36, -18, 16, 0, 8);
+    ctx.fill();
+  } else if (kind === 'twin-mark') {
+    const g = ctx.createLinearGradient(0, 0, 0, 62);
+    g.addColorStop(0, goldHi);
+    g.addColorStop(0.5, goldMid);
+    g.addColorStop(1, '#7a4e0e');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(17, 11, 22, 32, 21, 62);
+    ctx.lineTo(-21, 62);
+    ctx.bezierCurveTo(-22, 32, -17, 11, 0, 0);
+    ctx.fill();
+    ctx.fillStyle = '#1a1408';
+    ctx.fillRect(-8, 18, 4, 28);
+    ctx.fillRect(4, 18, 4, 28);
+  } else {
     const g = ctx.createLinearGradient(0, 0, 0, 62);
     g.addColorStop(0, '#fff6d0');
     g.addColorStop(0.16, '#f3d58a');
@@ -83,39 +142,90 @@ export function makeRocket(fairing, payload) {
     ctx.lineTo(-8, 58);
     ctx.bezierCurveTo(-10, 36, -8, 18, -2, 10);
     ctx.fill();
-    ctx.fillStyle = payload?.accent || '#8a5a12';
-    ctx.fillRect(-21, 60, 42, 5);
-    if (payload?.mark) {
-      ctx.fillStyle = '#1a1408';
-      ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(payload.mark, 0, 52);
-    }
+  }
+  ctx.fillStyle = payload?.accent || accent;
+  ctx.fillRect(-21, 60, 42, 5);
+  if (payload?.mark) {
+    ctx.fillStyle = '#1a1408';
+    ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(payload.mark, 0, 52);
+  }
+}
+
+function drawEngineBells(ctx, kind, y) {
+  const count = kind === 'slim' ? 9 : kind === 'dual' ? 7 : 7;
+  const spread = kind === 'clustered' ? 4.4 : kind === 'slim' ? 4.2 : 5.4;
+  const rx = kind === 'bell-wide' ? 4.2 : kind === 'slim' ? 2.2 : 3;
+  const ry = kind === 'bell-wide' ? 8.5 : 7;
+  const start = -((count - 1) * spread) / 2;
+  for (let i = 0; i < count; i++) {
+    const x = start + i * spread;
+    const fat = kind === 'dual' && (i === 0 || i === count - 1);
+    ctx.fillStyle = '#2b3038';
+    ctx.beginPath();
+    ctx.ellipse(x, y, fat ? 5 : rx, fat ? 9 : ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#6d7380';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 2, (fat ? 5 : rx) * 0.5, (fat ? 9 : ry) * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+export function makeRocket(fairing, payload, loadout) {
+  const kit = { ...DEFAULT_LOADOUT, ...(loadout || {}) };
+  const paint = paintSpec(kit.paint);
+  const accent = accentColor(kit.accent);
+  const cv = canvas(92, 268);
+  const ctx = cv.getContext('2d');
+  ctx.translate(46, 8);
+
+  if (fairing) {
+    drawNose(ctx, kit.nose, accent, payload);
   } else {
-    ctx.fillStyle = '#f4f7fb';
+    ctx.fillStyle = paint.hi;
     ctx.fillRect(-16, 32, 32, 30);
     ctx.fillStyle = '#c5ced8';
     ctx.fillRect(-11, 28, 22, 8);
   }
 
   const goldTop = ctx.createLinearGradient(-21, 65, 21, 84);
-  goldTop.addColorStop(0, '#f3d58a');
-  goldTop.addColorStop(0.45, '#c48a2a');
+  goldTop.addColorStop(0, accent);
+  goldTop.addColorStop(0.45, accent);
   goldTop.addColorStop(1, '#8a5a12');
   ctx.fillStyle = goldTop;
   ctx.fillRect(-21, 65, 42, 16);
 
   const body = ctx.createLinearGradient(-20, 80, 20, 80);
-  body.addColorStop(0, '#b8c2ca');
-  body.addColorStop(0.22, '#f7fbff');
-  body.addColorStop(0.55, '#e8eef4');
-  body.addColorStop(1, '#8e979e');
+  body.addColorStop(0, paint.lo);
+  body.addColorStop(0.22, paint.hi);
+  body.addColorStop(0.55, paint.mid);
+  body.addColorStop(1, paint.lo);
   ctx.fillStyle = body;
   ctx.fillRect(-20, 80, 40, 118);
   ctx.fillStyle = 'rgba(20,28,40,0.08)';
   for (let y = 88; y < 188; y += 13) ctx.fillRect(-18, y, 36, 1);
 
-  chevronMark(ctx, 0, 136, 0.62, '#1c2834');
+  if (kit.body === 'stripe') {
+    ctx.fillStyle = 'rgba(20,28,40,0.42)';
+    ctx.fillRect(-3, 84, 6, 108);
+  } else if (kit.body === 'ringed') {
+    ctx.fillStyle = accent;
+    ctx.fillRect(-20, 108, 40, 3);
+    ctx.fillRect(-20, 148, 40, 3);
+  } else if (kit.body === 'cargo') {
+    ctx.fillStyle = 'rgba(20,28,40,0.35)';
+    ctx.fillRect(-20, 118, 40, 28);
+  } else if (kit.body === 'long-window') {
+    ctx.fillStyle = '#8ce0ff';
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(-14, 100, 8, 36);
+    ctx.fillRect(6, 100, 8, 36);
+    ctx.globalAlpha = 1;
+  }
+
+  chevronMark(ctx, 0, 136, kit.body === 'chevron' ? 0.86 : 0.62, '#1c2834');
 
   ctx.fillStyle = '#fff';
   ctx.fillRect(8, 98, 10, 6);
@@ -125,27 +235,17 @@ export function makeRocket(fairing, payload) {
   ctx.fillStyle = '#3c3b6e';
   ctx.fillRect(8, 98, 4, 6);
 
-  drawStrakes(ctx, 20, false, 92, 176);
+  drawStrakes(ctx, 20, false, 92, 176, kit.strakes);
 
   const copper = ctx.createLinearGradient(-22, 210, 22, 238);
-  copper.addColorStop(0, '#e0b85a');
+  copper.addColorStop(0, accent);
   copper.addColorStop(0.35, '#c48a2a');
   copper.addColorStop(0.7, '#8a4e12');
   copper.addColorStop(1, '#5a320c');
   ctx.fillStyle = copper;
   ctx.fillRect(-22, 210, 44, 22);
 
-  for (let i = 0; i < 7; i++) {
-    const x = -16 + i * 5.4;
-    ctx.fillStyle = '#2b3038';
-    ctx.beginPath();
-    ctx.ellipse(x, 246, 3, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#6d7380';
-    ctx.beginPath();
-    ctx.ellipse(x, 244, 1.5, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  drawEngineBells(ctx, kit.engines, 246);
 
   ctx.strokeStyle = 'rgba(20,28,40,0.16)';
   ctx.strokeRect(-20, 80, 40, 118);
@@ -241,35 +341,31 @@ export function makeSepShard(kind) {
   return cv;
 }
 
-export function makePad() {
+export function makePad(todId) {
+  const tod = todPalette(todId);
   const w = 1280;
   const h = 720;
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
 
   const sky = ctx.createLinearGradient(0, 0, 0, 430);
-  sky.addColorStop(0, '#1a3a68');
-  sky.addColorStop(0.18, '#3a6ea8');
-  sky.addColorStop(0.36, '#7aa8c8');
-  sky.addColorStop(0.52, '#e8b070');
-  sky.addColorStop(0.7, '#f0c090');
-  sky.addColorStop(0.86, '#d8b888');
-  sky.addColorStop(1, '#c0a878');
+  const stops = tod.padSky || ['#1a3a68', '#3a6ea8', '#7aa8c8', '#e8b070', '#f0c090', '#c0a878'];
+  stops.forEach((color, i) => sky.addColorStop(i / Math.max(1, stops.length - 1), color));
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
-  const sun = ctx.createRadialGradient(1080, 92, 8, 1080, 92, 260);
-  sun.addColorStop(0, 'rgba(255,244,210,1)');
-  sun.addColorStop(0.12, 'rgba(255,214,140,0.7)');
-  sun.addColorStop(0.4, 'rgba(255,170,70,0.22)');
-  sun.addColorStop(1, 'rgba(255,140,40,0)');
+  const sun = ctx.createRadialGradient(tod.sun.x, tod.sun.y, 8, tod.sun.x, tod.sun.y, 260);
+  sun.addColorStop(0, tod.sun.inner);
+  sun.addColorStop(0.12, tod.sun.mid);
+  sun.addColorStop(0.4, tod.sun.mid);
+  sun.addColorStop(1, tod.sun.outer);
   ctx.fillStyle = sun;
-  ctx.fillRect(780, 0, 500, 320);
+  ctx.fillRect(Math.max(0, tod.sun.x - 280), 0, 560, 360);
 
   ctx.fillStyle = 'rgba(255,210,160,0.12)';
   for (let i = 0; i < 7; i++) {
     ctx.beginPath();
-    ctx.moveTo(1080, 92);
+    ctx.moveTo(tod.sun.x, tod.sun.y);
     ctx.lineTo(640 + i * 90, 360);
     ctx.lineTo(700 + i * 90, 360);
     ctx.fill();
@@ -290,10 +386,11 @@ export function makePad() {
   ctx.fillRect(0, 300, w, 170);
 
   const ocean = ctx.createLinearGradient(0, 352, 0, 478);
-  ocean.addColorStop(0, '#1a5580');
-  ocean.addColorStop(0.28, '#247094');
-  ocean.addColorStop(0.7, '#1a5a78');
-  ocean.addColorStop(1, '#123e58');
+  const oc = tod.ocean || ['#1a5580', '#247094', '#1a5a78', '#123e58'];
+  ocean.addColorStop(0, oc[0]);
+  ocean.addColorStop(0.28, oc[1]);
+  ocean.addColorStop(0.7, oc[2]);
+  ocean.addColorStop(1, oc[3]);
   ctx.fillStyle = ocean;
   ctx.fillRect(0, 352, w, 126);
   ctx.fillStyle = 'rgba(255,255,255,0.12)';
@@ -406,6 +503,20 @@ export function makePad() {
   ctx.fillText('PIER 7', 40, 572);
   ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.fillText('COASTAL COMPLEX', 40, 588);
+
+  if (tod.stars > 0.3) {
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 90; i++) {
+      ctx.globalAlpha = 0.2 + (i % 5) * 0.12;
+      ctx.fillRect((i * 137) % w, (i * 53) % 280, 1 + (i % 9 === 0 ? 1 : 0), 1);
+    }
+    ctx.globalAlpha = 1;
+  }
+  const flood = ctx.createRadialGradient(742, 280, 8, 742, 280, 180);
+  flood.addColorStop(0, `rgba(255,220,160,${0.18 + tod.stars * 0.2})`);
+  flood.addColorStop(1, 'rgba(255,180,80,0)');
+  ctx.fillStyle = flood;
+  ctx.fillRect(560, 120, 360, 360);
 
   return cv;
 }
@@ -601,13 +712,16 @@ function drawIlt(ctx, x, groundY) {
  * REJECT Falcon cues: lattice grid fins, A-frame landing legs,
  * 3-1 landing-burn language, ASDS circle-X droneship.
  */
-export function makeBooster(deployed = false) {
+export function makeBooster(deployed = false, loadout) {
+  const kit = { ...DEFAULT_LOADOUT, ...(loadout || {}) };
+  const paint = paintSpec(kit.paint);
+  const accent = accentColor(kit.accent);
   const cv = canvas(124, 268);
   const ctx = cv.getContext('2d');
   ctx.translate(62, 10);
 
   const gold = ctx.createLinearGradient(-22, 0, 22, 48);
-  gold.addColorStop(0, '#f3d58a');
+  gold.addColorStop(0, accent);
   gold.addColorStop(0.35, '#d4a43a');
   gold.addColorStop(0.7, '#b47a18');
   gold.addColorStop(1, '#7a4e0e');
@@ -617,16 +731,16 @@ export function makeBooster(deployed = false) {
   ctx.fillRect(-20, 4, 10, 38);
 
   const body = ctx.createLinearGradient(-20, 46, 20, 46);
-  body.addColorStop(0, '#b8c2ca');
-  body.addColorStop(0.28, '#f7fbff');
-  body.addColorStop(0.62, '#e4ebf2');
-  body.addColorStop(1, '#8e979e');
+  body.addColorStop(0, paint.lo);
+  body.addColorStop(0.28, paint.hi);
+  body.addColorStop(0.62, paint.mid);
+  body.addColorStop(1, paint.lo);
   ctx.fillStyle = body;
   ctx.fillRect(-20, 46, 40, 154);
   ctx.fillStyle = 'rgba(20,28,40,0.08)';
   for (let y = 56; y < 188; y += 16) ctx.fillRect(-18, y, 36, 1);
 
-  drawStrakes(ctx, 20, deployed, 54, 150);
+  drawStrakes(ctx, 20, deployed, 54, 150, kit.strakes);
 
   ctx.fillStyle = '#0b0d12';
   ctx.font = 'bold 9px "IBM Plex Mono", ui-monospace, monospace';
@@ -637,19 +751,13 @@ export function makeBooster(deployed = false) {
   ctx.restore();
 
   const copper = ctx.createLinearGradient(-22, 198, 22, 226);
-  copper.addColorStop(0, '#e0b85a');
+  copper.addColorStop(0, accent);
   copper.addColorStop(0.4, '#c48a2a');
   copper.addColorStop(1, '#6a3a0e');
   ctx.fillStyle = copper;
   ctx.fillRect(-22, 198, 44, 18);
 
-  for (let i = 0; i < 7; i++) {
-    const x = -16 + i * 5.4;
-    ctx.fillStyle = '#2b3038';
-    ctx.beginPath();
-    ctx.ellipse(x, 232, 3.2, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  drawEngineBells(ctx, kit.engines, 232);
   return cv;
 }
 
@@ -700,43 +808,36 @@ export function makeHaven() {
 }
 
 /** Climb backdrop. Keep the canvas small — software WebGL maxes out near 2048. */
-export function makeAscentSky() {
+export function makeAscentSky(todId) {
+  const tod = todPalette(todId);
   const w = 640;
   const h = 1024;
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, '#010105');
-  sky.addColorStop(0.08, '#030610');
-  sky.addColorStop(0.2, '#050a18');
-  sky.addColorStop(0.34, '#071428');
-  sky.addColorStop(0.46, '#0c2048');
-  sky.addColorStop(0.58, '#163868');
-  sky.addColorStop(0.7, '#2a6aa0');
-  sky.addColorStop(0.82, '#5aa0d0');
-  sky.addColorStop(0.92, '#9ec8e8');
-  sky.addColorStop(1, '#d0e4f0');
+  tod.sky.forEach(([t, color]) => sky.addColorStop(t, color));
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
   const limb = ctx.createLinearGradient(0, h * 0.34, 0, h * 0.5);
-  limb.addColorStop(0, 'rgba(80,180,255,0)');
-  limb.addColorStop(0.45, 'rgba(255,170,90,0.22)');
-  limb.addColorStop(0.7, 'rgba(90,200,255,0.18)');
-  limb.addColorStop(1, 'rgba(80,180,255,0)');
+  limb.addColorStop(0, tod.limb[0]);
+  limb.addColorStop(0.45, tod.limb[1]);
+  limb.addColorStop(0.7, tod.limb[2]);
+  limb.addColorStop(1, tod.limb[3]);
   ctx.fillStyle = limb;
   ctx.fillRect(0, h * 0.34, w, h * 0.18);
 
   ctx.fillStyle = '#fff';
-  for (let i = 0; i < 340; i++) {
+  const starN = 280 + Math.round(tod.stars * 220);
+  for (let i = 0; i < starN; i++) {
     const y = (i * 97) % Math.floor(h * 0.58);
     const size = 1 + (i % 9 === 0 ? 1.8 : 0);
-    ctx.globalAlpha = 0.2 + (i % 6) * 0.12;
+    ctx.globalAlpha = (0.2 + (i % 6) * 0.12) * (0.35 + tod.stars);
     ctx.fillRect((i * 137) % w, y, size, size);
   }
   ctx.globalAlpha = 1;
 
-  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  ctx.fillStyle = tod.cloud;
   for (let i = 0; i < 10; i++) {
     ctx.beginPath();
     ctx.ellipse((i * 190 + 80) % w, h * 0.78 + (i % 3) * 28, 78, 13, 0.04 * (i % 2 ? 1 : -1), 0, Math.PI * 2);
@@ -752,11 +853,11 @@ export function makeStarfield() {
   const ctx = cv.getContext('2d');
   ctx.fillStyle = '#010105';
   ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 520; i++) {
+  for (let i = 0; i < 1100; i++) {
     const x = (i * 131 + 17) % w;
     const y = (i * 89 + 9) % h;
     const s = i % 13 === 0 ? 2.4 : i % 4 === 0 ? 1.5 : 1;
-    ctx.fillStyle = i % 11 === 0 ? '#c8dcff' : i % 17 === 0 ? '#ffe8c8' : '#fff';
+    ctx.fillStyle = i % 11 === 0 ? '#c8dcff' : i % 17 === 0 ? '#ffe8c8' : i % 23 === 0 ? '#c8a8ff' : '#fff';
     ctx.globalAlpha = 0.28 + (i % 7) * 0.1;
     ctx.fillRect(x, y, s, s);
   }
@@ -770,12 +871,86 @@ export function makeStarfield() {
   return cv;
 }
 
-export function makeCloudSheet(seed = 1) {
+/** Soft galactic band. One canvas — no per-star sprites. */
+export function makeMilkyWay() {
+  const w = 720;
+  const h = 640;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-0.42);
+  const band = ctx.createLinearGradient(0, -90, 0, 90);
+  band.addColorStop(0, 'rgba(180,200,255,0)');
+  band.addColorStop(0.35, 'rgba(200,210,255,0.16)');
+  band.addColorStop(0.5, 'rgba(255,236,220,0.28)');
+  band.addColorStop(0.65, 'rgba(180,160,255,0.16)');
+  band.addColorStop(1, 'rgba(180,200,255,0)');
+  ctx.fillStyle = band;
+  ctx.fillRect(-w, -90, w * 2, 180);
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 240; i++) {
+    ctx.globalAlpha = 0.12 + (i % 6) * 0.08;
+    ctx.fillRect((i * 47) % (w + 80) - w / 2, ((i * 13) % 70) - 35, 1.4, 1.4);
+  }
+  ctx.globalAlpha = 1;
+  return cv;
+}
+
+/** Cosmic dust / nebula. Fades in with altitude. */
+export function makeNebula() {
+  const w = 640;
+  const h = 480;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  const blobs = [
+    [180, 160, 160, 'rgba(90,40,140,0.42)'],
+    [380, 220, 180, 'rgba(40,70,140,0.38)'],
+    [280, 280, 140, 'rgba(160,60,90,0.28)'],
+    [120, 300, 110, 'rgba(40,100,120,0.3)'],
+  ];
+  blobs.forEach(([x, y, r, color]) => {
+    const g = ctx.createRadialGradient(x, y, 8, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, 'rgba(10,8,20,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  return cv;
+}
+
+export function makeHeat() {
+  const cv = canvas(48, 72);
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(24, 56, 4, 24, 28, 34);
+  g.addColorStop(0, 'rgba(255,240,180,0.55)');
+  g.addColorStop(0.4, 'rgba(255,140,40,0.22)');
+  g.addColorStop(1, 'rgba(255,80,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 48, 72);
+  return cv;
+}
+
+export function makeWindDash() {
+  const cv = canvas(28, 6);
+  const ctx = cv.getContext('2d');
+  ctx.strokeStyle = 'rgba(220,236,255,0.85)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(2, 3);
+  ctx.lineTo(24, 3);
+  ctx.stroke();
+  return cv;
+}
+
+export function makeCloudSheet(seed = 1, todId) {
+  const tod = todPalette(todId);
   const w = 640;
   const h = 220;
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillStyle = tod.cloud || 'rgba(255,255,255,0.18)';
   for (let i = 0; i < 14; i++) {
     const x = (i * 97 * seed + 40) % w;
     const y = 40 + (i * 37 * seed) % 120;
@@ -786,47 +961,47 @@ export function makeCloudSheet(seed = 1) {
   return cv;
 }
 
-export function makeHazeBand() {
+export function makeHazeBand(todId) {
+  const tod = todPalette(todId);
   const w = 640;
   const h = 180;
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
   const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, 'rgba(180,200,220,0)');
-  g.addColorStop(0.45, 'rgba(170,190,210,0.22)');
-  g.addColorStop(1, 'rgba(160,180,200,0)');
+  g.addColorStop(0, tod.haze[0]);
+  g.addColorStop(0.45, tod.haze[1]);
+  g.addColorStop(1, tod.haze[2]);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
   return cv;
 }
 
-export function makeOcean() {
+export function makeOcean(todId) {
+  const tod = todPalette(todId);
   const cv = canvas(1280, 720);
   const ctx = cv.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, 720);
-  sky.addColorStop(0, '#04080e');
-  sky.addColorStop(0.28, '#081828');
-  sky.addColorStop(0.5, '#0c2a42');
-  sky.addColorStop(0.68, '#0e3a55');
-  sky.addColorStop(1, '#072838');
+  tod.sky.forEach(([t, color]) => sky.addColorStop(Math.min(1, t * 0.7 + 0.05), color));
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, 1280, 720);
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let i = 0; i < 72; i++) {
+  const starN = 40 + Math.round(tod.stars * 80);
+  for (let i = 0; i < starN; i++) {
     ctx.globalAlpha = 0.22 + (i % 5) * 0.12;
     ctx.fillRect((i * 97) % 1280, (i * 53) % 360, 2, 2);
   }
   ctx.globalAlpha = 1;
-  const moon = ctx.createRadialGradient(980, 90, 4, 980, 90, 90);
-  moon.addColorStop(0, 'rgba(255,246,220,0.7)');
-  moon.addColorStop(1, 'rgba(255,220,160,0)');
+  const moon = ctx.createRadialGradient(tod.sun.x * 0.9, tod.sun.y, 4, tod.sun.x * 0.9, tod.sun.y, 90);
+  moon.addColorStop(0, tod.sun.inner);
+  moon.addColorStop(1, tod.sun.outer);
   ctx.fillStyle = moon;
-  ctx.fillRect(880, 0, 220, 200);
+  ctx.fillRect(Math.max(0, tod.sun.x * 0.9 - 120), 0, 240, 220);
   const sea = ctx.createLinearGradient(0, 400, 0, 720);
-  sea.addColorStop(0, '#0c4a64');
-  sea.addColorStop(0.2, '#0a3a52');
-  sea.addColorStop(0.55, '#072c40');
-  sea.addColorStop(1, '#03141e');
+  const oc = tod.ocean;
+  sea.addColorStop(0, oc[0]);
+  sea.addColorStop(0.2, oc[1]);
+  sea.addColorStop(0.55, oc[2]);
+  sea.addColorStop(1, oc[3]);
   ctx.fillStyle = sea;
   ctx.fillRect(0, 400, 1280, 320);
   ctx.fillStyle = 'rgba(180,220,240,0.07)';
@@ -998,14 +1173,14 @@ export function makeSpark() {
   return makeDot('#ffb24a', 10, 10);
 }
 
-export function installTextures(scene) {
+export function installTextures(scene, todId = 'dawn', loadout) {
   const add = (key, cv) => {
     if (scene.textures.exists(key)) scene.textures.remove(key);
     scene.textures.addCanvas(key, cv);
   };
-  add('rocket', makeRocket(true));
-  add('booster', makeBooster(false));
-  add('booster-glide', makeBooster(true));
+  add('rocket', makeRocket(true, null, loadout));
+  add('booster', makeBooster(false, loadout));
+  add('booster-glide', makeBooster(true, loadout));
   add('upper-stage', makeUpperStage());
   add('fairing-l', makeFairingHalf(-1));
   add('fairing-r', makeFairingHalf(1));
@@ -1014,18 +1189,21 @@ export function installTextures(scene) {
   add('soot', makeDot('#6a3a18', 36, 36));
   add('smoke-bank', makeSmokeBank());
   MISSIONS.forEach((mission) => {
-    add(`rocket-${mission.id}`, makeRocket(true, mission));
+    add(`rocket-${mission.id}`, makeRocket(true, mission, loadout));
   });
-  add('pad', makePad());
-  add('ascent-sky', makeAscentSky());
+  add('rocket-equipped', makeRocket(true, null, loadout));
+  add('pad', makePad(todId));
+  add('ascent-sky', makeAscentSky(todId));
   add('stars', makeStarfield());
-  add('clouds-far', makeCloudSheet(1));
-  add('clouds-near', makeCloudSheet(2));
-  add('haze', makeHazeBand());
+  add('milky', makeMilkyWay());
+  add('nebula', makeNebula());
+  add('clouds-far', makeCloudSheet(1, todId));
+  add('clouds-near', makeCloudSheet(2, todId));
+  add('haze', makeHazeBand(todId));
   add('sep-ring', makeSepShard('ring'));
   add('sep-strut', makeSepShard('strut'));
   add('sep-plate', makeSepShard('plate'));
-  add('ocean', makeOcean());
+  add('ocean', makeOcean(todId));
   add('jacklyn', makeHaven());
   add('bird', makeHazard('bird'));
   add('balloon', makeHazard('balloon'));
@@ -1036,5 +1214,31 @@ export function installTextures(scene) {
   add('pickup-boost', makePickup('boost'));
   add('spark', makeSpark());
   add('steam', makeDot('rgba(230,240,255,0.9)', 16, 16));
+  add('heat', makeHeat());
+  add('wind', makeWindDash());
   add('deck-pad', canvas(280, 32));
+}
+
+export function refreshTodTextures(scene, todId) {
+  const add = (key, cv) => {
+    if (scene.textures.exists(key)) scene.textures.remove(key);
+    scene.textures.addCanvas(key, cv);
+  };
+  add('pad', makePad(todId));
+  add('ascent-sky', makeAscentSky(todId));
+  add('clouds-far', makeCloudSheet(1, todId));
+  add('clouds-near', makeCloudSheet(2, todId));
+  add('haze', makeHazeBand(todId));
+  add('ocean', makeOcean(todId));
+}
+
+export function refreshLoadoutTextures(scene, loadout, payload) {
+  const add = (key, cv) => {
+    if (scene.textures.exists(key)) scene.textures.remove(key);
+    scene.textures.addCanvas(key, cv);
+  };
+  add('rocket', makeRocket(true, payload, loadout));
+  add('rocket-equipped', makeRocket(true, payload, loadout));
+  add('booster', makeBooster(false, loadout));
+  add('booster-glide', makeBooster(true, loadout));
 }

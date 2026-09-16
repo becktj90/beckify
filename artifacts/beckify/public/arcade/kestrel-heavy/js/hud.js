@@ -54,6 +54,7 @@ export function renderHud(snapshot) {
     't-thr': snapshot.throttle,
     't-fuel': snapshot.fuel,
     't-shield': snapshot.shield,
+    't-health': snapshot.health,
     't-stage': snapshot.stage,
     't-score': snapshot.score,
     't-best': snapshot.best,
@@ -134,6 +135,7 @@ export function renderHud(snapshot) {
   if (snapshot.diff) document.body.dataset.diff = snapshot.diff;
   document.body.classList.toggle('is-kid', snapshot.diff === 'KID');
   renderTape(snapshot.tapeId, snapshot.nextTapeId);
+  renderHealth(snapshot);
 }
 
 export function setSummaryWhy(text) {
@@ -160,7 +162,7 @@ export function renderTape(activeId, nextId) {
   });
 }
 
-const SHEET_IDS = ['ng-menu', 'ng-missions', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'];
+const SHEET_IDS = ['ng-menu', 'ng-missions', 'ng-hangar', 'ng-settings', 'ng-howto', 'ng-pause', 'ng-summary'];
 
 export function syncPlayfieldPointers() {
   const sheetOpen = SHEET_IDS.some((id) => {
@@ -211,9 +213,11 @@ export function bindChrome(handlers) {
     ['ng-play', handlers.play],
     ['ng-hold', handlers.hold],
     ['ng-open-missions', handlers.openMissions],
+    ['ng-open-hangar', handlers.openHangar],
     ['ng-open-settings', handlers.toggleSettings],
     ['ng-open-howto', handlers.openHowto],
     ['ng-missions-back', handlers.backToMenu],
+    ['ng-hangar-back', handlers.backToMenu],
     ['ng-howto-back', handlers.backToMenu],
     ['ng-settings-back', handlers.closeSettings],
     ['ng-pause-resume', handlers.togglePause],
@@ -358,6 +362,51 @@ export function bindChrome(handlers) {
   syncPlayfieldPointers();
 }
 
+export function renderHealth(snapshot) {
+  const bar = el('ng-health');
+  const fill = el('ng-health-fill');
+  const label = el('t-health');
+  if (!bar) return;
+  const max = Math.max(1, Number(snapshot.healthMax) || 100);
+  const hp = Math.max(0, Math.min(max, Number(snapshot.health) || 0));
+  const pct = Math.round((hp / max) * 100);
+  bar.setAttribute('aria-valuenow', String(pct));
+  bar.setAttribute('aria-valuemax', '100');
+  bar.dataset.kind = snapshot.healthKind || (pct <= 0 ? 'fail' : pct <= 34 ? 'warn' : 'ok');
+  bar.hidden = snapshot.hideHealth === true;
+  if (fill) fill.style.width = `${pct}%`;
+  if (label && snapshot.healthText != null) label.textContent = snapshot.healthText;
+  const chip = el('t-health-chip');
+  if (chip) chip.textContent = snapshot.healthText || `${Math.round(pct)}`;
+}
+
+export function setHangar(settings, catalog, combo, onEquip) {
+  const count = el('ng-hangar-count');
+  if (count) count.textContent = `${Number(combo || 0).toLocaleString()} combinations`;
+  catalog.LOADOUT_CATS.forEach((cat) => {
+    const row = el(`hangar-${cat}`);
+    if (!row) return;
+    const unlocks = settings.unlockedParts?.[cat] || [];
+    const equipped = settings.loadout?.[cat];
+    row.querySelectorAll('[data-part]').forEach((btn) => {
+      const id = btn.getAttribute('data-part');
+      const open = unlocks.includes(id);
+      btn.classList.toggle('is-active', equipped === id);
+      btn.classList.toggle('is-locked', !open);
+      btn.setAttribute('aria-pressed', equipped === id ? 'true' : 'false');
+      btn.setAttribute('aria-disabled', open ? 'false' : 'true');
+      if (!btn._bound) {
+        btn._bound = true;
+        btn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onEquip(cat, id);
+        });
+      }
+    });
+  });
+}
+
 export function setMissionButtons(settings, onPick) {
   document.querySelectorAll('[data-mission]').forEach((btn) => {
     const id = btn.getAttribute('data-mission');
@@ -459,8 +508,14 @@ export function setSummaryBreakdown(ascent, jacklyn, delta, nextLabel) {
 export function setCardFlight(flight) {
   const title = el('ng-card-flight');
   const blurb = el('ng-card-blurb');
+  const tod = el('ng-card-tod');
   if (title) title.textContent = `${flight.id} · ${flight.payload}`;
   if (blurb) blurb.textContent = flight.blurb || '';
+  if (tod) {
+    const label = flight.todLabel || flight.tod || '';
+    tod.textContent = label ? `Pier 7 · ${label}` : '';
+    tod.hidden = !label;
+  }
 }
 
 export function isEmbedded() {

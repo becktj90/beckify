@@ -3,7 +3,7 @@
  *
  * Difficulty scheme (documented for the PR):
  *   KID / CADET / PAD RAT is the skill slider *inside* a mission.
- *   KH-n only changes payload, fairing mark, Haven flavor, and a light spawn nudge.
+ *   KH-n only changes payload, fairing mark, Haven flavor, time of day, and a light spawn nudge.
  *   Completing Haven (soft, salvage, or splash — not RUD) unlocks the next KH-n.
  */
 export const MISSIONS = [
@@ -13,6 +13,8 @@ export const MISSIONS = [
     mark: 'AES',
     accent: '#3ec6ff',
     blurb: 'Demo stack. Prove the corridor.',
+    tod: 'dawn',
+    todLabel: 'Dawn',
     spawnMul: 1,
     hazards: ['bird', 'bird', 'balloon'],
     lzOffset: -70,
@@ -30,6 +32,8 @@ export const MISSIONS = [
     mark: 'EMB',
     accent: '#ff7a3c',
     blurb: 'Twin weather-watch microsats. Land the booster.',
+    tod: 'noon',
+    todLabel: 'Noon',
     spawnMul: 1.08,
     hazards: ['balloon', 'ice', 'bird'],
     lzOffset: 0,
@@ -47,6 +51,8 @@ export const MISSIONS = [
     mark: 'HBE',
     accent: '#ffcf5d',
     blurb: 'Coastal imaging sat. Corridor gets busy.',
+    tod: 'golden',
+    todLabel: 'Golden hour',
     spawnMul: 1.16,
     hazards: ['ice', 'balloon', 'debris'],
     lzOffset: 80,
@@ -64,6 +70,8 @@ export const MISSIONS = [
     mark: 'NGL',
     accent: '#b7abff',
     blurb: 'Comms array. Tight TVC.',
+    tod: 'dusk',
+    todLabel: 'Dusk',
     spawnMul: 1.24,
     hazards: ['debris', 'ice', 'ice'],
     lzOffset: -40,
@@ -81,6 +89,8 @@ export const MISSIONS = [
     mark: 'LUT',
     accent: '#7dffb0',
     blurb: 'Tug + cargo. Long climb, same pad.',
+    tod: 'night',
+    todLabel: 'Night',
     spawnMul: 1.32,
     hazards: ['debris', 'debris', 'ice', 'balloon'],
     lzOffset: 50,

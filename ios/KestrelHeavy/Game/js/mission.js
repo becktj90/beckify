@@ -28,6 +28,16 @@ import {
   corridorVisibleSpan,
   dashRail,
 } from './corridor.js';
+import { applyHit, applyScrape, healthKind, healthMaxFor } from './health.js';
+import {
+  LOADOUT_CATS,
+  comboCount,
+  grantPickupUnlock,
+  isPartUnlocked,
+  mergeUnlocks,
+} from './loadout.js';
+import { liveCameraTop, spawnYAboveCamera, SPAWN } from './spawn.js';
+import { missionTod } from './tod.js';
 import AudioApi from './audio.js';
 import {
   bindChrome,
@@ -39,6 +49,7 @@ import {
   setBanner,
   setCardFlight,
   setDifficultyButtons,
+  setHangar,
   setMissionButtons,
   setOverlay,
   setSummaryBreakdown,
@@ -60,7 +71,7 @@ import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isBoosting, se
 import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, phaseChip, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
-import { installTextures } from './textures.js';
+import { installTextures, refreshLoadoutTextures, refreshTodTextures } from './textures.js';
 import {
   bindFullscreenChrome,
   exitNativeFullscreen,
@@ -123,7 +134,7 @@ export default class MissionScene extends Phaser.Scene {
       saveSettings(this.settings);
     }
 
-    installTextures(this);
+    installTextures(this, this.currentFlight().tod, this.settings.loadout);
     this.matter.world.setGravity(0, 0);
     this.matter.world.setBounds(-400, CAM.worldTop, W + 800, CAM.worldHeight, 32, false, false, false, false);
 
@@ -131,6 +142,8 @@ export default class MissionScene extends Phaser.Scene {
     this.bgWash = this.add.graphics().setDepth(-3);
     this.paintSkyWash(0);
     this.stars = this.add.image(W / 2, -2200, 'stars').setDepth(-2).setDisplaySize(W + 420, 2800).setAlpha(0);
+    this.milky = this.add.image(W / 2, -2400, 'milky').setDepth(-1.8).setDisplaySize(W + 520, 1600).setAlpha(0).setBlendMode('ADD');
+    this.nebula = this.add.image(W / 2, -2000, 'nebula').setDepth(-1.7).setDisplaySize(W + 480, 1400).setAlpha(0).setBlendMode('ADD');
     this.bgSky = this.add.image(W / 2, -1480, 'ascent-sky').setDepth(-1).setDisplaySize(W, 4400);
     this.cloudsFar = this.add.image(W / 2, 80, 'clouds-far').setDepth(-0.6).setDisplaySize(W + 120, 260).setAlpha(0.7);
     this.cloudsNear = this.add.image(W / 2, 220, 'clouds-near').setDepth(-0.4).setDisplaySize(W + 200, 280).setAlpha(0.55);
@@ -256,6 +269,27 @@ export default class MissionScene extends Phaser.Scene {
     } catch {
       this.steam = noopEmitter;
     }
+    try {
+      this.windFx = this.add.particles(0, 0, 'wind', {
+        lifespan: { min: 480, max: 900 },
+        speedX: { min: 40, max: 120 },
+        speedY: { min: -18, max: 18 },
+        scale: { start: 0.9, end: 0.2 },
+        emitting: false,
+        frequency: 28,
+        quantity: 1,
+        alpha: { start: 0.55, end: 0 },
+      });
+      this.windFx.setDepth(3);
+    } catch {
+      this.windFx = noopEmitter;
+    }
+    this.heat = this.add.image(PAD_ROCKET_X, PAD_ROCKET_Y + 118, 'heat')
+      .setDepth(5.5)
+      .setBlendMode('ADD')
+      .setAlpha(0)
+      .setVisible(true);
+    this.windGfx = this.add.graphics().setDepth(3.2);
 
     this.hazards = [];
     this.pickups = [];
@@ -297,6 +331,7 @@ export default class MissionScene extends Phaser.Scene {
       restart: () => this.restartMission(),
       nextFlight: () => this.flyNextMission(),
       openMissions: () => this.openScreen('missions'),
+      openHangar: () => this.openHangar(),
       openHowto: () => this.openScreen('howto'),
       backToMenu: () => this.backToMenu(),
       closeSettings: () => this.closeSettings(),
@@ -323,6 +358,7 @@ export default class MissionScene extends Phaser.Scene {
 
     setDifficultyButtons(this.settings.difficulty, (mode) => this.setDifficulty(mode));
     setMissionButtons(this.settings, (id) => this.setMission(id));
+    this.refreshHangar();
     syncSettingsForm(this.settings);
     const form = document.getElementById('ng-settings');
     if (form) {
@@ -401,6 +437,7 @@ export default class MissionScene extends Phaser.Scene {
       fuel: FUEL_MAX,
       throttle: 0,
       shield: 0,
+      health: healthMaxFor(this.settings.difficulty),
       overdrive: 0,
       grace: DIFFICULTY[this.settings.difficulty].graceSec,
       altitudeKm: 0,
@@ -636,7 +673,7 @@ export default class MissionScene extends Phaser.Scene {
     this.jacklyn.setVisible(false);
     this.hideLandingFx();
     this.parkRecovery();
-    this.applyRocketSkin();
+    this.applyLook();
     this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y);
     this.rocket.setVelocity(0, 0);
     this.rocket.setAngle(0);
@@ -700,7 +737,7 @@ export default class MissionScene extends Phaser.Scene {
     this.jacklyn.setVisible(false);
     this.hideLandingFx();
     this.parkRecovery();
-    this.applyRocketSkin();
+    this.applyLook();
     this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y);
     this.rocket.setAngle(0);
     this.rocket.setVelocity(0, 0);
@@ -871,6 +908,7 @@ export default class MissionScene extends Phaser.Scene {
     else if (this.status === 'JACKLYN') this.updateJacklyn(dt);
     if (this.inFlight()) this.syncScience(dt);
     this.updateSkyLayers();
+    this.updateFlightFx(dt);
     this.updateCorridor(dt);
     this.updateSepZone();
     this.updateFloaters(dt);
@@ -951,6 +989,7 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setAngle(clamp(this.rocket.body.velocity.x * 3.6 + axis * 5.2, -16, 16));
     this.enforceCorridor(dt);
     if (this.status !== 'ASCENT') return;
+    this.emitWind(mode.wind || 0);
 
     this.bgPad.setVisible(this.rocket.y > 80);
     const zoomStart = this.isCoarsePointer() ? CAM.ascentMobile : CAM.ascentStart;
@@ -1519,9 +1558,10 @@ export default class MissionScene extends Phaser.Scene {
     const mode = DIFFICULTY[this.settings.difficulty];
     const mix = this.currentFlight().hazards || ['bird', 'balloon', 'ice'];
     const kind = this.session.altitudeKm < 8 ? pick(['bird', 'balloon', mix[0]]) : pick(mix);
-    const edge = corridorEdge(this.rocket.x, this.rocket.y);
+    const camTop = liveCameraTop(this.cameras.main, this.rocket.y, CAM.lookAheadY);
+    const y = spawnYAboveCamera(camTop, SPAWN.leadMin, SPAWN.leadMax);
+    const edge = corridorEdge(this.rocket.x, y);
     const x = clamp(this.rocket.x + rand(-200, 200), edge.left + 24, edge.right - 24);
-    const y = this.rocket.y - rand(420, 680);
     const img = this.matter.add.image(x, y, kind, null, {
       isSensor: true,
       label: `hazard-${kind}`,
@@ -1536,9 +1576,10 @@ export default class MissionScene extends Phaser.Scene {
 
   spawnPickup(kind) {
     const type = kind || pick(PICKUP_TYPES);
-    const edge = corridorEdge(this.rocket.x, this.rocket.y);
+    const camTop = liveCameraTop(this.cameras.main, this.rocket.y, CAM.lookAheadY);
+    const y = spawnYAboveCamera(camTop, SPAWN.pickupLeadMin, SPAWN.pickupLeadMax);
+    const edge = corridorEdge(this.rocket.x, y);
     const x = clamp(this.rocket.x + rand(-140, 140), edge.left + 36, edge.right - 36);
-    const y = this.rocket.y - rand(240, 380);
     const img = this.matter.add.image(x, y, `pickup-${type}`, null, {
       isSensor: true,
       label: `pickup-${type}`,
@@ -1575,33 +1616,43 @@ export default class MissionScene extends Phaser.Scene {
     }
     const kind = String(label || obj.body?.label || obj.label || '').replace(/^hazard-/, '');
     const atMaxQ = this.session.tClock >= PACE.MAXQ - 4 && this.session.tClock <= PACE.MAXQ + 8;
-    if (this.session.shield > 0) {
-      this.session.shield -= 1;
-      obj.destroy();
+    const result = applyHit(this.session, kind, this.settings.difficulty);
+    this.session.health = result.health;
+    this.session.shield = result.shield;
+    obj.destroy();
+    if (result.kind === 'shield') {
       AudioApi.play('shield', this.settings);
       this.callout('shield-hit', { banner: 'AERO SHIELD ABSORBED THE HIT', kind: 'info', holdMs: 1400 });
       this.session.combo = 0;
       return;
     }
-    if (!mode.allowFail) {
-      obj.destroy();
+    if (result.kind === 'kid') {
       this.session.combo = 0;
       AudioApi.play('hit', this.settings);
-      this.callout('close-call', { banner: 'CLOSE CALL — KID mode keeps you flying', kind: 'warn', holdMs: 900 });
+      this.callout('close-call', {
+        banner: `GRAZE — INT ${Math.round(result.health)} · KID keeps you flying`,
+        kind: 'warn',
+        holdMs: 900,
+      });
       return;
     }
     this.session.hits += 1;
-    obj.destroy();
     if (!this.settings.reducedFlashes && !this.settings.reducedMotion) {
       this.cameras.main.flash(80, 40, 8, 8);
     }
     AudioApi.play('hit', this.settings);
-    if (this.session.hits >= (this.settings.difficulty === 'PAD_RAT' ? 1 : 2)) {
+    if (result.kind === 'lethal' && mode.allowFail) {
+      this.callout('health-lethal', { banner: 'INT 0 — STRUCTURAL LIMIT', kind: 'fail', holdMs: 900 });
       this.failFlight(hazardAbortId(kind, atMaxQ));
-    } else {
-      this.session.combo = 0;
-      this.callout('struct-warn', { banner: 'STRUCTURAL HIT — one more and it is RUD', kind: 'fail', holdMs: 1600 });
+      return;
     }
+    this.session.combo = 0;
+    const pct = Math.round(result.health);
+    this.callout('health-graze', {
+      banner: `GRAZE — INT ${pct}  ·  not lethal`,
+      kind: 'warn',
+      holdMs: 1400,
+    });
   }
 
   collectPickup(obj) {
@@ -1621,14 +1672,35 @@ export default class MissionScene extends Phaser.Scene {
       AudioApi.play('shield', this.settings);
       this.callout('pickup-shield', { banner: 'AERO SHIELD', kind: 'info', holdMs: 900 });
       if (this.currentFlight().objective?.id === 'shield') this.completeObjective();
+      const unlocked = grantPickupUnlock(this.settings, 'shield');
+      if (unlocked) {
+        mergeUnlocks(this.settings);
+        saveSettings(this.settings);
+        this.refreshHangar();
+        setBanner(`HANGAR — ${unlocked.id} unlocked`, 'go', 1400);
+      }
     } else if (kind === 'fuel') {
       this.session.fuel = Math.min(FUEL_MAX, this.session.fuel + 28);
       AudioApi.play('fuel', this.settings);
       this.callout('pickup-fuel', { banner: 'LOX TOP-OFF', kind: 'info', holdMs: 900 });
+      const unlocked = grantPickupUnlock(this.settings, 'fuel');
+      if (unlocked) {
+        mergeUnlocks(this.settings);
+        saveSettings(this.settings);
+        this.refreshHangar();
+        setBanner(`HANGAR — ${unlocked.id} unlocked`, 'go', 1400);
+      }
     } else {
       this.session.overdrive = OVERDRIVE_SEC;
       AudioApi.play('overdrive', this.settings);
       this.callout('pickup-boost', { banner: 'CORE KICK', kind: 'go', holdMs: 900 });
+      const unlocked = grantPickupUnlock(this.settings, 'boost');
+      if (unlocked) {
+        mergeUnlocks(this.settings);
+        saveSettings(this.settings);
+        this.refreshHangar();
+        setBanner(`HANGAR — ${unlocked.id} unlocked`, 'go', 1400);
+      }
     }
   }
 
@@ -1661,7 +1733,7 @@ export default class MissionScene extends Phaser.Scene {
   flashPad(alpha) {
     if (!this.padGlow || this.settings.reducedFlashes) return;
     this.padGlow.clear();
-    this.padGlow.fillStyle(0xff9a28, alpha);
+    this.padGlow.fillStyle(missionTod(this.currentFlight()).padGlow, alpha);
     this.padGlow.fillEllipse(PAD_ROCKET_X, PAD_ROCKET_Y + 122, 220, 56);
     this.time.delayedCall(this.settings.reducedMotion ? 80 : 160, () => {
       if (this.padGlow) this.padGlow.clear();
@@ -1671,8 +1743,16 @@ export default class MissionScene extends Phaser.Scene {
   emitPlume(power) {
     if (this.settings.reducedMotion) return;
     const space = (this.session?.altitudeKm || 0) > 28 || this.status === 'SEP' || this.status === 'JACKLYN';
-    const n = power > 0.7 ? (space ? 11 : 14) : 5;
+    const twr = this.session?.science?.twr || power;
+    const strength = clamp(Math.max(power, twr * 0.28), 0, 1.6);
+    const n = strength > 0.7 ? (space ? 8 + Math.round(strength * 6) : 10 + Math.round(strength * 8)) : 3 + Math.round(strength * 4);
     this.plume.emitParticleAt(this.rocket.x, this.rocket.y + 108, n);
+    if (this.heat) {
+      this.heat.setPosition(this.rocket.x, this.rocket.y + 112);
+      this.heat.setAlpha(0.25 + strength * 0.55);
+      this.heat.setScale(0.7 + strength * 0.9, 0.9 + strength * 1.15);
+      this.heat.setAngle((this.nowSec * 40) % 8 - 4);
+    }
     if (this.bloomFx && power > 0.75 && (this.status === 'JACKLYN' || this.status === 'PRELAUNCH')) {
       this.bloomFx.emitParticleAt(this.rocket.x, this.rocket.y + 102, this.settings.reducedMotion ? 2 : 6);
     }
@@ -1685,6 +1765,50 @@ export default class MissionScene extends Phaser.Scene {
     if (this.settings.reducedMotion || !this.rcsFx) return;
     this.rcsFx.emitParticleAt(this.rocket.x + 22, this.rocket.y - 96, 3);
     this.rcsFx.emitParticleAt(this.rocket.x - 22, this.rocket.y - 96, 3);
+  }
+
+  emitWind(wind, gust) {
+    if (!this.rocket) return;
+    const power = Number(wind) || 0;
+    if (this.windGfx) this.windGfx.clear();
+    if (this.settings.reducedMotion || power < 0.08) return;
+    const g = gust == null ? Math.sin(this.nowSec * 0.9) * power : gust;
+    const dir = g >= 0 ? 1 : -1;
+    if (this.status === 'ASCENT') {
+      const lean = clamp(this.rocket.angle + dir * power * 4, -18, 18);
+      this.rocket.setAngle(lean);
+      this.rocket.applyForce({ x: g * 0.0012, y: 0 });
+    }
+    if (this.windFx) {
+      if (this.windFx.speedX !== undefined) {
+        this.windFx.speedX = dir >= 0 ? { min: 40, max: 120 } : { min: -120, max: -40 };
+      }
+      const n = this.isCoarsePointer() ? 1 : 2;
+      this.windFx.emitParticleAt(this.rocket.x - dir * 78, this.rocket.y - 10, n);
+      this.windFx.emitParticleAt(this.rocket.x - dir * 52, this.rocket.y + 36, 1);
+    }
+    if (this.windGfx) {
+      this.windGfx.lineStyle(2, 0xc8e8ff, 0.22 + power * 0.4);
+      for (let i = 0; i < 4; i++) {
+        const y = this.rocket.y - 70 + i * 38;
+        const x0 = this.rocket.x - dir * (86 + i * 10);
+        this.windGfx.lineBetween(x0, y, x0 + dir * (46 + power * 36), y + 3);
+      }
+    }
+  }
+
+  updateFlightFx(dt) {
+    if (this.heat) {
+      const thrusting = (this.session?.throttle || 0) > 0.08 && this.inFlight();
+      if (!thrusting || this.settings.reducedMotion) {
+        this.heat.setAlpha(Math.max(0, (this.heat.alpha || 0) - dt * 3.2));
+      } else {
+        this.heat.setPosition(this.rocket.x, this.rocket.y + 112);
+      }
+    }
+    if (this.windGfx && (this.status === 'MENU' || this.status === 'SUMMARY' || this.status === 'SEP')) {
+      this.windGfx.clear();
+    }
   }
 
   emitBloom() {
@@ -1796,8 +1920,10 @@ export default class MissionScene extends Phaser.Scene {
     const nxt = reason === 'rud' ? null : nextMissionId(this.currentFlight().id);
     const unlockedNext = nxt && !this.settings.unlockedMissions.includes(nxt);
     if (unlockedNext) this.settings.unlockedMissions.push(nxt);
+    mergeUnlocks(this.settings);
     saveSettings(this.settings);
     setMissionButtons(this.settings, (id) => this.setMission(id));
+    this.refreshHangar();
     if (typeof window.recordGameScore === 'function') {
       window.recordGameScore('kestrel-heavy', points);
     }
@@ -1884,6 +2010,13 @@ export default class MissionScene extends Phaser.Scene {
       return;
     }
     this.session.corridorHold = (this.session.corridorHold || 0) + dt;
+    const scrape = applyScrape(this.session, dt, this.settings.difficulty);
+    this.session.health = scrape.health;
+    this.callout('health-scrape', { banner: 'CORRIDOR SCRAPE — steer back in', kind: 'fail', holdMs: 1200 });
+    if (scrape.kind === 'lethal') {
+      this.failFlight('corridorEdge');
+      return;
+    }
     this.callout('corridor-edge', { banner: 'CORRIDOR EDGE — steer back in', kind: 'fail', holdMs: 1200 });
     if (this.session.corridorHold >= abortHoldFor(this.settings.difficulty)) {
       this.failFlight('corridorEdge');
@@ -1961,20 +2094,23 @@ export default class MissionScene extends Phaser.Scene {
   paintSkyWash(spaceT) {
     if (!this.bgWash) return;
     const t = clamp(spaceT, 0, 1);
+    const wash = missionTod(this.currentFlight()).wash;
     this.bgWash.clear();
-    this.bgWash.fillStyle(0x010105, 1);
+    this.bgWash.fillStyle(wash.space, 1);
     this.bgWash.fillRect(-400, CAM.worldTop, W + 800, CAM.worldHeight * 0.62);
-    this.bgWash.fillStyle(t > 0.55 ? 0x050814 : 0x0a2040, 1);
+    this.bgWash.fillStyle(t > 0.55 ? wash.space : wash.mid, 1);
     this.bgWash.fillRect(-400, -1800, W + 800, 1600);
-    this.bgWash.fillStyle(t > 0.78 ? 0x071018 : 0x2a5a8c, 1);
+    this.bgWash.fillStyle(t > 0.78 ? wash.near : wash.horizon, 1);
     this.bgWash.fillRect(-400, -220, W + 800, 520);
-    this.bgWash.fillStyle(0x6fb4e8, Math.max(0, 0.9 - t * 0.9));
+    this.bgWash.fillStyle(wash.low, Math.max(0, 0.9 - t * 0.9));
     this.bgWash.fillRect(-400, 300, W + 800, 500);
   }
 
   showAscentSky(on) {
     if (this.bgSky) this.bgSky.setVisible(on);
     if (this.stars) this.stars.setVisible(on);
+    if (this.milky) this.milky.setVisible(on);
+    if (this.nebula) this.nebula.setVisible(on);
     if (this.cloudsFar) this.cloudsFar.setVisible(on);
     if (this.cloudsNear) this.cloudsNear.setVisible(on);
     if (this.hazeBand) this.hazeBand.setVisible(on);
@@ -2005,6 +2141,16 @@ export default class MissionScene extends Phaser.Scene {
       this.stars.setAlpha(Math.max(space * 0.98, sep ? 1 : 0));
       this.stars.setPosition(this.rocket.x * 0.04 + W / 2, this.rocket.y * 0.08 - 1800);
       this.stars.setDisplaySize(W + 520, 3200);
+    }
+    if (this.milky && this.rocket) {
+      const milkyA = sep ? 0.72 : clamp((space - 0.18) / 0.55, 0, 0.7);
+      this.milky.setAlpha(milkyA);
+      this.milky.setPosition(this.rocket.x * 0.03 + W / 2, this.rocket.y * 0.05 - 2100);
+    }
+    if (this.nebula && this.rocket) {
+      const dust = sep ? 0.55 : clamp((space - 0.28) / 0.5, 0, 0.5);
+      this.nebula.setAlpha(dust);
+      this.nebula.setPosition(this.rocket.x * 0.05 + W / 2, this.rocket.y * 0.07 - 1900);
     }
     if (this.bgSky && this.rocket) {
       this.bgSky.y = -1480 + this.rocket.y * 0.06;
@@ -2053,6 +2199,7 @@ export default class MissionScene extends Phaser.Scene {
     this.jacklyn.setPosition(x, this.jacklyn.y);
     this.deck.setPosition(x, this.jacklyn.y - 12);
     this.rocket.applyForce({ x: gust * 0.0034, y: 0 });
+    this.emitWind(wind, gust);
     if (this.bgOcean) {
       this.bgOcean.x = W / 2 + swell * 0.15;
     }
@@ -2113,7 +2260,14 @@ export default class MissionScene extends Phaser.Scene {
       AudioApi.setPaused(false);
       setOverlay('ng-pause', false);
     } else if (this.status === 'MENU') {
-      showScreen(this.screen === 'missions' ? 'ng-missions' : this.screen === 'howto' ? 'ng-howto' : 'ng-menu');
+      const sheet = this.screen === 'missions'
+        ? 'ng-missions'
+        : this.screen === 'howto'
+          ? 'ng-howto'
+          : this.screen === 'hangar'
+            ? 'ng-hangar'
+            : 'ng-menu';
+      showScreen(sheet);
     } else if (this.paused) {
       setOverlay('ng-pause', true);
     }
@@ -2135,7 +2289,31 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (name === 'missions') showScreen('ng-missions');
     else if (name === 'howto') showScreen('ng-howto');
+    else if (name === 'hangar') showScreen('ng-hangar');
     else showScreen('ng-menu');
+  }
+
+  openHangar() {
+    mergeUnlocks(this.settings);
+    this.refreshHangar();
+    this.openScreen('hangar');
+  }
+
+  refreshHangar() {
+    setHangar(this.settings, { LOADOUT_CATS }, comboCount(), (cat, id) => this.equipPart(cat, id));
+  }
+
+  equipPart(cat, id) {
+    mergeUnlocks(this.settings);
+    if (!isPartUnlocked(this.settings.unlockedParts, cat, id)) {
+      setBanner('LOCKED — fly KH-n, score, or grab pickups to unlock', 'warn', 1800);
+      return;
+    }
+    this.settings.loadout = { ...this.settings.loadout, [cat]: id };
+    saveSettings(this.settings);
+    this.applyLook();
+    this.refreshHangar();
+    AudioApi.play('ui', this.settings);
   }
 
   backToMenu() {
@@ -2211,9 +2389,24 @@ export default class MissionScene extends Phaser.Scene {
     return getMission(this.settings.currentMission || FIRST_MISSION);
   }
 
+  applyLook() {
+    const flight = this.currentFlight();
+    refreshTodTextures(this, flight.tod);
+    refreshLoadoutTextures(this, this.settings.loadout, flight);
+    if (this.bgPad) this.bgPad.setTexture('pad');
+    if (this.bgSky) this.bgSky.setTexture('ascent-sky');
+    if (this.cloudsFar) this.cloudsFar.setTexture('clouds-far');
+    if (this.cloudsNear) this.cloudsNear.setTexture('clouds-near');
+    if (this.hazeBand) this.hazeBand.setTexture('haze');
+    if (this.bgOcean) this.bgOcean.setTexture('ocean');
+    this.applyRocketSkin();
+    this.paintSkyWash(this.status === 'SEP' ? 1 : 0);
+  }
+
   applyRocketSkin() {
-    const key = `rocket-${this.currentFlight().id}`;
-    this.rocket.setTexture(this.textures.exists(key) ? key : 'rocket');
+    const key = this.textures.exists('rocket-equipped') ? 'rocket-equipped' : 'rocket';
+    if (this.status === 'JACKLYN') return;
+    this.rocket.setTexture(key);
     this.bindRocketBody();
   }
 
@@ -2234,7 +2427,7 @@ export default class MissionScene extends Phaser.Scene {
     this.settings.currentMission = id;
     saveSettings(this.settings);
     setMissionButtons(this.settings, (next) => this.setMission(next));
-    this.applyRocketSkin();
+    this.applyLook();
     this.refreshMenuCopy();
     AudioApi.play('ui', this.settings);
     this.refreshHud();
@@ -2252,7 +2445,8 @@ export default class MissionScene extends Phaser.Scene {
   resetMissionRecord() {
     resetRecord(this.settings);
     setMissionButtons(this.settings, (id) => this.setMission(id));
-    this.applyRocketSkin();
+    this.refreshHangar();
+    this.applyLook();
     this.refreshMenuCopy();
     this.refreshHud();
   }
@@ -2350,6 +2544,14 @@ export default class MissionScene extends Phaser.Scene {
           : `${shown.cham}`,
       fuel: shown.prop,
       shield: `${s.shield}/${SHIELD_MAX}`,
+      health: `${Math.round(s.health == null ? healthMaxFor(this.settings.difficulty) : s.health)}`,
+      healthText: `${Math.round(s.health == null ? healthMaxFor(this.settings.difficulty) : s.health)}`,
+      healthMax: healthMaxFor(this.settings.difficulty),
+      healthKind: healthKind(
+        s.health == null ? healthMaxFor(this.settings.difficulty) : s.health,
+        healthMaxFor(this.settings.difficulty),
+      ),
+      hideHealth: this.status === 'MENU' || this.status === 'SUMMARY',
       diff: this.settings.difficulty,
       pauseHint: pauseHintFor(this.status, s.sepPhase),
       stage: this.status === 'MENU' ? 'STANDBY' : (this.status === 'SUMMARY' ? 'SUMMARY' : (s.stage && s.stage !== 'MENU' ? s.stage : 'STANDBY')),
@@ -2387,6 +2589,7 @@ export default class MissionScene extends Phaser.Scene {
     });
     AudioApi.applyMix(this.settings);
     document.body.dataset.phase = this.status === 'PRELAUNCH' ? 'PAD' : this.status;
+    document.body.dataset.tod = flight.tod || '';
     this.syncCanvasInput();
     if (boosting && this.status === 'ASCENT' && !this.settings.reducedMotion) {
       /* plume handled in update */
