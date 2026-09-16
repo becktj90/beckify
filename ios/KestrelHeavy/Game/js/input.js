@@ -15,6 +15,7 @@ export function createInput() {
     pointerX: null,
     touchSteer: null,
     touchSteerArmed: false,
+    thumbHeld: false,
   };
 }
 
@@ -46,16 +47,35 @@ export function steerAxis(input) {
  * One-thumb climb pad: hold still does not steal ◀ ▶ / canvas analog.
  * Past the deadzone, horizontal drag is analog steer in [-1, 1].
  */
+export function peekTouchSteer(dxPx, armed = false) {
+  if (dxPx == null || !Number.isFinite(dxPx)) return 0;
+  if (!armed && Math.abs(dxPx) < TOUCH_STEER_DEAD_PX) return 0;
+  return Math.max(-1, Math.min(1, dxPx / TOUCH_STEER_FULL_PX));
+}
+
 export function setTouchSteer(input, dxPx) {
   if (dxPx == null || !Number.isFinite(dxPx)) {
     input.touchSteer = null;
     input.touchSteerArmed = false;
-    return;
+    return null;
   }
-  if (!input.touchSteerArmed && Math.abs(dxPx) < TOUCH_STEER_DEAD_PX) return;
+  if (!input.touchSteerArmed && Math.abs(dxPx) < TOUCH_STEER_DEAD_PX) return input.touchSteer;
   input.touchSteerArmed = true;
-  const span = TOUCH_STEER_FULL_PX;
-  input.touchSteer = Math.max(-1, Math.min(1, dxPx / span));
+  input.touchSteer = peekTouchSteer(dxPx, true);
+  return input.touchSteer;
+}
+
+export function climbArmedFromLabel(label) {
+  return label !== 'GLIDE';
+}
+
+export function paintThumbSteer(node, analog) {
+  if (!node) return;
+  const axis = Math.max(-1, Math.min(1, Number(analog) || 0));
+  if (node.style?.setProperty) node.style.setProperty('--kh-steer', String(axis));
+  node.classList?.toggle?.('is-steer-left', axis < -0.02);
+  node.classList?.toggle?.('is-steer-right', axis > 0.02);
+  if (node.dataset) node.dataset.steer = axis.toFixed(2);
 }
 
 /**
@@ -79,6 +99,7 @@ export function clearFlightHolds(input) {
   input.pointerX = null;
   input.touchSteer = null;
   input.touchSteerArmed = false;
+  input.thumbHeld = false;
 }
 
 export function bindKeyboard(input, hooks) {
