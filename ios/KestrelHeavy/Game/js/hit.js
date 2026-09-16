@@ -2,21 +2,24 @@
  * Honest overlap. Hazard sprites sit on a 48×48 canvas with a glow halo;
  * Matter's default rectangle used the whole frame, so near-misses INT-hit.
  * Bodies match the solid art plus a tiny graze pad — never a fat invisible pad.
+ *
+ * Phaser Matter setCircle / setRectangle replace the body and drop label to
+ * the Matter default "Body". Always restamp label (and filters) after reshape.
  */
 
 export const HAZARD_CANVAS = 48;
 
 /** Solid visual radius at scale 1 (px), ignoring canvas padding / halo. */
 export const HAZARD_RADIUS = {
-  bird: 8,
-  balloon: 10,
-  ice: 10,
-  debris: 9,
-  clutter: 9,
+  bird: 14,
+  balloon: 13,
+  ice: 13,
+  debris: 12,
+  clutter: 12,
 };
 
 /** Extra px beyond the solid art so a true edge clip still counts. */
-export const GRAZE_PAD = 1.6;
+export const GRAZE_PAD = 2;
 
 /**
  * Unscaled Matter rectangle for the stack. Canvas is 92×268 (booster 124×268)
@@ -33,8 +36,39 @@ export function rocketHitSize(booster) {
   return booster ? BOOSTER_HIT : ROCKET_HIT;
 }
 
+/** Options to pass into Matter setCircle / setRectangle so labels survive. */
+export function matterLabelOptions(label, extra = {}) {
+  return { label, ...extra };
+}
+
+export function stampBodyLabel(gameObject, label) {
+  if (gameObject?.body) gameObject.body.label = label;
+  return gameObject;
+}
+
+export function isRocketBody(body, rocket) {
+  if (!body) return false;
+  if (rocket && (body === rocket.body || body.gameObject === rocket)) return true;
+  return body.label === 'rocket';
+}
+
+/** The non-rocket body in a Matter collision pair, or null. */
+export function otherBody(pair, rocket) {
+  if (!pair) return null;
+  if (isRocketBody(pair.bodyA, rocket)) return pair.bodyB;
+  if (isRocketBody(pair.bodyB, rocket)) return pair.bodyA;
+  return null;
+}
+
+export function hazardKindOf(obj, label) {
+  if (obj && obj.hazardKind) return String(obj.hazardKind);
+  const raw = String(label || obj?.body?.label || obj?.label || '');
+  return raw.startsWith('hazard-') ? raw.slice(7) : raw;
+}
+
 /**
- * Circle vs axis-aligned box (centers). Used to reject fat default bodies.
+ * Circle vs axis-aligned box (centers). Used to reject fat default bodies
+ * and as a software overlap scan when Matter labels are missing.
  */
 export function circleHitsAabb(cx, cy, radius, ax, ay, halfW, halfH) {
   const dx = Math.abs(Number(cx) - Number(ax));
@@ -48,10 +82,11 @@ export function contactsHazard(rocket, hazard, kind, booster = false) {
   if (!rocket || !hazard) return false;
   const box = rocketHitSize(booster);
   const scale = Number(rocket.scaleX) || 1;
+  const resolved = hazardKindOf(hazard, kind);
   return circleHitsAabb(
     hazard.x,
     hazard.y,
-    hazardRadius(kind) * (Number(hazard.scaleX) || 1),
+    hazardRadius(resolved) * (Number(hazard.scaleX) || 1),
     rocket.x,
     rocket.y,
     (box.width * scale) / 2,

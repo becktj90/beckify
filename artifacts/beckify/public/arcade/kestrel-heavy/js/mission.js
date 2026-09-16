@@ -33,7 +33,11 @@ import {
   BOOSTER_HIT,
   ROCKET_HIT,
   contactsHazard,
+  hazardKindOf,
   hazardRadius,
+  matterLabelOptions,
+  otherBody,
+  stampBodyLabel,
 } from './hit.js';
 import {
   LOADOUT_CATS,
@@ -1468,17 +1472,18 @@ export default class MissionScene extends Phaser.Scene {
   onCollision(event) {
     if (this.session && this.session.landingLock) return;
     event.pairs.forEach((pair) => {
-      const labels = [pair.bodyA.label, pair.bodyB.label];
-      const other = pair.bodyA.label === 'rocket' ? pair.bodyB : pair.bodyA;
-      if (!labels.includes('rocket')) return;
-      if (other.label === 'deck' && this.status === 'JACKLYN') {
+      const other = otherBody(pair, this.rocket);
+      if (!other) return;
+      const go = other.gameObject;
+      const label = other.label || go?.body?.label || '';
+      if (label === 'deck' && this.status === 'JACKLYN') {
         this.resolveLanding('deck');
-      } else if (other.label === 'water' && this.status === 'JACKLYN') {
+      } else if (label === 'water' && this.status === 'JACKLYN') {
         this.resolveLanding('water');
-      } else if (other.label && other.label.startsWith('hazard')) {
-        this.hitHazard(other.gameObject, other.label);
-      } else if (other.label && other.label.startsWith('pickup')) {
-        this.collectPickup(other.gameObject);
+      } else if ((label && label.startsWith('hazard')) || go?.hazardKind) {
+        this.hitHazard(go, label || `hazard-${go.hazardKind}`);
+      } else if ((label && label.startsWith('pickup')) || go?.pickupKind) {
+        this.collectPickup(go);
       }
     });
   }
@@ -1577,12 +1582,16 @@ export default class MissionScene extends Phaser.Scene {
     const y = spawnYAboveCamera(camTop, SPAWN.leadMin, SPAWN.leadMax);
     const edge = corridorEdge(this.rocket.x, y);
     const x = clamp(this.rocket.x + rand(-200, 200), edge.left + 24, edge.right - 24);
+    const label = `hazard-${kind}`;
+    const radius = hazardRadius(kind);
     const img = this.matter.add.image(x, y, kind, null, {
       isSensor: true,
-      label: `hazard-${kind}`,
-      shape: { type: 'circle', radius: hazardRadius(kind) },
+      label,
+      shape: { type: 'circle', radius },
     });
-    img.setCircle(hazardRadius(kind));
+    // setCircle replaces the body and drops label to Matter's default "Body".
+    img.setCircle(radius, matterLabelOptions(label, { isSensor: true }));
+    stampBodyLabel(img, label);
     img.setSensor(true);
     img.setCollisionCategory(CAT_HAZARD);
     img.setCollidesWith(CAT_ROCKET);
@@ -1613,6 +1622,7 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   advanceActors() {
+    this.resolveHazardOverlaps();
     const prune = (list) => {
       for (let i = list.length - 1; i >= 0; i--) {
         const item = list[i];
@@ -1626,14 +1636,32 @@ export default class MissionScene extends Phaser.Scene {
     prune(this.pickups);
   }
 
+  /**
+   * Software overlap scan. Matter collisionstart is primary, but #172's
+   * setCircle/setRectangle label wipe made every pair look like Body/Body
+   * so onCollision returned early. This matches the same honest radii.
+   */
+  resolveHazardOverlaps() {
+    if (this.status !== 'ASCENT' || !this.rocket || this.session?.landingLock) return;
+    const booster = false;
+    for (let i = 0; i < this.hazards.length; i++) {
+      const item = this.hazards[i];
+      if (!item?.active) continue;
+      const kind = item.hazardKind || 'debris';
+      if (contactsHazard(this.rocket, item, kind, booster)) {
+        this.hitHazard(item, `hazard-${kind}`);
+      }
+    }
+  }
+
   hitHazard(obj, label) {
-    if (!obj || this.status !== 'ASCENT') return;
+    if (!obj || !obj.active || this.status !== 'ASCENT') return;
     const mode = DIFFICULTY[this.settings.difficulty];
     if (this.session.grace > 0) {
       obj.destroy();
       return;
     }
-    const kind = String(label || obj.body?.label || obj.label || '').replace(/^hazard-/, '');
+    const kind = hazardKindOf(obj, label);
     if (!contactsHazard(this.rocket, obj, kind, this.status === 'JACKLYN')) return;
     const atMaxQ = this.session.tClock >= PACE.MAXQ - 4 && this.session.tClock <= PACE.MAXQ + 8;
     const result = applyHit(this.session, kind, this.settings.difficulty);
@@ -2097,19 +2125,29 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   /**
-   * setBody / setRectangle wipe mass, friction, and collision filters.
-   * Re-apply after any reshape. Positions are center-of-mass.
+   * setBody / setRectangle wipe mass, friction, collision filters, AND label
+   * (Matter default "Body"). Re-apply after any reshape. Positions are
+   * center-of-mass. Rectangle size matches contactsHazard (sprite scale).
    */
   bindRocketBody() {
     const ignore = this.rocket.body?.ignoreGravity;
     const haven = this.status === 'JACKLYN';
     const box = haven ? BOOSTER_HIT : ROCKET_HIT;
-    this.rocket.setRectangle(box.width, box.height);
+    const scale = Number(this.rocket.scaleX) || 1;
+    const vx = this.rocket.body?.velocity?.x ?? 0;
+    const vy = this.rocket.body?.velocity?.y ?? 0;
+    this.rocket.setRectangle(
+      box.width * scale,
+      box.height * scale,
+      matterLabelOptions('rocket'),
+    );
+    stampBodyLabel(this.rocket, 'rocket');
     this.rocket.setDensity(0.002);
     this.rocket.setFrictionAir(haven ? HAVEN.glideAir : 0.02);
     this.rocket.setCollisionCategory(CAT_ROCKET);
     this.rocket.setCollidesWith(CAT_DECK | CAT_WATER | CAT_HAZARD | CAT_PICKUP);
     this.rocket.setFixedRotation();
+    this.rocket.setVelocity(vx, vy);
     if (ignore) this.rocket.setIgnoreGravity(true);
   }
 
