@@ -69,7 +69,7 @@ export function dashRail(graphics, x, y0, y1, dash = 16, gap = 12) {
 
 export function corridorVisibleSpan(rocketY) {
   const y = Number(rocketY) || PAD_ROCKET_Y;
-  return { y0: y + 420, y1: y - 980 };
+  return { y0: y + 420, y1: y - 1280 };
 }
 
 export function clampToCorridor(x, y) {

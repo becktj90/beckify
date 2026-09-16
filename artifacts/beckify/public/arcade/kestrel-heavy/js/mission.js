@@ -56,7 +56,7 @@ import {
   pauseHintFor,
   speak,
 } from './voice.js';
-import { bindKeyboard, clearFlightHolds, createInput, isBoosting, setBoostHeld, steerAxis } from './input.js';
+import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, phaseChip, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
@@ -306,6 +306,9 @@ export default class MissionScene extends Phaser.Scene {
         if (dir < 0) this.inputState.left = down;
         if (dir > 0) this.inputState.right = down;
       },
+      steerDrag: (dx) => {
+        setTouchSteer(this.inputState, dx);
+      },
       boost: (down) => {
         if (down) {
           this.onPrimary();
@@ -461,6 +464,15 @@ export default class MissionScene extends Phaser.Scene {
     cam.startFollow(this.rocket, false, lerpX, lerpY);
     cam.setDeadzone(CAM.deadzoneX, CAM.deadzoneY);
     if (typeof cam.setLerp === 'function') cam.setLerp(lerpX, lerpY);
+    this.syncFollowOffset();
+  }
+
+  /** Keep more corridor above the stack during climb; SEP / Haven stay locked on. */
+  syncFollowOffset() {
+    const cam = this.cameras.main;
+    if (!cam || typeof cam.setFollowOffset !== 'function') return;
+    const ahead = this.status === 'ASCENT' ? (CAM.lookAheadY || 0) : 0;
+    cam.setFollowOffset(0, ahead);
   }
 
   setZoomWant(zoom, rate) {
@@ -560,11 +572,19 @@ export default class MissionScene extends Phaser.Scene {
     return sci;
   }
 
+  isCoarsePointer() {
+    try {
+      return Boolean(window.matchMedia?.('(pointer: coarse), (hover: none)')?.matches);
+    } catch {
+      return false;
+    }
+  }
+
   flightZoom(kind) {
     if (this.settings.reducedMotion) return CAM.reduced;
     if (kind === 'sep') return CAM.sep;
     if (kind === 'high') return CAM.ascentHigh;
-    return CAM.ascentStart;
+    return this.isCoarsePointer() ? CAM.ascentMobile : CAM.ascentStart;
   }
 
   isHavenQa() {
@@ -903,10 +923,7 @@ export default class MissionScene extends Phaser.Scene {
       this.session.throttle = clamp(this.session.throttle - dt * 1.8, 0, 0.08);
     }
 
-    let axis = steerAxis(this.inputState);
-    if (this.inputState.pointerX != null) {
-      axis = clamp((this.inputState.pointerX - this.rocket.x) / 140, -1, 1);
-    }
+    const axis = flightAxis(this.inputState, this.rocket.x, 140);
     const alt = this.session.altitudeKm || 0;
     const space = clamp((alt - 8) / 48, 0, 1);
     this.matter.world.setGravity(0, PHYS.ascentG * (1 - space * 0.82));
@@ -933,9 +950,10 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status !== 'ASCENT') return;
 
     this.bgPad.setVisible(this.rocket.y > 80);
+    const zoomStart = this.isCoarsePointer() ? CAM.ascentMobile : CAM.ascentStart;
     const climbZoom = this.settings.reducedMotion
       ? CAM.reduced
-      : clamp(CAM.ascentStart - this.session.altitudeKm * 0.0014, CAM.ascentHigh, CAM.ascentStart);
+      : clamp(zoomStart - this.session.altitudeKm * 0.0014, CAM.ascentHigh, zoomStart);
     if (this.session.flightTime > CAM.zoomLiftDelay) this.setZoomWant(climbZoom, CAM.zoomClimbRate);
     const climbVy = this.rocket.body.velocity.y;
     this.session.score += Math.max(0, (-climbVy) * 26 * dt * (1 + this.session.combo * 0.1));
@@ -983,10 +1001,7 @@ export default class MissionScene extends Phaser.Scene {
     this.fireDueBeats();
     this.lockVehicleCamera(CAM.sepLerpX, CAM.sepLerpY);
 
-    let axis = steerAxis(this.inputState);
-    if (this.inputState.pointerX != null) {
-      axis = clamp((this.inputState.pointerX - this.rocket.x) / 150, -1, 1);
-    }
+    let axis = flightAxis(this.inputState, this.rocket.x, 150);
     if (mode.assist > 0 && this.session.sepPhase !== 'clear') {
       axis = clamp(axis - this.rocket.body.velocity.x * 0.18 * mode.assist, -1, 1);
     }
@@ -1097,10 +1112,7 @@ export default class MissionScene extends Phaser.Scene {
     this.applyHavenDrift(dt, mode);
 
     const boosting = isBoosting(this.inputState, this.nowSec);
-    let axis = steerAxis(this.inputState);
-    if (this.inputState.pointerX != null) {
-      axis = clamp((this.inputState.pointerX - this.rocket.x) / 210, -1, 1);
-    }
+    let axis = flightAxis(this.inputState, this.rocket.x, 210);
     const deckX = this.deck.x;
     const assist = this.isHavenQa() ? Math.max(mode.assist, 0.42) : mode.assist;
     if (assist > 0) {
@@ -1506,7 +1518,7 @@ export default class MissionScene extends Phaser.Scene {
     const kind = this.session.altitudeKm < 8 ? pick(['bird', 'balloon', mix[0]]) : pick(mix);
     const edge = corridorEdge(this.rocket.x, this.rocket.y);
     const x = clamp(this.rocket.x + rand(-200, 200), edge.left + 24, edge.right - 24);
-    const y = this.rocket.y - rand(340, 560);
+    const y = this.rocket.y - rand(420, 680);
     const img = this.matter.add.image(x, y, kind, null, {
       isSensor: true,
       label: `hazard-${kind}`,
@@ -1898,7 +1910,7 @@ export default class MissionScene extends Phaser.Scene {
       this.corridorGfx.fillRect(-200, y1, edge.left + 200, y0 - y1);
       this.corridorGfx.fillRect(edge.right, y1, W + 200 - edge.right, y0 - y1);
     }
-    this.corridorGfx.lineStyle(3, color, alpha);
+    this.corridorGfx.lineStyle(this.isCoarsePointer() ? 5 : 3, color, alpha);
     dashRail(this.corridorGfx, edge.left, y0, y1);
     dashRail(this.corridorGfx, edge.right, y0, y1);
     const teach = (this.session?.flightTime || 0) < 6.2 || warn;
@@ -2270,9 +2282,9 @@ export default class MissionScene extends Phaser.Scene {
 
   hintLine() {
     if (!this.settings.controlHints || !this.session) return '';
-    if (this.status === 'PRELAUNCH') return 'HOLD CLIMB through ignition';
+    if (this.status === 'PRELAUNCH') return 'HOLD CLIMB through ignition  ·  drag to steer';
     if (this.status === 'ASCENT') {
-      if (this.session.flightTime < 6.4) return 'STAY INSIDE THE CORRIDOR  ·  HOLD CLIMB';
+      if (this.session.flightTime < 6.4) return 'STAY INSIDE THE CORRIDOR  ·  HOLD + DRAG';
       if (this.currentFlight().objective?.id === 'shield' && !this.session.objectiveDone && this.session.flightTime < 16) {
         return 'GRAB THE CYAN AERO SHIELD';
       }
@@ -2293,7 +2305,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status === 'JACKLYN') {
       const phase = this.session.jacklynPhase || 'glide';
       if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
-        return 'LANDING BURN  ·  HOLD CLIMB  ·  straighten for the deck';
+        return 'LANDING BURN  ·  HOLD + DRAG  ·  straighten for the deck';
       }
       return 'STRAKES OUT  ·  GLIDE the diagonal  ·  do not burn yet';
     }
@@ -2358,7 +2370,7 @@ export default class MissionScene extends Phaser.Scene {
           : 'GLIDE')
         : this.status === 'SEP' && s.sepPhase === 'window'
           ? 'SEPARATE'
-          : 'HOLD TO CLIMB',
+          : 'HOLD · DRAG',
       boostHeld: boosting,
       sepReady: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone && this.inSepZone(),
       sepArmed: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone,

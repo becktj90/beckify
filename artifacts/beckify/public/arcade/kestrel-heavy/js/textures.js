@@ -896,53 +896,70 @@ export function makeDot(color, w = 18, h = 18) {
 }
 
 export function makeHazard(kind) {
-  const cv = canvas(40, 40);
+  const cv = canvas(48, 48);
   const ctx = cv.getContext('2d');
-  ctx.translate(20, 20);
+  ctx.translate(24, 24);
+  // Amber halo so dark birds / gray debris read on night sky and small phones.
+  ctx.save();
+  ctx.shadowColor = 'rgba(255, 207, 93, 0.95)';
+  ctx.shadowBlur = 12;
   if (kind === 'bird') {
-    ctx.strokeStyle = '#1e2430';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffcf5d';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-14, 0);
-    ctx.quadraticCurveTo(-6, -10, 0, 0);
-    ctx.quadraticCurveTo(6, -10, 14, 0);
+    ctx.moveTo(-16, 2);
+    ctx.quadraticCurveTo(-6, -12, 0, 1);
+    ctx.quadraticCurveTo(6, -12, 16, 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#1e2430';
+    ctx.lineWidth = 2.2;
     ctx.stroke();
   } else if (kind === 'balloon') {
-    ctx.fillStyle = '#e85d4c';
+    ctx.fillStyle = '#ff6a55';
     ctx.beginPath();
-    ctx.ellipse(0, -4, 10, 13, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -4, 11, 14, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ffe7a8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.strokeStyle = '#c9d0d6';
     ctx.beginPath();
-    ctx.moveTo(0, 9);
-    ctx.lineTo(0, 16);
+    ctx.moveTo(0, 10);
+    ctx.lineTo(0, 17);
     ctx.stroke();
   } else if (kind === 'ice') {
-    ctx.fillStyle = '#d7f3ff';
-    ctx.strokeStyle = '#8ec8e0';
+    ctx.fillStyle = '#e8fbff';
+    ctx.strokeStyle = '#8ce0ff';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, -12);
-    ctx.lineTo(12, 2);
-    ctx.lineTo(4, 12);
-    ctx.lineTo(-10, 8);
-    ctx.lineTo(-8, -6);
+    ctx.moveTo(0, -13);
+    ctx.lineTo(13, 2);
+    ctx.lineTo(5, 13);
+    ctx.lineTo(-11, 9);
+    ctx.lineTo(-9, -6);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   } else {
-    ctx.fillStyle = '#6e747c';
+    ctx.fillStyle = '#9aa3b4';
     ctx.beginPath();
-    ctx.moveTo(-12, -5);
-    ctx.lineTo(11, -7);
-    ctx.lineTo(10, 7);
-    ctx.lineTo(-10, 6);
+    ctx.moveTo(-13, -6);
+    ctx.lineTo(12, -8);
+    ctx.lineTo(11, 8);
+    ctx.lineTo(-11, 7);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#c48a2a';
-    ctx.fillRect(-10, -1, 20, 3);
-    ctx.strokeStyle = 'rgba(8,10,14,0.55)';
+    ctx.fillStyle = '#ffcf5d';
+    ctx.fillRect(-11, -1, 22, 3);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#041014';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
   }
+  ctx.restore();
   return cv;
 }
 

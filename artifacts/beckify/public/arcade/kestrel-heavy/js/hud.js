@@ -90,12 +90,12 @@ export function renderHud(snapshot) {
     climb.setAttribute(
       'aria-label',
       snapshot.boostLabel === 'HOLD TO BURN'
-        ? 'Hold to fire the landing burn'
+        ? 'Hold to fire the landing burn, drag left or right to steer'
         : snapshot.boostLabel === 'GLIDE'
-          ? 'Glide — do not burn yet'
+          ? 'Glide — do not burn yet. Steer on the playfield or with the side pads'
           : snapshot.boostLabel === 'SEPARATE'
             ? 'Press to separate stages'
-            : 'Hold boost to climb',
+            : 'Hold to climb, drag left or right to steer',
     );
   }
   const sepBtn = el('ng-sep-btn');
@@ -229,6 +229,24 @@ export function bindChrome(handlers) {
     });
   });
 
+  const clientXOf = (event) => {
+    if (typeof event.clientX === 'number') return event.clientX;
+    const touch = event.changedTouches?.[0] || event.touches?.[0];
+    return touch ? touch.clientX : null;
+  };
+
+  const suppressCallout = (event) => {
+    event.preventDefault();
+  };
+
+  const bindHoldGuards = (node) => {
+    node.addEventListener('contextmenu', suppressCallout);
+    node.addEventListener('selectstart', suppressCallout);
+    // iOS Safari starts the text magnifier / scroll from the native touch.
+    node.addEventListener('touchstart', suppressCallout, { passive: false });
+    node.addEventListener('touchmove', suppressCallout, { passive: false });
+  };
+
   const hold = (id, down, up) => {
     const node = el(id);
     if (!node) return;
@@ -249,24 +267,74 @@ export function bindChrome(handlers) {
       held = false;
       up();
     };
-    const suppressCallout = (event) => {
-      event.preventDefault();
-    };
     node.addEventListener('pointerdown', onDown, { passive: false });
     node.addEventListener('pointerup', onUp, { passive: false });
     node.addEventListener('pointercancel', onUp, { passive: false });
     node.addEventListener('pointerleave', onUp, { passive: false });
-    // iOS Safari starts the text magnifier from the native touch, not pointerdown.
+    node.addEventListener('lostpointercapture', onUp, { passive: false });
     node.addEventListener('touchstart', onDown, { passive: false });
     node.addEventListener('touchend', onUp, { passive: false });
     node.addEventListener('touchcancel', onUp, { passive: false });
-    node.addEventListener('contextmenu', suppressCallout);
-    node.addEventListener('selectstart', suppressCallout);
+    bindHoldGuards(node);
+  };
+
+  /**
+   * Primary one-thumb path: hold = climb/burn, drag horizontally = analog steer.
+   * Do not release on pointerleave — capture keeps the same finger after the pad.
+   * ◀ ▶ stay as optional second-finger pads.
+   */
+  const holdClimb = (id) => {
+    const node = el(id);
+    if (!node) return;
+    let held = false;
+    let originX = 0;
+    const endHold = () => {
+      if (!held) return;
+      held = false;
+      originX = 0;
+      if (handlers.steerDrag) handlers.steerDrag(null);
+      handlers.boost(false);
+    };
+    const onDown = (event) => {
+      event.preventDefault();
+      if (event.button != null && event.button !== 0) return;
+      if (held) return;
+      const x = clientXOf(event);
+      if (x == null) return;
+      held = true;
+      originX = x;
+      if (node.setPointerCapture && event.pointerId !== undefined) {
+        node.setPointerCapture(event.pointerId);
+      }
+      if (handlers.steerDrag) handlers.steerDrag(null);
+      handlers.boost(true);
+    };
+    const onMove = (event) => {
+      if (!held) return;
+      event.preventDefault();
+      const x = clientXOf(event);
+      if (x == null || !handlers.steerDrag) return;
+      handlers.steerDrag(x - originX);
+    };
+    const onUp = (event) => {
+      event.preventDefault();
+      endHold();
+    };
+    node.addEventListener('pointerdown', onDown, { passive: false });
+    node.addEventListener('pointermove', onMove, { passive: false });
+    node.addEventListener('pointerup', onUp, { passive: false });
+    node.addEventListener('pointercancel', onUp, { passive: false });
+    node.addEventListener('lostpointercapture', onUp, { passive: false });
+    node.addEventListener('touchstart', onDown, { passive: false });
+    node.addEventListener('touchmove', onMove, { passive: false });
+    node.addEventListener('touchend', onUp, { passive: false });
+    node.addEventListener('touchcancel', onUp, { passive: false });
+    bindHoldGuards(node);
   };
 
   hold('atb-left', () => handlers.steer(-1, true), () => handlers.steer(-1, false));
   hold('atb-right', () => handlers.steer(1, true), () => handlers.steer(1, false));
-  hold('atb-boost', () => handlers.boost(true), () => handlers.boost(false));
+  holdClimb('atb-boost');
   syncPlayfieldPointers();
 }
 

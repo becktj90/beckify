@@ -71,57 +71,108 @@ export const DIFFICULTY = {
   },
 };
 
-/** Compressed MET spine. A clean run is ~T+100, not a 50s sprint. */
+/**
+ * Compressed MET spine. Chapter order matches public launch→landing cuts
+ * (liftoff → Max-Q → MECO → sep → SES-1 → fairing → reentry → landing burn
+ * → touchdown), scaled to ~T+96 so a stranger hears every beat in one run.
+ */
 export const PACE = {
-  MAXQ: 18.6,
-  MECO: 38.4,
-  SEP: 40.2,
-  SES1: 51.8,
-  FAIRING: 55.6,
-  ENTRY: 64.0,
-  LANDING: 84.8,
+  MAXQ: 21.6,
+  MECO: 38.8,
+  SEP: 40.8,
+  SES1: 43.0,
+  FAIRING: 49.4,
+  ENTRY: 69.2,
+  LANDING: 89.8,
   TOUCHDOWN: 96.5,
-  SECO: 99.8,
-  DEPLOY: 103.6,
+  SECO: 100.2,
+  DEPLOY: 104.0,
 };
 
 /** MECO → stage sep is a playable beat, not a 400ms cutscene. */
 export const SEP = {
-  coastSec: 3.4,
-  clearSec: 6.4,
-  alignHold: 0.55,
+  coastSec: 2.4,
+  clearSec: 7.6,
+  sesDelaySec: 2.2,
+  fairingDelaySec: 5.8,
+  alignHold: 0.4,
   widePenalty: 400,
   contactPenalty: 650,
+  spaceY: -2360,
+  zoneH: 380,
+  lateSec: 11.5,
 };
 
-/** Zoomed-out Haven approach — barge reads small; closing speed stays slow. */
+/**
+ * Arcade Matter tuning. Forces stay in the 0.01–0.1 band; these just make
+ * ascent feel planted, sep coast in micro-g, and Haven a glide then burn.
+ */
+export const PHYS = {
+  ascentG: 0.198,
+  spaceG: 0.03,
+  sepG: 0.012,
+  thrust: 0.062,
+  steer: 0.012,
+  coastSteer: 0.006,
+  maxClimb: 6.15,
+  holdFloor: 0.92,
+  airAtmo: 0.04,
+  airSpace: 0.013,
+  sepAir: 0.026,
+  vxDamp: 1.65,
+};
+
+/**
+ * Zoomed-out Haven approach, compressed from public first-stage recovery
+ * language: reentry pitch-over → strakes → diagonal glide → player landing burn.
+ */
 export const HAVEN = {
-  startY: -340,
-  startLat: 820,
+  startY: -620,
+  startLat: 1180,
   bargeY: 690,
   zoomFar: 0.34,
-  zoomNear: 0.46,
-  gravity: 0.155,
-  frictionAir: 0.058,
-  maxVyEarly: 1.85,
-  maxVy: 4.2,
-  earlySec: 5.2,
-  landingFuel: 24,
+  zoomNear: 0.52,
+  gravity: 0.142,
+  glideGravity: 0.068,
+  reentryGravity: 0.09,
+  frictionAir: 0.048,
+  glideAir: 0.034,
+  maxVyEarly: 1.42,
+  maxVy: 3.7,
+  earlySec: 7.4,
+  landingFuel: 28,
   swellAmp: 14,
+  burnAlt: 268,
+  reentrySec: 1.85,
+  strakeSec: 1.2,
+  glideMinSec: 4.8,
 };
 
 /** Dotted rails are the climb corridor. Stay between them or the stack aborts. */
 export const CORRIDOR_TEACH_SEC = 5.4;
 
-/** Wider default framing so the corridor, sep stack, and Haven read as space. */
+/** Pad starts tight; zoom eases out after tower clear so liftoff does not hard-cut. */
 export const CAM = {
-  ascentStart: 0.56,
-  ascentHigh: 0.50,
-  sep: 0.48,
+  pad: 1,
+  ascentStart: 0.62,
+  ascentMobile: 0.5,
+  ascentHigh: 0.48,
+  sep: 0.52,
   reduced: 0.58,
   recovered: 0.82,
-  deadzoneX: 96,
-  deadzoneY: 72,
+  deadzoneX: 42,
+  deadzoneY: 36,
+  /** Ascent look-ahead: camera sits below the stack so incoming junk is on-screen. */
+  lookAheadY: 210,
+  followLerpX: 0.18,
+  followLerpY: 0.24,
+  sepLerpX: 0.38,
+  sepLerpY: 0.48,
+  zoomLiftDelay: 0.62,
+  zoomLiftRate: 0.85,
+  zoomClimbRate: 1.65,
+  worldTop: -18000,
+  worldHeight: 20000,
 };
 
 export const BOOST_COYOTE_SEC = 0.14;
@@ -152,10 +203,10 @@ export const RADIO = {
   LIFTOFF: 'Liftoff. Kestrel Heavy clearing the tower.',
   ASCENT: 'Vehicle flying nominally. Steer the corridor.',
   MAXQ: 'Max-Q. Hold the line.',
-  MECO: 'MECO. Hold attitude. Sep window is coming.',
-  SEP: 'Stage sep. Steer ALIGN green, then tap climb to fire.',
+  MECO: 'MECO. Hold attitude. Sep zone incoming.',
+  SEP: 'Sep zone. ALIGN green, then press SEPARATE.',
   SEP_CLEAR: 'Booster clear. Keep the relative motion wide of the stack.',
-  JACKLYN: 'Haven downrange. Long slide-in. Brake the painted deck.',
+  JACKLYN: 'Haven downrange. Pitch over, strakes out, glide, then burn the painted deck.',
   RECOVERED: 'Landed on Haven. Sea state nominal. Coffee earned.',
   SPLASH: 'Splash. Combo reset — upper stage still flies.',
   SALVAGE: 'Hard catch. Booster on deck, score clipped.',
