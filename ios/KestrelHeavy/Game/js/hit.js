@@ -27,6 +27,8 @@ export const GRAZE_PAD = 2;
  */
 export const ROCKET_HIT = { width: 42, height: 228 };
 export const BOOSTER_HIT = { width: 38, height: 198 };
+/** Matter density for the unscaled 42×228 (or booster) box. */
+export const ROCKET_DENSITY = 0.002;
 
 export function hazardRadius(kind) {
   return (HAZARD_RADIUS[kind] || HAZARD_RADIUS.debris) + GRAZE_PAD;
@@ -34,6 +36,12 @@ export function hazardRadius(kind) {
 
 export function rocketHitSize(booster) {
   return booster ? BOOSTER_HIT : ROCKET_HIT;
+}
+
+/** Density so a sprite-scaled Matter box keeps the unscaled mass. */
+export function rocketBodyDensity(scale = 1) {
+  const s = Number(scale) || 1;
+  return ROCKET_DENSITY / (s * s);
 }
 
 /** Options to pass into Matter setCircle / setRectangle so labels survive. */
@@ -78,12 +86,26 @@ export function circleHitsAabb(cx, cy, radius, ax, ay, halfW, halfH) {
   return nx * nx + ny * ny <= radius * radius;
 }
 
+/**
+ * Circle vs the rocket's rotated box. Phaser angle is clockwise degrees, Y down.
+ */
+export function circleHitsRotatedAabb(cx, cy, radius, ax, ay, halfW, halfH, angleDeg) {
+  const rad = ((Number(angleDeg) || 0) * Math.PI) / 180;
+  const dx = Number(cx) - Number(ax);
+  const dy = Number(cy) - Number(ay);
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  const lx = c * dx + s * dy;
+  const ly = -s * dx + c * dy;
+  return circleHitsAabb(lx, ly, radius, 0, 0, halfW, halfH);
+}
+
 export function contactsHazard(rocket, hazard, kind, booster = false) {
   if (!rocket || !hazard) return false;
   const box = rocketHitSize(booster);
   const scale = Number(rocket.scaleX) || 1;
   const resolved = hazardKindOf(hazard, kind);
-  return circleHitsAabb(
+  return circleHitsRotatedAabb(
     hazard.x,
     hazard.y,
     hazardRadius(resolved) * (Number(hazard.scaleX) || 1),
@@ -91,6 +113,7 @@ export function contactsHazard(rocket, hazard, kind, booster = false) {
     rocket.y,
     (box.width * scale) / 2,
     (box.height * scale) / 2,
+    rocket.angle,
   );
 }
 

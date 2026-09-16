@@ -37,6 +37,7 @@ import {
   hazardRadius,
   matterLabelOptions,
   otherBody,
+  rocketBodyDensity,
   rocketHitSize,
   stampBodyLabel,
 } from './hit.js';
@@ -2203,7 +2204,8 @@ export default class MissionScene extends Phaser.Scene {
   /**
    * setBody / setRectangle wipe mass, friction, collision filters, AND label
    * (Matter default "Body"). Re-apply after any reshape. Positions are
-   * center-of-mass. Rectangle size matches contactsHazard (sprite scale).
+   * center-of-mass. Rectangle size matches contactsHazard (sprite scale);
+   * density is divided by scale² so mass stays the unscaled 42×228 tune.
    */
   bindRocketBody() {
     const ignore = this.rocket.body?.ignoreGravity;
@@ -2218,7 +2220,7 @@ export default class MissionScene extends Phaser.Scene {
       matterLabelOptions('rocket'),
     );
     stampBodyLabel(this.rocket, 'rocket');
-    this.rocket.setDensity(0.002);
+    this.rocket.setDensity(rocketBodyDensity(scale));
     this.rocket.setFrictionAir(haven ? HAVEN.glideAir : 0.02);
     this.rocket.setCollisionCategory(CAT_ROCKET);
     this.rocket.setCollidesWith(CAT_DECK | CAT_WATER | CAT_HAZARD | CAT_PICKUP);

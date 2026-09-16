@@ -19,6 +19,8 @@ test('overlap hits; near-miss does not; Matter labels survive reshape', async ()
     hazardKindOf,
     stampBodyLabel,
     matterLabelOptions,
+    rocketBodyDensity,
+    ROCKET_DENSITY,
   } = await import(path.join(arcade, 'hit.js'));
 
   assert.ok(hazardRadius('bird') < HAZARD_CANVAS / 2, 'body tighter than 48px canvas');
@@ -51,6 +53,20 @@ test('overlap hits; near-miss does not; Matter labels survive reshape', async ()
   const edgeClip = { x: rocket.x + hw + rBird - 1, y: rocket.y, scaleX: 1 };
   assert.equal(contactsHazard(rocket, edgeClip, 'bird', false), true, 'solid-art graze still hits');
 
+  const tilted = { x: 400, y: 400, scaleX: 1.18, angle: 16 };
+  const aabbCorner = { x: tilted.x + hw - 2, y: tilted.y + (box.height * 1.18) / 2 - 2, scaleX: 1 };
+  assert.equal(contactsHazard({ ...tilted, angle: 0 }, aabbCorner, 'bird', false), true);
+  assert.equal(
+    contactsHazard(tilted, aabbCorner, 'bird', false),
+    false,
+    'empty AABB corner of a tilted stack is not a hit',
+  );
+  const noseAt90 = { x: tilted.x + (box.height * 1.18) / 2 - 4, y: tilted.y, scaleX: 1 };
+  assert.equal(contactsHazard({ ...tilted, angle: 90 }, noseAt90, 'bird', false), true, 'rotated nose still hits');
+
+  assert.equal(rocketBodyDensity(1), ROCKET_DENSITY);
+  assert.ok(Math.abs(rocketBodyDensity(1.18) * 1.18 * 1.18 - ROCKET_DENSITY) < 1e-12);
+
   const rocketGo = { body: { label: 'Body' } };
   rocketGo.body.gameObject = rocketGo;
   assert.equal(isRocketBody(rocketGo.body, rocketGo), true, 'identity beats wiped label');
@@ -76,6 +92,9 @@ test('overlap hits; near-miss does not; Matter labels survive reshape', async ()
   assert.match(mission, /go\?\.hazardKind/);
   assert.match(mission, /get\('qa'\) === 'hits'/);
   assert.match(mission, /spawnQaHitPair/);
+  assert.match(mission, /rocketBodyDensity\(scale\)/);
+  const hitSrc = fs.readFileSync(path.join(arcade, 'hit.js'), 'utf8');
+  assert.match(hitSrc, /circleHitsRotatedAabb/);
 });
 
 test('sky→space blend is continuous over altitude', async () => {
