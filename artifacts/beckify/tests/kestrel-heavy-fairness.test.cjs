@@ -74,6 +74,8 @@ test('overlap hits; near-miss does not; Matter labels survive reshape', async ()
   assert.match(mission, /otherBody\(pair, this\.rocket\)/);
   assert.match(mission, /resolveHazardOverlaps/);
   assert.match(mission, /go\?\.hazardKind/);
+  assert.match(mission, /get\('qa'\) === 'hits'/);
+  assert.match(mission, /spawnQaHitPair/);
 });
 
 test('sky→space blend is continuous over altitude', async () => {

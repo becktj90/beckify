@@ -37,6 +37,7 @@ import {
   hazardRadius,
   matterLabelOptions,
   otherBody,
+  rocketHitSize,
   stampBodyLabel,
 } from './hit.js';
 import {
@@ -135,6 +136,7 @@ export default class MissionScene extends Phaser.Scene {
     this.nowSec = 0;
     this.tip = pick(TIPS);
     this.qaBeat = new URLSearchParams(window.location.search).get('beat');
+    this.qaHits = new URLSearchParams(window.location.search).get('qa') === 'hits';
     const qaMission = new URLSearchParams(window.location.search).get('mission');
     if (qaMission && getMission(qaMission).id === qaMission) {
       const ids = MISSIONS.map((row) => row.id);
@@ -1033,6 +1035,10 @@ export default class MissionScene extends Phaser.Scene {
       if (Math.random() < 0.3 * mode.pickupMul) this.spawnPickup();
       this.session.spawnAt = rand(0.62, 1.2) / (mode.spawnMul * this.currentFlight().spawnMul);
     }
+    if (this.qaHits && !this.session.qaHitsDone && this.session.grace <= 0) {
+      this.session.qaHitsDone = true;
+      this.spawnQaHitPair();
+    }
     this.advanceActors();
 
     if (this.session.fired.meco) this.enterSep();
@@ -1582,6 +1588,23 @@ export default class MissionScene extends Phaser.Scene {
     const y = spawnYAboveCamera(camTop, SPAWN.leadMin, SPAWN.leadMax);
     const edge = corridorEdge(this.rocket.x, y);
     const x = clamp(this.rocket.x + rand(-200, 200), edge.left + 24, edge.right - 24);
+    this.placeHazard(x, y, kind);
+  }
+
+  /**
+   * ?qa=hits — one bird overlapping the stack (must INT) and one ice at the
+   * old 48×48 near-miss offset (must not). Playtest the #172 fly-through.
+   */
+  spawnQaHitPair() {
+    const box = rocketHitSize(this.status === 'JACKLYN');
+    const scale = Number(this.rocket.scaleX) || 1;
+    const hw = (box.width * scale) / 2;
+    const y = this.rocket.y - 40;
+    this.placeHazard(this.rocket.x, y, 'bird', { x: 0, y: 0.15 });
+    this.placeHazard(this.rocket.x + hw + 28, y - 70, 'ice', { x: 0, y: 0.15 });
+  }
+
+  placeHazard(x, y, kind, velocity = null) {
     const label = `hazard-${kind}`;
     const radius = hazardRadius(kind);
     const img = this.matter.add.image(x, y, kind, null, {
@@ -1596,10 +1619,11 @@ export default class MissionScene extends Phaser.Scene {
     img.setCollisionCategory(CAT_HAZARD);
     img.setCollidesWith(CAT_ROCKET);
     img.setIgnoreGravity(true);
-    img.setVelocity(rand(-0.4, 0.4), rand(0.6, 1.6));
+    img.setVelocity(velocity?.x ?? rand(-0.4, 0.4), velocity?.y ?? rand(0.6, 1.6));
     img.setScale(1);
     img.hazardKind = kind;
     this.hazards.push(img);
+    return img;
   }
 
   spawnPickup(kind) {
