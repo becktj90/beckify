@@ -260,8 +260,8 @@ export function playGoal(status, session = {}, flight = {}) {
   if (status === 'JACKLYN') {
     const phase = session.jacklynPhase || 'glide';
     if (phase === 'reentry') return 'PITCH OVER  ·  reentry  ·  strakes stand by';
-    if (phase === 'burn' || phase === 'straighten' || phase === 'settle') {
-      return 'HOLD CLIMB + drag for the landing burn · straighten for the deck';
+    if (session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
+      return 'LANDING BURN  ·  HOLD TO BURN  ·  keep holding and steer onto the paint';
     }
     return 'STRAKES OUT  ·  glide the diagonal  ·  do not burn yet';
   }

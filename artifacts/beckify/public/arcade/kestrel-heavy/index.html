@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-15">
+      <meta name="arcade-asset-version" content="kestrel-16">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -340,6 +340,7 @@
     #atb-right { right: max(8px, env(safe-area-inset-right, 0px)); }
     #atb-boost {
       --kh-steer: 0;
+      --kh-hold: 0;
       left: 50%;
       bottom: max(12px, env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%);
@@ -349,12 +350,18 @@
       z-index: 1;
       background-color: rgba(16, 12, 40, 0.82);
       background-image: linear-gradient(
-        90deg,
-        transparent calc(50% + (var(--kh-steer, 0) * 38%) - 6px),
-        var(--go) calc(50% + (var(--kh-steer, 0) * 38%) - 6px),
-        var(--go) calc(50% + (var(--kh-steer, 0) * 38%) + 6px),
-        transparent calc(50% + (var(--kh-steer, 0) * 38%) + 6px)
-      );
+          to top,
+          rgba(255, 207, 93, 0.55) 0%,
+          rgba(255, 207, 93, 0.55) calc(var(--kh-hold, 0) * 100%),
+          transparent calc(var(--kh-hold, 0) * 100%)
+        ),
+        linear-gradient(
+          90deg,
+          transparent calc(50% + (var(--kh-steer, 0) * 38%) - 6px),
+          var(--go) calc(50% + (var(--kh-steer, 0) * 38%) - 6px),
+          var(--go) calc(50% + (var(--kh-steer, 0) * 38%) + 6px),
+          transparent calc(50% + (var(--kh-steer, 0) * 38%) + 6px)
+        );
     }
     /* Invisible extra thumb plate — hold + drag without a second finger. */
     #atb-boost::before {
@@ -370,6 +377,24 @@
       border-color: var(--go);
       color: var(--go);
       box-shadow: 0 0 16px rgba(125, 255, 176, 0.45);
+    }
+    #atb-boost.is-burn {
+      border-color: var(--amber);
+      color: var(--amber);
+      min-height: 64px;
+      letter-spacing: 0.06em;
+      box-shadow: 0 0 18px rgba(255, 207, 93, 0.4);
+      animation: kh-burn-pulse 1.15s ease-in-out infinite;
+    }
+    #atb-boost.is-burn.is-held {
+      border-color: var(--go);
+      color: var(--go);
+      animation: none;
+      box-shadow: 0 0 20px rgba(125, 255, 176, 0.55);
+    }
+    @keyframes kh-burn-pulse {
+      from { box-shadow: 0 0 10px rgba(255, 207, 93, 0.28); }
+      to { box-shadow: 0 0 22px rgba(255, 207, 93, 0.7); }
     }
     #atb-boost.is-steer-left {
       box-shadow: -12px 0 22px rgba(125, 255, 176, 0.32);
@@ -409,7 +434,8 @@
     }
     #ng-sep-btn[hidden] { display: none !important; }
     @media (prefers-reduced-motion: reduce) {
-      #atb-boost.is-flash { animation: none; }
+      #atb-boost.is-flash,
+      #atb-boost.is-burn { animation: none; }
     }
     body[data-phase="MENU"] #arcade-touch-btns,
     body[data-phase="SUMMARY"] #arcade-touch-btns,

@@ -47,7 +47,7 @@ import {
   isPartUnlocked,
   mergeUnlocks,
 } from './loadout.js';
-import { liveCameraTop, spawnYAboveCamera, SPAWN } from './spawn.js';
+import { liveCameraTop, spawnYAboveCamera, spawnYInView, SPAWN } from './spawn.js';
 import { lerpRgb, missionTod, skyLayerAlphas, spaceBlend } from './tod.js';
 import AudioApi from './audio.js';
 import {
@@ -135,7 +135,7 @@ export default class MissionScene extends Phaser.Scene {
     this.screen = 'menu';
     this.nowSec = 0;
     this.tip = pick(TIPS);
-    this.qaBeat = new URLSearchParams(window.location.search).get('beat');
+    this.qaBeat = String(new URLSearchParams(window.location.search).get('beat') || '').toLowerCase();
     this.qaHits = new URLSearchParams(window.location.search).get('qa') === 'hits';
     const qaMission = new URLSearchParams(window.location.search).get('mission');
     if (qaMission && getMission(qaMission).id === qaMission) {
@@ -415,17 +415,9 @@ export default class MissionScene extends Phaser.Scene {
     window.arcadeFullscreen = () => this.toggleFullscreen();
     window.arcadeReset = () => this.resetMissionRecord();
 
-    if (this.isHavenQa()) {
-      this.bootQaFlight(PACE.ENTRY - 0.2, () => this.enterJacklyn());
-    } else if (this.qaBeat === 'sep') {
-      this.bootQaFlight(PACE.MECO - 0.05, () => {
-        this.session.altitudeKm = 54;
-        this.bgPad.setVisible(false);
-        this.rocket.setPosition(W / 2, -1480);
-        this.rocket.setVelocity(0.2, -0.35);
-        this.cameras.main.centerOn(W / 2, -1480);
-        this.enterSep();
-      });
+    if (this.isHavenQa() || this.qaBeat === 'sep') {
+      this.applyQaBeat();
+      this.time.delayedCall(40, () => this.applyQaBeat());
     }
 
     this.refreshMenuCopy();
@@ -498,6 +490,9 @@ export default class MissionScene extends Phaser.Scene {
       science: null,
       attitudeHold: 0,
       corridorHold: 0,
+      burnHold: 0,
+      burnAck: false,
+      shieldTaught: false,
     };
   }
 
@@ -648,21 +643,47 @@ export default class MissionScene extends Phaser.Scene {
     return this.qaBeat === 'haven' || this.qaBeat === 'jacklyn';
   }
 
+  applyQaBeat() {
+    if (this._qaBooted) return;
+    const beat = String(this.qaBeat || new URLSearchParams(window.location.search).get('beat') || '').toLowerCase();
+    this.qaBeat = beat;
+    if (beat !== 'haven' && beat !== 'jacklyn' && beat !== 'sep') return;
+    this._qaBooted = true;
+    if (beat === 'sep') {
+      this.bootQaFlight(PACE.MECO - 0.05, () => {
+        this.session.altitudeKm = 54;
+        this.bgPad.setVisible(false);
+        this.rocket.setPosition(W / 2, -1480);
+        this.rocket.setVelocity(0.2, -0.35);
+        this.cameras.main.centerOn(W / 2, -1480);
+        this.enterSep();
+      });
+      return;
+    }
+    this.bootQaFlight(PACE.ENTRY - 0.2, () => this.enterJacklyn());
+  }
+
   bootQaFlight(tClock, enter) {
     this.voice.beginFlight();
     this.session = this.freshSession();
     this.session.tClock = tClock;
+    this.session.qaBooted = true;
     for (const beat of this.session.beats) {
       if (beat.t < tClock) this.session.fired[beat.id] = true;
     }
+    this.status = 'PRELAUNCH';
+    this.screen = 'play';
     this.paused = false;
     this.pausedForSettings = false;
+    this.settingsOpen = false;
     this.syncMatterPause();
     this.menuLayer.setVisible(false);
     hideScreens();
+    this.syncCanvasInput();
     AudioApi.unlock(this.settings);
     AudioApi.setTheme(true, this.settings);
     enter();
+    this.refreshHud();
   }
 
   startMission() {
@@ -772,7 +793,7 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setIgnoreGravity(false);
     this.matter.world.setGravity(0, PHYS.ascentG);
     this.rocket.setFrictionAir(PHYS.airAtmo);
-    if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup('shield'));
+    if (this.session.grace > 1.2) this.time.delayedCall(360, () => this.spawnPickup('shield', { near: true }));
     this.lockVehicleCamera(CAM.followLerpX, CAM.followLerpY);
     this.setZoomWant(CAM.pad, CAM.zoomClimbRate);
     this.time.delayedCall(Math.round(CAM.zoomLiftDelay * 1000), () => {
@@ -844,6 +865,8 @@ export default class MissionScene extends Phaser.Scene {
     this.session.burnLit = false;
     this.session.burnWindow = false;
     this.session.burnWindowCalled = false;
+    this.session.burnHold = 0;
+    this.session.burnAck = false;
     this.clearActors();
     this.showAscentSky(false);
     this.bgPad.setVisible(false);
@@ -1186,14 +1209,31 @@ export default class MissionScene extends Phaser.Scene {
     if (burnWindow && !this.session.burnWindowCalled) {
       this.session.burnWindowCalled = true;
       this.callout('haven-burn', {
-        banner: 'LANDING BURN — HOLD CLIMB and steer onto the paint',
-        kind: 'warn',
-        holdMs: 2600,
+        banner: 'LANDING BURN — HOLD TO BURN and steer onto the paint',
+        kind: 'go',
+        holdMs: 3200,
       });
+      flashIgnite();
     }
     if (burnWindow && boosting && this.session.fuel > 0) {
       this.session.jacklynPhase = 'burn';
       this.session.burnLit = true;
+      this.session.burnHold = clamp((this.session.burnHold || 0) + dt * 1.35, 0, 1);
+      if (!this.session.burnAck) {
+        this.session.burnAck = true;
+        this.callout('haven-burn-hold', { banner: 'BURN HOLD — keep holding, drag onto the paint', kind: 'go', holdMs: 1600 });
+      }
+    } else if (burnWindow) {
+      this.session.burnHold = clamp((this.session.burnHold || 0) - dt * 0.55, 0, 1);
+      if (!this.session.burnLit && alt < HAVEN.burnAlt * 0.62) {
+        this.callout('haven-burn-nag', {
+          banner: 'HOLD TO BURN — engines will not light until you hold',
+          kind: 'warn',
+          holdMs: 1800,
+        });
+      }
+    } else {
+      this.session.burnHold = 0;
     }
     if (alt < 200 && this.session.burnLit && this.session.jacklynPhase === 'burn') {
       this.session.jacklynPhase = 'straighten';
@@ -1626,12 +1666,14 @@ export default class MissionScene extends Phaser.Scene {
     return img;
   }
 
-  spawnPickup(kind) {
+  spawnPickup(kind, opts = {}) {
     const type = kind || pick(PICKUP_TYPES);
     const camTop = liveCameraTop(this.cameras.main, this.rocket.y, CAM.lookAheadY);
-    const y = spawnYAboveCamera(camTop, SPAWN.pickupLeadMin, SPAWN.pickupLeadMax);
+    const y = opts.near
+      ? this.rocket.y - rand(SPAWN.pickupAheadMin, SPAWN.pickupAheadMax)
+      : spawnYInView(this.rocket.y, camTop);
     const edge = corridorEdge(this.rocket.x, y);
-    const x = clamp(this.rocket.x + rand(-140, 140), edge.left + 36, edge.right - 36);
+    const x = clamp(this.rocket.x + rand(-90, 90), edge.left + 36, edge.right - 36);
     const img = this.matter.add.image(x, y, `pickup-${type}`, null, {
       isSensor: true,
       label: `pickup-${type}`,
@@ -1639,10 +1681,20 @@ export default class MissionScene extends Phaser.Scene {
     img.setCollisionCategory(CAT_PICKUP);
     img.setCollidesWith(CAT_ROCKET);
     img.setIgnoreGravity(true);
-    img.setVelocity(0, 0.7);
+    img.setVelocity(0, 0.45);
+    const firstShield = type === 'shield' && !this.session.shieldTaught;
+    img.setScale(firstShield ? 1.55 : 1.28);
+    img.setDepth(7);
     img.pickupKind = type;
     this.pickups.push(img);
-    if (type === 'shield') this.callout('hint-pickup');
+    if (type === 'shield') {
+      this.session.shieldTaught = true;
+      this.callout('hint-pickup', {
+        banner: 'AERO SHIELD — cyan, in the corridor. Steer into it.',
+        kind: 'go',
+        holdMs: 2200,
+      });
+    }
   }
 
   advanceActors() {
@@ -2594,7 +2646,9 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status === 'JACKLYN') {
       const phase = this.session.jacklynPhase || 'glide';
       if (this.session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
-        return 'LANDING BURN  ·  HOLD + DRAG  ·  fly onto the painted deck';
+        return this.session.burnLit
+          ? 'LANDING BURN  ·  KEEP HOLDING  ·  drag onto the painted deck'
+          : 'LANDING BURN  ·  HOLD TO BURN  ·  keep holding and steer onto the paint';
       }
       return 'STRAKES OUT  ·  long GLIDE the diagonal  ·  do not burn yet';
     }
@@ -2669,6 +2723,8 @@ export default class MissionScene extends Phaser.Scene {
           ? 'SEPARATE'
           : 'HOLD · DRAG',
       boostHeld: boosting,
+      boostHold: this.status === 'JACKLYN' && s.burnWindow ? (s.burnHold || 0) : (boosting ? 1 : 0),
+      burnReady: this.status === 'JACKLYN' && Boolean(s.burnWindow || s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle'),
       thumbHeld: Boolean(this.inputState.thumbHeld),
       touchSteer: this.inputState.touchSteer,
       sepReady: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone && this.inSepZone(),

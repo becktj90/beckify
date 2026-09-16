@@ -23,6 +23,27 @@ test('hazards spawn above the camera, never inside the corridor frame', async ()
   assert.ok(spawnIsAheadOfCamera(spawnYAboveCamera(desktopTop, SPAWN.leadMin, SPAWN.leadMax, () => 0), desktopTop));
 });
 
+test('aero-shield pickups spawn in the readable corridor, not sky-top pinpricks', async () => {
+  const { cameraTopY, spawnYInView, SPAWN } = await import(path.join(arcade, 'spawn.js'));
+  const rocketY = 400;
+  const camTop = cameraTopY(rocketY, 0.5, 210, 720);
+  const near = spawnYInView(rocketY, camTop, SPAWN.pickupAheadMin, SPAWN.pickupAheadMax, () => 0);
+  const far = spawnYInView(rocketY, camTop, SPAWN.pickupAheadMin, SPAWN.pickupAheadMax, () => 1);
+  assert.ok(near > camTop, 'pickup is on-screen, not above the camera');
+  assert.ok(far > camTop);
+  assert.ok(near < rocketY, 'still ahead of the stack');
+  assert.ok(far < rocketY);
+  assert.ok(rocketY - near <= SPAWN.pickupAheadMax + 1);
+});
+
+test('Haven burn window OBJ says HOLD TO BURN, not do-not-burn', async () => {
+  const { playGoal } = await import(path.join(arcade, 'sequence.js'));
+  assert.match(playGoal('JACKLYN', { jacklynPhase: 'glide' }, {}), /do not burn yet/i);
+  const open = playGoal('JACKLYN', { jacklynPhase: 'glide', burnWindow: true }, {});
+  assert.match(open, /HOLD TO BURN/);
+  assert.doesNotMatch(open, /do not burn yet/i);
+});
+
 test('integrity names graze vs lethal and shield still eats a hit', async () => {
   const { applyHit, applyScrape, healthMaxFor } = await import(path.join(arcade, 'health.js'));
   assert.equal(healthMaxFor('CADET'), 100);

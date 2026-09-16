@@ -109,7 +109,10 @@ test('Haven glide is longer and the burn window waits for the player', async () 
   assert.ok(HAVEN.readySec >= 10);
   const mission = fs.readFileSync(path.join(arcade, 'mission.js'), 'utf8');
   assert.match(mission, /burnWindow && boosting/);
-  assert.match(mission, /HOLD CLIMB and steer onto the paint/);
+  assert.match(mission, /HOLD TO BURN and steer onto the paint/);
+  assert.match(mission, /burnHold/);
+  assert.match(mission, /haven-burn-nag/);
+  assert.match(mission, /applyQaBeat/);
   assert.doesNotMatch(mission, /setVelocityY\(0\.48\)/);
   assert.match(mission, /clamp\(this\.rocket\.x, -1900/);
 });
