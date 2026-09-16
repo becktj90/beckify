@@ -40,7 +40,8 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - Haven recovery (arcade-compressed): **reentry pitch-over** → **strakes deployed** → diagonal **glide** (descent max-Q) → player **landing burn** → RCS straighten (`landingVy` + `landingTol`). Solid black strakes, not lattice grid fins. No A-frame legs or ASDS circle-X.
 - After SEPARATE the camera stays on the booster. SES-1 and fairing jettison play as off-booster beats, then Haven.
 - Mobile climb pad is one-thumb: **hold to climb/burn**, **drag left/right to steer**. Keyboard Space + A/D is unchanged. Optional ◀ ▶ pads stay as a second-finger path.
-- Ascent camera uses `CAM.lookAheadY` so incoming corridor junk sits on-screen under the HUD. On a phone the dense callout/sci stack hides during flight so the lane stays clear; fail banners still fire. Hazard sprites carry an amber halo.
+- Ascent camera uses `CAM.lookAheadY` so incoming corridor junk sits on-screen under the HUD. Hazards spawn **above the camera** (`spawnYAboveCamera`) so they scroll into view instead of popping mid-corridor. On a phone the dense callout/sci stack hides during flight so the lane stays clear; fail banners still fire. Hazard sprites carry an amber halo.
+- INT / integrity bar is visible remaining damage tolerance (shield still eats one hit). Grazes and lethal hits are named — no silent RUD.
 - Ascent dotted rails are the **flight corridor** (Phaser graphics, not sky decoration). Stay between them or abort; KID is bounced back inside.
 - MECO → stage sep is a playable beat (`SEP` status) in a marked **SEP ZONE** with an on-screen **SEPARATE** button. Camera stays locked on the stack. It is not a 400ms cutscene.
 
@@ -53,6 +54,7 @@ Append to the cabinet URL (iframe `src` or standalone `index.html`):
 | `?beat=haven` | Zoomed-out Haven approach |
 | `?beat=jacklyn` | Same as `haven` (legacy alias) |
 | `?beat=sep` | MECO / stage-sep window |
+| `?mission=KH-5` | Unlock KH-1…KH-5 and select that flight (TOD / hangar QA) |
 | `?debug=1` | Matter debug outlines |
 
 Looping BGM is the Suno instrumental “Kestrel Heavy” (`audio/theme.ogg` / `.mp3`), started on launch via `AudioApi.setTheme`. Mute / SOUND / Music settings apply. Theme volume stays under SFX; critical callouts duck it.

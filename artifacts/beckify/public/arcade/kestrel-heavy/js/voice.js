@@ -187,8 +187,20 @@ export const LINES = {
     'That would have been RUD. KID lets it slide.',
   ],
   'struct-warn': [
-    'Structural hit — one more and it is RUD.',
-    'Airframe is hurt. Another hit ends the flight.',
+    'Structural hit — integrity is down. Another hit may be RUD.',
+    'Airframe is hurt. Watch the INT bar.',
+  ],
+  'health-graze': [
+    'Grazed. Integrity holding. Fly cleaner.',
+    'Hit registered. Stack is still flying.',
+  ],
+  'health-lethal': [
+    'Integrity gone. Range safe.',
+    'Structural limit. Vehicle is lost.',
+  ],
+  'health-scrape': [
+    'Corridor scrape. Steer back inside the rails.',
+    'Skinning the corridor. Integrity is dropping.',
   ],
   'fuel-low': [
     'Propellant low. Hold climb or the cores will starve.',
@@ -394,6 +406,8 @@ const COOLDOWN = {
   'shield-hit': 2.2,
   'close-call': 2.4,
   'struct-warn': 2.2,
+  'health-graze': 1.6,
+  'health-scrape': 2.4,
   'sep-contact': 3,
   'corridor-edge': 2.8,
 };

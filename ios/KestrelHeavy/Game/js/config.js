@@ -10,10 +10,11 @@ export const H = 720;
 export const PAD_ROCKET_X = 508;
 export const PAD_ROCKET_Y = 418;
 
-/** Current settings + scores. Bumped for SFX/music splits + control hints. */
-export const STORAGE_KEY = 'newGlennRunnerStateV6';
+/** Current settings + scores. Bumped for hangar loadouts + integrity. */
+export const STORAGE_KEY = 'newGlennRunnerStateV7';
 /** Prior keys — high scores and prefs are copied forward once. */
 export const LEGACY_KEYS = [
+  'newGlennRunnerStateV6',
   'newGlennRunnerStateV5',
   'newGlennRunnerStateV4',
   'newGlennRunnerStateV3',
@@ -242,4 +243,20 @@ export const DEFAULT_SETTINGS = {
   currentMission: 'KH-1',
   unlockedMissions: ['KH-1'],
   missionBests: {},
+  loadout: {
+    nose: 'ogive-gold',
+    body: 'classic',
+    strakes: 'black',
+    engines: 'seven',
+    paint: 'white',
+    accent: 'gold',
+  },
+  unlockedParts: {
+    nose: ['ogive-gold'],
+    body: ['classic'],
+    strakes: ['black'],
+    engines: ['seven'],
+    paint: ['white'],
+    accent: ['gold'],
+  },
 };

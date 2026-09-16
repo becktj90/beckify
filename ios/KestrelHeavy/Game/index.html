@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-12">
+      <meta name="arcade-asset-version" content="kestrel-13">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' kestrel-heavy:; script-src 'self' 'unsafe-inline' kestrel-heavy:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' kestrel-heavy:; worker-src 'self' blob:; media-src 'self' blob: kestrel-heavy:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
@@ -136,6 +136,36 @@
       align-items: center;
       gap: 6px;
     }
+    .hp-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 9.5rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(4, 8, 16, 0.88);
+      border: 1px solid rgba(180, 236, 255, 0.55);
+      font: 700 0.62rem/1 var(--font-mono);
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+    }
+    .hp-label { color: var(--amber); }
+    .hp-track {
+      flex: 1;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+    }
+    #ng-health-fill {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: var(--go);
+    }
+    .hp-bar[data-kind="warn"] #ng-health-fill { background: var(--amber); }
+    .hp-bar[data-kind="fail"] #ng-health-fill { background: var(--fail); }
+    .hp-bar[hidden] { display: none !important; }
     .mc-met {
       display: flex;
       flex-direction: column;
@@ -491,6 +521,34 @@
       font: 800 1.02rem/1.25 var(--font-main);
       color: var(--fg);
     }
+    #ng-card-tod {
+      margin: -6px 0 12px;
+      font: 600 0.72rem/1.3 var(--font-mono);
+      color: var(--amber);
+      letter-spacing: 0.08em;
+    }
+    .hangar-cat {
+      margin: 12px 0 0;
+      text-align: left;
+    }
+    .hangar-cat .ng-kicker { margin-bottom: 6px; }
+    .hangar-parts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .hangar-parts button {
+      min-height: 40px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(183,171,255,.4);
+      background: rgba(8, 10, 22, 0.55);
+      color: var(--fg);
+      font: 700 0.68rem/1 var(--font-mono);
+      cursor: pointer;
+    }
+    .hangar-parts button.is-active { border-color: var(--go); color: var(--go); }
+    .hangar-parts button.is-locked { opacity: 0.55; }
     #ng-card-blurb {
       margin: 0 0 12px;
       color: var(--cyan);
@@ -901,11 +959,17 @@
             <tr><th scope="row">CHAM</th><td id="t-thr">0%</td></tr>
             <tr><th scope="row">PROP</th><td id="t-fuel">100%</td></tr>
             <tr><th scope="row">SHLD</th><td id="t-shield">0/2</td></tr>
+            <tr><th scope="row">INT</th><td id="t-health">100</td></tr>
           </table>
         </div>
         <div class="mc-center">
           <div class="mc-status">
             <div id="ng-phase">STANDBY</div>
+            <div id="ng-health" class="hp-bar" role="meter" aria-label="Stack integrity" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" data-kind="ok">
+              <span class="hp-label">INT</span>
+              <span class="hp-track"><span id="ng-health-fill"></span></span>
+              <span id="t-health-chip">100</span>
+            </div>
             <div id="ng-banner" hidden data-kind="info"></div>
           </div>
           <div class="mc-met">
@@ -942,6 +1006,7 @@
           <h1>KESTREL HEAVY</h1>
           <p id="ng-card-flight">KH-1 · Aether Scout</p>
           <p id="ng-card-blurb">Demo stack. Prove the corridor.</p>
+          <p id="ng-card-tod">Pier 7 · Dawn</p>
           <p id="ng-menu-blurb" class="visually-hidden">Hold climb and drag to steer. Stay between the dotted corridor rails. Slide onto Haven.</p>
           <div class="diff-row" role="group" aria-label="Difficulty">
             <button type="button" data-diff="KID">KID</button>
@@ -954,7 +1019,10 @@
               <button type="button" id="ng-hold">HOLD</button>
               <button type="button" id="ng-open-settings">Settings</button>
             </div>
-            <button type="button" id="ng-open-howto">How to play</button>
+            <div class="cta-secondary">
+              <button type="button" id="ng-open-hangar">Hangar</button>
+              <button type="button" id="ng-open-howto">How to play</button>
+            </div>
           </div>
           <p id="ng-launch-tip">Hold climb · drag to steer · stay between the dotted corridor rails · SEP ZONE then SEPARATE · glide then burn Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
@@ -983,15 +1051,90 @@
           <button class="btn" id="ng-missions-back" type="button">BACK</button>
         </div>
       </div>
+      <div id="ng-hangar" class="ng-screen" hidden>
+        <div class="ng-card">
+          <p class="ng-kicker">Pier 7 hangar</p>
+          <h2>BUILD YOUR STACK</h2>
+          <p>Unlock parts by flying KH-n, scoring, and grabbing pickups. Equipped loadout flies on the pad and in the corridor. Default silhouette stays a tall white-ish stack with gold tip accents and solid black strakes.</p>
+          <p id="ng-hangar-count">36,000 combinations</p>
+          <div class="hangar-cat">
+            <p class="ng-kicker">Nose / fairing</p>
+            <div class="hangar-parts" id="hangar-nose">
+              <button type="button" data-part="ogive-gold">Ogive gold</button>
+              <button type="button" data-part="blunt-gold">Blunt gold</button>
+              <button type="button" data-part="white-needle">White needle</button>
+              <button type="button" data-part="black-ogive">Night ogive</button>
+              <button type="button" data-part="twin-mark">Twin mark</button>
+            </div>
+          </div>
+          <div class="hangar-cat">
+            <p class="ng-kicker">Body</p>
+            <div class="hangar-parts" id="hangar-body">
+              <button type="button" data-part="classic">Classic</button>
+              <button type="button" data-part="stripe">Race stripe</button>
+              <button type="button" data-part="chevron">Heavy chevron</button>
+              <button type="button" data-part="ringed">Ringed</button>
+              <button type="button" data-part="cargo">Cargo band</button>
+              <button type="button" data-part="long-window">Long window</button>
+            </div>
+          </div>
+          <div class="hangar-cat">
+            <p class="ng-kicker">Strakes</p>
+            <div class="hangar-parts" id="hangar-strakes">
+              <button type="button" data-part="black">Black strakes</button>
+              <button type="button" data-part="wide">Wide</button>
+              <button type="button" data-part="aft">Aft only</button>
+              <button type="button" data-part="gold-edge">Gold edge</button>
+              <button type="button" data-part="stub">Stub</button>
+            </div>
+          </div>
+          <div class="hangar-cat">
+            <p class="ng-kicker">Engines</p>
+            <div class="hangar-parts" id="hangar-engines">
+              <button type="button" data-part="seven">Seven core</button>
+              <button type="button" data-part="clustered">Cluster</button>
+              <button type="button" data-part="bell-wide">Wide bells</button>
+              <button type="button" data-part="dual">Dual outboard</button>
+              <button type="button" data-part="slim">Slim seven</button>
+            </div>
+          </div>
+          <div class="hangar-cat">
+            <p class="ng-kicker">Paint / livery</p>
+            <div class="hangar-parts" id="hangar-paint">
+              <button type="button" data-part="white">Pier white</button>
+              <button type="button" data-part="dawn">Dawn blush</button>
+              <button type="button" data-part="ember">Ember</button>
+              <button type="button" data-part="harbor">Harbor</button>
+              <button type="button" data-part="night">Nightglass</button>
+              <button type="button" data-part="lumen">Lumen</button>
+              <button type="button" data-part="storm">Storm</button>
+              <button type="button" data-part="pier">Pier sand</button>
+            </div>
+          </div>
+          <div class="hangar-cat">
+            <p class="ng-kicker">Accents</p>
+            <div class="hangar-parts" id="hangar-accent">
+              <button type="button" data-part="gold">Gold</button>
+              <button type="button" data-part="cyan">Cyan</button>
+              <button type="button" data-part="ember">Ember</button>
+              <button type="button" data-part="violet">Violet</button>
+              <button type="button" data-part="copper">Copper</button>
+              <button type="button" data-part="lime">Lime</button>
+            </div>
+          </div>
+          <button class="btn" id="ng-hangar-back" type="button">BACK</button>
+        </div>
+      </div>
       <div id="ng-howto" class="ng-screen" hidden>
         <div class="ng-card">
           <p class="ng-kicker">Readable in 3 seconds</p>
           <h2>HOW TO PLAY</h2>
           <p>HOLD SPACE / CLIMB to throttle — the pad flashes when the hold registers. On a phone, hold CLIMB and drag left/right to steer with one thumb. Keyboard A D or optional ◀ ▶ also steer between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
-Grab the cyan aero shield when you can. Through MAX-Q, fly smooth.
+Grab the cyan aero shield when you can. Watch the INT bar — grazes hurt, a lethal hit is a RUD. Through MAX-Q, fly smooth.
 After MECO you are in space. Stay in the marked SEP ZONE, ALIGN green, then press SEPARATE.
 Haven is a strake glide: hold the diagonal, then HOLD CLIMB for the landing burn and straighten onto the painted deck. Soft deck = BOOSTER RECOVERED.
 Tip, hard catch, or splash clips score — not a wipe. A RUD ends the flight and names the reason.
+Hangar unlocks parts as you fly. Each KH-n has its own time of day.
 The bottom tape is the roadmap: NOW is this beat, NEXT is the one after.
 KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p>
           <button class="btn" id="ng-howto-back" type="button">BACK</button>
