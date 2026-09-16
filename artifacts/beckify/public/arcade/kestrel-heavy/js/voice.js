@@ -143,8 +143,8 @@ export const LINES = {
     'Outside the rails is a RUD. Nudge back in.',
   ],
   'hint-pickup': [
-    'Cyan pickup is an aero shield — one free hit.',
-    'Grab the shield before Max-Q if you can.',
+    'Cyan aero shield, in the corridor — steer into it for one free hit.',
+    'Grab the cyan shield ahead of the stack before Max-Q.',
   ],
   'hint-sep': [
     'After MECO: hold attitude. Stay in the SEP ZONE, then press SEPARATE.',
@@ -159,8 +159,16 @@ export const LINES = {
     'Strakes out. Ride the diagonal into Haven.',
   ],
   'haven-burn': [
-    'Landing burn. HOLD climb. Kill sink over the paint.',
-    'Engines for the deck. Hold burn, then straighten.',
+    'Landing burn window. HOLD TO BURN. Keep holding and drag onto the paint.',
+    'Engines wait on a hold. HOLD TO BURN, then steer the deck.',
+  ],
+  'haven-burn-hold': [
+    'Burn hold is in. Keep holding. Drag onto the paint.',
+    'Landing burn lit. Hold it and straighten for the deck.',
+  ],
+  'haven-burn-nag': [
+    'HOLD TO BURN. A tap will not kill sink over Haven.',
+    'The window is open. Hold climb or you will splash.',
   ],
   'press-ok': [
     'Hold confirmed. Cores coming up.',
@@ -394,7 +402,7 @@ const ONCE = new Set([
   'entry', 'landing', 'touchdown', 'seco', 'deploy',
   'terminal', 'tankpress', 'internal', 'deluge', 'ignition',
   'haven-slide', 'haven-straighten', 'haven-strakes', 'haven-burn',
-  'haven-reentry', 'haven-maxq', 'press-ok',
+  'haven-reentry', 'haven-maxq', 'press-ok', 'haven-burn-hold',
 ]);
 
 const COOLDOWN = {
@@ -410,6 +418,7 @@ const COOLDOWN = {
   'health-scrape': 2.4,
   'sep-contact': 3,
   'corridor-edge': 2.8,
+  'haven-burn-nag': 3.2,
 };
 
 export function fillLine(text, mission) {
@@ -526,7 +535,7 @@ export function pauseHintFor(status, sepPhase) {
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Pitch over, strakes out. Long diagonal glide, then HOLD + drag a careful landing burn onto the paint.';
+  if (status === 'JACKLYN') return 'Pitch over, strakes out. Long diagonal glide, then HOLD TO BURN and keep holding while you steer onto the paint.';
   return 'HOLD climb and drag to steer. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
 }
 

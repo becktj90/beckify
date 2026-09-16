@@ -91,6 +91,10 @@ export function renderHud(snapshot) {
     climb.dataset.label = snapshot.boostLabel;
     climb.dataset.climb = climbArmedFromLabel(snapshot.boostLabel) ? 'on' : 'off';
     climb.classList.toggle('is-held', Boolean(snapshot.boostHeld || snapshot.thumbHeld));
+    climb.classList.toggle('is-burn', Boolean(snapshot.burnReady));
+    if (climb.style?.setProperty) {
+      climb.style.setProperty('--kh-hold', String(Math.max(0, Math.min(1, Number(snapshot.boostHold) || 0))));
+    }
     paintThumbSteer(climb, snapshot.touchSteer);
     if (climb._syncClimb) climb._syncClimb();
     climb.setAttribute(

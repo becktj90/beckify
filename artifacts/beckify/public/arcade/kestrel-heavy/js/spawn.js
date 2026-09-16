@@ -11,8 +11,9 @@ export const SPAWN = {
   /** Pixels above cameras.main.worldView.top (smaller Y). */
   leadMin: 200,
   leadMax: 380,
-  pickupLeadMin: 140,
-  pickupLeadMax: 260,
+  /** Ahead of the stack, still inside the camera — not a pinprick at sky-top. */
+  pickupAheadMin: 110,
+  pickupAheadMax: 220,
 };
 
 /**
@@ -48,6 +49,22 @@ export function spawnYAboveCamera(
 
 export function spawnIsAheadOfCamera(spawnY, camTop) {
   return Number(spawnY) < Number(camTop);
+}
+
+/**
+ * Pickup Y in the readable corridor: above the stack, below the camera top.
+ */
+export function spawnYInView(
+  rocketY,
+  camTop,
+  minAhead = SPAWN.pickupAheadMin,
+  maxAhead = SPAWN.pickupAheadMax,
+  random = Math.random,
+) {
+  const ahead = minAhead + random() * Math.max(0, maxAhead - minAhead);
+  const want = Number(rocketY) - ahead;
+  const floor = Number(camTop) + 48;
+  return Math.max(want, floor);
 }
 
 /** Resolve cam top from a live Phaser camera, falling back to the formula. */

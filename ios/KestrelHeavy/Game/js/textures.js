@@ -1142,30 +1142,39 @@ export function makeHazard(kind) {
 }
 
 export function makePickup(kind) {
-  const cv = canvas(36, 36);
+  const cv = canvas(64, 64);
   const ctx = cv.getContext('2d');
-  ctx.translate(18, 18);
+  ctx.translate(32, 32);
+  ctx.strokeStyle = kind === 'shield' ? 'rgba(140, 224, 255, 0.95)' : 'rgba(255, 207, 93, 0.85)';
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.arc(0, 0, 28, 0, Math.PI * 2);
+  ctx.stroke();
   if (kind === 'shield') {
     ctx.fillStyle = '#8ce0ff';
     ctx.beginPath();
-    ctx.moveTo(0, -12);
-    ctx.lineTo(12, -4);
-    ctx.lineTo(8, 12);
-    ctx.lineTo(-8, 12);
-    ctx.lineTo(-12, -4);
+    ctx.moveTo(0, -18);
+    ctx.lineTo(16, -6);
+    ctx.lineTo(11, 16);
+    ctx.lineTo(-11, 16);
+    ctx.lineTo(-16, -6);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#f4fbff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
   } else if (kind === 'fuel') {
     ctx.fillStyle = '#9df6bf';
-    ctx.fillRect(-7, -12, 14, 24);
+    ctx.fillRect(-10, -16, 20, 32);
     ctx.fillStyle = '#146a3a';
-    ctx.fillText('LOX', -10, 4);
+    ctx.font = '700 11px sans-serif';
+    ctx.fillText('LOX', -12, 4);
   } else {
     ctx.fillStyle = '#ffcf5d';
     ctx.beginPath();
-    ctx.moveTo(0, -12);
-    ctx.lineTo(10, 12);
-    ctx.lineTo(-10, 12);
+    ctx.moveTo(0, -18);
+    ctx.lineTo(14, 16);
+    ctx.lineTo(-14, 16);
     ctx.closePath();
     ctx.fill();
   }
