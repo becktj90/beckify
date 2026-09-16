@@ -54,6 +54,7 @@ Append to the cabinet URL (iframe `src` or standalone `index.html`):
 | `?beat=haven` | Zoomed-out Haven approach |
 | `?beat=jacklyn` | Same as `haven` (legacy alias) |
 | `?beat=sep` | MECO / stage-sep window |
+| `?mission=KH-5` | Unlock KH-1…KH-5 and select that flight (TOD / hangar QA) |
 | `?debug=1` | Matter debug outlines |
 
 Looping BGM is the Suno instrumental “Kestrel Heavy” (`audio/theme.ogg` / `.mp3`), started on launch via `AudioApi.setTheme`. Mute / SOUND / Music settings apply. Theme volume stays under SFX; critical callouts duck it.

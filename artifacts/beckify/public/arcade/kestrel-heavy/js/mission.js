@@ -68,7 +68,7 @@ import {
   speak,
 } from './voice.js';
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
-import { FIRST_MISSION, getMission, isUnlocked, nextMissionId } from './missions.js';
+import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, phaseChip, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures, refreshLoadoutTextures, refreshTodTextures } from './textures.js';
@@ -127,10 +127,15 @@ export default class MissionScene extends Phaser.Scene {
     this.qaBeat = new URLSearchParams(window.location.search).get('beat');
     const qaMission = new URLSearchParams(window.location.search).get('mission');
     if (qaMission && getMission(qaMission).id === qaMission) {
-      if (!this.settings.unlockedMissions.includes(qaMission)) {
-        this.settings.unlockedMissions.push(qaMission);
+      const ids = MISSIONS.map((row) => row.id);
+      const idx = ids.indexOf(qaMission);
+      for (let i = 0; i <= idx; i++) {
+        if (!this.settings.unlockedMissions.includes(ids[i])) {
+          this.settings.unlockedMissions.push(ids[i]);
+        }
       }
       this.settings.currentMission = qaMission;
+      mergeUnlocks(this.settings);
       saveSettings(this.settings);
     }
 

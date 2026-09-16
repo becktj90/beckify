@@ -267,6 +267,8 @@ assert.match(mission, /hiArcadeScore/);
 assert.match(mission, /beat === 'haven'|isHavenQa/);
 assert.match(mission, /qaBeat === 'sep'/);
 assert.match(mission, /beat=jacklyn|qaBeat/);
+assert.match(mission, /get\('mission'\)/);
+assert.match(engineDoc, /\?mission=KH-5/);
 assert.match(missions, /id: 'KH-1'/);
 assert.match(missions, /id: 'KH-5'/);
 assert.match(missions, /Aether Scout/);
