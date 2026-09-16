@@ -133,3 +133,50 @@ export function todPalette(id) {
 export function missionTod(flight) {
   return todPalette(flight?.tod);
 }
+
+export function clamp01(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return 0;
+  return Math.max(0, Math.min(1, x));
+}
+
+export function smoothstep(edge0, edge1, x) {
+  const span = edge1 - edge0;
+  if (span === 0) return x >= edge1 ? 1 : 0;
+  const t = clamp01((x - edge0) / span);
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Continuous atmo → vacuum. No step functions — callers lerp layer alphas.
+ * SEP / Haven sit at 1. Ascent crosses 6–56 km.
+ */
+export function spaceBlend(altKm, status) {
+  if (status === 'SEP' || status === 'JACKLYN') return 1;
+  return smoothstep(6, 56, Number(altKm) || 0);
+}
+
+export function skyLayerAlphas(spaceT) {
+  const t = clamp01(spaceT);
+  return {
+    sky: 1 - t,
+    stars: t,
+    milky: smoothstep(0.18, 0.9, t) * 0.74,
+    nebula: smoothstep(0.28, 1, t) * 0.52,
+    clouds: 1 - smoothstep(0.04, 0.58, t),
+    haze: 1 - smoothstep(0, 0.72, t),
+  };
+}
+
+export function lerpRgb(a, b, t) {
+  const k = clamp01(t);
+  const ar = (a >> 16) & 255;
+  const ag = (a >> 8) & 255;
+  const ab = a & 255;
+  const br = (b >> 16) & 255;
+  const bg = (b >> 8) & 255;
+  const bb = b & 255;
+  return (Math.round(ar + (br - ar) * k) << 16)
+    | (Math.round(ag + (bg - ag) * k) << 8)
+    | Math.round(ab + (bb - ab) * k);
+}

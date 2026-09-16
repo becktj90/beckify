@@ -526,7 +526,7 @@ export function pauseHintFor(status, sepPhase) {
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Pitch over, strakes out. Glide the diagonal, then HOLD + drag for the landing burn.';
+  if (status === 'JACKLYN') return 'Pitch over, strakes out. Long diagonal glide, then HOLD + drag a careful landing burn onto the paint.';
   return 'HOLD climb and drag to steer. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
 }
 
