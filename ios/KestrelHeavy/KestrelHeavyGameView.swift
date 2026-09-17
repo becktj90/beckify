@@ -6,12 +6,14 @@ import WebKit
 /// Loads `kestrel-heavy://game/index.html` through `KestrelHeavySchemeHandler`
 /// so ES modules, vendor/phaser.min.js, and audio/ share one origin.
 struct KestrelHeavyGameView: UIViewRepresentable {
+    var onCabinetReady: () -> Void = {}
+
     static func packAvailable() -> Bool {
         KestrelHeavyOrigin.packRoot() != nil
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(onCabinetReady: onCabinetReady)
     }
 
     func makeUIView(context: Context) -> WKWebView {
@@ -65,9 +67,11 @@ struct KestrelHeavyGameView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
+        context.coordinator.onCabinetReady = onCabinetReady
         if webView.url == nil {
             context.coordinator.loadCabinet(webView)
         }
+        (webView as? ArcadeWebView)?.publishViewportIfNeeded()
     }
 
     static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
@@ -83,14 +87,21 @@ struct KestrelHeavyGameView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         let schemeHandler = KestrelHeavySchemeHandler()
+        var onCabinetReady: () -> Void
         private let light = UIImpactFeedbackGenerator(style: .light)
         private let medium = UIImpactFeedbackGenerator(style: .medium)
+        private var didAnnounceReady = false
+
+        init(onCabinetReady: @escaping () -> Void) {
+            self.onCabinetReady = onCabinetReady
+        }
 
         func loadCabinet(_ webView: WKWebView) {
             webView.load(URLRequest(url: KestrelHeavyOrigin.index))
         }
 
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            didAnnounceReady = false
             loadCabinet(webView)
         }
 
@@ -113,6 +124,8 @@ struct KestrelHeavyGameView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             webView.becomeFirstResponder()
+            (webView as? ArcadeWebView)?.publishViewportIfNeeded(force: true)
+            announceReady()
         }
 
         func webView(
@@ -131,6 +144,13 @@ struct KestrelHeavyGameView: UIViewRepresentable {
             light.prepare()
             medium.prepare()
             fire(pattern: message.body)
+        }
+
+        private func announceReady() {
+            guard !didAnnounceReady else { return }
+            didAnnounceReady = true
+            // Keep the brand frame up just long enough to match LaunchScreen.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: onCabinetReady)
         }
 
         private func fire(pattern: Any) {
@@ -171,5 +191,53 @@ struct KestrelHeavyGameView: UIViewRepresentable {
 
 /// Keeps hardware-keyboard / iPad key events flowing into Phaser.
 final class ArcadeWebView: WKWebView {
+    private var lastPublished = CGSize.zero
+
     override var canBecomeFirstResponder: Bool { true }
+
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        [.portrait, .portraitUpsideDown]
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        publishViewportIfNeeded()
+    }
+
+    /// Push the real WKWebView point size into the cabinet so Phaser ENVELOP
+    /// covers the shell instead of a stale 16:9 visualViewport letterbox.
+    func publishViewportIfNeeded(force: Bool = false) {
+        let size = bounds.size
+        guard size.width > 1, size.height > 1 else { return }
+        if !force, size == lastPublished { return }
+        lastPublished = size
+        let width = Int(size.width.rounded())
+        let height = Int(size.height.rounded())
+        let script = """
+        (function () {
+          var w = \(width);
+          var h = \(height);
+          if (!(w > 0 && h > 0)) return;
+          var root = document.documentElement;
+          if (!root) return;
+          root.style.setProperty('--game-vv-top', '0px');
+          root.style.setProperty('--game-vv-left', '0px');
+          root.style.setProperty('--game-vv-width', w + 'px');
+          root.style.setProperty('--game-vv-height', h + 'px');
+          var nodes = [root, document.body, document.querySelector('.cabinet'), document.getElementById('arcade-fs-wrapper')];
+          for (var i = 0; i < nodes.length; i++) {
+            var n = nodes[i];
+            if (!n) continue;
+            n.style.width = w + 'px';
+            n.style.height = h + 'px';
+            n.style.minHeight = h + 'px';
+            n.style.maxWidth = 'none';
+            n.style.maxHeight = 'none';
+          }
+          if (document.body) document.body.classList.add('arcade-host-fill', 'is-ios-app');
+          try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+        })();
+        """
+        evaluateJavaScript(script, completionHandler: nil)
+    }
 }

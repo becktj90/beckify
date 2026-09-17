@@ -11,7 +11,7 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 **Bundle ID:** `com.beckify.kestrelheavy`  
 **SKU:** `kestrel-heavy`  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M`  
-**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), portrait + landscape  
+**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), **portrait only** (upside-down allowed). Build **1.0 (2)**.  
 **Category:** Games  
 **Secondary:** Arcade  
 **Age rating (draft):** 9+ — cartoon launch / recovery arcade. No realistic violence, no UGC feed, no unrestricted web (WKWebView loads only the bundled cabinet). Confirm in the Connect questionnaire.  
@@ -38,7 +38,7 @@ Free. No ads. No account. No in-app purchases. Plays offline from the app bundle
 arcade,rocket,launch,space,flight,kestrel,haven,pad,recovery,casual
 
 **What's New (1.0):**
-First release. Five KH-n flights, KID / CADET / PAD RAT, Haven recovery. Offline. Free, no IAP, no ads.
+First release. Portrait-only playfield (no landscape letterbox), KH / Pier 7 launch splash. Five KH-n flights, KID / CADET / PAD RAT, Haven recovery. Offline. Free, no IAP, no ads.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com/games/kestrel-heavy  
@@ -80,7 +80,7 @@ Suggested 3–6 shots:
 3. Stage sep — ALIGN / MECO beat
 4. Haven approach — camera locked on the booster, then HOLD TO BURN
 5. Summary — BOOSTER RECOVERED / score
-6. iPad portrait and landscape of the same full-bleed cabinet
+6. iPad portrait of the same full-bleed cabinet (no landscape)
 
 ## App icon
 

@@ -1,8 +1,11 @@
 import AVFoundation
 import SwiftUI
+import UIKit
 
 @main
 struct KestrelHeavyApp: App {
+    @UIApplicationDelegateAdaptor(KestrelHeavyAppDelegate.self) private var appDelegate
+
     init() {
         KestrelHeavyAudioSession.activate()
     }
@@ -13,7 +16,18 @@ struct KestrelHeavyApp: App {
                 .preferredColorScheme(.dark)
                 .statusBarHidden(true)
                 .persistentSystemOverlays(.hidden)
+                .supportedInterfaceOrientations(.portrait.union(.portraitUpsideDown))
         }
+    }
+}
+
+/// Info.plist is portrait-only; this keeps WKWebView from inheriting a landscape mask.
+final class KestrelHeavyAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        [.portrait, .portraitUpsideDown]
     }
 }
 

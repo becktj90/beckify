@@ -210,7 +210,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 
 ## Remaining steps (Mac + App Store Connect)
 
-**Next binary / App Store upload:** Toolbox `MARKETING_VERSION` (`CFBundleShortVersionString`) is **1.0.1**. `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **126**. **1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**). Transporter rejected **1.0 (121)** for that reason. The next Connect upload must be **1.0.1** with build **≥126**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck (`com.beckify.lookcheck`) and Kestrel Heavy (`com.beckify.kestrelheavy`) stay **1.0** / **1**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
+**Next binary / App Store upload:** Toolbox `MARKETING_VERSION` (`CFBundleShortVersionString`) is **1.0.1**. `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **126**. **1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**). Transporter rejected **1.0 (121)** for that reason. The next Connect upload must be **1.0.1** with build **≥126**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck (`com.beckify.lookcheck`) stays **1.0** / **1**. Kestrel Heavy (`com.beckify.kestrelheavy`) is **1.0 (2)**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 
