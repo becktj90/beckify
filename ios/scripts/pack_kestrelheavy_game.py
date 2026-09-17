@@ -69,7 +69,9 @@ IOS_CSS = """
     body.is-ios-app #atb-left,
     body.is-ios-app #atb-right {
       width: 44px;
+      min-width: 40px;
       height: 80px;
+      min-height: 44px;
       background: rgba(16, 12, 40, 0.2);
       border-color: rgba(183, 171, 255, 0.28);
     }
