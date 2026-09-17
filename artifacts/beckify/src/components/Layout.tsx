@@ -28,7 +28,7 @@ export const Layout = ({
       <main
         className={
           variant === "cabinet"
-            ? "kh-cabinet-shell mx-auto flex min-h-[calc(100dvh-5.5rem)] w-full max-w-[1280px] flex-1 flex-col px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-3"
+            ? "kh-cabinet-shell mx-auto flex min-h-[calc(100dvh-5.5rem)] w-full max-w-none flex-1 flex-col px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-3"
             : "mx-auto max-w-5xl space-y-14 px-6 py-10 md:py-14"
         }
       >

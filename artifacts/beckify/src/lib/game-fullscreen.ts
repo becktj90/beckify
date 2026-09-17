@@ -150,22 +150,23 @@ export function isArcadeViewportMessage(data: unknown): data is ArcadeViewportMe
  */
 export function syncEmbeddedArcadeViewport(iframe: HTMLIFrameElement, immersive: boolean): void {
   const box = visualViewportBox();
-  if (immersive) {
-    iframe.style.width = `${box.width}px`;
-    iframe.style.height = `${box.height}px`;
-    iframe.setAttribute("width", String(box.width));
-    iframe.setAttribute("height", String(box.height));
-  } else {
-    iframe.style.removeProperty("width");
-    iframe.style.removeProperty("height");
-    iframe.removeAttribute("width");
-    iframe.removeAttribute("height");
-  }
+  const host = iframe.parentElement;
+  const hostRect = host?.getBoundingClientRect();
+  const frameRect = iframe.getBoundingClientRect();
+  const width = Math.round(
+    immersive ? box.width : (hostRect?.width || frameRect.width || box.width),
+  );
+  const height = Math.round(
+    immersive ? box.height : (hostRect?.height || frameRect.height || box.height),
+  );
+  // iOS Safari / WKWebView keep the iframe layout viewport at the first
+  // 16:9 cabinet size unless width/height are explicit pixels every time.
+  iframe.style.width = `${width}px`;
+  iframe.style.height = `${height}px`;
+  iframe.setAttribute("width", String(width));
+  iframe.setAttribute("height", String(height));
   const win = iframe.contentWindow;
   if (!win) return;
-  const rect = iframe.getBoundingClientRect();
-  const width = Math.round(immersive ? box.width : (rect.width || box.width));
-  const height = Math.round(immersive ? box.height : (rect.height || box.height));
   const payload: ArcadeViewportMessage = {
     source: KESTREL_VIEWPORT_SOURCE,
     type: "viewport",

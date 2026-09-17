@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-18">
+      <meta name="arcade-asset-version" content="kestrel-19">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,21 +38,13 @@
       overflow: hidden;
     }
     .cabinet {
-      max-width: 1280px;
+      max-width: none;
       margin: 0 auto;
-      width: 100%;
-      height: 100dvh;
-      min-height: 100dvh;
+      width: var(--game-vv-width, 100%);
+      height: var(--game-vv-height, 100dvh);
+      min-height: var(--game-vv-height, 100dvh);
       display: flex;
       flex-direction: column;
-    }
-    @media (hover: none), (pointer: coarse), (orientation: portrait) {
-      .cabinet {
-        max-width: none;
-        width: 100%;
-        height: var(--game-vv-height, 100dvh);
-        min-height: var(--game-vv-height, 100dvh);
-      }
     }
     #arcade-fs-wrapper {
       position: relative;
@@ -62,8 +54,9 @@
       border-radius: 0;
       background: #05050d;
       container: cabinet / size;
-      aspect-ratio: 16 / 9;
-      width: 100%;
+      aspect-ratio: unset;
+      width: var(--game-vv-width, 100%);
+      height: var(--game-vv-height, 100%);
     }
     @supports (height: 100dvh) {
       #arcade-fs-wrapper {

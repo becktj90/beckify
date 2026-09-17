@@ -66,4 +66,4 @@ Looping BGM is the Suno instrumental “Kestrel Heavy” (`audio/theme.ogg` / `.
 
 ## Stage
 
-Internal resolution is **1280×720**. Phone / tablet / iOS pack fill the usable visual viewport (not a letterboxed 16:9 strip). Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent; portrait zoom keeps the corridor and booster in the cropped strip. Haven camera **follows stage-1** (expanded bounds, follow lerp) so the vehicle does not vanish into empty sky. Do not use `Scale.RESIZE` for the Matter world.
+Internal resolution is **1280×720**. Every device (iPhone, iPad, any phone/tablet, portrait + landscape) and the iOS WKWebView pack fill the usable visual viewport / safe-area / host iframe pixels (not a letterboxed 16:9 strip). Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent; playfield zoom keeps the corridor and booster in the cropped strip. Haven camera **stays locked on stage-1** through glide → burn → deck (expanded bounds, fast follow lerp, snap-if-offscreen after iOS Scale.refresh). Do not use `Scale.RESIZE` for the Matter world.

@@ -86,6 +86,7 @@ import {
   havenFollowOffset,
   havenZoomWant,
   padZoomForPlayfield,
+  vehicleInView,
 } from './camera.js';
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isAscentCruise, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
@@ -404,7 +405,13 @@ export default class MissionScene extends Phaser.Scene {
       if (fsBtn) fsBtn.hidden = true;
     }
     const fsWrap = document.getElementById('arcade-fs-wrapper');
-    if (fsWrap) bindFullscreenChrome(fsWrap, () => this.scale.refresh());
+    if (fsWrap) {
+      bindFullscreenChrome(fsWrap, () => {
+        this.scale.refresh();
+        this.relockFlightCamera();
+      });
+    }
+    this.scale.on('resize', () => this.relockFlightCamera());
     if (isEmbedded()) requestHostViewport();
 
     this.input.on('pointerdown', (pointer) => {
@@ -538,9 +545,41 @@ export default class MissionScene extends Phaser.Scene {
       cam.setBounds(-2400, CAM.worldTop, W + 4800, CAM.worldHeight);
     }
     cam.startFollow(this.rocket, false, lerpX, lerpY);
-    cam.setDeadzone(CAM.deadzoneX, CAM.deadzoneY);
+    cam.setDeadzone(this.status === 'JACKLYN' ? 18 : CAM.deadzoneX, this.status === 'JACKLYN' ? 16 : CAM.deadzoneY);
     if (typeof cam.setLerp === 'function') cam.setLerp(lerpX, lerpY);
     this.syncFollowOffset();
+    this.snapVehicleIfOffscreen();
+  }
+
+  /** iOS visualViewport / Scale.refresh can drop follow — put the live stack back. */
+  relockFlightCamera() {
+    if (!this.rocket || this.status === 'MENU' || this.status === 'SUMMARY') return;
+    if (this.status === 'JACKLYN') {
+      this.cameras.main.centerOn(this.rocket.x, this.rocket.y);
+      this.lockVehicleCamera(CAM.havenLerpX, CAM.havenLerpY);
+      return;
+    }
+    if (this.status === 'SEP') this.lockVehicleCamera(CAM.sepLerpX, CAM.sepLerpY);
+    else this.lockVehicleCamera(CAM.followLerpX, CAM.followLerpY);
+  }
+
+  snapVehicleIfOffscreen() {
+    if (!this.rocket) return;
+    const cam = this.cameras.main;
+    if (!cam) return;
+    const { w, h } = this.playfieldSize();
+    const vis = envelopVisibleWorld(w, h, W, H, cam.zoom || 1);
+    const cx = cam.midPoint?.x ?? (cam.worldView?.centerX);
+    const cy = cam.midPoint?.y ?? (cam.worldView?.centerY);
+    if (cx == null || cy == null) {
+      cam.centerOn(this.rocket.x, this.rocket.y);
+      return;
+    }
+    if (!vehicleInView(this.rocket.x, this.rocket.y, cx, cy, vis.w, vis.h, 80)) {
+      cam.centerOn(this.rocket.x, this.rocket.y);
+      if (typeof cam.setFollowOffset === 'function') cam.setFollowOffset(0, 0);
+      if (typeof cam.setLerp === 'function') cam.setLerp(1, 1);
+    }
   }
 
   /** Keep more corridor above the stack during climb; SEP / Haven stay locked on. */
@@ -2409,6 +2448,7 @@ export default class MissionScene extends Phaser.Scene {
     this.setZoomWant(want, 1.8);
     this.tickZoom(typeof dt === 'number' ? dt : 0.016);
     this.lockVehicleCamera(CAM.havenLerpX, CAM.havenLerpY);
+    this.snapVehicleIfOffscreen();
   }
 
   applyHavenDrift(dt, mode) {
