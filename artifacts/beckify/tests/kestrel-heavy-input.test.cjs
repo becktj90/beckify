@@ -54,6 +54,7 @@ test('Haven glide hold does not arm climb until the burn label', async () => {
   assert.equal(climbArmedFromLabel('HOLD · DRAG'), false);
   assert.equal(climbArmedFromLabel('TAP TO LAUNCH'), false);
   assert.equal(climbArmedFromLabel('STEER'), false);
+  assert.equal(climbArmedFromLabel('DRAG TO STEER'), false);
   assert.equal(isAscentCruise('ASCENT'), true);
   assert.equal(isAscentCruise('PRELAUNCH'), false);
   assert.equal(isAscentCruise('JACKLYN'), false);

@@ -107,7 +107,9 @@ export function renderHud(snapshot) {
             ? 'Press to separate stages'
             : snapshot.boostLabel === 'TAP TO LAUNCH'
               ? 'Tap anywhere to launch, then steer'
-              : 'Steer left or right — climb stays on',
+              : snapshot.boostLabel === 'DRAG TO STEER' || snapshot.boostLabel === 'STEER'
+                ? 'Drag to steer — climb stays on'
+                : 'Steer left or right — climb stays on',
     );
   }
   const sepBtn = el('ng-sep-btn');

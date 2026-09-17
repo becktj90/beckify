@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <!-- Phaser 4.2.1 full build + Matter. vendor/phaser.min.js == jsDelivr phaser@4.2.1/dist/phaser.min.js. Do not load arcade.js. -->
-<html lang="en" data-ng-engine="phaser4">
+<html lang="en" data-ng-engine="phaser4" data-kh-build="kestrel-20">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-19">
+      <meta name="arcade-asset-version" content="kestrel-20">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,6 +75,9 @@
     #ng-phaser-root canvas {
       display: block;
       pointer-events: inherit;
+      /* ENVELOP covers the parent; never leave a 16:9 FIT pillarbox. */
+      max-width: none;
+      max-height: none;
     }
     /* Menu / sheets own the pointer. Phaser must not sit on top of LAUNCH. */
     body[data-phase="MENU"] #ng-phaser-root,
@@ -372,6 +375,13 @@
       width: min(88vw, 520px);
       height: max(96px, 18%);
       transform: translateX(-50%);
+    }
+    #atb-boost[data-label="DRAG TO STEER"],
+    #atb-boost[data-label="STEER"],
+    #atb-boost[data-label="GLIDE"] {
+      background: rgba(8, 10, 20, 0.45);
+      border-color: rgba(183, 171, 255, 0.35);
+      color: var(--fg);
     }
     #atb-boost.is-held {
       border-color: var(--go);
@@ -769,6 +779,88 @@
       padding: 0 !important;
       border: 0 !important;
       white-space: nowrap !important;
+    }
+    /* Compact play HUD is the default. #174 still used the 3-column desktop
+       grid whenever cabinet width > 820px — iPhone landscape is ~844–926px,
+       so telem/score ate the sides and squeezed the stack into a ribbon. */
+    body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud {
+      inset: max(4px, env(safe-area-inset-top, 0px)) 8px auto 8px;
+      grid-template-columns: 1fr;
+      grid-template-areas: "status";
+      column-gap: 0;
+    }
+    body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud .mc-panel,
+    body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-callout {
+      display: none !important;
+    }
+    body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-center {
+      gap: 2px;
+    }
+    @media (hover: hover) and (pointer: fine) and (min-width: 1100px) and (min-height: 700px) {
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud {
+        inset: 48px 8px auto 8px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-areas:
+          "telem status score"
+          "callout status score";
+        column-gap: 8px;
+      }
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud .mc-panel {
+        display: block !important;
+      }
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-callout {
+        display: flex !important;
+      }
+    }
+    @media (hover: none), (pointer: coarse), (orientation: landscape) and (max-height: 820px) {
+      #atb-left,
+      #atb-right {
+        width: 44px;
+        height: 88px;
+        background: rgba(16, 12, 40, 0.22);
+        border-color: rgba(183, 171, 255, 0.28);
+      }
+      #atb-boost {
+        min-width: 140px;
+        min-height: 44px;
+        font-size: 0.78rem;
+      }
+      #atb-boost::before {
+        width: min(70vw, 360px);
+        height: 72px;
+      }
+      .hud-btns button {
+        min-width: 40px;
+        min-height: 36px;
+        padding: 4px 8px;
+        font-size: 0.62rem;
+      }
+    }
+    @media (orientation: landscape) and (max-height: 500px) {
+      #atb-left,
+      #atb-right {
+        top: auto;
+        bottom: max(8px, env(safe-area-inset-bottom, 0px));
+        height: 52px;
+        width: 40px;
+        transform: none;
+      }
+      #atb-boost {
+        min-width: 120px;
+        min-height: 36px;
+        bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      }
+      #ng-hints {
+        display: none;
+      }
+      #ng-phase {
+        padding: 4px 10px;
+        font-size: 0.62rem;
+      }
+      .hud-btns {
+        top: max(4px, env(safe-area-inset-top, 0px));
+        right: max(4px, env(safe-area-inset-right, 0px));
+      }
     }
     @media (hover: none), (pointer: coarse) {
       .mc-hud {

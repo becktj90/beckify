@@ -56,6 +56,23 @@ IOS_CSS = """
       max-height: none !important;
       aspect-ratio: unset;
     }
+    /* Compact play HUD — never 3-column telem squeeze on the WKWebView pack. */
+    body.is-ios-app:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud {
+      grid-template-columns: 1fr !important;
+      grid-template-areas: "status" !important;
+      inset: max(4px, env(safe-area-inset-top, 0px)) 8px auto 8px;
+    }
+    body.is-ios-app:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud .mc-panel,
+    body.is-ios-app:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-callout {
+      display: none !important;
+    }
+    body.is-ios-app #atb-left,
+    body.is-ios-app #atb-right {
+      width: 44px;
+      height: 80px;
+      background: rgba(16, 12, 40, 0.2);
+      border-color: rgba(183, 171, 255, 0.28);
+    }
 """
 
 LOCAL_STORE_STUB = """/* Offline stub — website uses /toolbox/js/local-store.js.

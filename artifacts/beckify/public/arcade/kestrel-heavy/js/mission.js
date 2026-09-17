@@ -2839,9 +2839,7 @@ export default class MissionScene extends Phaser.Scene {
           ? 'SEPARATE'
           : this.status === 'PRELAUNCH'
             ? 'TAP TO LAUNCH'
-            : this.status === 'ASCENT'
-              ? 'STEER'
-              : 'STEER',
+            : 'DRAG TO STEER',
       boostHeld: boosting,
       boostHold: this.status === 'JACKLYN' && s.burnWindow ? (s.burnHold || 0) : (boosting ? 1 : 0),
       burnReady: this.status === 'JACKLYN' && Boolean(s.burnWindow || s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle'),
