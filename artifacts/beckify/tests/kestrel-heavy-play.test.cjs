@@ -572,7 +572,26 @@ for (const rel of ['js/hud.js', 'js/input.js', 'js/mission.js', 'js/camera.js'])
 }
 assert.match(iosHtml, /container:\s*cabinet\s*\/\s*size/);
 assert.match(iosHtml, /is-ios-app/);
+assert.match(iosHtml, /data-kh-build="kestrel-20"/);
+assert.match(iosHtml, /name="arcade-asset-version" content="kestrel-20"/);
+assert.match(iosHtml, /DRAG TO STEER/);
+assert.match(iosHtml, /HOLD TO BURN/);
+assert.match(iosHtml, /id="ng-sep-btn"/);
+assert.match(
+  iosHtml,
+  /body:not\(\[data-phase="MENU"\]\):not\(\[data-phase="SUMMARY"\]\) \.mc-hud \{[\s\S]*grid-template-columns:\s*1fr/,
+  'packed play HUD must stay compact (no 3-column iPhone squeeze)',
+);
+assert.doesNotMatch(iosHtml, /HOLD·DRAG/);
+assert.doesNotMatch(iosHtml, /Blue Origin|New Glenn/i);
 assert.doesNotMatch(iosHtml, /fonts\.googleapis\.com/);
+const iosMission = fs.readFileSync(path.join(iosGame, 'js/mission.js'), 'utf8');
+assert.match(iosMission, /'DRAG TO STEER'/);
+assert.match(iosMission, /'HOLD TO BURN'/);
+assert.match(iosMission, /'TAP TO LAUNCH'/);
+assert.match(iosMission, /'SEPARATE'/);
+assert.doesNotMatch(iosMission, /HOLD·DRAG/);
+assert.doesNotMatch(iosMission, /Blue Origin|New Glenn/i);
 assert.ok(fs.existsSync(path.join(iosGame, 'vendor/phaser.min.js')), 'iOS pack must vendor Phaser');
 assert.ok(fs.existsSync(path.join(iosGame, 'audio/theme.mp3')), 'iOS pack must include theme BGM');
 const pbx = fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/project.pbxproj'), 'utf8');
