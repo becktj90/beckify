@@ -572,7 +572,26 @@ for (const rel of ['js/hud.js', 'js/input.js', 'js/mission.js', 'js/camera.js'])
 }
 assert.match(iosHtml, /container:\s*cabinet\s*\/\s*size/);
 assert.match(iosHtml, /is-ios-app/);
+assert.match(iosHtml, /data-kh-build="kestrel-20"/);
+assert.match(iosHtml, /name="arcade-asset-version" content="kestrel-20"/);
+assert.match(iosHtml, /DRAG TO STEER/);
+assert.match(iosHtml, /HOLD TO BURN/);
+assert.match(iosHtml, /id="ng-sep-btn"/);
+assert.match(
+  iosHtml,
+  /body:not\(\[data-phase="MENU"\]\):not\(\[data-phase="SUMMARY"\]\) \.mc-hud \{[\s\S]*grid-template-columns:\s*1fr/,
+  'packed play HUD must stay compact (no 3-column iPhone squeeze)',
+);
+assert.doesNotMatch(iosHtml, /HOLD·DRAG/);
+assert.doesNotMatch(iosHtml, /Blue Origin|New Glenn/i);
 assert.doesNotMatch(iosHtml, /fonts\.googleapis\.com/);
+const iosMission = fs.readFileSync(path.join(iosGame, 'js/mission.js'), 'utf8');
+assert.match(iosMission, /'DRAG TO STEER'/);
+assert.match(iosMission, /'HOLD TO BURN'/);
+assert.match(iosMission, /'TAP TO LAUNCH'/);
+assert.match(iosMission, /'SEPARATE'/);
+assert.doesNotMatch(iosMission, /HOLD·DRAG/);
+assert.doesNotMatch(iosMission, /Blue Origin|New Glenn/i);
 assert.ok(fs.existsSync(path.join(iosGame, 'vendor/phaser.min.js')), 'iOS pack must vendor Phaser');
 assert.ok(fs.existsSync(path.join(iosGame, 'audio/theme.mp3')), 'iOS pack must include theme BGM');
 const pbx = fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/project.pbxproj'), 'utf8');
@@ -583,8 +602,46 @@ assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameVi
 assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameView.swift'), 'utf8'), /webViewWebContentProcessDidTerminate/);
 assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavySchemeHandler.swift'), 'utf8'), /kestrel-heavy:\/\/game\/index\.html/);
 const khConfigs = pbx.split('KHCF00000000000000000013 /* Debug */')[1].split('/* End XCBuildConfiguration')[0];
-assert.match(khConfigs, /UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight/);
-assert.match(khConfigs, /UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown/);
+assert.match(khConfigs, /CURRENT_PROJECT_VERSION = 3;/);
+assert.doesNotMatch(khConfigs, /CURRENT_PROJECT_VERSION = 2;/);
+assert.match(khConfigs, /UILaunchStoryboardName = LaunchScreen/);
+assert.match(khConfigs, /UIInterfaceOrientation = UIInterfaceOrientationPortrait/);
+assert.match(khConfigs, /INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"/);
+assert.match(khConfigs, /INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"/);
+assert.match(khConfigs, /INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"/);
+assert.doesNotMatch(khConfigs, /LandscapeLeft|LandscapeRight|UILaunchScreen_Generation = YES/);
+assert.match(pbx, /LaunchScreen\.storyboard in Resources/);
+const toolboxConfigs = pbx.split('BECF0000000000000000003C /* Debug */')[1].split('AECF00000000000000000017')[0];
+assert.match(toolboxConfigs, /LandscapeLeft/, 'Beckify Toolbox must keep landscape');
+const lookCheckConfigs = pbx.split('AECF00000000000000000017 /* Debug */')[1].split('KHCF00000000000000000013')[0];
+assert.match(lookCheckConfigs, /LandscapeLeft/, 'LookCheck must keep landscape');
+assert.match(lookCheckConfigs, /CURRENT_PROJECT_VERSION = 1;/);
+const khApp = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyApp.swift'), 'utf8');
+assert.match(khApp, /supportedInterfaceOrientationsFor/);
+assert.match(khApp, /\[\.portrait, \.portraitUpsideDown\]/);
+assert.doesNotMatch(khApp, /landscapeLeft|landscapeRight|\.landscape/);
+const khRoot = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyRootView.swift'), 'utf8');
+assert.match(khRoot, /KestrelHeavySplashView/);
+assert.match(khRoot, /PIER 7/);
+assert.match(khRoot, /LaunchMark/);
+const khGame = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameView.swift'), 'utf8');
+assert.match(khGame, /UIViewControllerRepresentable/);
+assert.match(khGame, /KestrelHeavyCabinetController/);
+assert.match(khGame, /shouldAutorotate: Bool \{ false \}/);
+assert.match(khGame, /publishViewportIfNeeded/);
+assert.match(khGame, /--game-vv-width/);
+assert.match(khGame, /arcade-host-fill/);
+assert.match(khGame, /onCabinetReady/);
+assert.match(khApp, /requestGeometryUpdate/);
+const launch = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/LaunchScreen.storyboard'), 'utf8');
+assert.match(launch, /launchScreen="YES"/);
+assert.match(launch, /KESTREL HEAVY/);
+assert.match(launch, /PIER 7/);
+assert.match(launch, /LaunchMark/);
+assert.doesNotMatch(launch, /Blue Origin|New Glenn/i);
+assert.ok(fs.existsSync(path.join(iosRoot, 'KestrelHeavy/Assets.xcassets/LaunchMark.imageset/LaunchMark.png')));
+assert.match(iosHtml, /#ng-phaser-root \{/);
+assert.match(iosHtml, /aspect-ratio: unset/);
 assert.match(fs.readFileSync(path.join(iosRoot, 'Beckify.xcodeproj/xcshareddata/xcschemes/KestrelHeavy.xcscheme'), 'utf8'), /KestrelHeavy\.app/);
 assert.doesNotMatch(fs.readFileSync(path.join(iosRoot, 'Beckify/Models/ToolboxCatalog.swift'), 'utf8'), /kestrel/i);
 

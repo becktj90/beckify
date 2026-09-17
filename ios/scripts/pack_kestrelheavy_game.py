@@ -48,13 +48,18 @@ IOS_CSS = """
       right: max(8px, env(safe-area-inset-right, 0px));
       bottom: max(6px, env(safe-area-inset-bottom, 0px));
     }
-    html, body, body.is-ios-app .cabinet, body.is-ios-app #arcade-fs-wrapper {
+    html, body, body.is-ios-app .cabinet, body.is-ios-app #arcade-fs-wrapper,
+    body.is-ios-app #ng-phaser-root {
       width: var(--game-vv-width, 100%) !important;
       height: var(--game-vv-height, 100%) !important;
       min-height: var(--game-vv-height, 100%) !important;
       max-width: none !important;
       max-height: none !important;
       aspect-ratio: unset;
+    }
+    /* Parent fills the shell; Phaser ENVELOP sizes the canvas. Do not stretch canvas. */
+    body.is-ios-app #ng-phaser-root {
+      inset: 0 !important;
     }
     /* Compact play HUD — never 3-column telem squeeze on the WKWebView pack. */
     body.is-ios-app:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud {
