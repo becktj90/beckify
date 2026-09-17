@@ -8,6 +8,7 @@ struct KestrelHeavyApp: App {
 
     init() {
         KestrelHeavyAudioSession.activate()
+        KestrelHeavyOrientation.lockScene()
     }
 
     var body: some Scene {
@@ -21,13 +22,25 @@ struct KestrelHeavyApp: App {
     }
 }
 
+enum KestrelHeavyOrientation {
+    static let mask: UIInterfaceOrientationMask = [.portrait, .portraitUpsideDown]
+
+    static func lockScene() {
+        let prefs = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: mask)
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            windowScene.requestGeometryUpdate(prefs) { _ in }
+        }
+    }
+}
+
 /// Info.plist is portrait-only; this keeps WKWebView from inheriting a landscape mask.
 final class KestrelHeavyAppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?
     ) -> UIInterfaceOrientationMask {
-        [.portrait, .portraitUpsideDown]
+        KestrelHeavyOrientation.mask
     }
 }
 

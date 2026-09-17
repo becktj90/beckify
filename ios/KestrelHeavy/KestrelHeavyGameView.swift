@@ -5,7 +5,9 @@ import WebKit
 /// WKWebView shell for the packed Phaser 4 game.
 /// Loads `kestrel-heavy://game/index.html` through `KestrelHeavySchemeHandler`
 /// so ES modules, vendor/phaser.min.js, and audio/ share one origin.
-struct KestrelHeavyGameView: UIViewRepresentable {
+/// Hosted in a portrait-locked view controller so the cabinet cannot rotate
+/// into the landscape pillarbox Trevor saw on TestFlight 1.0 (2).
+struct KestrelHeavyGameView: UIViewControllerRepresentable {
     var onCabinetReady: () -> Void = {}
 
     static func packAvailable() -> Bool {
@@ -16,7 +18,7 @@ struct KestrelHeavyGameView: UIViewRepresentable {
         Coordinator(onCabinetReady: onCabinetReady)
     }
 
-    func makeUIView(context: Context) -> WKWebView {
+    func makeUIViewController(context: Context) -> KestrelHeavyCabinetController {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
@@ -62,20 +64,22 @@ struct KestrelHeavyGameView: UIViewRepresentable {
         }
         #endif
 
+        let cabinet = KestrelHeavyCabinetController(webView: webView)
         context.coordinator.loadCabinet(webView)
-        return webView
+        return cabinet
     }
 
-    func updateUIView(_ webView: WKWebView, context: Context) {
+    func updateUIViewController(_ cabinet: KestrelHeavyCabinetController, context: Context) {
         context.coordinator.onCabinetReady = onCabinetReady
-        if webView.url == nil {
-            context.coordinator.loadCabinet(webView)
+        if cabinet.webView.url == nil {
+            context.coordinator.loadCabinet(cabinet.webView)
         }
-        (webView as? ArcadeWebView)?.publishViewportIfNeeded()
+        cabinet.webView.publishViewportIfNeeded()
+        KestrelHeavyOrientation.lockScene()
     }
 
-    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
-        webView.configuration.userContentController.removeScriptMessageHandler(forName: "kestrelHaptics")
+    static func dismantleUIViewController(_ cabinet: KestrelHeavyCabinetController, coordinator: Coordinator) {
+        cabinet.webView.configuration.userContentController.removeScriptMessageHandler(forName: "kestrelHaptics")
     }
 
     private static let bootScript = """
@@ -186,6 +190,52 @@ struct KestrelHeavyGameView: UIViewRepresentable {
                 light.impactOccurred()
             }
         }
+    }
+}
+
+/// Owns the WKWebView and refuses landscape so Phaser cannot pillarbox.
+final class KestrelHeavyCabinetController: UIViewController {
+    let webView: ArcadeWebView
+
+    init(webView: ArcadeWebView) {
+        self.webView = webView
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        KestrelHeavyOrientation.mask
+    }
+
+    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation { .portrait }
+
+    override var shouldAutorotate: Bool { false }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = UIColor(red: 5 / 255, green: 5 / 255, blue: 13 / 255, alpha: 1)
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(webView)
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        KestrelHeavyOrientation.lockScene()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        webView.publishViewportIfNeeded()
     }
 }
 

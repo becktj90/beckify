@@ -35,6 +35,7 @@ struct KestrelHeavyRootView: View {
         }
         .supportedInterfaceOrientations(.portrait.union(.portraitUpsideDown))
         .onAppear {
+            KestrelHeavyOrientation.lockScene()
             // Never leave the brand screen up if WKWebView stalls.
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.2, execute: dismissSplash)
         }

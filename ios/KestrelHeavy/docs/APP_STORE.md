@@ -11,7 +11,7 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 **Bundle ID:** `com.beckify.kestrelheavy`  
 **SKU:** `kestrel-heavy`  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M`  
-**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), **portrait only** (upside-down allowed). Build **1.0 (2)**.  
+**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), **portrait only** (upside-down allowed). Next TestFlight build **1.0 (3)** (build **2** still letterboxed in landscape).  
 **Category:** Games  
 **Secondary:** Arcade  
 **Age rating (draft):** 9+ — cartoon launch / recovery arcade. No realistic violence, no UGC feed, no unrestricted web (WKWebView loads only the bundled cabinet). Confirm in the Connect questionnaire.  
