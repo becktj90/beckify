@@ -163,12 +163,15 @@ export function syncEmbeddedArcadeViewport(iframe: HTMLIFrameElement, immersive:
   }
   const win = iframe.contentWindow;
   if (!win) return;
+  const rect = iframe.getBoundingClientRect();
+  const width = Math.round(immersive ? box.width : (rect.width || box.width));
+  const height = Math.round(immersive ? box.height : (rect.height || box.height));
   const payload: ArcadeViewportMessage = {
     source: KESTREL_VIEWPORT_SOURCE,
     type: "viewport",
     immersive,
-    width: immersive ? box.width : 0,
-    height: immersive ? box.height : 0,
+    width,
+    height,
   };
   try {
     win.postMessage(payload, window.location.origin);

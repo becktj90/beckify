@@ -132,7 +132,9 @@ export const HAVEN = {
   startLat: 1680,
   bargeY: 690,
   zoomFar: 0.28,
+  zoomFarPortrait: 0.42,
   zoomNear: 0.56,
+  zoomNearPortrait: 0.64,
   gravity: 0.148,
   glideGravity: 0.058,
   reentryGravity: 0.082,
@@ -159,6 +161,7 @@ export const CAM = {
   ascentStart: 0.62,
   ascentMobile: 0.5,
   ascentHigh: 0.48,
+  portraitMin: 0.36,
   sep: 0.52,
   reduced: 0.58,
   recovered: 0.82,
@@ -170,11 +173,15 @@ export const CAM = {
   followLerpY: 0.24,
   sepLerpX: 0.38,
   sepLerpY: 0.48,
+  havenLerpX: 0.46,
+  havenLerpY: 0.54,
   zoomLiftDelay: 0.62,
   zoomLiftRate: 0.85,
   zoomClimbRate: 1.65,
   worldTop: -18000,
   worldHeight: 20000,
+  havenBoundsX: -5600,
+  havenBoundsW: W + 11200,
 };
 
 export const BOOST_COYOTE_SEC = 0.14;

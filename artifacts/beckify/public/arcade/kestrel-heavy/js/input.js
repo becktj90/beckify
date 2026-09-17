@@ -16,6 +16,7 @@ export function createInput() {
     touchSteer: null,
     touchSteerArmed: false,
     thumbHeld: false,
+    launchArmed: false,
   };
 }
 
@@ -65,8 +66,16 @@ export function setTouchSteer(input, dxPx) {
   return input.touchSteer;
 }
 
+/**
+ * Only Haven's landing burn is a deliberate hold. Pad launch is a tap,
+ * ascent cruise is automatic, glide is steer-only.
+ */
 export function climbArmedFromLabel(label) {
-  return label !== 'GLIDE';
+  return label === 'HOLD TO BURN';
+}
+
+export function isAscentCruise(status) {
+  return status === 'ASCENT';
 }
 
 export function paintThumbSteer(node, analog) {
@@ -100,6 +109,7 @@ export function clearFlightHolds(input) {
   input.touchSteer = null;
   input.touchSteerArmed = false;
   input.thumbHeld = false;
+  input.launchArmed = false;
 }
 
 export function bindKeyboard(input, hooks) {

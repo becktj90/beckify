@@ -3,7 +3,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 import { KESTREL_VIEWPORT_SOURCE, isArcadeViewportMessage, syncEmbeddedArcadeViewport } from "@/lib/game-fullscreen";
 
-const ARCADE_ASSET_VERSION = "kestrel-17";
+const ARCADE_ASSET_VERSION = "kestrel-18";
 const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/kestrel-heavy/index.html?v=${ARCADE_ASSET_VERSION}`.replace(/([^:]\/)\/+/g, "$1");
 
 export function KestrelHeavy() {
@@ -41,7 +41,7 @@ export function KestrelHeavy() {
       <h1 id="kestrel-heavy-title" className="sr-only">Kestrel Heavy</h1>
       <div
         ref={stageRef}
-        className={`game-stage ng-playfield relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[80] is-immersive rounded-none border-0" : "w-full min-w-0 aspect-video max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
+        className={`game-stage ng-playfield relative mx-auto overflow-hidden bg-[#05050d] shadow-[0_20px_60px_rgba(0,0,0,.35)] ${immersive ? "fixed inset-0 z-[80] is-immersive rounded-none border-0" : "kh-stage-fill w-full min-w-0 max-w-[1280px] rounded-2xl border border-[#b7abff]/40"}`}
       >
         <iframe
           ref={iframeRef}

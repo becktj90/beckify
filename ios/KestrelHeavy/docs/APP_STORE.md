@@ -11,7 +11,7 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 **Bundle ID:** `com.beckify.kestrelheavy`  
 **SKU:** `kestrel-heavy`  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M`  
-**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), landscape only  
+**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), portrait + landscape  
 **Category:** Games  
 **Secondary:** Arcade  
 **Age rating (draft):** 9+ — cartoon launch / recovery arcade. No realistic violence, no UGC feed, no unrestricted web (WKWebView loads only the bundled cabinet). Confirm in the Connect questionnaire.  
@@ -20,7 +20,7 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 Create the App Store Connect record on a Mac (this repo does not). There is no Apple ID / Connect status for Kestrel Heavy yet.
 
 **Promotional text (170 characters, draft):**
-Hold climb, steer the corridor, time stage sep, then slide onto barge Haven. Five KH-n flights. Offline. Free, no ads.
+Tap to launch, steer the corridor, time stage sep, then HOLD TO BURN onto barge Haven. Five KH-n flights. Offline. Free, no ads.
 
 **Description (draft):**
 
@@ -28,7 +28,7 @@ Kestrel Heavy is a Pier 7 launch arcade. Fly a fictional two-stage stack through
 
 Pick a difficulty — KID, CADET, or PAD RAT — and work the KH-1 through KH-5 flight manifest. Each flight has its own payload. Soft deck is BOOSTER RECOVERED; a tip or splash clips score, not a wipe.
 
-Hold climb to throttle. Steer with the on-screen pads or a keyboard. Pause, mute, and settings stay on the HUD. Best scores live on this device.
+Tap anywhere to launch, then just steer. HOLD TO BURN is the Haven catch. On-screen pads or a keyboard. Pause, mute, and settings stay on the HUD. Best scores live on this device.
 
 This is original fiction: Kestrel Heavy, Pier 7, and Haven. It is not a licensed rocket, not a documentary, and not affiliated with any launch provider.
 
@@ -76,11 +76,11 @@ Not captured in this repository. On a Mac with Xcode, capture Simulator shots. D
 Suggested 3–6 shots:
 
 1. Menu — KESTREL HEAVY / Pier 7, LAUNCH, difficulty, flight manifest
-2. Ascent — HUD telemetry, HOLD TO CLIMB, steer pads
+2. Ascent — HUD telemetry, TAP TO LAUNCH / STEER, steer pads
 3. Stage sep — ALIGN / MECO beat
-4. Haven approach — long slide onto the painted deck
+4. Haven approach — camera locked on the booster, then HOLD TO BURN
 5. Summary — BOOSTER RECOVERED / score
-6. iPad landscape of the same cabinet
+6. iPad portrait and landscape of the same full-bleed cabinet
 
 ## App icon
 

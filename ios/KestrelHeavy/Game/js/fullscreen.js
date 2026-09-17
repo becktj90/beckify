@@ -6,6 +6,13 @@ export function isIosPhone(userAgent = navigator.userAgent) {
   return /iPhone|iPod/.test(userAgent);
 }
 
+/** Standalone cabinet or iOS WKWebView — fill the usable visual viewport ourselves. */
+export function shouldSelfFillViewport() {
+  if (document.body?.classList?.contains('is-ios-app')) return true;
+  if (document.body?.classList?.contains('is-embedded')) return false;
+  return document.body?.getAttribute('data-arcade-standalone') === 'true';
+}
+
 export function nativeFullscreenElement() {
   return document.fullscreenElement || document.webkitFullscreenElement || null;
 }
@@ -101,9 +108,10 @@ function applyVisualViewportVars(active, box) {
 export function applyHostViewportMessage(data) {
   if (!data || data.source !== KESTREL_VIEWPORT_SOURCE) return false;
   if (data.type === 'request') return false;
-  const immersive = Boolean(data.immersive && data.width > 0 && data.height > 0);
-  document.body.classList.toggle('arcade-host-fill', immersive);
-  if (!immersive) {
+  const sized = Number(data.width) > 0 && Number(data.height) > 0;
+  const immersive = Boolean(data.immersive && sized);
+  document.body.classList.toggle('arcade-host-fill', sized);
+  if (!sized) {
     applyVisualViewportVars(false);
     return true;
   }
@@ -148,20 +156,22 @@ export async function exitNativeFullscreen() {
 }
 
 export function bindFullscreenChrome(wrap, onChange) {
-  const sync = () => {
+  const syncFill = () => {
     const nativeOn = nativeFullscreenElement() === wrap;
     const cssOn = wrap.classList.contains('arcade-immersive');
-    if (!nativeOn && !cssOn && !document.body.classList.contains('arcade-host-fill')) {
-      applyVisualViewportVars(false);
-    }
+    const hostFill = document.body.classList.contains('arcade-host-fill');
+    if (cssOn || shouldSelfFillViewport()) applyVisualViewportVars(true);
+    else if (!nativeOn && !hostFill) applyVisualViewportVars(false);
     syncFullscreenButton(nativeOn || cssOn);
     onChange?.();
   };
-  document.addEventListener('fullscreenchange', sync);
-  document.addEventListener('webkitfullscreenchange', sync);
+  document.addEventListener('fullscreenchange', syncFill);
+  document.addEventListener('webkitfullscreenchange', syncFill);
   const vv = window.visualViewport;
   const syncVv = () => {
-    if (wrap.classList.contains('arcade-immersive')) applyVisualViewportVars(true);
+    if (wrap.classList.contains('arcade-immersive') || shouldSelfFillViewport()) {
+      applyVisualViewportVars(true);
+    }
     onChange?.();
   };
   vv?.addEventListener('resize', syncVv);
@@ -175,5 +185,5 @@ export function bindFullscreenChrome(wrap, onChange) {
     }
   });
   requestHostViewport();
-  syncFullscreenButton(false);
+  syncFill();
 }
