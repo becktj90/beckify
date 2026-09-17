@@ -105,7 +105,9 @@ export function renderHud(snapshot) {
           ? 'Drag to steer the glide — do not burn yet'
           : snapshot.boostLabel === 'SEPARATE'
             ? 'Press to separate stages'
-            : 'Hold to climb, drag left or right to steer',
+            : snapshot.boostLabel === 'TAP TO LAUNCH'
+              ? 'Tap anywhere to launch, then steer'
+              : 'Steer left or right — climb stays on',
     );
   }
   const sepBtn = el('ng-sep-btn');
@@ -292,7 +294,7 @@ export function bindChrome(handlers) {
   };
 
   /**
-   * Primary one-thumb path: hold = climb/burn, drag horizontally = analog steer.
+   * One-thumb pad: tap launches on the pad, drag steers, hold only for Haven burn.
    * Do not release on pointerleave — capture keeps the same finger after the pad.
    * ◀ ▶ stay as optional second-finger pads.
    */

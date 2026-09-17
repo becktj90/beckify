@@ -44,13 +44,19 @@ test('touch steer dead zone, clamp, and release', async () => {
   clearFlightHolds(input);
   assert.equal(input.thumbHeld, false);
   assert.equal(input.touchSteer, null);
+  assert.equal(input.launchArmed, false);
 });
 
 test('Haven glide hold does not arm climb until the burn label', async () => {
-  const { climbArmedFromLabel, paintThumbSteer } = await import(path.join(arcade, 'input.js'));
+  const { climbArmedFromLabel, isAscentCruise, paintThumbSteer } = await import(path.join(arcade, 'input.js'));
   assert.equal(climbArmedFromLabel('GLIDE'), false);
   assert.equal(climbArmedFromLabel('HOLD TO BURN'), true);
-  assert.equal(climbArmedFromLabel('HOLD · DRAG'), true);
+  assert.equal(climbArmedFromLabel('HOLD · DRAG'), false);
+  assert.equal(climbArmedFromLabel('TAP TO LAUNCH'), false);
+  assert.equal(climbArmedFromLabel('STEER'), false);
+  assert.equal(isAscentCruise('ASCENT'), true);
+  assert.equal(isAscentCruise('PRELAUNCH'), false);
+  assert.equal(isAscentCruise('JACKLYN'), false);
 
   const node = {
     dataset: {},

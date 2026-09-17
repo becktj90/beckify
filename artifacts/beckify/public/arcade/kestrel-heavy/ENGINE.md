@@ -39,7 +39,7 @@ Create bodies with `this.matter.add.sprite` / `image` / `rectangle`. Do **not** 
 - Collision categories + sensors: deck paint and water are sensors (water is not a solid floor). Pickups and hazards are sensors.
 - Haven recovery (arcade-compressed): **reentry pitch-over** → **strakes deployed** → a **long diagonal glide** → player-initiated **landing burn** that still needs throttle, attitude, and lateral steer onto the paint (`landingVy` + `landingTol`). Not a free auto-settle. Solid black strakes, not lattice grid fins. No A-frame legs or ASDS circle-X.
 - After SEPARATE the camera stays on the booster. SES-1 and fairing jettison play as off-booster beats, then Haven.
-- Mobile climb pad is one-thumb: **hold to climb/burn**, **drag left/right to steer**. Keyboard Space + A/D is unchanged. Optional ◀ ▶ pads stay as a second-finger path.
+- Mobile: **tap anywhere to launch**, then **steer only** (drag or ◀ ▶). Climb stays on after liftoff. Keyboard Space launches; A/D steer. Haven **HOLD TO BURN** is the only deliberate hold. Optional ◀ ▶ pads stay as a second-finger path.
 - Ascent camera uses `CAM.lookAheadY` so incoming corridor junk sits on-screen under the HUD. Hazards spawn **above the camera** (`spawnYAboveCamera`) so they scroll into view instead of popping mid-corridor. Matter sensors match the solid sprite (`hazardRadius` / `setCircle`) — near-misses do not INT-hit. On a phone the dense callout/sci stack hides during flight so the lane stays clear; fail banners still fire. Hazard sprites carry a thin amber ring, not a fat glow pad.
 - Atmospheric sky **smoothsteps** into stars / Milky Way over altitude (`spaceBlend` 6–56 km). SEP finishes the lerp; no hard cut.
 - INT / integrity bar is visible remaining damage tolerance (shield still eats one hit). Grazes and lethal hits are named — no silent RUD.
@@ -66,4 +66,4 @@ Looping BGM is the Suno instrumental “Kestrel Heavy” (`audio/theme.ogg` / `.
 
 ## Stage
 
-Internal resolution is **1280×720**. The React embed (`KestrelHeavy.tsx`) is `aspect-video` (16:9) max 1280. Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent (FIT letterboxes on 16:10 / DevTools). The cabinet parent is 100% of the iframe so chrome does not steal the playfield. Do not use `Scale.RESIZE` for the Matter world.
+Internal resolution is **1280×720**. Every device (iPhone, iPad, any phone/tablet, portrait + landscape) and the iOS WKWebView pack fill the usable visual viewport / safe-area / host iframe pixels (not a letterboxed 16:9 strip). Phaser `Scale.ENVELOP` + `CENTER_BOTH` covers the parent; playfield zoom keeps the corridor and booster in the cropped strip. Haven camera **stays locked on stage-1** through glide → burn → deck (expanded bounds, fast follow lerp, snap-if-offscreen after iOS Scale.refresh). Do not use `Scale.RESIZE` for the Matter world.

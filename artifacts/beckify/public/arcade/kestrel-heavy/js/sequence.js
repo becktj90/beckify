@@ -22,7 +22,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'Pier 7 terminal count. {id} on the pad. Range is green.',
     juice: 'none',
-    coach: 'HOLD CLIMB through ignition',
+    coach: 'TAP ANYWHERE to launch',
   },
   {
     id: 'tankpress',
@@ -62,7 +62,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Ignition. Seven core engines at startup.',
     juice: 'ignition',
-    coach: 'HOLD CLIMB — do not tap',
+    coach: 'TAP TO LAUNCH — then steer',
   },
   {
     id: 'liftoff',
@@ -72,7 +72,7 @@ export const SPINE = [
     kind: 'go',
     radio: 'Liftoff. {id} clearing the tower.',
     juice: 'liftoff',
-    coach: 'Stay inside the corridor · hold climb',
+    coach: 'Stay inside the corridor · steer only',
   },
   {
     id: 'maxq',
@@ -141,7 +141,7 @@ export const SPINE = [
     kind: 'warn',
     radio: 'Landing burn. HOLD climb. Kill sink over the paint.',
     juice: 'landing',
-    coach: 'HOLD CLIMB for the landing burn',
+    coach: 'HOLD TO BURN for the landing burn',
   },
   {
     id: 'touchdown',
@@ -240,17 +240,17 @@ export function nextCoachBeat(beats, tClock) {
 }
 
 export function playGoal(status, session = {}, flight = {}) {
-  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition · drag to steer';
+  if (status === 'PRELAUNCH') return 'TAP ANYWHERE to launch · then steer';
   if (status === 'ASCENT') {
     const clock = Number(session.tClock) || 0;
     if (clock < PACE.MAXQ - 4) {
       if (flight.objective?.id === 'shield' && !session.objectiveDone) {
         return 'Stay inside the corridor · grab an aero shield';
       }
-      return 'Stay inside the corridor · hold climb';
+      return 'Stay inside the corridor · steer only';
     }
     if (clock < PACE.MAXQ + 5) return 'Fly smooth through Max-Q';
-    return 'Hold climb to MECO';
+    return 'Steer to MECO — climb stays on';
   }
   if (status === 'SEP') {
     if (session.sepPhase === 'window') return 'SEP ZONE  ·  press SEPARATE';

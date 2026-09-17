@@ -168,11 +168,11 @@ export const LINES = {
   ],
   'haven-burn-nag': [
     'HOLD TO BURN. A tap will not kill sink over Haven.',
-    'The window is open. Hold climb or you will splash.',
+    'The window is open. Hold the burn or you will splash.',
   ],
   'press-ok': [
-    'Hold confirmed. Cores coming up.',
-    'Climb hold is in. Throttle is yours.',
+    'Launch confirmed. Cores coming up.',
+    'Tap is in. Throttle is coming up.',
   ],
   'pickup-shield': [
     'Aero shield on the stack.',
@@ -528,15 +528,15 @@ export function abortRadio(voice, abort, mission) {
 }
 
 export function pauseHintFor(status, sepPhase) {
-  if (status === 'PRELAUNCH') return 'HOLD CLIMB through ignition. Drag left/right to steer. Stay between the dotted corridor rails.';
-  if (status === 'ASCENT') return 'HOLD climb and drag to steer. Stay between the dotted rails. Grab the aero shield.';
+  if (status === 'PRELAUNCH') return 'TAP ANYWHERE to launch. Then just steer. Stay between the dotted corridor rails.';
+  if (status === 'ASCENT') return 'Climb stays on. Drag or A/D to steer. Stay between the dotted rails. Grab the aero shield.';
   if (status === 'SEP') {
     if (sepPhase === 'window') return 'Stay in the SEP ZONE. ALIGN green, then press SEPARATE.';
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
   if (status === 'JACKLYN') return 'Pitch over, strakes out. Long diagonal glide, then HOLD TO BURN and keep holding while you steer onto the paint.';
-  return 'HOLD climb and drag to steer. After MECO, SEP ZONE then SEPARATE. Glide Haven.';
+  return 'Tap to launch, then steer. After MECO, SEP ZONE then SEPARATE. Glide Haven, then HOLD TO BURN.';
 }
 
 export function hazardAbortId(kind, atMaxQ) {

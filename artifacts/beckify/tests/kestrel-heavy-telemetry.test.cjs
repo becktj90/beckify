@@ -126,7 +126,7 @@ test('corridor rails are play bounds and beat goals stay readable', async () => 
   assert.ok(bounced > pad.left);
 
   const mission = { id: 'KH-1', payload: 'Aether Scout', mark: 'AES', objective: { id: 'shield', label: 'Grab an aero shield' } };
-  assert.match(playGoal('PRELAUNCH', { tClock: -4 }, mission), /HOLD CLIMB/);
+  assert.match(playGoal('PRELAUNCH', { tClock: -4 }, mission), /TAP ANYWHERE|launch/i);
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /corridor/);
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /aero shield/);
   assert.match(playGoal('ASCENT', { tClock: 18.6 }, mission), /Max-Q/);

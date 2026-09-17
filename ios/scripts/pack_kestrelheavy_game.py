@@ -48,6 +48,14 @@ IOS_CSS = """
       right: max(8px, env(safe-area-inset-right, 0px));
       bottom: max(6px, env(safe-area-inset-bottom, 0px));
     }
+    html, body, body.is-ios-app .cabinet, body.is-ios-app #arcade-fs-wrapper {
+      width: var(--game-vv-width, 100%) !important;
+      height: var(--game-vv-height, 100%) !important;
+      min-height: var(--game-vv-height, 100%) !important;
+      max-width: none !important;
+      max-height: none !important;
+      aspect-ratio: unset;
+    }
 """
 
 LOCAL_STORE_STUB = """/* Offline stub — website uses /toolbox/js/local-store.js.
@@ -142,6 +150,8 @@ def copy_tree() -> None:
         raise SystemExit("Pack missing js/telemetry.js")
     if not (DEST / "js" / "fullscreen.js").is_file():
         raise SystemExit("Pack missing js/fullscreen.js")
+    if not (DEST / "js" / "camera.js").is_file():
+        raise SystemExit("Pack missing js/camera.js")
 
 
 def main() -> None:
