@@ -312,11 +312,8 @@
       position: absolute;
       inset: 0;
       z-index: 10;
-      display: none;
+      display: block;
       pointer-events: none;
-    }
-    @media (hover: none), (pointer: coarse), (max-width: 900px) {
-      #arcade-touch-btns { display: block; }
     }
     #arcade-touch-btns button {
       pointer-events: auto;
@@ -352,7 +349,7 @@
       --kh-steer: 0;
       --kh-hold: 0;
       left: 50%;
-      bottom: max(12px, env(safe-area-inset-bottom, 0px));
+      bottom: max(2.8rem, calc(env(safe-area-inset-bottom, 0px) + 2.2rem));
       transform: translateX(-50%);
       min-width: 168px;
       min-height: 56px;

@@ -789,9 +789,9 @@ export default class MissionScene extends Phaser.Scene {
       saveSettings(this.settings);
     }
     this.callout('pad', {
-      banner: 'TERMINAL COUNT — tap anywhere to launch',
-      kind: 'info',
-      holdMs: 2400,
+      banner: 'TAP ANYWHERE TO LAUNCH',
+      kind: 'go',
+      holdMs: 0,
       once: false,
     });
     AudioApi.play('countdown', this.settings);
@@ -1029,8 +1029,13 @@ export default class MissionScene extends Phaser.Scene {
     this.session.tClock += dt;
     this.fireDueBeats();
     const launched = Boolean(this.session.launchArmed);
-    this.session.charge = clamp(this.session.charge + (launched ? dt * 0.9 : dt * 0.08), 0, 1);
-    this.session.throttle = this.session.charge;
+    if (!launched) {
+      this.session.charge = 0;
+      this.session.throttle = 0;
+    } else {
+      this.session.charge = clamp(this.session.charge + dt * 0.9, 0, 1);
+      this.session.throttle = this.session.charge;
+    }
     this.rocket.setPosition(PAD_ROCKET_X, PAD_ROCKET_Y - this.session.charge * 6);
     this.rocket.setVelocity(0, 0);
     if (this.session.fired.deluge && this.steam) {
@@ -1042,7 +1047,13 @@ export default class MissionScene extends Phaser.Scene {
       this.emitPlume(0.85);
       this.flashPad(0.28);
     }
-    if (!launched) return;
+    if (!launched) {
+      const banner = document.getElementById('ng-banner');
+      if (!banner || banner.hidden || !/TAP ANYWHERE/i.test(banner.textContent || '')) {
+        setBanner('TAP ANYWHERE TO LAUNCH', 'go', 0);
+      }
+      return;
+    }
     if (this.session.tClock >= -0.12 || this.session.charge >= 0.58) this.liftoff();
   }
 
