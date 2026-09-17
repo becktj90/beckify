@@ -195,10 +195,6 @@ final class ArcadeWebView: WKWebView {
 
     override var canBecomeFirstResponder: Bool { true }
 
-    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        [.portrait, .portraitUpsideDown]
-    }
-
     override func layoutSubviews() {
         super.layoutSubviews()
         publishViewportIfNeeded()
