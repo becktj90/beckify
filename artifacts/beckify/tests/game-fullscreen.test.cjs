@@ -118,7 +118,7 @@ assert.match(host, /aria-pressed=\{immersive\}/);
 assert.match(host, /immersive \? "EXIT" : "FULL"/);
 assert.match(host, /is-immersive/);
 assert.match(host, /syncEmbeddedArcadeViewport/);
-assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-20"/);
+assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-21"/);
 assert.match(arcadeFs, /iPhone\|iPod/);
 assert.match(arcadeFs, /shouldSelfFillViewport/);
 assert.match(arcadeFs, /is-ios-app/);

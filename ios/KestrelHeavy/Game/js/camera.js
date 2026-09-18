@@ -59,30 +59,38 @@ export function vehicleInView(rx, ry, cx, cy, viewW, viewH, pad = 48) {
   );
 }
 
-/** Peek toward Haven only when the booster is already close. Far glide = lock on. */
+/**
+ * Peek toward Haven on every playfield, including the portrait strip.
+ * Far glide still locks mostly on the booster; close approach shares the frame.
+ */
 export function havenPeekAmount(range, viewW) {
   const dist = Math.max(0, Number(range) || 0);
-  const narrow = Number(viewW) < 640;
-  if (dist > 900 || narrow) return 0;
-  if (dist > 480) return 0.05;
-  return 0.1;
+  const span = Math.max(160, Number(viewW) || 1);
+  if (dist < 36) return 0.04;
+  if (dist > span * 2.1) return 0.28;
+  if (dist > span * 0.85) return 0.4;
+  return 0.48;
 }
 
 /**
- * Camera look point: lock on the booster, peek toward Haven only if the
- * vehicle stays inside the cropped frame. Same class of fix as sep follow.
+ * Camera look point: keep the booster framed, walk Haven's paint into view
+ * when the cropped strip can hold both.
  */
 export function havenLookPoint(rocketX, rocketY, bargeX, bargeY, viewW, viewH, peek) {
-  const range = Math.hypot(bargeX - rocketX, bargeY - rocketY);
+  const dx = bargeX - rocketX;
+  const dy = bargeY - rocketY;
+  const range = Math.hypot(dx, dy);
   const amount = peek == null ? havenPeekAmount(range, viewW) : peek;
-  const maxX = Math.max(16, viewW * 0.12);
-  const maxY = Math.max(16, viewH * 0.1);
-  const peekX = clamp((bargeX - rocketX) * amount, -maxX, maxX);
-  const peekY = clamp((bargeY - rocketY) * (amount * 0.55), -maxY, maxY);
+  const maxX = Math.max(24, viewW * 0.36);
+  const maxY = Math.max(24, viewH * 0.3);
+  const peekX = clamp(dx * amount, -maxX, maxX);
+  const peekY = clamp(dy * (amount * 0.62), -maxY, maxY);
   const cx = rocketX + peekX;
   const cy = rocketY + peekY;
-  if (!vehicleInView(rocketX, rocketY, cx, cy, viewW, viewH, 80)) {
-    return { cx: rocketX, cy: rocketY };
+  if (!vehicleInView(rocketX, rocketY, cx, cy, viewW, viewH, 88)) {
+    const safeX = clamp(dx * 0.16, -viewW * 0.2, viewW * 0.2);
+    const safeY = clamp(dy * 0.12, -viewH * 0.16, viewH * 0.16);
+    return { cx: rocketX + safeX, cy: rocketY + safeY };
   }
   return { cx, cy };
 }
@@ -100,19 +108,32 @@ export function shouldSnapVehicle(rx, ry, cx, cy, viewW, viewH, pad = 80) {
   return !vehicleInView(rx, ry, cx, cy, viewW, viewH, pad);
 }
 
+/**
+ * Approach stays wide so the paint can enter the strip. Burn only tightens
+ * when the deck is already close — never crop Haven out of a portrait phone.
+ */
 export function havenZoomWant({
   alt = 900,
   pulling = false,
   reduced = false,
   parentW = W,
   parentH = H,
+  dx = 0,
 } = {}) {
   if (reduced) return CAM.reduced;
   const portrait = isPortraitPlayfield(parentW, parentH);
   const far = portrait ? HAVEN.zoomFarPortrait : HAVEN.zoomFar;
   const near = portrait ? HAVEN.zoomNearPortrait : HAVEN.zoomNear;
-  const t = pulling ? clamp(1 - alt / 900, 0, 1) : 0;
-  return far + (near - far) * t * t;
+  const floor = portrait ? HAVEN.zoomFloorPortrait : HAVEN.zoomFloor;
+  const vis1 = envelopVisibleWorld(parentW, parentH, W, H, 1);
+  const spanX = Math.abs(Number(dx) || 0) + 240;
+  const spanY = Math.max(260, Math.abs(Number(alt) || 0) + 200);
+  const fit = Math.min(vis1.w / Math.max(spanX, 1), vis1.h / Math.max(spanY, 1));
+  const t = pulling
+    ? clamp(1 - Math.abs(alt) / 420, 0, 1)
+    : clamp(1 - Math.abs(alt) / 1700, 0, 0.28);
+  const want = far + (near - far) * t * t;
+  return clamp(Math.min(want, Math.max(fit, floor)), floor, near);
 }
 
 export function expandedHavenBounds() {
@@ -121,6 +142,24 @@ export function expandedHavenBounds() {
     y: CAM.worldTop,
     width: CAM.havenBoundsW,
     height: CAM.worldHeight,
+  };
+}
+
+/** Screen-edge cue when Haven's paint is outside the cropped world view. */
+export function havenEdgeCue(rocketX, rocketY, bargeX, bargeY, cx, cy, viewW, viewH, pad = 72) {
+  const inView = vehicleInView(bargeX, bargeY, cx, cy, viewW, viewH, pad);
+  const hw = Math.max(1, viewW) / 2 - pad;
+  const hh = Math.max(1, viewH) / 2 - pad;
+  const x = clamp(bargeX, cx - hw, cx + hw);
+  const y = clamp(bargeY, cy - hh, cy + hh);
+  const ang = Math.atan2(bargeY - rocketY, bargeX - rocketX);
+  return {
+    inView,
+    x,
+    y,
+    ang,
+    dx: bargeX - rocketX,
+    dy: bargeY - rocketY,
   };
 }
 

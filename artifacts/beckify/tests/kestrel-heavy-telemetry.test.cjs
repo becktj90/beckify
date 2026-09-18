@@ -4,6 +4,37 @@ const path = require('node:path');
 
 const arcade = path.join(__dirname, '..', 'public/arcade/kestrel-heavy/js');
 
+test('playPhase reads real stage changes, not leftover terminal count', async () => {
+  const { playPhase, playPhaseKind, playGoal } = await import(path.join(arcade, 'sequence.js'));
+  assert.equal(playPhase('PRELAUNCH', { launchArmed: false }), 'TERMINAL COUNT');
+  assert.equal(playPhase('PRELAUNCH', { launchArmed: true }), 'IGNITION');
+  assert.equal(playPhase('ASCENT', { tClock: 4 }, 'liftoff'), 'LIFTOFF');
+  assert.equal(playPhase('ASCENT', { tClock: 22 }, 'maxq'), 'MAX-Q');
+  assert.equal(playPhase('SEP', { sepPhase: 'window' }), 'SEP ZONE');
+  assert.equal(playPhase('JACKLYN', { jacklynPhase: 'glide' }), 'GLIDE');
+  assert.equal(playPhase('JACKLYN', { jacklynPhase: 'glide', burnWindow: true }), 'LANDING BURN');
+  assert.equal(playPhaseKind('LIFTOFF'), 'go');
+  assert.equal(playPhaseKind('LANDING BURN'), 'warn');
+  assert.match(playGoal('PRELAUNCH', {}), /TAP TO LAUNCH/i);
+});
+
+test('recovery tape reports offset, closing speed, gear, and burn cue', async () => {
+  const { formatRecoverHud } = await import(path.join(arcade, 'telemetry.js'));
+  const glide = formatRecoverHud({
+    altPx: 800, dxPx: -120, vy: 1.4, burnWindow: false, burnLit: false, boosting: false, landingTol: 36,
+  });
+  assert.match(glide.line, /RNG /);
+  assert.match(glide.line, /OFF L /);
+  assert.match(glide.line, /GEAR UP/);
+  assert.match(glide.line, /GLIDE/);
+  const burn = formatRecoverHud({
+    altPx: 180, dxPx: 8, vy: 0.6, burnWindow: true, burnLit: true, boosting: true, landingTol: 36, gear: true,
+  });
+  assert.match(burn.line, /ON PAINT/);
+  assert.match(burn.line, /GEAR DN/);
+  assert.match(burn.line, /BURN LIT/);
+});
+
 test('ascent science evolves through Max-Q and MECO', async () => {
   const { computeTelemetry, formatScience } = await import(path.join(arcade, 'telemetry.js'));
   const pad = computeTelemetry({ status: 'PRELAUNCH', tClock: -4, throttle: 0.2, fuel: 100, charge: 0.4 });

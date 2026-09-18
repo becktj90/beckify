@@ -528,14 +528,14 @@ export function abortRadio(voice, abort, mission) {
 }
 
 export function pauseHintFor(status, sepPhase) {
-  if (status === 'PRELAUNCH') return 'TAP ANYWHERE to launch. Then just steer. Stay between the dotted corridor rails.';
+  if (status === 'PRELAUNCH') return 'TAP TO LAUNCH. One tap, then steer. Stay between the dotted corridor rails.';
   if (status === 'ASCENT') return 'Climb stays on. Drag or A/D to steer. Stay between the dotted rails. Grab the aero shield.';
   if (status === 'SEP') {
     if (sepPhase === 'window') return 'Stay in the SEP ZONE. ALIGN green, then press SEPARATE.';
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Pitch over, strakes out. Long diagonal glide, then HOLD TO BURN and keep holding while you steer onto the paint.';
+  if (status === 'JACKLYN') return 'Pitch over, strakes out. Glide onto the PAINT, then HOLD TO BURN and keep holding while you steer onto the deck.';
   return 'Tap to launch, then steer. After MECO, SEP ZONE then SEPARATE. Glide Haven, then HOLD TO BURN.';
 }
 

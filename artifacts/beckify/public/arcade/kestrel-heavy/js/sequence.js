@@ -22,7 +22,7 @@ export const SPINE = [
     kind: 'info',
     radio: 'Pier 7 terminal count. {id} on the pad. Range is green.',
     juice: 'none',
-    coach: 'TAP ANYWHERE to launch',
+    coach: 'TAP TO LAUNCH',
   },
   {
     id: 'tankpress',
@@ -216,15 +216,15 @@ const PHASE_CHIP = {
   tankpress: 'TERMINAL COUNT',
   internal: 'TERMINAL COUNT',
   deluge: 'TERMINAL COUNT',
-  ignition: 'TERMINAL COUNT',
-  liftoff: 'TERMINAL COUNT',
+  ignition: 'IGNITION',
+  liftoff: 'LIFTOFF',
   maxq: 'MAX-Q',
   meco: 'MECO',
   sep: 'STAGE SEP',
   ses1: 'STAGE SEP',
   fairing: 'FAIRING',
-  entry: 'HAVEN',
-  landing: 'HAVEN',
+  entry: 'PITCH OVER',
+  landing: 'LANDING BURN',
   touchdown: 'HAVEN',
   seco: 'HAVEN',
   deploy: 'HAVEN',
@@ -234,13 +234,50 @@ export function phaseChip(beatId) {
   return PHASE_CHIP[beatId] || 'TERMINAL COUNT';
 }
 
+/** Compact play chip — status/phase first so stage changes actually read. */
+export function playPhase(status, session = {}, beatId = '') {
+  if (status === 'MENU') return 'STANDBY';
+  if (status === 'SUMMARY') return 'SUMMARY';
+  if (status === 'PRELAUNCH') return session.launchArmed ? 'IGNITION' : 'TERMINAL COUNT';
+  if (status === 'ASCENT') {
+    const clock = Number(session.tClock) || 0;
+    if (clock >= PACE.MECO - 1.6) return 'MECO';
+    if (beatId === 'maxq' || clock >= PACE.MAXQ) return 'MAX-Q';
+    return 'LIFTOFF';
+  }
+  if (status === 'SEP') {
+    if (session.sepPhase === 'clear') return 'STAGE SEP';
+    if (session.sepPhase === 'window') return 'SEP ZONE';
+    return 'MECO';
+  }
+  if (status === 'JACKLYN') {
+    const phase = session.jacklynPhase || 'glide';
+    if (session.landingLock) return 'HAVEN';
+    if (session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
+      return 'LANDING BURN';
+    }
+    if (phase === 'reentry') return 'PITCH OVER';
+    if (phase === 'strakes') return 'STRAKES';
+    return 'GLIDE';
+  }
+  return phaseChip(beatId);
+}
+
+export function playPhaseKind(label) {
+  if (label === 'LIFTOFF' || label === 'STAGE SEP' || label === 'HAVEN' || label === 'IGNITION') return 'go';
+  if (label === 'MAX-Q' || label === 'LANDING BURN' || label === 'SEP ZONE' || label === 'PITCH OVER') return 'warn';
+  return 'info';
+}
+
 export function nextCoachBeat(beats, tClock) {
   const t = Number(tClock) || 0;
   return (beats || []).find((beat) => beat.coach && t + 0.05 < beat.t) || null;
 }
 
 export function playGoal(status, session = {}, flight = {}) {
-  if (status === 'PRELAUNCH') return 'TAP ANYWHERE to launch · then steer';
+  if (status === 'PRELAUNCH') {
+    return session.launchArmed ? 'IGNITION — cores coming up' : 'TAP TO LAUNCH · one tap, then steer';
+  }
   if (status === 'ASCENT') {
     const clock = Number(session.tClock) || 0;
     if (clock < PACE.MAXQ - 4) {
@@ -263,7 +300,7 @@ export function playGoal(status, session = {}, flight = {}) {
     if (session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
       return 'LANDING BURN  ·  HOLD TO BURN  ·  keep holding and steer onto the paint';
     }
-    return 'STRAKES OUT  ·  glide the diagonal  ·  do not burn yet';
+    return 'STRAKES OUT  ·  glide the diagonal onto the PAINT  ·  do not burn yet';
   }
   return '';
 }

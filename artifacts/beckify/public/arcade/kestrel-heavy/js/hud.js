@@ -92,6 +92,7 @@ export function renderHud(snapshot) {
     climb.dataset.climb = climbArmedFromLabel(snapshot.boostLabel) ? 'on' : 'off';
     climb.classList.toggle('is-held', Boolean(snapshot.boostHeld || snapshot.thumbHeld));
     climb.classList.toggle('is-burn', Boolean(snapshot.burnReady));
+    climb.classList.toggle('is-launch', snapshot.boostLabel === 'TAP TO LAUNCH');
     if (climb.style?.setProperty) {
       climb.style.setProperty('--kh-hold', String(Math.max(0, Math.min(1, Number(snapshot.boostHold) || 0))));
     }
@@ -106,7 +107,7 @@ export function renderHud(snapshot) {
           : snapshot.boostLabel === 'SEPARATE'
             ? 'Press to separate stages'
             : snapshot.boostLabel === 'TAP TO LAUNCH'
-              ? 'Tap anywhere to launch, then steer'
+              ? 'Tap to launch'
               : snapshot.boostLabel === 'DRAG TO STEER' || snapshot.boostLabel === 'STEER'
                 ? 'Drag to steer — climb stays on'
                 : 'Steer left or right — climb stays on',
@@ -134,7 +135,18 @@ export function renderHud(snapshot) {
   const phase = el('ng-phase');
   if (phase && snapshot.phase) {
     phase.hidden = false;
+    if (phase.textContent !== snapshot.phase) {
+      phase.classList.remove('is-sting');
+      void phase.offsetWidth;
+      phase.classList.add('is-sting');
+    }
     phase.textContent = snapshot.phase;
+    phase.dataset.kind = snapshot.phaseKind || 'info';
+  }
+  const recover = el('ng-recover');
+  if (recover) {
+    recover.hidden = !snapshot.recover;
+    if (snapshot.recover) recover.textContent = snapshot.recover;
   }
   const tip = el('ng-launch-tip');
   if (tip && snapshot.launchTip != null) tip.hidden = !snapshot.launchTip;
@@ -331,7 +343,11 @@ export function bindChrome(handlers) {
       }
       handlers.thumb?.(true);
       if (handlers.steerDrag) handlers.steerDrag(null);
-      handlers.boost(climbArmed());
+      const lift = climbArmed();
+      handlers.boost(lift);
+      // TAP TO LAUNCH / SEPARATE are commits, not holds — do not wait for
+      // a second Phaser playfield tap after the HUD pad.
+      if (!lift) handlers.commit?.();
       paintThumbSteer(node, 0);
     };
     const onMove = (event) => {

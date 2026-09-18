@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <!-- Phaser 4.2.1 full build + Matter. vendor/phaser.min.js == jsDelivr phaser@4.2.1/dist/phaser.min.js. Do not load arcade.js. -->
-<html lang="en" data-ng-engine="phaser4" data-kh-build="kestrel-20">
+<html lang="en" data-ng-engine="phaser4" data-kh-build="kestrel-21">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-20">
+      <meta name="arcade-asset-version" content="kestrel-21">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -247,7 +247,32 @@
       color: #041014;
       background: var(--cyan);
     }
+    #ng-phase[data-kind="go"] { background: var(--go); }
+    #ng-phase[data-kind="warn"] { background: var(--amber); }
+    #ng-phase[data-kind="info"] { background: var(--cyan); }
+    #ng-phase.is-sting {
+      animation: kh-phase-sting 0.42s ease-out;
+    }
+    @keyframes kh-phase-sting {
+      from { transform: scale(1.08); box-shadow: 0 0 18px rgba(255, 207, 93, 0.7); }
+      to { transform: scale(1); box-shadow: none; }
+    }
     #ng-phase[hidden] { display: none !important; }
+    #ng-recover {
+      font-family: var(--font-mono);
+      font-size: clamp(0.5rem, 1.15cqi, 0.6rem);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--amber);
+      text-align: start;
+      text-shadow: 0 1px 2px #000;
+      max-width: calc(100% - 7.25rem);
+      margin: 0 auto 0 0;
+      padding-inline: 4px;
+      pointer-events: none;
+    }
+    #ng-recover[hidden] { display: none !important; }
+    body:not([data-phase="JACKLYN"]) #ng-recover { display: none !important; }
     .mc-obj {
       font-family: var(--font-mono);
       font-size: clamp(0.58rem, 1.3cqi, 0.66rem);
@@ -412,6 +437,11 @@
     #atb-boost.is-steer-right {
       box-shadow: 12px 0 22px rgba(125, 255, 176, 0.32);
     }
+    #atb-boost.is-launch {
+      border-color: var(--go);
+      color: var(--go);
+      box-shadow: 0 0 16px rgba(125, 255, 176, 0.35);
+    }
     #atb-boost.is-flash {
       animation: kh-ignite 0.28s ease-out;
     }
@@ -445,7 +475,8 @@
     #ng-sep-btn[hidden] { display: none !important; }
     @media (prefers-reduced-motion: reduce) {
       #atb-boost.is-flash,
-      #atb-boost.is-burn { animation: none; }
+      #atb-boost.is-burn,
+      #ng-phase.is-sting { animation: none; }
     }
     body[data-phase="MENU"] #arcade-touch-btns,
     body[data-phase="SUMMARY"] #arcade-touch-btns,
@@ -1112,7 +1143,7 @@
   <main id="sec-arcade" class="cabinet">
     <div id="arcade-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
     <div id="arcade-fs-wrapper">
-      <div id="ng-phaser-root" role="application" aria-label="Kestrel Heavy flight. Tap to launch, steer the corridor, then land on Haven."></div>
+      <div id="ng-phaser-root" role="application" aria-label="Kestrel Heavy flight. Tap to launch, steer the corridor, then land on Haven's paint."></div>
       <div class="mc-hud" aria-hidden="false">
         <div class="mc-panel mc-telem">
           <table>
@@ -1142,6 +1173,7 @@
           </div>
           <div class="mc-met">
             <div id="t-clock">T-0:08.0</div>
+            <div id="ng-recover" hidden>RNG · OFF · VC · GEAR · BURN</div>
             <div id="t-payload">AES  Aether Scout</div>
             <div id="t-sci">0.0 km · 0 m/s · 0% thr</div>
           </div>
@@ -1158,7 +1190,7 @@
         </div>
         <div class="mc-callout">
           <div id="t-radio">Pier 7 standing by.</div>
-          <div id="t-obj" class="mc-obj">TAP ANYWHERE to launch</div>
+          <div id="t-obj" class="mc-obj">TAP TO LAUNCH</div>
           <div id="t-next" class="mc-next">NEXT · LIFTOFF — Stay inside the corridor</div>
         </div>
       </div>
@@ -1175,7 +1207,7 @@
           <p id="ng-card-flight">KH-1 · Aether Scout</p>
           <p id="ng-card-blurb">Demo stack. Prove the corridor.</p>
           <p id="ng-card-tod">Pier 7 · Dawn</p>
-          <p id="ng-menu-blurb" class="visually-hidden">Tap anywhere to launch, then steer. Stay between the dotted corridor rails. Slide onto Haven. HOLD TO BURN to catch the deck.</p>
+          <p id="ng-menu-blurb" class="visually-hidden">Tap to launch, then steer. Stay between the dotted corridor rails. Glide onto Haven's paint. HOLD TO BURN to catch the deck.</p>
           <div class="diff-row" role="group" aria-label="Difficulty">
             <button type="button" data-diff="KID">KID</button>
             <button type="button" data-diff="CADET">CADET</button>
@@ -1297,10 +1329,10 @@
         <div class="ng-card">
           <p class="ng-kicker">Readable in 3 seconds</p>
           <h2>HOW TO PLAY</h2>
-          <p>TAP ANYWHERE on the pad (or press Space) to launch — the pad flashes when the tap registers. After liftoff, climb stays on. Just steer: drag left/right on a phone, or A D / optional ◀ ▶ on a keyboard. Stay between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
+          <p>TAP TO LAUNCH on the pad (or press Space) — one tap, confirm flash, then go. After liftoff, climb stays on. Just steer: drag left/right on a phone, or A D / optional ◀ ▶ on a keyboard. Stay between the dotted CORRIDOR rails — those are the fly-out bounds, not decoration.
 Grab the cyan aero shield when you can. Watch the INT bar — grazes hurt, a lethal hit is a RUD. Through MAX-Q, fly smooth.
 After MECO you are in space. Stay in the marked SEP ZONE, ALIGN green, then press SEPARATE.
-Haven is a long strake glide: steer the diagonal, wait for the burn window, then HOLD TO BURN and keep holding while you steer onto the painted deck. Soft deck = BOOSTER RECOVERED.
+Haven is a long strake glide: follow the PAINT mark on the Haven deck, wait for the burn window, then HOLD TO BURN and keep holding while you steer onto the paint. Soft deck = BOOSTER RECOVERED.
 Tip, hard catch, or splash clips score — not a wipe. A RUD ends the flight and names the reason.
 Hangar unlocks parts as you fly. Each KH-n has its own time of day.
 The bottom tape is the roadmap: NOW is this beat, NEXT is the one after.
@@ -1370,12 +1402,12 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
       </ol>
       <div id="arcade-touch-btns">
         <button id="atb-left" type="button" aria-label="Steer left" data-label="◀" draggable="false"></button>
-        <button id="atb-boost" type="button" aria-label="Tap anywhere to launch, then steer" data-label="TAP TO LAUNCH" draggable="false"></button>
+        <button id="atb-boost" type="button" aria-label="Tap to launch" data-label="TAP TO LAUNCH" draggable="false"></button>
         <button id="atb-right" type="button" aria-label="Steer right" data-label="▶" draggable="false"></button>
       </div>
       <button id="ng-sep-btn" type="button" hidden aria-label="Separate stages">SEPARATE</button>
     </div>
-    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space launches then climb stays on, P or Escape pauses, M mutes. Touch: tap anywhere to launch, then drag left/right to steer (◀ ▶ optional). After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven and HOLD TO BURN — a long approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space launches then climb stays on, P or Escape pauses, M mutes. Touch: one tap launches, then drag left/right to steer (◀ ▶ optional). After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven's paint and HOLD TO BURN — a long approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>
