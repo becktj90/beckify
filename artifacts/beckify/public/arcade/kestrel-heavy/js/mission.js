@@ -1036,9 +1036,14 @@ export default class MissionScene extends Phaser.Scene {
       parentH: h,
       dx: this.jacklyn.x - this.rocket.x,
     });
-    this.setZoomWant(zoom, 2.4);
-    this.cameras.main.setZoom(zoom);
-    this.frameHavenCamera(1);
+    this.setZoomWant(zoom, this.settings.reducedMotion ? 12 : 1.05);
+    const from = this.cameras.main.zoom || CAM.sep;
+    if (this.settings.reducedMotion) {
+      this.cameras.main.setZoom(zoom);
+    } else {
+      this.cameras.main.setZoom(from * 0.4 + zoom * 0.6);
+    }
+    this.frameHavenCamera(0.016);
     this.updateHavenPaint();
     if (flight.objective?.id === 'clean' && this.session.hits === 0) this.completeObjective();
     AudioApi.stopBeds();
@@ -2526,32 +2531,40 @@ export default class MissionScene extends Phaser.Scene {
     const color = onPaint ? 0x7dffb0 : (burn ? 0xffcf5d : 0x9be7ff);
     const g = this.havenGfx;
     g.clear();
-    g.lineStyle(lw, color, 0.55 * pulse);
-    g.lineBetween(this.rocket.x, this.rocket.y + 28, bargeX, bargeY);
-    g.fillStyle(color, 0.16 * pulse);
-    g.fillRect(bargeX - 86, bargeY - 18, 172, 36);
-    g.lineStyle(lw + 1, color, 0.92 * pulse);
-    g.strokeRect(bargeX - 86, bargeY - 18, 172, 36);
-    g.lineStyle(lw, color, 0.7);
-    g.lineBetween(bargeX - 70, bargeY, bargeX + 70, bargeY);
-    g.lineBetween(bargeX, bargeY - 14, bargeX, bargeY + 14);
+    // Aim cues live on the deck and as an offset bracket below the booster —
+    // never a line through the stack.
+    const footY = this.rocket.y + 92;
+    g.fillStyle(color, 0.18 * pulse);
+    g.fillRect(bargeX - 90, bargeY - 16, 180, 32);
+    g.lineStyle(lw + 1, color, 0.95 * pulse);
+    g.strokeRect(bargeX - 90, bargeY - 16, 180, 32);
+    g.lineStyle(lw, color, 0.8);
+    g.lineBetween(bargeX - 72, bargeY, bargeX + 72, bargeY);
+    g.lineBetween(bargeX, bargeY - 12, bargeX, bargeY + 12);
     const tick = Math.max(10, 16 / z);
-    g.strokeCircle(bargeX, bargeY, 22);
-    g.lineBetween(this.rocket.x, this.rocket.y + 70, this.rocket.x, bargeY);
-    g.fillStyle(color, 0.85);
+    g.fillStyle(color, 0.9);
     g.fillTriangle(
       bargeX,
-      bargeY - 28,
+      bargeY - 26,
       bargeX - tick,
-      bargeY - 12,
+      bargeY - 10,
       bargeX + tick,
-      bargeY - 12,
+      bargeY - 10,
     );
+    const err = this.rocket.x - bargeX;
+    if (Math.abs(err) > 18) {
+      g.lineStyle(lw, color, 0.55 * pulse);
+      g.lineBetween(this.rocket.x, footY, this.rocket.x, bargeY);
+      g.lineBetween(this.rocket.x, bargeY, bargeX, bargeY);
+    } else {
+      g.lineStyle(lw, color, 0.4 * pulse);
+      g.lineBetween(this.rocket.x, footY, bargeX, bargeY);
+    }
     if (this.session?.jacklynPhase === 'burn' || this.session?.jacklynPhase === 'straighten' || this.session?.jacklynPhase === 'settle') {
-      const gearY = this.rocket.y + 58;
-      g.lineStyle(lw, 0x7dffb0, 0.85);
-      g.lineBetween(this.rocket.x - 18, this.rocket.y + 36, this.rocket.x - 28, gearY);
-      g.lineBetween(this.rocket.x + 18, this.rocket.y + 36, this.rocket.x + 28, gearY);
+      const gearY = this.rocket.y + 70;
+      g.lineStyle(lw, 0x7dffb0, 0.9);
+      g.lineBetween(this.rocket.x - 16, this.rocket.y + 48, this.rocket.x - 26, gearY);
+      g.lineBetween(this.rocket.x + 16, this.rocket.y + 48, this.rocket.x + 26, gearY);
     }
     if (this.paintTag) {
       this.paintTag.setVisible(true);
