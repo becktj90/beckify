@@ -795,10 +795,15 @@ export function makeHaven() {
   ctx.fill();
 
   ctx.strokeStyle = '#ffcf5d';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([10, 7]);
-  ctx.strokeRect(246, 132, 148, 20);
+  ctx.lineWidth = 5;
+  ctx.setLineDash([8, 6]);
+  ctx.strokeRect(220, 124, 200, 34);
   ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255, 207, 93, 0.28)';
+  ctx.fillRect(228, 130, 184, 22);
+  ctx.strokeStyle = '#7dffb0';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(286, 132, 68, 18);
 
   ctx.fillStyle = '#0b0d12';
   ctx.font = 'bold 26px "IBM Plex Mono", ui-monospace, monospace';

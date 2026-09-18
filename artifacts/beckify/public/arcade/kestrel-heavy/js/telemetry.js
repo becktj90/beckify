@@ -139,6 +139,44 @@ export function computeTelemetry(sample) {
   };
 }
 
+/**
+ * Arcade recovery tape — closing speed, paint offset, gear, burn cue.
+ * Numbers are compressed play-feel, not a GNC sim.
+ */
+export function formatRecoverHud({
+  altPx = 0,
+  dxPx = 0,
+  vy = 0,
+  burnWindow = false,
+  burnLit = false,
+  boosting = false,
+  landingTol = 36,
+  gear = false,
+} = {}) {
+  const rangeM = Math.max(0, Math.round(Math.abs(altPx) * 0.85));
+  const offsetM = Math.round(dxPx * 0.55);
+  const closing = Math.max(0, Math.round(Math.abs(vy) * 36));
+  const onPaint = Math.abs(dxPx) <= landingTol + 22;
+  const off = onPaint
+    ? 'ON PAINT'
+    : `${offsetM < 0 ? 'L' : 'R'} ${Math.abs(offsetM)}`;
+  let burn = 'GLIDE';
+  if (burnLit && boosting) burn = 'BURN LIT';
+  else if (burnWindow && boosting) burn = 'HOLD';
+  else if (burnWindow) burn = 'HOLD TO BURN';
+  const gearTxt = gear ? 'DN' : 'UP';
+  const rng = rangeM >= 1000 ? `${(rangeM / 1000).toFixed(1)}km` : `${rangeM}m`;
+  return {
+    rangeM,
+    offsetM,
+    closing,
+    onPaint,
+    gear: gearTxt,
+    burn,
+    line: `RNG ${rng}  ·  OFF ${off}  ·  VC ${closing}  ·  GEAR ${gearTxt}  ·  ${burn}`,
+  };
+}
+
 export function formatScience(sci, difficulty) {
   const kid = difficulty === 'KID';
   const mach = sci.mach < 0.12 ? '0.00' : sci.mach.toFixed(2);

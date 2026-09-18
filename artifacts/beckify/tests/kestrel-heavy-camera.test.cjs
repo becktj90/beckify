@@ -77,6 +77,28 @@ test('Haven camera stays locked on the booster, not empty ocean', async () => {
       true,
       `${field.name}: booster must stay framed through the landing-burn pull-in`,
     );
+    const offsetX = bargeX + 420;
+    const offsetY = bargeY - 280;
+    const offsetZoom = havenZoomWant({
+      alt: 280,
+      pulling: true,
+      reduced: false,
+      parentW: field.w,
+      parentH: field.h,
+      dx: 420,
+    });
+    const offsetVis = envelopVisibleWorld(field.w, field.h, 1280, 720, offsetZoom);
+    const offsetLook = havenLookPoint(offsetX, offsetY, bargeX, bargeY, offsetVis.w, offsetVis.h);
+    assert.equal(
+      vehicleInView(offsetX, offsetY, offsetLook.cx, offsetLook.cy, offsetVis.w, offsetVis.h, 40),
+      true,
+      `${field.name}: booster stays framed with a 420px paint offset`,
+    );
+    assert.equal(
+      vehicleInView(bargeX, bargeY, offsetLook.cx, offsetLook.cy, offsetVis.w, offsetVis.h, -24),
+      true,
+      `${field.name}: Haven paint must be in the cropped burn frame at 420px offset`,
+    );
   }
 
   assert.equal(

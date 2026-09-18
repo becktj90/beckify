@@ -36,7 +36,7 @@ Do **not** point Toolbox Archive-iOS at **KestrelHeavy** or **LookCheck**. Keep 
 - Packed Phaser 4 cabinet from `artifacts/beckify/public/arcade/kestrel-heavy` → `ios/KestrelHeavy/Game/`.
 - Offline: vendor Phaser, ES modules, NASA/Suno audio served from `kestrel-heavy://game/` (not `file://`). Scores stay in WKWebView `localStorage`.
 - Portrait only — Info.plist + SwiftUI/WKWebView shell refuse landscape so the cabinet cannot pillarbox. Phaser 1280×720 `ENVELOP` fills the WKWebView; camera zoom keeps the corridor and booster in the cropped strip.
-- LaunchScreen storyboard (KH / Pier 7) plus a short in-app splash while the cabinet boots. Next TestFlight binary is **1.0 (3)** — **1.0 (2)** still launched landscape.
+- LaunchScreen storyboard (KH / Pier 7) plus a short in-app splash while the cabinet boots. Next TestFlight binary is **1.0 (4)** — play-feel pack (one-tap launch, Haven paint cue).
 - Fictional **Kestrel Heavy / Pier 7 / Haven** branding. No Blue Origin or New Glenn marks.
 
 ## How to run (Mac + Xcode)

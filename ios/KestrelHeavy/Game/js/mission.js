@@ -70,7 +70,7 @@ import {
   showScreen,
   syncSettingsForm,
 } from './hud.js';
-import { computeTelemetry, formatScience } from './telemetry.js';
+import { computeTelemetry, formatRecoverHud, formatScience } from './telemetry.js';
 import {
   abortRadio,
   createVoice,
@@ -83,6 +83,7 @@ import {
   ascentZoomForPlayfield,
   envelopVisibleWorld,
   expandedHavenBounds,
+  havenEdgeCue,
   havenFollowOffset,
   havenZoomWant,
   padZoomForPlayfield,
@@ -90,7 +91,7 @@ import {
 } from './camera.js';
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isAscentCruise, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
-import { beatsFor, currentBeat, formatClock, nextCoachBeat, phaseChip, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
+import { beatsFor, currentBeat, formatClock, nextCoachBeat, playPhase, playPhaseKind, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures, refreshLoadoutTextures, refreshTodTextures } from './textures.js';
 import {
@@ -195,6 +196,23 @@ export default class MissionScene extends Phaser.Scene {
       stroke: '#041014',
       strokeThickness: 5,
     }).setOrigin(0.5).setDepth(4).setVisible(false);
+    this.havenGfx = this.add.graphics().setDepth(4.4);
+    this.paintTag = this.add.text(0, 0, 'PAINT', {
+      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+      fontSize: '16px',
+      fontStyle: '800',
+      color: '#ffcf5d',
+      stroke: '#041014',
+      strokeThickness: 5,
+    }).setOrigin(0.5).setDepth(9).setVisible(false);
+    this.havenCue = this.add.text(0, 0, 'HAVEN', {
+      fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+      fontSize: '15px',
+      fontStyle: '800',
+      color: '#7dffb0',
+      stroke: '#041014',
+      strokeThickness: 5,
+    }).setOrigin(0.5).setDepth(9).setVisible(false);
     this.setCorridorVisible(false);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
     this.oceanWash = this.add.graphics().setDepth(-1).setVisible(false);
@@ -382,6 +400,10 @@ export default class MissionScene extends Phaser.Scene {
         }
         setBoostHeld(this.inputState, down, this.nowSec);
       },
+      commit: () => {
+        this.onPrimary();
+        this.noteBoostPress();
+      },
     });
 
     setDifficultyButtons(this.settings.difficulty, (mode) => this.setDifficulty(mode));
@@ -512,6 +534,7 @@ export default class MissionScene extends Phaser.Scene {
       burnAck: false,
       shieldTaught: false,
       launchArmed: false,
+      launchGoAt: 0,
     };
   }
 
@@ -648,13 +671,21 @@ export default class MissionScene extends Phaser.Scene {
     }
     this.session.launchArmed = true;
     this.inputState.launchArmed = true;
+    this.session.launchGoAt = this.nowSec + 0.32;
+    this.session.charge = Math.max(this.session.charge || 0, 0.22);
+    if (this.session.tClock < -0.92) {
+      for (const beat of this.session.beats || []) {
+        if (beat.t < 0 && beat.quiet) this.session.fired[beat.id] = true;
+      }
+      this.session.tClock = -0.82;
+    }
     flashIgnite();
     this.flashPad(0.55);
     this.vibrate(18);
     if (!this.session.igniteAck) {
       this.session.igniteAck = true;
       AudioApi.play('ignite', this.settings);
-      this.callout('press-ok', { banner: 'LAUNCH CONFIRMED — cores coming up', kind: 'go', holdMs: 1300 });
+      this.callout('press-ok', { banner: 'LAUNCH CONFIRMED — cores coming up', kind: 'go', holdMs: 900 });
     }
   }
 
@@ -828,7 +859,7 @@ export default class MissionScene extends Phaser.Scene {
       saveSettings(this.settings);
     }
     this.callout('pad', {
-      banner: 'TAP ANYWHERE TO LAUNCH',
+      banner: 'TAP TO LAUNCH',
       kind: 'go',
       holdMs: 0,
       once: false,
@@ -868,6 +899,7 @@ export default class MissionScene extends Phaser.Scene {
     this.setCorridorVisible(false);
     if (this.sepGfx) this.sepGfx.clear();
     if (this.sepTag) this.sepTag.setVisible(false);
+    this.clearHavenPaint();
     this.bgPad.setVisible(true);
     this.bgOcean.setVisible(false);
     this.bgOcean.clearTint();
@@ -1002,17 +1034,19 @@ export default class MissionScene extends Phaser.Scene {
       reduced: this.settings.reducedMotion,
       parentW: w,
       parentH: h,
+      dx: this.jacklyn.x - this.rocket.x,
     });
     this.setZoomWant(zoom, 2.4);
     this.cameras.main.setZoom(zoom);
     this.frameHavenCamera(1);
+    this.updateHavenPaint();
     if (flight.objective?.id === 'clean' && this.session.hits === 0) this.completeObjective();
     AudioApi.stopBeds();
     AudioApi.play('whoosh', this.settings);
     this.callout('haven-reentry', {
-      banner: 'PITCH OVER — reentry. Strakes stand by. Do not burn yet.',
+      banner: 'HAVEN APPROACH — pitch over. Paint is downrange.',
       kind: 'warn',
-      holdMs: 2400,
+      holdMs: 2200,
     });
     this.time.delayedCall(Math.round(HAVEN.reentrySec * 1000), () => {
       if (this.status !== 'JACKLYN' || !this.rocket) return;
@@ -1022,9 +1056,9 @@ export default class MissionScene extends Phaser.Scene {
       this.bindRocketBody();
       if (this.bgOcean) this.bgOcean.setTint(flight.seaTint || 0xffffff);
       this.callout('haven-strakes', {
-        banner: 'STRAKES DEPLOYED — glide the diagonal. Do not burn yet.',
+        banner: 'STRAKES DEPLOYED — glide onto the PAINT. Do not burn yet.',
         kind: 'warn',
-        holdMs: 3200,
+        holdMs: 2800,
       });
       this.time.delayedCall(1500, () => {
         if (this.status === 'JACKLYN') {
@@ -1088,12 +1122,16 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (!launched) {
       const banner = document.getElementById('ng-banner');
-      if (!banner || banner.hidden || !/TAP ANYWHERE/i.test(banner.textContent || '')) {
-        setBanner('TAP ANYWHERE TO LAUNCH', 'go', 0);
+      if (!banner || banner.hidden || !/TAP TO LAUNCH|TAP ANYWHERE/i.test(banner.textContent || '')) {
+        setBanner('TAP TO LAUNCH', 'go', 0);
       }
       return;
     }
-    if (this.session.tClock >= -0.12 || this.session.charge >= 0.58) this.liftoff();
+    if (
+      this.session.tClock >= -0.12
+      || this.session.charge >= 0.48
+      || (this.session.launchGoAt && this.nowSec >= this.session.launchGoAt)
+    ) this.liftoff();
   }
 
   updateAscent(dt) {
@@ -1295,6 +1333,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.session.landingLock) {
       this.session.tClock += dt;
       this.fireDueBeats();
+      this.updateHavenPaint();
       return;
     }
     const mode = DIFFICULTY[this.settings.difficulty];
@@ -1319,10 +1358,11 @@ export default class MissionScene extends Phaser.Scene {
     this.session.burnWindow = burnWindow;
     if (burnWindow && !this.session.burnWindowCalled) {
       this.session.burnWindowCalled = true;
+      this.session.stage = 'LANDING BURN';
       this.callout('haven-burn', {
-        banner: 'LANDING BURN — HOLD TO BURN and steer onto the paint',
+        banner: 'LANDING BURN — HOLD TO BURN · paint is the amber deck',
         kind: 'go',
-        holdMs: 3200,
+        holdMs: 2800,
       });
       flashIgnite();
     }
@@ -1432,6 +1472,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.velocity = Math.round(this.rocket.body.velocity.y * 36);
     this.session.altitudeKm = clamp(alt / 140, 0, 12);
     this.frameHavenCamera(dt);
+    this.updateHavenPaint();
     if (this.rocket.y > this.jacklyn.y + 90) this.resolveLanding('water');
   }
 
@@ -2060,6 +2101,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.bloomFlash) {
       this.bloomFlash.setVisible(false).setAlpha(0).setScale(1);
     }
+    this.clearHavenPaint();
   }
 
   playRecoveredSpectacle() {
@@ -2444,11 +2486,96 @@ export default class MissionScene extends Phaser.Scene {
       reduced: this.settings.reducedMotion,
       parentW: w,
       parentH: h,
+      dx: this.jacklyn.x - this.rocket.x,
     });
-    this.setZoomWant(want, 1.8);
+    this.setZoomWant(want, pulling ? 1.35 : 1.55);
     this.tickZoom(typeof dt === 'number' ? dt : 0.016);
     this.lockVehicleCamera(CAM.havenLerpX, CAM.havenLerpY);
     this.snapVehicleIfOffscreen();
+  }
+
+  clearHavenPaint() {
+    if (this.havenGfx) this.havenGfx.clear();
+    if (this.paintTag) this.paintTag.setVisible(false);
+    if (this.havenCue) this.havenCue.setVisible(false);
+  }
+
+  updateHavenPaint() {
+    if (!this.havenGfx || !this.rocket || !this.jacklyn) {
+      this.clearHavenPaint();
+      return;
+    }
+    if (this.status !== 'JACKLYN') {
+      this.clearHavenPaint();
+      return;
+    }
+    const cam = this.cameras.main;
+    const { w, h } = this.playfieldSize();
+    const vis = envelopVisibleWorld(w, h, W, H, cam.zoom || 1);
+    const cx = cam.midPoint?.x ?? (cam.worldView?.centerX) ?? this.rocket.x;
+    const cy = cam.midPoint?.y ?? (cam.worldView?.centerY) ?? this.rocket.y;
+    const bargeX = this.jacklyn.x;
+    const bargeY = this.jacklyn.y - 18;
+    const cue = havenEdgeCue(this.rocket.x, this.rocket.y, bargeX, bargeY, cx, cy, vis.w, vis.h, 88);
+    const z = Math.max(0.18, cam.zoom || 1);
+    const lw = Math.max(2.2, 3.4 / z);
+    const pulse = this.settings.reducedMotion ? 1 : 0.78 + Math.sin(this.nowSec * 4.6) * 0.22;
+    const mode = DIFFICULTY[this.settings.difficulty];
+    const onPaint = Math.abs(this.rocket.x - bargeX) <= (mode.landingTol + 22);
+    const burn = Boolean(this.session?.burnWindow || this.session?.burnLit);
+    const color = onPaint ? 0x7dffb0 : (burn ? 0xffcf5d : 0x9be7ff);
+    const g = this.havenGfx;
+    g.clear();
+    g.lineStyle(lw, color, 0.55 * pulse);
+    g.lineBetween(this.rocket.x, this.rocket.y + 28, bargeX, bargeY);
+    g.fillStyle(color, 0.16 * pulse);
+    g.fillRect(bargeX - 86, bargeY - 18, 172, 36);
+    g.lineStyle(lw + 1, color, 0.92 * pulse);
+    g.strokeRect(bargeX - 86, bargeY - 18, 172, 36);
+    g.lineStyle(lw, color, 0.7);
+    g.lineBetween(bargeX - 70, bargeY, bargeX + 70, bargeY);
+    g.lineBetween(bargeX, bargeY - 14, bargeX, bargeY + 14);
+    const tick = Math.max(10, 16 / z);
+    g.strokeCircle(bargeX, bargeY, 22);
+    g.lineBetween(this.rocket.x, this.rocket.y + 70, this.rocket.x, bargeY);
+    g.fillStyle(color, 0.85);
+    g.fillTriangle(
+      bargeX,
+      bargeY - 28,
+      bargeX - tick,
+      bargeY - 12,
+      bargeX + tick,
+      bargeY - 12,
+    );
+    if (this.session?.jacklynPhase === 'burn' || this.session?.jacklynPhase === 'straighten' || this.session?.jacklynPhase === 'settle') {
+      const gearY = this.rocket.y + 58;
+      g.lineStyle(lw, 0x7dffb0, 0.85);
+      g.lineBetween(this.rocket.x - 18, this.rocket.y + 36, this.rocket.x - 28, gearY);
+      g.lineBetween(this.rocket.x + 18, this.rocket.y + 36, this.rocket.x + 28, gearY);
+    }
+    if (this.paintTag) {
+      this.paintTag.setVisible(true);
+      this.paintTag.setPosition(bargeX, bargeY - 36);
+      this.paintTag.setColor(onPaint ? '#7dffb0' : '#ffcf5d');
+      this.paintTag.setText(onPaint ? 'ON PAINT' : 'PAINT · HAVEN');
+      this.paintTag.setScale(clamp(1 / z, 0.9, 1.65));
+    }
+    if (this.havenCue) {
+      if (cue.inView) {
+        this.havenCue.setVisible(false);
+      } else {
+        this.havenCue.setVisible(true);
+        this.havenCue.setPosition(cue.x, cue.y);
+        this.havenCue.setScale(clamp(1 / z, 1, 1.8));
+        const left = bargeX < this.rocket.x;
+        this.havenCue.setText(left ? '← HAVEN PAINT' : 'HAVEN PAINT →');
+        this.havenCue.setColor('#7dffb0');
+        g.fillStyle(0x7dffb0, 0.22 * pulse);
+        g.fillCircle(cue.x, cue.y, 26);
+        g.lineStyle(lw + 1, 0x7dffb0, 0.95);
+        g.strokeCircle(cue.x, cue.y, 26);
+      }
+    }
   }
 
   applyHavenDrift(dt, mode) {
@@ -2739,7 +2866,7 @@ export default class MissionScene extends Phaser.Scene {
 
   hintLine() {
     if (!this.settings.controlHints || !this.session) return '';
-    if (this.status === 'PRELAUNCH') return 'TAP ANYWHERE TO LAUNCH  ·  then steer';
+    if (this.status === 'PRELAUNCH') return this.session.launchArmed ? 'IGNITION  ·  cores coming up' : 'TAP TO LAUNCH  ·  then steer';
     if (this.status === 'ASCENT') {
       if (this.session.flightTime < 6.4) return 'STAY INSIDE THE CORRIDOR  ·  STEER ONLY';
       if (this.currentFlight().objective?.id === 'shield' && !this.session.objectiveDone && this.session.flightTime < 16) {
@@ -2764,9 +2891,9 @@ export default class MissionScene extends Phaser.Scene {
       if (this.session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
         return this.session.burnLit
           ? 'LANDING BURN  ·  KEEP HOLDING  ·  drag onto the painted deck'
-          : 'LANDING BURN  ·  HOLD TO BURN  ·  keep holding and steer onto the paint';
+          : 'LANDING BURN  ·  HOLD TO BURN  ·  paint is the amber deck mark';
       }
-      return 'STRAKES OUT  ·  long GLIDE the diagonal  ·  do not burn yet';
+      return 'GLIDE  ·  fly the diagonal onto the PAINT  ·  do not burn yet';
     }
     return '';
   }
@@ -2828,7 +2955,25 @@ export default class MissionScene extends Phaser.Scene {
       clock: formatClock(s.tClock),
       tapeId: beat?.id || '',
       nextTapeId: TAPE_IDS[TAPE_IDS.indexOf(beat?.id) + 1] || nextCoachBeat(s.beats || beatsFor(flight), s.tClock)?.id || '',
-      phase: this.status === 'MENU' ? 'STANDBY' : (this.status === 'SEP' ? (s.sepPhase === 'clear' ? 'STAGE SEP' : (s.sepPhase === 'window' ? 'STAGE SEP' : 'MECO')) : phaseChip(beat?.id)),
+      phase: playPhase(this.status, s, beat?.id),
+      phaseKind: playPhaseKind(playPhase(this.status, s, beat?.id)),
+      recover: this.status === 'JACKLYN' && this.rocket && this.jacklyn
+        ? formatRecoverHud({
+          altPx: this.jacklyn.y - 50 - this.rocket.y,
+          dxPx: this.rocket.x - this.jacklyn.x,
+          vy: this.rocket.body?.velocity?.y || 0,
+          burnWindow: Boolean(s.burnWindow),
+          burnLit: Boolean(s.burnLit),
+          boosting,
+          landingTol: DIFFICULTY[this.settings.difficulty].landingTol,
+          gear: Boolean(
+            s.jacklynPhase === 'burn'
+            || s.jacklynPhase === 'straighten'
+            || s.jacklynPhase === 'settle'
+            || (this.jacklyn.y - this.rocket.y) < 240,
+          ),
+        }).line
+        : '',
       muted: this.settings.muted,
       paused: this.paused,
       boostLabel: this.status === 'JACKLYN'
