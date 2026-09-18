@@ -260,14 +260,15 @@
     #ng-phase[hidden] { display: none !important; }
     #ng-recover {
       font-family: var(--font-mono);
-      font-size: clamp(0.52rem, 1.2cqi, 0.62rem);
+      font-size: clamp(0.5rem, 1.15cqi, 0.6rem);
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       color: var(--amber);
-      text-align: center;
+      text-align: start;
       text-shadow: 0 1px 2px #000;
-      max-width: min(92vw, 26rem);
-      margin: 0 auto;
+      max-width: calc(100% - 7.25rem);
+      margin: 0 auto 0 0;
+      padding-inline: 4px;
     }
     #ng-recover[hidden] { display: none !important; }
     body:not([data-phase="JACKLYN"]) #ng-recover { display: none !important; }

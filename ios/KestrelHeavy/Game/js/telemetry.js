@@ -166,6 +166,7 @@ export function formatRecoverHud({
   else if (burnWindow) burn = 'HOLD TO BURN';
   const gearTxt = gear ? 'DN' : 'UP';
   const rng = rangeM >= 1000 ? `${(rangeM / 1000).toFixed(1)}km` : `${rangeM}m`;
+  const burnShort = burn === 'HOLD TO BURN' ? 'HOLD' : burn;
   return {
     rangeM,
     offsetM,
@@ -173,7 +174,7 @@ export function formatRecoverHud({
     onPaint,
     gear: gearTxt,
     burn,
-    line: `RNG ${rng}  ·  OFF ${off}  ·  VC ${closing}  ·  GEAR ${gearTxt}  ·  ${burn}`,
+    line: `RNG ${rng} · OFF ${off} · VC ${closing} · GEAR ${gearTxt} · ${burnShort}`,
   };
 }
 
