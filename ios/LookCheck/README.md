@@ -10,9 +10,11 @@ This is not a website wrapper and not a second copy of the Field EE toolbox.
 
 | Field | Value |
 | --- | --- |
-| Display name | Look Check |
+| Xcode display name | Look Check |
+| Connect / TestFlight name | LookCheck5000 (do not rename the Xcode product unless Trevor asks) |
 | Bundle ID | `com.beckify.lookcheck` |
-| SKU (ASC stub) | `look-check` |
+| SKU | `look-check` |
+| Version | **1.0 (1)** — matches TestFlight as of ~2026-09-17/18. Connect record exists. Archive scheme **LookCheck** |
 | Team prefix | `9TR6R5LV8M` (same Apple Developer team as Beckify Toolbox) |
 | Deployment | iOS 17+, iPhone + iPad |
 | Price | Free, no IAP, no ads (v1) |

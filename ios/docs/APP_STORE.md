@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify
 
-Listing copy for the native SwiftUI **Beckify Toolbox** app (iPhone + iPad, no ads). Standalone **Look Check** (`com.beckify.lookcheck`) and **Kestrel Heavy** (`com.beckify.kestrelheavy`) are separate products — see [`../LookCheck/docs/APP_STORE.md`](../LookCheck/docs/APP_STORE.md) and [`../KestrelHeavy/docs/APP_STORE.md`](../KestrelHeavy/docs/APP_STORE.md). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. **Version 1.0 is approved** — that pre-release train is closed. Transporter rejected **1.0 (121)** (**ITMS-90186** Invalid Pre-Release Train, **ITMS-90062** `CFBundleShortVersionString` must be higher than approved **1.0**). Next Connect version is **1.0.1**, build **≥126**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck or KestrelHeavy. Xcode Cloud Archive-iOS for Toolbox stays on **Beckify** only.
+Listing copy for the native SwiftUI **Beckify Toolbox** app (iPhone + iPad, no ads). Standalone **Look Check** (`com.beckify.lookcheck`) and **Kestrel Heavy** (`com.beckify.kestrelheavy`) are separate products — see [`../LookCheck/docs/APP_STORE.md`](../LookCheck/docs/APP_STORE.md) and [`../KestrelHeavy/docs/APP_STORE.md`](../KestrelHeavy/docs/APP_STORE.md). Trevor Beck enrolled in the **Apple Developer Program** on 2026-09-02. An **App Store Connect record exists**. **Version 1.0 is approved** — that pre-release train is closed. Transporter rejected **1.0 (121)** (**ITMS-90186** Invalid Pre-Release Train, **ITMS-90062** `CFBundleShortVersionString` must be higher than approved **1.0**). Next Connect version is **1.0.1**, build **≥150**. TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Repo `CURRENT_PROJECT_VERSION` is **150**, one above that known build. Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥150**, bump again before the next Archive. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck or KestrelHeavy. Xcode Cloud Archive-iOS for Toolbox stays on **Beckify** only.
 
 This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation UI, signed a binary, captured screenshots, archived, or uploaded a build.
 
@@ -13,7 +13,7 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 **App ID (Apple ID):** `6807908745`  
 **Bundle ID:** `com.beckify.toolbox`  
 **SKU:** `beckify-toolbox`  
-**Connect status:** **1.0 approved** (train closed). Next version **1.0.1** (create or select in Connect before upload); next binary **1.0.1 (126)**  
+**Connect status:** **1.0 approved** (train closed). Next version **1.0.1** (create or select in Connect before upload); next binary **1.0.1 (≥150)**. TestFlight already processed **1.0.1 (149)** (~2026-09-17/18). Repo build is **150**.  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M` (Apple auto-filled at identifier registration; set on the Beckify target Debug and Release in `ios/Beckify.xcodeproj`)  
 **Devices:** iPhone and iPad (Xcode `TARGETED_DEVICE_FAMILY` 1,2)  
 **Category:** Productivity  
@@ -128,8 +128,8 @@ This app is a design aid. It is not a PE stamp, permit, inspection, calibrated i
 **Keywords (100 characters max, comma-separated draft):**
 electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
 
-**What's New (draft for next Connect upload — 1.0.1 build 126):**
-BLE Scanner adds an RF activity index, room mix, and device-ID churn — unique BLE advertisements, not occupancy. Public advertisement fields and RSSI radar remain. Distance stays RSSI-only — advertised TX is output, not a 1 m calibration. Device count ≠ people; Apple rotates identifiers. Device Health is a field snapshot — not Battery Health %. Receptacle Selector matches faces through 400 A. Submit **1.0.1 (126)** — must be a new Connect version above approved **1.0**; do not retry closed-train **1.0 (121)**. Create or select **1.0.1** in Connect first. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. Free, no IAP, no ads.
+**What's New (draft for next Connect upload — 1.0.1 build ≥150):**
+BLE Scanner adds an RF activity index, room mix, and device-ID churn — unique BLE advertisements, not occupancy. Public advertisement fields and RSSI radar remain. Distance stays RSSI-only — advertised TX is output, not a 1 m calibration. Device count ≠ people; Apple rotates identifiers. Device Health is a field snapshot — not Battery Health %. Receptacle Selector matches faces through 400 A. Submit **1.0.1 (≥150)** — must be a new Connect version above approved **1.0**; do not retry closed-train **1.0 (121)** or the already-processed TestFlight build **1.0.1 (149)**. Create or select **1.0.1** in Connect first. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. Free, no IAP, no ads.
 
 **Support URL:** https://beckify.com  
 **Marketing URL:** https://beckify.com  
@@ -171,7 +171,7 @@ The app uses HTTPS for optional links the user taps (beckify.com, mailto) and fo
 
 ## Screenshots (required sizes)
 
-Not captured in this repository. This repo has not run an iOS Simulator UI build, signed the app, uploaded TestFlight, or submitted to the App Store. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
+Not captured in this repository. This Linux environment has not run an iOS Simulator UI build, signed the app, or submitted to the App Store. TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18; this checkout did not upload that build. On a Mac with Xcode, capture Simulator screenshots at the sizes below. Do **not** ship website screenshots.
 
 Apple's current required screenshot classes for an iPhone + iPad app (verify in App Store Connect before upload):
 
@@ -210,7 +210,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 
 ## Remaining steps (Mac + App Store Connect)
 
-**Next binary / App Store upload:** Toolbox `MARKETING_VERSION` (`CFBundleShortVersionString`) is **1.0.1**. `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **126**. **1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**). Transporter rejected **1.0 (121)** for that reason. The next Connect upload must be **1.0.1** with build **≥126**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. LookCheck (`com.beckify.lookcheck`) stays **1.0** / **1**. Kestrel Heavy (`com.beckify.kestrelheavy`) next binary is **1.0 (4)**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
+**Next binary / App Store upload:** Toolbox `MARKETING_VERSION` (`CFBundleShortVersionString`) is **1.0.1**. `CURRENT_PROJECT_VERSION` (CFBundleVersion) is **150**. **1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**). Transporter rejected **1.0 (121)** for that reason. TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). The next Connect upload must be **1.0.1** with build **≥150**. If Xcode Cloud has auto-bumped past **150**, or TestFlight already shows a build **≥150**, raise `CURRENT_PROJECT_VERSION` above that build before the next Archive — do not re-upload **149** or the stale repo floor **126**. Trevor must **create or select version 1.0.1** in App Store Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check (`com.beckify.lookcheck`) stays **1.0 (1)**; Connect/TestFlight exists under the display name **LookCheck5000** (Xcode display name stays **Look Check**; Archive scheme **LookCheck**). Kestrel Heavy (`com.beckify.kestrelheavy`) repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. Wait **one day** between upload storms (**ITMS-90382**). This repo has no `ci_scripts` / `.xcode-cloud` start-number file.
 
 **Apple Developer Program:** signed up as Trevor Beck (stated 2026-09-02). Enrollment is no longer a blocker.
 
@@ -219,7 +219,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Field | Value |
 | --- | --- |
 | Status | **1.0 approved** (train closed). Create or select **1.0.1** before the next upload |
-| Binary | 1.0 approved; 1.0 (113) was rejected by Review (Guideline 2.1, 2026-09-09); 1.0 (121) rejected by Transporter (ITMS-90186 / ITMS-90062). Next upload **1.0.1 (126)** |
+| Binary | 1.0 approved; 1.0 (113) was rejected by Review (Guideline 2.1, 2026-09-09); 1.0 (121) rejected by Transporter (ITMS-90186 / ITMS-90062). TestFlight already had **1.0.1 (149)** (~2026-09-17/18). Repo build **150**. Next upload **1.0.1 (≥150)** |
 | App ID (Apple ID) | `6807908745` |
 | Bundle ID | `com.beckify.toolbox` |
 | SKU | `beckify-toolbox` |
@@ -227,7 +227,7 @@ App icon is `Beckify/Assets.xcassets/AppIcon.appiconset/AppIcon.png` (opaque 102
 | Team prefix | `9TR6R5LV8M` |
 | Price | Free ($0), no IAP, no ads (Trevor’s v1 decision) |
 
-The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. **1.0 is approved.** Transporter rejected **1.0 (121)** because that train is closed. This Linux environment did not compile, sign, or upload **1.0.1 (126)**. Archive scheme **Beckify**, not LookCheck or KestrelHeavy.
+The app is native SwiftUI, iPhone + iPad. **Price:** Free, no in-app purchases, no ads. **1.0 is approved.** Transporter rejected **1.0 (121)** because that train is closed. This Linux environment did not compile, sign, or upload **1.0.1 (150)**. Archive scheme **Beckify**, not LookCheck or KestrelHeavy.
 
 Still needed (Mac + Trevor; not done in this Linux environment):
 
@@ -237,9 +237,9 @@ Still needed (Mac + Trevor; not done in this Linux environment):
 4. **DPLA:** Trevor must accept the Apple Developer Program License Agreement in App Store Connect / developer.apple.com if it is still pending. This environment cannot do that.
 5. Capture screenshots at the sizes below. Do **not** ship website screenshots.
 6. Archive in Xcode (Product → Archive) or `xcodebuild archive` with signing enabled (`DEVELOPMENT_TEAM` `9TR6R5LV8M`). Xcode Cloud Archive-iOS must pin scheme **Beckify** (`com.beckify.toolbox`); do not archive Toolbox with **LookCheck** or **KestrelHeavy**.
-7. In App Store Connect, **create or select version 1.0.1** (the 1.0 train is closed). Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck or KestrelHeavy. Upload a signed **1.0.1 (126)** archive (Organizer or Transporter). Wait for processing. Do not re-upload **1.0 (121)** or rejected **1.0 (113)**.
+7. In App Store Connect, **create or select version 1.0.1** (the 1.0 train is closed). Archive the **Beckify** scheme (`com.beckify.toolbox`), not LookCheck or KestrelHeavy. Upload a signed **1.0.1 (≥150)** archive (Organizer or Transporter). Wait for processing. Do not re-upload **1.0.1 (149)**, closed-train **1.0 (121)**, or rejected **1.0 (113)**. If TestFlight or Xcode Cloud is already at or above **150**, bump `CURRENT_PROJECT_VERSION` first.
 8. Attach screenshots, review the encryption and content-rights questions, then submit for review (not done).
 9. Answer App Review if they ask about NEC table transcription, microphone/Bluetooth/location/Motion strings, or “design aid” disclaimers.
-10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382, upload the **1.0.1 / 126** tuple once — do not retry closed-train **1.0 (121)** or rejected **1.0 (113)**.
+10. Work the [`FIVE_STAR_READINESS.md`](FIVE_STAR_READINESS.md) Connect + device gate before Submit. After ITMS-90382, upload the **1.0.1 / ≥150** tuple once — do not retry TestFlight **1.0.1 (149)**, closed-train **1.0 (121)**, or rejected **1.0 (113)**.
 
-**1.0 is approved** (train closed). The next binary to upload is **1.0.1 (126)** after Trevor creates or selects that Connect version. Archive scheme **Beckify**, not LookCheck or KestrelHeavy. This Linux environment did not compile, sign, or upload 126.
+**1.0 is approved** (train closed). The next binary to upload is **1.0.1 (≥150)** after Trevor creates or selects that Connect version. TestFlight already had **1.0.1 (149)** (~2026-09-17/18). Archive scheme **Beckify**, not LookCheck or KestrelHeavy. This Linux environment did not compile, sign, or upload 150.

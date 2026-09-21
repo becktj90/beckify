@@ -11,13 +11,16 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 **Bundle ID:** `com.beckify.kestrelheavy`  
 **SKU:** `kestrel-heavy`  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M`  
-**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), **portrait only** (upside-down allowed). Next TestFlight build **1.0 (4)**.  
+**Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2), **portrait only** (upside-down allowed).  
+**Version:** Repo build is **1.0 (4)** — `MARKETING_VERSION` **1.0**, `CURRENT_PROJECT_VERSION` **4** (after #176 / #177).  
 **Category:** Games  
 **Secondary:** Arcade  
 **Age rating (draft):** 9+ — cartoon launch / recovery arcade. No realistic violence, no UGC feed, no unrestricted web (WKWebView loads only the bundled cabinet). Confirm in the Connect questionnaire.  
 **Price:** Free, no in-app purchases, no ads (v1)
 
-Create the App Store Connect record on a Mac (this repo does not). There is no Apple ID / Connect status for Kestrel Heavy yet.
+**Connect / TestFlight exists.** A TestFlight record is already there (Trevor, ~2026-09-17/18). This repo did not query App Store Connect and does not record an Apple ID. Do not create a second app record.
+
+**Next Archive:** repo build is **4**. If TestFlight already has **≥4**, bump `CURRENT_PROJECT_VERSION` before the next Archive. If **4** is not uploaded yet, the next binary is **1.0 (4)**. Archive scheme is **KestrelHeavy**, not Beckify and not LookCheck.
 
 **Promotional text (170 characters, draft):**
 Tap to launch, steer the corridor, time stage sep, then HOLD TO BURN onto barge Haven. Five KH-n flights. Offline. Free, no ads.
@@ -93,7 +96,7 @@ Arcade one-shots are short NASA public-mission trims plus generated SFX — see 
 ## Remaining steps (Mac + App Store Connect)
 
 1. Register bundle ID `com.beckify.kestrelheavy` on the `9TR6R5LV8M` team if it is not already created.
-2. Create the Kestrel Heavy app record in App Store Connect (SKU `kestrel-heavy`).
+2. The TestFlight record already exists. Do not create a second app record. Repo build is **4**. If TestFlight already has **≥4**, bump `CURRENT_PROJECT_VERSION` before the next Archive; if **4** is not uploaded yet, the next binary is **1.0 (4)**.
 3. Open `ios/Beckify.xcodeproj`, scheme **KestrelHeavy**, confirm Signing & Capabilities.
 4. Run on a physical device at least once.
 5. Capture screenshots at required sizes.
