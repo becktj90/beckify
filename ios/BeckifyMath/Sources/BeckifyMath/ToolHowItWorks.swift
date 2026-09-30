@@ -118,6 +118,7 @@ public enum ToolHowItWorksCatalog {
                 "kVA from volts and amps (√3 on 3Ø). Protection follows 450.3(B).",
                 "Primary and secondary EGC rows use NEC 2023 Table 250.122 from those OCPDs. Confirm AHJ.",
                 "Not a coordination study, inrush calc, or utility-transformer spec.",
+                "The connection diagram draws windings, the bond, and common North American conductor colors. High-leg orange is the code rule. 480Y brown/orange/yellow is practice. The AHJ and the spec win.",
             ]
         ),
         "timer555": ToolHowItWorks(

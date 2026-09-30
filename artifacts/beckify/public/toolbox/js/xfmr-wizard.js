@@ -511,84 +511,193 @@
     svg.appendChild(svgEl(svg, 'circle', { cx: x, cy: y, r: 3, fill: color }));
   }
 
-  function buildConnectionSvg(connectionId, colors) {
+  function drawWindingCoil(svg, x1, y1, x2, y2, stroke, dashed) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const px = -uy;
+    const py = ux;
+    const n = Math.max(5, Math.round(len / 16));
+    const step = len / n;
+    let d = 'M ' + x1 + ' ' + y1;
+    for (let i = 0; i < n; i++) {
+      const sx = x1 + ux * step * i;
+      const sy = y1 + uy * step * i;
+      const mx = sx + ux * step * 0.5 + px * 9;
+      const my = sy + uy * step * 0.5 + py * 9;
+      const ex = x1 + ux * step * (i + 1);
+      const ey = y1 + uy * step * (i + 1);
+      d += ' Q ' + mx + ' ' + my + ' ' + ex + ' ' + ey;
+    }
+    const attrs = { d: d, fill: 'none', stroke: stroke, 'stroke-width': 2.2, 'stroke-linecap': 'round' };
+    if (dashed) attrs['stroke-dasharray'] = '5 4';
+    svg.appendChild(svgEl(svg, 'path', attrs));
+  }
+
+  function mapBank(at, rect) {
+    const pad = 28;
+    return {
+      x: rect.x + pad + (at[0] / 100) * (rect.w - pad * 2),
+      y: rect.y + pad + (at[1] / 100) * (rect.h - pad * 2),
+    };
+  }
+
+  function drawBank(svg, bank, rect) {
+    const coil = bank.side === 'primary' ? '#8b7bff' : '#6ee7b7';
+    svg.appendChild(svgEl(svg, 'rect', {
+      x: rect.x, y: rect.y, width: rect.w, height: rect.h,
+      fill: '#111827', stroke: '#334155', 'stroke-width': 1, rx: 8,
+    }));
+    svgText(svg, bank.title || '', rect.x + 10, rect.y + 16, '#94a3b8');
+    (bank.windings || []).forEach(function (w) {
+      const a = mapBank(w.a, rect);
+      const b = mapBank(w.b, rect);
+      drawWindingCoil(svg, a.x, a.y, b.x, b.y, coil, w.dashed);
+      if (w.tap) {
+        const t = mapBank(w.tap, rect);
+        svg.appendChild(svgEl(svg, 'circle', { cx: t.x, cy: t.y, r: 4, fill: '#f4f4f5', stroke: '#0d1117', 'stroke-width': 1 }));
+      }
+    });
+    (bank.terminals || []).forEach(function (term) {
+      const p = mapBank(term.at, rect);
+      svg.appendChild(svgEl(svg, 'circle', { cx: p.x, cy: p.y, r: 5, fill: '#0d1117', stroke: '#e2e8f0', 'stroke-width': 1.4 }));
+      svgText(svg, term.name, p.x + 7, p.y - 7, '#e2e8f0');
+    });
+    (bank.grounds || []).forEach(function (g) {
+      const p = mapBank(g.at, rect);
+      if (g.kind === 'resistor' || g.kind === 'reactor') {
+        svg.appendChild(svgEl(svg, 'rect', {
+          x: p.x - 14, y: p.y + 8, width: 28, height: 16, fill: 'none', stroke: '#f5c451', 'stroke-width': 1.5,
+        }));
+        svgText(svg, g.kind === 'resistor' ? 'R' : 'X', p.x - 4, p.y + 20, '#f5c451');
+        drawGround(svg, p.x, p.y + 36);
+      } else {
+        svg.appendChild(svgEl(svg, 'line', { x1: p.x, y1: p.y, x2: p.x, y2: p.y + 16, stroke: '#6ee7b7', 'stroke-width': 1.6 }));
+        drawGround(svg, p.x, p.y + 18);
+      }
+    });
+    if (bank.floating) {
+      svgText(svg, 'No phase bond', rect.x + 10, rect.y + rect.h - 10, '#f5c451');
+    }
+  }
+
+  function drawOutgoingLeads(svg, bank, rect, outgoing) {
+    const center = mapBank([50, 50], rect);
+    (bank.terminals || []).forEach(function (term) {
+      const row = (outgoing || []).find(function (item) { return item.terminalId === term.id; });
+      if (!row) return;
+      const p = mapBank(term.at, rect);
+      const dx = p.x - center.x;
+      const dy = p.y - center.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const x2 = p.x + (dx / len) * 36;
+      const y2 = p.y + (dy / len) * 28;
+      if (row.hex === '#1a1a1a') {
+        svg.appendChild(svgEl(svg, 'line', {
+          x1: p.x, y1: p.y, x2: x2, y2: y2,
+          stroke: '#e2e8f0', 'stroke-width': 5.2, 'stroke-linecap': 'round',
+        }));
+      }
+      svg.appendChild(svgEl(svg, 'line', {
+        x1: p.x, y1: p.y, x2: x2, y2: y2,
+        stroke: row.hex, 'stroke-width': 3.5, 'stroke-linecap': 'round',
+      }));
+      svg.appendChild(svgEl(svg, 'circle', { cx: x2, cy: y2, r: 4.5, fill: row.hex, stroke: '#e2e8f0', 'stroke-width': 0.8 }));
+    });
+  }
+
+  function drawPhasorPanel(svg, rect, phasors) {
+    svg.appendChild(svgEl(svg, 'rect', {
+      x: rect.x, y: rect.y, width: rect.w, height: rect.h,
+      fill: '#111827', stroke: '#334155', 'stroke-width': 1, rx: 8,
+    }));
+    svgText(svg, 'Secondary phasors', rect.x + 10, rect.y + 16, '#94a3b8');
+    const points = (phasors && phasors.points) || [];
+    if (!points.length) return;
+    let max = 1;
+    points.forEach(function (p) { max = Math.max(max, Math.abs(p.x), Math.abs(p.y)); });
+    const cx = rect.x + rect.w * 0.42;
+    const cy = rect.y + rect.h * 0.56;
+    const scale = (Math.min(rect.w, rect.h) * 0.30) / max;
+    function plot(p) { return { x: cx + p.x * scale, y: cy - p.y * scale }; }
+    const byId = {};
+    points.forEach(function (p) { byId[p.id] = p; });
+    svg.appendChild(svgEl(svg, 'line', { x1: rect.x + 16, y1: cy, x2: rect.x + rect.w - 16, y2: cy, stroke: '#1e293b', 'stroke-width': 1 }));
+    svg.appendChild(svgEl(svg, 'line', { x1: cx, y1: rect.y + 28, x2: cx, y2: rect.y + rect.h - 16, stroke: '#1e293b', 'stroke-width': 1 }));
+    (phasors.vectors || []).forEach(function (pair) {
+      const a = byId[pair[0]];
+      const b = byId[pair[1]];
+      if (!a || !b) return;
+      const pa = plot(a);
+      const pb = plot(b);
+      svg.appendChild(svgEl(svg, 'line', {
+        x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y,
+        stroke: b.hex || '#94a3b8', 'stroke-width': 2.4, 'stroke-linecap': 'round',
+      }));
+    });
+    points.forEach(function (p) {
+      const at = plot(p);
+      svg.appendChild(svgEl(svg, 'circle', { cx: at.x, cy: at.y, r: 4.5, fill: p.hex, stroke: '#e2e8f0', 'stroke-width': 0.6 }));
+      svgText(svg, p.label, at.x + 6, at.y - 6, p.hex === '#1a1a1a' ? '#e2e8f0' : '#e2e8f0');
+    });
+  }
+
+  function buildConnectionSvg(connectionId, colors, volts) {
+    const api = teachApi();
+    const secondary = volts && volts.secondary;
+    const primary = volts && volts.primary;
+    const spec = api && api.diagramSpec(connectionId, secondary, primary);
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('viewBox', '0 0 420 210');
+    svg.setAttribute('viewBox', '0 0 960 520');
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'Winding schematic and secondary conductor colors');
+    svg.setAttribute('aria-label', 'Detailed winding schematic, colored secondary leads, and phasor diagram');
     svg.classList.add('xw-diagram');
-    svg.appendChild(svgEl(svg, 'rect', { x: 0, y: 0, width: 420, height: 210, fill: '#0d1117', rx: 8 }));
-    const pri = '#8b7bff';
-    const sec = '#6ee7b7';
-    const id = connectionId;
-    svgText(svg, 'Primary', 70, 22, pri);
-    svgText(svg, 'Secondary', 250, 22, sec);
-
-    if (id === 'open-delta') {
-      drawDelta(svg, 78, 100, pri, true);
-      drawDelta(svg, 250, 100, sec, true);
-      svgText(svg, 'Missing unit — 57.7% of a closed bank', 16, 196, '#f5c451');
-    } else if (id === 'high-leg') {
-      drawDelta(svg, 78, 90, pri, false);
-      drawDelta(svg, 250, 90, sec, false);
-      svg.appendChild(svgEl(svg, 'line', { x1: 218, y1: 112, x2: 282, y2: 112, stroke: '#f4f4f5', 'stroke-width': 1.4 }));
-      svg.appendChild(svgEl(svg, 'circle', { cx: 250, cy: 112, r: 3.5, fill: '#f4f4f5' }));
-      drawGround(svg, 250, 128);
-      svgText(svg, 'Center tap = neutral. B is the high leg, not grounded.', 16, 186, '#f5c451');
-    } else if (id === 'corner-grounded') {
-      drawDelta(svg, 78, 96, pri, false);
-      drawDelta(svg, 250, 96, sec, false);
-      svg.appendChild(svgEl(svg, 'line', { x1: 218, y1: 118, x2: 218, y2: 140, stroke: '#f4f4f5', 'stroke-width': 1.6 }));
-      drawGround(svg, 218, 148);
-      svgText(svg, 'One corner grounded. No neutral. Not a high leg.', 16, 196, '#f5c451');
-    } else if (id === 'zigzag') {
-      drawWye(svg, 250, 100, sec);
-      svg.appendChild(svgEl(svg, 'path', {
-        d: 'M230 78 L250 100 L270 78 M230 122 L250 100 L270 122',
-        fill: 'none', stroke: sec, 'stroke-width': 1.4,
-      }));
-      drawGround(svg, 250, 140);
-      svgText(svg, 'Grounding transformer — not a step-down panel', 16, 196, '#f5c451');
-    } else if (id === 'autotransformer' || id === 'buck-boost') {
-      svg.appendChild(svgEl(svg, 'line', { x1: 70, y1: 70, x2: 70, y2: 150, stroke: pri, 'stroke-width': 3 }));
-      svg.appendChild(svgEl(svg, 'circle', { cx: 70, cy: 110, r: 4, fill: '#f5c451' }));
-      svgText(svg, id === 'buck-boost' ? 'Small series winding. Not isolation.' : 'Shared winding. Not isolation.', 140, 120, '#f5c451');
-    } else if (id === 'isolation') {
-      svg.appendChild(svgEl(svg, 'line', { x1: 60, y1: 60, x2: 60, y2: 150, stroke: pri, 'stroke-width': 3 }));
-      svg.appendChild(svgEl(svg, 'line', { x1: 110, y1: 60, x2: 110, y2: 150, stroke: sec, 'stroke-width': 3 }));
-      svgText(svg, 'Two windings — galvanic break', 160, 110, '#94a3b8');
-    } else if (id === 'ungrounded-delta') {
-      drawDelta(svg, 78, 100, pri, false);
-      drawDelta(svg, 250, 100, sec, false);
-      svgText(svg, 'No intentional phase ground. Detector required.', 16, 196, '#f5c451');
-    } else if (id === 'resistance-ground' || id === 'reactance-ground') {
-      drawWye(svg, 250, 88, sec);
-      svg.appendChild(svgEl(svg, 'rect', { x: 236, y: 118, width: 28, height: 16, fill: 'none', stroke: '#f5c451', 'stroke-width': 1.5 }));
-      svgText(svg, id === 'resistance-ground' ? 'R' : 'X', 244, 130, '#f5c451');
-      drawGround(svg, 250, 156);
-      svgText(svg, 'Ohms come from a study. Not computed here.', 16, 196, '#f5c451');
-    } else {
-      const priWye = id === 'wye-delta' || id === 'wye-wye';
-      const secWye = id === 'delta-wye' || id === 'wye-wye' || id === 'grounded-wye';
-      if (priWye) drawWye(svg, 78, 100, pri); else drawDelta(svg, 78, 100, pri, false);
-      if (secWye) {
-        drawWye(svg, 250, 96, sec);
-        drawGround(svg, 250, 148);
-      } else {
-        drawDelta(svg, 250, 100, sec, false);
-      }
-      if (id === 'wye-wye') svgText(svg, 'Needs a delta tertiary for triplens', 16, 196, '#f5c451');
+    svg.appendChild(svgEl(svg, 'rect', { x: 0, y: 0, width: 960, height: 520, fill: '#0d1117', rx: 8 }));
+    if (!spec) {
+      svgText(svg, 'No diagram for this connection.', 24, 40, '#94a3b8');
+      return svg;
     }
-
-    const leads = (colors && colors.leads) || [];
-    leads.slice(0, 5).forEach(function (lead, i) {
-      const y = 36 + i * 16;
-      svg.appendChild(svgEl(svg, 'circle', { cx: 360, cy: y - 3, r: 5, fill: lead.hex || '#94a3b8', stroke: '#e2e8f0', 'stroke-width': 0.6 }));
-      svgText(svg, lead.name + ' ' + lead.colorName, 372, y, lead.role === 'code' ? '#f4f4f5' : '#94a3b8');
+    svgText(svg, spec.title, 16, 22, '#e2e8f0');
+    const banks = spec.banks || [];
+    const band = { y: 36, h: 300 };
+    if (banks.length === 1) {
+      drawBank(svg, banks[0], { x: 16, y: band.y, w: 560, h: band.h });
+      drawOutgoingLeads(svg, banks[0], { x: 16, y: band.y, w: 560, h: band.h }, spec.outgoing);
+    } else {
+      banks.forEach(function (bank, index) {
+        const rect = { x: 16 + index * 300, y: band.y, w: 288, h: band.h };
+        drawBank(svg, bank, rect);
+        if (bank.side === 'secondary') drawOutgoingLeads(svg, bank, rect, spec.outgoing);
+      });
+    }
+    drawPhasorPanel(svg, { x: 620, y: band.y, w: 324, h: band.h }, spec.phasors);
+    const legend = spec.outgoing || [];
+    legend.forEach(function (lead, i) {
+      const x = 16 + (i % 5) * 186;
+      const y = 360 + Math.floor(i / 5) * 22;
+      if (lead.hex === '#1a1a1a') {
+        svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y - 4, x2: x + 28, y2: y - 4, stroke: '#e2e8f0', 'stroke-width': 6, 'stroke-linecap': 'round' }));
+      }
+      svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y - 4, x2: x + 28, y2: y - 4, stroke: lead.hex, 'stroke-width': 4, 'stroke-linecap': 'round' }));
+      svgText(svg, lead.name + ' ' + lead.colorName + (lead.role === 'code' ? ' (code)' : ' (practice)'), x + 34, y, '#e2e8f0');
     });
+    (spec.callouts || []).forEach(function (line, i) {
+      svgText(svg, line, 16, 412 + i * 16, '#f5c451');
+    });
+    if (spec.phasors && spec.phasors.caption) {
+      svgText(svg, spec.phasors.caption, 16, 470, '#94a3b8');
+    }
+    svgText(svg, 'Common North American practice. The AHJ and the project spec win.', 16, 500, '#64748b');
+    if (colors && colors.summary && !(spec.callouts || []).length) {
+      svgText(svg, colors.summary, 16, 430, '#94a3b8');
+    }
     return svg;
   }
+
+  window.buildXfmrConnectionSvg = buildConnectionSvg;
 
   function renderTeachDetail() {
     const host = document.getElementById('xw_teach_detail');
@@ -609,7 +718,7 @@
     const place = api.placement(WZ.xfmrType || 'dry-vent', WZ.environment || 'indoor');
     const race = api.racewayNotes(WZ.environment || 'indoor', WZ.windingId, WZ.secV);
 
-    host.appendChild(buildConnectionSvg(WZ.windingId, colors));
+    host.appendChild(buildConnectionSvg(WZ.windingId, colors, { primary: WZ.priV, secondary: WZ.secV }));
 
     function para(className, text) {
       const p = document.createElement('p');
@@ -1167,7 +1276,12 @@
         priConn, secConn,
       };
       xfmrSvgEl.appendChild(buildXfmrSvg(svgParams));
-      if (taught && taught.colors) xfmrSvgEl.appendChild(buildConnectionSvg(WZ.windingId, taught.colors));
+      if (taught && taught.colors) {
+        const diagramHost = document.createElement('div');
+        diagramHost.className = 'xw-diagram-host';
+        diagramHost.appendChild(buildConnectionSvg(WZ.windingId, taught.colors, { primary: priV, secondary: secV }));
+        resultEl.insertBefore(diagramHost, resultEl.firstChild);
+      }
     }
 
     /* ── SLD ── */

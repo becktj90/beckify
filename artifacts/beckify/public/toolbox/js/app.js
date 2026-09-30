@@ -709,10 +709,11 @@ window.calcXfmr = function () {
   }
 
   const teach = (typeof XFMR_TEACH !== 'undefined' && XFMR_TEACH) || (typeof window !== 'undefined' && window.XFMR_TEACH);
+  let taught = null;
   if (teach && typeof teach.analyze === 'function') {
     const zEl = document.getElementById('xfmr_z');
     const percentZ = zEl && zEl.value !== '' ? parseFloat(zEl.value) : 0;
-    const taught = teach.analyze({
+    taught = teach.analyze({
       id: topology,
       kva: kVA,
       vp: Vp,
@@ -739,6 +740,12 @@ window.calcXfmr = function () {
       if (taught.colors && taught.colors.summary) rows.push(['Colors (NA practice)', taught.colors.summary]);
       if (taught.extra && taught.extra.ohms) rows.push(['Grounding note', taught.extra.ohms]);
     }
+  }
+
+  const diagramHost = document.getElementById('xfmr_diagram');
+  if (diagramHost && typeof buildXfmrConnectionSvg === 'function') {
+    diagramHost.textContent = '';
+    diagramHost.appendChild(buildXfmrConnectionSvg(topology, taught && taught.colors, { primary: Vp, secondary: Vs }));
   }
 
   const el = document.getElementById('xfmr_result');

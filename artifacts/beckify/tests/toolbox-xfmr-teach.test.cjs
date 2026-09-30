@@ -160,11 +160,25 @@ assert.match(html, /id="xw_teach_detail"/);
 assert.match(html, /id="xw_phase_note"/);
 assert.match(html, /id="xw_env"/);
 assert.match(wizard, /Switch phase to 3Ø/);
-assert.match(wizard, /lead\.hex/);
+assert.match(wizard, /row\.hex/);
 assert.match(html, /js\/xfmr-teach\.js/);
 assert.match(families, /Teach & size/);
 assert.match(registry, /Teach & size/);
 assert.equal((registry.match(/slug: "transformer-design"/g) || []).length, 1);
-assert.match(fs.readFileSync(path.join(root, 'public', 'toolbox', 'sw.js'), 'utf8'), /CACHE_VERSION = 'v47'/);
+assert.match(fs.readFileSync(path.join(root, 'public', 'toolbox', 'sw.js'), 'utf8'), /CACHE_VERSION = 'v48'/);
+
+const highLegDiagram = T.diagramSpec('high-leg', 240, 480);
+assert.ok(highLegDiagram.banks.some(function (bank) { return (bank.windings || []).length >= 3; }));
+assert.ok(highLegDiagram.outgoing.some(function (lead) { return lead.hex === '#f97316' && lead.role === 'code'; }));
+assert.ok(highLegDiagram.phasors.points.some(function (point) { return point.hex === '#f97316' && /208/.test(point.label); }));
+const yDiagram = T.diagramSpec('delta-wye', 480, 480);
+assert.ok(yDiagram.outgoing.some(function (lead) { return lead.colorName === 'Brown' && lead.role === 'convention'; }));
+assert.match(yDiagram.phasors.caption, /line\/√3|Neutral at the origin/);
+const cornerDiagram = T.diagramSpec('corner-grounded', 480, 480);
+assert.equal(cornerDiagram.outgoing.some(function (lead) { return lead.hex === '#f97316'; }), false);
+assert.ok(cornerDiagram.outgoing.some(function (lead) { return /white or gray/i.test(lead.colorName) && lead.role === 'code'; }));
+assert.ok(cornerDiagram.phasors.points.some(function (point) { return /0 V/.test(point.label); }));
+assert.match(wizard, /drawWindingCoil/);
+assert.match(html, /id="xfmr_diagram"/);
 
 console.log('Transformer teach math: ratio, phase current, high-leg vs corner, colors, enclosure');

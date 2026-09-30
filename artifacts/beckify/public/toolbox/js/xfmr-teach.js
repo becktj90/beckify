@@ -813,6 +813,365 @@
     return result;
   }
 
+  function roundVolts(n) {
+    if (!isFinite(n) || n <= 0) return '';
+    var nearest = Math.round(n);
+    if (Math.abs(n - nearest) < 0.6) return nearest + ' V';
+    var r = Math.round(n * 10) / 10;
+    return r + ' V';
+  }
+
+  function xy(x, y) { return [x, y]; }
+
+  function deltaBank(open) {
+    return {
+      windings: [
+        { a: xy(18, 24), b: xy(82, 24), dashed: false },
+        { a: xy(82, 24), b: xy(50, 86), dashed: !!open },
+        { a: xy(50, 86), b: xy(18, 24), dashed: false },
+      ],
+      terminals: [
+        { id: 'A', at: xy(18, 24), name: 'A' },
+        { id: 'B', at: xy(82, 24), name: 'B' },
+        { id: 'C', at: xy(50, 86), name: 'C' },
+      ],
+      grounds: [],
+    };
+  }
+
+  function wyeBank(bondKind) {
+    return {
+      windings: [
+        { a: xy(50, 46), b: xy(50, 10), dashed: false },
+        { a: xy(50, 46), b: xy(16, 84), dashed: false },
+        { a: xy(50, 46), b: xy(84, 84), dashed: false },
+      ],
+      terminals: [
+        { id: 'N', at: xy(50, 46), name: 'N' },
+        { id: 'A', at: xy(50, 10), name: 'A' },
+        { id: 'B', at: xy(16, 84), name: 'B' },
+        { id: 'C', at: xy(84, 84), name: 'C' },
+      ],
+      grounds: [{ at: xy(50, 46), label: bondKind === 'solid' ? 'Neutral–ground bond' : (bondKind === 'resistor' ? 'Resistor' : 'Reactor'), kind: bondKind || 'solid' }],
+    };
+  }
+
+  function highLegBank() {
+    var bank = deltaBank(false);
+    bank.windings[2].tap = xy(34, 55);
+    bank.terminals.push({ id: 'N', at: xy(34, 55), name: 'N' });
+    bank.grounds.push({ at: xy(34, 55), label: 'Center tap. Not a corner.', kind: 'solid' });
+    return bank;
+  }
+
+  function cornerBank() {
+    var bank = deltaBank(false);
+    bank.grounds.push({ at: xy(18, 24), label: 'Grounded phase. Still carries current.', kind: 'solid' });
+    return bank;
+  }
+
+  function zigzagBank() {
+    return {
+      windings: [
+        { a: xy(50, 78), b: xy(32, 48), dashed: false },
+        { a: xy(32, 48), b: xy(50, 12), dashed: false },
+        { a: xy(50, 78), b: xy(68, 48), dashed: false },
+        { a: xy(68, 48), b: xy(18, 28), dashed: false },
+        { a: xy(50, 78), b: xy(50, 48), dashed: false },
+        { a: xy(50, 48), b: xy(82, 28), dashed: false },
+      ],
+      terminals: [
+        { id: 'A', at: xy(50, 12), name: 'A' },
+        { id: 'B', at: xy(18, 28), name: 'B' },
+        { id: 'C', at: xy(82, 28), name: 'C' },
+        { id: 'N', at: xy(50, 78), name: 'N' },
+      ],
+      grounds: [{ at: xy(50, 78), label: 'Grounding neutral', kind: 'solid' }],
+    };
+  }
+
+  function singleCoil(top, bottom) {
+    return {
+      windings: [{ a: xy(50, 16), b: xy(50, 84), dashed: false }],
+      terminals: [
+        { id: 'L1', at: xy(50, 16), name: top },
+        { id: 'L2', at: xy(50, 84), name: bottom },
+      ],
+      grounds: [],
+    };
+  }
+
+  function isolationSecondary() {
+    return {
+      windings: [{ a: xy(50, 14), b: xy(50, 86), dashed: false, tap: xy(50, 50) }],
+      terminals: [
+        { id: 'L1', at: xy(50, 14), name: 'X1' },
+        { id: 'N', at: xy(50, 50), name: 'N' },
+        { id: 'L2', at: xy(50, 86), name: 'X2' },
+      ],
+      grounds: [{ at: xy(50, 50), label: 'Neutral, if this secondary has one', kind: 'solid' }],
+    };
+  }
+
+  function autoBank() {
+    return {
+      windings: [{ a: xy(50, 12), b: xy(50, 88), dashed: false, tap: xy(50, 46) }],
+      terminals: [
+        { id: 'H', at: xy(50, 12), name: 'H' },
+        { id: 'T', at: xy(50, 46), name: 'Tap' },
+        { id: 'X', at: xy(50, 88), name: 'Common' },
+      ],
+      grounds: [],
+    };
+  }
+
+  function bankForKind(kind) {
+    if (kind === 'high-leg') return highLegBank();
+    if (kind === 'corner') return cornerBank();
+    if (kind === 'open-delta') return deltaBank(true);
+    if (kind === 'zigzag') return zigzagBank();
+    if (kind === 'wye') return wyeBank('solid');
+    if (kind === 'single') return singleCoil('H1', 'H2');
+    if (kind === 'auto') return autoBank();
+    return deltaBank(false);
+  }
+
+  function leadByName(leads, id) {
+    for (var i = 0; i < leads.length; i++) {
+      var name = leads[i].name;
+      if (id === 'N' && name === 'N') return leads[i];
+      if (id === 'EGC' && name === 'EGC') return leads[i];
+      if (id === 'L1' && name === 'L1') return leads[i];
+      if (id === 'L2' && name === 'L2') return leads[i];
+      if (id === 'A' && (name === 'A' || name.indexOf('A') === 0)) return leads[i];
+      if (id === 'B' && (name === 'B' || name.indexOf('B') === 0)) return leads[i];
+      if (id === 'C' && name === 'C') return leads[i];
+    }
+    return null;
+  }
+
+  function polar(deg, mag) {
+    var r = deg * Math.PI / 180;
+    return { x: mag * Math.cos(r), y: mag * Math.sin(r) };
+  }
+
+  function phasorPoint(id, coord, hex, label) {
+    return { id: id, x: coord.x, y: coord.y, hex: hex, label: label };
+  }
+
+  /**
+   * Geometry for the detailed winding schematic and the secondary phasor panel.
+   * Coordinates inside a bank are 0–100. Phasor x/y are volts, y up.
+   */
+  function diagramSpec(connectionId, secondaryVolts, primaryVolts) {
+    var id = resolveId(connectionId);
+    var conn = connectionById(id);
+    var vs = Number(secondaryVolts) || 0;
+    var vp = Number(primaryVolts) || 0;
+    var colors = colorPlan(id, vs, vp);
+    var leads = colors.leads || [];
+    if (!conn) return null;
+
+    var primaryKind = conn.priKind === 'open-delta' ? 'open-delta'
+      : (conn.priKind === 'auto' ? 'auto'
+      : (conn.priKind === 'single' ? 'single'
+      : (conn.priKind === 'zigzag' ? 'zigzag'
+      : (conn.priKind === 'wye' ? 'wye' : 'delta'))));
+    var secondaryKind = conn.secKind === 'high-leg' ? 'high-leg'
+      : (conn.secKind === 'corner' ? 'corner'
+      : (conn.secKind === 'open-delta' ? 'open-delta'
+      : (conn.secKind === 'zigzag' ? 'zigzag'
+      : (conn.secKind === 'single' ? 'single'
+      : (conn.secKind === 'wye' ? 'wye' : 'delta')))));
+
+    var banks = [];
+    if (id === 'autotransformer' || id === 'buck-boost') {
+      var auto = autoBank();
+      auto.title = id === 'buck-boost' ? 'Series winding on the same core' : 'Shared winding';
+      auto.side = 'both';
+      banks.push(auto);
+    } else if (id === 'zigzag') {
+      var zig = zigzagBank();
+      zig.title = 'Zig-zag windings';
+      zig.side = 'secondary';
+      banks.push(zig);
+    } else if (id === 'isolation') {
+      var pri = singleCoil('H1', 'H2');
+      pri.title = 'Primary';
+      pri.side = 'primary';
+      var sec = isolationSecondary();
+      sec.title = 'Secondary';
+      sec.side = 'secondary';
+      banks.push(pri, sec);
+    } else {
+      var priBank = bankForKind(primaryKind);
+      priBank.title = 'Primary';
+      priBank.side = 'primary';
+      var secBank = bankForKind(secondaryKind);
+      if (id === 'resistance-ground') secBank = wyeBank('resistor');
+      if (id === 'reactance-ground') secBank = wyeBank('reactor');
+      if (id === 'ungrounded-delta') {
+        secBank = deltaBank(false);
+        secBank.floating = true;
+      }
+      secBank.title = 'Secondary';
+      secBank.side = 'secondary';
+      banks.push(priBank, secBank);
+    }
+
+    var secBankRef = null;
+    for (var b = 0; b < banks.length; b++) {
+      if (banks[b].side === 'secondary' || banks[b].side === 'both') secBankRef = banks[b];
+    }
+    var outgoing = [];
+    if (secBankRef) {
+      if (id === 'corner-grounded') {
+        var ungrounded = [];
+        var groundedLead = null;
+        var egc = null;
+        leads.forEach(function (lead) {
+          if (lead.name === 'Ungrounded') ungrounded.push(lead);
+          else if (lead.name === 'Grounded phase') groundedLead = lead;
+          else if (lead.name === 'EGC') egc = lead;
+        });
+        [
+          { id: 'A', lead: groundedLead },
+          { id: 'B', lead: ungrounded[0] },
+          { id: 'C', lead: ungrounded[1] },
+        ].forEach(function (pair) {
+          if (!pair.lead) return;
+          outgoing.push({
+            terminalId: pair.id,
+            name: pair.id === 'A' ? 'Grounded phase' : pair.id,
+            colorName: pair.lead.colorName,
+            hex: pair.lead.hex,
+            role: pair.lead.role,
+          });
+        });
+        if (egc) outgoing.push({ terminalId: 'EGC', name: 'EGC', colorName: egc.colorName, hex: egc.hex, role: egc.role });
+      } else {
+        secBankRef.terminals.forEach(function (term) {
+          var lead = leadByName(leads, term.id);
+          if (!lead && (term.id === 'H' || term.id === 'T' || term.id === 'X')) return;
+          if (!lead) return;
+          outgoing.push({
+            terminalId: term.id,
+            name: lead.name,
+            colorName: lead.colorName,
+            hex: lead.hex,
+            role: lead.role,
+          });
+        });
+        if (!outgoing.some(function (row) { return row.terminalId === 'EGC'; })) {
+          var equipment = leadByName(leads, 'EGC');
+          if (equipment) {
+            outgoing.push({ terminalId: 'EGC', name: 'EGC', colorName: equipment.colorName, hex: equipment.hex, role: equipment.role });
+          }
+        }
+      }
+    }
+
+    var phasors = { caption: '', points: [], vectors: [] };
+    var hot = is480Class(vs) ? palette480() : palette208();
+    if (id === 'high-leg') {
+      var half = vs > 0 ? vs / 2 : 120;
+      var wild = vs > 0 ? vs * SQRT3 / 2 : 208;
+      phasors.caption = 'Center tap is the origin. B is longer because it is not on that winding.';
+      phasors.points = [
+        phasorPoint('N', { x: 0, y: 0 }, '#f4f4f5', 'N'),
+        phasorPoint('A', { x: -half, y: 0 }, '#1a1a1a', 'A ' + roundVolts(half)),
+        phasorPoint('C', { x: half, y: 0 }, '#2563eb', 'C ' + roundVolts(half)),
+        phasorPoint('B', { x: 0, y: wild }, '#f97316', 'B high-leg ' + roundVolts(wild)),
+      ];
+      phasors.vectors = [['N', 'A'], ['N', 'C'], ['N', 'B']];
+    } else if (id === 'corner-grounded') {
+      var line = vs > 0 ? vs : 480;
+      var groundedHex = '#f4f4f5';
+      var bHex = (outgoing[1] && outgoing[1].hex) || hot[0].hex;
+      var cHex = (outgoing[2] && outgoing[2].hex) || hot[2].hex;
+      phasors.caption = 'One phase is the ground reference. The other two sit at full line voltage from it.';
+      phasors.points = [
+        phasorPoint('A', { x: 0, y: 0 }, groundedHex, 'Grounded 0 V'),
+        phasorPoint('B', { x: line, y: 0 }, bHex, roundVolts(line) + ' to ground'),
+        phasorPoint('C', polar(60, line), cHex, roundVolts(line) + ' to ground'),
+      ];
+      phasors.vectors = [['A', 'B'], ['A', 'C'], ['B', 'C']];
+    } else if (id === 'ungrounded-delta' || id === 'delta-delta' || id === 'open-delta' || id === 'wye-delta') {
+      var vll = vs > 0 ? vs : 480;
+      phasors.caption = id === 'ungrounded-delta'
+        ? 'The triangle floats. Nothing is bolted to ground until the first fault.'
+        : 'Line-to-line only. No neutral at the center.';
+      phasors.points = [
+        phasorPoint('A', polar(90, vll / SQRT3), hot[0].hex, 'A'),
+        phasorPoint('B', polar(210, vll / SQRT3), hot[1].hex, 'B'),
+        phasorPoint('C', polar(330, vll / SQRT3), hot[2].hex, 'C'),
+      ];
+      phasors.vectors = [['A', 'B'], ['B', 'C'], ['C', 'A']];
+    } else if (id === 'isolation' || conn.phases === 1) {
+      phasors.caption = 'Single-phase pair. The neutral, when the winding has a center tap, sits between them.';
+      var half1 = vs > 0 ? vs / 2 : 120;
+      phasors.points = [
+        phasorPoint('N', { x: 0, y: 0 }, '#f4f4f5', 'N'),
+        phasorPoint('L1', { x: -half1, y: 0 }, '#1a1a1a', 'L1 ' + roundVolts(half1)),
+        phasorPoint('L2', { x: half1, y: 0 }, '#dc2626', 'L2 ' + roundVolts(half1)),
+      ];
+      phasors.vectors = [['N', 'L1'], ['N', 'L2']];
+    } else if (id === 'autotransformer' || id === 'buck-boost') {
+      var common = Math.min(vs || 0, vp || 0);
+      var source = Math.max(vs || 0, vp || 0);
+      phasors.caption = 'Same phasors as the system you tapped. This winding does not make a new one.';
+      phasors.points = [
+        phasorPoint('X', { x: 0, y: 0 }, '#f4f4f5', 'Common'),
+        phasorPoint('H', { x: source || 1, y: 0 }, '#8b7bff', 'Across winding ' + roundVolts(source)),
+        phasorPoint('T', { x: common || 0.5, y: 0 }, '#f5c451', 'Tap ' + roundVolts(common)),
+      ];
+      phasors.vectors = [['X', 'H']];
+    } else {
+      var phaseV = vs > 0 ? vs / SQRT3 : 1;
+      var labelV = vs > 0 ? roundVolts(phaseV) + ' to N' : 'Vll / √3';
+      phasors.caption = 'Neutral at the origin. Each phase is 120° away and line/√3 to ground.';
+      phasors.points = [
+        phasorPoint('N', { x: 0, y: 0 }, '#f4f4f5', 'N'),
+        phasorPoint('A', polar(90, phaseV), hot[0].hex, 'A ' + labelV),
+        phasorPoint('B', polar(210, phaseV), hot[1].hex, 'B ' + labelV),
+        phasorPoint('C', polar(330, phaseV), hot[2].hex, 'C ' + labelV),
+      ];
+      phasors.vectors = [['N', 'A'], ['N', 'B'], ['N', 'C']];
+    }
+
+    var callouts = [];
+    if (id === 'high-leg') {
+      callouts.push('A–N and C–N are half the line voltage' + (vs > 0 ? ' (' + roundVolts(vs / 2) + ').' : '.'));
+      callouts.push('B–N is line × √3/2' + (vs > 0 ? ' (' + roundVolts(vs * SQRT3 / 2) + '). Tag that conductor orange.' : '. Tag that conductor orange.'));
+      callouts.push('The center tap is the neutral. B is not grounded.');
+    } else if (id === 'corner-grounded') {
+      callouts.push('Grounded phase to ground is 0 V, and that conductor still carries load current.');
+      callouts.push('Each other phase to ground is the full line voltage' + (vs > 0 ? ' (' + roundVolts(vs) + ').' : '.'));
+      callouts.push('White or gray on the grounded phase. Not green. Not orange. No high leg.');
+    } else if (secondaryKind === 'wye' || id === 'grounded-wye' || id === 'delta-wye') {
+      callouts.push('Phase-to-neutral is line / √3' + (vs > 0 ? ' (' + roundVolts(vs / SQRT3) + ').' : '.'));
+      callouts.push(is480Class(vs)
+        ? '480Y practice is brown, orange, yellow. That orange is not a high leg.'
+        : 'Under 250 V the usual phase colors are black, red, blue.');
+    }
+    if (id === 'open-delta') callouts.push('The dashed winding is the missing unit. Capacity is 57.7% of three equal units.');
+    if (id === 'zigzag') callouts.push('Grounding transformer. The neutral is not a 120 V receptacle bus.');
+    if (id === 'isolation') callouts.push('Two windings. The gap between them is the isolation. A center tap exists only on a 120/240 V secondary.');
+    if (id === 'autotransformer' || id === 'buck-boost') callouts.push('One winding. Not a separately derived system and not a new color code.');
+    if (id === 'resistance-ground' || id === 'reactance-ground') callouts.push('The ohms are a study result. This diagram only shows where the impedance sits.');
+
+    return {
+      id: id,
+      title: conn.name,
+      disclaimer: COLOR_DISCLAIMER,
+      banks: banks,
+      outgoing: outgoing,
+      phasors: phasors,
+      callouts: callouts,
+      colors: colors,
+    };
+  }
+
   root.XFMR_TEACH = {
     SQRT3: SQRT3,
     OPEN_DELTA_OF_CLOSED: OPEN_DELTA_OF_CLOSED,
@@ -835,5 +1194,6 @@
     installNotes: installNotes,
     autoMath: autoMath,
     analyze: analyze,
+    diagramSpec: diagramSpec,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
