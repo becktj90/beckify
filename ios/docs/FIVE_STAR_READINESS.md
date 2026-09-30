@@ -1,6 +1,6 @@
 # Five-star readiness — Beckify iOS
 
-Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **≥150** (repo `CURRENT_PROJECT_VERSION` is **152**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on **1.0.1 (149)**, or on closed-train **1.0**.
+Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **≥150** (repo `CURRENT_PROJECT_VERSION` is **153**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on **1.0.1 (149)**, or on closed-train **1.0**.
 
 Listing copy, nutrition-label facts, and screenshot sizes stay in [`APP_STORE.md`](APP_STORE.md). Privacy text stays in [`PRIVACY.md`](PRIVACY.md). This file is the **rating and review-risk** plan.
 

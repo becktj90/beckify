@@ -6,7 +6,7 @@ final class CalculationSessionTests: XCTestCase {
     // MARK: - Mode classification
 
     func testLiveToolsAreClassifiedLive() {
-        for id in ["unitConverter", "resistorColor", "circularMils", "modbusAddress", "numberBase"] {
+        for id in ["unitConverter", "resistorColor", "circularMils", "modbusAddress", "numberBase", "controlStrategies"] {
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .live, id)
         }
     }

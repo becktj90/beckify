@@ -415,6 +415,7 @@ extension GlyphKind {
         case .eBikePackDesigner: return .eBikePackDesigner
         case .nickelStrip: return .nickelStrip
         case .controlSystems: return .controlSystems
+        case .controlStrategies: return .controlStrategies
         }
     }
 }
@@ -498,6 +499,7 @@ enum GlyphKind {
     case eBikePackDesigner
     case nickelStrip
     case controlSystems
+    case controlStrategies
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -532,6 +534,7 @@ enum GlyphKind {
         case .plcTimer: return Self.plcTimer(rect)
         case .rackCurrent: return Self.rackCurrent(rect)
         case .controlSystems: return Self.controlSystems(rect)
+        case .controlStrategies: return Self.controlStrategies(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -1081,6 +1084,19 @@ enum GlyphKind {
             width: slotW * 0.90, height: slotH
         ))
         return .fill(Glyph.punched(body, a, b))
+    }
+
+    /// Forked path — a strategy choice, not the feedback loop.
+    private static func controlStrategies(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let trunkBottom = CGPoint(x: r.midX, y: r.maxY - r.height * 0.12)
+        let fork = CGPoint(x: r.midX, y: r.midY + r.height * 0.04)
+        Glyph.line(&path, trunkBottom, fork)
+        Glyph.line(&path, fork, CGPoint(x: r.minX + r.width * 0.16, y: r.minY + r.height * 0.16))
+        Glyph.line(&path, fork, CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.16))
+        let node = r.width * 0.12
+        path.addEllipse(in: CGRect(x: fork.x - node / 2, y: fork.y - node / 2, width: node, height: node))
+        return .stroke(path)
     }
 
     /// Feedback circle + one arrow — open mark.

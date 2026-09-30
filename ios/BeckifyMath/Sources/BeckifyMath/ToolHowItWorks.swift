@@ -701,7 +701,16 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Ziegler–Nichols from Ku/Pu or an FOPDT fit. Bode is a log sweep.",
                 "Educational RK4 / Durand–Kerner approximations — not safety-critical commissioning.",
-                "State-space LQR / Kalman / MPC stays on the website.",
+                "Bang-bang, MPC, ADRC, sliding mode, and learned methods are Control Strategies. This lab stays PID, Bode, and lead. State-space LQR / Kalman design stays on the website.",
+            ]
+        ),
+        "controlStrategies": ToolHowItWorks(
+            summary: "Compares bang-bang, PID, MPC, fuzzy, sliding mode, ADRC, and learned methods, then suggests one from your constraints.",
+            context: "Field → Controls, next to the Control Systems lab. Open the lab when the pick is PID.",
+            bullets: [
+                "Matrix, plant examples, and plots are teaching sketches — not a commissioned loop.",
+                "No cloud training. DRL, PINN, and ML-MPC stay explanatory.",
+                "Does not replace Signal Scaling, PLC Timer, or the PID / Bode lab.",
             ]
         ),
     ]

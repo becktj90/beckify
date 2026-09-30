@@ -811,8 +811,11 @@ struct EngineerLinePlot: View {
     var yGuides: [EngineerGuide] = []
     var logX: Bool = false
     var height: CGFloat = 200
+    /// Catmull-Rom for smooth plant responses. Linear keeps relay and hysteresis corners square.
+    var smooth: Bool = true
 
     var body: some View {
+        let interpolation: InterpolationMethod = smooth ? .catmullRom : .linear
         let chart = Chart {
             ForEach(series) { s in
                 ForEach(Array(s.points.enumerated()), id: \.offset) { _, point in
@@ -823,7 +826,7 @@ struct EngineerLinePlot: View {
                     )
                     .foregroundStyle(by: .value("Series", s.name))
                     .lineStyle(StrokeStyle(lineWidth: 2.25, lineJoin: .round))
-                    .interpolationMethod(.catmullRom)
+                    .interpolationMethod(interpolation)
 
                     if s.fills {
                         AreaMark(
@@ -833,7 +836,7 @@ struct EngineerLinePlot: View {
                         )
                         .foregroundStyle(by: .value("Series", s.name))
                         .opacity(0.14)
-                        .interpolationMethod(.catmullRom)
+                        .interpolationMethod(interpolation)
                     }
                 }
             }

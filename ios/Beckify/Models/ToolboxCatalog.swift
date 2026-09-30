@@ -80,6 +80,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case eBikePackDesigner
     case nickelStrip
     case controlSystems
+    case controlStrategies
 
     var id: String { rawValue }
 }
@@ -909,6 +910,18 @@ enum ToolboxCatalog {
                 "tuner", "g(s)", "overlay",
             ]
         ),
+        ToolDefinition(
+            id: .controlStrategies,
+            kind: .calculator,
+            title: "Control Strategies",
+            subtitle: "Compare bang-bang, PID, MPC, and ADRC — plots and a picker. Not a tuner.",
+            symbol: "arrow.triangle.branch",
+            synonyms: [
+                "control strategies", "bang bang", "bang-bang", "hysteresis", "mpc", "model predictive",
+                "adrc", "sliding mode", "smc", "fuzzy", "anfis", "drl", "reinforcement", "pinn",
+                "gain schedule", "disturbance", "chattering", "selector", "servo strategy",
+            ]
+        ),
     ]
 
     /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
@@ -929,7 +942,7 @@ enum ToolboxCatalog {
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
-            .controlSystems,
+            .controlSystems, .controlStrategies,
         ],
         .homework: [
             .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
@@ -1024,9 +1037,9 @@ enum ToolboxCatalog {
         .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],
         .circularMils: [.conductorLength, .wireAmpacity, .voltageDrop],
         .loadFactors: [.panelDirectory, .power, .motorFLA],
-        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems],
+        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems, .controlStrategies],
         .modbusAddress: [.signalScaling, .plcTimer],
-        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems],
+        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems, .controlStrategies],
         .panelDirectory: [.loadWorksheet, .loadFactors, .wireAmpacity],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
@@ -1064,6 +1077,7 @@ enum ToolboxCatalog {
         .linearRegulator: [.voltageDivider, .power, .ledRC],
         .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
-        .controlSystems: [.signalScaling, .plcTimer, .analogWorkbench, .transientCircuit],
+        .controlSystems: [.controlStrategies, .signalScaling, .plcTimer, .analogWorkbench],
+        .controlStrategies: [.controlSystems, .signalScaling, .plcTimer, .analogWorkbench],
     ]
 }
