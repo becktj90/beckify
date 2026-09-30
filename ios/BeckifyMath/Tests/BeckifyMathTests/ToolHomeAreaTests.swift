@@ -117,6 +117,14 @@ final class ToolHomeAreaTests: XCTestCase {
         }
     }
 
+    func testMagneticsShelfIsField() {
+        for id in ["magneticsLab", "emFields"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .magnetics, id)
+        }
+        XCTAssertEqual(ToolShelfKind.magnetics.homeArea, .field)
+    }
+
     func testFieldControlsStayLoopHelpers() {
         for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)

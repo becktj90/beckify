@@ -424,6 +424,8 @@ extension GlyphKind {
         case .electronicsLab: return .electronicsLab
         case .phasorImpedance: return .phasorImpedance
         case .ul508aPanelLab: return .ul508aPanelLab
+        case .magneticsLab: return .magneticsLab
+        case .emFields: return .emFields
         }
     }
 }
@@ -516,6 +518,8 @@ enum GlyphKind {
     case electronicsLab
     case phasorImpedance
     case ul508aPanelLab
+    case magneticsLab
+    case emFields
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -558,6 +562,8 @@ enum GlyphKind {
         case .electronicsLab: return Self.electronicsLab(rect)
         case .phasorImpedance: return Self.phasorImpedance(rect)
         case .ul508aPanelLab: return Self.ul508aPanelLab(rect)
+        case .magneticsLab: return Self.magneticsLab(rect)
+        case .emFields: return Self.emFields(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -1201,6 +1207,40 @@ enum GlyphKind {
             width: slotW * 0.90, height: slotH
         ))
         return .fill(Glyph.punched(body, a, b))
+    }
+
+    /// Core window with a coil — magnetics lab.
+    private static func magneticsLab(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let core = r.insetBy(dx: r.width * 0.18, dy: r.height * 0.16)
+        path.addRoundedRect(in: core, cornerRadius: 4)
+        let inner = core.insetBy(dx: core.width * 0.28, dy: core.height * 0.22)
+        path.addRoundedRect(in: inner, cornerRadius: 2)
+        for step in -1...1 {
+            let y = core.midY + CGFloat(step) * core.height * 0.12
+            path.move(to: CGPoint(x: core.minX - r.width * 0.06, y: y))
+            path.addLine(to: CGPoint(x: core.minX + core.width * 0.22, y: y))
+        }
+        return .stroke(path)
+    }
+
+    /// Crossed field arrows — EM checks.
+    private static func emFields(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY)
+        Glyph.arrow(
+            &path,
+            from: CGPoint(x: r.minX + r.width * 0.16, y: center.y),
+            to: CGPoint(x: r.maxX - r.width * 0.12, y: center.y),
+            head: r.width * 0.16
+        )
+        Glyph.arrow(
+            &path,
+            from: CGPoint(x: center.x, y: r.maxY - r.height * 0.16),
+            to: CGPoint(x: center.x, y: r.minY + r.height * 0.14),
+            head: r.width * 0.16
+        )
+        return .stroke(path)
     }
 
     /// Cabinet door with a rating punch — industrial control panel.

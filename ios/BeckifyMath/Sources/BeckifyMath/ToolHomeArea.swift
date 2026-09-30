@@ -12,6 +12,7 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
     case jobsite
     case power
     case controls
+    case magnetics
     case instruments
     case basics
     case bench
@@ -19,7 +20,7 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
 
     public var homeArea: ToolHomeArea {
         switch self {
-        case .jobsite, .power, .controls, .instruments: return .field
+        case .jobsite, .power, .controls, .magnetics, .instruments: return .field
         case .basics, .bench, .reference: return .toolkit
         }
     }
@@ -39,6 +40,7 @@ public enum ToolHomeAreaPolicy {
     }
 
     public static func shelf(forToolID id: String) -> ToolShelfKind {
+        if magneticsIDs.contains(id) { return .magnetics }
         if instrumentIDs.contains(id) { return .instruments }
         if basicsIDs.contains(id) { return .basics }
         if benchIDs.contains(id) { return .bench }
@@ -134,6 +136,11 @@ public enum ToolHomeAreaPolicy {
     /// Analysis (PID / Bode / lead) sits next to Signal Scaling and PLC Timer
     /// rather than Toolkit → Bench (Analog Workbench) because the same Field
     /// audience already uses those tools on a loop. State-space studios stay web-only.
+    /// Field → Magnetics & Fields. Core and EM checks, separate from the bench magnetic-circuit card.
+    private static let magneticsIDs: Set<String> = [
+        "magneticsLab", "emFields",
+    ]
+
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
         "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",

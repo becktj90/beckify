@@ -799,5 +799,25 @@ public enum ToolHowItWorksCatalog {
                 "Does not replace Signal Scaling, PLC Timer, or the PID / Bode lab.",
             ]
         ),
+        "magneticsLab": ToolHowItWorks(
+            summary: "Series or three-leg core: reluctance, flux, ampere-turns, inductance, and stored energy, plus a transformer, motor, or generator check.",
+            context: "Field → Magnetics & Fields. A first pass before a finite-element run or the maker’s curve.",
+            bullets: [
+                "ℜ = ℓ / (µ A), ℱ = NI = ℜ Φ, L = N² / ℜ, W = ½ L I². µ₀ = 4π×10⁻⁷ H/m.",
+                "Air gap, fringing, and stacking are inputs. µr stays linear. Saturation and leakage are called out, not modeled.",
+                "On a three-leg core, flux into the center leaves through the sides. The gap usually takes the ampere-turns.",
+                "Machine rows are one shared flux, one conductor force, or one motional emf — not a full machine design.",
+            ]
+        ),
+        "emFields": ToolHowItWorks(
+            summary: "Induced emf in a loop, the field of point charges, the force on a moving charge, and a vector check.",
+            context: "Field → Magnetics & Fields, next to Magnetics Lab.",
+            bullets: [
+                "ε = −N dΦ/dt for a flat loop and a perpendicular B. The sketch shows the current that opposes the change.",
+                "Point-charge E is a vector sum. A near-zero result is flagged. Conductors and dielectrics are not included.",
+                "Lorentz force is the initial push. An arc radius appears only when B dominates and you enter a mass.",
+                "Frames, dot, cross, and four sample fields. Not a general derivative solver.",
+            ]
+        ),
     ]
 }
