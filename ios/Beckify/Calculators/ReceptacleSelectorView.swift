@@ -10,6 +10,7 @@ struct ReceptacleSelectorView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
+    @AppStorage(ToolboxPreferenceKey.electricalCode) private var codeRaw = ElectricalCode.nec.rawValue
 
     @StoredChoice(.receptacleSelector, "voltagePreset", default: ReceptacleVoltagePreset.v120) private var voltagePreset
     @StoredInput(.receptacleSelector, "customVolts", default: "120") private var customVolts
@@ -28,8 +29,10 @@ struct ReceptacleSelectorView: View {
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var code: ElectricalCode { ElectricalCode(rawValue: codeRaw) ?? .nec }
+
     private var inputFingerprint: String {
-        "\(voltagePreset)|\(customVolts)|\(phase)|\(ampPreset)|\(customAmps)|\(environment)|\(family)|\(neutral)|\(isolatedGround)|\(preferGFCI)|\(frequencyHz)"
+        "\(code.rawValue)|\(voltagePreset)|\(customVolts)|\(phase)|\(ampPreset)|\(customAmps)|\(environment)|\(family)|\(neutral)|\(isolatedGround)|\(preferGFCI)|\(frequencyHz)"
     }
 
     private var volts: Double? {
@@ -51,7 +54,8 @@ struct ReceptacleSelectorView: View {
             isolatedGround: isolatedGround,
             preferGFCI: preferGFCI,
             frequencyHz: frequencyHz,
-            neutral: neutral
+            neutral: neutral,
+            electricalCode: code
         )
     }
 
@@ -180,6 +184,11 @@ struct ReceptacleSelectorView: View {
             Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA, household, and Meltric faces do not change.")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
+            if code == .asnzs {
+                Text("AS/NZS nominal is 230 V at 50 Hz. Type I (AS/NZS 3112) ranks first among household faces. Other families stay in the list when they fit.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+            }
         }
     }
 
@@ -188,7 +197,7 @@ struct ReceptacleSelectorView: View {
             onCalculate: calculate,
             onReset: reset,
             onExample: applyExample,
-            exampleTitle: "120 V 1Ø 15 A indoor"
+            exampleTitle: code == .asnzs ? "230 V 1Ø 10 A Type I" : "120 V 1Ø 15 A indoor"
         )
     }
 
@@ -275,15 +284,22 @@ struct ReceptacleSelectorView: View {
     }
 
     private func applyExample() {
-        voltagePreset = .v120
-        phase = .singlePhase2Wire
-        ampPreset = .a15
+        if code == .asnzs {
+            voltagePreset = .v230
+            phase = .singlePhase2Wire
+            ampPreset = .a10
+            frequencyHz = 50
+        } else {
+            voltagePreset = .v120
+            phase = .singlePhase2Wire
+            ampPreset = .a15
+            frequencyHz = 60
+        }
         environment = .indoorDry
         family = .any
         neutral = .auto
         isolatedGround = false
         preferGFCI = false
-        frequencyHz = 60
         selectedID = nil
         session.prepareForNewInputs()
     }

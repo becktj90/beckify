@@ -73,6 +73,7 @@
 		BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008B /* EbikeCalculatorViews.swift */; };
 		BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008D /* ControlSystemsLabView.swift */; };
 		BECF000000000000000000AF /* ControlStrategiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000AE /* ControlStrategiesView.swift */; };
+		BECF000000000000000000B5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000B4 /* SettingsView.swift */; };
 		BECF00000000000000000090 /* ConductorLengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008F /* ConductorLengthView.swift */; };
 		BECF00000000000000000092 /* CellularStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000091 /* CellularStatusView.swift */; };
 		BECF00000000000000000094 /* ReviewAskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000093 /* ReviewAskStore.swift */; };
@@ -165,6 +166,7 @@
 		BECF0000000000000000008B /* EbikeCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EbikeCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008D /* ControlSystemsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSystemsLabView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000AE /* ControlStrategiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlStrategiesView.swift; sourceTree = "<group>"; };
+		BECF000000000000000000B4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008F /* ConductorLengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorLengthView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000091 /* CellularStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularStatusView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000093 /* ReviewAskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewAskStore.swift; sourceTree = "<group>"; };
@@ -335,6 +337,7 @@
 				BECF00000000000000000021 /* ToolboxView.swift */,
 				BECF00000000000000000069 /* FavoritesView.swift */,
 				BECF0000000000000000006D /* ToolGridView.swift */,
+				BECF000000000000000000B4 /* SettingsView.swift */,
 				BECF00000000000000000031 /* Components */,
 			);
 			path = Views;
@@ -615,6 +618,7 @@
 				BECF0000000000000000008C /* EbikeCalculatorViews.swift in Sources */,
 				BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */,
 				BECF000000000000000000AF /* ControlStrategiesView.swift in Sources */,
+				BECF000000000000000000B5 /* SettingsView.swift in Sources */,
 				BECF00000000000000000090 /* ConductorLengthView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -63,6 +63,9 @@ struct JobsView: View {
             }
             .navigationTitle("Saved Jobs")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsToolbarButton()
+                }
                 if !jobs.jobs.isEmpty { EditButton() }
             }
             .background(Theme.ambientBackground.ignoresSafeArea())

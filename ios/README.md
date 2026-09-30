@@ -8,6 +8,8 @@ Two more App Store products live in the same Xcode project: **Look Check** (`com
 
 Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
+**Settings** (gear on Toolbox, Favorites, and Saved Jobs) stores the electrical code, length units, and appearance on device. Default code is **NEC (US)**. **AS/NZS** is the other selectable code. IEC 60364, CEC, and BS 7671 are named and not selectable. Tools are not duplicated per code. Where AS/NZS tables are not in the app, the tool says **“AS/NZS not available for this tool yet — showing NEC”** and keeps the NEC result labeled as NEC. Appearance defaults to the system (light or dark). It does not force dark mode.
+
 This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode. Website toolbox IA is a follow-up, not this app.
 
 ## Design system
@@ -45,7 +47,7 @@ ios/
 
 ### Jobsite
 
-- Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff; 1Ø and 3Ø also show a NEC 2023 Table 250.122 EGC from the next standard OCPD — design aid, confirm Code / AHJ, not a PE stamp)
+- Voltage Drop. **NEC (default):** K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff; 1Ø and 3Ø also show a NEC 2023 Table 250.122 EGC from the next standard OCPD. **AS/NZS:** metric mm² sizes, resistance-only drop from IEC 60228 maximum R (reactance omitted — not an AS/NZS 3008 mV/A·m table), AS/NZS 3000:2018 Clause 3.6.2’s 5% installation limit, and a copper earth from Table 5.1. Current-carrying capacity is not checked on the AS/NZS path. Design aid — not a PE or AEE stamp.
 - Conductor Cost Optimizer (compliant size × parallel-run ranking with planning $/kft and optional I²R energy — not a live quote)
 - Conductor Length by Resistance (length from a milliohm / mΩ reading — end-to-end or short-to-parallel; Cu/Al α compensation; estimated metal weight)
 - Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways). 1Ø, multiwire, or 3Ø plus amps can show a NEC 2023 Table 250.122 EGC beside the fill. That conductor is added only if you turn Count EGC on — mixed fill math is otherwise unchanged.
@@ -55,15 +57,17 @@ ios/
 - Motor Nameplate OCR (camera or library photo; on-device flatten and contrast lift, then multi-pass Vision, then heuristic field extract into the shared nameplate schema — value + confidence + reviewed; a low scan-quality score asks for a retake. Human confirm sets reviewed. Optional Analyze POSTs to `/api/analyze-nameplate` only when you tap it. MOCP and LRA are never treated as FLA. Optional seed into FLA / Analyzer / Speed)
 - Look Check (camera or library photo, then Analyze Look for a playful look verdict plus lighting / framing / expression / sharpness metrics and a roast. Entertainment only — not medical, dating, or beauty authority. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Distinct from the Wi-Fi / Cellular **Online / Captive** hotspot-detect card.)
 - Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load). Circuit defaults to phase conductors only. Choosing 1Ø, multiwire, or 3Ø shows a NEC 2023 Table 250.122 EGC beside the phase size.
-- Receptacle Selector (NEMA / IEC 60309 / international household / Meltric through 400 A, schematic pinout, cited public PNs — design aid)
+- Receptacle Selector (NEMA / IEC 60309 / international household / Meltric through 400 A, schematic pinout, cited public PNs — design aid). AS/NZS ranks AS/NZS 3112 Type I ahead of other household faces near 230 V. The list is not copied into a second tool.
 - Short-Circuit Current, Circular Mils, Load & Demand Factors
 - NEC Circuit Calculator (design current, derated conductor, VD, OCPD — live one-shot calc, not paperwork). When phase and amps imply a feeder ground, a NEC 2023 Table 250.122 EGC is shown. A service grounding electrode conductor is Table 250.66, not this row.
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
 
+Wire Size & Ampacity, Conduit Fill (including the Count EGC toggle), Motor FLA, Conductor Cost, Conductor Length, NEC Circuit, Load Calculation Worksheet, and Motor Nameplate Analyzer stay on their NEC tables when AS/NZS is selected. The banner names that. Mixed conduit fill math is unchanged.
+
 ### Power (facility / distribution only)
 
-- Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
-- Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
+- Power (DC identities + 1Ø / 3Ø). The formulas do not change with code. AS/NZS shows the nominal supply as 230 V single-phase and 400 V three-phase at 50 Hz. ToolID.powerWizard remains for saved jobs and is not listed.
+- Transformer Sizing & Protection (NEC 450.3(B) + Note 1). AS/NZS transformer protection is not in this tool; the screen says it is still showing NEC.
 - Tap-Changer Calculator (DETC tap from measured secondary)
 - Power Factor Correction
 - Harmonics (THD) (current THD / IEEE 519 discussion bands)
@@ -150,7 +154,7 @@ cd ios/BeckifyMath
 swift test
 ```
 
-You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth on Linux. Simulator, signing, archive, and App Store upload require a Mac. This repository does not claim those happened.
+You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth on Linux. Simulator, signing, archive, and App Store upload require a Mac. This repository does not claim those happened. The electrical-code Settings screen and in-tool banners were not exercised in Simulator or on a device.
 
 ## Mac — open and run
 

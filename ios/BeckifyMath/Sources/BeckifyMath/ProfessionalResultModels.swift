@@ -3,6 +3,8 @@ import Foundation
 /// NEC edition used by transcribed table data in this package.
 public enum CodeEdition: String, Codable, CaseIterable, Sendable, Hashable {
     case nec2023 = "NEC 2023"
+    case asnzs3000 = "AS/NZS 3000:2018"
+    case iec60228 = "IEC 60228"
 
     public var displayName: String { rawValue }
 }

@@ -60,6 +60,7 @@ public enum ToolHowItWorksCatalog {
             context: "Nameplate or feeder power when you already have volts, amps, and PF.",
             bullets: [
                 "3Ø uses √3. Enter PF to split kW and kVAR from kVA.",
+                "The identities do not change with code. AS/NZS shows 230 V / 400 V at 50 Hz as the nominal supply.",
                 "Design aid — not a billing meter or a demand study.",
             ]
         ),
@@ -72,13 +73,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "voltageDrop": ToolHowItWorks(
-            summary: "K-factor voltage drop with conductor size, parallels, target %, and an ampacity check.",
+            summary: "Voltage drop for the code in Settings. NEC is the K-factor path. AS/NZS is a metric resistance path.",
             context: "Feeder or branch check before you pull wire.",
             bullets: [
-                "VD uses K, circular mils, current, and one-way length. 3Ø uses √3.",
-                "Parallels split current. Ampacity is a companion check, not 310.16 design.",
-                "1Ø and 3Ø also show a Table 250.122 EGC from the next standard OCPD. Confirm Code / AHJ.",
-                "Design aid — not a stamped study or a bid length.",
+                "NEC: VD uses K, circular mils, current, and one-way length. 3Ø uses √3. 3% and 5% are informational.",
+                "NEC ampacity is a companion check. 1Ø and 3Ø show a Table 250.122 EGC from the next standard OCPD.",
+                "AS/NZS: mm² sizes, IEC 60228 maximum R, Clause 3.6.2’s 5% limit, and a Table 5.1 copper earth. Not an AS/NZS 3008 mV/A·m or current-carrying-capacity table.",
+                "Design aid — not a PE or AEE stamp, and not a bid length.",
             ]
         ),
         "conduitFill": ToolHowItWorks(
@@ -327,7 +328,7 @@ public enum ToolHowItWorksCatalog {
             context: "Which receptacle family matches the circuit, before you order.",
             bullets: [
                 "Amp presets through 400 A. Public Meltric/Hubbell PNs only when a catalog page is cited.",
-                "Household faces are schematic (Schuko, BS 1363, Type I), not manufacturer artwork.",
+                "Household faces are schematic. AS/NZS ranks Type I (3112) first near 230 V. The catalog is not copied per code.",
                 "EGC row is NEC 2023 Table 250.122 from the amp rating you entered. Confirm the breaker.",
                 "Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog.",
             ]
