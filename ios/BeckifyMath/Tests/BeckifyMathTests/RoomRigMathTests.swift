@@ -198,6 +198,13 @@ final class RoomRigMathTests: XCTestCase {
         XCTAssertEqual(balance?.highVsLoudestDB ?? 0, -10, accuracy: 1e-6)
         XCTAssertNil(RoomRigTestMath.bandBalance(bands: flat))
 
+        // Lower median (even count → lower central sample), max peak, mean clip.
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([-20, -10]) ?? 0, -20, accuracy: 1e-9)
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([8, 4]) ?? 0, 4, accuracy: 1e-9)
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([1_000, 1_200]) ?? 0, 1_000, accuracy: 1e-9)
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([-15, -20, -10]) ?? 0, -15, accuracy: 1e-9)
+        XCTAssertNil(RoomRigTestMath.lowerMedian([.nan]))
+
         var capture = RoomRigTestCapture()
         XCTAssertNil(capture.snapshot(stimulus: "Pink", durationSeconds: 1, floorDBFS: nil))
         capture.append(levelDBFS: -20, peakDBFS: -12, crestDB: 8, clipFraction: 0, peakHz: 1_000, bands: grouped)

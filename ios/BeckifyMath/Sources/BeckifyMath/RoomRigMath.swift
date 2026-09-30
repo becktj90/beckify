@@ -435,9 +435,9 @@ public struct RoomRigTestCapture: Equatable, Sendable {
         durationSeconds: Double,
         floorDBFS: Double?
     ) -> RoomRigTestSnapshot? {
-        guard let level = RoomRigMath.percentile(levels, p: 0.5) else { return nil }
+        guard let level = RoomRigTestMath.lowerMedian(levels) else { return nil }
         let peak = peaks.max() ?? level
-        let crest = RoomRigMath.percentile(crests, p: 0.5)
+        let crest = RoomRigTestMath.lowerMedian(crests)
         let clip = clips.isEmpty ? 0 : clips.reduce(0, +) / Double(clips.count)
         let above = floorDBFS.flatMap { RoomRigMath.signalAboveFloorDB(levelDBFS: level, floorDBFS: $0) }
         let averaged = RoomRigTestMath.averageBands(bands)
@@ -449,7 +449,7 @@ public struct RoomRigTestCapture: Equatable, Sendable {
             crestDB: crest,
             clipFraction: clip,
             aboveFloorDB: above,
-            peakHz: RoomRigMath.percentile(peakHz, p: 0.5),
+            peakHz: RoomRigTestMath.lowerMedian(self.peakHz),
             centroidHz: RoomRigTestMath.centroidHz(bands: averaged),
             balance: RoomRigTestMath.bandBalance(bands: averaged)
         )
@@ -481,6 +481,15 @@ public enum RoomRigTestCopy {
 public enum RoomRigTestMath {
     /// Long enough for one log sweep, short enough to hold the phone still.
     public static let windowSeconds = 8.0
+
+    /// Lower median. An even count takes the lower of the two central samples.
+    /// The index is integer division, so a two-sample window does not depend on
+    /// whether `rounded()` sends 0.5 up or to even.
+    public static func lowerMedian(_ values: [Double]) -> Double? {
+        let finite = values.filter(\.isFinite).sorted()
+        guard !finite.isEmpty else { return nil }
+        return finite[(finite.count - 1) / 2]
+    }
 
     /// Power-weighted center of the bands. Nil when there is no energy.
     public static func centroidHz(bands: [AcousticDisplayBand]) -> Double? {

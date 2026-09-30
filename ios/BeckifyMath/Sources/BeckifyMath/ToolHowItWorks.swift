@@ -244,14 +244,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "setupCheck": ToolHowItWorks(
-            summary: "Room & Rig Check: leave it open while you listen, then run a short relative test.",
+            summary: "Room & Rig Check: leave it open while you listen, then run a short relative FFT test.",
             context: "Compare a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
             bullets: [
                 "Phone speaker plus mic is not a calibrated measurement microphone. Relative shape and trends only. No invented dB SPL.",
                 "Plots stay live while music or a test signal plays. Start test captures about 8 seconds and explains each number.",
-                "Plots label frequency, relative dBFS, and time. Pink noise, a log sweep, or tone bursts play locally and are not recorded.",
-                "Harmonic percent, band balance, and the sweep curve are relative energy, not lab THD and not a certification plot.",
-                "Most iPhones show one mic path here, so stereo balance stays blank. Share saves a PNG, not audio.",
+                "The live FFT and approximate RTA label frequency, relative dBFS, and time. Pink noise, a sweep, or bursts are not recorded.",
+                "Harmonic percent, band balance, and the sweep are relative energy, not lab THD. One mic path, so stereo stays blank. Share saves a PNG, not audio.",
             ]
         ),
         "bubbleLevel": ToolHowItWorks(
