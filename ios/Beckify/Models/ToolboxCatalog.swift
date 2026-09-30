@@ -572,7 +572,7 @@ enum ToolboxCatalog {
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
-            subtitle: "Take a picture of a schedule; Vision first, optional Analyze, then confirm demand.",
+            subtitle: "Photo a schedule. On-device Vision, scan quality, editable rows, then confirm demand.",
             symbol: "list.bullet.rectangle",
             synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm", "analyze"]
         ),
