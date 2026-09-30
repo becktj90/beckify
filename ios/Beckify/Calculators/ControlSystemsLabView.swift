@@ -43,6 +43,7 @@ struct ControlSystemsLabView: View {
     @State private var successTick = 0
     @State private var tunerNote: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openRelatedTool) private var openRelated
 
     private var inputFingerprint: String {
         "\(section)|\(plantID)|\(mode)|\(numerator)|\(denominator)|\(kp)|\(ki)|\(kd)|\(compare)|\(loopK)|\(leadPhase)|\(leadOmega)"
@@ -68,6 +69,26 @@ struct ControlSystemsLabView: View {
             }
             .segmentedControlStyle()
             .accessibilityLabel("Lab section")
+
+            Button {
+                openRelated(.controlStrategies)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .accessibilityHidden(true)
+                    Text("Which strategy? Bang-bang, MPC, ADRC…")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .accessibilityHidden(true)
+                }
+                .foregroundStyle(Theme.accent)
+                .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("controlSystems.openStrategies")
+            .accessibilityHint("Opens Control Strategies. This lab stays PID, Bode, and lead.")
 
             plantPicker
 

@@ -76,6 +76,7 @@ ios/
 - Signal Scaling, Modbus Address, PLC Timer Preset
 - E-Bus / Rack Current
 - Control Systems (Field → Controls hub: plant library + custom G(s), P→PI→PID step with Ziegler–Nichols and Open/P/PI/PID overlay, Bode margins, lead compensator; educational — not commissioning)
+- Control Strategies (same shelf: matrix of bang-bang, PID / gain-scheduled PID, MPC, fuzzy, sliding mode, DRL, ADRC, and NN / PINN / ML-MPC; linear vs nonlinear, SISO vs MIMO, <1 ms vs >1 s; HVAC / drives / robotics / flight / BMS examples; constraint picker. Teaching plots only — not a tuner and not a trained policy. PID / Bode stays in Control Systems)
 
 ## Toolkit (basics, bench / homework, reference)
 
@@ -119,7 +120,7 @@ ios/
 - Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
 - Cable Schedule Generator (sequential IDs + CSV copy)
 
-Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, Analog Design Workbench Bode magnitude, and Control Systems step / PID overlay / Bode / lead. This is not a new tool list.
+Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, Analog Design Workbench Bode magnitude, Control Systems step / PID overlay / Bode / lead, and Control Strategies step / hysteresis / sliding-mode / cost sketches. This is not a new tool list.
 
 ## Instruments (Field subsection — public APIs only)
 
@@ -230,7 +231,7 @@ xcodebuild \
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Next Connect version is **1.0.1**, build **≥152** (repo `CURRENT_PROJECT_VERSION` is **152**). Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥150**, bump again before the next Archive. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload 150.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Next Connect version is **1.0.1**, build **≥153** (repo `CURRENT_PROJECT_VERSION` is **153**). Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥150**, bump again before the next Archive. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload 150.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac

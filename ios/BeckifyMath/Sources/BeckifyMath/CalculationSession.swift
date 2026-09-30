@@ -152,7 +152,8 @@ public enum ToolCalculationPolicy {
             "resistorColor",
             "circularMils",
             "modbusAddress",
-            "numberBase":
+            "numberBase",
+            "controlStrategies":
             return .live
 
         case
@@ -197,7 +198,7 @@ public enum ToolCalculationPolicy {
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-        "controlSystems",
+        "controlSystems", "controlStrategies",
     ]
 
     public static var liveToolIDs: [String] {
