@@ -200,7 +200,7 @@ public enum ToolCalculationPolicy {
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-        "controlSystems", "controlStrategies", "electronicsLab",
+        "controlSystems", "controlStrategies", "electronicsLab", "ul508aPanelLab",
     ]
 
     public static var liveToolIDs: [String] {

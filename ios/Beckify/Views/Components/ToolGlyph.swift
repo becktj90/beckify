@@ -421,6 +421,7 @@ extension GlyphKind {
         case .controlSystems: return .controlSystems
         case .controlStrategies: return .controlStrategies
         case .electronicsLab: return .electronicsLab
+        case .ul508aPanelLab: return .ul508aPanelLab
         }
     }
 }
@@ -510,6 +511,7 @@ enum GlyphKind {
     case controlSystems
     case controlStrategies
     case electronicsLab
+    case ul508aPanelLab
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -549,6 +551,7 @@ enum GlyphKind {
         case .controlSystems: return Self.controlSystems(rect)
         case .controlStrategies: return Self.controlStrategies(rect)
         case .electronicsLab: return Self.electronicsLab(rect)
+        case .ul508aPanelLab: return Self.ul508aPanelLab(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -1176,6 +1179,23 @@ enum GlyphKind {
             width: slotW * 0.90, height: slotH
         ))
         return .fill(Glyph.punched(body, a, b))
+    }
+
+    /// Cabinet door with a rating punch — industrial control panel.
+    private static func ul508aPanelLab(_ r: CGRect) -> GlyphArtwork {
+        let frame = r.insetBy(dx: r.width * 0.16, dy: r.height * 0.12)
+        let body = Glyph.roundedRect(frame, corner: 3)
+        let seam = Glyph.slot(CGRect(
+            x: frame.minX + frame.width * 0.56,
+            y: frame.minY + frame.height * 0.16,
+            width: max(2, frame.width * 0.07),
+            height: frame.height * 0.68
+        ))
+        let badge = Glyph.circlePath(
+            CGPoint(x: frame.minX + frame.width * 0.32, y: frame.midY),
+            frame.width * 0.11
+        )
+        return .fill(Glyph.punched(body, seam, badge))
     }
 
     /// Forked path — a strategy choice, not the feedback loop.
