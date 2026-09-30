@@ -210,22 +210,29 @@ private final class FluteSynth: @unchecked Sendable {
     }
 
     func fill(_ data: UnsafeMutablePointer<Float>, frames: Int, sampleRate: Double) {
-        lock.withLock { state in
+        // OSAllocatedUnfairLock.withLock is @Sendable. The render pointer is not.
+        // Render into Sendable storage, then copy into the buffer on this thread.
+        let rendered: ContiguousArray<Float> = lock.withLock { state in
+            var samples = ContiguousArray<Float>(repeating: 0, count: frames)
             let silent = !state.gate || state.amplitude <= 0 || state.hz <= 0
-            for index in 0..<frames {
-                if silent {
-                    data[index] = 0
-                } else {
+            if !silent {
+                for index in 0..<frames {
                     let step = BreathFluteMath.sineSample(
                         phase: state.phase,
                         frequencyHz: state.hz,
                         sampleRate: sampleRate,
                         amplitude: state.amplitude
                     )
-                    data[index] = Float(step.sample)
+                    samples[index] = Float(step.sample)
                     state.phase = step.nextPhase
                 }
             }
+            return samples
+        }
+        guard frames > 0 else { return }
+        rendered.withUnsafeBufferPointer { buffer in
+            guard let base = buffer.baseAddress else { return }
+            data.update(from: base, count: frames)
         }
     }
 }
