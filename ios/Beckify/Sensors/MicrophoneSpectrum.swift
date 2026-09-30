@@ -5,11 +5,11 @@ import os
 import SwiftUI
 import BeckifyMath
 
-/// One microphone tap for Noise Meter, Acoustic Imager, Stillness Anomaly Watch, and Setup Check.
+/// One microphone tap for Noise Meter, Acoustic Imager, Stillness Anomaly Watch, and Room & Rig Check.
 ///
 /// A second screen that wants the mic joins this tap instead of installing another
 /// `AVAudioEngine` tap. Breath Flute calls `suspendForTone()` so a play-along
-/// tone does not fight the metering engine. Setup Check plays pink noise, a log
+/// tone does not fight the metering engine. Room & Rig Check plays pink noise, a log
 /// sweep, or a tone burst on this same engine — it does not start a second FFT.
 @MainActor
 final class MicrophoneSpectrumCenter: ObservableObject {

@@ -438,7 +438,18 @@ public enum BreathFluteMath {
     public static let rootHz = 261.625565
 
     public static let honestLimit =
-        "Play tool. Blow gates a tone on this phone. Nothing is recorded or uploaded. Not a meter, tuner, or SLM."
+        "Play tool. Silence until a breath clears the gate; a harder blow is louder. Not a calibrated wind instrument, not a meter, tuner, or SLM. Nothing is recorded or uploaded."
+
+    /// Output gain at the gate threshold. Below the margin the tone is exactly zero.
+    public static let quietAmplitude = 0.14
+    /// Output gain once the blow is `loudSpanDB` above the gate margin.
+    public static let loudAmplitude = 0.62
+    public static let loudSpanDB = 24.0
+    /// Round finger holes. Index 0 is the hole nearest the embouchure.
+    public static let fingerHoleCount = 7
+    /// Equal-temperament frets from all-open (index 0, C5) to all-covered (index 7, C4).
+    public static let coveredFrets = [12, 11, 9, 7, 5, 4, 2, 0]
+    public static let coveredNoteNames = ["C5", "B", "A", "G", "F", "E", "D", "C4"]
 
     public static func gateOpen(
         rmsDBFS: Double,
@@ -495,11 +506,38 @@ public enum BreathFluteMath {
         return floor + (currentDBFS - floor) * alpha
     }
 
-    /// Louder blows are a little louder. Below the gate margin the amplitude is silence.
-    public static func amplitude(aboveFloorDB: Double, marginDB: Double = marginDB) -> Double {
-        guard aboveFloorDB.isFinite, marginDB.isFinite, aboveFloorDB >= marginDB else { return 0 }
-        let t = min(1, max(0, (aboveFloorDB - marginDB) / 24))
-        return 0.08 + 0.18 * t
+    /// Louder blows are louder. Below the gate margin the amplitude is exactly zero.
+    public static func amplitude(
+        aboveFloorDB: Double,
+        marginDB: Double = marginDB,
+        spanDB: Double = loudSpanDB
+    ) -> Double {
+        guard aboveFloorDB.isFinite, marginDB.isFinite, spanDB.isFinite, spanDB > 0 else { return 0 }
+        guard aboveFloorDB >= marginDB else { return 0 }
+        let t = min(1, max(0, (aboveFloorDB - marginDB) / spanDB))
+        return quietAmplitude + (loudAmplitude - quietAmplitude) * t
+    }
+
+    /// How many holes are covered in a row starting at the embouchure.
+    /// An open hole nearer the mouth ignores covers farther up the tube.
+    public static func coveredFromEmbouchure(holesCovered: [Bool]) -> Int {
+        var count = 0
+        for covered in holesCovered {
+            if !covered { break }
+            count += 1
+        }
+        return count
+    }
+
+    /// Pitch for a simple flute: all covered is low C4, all open is high C5.
+    public static func frequencyHz(coveredFromEmbouchure count: Int) -> Double {
+        let index = min(fingerHoleCount, max(0, count))
+        return fretFrequencyHz(fret: coveredFrets[index])
+    }
+
+    public static func noteName(coveredFromEmbouchure count: Int) -> String {
+        let index = min(fingerHoleCount, max(0, count))
+        return coveredNoteNames[index]
     }
 
     /// One sine sample. Phase is radians and wraps to `[0, 2π)`.

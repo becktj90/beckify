@@ -178,4 +178,50 @@ final class RoomRigMathTests: XCTestCase {
         XCTAssertTrue(RoomRigMath.honestLimit.localizedCaseInsensitiveContains("not a calibrated"))
         XCTAssertTrue(RoomRigMath.honestLimit.localizedCaseInsensitiveContains("dB SPL"))
     }
+
+    func testListenTestCentroidBalanceAndSnapshot() {
+        let flat = [
+            AcousticDisplayBand(lowHz: 80, highHz: 120, centerHz: 100, dbFS: 0),
+            AcousticDisplayBand(lowHz: 800, highHz: 1200, centerHz: 1_000, dbFS: 0),
+        ]
+        XCTAssertEqual(RoomRigTestMath.centroidHz(bands: flat) ?? 0, 550, accuracy: 1e-6)
+        XCTAssertNil(RoomRigTestMath.centroidHz(bands: []))
+
+        let grouped = [
+            AcousticDisplayBand(lowHz: 80, highHz: 120, centerHz: 100, dbFS: 0),
+            AcousticDisplayBand(lowHz: 800, highHz: 1200, centerHz: 1_000, dbFS: -10),
+            AcousticDisplayBand(lowHz: 3_000, highHz: 5_000, centerHz: 4_000, dbFS: -10),
+        ]
+        let balance = RoomRigTestMath.bandBalance(bands: grouped)
+        XCTAssertEqual(balance?.lowVsLoudestDB ?? 99, 0, accuracy: 1e-6)
+        XCTAssertEqual(balance?.midVsLoudestDB ?? 0, -10, accuracy: 1e-6)
+        XCTAssertEqual(balance?.highVsLoudestDB ?? 0, -10, accuracy: 1e-6)
+        XCTAssertNil(RoomRigTestMath.bandBalance(bands: flat))
+
+        // Lower median (even count → lower central sample), max peak, mean clip.
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([-20, -10]) ?? 0, -20, accuracy: 1e-9)
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([8, 4]) ?? 0, 4, accuracy: 1e-9)
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([1_000, 1_200]) ?? 0, 1_000, accuracy: 1e-9)
+        XCTAssertEqual(RoomRigTestMath.lowerMedian([-15, -20, -10]) ?? 0, -15, accuracy: 1e-9)
+        XCTAssertNil(RoomRigTestMath.lowerMedian([.nan]))
+
+        var capture = RoomRigTestCapture()
+        XCTAssertNil(capture.snapshot(stimulus: "Pink", durationSeconds: 1, floorDBFS: nil))
+        capture.append(levelDBFS: -20, peakDBFS: -12, crestDB: 8, clipFraction: 0, peakHz: 1_000, bands: grouped)
+        capture.append(levelDBFS: -10, peakDBFS: -6, crestDB: 4, clipFraction: 0.02, peakHz: 1_200, bands: grouped)
+        capture.append(levelDBFS: .nan, peakDBFS: -4, crestDB: nil, clipFraction: .nan, peakHz: nil, bands: [])
+        let snap = capture.snapshot(stimulus: "Pink", durationSeconds: 8, floorDBFS: -40)
+        XCTAssertEqual(snap?.levelDBFS ?? 0, -20, accuracy: 1e-9)
+        XCTAssertEqual(snap?.peakDBFS ?? 0, -4, accuracy: 1e-9)
+        XCTAssertEqual(snap?.crestDB ?? 0, 4, accuracy: 1e-9)
+        XCTAssertEqual(snap?.clipFraction ?? 0, 0.01, accuracy: 1e-9)
+        XCTAssertEqual(snap?.aboveFloorDB ?? 0, 20, accuracy: 1e-9)
+        XCTAssertEqual(snap?.peakHz ?? 0, 1_000, accuracy: 1e-6)
+        XCTAssertNotNil(snap?.centroidHz)
+        XCTAssertEqual(snap?.balance?.lowVsLoudestDB ?? 99, 0, accuracy: 0.2)
+        XCTAssertTrue(RoomRigTestCopy.level.localizedCaseInsensitiveContains("not db spl"))
+        XCTAssertTrue(RoomRigTestCopy.balance.localizedCaseInsensitiveContains("not a lab rta"))
+        XCTAssertTrue(RoomRigTestCopy.versusA.localizedCaseInsensitiveContains("not a calibrated"))
+        XCTAssertEqual(RoomRigTestMath.windowSeconds, 8, accuracy: 1e-9)
+    }
 }

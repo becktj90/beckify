@@ -15,7 +15,7 @@ struct AcousticImagerView: View {
             toolID: .acousticImager,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Field visualization only. Not a Fluke acoustic camera, not ultrasonic beamforming, not a gas-leak locator, and not a calibrated SPL meter. A single microphone cannot place a leak. Saving stores numbers — not a recording. Noise Meter and Setup Check share this microphone tap.")
+            disclaimer: .sensor(extra: "Field visualization only. Not a Fluke acoustic camera, not ultrasonic beamforming, not a gas-leak locator, and not a calibrated SPL meter. A single microphone cannot place a leak. Saving stores numbers — not a recording. Noise Meter and Room & Rig Check share this microphone tap.")
         ) {
             ShowWorkCard(
                 toolID: .acousticImager,

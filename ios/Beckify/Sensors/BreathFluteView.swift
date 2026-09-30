@@ -5,12 +5,6 @@ import os
 import SwiftUI
 import BeckifyMath
 
-private struct FluteFret: Identifiable {
-    var id: Int { fret }
-    var label: String
-    var fret: Int
-}
-
 @MainActor
 final class BreathFluteModel: ObservableObject {
     @Published var rmsDBFS = SoundLevel.silenceFloorDBFS
@@ -23,6 +17,7 @@ final class BreathFluteModel: ObservableObject {
     @Published var status = "Microphone idle"
     @Published var hasReading = false
     @Published var blowBands: [AcousticDisplayBand] = []
+    @Published var micRoute = "Mic route pending"
 
     private let engine = AVAudioEngine()
     private let frameBuffer = AudioFrameBuffer()
@@ -33,6 +28,7 @@ final class BreathFluteModel: ObservableObject {
     private var wantsRunning = false
     private var didSuspendSpectrum = false
     private var sampleRate = 44_100.0
+    private var triedVoiceFallback = false
 
     func start() {
         wantsRunning = true
@@ -75,6 +71,8 @@ final class BreathFluteModel: ObservableObject {
             self.fftSetup = nil
         }
         blowBands = []
+        micRoute = "Mic route pending"
+        triedVoiceFallback = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         if didSuspendSpectrum {
             didSuspendSpectrum = false
@@ -94,72 +92,157 @@ final class BreathFluteModel: ObservableObject {
             pushSynth()
             return
         }
+        let plan: SessionPlan = triedVoiceFallback ? .measurement : .voiceChat
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
-            try session.setActive(true)
-            let input = engine.inputNode
-            let format = input.outputFormat(forBus: 0)
-            guard format.sampleRate > 0, format.channelCount > 0 else {
-                status = "No microphone format"
-                running = false
-                return
-            }
-            sampleRate = format.sampleRate
-            if installed {
-                input.removeTap(onBus: 0)
-                installed = false
-            }
-            if fftSetup == nil {
-                fftSetup = AudioBlockFFT.makeSetup()
-            }
-            let setup = fftSetup
-            let scratch = frameBuffer
-            let rate = format.sampleRate
-            input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-                guard let channel = buffer.floatChannelData?[0] else { return }
-                let frames = Int(buffer.frameLength)
-                guard frames > 0 else { return }
-                let samples = Array(UnsafeBufferPointer(start: channel, count: frames))
-                let levels = BreathFluteMath.levelDBFS(samples: samples)
-                scratch.append(buffer)
-                var bands: [AcousticDisplayBand]?
-                if let setup, let frame = scratch.pop(count: AudioBlockFFT.length),
-                   let magnitudes = AudioBlockFFT.magnitudes(samples: frame, setup: setup) {
-                    bands = AcousticSpectrum.fold(
-                        linearMagnitudes: magnitudes,
-                        sampleRate: rate,
-                        fftLength: AudioBlockFFT.length,
-                        bandCount: 12
-                    )
-                }
-                Task { @MainActor in
-                    self?.apply(levels)
-                    if let bands { self?.blowBands = bands }
-                }
-            }
-            installed = true
-            if source == nil {
-                let node = AVAudioSourceNode { [synth] _, _, frameCount, audioBufferList -> OSStatus in
-                    let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
-                    for buffer in buffers {
-                        guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
-                        synth.fill(data, frames: Int(frameCount), sampleRate: format.sampleRate)
-                    }
-                    return noErr
-                }
-                source = node
-                engine.attach(node)
-                engine.connect(node, to: engine.mainMixerNode, format: format)
-            }
-            try engine.start()
-            running = true
-            status = "Play tool · local tone · not recording"
-            pushSynth()
+            try boot(plan)
         } catch {
-            status = "Could not start audio: \(error.localizedDescription)"
-            running = false
+            tearDownPartial()
+            if plan.voiceProcessing, !triedVoiceFallback, !(error is FluteAudioError) {
+                triedVoiceFallback = true
+                do {
+                    try boot(.measurement)
+                } catch {
+                    reportStartFailure(error)
+                }
+            } else {
+                reportStartFailure(error)
+            }
         }
+    }
+
+    private func reportStartFailure(_ error: Error) {
+        running = false
+        if error is FluteAudioError {
+            status = "No microphone format"
+        } else {
+            status = "Could not start audio: \(error.localizedDescription)"
+        }
+    }
+
+    /// Voice chat lets iOS echo-cancel the speaker so the gate follows breath.
+    /// Measurement is the fallback when that route will not start. Neither mode is a calibration.
+    private struct SessionPlan {
+        var mode: AVAudioSession.Mode
+        var voiceProcessing: Bool
+        var echoLabel: String
+
+        static let voiceChat = SessionPlan(mode: .voiceChat, voiceProcessing: true, echoLabel: "echo cancel on")
+        static let measurement = SessionPlan(mode: .measurement, voiceProcessing: false, echoLabel: "echo cancel off")
+    }
+
+    private func boot(_ plan: SessionPlan) throws {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playAndRecord, mode: plan.mode, options: [.defaultToSpeaker, .mixWithOthers])
+        try session.setActive(true)
+        try? session.overrideOutputAudioPort(.speaker)
+        let route = preferBottomBuiltInMic(session)
+        let input = engine.inputNode
+        var echoLabel = plan.echoLabel
+        if plan.voiceProcessing {
+            do {
+                try input.setVoiceProcessingEnabled(true)
+            } catch {
+                echoLabel = "echo cancel unavailable"
+            }
+        }
+        let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            micRoute = route
+            status = "No microphone format"
+            running = false
+            throw FluteAudioError.noFormat
+        }
+        sampleRate = format.sampleRate
+        if installed {
+            input.removeTap(onBus: 0)
+            installed = false
+        }
+        if fftSetup == nil {
+            fftSetup = AudioBlockFFT.makeSetup()
+        }
+        let setup = fftSetup
+        let scratch = frameBuffer
+        let rate = format.sampleRate
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            guard let channel = buffer.floatChannelData?[0] else { return }
+            let frames = Int(buffer.frameLength)
+            guard frames > 0 else { return }
+            let samples = Array(UnsafeBufferPointer(start: channel, count: frames))
+            let levels = BreathFluteMath.levelDBFS(samples: samples)
+            scratch.append(buffer)
+            var bands: [AcousticDisplayBand]?
+            if let setup, let frame = scratch.pop(count: AudioBlockFFT.length),
+               let magnitudes = AudioBlockFFT.magnitudes(samples: frame, setup: setup) {
+                bands = AcousticSpectrum.fold(
+                    linearMagnitudes: magnitudes,
+                    sampleRate: rate,
+                    fftLength: AudioBlockFFT.length,
+                    bandCount: 12
+                )
+            }
+            Task { @MainActor in
+                self?.apply(levels)
+                if let bands { self?.blowBands = bands }
+            }
+        }
+        installed = true
+        if source == nil {
+            let node = AVAudioSourceNode { [synth] _, _, frameCount, audioBufferList -> OSStatus in
+                let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
+                for buffer in buffers {
+                    guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
+                    synth.fill(data, frames: Int(frameCount), sampleRate: format.sampleRate)
+                }
+                return noErr
+            }
+            source = node
+            engine.attach(node)
+            engine.connect(node, to: engine.mainMixerNode, format: format)
+        }
+        try engine.start()
+        running = true
+        micRoute = route
+        status = "Play tool · \(route) · \(echoLabel) · not recording"
+        pushSynth()
+    }
+
+    /// Prefer the built-in mic at the bottom of the phone when iOS lists that data source.
+    /// The string stays honest when the source is missing or the call fails.
+    private func preferBottomBuiltInMic(_ session: AVAudioSession) -> String {
+        guard let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) else {
+            return "System input · no built-in mic listed"
+        }
+        do {
+            try session.setPreferredInput(builtIn)
+        } catch {
+            return "System input · built-in mic not selected"
+        }
+        guard let bottom = builtIn.dataSources?.first(where: { $0.orientation == .bottom }) else {
+            return "Built-in mic · no bottom source on this device"
+        }
+        do {
+            try builtIn.setPreferredDataSource(bottom)
+            if bottom.supportedPolarPatterns.contains(.omnidirectional) {
+                try bottom.setPreferredPolarPattern(.omnidirectional)
+            }
+            return "Built-in bottom mic"
+        } catch {
+            return "Built-in mic · bottom source listed, not selected"
+        }
+    }
+
+    private func tearDownPartial() {
+        if installed {
+            engine.inputNode.removeTap(onBus: 0)
+            installed = false
+        }
+        if engine.isRunning { engine.stop() }
+        if let source {
+            engine.detach(source)
+            self.source = nil
+        }
+        running = false
+        try? engine.inputNode.setVoiceProcessingEnabled(false)
     }
 
     private func apply(_ levels: (rms: Double, peak: Double)) {
@@ -189,6 +272,10 @@ final class BreathFluteModel: ObservableObject {
             amplitude: gateOpen ? BreathFluteMath.amplitude(aboveFloorDB: above) : 0
         )
     }
+}
+
+private enum FluteAudioError: Error {
+    case noFormat
 }
 
 private final class FluteSynth: @unchecked Sendable {
@@ -243,17 +330,9 @@ struct BreathFluteView: View {
     @StateObject private var model = BreathFluteModel()
     @StoredInput(.breathFlute, "jobName", default: "Breath flute") private var jobName
     @State private var notes = ""
-
-    private let frets = [
-        FluteFret(label: "C4", fret: 0),
-        FluteFret(label: "D", fret: 2),
-        FluteFret(label: "E", fret: 4),
-        FluteFret(label: "F", fret: 5),
-        FluteFret(label: "G", fret: 7),
-        FluteFret(label: "A", fret: 9),
-        FluteFret(label: "B", fret: 11),
-        FluteFret(label: "C5", fret: 12),
-    ]
+    /// Sticky covers. Index 0 is the hole nearest the embouchure (bottom of the screen).
+    @State private var latched = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
+    @State private var touching = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
 
     var body: some View {
         ToolScaffold(
@@ -266,14 +345,9 @@ struct BreathFluteView: View {
                 toolID: .breathFlute,
                 symbolic: "gate when RMS or peak > noise floor + margin    f = f₀ · 2^(n/12)",
                 substituted: sticky,
-                meaning: "Blow to open a tone generated on this phone. Touch height or a fret sets pitch. This is a play tool, not a meter. Nothing is recorded or uploaded."
+                meaning: "Blow into the bottom edge of the phone. Cover the round holes with your fingers. Silence until you blow. A harder blow is louder. Play tool, not a calibrated wind instrument. Nothing is recorded or uploaded."
             )
-            Text("Play tool")
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.accent)
-            Text(BreathFluteMath.honestLimit)
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
+            playSteps
             if model.permissionDenied {
                 ToolEmptyState(
                     title: "Microphone is off",
@@ -282,28 +356,26 @@ struct BreathFluteView: View {
                     showsSettings: true
                 )
             }
-            ResultCard(title: "Tone", copyText: copyText) {
-                ResultRow(label: "Gate", value: model.gateOpen ? "Open" : "Silent", emphasis: true, tone: model.gateOpen ? Theme.good : Theme.foreground)
-                ResultRow(label: "Pitch", value: "\(Format.number(model.frequencyHz, digits: 1)) Hz", emphasis: true, tone: Theme.copper)
-                ResultRow(label: "Above floor", value: aboveLabel)
-                ResultRow(label: "Engine", value: model.status)
-                pitchPad
-                    .padding(.top, 8)
-                Text("Tiny blow spectrum, relative dBFS. Play tool, not a meter.")
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .padding(.top, 8)
-                SpectrumPlot(
-                    bands: model.blowBands,
-                    plotHeight: 56,
-                    accessibilityLabel: "Tiny relative blow spectrum",
-                    footnote: "Same microphone, not recorded. Not an SLM."
-                )
-            }
-            fretRow
+            Text(model.gateOpen ? breathWord : "Silent")
+                .font(Theme.TypeRole.numericHero)
+                .foregroundStyle(model.gateOpen ? Theme.good : Theme.muted)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityLabel(model.gateOpen ? breathWord : "Silent until you blow")
+            fingerFlute
+            Text("Quiet until you blow. Blow harder, it gets louder.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text(BreathFluteMath.honestLimit)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
-        .onAppear { model.start() }
+        .onAppear {
+            applyFingering()
+            model.start()
+        }
         .onDisappear { model.stop() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -314,42 +386,101 @@ struct BreathFluteView: View {
         }
     }
 
-    private var pitchPad: some View {
-            GeometryReader { geo in
-            ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Theme.surfaceRaised)
-                Text("Drag up for a higher pitch")
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .padding(8)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        let height = max(geo.size.height, 1)
-                        let touch = 1 - min(1, max(0, value.location.y / height))
-                        model.setFrequency(BreathFluteMath.frequencyHz(touchY: touch))
-                    }
-            )
-        }
-        .frame(height: 180)
-        .accessibilityLabel("Pitch pad. Drag up for a higher tone.")
+    private var coveredHoles: [Bool] {
+        zip(latched, touching).map { $0 || $1 }
     }
 
-    private var fretRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(frets) { fret in
-                    Button(fret.label) {
-                        model.setFrequency(BreathFluteMath.fretFrequencyHz(fret: fret.fret))
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.accent)
+    private var coveredCount: Int {
+        BreathFluteMath.coveredFromEmbouchure(holesCovered: coveredHoles)
+    }
+
+    private var noteName: String {
+        BreathFluteMath.noteName(coveredFromEmbouchure: coveredCount)
+    }
+
+    private var breathWord: String {
+        let above = max(model.rmsDBFS, model.peakDBFS) - model.noiseFloor
+        let amplitude = BreathFluteMath.amplitude(aboveFloorDB: above)
+        if amplitude >= BreathFluteMath.loudAmplitude * 0.75 { return "Loud" }
+        return "Playing"
+    }
+
+    private var playSteps: some View {
+        HStack(alignment: .top, spacing: 8) {
+            playStep("1", "Blow the bottom")
+            playStep("2", "Cover the holes")
+            playStep("3", "Sound when you blow")
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Blow the bottom of the phone. Cover the holes with your fingers. Sound only when you blow.")
+    }
+
+    private func playStep(_ index: String, _ words: String) -> some View {
+        VStack(spacing: 4) {
+            Text(index)
+                .font(Theme.TypeRole.numericEmphasis)
+                .foregroundStyle(Theme.accent)
+                .frame(width: 36, height: 36)
+                .background(Theme.accent.opacity(0.15), in: Circle())
+            Text(words)
+                .font(Theme.TypeRole.fieldLabel)
+                .foregroundStyle(Theme.foreground)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var fingerFlute: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(noteName)
+                    .font(Theme.TypeRole.numericHero)
+                    .foregroundStyle(Theme.copper)
+                Spacer()
+                Button("Clear fingers") {
+                    latched = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
+                    touching = latched
+                    applyFingering(held: latched, down: touching)
                 }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+            }
+            FingerFlute(
+                covered: coveredHoles,
+                onTouching: { next in
+                    touching = next
+                    applyFingering(down: next)
+                },
+                onTap: { index in
+                    guard latched.indices.contains(index) else { return }
+                    latched[index].toggle()
+                    applyFingering(held: latched)
+                }
+            )
+            .frame(height: 560)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Finger flute. Blow here, at the bottom edge of the phone.")
+            .accessibilityValue("\(noteName), \(model.gateOpen ? breathWord : "silent"). \(coveredCount) holes covered from the mouthpiece.")
+            .accessibilityAdjustableAction { direction in
+                let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: latched)
+                switch direction {
+                case .increment:
+                    if count > 0 { latched[count - 1] = false }
+                case .decrement:
+                    if count < BreathFluteMath.fingerHoleCount { latched[count] = true }
+                @unknown default:
+                    break
+                }
+                applyFingering(held: latched)
             }
         }
+    }
+
+    private func applyFingering(held: [Bool]? = nil, down: [Bool]? = nil) {
+        let holes = zip(held ?? latched, down ?? touching).map { $0 || $1 }
+        let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: holes)
+        model.setFrequency(BreathFluteMath.frequencyHz(coveredFromEmbouchure: count))
     }
 
     private var aboveLabel: String {
@@ -377,5 +508,239 @@ struct BreathFluteView: View {
                 "audio": "not recorded",
             ]
         ))
+    }
+}
+
+/// Vertical flute. The embouchure sits at the bottom so it points at the phone mic.
+private struct FingerFlute: View {
+    var covered: [Bool]
+    var onTouching: ([Bool]) -> Void
+    var onTap: (Int) -> Void
+
+    var body: some View {
+        GeometryReader { geo in
+            let layout = FingerFluteLayout(size: geo.size, holeCount: covered.count)
+            ZStack {
+                fluteBody(layout)
+                ForEach(covered.indices, id: \.self) { index in
+                    hole(index, layout: layout)
+                }
+                embouchure(layout)
+                FluteTouchOverlay(
+                    centers: (0..<covered.count).map { layout.holeCenter($0) },
+                    hitRadius: layout.hitRadius,
+                    onTouching: onTouching,
+                    onTap: onTap
+                )
+            }
+        }
+    }
+
+    private func fluteBody(_ layout: FingerFluteLayout) -> some View {
+        let tube = layout.tubeRect
+        return ZStack {
+            RoundedRectangle(cornerRadius: tube.width / 2, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(white: 0.62),
+                            Color(white: 0.94),
+                            Color(white: 0.70),
+                            Color(white: 0.84),
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: tube.width / 2, style: .continuous)
+                        .stroke(Color.black.opacity(0.28), lineWidth: 1)
+                )
+                .frame(width: tube.width, height: tube.height)
+                .position(x: tube.midX, y: tube.midY)
+            Capsule()
+                .fill(Color(white: 0.78))
+                .overlay(Capsule().stroke(Color.black.opacity(0.25), lineWidth: 1))
+                .frame(width: tube.width * 1.16, height: 34)
+                .position(x: tube.midX, y: tube.maxY - 22)
+        }
+    }
+
+    private func hole(_ index: Int, layout: FingerFluteLayout) -> some View {
+        let center = layout.holeCenter(index)
+        let closed = covered.indices.contains(index) && covered[index]
+        return ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.88))
+                .overlay(Circle().stroke(Color.white.opacity(0.9), lineWidth: 3))
+                .frame(width: layout.holeRadius * 2, height: layout.holeRadius * 2)
+            if closed {
+                Circle()
+                    .fill(Color(red: 0.76, green: 0.58, blue: 0.44))
+                    .overlay(Circle().stroke(Color.white.opacity(0.45), lineWidth: 1))
+                    .frame(width: layout.holeRadius * 1.9, height: layout.holeRadius * 1.9)
+            }
+        }
+        .position(center)
+        .allowsHitTesting(false)
+    }
+
+    private func embouchure(_ layout: FingerFluteLayout) -> some View {
+        VStack(spacing: 4) {
+            Ellipse()
+                .fill(Color.black.opacity(0.92))
+                .overlay(Ellipse().stroke(Color.white.opacity(0.9), lineWidth: 2))
+                .frame(width: 36, height: 20)
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(Theme.accent)
+            Text("Blow here")
+                .font(Theme.TypeRole.lead)
+                .foregroundStyle(Theme.foreground)
+            Text("Bottom edge of the phone")
+                .font(Theme.TypeRole.fieldLabel)
+                .foregroundStyle(Theme.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.accent, lineWidth: 2)
+        )
+        .position(layout.embouchureCenter)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct FingerFluteLayout {
+    var size: CGSize
+    var holeCount: Int
+
+    var tubeRect: CGRect {
+        let width: CGFloat = 112
+        let height = max(160, size.height - 8)
+        return CGRect(x: (size.width - width) / 2, y: 4, width: width, height: height)
+    }
+
+    /// Big enough for a fingertip. The hit target is larger than the drawn hole.
+    var holeRadius: CGFloat { 22 }
+    var hitRadius: CGFloat { 32 }
+
+    func holeCenter(_ index: Int) -> CGPoint {
+        let top = tubeRect.minY + 28
+        let bottom = tubeRect.maxY - 168
+        let span = max(bottom - top, 1)
+        let t = holeCount <= 1 ? 0 : CGFloat(index) / CGFloat(max(holeCount - 1, 1))
+        return CGPoint(x: tubeRect.midX, y: bottom - t * span)
+    }
+
+    var embouchureCenter: CGPoint {
+        CGPoint(x: tubeRect.midX, y: tubeRect.maxY - 74)
+    }
+}
+
+private struct FluteTouchOverlay: UIViewRepresentable {
+    var centers: [CGPoint]
+    var hitRadius: CGFloat
+    var onTouching: ([Bool]) -> Void
+    var onTap: (Int) -> Void
+
+    func makeUIView(context: Context) -> FluteTouchView {
+        let view = FluteTouchView()
+        view.onTouching = onTouching
+        view.onTap = onTap
+        return view
+    }
+
+    func updateUIView(_ uiView: FluteTouchView, context: Context) {
+        uiView.centers = centers
+        uiView.hitRadius = hitRadius
+        uiView.onTouching = onTouching
+        uiView.onTap = onTap
+    }
+}
+
+private final class FluteTouchView: UIView {
+    var centers: [CGPoint] = []
+    var hitRadius: CGFloat = 28
+    var onTouching: (([Bool]) -> Void)?
+    var onTap: ((Int) -> Void)?
+    private var tracks: [ObjectIdentifier: Track] = [:]
+
+    private struct Track {
+        var start: CGPoint
+        var time: TimeInterval
+        var hole: Int?
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isMultipleTouchEnabled = true
+        backgroundColor = .clear
+        isAccessibilityElement = false
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches {
+            let point = touch.location(in: self)
+            tracks[ObjectIdentifier(touch)] = Track(start: point, time: touch.timestamp, hole: holeIndex(at: point))
+        }
+        publish(event)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        publish(event)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches {
+            let key = ObjectIdentifier(touch)
+            let point = touch.location(in: self)
+            if let track = tracks[key], let hole = track.hole ?? holeIndex(at: point) {
+                let travel = hypot(point.x - track.start.x, point.y - track.start.y)
+                if travel < 18, touch.timestamp - track.time < 0.28 {
+                    onTap?(hole)
+                }
+            }
+            tracks[key] = nil
+        }
+        publish(event)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches {
+            tracks[ObjectIdentifier(touch)] = nil
+        }
+        publish(event)
+    }
+
+    private func publish(_ event: UIEvent?) {
+        var covered = Array(repeating: false, count: centers.count)
+        let active = event?.allTouches?.filter { touch in
+            touch.phase != .ended && touch.phase != .cancelled
+        } ?? []
+        for touch in active {
+            if let index = holeIndex(at: touch.location(in: self)) {
+                covered[index] = true
+            }
+        }
+        onTouching?(covered)
+    }
+
+    private func holeIndex(at point: CGPoint) -> Int? {
+        var best: (index: Int, distance: CGFloat)?
+        for (index, center) in centers.enumerated() {
+            let distance = hypot(point.x - center.x, point.y - center.y)
+            guard distance <= hitRadius else { continue }
+            if best == nil || distance < best!.distance {
+                best = (index, distance)
+            }
+        }
+        return best?.index
     }
 }

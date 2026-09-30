@@ -24,6 +24,8 @@ public enum AcousticSpectrum {
     /// Display ceiling. Energy above this is not claimed, even if the FFT has bins there.
     public static let audibleCeilingHz: Double = 8_000
     public static let displayFloorDBFS: Double = -80
+    /// Top of the spectrum heat scale. A display stop, not 0 dB SPL.
+    public static let displayCeilingDBFS: Double = -3
 
     public static func bandEdges(
         count: Int,
@@ -99,7 +101,7 @@ public enum AcousticSpectrum {
     public static func heat(
         dbFS: Double,
         floor: Double = displayFloorDBFS,
-        ceiling: Double = -3
+        ceiling: Double = displayCeilingDBFS
     ) -> Double {
         guard dbFS.isFinite, ceiling > floor else { return 0 }
         return max(0, min(1, (dbFS - floor) / (ceiling - floor)))

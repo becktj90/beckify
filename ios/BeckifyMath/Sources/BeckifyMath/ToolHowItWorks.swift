@@ -228,7 +228,7 @@ public enum ToolHowItWorksCatalog {
             context: "Homework / field note: louder vs quieter, and which band is up, on this phone.",
             bullets: [
                 "Not an SLM, not OSHA-legal, not A-weighted dB(A). Bars are relative dBFS, not sound pressure.",
-                "Same on-device FFT tap as Acoustic Imager and Setup Check. Meter plus spectrum, not a sound camera.",
+                "Same on-device FFT tap as Acoustic Imager and Room & Rig Check. Meter plus spectrum, not a sound camera.",
                 "Rough harmonic % is leftover mic-FFT energy, not THD and not SPL. Freeze holds the plot. Share saves a PNG, not audio.",
                 "Save stores the numeric dBFS snapshot only — never a recording.",
             ]
@@ -240,17 +240,17 @@ public enum ToolHowItWorksCatalog {
                 "AVAudioEngine tap plus Accelerate FFT. Not ultrasonic beamforming or a Fluke-style imager.",
                 "Not a calibrated SPL meter, and not a gas-leak certification tool.",
                 "One microphone shows level, spectrum, and recent time activity. It cannot place a leak.",
-                "Audio stays on device. Save stores numbers, never a recording. Setup Check shares this tap.",
+                "Audio stays on device. Save stores numbers, never a recording. Room & Rig Check shares this tap.",
             ]
         ),
         "setupCheck": ToolHowItWorks(
-            summary: "Relative room and rig check: live FFT, rough RTA, level, and optional speaker signals.",
-            context: "A/B a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
+            summary: "Room & Rig Check: leave it open while you listen, then run a short relative FFT test.",
+            context: "Compare a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
             bullets: [
                 "Phone speaker plus mic is not a calibrated measurement microphone. Relative shape and trends only. No invented dB SPL.",
-                "Same on-device FFT tap as Noise Meter. Pink noise, a log sweep, or tone bursts play locally and are not recorded.",
-                "Harmonic percent and the sweep curve are relative energy, not lab THD and not a certification plot.",
-                "Most iPhones show one mic path here, so stereo balance stays blank. Share saves a PNG, not audio.",
+                "Plots stay live while music or a test signal plays. Start test captures about 8 seconds and explains each number.",
+                "The live FFT and approximate RTA label frequency, relative dBFS, and time. Pink noise, a sweep, or bursts are not recorded.",
+                "Harmonic percent, band balance, and the sweep are relative energy, not lab THD. One mic path, so stereo stays blank. Share saves a PNG, not audio.",
             ]
         ),
         "bubbleLevel": ToolHowItWorks(
@@ -297,10 +297,11 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "breathFlute": ToolHowItWorks(
-            summary: "A play tool: blowing into the mic gates a local tone. Finger height or a fret sets the pitch.",
-            context: "A toy on the Instruments shelf. Not a meter, tuner, or recorder.",
+            summary: "A play tool: blow the bottom edge of the phone. Finger holes set the pitch. Silent until you blow.",
+            context: "Easy to try in a few seconds. Not a meter, tuner, or recorder.",
             bullets: [
-                "RMS or peak above this phone’s noise floor opens the gate. Quiet air stays silent.",
+                "Blow into the bottom edge, where the mic is. Cover the round holes with your fingers. No breath, no sound. A harder blow is louder.",
+                "The bottom built-in mic is preferred when iOS lists one. This is not a calibrated wind instrument.",
                 "The tone is generated on device. Audio is not recorded and is not uploaded.",
                 "Same microphone permission as Noise Meter. Not an SLM and not a pitch reference.",
             ]
