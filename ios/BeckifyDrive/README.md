@@ -2,7 +2,7 @@
 
 Native iPhone and iPad dashboard for a Bluetooth LE OBD-II adapter, plus a CarPlay scene. Bundle ID `com.beckify.drive`, display name **Beckify Drive**, iOS 17+.
 
-This is a sibling of the Beckify Toolbox, not a tool inside it. Apple’s driving-task rule says the CarPlay app has to be built for that job. Toolbox stays a field EE app (`com.beckify.toolbox`, build **159**). Archive scheme **BeckifyDrive** only when you mean this product. Do not point the Toolbox Xcode Cloud workflows at this scheme.
+This is a sibling of the Beckify Toolbox, not a tool inside it. Apple’s driving-task rule says the CarPlay app has to be built for that job. Toolbox stays a field EE app (`com.beckify.toolbox`, build **160**). Archive scheme **BeckifyDrive** only when you mean this product. Do not point the Toolbox Xcode Cloud workflows at this scheme.
 
 The phone screen is the dense gauge. CarPlay uses `CPTemplate` / `CPInformationTemplate` and a dashboard shortcut scene. There is no `WKWebView`.
 

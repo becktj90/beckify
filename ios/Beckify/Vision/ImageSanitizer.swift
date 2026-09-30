@@ -63,7 +63,7 @@ enum ImageSanitizer {
         } catch {
             return nil
         }
-        let rects = (request.results as? [VNRectangleObservation]) ?? []
+        let rects = request.results ?? []
         return rects
             .filter { observation in
                 let area = observation.boundingBox.width * observation.boundingBox.height

@@ -110,7 +110,7 @@ enum ResilientOCREngine {
         request.recognitionLanguages = ["en-US"]
         let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
         try handler.perform([request])
-        let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
+        let observations = request.results ?? []
         return observations.compactMap { observation in
             let candidates = observation.topCandidates(3)
             guard let chosen = preferCodes ? pickCode(candidates) : candidates.first else { return nil }

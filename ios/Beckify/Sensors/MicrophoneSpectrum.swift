@@ -423,7 +423,10 @@ private final class RoomStimulusPlayer: @unchecked Sendable {
     }
 
     func fill(_ data: UnsafeMutablePointer<Float>, frames: Int, sampleRate: Double) {
-        lock.withLock { state in
+        // OSAllocatedUnfairLock.withLock is @Sendable. The render pointer is not.
+        // Render into Sendable storage, then copy into the buffer on this thread.
+        let rendered: ContiguousArray<Float> = lock.withLock { state in
+            var samples = ContiguousArray<Float>(repeating: 0, count: frames)
             let rate = sampleRate.isFinite && sampleRate > 0 ? sampleRate : 48_000
             let gap = Int(rate * 0.65)
             let period = RoomRigMath.burstLength + max(gap, 1)
@@ -472,8 +475,14 @@ private final class RoomStimulusPlayer: @unchecked Sendable {
                     }
                     state.burstCursor += 1
                 }
-                data[index] = Float(sample)
+                samples[index] = Float(sample)
             }
+            return samples
+        }
+        guard frames > 0 else { return }
+        rendered.withUnsafeBufferPointer { buffer in
+            guard let base = buffer.baseAddress else { return }
+            data.update(from: base, count: frames)
         }
     }
 }
@@ -495,7 +504,7 @@ enum AudioBlockFFT {
         let n = samples.count
         guard n == length else { return nil }
         let half = n / 2
-        var window = CoupledVibrationMath.window(count: n, kind: kind).map { Float($0) }
+        let window = CoupledVibrationMath.window(count: n, kind: kind).map { Float($0) }
         var windowed = [Float](repeating: 0, count: n)
         vDSP_vmul(samples, 1, window, 1, &windowed, 1, vDSP_Length(n))
 
