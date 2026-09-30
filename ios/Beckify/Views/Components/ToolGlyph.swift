@@ -342,6 +342,7 @@ extension GlyphKind {
         case .powerWizard: return .powerWizard
         case .voltageDrop: return .voltageDrop
         case .conduitFill: return .conduitFill
+        case .equipmentGround: return .equipmentGround
         case .conductorCost: return .conductorCost
         case .conductorLength: return .conductorLength
         case .transformer: return .transformer
@@ -427,6 +428,7 @@ enum GlyphKind {
     case powerWizard
     case voltageDrop
     case conduitFill
+    case equipmentGround
     case conductorCost
     case conductorLength
     case transformer
@@ -511,6 +513,7 @@ enum GlyphKind {
         case .receptacleSelector: return Self.receptacleSelector(rect)
         case .wifiStatus: return Self.wifiStatus(rect)
         case .conduitFill: return Self.conduitFill(rect)
+        case .equipmentGround: return Self.equipmentGround(rect)
         case .conductorCost: return Self.conductorCost(rect)
         case .conductorLength: return Self.conductorLength(rect)
         case .shortCircuit: return Self.shortCircuit(rect)
@@ -701,6 +704,29 @@ enum GlyphKind {
             outer * 0.24
         )
         return .fill(Glyph.punched(body, hole, conductor))
+    }
+
+    /// Filled conductor plus an open equipment-ground mark (three bars).
+    private static func equipmentGround(_ r: CGRect) -> GlyphArtwork {
+        let sleeve = CGRect(
+            x: r.minX + r.width * 0.10,
+            y: r.minY + r.height * 0.22,
+            width: r.width * 0.28,
+            height: r.height * 0.56
+        )
+        let fill = Glyph.roundedRect(sleeve, corner: sleeve.width * 0.28)
+        var stroke = Path()
+        let x = r.minX + r.width * 0.62
+        let stemTop = r.minY + r.height * 0.18
+        let stemBottom = r.minY + r.height * 0.48
+        Glyph.line(&stroke, CGPoint(x: x, y: stemTop), CGPoint(x: x, y: stemBottom))
+        let widths: [CGFloat] = [0.46, 0.32, 0.18]
+        for (index, fraction) in widths.enumerated() {
+            let y = stemBottom + CGFloat(index) * r.height * 0.12
+            let half = r.width * fraction * 0.5
+            Glyph.line(&stroke, CGPoint(x: x - half, y: y), CGPoint(x: x + half, y: y))
+        }
+        return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
     // MARK: - Field · Jobsite

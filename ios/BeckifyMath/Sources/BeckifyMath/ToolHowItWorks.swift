@@ -87,8 +87,18 @@ public enum ToolHowItWorksCatalog {
             context: "Raceway pick on the truck — EMT, IMC, RMC, PVC, ENT, FMC, LFMC.",
             bullets: [
                 "Fill % is area of conductors ÷ raceway area. 40% is the usual >2-wire limit.",
-                "3Ø or multiwire can show one Table 250.122 EGC (NEC 2023). Fill counts it only if Count EGC is on. Confirm Code / AHJ.",
+                "1Ø, multiwire, or 3Ø shows the Table 250.122 size beside the fill. Count EGC adds that one conductor. Same math as Equipment Grounding.",
                 "Transcription of published tables — not a substitute for the NEC book.",
+            ]
+        ),
+        "equipmentGround": ToolHowItWorks(
+            summary: "Minimum equipment grounding conductor from the OCPD rating, copper or aluminum.",
+            context: "When you need the ground size itself — not buried inside conduit fill.",
+            bullets: [
+                "NEC 2023 Table 250.122, keyed by the device ahead of the equipment. Not ampacity.",
+                "250.122(B) upsizing for voltage drop is noted, not applied. A service GEC is Table 250.66.",
+                "AS/NZS earth is Table 5.1 on Voltage Drop. This screen stays NEC and says so.",
+                "Design aid — confirm the current Code and the AHJ. Not a PE stamp.",
             ]
         ),
         "transformer": ToolHowItWorks(
@@ -415,6 +425,7 @@ public enum ToolHowItWorksCatalog {
                 "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
                 "Odd/even circuit numbers can be inferred when the print is missing. Yellow rows are guesses — confirm them.",
                 "Trip is not measured load. FLA and kAIC reads are not measured. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
+                "A main rating shows a copper Table 250.122 feeder EGC. Aluminum is Equipment Grounding. Not a service GEC.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(
@@ -608,6 +619,7 @@ public enum ToolHowItWorksCatalog {
             context: "From–to list for a tray or a pull — IDs, not ampacity.",
             bullets: [
                 "You pick the type and count; the tool stamps IDs.",
+                "Optional power OCPD shows a Table 250.122 EGC beside power cables. Control cables are not sized that way.",
                 "Not a routing, tray-fill, or voltage-drop schedule.",
             ]
         ),

@@ -1146,12 +1146,13 @@ struct CableScheduleView: View {
     @StoredInput(.cableSchedule, "qtyB", default: "2") private var qtyB
     @StoredInput(.cableSchedule, "fromB", default: "PLC-1") private var fromB
     @StoredInput(.cableSchedule, "toB", default: "JB-12") private var toB
+    @StoredInput(.cableSchedule, "powerOCPD", default: "") private var powerOCPD
     @StoredInput(.cableSchedule, "jobName", default: "Cable schedule") private var jobName
     @State private var session = ExplicitCalculationState<CableScheduleResult>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var inputFingerprint: String { "\(prefix)|\(start)|\(typeA)|\(qtyA)|\(fromA)|\(toA)|\(typeB)|\(qtyB)|\(fromB)|\(toB)" }
+    private var inputFingerprint: String { "\(prefix)|\(start)|\(typeA)|\(qtyA)|\(fromA)|\(toA)|\(typeB)|\(qtyB)|\(fromB)|\(toB)|\(powerOCPD)" }
     private let typeOptions = CableSchedule.seedCatalog.map(\.id)
 
     var body: some View {
@@ -1183,12 +1184,18 @@ struct CableScheduleView: View {
             NumberField(title: "Quantity", unit: "", text: $qtyB, fieldID: "qtyB", onSubmit: calculate)
             TextInputField(title: "From", text: $fromB, placeholder: "PLC-1", autocapitalization: .characters, fieldID: "fromB", onSubmit: calculate)
             TextInputField(title: "To", text: $toB, placeholder: "JB-12", autocapitalization: .characters, fieldID: "toB", onSubmit: calculate)
+            NumberField(title: "Power-cable OCPD", unit: "A", text: $powerOCPD, optional: true, fieldID: "powerOCPD", onSubmit: calculate)
+            Text("Optional. Power types get a NEC 2023 Table 250.122 EGC from this breaker. Control and instrumentation cables are not sized that way. Confirm the cable already includes the ground before adding one.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
 
             CalculatorActionBar(
                 onCalculate: calculate,
                 onReset: {
                     prefix = "C"; start = "1"
                     qtyA = ""; fromA = ""; toA = ""; qtyB = ""; fromB = ""; toB = ""
+                    powerOCPD = ""
                     session.reset()
                 },
                 onExample: {
@@ -1218,6 +1225,14 @@ struct CableScheduleView: View {
                     }
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+
+                ForEach(powerGrounds(for: r)) { ground in
+                    EquipmentGroundingCard(
+                        title: "EGC for \(NECTables.wireLabel(ground.size)) power",
+                        recommendation: ground.recommendation
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
 
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
@@ -1260,7 +1275,40 @@ struct CableScheduleView: View {
 
     private var sticky: String? {
         guard let r = session.displayedResult else { return nil }
-        return "\(r.rows.count) cables · \(r.rows.first?.cableID ?? "")…"
+        let base = "\(r.rows.count) cables · \(r.rows.first?.cableID ?? "")…"
+        let grounds = powerGrounds(for: r)
+        guard let first = grounds.first else { return base }
+        return "\(base) · EGC \(first.recommendation.label)"
+    }
+
+    private struct PowerGround: Identifiable {
+        var size: String
+        var recommendation: EquipmentGroundingRecommendation
+        var id: String { size }
+    }
+
+    /// One Table 250.122 row per distinct power-cable phase size. The table
+    /// does not change with 1Ø vs 3Ø; context only means “this circuit has an EGC”.
+    private func powerGrounds(for result: CableScheduleResult) -> [PowerGround] {
+        let text = powerOCPD.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, let amps = powerOCPD.parsedDouble, amps > 0 else { return [] }
+        let catalog = Dictionary(uniqueKeysWithValues: CableSchedule.seedCatalog.map { ($0.id, $0) })
+        var seen = Set<String>()
+        var grounds: [PowerGround] = []
+        for row in result.rows {
+            guard let item = catalog[row.cableType], item.use == "power" else { continue }
+            guard seen.insert(item.size).inserted else { continue }
+            guard let recommendation = EquipmentGrounding.recommend(
+                amps: amps,
+                material: .copper,
+                context: .threePhase,
+                ampsAreOCPDRating: true,
+                ungroundedSize: item.size,
+                extraNote: "Power cable \(item.id) phase size is \(NECTables.wireLabel(item.size)). Confirm that cable already includes this conductor before adding another. Control and instrumentation rows are not sized here. Aluminum is in Equipment Grounding."
+            ) else { continue }
+            grounds.append(PowerGround(size: item.size, recommendation: recommendation))
+        }
+        return grounds
     }
 }
 

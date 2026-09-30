@@ -88,6 +88,7 @@ struct PanelDirectoryView: View {
             scanQualityBlock
 
             panelInputs
+            feederGroundCard
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("SCHEDULE TEXT")
@@ -466,6 +467,23 @@ struct PanelDirectoryView: View {
                 confirmed = false
             }
         )
+    }
+
+    @ViewBuilder
+    private var feederGroundCard: some View {
+        if let amps = mainAmps.parsedDouble, amps > 0,
+           let recommendation = EquipmentGrounding.recommend(
+            amps: amps,
+            material: .copper,
+            context: EquipmentGroundingContext.from(phases: phaseCount),
+            ampsAreOCPDRating: true,
+            extraNote: "From the main rating on this panel. Copper only here — aluminum is in Equipment Grounding. A service grounding electrode conductor is Table 250.66, not this row."
+           ) {
+            EquipmentGroundingCard(
+                title: "Feeder equipment grounding conductor",
+                recommendation: recommendation
+            )
+        }
     }
 
     @ViewBuilder

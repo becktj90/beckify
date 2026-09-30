@@ -14,7 +14,7 @@ final class ToolHomeAreaTests: XCTestCase {
 
     func testHeuristicFieldJobsiteTools() {
         let field = [
-            "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength", "conduitFill", "transformer",
+            "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength", "conduitFill", "equipmentGround", "transformer",
             "motorFLA", "power", "powerWizard", "receptacleSelector",
             "circularMils", "loadFactors", "shortCircuit",
             "motorSpeed", "isLoopVerifier", "signalScaling", "modbusAddress",
@@ -106,7 +106,7 @@ final class ToolHomeAreaTests: XCTestCase {
     func testPrimaryJobsiteShelfMembership() {
         let jobsite = [
             "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength",
-            "conduitFill", "motorFLA", "motorSpeed", "motorNameplate", "motorNameplateOCR",
+            "conduitFill", "equipmentGround", "motorFLA", "motorSpeed", "motorNameplate", "motorNameplateOCR",
             "lookCheck",
             "receptacleSelector", "shortCircuit", "circularMils", "loadFactors",
             "necCircuit", "isLoopVerifier",
