@@ -18,13 +18,16 @@ struct TransformerView: View {
     @StoredInput(.transformer, "vs", default: "208") private var vs
     @StoredChoice(.transformer, "connection", default: TransformerConnection.deltaWye) private var connection
     @StoredToggle(.transformer, "continuous", default: true) private var continuous
+    @StoredInput(.transformer, "zR", default: "8") private var zR
+    @StoredInput(.transformer, "zX", default: "6") private var zX
+    @StoredInput(.transformer, "lineR", default: "0.25") private var lineR
     @StoredInput(.transformer, "jobName", default: "Transformer") private var jobName
-    @State private var session = ExplicitCalculationState<TransformerSizingResult>()
+    @State private var session = ExplicitCalculationState<TransformerRun>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var inputFingerprint: String {
-        "\(system)|\(loadKind)|\(load)|\(pf)|\(vp)|\(vs)|\(continuous)"
+        "\(system)|\(loadKind)|\(load)|\(pf)|\(vp)|\(vs)|\(connection)|\(continuous)|\(zR)|\(zX)|\(lineR)"
     }
 
     var body: some View {
@@ -65,10 +68,18 @@ struct TransformerView: View {
                 }
             }
             .pickerStyle(.menu)
+            NumberField(title: "Secondary resistance", unit: "Ω", text: $zR, fieldID: "zR", onSubmit: calculate)
+            NumberField(title: "Secondary reactance", unit: "Ω", text: $zX, fieldID: "zX", onSubmit: calculate)
+            NumberField(title: "Line conductor resistance", unit: "Ω", text: $lineR, fieldID: "lineR", onSubmit: calculate)
+            Text("Z' = Z × (Np/Ns)². Ideal ratio. Magnetizing current is left out. Line loss holds the same watts and leaves out transformer loss.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
             TransformerConnectionDiagram(
                 connection: resolvedConnection,
                 secondaryVolts: vs.parsedDouble ?? 0,
-                primaryVolts: vp.parsedDouble ?? 0
+                primaryVolts: vp.parsedDouble ?? 0,
+                referral: session.isStale ? nil : referralCaption
             )
             Toggle("Continuous load (size at 125%)", isOn: $continuous)
                 .tint(Theme.accent)
@@ -86,6 +97,9 @@ struct TransformerView: View {
                     vs = "208"
                     connection = .deltaWye
                     continuous = true
+                    zR = "8"
+                    zX = "6"
+                    lineR = "0.25"
                     session.prepareForNewInputs()
                 },
                 exampleTitle: "38 kW, 480/208 V 3Ø, PF 90%"
@@ -95,7 +109,8 @@ struct TransformerView: View {
                 ErrorText(message: error.message)
             }
 
-            if let r = session.displayedResult {
+            if let run = session.displayedResult {
+                let r = run.sizing
                 ResultCard(title: "Transformer", copyText: copyText) {
                     ResultRow(label: "Connected", value: "\(Format.number(r.loadKVA, digits: 2)) kVA")
                     ResultRow(label: "Design", value: "\(Format.number(r.designKVA, digits: 2)) kVA")
@@ -145,6 +160,7 @@ struct TransformerView: View {
                     )
                     .opacity(session.isStale ? 0.72 : 1)
                 }
+                reflectionCards(run)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     var inputs: [String: String] = [
                         "system": system.displayName,
@@ -201,12 +217,19 @@ struct TransformerView: View {
             case .kw: kind = .kW(load.parsedDouble ?? .nan, powerFactor: (pf.parsedDouble ?? .nan) / 100)
             case .amps: kind = .amps(load.parsedDouble ?? .nan)
             }
-            return try TransformerSizing.size(
+            let sizing = try TransformerSizing.size(
                 system: system == .dc ? .threePhase : system,
                 load: kind,
                 primaryVolts: vp.parsedDouble ?? .nan,
                 secondaryVolts: vs.parsedDouble ?? .nan,
                 continuous: continuous
+            )
+            let reflected = reflect(primaryVolts: vp.parsedDouble ?? .nan, secondaryVolts: vs.parsedDouble ?? .nan)
+            return TransformerRun(
+                sizing: sizing,
+                referred: reflected?.referred,
+                lineLoss: reflected?.lineLoss,
+                reflectionMessage: reflected?.message
             )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
@@ -219,25 +242,141 @@ struct TransformerView: View {
         pf = "90"
         vp = ""
         vs = ""
+        zR = ""
+        zX = ""
+        lineR = ""
         session.reset()
     }
 
     private var substituted: String? {
-        guard let r = session.displayedResult else { return nil }
+        guard let r = session.displayedResult?.sizing else { return nil }
         return "\(r.formula)  →  Ip \(Format.amps(r.primaryFLA))  ·  Is \(Format.amps(r.secondaryFLA))"
     }
 
     private var sticky: String? {
-        guard let r = session.displayedResult else { return nil }
+        guard let r = session.displayedResult?.sizing else { return nil }
         return "\(Format.number(r.selectedKVA, digits: 1)) kVA  ·  Ip \(Format.amps(r.primaryFLA))  ·  Is \(Format.amps(r.secondaryFLA))"
     }
 
     private var copyText: String? { sticky }
 
+    private var referralCaption: String? {
+        guard let referred = session.displayedResult?.referred else { return nil }
+        return "Secondary \(ohms(referred.load)) refers to the primary as \(ohms(referred.referred)). Np/Ns \(Format.number(referred.turnsRatio, digits: 3))."
+    }
+
+    private func reflect(primaryVolts: Double, secondaryVolts: Double) -> (referred: ReferredImpedance?, lineLoss: StepUpLineLoss?, message: String?)? {
+        let rBlank = zR.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let xBlank = zX.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard !rBlank || !xBlank else { return nil }
+        let load = ComplexOhms(
+            resistance: rBlank ? 0 : (zR.parsedDouble ?? .nan),
+            reactance: xBlank ? 0 : (zX.parsedDouble ?? .nan)
+        )
+        let conductor = lineR.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : (lineR.parsedDouble ?? .nan)
+        do {
+            let referred = try ImpedanceReflection.refer(
+                load: load,
+                primaryVolts: primaryVolts,
+                secondaryVolts: secondaryVolts,
+                basis: turnsBasis
+            )
+            let loss = try ImpedanceReflection.compareLineLoss(
+                system: system == .dc ? .threePhase : system,
+                load: load,
+                secondaryVolts: secondaryVolts,
+                primaryVolts: primaryVolts,
+                conductorOhms: conductor
+            )
+            return (referred, loss, nil)
+        } catch let error as CalcError {
+            let referred = try? ImpedanceReflection.refer(
+                load: load,
+                primaryVolts: primaryVolts,
+                secondaryVolts: secondaryVolts,
+                basis: turnsBasis
+            )
+            return (referred, nil, error.message)
+        } catch {
+            return (nil, nil, CalcError.missing("values").message)
+        }
+    }
+
+    private var turnsBasis: TurnsRatioBasis {
+        switch resolvedConnection {
+        case .zigzag, .autotransformer, .buckBoost:
+            return .approximateLineVoltages
+        case .wyeDelta:
+            return .wyePrimaryDeltaSecondary
+        case .deltaWye, .groundedWye:
+            return .deltaPrimaryWyeSecondary
+        case .wyeWye, .resistanceGround, .reactanceGround, .deltaDelta, .openDelta, .ungroundedDelta, .highLeg, .cornerGrounded, .isolation:
+            return .lineVoltages
+        }
+    }
+
+    @ViewBuilder
+    private func reflectionCards(_ run: TransformerRun) -> some View {
+        let stale = session.isStale
+        if let referred = run.referred {
+            ResultCard(title: "Referred impedance") {
+                ResultRow(label: "Z secondary", value: ohms(referred.load))
+                ResultRow(label: "Np/Ns", value: Format.number(referred.turnsRatio, digits: 3), emphasis: true)
+                ResultRow(label: "Z primary", value: ohms(referred.referred), emphasis: true, tone: Theme.good)
+                ResultRow(label: "|Z'|", value: "\(Format.number(referred.referred.magnitude, digits: 3)) Ω")
+                ResultRow(label: "Angle", value: Format.degrees(referred.referred.angleDegrees))
+                Text(referred.formula)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                Text(referred.basis.note)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .opacity(stale ? 0.72 : 1)
+        }
+        if let loss = run.lineLoss {
+            ResultCard(title: "Line loss, same load power") {
+                ResultRow(label: "Load", value: "\(Format.watts(loss.loadWatts))  ·  PF \(Format.percent(loss.powerFactor * 100))")
+                ResultRow(label: "At \(Format.number(loss.lowVolts, digits: 0)) V", value: "\(Format.amps(loss.currentLow))  ·  \(Format.watts(loss.lossLowWatts))")
+                ResultRow(
+                    label: "At \(Format.number(loss.highVolts, digits: 0)) V",
+                    value: "\(Format.amps(loss.currentHigh))  ·  \(Format.watts(loss.lossHighWatts))",
+                    emphasis: true,
+                    tone: Theme.good
+                )
+                ForEach(loss.assumptions, id: \.self) { line in
+                    Text(line)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .opacity(stale ? 0.72 : 1)
+        } else if let message = run.reflectionMessage {
+            Text(message)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.warn)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private var resolvedConnection: TransformerConnection {
         let allowed = TransformerConnection.allowed(system)
         return allowed.contains(connection) ? connection : (system == .singlePhase ? .isolation : .deltaWye)
     }
+}
+
+private struct TransformerRun: Equatable, Sendable {
+    var sizing: TransformerSizingResult
+    var referred: ReferredImpedance?
+    var lineLoss: StepUpLineLoss?
+    var reflectionMessage: String?
+}
+
+private func ohms(_ z: ComplexOhms) -> String {
+    let sign = z.reactance < 0 ? "−" : "+"
+    return "\(Format.number(z.resistance, digits: 3)) \(sign) j\(Format.number(abs(z.reactance), digits: 3)) Ω"
 }
 
 enum TransformerConnection: String, CaseIterable, Identifiable {
@@ -306,9 +445,12 @@ private struct TransformerConnectionDiagram: View {
     var connection: TransformerConnection
     var secondaryVolts: Double
     var primaryVolts: Double
+    var referral: String? = nil
 
     private var summary: String {
-        "\(connection.title) winding diagram. \(callouts.joined(separator: " ")) Common North American practice. The AHJ and the project spec win."
+        let base = "\(connection.title) winding diagram. \(callouts.joined(separator: " ")) Common North American practice. The AHJ and the project spec win."
+        if let referral { return "\(base) \(referral)" }
+        return base
     }
 
     var body: some View {
@@ -347,6 +489,12 @@ private struct TransformerConnectionDiagram: View {
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
+                if let referral {
+                    Text(referral)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.foreground)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }

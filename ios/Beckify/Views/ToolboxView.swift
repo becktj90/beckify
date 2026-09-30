@@ -185,6 +185,7 @@ struct CalculatorHostView: View {
             switch toolID {
             case .ohmsLaw: OhmsLawView()
             case .power: PowerView()
+            case .threePhasePower: ThreePhasePowerView()
             case .powerWizard: PowerWizardView()
             case .voltageDrop: VoltageDropView()
             case .conduitFill: ConduitFillView()

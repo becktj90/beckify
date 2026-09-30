@@ -15,7 +15,7 @@ final class ToolHomeAreaTests: XCTestCase {
     func testHeuristicFieldJobsiteTools() {
         let field = [
             "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength", "conduitFill", "equipmentGround", "transformer",
-            "motorFLA", "power", "powerWizard", "receptacleSelector",
+            "motorFLA", "power", "threePhasePower", "powerWizard", "receptacleSelector",
             "circularMils", "loadFactors", "shortCircuit",
             "motorSpeed", "isLoopVerifier", "signalScaling", "modbusAddress",
             "plcTimer", "rackCurrent", "powerFactor", "batteryBank",
@@ -68,7 +68,7 @@ final class ToolHomeAreaTests: XCTestCase {
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "solarDesign"), .power)
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "motorNameplate"), .jobsite)
         let power = [
-            "power", "powerWizard", "transformer", "powerFactor", "batteryBank",
+            "power", "threePhasePower", "powerWizard", "transformer", "powerFactor", "batteryBank",
             "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
         ]
         for id in power {

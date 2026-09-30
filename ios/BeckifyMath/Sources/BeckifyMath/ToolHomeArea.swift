@@ -126,7 +126,7 @@ public enum ToolHomeAreaPolicy {
     /// Field → Power: distribution / facility energy only. Specialty design
     /// (heaters, solenoids, EMP, e-bike / nickel pack) lives on Toolkit → Bench.
     private static let powerIDs: Set<String> = [
-        "power", "powerWizard", "transformer", "powerFactor", "batteryBank",
+        "power", "threePhasePower", "powerWizard", "transformer", "powerFactor", "batteryBank",
         "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
     ]
 

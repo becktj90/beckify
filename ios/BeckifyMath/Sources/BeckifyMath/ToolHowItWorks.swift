@@ -64,6 +64,16 @@ public enum ToolHowItWorksCatalog {
                 "Design aid — not a billing meter or a demand study.",
             ]
         ),
+        "threePhasePower": ToolHowItWorks(
+            summary: "Balanced Y–Y, Y–Δ, Δ–Y, and Δ–Δ line and phase values, plus P, Q, and S.",
+            context: "Field → Power, beside Power. 480 V class defaults. Power still does the quick kVA check.",
+            bullets: [
+                "Wye: V_LL = √3 × Vφ and I_L = Iφ. Delta: I_L = √3 × Iφ and V_LL = Vφ.",
+                "P = √3 × V_LL × I_L × cos θ. |S| = √3 × V_LL × I_L. S = P + jQ.",
+                "A delta load is solved as Z ÷ 3 on one phase. Balanced neutral current is zero.",
+                "Line ohms are one conductor. The magnetizing branch and a motor model are not included.",
+            ]
+        ),
         "powerWizard": ToolHowItWorks(
             summary: "Asks for the knowns (amps, kW, kVA, or HP) and fills DC, 1Ø, or 3Ø power.",
             context: "Saved-job deep link. New work uses Power on the Field shelf.",
@@ -118,7 +128,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "kVA from volts and amps (√3 on 3Ø). Protection follows 450.3(B).",
                 "Primary and secondary EGC rows use NEC 2023 Table 250.122 from those OCPDs. Confirm AHJ.",
-                "Not a coordination study, inrush calc, or utility-transformer spec.",
+                "Not a coordination study or inrush calc. Secondary Z refers by (Np/Ns)². Line loss holds watts fixed and omits transformer loss.",
                 "Connection diagram: windings, the bond, and North American colors. High-leg orange is code. 480Y brown/orange/yellow is practice. The AHJ and the spec win.",
             ]
         ),
