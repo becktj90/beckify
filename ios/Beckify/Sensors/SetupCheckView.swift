@@ -1,7 +1,7 @@
 import SwiftUI
 import BeckifyMath
 
-/// Field → Instruments. One room-and-rig screen on the shared microphone FFT.
+/// Field → Instruments. Room & Rig Check on the shared microphone FFT.
 /// Optional test signals play from the phone speaker on that same engine.
 struct SetupCheckView: View {
     @EnvironmentObject private var jobs: JobStore
@@ -21,8 +21,14 @@ struct SetupCheckView: View {
     @State private var frozenSpectrogram: [[Double]]?
     @State private var frozenTrace: [Double]?
     @State private var frozenResponse: [RoomRigPoint]?
-    @StoredInput(.setupCheck, "jobName", default: "Setup check") private var jobName
+    @StoredInput(.setupCheck, "jobName", default: "Room and rig") private var jobName
     @State private var notes = ""
+    @State private var testRunning = false
+    @State private var testStarted: Date?
+    @State private var testRunID = UUID()
+    @State private var capture = RoomRigTestCapture()
+    @State private var testResult: RoomRigTestSnapshot?
+    @State private var spotA: RoomRigTestSnapshot?
 
     var body: some View {
         ToolScaffold(
@@ -41,10 +47,14 @@ struct SetupCheckView: View {
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
+            Text("Leave this open while you listen. The meters and spectrum stay live. Start test when you want numbers for an A/B.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.foreground)
+                .fixedSize(horizontal: false, vertical: true)
             if spectrum.permissionDenied {
                 ToolEmptyState(
                     title: "Microphone is off",
-                    detail: "Setup Check needs the microphone for a relative spectrum. Test signals stay on this phone. Nothing is recorded or uploaded.",
+                    detail: "Room & Rig Check needs the microphone for a relative spectrum. Test signals stay on this phone. Nothing is recorded or uploaded.",
                     systemImage: "mic.slash",
                     showsSettings: true
                 )
@@ -60,8 +70,12 @@ struct SetupCheckView: View {
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
+            testControls
+            if let testResult {
+                testResultCard(testResult)
+            }
 
-            ResultCard(title: "Reading", copyText: copyText) {
+            ResultCard(title: "Listening", copyText: copyText) {
                 ResultRow(label: "Level", value: Format.dbfs(spectrum.rmsDBFS), emphasis: true, tone: Theme.good)
                 ResultRow(label: "Peak hold", value: Format.dbfs(peakHold), tone: Theme.warn)
                 ResultRow(label: "Crest", value: crestLabel, tone: Theme.copper)
@@ -98,9 +112,16 @@ struct SetupCheckView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                SpectrumPlot(bands: shownBands, footnote: spectrumFootnote)
+                Text("Which frequencies are louder right now. Left to right is frequency. Up is louder, in relative dBFS — not dB SPL.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                SpectrumPlot(bands: shownBands, footnote: spectrumFootnote, showsRelativeDBFSScale: true)
                     .padding(.top, 8)
             }
+
+            instructions
+            viewGuide
 
             DiagramCard(
                 title: "RTA bands",
@@ -113,8 +134,9 @@ struct SetupCheckView: View {
                 SpectrumPlot(
                     bands: shownRTA,
                     plotHeight: 128,
-                    accessibilityLabel: "Third-octave relative spectrum",
-                    footnote: "Nominal centers 50 Hz–8 kHz, limited by this phone’s sample rate."
+                    accessibilityLabel: "Third-octave relative spectrum. Frequency across, relative dBFS up.",
+                    footnote: "Nominal centers 50 Hz–8 kHz, limited by this phone’s sample rate. Not IEC 61260.",
+                    showsRelativeDBFSScale: true
                 )
                 .padding(.top, 8)
             }
@@ -124,9 +146,10 @@ struct SetupCheckView: View {
                 accessibilitySummary: spectrogramSummary,
                 exportName: "beckify-setup-spectrogram"
             ) {
-                Text("Recent audible bands. Newer rows sit at the bottom. Relative energy only.")
+                Text("Recent audible bands. Left is lower frequency, top is older, bottom is newer. Color is relative dBFS, not a recording.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 SetupSpectrogram(rows: shownSpectrogram)
                     .padding(.top, 8)
             }
@@ -136,10 +159,15 @@ struct SetupCheckView: View {
                 accessibilitySummary: levelSummary,
                 exportName: "beckify-setup-level"
             ) {
-                Text("Level over the last moments. Not a recording.")
+                Text("Relative dBFS over the last moments. The vertical scale follows this trace. Not a recording and not dB SPL.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
-                TraceSparkline(samples: shownTrace, accessibilityLabel: "Level versus time")
+                    .fixedSize(horizontal: false, vertical: true)
+                TraceSparkline(
+                    samples: shownTrace,
+                    accessibilityLabel: "Level versus time, relative dBFS. Older on the left, now on the right.",
+                    showsDBFSTimeAxes: true
+                )
                     .padding(.top, 6)
             }
 
@@ -148,7 +176,7 @@ struct SetupCheckView: View {
                 accessibilitySummary: responseSummary,
                 exportName: "beckify-setup-sweep"
             ) {
-                Text("Unsmoothed 1/3-octave buckets from the log sweep, plus a 1/3-octave smooth. 0 dB is the loudest bucket on this pass — a shape, not a calibration.")
+                Text("Unsmoothed 1/3-octave buckets from the log sweep, plus a 1/3-octave smooth. Vertical axis is dB versus this pass’s peak. 0 dB is the loudest bucket — a shape, not a calibration.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -182,6 +210,7 @@ struct SetupCheckView: View {
             case .active:
                 retainMic()
             case .background:
+                if testRunning { finishTest() }
                 stimulus = .listen
                 spectrum.endStimulus()
                 spectrum.release(micToken)
@@ -194,12 +223,32 @@ struct SetupCheckView: View {
             spectrum.setStimulus(kind)
         }
         .onChange(of: spectrum.rmsDBFS) { _, db in
-            guard !frozen, spectrum.hasReading, db.isFinite else { return }
+            guard spectrum.hasReading, db.isFinite else { return }
+            if testRunning {
+                capture.append(
+                    levelDBFS: db,
+                    peakDBFS: spectrum.peakDBFS,
+                    crestDB: spectrum.crestDB,
+                    clipFraction: spectrum.clipFraction,
+                    peakHz: spectrum.peakHz,
+                    bands: spectrum.rtaBands
+                )
+            }
+            guard !frozen else { return }
             if db > peakHold { peakHold = db }
             levelTrace = MagSweepMath.appendTrace(levelTrace, sample: db, limit: 120)
-            guard stimulus == .listen else { return }
+            guard stimulus == .listen, !testRunning else { return }
             quietTrace = MagSweepMath.appendTrace(quietTrace, sample: db, limit: 40)
             noiseFloor = RoomRigMath.percentile(quietTrace, p: 0.2)
+        }
+        .task(id: testRunID) {
+            guard testRunning, let testStarted else { return }
+            let remain = RoomRigTestMath.windowSeconds - Date().timeIntervalSince(testStarted)
+            if remain > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(remain * 1_000_000_000))
+            }
+            guard !Task.isCancelled, testRunning else { return }
+            finishTest()
         }
         .onChange(of: spectrum.bands) { _, bands in
             guard !frozen, !bands.isEmpty else { return }
@@ -222,14 +271,46 @@ struct SetupCheckView: View {
     private var shownShape: [RoomRigPoint] { RoomRigMath.normalizeToPeak(shownResponse) }
     private var smoothedShape: [RoomRigPoint] { RoomRigMath.smoothOneThirdOctave(shownShape) }
 
+    private var instructions: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("How to A/B a room or a rig")
+                .font(Theme.TypeRole.fieldLabel)
+                .foregroundStyle(Theme.foreground)
+            Text("1. Leave the screen open. Play music, or pick Pink, Sweep, or Burst. The plots stay live.")
+            Text("2. Tap Start test. It listens for about \(Format.number(RoomRigTestMath.windowSeconds, digits: 0)) seconds, or until you tap Stop. Each number underneath says what it means.")
+            Text("3. Keep that pass as spot A. Move the phone or change the rig, run the test again, and read this pass minus A.")
+            Text("4. Pink noise fills the band so two spots are easier to compare. Sweep draws a shape — 0 dB is that pass’s peak, not a calibration. Burst is a rough speaker-to-mic delay.")
+        }
+        .font(Theme.TypeRole.help)
+        .foregroundStyle(Theme.muted)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var viewGuide: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("What each view means")
+                .font(Theme.TypeRole.fieldLabel)
+                .foregroundStyle(Theme.foreground)
+            Text("Live FFT — frequencies that are up right now. Horizontal axis is frequency. Vertical axis is relative dBFS.")
+            Text("RTA — that energy in approximate third-octave buckets. Same relative scale. Not an IEC class filter.")
+            Text("Spectrogram — those bands over the last moments. Left is lower frequency, top is older, bottom is newer. Color is relative dBFS.")
+            Text("Level — relative dBFS versus time. Left is older, right is now.")
+            Text("Sweep shape — fills in only while Sweep plays. Copper is raw, teal is a third-octave smooth.")
+            Text("Keep the phone in the same place for each side of the A/B. This speaker and mic are not a calibrated measurement microphone.")
+        }
+        .font(Theme.TypeRole.help)
+        .foregroundStyle(Theme.muted)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
     private var signalCaption: String {
         switch stimulus {
         case .listen:
-            return "Listening only. Play a signal when you want a speaker-to-mic A/B."
+            return "Listening only. A quiet moment here sets the floor the test compares against. Turn on a signal when you want the phone speaker in the A/B."
         case .pink:
-            return "Pink noise from this phone’s speaker. Compare seats or rigs. Not a reference generator."
+            return "Pink noise from this phone’s speaker. Use it to compare seats or rigs. Not a reference generator."
         case .sweep:
-            return "Log sweep, \(Format.number(RoomRigMath.sweepStartHz, digits: 0))–\(Format.number(RoomRigMath.sweepEndHz, digits: 0)) Hz. The shape fills in over about \(Format.number(RoomRigMath.sweepDuration, digits: 0)) seconds."
+            return "Log sweep, \(Format.number(RoomRigMath.sweepStartHz, digits: 0))–\(Format.number(RoomRigMath.sweepEndHz, digits: 0)) Hz. The shape fills in over about \(Format.number(RoomRigMath.sweepDuration, digits: 0)) seconds. 0 dB is this pass’s peak."
         case .burst:
             return "1 kHz tone bursts. Loop delay is a rough speaker-to-mic gap when the burst rises out of the room."
         }
@@ -325,8 +406,141 @@ struct SetupCheckView: View {
         return "\(Format.dbfs(spectrum.rmsDBFS)), crest \(crestLabel), \(clipLabel), harmonics \(harmonicLabel). Relative phone speaker and mic. Not SPL."
     }
 
+    private var testControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(testRunning ? "Stop test" : "Start test") {
+                if testRunning {
+                    finishTest()
+                } else {
+                    startTest()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(testRunning ? Theme.warn : Theme.accent)
+            .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+            .accessibilityHint(testRunning
+                ? "Ends the capture and shows the explained numbers."
+                : "Listens for about 8 seconds. The live plots stay up.")
+            if testRunning, let testStarted {
+                TimelineView(.periodic(from: testStarted, by: 0.25)) { context in
+                    let elapsed = min(RoomRigTestMath.windowSeconds, max(0, context.date.timeIntervalSince(testStarted)))
+                    Text("Capturing \(Format.number(elapsed, digits: 0)) s of \(Format.number(RoomRigTestMath.windowSeconds, digits: 0)) s. Plots stay live.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                }
+            } else {
+                Text("Pink noise, a sweep, bursts, or whatever is already playing. The numbers are relative on this phone.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func testResultCard(_ snap: RoomRigTestSnapshot) -> some View {
+        ResultCard(title: "Test · \(snap.stimulus)", copyText: testCopy(snap)) {
+            Text("\(Format.number(snap.durationSeconds, digits: 0)) s on this phone. Relative A/B only — not SPL, not a lab RTA.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            explained("Level", Format.dbfs(snap.levelDBFS), RoomRigTestCopy.level, emphasis: true)
+            explained("Peak", Format.dbfs(snap.peakDBFS), RoomRigTestCopy.peak)
+            explained("Crest", snap.crestDB.map { "\(Format.number($0, digits: 1)) dB" } ?? "—", RoomRigTestCopy.crest)
+            explained(
+                "Clipping",
+                "\(Format.number(snap.clipFraction * 100, digits: 1))%",
+                RoomRigTestCopy.clip,
+                tone: snap.clipFraction >= 0.01 ? Theme.bad : Theme.foreground
+            )
+            explained(
+                "Above quiet",
+                snap.aboveFloorDB.map { String(format: "%+.1f dB", $0) } ?? "Listen quietly first",
+                RoomRigTestCopy.aboveFloor
+            )
+            explained("Peak freq", snap.peakHz.map { "\(Format.number($0, digits: 0)) Hz" } ?? "—", RoomRigTestCopy.peakHz)
+            explained("Centroid", snap.centroidHz.map { "\(Format.number($0, digits: 0)) Hz" } ?? "—", RoomRigTestCopy.centroid)
+            if let balance = snap.balance {
+                explained(
+                    "Bands vs loudest",
+                    "L \(Format.number(balance.lowVsLoudestDB, digits: 0)) · M \(Format.number(balance.midVsLoudestDB, digits: 0)) · H \(Format.number(balance.highVsLoudestDB, digits: 0)) dB",
+                    RoomRigTestCopy.balance
+                )
+            } else {
+                explained("Bands vs loudest", "—", RoomRigTestCopy.balance)
+            }
+            if let spotA, spotA != snap {
+                Text(RoomRigTestCopy.versusA)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
+                ResultRow(
+                    label: "Level vs A",
+                    value: String(format: "%+.1f dB", snap.levelDBFS - spotA.levelDBFS),
+                    emphasis: true,
+                    tone: Theme.copper
+                )
+                if let crest = snap.crestDB, let crestA = spotA.crestDB {
+                    ResultRow(label: "Crest vs A", value: String(format: "%+.1f dB", crest - crestA))
+                }
+                if let here = snap.centroidHz, let there = spotA.centroidHz {
+                    ResultRow(label: "Centroid vs A", value: String(format: "%+.0f Hz", here - there))
+                }
+            }
+            Button(spotA == nil ? "Keep as spot A" : "Replace spot A") {
+                spotA = snap
+            }
+            .buttonStyle(.bordered)
+            .tint(Theme.accent)
+            .frame(minHeight: Theme.touchTarget)
+        }
+    }
+
+    private func explained(
+        _ label: String,
+        _ value: String,
+        _ explanation: String,
+        emphasis: Bool = false,
+        tone: Color = Theme.foreground
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ResultRow(label: label, value: value, emphasis: emphasis, tone: tone)
+            Text(explanation)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func testCopy(_ snap: RoomRigTestSnapshot) -> String {
+        "\(snap.stimulus) \(Format.number(snap.durationSeconds, digits: 0)) s, \(Format.dbfs(snap.levelDBFS)), crest \(snap.crestDB.map { Format.number($0, digits: 1) } ?? "—") dB. Relative phone mic. Not SPL."
+    }
+
+    private func startTest() {
+        capture = RoomRigTestCapture()
+        testStarted = Date()
+        testRunning = true
+        testRunID = UUID()
+    }
+
+    private func finishTest() {
+        guard testRunning else { return }
+        let started = testStarted ?? Date()
+        let duration = min(RoomRigTestMath.windowSeconds, max(0, Date().timeIntervalSince(started)))
+        let snap = capture.snapshot(
+            stimulus: stimulus.title,
+            durationSeconds: duration,
+            floorDBFS: noiseFloor
+        )
+        testRunning = false
+        testStarted = nil
+        if let snap {
+            testResult = snap
+        }
+    }
+
     private func retainMic() {
-        spectrum.retain(micToken, role: "Setup Check")
+        spectrum.retain(micToken, role: "Room & Rig Check")
         if stimulus != .listen {
             spectrum.setStimulus(stimulus)
         }
@@ -365,6 +579,8 @@ struct SetupCheckView: View {
                 "clip": clipLabel,
                 "harmonics": harmonicLabel,
                 "latency": latencyLabel,
+                "testLevel": testResult.map { Format.dbfs($0.levelDBFS) } ?? "—",
+                "testCentroidHz": testResult?.centroidHz.map { Format.number($0, digits: 0) } ?? "—",
                 "spl": "not claimed — uncalibrated",
             ]
         ))
@@ -406,28 +622,56 @@ private struct SetupSpectrogram: View {
     var rows: [[Double]]
 
     var body: some View {
-        Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
-            guard !rows.isEmpty else { return }
-            let rowH = size.height / CGFloat(rows.count)
-            for (rowIndex, row) in rows.enumerated() {
-                guard !row.isEmpty else { continue }
-                let colW = size.width / CGFloat(row.count)
-                for (colIndex, db) in row.enumerated() {
-                    let heat = AcousticSpectrum.heat(dbFS: db)
-                    let rect = CGRect(
-                        x: CGFloat(colIndex) * colW,
-                        y: CGFloat(rowIndex) * rowH,
-                        width: colW + 0.5,
-                        height: rowH + 0.5
-                    )
-                    context.fill(Path(rect), with: .color(cell(heat)))
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Time")
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+            HStack(alignment: .top, spacing: 6) {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("older")
+                    Spacer(minLength: 0)
+                    Text("newer")
                 }
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+                .frame(width: 44, height: 148)
+                Canvas { context, size in
+                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+                    guard !rows.isEmpty else { return }
+                    let rowH = size.height / CGFloat(rows.count)
+                    for (rowIndex, row) in rows.enumerated() {
+                        guard !row.isEmpty else { continue }
+                        let colW = size.width / CGFloat(row.count)
+                        for (colIndex, db) in row.enumerated() {
+                            let heat = AcousticSpectrum.heat(dbFS: db)
+                            let rect = CGRect(
+                                x: CGFloat(colIndex) * colW,
+                                y: CGFloat(rowIndex) * rowH,
+                                width: colW + 0.5,
+                                height: rowH + 0.5
+                            )
+                            context.fill(Path(rect), with: .color(cell(heat)))
+                        }
+                    }
+                }
+                .frame(height: 148)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
+            HStack {
+                Text("low")
+                Spacer()
+                Text("Frequency")
+                Spacer()
+                Text("high")
+            }
+            .font(Theme.TypeRole.help)
+            .foregroundStyle(Theme.muted)
+            Text("Color: relative dBFS (\(Format.number(AcousticSpectrum.displayFloorDBFS, digits: 0)) dark → \(Format.number(AcousticSpectrum.displayCeilingDBFS, digits: 0)) bright). Not SPL.")
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
         }
-        .frame(height: 148)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .accessibilityLabel("Spectrogram of recent audible bands")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Spectrogram. Frequency left to right, older time at the top, relative dBFS as color.")
     }
 
     private func cell(_ heat: Double) -> Color {
@@ -444,33 +688,63 @@ private struct SetupResponsePlot: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Canvas { context, size in
-                context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
-                guard raw.count >= 2 else {
-                    let label = Text("Play Sweep").foregroundStyle(Theme.muted)
-                    context.draw(context.resolve(label), at: CGPoint(x: size.width / 2, y: size.height / 2))
-                    return
+            Text("dB vs peak")
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+            HStack(alignment: .top, spacing: 6) {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("+6")
+                    Spacer(minLength: 0)
+                    Text("0")
+                    Spacer(minLength: 0)
+                    Text("−36")
                 }
-                stroke(raw, color: Theme.copper.opacity(0.85), width: 1.25, in: context, size: size)
-                if smooth.count >= 2 {
-                    stroke(smooth, color: Theme.accent, width: 2.25, in: context, size: size)
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+                .frame(width: 32, height: 160)
+                Canvas { context, size in
+                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+                    guard raw.count >= 2 else {
+                        let label = Text("Play Sweep").foregroundStyle(Theme.muted)
+                        context.draw(context.resolve(label), at: CGPoint(x: size.width / 2, y: size.height / 2))
+                        return
+                    }
+                    zeroLine(in: context, size: size)
+                    stroke(raw, color: Theme.copper.opacity(0.85), width: 1.25, in: context, size: size)
+                    if smooth.count >= 2 {
+                        stroke(smooth, color: Theme.accent, width: 2.25, in: context, size: size)
+                    }
                 }
+                .frame(height: 160)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
-            .frame(height: 160)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             HStack {
-                Text("80 Hz")
+                Text("\(Format.number(RoomRigMath.sweepStartHz, digits: 0)) Hz")
                 Spacer()
-                Text("Copper raw · teal smooth")
+                Text("Frequency")
                 Spacer()
-                Text("8 kHz")
+                Text("\(Format.number(RoomRigMath.sweepEndHz / 1000, digits: 0)) kHz")
             }
             .font(Theme.TypeRole.help)
             .foregroundStyle(Theme.muted)
+            Text("Copper is raw. Teal is the third-octave smooth. 0 dB is this pass’s peak, not SPL.")
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
         }
         .accessibilityLabel(raw.count >= 2
             ? "Relative sweep shape, \(raw.count) bands, peak at 0 dB"
             : "Sweep shape empty")
+    }
+
+    private func zeroLine(in context: GraphicsContext, size: CGSize) {
+        let floor = -36.0
+        let ceiling = 6.0
+        let yNorm = (0 - floor) / (ceiling - floor)
+        let y = size.height * (1 - CGFloat(yNorm))
+        var line = Path()
+        line.move(to: CGPoint(x: 0, y: y))
+        line.addLine(to: CGPoint(x: size.width, y: y))
+        context.stroke(line, with: .color(Theme.muted.opacity(0.7)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
     }
 
     private func stroke(_ points: [RoomRigPoint], color: Color, width: CGFloat, in context: GraphicsContext, size: CGSize) {

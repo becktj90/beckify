@@ -13,6 +13,8 @@ struct SpectrumPlot: View {
     /// 0…1 from the bottom. A median or display floor, not a calibrated noise spec.
     var referenceHeight: Double?
     var peakIndex: Int?
+    /// Room & Rig Check opts in. Other tools keep the unlabeled bar row.
+    var showsRelativeDBFSScale: Bool
 
     init(
         heights: [Double],
@@ -22,7 +24,8 @@ struct SpectrumPlot: View {
         plotHeight: CGFloat = 112,
         accessibilityLabel: String,
         referenceHeight: Double? = nil,
-        peakIndex: Int? = nil
+        peakIndex: Int? = nil,
+        showsRelativeDBFSScale: Bool = false
     ) {
         self.heights = heights
         self.leadingCaption = leadingCaption
@@ -32,6 +35,7 @@ struct SpectrumPlot: View {
         self.accessibilityLabel = accessibilityLabel
         self.referenceHeight = referenceHeight
         self.peakIndex = peakIndex
+        self.showsRelativeDBFSScale = showsRelativeDBFSScale
     }
 
     /// Audible-band microphone bars. Heat uses the Acoustic Imager display stops.
@@ -39,7 +43,8 @@ struct SpectrumPlot: View {
         bands: [AcousticDisplayBand],
         plotHeight: CGFloat = 112,
         accessibilityLabel: String? = nil,
-        footnote: String? = nil
+        footnote: String? = nil,
+        showsRelativeDBFSScale: Bool = false
     ) {
         heights = bands.map { AcousticSpectrum.heat(dbFS: $0.dbFS) }
         leadingCaption = bands.first.map { Self.hertz($0.lowHz) }
@@ -52,11 +57,77 @@ struct SpectrumPlot: View {
         let finite = heights.filter(\.isFinite).sorted()
         referenceHeight = finite.isEmpty ? nil : finite[finite.count / 2]
         peakIndex = heights.indices.max { heights[$0] < heights[$1] }
+        self.showsRelativeDBFSScale = showsRelativeDBFSScale
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Canvas { context, size in
+            if showsRelativeDBFSScale {
+                labeledSpectrum
+            } else {
+                barCanvas
+                frequencyCaptions
+            }
+            if let footnote, !footnote.isEmpty {
+                Text(footnote)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var labeledSpectrum: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Relative dBFS")
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+                .accessibilityHidden(true)
+            HStack(alignment: .top, spacing: 6) {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(Self.dbfsTick(AcousticSpectrum.displayCeilingDBFS))
+                    Spacer(minLength: 0)
+                    Text(Self.dbfsTick((AcousticSpectrum.displayCeilingDBFS + AcousticSpectrum.displayFloorDBFS) / 2))
+                    Spacer(minLength: 0)
+                    Text(Self.dbfsTick(AcousticSpectrum.displayFloorDBFS))
+                }
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+                .frame(width: 40, height: plotHeight)
+                .accessibilityHidden(true)
+                barCanvas
+            }
+            HStack {
+                Text(leadingCaption ?? "")
+                Spacer()
+                Text("Frequency")
+                Spacer()
+                Text(trailingCaption ?? "")
+            }
+            .font(Theme.TypeRole.help)
+            .foregroundStyle(Theme.muted)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private var frequencyCaptions: some View {
+        Group {
+            if leadingCaption != nil || trailingCaption != nil {
+                HStack {
+                    Text(leadingCaption ?? "")
+                    Spacer()
+                    Text(trailingCaption ?? "")
+                }
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+            }
+        }
+    }
+
+    private var barCanvas: some View {
+        Canvas { context, size in
                 let count = heights.count
                 guard count > 0 else { return }
                 let gap: CGFloat = count > 16 ? 2 : 3
@@ -87,30 +158,16 @@ struct SpectrumPlot: View {
         .frame(height: plotHeight)
         .padding(6)
         .background(Theme.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            if leadingCaption != nil || trailingCaption != nil {
-                HStack {
-                    Text(leadingCaption ?? "")
-                    Spacer()
-                    Text(trailingCaption ?? "")
-                }
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-            }
-            if let footnote, !footnote.isEmpty {
-                Text(footnote)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
     }
 
     private func barColor(_ heat: CGFloat) -> Color {
         if heat > 0.72 { return Theme.bad }
         if heat > 0.4 { return Theme.warn }
         return Theme.accent
+    }
+
+    private static func dbfsTick(_ db: Double) -> String {
+        Format.number(db, digits: 0)
     }
 
     private static func hertz(_ hz: Double) -> String {
@@ -126,8 +183,59 @@ struct SpectrumPlot: View {
 struct TraceSparkline: View {
     var samples: [Double]
     var accessibilityLabel: String
+    /// Room & Rig Check labels relative dBFS versus time. Other callers stay unlabeled.
+    var showsDBFSTimeAxes: Bool = false
 
     var body: some View {
+        if showsDBFSTimeAxes {
+            labeledTrace
+        } else {
+            sparkCanvas
+        }
+    }
+
+    private var labeledTrace: some View {
+        let finite = samples.filter(\.isFinite)
+        let top = finite.max()
+        let bottom = finite.min()
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("Relative dBFS")
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+                .accessibilityHidden(true)
+            HStack(alignment: .center, spacing: 6) {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(tick(top))
+                    Spacer(minLength: 0)
+                    Text(tick(bottom))
+                }
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.muted)
+                .frame(width: 52, height: 72)
+                .accessibilityHidden(true)
+                sparkCanvas
+            }
+            HStack {
+                Text("older")
+                Spacer()
+                Text("Time")
+                Spacer()
+                Text("now")
+            }
+            .font(Theme.TypeRole.help)
+            .foregroundStyle(Theme.muted)
+            .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private func tick(_ value: Double?) -> String {
+        guard let value, value.isFinite else { return "—" }
+        return "\(Format.number(value, digits: 0))"
+    }
+
+    private var sparkCanvas: some View {
         Canvas { context, size in
             guard samples.count >= 2 else {
                 var path = Path()
@@ -153,6 +261,6 @@ struct TraceSparkline: View {
             )
         }
         .frame(height: 72)
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel(showsDBFSTimeAxes ? "" : accessibilityLabel)
     }
 }

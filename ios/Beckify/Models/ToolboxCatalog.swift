@@ -464,11 +464,12 @@ enum ToolboxCatalog {
         ToolDefinition(
             id: .setupCheck,
             kind: .sensor,
-            title: "Setup Check",
-            subtitle: "Room and rig A/B. Relative FFT, RTA, and optional speaker signals.",
+            title: "Room & Rig Check",
+            subtitle: "Leave it open, then run a relative listen test. Not a lab mic.",
             symbol: "speaker.wave.2.fill",
             synonyms: [
-                "setup check", "room", "rig", "audiophile", "listening", "rta",
+                "room & rig check", "room and rig", "setup check", "speaker setup", "acoustic setup",
+                "room", "rig", "audiophile", "listening", "rta", "test",
                 "fft", "spectrogram", "pink noise", "sweep", "speaker",
                 "frequency response", "crest", "waterfall",
             ]
@@ -517,9 +518,9 @@ enum ToolboxCatalog {
             id: .breathFlute,
             kind: .sensor,
             title: "Breath Flute",
-            subtitle: "Play tool. Blow gates a local tone; touch sets pitch. Nothing recorded.",
+            subtitle: "Blow the bottom edge. Silent until you blow. Big finger holes.",
             symbol: "music.note",
-            synonyms: ["flute", "breath", "blow", "toy", "play", "pitch", "tone"]
+            synonyms: ["flute", "breath", "blow", "blow here", "bottom mic", "finger holes", "toy", "play", "pitch", "tone"]
         ),
         ToolDefinition(
             id: .coupledVibration,

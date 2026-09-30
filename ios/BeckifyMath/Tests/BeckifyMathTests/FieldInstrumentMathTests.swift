@@ -250,8 +250,25 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertEqual(BreathFluteMath.fretFrequencyHz(fret: 12), BreathFluteMath.rootHz * 2, accuracy: 1e-6)
 
         XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 0), 0, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 12), 0.08, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 36), 0.26, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 11.9), 0, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 12), BreathFluteMath.quietAmplitude, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 36), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 80), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
+        let soft = BreathFluteMath.amplitude(aboveFloorDB: 18)
+        let hard = BreathFluteMath.amplitude(aboveFloorDB: 30)
+        XCTAssertGreaterThan(hard, soft)
+        XCTAssertGreaterThan(soft, BreathFluteMath.quietAmplitude)
+        XCTAssertEqual(BreathFluteMath.coveredFromEmbouchure(holesCovered: [false, true, true]), 0)
+        XCTAssertEqual(BreathFluteMath.coveredFromEmbouchure(holesCovered: [true, true, false, true]), 2)
+        XCTAssertEqual(
+            BreathFluteMath.frequencyHz(coveredFromEmbouchure: 0),
+            BreathFluteMath.fretFrequencyHz(fret: 12),
+            accuracy: 1e-6
+        )
+        XCTAssertEqual(BreathFluteMath.frequencyHz(coveredFromEmbouchure: 7), BreathFluteMath.rootHz, accuracy: 1e-6)
+        XCTAssertEqual(BreathFluteMath.noteName(coveredFromEmbouchure: 0), "C5")
+        XCTAssertEqual(BreathFluteMath.noteName(coveredFromEmbouchure: 7), "C4")
+        XCTAssertEqual(BreathFluteMath.noteName(coveredFromEmbouchure: 99), "C4")
 
         let seeded = BreathFluteMath.updateNoiseFloor(currentDBFS: -40, floor: nil)
         XCTAssertEqual(seeded, -40, accuracy: 1e-9)
@@ -273,6 +290,8 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertEqual(wrap.nextPhase, 0, accuracy: 1e-6)
         XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("play tool"))
         XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("not a meter"))
+        XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("silence"))
+        XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("not a calibrated wind instrument"))
         XCTAssertFalse(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("recorded or uploaded") == false)
     }
 

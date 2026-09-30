@@ -53,7 +53,7 @@ public struct RoomRigFrameStats: Equatable, Sendable {
     }
 }
 
-/// What Setup Check may play from the phone speaker while the shared mic tap listens.
+/// What Room & Rig Check may play from the phone speaker while the shared mic tap listens.
 public enum RoomRigStimulusKind: String, CaseIterable, Sendable {
     case listen
     case pink
@@ -70,7 +70,7 @@ public enum RoomRigStimulusKind: String, CaseIterable, Sendable {
     }
 }
 
-/// Room and rig helpers for Setup Check.
+/// Room and rig helpers for Room & Rig Check.
 ///
 /// Every number here is relative to this phone’s speaker and microphone.
 /// It is not a calibrated measurement microphone, not REW, and not a THX certificate.
@@ -316,6 +316,234 @@ public enum RoomRigMath {
             next.removeFirst(next.count - limit)
         }
         return next
+    }
+}
+
+// MARK: - Listen-and-test snapshot
+
+/// Low / mid / high energy from an approximate RTA. Decibels are relative dBFS, not SPL.
+public struct RoomRigBandBalance: Equatable, Sendable {
+    public var lowDBFS: Double
+    public var midDBFS: Double
+    public var highDBFS: Double
+    /// Each group minus the loudest group. Zero is the strongest group on this pass.
+    public var lowVsLoudestDB: Double
+    public var midVsLoudestDB: Double
+    public var highVsLoudestDB: Double
+
+    public init(
+        lowDBFS: Double,
+        midDBFS: Double,
+        highDBFS: Double,
+        lowVsLoudestDB: Double,
+        midVsLoudestDB: Double,
+        highVsLoudestDB: Double
+    ) {
+        self.lowDBFS = lowDBFS
+        self.midDBFS = midDBFS
+        self.highDBFS = highDBFS
+        self.lowVsLoudestDB = lowVsLoudestDB
+        self.midVsLoudestDB = midVsLoudestDB
+        self.highVsLoudestDB = highVsLoudestDB
+    }
+}
+
+/// One finished listen-and-test pass. Every number is relative to this phone.
+public struct RoomRigTestSnapshot: Equatable, Sendable {
+    public var stimulus: String
+    public var durationSeconds: Double
+    public var levelDBFS: Double
+    public var peakDBFS: Double
+    public var crestDB: Double?
+    public var clipFraction: Double
+    public var aboveFloorDB: Double?
+    public var peakHz: Double?
+    public var centroidHz: Double?
+    public var balance: RoomRigBandBalance?
+
+    public init(
+        stimulus: String,
+        durationSeconds: Double,
+        levelDBFS: Double,
+        peakDBFS: Double,
+        crestDB: Double?,
+        clipFraction: Double,
+        aboveFloorDB: Double?,
+        peakHz: Double?,
+        centroidHz: Double?,
+        balance: RoomRigBandBalance?
+    ) {
+        self.stimulus = stimulus
+        self.durationSeconds = durationSeconds
+        self.levelDBFS = levelDBFS
+        self.peakDBFS = peakDBFS
+        self.crestDB = crestDB
+        self.clipFraction = clipFraction
+        self.aboveFloorDB = aboveFloorDB
+        self.peakHz = peakHz
+        self.centroidHz = centroidHz
+        self.balance = balance
+    }
+}
+
+/// Samples gathered while a test is running. The live meters keep updating beside this.
+public struct RoomRigTestCapture: Equatable, Sendable {
+    public var levels: [Double]
+    public var peaks: [Double]
+    public var crests: [Double]
+    public var clips: [Double]
+    public var peakHz: [Double]
+    public var bands: [AcousticDisplayBand]
+
+    public init(
+        levels: [Double] = [],
+        peaks: [Double] = [],
+        crests: [Double] = [],
+        clips: [Double] = [],
+        peakHz: [Double] = [],
+        bands: [AcousticDisplayBand] = []
+    ) {
+        self.levels = levels
+        self.peaks = peaks
+        self.crests = crests
+        self.clips = clips
+        self.peakHz = peakHz
+        self.bands = bands
+    }
+
+    public mutating func append(
+        levelDBFS: Double,
+        peakDBFS: Double,
+        crestDB: Double?,
+        clipFraction: Double,
+        peakHz: Double?,
+        bands: [AcousticDisplayBand]
+    ) {
+        if levelDBFS.isFinite { levels.append(levelDBFS) }
+        if peakDBFS.isFinite { peaks.append(peakDBFS) }
+        if let crestDB, crestDB.isFinite { crests.append(crestDB) }
+        if clipFraction.isFinite { clips.append(min(1, max(0, clipFraction))) }
+        if let peakHz, peakHz.isFinite, peakHz > 0 { self.peakHz.append(peakHz) }
+        for band in bands where band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
+            self.bands.append(band)
+        }
+    }
+
+    /// Nil until at least one level has arrived.
+    public func snapshot(
+        stimulus: String,
+        durationSeconds: Double,
+        floorDBFS: Double?
+    ) -> RoomRigTestSnapshot? {
+        guard let level = RoomRigMath.percentile(levels, p: 0.5) else { return nil }
+        let peak = peaks.max() ?? level
+        let crest = RoomRigMath.percentile(crests, p: 0.5)
+        let clip = clips.isEmpty ? 0 : clips.reduce(0, +) / Double(clips.count)
+        let above = floorDBFS.flatMap { RoomRigMath.signalAboveFloorDB(levelDBFS: level, floorDBFS: $0) }
+        let averaged = RoomRigTestMath.averageBands(bands)
+        return RoomRigTestSnapshot(
+            stimulus: stimulus,
+            durationSeconds: durationSeconds.isFinite ? max(0, durationSeconds) : 0,
+            levelDBFS: level,
+            peakDBFS: peak,
+            crestDB: crest,
+            clipFraction: clip,
+            aboveFloorDB: above,
+            peakHz: RoomRigMath.percentile(peakHz, p: 0.5),
+            centroidHz: RoomRigTestMath.centroidHz(bands: averaged),
+            balance: RoomRigTestMath.bandBalance(bands: averaged)
+        )
+    }
+}
+
+/// Plain-language notes for the listen-and-test numbers. Relative A/B only.
+public enum RoomRigTestCopy {
+    public static let level =
+        "How loud this pass was on this phone, in relative dBFS. Use the same signal in two spots and compare. Not dB SPL."
+    public static let peak =
+        "The loudest moment in the window. If it sits near 0 dBFS, this mic overloaded and the A/B is not fair."
+    public static let crest =
+        "How much the peaks stick up above the typical level. Music is usually higher crest than pink noise. A big change between seats can mean the room, or that the song changed."
+    public static let clip =
+        "Share of the window at full scale. Any clip means it was too hot — turn it down and run the test again."
+    public static let aboveFloor =
+        "How far this pass sat above the quiet floor from Listen. A small gap means the signal is barely out of the room noise on this mic."
+    public static let peakHz =
+        "The strongest band during the pass. On pink noise, a peak that moves between seats is a relative tilt, not a certified room mode."
+    public static let centroid =
+        "Where the spectrum balances. Higher means this pass was brighter on this mic. Compare seats. It is not a target curve."
+    public static let balance =
+        "Low, mid, and high from the approximate RTA. 0 dB is the strongest group on this pass. A seat that loses highs versus spot A is darker on this phone — not a lab RTA."
+    public static let versusA =
+        "This pass minus spot A, on this phone. Positive level means louder here. Not a calibrated difference."
+}
+
+public enum RoomRigTestMath {
+    /// Long enough for one log sweep, short enough to hold the phone still.
+    public static let windowSeconds = 8.0
+
+    /// Power-weighted center of the bands. Nil when there is no energy.
+    public static func centroidHz(bands: [AcousticDisplayBand]) -> Double? {
+        var weight = 0.0
+        var moment = 0.0
+        for band in bands where band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
+            let power = pow(10, band.dbFS / 10)
+            guard power.isFinite, power > 0 else { continue }
+            weight += power
+            moment += band.centerHz * power
+        }
+        guard weight > 0 else { return nil }
+        return moment / weight
+    }
+
+    /// Groups the approximate RTA into low (<250 Hz), mid, and high (≥2 kHz).
+    public static func bandBalance(bands: [AcousticDisplayBand]) -> RoomRigBandBalance? {
+        func energy(_ include: (Double) -> Bool) -> Double? {
+            var sum = 0.0
+            var hits = 0
+            for band in bands where band.centerHz.isFinite && band.dbFS.isFinite && include(band.centerHz) {
+                let power = pow(10, band.dbFS / 10)
+                guard power.isFinite, power > 0 else { continue }
+                sum += power
+                hits += 1
+            }
+            guard hits > 0, sum > 0 else { return nil }
+            return 10 * log10(sum / Double(hits))
+        }
+        guard let low = energy({ $0 < 250 }),
+              let mid = energy({ $0 >= 250 && $0 < 2_000 }),
+              let high = energy({ $0 >= 2_000 })
+        else { return nil }
+        let loudest = max(low, mid, high)
+        return RoomRigBandBalance(
+            lowDBFS: low,
+            midDBFS: mid,
+            highDBFS: high,
+            lowVsLoudestDB: low - loudest,
+            midVsLoudestDB: mid - loudest,
+            highVsLoudestDB: high - loudest
+        )
+    }
+
+    /// Mean power in each third-octave center, written back as dBFS.
+    public static func averageBands(_ bands: [AcousticDisplayBand]) -> [AcousticDisplayBand] {
+        var power: [Double: Double] = [:]
+        var hits: [Double: Int] = [:]
+        for band in bands where band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
+            let linear = pow(10, band.dbFS / 10)
+            guard linear.isFinite, linear > 0 else { continue }
+            power[band.centerHz, default: 0] += linear
+            hits[band.centerHz, default: 0] += 1
+        }
+        return power.keys.sorted().compactMap { hz in
+            guard let sum = power[hz], let count = hits[hz], count > 0, sum > 0 else { return nil }
+            return AcousticDisplayBand(
+                lowHz: hz,
+                highHz: hz,
+                centerHz: hz,
+                dbFS: 10 * log10(sum / Double(count))
+            )
+        }
     }
 }
 
