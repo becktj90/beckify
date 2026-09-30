@@ -23,11 +23,19 @@ struct ConduitFillView: View {
     @StoredChoice(.conduitFill, "raceway", default: RacewayKind.emt) private var raceway
     @StoredChoice(.conduitFill, "insulation", default: ConductorInsulationKind.thhn) private var insulation
     @StoredToggle(.conduitFill, "nipple", default: false) private var nipple
+    @StoredChoice(.conduitFill, "grounding", default: EquipmentGroundingContext.none) private var grounding
+    @StoredInput(.conduitFill, "ocpd", default: "") private var ocpd
+    @StoredInput(.conduitFill, "loadAmps", default: "") private var loadAmps
+    @StoredChoice(.conduitFill, "egcMaterial", default: ConductorMaterial.copper) private var egcMaterial
+    @StoredToggle(.conduitFill, "countEGC", default: true) private var countEGC
     @StoredInput(.conduitFill, "mixedJSON", default: "") private var mixedJSON
     @StoredInput(.conduitFill, "jobName", default: "Conduit fill") private var jobName
     @State private var session = ExplicitCalculationState<ConduitFillResult>()
     @State private var mixedRows: [MixedRow] = ConduitFillView.defaultMixedRows()
     @State private var importedBanner: String?
+    @State private var displayedEGC: EquipmentGroundingRecommendation?
+    @State private var egcCounted = false
+    @State private var egcNote: String?
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -39,7 +47,7 @@ struct ConduitFillView: View {
 
     private var inputFingerprint: String {
         let mixed = mixedRows.map { "\($0.qty):\($0.size):\($0.insulation.rawValue)" }.joined(separator: ",")
-        return "\(mode)|\(qty)|\(size)|\(trade)|\(raceway)|\(insulation)|\(nipple)|\(mixed)"
+        return "\(mode)|\(qty)|\(size)|\(trade)|\(raceway)|\(insulation)|\(nipple)|\(grounding)|\(ocpd)|\(loadAmps)|\(egcMaterial)|\(countEGC)|\(mixed)"
     }
 
     var body: some View {
@@ -54,7 +62,7 @@ struct ConduitFillView: View {
                 symbolic: "1 wire → 53%    2 wires → 31%    3+ → 40%    nipple → 60%",
                 substituted: substituted,
                 meaning: "Fill percent is the sum of Chapter 9 Table 5 conductor areas over the Table 4 raceway area. Equipment grounding conductors count toward the conductor total. Same-size Annex C counts govern at an exact boundary.",
-                citation: "NEC Chapter 9 Table 1 (and Note 4). Areas from Table 4 (raceway) and Table 5 (insulation)."
+                citation: "NEC Chapter 9 Table 1 (and Note 4). Areas from Table 4 and Table 5. Optional EGC: NEC 2023 Table 250.122. Confirm Code / AHJ."
             )
 
             if let importedBanner {
@@ -71,6 +79,17 @@ struct ConduitFillView: View {
             MenuField(title: "Raceway", selection: $raceway, options: RacewayKind.allCases) { $0.displayName }
             MenuField(title: "Trade size", selection: $trade, options: trades, label: { "\($0)\"" })
             Toggle("Nipple — 24 in or shorter (60% fill)", isOn: $nipple)
+
+            MenuField(title: "Circuit", selection: $grounding, options: EquipmentGroundingContext.allCases) { $0.displayName }
+            if grounding.impliesEquipmentGround {
+                NumberField(title: "OCPD rating", unit: "A", text: $ocpd, optional: true, fieldID: "ocpd", onSubmit: calculate)
+                NumberField(title: "Load current if no OCPD", unit: "A", text: $loadAmps, optional: true, fieldID: "loadAmps", onSubmit: calculate)
+                MenuField(title: "EGC material", selection: $egcMaterial, options: ConductorMaterial.allCases) { $0.displayName }
+                Toggle("Count EGC in fill", isOn: $countEGC)
+                Text("3Ø and multiwire use one Table 250.122 equipment grounding conductor. Turn the count off if that ground is already in the groups. Confirm the current Code and the AHJ.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+            }
 
             if mode == .same {
                 NumberField(title: "Conductor count", unit: "ea", text: $qty, fieldID: "qty", onSubmit: calculate)
@@ -149,7 +168,11 @@ struct ConduitFillView: View {
                     if let sug = r.suggestedTradeSize {
                         ResultRow(label: "Minimum \(r.raceway.displayName)", value: "\(sug)\"", tone: Theme.warn)
                     }
+                    if let egcNote {
+                        ResultRow(label: "EGC in this fill", value: egcNote, tone: Theme.muted)
+                    }
                 }
+                EquipmentGroundingCard(recommendation: displayedEGC, countedInFill: displayedEGC == nil ? nil : egcCounted)
                 .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
@@ -161,7 +184,11 @@ struct ConduitFillView: View {
                             "emt": trade,
                             "raceway": raceway.rawValue,
                         ],
-                        outputs: ["fill": Format.percent(r.actualFillPercent), "ok": r.passes ? "PASS" : "FAIL"]
+                        outputs: [
+                            "fill": Format.percent(r.actualFillPercent),
+                            "ok": r.passes ? "PASS" : "FAIL",
+                            "EGC": displayedEGC?.copyLine ?? "",
+                        ]
                     ))
                 }
             }
@@ -183,28 +210,91 @@ struct ConduitFillView: View {
         .sensoryFeedback(.success, trigger: successTick)
     }
 
+    private struct PreparedFill {
+        var groups: [ConduitFillGroup]
+        var recommendation: EquipmentGroundingRecommendation?
+        var counted: Bool
+        var note: String?
+    }
+
     private func calculate() {
+        let prepared: PreparedFill
+        do {
+            prepared = try preparedFill()
+        } catch let error as CalcError {
+            session.calculate { throw error }
+            return
+        } catch {
+            session.calculate { throw CalcError.outOfRange(error.localizedDescription) }
+            return
+        }
+        let groups = prepared.groups
         session.calculate {
-            let groups: [ConduitFillGroup]
-            if mode == .same {
-                let n = try WholeCount.parse(qty.parsedDouble ?? .nan, name: "Conductor quantity")
-                groups = [ConduitFillGroup(quantity: n, size: size, insulation: insulation)]
-            } else {
-                groups = try mixedRows.map { row in
-                    let n = try WholeCount.parse(row.qty.parsedDouble ?? .nan, name: "Conductor quantity")
-                    return ConduitFillGroup(quantity: n, size: row.size, insulation: row.insulation)
-                }
-            }
-            return try ConduitFill.calculate(
+            try ConduitFill.calculate(
                 groups: groups,
                 raceway: raceway,
                 tradeSize: trade,
                 nipple: nipple
             )
         }
-        if session.displayedResult != nil, !session.isStale, !reduceMotion {
-            successTick += 1
+        if session.displayedResult != nil, !session.isStale {
+            displayedEGC = prepared.recommendation
+            egcCounted = prepared.counted
+            egcNote = prepared.note
+            if !reduceMotion { successTick += 1 }
         }
+    }
+
+    private func preparedFill() throws -> PreparedFill {
+        var groups: [ConduitFillGroup]
+        if mode == .same {
+            let n = try WholeCount.parse(qty.parsedDouble ?? .nan, name: "Conductor quantity")
+            groups = [ConduitFillGroup(quantity: n, size: size, insulation: insulation)]
+        } else {
+            groups = try mixedRows.map { row in
+                let n = try WholeCount.parse(row.qty.parsedDouble ?? .nan, name: "Conductor quantity")
+                return ConduitFillGroup(quantity: n, size: row.size, insulation: row.insulation)
+            }
+        }
+
+        let recommendation = equipmentGroundRecommendation()
+        var counted = false
+        var note: String?
+        if let recommendation {
+            if countEGC {
+                let egcInsulation: ConductorInsulationKind = mode == .same ? insulation : .thhn
+                if NECTables.conductorArea(size: recommendation.size, insulation: egcInsulation) != nil {
+                    groups.append(ConduitFillGroup(quantity: 1, size: recommendation.size, insulation: egcInsulation))
+                    counted = true
+                    note = "Added 1 × \(recommendation.label)"
+                } else {
+                    note = "No Table 5 area — not added"
+                }
+            } else {
+                note = "Recommended, not added"
+            }
+        }
+        return PreparedFill(groups: groups, recommendation: recommendation, counted: counted, note: note)
+    }
+
+    private func equipmentGroundRecommendation() -> EquipmentGroundingRecommendation? {
+        let ocpdText = ocpd.trimmingCharacters(in: .whitespacesAndNewlines)
+        let loadText = loadAmps.trimmingCharacters(in: .whitespacesAndNewlines)
+        let explicit = !ocpdText.isEmpty
+        guard let amps = explicit ? ocpd.parsedDouble : (loadText.isEmpty ? nil : loadAmps.parsedDouble) else {
+            return nil
+        }
+        let extra = grounding.countsInRacewayByDefault
+            ? "3Ø or multiwire: one EGC from the OCPD. Count it here unless you already listed that ground."
+            : "1Ø equipment ground from the same table. The count toggle adds that conductor to this raceway."
+        return EquipmentGrounding.recommend(
+            amps: amps,
+            material: egcMaterial,
+            context: grounding,
+            ampsAreOCPDRating: explicit,
+            ungroundedSize: mode == .same ? size : nil,
+            extraNote: extra
+        )
     }
 
     private func reset() {
@@ -214,6 +304,14 @@ struct ConduitFillView: View {
         raceway = .emt
         insulation = .thhn
         nipple = false
+        grounding = .none
+        ocpd = ""
+        loadAmps = ""
+        egcMaterial = .copper
+        countEGC = true
+        displayedEGC = nil
+        egcCounted = false
+        egcNote = nil
         mixedRows = Self.defaultMixedRows()
         persistMixedRows()
         importedBanner = nil

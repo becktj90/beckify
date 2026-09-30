@@ -164,6 +164,18 @@ struct ConductorCostView: View {
         }
         .opacity(session.isStale ? 0.72 : 1)
 
+        EquipmentGroundingCard(
+            recommendation: EquipmentGrounding.recommend(
+                amps: r.designCurrent,
+                material: material,
+                context: EquipmentGroundingContext.from(system: system),
+                ampsAreOCPDRating: false,
+                ungroundedSize: r.recommended.size,
+                extraNote: "Sized from the design current (continuous loads already include 125%). Not included in the $/kft rank."
+            )
+        )
+        .opacity(session.isStale ? 0.72 : 1)
+
         ResultCard(title: "Compliant options") {
             ForEach(Array(r.options.prefix(10).enumerated()), id: \.offset) { index, option in
                 VStack(alignment: .leading, spacing: 4) {

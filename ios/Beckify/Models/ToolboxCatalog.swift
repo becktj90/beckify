@@ -23,6 +23,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case cellularStatus
     case bluetoothScan
     case noiseMeter
+    case acousticImager
     case bubbleLevel
     case magnetometer
     case barometer
@@ -443,6 +444,17 @@ enum ToolboxCatalog {
             subtitle: "Uncalibrated microphone dBFS. Not an SLM.",
             symbol: "mic.fill",
             synonyms: ["noise", "decibel", "db", "spl", "microphone", "sound", "dbfs"]
+        ),
+        ToolDefinition(
+            id: .acousticImager,
+            kind: .sensor,
+            title: "Acoustic Imager",
+            subtitle: "Mic spectrum and level map. Not an ultrasonic imager.",
+            symbol: "waveform",
+            synonyms: [
+                "acoustic", "imager", "spectrum", "fft", "spectrogram", "sound camera",
+                "level map", "microphone", "ultrasonic", "leak",
+            ]
         ),
         ToolDefinition(
             id: .bubbleLevel,
@@ -902,7 +914,7 @@ enum ToolboxCatalog {
             .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
         ],
         .sensors: [
-            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .bubbleLevel,
+            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .bubbleLevel,
             .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
         ],
         .reference: [
@@ -969,13 +981,14 @@ enum ToolboxCatalog {
         .wifiStatus: [.cellularStatus, .bluetoothScan, .deviceHealth],
         .cellularStatus: [.wifiStatus, .rfLink, .bluetoothScan],
         .bluetoothScan: [.wifiStatus, .cellularStatus, .deviceHealth],
-        .noiseMeter: [.deviceHealth],
+        .noiseMeter: [.acousticImager, .deviceHealth],
+        .acousticImager: [.noiseMeter, .deviceHealth],
         .bubbleLevel: [.motionSnapshot, .magnetometer, .solarDesign],
         .magnetometer: [.bubbleLevel, .solarDesign, .motionSnapshot],
         .barometer: [.fieldPosition, .deviceHealth],
         .motionSnapshot: [.bubbleLevel, .magnetometer],
         .fieldPosition: [.magnetometer, .wifiStatus, .barometer],
-        .deviceHealth: [.wifiStatus, .noiseMeter],
+        .deviceHealth: [.wifiStatus, .noiseMeter, .acousticImager],
         .reactance: [.powerFactor, .frequencyWave, .ohmsLaw],
         .powerFactor: [.power, .reactance, .transformer],
         .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],

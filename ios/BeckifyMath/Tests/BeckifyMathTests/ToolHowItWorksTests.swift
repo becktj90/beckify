@@ -63,6 +63,14 @@ final class ToolHowItWorksTests: XCTestCase {
         XCTAssertTrue(noise?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("SLM") }) == true)
         XCTAssertTrue(noise?.summary.localizedCaseInsensitiveContains("dBFS") == true)
 
+        let imager = ToolHowItWorksCatalog.copy(forToolID: "acousticImager")
+        XCTAssertTrue(imager?.summary.localizedCaseInsensitiveContains("FFT") == true)
+        XCTAssertTrue(imager?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("ultrasonic") }) == true)
+        XCTAssertTrue(imager?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("Fluke") }) == true)
+        XCTAssertTrue(imager?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("gas-leak") }) == true)
+        XCTAssertTrue(imager?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("bearing") }) == true)
+        XCTAssertTrue(imager?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("SPL") }) == true)
+
         let health = ToolHowItWorksCatalog.copy(forToolID: "deviceHealth")
         XCTAssertTrue(health?.summary.localizedCaseInsensitiveContains("Low Power") == true)
         XCTAssertTrue(health?.summary.localizedCaseInsensitiveContains("storage") == true)

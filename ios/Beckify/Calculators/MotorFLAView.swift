@@ -78,6 +78,16 @@ struct MotorFLAView: View {
                     ResultRow(label: "Conductor min (430.22)", value: Format.amps(MotorFLA.conductorAmps(fla: r.fla)))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                EquipmentGroundingCard(
+                    recommendation: EquipmentGrounding.recommend(
+                        amps: MotorFLA.conductorAmps(fla: r.fla),
+                        material: .copper,
+                        context: r.threePhase ? .threePhase : .singlePhase,
+                        ampsAreOCPDRating: false,
+                        extraNote: "Basis is the next standard device at or above 125% table FLA (430.22). A 430.52 breaker is often larger — use that device for the EGC."
+                    )
+                )
+                .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,

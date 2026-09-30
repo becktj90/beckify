@@ -477,6 +477,19 @@ struct MotorNameplateView: View {
                     ResultRow(label: "Conductor ≥", value: "\(Format.amps(r.conductorRequiredAmps))" + (r.suggestedConductorSize.map { " → \($0) AWG/kcmil" } ?? ""))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if let device = r.scpd.nextStandardAmps {
+                    EquipmentGroundingCard(
+                        recommendation: EquipmentGrounding.recommend(
+                            amps: Double(device),
+                            material: .copper,
+                            context: EquipmentGroundingContext.from(phases: Int(phases) ?? 3),
+                            ampsAreOCPDRating: true,
+                            ungroundedSize: r.suggestedConductorSize,
+                            extraNote: "OCPD basis is the Table 430.52 next standard device, not nameplate FLA. A smaller breaker can allow a smaller EGC."
+                        )
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
 
                 if let lra = r.lockedRotor {
                     ResultCard(title: "Locked-rotor (code letter)") {
@@ -606,6 +619,17 @@ struct HeaterDesignView: View {
                         ResultRow(label: "Suggested OCPD", value: "\(ocpd) A")
                     }
                 }
+                .opacity(session.isStale ? 0.72 : 1)
+                EquipmentGroundingCard(
+                    recommendation: EquipmentGrounding.recommend(
+                        amps: r.suggestedOCPD.map(Double.init) ?? r.designAmps,
+                        material: .copper,
+                        context: (HeaterPhase(rawValue: phase) ?? .three) == .three ? .threePhase : .singlePhase,
+                        ampsAreOCPDRating: r.suggestedOCPD != nil,
+                        ungroundedSize: r.suggestedConductorSize,
+                        extraNote: "Heater branch EGC from the suggested OCPD when one is listed, otherwise from 125% line current."
+                    )
+                )
                 .opacity(session.isStale ? 0.72 : 1)
             }
 
@@ -932,6 +956,19 @@ struct NECCircuitView: View {
                     ResultRow(label: "OCPD", value: r.ocpdAmps.map { "\($0) A" } ?? "—", emphasis: true, tone: Theme.copper)
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if let ocpd = r.ocpdAmps {
+                    EquipmentGroundingCard(
+                        recommendation: EquipmentGrounding.recommend(
+                            amps: Double(ocpd),
+                            material: .copper,
+                            context: EquipmentGroundingContext.from(phases: Int(phases) ?? 3),
+                            ampsAreOCPDRating: true,
+                            ungroundedSize: r.conductorSize,
+                            extraNote: "Feeder or branch EGC. A service grounding electrode conductor is Table 250.66, not this row."
+                        )
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
 
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
@@ -1048,6 +1085,17 @@ struct LoadWorksheetView: View {
                     ResultRow(label: "With spare", value: "\(Format.number(r.grandTotalVA, digits: 0)) VA", tone: Theme.copper)
                     ResultRow(label: "Calculated amps", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
                 }
+                .opacity(session.isStale ? 0.72 : 1)
+                EquipmentGroundingCard(
+                    title: "Feeder EGC if this is the OCPD",
+                    recommendation: EquipmentGrounding.recommend(
+                        amps: r.amps,
+                        material: .copper,
+                        context: EquipmentGroundingContext.from(phases: Int(phases) ?? 3),
+                        ampsAreOCPDRating: false,
+                        extraNote: "Only if this calculated current is the feeder OCPD basis. A service grounding electrode conductor is Table 250.66, sized from the service conductors, not from this row."
+                    )
+                )
                 .opacity(session.isStale ? 0.72 : 1)
 
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {

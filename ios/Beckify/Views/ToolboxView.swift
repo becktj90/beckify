@@ -200,6 +200,7 @@ struct CalculatorHostView: View {
             case .cellularStatus: CellularStatusView()
             case .bluetoothScan: BluetoothScannerView()
             case .noiseMeter: NoiseMeterView()
+            case .acousticImager: AcousticImagerView()
             case .bubbleLevel: BubbleLevelView()
             case .magnetometer: MagnetometerView()
             case .barometer: BarometerView()

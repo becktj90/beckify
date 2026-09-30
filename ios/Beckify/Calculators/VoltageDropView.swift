@@ -131,6 +131,17 @@ struct VoltageDropView: View {
                 }
                 .opacity(session.isStale ? 0.72 : 1)
 
+                EquipmentGroundingCard(
+                    recommendation: EquipmentGrounding.recommend(
+                        amps: current.parsedDouble ?? .nan,
+                        material: material,
+                        context: EquipmentGroundingContext.from(system: system),
+                        ampsAreOCPDRating: false,
+                        ungroundedSize: r.recommendedSize ?? size
+                    )
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
                 ResultCard(title: "Size comparison") {
                     ForEach(comparisonRows(from: r), id: \.size) { row in
                         HStack(alignment: .firstTextBaseline) {

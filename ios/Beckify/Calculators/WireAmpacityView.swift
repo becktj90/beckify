@@ -28,6 +28,7 @@ struct WireAmpacityView: View {
     @StoredChoice(.wireAmpacity, "mode", default: Mode.select) private var mode
     @StoredInput(.wireAmpacity, "amps", default: "95") private var amps
     @StoredChoice(.wireAmpacity, "material", default: ConductorMaterial.copper) private var material
+    @StoredChoice(.wireAmpacity, "circuit", default: EquipmentGroundingContext.threePhase) private var circuit
     @StoredChoice(.wireAmpacity, "insulation", default: TempChoice.c90) private var insulation
     @StoredChoice(.wireAmpacity, "termination", default: TempChoice.c75) private var termination
     @StoredInput(.wireAmpacity, "ambient", default: "30") private var ambient
@@ -50,7 +51,7 @@ struct WireAmpacityView: View {
     }
 
     private var inputFingerprint: String {
-        "\(mode)|\(amps)|\(material)|\(insulation)|\(termination)|\(ambient)|\(ccc)|\(runs)|\(continuous)|\(size)|\(ocpd)"
+        "\(mode)|\(amps)|\(material)|\(circuit)|\(insulation)|\(termination)|\(ambient)|\(ccc)|\(runs)|\(continuous)|\(size)|\(ocpd)"
     }
 
     var body: some View {
@@ -84,6 +85,7 @@ struct WireAmpacityView: View {
                 ForEach(ConductorMaterial.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
             .segmentedControlStyle()
+            MenuField(title: "Circuit", selection: $circuit, options: EquipmentGroundingContext.allCases) { $0.displayName }
 
             NumberField(title: "Load current", unit: "A", text: $amps, fieldID: "amps", onSubmit: calculate)
             MenuField(title: "Insulation", selection: $insulation, options: TempChoice.allCases) { $0.label }
@@ -155,6 +157,17 @@ struct WireAmpacityView: View {
         }
         .opacity(session.isStale ? 0.72 : 1)
 
+        EquipmentGroundingCard(
+            recommendation: EquipmentGrounding.recommend(
+                amps: r.requiredAmpacity,
+                material: material,
+                context: circuit,
+                ampsAreOCPDRating: false,
+                ungroundedSize: r.selected.size
+            )
+        )
+        .opacity(session.isStale ? 0.72 : 1)
+
         warningList(r.selected.warnings)
         citationList(r.selected.citations)
 
@@ -188,6 +201,13 @@ struct WireAmpacityView: View {
                         "size": r.selected.label,
                         "usable": Format.amps(r.selected.usableTotal),
                         "required": Format.amps(r.requiredAmpacity),
+                        "EGC": EquipmentGrounding.recommend(
+                            amps: r.requiredAmpacity,
+                            material: material,
+                            context: circuit,
+                            ampsAreOCPDRating: false,
+                            ungroundedSize: r.selected.size
+                        )?.copyLine ?? "",
                     ]
                 ))
             }
@@ -214,6 +234,9 @@ struct WireAmpacityView: View {
         }
         .opacity(evaluateSession.isStale ? 0.72 : 1)
 
+        EquipmentGroundingCard(recommendation: evaluateGround(for: r))
+            .opacity(evaluateSession.isStale ? 0.72 : 1)
+
         warningList(r.warnings)
         citationList(r.citations)
 
@@ -233,7 +256,10 @@ struct WireAmpacityView: View {
                     name: jobName,
                     toolID: .wireAmpacity,
                     inputs: ["size": r.label, "mat": material.displayName, "I": amps],
-                    outputs: ["usable": Format.amps(r.usableTotal)]
+                    outputs: [
+                        "usable": Format.amps(r.usableTotal),
+                        "EGC": evaluateGround(for: r)?.copyLine ?? "",
+                    ]
                 ))
             }
         }
@@ -266,6 +292,20 @@ struct WireAmpacityView: View {
                 ResultRow(label: cite.articleOrTable, value: cite.edition.displayName, tone: Theme.muted)
             }
         }
+    }
+
+    private func evaluateGround(for result: AmpacityDeratingResult) -> EquipmentGroundingRecommendation? {
+        let ocpdText = ocpd.trimmingCharacters(in: .whitespacesAndNewlines)
+        let explicit = !ocpdText.isEmpty
+        let basis = explicit ? ocpd.parsedDouble : amps.parsedDouble
+        guard let basis else { return nil }
+        return EquipmentGrounding.recommend(
+            amps: basis,
+            material: material,
+            context: circuit,
+            ampsAreOCPDRating: explicit,
+            ungroundedSize: result.size
+        )
     }
 
     private func calculate() {
