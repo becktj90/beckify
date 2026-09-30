@@ -419,6 +419,7 @@ extension GlyphKind {
         case .nickelStrip: return .nickelStrip
         case .controlSystems: return .controlSystems
         case .controlStrategies: return .controlStrategies
+        case .electronicsLab: return .electronicsLab
         }
     }
 }
@@ -506,6 +507,7 @@ enum GlyphKind {
     case nickelStrip
     case controlSystems
     case controlStrategies
+    case electronicsLab
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -543,6 +545,7 @@ enum GlyphKind {
         case .rackCurrent: return Self.rackCurrent(rect)
         case .controlSystems: return Self.controlSystems(rect)
         case .controlStrategies: return Self.controlStrategies(rect)
+        case .electronicsLab: return Self.electronicsLab(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -1147,6 +1150,30 @@ enum GlyphKind {
         Glyph.line(&path, fork, CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.16))
         let node = r.width * 0.12
         path.addEllipse(in: CGRect(x: fork.x - node / 2, y: fork.y - node / 2, width: node, height: node))
+        return .stroke(path)
+    }
+
+    /// Op-amp triangle with a series resistor — open mark for the lab shelf.
+    private static func electronicsLab(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let left = CGPoint(x: r.minX + r.width * 0.18, y: r.midY)
+        let top = CGPoint(x: r.minX + r.width * 0.42, y: r.minY + r.height * 0.22)
+        let bottom = CGPoint(x: r.minX + r.width * 0.42, y: r.maxY - r.height * 0.22)
+        let tip = CGPoint(x: r.maxX - r.width * 0.16, y: r.midY)
+        path.move(to: top)
+        path.addLine(to: bottom)
+        path.addLine(to: tip)
+        path.closeSubpath()
+        Glyph.line(&path, left, CGPoint(x: r.minX + r.width * 0.30, y: r.midY))
+        let zigY = r.minY + r.height * 0.72
+        var x = r.minX + r.width * 0.22
+        path.move(to: CGPoint(x: x, y: zigY))
+        let step = r.width * 0.08
+        for index in 0..<5 {
+            x += step
+            let y = zigY + (index % 2 == 0 ? -r.height * 0.08 : r.height * 0.08)
+            path.addLine(to: CGPoint(x: x, y: index == 4 ? zigY : y))
+        }
         return .stroke(path)
     }
 
