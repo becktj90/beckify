@@ -250,7 +250,7 @@ struct ControlStrategiesView: View {
                         EngineerSeries(name: "ADRC", points: sketch.adrc.output, color: Theme.chartTertiary, fills: false),
                     ],
                     xLabel: "Time (s)",
-                    yLabel: "PV",
+                    yLabel: "Process variable",
                     xGuides: [EngineerGuide(value: sketch.disturbanceTime, label: "Load", axis: .x)],
                     yGuides: [EngineerGuide(value: sketch.reference, label: "SP", axis: .y)],
                     height: 230
@@ -273,7 +273,7 @@ struct ControlStrategiesView: View {
                         EngineerSeries(name: "ADRC", points: sketch.adrc.actuator, color: Theme.chartTertiary),
                     ],
                     xLabel: "Time (s)",
-                    yLabel: "Command",
+                    yLabel: "Command (0–1)",
                     height: 200,
                     smooth: false
                 )
@@ -315,7 +315,7 @@ struct ControlStrategiesView: View {
                     EngineerSeries(name: "Relay", points: loop.samples, color: Theme.chartSecondary),
                 ],
                 xLabel: "Input",
-                yLabel: "Command",
+                yLabel: "Command (0–1)",
                 xGuides: [
                     EngineerGuide(value: loop.risingTrip, label: "+\(bandText)", axis: .x),
                     EngineerGuide(value: loop.fallingTrip, label: "−\(bandText)", axis: .x),
@@ -342,7 +342,7 @@ struct ControlStrategiesView: View {
                         EngineerSeries(name: "−φ", points: slide.lowerBand, color: Theme.muted),
                     ],
                     xLabel: "Error",
-                    yLabel: "Error rate",
+                    yLabel: "Error rate (1/s)",
                     height: 230,
                     smooth: false
                 )
@@ -357,7 +357,7 @@ struct ControlStrategiesView: View {
                         EngineerSeries(name: "u", points: slide.actuator, color: Theme.warn),
                     ],
                     xLabel: "Time (s)",
-                    yLabel: "Command",
+                    yLabel: "Command (0–1)",
                     height: 180,
                     smooth: false
                 )

@@ -348,7 +348,24 @@ private struct FlexibleCableAmpacityChart: View {
                 )
                 .foregroundStyle(barColor(point))
             }
-            .chartYAxisLabel("A")
+            .chartXAxisLabel("Size")
+            .chartYAxisLabel("Ampacity (A)")
+            .chartXAxis {
+                AxisMarks { _ in
+                    AxisGridLine().foregroundStyle(Theme.chartGrid)
+                    AxisTick()
+                    AxisValueLabel()
+                        .font(.caption.monospacedDigit())
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisGridLine().foregroundStyle(Theme.chartGrid)
+                    AxisTick()
+                    AxisValueLabel()
+                        .font(.caption.monospacedDigit())
+                }
+            }
             .frame(height: 180)
             .accessibilityHidden(true)
             Text("Bars are \(column) from the cited table, before ambient correction and Table 400.5(A)(3). The strong bar is the size you picked. A second color, when it appears, is the smallest size for the load.")

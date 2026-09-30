@@ -468,7 +468,7 @@ private struct CableLadderCrossSection: View {
     let tint: Bool
 
     var body: some View {
-        DiagramCard(title: "Cross-section  \(result.status.label)", accessibilitySummary: result.accessibilitySummary) {
+        DiagramCard(title: "Cross-section  \(result.status.label)", accessibilitySummary: result.accessibilitySummary, allowsMagnify: true) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Image(systemName: symbol)

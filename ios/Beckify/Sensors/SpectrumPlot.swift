@@ -13,8 +13,12 @@ struct SpectrumPlot: View {
     /// 0…1 from the bottom. A median or display floor, not a calibrated noise spec.
     var referenceHeight: Double?
     var peakIndex: Int?
-    /// Room & Rig Check opts in. Other tools keep the unlabeled bar row.
+    /// Room & Rig Check opts in. The axis titles stay on every spectrum either way.
     var showsRelativeDBFSScale: Bool
+    var xAxis: PlotAxis
+    var yAxis: PlotAxis
+    var barReadouts: [String]
+    var inspection: PlotInspection
 
     init(
         heights: [Double],
@@ -25,7 +29,11 @@ struct SpectrumPlot: View {
         accessibilityLabel: String,
         referenceHeight: Double? = nil,
         peakIndex: Int? = nil,
-        showsRelativeDBFSScale: Bool = false
+        showsRelativeDBFSScale: Bool = false,
+        xAxis: PlotAxis? = nil,
+        yAxis: PlotAxis? = nil,
+        barReadouts: [String] = [],
+        inspection: PlotInspection = .inspect
     ) {
         self.heights = heights
         self.leadingCaption = leadingCaption
@@ -36,6 +44,21 @@ struct SpectrumPlot: View {
         self.referenceHeight = referenceHeight
         self.peakIndex = peakIndex
         self.showsRelativeDBFSScale = showsRelativeDBFSScale
+        self.xAxis = xAxis ?? PlotAxis(
+            title: "Frequency",
+            unit: "Hz",
+            start: leadingCaption ?? "",
+            end: trailingCaption ?? ""
+        )
+        if let yAxis {
+            self.yAxis = yAxis
+        } else if showsRelativeDBFSScale {
+            self.yAxis = Self.dbfsAxis
+        } else {
+            self.yAxis = PlotAxis(title: "Level", unit: "relative", start: "0", mid: "0.5", end: "1")
+        }
+        self.barReadouts = barReadouts
+        self.inspection = inspection
     }
 
     /// Audible-band microphone bars. Heat uses the Acoustic Imager display stops.
@@ -52,26 +75,45 @@ struct SpectrumPlot: View {
         let showsRelative = showsRelativeDBFSScale
         let finite = levels.filter(\.isFinite).sorted()
         let peak = levels.indices.max { levels[$0] < levels[$1] }
+        let leading = bands.first.map { Self.hertz($0.lowHz) }
+        let trailing = bands.last.map { Self.hertz($0.highHz) }
+        let readouts = bands.map { band in
+            "\(Self.hertz(band.centerHz)), \(Format.number(band.dbFS, digits: 0)) dBFS"
+        }
         heights = levels
-        leadingCaption = bands.first.map { Self.hertz($0.lowHz) }
-        trailingCaption = bands.last.map { Self.hertz($0.highHz) }
+        leadingCaption = leading
+        trailingCaption = trailing
         self.footnote = footnote
         self.plotHeight = plotHeight
         self.accessibilityLabel = accessibilityLabel ?? (bands.isEmpty
             ? "Spectrum idle"
-            : "Audible spectrum, \(bands.count) bands, relative dBFS")
+            : "Audible spectrum, \(bands.count) bands, amplitude in dBFS, frequency in hertz")
         referenceHeight = finite.isEmpty ? nil : finite[finite.count / 2]
         peakIndex = peak
         self.showsRelativeDBFSScale = showsRelative
+        xAxis = PlotAxis(
+            title: "Frequency",
+            unit: "Hz",
+            start: leading ?? "",
+            end: trailing ?? ""
+        )
+        yAxis = Self.dbfsAxis
+        barReadouts = readouts
+        inspection = .inspect
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if showsRelativeDBFSScale {
-                labeledSpectrum
-            } else {
+            LabeledPlotChrome(
+                xAxis: xAxis,
+                yAxis: yAxis,
+                accessibilityLabel: accessibilityLabel,
+                inspection: inspection,
+                plotHeight: plotHeight,
+                fullscreenTitle: "Spectrum",
+                readout: describe
+            ) {
                 barCanvas
-                frequencyCaptions
             }
             if let footnote, !footnote.isEmpty {
                 Text(footnote)
@@ -80,72 +122,34 @@ struct SpectrumPlot: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
     }
 
-    private var labeledSpectrum: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Relative dBFS")
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
-                .accessibilityHidden(true)
-            HStack(alignment: .top, spacing: 6) {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(Self.dbfsTick(AcousticSpectrum.displayCeilingDBFS))
-                    Spacer(minLength: 0)
-                    Text(Self.dbfsTick((AcousticSpectrum.displayCeilingDBFS + AcousticSpectrum.displayFloorDBFS) / 2))
-                    Spacer(minLength: 0)
-                    Text(Self.dbfsTick(AcousticSpectrum.displayFloorDBFS))
-                }
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
-                .frame(width: 40, height: plotHeight)
-                .accessibilityHidden(true)
-                barCanvas
-            }
-            HStack {
-                Text(leadingCaption ?? "")
-                Spacer()
-                Text("Frequency")
-                Spacer()
-                Text(trailingCaption ?? "")
-            }
-            .font(Theme.TypeRole.help)
-            .foregroundStyle(Theme.muted)
-            .accessibilityHidden(true)
+    private func describe(x: CGFloat, y: CGFloat) -> String {
+        guard !heights.isEmpty else { return "No spectrum yet" }
+        let index = min(heights.count - 1, max(0, Int(x * CGFloat(heights.count))))
+        if barReadouts.indices.contains(index) {
+            return barReadouts[index]
         }
-    }
-
-    private var frequencyCaptions: some View {
-        Group {
-            if leadingCaption != nil || trailingCaption != nil {
-                HStack {
-                    Text(leadingCaption ?? "")
-                    Spacer()
-                    Text(trailingCaption ?? "")
-                }
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-            }
-        }
+        let level = heights[index]
+        let shown = level.isFinite ? Format.number(level, digits: 2) : "—"
+        return "Bin \(index + 1) of \(heights.count), relative \(shown)"
     }
 
     private var barCanvas: some View {
         Canvas { context, size in
-                let count = heights.count
-                guard count > 0 else { return }
-                let gap: CGFloat = count > 16 ? 2 : 3
-                let width = max(1, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
-                for (index, raw) in heights.enumerated() {
-                    let heat = CGFloat(min(1, max(0, raw.isFinite ? raw : 0)))
-                    let bar = max(2, size.height * heat)
-                    let rect = CGRect(
-                        x: CGFloat(index) * (width + gap),
-                        y: size.height - bar,
-                        width: width,
-                        height: bar
-                    )
+            let count = heights.count
+            guard count > 0 else { return }
+            let gap: CGFloat = count > 16 ? 2 : 3
+            let width = max(1, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
+            for (index, raw) in heights.enumerated() {
+                let heat = CGFloat(min(1, max(0, raw.isFinite ? raw : 0)))
+                let bar = max(2, size.height * heat)
+                let rect = CGRect(
+                    x: CGFloat(index) * (width + gap),
+                    y: size.height - bar,
+                    width: width,
+                    height: bar
+                )
                 context.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(barColor(heat)))
                 if peakIndex == index, heat > 0.02 {
                     let marker = CGRect(x: rect.midX - 3, y: max(0, rect.minY - 6), width: 6, height: 6)
@@ -157,18 +161,25 @@ struct SpectrumPlot: View {
                 var line = Path()
                 line.move(to: CGPoint(x: 0, y: y))
                 line.addLine(to: CGPoint(x: size.width, y: y))
-                context.stroke(line, with: .color(Theme.muted.opacity(0.85)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                context.stroke(line, with: .color(Theme.foreground.opacity(0.55)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
             }
         }
-        .frame(height: plotHeight)
-        .padding(6)
-        .background(Theme.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func barColor(_ heat: CGFloat) -> Color {
         if heat > 0.72 { return Theme.bad }
         if heat > 0.4 { return Theme.warn }
         return Theme.accent
+    }
+
+    private static var dbfsAxis: PlotAxis {
+        PlotAxis(
+            title: "Amplitude",
+            unit: "dBFS",
+            start: dbfsTick(AcousticSpectrum.displayFloorDBFS),
+            mid: dbfsTick((AcousticSpectrum.displayCeilingDBFS + AcousticSpectrum.displayFloorDBFS) / 2),
+            end: dbfsTick(AcousticSpectrum.displayCeilingDBFS)
+        )
     }
 
     private static func dbfsTick(_ db: Double) -> String {
@@ -184,60 +195,92 @@ struct SpectrumPlot: View {
     }
 }
 
-/// Time-domain trace. Used for Mag Sweep |B| and the vibration RMS preview.
+/// Time-domain trace. Used for Mag Sweep |B|, noise level, and the vibration preview.
 struct TraceSparkline: View {
     var samples: [Double]
     var accessibilityLabel: String
-    /// Room & Rig Check labels relative dBFS versus time. Other callers stay unlabeled.
-    var showsDBFSTimeAxes: Bool = false
+    var yAxis: PlotAxis
+    var xAxis: PlotAxis
+    var inspection: PlotInspection
+    var fullscreenTitle: String
+
+    init(
+        samples: [Double],
+        accessibilityLabel: String,
+        showsDBFSTimeAxes: Bool = false,
+        yAxis: PlotAxis? = nil,
+        xAxis: PlotAxis? = nil,
+        inspection: PlotInspection = .inspect,
+        fullscreenTitle: String = "Trace"
+    ) {
+        self.samples = samples
+        self.accessibilityLabel = accessibilityLabel
+        self.inspection = inspection
+        self.fullscreenTitle = fullscreenTitle
+        let finite = samples.filter(\.isFinite)
+        let top = finite.max()
+        let bottom = finite.min()
+        if let yAxis {
+            self.yAxis = yAxis
+        } else if showsDBFSTimeAxes {
+            self.yAxis = PlotAxis(
+                title: "Amplitude",
+                unit: "dBFS",
+                start: Self.tick(bottom),
+                end: Self.tick(top)
+            )
+        } else {
+            self.yAxis = PlotAxis(
+                title: "Value",
+                unit: "",
+                start: Self.tick(bottom),
+                end: Self.tick(top)
+            )
+        }
+        self.xAxis = xAxis ?? PlotAxis(title: "Time", unit: "", start: "older", end: "now")
+    }
 
     var body: some View {
-        if showsDBFSTimeAxes {
-            labeledTrace
-        } else {
+        LabeledPlotChrome(
+            xAxis: displayedX,
+            yAxis: displayedY,
+            accessibilityLabel: accessibilityLabel,
+            inspection: inspection,
+            plotHeight: 96,
+            fullscreenTitle: fullscreenTitle,
+            readout: describe
+        ) {
             sparkCanvas
         }
     }
 
-    private var labeledTrace: some View {
+    private var displayedY: PlotAxis {
         let finite = samples.filter(\.isFinite)
-        let top = finite.max()
-        let bottom = finite.min()
-        return VStack(alignment: .leading, spacing: 2) {
-            Text("Relative dBFS")
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
-                .accessibilityHidden(true)
-            HStack(alignment: .center, spacing: 6) {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(tick(top))
-                    Spacer(minLength: 0)
-                    Text(tick(bottom))
-                }
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
-                .frame(width: 52, height: 72)
-                .accessibilityHidden(true)
-                sparkCanvas
-            }
-            HStack {
-                Text("older")
-                Spacer()
-                Text("Time")
-                Spacer()
-                Text("now")
-            }
-            .font(Theme.TypeRole.help)
-            .foregroundStyle(Theme.muted)
-            .accessibilityHidden(true)
+        var axis = yAxis
+        let low = finite.min()
+        let high = finite.max()
+        axis.start = Self.tick(low)
+        axis.end = Self.tick(high)
+        if let low, let high, low.isFinite, high.isFinite {
+            axis.mid = Self.tick((low + high) / 2)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
+        return axis
     }
 
-    private func tick(_ value: Double?) -> String {
+    private var displayedX: PlotAxis { xAxis }
+
+    private func describe(x: CGFloat, y: CGFloat) -> String {
+        let finiteCount = samples.count
+        guard finiteCount >= 1 else { return "No samples yet" }
+        let index = min(finiteCount - 1, max(0, Int((x * CGFloat(finiteCount - 1)).rounded())))
+        let sample = samples[index]
+        let value = sample.isFinite ? Format.number(sample, digits: 2) : "—"
+        return "\(xAxis.titleWithUnit) sample \(index + 1) of \(finiteCount), \(yAxis.titleWithUnit) \(value)"
+    }
+
+    private static func tick(_ value: Double?) -> String {
         guard let value, value.isFinite else { return "—" }
-        return "\(Format.number(value, digits: 0))"
+        return Format.number(value, digits: 0)
     }
 
     private var sparkCanvas: some View {
@@ -265,7 +308,5 @@ struct TraceSparkline: View {
                 style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
             )
         }
-        .frame(height: 72)
-        .accessibilityLabel(showsDBFSTimeAxes ? "" : accessibilityLabel)
     }
 }

@@ -150,7 +150,11 @@ struct SetupCheckView: View {
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
-                SetupSpectrogram(rows: shownSpectrogram)
+                SetupSpectrogram(
+                    rows: shownSpectrogram,
+                    lowLabel: spectrogramLow,
+                    highLabel: spectrogramHigh
+                )
                     .padding(.top, 8)
             }
 
@@ -266,6 +270,17 @@ struct SetupCheckView: View {
     private var shownBands: [AcousticDisplayBand] { frozenBands ?? spectrum.bands }
     private var shownRTA: [AcousticDisplayBand] { frozenRTA ?? spectrum.rtaBands }
     private var shownSpectrogram: [[Double]] { frozenSpectrogram ?? spectrogram }
+
+    private var spectrogramLow: String {
+        guard let hz = shownBands.first?.lowHz, hz.isFinite else { return "low" }
+        return "\(Format.number(hz, digits: 0)) Hz"
+    }
+
+    private var spectrogramHigh: String {
+        guard let hz = shownBands.last?.highHz, hz.isFinite else { return "high" }
+        if hz >= 1000 { return "\(Format.number(hz / 1000, digits: 1)) kHz" }
+        return "\(Format.number(hz, digits: 0)) Hz"
+    }
     private var shownTrace: [Double] { frozenTrace ?? levelTrace }
     private var shownResponse: [RoomRigPoint] { frozenResponse ?? response }
     private var shownShape: [RoomRigPoint] { RoomRigMath.normalizeToPeak(shownResponse) }
@@ -620,22 +635,44 @@ private struct BalanceBar: View {
 
 private struct SetupSpectrogram: View {
     var rows: [[Double]]
+    var lowLabel: String
+    var highLabel: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Time")
+        VStack(alignment: .leading, spacing: 4) {
+            LabeledPlotChrome(
+                xAxis: PlotAxis(title: "Frequency", unit: "Hz", start: lowLabel, end: highLabel),
+                yAxis: PlotAxis(title: "Time", unit: "", start: "newer", end: "older"),
+                accessibilityLabel: "Spectrogram. Frequency from \(lowLabel) to \(highLabel), older time at the top, color is relative dBFS.",
+                inspection: .inspect,
+                plotHeight: 180,
+                fullscreenTitle: "Spectrogram",
+                readout: describe
+            ) {
+                spectrogramCanvas
+            }
+            Text("Color: relative dBFS (\(Format.number(AcousticSpectrum.displayFloorDBFS, digits: 0)) dark → \(Format.number(AcousticSpectrum.displayCeilingDBFS, digits: 0)) bright). Not SPL.")
                 .font(Theme.TypeRole.hud)
                 .foregroundStyle(Theme.muted)
-            HStack(alignment: .top, spacing: 6) {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text("older")
-                    Spacer(minLength: 0)
-                    Text("newer")
-                }
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
-                .frame(width: 44, height: 148)
-                Canvas { context, size in
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func describe(x: CGFloat, y: CGFloat) -> String {
+        guard !rows.isEmpty, let widest = rows.max(by: { $0.count < $1.count }), !widest.isEmpty else {
+            return "No spectrogram yet"
+        }
+        let column = min(widest.count - 1, max(0, Int(x * CGFloat(widest.count))))
+        let rowFromTop = min(rows.count - 1, max(0, Int((1 - y) * CGFloat(rows.count))))
+        let row = rows[rowFromTop]
+        guard !row.isEmpty else { return "Empty row" }
+        let sample = row[min(column, row.count - 1)]
+        let db = sample.isFinite ? Format.number(sample, digits: 0) : "—"
+        return "\(lowLabel) toward \(highLabel), \(db) dBFS"
+    }
+
+    private var spectrogramCanvas: some View {
+        Canvas { context, size in
                     context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
                     guard !rows.isEmpty else { return }
                     let rowH = size.height / CGFloat(rows.count)
@@ -653,25 +690,7 @@ private struct SetupSpectrogram: View {
                             context.fill(Path(rect), with: .color(cell(heat)))
                         }
                     }
-                }
-                .frame(height: 148)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            }
-            HStack {
-                Text("low")
-                Spacer()
-                Text("Frequency")
-                Spacer()
-                Text("high")
-            }
-            .font(Theme.TypeRole.help)
-            .foregroundStyle(Theme.muted)
-            Text("Color: relative dBFS (\(Format.number(AcousticSpectrum.displayFloorDBFS, digits: 0)) dark → \(Format.number(AcousticSpectrum.displayCeilingDBFS, digits: 0)) bright). Not SPL.")
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Spectrogram. Frequency left to right, older time at the top, relative dBFS as color.")
     }
 
     private func cell(_ heat: Double) -> Color {
@@ -688,21 +707,46 @@ private struct SetupResponsePlot: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("dB vs peak")
+            LabeledPlotChrome(
+                xAxis: PlotAxis(
+                    title: "Frequency",
+                    unit: "Hz",
+                    start: "\(Format.number(RoomRigMath.sweepStartHz, digits: 0)) Hz",
+                    end: "\(Format.number(RoomRigMath.sweepEndHz / 1000, digits: 0)) kHz"
+                ),
+                yAxis: PlotAxis(title: "Level", unit: "dB vs peak", start: "−36", mid: "0", end: "+6"),
+                accessibilityLabel: raw.count >= 2
+                    ? "Relative sweep shape, \(raw.count) bands. Frequency in hertz, level in dB versus this pass’s peak."
+                    : "Sweep shape empty",
+                inspection: .inspect,
+                plotHeight: 200,
+                fullscreenTitle: "Sweep shape",
+                readout: describe
+            ) {
+                responseCanvas
+            }
+            Text("Copper is raw. Teal is the third-octave smooth. 0 dB is this pass’s peak, not SPL.")
                 .font(Theme.TypeRole.hud)
                 .foregroundStyle(Theme.muted)
-            HStack(alignment: .top, spacing: 6) {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text("+6")
-                    Spacer(minLength: 0)
-                    Text("0")
-                    Spacer(minLength: 0)
-                    Text("−36")
-                }
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
-                .frame(width: 32, height: 160)
-                Canvas { context, size in
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func describe(x: CGFloat, _: CGFloat) -> String {
+        let minHz = log(RoomRigMath.sweepStartHz)
+        let maxHz = log(RoomRigMath.sweepEndHz)
+        let hz = exp(minHz + (maxHz - minHz) * Double(min(1, max(0, x))))
+        guard raw.count >= 2 else { return "Play Sweep. \(Format.number(hz, digits: 0)) Hz" }
+        let nearest = raw.min { lhs, rhs in
+            abs(log(max(lhs.hz, 1)) - log(hz)) < abs(log(max(rhs.hz, 1)) - log(hz))
+        }
+        let db = nearest?.db
+        let level = db.map { Format.number($0, digits: 1) } ?? "—"
+        return "\(Format.number(hz, digits: 0)) Hz, \(level) dB vs peak"
+    }
+
+    private var responseCanvas: some View {
+        Canvas { context, size in
                     context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
                     guard raw.count >= 2 else {
                         let label = Text("Play Sweep").foregroundStyle(Theme.muted)
@@ -714,26 +758,7 @@ private struct SetupResponsePlot: View {
                     if smooth.count >= 2 {
                         stroke(smooth, color: Theme.accent, width: 2.25, in: context, size: size)
                     }
-                }
-                .frame(height: 160)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            }
-            HStack {
-                Text("\(Format.number(RoomRigMath.sweepStartHz, digits: 0)) Hz")
-                Spacer()
-                Text("Frequency")
-                Spacer()
-                Text("\(Format.number(RoomRigMath.sweepEndHz / 1000, digits: 0)) kHz")
-            }
-            .font(Theme.TypeRole.help)
-            .foregroundStyle(Theme.muted)
-            Text("Copper is raw. Teal is the third-octave smooth. 0 dB is this pass’s peak, not SPL.")
-                .font(Theme.TypeRole.hud)
-                .foregroundStyle(Theme.muted)
         }
-        .accessibilityLabel(raw.count >= 2
-            ? "Relative sweep shape, \(raw.count) bands, peak at 0 dB"
-            : "Sweep shape empty")
     }
 
     private func zeroLine(in context: GraphicsContext, size: CGSize) {

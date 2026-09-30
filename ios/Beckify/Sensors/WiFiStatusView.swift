@@ -689,7 +689,6 @@ struct WiFiStatusView: View {
                     model.dropTapSample(east: east, north: north)
                 }
             )
-            .frame(height: 280)
             WiFiHeatLegend()
             ThumbButtonRow {
                 if model.surveying {
@@ -768,6 +767,19 @@ struct WiFiStrengthGauge: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            PlotFullscreenControl(title: "Wi-Fi strength", plotName: "Wi-Fi strength gauge") {
+                dial
+                Text("Percent and four bars use Apple’s 0…1 signalStrength. Not dBm.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            dial
+        }
+    }
+
+    private var dial: some View {
         let s = strength ?? 0
         let bars = WiFiCoverageMath.bars(s)
         VStack(spacing: 14) {
@@ -846,27 +858,63 @@ struct WiFiHeatmapCanvas: View {
     private typealias CoverageBox = (minE: Double, maxE: Double, minN: Double, maxN: Double)
 
     var body: some View {
-        GeometryReader { geo in
-            Canvas { context, size in
-                drawHeat(context: &context, size: size)
+        LabeledPlotChrome(
+            xAxis: xAxis,
+            yAxis: yAxis,
+            accessibilityLabel: "Coverage sketch. \(xAxis.titleWithUnit) across, \(yAxis.titleWithUnit) up. \(overlayCaption).",
+            inspection: .look,
+            plotHeight: 280,
+            fullscreenTitle: "Coverage"
+        ) {
+            GeometryReader { geo in
+                Canvas { context, size in
+                    drawHeat(context: &context, size: size)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { location in
+                    let box = coverageBox()
+                    let (east, north) = world(from: location, size: geo.size, box: box)
+                    onTap(east, north)
+                }
+                .overlay(alignment: .topLeading) {
+                    Text(overlayCaption)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Theme.foreground.opacity(0.8))
+                        .padding(8)
+                        .accessibilityHidden(true)
+                }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { location in
-                let box = coverageBox()
-                let (east, north) = world(from: location, size: geo.size, box: box)
-                onTap(east, north)
-            }
-            .overlay(alignment: .topLeading) {
-                Text(overlayCaption)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Theme.foreground.opacity(0.8))
-                    .padding(8)
-            }
+            .background(Theme.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Theme.accent.opacity(0.35), lineWidth: 1)
+            )
         }
-        .background(Theme.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Theme.accent.opacity(0.35), lineWidth: 1)
+    }
+
+    private var xAxis: PlotAxis {
+        if mode == .tap {
+            return PlotAxis(title: "Width", unit: "grid", start: "0", end: Format.number(roomWidth, digits: 0))
+        }
+        let box = coverageBox()
+        return PlotAxis(
+            title: "East",
+            unit: "m",
+            start: Format.number(box?.minE ?? 0, digits: 1),
+            end: Format.number(box?.maxE ?? 10, digits: 1)
+        )
+    }
+
+    private var yAxis: PlotAxis {
+        if mode == .tap {
+            return PlotAxis(title: "Depth", unit: "grid", start: "0", end: Format.number(roomDepth, digits: 0))
+        }
+        let box = coverageBox()
+        return PlotAxis(
+            title: "North",
+            unit: "m",
+            start: Format.number(box?.minN ?? 0, digits: 1),
+            end: Format.number(box?.maxN ?? 10, digits: 1)
         )
     }
 

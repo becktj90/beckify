@@ -381,10 +381,23 @@ private struct SchematicCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SCHEMATIC")
-                .font(Theme.TypeRole.sectionLabel)
-                .tracking(0.8)
-                .foregroundStyle(Theme.muted)
+            HStack(alignment: .firstTextBaseline) {
+                Text("SCHEMATIC")
+                    .font(Theme.TypeRole.sectionLabel)
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.muted)
+                Spacer(minLength: 8)
+                PlotFullscreenControl(title: "Schematic", plotName: "schematic") {
+                    TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
+                        let phase = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.4) / 1.4
+                        schematic(phase: phase)
+                            .frame(minHeight: 420)
+                    }
+                    Text("Tap a node for its reading. Tap a branch for current. This is a schematic, not an X–Y plot.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
             Text("Tap a node for its reading. Tap a branch for current.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)

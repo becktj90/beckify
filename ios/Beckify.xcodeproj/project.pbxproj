@@ -65,6 +65,7 @@
 		BECF00000000000000000072 /* ControlsCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000071 /* ControlsCalculatorViews.swift */; };
 		BECF00000000000000000074 /* PanelDirectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000073 /* PanelDirectoryView.swift */; };
 		BECF00000000000000000076 /* CalculateChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000075 /* CalculateChrome.swift */; };
+		BECF000000000000000000E2 /* PlotChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E1 /* PlotChrome.swift */; };
 		BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000077 /* EngineeringDiagrams.swift */; };
 		BECF0000000000000000007C /* RecentToolsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007B /* RecentToolsStore.swift */; };
 		BECF0000000000000000007E /* ConductorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007D /* ConductorHandoff.swift */; };
@@ -175,6 +176,7 @@
 		BECF00000000000000000071 /* ControlsCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsCalculatorViews.swift; sourceTree = "<group>"; };
 		BECF00000000000000000073 /* PanelDirectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDirectoryView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000075 /* CalculateChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculateChrome.swift; sourceTree = "<group>"; };
+		BECF000000000000000000E1 /* PlotChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotChrome.swift; sourceTree = "<group>"; };
 		BECF00000000000000000077 /* EngineeringDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineeringDiagrams.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007B /* RecentToolsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentToolsStore.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007D /* ConductorHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorHandoff.swift; sourceTree = "<group>"; };
@@ -387,6 +389,7 @@
 				BECF00000000000000000065 /* ToolUX.swift */,
 				BECF0000000000000000006B /* ToolGlyph.swift */,
 				BECF00000000000000000075 /* CalculateChrome.swift */,
+				BECF000000000000000000E1 /* PlotChrome.swift */,
 				BECF00000000000000000077 /* EngineeringDiagrams.swift */,
 			);
 			path = Components;
@@ -713,6 +716,7 @@
 				BECF000000000000000000B2 /* ResilientOCREngine.swift in Sources */,
 				BECF00000000000000000076 /* CalculateChrome.swift in Sources */,
 				BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */,
+				BECF000000000000000000E2 /* PlotChrome.swift in Sources */,
 				BECF0000000000000000007C /* RecentToolsStore.swift in Sources */,
 				BECF0000000000000000007E /* ConductorHandoff.swift in Sources */,
 				BECF00000000000000000080 /* FacilityCalculatorViews.swift in Sources */,
@@ -870,7 +874,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 169;
+				CURRENT_PROJECT_VERSION = 170;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -913,7 +917,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 169;
+				CURRENT_PROJECT_VERSION = 170;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

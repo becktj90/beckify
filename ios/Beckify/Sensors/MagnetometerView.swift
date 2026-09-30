@@ -191,8 +191,11 @@ struct MagnetometerView: View {
                     TraceSparkline(
                         samples: model.sweepTrace,
                         accessibilityLabel: model.sweepTrace.count < 2
-                            ? "Mag sweep sparkline waiting for a baseline"
-                            : "Mag sweep sparkline of DC field change"
+                            ? "Mag sweep trace waiting for a baseline. Vertical axis is field change in microtesla."
+                            : "Mag sweep of DC field change in microtesla versus time.",
+                        yAxis: PlotAxis(title: "Field change", unit: "µT", start: "", end: ""),
+                        xAxis: PlotAxis(title: "Time", unit: "", start: "older", end: "now"),
+                        fullscreenTitle: "Mag sweep"
                     )
                     .padding(.top, 6)
                     Text(MagSweepMath.variationSpectrumLabel)
@@ -208,7 +211,12 @@ struct MagnetometerView: View {
                         trailingCaption: variationNyquist,
                         footnote: "Slow change in DC |B|. Phone magnets dominate. Nyquist is half the delivered rate, far below 50/60 Hz, so this cannot isolate mains hum.",
                         plotHeight: 88,
-                        accessibilityLabel: "Field variation spectrum, DC magnetometer, not AC EMF"
+                        accessibilityLabel: "Field variation spectrum. Frequency in hertz, height relative to the peak change. Not AC EMF.",
+                        xAxis: PlotAxis(title: "Frequency", unit: "Hz", start: "0 Hz", end: variationNyquist),
+                        yAxis: PlotAxis(title: "Relative change", unit: "relative", start: "0", end: "1"),
+                        barReadouts: model.variationBands.map { band in
+                            "\(Format.number(band.centerHz, digits: 2)) Hz, relative \(Format.number(band.magnitudeG, digits: 3))"
+                        }
                     )
                 }
                 HStack {

@@ -314,17 +314,23 @@ struct BluetoothScannerView: View {
                 )
             }
             ResultCard(title: "Radar") {
-                Text("Live RSSI layout. Stronger advertisements sit closer to the phone. Angle is a stable slot — not direction.")
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                BLERadarMap(
-                    sightings: Array(model.sightings.prefix(40)),
-                    selectedID: selectedID,
-                    scanning: model.scanning,
-                    onSelect: { selectedID = $0.id }
-                )
-                .frame(height: radarHeight)
+                HStack(alignment: .top, spacing: 8) {
+                    Text("Live RSSI layout. Stronger advertisements sit closer to the phone. Angle is a stable slot — not direction. Rings are Near, Mid, and Far.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    PlotFullscreenControl(title: "BLE radar", plotName: "Bluetooth radar") {
+                        radarMap
+                            .frame(minHeight: 420)
+                        BLERadarLegend()
+                        Text("Radius is an RSSI estimate in near, mid, and far bands. Angle is a layout slot, not a bearing. Device count is not people.")
+                            .font(Theme.TypeRole.help)
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+                radarMap
+                    .frame(height: radarHeight)
                 BLERadarLegend()
             }
             ResultCard(title: "Peripherals") {
@@ -373,6 +379,15 @@ struct BluetoothScannerView: View {
     private var radarHeight: CGFloat {
         if dynamicTypeSize.isAccessibilitySize { return 260 }
         return sizeClass == .regular ? 360 : 300
+    }
+
+    private var radarMap: some View {
+        BLERadarMap(
+            sightings: Array(model.sightings.prefix(40)),
+            selectedID: selectedID,
+            scanning: model.scanning,
+            onSelect: { selectedID = $0.id }
+        )
     }
 
     private var activityTone: Color {

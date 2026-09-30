@@ -45,7 +45,11 @@ struct AcousticImagerView: View {
                 Text("Recent audible bands. Brighter means more relative energy on this phone. Not a leak position, not SPL, not ultrasonic.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
-                AcousticLevelMap(history: history)
+                AcousticLevelMap(
+                    history: history,
+                    lowLabel: spectrum.bands.first.map { Self.hertz($0.lowHz) } ?? "low",
+                    highLabel: spectrum.bands.last.map { Self.hertz($0.highHz) } ?? "high"
+                )
                     .padding(.top, 6)
             }
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: spectrum.hasReading) { save() }
@@ -88,6 +92,12 @@ struct AcousticImagerView: View {
         return "\(fs) · \(nq) · \(spectrum.windowKind.title) window · display floor \(Format.number(AcousticSpectrum.displayFloorDBFS, digits: 0)) dBFS. Not SPL. Dashed line is the median band in this window."
     }
 
+    private static func hertz(_ hz: Double) -> String {
+        guard hz.isFinite else { return "" }
+        if hz >= 1000 { return "\(Format.number(hz / 1000, digits: hz >= 10_000 ? 0 : 1)) kHz" }
+        return "\(Format.number(hz, digits: 0)) Hz"
+    }
+
     private var peakLabel: String {
         guard let hz = spectrum.peakHz, hz.isFinite else { return "—" }
         return "\(Format.number(hz, digits: 0)) Hz"
@@ -111,8 +121,37 @@ struct AcousticImagerView: View {
 
 private struct AcousticLevelMap: View {
     var history: [[Double]]
+    var lowLabel: String
+    var highLabel: String
 
     var body: some View {
+        LabeledPlotChrome(
+            xAxis: PlotAxis(title: "Frequency", unit: "Hz", start: lowLabel, end: highLabel),
+            yAxis: PlotAxis(title: "Time", unit: "", start: "newer", end: "older"),
+            accessibilityLabel: "Time activity of recent audible bands. Frequency from \(lowLabel) to \(highLabel). Color is relative dBFS.",
+            inspection: .inspect,
+            plotHeight: 140,
+            fullscreenTitle: "Time activity",
+            readout: describe
+        ) {
+            mapCanvas
+        }
+    }
+
+    private func describe(x: CGFloat, y: CGFloat) -> String {
+        guard !history.isEmpty, let widest = history.max(by: { $0.count < $1.count }), !widest.isEmpty else {
+            return "No time activity yet"
+        }
+        let column = min(widest.count - 1, max(0, Int(x * CGFloat(widest.count))))
+        let rowFromTop = min(history.count - 1, max(0, Int((1 - y) * CGFloat(history.count))))
+        let row = history[rowFromTop]
+        guard !row.isEmpty else { return "Empty row" }
+        let db = row[min(column, row.count - 1)]
+        let level = db.isFinite ? Format.number(db, digits: 0) : "—"
+        return "\(lowLabel) toward \(highLabel), \(level) dBFS"
+    }
+
+    private var mapCanvas: some View {
         Canvas { context, size in
             let rows = history
             guard !rows.isEmpty else {
@@ -136,9 +175,6 @@ private struct AcousticLevelMap: View {
                 }
             }
         }
-        .frame(height: 96)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .accessibilityLabel("Time activity of recent audible bands")
     }
 
     private func cellColor(_ heat: Double) -> Color {
