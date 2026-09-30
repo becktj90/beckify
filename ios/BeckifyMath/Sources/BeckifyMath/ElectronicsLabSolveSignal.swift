@@ -37,6 +37,7 @@ extension LabSolve {
                 q("ideal", "Ideal Vout", ideal, "V"),
                 q("av", "Av", -rf / rin, "", unknown == "rf"),
                 q("rf", "Rf", rf, "Ω", unknown == "rf"),
+                q("rin", "Rin", rin, "Ω"),
                 q("vin", "Vin", vin, "V", unknown == "vin"),
                 q("iin", "Iin", i, "A"),
             ],

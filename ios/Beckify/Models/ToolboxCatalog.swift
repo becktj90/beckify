@@ -1019,10 +1019,10 @@ enum ToolboxCatalog {
             id: .electronicsLab,
             kind: .calculator,
             title: "Electronics Lab",
-            subtitle: "College schematics — node voltages, branch currents, and solve-any-value.",
+            subtitle: "Schematics and a solderless breadboard — node voltages, branch currents, and solve-any-value.",
             symbol: "point.3.connected.trianglepath.dotted",
             synonyms: [
-                "electronics lab", "schematic", "bjt", "mosfet", "op amp", "op-amp", "555",
+                "electronics lab", "schematic", "breadboard", "bjt", "mosfet", "op amp", "op-amp", "555",
                 "thevenin", "norton", "rectifier", "clipper", "clamper", "7 segment", "seven segment",
                 "impedance match", "l match", "quarter wave", "stub", "complex", "polar", "phasor",
                 "voltage divider", "kirchhoff", "cmos", "buck", "class a", "led flasher",
