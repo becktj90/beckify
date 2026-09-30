@@ -205,9 +205,22 @@ Refresh the packed cabinet after arcade changes:
 python3 ios/scripts/pack_kestrelheavy_game.py
 ```
 
-### Archive (signed, on a Mac; upload still outstanding)
+### Archive → TestFlight (scheme Beckify only)
 
-**Xcode Cloud / Archive-iOS must pin scheme Beckify.** Archiving **LookCheck** or **KestrelHeavy** ships `com.beckify.lookcheck` or `com.beckify.kestrelheavy`, not Toolbox (`com.beckify.toolbox`), and will fail App Store Connect prepare for the Toolbox record. Each product has its own Archive workflow — do not share one.
+Push to `main`. Xcode Cloud then starts both Toolbox workflows:
+
+1. `Beckify | Beckify | Build - iOS`
+2. `Beckify | Beckify | Archive - iOS`
+
+**Archive - iOS** is the TestFlight path. It must archive scheme **Beckify** (`com.beckify.toolbox`, App ID `6807908745`). A green archive is what App Store Connect can process for TestFlight. This repo does not submit that build.
+
+Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`) or **KestrelHeavy** (`com.beckify.kestrelheavy`). Those products keep their own Archive schemes and bundle IDs.
+
+Connect version **1.0.1** must already exist (the **1.0** train is closed). Repo `CURRENT_PROJECT_VERSION` is **152**. If TestFlight or a previous Cloud upload is already **≥152**, bump that number before the next push.
+
+#### Mac fallback
+
+On a Mac, open `ios/Beckify.xcodeproj`, select scheme **Beckify**, confirm Team **9TR6R5LV8M** (already `DEVELOPMENT_TEAM` on the Beckify target), then **Product → Archive**. Distribute that archive to App Store Connect from Organizer. Or:
 
 ```bash
 cd ios
@@ -217,6 +230,7 @@ xcodebuild \
   -configuration Release \
   -destination 'generic/platform=iOS' \
   -archivePath build/Beckify.xcarchive \
+  DEVELOPMENT_TEAM=9TR6R5LV8M \
   archive
 
 xcodebuild \
@@ -226,7 +240,9 @@ xcodebuild \
   -exportPath build/export
 ```
 
-`ExportOptions.plist` is not in this repo. Team prefix `9TR6R5LV8M` is already in the Xcode project. Create an export plist on a Mac if you export from `xcodebuild`. See `docs/APP_STORE.md`.
+`ExportOptions.plist` is not in this repo. Create one on the Mac only if you export with `xcodebuild -exportArchive` instead of Organizer. See `docs/APP_STORE.md`.
+
+This Linux checkout did not run `xcodebuild`, sign a binary, install the app on a device, or upload to TestFlight. Do not treat a docs or source change as a green Archive.
 
 ## What still needs a Mac + Apple login
 
