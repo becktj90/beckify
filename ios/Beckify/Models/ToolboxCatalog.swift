@@ -7,6 +7,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case powerWizard
     case voltageDrop
     case conduitFill
+    case cableLadder
     case equipmentGround
     case transformer
     case timer555
@@ -293,6 +294,17 @@ enum ToolboxCatalog {
             subtitle: "Same-size or mixed THHN (and other Table 5) fill vs Table 1.",
             symbol: "circle.hexagongrid.fill",
             synonyms: ["conduit", "fill", "emt", "thhn", "raceway", "chapter 9", "40 percent", "annex c", "mixed sizes"]
+        ),
+        ToolDefinition(
+            id: .cableLadder,
+            kind: .calculator,
+            title: "Cable Ladder",
+            subtitle: "Article 392 fill, hangers, and a tray cross-section.",
+            symbol: "rectangle.split.3x1",
+            synonyms: [
+                "cable ladder", "cable tray", "tray fill", "article 392", "nema ve 1",
+                "tc-er", "tray cable", "hanger", "392", "ladder tray",
+            ]
         ),
         ToolDefinition(
             id: .equipmentGround,
@@ -986,7 +998,7 @@ enum ToolboxCatalog {
     /// Open PRs can keep appending to these arrays after updating the policy.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
-            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
+            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .cableLadder, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR, .lookCheck,
             .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
@@ -1059,8 +1071,9 @@ enum ToolboxCatalog {
         .power: [.ohmsLaw, .transformer, .powerFactor],
         .powerWizard: [.power, .motorFLA, .transformer],
         .voltageDrop: [.wireAmpacity, .equipmentGround, .conductorCost, .conduitFill],
-        .conduitFill: [.equipmentGround, .flexibleCable, .wireAmpacity, .voltageDrop],
-        .equipmentGround: [.conduitFill, .flexibleCable, .wireAmpacity, .necCircuit],
+        .conduitFill: [.cableLadder, .equipmentGround, .flexibleCable, .wireAmpacity, .voltageDrop],
+        .cableLadder: [.conduitFill, .cableSchedule, .equipmentGround, .referenceLibrary],
+        .equipmentGround: [.cableLadder, .conduitFill, .flexibleCable, .wireAmpacity, .necCircuit],
         .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.power, .shortCircuit, .motorFLA],
@@ -1128,7 +1141,7 @@ enum ToolboxCatalog {
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.equipmentGround, .wireAmpacity, .voltageDrop],
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
-        .cableSchedule: [.flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
+        .cableSchedule: [.cableLadder, .flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
         .analogWorkbench: [.electronicsLab, .voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
         .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],

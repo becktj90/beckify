@@ -188,6 +188,7 @@ struct CalculatorHostView: View {
             case .powerWizard: PowerWizardView()
             case .voltageDrop: VoltageDropView()
             case .conduitFill: ConduitFillView()
+            case .cableLadder: CableLadderView()
             case .equipmentGround: EquipmentGroundingView()
             case .conductorCost: ConductorCostView()
             case .conductorLength: ConductorLengthView()

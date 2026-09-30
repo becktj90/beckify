@@ -11,6 +11,7 @@
 		BECF00000000000000000004 /* ConduitFillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000003 /* ConduitFillView.swift */; };
 		BECF000000000000000000C3 /* EquipmentGroundingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000C2 /* EquipmentGroundingView.swift */; };
 		BECF000000000000000000C5 /* FlexibleCableAmpacityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000C4 /* FlexibleCableAmpacityView.swift */; };
+		BECF000000000000000000D5 /* CableLadderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000D4 /* CableLadderView.swift */; };
 		BECF00000000000000000006 /* MotorFLAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000005 /* MotorFLAView.swift */; };
 		BECF00000000000000000008 /* OhmsLawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000007 /* OhmsLawView.swift */; };
 		BECF0000000000000000000A /* PowerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000009 /* PowerView.swift */; };
@@ -116,6 +117,7 @@
 		BECF00000000000000000003 /* ConduitFillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConduitFillView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000C2 /* EquipmentGroundingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentGroundingView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000C4 /* FlexibleCableAmpacityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexibleCableAmpacityView.swift; sourceTree = "<group>"; };
+		BECF000000000000000000D4 /* CableLadderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableLadderView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000005 /* MotorFLAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorFLAView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000007 /* OhmsLawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OhmsLawView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000009 /* PowerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerView.swift; sourceTree = "<group>"; };
@@ -401,6 +403,7 @@
 				BECF00000000000000000003 /* ConduitFillView.swift */,
 				BECF000000000000000000C2 /* EquipmentGroundingView.swift */,
 				BECF000000000000000000C4 /* FlexibleCableAmpacityView.swift */,
+				BECF000000000000000000D4 /* CableLadderView.swift */,
 				BECF00000000000000000005 /* MotorFLAView.swift */,
 				BECF00000000000000000007 /* OhmsLawView.swift */,
 				BECF00000000000000000009 /* PowerView.swift */,
@@ -642,6 +645,7 @@
 				BECF00000000000000000004 /* ConduitFillView.swift in Sources */,
 				BECF000000000000000000C3 /* EquipmentGroundingView.swift in Sources */,
 				BECF000000000000000000C5 /* FlexibleCableAmpacityView.swift in Sources */,
+				BECF000000000000000000D5 /* CableLadderView.swift in Sources */,
 				BECF00000000000000000006 /* MotorFLAView.swift in Sources */,
 				BECF00000000000000000008 /* OhmsLawView.swift in Sources */,
 				BECF0000000000000000000A /* PowerView.swift in Sources */,
@@ -850,7 +854,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 167;
+				CURRENT_PROJECT_VERSION = 168;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -893,7 +897,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 167;
+				CURRENT_PROJECT_VERSION = 168;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

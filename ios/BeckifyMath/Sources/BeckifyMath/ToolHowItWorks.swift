@@ -91,6 +91,16 @@ public enum ToolHowItWorksCatalog {
                 "Transcription of published tables — not a substitute for the NEC book.",
             ]
         ),
+        "cableLadder": ToolHowItWorks(
+            summary: "Article 392 tray fill, a NEMA VE 1 hanger check, and a sketch of cables, supports, and the conduit drop.",
+            context: "Jobsite ladder or tray — fill, hangers, cable type, and the box at the transition.",
+            bullets: [
+                "AWG rows use Chapter 9 Table 5. Overall OD is a jacketed cable. Over 80% of the 392 limit warns; over 100% fails.",
+                "Hangers use your span. NEMA VE 1 class A/B/C is 50/75/100 lb/ft at 8, 12, 16, or 20 ft — not a NEMA 250 enclosure type.",
+                "Single conductors in tray are 1/0 or larger and tray-marked. Smaller THHN stays in a raceway. Jacketed cable is TC; TC-ER is a limited exposed run.",
+                "Phase tints match Reference Library color names and are a legend only. NEMA 250, IP, and conduit describe the box and the drop. Confirm the manufacturer and the AHJ.",
+            ]
+        ),
         "equipmentGround": ToolHowItWorks(
             summary: "Minimum equipment grounding conductor from the OCPD rating, copper or aluminum.",
             context: "When you need the ground size itself — not buried inside conduit fill.",
@@ -630,7 +640,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "You pick the type and count; the tool stamps IDs.",
                 "Optional power OCPD shows a Table 250.122 EGC beside power cables. Control cables are not sized that way.",
-                "Not a routing, tray-fill, or voltage-drop schedule.",
+                "Not a routing or voltage-drop schedule. Tray fill is Cable Ladder.",
             ]
         ),
         "solenoidDesign": ToolHowItWorks(
