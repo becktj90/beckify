@@ -106,6 +106,32 @@ struct TransformerView: View {
                     ResultRow(label: "Secondary 125%", value: Format.amps(r.secondaryConductorMinAmps))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if let primary = r.primaryWithSecondary.deviceAmps {
+                    EquipmentGroundingCard(
+                        title: "Primary EGC",
+                        recommendation: EquipmentGrounding.recommend(
+                            amps: Double(primary),
+                            material: .copper,
+                            context: EquipmentGroundingContext.from(system: system == .dc ? .threePhase : system),
+                            ampsAreOCPDRating: true,
+                            extraNote: "From the 450.3(B) primary device in the primary-and-secondary method. Confirm the device you install."
+                        )
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
+                if let secondary = r.secondaryProtection.deviceAmps {
+                    EquipmentGroundingCard(
+                        title: "Secondary EGC",
+                        recommendation: EquipmentGrounding.recommend(
+                            amps: Double(secondary),
+                            material: .copper,
+                            context: EquipmentGroundingContext.from(system: system == .dc ? .threePhase : system),
+                            ampsAreOCPDRating: true,
+                            extraNote: "From the 450.3(B) secondary device. This is an equipment grounding conductor, not a grounding electrode conductor."
+                        )
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     var inputs: [String: String] = [
                         "system": system.displayName,

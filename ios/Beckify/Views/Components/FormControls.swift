@@ -276,6 +276,42 @@ struct SaveJobBar: View {
     }
 }
 
+/// Shared NEC 2023 Table 250.122 row. Hidden when the circuit does not imply a ground.
+struct EquipmentGroundingCard: View {
+    var title: String = "Equipment grounding conductor"
+    var recommendation: EquipmentGroundingRecommendation?
+    var countedInFill: Bool? = nil
+
+    var body: some View {
+        if let recommendation {
+            ResultCard(title: title, copyText: recommendation.copyLine) {
+                ResultRow(label: "Minimum EGC", value: recommendation.label, emphasis: true, tone: Theme.copper)
+                ResultRow(label: "Material", value: recommendation.material.displayName)
+                ResultRow(label: "Table row", value: "≤ \(recommendation.tableRatingAmps) A")
+                ResultRow(label: "Basis", value: recommendation.basisLabel, tone: Theme.muted)
+                ResultRow(
+                    label: recommendation.citation.articleOrTable,
+                    value: recommendation.citation.edition.displayName,
+                    tone: Theme.muted
+                )
+                if let countedInFill {
+                    ResultRow(
+                        label: "Counted in fill",
+                        value: countedInFill ? "Yes · +1 conductor" : "No",
+                        tone: countedInFill ? Theme.good : Theme.muted
+                    )
+                }
+                ForEach(Array(recommendation.notes.prefix(4).enumerated()), id: \.offset) { _, note in
+                    Text(note)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .padding(.vertical, 2)
+                }
+            }
+        }
+    }
+}
+
 struct ErrorText: View {
     let message: String
     var body: some View {

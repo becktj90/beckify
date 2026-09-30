@@ -162,6 +162,15 @@ struct ReceptacleSelectorView: View {
                             ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
                         }
                     }
+                    EquipmentGroundingCard(
+                        recommendation: EquipmentGrounding.recommend(
+                            amps: committed.amps,
+                            material: .copper,
+                            context: EquipmentGroundingContext.from(receptacle: committed.phase),
+                            ampsAreOCPDRating: true,
+                            extraNote: "Stand-in is the amp rating you entered, often the breaker on a dedicated receptacle. Use the real OCPD if it differs."
+                        )
+                    )
                     ResultCard(title: "Why it fits") {
                         ForEach(shown.reasons, id: \.self) { reason in
                             Text("• \(reason)")

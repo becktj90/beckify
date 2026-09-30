@@ -118,7 +118,7 @@ public enum ToolHomeAreaPolicy {
     ]
 
     private static let instrumentIDs: Set<String> = [
-        "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "bubbleLevel",
+        "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "acousticImager", "bubbleLevel",
         "magnetometer", "barometer", "motionSnapshot", "fieldPosition",
         "deviceHealth",
     ]

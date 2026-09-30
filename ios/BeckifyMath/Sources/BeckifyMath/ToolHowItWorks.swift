@@ -77,6 +77,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "VD uses K, circular mils, current, and one-way length. 3Ø uses √3.",
                 "Parallels split current. Ampacity is a companion check, not 310.16 design.",
+                "1Ø and 3Ø also show a Table 250.122 EGC from the next standard OCPD. Confirm Code / AHJ.",
                 "Design aid — not a stamped study or a bid length.",
             ]
         ),
@@ -85,6 +86,7 @@ public enum ToolHowItWorksCatalog {
             context: "Raceway pick on the truck — EMT, IMC, RMC, PVC, ENT, FMC, LFMC.",
             bullets: [
                 "Fill % is area of conductors ÷ raceway area. 40% is the usual >2-wire limit.",
+                "3Ø or multiwire can show one Table 250.122 EGC (NEC 2023). Fill counts it only if Count EGC is on. Confirm Code / AHJ.",
                 "Transcription of published tables — not a substitute for the NEC book.",
             ]
         ),
@@ -93,6 +95,7 @@ public enum ToolHowItWorksCatalog {
             context: "Dry-type or small power transformer sizing on a job.",
             bullets: [
                 "kVA from volts and amps (√3 on 3Ø). Protection follows 450.3(B).",
+                "Primary and secondary EGC rows use NEC 2023 Table 250.122 from those OCPDs. Confirm AHJ.",
                 "Not a coordination study, inrush calc, or utility-transformer spec.",
             ]
         ),
@@ -109,6 +112,7 @@ public enum ToolHowItWorksCatalog {
             context: "Conductor and OCPD starting point when the nameplate FLA is missing.",
             bullets: [
                 "Table current, not the nameplate. Use Motor Nameplate Analyzer when you have the plate.",
+                "EGC uses Table 250.122 from the next device ≥ 125% FLA. 430.52 breakers are often larger.",
                 "Squirrel-cage / induction tables only — not DC, wound-rotor, or servo.",
             ]
         ),
@@ -117,6 +121,7 @@ public enum ToolHowItWorksCatalog {
             context: "Pick a copper or aluminum size that still carries the load after derating.",
             bullets: [
                 "Smallest size whose derated ampacity ≥ required amps (125% continuous when checked).",
+                "1Ø, multiwire, and 3Ø show a Table 250.122 EGC beside the phase size. Confirm Code / AHJ.",
                 "Termination temperature caps the column. Design aid — verify the edition you are under.",
             ]
         ),
@@ -125,6 +130,7 @@ public enum ToolHowItWorksCatalog {
             context: "When two legal sizes both work and you want a cheaper planning pick.",
             bullets: [
                 "Uses your $/kft or a default book — not LME, not a distributor quote.",
+                "EGC size is NEC 2023 Table 250.122 from the design current. It is not in the $/kft rank.",
                 "I²R is optional energy, not a life-cycle study. Design aid only.",
             ]
         ),
@@ -224,6 +230,16 @@ public enum ToolHowItWorksCatalog {
                 "Save stores the numeric dBFS snapshot only — never a recording.",
             ]
         ),
+        "acousticImager": ToolHowItWorks(
+            summary: "Live spectrum and time activity from the microphone using an on-device FFT.",
+            context: "Level, spectrum, and recent bands. Not a sound camera or a leak locator.",
+            bullets: [
+                "AVAudioEngine tap plus Accelerate FFT. Not ultrasonic beamforming or a Fluke-style imager.",
+                "Not a calibrated SPL meter, and not a gas-leak certification tool.",
+                "One microphone shows level, spectrum, and recent time activity. It cannot place a leak.",
+                "Audio stays on device. Save stores numbers, never a recording.",
+            ]
+        ),
         "bubbleLevel": ToolHowItWorks(
             summary: "Pitch, roll, and plumb from CoreMotion gravity.",
             context: "Conduit, panel, or phone-on-the-rail check — not a machinist level.",
@@ -280,6 +296,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Amp presets through 400 A. Public Meltric/Hubbell PNs only when a catalog page is cited.",
                 "Household faces are schematic (Schuko, BS 1363, Type I), not manufacturer artwork.",
+                "EGC row is NEC 2023 Table 250.122 from the amp rating you entered. Confirm the breaker.",
                 "Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog.",
             ]
         ),
@@ -489,6 +506,7 @@ public enum ToolHowItWorksCatalog {
             context: "You have HP, FLA, SF, and code letter — this walks the usual 430 picks.",
             bullets: [
                 "MOCP and LRA are never treated as FLA.",
+                "EGC uses NEC 2023 Table 250.122 from the Table 430.52 device, not from FLA.",
                 "Table picks are a design aid. Confirm the edition and the controller type.",
             ]
         ),
@@ -529,6 +547,7 @@ public enum ToolHowItWorksCatalog {
             context: "Branch or feeder when you want ampacity, VD, and breaker together.",
             bullets: [
                 "Chains the same identities as the standalone ampacity and VD tools.",
+                "Feeder EGC is NEC 2023 Table 250.122 from the OCPD. A service GEC is Table 250.66.",
                 "Design aid — not a panel schedule or a stamped calc package.",
             ]
         ),

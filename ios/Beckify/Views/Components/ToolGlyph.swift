@@ -358,6 +358,7 @@ extension GlyphKind {
         case .cellularStatus: return .cellularStatus
         case .bluetoothScan: return .bluetoothScan
         case .noiseMeter: return .noiseMeter
+        case .acousticImager: return .acousticImager
         case .bubbleLevel: return .bubbleLevel
         case .magnetometer: return .magnetometer
         case .barometer: return .barometer
@@ -437,6 +438,7 @@ enum GlyphKind {
     case cellularStatus
     case bluetoothScan
     case noiseMeter
+    case acousticImager
     case bubbleLevel
     case magnetometer
     case barometer
@@ -527,6 +529,7 @@ enum GlyphKind {
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
+        case .acousticImager: return Self.acousticImager(rect)
         case .bubbleLevel: return Self.bubbleLevel(rect)
         case .magnetometer: return Self.magnetometer(rect)
         case .barometer: return Self.barometer(rect)
@@ -1131,6 +1134,33 @@ enum GlyphKind {
                 clockwise: false
             )
         }
+        return .both(fill: fill, stroke: stroke, openMark: true)
+    }
+
+    /// Spectrum bars — a visualization aid, not a sound camera.
+    private static func acousticImager(_ r: CGRect) -> GlyphArtwork {
+        let heights: [CGFloat] = [0.28, 0.46, 0.72, 0.55, 0.34]
+        var fill = Path()
+        let count = CGFloat(heights.count)
+        let gap = r.width * 0.035
+        let barW = (r.width * 0.62 - gap * (count - 1)) / count
+        let baseY = r.maxY - r.height * 0.16
+        for (index, height) in heights.enumerated() {
+            let x = r.minX + r.width * 0.08 + CGFloat(index) * (barW + gap)
+            let h = r.height * height
+            fill.addPath(Glyph.roundedRect(
+                CGRect(x: x, y: baseY - h, width: barW, height: h),
+                corner: 1.5
+            ))
+        }
+        var stroke = Path()
+        stroke.addArc(
+            center: CGPoint(x: r.maxX - r.width * 0.22, y: r.midY),
+            radius: r.width * 0.16,
+            startAngle: .degrees(-70),
+            endAngle: .degrees(70),
+            clockwise: false
+        )
         return .both(fill: fill, stroke: stroke, openMark: true)
     }
 
