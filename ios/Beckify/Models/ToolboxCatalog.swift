@@ -4,6 +4,7 @@ import BeckifyMath
 enum ToolID: String, Codable, CaseIterable, Identifiable {
     case ohmsLaw
     case power
+    case threePhasePower
     case powerWizard
     case voltageDrop
     case conduitFill
@@ -282,6 +283,17 @@ enum ToolboxCatalog {
             synonyms: ["dc power", "ac power", "watts", "kvar", "apparent", "true power", "reactive", "power wizard", "kva", "kw", "horsepower", "three phase", "3 phase", "single phase"]
         ),
         ToolDefinition(
+            id: .threePhasePower,
+            kind: .calculator,
+            title: "Three-Phase Power",
+            subtitle: "Balanced Y and Δ line, phase, and P + jQ.",
+            symbol: "triangle",
+            synonyms: [
+                "three phase", "3 phase", "wye", "delta", "y-y", "y-delta", "delta-wye", "delta-delta",
+                "line voltage", "phase voltage", "power triangle", "complex power",
+            ]
+        ),
+        ToolDefinition(
             id: .voltageDrop,
             kind: .calculator,
             title: "Voltage Drop",
@@ -330,6 +342,7 @@ enum ToolboxCatalog {
                 "transformer", "xfmr", "kva", "450.3", "ocpd", "primary", "secondary", "note 1",
                 "high-leg", "high leg", "delta-wye", "delta wye", "wye-delta", "winding", "phasor",
                 "wire color", "conductor color", "corner-grounded", "zig-zag", "open delta", "buck-boost",
+                "impedance", "referred", "turns ratio", "line loss",
             ]
         ),
         ToolDefinition(
@@ -1031,7 +1044,7 @@ enum ToolboxCatalog {
             .necCircuit, .isLoopVerifier,
         ],
         .power: [
-            .power, .transformer, .tapChanger, .powerFactor, .harmonicsTHD,
+            .power, .threePhasePower, .transformer, .tapChanger, .powerFactor, .harmonicsTHD,
             .batteryBank, .solarDesign, .upsSizing,
         ],
         .controls: [
@@ -1096,7 +1109,8 @@ enum ToolboxCatalog {
 
     private static let relatedIDs: [ToolID: [ToolID]] = [
         .ohmsLaw: [.power, .voltageDivider, .ledRC],
-        .power: [.ohmsLaw, .transformer, .powerFactor],
+        .power: [.threePhasePower, .ohmsLaw, .powerFactor],
+        .threePhasePower: [.power, .transformer, .phasorImpedance],
         .powerWizard: [.power, .motorFLA, .transformer],
         .voltageDrop: [.wireAmpacity, .equipmentGround, .conductorCost, .conduitFill],
         .conduitFill: [.ul508aPanelLab, .cableLadder, .equipmentGround, .flexibleCable, .wireAmpacity, .voltageDrop],
@@ -1104,7 +1118,7 @@ enum ToolboxCatalog {
         .equipmentGround: [.ul508aPanelLab, .cableLadder, .conduitFill, .flexibleCable, .wireAmpacity, .necCircuit],
         .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
-        .transformer: [.ul508aPanelLab, .power, .shortCircuit, .motorFLA],
+        .transformer: [.threePhasePower, .power, .shortCircuit, .motorFLA],
         .timer555: [.electronicsLab, .plcTimer, .ledRC, .frequencyWave],
         .motorFLA: [.ul508aPanelLab, .motorNameplateOCR, .motorNameplate, .motorSpeed],
         .wireAmpacity: [.ul508aPanelLab, .flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],

@@ -149,6 +149,7 @@ public enum ElectricalCodeSupport {
     public static let nativeToolIDs: Set<String> = [
         "voltageDrop",
         "power",
+        "threePhasePower",
         "receptacleSelector",
     ]
 
@@ -201,6 +202,8 @@ public enum ElectricalCodeSupport {
             message = "Metric sizes. Drop is resistance-only from IEC 60228 maximum R, corrected for temperature, with reactance omitted — not an AS/NZS 3008 mV/A·m table. The 5% figure is AS/NZS 3000:2018 Clause 3.6.2 for the installation from the point of supply. Earthing uses Table 5.1. Current-carrying capacity is not checked."
         case "power":
             message = "P, kVA, kW, and kVAR are the same identities either way. Nominal supply shown for AS/NZS is 230 V single-phase and 400 V three-phase at 50 Hz."
+        case "threePhasePower":
+            message = "Line, phase, and P + jQ are the same identities either way. Nominal three-phase supply shown for AS/NZS is 400 V at 50 Hz."
         case "receptacleSelector":
             message = "AS/NZS ranks AS/NZS 3112 Type I ahead of other household faces near 230 V. NEMA and IEC rows stay in the list when they fit. Not a listing."
         default:

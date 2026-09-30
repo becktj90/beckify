@@ -339,6 +339,7 @@ extension GlyphKind {
         switch id {
         case .ohmsLaw: return .ohmsLaw
         case .power: return .power
+        case .threePhasePower: return .threePhasePower
         case .powerWizard: return .powerWizard
         case .voltageDrop: return .voltageDrop
         case .conduitFill: return .conduitFill
@@ -430,6 +431,7 @@ extension GlyphKind {
 enum GlyphKind {
     case ohmsLaw
     case power
+    case threePhasePower
     case powerWizard
     case voltageDrop
     case conduitFill
@@ -538,6 +540,7 @@ enum GlyphKind {
         case .motorNameplateOCR: return Self.motorNameplateOCR(rect)
         case .lookCheck: return Self.lookCheck(rect)
         case .power: return Self.power(rect)
+        case .threePhasePower: return Self.threePhasePower(rect)
         case .powerWizard: return Self.powerWizard(rect)
         case .transformer: return Self.transformer(rect)
         case .tapChanger: return Self.tapChanger(rect)
@@ -1001,6 +1004,22 @@ enum GlyphKind {
 
     private static func power(_ r: CGRect) -> GlyphArtwork {
         .fill(Glyph.bolt(r))
+    }
+
+    /// Three arrows at 120° — open mark, distinct from the bolt.
+    private static func threePhasePower(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let center = CGPoint(x: r.midX, y: r.midY + r.height * 0.04)
+        let length = r.width * 0.34
+        for deg in [90.0, 210.0, 330.0] {
+            let rad = deg * .pi / 180
+            let tip = CGPoint(
+                x: center.x + CGFloat(cos(rad)) * length,
+                y: center.y - CGFloat(sin(rad)) * length
+            )
+            Glyph.arrow(&path, from: center, to: tip, head: r.width * 0.09)
+        }
+        return .stroke(path)
     }
 
     /// Filled bolt + two-ray star (open).

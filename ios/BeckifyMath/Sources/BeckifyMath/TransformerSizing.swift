@@ -164,3 +164,195 @@ public enum TransformerSizing {
         return (167, "Secondary under 9 A", false)
     }
 }
+
+/// How line voltages become a winding turns ratio.
+public enum TurnsRatioBasis: String, Equatable, Sendable {
+    /// Wye–wye, delta–delta, or a single winding. Np/Ns = Vp/Vs.
+    case lineVoltages
+    /// Delta primary, wye secondary. Np/Ns = √3 × Vp/Vs.
+    case deltaPrimaryWyeSecondary
+    /// Wye primary, delta secondary. Np/Ns = Vp ÷ (√3 × Vs).
+    case wyePrimaryDeltaSecondary
+    /// Zig-zag, autotransformer, or buck-boost. The row still uses Vp/Vs.
+    case approximateLineVoltages
+
+    public func turnsRatio(primaryVolts: Double, secondaryVolts: Double) -> Double {
+        let line = primaryVolts / secondaryVolts
+        switch self {
+        case .lineVoltages, .approximateLineVoltages:
+            return line
+        case .deltaPrimaryWyeSecondary:
+            return line * 3.0.squareRoot()
+        case .wyePrimaryDeltaSecondary:
+            return line / 3.0.squareRoot()
+        }
+    }
+
+    public var note: String {
+        switch self {
+        case .lineVoltages:
+            return "Np/Ns uses the line voltages. Wye–wye, delta–delta, and a single winding share that ratio."
+        case .deltaPrimaryWyeSecondary:
+            return "Delta primary, wye secondary: Np/Ns = √3 × Vp/Vs. Line voltages alone are not the winding ratio."
+        case .wyePrimaryDeltaSecondary:
+            return "Wye primary, delta secondary: Np/Ns = Vp ÷ (√3 × Vs)."
+        case .approximateLineVoltages:
+            return "This connection is not a simple two-winding pair. The row still uses Vp/Vs."
+        }
+    }
+}
+
+public struct ReferredImpedance: Equatable, Sendable {
+    public var load: ComplexOhms
+    public var referred: ComplexOhms
+    public var turnsRatio: Double
+    public var basis: TurnsRatioBasis
+    public var formula: String
+
+    public init(load: ComplexOhms, referred: ComplexOhms, turnsRatio: Double, basis: TurnsRatioBasis, formula: String) {
+        self.load = load
+        self.referred = referred
+        self.turnsRatio = turnsRatio
+        self.basis = basis
+        self.formula = formula
+    }
+}
+
+public struct StepUpLineLoss: Equatable, Sendable {
+    public var loadWatts: Double
+    public var powerFactor: Double
+    public var lagging: Bool
+    public var lowVolts: Double
+    public var highVolts: Double
+    public var conductorOhms: Double
+    public var threePhase: Bool
+    public var currentLow: Double
+    public var currentHigh: Double
+    public var lossLowWatts: Double
+    public var lossHighWatts: Double
+    public var assumptions: [String]
+
+    public init(
+        loadWatts: Double,
+        powerFactor: Double,
+        lagging: Bool,
+        lowVolts: Double,
+        highVolts: Double,
+        conductorOhms: Double,
+        threePhase: Bool,
+        currentLow: Double,
+        currentHigh: Double,
+        lossLowWatts: Double,
+        lossHighWatts: Double,
+        assumptions: [String]
+    ) {
+        self.loadWatts = loadWatts
+        self.powerFactor = powerFactor
+        self.lagging = lagging
+        self.lowVolts = lowVolts
+        self.highVolts = highVolts
+        self.conductorOhms = conductorOhms
+        self.threePhase = threePhase
+        self.currentLow = currentLow
+        self.currentHigh = currentHigh
+        self.lossLowWatts = lossLowWatts
+        self.lossHighWatts = lossHighWatts
+        self.assumptions = assumptions
+    }
+}
+
+/// Ideal referral of a secondary impedance, plus a line-loss comparison at two voltages.
+public enum ImpedanceReflection {
+    public static let referralFormula = "Z' = Z × (Np/Ns)²"
+
+    public static func refer(
+        load: ComplexOhms,
+        primaryVolts: Double,
+        secondaryVolts: Double,
+        basis: TurnsRatioBasis
+    ) throws -> ReferredImpedance {
+        let vp = try Positive.require(primaryVolts, name: "Primary voltage")
+        let vs = try Positive.require(secondaryVolts, name: "Secondary voltage")
+        let z = try requireLoad(load)
+        let turns = basis.turnsRatio(primaryVolts: vp, secondaryVolts: vs)
+        let factor = turns * turns
+        return ReferredImpedance(
+            load: z,
+            referred: z.scaled(by: factor),
+            turnsRatio: turns,
+            basis: basis,
+            formula: referralFormula
+        )
+    }
+
+    /// Same real watts and power factor, sent at the secondary voltage or stepped up to the primary voltage.
+    public static func compareLineLoss(
+        system: ElectricalSystem,
+        load: ComplexOhms,
+        secondaryVolts: Double,
+        primaryVolts: Double,
+        conductorOhms: Double
+    ) throws -> StepUpLineLoss {
+        guard system != .dc else {
+            throw CalcError.outOfRange("Line-loss comparison is for AC.")
+        }
+        let vs = try Positive.require(secondaryVolts, name: "Secondary voltage")
+        let vp = try Positive.require(primaryVolts, name: "Primary voltage")
+        guard conductorOhms.isFinite else { throw CalcError.missing("Line conductor resistance") }
+        guard conductorOhms >= 0 else {
+            throw CalcError.outOfRange("Line conductor resistance cannot be negative.")
+        }
+        let z = try requireLoad(load)
+        guard abs(z.resistance) > 0 else {
+            throw CalcError.outOfRange("Line-loss comparison needs real watts. A pure reactive load has no power factor to hold constant.")
+        }
+
+        let sqrt3 = 3.0.squareRoot()
+        let pf = z.resistance / z.magnitude
+        let threePhase = system == .threePhase
+        let loadCurrent = threePhase ? (vs / sqrt3) / z.magnitude : vs / z.magnitude
+        let watts = (threePhase ? 3 : 1) * loadCurrent * loadCurrent * z.resistance
+        let currentLow = threePhase ? watts / (sqrt3 * vs * pf) : watts / (vs * pf)
+        let currentHigh = threePhase ? watts / (sqrt3 * vp * pf) : watts / (vp * pf)
+        let conductors = threePhase ? 3.0 : 2.0
+        let loss: (Double) -> Double = { current in conductors * current * current * conductorOhms }
+        let path = threePhase
+            ? "Three-phase loss is 3 I²R. R is one conductor. Neutral current is not in this row."
+            : "Single-phase loss is 2 I²R, out and back. R is one conductor."
+
+        return StepUpLineLoss(
+            loadWatts: watts,
+            powerFactor: pf,
+            lagging: z.reactance >= 0,
+            lowVolts: vs,
+            highVolts: vp,
+            conductorOhms: conductorOhms,
+            threePhase: threePhase,
+            currentLow: currentLow,
+            currentHigh: currentHigh,
+            lossLowWatts: loss(currentLow),
+            lossHighWatts: loss(currentHigh),
+            assumptions: [
+                "Same real watts and power factor at both voltages.",
+                path,
+                "The step-up is ideal. Core and copper loss in the transformer are not included.",
+                threePhase
+                    ? "Secondary Z is one phase of a balanced wye at the secondary line voltage."
+                    : "Secondary Z is the load on the secondary winding.",
+            ]
+        )
+    }
+
+    private static func requireLoad(_ load: ComplexOhms) throws -> ComplexOhms {
+        guard load.resistance.isFinite, load.reactance.isFinite else {
+            throw CalcError.missing("Secondary resistance and reactance")
+        }
+        guard load.resistance >= 0 else {
+            throw CalcError.outOfRange("Secondary resistance cannot be negative.")
+        }
+        guard load.magnitude > 0 else {
+            throw CalcError.outOfRange("Secondary impedance cannot be a short. Enter resistance, reactance, or both.")
+        }
+        return load
+    }
+}
