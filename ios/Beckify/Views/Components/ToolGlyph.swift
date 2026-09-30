@@ -349,6 +349,7 @@ extension GlyphKind {
         case .timer555: return .timer555
         case .motorFLA: return .motorFLA
         case .wireAmpacity: return .wireAmpacity
+        case .flexibleCable: return .flexibleCable
         case .voltageDivider: return .voltageDivider
         case .seriesParallel: return .seriesParallel
         case .resistorColor: return .resistorColor
@@ -435,6 +436,7 @@ enum GlyphKind {
     case timer555
     case motorFLA
     case wireAmpacity
+    case flexibleCable
     case voltageDivider
     case seriesParallel
     case resistorColor
@@ -509,6 +511,7 @@ enum GlyphKind {
         switch self {
         case .voltageDrop: return Self.voltageDrop(rect)
         case .wireAmpacity: return Self.wireAmpacity(rect)
+        case .flexibleCable: return Self.flexibleCable(rect)
         case .motorFLA: return Self.motorFLA(rect)
         case .receptacleSelector: return Self.receptacleSelector(rect)
         case .wifiStatus: return Self.wifiStatus(rect)
@@ -609,6 +612,25 @@ enum GlyphKind {
         Glyph.line(&path, left, CGPoint(x: left.x, y: r.maxY - r.height * 0.06))
         Glyph.line(&path, right, CGPoint(x: right.x, y: r.maxY - r.height * 0.06))
         return .stroke(path)
+    }
+
+    /// Round jacket with four punched conductors — a flexible cable end, not a building-wire sleeve.
+    private static func flexibleCable(_ r: CGRect) -> GlyphArtwork {
+        let side = min(r.width, r.height) * 0.92
+        let center = CGPoint(x: r.midX, y: r.midY)
+        let body = Glyph.circlePath(center, side / 2)
+        let dot = side * 0.12
+        let orbit = side * 0.24
+        var holes: [Path] = []
+        for index in 0..<4 {
+            let angle = (CGFloat(index) * 90 - 45) * .pi / 180
+            let point = CGPoint(
+                x: center.x + cos(angle) * orbit,
+                y: center.y + sin(angle) * orbit
+            )
+            holes.append(Glyph.circlePath(point, dot))
+        }
+        return .fill(Glyph.punched(body, holes))
     }
 
     /// Filled sleeve with three conductor slot holes.

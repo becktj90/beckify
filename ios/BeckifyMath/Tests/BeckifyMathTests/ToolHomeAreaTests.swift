@@ -105,7 +105,7 @@ final class ToolHomeAreaTests: XCTestCase {
 
     func testPrimaryJobsiteShelfMembership() {
         let jobsite = [
-            "voltageDrop", "wireAmpacity", "conductorCost", "conductorLength",
+            "voltageDrop", "wireAmpacity", "flexibleCable", "conductorCost", "conductorLength",
             "conduitFill", "equipmentGround", "motorFLA", "motorSpeed", "motorNameplate", "motorNameplateOCR",
             "lookCheck",
             "receptacleSelector", "shortCircuit", "circularMils", "loadFactors",

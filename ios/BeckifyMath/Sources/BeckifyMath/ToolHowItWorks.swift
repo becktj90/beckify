@@ -127,6 +127,16 @@ public enum ToolHowItWorksCatalog {
                 "Squirrel-cage / induction tables only — not DC, wound-rotor, or servo.",
             ]
         ),
+        "flexibleCable": ToolHowItWorks(
+            summary: "Ampacity and a size pick up to 400 A for Type W and SO/SJO portable cord from NEC Table 400.5.",
+            context: "Jobsite flexible cable. THHN in conduit stays on Wire Size & Ampacity.",
+            bullets: [
+                "SO/SJO use Table 400.5(A)(1). Type W uses the 90°C column of Table 400.5(A)(2). Each row names its source.",
+                "The equipment ground is not current-carrying. More than three CCC uses Table 400.5(A)(3). Continuous load is a 125% check.",
+                "Aluminum and the Type W 60/75°C columns are not transcribed. Missing cells are not invented.",
+                "Planning aid. The AHJ and the manufacturer prevail. Cord is not a substitute for fixed wiring.",
+            ]
+        ),
         "wireAmpacity": ToolHowItWorks(
             summary: "NEC Table 310.16 ampacity with ambient correction, CCC adjustment, termination cap, and continuous load.",
             context: "Pick a copper or aluminum size that still carries the load after derating.",

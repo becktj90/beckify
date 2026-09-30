@@ -195,6 +195,7 @@ struct CalculatorHostView: View {
             case .timer555: Timer555View()
             case .motorFLA: MotorFLAView()
             case .wireAmpacity: WireAmpacityView()
+            case .flexibleCable: FlexibleCableAmpacityView()
             case .receptacleSelector: ReceptacleSelectorView()
             case .voltageDivider: VoltageDividerView()
             case .seriesParallel: SeriesParallelView()
