@@ -14,7 +14,7 @@ const TOOL_FAMILIES = [
       { id: 'basics', label: 'Ratio & current', slug: 'transformer', anchor: 'sec-xfmr' },
       { id: 'sizing', label: 'Sizing & 450.3', slug: 'transformer-sizing', anchor: 'sec-xfmr-size' },
       { id: 'conductors', label: 'Conductors / OCPD / VD', slug: 'transformer-engine', anchor: 'sec-xfmr-engine' },
-      { id: 'design', label: 'Type & winding', slug: 'transformer-design', anchor: 'sec-xfmr-wizard' },
+      { id: 'design', label: 'Teach & size', slug: 'transformer-design', anchor: 'sec-xfmr-wizard' },
     ],
   },
   {
