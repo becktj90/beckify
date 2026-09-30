@@ -99,6 +99,11 @@ struct ToolGridView: View {
             .navigationTitle("Beckify")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Search Field and Toolkit…")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsToolbarButton()
+                }
+            }
             .overlay {
                 if isSearching && searchResults.isEmpty {
                     ContentUnavailableView.search(text: query)

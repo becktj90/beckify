@@ -42,7 +42,14 @@ struct ToolScaffold<Content: View>: View {
 
     @EnvironmentObject private var favorites: FavoritesStore
     @StateObject private var chrome = ToolChromeController()
+    @AppStorage(ToolboxPreferenceKey.electricalCode) private var codeRaw = ElectricalCode.nec.rawValue
     private var tool: ToolDefinition { ToolboxCatalog.tool(toolID) }
+    private var codeNotice: ElectricalCodeNotice? {
+        ElectricalCodeSupport.notice(
+            toolID: toolID.rawValue,
+            code: ElectricalCode(rawValue: codeRaw) ?? .nec
+        )
+    }
 
     /// Calculate stays in the sticky strip when the keyboard is down so a
     /// gloved thumb can hit it without scrolling. While editing, it moves to
@@ -58,6 +65,9 @@ struct ToolScaffold<Content: View>: View {
                     ToolIdentityHeader(toolID: toolID)
                 }
                 AboutToolCard(toolID: toolID)
+                if let codeNotice {
+                    ElectricalCodeBannerView(notice: codeNotice)
+                }
                 if isResultStale {
                     StaleResultBanner()
                 }

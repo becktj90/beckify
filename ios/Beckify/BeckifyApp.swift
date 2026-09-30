@@ -28,6 +28,7 @@ struct RootView: View {
     @State private var didFinishFirstAppear = false
     @ObservedObject private var reviewAsk = ReviewAskStore.shared
     @Environment(\.requestReview) private var requestReview
+    @AppStorage(ToolboxPreferenceKey.appearance) private var appearanceRaw = ToolboxAppearance.system.rawValue
 
     var body: some View {
         TabView(selection: $tab) {
@@ -48,6 +49,7 @@ struct RootView: View {
                 .tag(RootTab.jobs)
         }
         .tint(Theme.accent)
+        .preferredColorScheme((ToolboxAppearance(rawValue: appearanceRaw) ?? .system).colorScheme)
         // Frosted tab chrome — reads as a floating bar over the ambient wash.
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)

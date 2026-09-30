@@ -69,6 +69,11 @@ struct ToolboxView: View {
             }
             .navigationTitle("Beckify")
             .searchable(text: $query, prompt: "Search Field and Toolkit…")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsToolbarButton()
+                }
+            }
             .safeAreaInset(edge: .top) {
                 if !isSearching {
                     Picker("Home area", selection: $homeArea) {

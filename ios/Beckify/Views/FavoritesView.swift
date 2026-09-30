@@ -46,6 +46,9 @@ struct FavoritesView: View {
             }
             .navigationTitle("Favorites")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsToolbarButton()
+                }
                 if !tools.isEmpty { EditButton() }
             }
             .background {

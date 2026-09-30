@@ -107,6 +107,8 @@ public struct ReceptacleQuery: Equatable, Sendable {
     public var preferGFCI: Bool
     public var frequencyHz: Double
     public var neutral: NeutralChoice
+    /// Ranking hint only. NEC leaves the existing scores alone.
+    public var electricalCode: ElectricalCode
 
     public init(
         volts: Double,
@@ -117,7 +119,8 @@ public struct ReceptacleQuery: Equatable, Sendable {
         isolatedGround: Bool = false,
         preferGFCI: Bool = false,
         frequencyHz: Double = 60,
-        neutral: NeutralChoice = .auto
+        neutral: NeutralChoice = .auto,
+        electricalCode: ElectricalCode = .nec
     ) {
         self.volts = volts
         self.phase = phase
@@ -128,6 +131,7 @@ public struct ReceptacleQuery: Equatable, Sendable {
         self.preferGFCI = preferGFCI
         self.frequencyHz = frequencyHz
         self.neutral = neutral
+        self.electricalCode = electricalCode
     }
 }
 
@@ -587,6 +591,20 @@ extension ReceptacleSelector {
             reasons.append("IEC earth contact at \(hour)h (socket view, keyway at 6 o’clock)")
             if query.frequencyHz == 50, config.frequencyHz == 60 {
                 caveats.append("This IEC clock row is 60 Hz (e.g. 277 V 5h). 50 Hz does not use that clock.")
+            }
+        }
+
+        if query.electricalCode == .asnzs {
+            let isTypeI = config.id.contains("type-i") || config.code.contains("3112")
+            if isTypeI {
+                score += 36
+                reasons.append("AS/NZS 3112 Type I — usual Australia / New Zealand household face")
+            } else if config.family == .internationalHousehold, volts >= 220, volts <= 250 {
+                caveats.append("AS/NZS household preference is Type I (AS/NZS 3112), not this face.")
+            }
+            if config.family == .iec60309, config.iecEarthHour == 6, abs(volts - 400) <= 20 {
+                score += 14
+                reasons.append("IEC 60309 6h is the usual 380–415 V 50 Hz industrial clock (AS/NZS).")
             }
         }
 
