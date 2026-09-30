@@ -86,9 +86,13 @@ struct ConduitFillView: View {
                 NumberField(title: "Load current if no OCPD", unit: "A", text: $loadAmps, optional: true, fieldID: "loadAmps", onSubmit: calculate)
                 MenuField(title: "EGC material", selection: $egcMaterial, options: ConductorMaterial.allCases) { $0.displayName }
                 Toggle("Count EGC in fill", isOn: $countEGC)
-                Text("Shows a Table 250.122 equipment grounding conductor beside this fill. Turn the count on to add that one conductor. Leave it off if the ground is already listed. Confirm the current Code and the AHJ.")
+                Text("The minimum size is NEC 2023 Table 250.122, shown here as soon as the amps are entered. Turn the count on to add that one conductor. Leave it off if the ground is already listed. The same table is the Equipment Grounding tool.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let live = liveGround {
+                    EquipmentGroundingSummary(recommendation: live, countedInFill: countEGC)
+                }
             }
 
             if mode == .same {
@@ -104,10 +108,11 @@ struct ConduitFillView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(alignment: .top, spacing: Theme.Space.sm) {
                             NumberField(title: "Qty", unit: "ea", text: $row.qty, fieldID: "mixed-\(row.id.uuidString)", onSubmit: calculate)
-                                .frame(maxWidth: 110)
+                                .frame(maxWidth: 140)
                             MenuField(title: "Size", selection: $row.size, options: sizes, label: NECTables.wireLabel)
-                            MenuField(title: "Insulation", selection: $row.insulation, options: ConductorInsulationKind.allCases) { $0.displayName }
                         }
+                        // Full width so "THHN / THWN-2" and "RHH / RHW / RHW-2" stay one readable line.
+                        MenuField(title: "Insulation", selection: $row.insulation, options: ConductorInsulationKind.allCases) { $0.displayName }
                         if mixedRows.count > 1 {
                             Button(role: .destructive) {
                                 mixedRows.removeAll { $0.id == row.id }
@@ -165,6 +170,14 @@ struct ConduitFillView: View {
                     ResultRow(label: "Basis", value: r.fillBasis, tone: Theme.muted)
                     ResultRow(label: "Actual fill", value: Format.percent(r.actualFillPercent), emphasis: true, tone: r.passes ? Theme.good : Theme.bad)
                     ResultRow(label: "Status", value: r.passes ? "PASS" : "FAIL — exceeds Table 1", tone: r.passes ? Theme.good : Theme.bad)
+                    if let displayedEGC {
+                        ResultRow(
+                            label: "Minimum EGC",
+                            value: "\(displayedEGC.label) \(displayedEGC.material.displayName)",
+                            emphasis: true,
+                            tone: Theme.copper
+                        )
+                    }
                     if let sug = r.suggestedTradeSize {
                         ResultRow(label: "Minimum \(r.raceway.displayName)", value: "\(sug)\"", tone: Theme.warn)
                     }
@@ -353,12 +366,22 @@ struct ConduitFillView: View {
         return "\(r.formula)  →  \(Format.percent(r.actualFillPercent))  (limit \(Format.percent(r.maxFillPercent)), \(r.conductorCount) conductors)"
     }
 
-    private var sticky: String? {
-        guard let r = session.displayedResult else { return nil }
-        return "\(Format.percent(r.actualFillPercent))  ·  \(r.passes ? "PASS" : "FAIL")"
+    private var liveGround: EquipmentGroundingRecommendation? {
+        equipmentGroundRecommendation()
     }
 
-    private var copyText: String? { sticky }
+    private var sticky: String? {
+        guard let r = session.displayedResult else { return nil }
+        let fill = "\(Format.percent(r.actualFillPercent))  ·  \(r.passes ? "PASS" : "FAIL")"
+        guard let displayedEGC else { return fill }
+        return "\(fill)  ·  EGC \(displayedEGC.label)"
+    }
+
+    private var copyText: String? {
+        guard let sticky else { return nil }
+        guard let displayedEGC else { return sticky }
+        return "\(sticky) · \(displayedEGC.copyLine)"
+    }
 
     private static func defaultMixedRows() -> [MixedRow] {
         [

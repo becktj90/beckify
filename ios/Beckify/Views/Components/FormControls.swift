@@ -277,6 +277,59 @@ struct SaveJobBar: View {
     }
 }
 
+/// Compact Table 250.122 size shown beside inputs (conduit fill, before Calculate).
+struct EquipmentGroundingSummary: View {
+    var recommendation: EquipmentGroundingRecommendation
+    var countedInFill: Bool? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("MINIMUM EGC")
+                .font(.caption.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(Theme.muted)
+            Text("\(recommendation.label) \(recommendation.material.displayName)")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.copper)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text("\(recommendation.citation.articleOrTable) · \(recommendation.basisLabel)")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            if let countedInFill {
+                Text(countedInFill
+                     ? "Included in this fill (+1 conductor)."
+                     : "Not in the fill. Turn Count EGC on to add this one conductor.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(countedInFill ? Theme.good : Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.copper.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Theme.copper.opacity(0.45), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        var parts = [
+            "Minimum equipment grounding conductor \(recommendation.label) \(recommendation.material.displayName).",
+            recommendation.citation.articleOrTable,
+            recommendation.basisLabel,
+        ]
+        if let countedInFill {
+            parts.append(countedInFill ? "Counted in the fill." : "Not counted in the fill.")
+        }
+        return parts.joined(separator: " ")
+    }
+}
+
 /// Shared NEC 2023 Table 250.122 row. Hidden when the circuit does not imply a ground.
 struct EquipmentGroundingCard: View {
     var title: String = "Equipment grounding conductor"

@@ -32,6 +32,14 @@ final class ElectricalCodeTests: XCTestCase {
         XCTAssertTrue(fill?.message.contains("Count EGC") == true)
         XCTAssertEqual(fill?.kind, .necLabeledFallback)
 
+        let ground = ElectricalCodeSupport.notice(toolID: "equipmentGround", code: .asnzs)
+        XCTAssertEqual(ground?.kind, .necLabeledFallback)
+        XCTAssertTrue(ground?.title.contains("showing NEC") == true)
+        XCTAssertTrue(ground?.message.contains("250.122") == true)
+        XCTAssertTrue(ground?.message.contains("Table 5.1") == true)
+        XCTAssertFalse(ground?.message.localizedCaseInsensitiveContains("this result is AS/NZS") == true)
+        XCTAssertEqual(ElectricalCodeSupport.notice(toolID: "equipmentGround", code: .nec)?.kind, .activeNative)
+
         let drop = ElectricalCodeSupport.notice(toolID: "voltageDrop", code: .asnzs)
         XCTAssertEqual(drop?.kind, .activeNative)
         XCTAssertFalse(drop?.title.contains("showing NEC") == true)

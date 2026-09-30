@@ -7,6 +7,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case powerWizard
     case voltageDrop
     case conduitFill
+    case equipmentGround
     case transformer
     case timer555
     case motorFLA
@@ -290,6 +291,18 @@ enum ToolboxCatalog {
             subtitle: "Same-size or mixed THHN (and other Table 5) fill vs Table 1.",
             symbol: "circle.hexagongrid.fill",
             synonyms: ["conduit", "fill", "emt", "thhn", "raceway", "chapter 9", "40 percent", "annex c", "mixed sizes"]
+        ),
+        ToolDefinition(
+            id: .equipmentGround,
+            kind: .calculator,
+            title: "Equipment Grounding",
+            subtitle: "NEC Table 250.122 minimum EGC from the OCPD, copper or aluminum.",
+            symbol: "shield.lefthalf.filled",
+            synonyms: [
+                "egc", "equipment grounding", "equipment grounding conductor", "ground wire",
+                "grounding conductor", "equipment ground", "250.122", "table 250.122",
+                "copper ground", "aluminum ground", "green wire",
+            ]
         ),
         ToolDefinition(
             id: .transformer,
@@ -945,7 +958,7 @@ enum ToolboxCatalog {
     /// Open PRs can keep appending to these arrays after updating the policy.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
-            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .motorFLA, .motorSpeed, .motorNameplate,
+            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .equipmentGround, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR, .lookCheck,
             .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
@@ -1017,14 +1030,15 @@ enum ToolboxCatalog {
         .ohmsLaw: [.power, .voltageDivider, .ledRC],
         .power: [.ohmsLaw, .transformer, .powerFactor],
         .powerWizard: [.power, .motorFLA, .transformer],
-        .voltageDrop: [.wireAmpacity, .conductorCost, .conductorLength, .conduitFill],
-        .conduitFill: [.wireAmpacity, .voltageDrop, .conductorCost],
+        .voltageDrop: [.wireAmpacity, .equipmentGround, .conductorCost, .conduitFill],
+        .conduitFill: [.equipmentGround, .wireAmpacity, .voltageDrop],
+        .equipmentGround: [.conduitFill, .wireAmpacity, .necCircuit],
         .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.power, .shortCircuit, .motorFLA],
         .timer555: [.plcTimer, .ledRC, .frequencyWave],
         .motorFLA: [.motorNameplateOCR, .motorNameplate, .motorSpeed],
-        .wireAmpacity: [.voltageDrop, .conductorCost, .conductorLength],
+        .wireAmpacity: [.equipmentGround, .voltageDrop, .conductorCost],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
@@ -1055,7 +1069,7 @@ enum ToolboxCatalog {
         .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems, .controlStrategies],
         .modbusAddress: [.signalScaling, .plcTimer],
         .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems, .controlStrategies],
-        .panelDirectory: [.loadWorksheet, .loadFactors, .wireAmpacity],
+        .panelDirectory: [.equipmentGround, .loadWorksheet, .necCircuit],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
@@ -1083,9 +1097,9 @@ enum ToolboxCatalog {
         .lookCheck: [.motorNameplateOCR, .panelDirectory],
         .heaterDesign: [.ohmsLaw, .wireAmpacity, .power],
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
-        .necCircuit: [.wireAmpacity, .voltageDrop, .loadWorksheet],
+        .necCircuit: [.equipmentGround, .wireAmpacity, .voltageDrop],
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
-        .cableSchedule: [.wireAmpacity, .conduitFill, .panelDirectory],
+        .cableSchedule: [.equipmentGround, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
         .analogWorkbench: [.voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
         .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],

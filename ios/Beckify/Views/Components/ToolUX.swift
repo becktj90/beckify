@@ -605,20 +605,49 @@ struct MenuField<Value: Hashable>: View {
                 .font(.caption.weight(.semibold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.muted)
-            Picker(title, selection: $selection) {
+            // A system `.menu` picker lays its label out at a tiny width inside
+            // a fixed-height button. Long names ("THHN / THWN-2") then wrap a
+            // few letters per line and the glyphs overlap. This label owns the
+            // width and grows to two lines instead of crushing the type.
+            Menu {
                 ForEach(options, id: \.self) { item in
-                    Text(label(item)).tag(item)
+                    Button {
+                        selection = item
+                    } label: {
+                        if item == selection {
+                            Label(label(item), systemImage: "checkmark")
+                        } else {
+                            Text(label(item))
+                        }
+                    }
                 }
+            } label: {
+                HStack(alignment: .center, spacing: 8) {
+                    Text(label(selection))
+                        .font(.body)
+                        .foregroundStyle(Theme.foreground)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .pickerStyle(.menu)
-            .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+            .buttonStyle(.plain)
             .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Theme.border, lineWidth: 1)
             )
             .accessibilityLabel(title)
+            .accessibilityValue(label(selection))
         }
     }
 }
