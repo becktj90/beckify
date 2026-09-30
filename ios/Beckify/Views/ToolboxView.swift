@@ -270,6 +270,8 @@ struct CalculatorHostView: View {
             case .electronicsLab: ElectronicsLabView()
             case .phasorImpedance: PhasorImpedanceView()
             case .ul508aPanelLab: UL508APanelLabView()
+            case .magneticsLab: MagneticsLabView()
+            case .emFields: EMFieldsView()
             }
         }
     }

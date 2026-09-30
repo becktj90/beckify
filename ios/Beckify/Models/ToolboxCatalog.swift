@@ -89,6 +89,8 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case electronicsLab
     case phasorImpedance
     case ul508aPanelLab
+    case magneticsLab
+    case emFields
 
     var id: String { rawValue }
 }
@@ -150,6 +152,7 @@ extension ToolShelfKind {
         case .jobsite: return "Jobsite"
         case .power: return "Power & AC"
         case .controls: return "Controls"
+        case .magnetics: return "Magnetics & Fields"
         case .instruments: return "Instruments"
         case .basics: return "Basics"
         case .bench: return "Bench / homework"
@@ -168,6 +171,7 @@ extension ToolShelfKind {
         case .jobsite: return .field
         case .power: return .power
         case .controls: return .controls
+        case .magnetics: return .power
         case .instruments: return .sensors
         case .basics, .bench: return .homework
         case .reference: return .reference
@@ -1029,6 +1033,30 @@ enum ToolboxCatalog {
             synonyms: ["phasor", "impedance", "admittance", "lead lag", "sinusoid", "reactance", "polar"],
             calculationMode: .live
         ),
+        ToolDefinition(
+            id: .magneticsLab,
+            kind: .calculator,
+            title: "Magnetics Lab",
+            subtitle: "Core reluctance, flux, inductance, and a transformer, motor, or generator check.",
+            symbol: "atom",
+            synonyms: [
+                "magnetics", "magnetic circuit", "reluctance", "mmf", "flux", "air gap",
+                "inductance", "stacking", "fringing", "three leg", "transformer", "generator",
+            ],
+            calculationMode: .live
+        ),
+        ToolDefinition(
+            id: .emFields,
+            kind: .calculator,
+            title: "EM Fields",
+            subtitle: "Induced emf, point charges, Lorentz force, and a vector check.",
+            symbol: "arrow.up.and.down.and.arrow.left.and.right",
+            synonyms: [
+                "faraday", "induced emf", "lorentz", "point charge", "electric field",
+                "vector", "cylindrical", "spherical", "divergence", "curl",
+            ],
+            calculationMode: .live
+        ),
     ]
 
     /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
@@ -1195,5 +1223,7 @@ enum ToolboxCatalog {
         .electronicsLab: [.phasorImpedance, .controlSystems, .analogWorkbench, .timer555, .voltageDivider],
         .phasorImpedance: [.electronicsLab, .reactance, .phasorDiagram, .frequencyWave],
         .ul508aPanelLab: [.motorFLA, .equipmentGround, .conduitFill, .wireAmpacity, .panelDirectory, .cableSchedule, .transformer],
+        .magneticsLab: [.emFields, .transformer, .solenoidDesign, .magneticCircuit],
+        .emFields: [.magneticsLab, .magnetometer, .solenoidDesign],
     ]
 }
