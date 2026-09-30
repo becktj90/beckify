@@ -342,6 +342,7 @@ extension GlyphKind {
         case .powerWizard: return .powerWizard
         case .voltageDrop: return .voltageDrop
         case .conduitFill: return .conduitFill
+        case .cableLadder: return .cableLadder
         case .equipmentGround: return .equipmentGround
         case .conductorCost: return .conductorCost
         case .conductorLength: return .conductorLength
@@ -430,6 +431,7 @@ enum GlyphKind {
     case powerWizard
     case voltageDrop
     case conduitFill
+    case cableLadder
     case equipmentGround
     case conductorCost
     case conductorLength
@@ -518,6 +520,7 @@ enum GlyphKind {
         case .receptacleSelector: return Self.receptacleSelector(rect)
         case .wifiStatus: return Self.wifiStatus(rect)
         case .conduitFill: return Self.conduitFill(rect)
+        case .cableLadder: return Self.cableLadder(rect)
         case .equipmentGround: return Self.equipmentGround(rect)
         case .conductorCost: return Self.conductorCost(rect)
         case .conductorLength: return Self.conductorLength(rect)
@@ -752,6 +755,41 @@ enum GlyphKind {
             Glyph.line(&stroke, CGPoint(x: x - half, y: y), CGPoint(x: x + half, y: y))
         }
         return .both(fill: fill, stroke: stroke, openMark: true)
+    }
+
+    /// Side rails, rung strokes, and three cable circles.
+    private static func cableLadder(_ r: CGRect) -> GlyphArtwork {
+        let railW = r.width * 0.08
+        let left = CGRect(
+            x: r.minX + r.width * 0.10,
+            y: r.minY + r.height * 0.18,
+            width: railW,
+            height: r.height * 0.64
+        )
+        let right = CGRect(
+            x: r.maxX - r.width * 0.10 - railW,
+            y: left.minY,
+            width: railW,
+            height: left.height
+        )
+        var fill = Glyph.roundedRect(left, corner: 1.5)
+        fill.addPath(Glyph.roundedRect(right, corner: 1.5))
+        let xs: [CGFloat] = [0.34, 0.50, 0.66]
+        let radii: [CGFloat] = [0.075, 0.055, 0.075]
+        for index in 0..<3 {
+            fill.addEllipse(in: CGRect(
+                x: r.minX + r.width * xs[index] - r.width * radii[index],
+                y: r.midY - r.width * radii[index],
+                width: r.width * radii[index] * 2,
+                height: r.width * radii[index] * 2
+            ))
+        }
+        var stroke = Path()
+        for index in 0..<3 {
+            let y = left.minY + left.height * (0.22 + 0.28 * CGFloat(index))
+            Glyph.line(&stroke, CGPoint(x: left.maxX, y: y), CGPoint(x: right.minX, y: y))
+        }
+        return .both(fill: fill, stroke: stroke)
     }
 
     // MARK: - Field · Jobsite

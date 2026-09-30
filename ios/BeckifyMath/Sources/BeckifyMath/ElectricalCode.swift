@@ -157,6 +157,7 @@ public enum ElectricalCodeSupport {
         "wireAmpacity",
         "flexibleCable",
         "conduitFill",
+        "cableLadder",
         "equipmentGround",
         "motorFLA",
         "transformer",
@@ -220,6 +221,8 @@ public enum ElectricalCodeSupport {
             return "Flexible cord and Type W ampacity here are NEC Table 400.5. AS/NZS current-carrying capacity is not in this tool. The table names stay NEC."
         case "conduitFill":
             return "Fill is NEC Chapter 9. Count EGC still adds a Table 250.122 conductor only when that toggle is on. AS/NZS conduit space factors are not in this tool."
+        case "cableLadder":
+            return "Fill, hangers, NEMA 250, and conduit notes are NEC Article 392 plus Reference Library names. AS/NZS cable-tray rules are not in this tool. Phase tints are a legend, not a wiring rule."
         case "equipmentGround":
             return "This screen is NEC 2023 Table 250.122 only. AS/NZS protective-earth sizing (Table 5.1) is on Voltage Drop, not here. The sizes below stay labeled NEC."
         case "motorFLA":
