@@ -164,9 +164,10 @@ enum LabKit {
             branches: branches,
             quantities: quantities,
             steps: steps,
-            notes: Array(notes.prefix(4)),
-            warning: warning
-        )
+        notes: Array(notes.prefix(4)),
+        warning: warning,
+        io: LabSignals.make(circuit: circuit, quantities: quantities)
+    )
     }
 
     static func clampSwing(_ ideal: Double, limit: Double) -> (shown: Double, clipped: Bool) {

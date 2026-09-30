@@ -120,6 +120,7 @@ struct ElectronicsLabView: View {
                         .foregroundStyle(Theme.accent)
                         .accessibilityIdentifier("electronicsLab.callout")
                 }
+                LabResponseCard(io: solution.io)
                 readingTable(title: "Nodes", rows: solution.nodes.map {
                     ($0.id, $0.name, labReading($0.value, unit: $0.unit))
                 })
@@ -370,6 +371,63 @@ private enum DraftStore {
 }
 
 // MARK: - Schematic
+
+private struct LabResponseCard: View {
+    let io: LabIO
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            Text("TRANSFER")
+                .font(Theme.TypeRole.sectionLabel)
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            Text(io.expression)
+                .font(.subheadline.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("electronicsLab.transfer")
+            if !io.detail.isEmpty {
+                Text(io.detail)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(io.plots) { plot in
+                DiagramCard(
+                    title: plot.title,
+                    accessibilitySummary: "\(plot.title). \(plot.yLabel) versus \(plot.xLabel). \(io.expression)",
+                    exportName: "electronics-lab-\(plot.id)"
+                ) {
+                    EngineerLinePlot(
+                        series: plot.series.enumerated().map { index, series in
+                            EngineerSeries(
+                                name: series.name,
+                                points: series.points,
+                                color: labTraceColor(index),
+                                fills: index == 0 && plot.series.count == 1
+                            )
+                        },
+                        xLabel: plot.xLabel,
+                        yLabel: plot.yLabel,
+                        xGuides: plot.xGuide.map { [EngineerGuide(value: $0, label: plot.xGuideLabel, axis: .x)] } ?? [],
+                        yGuides: plot.showZero ? [EngineerGuide(value: 0, label: "0", axis: .y)] : [],
+                        logX: plot.logX,
+                        smooth: plot.smooth
+                    )
+                }
+            }
+        }
+    }
+}
+
+private func labTraceColor(_ index: Int) -> Color {
+    switch index {
+    case 0: return Theme.chartPrimary
+    case 1: return Theme.chartSecondary
+    case 2: return Theme.chartTertiary
+    default: return Theme.good
+    }
+}
 
 private struct SchematicCard: View {
     var solution: LabSolution

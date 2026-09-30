@@ -117,6 +117,9 @@ final class ElectronicsLabTests: XCTestCase {
             XCTAssertLessThanOrEqual(solved.notes.count, 4, info.title)
             XCTAssertLessThanOrEqual(solved.steps.count, 6, info.title)
             XCTAssertFalse(solved.headline.isEmpty, info.title)
+            XCTAssertFalse(solved.io.expression.isEmpty, info.title)
+            XCTAssertFalse(solved.io.plots.isEmpty, info.title)
+            XCTAssertGreaterThanOrEqual(solved.io.plots[0].series.first?.points.count ?? 0, 2, info.title)
             let fields = ElectronicsLab.fields(for: info.id, unknown: info.defaultUnknown)
             XCTAssertFalse(fields.isEmpty, info.title)
         }
@@ -133,5 +136,59 @@ final class ElectronicsLabTests: XCTestCase {
         let each = 3.0 / 330
         XCTAssertEqual(solved.quantity("iseg") ?? -1, each, accuracy: 1e-12)
         XCTAssertEqual(solved.quantity("itotal") ?? -1, 7 * each, accuracy: 1e-12)
+        XCTAssertEqual(solved.io.transferKind, .none)
+    }
+
+    func testDividerTransferAndSinePeak() throws {
+        let solved = try ElectronicsLab.solve(
+            .voltageDivider,
+            unknown: "vout",
+            inputs: ["vin": "12", "r1": "10000", "r2": "10000"]
+        )
+        XCTAssertEqual(solved.io.transferKind, .closedForm)
+        XCTAssertEqual(LabSignals.dividerRatio(r1: 10_000, r2: 10_000), 0.5, accuracy: 1e-12)
+        let vout = solved.io.plots[0].series.first { $0.id == "vout" }
+        let peak = vout?.points.map(\.y).max() ?? -1
+        XCTAssertEqual(peak, 6, accuracy: 1e-6)
+        let atQuarter = LabSignals.sineValue(frequency: 1_000, time: 0.00025, amplitude: 12)
+        XCTAssertEqual(atQuarter * 0.5, 6, accuracy: 1e-9)
+    }
+
+    func testFirstOrderAndIntegratorAndRLCFormulas() {
+        let low = LabSignals.lowpassPhasor(frequency: 1_000, cutoff: 1_000)
+        XCTAssertEqual(low.magnitude, 1 / sqrt(2), accuracy: 1e-12)
+        XCTAssertEqual(low.phaseDeg, -45, accuracy: 1e-9)
+        let high = LabSignals.highpassPhasor(frequency: 1_000, cutoff: 1_000)
+        XCTAssertEqual(high.magnitude, 1 / sqrt(2), accuracy: 1e-12)
+        XCTAssertEqual(high.phaseDeg, 45, accuracy: 1e-9)
+        let r = 10_000.0
+        let c = 1e-7
+        let unity = 1 / (2 * .pi * r * c)
+        XCTAssertEqual(LabSignals.integratorMagnitude(frequency: unity, resistance: r, capacitance: c), 1, accuracy: 1e-9)
+        let l = 1e-3
+        let f0 = 1 / (2 * .pi * sqrt(l * c))
+        XCTAssertEqual(
+            LabSignals.seriesRLCCurrentGain(resistance: 50, inductance: l, capacitance: c, frequency: f0),
+            1 / 50,
+            accuracy: 1e-6
+        )
+    }
+
+    func testShortedStubReactanceAndNonlinearKinds() throws {
+        XCTAssertEqual(LabSignals.shortedStubReactance(z0: 50, lengthOverLambda: 0.125), 50, accuracy: 1e-9)
+        let timer = try ElectronicsLab.solve(
+            .astable555,
+            unknown: "frequency",
+            inputs: ["vcc": "5", "r1": "1000", "r2": "1000", "c": "0.000001"]
+        )
+        XCTAssertEqual(timer.io.transferKind, .none)
+        XCTAssertTrue(timer.io.expression.contains("No linear"))
+        let bias = try ElectronicsLab.solve(
+            .bjtBias,
+            unknown: ElectronicsLab.info(.bjtBias).defaultUnknown,
+            inputs: ElectronicsLab.info(.bjtBias).defaults
+        )
+        XCTAssertEqual(bias.io.transferKind, .operatingPoint)
+        XCTAssertFalse(bias.io.plots.isEmpty)
     }
 }

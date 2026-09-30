@@ -59,6 +59,7 @@ extension LabSolve {
                 q("r1", "R1", r1, "Ω", unknown == "r1" || unknown == "resistors"),
                 q("r2", "R2", r2, "Ω", unknown == "r2" || unknown == "resistors"),
                 q("c", "C", c, "F", unknown == "c"),
+                q("vcc", "Vcc", vcc, "V"),
             ],
             steps: [
                 "tH = ln(2)·(R1+R2)·C,  tL = ln(2)·R2·C",
@@ -113,6 +114,7 @@ extension LabSolve {
                 q("r", "R", r, "Ω", unknown == "r"),
                 q("c", "C", c, "F", unknown == "c"),
                 q("retrigger", "Max rate", timed.maxRetriggerHz, "Hz"),
+                q("vcc", "Vcc", vcc, "V"),
             ],
             steps: [
                 "t = ln(3)·R·C ≈ 1.1·R·C",
@@ -326,6 +328,8 @@ extension LabSolve {
                 q("vce", "Vce", bias.vce, "V"),
                 q("vc", "Vc", bias.vc, "V"),
                 q("vb", "Vb", bias.vb, "V"),
+                q("vcc", "Vcc", vcc, "V"),
+                q("rc", "Rc", rc, "Ω"),
             ],
             steps: [
                 "Same divider-bias point as the BJT screen.",
@@ -653,6 +657,8 @@ extension LabSolve {
                 q("xp", "Shunt |X|", xp, "Ω"),
                 q("l", "L", l, "H"),
                 q("c", "C", c, "F"),
+                q("f", "f", f, "Hz"),
+                q("lowpass", "Low-pass", topology == "lowpass" ? 1 : 0, ""),
             ],
             steps: [
                 "Q = √(Rhi/Rlo − 1) = \(String(format: "%.4f", qFactor))",
@@ -701,6 +707,8 @@ extension LabSolve {
                 q("zload", "Zload", zLoad, "Ω", unknown == "zload"),
                 q("lengthM", "Length", length, "m"),
                 q("lengthMm", "Length", length * 1000, "mm"),
+                q("f", "f", f, "Hz"),
+                q("vf", "vf", vf, ""),
             ],
             steps: [
                 "Z0 = √(Zin · Zload)",
@@ -747,6 +755,10 @@ extension LabSolve {
                 q("degrees", "Electrical", degrees, "°"),
                 q("xStub", "Stub X", xStub, "Ω"),
                 q("lambda", "λ", lambda, "m"),
+                q("f", "f", f, "Hz"),
+                q("z0", "Z0", z0, "Ω"),
+                q("vf", "vf", vf, ""),
+                q("shorted", "Shorted", kind == "shorted" ? 1 : 0, ""),
             ],
             steps: [
                 kind == "shorted" ? "Shorted: jX = j Z0 tan(βl)" : "Open: jX = −j Z0 cot(βl)",

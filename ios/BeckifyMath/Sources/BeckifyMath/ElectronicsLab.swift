@@ -246,6 +246,7 @@ public struct LabSolution: Equatable, Sendable {
     public var steps: [String]
     public var notes: [String]
     public var warning: String?
+    public var io: LabIO
 
     public init(
         circuit: ElectronicsCircuit,
@@ -256,7 +257,8 @@ public struct LabSolution: Equatable, Sendable {
         quantities: [LabQuantity],
         steps: [String],
         notes: [String],
-        warning: String? = nil
+        warning: String? = nil,
+        io: LabIO = .empty
     ) {
         self.circuit = circuit
         self.headline = headline
@@ -267,6 +269,7 @@ public struct LabSolution: Equatable, Sendable {
         self.steps = steps
         self.notes = notes
         self.warning = warning
+        self.io = io
     }
 
     public func quantity(_ id: String) -> Double? {

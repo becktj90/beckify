@@ -184,6 +184,7 @@ extension LabSolve {
                 q("vc", "Vc", vc, "V"),
                 q("forced", "β forced", forced, ""),
                 q("state", saturated ? "Saturated" : "Active", saturated ? 1 : 0, ""),
+                q("vcc", "Vcc", vcc, "V"),
             ],
             steps: [
                 "Ic(sat) = (Vcc − 0.2) / Rc = \(eng(icSat)) A",
@@ -330,6 +331,7 @@ extension LabSolve {
                 q("vds", "Vds", vds, "V"),
                 q("rdson", "Rds(on)", rdson, "Ω", unknown == "rdson"),
                 q("state", on ? "On" : "Off", on ? 1 : 0, ""),
+                q("vdd", "Vdd", vdd, "V"),
             ],
             steps: [
                 on ? "Id = Vdd / (Rd + Rds(on))" : "Vgs ≤ Vt, so Id = 0 and the drain sits at Vdd.",
@@ -384,6 +386,7 @@ extension LabSolve {
                 q("vout", "Vout", vout, "V", unknown == "vout"),
                 q("vin", "Vin", vin, "V"),
                 q("nml", "NM sketch", max(0, vm - vtn), "V"),
+                q("vdd", "Vdd", vdd, "V"),
             ],
             steps: [
                 "Vm = (Vdd − |Vtp| + Vtn) / 2 = \(eng(vm)) V",
