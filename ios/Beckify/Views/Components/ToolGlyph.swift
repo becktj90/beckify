@@ -363,6 +363,9 @@ extension GlyphKind {
         case .magnetometer: return .magnetometer
         case .barometer: return .barometer
         case .motionSnapshot: return .motionSnapshot
+        case .stillnessWatch: return .stillnessWatch
+        case .breathFlute: return .breathFlute
+        case .coupledVibration: return .coupledVibration
         case .fieldPosition: return .fieldPosition
         case .deviceHealth: return .deviceHealth
         case .receptacleSelector: return .receptacleSelector
@@ -443,6 +446,9 @@ enum GlyphKind {
     case magnetometer
     case barometer
     case motionSnapshot
+    case stillnessWatch
+    case breathFlute
+    case coupledVibration
     case fieldPosition
     case deviceHealth
     case receptacleSelector
@@ -534,6 +540,9 @@ enum GlyphKind {
         case .magnetometer: return Self.magnetometer(rect)
         case .barometer: return Self.barometer(rect)
         case .motionSnapshot: return Self.motionSnapshot(rect)
+        case .stillnessWatch: return Self.stillnessWatch(rect)
+        case .breathFlute: return Self.breathFlute(rect)
+        case .coupledVibration: return Self.coupledVibration(rect)
         case .fieldPosition: return Self.fieldPosition(rect)
         case .deviceHealth: return Self.deviceHealth(rect)
         case .ohmsLaw: return Self.ohmsLaw(rect)
@@ -1209,6 +1218,62 @@ enum GlyphKind {
         Glyph.arrow(&stroke, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.minY + r.height * 0.12), head: r.width * 0.10)
         Glyph.arrow(&stroke, from: CGPoint(x: x, y: r.midY), to: CGPoint(x: x, y: r.maxY - r.height * 0.12), head: r.width * 0.10)
         return .both(fill: fill, stroke: stroke, openMark: true)
+    }
+
+    /// Flat baseline with four channel ticks. Solid fill.
+    private static func stillnessWatch(_ r: CGRect) -> GlyphArtwork {
+        let base = Glyph.roundedRect(
+            CGRect(x: r.minX + r.width * 0.06, y: r.maxY - r.height * 0.28, width: r.width * 0.88, height: r.height * 0.12),
+            corner: 2
+        )
+        let heights: [CGFloat] = [0.28, 0.46, 0.22, 0.38]
+        var ticks = Path()
+        let count = CGFloat(heights.count)
+        let gap = r.width * 0.04
+        let barW = (r.width * 0.72 - gap * (count - 1)) / count
+        for (index, height) in heights.enumerated() {
+            let x = r.minX + r.width * 0.14 + CGFloat(index) * (barW + gap)
+            let h = r.height * height
+            ticks.addPath(Glyph.roundedRect(
+                CGRect(x: x, y: r.maxY - r.height * 0.28 - h, width: barW, height: h),
+                corner: 1.5
+            ))
+        }
+        ticks.addPath(base)
+        return .fill(ticks)
+    }
+
+    /// Filled flute tube with finger holes punched through.
+    private static func breathFlute(_ r: CGRect) -> GlyphArtwork {
+        let tube = CGRect(
+            x: r.minX + r.width * 0.04,
+            y: r.midY - r.height * 0.12,
+            width: r.width * 0.92,
+            height: r.height * 0.24
+        )
+        let body = Glyph.roundedRect(tube, corner: tube.height / 2)
+        var holes = Path()
+        for index in 0..<4 {
+            let x = tube.minX + tube.width * (0.22 + CGFloat(index) * 0.18)
+            holes.addPath(Glyph.circlePath(CGPoint(x: x, y: tube.midY), tube.height * 0.22))
+        }
+        return .fill(Glyph.punched(body, holes))
+    }
+
+    /// Machine block with a waveform cut out. Solid fill, distinct from the g-force phone.
+    private static func coupledVibration(_ r: CGRect) -> GlyphArtwork {
+        let block = r.insetBy(dx: r.width * 0.08, dy: r.height * 0.16)
+        let body = Glyph.roundedRect(block, corner: 4)
+        let mid = block.midY
+        let wave = Glyph.ribbon([
+            CGPoint(x: block.minX + block.width * 0.12, y: mid),
+            CGPoint(x: block.minX + block.width * 0.28, y: mid - block.height * 0.28),
+            CGPoint(x: block.minX + block.width * 0.44, y: mid + block.height * 0.28),
+            CGPoint(x: block.minX + block.width * 0.60, y: mid - block.height * 0.22),
+            CGPoint(x: block.minX + block.width * 0.76, y: mid + block.height * 0.16),
+            CGPoint(x: block.minX + block.width * 0.88, y: mid),
+        ], width: max(2.2, block.height * 0.12))
+        return .fill(Glyph.punched(body, wave))
     }
 
     /// Filled map-pin teardrop + inner hole.

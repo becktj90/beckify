@@ -164,7 +164,10 @@ public enum ToolCalculationPolicy {
             "bubbleLevel",
             "magnetometer",
             "barometer",
+            "stillnessWatch",
             "motionSnapshot",
+            "coupledVibration",
+            "breathFlute",
             "fieldPosition",
             "deviceHealth":
             return .sensor
@@ -180,8 +183,8 @@ public enum ToolCalculationPolicy {
         "timer555", "motorFLA", "wireAmpacity", "conductorCost", "conductorLength", "voltageDivider", "seriesParallel",
         "resistorColor", "unitConverter", "frequencyWave", "ledRC", "wifiStatus",
         "cellularStatus",
-        "bluetoothScan", "noiseMeter", "acousticImager", "bubbleLevel", "magnetometer", "barometer",
-        "motionSnapshot", "fieldPosition", "deviceHealth", "receptacleSelector",
+        "bluetoothScan", "noiseMeter", "acousticImager", "breathFlute", "bubbleLevel", "magnetometer", "barometer",
+        "stillnessWatch", "motionSnapshot", "coupledVibration", "fieldPosition", "deviceHealth", "receptacleSelector",
         "reactance", "powerFactor", "shortCircuit", "circularMils", "loadFactors",
         "signalScaling", "modbusAddress", "plcTimer", "panelDirectory",
         "motorSpeed", "rfLink", "phasorDiagram", "numberBase", "batteryBank",
