@@ -91,6 +91,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case ul508aPanelLab
     case magneticsLab
     case emFields
+    case statistics
 
     var id: String { rawValue }
 }
@@ -105,6 +106,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     case homework = "Homework"
     case sensors = "Sensors"
     case reference = "Reference"
+    case analysis = "Analysis"
 
     var id: String { rawValue }
 
@@ -117,6 +119,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
         case .homework: return "Bench / homework"
         case .sensors: return "Instruments"
         case .reference: return "Reference"
+        case .analysis: return "Analysis"
         }
     }
 }
@@ -153,6 +156,7 @@ extension ToolShelfKind {
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .magnetics: return "Magnetics & Fields"
+        case .analysis: return "Analysis"
         case .instruments: return "Instruments"
         case .basics: return "Basics"
         case .bench: return "Bench / homework"
@@ -172,6 +176,7 @@ extension ToolShelfKind {
         case .power: return .power
         case .controls: return .controls
         case .magnetics: return .power
+        case .analysis: return .analysis
         case .instruments: return .sensors
         case .basics, .bench: return .homework
         case .reference: return .reference
@@ -1057,6 +1062,19 @@ enum ToolboxCatalog {
             ],
             calculationMode: .live
         ),
+        ToolDefinition(
+            id: .statistics,
+            kind: .calculator,
+            title: "Statistics",
+            subtitle: "Distributions, rescale, paired normals, and correlation.",
+            symbol: "chart.bar.xaxis",
+            synonyms: [
+                "statistics", "distribution", "normal", "gaussian", "histogram", "standard deviation",
+                "mean", "correlation", "covariance", "bivariate", "binomial", "poisson", "uniform",
+                "exponential", "dice", "simulation", "monte carlo", "rescale", "conditional",
+            ],
+            calculationMode: .live
+        ),
     ]
 
     /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
@@ -1079,6 +1097,9 @@ enum ToolboxCatalog {
             .ul508aPanelLab,
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
             .controlSystems, .controlStrategies, .electronicsLab, .phasorImpedance,
+        ],
+        .analysis: [
+            .statistics,
         ],
         .homework: [
             .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
@@ -1214,7 +1235,7 @@ enum ToolboxCatalog {
         .cableSchedule: [.ul508aPanelLab, .cableLadder, .flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
         .analogWorkbench: [.electronicsLab, .voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
-        .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],
+        .noiseSNR: [.statistics, .analogWorkbench, .rfLink, .ohmsLaw],
         .linearRegulator: [.voltageDivider, .power, .ledRC],
         .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
@@ -1225,5 +1246,6 @@ enum ToolboxCatalog {
         .ul508aPanelLab: [.motorFLA, .equipmentGround, .conduitFill, .wireAmpacity, .panelDirectory, .cableSchedule, .transformer],
         .magneticsLab: [.emFields, .transformer, .solenoidDesign, .magneticCircuit],
         .emFields: [.magneticsLab, .magnetometer, .solenoidDesign],
+        .statistics: [.noiseSNR, .unitConverter, .harmonicsTHD],
     ]
 }

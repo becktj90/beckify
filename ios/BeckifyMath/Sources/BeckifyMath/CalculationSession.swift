@@ -157,7 +157,8 @@ public enum ToolCalculationPolicy {
             "electronicsLab",
             "phasorImpedance",
             "magneticsLab",
-            "emFields":
+            "emFields",
+            "statistics":
             return .live
 
         case
@@ -204,7 +205,7 @@ public enum ToolCalculationPolicy {
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
         "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
-        "magneticsLab", "emFields",
+        "magneticsLab", "emFields", "statistics",
     ]
 
     public static var liveToolIDs: [String] {

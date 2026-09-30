@@ -790,6 +790,16 @@ public enum ToolHowItWorksCatalog {
                 "Educational planning aid. Not a UL certification or a substitute for the official text and the AHJ.",
             ]
         ),
+        "statistics": ToolHowItWorks(
+            summary: "Distributions, a linear rescale, a paired normal, covariance, and two dice — formula next to a seeded draw.",
+            context: "Field → Analysis. Closed formulas where they exist; draws elsewhere.",
+            bullets: [
+                "Histograms and scatters are Monte Carlo. Changing the draw count moves them a little.",
+                "Paired conditional mean and spread are exact. The chance is a numerical integral, not a computer-algebra system.",
+                "500 and 100 defaults are example scores only. Not an official College Board tool.",
+                "Two dice enumerate all 36 faces. That screen is exact.",
+            ]
+        ),
         "controlStrategies": ToolHowItWorks(
             summary: "Compares bang-bang, PID, MPC, fuzzy, sliding mode, ADRC, and learned methods, then suggests one from your constraints.",
             context: "Field → Controls, next to the Control Systems lab. Open the lab when the pick is PID.",

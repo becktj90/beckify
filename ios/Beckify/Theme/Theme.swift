@@ -138,6 +138,18 @@ enum Theme {
                     dark: UIColor(red: 140 / 255, green: 154 / 255, blue: 172 / 255, alpha: 1)
                 )
             )
+        case .analysis:
+            // Cobalt — charts and distributions, apart from power teal and controls violet.
+            return (
+                Color.adaptive(
+                    light: UIColor(red: 32 / 255, green: 86 / 255, blue: 168 / 255, alpha: 1),
+                    dark: UIColor(red: 142 / 255, green: 186 / 255, blue: 255 / 255, alpha: 1)
+                ),
+                Color.adaptive(
+                    light: UIColor(red: 18 / 255, green: 120 / 255, blue: 158 / 255, alpha: 1),
+                    dark: UIColor(red: 120 / 255, green: 214 / 255, blue: 230 / 255, alpha: 1)
+                )
+            )
         }
     }
 
