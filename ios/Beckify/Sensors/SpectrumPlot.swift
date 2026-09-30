@@ -46,7 +46,13 @@ struct SpectrumPlot: View {
         footnote: String? = nil,
         showsRelativeDBFSScale: Bool = false
     ) {
-        heights = bands.map { AcousticSpectrum.heat(dbFS: $0.dbFS) }
+        // Locals only. A closure over `self.heights` here captures every stored
+        // property, including `showsRelativeDBFSScale`, before it is set.
+        let levels = bands.map { AcousticSpectrum.heat(dbFS: $0.dbFS) }
+        let showsRelative = showsRelativeDBFSScale
+        let finite = levels.filter(\.isFinite).sorted()
+        let peak = levels.indices.max { levels[$0] < levels[$1] }
+        heights = levels
         leadingCaption = bands.first.map { Self.hertz($0.lowHz) }
         trailingCaption = bands.last.map { Self.hertz($0.highHz) }
         self.footnote = footnote
@@ -54,10 +60,9 @@ struct SpectrumPlot: View {
         self.accessibilityLabel = accessibilityLabel ?? (bands.isEmpty
             ? "Spectrum idle"
             : "Audible spectrum, \(bands.count) bands, relative dBFS")
-        let finite = heights.filter(\.isFinite).sorted()
         referenceHeight = finite.isEmpty ? nil : finite[finite.count / 2]
-        peakIndex = heights.indices.max { heights[$0] < heights[$1] }
-        self.showsRelativeDBFSScale = showsRelativeDBFSScale
+        peakIndex = peak
+        self.showsRelativeDBFSScale = showsRelative
     }
 
     var body: some View {
