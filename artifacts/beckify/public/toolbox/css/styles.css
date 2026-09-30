@@ -1541,6 +1541,15 @@ body.report-open { overflow: hidden; }
 .xw-pros li { margin-bottom: 2px; }
 .xw-nec-note { font-size: 0.72rem; color: #f5c451; background: rgba(245,196,81,0.06); border-left: 2px solid #f5c451; padding: 4px 8px; border-radius: 0 4px 4px 0; }
 .xw-svg-wrap { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.xw-why { font-size: 0.8rem; line-height: 1.5; margin: 6px 0; }
+.xw-hazard { border-left: 3px solid #f87171; background: rgba(248,113,113,0.08); padding: 8px 10px; margin: 8px 0; font-size: 0.78rem; line-height: 1.5; }
+.xw-teach { margin-top: 12px; }
+.xw-color-row { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 12px; }
+.xw-swatch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; }
+.xw-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.4); flex: 0 0 auto; }
+.xw-diagram { width: 100%; max-width: none; height: auto; display: block; margin: 0 0 10px; }
+.xw-diagram-host { margin: 0 0 14px; }
+.xw-type-card { content-visibility: auto; contain-intrinsic-size: auto 160px; }
 
 /* ── Circuit Simulator ── */
 .cs-schematic { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }

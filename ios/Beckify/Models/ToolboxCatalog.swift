@@ -323,9 +323,13 @@ enum ToolboxCatalog {
             id: .transformer,
             kind: .calculator,
             title: "Transformer Sizing",
-            subtitle: "Standard kVA and 450.3(B) protection, Note 1.",
+            subtitle: "Standard kVA, 450.3(B), and a winding diagram.",
             symbol: "rectangle.split.2x1.fill",
-            synonyms: ["transformer", "xfmr", "kva", "450.3", "ocpd", "primary", "secondary", "note 1"]
+            synonyms: [
+                "transformer", "xfmr", "kva", "450.3", "ocpd", "primary", "secondary", "note 1",
+                "high-leg", "high leg", "delta-wye", "delta wye", "wye-delta", "winding", "phasor",
+                "wire color", "conductor color", "corner-grounded", "zig-zag", "open delta", "buck-boost",
+            ]
         ),
         ToolDefinition(
             id: .timer555,

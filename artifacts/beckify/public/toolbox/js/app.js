@@ -698,12 +698,54 @@ window.calcXfmr = function () {
 
   if (topology === 'highleg') {
     rows.push(['⚠ High-Leg B-Phase V to N', fmt(Vs * Math.sqrt(3) / 2, 1) + ' V (tag orange — NEC 110.15)']);
+    rows.push(['Not a corner ground', 'Center tap is the neutral. Orange here is the high-leg rule, not 480Y phase B.']);
   }
   if (topology === 'corner') {
-    rows.push(['⚠ Corner-Ground Note', 'Grounded phase at 0 V potential — no neutral for 1Ø loads']);
+    rows.push(['⚠ Corner-Ground Note', 'Grounded phase at 0 V to ground and still carries current. Other phases are full line-to-line to ground. No 120 V neutral.']);
+    rows.push(['Color', 'Grounded phase white or gray. Not green. Not orange.']);
   }
   if (topology === 'delta-delta') {
     rows.push(['⚠ Neutral', 'No secondary neutral — 3-wire load only']);
+  }
+
+  const teach = (typeof XFMR_TEACH !== 'undefined' && XFMR_TEACH) || (typeof window !== 'undefined' && window.XFMR_TEACH);
+  let taught = null;
+  if (teach && typeof teach.analyze === 'function') {
+    const zEl = document.getElementById('xfmr_z');
+    const percentZ = zEl && zEl.value !== '' ? parseFloat(zEl.value) : 0;
+    taught = teach.analyze({
+      id: topology,
+      kva: kVA,
+      vp: Vp,
+      vs: Vs,
+      phases: is3ph ? '3ph' : '1ph',
+      percentZ: percentZ,
+    });
+    if (taught) {
+      if (isFinite(taught.windingRatio)) rows.push(['Winding ratio (phase V)', fmt(taught.windingRatio, 4) + ' : 1']);
+      if (isFinite(taught.primaryPhaseAmps)) rows.push(['Primary phase current', fmt(taught.primaryPhaseAmps, 2) + ' A']);
+      if (isFinite(taught.secondaryPhaseAmps)) rows.push(['Secondary phase current', fmt(taught.secondaryPhaseAmps, 2) + ' A']);
+      if (taught.extra && taught.extra.auto) {
+        rows.push(['Co-ratio', fmt(taught.extra.auto.coRatio, 3)]);
+        rows.push(['Winding kVA', fmt(taught.extra.auto.windingKva, 2) + ' kVA']);
+        rows.push(['Throughput kVA', fmt(taught.extra.auto.throughputKva, 2) + ' kVA']);
+      }
+      if (taught.extra && taught.extra.zigzag) {
+        rows.push(['Zig-zag neutral', fmt(taught.extra.zigzag.neutralAmps, 1) + ' A']);
+      }
+      if (taught.extra && taught.extra.openDelta) {
+        rows.push(['Open delta vs closed bank', fmt(taught.extra.openDelta.capacityOfClosed * 100, 1) + ' %']);
+      }
+      if (taught.fault) rows.push(['Infinite-bus Isc', fmt(taught.fault.symmetricalAmps, 0) + ' A']);
+      if (taught.colors && taught.colors.summary) rows.push(['Colors (NA practice)', taught.colors.summary]);
+      if (taught.extra && taught.extra.ohms) rows.push(['Grounding note', taught.extra.ohms]);
+    }
+  }
+
+  const diagramHost = document.getElementById('xfmr_diagram');
+  if (diagramHost && typeof buildXfmrConnectionSvg === 'function') {
+    diagramHost.textContent = '';
+    diagramHost.appendChild(buildXfmrConnectionSvg(topology, taught && taught.colors, { primary: Vp, secondary: Vs }));
   }
 
   const el = document.getElementById('xfmr_result');

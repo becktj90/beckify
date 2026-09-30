@@ -72,63 +72,33 @@
     },
   ];
 
-  /* ── Winding Configurations ── */
-  const XFMR_WINDING = [
-    {
-      id: 'delta-wye',
-      name: 'Delta–Wye (Δ–Y)',
-      priConn: 'delta', secConn: 'wye',
-      context: 'Most common configuration for step-down transformers. Delta primary eliminates 3rd harmonic distortion from propagating upstream. Wye secondary provides a neutral for grounded distribution. 30° phase shift between primary and secondary (ANSI Std12N).',
-      grounding: 'Secondary neutral solidly grounded per NEC 250.30',
-      typical: '480V primary → 208/120V secondary; 13.8 kV → 480V',
-      nec: 'NEC 250.30(A) — separately derived system grounding required at secondary',
-    },
-    {
-      id: 'wye-delta',
-      name: 'Wye–Delta (Y–Δ)',
-      priConn: 'wye', secConn: 'delta',
-      context: 'Common for step-up applications. Wye primary provides a neutral point for grounding on the primary side. Delta secondary has no neutral. Used in industrial motor drive systems where a neutral is not needed on secondary.',
-      grounding: 'Primary neutral grounded; secondary delta — no neutral',
-      typical: 'Generator step-up, industrial drives',
-      nec: 'NEC 450.5 — zigzag grounding required if neutral needed on delta secondary',
-    },
-    {
-      id: 'delta-delta',
-      name: 'Delta–Delta (Δ–Δ)',
-      priConn: 'delta', secConn: 'delta',
-      context: 'No phase shift. Reliable — if one winding fails, can run open-delta at 57.7% capacity. No neutral on secondary. Less common in modern facilities due to grounding limitations.',
-      grounding: 'No neutral on either side — grounding harder to achieve',
-      typical: 'Industrial, mining, legacy systems',
-      nec: 'NEC 250.30(A)(5) — if neutral required, derive via zigzag or additional winding',
-    },
-    {
-      id: 'high-leg-delta',
-      name: 'High-Leg Delta (Corner-Grounded)',
-      priConn: 'delta', secConn: 'delta-wye',
-      context: 'Three-phase 4-wire delta with center-tap on one winding grounded. Provides 120V for single-phase loads and 240V three-phase. The "high leg" (wild leg, stinger) is phase B at 208V to neutral — must be identified with orange color per NEC. Very common in older US commercial buildings.',
-      grounding: 'Center-tap of one winding grounded. High leg = 208V to neutral',
-      typical: 'Older US commercial — 240/120V 4-wire delta systems',
-      nec: 'NEC 110.15, 230.56 — high leg must be identified with orange color. NEC 408.3(F) — high leg in panelboard must be on B phase (center position).',
-    },
-    {
-      id: 'wye-wye',
-      name: 'Wye–Wye (Y–Y)',
-      priConn: 'wye', secConn: 'wye',
-      context: 'Both sides have neutrals. Susceptible to 3rd harmonic issues unless a tertiary delta winding is added. Used in some utility applications with careful design. Rarely used alone in commercial/industrial without a delta tertiary.',
-      grounding: 'Both neutrals can be grounded — requires tertiary delta for harmonic stability',
-      typical: 'Utility transmission, large substations with tertiary delta',
-      nec: 'NEC 250.30(A) — both neutrals require proper grounding',
-    },
-    {
-      id: '1ph',
-      name: 'Single-Phase',
-      priConn: '1ph', secConn: '1ph',
-      context: 'Single-phase transformer with two windings. Can be used for step-up, step-down, isolation, or autotransformer. Common for lighting panels, control power, HVAC, and residential distribution.',
-      grounding: 'Secondary neutral grounded per NEC 250.30',
-      typical: 'Residential, lighting panels, control power, HVAC',
-      nec: 'NEC 250.30 — separately derived system requires grounding electrode at secondary',
-    },
-  ];
+  /* Connections live in xfmr-teach.js so the ratio card and this wizard share one catalog. */
+  function teachApi() {
+    return (typeof XFMR_TEACH !== 'undefined' && XFMR_TEACH)
+      || (typeof window !== 'undefined' && window.XFMR_TEACH)
+      || null;
+  }
+
+  function wizardWindings(phase) {
+    const api = teachApi();
+    if (!api) return [];
+    return api.connectionsForPhase(phase).map(function (c) {
+      return {
+        id: c.id,
+        name: c.name,
+        priConn: c.priConn,
+        secConn: c.secConn,
+        context: c.why,
+        grounding: c.grounding,
+        typical: c.typical,
+        nec: c.nec,
+        wireCount: c.wireCount,
+        avoid: c.avoid,
+        hazards: c.hazards,
+        when: c.when,
+      };
+    });
+  }
 
   /* Shared planning-allowance book from wire-tools.js. No second price table. */
   function wzPriceBook(materialKey) {
@@ -158,6 +128,10 @@
     distFt: null,
     loadKva: null,
     demand: 1.0,
+    intent: '',
+    percentZ: null,
+    kFactor: 'k1',
+    environment: 'indoor',
   };
 
   /* ── Helper: next standard OCPD (from nec-data.js) ── */
@@ -451,8 +425,16 @@
     svg.appendChild(txt('PANEL', panX, midY + 52, '#6ee7b7', 8));
     svg.appendChild(txt(`${p.secV || '?'} V`, panX, midY + 62, '#94a3b8', 8));
 
-    /* ── Ground symbol at secondary neutral ── */
-    if (p.secConn !== 'delta') {
+    /* ── Ground symbol at secondary neutral or grounded phase ── */
+    if (p.groundMode === 'corner') {
+      const gx = panX, gy = midY + 50;
+      svg.appendChild(line(panX, midY + 40, gx, gy + 5, '#f4f4f5', 1.5));
+      svg.appendChild(line(gx - 12, gy + 5, gx + 12, gy + 5, '#6ee7b7', 2));
+      svg.appendChild(line(gx - 8, gy + 9, gx + 8, gy + 9, '#6ee7b7', 1.5));
+      svg.appendChild(line(gx - 4, gy + 13, gx + 4, gy + 13, '#6ee7b7', 1));
+      svg.appendChild(txt('Grounded phase', gx, gy + 24, '#f4f4f5', 7));
+      svg.appendChild(txt('White/gray — not EGC', gx, gy + 33, '#f5c451', 7));
+    } else if (p.groundMode !== 'none' && p.secConn !== 'delta') {
       const gx = panX, gy = midY + 50;
       // Grounding electrode conductor (GEC)
       svg.appendChild(line(panX, midY + 40, gx, gy + 5, '#6ee7b7', 1.5));
@@ -474,6 +456,305 @@
     svg.appendChild(txt('▪ OCPD = Overcurrent Protective Device (NEC 450.3(B))', 15, H - 33, '#64748b', 7, 'start'));
 
     return svg;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CONNECTION DIAGRAM + TEACHING PANEL
+     ═══════════════════════════════════════════════════════════════════════════ */
+  function svgEl(svg, tag, attrs) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const node = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(function (pair) { node.setAttribute(pair[0], pair[1]); });
+    return node;
+  }
+
+  function svgText(svg, content, x, y, fill) {
+    const t = svgEl(svg, 'text', {
+      x: x, y: y, fill: fill || '#94a3b8', 'font-size': '11', 'font-family': 'ui-sans-serif, system-ui, sans-serif',
+    });
+    t.textContent = content;
+    svg.appendChild(t);
+    return t;
+  }
+
+  function drawGround(svg, x, y) {
+    svg.appendChild(svgEl(svg, 'line', { x1: x - 10, y1: y, x2: x + 10, y2: y, stroke: '#6ee7b7', 'stroke-width': 1.6 }));
+    svg.appendChild(svgEl(svg, 'line', { x1: x - 6, y1: y + 4, x2: x + 6, y2: y + 4, stroke: '#6ee7b7', 'stroke-width': 1.4 }));
+    svg.appendChild(svgEl(svg, 'line', { x1: x - 3, y1: y + 8, x2: x + 3, y2: y + 8, stroke: '#6ee7b7', 'stroke-width': 1.2 }));
+  }
+
+  function drawDelta(svg, x, y, color, open) {
+    const pts = [
+      [x, y - 28],
+      [x + 32, y + 22],
+      [x - 32, y + 22],
+    ];
+    if (open) {
+      svg.appendChild(svgEl(svg, 'line', { x1: pts[0][0], y1: pts[0][1], x2: pts[1][0], y2: pts[1][1], stroke: color, 'stroke-width': 2 }));
+      svg.appendChild(svgEl(svg, 'line', { x1: pts[0][0], y1: pts[0][1], x2: pts[2][0], y2: pts[2][1], stroke: color, 'stroke-width': 2 }));
+      svg.appendChild(svgEl(svg, 'line', {
+        x1: pts[2][0], y1: pts[2][1], x2: pts[1][0], y2: pts[1][1],
+        stroke: color, 'stroke-width': 1.4, 'stroke-dasharray': '4 3',
+      }));
+      return;
+    }
+    svg.appendChild(svgEl(svg, 'polygon', {
+      points: pts.map(function (p) { return p.join(','); }).join(' '),
+      fill: 'none', stroke: color, 'stroke-width': 2,
+    }));
+  }
+
+  function drawWye(svg, x, y, color) {
+    svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y, x2: x, y2: y - 26, stroke: color, 'stroke-width': 2 }));
+    svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y, x2: x - 22, y2: y + 16, stroke: color, 'stroke-width': 2 }));
+    svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y, x2: x + 22, y2: y + 16, stroke: color, 'stroke-width': 2 }));
+    svg.appendChild(svgEl(svg, 'circle', { cx: x, cy: y, r: 3, fill: color }));
+  }
+
+  function drawWindingCoil(svg, x1, y1, x2, y2, stroke, dashed) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const px = -uy;
+    const py = ux;
+    const n = Math.max(5, Math.round(len / 16));
+    const step = len / n;
+    let d = 'M ' + x1 + ' ' + y1;
+    for (let i = 0; i < n; i++) {
+      const sx = x1 + ux * step * i;
+      const sy = y1 + uy * step * i;
+      const mx = sx + ux * step * 0.5 + px * 9;
+      const my = sy + uy * step * 0.5 + py * 9;
+      const ex = x1 + ux * step * (i + 1);
+      const ey = y1 + uy * step * (i + 1);
+      d += ' Q ' + mx + ' ' + my + ' ' + ex + ' ' + ey;
+    }
+    const attrs = { d: d, fill: 'none', stroke: stroke, 'stroke-width': 2.2, 'stroke-linecap': 'round' };
+    if (dashed) attrs['stroke-dasharray'] = '5 4';
+    svg.appendChild(svgEl(svg, 'path', attrs));
+  }
+
+  function mapBank(at, rect) {
+    const pad = 28;
+    return {
+      x: rect.x + pad + (at[0] / 100) * (rect.w - pad * 2),
+      y: rect.y + pad + (at[1] / 100) * (rect.h - pad * 2),
+    };
+  }
+
+  function drawBank(svg, bank, rect) {
+    const coil = bank.side === 'primary' ? '#8b7bff' : '#6ee7b7';
+    svg.appendChild(svgEl(svg, 'rect', {
+      x: rect.x, y: rect.y, width: rect.w, height: rect.h,
+      fill: '#111827', stroke: '#334155', 'stroke-width': 1, rx: 8,
+    }));
+    svgText(svg, bank.title || '', rect.x + 10, rect.y + 16, '#94a3b8');
+    (bank.windings || []).forEach(function (w) {
+      const a = mapBank(w.a, rect);
+      const b = mapBank(w.b, rect);
+      drawWindingCoil(svg, a.x, a.y, b.x, b.y, coil, w.dashed);
+      if (w.tap) {
+        const t = mapBank(w.tap, rect);
+        svg.appendChild(svgEl(svg, 'circle', { cx: t.x, cy: t.y, r: 4, fill: '#f4f4f5', stroke: '#0d1117', 'stroke-width': 1 }));
+      }
+    });
+    (bank.terminals || []).forEach(function (term) {
+      const p = mapBank(term.at, rect);
+      svg.appendChild(svgEl(svg, 'circle', { cx: p.x, cy: p.y, r: 5, fill: '#0d1117', stroke: '#e2e8f0', 'stroke-width': 1.4 }));
+      svgText(svg, term.name, p.x + 7, p.y - 7, '#e2e8f0');
+    });
+    (bank.grounds || []).forEach(function (g) {
+      const p = mapBank(g.at, rect);
+      if (g.kind === 'resistor' || g.kind === 'reactor') {
+        svg.appendChild(svgEl(svg, 'rect', {
+          x: p.x - 14, y: p.y + 8, width: 28, height: 16, fill: 'none', stroke: '#f5c451', 'stroke-width': 1.5,
+        }));
+        svgText(svg, g.kind === 'resistor' ? 'R' : 'X', p.x - 4, p.y + 20, '#f5c451');
+        drawGround(svg, p.x, p.y + 36);
+      } else {
+        svg.appendChild(svgEl(svg, 'line', { x1: p.x, y1: p.y, x2: p.x, y2: p.y + 16, stroke: '#6ee7b7', 'stroke-width': 1.6 }));
+        drawGround(svg, p.x, p.y + 18);
+      }
+    });
+    if (bank.floating) {
+      svgText(svg, 'No phase bond', rect.x + 10, rect.y + rect.h - 10, '#f5c451');
+    }
+  }
+
+  function drawOutgoingLeads(svg, bank, rect, outgoing) {
+    const center = mapBank([50, 50], rect);
+    (bank.terminals || []).forEach(function (term) {
+      const row = (outgoing || []).find(function (item) { return item.terminalId === term.id; });
+      if (!row) return;
+      const p = mapBank(term.at, rect);
+      const dx = p.x - center.x;
+      const dy = p.y - center.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const x2 = p.x + (dx / len) * 36;
+      const y2 = p.y + (dy / len) * 28;
+      if (row.hex === '#1a1a1a') {
+        svg.appendChild(svgEl(svg, 'line', {
+          x1: p.x, y1: p.y, x2: x2, y2: y2,
+          stroke: '#e2e8f0', 'stroke-width': 5.2, 'stroke-linecap': 'round',
+        }));
+      }
+      svg.appendChild(svgEl(svg, 'line', {
+        x1: p.x, y1: p.y, x2: x2, y2: y2,
+        stroke: row.hex, 'stroke-width': 3.5, 'stroke-linecap': 'round',
+      }));
+      svg.appendChild(svgEl(svg, 'circle', { cx: x2, cy: y2, r: 4.5, fill: row.hex, stroke: '#e2e8f0', 'stroke-width': 0.8 }));
+    });
+  }
+
+  function drawPhasorPanel(svg, rect, phasors) {
+    svg.appendChild(svgEl(svg, 'rect', {
+      x: rect.x, y: rect.y, width: rect.w, height: rect.h,
+      fill: '#111827', stroke: '#334155', 'stroke-width': 1, rx: 8,
+    }));
+    svgText(svg, 'Secondary phasors', rect.x + 10, rect.y + 16, '#94a3b8');
+    const points = (phasors && phasors.points) || [];
+    if (!points.length) return;
+    let max = 1;
+    points.forEach(function (p) { max = Math.max(max, Math.abs(p.x), Math.abs(p.y)); });
+    const cx = rect.x + rect.w * 0.42;
+    const cy = rect.y + rect.h * 0.56;
+    const scale = (Math.min(rect.w, rect.h) * 0.30) / max;
+    function plot(p) { return { x: cx + p.x * scale, y: cy - p.y * scale }; }
+    const byId = {};
+    points.forEach(function (p) { byId[p.id] = p; });
+    svg.appendChild(svgEl(svg, 'line', { x1: rect.x + 16, y1: cy, x2: rect.x + rect.w - 16, y2: cy, stroke: '#1e293b', 'stroke-width': 1 }));
+    svg.appendChild(svgEl(svg, 'line', { x1: cx, y1: rect.y + 28, x2: cx, y2: rect.y + rect.h - 16, stroke: '#1e293b', 'stroke-width': 1 }));
+    (phasors.vectors || []).forEach(function (pair) {
+      const a = byId[pair[0]];
+      const b = byId[pair[1]];
+      if (!a || !b) return;
+      const pa = plot(a);
+      const pb = plot(b);
+      svg.appendChild(svgEl(svg, 'line', {
+        x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y,
+        stroke: b.hex || '#94a3b8', 'stroke-width': 2.4, 'stroke-linecap': 'round',
+      }));
+    });
+    points.forEach(function (p) {
+      const at = plot(p);
+      svg.appendChild(svgEl(svg, 'circle', { cx: at.x, cy: at.y, r: 4.5, fill: p.hex, stroke: '#e2e8f0', 'stroke-width': 0.6 }));
+      svgText(svg, p.label, at.x + 6, at.y - 6, p.hex === '#1a1a1a' ? '#e2e8f0' : '#e2e8f0');
+    });
+  }
+
+  function buildConnectionSvg(connectionId, colors, volts) {
+    const api = teachApi();
+    const secondary = volts && volts.secondary;
+    const primary = volts && volts.primary;
+    const spec = api && api.diagramSpec(connectionId, secondary, primary);
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 960 520');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Detailed winding schematic, colored secondary leads, and phasor diagram');
+    svg.classList.add('xw-diagram');
+    svg.appendChild(svgEl(svg, 'rect', { x: 0, y: 0, width: 960, height: 520, fill: '#0d1117', rx: 8 }));
+    if (!spec) {
+      svgText(svg, 'No diagram for this connection.', 24, 40, '#94a3b8');
+      return svg;
+    }
+    svgText(svg, spec.title, 16, 22, '#e2e8f0');
+    const banks = spec.banks || [];
+    const band = { y: 36, h: 300 };
+    if (banks.length === 1) {
+      drawBank(svg, banks[0], { x: 16, y: band.y, w: 560, h: band.h });
+      drawOutgoingLeads(svg, banks[0], { x: 16, y: band.y, w: 560, h: band.h }, spec.outgoing);
+    } else {
+      banks.forEach(function (bank, index) {
+        const rect = { x: 16 + index * 300, y: band.y, w: 288, h: band.h };
+        drawBank(svg, bank, rect);
+        if (bank.side === 'secondary') drawOutgoingLeads(svg, bank, rect, spec.outgoing);
+      });
+    }
+    drawPhasorPanel(svg, { x: 620, y: band.y, w: 324, h: band.h }, spec.phasors);
+    const legend = spec.outgoing || [];
+    legend.forEach(function (lead, i) {
+      const x = 16 + (i % 5) * 186;
+      const y = 360 + Math.floor(i / 5) * 22;
+      if (lead.hex === '#1a1a1a') {
+        svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y - 4, x2: x + 28, y2: y - 4, stroke: '#e2e8f0', 'stroke-width': 6, 'stroke-linecap': 'round' }));
+      }
+      svg.appendChild(svgEl(svg, 'line', { x1: x, y1: y - 4, x2: x + 28, y2: y - 4, stroke: lead.hex, 'stroke-width': 4, 'stroke-linecap': 'round' }));
+      svgText(svg, lead.name + ' ' + lead.colorName + (lead.role === 'code' ? ' (code)' : ' (practice)'), x + 34, y, '#e2e8f0');
+    });
+    (spec.callouts || []).forEach(function (line, i) {
+      svgText(svg, line, 16, 412 + i * 16, '#f5c451');
+    });
+    if (spec.phasors && spec.phasors.caption) {
+      svgText(svg, spec.phasors.caption, 16, 470, '#94a3b8');
+    }
+    svgText(svg, 'Common North American practice. The AHJ and the project spec win.', 16, 500, '#64748b');
+    if (colors && colors.summary && !(spec.callouts || []).length) {
+      svgText(svg, colors.summary, 16, 430, '#94a3b8');
+    }
+    return svg;
+  }
+
+  window.buildXfmrConnectionSvg = buildConnectionSvg;
+
+  function renderTeachDetail() {
+    const host = document.getElementById('xw_teach_detail');
+    if (!host) return;
+    const api = teachApi();
+    host.textContent = '';
+    if (!api || !WZ.windingId) {
+      host.hidden = true;
+      return;
+    }
+    const conn = api.connectionById(WZ.windingId);
+    if (!conn) {
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+    const colors = api.colorPlan(WZ.windingId, WZ.secV, WZ.priV);
+    const place = api.placement(WZ.xfmrType || 'dry-vent', WZ.environment || 'indoor');
+    const race = api.racewayNotes(WZ.environment || 'indoor', WZ.windingId, WZ.secV);
+
+    host.appendChild(buildConnectionSvg(WZ.windingId, colors, { primary: WZ.priV, secondary: WZ.secV }));
+
+    function para(className, text) {
+      const p = document.createElement('p');
+      p.className = className;
+      p.textContent = text;
+      host.appendChild(p);
+    }
+    para('xw-why', 'Why this type: ' + conn.why);
+    para('xw-type-ctx', 'Use it when: ' + conn.when);
+    para('xw-type-ctx', 'Skip it when: ' + conn.avoid);
+    conn.hazards.forEach(function (h) {
+      const d = document.createElement('div');
+      d.className = 'xw-hazard';
+      d.textContent = h;
+      host.appendChild(d);
+    });
+    para('xw-nec-note', 'Colors — ' + colors.summary);
+    const legend = document.createElement('div');
+    legend.className = 'xw-color-row';
+    (colors.leads || []).forEach(function (lead) {
+      const item = document.createElement('span');
+      item.className = 'xw-swatch';
+      const dot = document.createElement('span');
+      dot.className = 'xw-dot';
+      dot.style.background = lead.hex;
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode(lead.name + ' ' + lead.colorName + (lead.role === 'code' ? ' (code)' : ' (practice)')));
+      legend.appendChild(item);
+    });
+    host.appendChild(legend);
+    para('xw-type-ctx', colors.disclaimer);
+    if (colors.twoSystems) para('xw-type-ctx', colors.twoSystems);
+    para('xw-type-ctx', 'Enclosure for this placement: NEMA ' + place.nema + ' · ' + place.ip + '. ' + place.note);
+    para('xw-type-ctx', race.insulation + ' ' + race.raceway);
+    race.extras.forEach(function (extra) { para('xw-hazard', extra); });
+    para('xw-type-ctx', 'NEMA and IP charts are separate tools in this toolbox. They are not interchangeable. ' + api.DISCLAIMER);
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -506,6 +787,14 @@
     WZ.secV = parseFloat(secV.value) || 208;
     WZ.loadKva = parseFloat(loadKva && loadKva.value) || null;
     WZ.demand = parseFloat(demand && demand.value) || 1.0;
+    const intentEl = document.getElementById('xw_intent');
+    const zEl = document.getElementById('xw_pct_z');
+    const kEl = document.getElementById('xw_kfactor');
+    const envEl = document.getElementById('xw_env');
+    WZ.intent = intentEl ? intentEl.value : '';
+    WZ.percentZ = zEl && zEl.value !== '' ? parseFloat(zEl.value) : null;
+    WZ.kFactor = kEl ? kEl.value : 'k1';
+    WZ.environment = envEl ? envEl.value : 'indoor';
 
     if (!WZ.priV || !WZ.secV) {
       showError('xw_step1_err', 'Enter primary and secondary voltages.');
@@ -518,6 +807,7 @@
   };
 
   function _populateStep2() {
+    const api = teachApi();
     const recKva = WZ.loadKva ? wzNextKva(WZ.loadKva * WZ.demand, WZ.phase) : null;
     const kvaArr = WZ.phase === '1ph' ? XFMR_KVA_1PH : XFMR_KVA_3PH;
 
@@ -566,6 +856,14 @@
       necNote.textContent = t.nec;
       card.appendChild(necNote);
 
+      if (api) {
+        const place = api.placement(t.id, WZ.environment || 'indoor');
+        const enc = document.createElement('div');
+        enc.className = 'xw-type-ctx';
+        enc.textContent = 'Enclosure: NEMA ' + place.nema + ' · ' + place.ip + '. ' + place.note;
+        card.appendChild(enc);
+      }
+
       typeDiv.appendChild(card);
     });
 
@@ -573,9 +871,8 @@
     const windDiv = document.getElementById('xw_winding_cards');
     if (!windDiv) return;
     windDiv.textContent = '';
-    const validWindings = WZ.phase === '1ph'
-      ? XFMR_WINDING.filter(w => w.id === '1ph')
-      : XFMR_WINDING.filter(w => w.id !== '1ph');
+    const validWindings = wizardWindings(WZ.phase);
+    const suggested = api && WZ.intent ? api.suggest(WZ.intent, WZ.phase) : null;
     validWindings.forEach(w => {
       const card = document.createElement('div');
       card.className = 'xw-type-card';
@@ -592,28 +889,60 @@
       ctx.textContent = w.context;
       card.appendChild(ctx);
 
+      const why = document.createElement('div');
+      why.className = 'xw-why';
+      why.textContent = 'Why: ' + (w.when || w.context);
+      card.appendChild(why);
+
       const grnd = document.createElement('div');
       grnd.className = 'xw-nec-note';
-      grnd.textContent = '⚡ ' + w.grounding + ' | ' + w.nec;
+      grnd.textContent = w.grounding;
       card.appendChild(grnd);
+
+      if (w.hazards && w.hazards.length) {
+        const hazard = document.createElement('div');
+        hazard.className = 'xw-hazard';
+        hazard.textContent = w.hazards[0];
+        card.appendChild(hazard);
+      }
 
       windDiv.appendChild(card);
     });
 
-    // Pre-select first winding if 1ph
-    if (WZ.phase === '1ph') xwSelectWinding('1ph');
+    function setIntentNotes(text) {
+      ['xw_intent_note', 'xw_phase_note'].forEach(function (id) {
+        const note = document.getElementById(id);
+        if (note) note.textContent = text || '';
+      });
+    }
+
+    if (suggested && validWindings.some(function (w) { return w.id === suggested.connectionId; })) {
+      xwSelectWinding(suggested.connectionId);
+      setIntentNotes('Starting point: ' + suggested.why);
+    } else if (suggested) {
+      WZ.windingId = null;
+      setIntentNotes('That choice is a three-phase connection. Switch phase to 3Ø, or pick isolation, autotransformer, or buck-boost here. ' + suggested.why);
+      renderTeachDetail();
+    } else if (WZ.phase === '1ph') {
+      setIntentNotes('');
+      xwSelectWinding('isolation');
+    } else {
+      setIntentNotes('');
+    }
   }
 
   window.xwSelectType = function (id) {
     document.querySelectorAll('[data-id]').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll(`[data-id="${id}"]`).forEach(c => c.classList.add('selected'));
     WZ.xfmrType = id;
+    renderTeachDetail();
   };
 
   window.xwSelectWinding = function (id) {
     document.querySelectorAll('[data-wid]').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll(`[data-wid="${id}"]`).forEach(c => c.classList.add('selected'));
     WZ.windingId = id;
+    renderTeachDetail();
   };
 
   window.xwNext2 = function () {
@@ -670,7 +999,7 @@
     const termTemp = WZ.terminationTemp || 75;
 
     const typeObj = XFMR_TYPES.find(t => t.id === WZ.xfmrType);
-    const windObj = XFMR_WINDING.find(w => w.id === WZ.windingId);
+    const windObj = wizardWindings(phase).find(w => w.id === WZ.windingId);
     const priConn = windObj ? windObj.priConn : 'delta';
     const secConn = windObj ? windObj.secConn : 'wye';
 
@@ -705,8 +1034,10 @@
     const secCond = pickCond(secFla);
 
     /* ── Parallel run options ── */
-    const priParallel = parallelRunOptions(priFla * 1.25, material, WZ.insulation, ambientC, ccc, termTemp, phase, priConn);
-    const secParallel = parallelRunOptions(secFla * 1.25, material, WZ.insulation, ambientC, ccc, termTemp, phase, secConn);
+    const priWireKey = priConn === 'delta' ? 'delta' : 'wye';
+    const secWireKey = windObj && windObj.wireCount === 3 ? 'delta' : 'wye';
+    const priParallel = parallelRunOptions(priFla * 1.25, material, WZ.insulation, ambientC, ccc, termTemp, phase, priWireKey);
+    const secParallel = parallelRunOptions(secFla * 1.25, material, WZ.insulation, ambientC, ccc, termTemp, phase, secWireKey);
     const priOptimal = priParallel.find(r => r.optimal) || priParallel[0];
     const secOptimal = secParallel.find(r => r.optimal) || secParallel[0];
 
@@ -838,7 +1169,10 @@
       section('▶ Equipment Grounding Conductor (EGC) — NEC 250.122', '#6ee7b7');
       row('EGC size', egcObj.size + ' ' + material, 'based on secondary OCPD ' + (secOcpd || '?') + ' A');
     }
-    if (gecObj) {
+    const api = teachApi();
+    const teachConn = api && api.connectionById(WZ.windingId);
+    const bondSecondary = !teachConn || teachConn.secKind === 'wye' || teachConn.secKind === 'high-leg' || teachConn.secKind === 'corner' || teachConn.secKind === 'single' || teachConn.groundingOnly;
+    if (gecObj && bondSecondary) {
       section('▶ Grounding Electrode Conductor (GEC) — NEC 250.30(A)', '#6ee7b7');
       row('GEC size', gecObj.size + ' ' + material.toUpperCase(), 'based on ' + secEquivalentCmil.toLocaleString() + ' cmil of derived secondary conductor(s)');
       note('NEC 250.30(A)(4) — GEC sized per Table 250.66, based on the size of the largest derived phase conductor.');
@@ -846,9 +1180,89 @@
 
     // Winding context note
     if (windObj) {
-      section('▶ Winding Notes', '#94a3b8');
+      section('▶ Why this connection', '#94a3b8');
       note(windObj.context);
+      if (windObj.when) note('Use it when: ' + windObj.when);
+      if (windObj.avoid) note('Skip it when: ' + windObj.avoid);
       note('Typical application: ' + windObj.typical);
+      (windObj.hazards || []).forEach(function (h) { note('Warning: ' + h); });
+    }
+
+    const taught = api ? api.analyze({
+      id: WZ.windingId,
+      kva: kva,
+      primaryVolts: priV,
+      secondaryVolts: secV,
+      phases: phase,
+      percentZ: WZ.percentZ,
+      kFactor: WZ.kFactor,
+      construction: WZ.xfmrType,
+      environment: WZ.environment,
+      kvaIs: (api.connectionById(WZ.windingId) || {}).kvaBasis,
+    }) : null;
+    if (taught) {
+      section('▶ Ratio and phase current', '#8b7bff');
+      if (isFinite(taught.lineRatio)) row('Line voltage ratio Vp/Vs', fmt(taught.lineRatio, 4) + ' : 1');
+      if (isFinite(taught.windingRatio)) row('Winding ratio (phase volts)', fmt(taught.windingRatio, 4) + ' : 1', 'Phase volts, not the line-to-line nameplate ratio, when one side is wye');
+      if (isFinite(taught.primaryPhaseAmps)) row('Primary phase current', fmt(taught.primaryPhaseAmps, 2) + ' A');
+      if (isFinite(taught.secondaryPhaseAmps)) row('Secondary phase current', fmt(taught.secondaryPhaseAmps, 2) + ' A');
+      if (taught.extra && taught.extra.highLeg) {
+        row('A and C to neutral', fmt(taught.extra.highLeg.van, 1) + ' V');
+        row('High leg B to neutral', fmt(taught.extra.highLeg.vbn, 1) + ' V', 'Tag orange. Not a corner ground.');
+      }
+      if (taught.extra && taught.extra.corner) {
+        row('Grounded phase to ground', '0 V', 'Still a current-carrying conductor');
+        row('Other phases to ground', fmt(taught.extra.corner.ungroundedPhaseToGround, 1) + ' V', 'Full line-to-line, not line/√3');
+      }
+      if (taught.extra && taught.extra.openDelta) {
+        row('Open-delta fraction of a closed bank', fmt(taught.extra.openDelta.capacityOfClosed * 100, 1) + ' %');
+        row('Each unit current', fmt(taught.extra.openDelta.unitCurrent, 2) + ' A', 'Line current, not line/√3');
+      }
+      if (taught.extra && taught.extra.zigzag) {
+        row('Zig-zag neutral current', fmt(taught.extra.zigzag.neutralAmps, 1) + ' A', taught.extra.zigzag.note);
+      }
+      if (taught.extra && taught.extra.auto) {
+        row('Co-ratio (transformed fraction)', fmt(taught.extra.auto.coRatio, 3));
+        row('Winding kVA', fmt(taught.extra.auto.windingKva, 2) + ' kVA');
+        row('Throughput kVA', fmt(taught.extra.auto.throughputKva, 2) + ' kVA');
+        row('Common-winding current', fmt(taught.extra.auto.commonAmps, 2) + ' A');
+      }
+      if (taught.fault) {
+        row('Infinite-bus fault current', fmt(taught.fault.symmetricalAmps, 0) + ' A', taught.fault.note);
+      }
+      if (taught.extra && taught.extra.ohms) note(taught.extra.ohms);
+      if (taught.extra && taught.extra.faultSkipped) note(taught.extra.faultSkipped);
+      note(taught.kFactor);
+
+      section('▶ Enclosure, raceway, and colors', '#6ee7b7');
+      if (taught.install) {
+        row('NEMA enclosure', taught.install.nema, taught.install.ip);
+        note(taught.install.enclosure);
+        note(taught.install.insulation);
+        note(taught.install.raceway);
+        note(taught.install.mv);
+        (taught.install.extras || []).forEach(function (extra) { note(extra); });
+        if (taught.colors) {
+          note(taught.colors.summary);
+          note(taught.colors.disclaimer);
+          if (taught.colors.twoSystems) note(taught.colors.twoSystems);
+          const legend = document.createElement('div');
+          legend.className = 'xw-color-row';
+          (taught.colors.leads || []).forEach(function (lead) {
+            const item = document.createElement('span');
+            item.className = 'xw-swatch';
+            const dot = document.createElement('span');
+            dot.className = 'xw-dot';
+            dot.style.background = lead.hex;
+            item.appendChild(dot);
+            item.appendChild(document.createTextNode(lead.name + ' ' + lead.colorName + (lead.role === 'code' ? ' (code)' : ' (practice)')));
+            legend.appendChild(item);
+          });
+          resultEl.appendChild(legend);
+        }
+        note(taught.install.charts);
+      }
+      note(taught.disclaimer);
     }
 
     /* ── Transformer SVG ── */
@@ -862,6 +1276,12 @@
         priConn, secConn,
       };
       xfmrSvgEl.appendChild(buildXfmrSvg(svgParams));
+      if (taught && taught.colors) {
+        const diagramHost = document.createElement('div');
+        diagramHost.className = 'xw-diagram-host';
+        diagramHost.appendChild(buildConnectionSvg(WZ.windingId, taught.colors, { primary: priV, secondary: secV }));
+        resultEl.insertBefore(diagramHost, resultEl.firstChild);
+      }
     }
 
     /* ── SLD ── */
@@ -872,6 +1292,10 @@
         typeName: typeObj ? typeObj.short : '',
         winding: windObj ? windObj.name : '',
         priConn, secConn,
+        groundMode: !teachConn ? 'neutral'
+          : teachConn.id === 'corner-grounded' ? 'corner'
+          : (teachConn.secKind === 'wye' || teachConn.secKind === 'high-leg' || teachConn.secKind === 'single' || teachConn.groundingOnly) ? 'neutral'
+          : 'none',
         priOcpd, secOcpd,
         priDisc: (priDisc || '—') + 'A DISC',
         material,

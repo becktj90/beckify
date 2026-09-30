@@ -40,7 +40,7 @@ export const TOOL_FAMILIES = [
       { id: "basics", label: "Ratio & current", slug: "transformer", anchor: "sec-xfmr" },
       { id: "sizing", label: "Sizing & 450.3", slug: "transformer-sizing", anchor: "sec-xfmr-size" },
       { id: "conductors", label: "Conductors / OCPD / VD", slug: "transformer-engine", anchor: "sec-xfmr-engine" },
-      { id: "design", label: "Type & winding", slug: "transformer-design", anchor: "sec-xfmr-wizard" },
+      { id: "design", label: "Teach & size", slug: "transformer-design", anchor: "sec-xfmr-wizard" },
     ],
   },
   {
@@ -130,7 +130,7 @@ export const TOOLS = [
   ["reactance-impedance", "Reactance & Resonance", "Calculate XL, XC, and series impedance, or series/parallel LC resonant frequency, Q, and bandwidth.", "sec-reactance"],
   ["power-factor-correction", "Power Factor Correction Calculator", "Estimate correction capacitance and improved power factor for AC loads.", "sec-pfc"],
   ["series-parallel", "Series and Parallel Calculator", "Combine resistance, capacitance, or inductance values in series and parallel networks.", "sec-sp"],
-  ["transformer", "Transformer", "One transformer job: ratio and current, NEC Table 450.3(B) sizing (primary-only or primary+secondary, Note 1, continuous 125%), conductors/OCPD/VD/EGC/GEC, and type/winding/SLD. Tap-changer is a separate tool.", "sec-xfmr-size"],
+  ["transformer", "Transformer", "One transformer job: ratio and line/phase current, connection teaching (delta, wye, open delta, zig-zag, high-leg, corner-grounded, autotransformer, buck-boost), NEC Table 450.3(B) sizing, conductors/OCPD/VD, enclosure and color notes. Tap-changer is a separate tool. Not a PE stamp.", "sec-xfmr-size"],
   ["tap-changer", "Tap-Changer Calculator", "De-energized tap changer for common MV/LV pairs (23 kV/480 V and others). Not a general transformer sizer.", "sec-tap"],
   ["conductors", "Conductors", "Select LV conductors for ampacity, voltage drop, and modeled material plus I²R energy cost; size a lighting run; estimate length from measured resistance; or select MV cable (Art. 311 / 310.60 series) with a written wire-type string.", "sec-wire-select"],
   ["cable-schedule", "Cable Schedule Generator", "Build a power, control, instrumentation, and communication cable schedule from a type catalog, quantity cart, and sequential Cable IDs, then export CSV, XLSX, or JSON.", "sec-cable-schedule"],
@@ -187,7 +187,7 @@ export const TOOLS = [
 export const TOOL_ALIASES = [
   ["transformer-sizing", "Transformer Sizing Calculator", "Select a standard kVA and apply NEC Table 450.3(B): primary-only or primary+secondary protection, Note 1 next-size-up on or off, optional continuous 125%.", "sec-xfmr-size", "transformer", "sizing"],
   ["transformer-engine", "Transformer Conductor Selection Engine", "Work through transformer conductors, OCPD, EGC/GEC, voltage drop, conduit, copper or aluminum, insulation temperature, and optional parallel runs.", "sec-xfmr-engine", "transformer", "conductors"],
-  ["transformer-design", "Transformer Design Wizard", "Guided type (dry / cast / liquid / FR3), winding, protection, and single-line diagram.", "sec-xfmr-wizard", "transformer", "design"],
+  ["transformer-design", "Transformer Design Wizard", "Teach and size the common connections, including high-leg versus corner-grounded delta, with ratio and phase current, a %Z fault estimate, NEMA/IP placement, raceway notes, and North American color practice. Same transformer entry.", "sec-xfmr-wizard", "transformer", "design"],
   ["voltage-drop", "Voltage Drop Calculator", "Calculate feeder and branch-circuit voltage drop for single-phase and three-phase electrical runs.", "sec-vdrop", "conductors", "vd"],
   ["wire-size-ampacity", "Wire Size and Ampacity Calculator", "Select conductors using ampacity, derating, termination temperature, and voltage drop constraints.", "sec-wire-select", "conductors", "ampacity-cost"],
   ["conductor-cost-optimizer", "Conductor Cost Optimizer", "Compare compliant conductor sizes and parallel runs using a user-overridable planning allowance and optional I²R energy cost.", "sec-wire-select", "conductors", "ampacity-cost"],

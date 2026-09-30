@@ -261,7 +261,7 @@
       <button class="nav-btn" data-target="sec-cable-schedule" data-keywords="cable schedule tray conductor ampacity voltage drop xlsx csv from to">Cable Schedule Generator</button>
       <button class="nav-btn" data-target="sec-motor-ref" data-keywords="#PowerDistribution #NEC #Calculators motor fla horsepower 430.248 430.250 430.6 table current">Motor</button>
       <button class="nav-btn" data-target="sec-motor-nameplate" data-keywords="motor nameplate OCR FLA overload 430.32 430.52 locked rotor service factor">Motor Nameplate Analyzer</button>
-      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio sizing protection conductor wizard ocpd 450.3 primary secondary note 1 dry cast oil FR3 SLD">Transformer</button>
+      <button class="nav-btn" data-target="sec-xfmr-size" data-keywords="#PowerDistribution #NEC #Calculators transformer current turns ratio sizing protection conductor wizard ocpd 450.3 primary secondary note 1 dry cast oil FR3 SLD corner-grounded high-leg zig-zag open delta buck-boost autotransformer k-factor NEMA 3R wire color orange 480Y">Transformer</button>
       <button class="nav-btn" data-target="sec-conduit" data-keywords="#PowerDistribution #NEC #Calculators conduit fill emt mixed conductors raceway IMC RMC PVC schedule 40 80 ENT FMC nipple chapter 9 table 1 table 4 table 5">Conduit Fill</button>
       <button class="nav-btn" data-target="sec-sc" data-keywords="#PowerDistribution #NEC #Calculators short circuit fault current interrupting rating">Short Circuit</button>
       <button class="nav-btn" data-target="sec-nec" data-keywords="#NEC #Calculators branch circuit ocpd conductor">NEC Circuit Calc</button>
@@ -3063,6 +3063,15 @@
                   <option value="delta-delta">3Ø Delta-Delta (No Neutral)</option>
                   <option value="highleg">3Ø High-Leg Delta (Wild Leg)</option>
                   <option value="corner">3Ø Corner-Grounded Delta</option>
+                  <option value="wye-delta">3Ø Wye-Delta</option>
+                  <option value="open-delta">3Ø Open Delta (V-V)</option>
+                  <option value="zigzag">3Ø Zig-zag grounding</option>
+                  <option value="ungrounded-delta">3Ø Ungrounded Delta</option>
+                  <option value="grounded-wye">3Ø Solidly Grounded Wye</option>
+                  <option value="autotransformer">Autotransformer</option>
+                  <option value="buck-boost">Buck-boost</option>
+                  <option value="resistance-ground">Resistance grounding (note)</option>
+                  <option value="reactance-ground">Reactance grounding (note)</option>
                 </select>
               </div>
             </div>
@@ -3072,8 +3081,10 @@
             </div>
             <div class="input-group single">
               <div><label>Secondary Voltage — Vs (V) <small style="color:var(--fg-muted)">(L-L for 3Ø)</small></label><input type="number" id="xfmr_vs" placeholder="e.g. 208" step="any" min="0"></div>
+              <div><label>Nameplate %Z (optional)</label><input type="number" id="xfmr_z" placeholder="e.g. 5" step="any" min="0"></div>
             </div>
             <button class="btn" onclick="calcXfmr()">Calculate</button>
+            <div id="xfmr_diagram" class="xw-diagram-host"></div>
             <div id="xfmr_result" class="result"></div>
           </div>
         </div>
@@ -5538,20 +5549,20 @@
     <section id="sec-xfmr-wizard" class="section">
       <div class="section-header">
         <h2>🔌 Transformer Design Wizard</h2>
-        <p>Step-by-step transformer selection, type guidance, winding configuration, NEC-compliant protection, conductor sizing with parallel run cost optimization, and a generated single-line diagram.</p>
+        <p>Teaching and sizing for the connections used in power and industrial work: why you would pick each one, line and phase current, a nameplate %Z fault estimate, enclosure and raceway notes, and conductor colors. Same transformer tool — not a second catalog entry.</p>
+        <p class="note">Design aid and teaching tool. Not a PE stamp. Verify the nameplate, the listing, and the NEC/NESC edition your AHJ enforces. Wire colors are common North American practice unless a note says code. The AHJ and the project spec win.</p>
         <details class="section-info">
           <summary>ℹ More Info — Transformer Design Wizard</summary>
           <div class="section-info-body">
-            <strong>NEC References:</strong>
+            <strong>Connections covered:</strong> single-phase isolation, autotransformer, buck-boost, Δ–Δ, Y–Y, Δ–Y, Y–Δ, open delta, zig-zag, high-leg (center-tapped) delta, corner-grounded delta, ungrounded delta, solidly grounded wye, and a high-level note on resistance and reactance grounding. Dry-type versus liquid-filled is a selection note, not a thermal design.
             <ul>
-              <li><strong>NEC 450.3(B)</strong> — Overcurrent protection for transformers 600V and below</li>
-              <li><strong>NEC 450.14</strong> — Disconnecting means: within sight, ≤30 ft</li>
-              <li><strong>NEC 215.2(A)</strong> — Feeder conductor ampacity: 125% of continuous load</li>
-              <li><strong>NEC 250.30(A)</strong> — Grounding of separately derived systems</li>
-              <li><strong>NEC 250.122</strong> — Equipment grounding conductor sizing</li>
-              <li><strong>NEC 310.16</strong> — Conductor ampacity table (ambient/bundling corrections)</li>
+              <li><strong>NEC 450.3(B)</strong> — Overcurrent protection for transformers 1000 V and below</li>
+              <li><strong>NEC 110.15</strong> — High-leg identified orange (or by other effective means). That orange is not the 480Y phase-B convention.</li>
+              <li><strong>NEC 200.6 / 250.119</strong> — Grounded conductor white or gray. Equipment ground green, green-yellow, or bare.</li>
+              <li><strong>NEC 210.5(C)</strong> — Identify ungrounded conductors where more than one voltage system is present. The palette itself is practice.</li>
+              <li><strong>NEC 250.30</strong> — Separately derived system bond. An autotransformer usually is not one.</li>
             </ul>
-            <strong>Standard kVA sizes</strong> per ANSI/NEMA ST-20, up to 4000 kVA.
+            Enclosure types point at the NEMA enclosure chart and the IP chart. They are not interchangeable. K-factor is a nameplate conversation; the Harmonics tool estimates distortion and does not rate the transformer.
           </div>
         </details>
       </div>
@@ -5594,7 +5605,50 @@
                   <label>Demand Factor (0–1)</label>
                   <input type="number" id="xw_demand" value="1.0" min="0.1" max="1" step="0.05">
                 </div>
+                <div>
+                  <label for="xw_intent">What are you feeding?</label>
+                  <select id="xw_intent">
+                    <option value="">I'll pick the connection myself</option>
+                    <option value="receptacles-208">208Y/120 V receptacles from 480 V</option>
+                    <option value="lighting-277">277 V lighting (480Y/277 V)</option>
+                    <option value="motors-only">Motors only — no neutral</option>
+                    <option value="legacy-240">Existing 240 V three-phase plus 120 V</option>
+                    <option value="ground-a-delta">Ground a delta, no 120 V</option>
+                    <option value="derive-neutral">Add a neutral to a delta</option>
+                    <option value="lost-a-unit">One delta unit failed</option>
+                    <option value="trim-voltage">Voltage is only a little off</option>
+                    <option value="isolate">Isolation or a new grounded system</option>
+                    <option value="step-up">Step up, no secondary neutral</option>
+                    <option value="both-neutrals">Neutral on both sides</option>
+                    <option value="continuity">Ride through the first ground fault</option>
+                    <option value="limit-fault">Limit ground-fault current</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="xw_env">Where it sits</label>
+                  <select id="xw_env">
+                    <option value="indoor">Indoor, clean electrical room</option>
+                    <option value="industrial">Indoor industrial (dust, drip)</option>
+                    <option value="outdoor">Outdoor, rain</option>
+                    <option value="coastal">Coastal or corrosive</option>
+                    <option value="washdown">Washdown</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="xw_pct_z">Nameplate %Z (optional fault estimate)</label>
+                  <input type="number" id="xw_pct_z" placeholder="e.g. 5" min="0" step="any">
+                </div>
+                <div>
+                  <label for="xw_kfactor">Nonlinear load</label>
+                  <select id="xw_kfactor">
+                    <option value="k1">Mostly linear (K-1)</option>
+                    <option value="k4">Some office electronics (K-4)</option>
+                    <option value="k13">VFDs or dense IT (K-13)</option>
+                    <option value="k20">Heavy switch-mode (K-20)</option>
+                  </select>
+                </div>
               </div>
+              <p id="xw_intent_note" class="note"></p>
               <div id="xw_step1_err" class="error" style="display:none"></div>
               <button class="btn" onclick="xwNext1()">Next: Select Transformer →</button>
             </div>
@@ -5639,9 +5693,11 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-title">Winding Configuration — select one</div>
+          <div class="card-title">Connection — why you would use it</div>
           <div class="card-body">
+            <p id="xw_phase_note" class="note"></p>
             <div id="xw_winding_cards"></div>
+            <div id="xw_teach_detail" class="xw-teach" hidden></div>
           </div>
         </div>
         <div id="xw_step2_err" class="error" style="display:none"></div>
@@ -11742,6 +11798,7 @@
 <script src="js/vendor/solver.js"></script>
 <script src="js/nec-data.js"></script>
 <script src="js/permalink-map.js"></script>
+<script src="js/xfmr-teach.js"></script>
 <script src="js/app.js"></script>
 <script src="js/toolbox-families.js"></script>
 <script src="js/wire-tools.js"></script>

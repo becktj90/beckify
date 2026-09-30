@@ -34,7 +34,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v46';
+const CACHE_VERSION = 'v48';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -62,6 +62,7 @@ const SHELL = [
   './js/wire-tools.js',
   './js/power-tools.js',
   './js/factor-tools.js',
+  './js/xfmr-teach.js',
   './js/xfmr-engine.js',
   './js/heater-wizard.js',
   './js/solar-wizard.js',

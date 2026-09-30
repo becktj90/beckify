@@ -62,6 +62,17 @@
       examples: ['Raceway type: EMT', 'Conductors: 3× #3/0 AWG THHN (phase) + 1× #3/0 AWG THHN (neutral) + 1× #6 AWG THHN (ground)', 'Target limit: ≤ 40% maximum fill'],
       button: { label: 'Load Example Values', action: 'loadConduitFillExample' }
     },
+    'sec-xfmr-wizard': {
+      overview: 'One transformer job, in teaching mode. Pick a connection because of the load you actually have, then read line and phase current, a nameplate %Z fault estimate, and the enclosure, raceway, and color notes that go with that choice. High-leg (center-tapped delta) and corner-grounded delta are different systems. Not a PE stamp.',
+      steps: [
+        'Enter the voltages and, if you know it, what the secondary has to feed.',
+        'Choose dry-type or liquid-filled for the room, then the connection. Read the why and the warnings before you leave the card.',
+        'Check the diagram: high-leg orange is NEC 110.15. Orange on a 480Y system is only common practice. A corner-grounded phase is white or gray, not green and not orange.',
+        'Use the conductor step for AWG, then confirm NEMA/IP and insulation against the nameplate and the AHJ.'
+      ],
+      examples: ['75 kVA, 480 V delta to 208Y/120 V', 'Line current uses √3. Winding ratio uses phase volts.', 'High-leg on 240 V: B to neutral ≈ 208 V, identified orange'],
+      button: null
+    },
     'sec-xfmr-size': {
       overview: 'Step-down transformers must be sized to handle connected continuous and non-continuous loads without thermal overload. This engine converts connected load into kVA demand, applies continuous-load factors, and compares the result with standard transformer ratings.',
       steps: [
