@@ -222,7 +222,8 @@ final class BreathFluteModel: ObservableObject {
         }
         do {
             try builtIn.setPreferredDataSource(bottom)
-            if bottom.supportedPolarPatterns.contains(.omnidirectional) {
+            // Nil means this source lists no pattern; skip rather than force one.
+            if bottom.supportedPolarPatterns?.contains(.omnidirectional) == true {
                 try bottom.setPreferredPolarPattern(.omnidirectional)
             }
             return "Built-in bottom mic"
