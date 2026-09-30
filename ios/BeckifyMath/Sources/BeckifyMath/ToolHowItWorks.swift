@@ -83,12 +83,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "conduitFill": ToolHowItWorks(
-            summary: "Same-size or mixed THHN (and other Table 5) fill against Chapter 9 Table 1 / Table 4.",
+            summary: "Chapter 9 fill with a to-scale bore: wall, each conductor, and the Table 1 limit for this run.",
             context: "Raceway pick on the truck — EMT, IMC, RMC, PVC, ENT, FMC, LFMC.",
             bullets: [
-                "Fill % is area of conductors ÷ raceway area. 40% is the usual >2-wire limit.",
-                "1Ø, multiwire, or 3Ø shows the Table 250.122 size beside the fill. Count EGC adds that one conductor. Same math as Equipment Grounding.",
-                "Transcription of published tables — not a substitute for the NEC book.",
+                "Fill % is Table 5 area over Table 4 area. 53% / 31% / 40%, or 60% on a nipple 24 in or shorter.",
+                "The cross-section is illustrative packing. A pass is not a jam check and not a promise the pull will go.",
+                "1Ø, multiwire, or 3Ø can show Table 250.122. Count EGC adds that conductor. Phase tints are a legend only.",
+                "AS/NZS shows Appendix C C6.2 (50/33/40) as guidance. Pass/fail stays NEC. Metric bores are not listed.",
             ]
         ),
         "cableLadder": ToolHowItWorks(

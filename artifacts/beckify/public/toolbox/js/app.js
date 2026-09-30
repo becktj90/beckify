@@ -784,10 +784,10 @@ const EMT_SIZES = {
   '1-1/4':{ area: 1.496,  id: 1.380 },
   '1-1/2':{ area: 2.036,  id: 1.610 },
   '2':    { area: 3.356,  id: 2.067 },
-  '2-1/2':{ area: 4.788,  id: 2.469 },
-  '3':    { area: 7.393,  id: 3.068 },
-  '3-1/2':{ area: 9.893,  id: 3.548 },
-  '4':    { area: 12.72,  id: 4.026 }
+  '2-1/2':{ area: 5.858,  id: 2.731 },
+  '3':    { area: 8.846,  id: 3.356 },
+  '3-1/2':{ area: 11.545, id: 3.834 },
+  '4':    { area: 14.753, id: 4.334 }
 };
 
 // Conductor cross-sectional areas (THHN/THWN-2, sq in) per NEC Table 5

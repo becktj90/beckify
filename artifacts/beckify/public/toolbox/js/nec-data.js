@@ -40,9 +40,10 @@ const WIRE_CMIL = {
 const CONDUIT_TYPES = {
   EMT: {
     label: 'EMT (Electrical Metallic Tubing)',
+    // 2½ in and larger are the current Chapter 9 Table 4 bores, not the smaller pre-enlargement tube.
     areas: {
       '1/2': 0.304, '3/4': 0.533, '1': 0.864, '1-1/4': 1.496, '1-1/2': 2.036,
-      '2': 3.356, '2-1/2': 4.788, '3': 7.393, '3-1/2': 9.893, '4': 12.720,
+      '2': 3.356, '2-1/2': 5.858, '3': 8.846, '3-1/2': 11.545, '4': 14.753,
     },
   },
   IMC: {

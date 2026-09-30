@@ -71,17 +71,19 @@ public enum NECTables: Sendable {
     ]
 
     /// NEC Chapter 9 Table 4 — EMT total internal area (in²), not the 40 % column.
+    /// 2½ in and larger are the current enlarged bores (ID 2.731, 3.356, 3.834, 4.334),
+    /// not the smaller tube printed in older editions.
     public static let emtArea: [(trade: String, area: Double)] = [
         ("1/2", 0.304), ("3/4", 0.533), ("1", 0.864), ("1-1/4", 1.496),
-        ("1-1/2", 2.036), ("2", 3.356), ("2-1/2", 4.788), ("3", 7.393),
-        ("3-1/2", 9.893), ("4", 12.720),
+        ("1-1/2", 2.036), ("2", 3.356), ("2-1/2", 5.858), ("3", 8.846),
+        ("3-1/2", 11.545), ("4", 14.753),
     ]
 
     /// NEC Chapter 9 Table 4 — total internal area (in²) by raceway type.
     public static let racewayArea: [RacewayKind: [String: Double]] = [
         .emt: [
             "1/2": 0.304, "3/4": 0.533, "1": 0.864, "1-1/4": 1.496, "1-1/2": 2.036,
-            "2": 3.356, "2-1/2": 4.788, "3": 7.393, "3-1/2": 9.893, "4": 12.720,
+            "2": 3.356, "2-1/2": 5.858, "3": 8.846, "3-1/2": 11.545, "4": 14.753,
         ],
         .imc: [
             "1/2": 0.342, "3/4": 0.586, "1": 0.959, "1-1/4": 1.647, "1-1/2": 2.225,
