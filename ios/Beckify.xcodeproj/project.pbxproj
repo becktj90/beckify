@@ -98,6 +98,14 @@
 		KHCF0000000000000000000C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */; };
 		KHCF0000000000000000000D /* Game in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000006 /* Game */; };
 		KHCF0000000000000000001A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = KHCF00000000000000000019 /* LaunchScreen.storyboard */; };
+		BDCF0000000000000000000A /* BeckifyDriveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000001 /* BeckifyDriveApp.swift */; };
+		BDCF0000000000000000000B /* DriveRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000002 /* DriveRootView.swift */; };
+		BDCF0000000000000000000C /* DriveTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000003 /* DriveTheme.swift */; };
+		BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000004 /* OBDBluetoothSession.swift */; };
+		BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000005 /* CarPlayDriveScene.swift */; };
+		BDCF0000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000006 /* Assets.xcassets */; };
+		BDCF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000007 /* PrivacyInfo.xcprivacy */; };
+		BDCF00000000000000000011 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = BDCF00000000000000000009 /* BeckifyMath */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -193,6 +201,16 @@
 		KHCF00000000000000000006 /* Game */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Game; sourceTree = "<group>"; };
 		KHCF00000000000000000007 /* KestrelHeavy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KestrelHeavy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		KHCF00000000000000000019 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		BDCF00000000000000000001 /* BeckifyDriveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyDriveApp.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000002 /* DriveRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveRootView.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000003 /* DriveTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTheme.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000004 /* OBDBluetoothSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDBluetoothSession.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000005 /* CarPlayDriveScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayDriveScene.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BDCF00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BDCF00000000000000000008 /* BeckifyDrive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeckifyDrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BDCF0000000000000000001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BDCF0000000000000000001B /* BeckifyDrive.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BeckifyDrive.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,6 +237,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BDCF00000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BDCF00000000000000000011 /* BeckifyMath in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -228,6 +254,7 @@
 				BECF0000000000000000002D /* Beckify */,
 				AECF00000000000000000016 /* LookCheck */,
 				KHCF00000000000000000011 /* KestrelHeavy */,
+				BDCF00000000000000000016 /* BeckifyDrive */,
 				BECF0000000000000000002C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -238,6 +265,7 @@
 				BECF00000000000000000027 /* Beckify.app */,
 				AECF00000000000000000008 /* LookCheck.app */,
 				KHCF00000000000000000007 /* KestrelHeavy.app */,
+				BDCF00000000000000000008 /* BeckifyDrive.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -269,6 +297,22 @@
 				KHCF00000000000000000006 /* Game */,
 			);
 			path = KestrelHeavy;
+			sourceTree = "<group>";
+		};
+		BDCF00000000000000000016 /* BeckifyDrive */ = {
+			isa = PBXGroup;
+			children = (
+				BDCF00000000000000000001 /* BeckifyDriveApp.swift */,
+				BDCF00000000000000000002 /* DriveRootView.swift */,
+				BDCF00000000000000000003 /* DriveTheme.swift */,
+				BDCF00000000000000000004 /* OBDBluetoothSession.swift */,
+				BDCF00000000000000000005 /* CarPlayDriveScene.swift */,
+				BDCF0000000000000000001A /* Info.plist */,
+				BDCF0000000000000000001B /* BeckifyDrive.entitlements */,
+				BDCF00000000000000000006 /* Assets.xcassets */,
+				BDCF00000000000000000007 /* PrivacyInfo.xcprivacy */,
+			);
+			path = BeckifyDrive;
 			sourceTree = "<group>";
 		};
 		BECF0000000000000000002D /* Beckify */ = {
@@ -471,6 +515,26 @@
 			productReference = KHCF00000000000000000007 /* KestrelHeavy.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BDCF00000000000000000015 /* BeckifyDrive */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BDCF00000000000000000019 /* Build configuration list for PBXNativeTarget "BeckifyDrive" */;
+			buildPhases = (
+				BDCF00000000000000000013 /* Sources */,
+				BDCF00000000000000000012 /* Frameworks */,
+				BDCF00000000000000000014 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BeckifyDrive;
+			packageProductDependencies = (
+				BDCF00000000000000000009 /* BeckifyMath */,
+			);
+			productName = BeckifyDrive;
+			productReference = BDCF00000000000000000008 /* BeckifyDrive.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -488,6 +552,9 @@
 						CreatedOnToolsVersion = 15.0;
 					};
 					KHCF00000000000000000012 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					BDCF00000000000000000015 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -511,6 +578,7 @@
 				BECF00000000000000000033 /* Beckify */,
 				AECF00000000000000000015 /* LookCheck */,
 				KHCF00000000000000000012 /* KestrelHeavy */,
+				BDCF00000000000000000015 /* BeckifyDrive */,
 			);
 		};
 /* End PBXProject section */
@@ -542,6 +610,15 @@
 				KHCF0000000000000000000C /* PrivacyInfo.xcprivacy in Resources */,
 				KHCF0000000000000000000D /* Game in Resources */,
 				KHCF0000000000000000001A /* LaunchScreen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BDCF00000000000000000014 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BDCF0000000000000000000F /* Assets.xcassets in Resources */,
+				BDCF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -647,6 +724,18 @@
 				KHCF00000000000000000009 /* KestrelHeavyRootView.swift in Sources */,
 				KHCF0000000000000000000A /* KestrelHeavyGameView.swift in Sources */,
 				KHCF00000000000000000018 /* KestrelHeavySchemeHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BDCF00000000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BDCF0000000000000000000A /* BeckifyDriveApp.swift in Sources */,
+				BDCF0000000000000000000B /* DriveRootView.swift in Sources */,
+				BDCF0000000000000000000C /* DriveTheme.swift in Sources */,
+				BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */,
+				BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -974,6 +1063,82 @@
 			};
 			name = Release;
 		};
+		BDCF00000000000000000017 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BeckifyDrive/BeckifyDrive.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BeckifyDrive/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Beckify Drive";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify Drive connects to a Bluetooth LE OBD-II adapter you choose so it can show vehicle readings on this phone and in CarPlay. Readings stay on this device and are not uploaded.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify Drive connects to a Bluetooth LE OBD-II adapter you choose so it can show vehicle readings on this phone and in CarPlay. Readings stay on this device and are not uploaded.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.drive;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BDCF00000000000000000018 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BeckifyDrive/BeckifyDrive.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BeckifyDrive/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Beckify Drive";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Beckify Drive connects to a Bluetooth LE OBD-II adapter you choose so it can show vehicle readings on this phone and in CarPlay. Readings stay on this device and are not uploaded.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify Drive connects to a Bluetooth LE OBD-II adapter you choose so it can show vehicle readings on this phone and in CarPlay. Readings stay on this device and are not uploaded.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.drive;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1013,6 +1178,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		BDCF00000000000000000019 /* Build configuration list for PBXNativeTarget "BeckifyDrive" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BDCF00000000000000000017 /* Debug */,
+				BDCF00000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -1029,6 +1203,11 @@
 			productName = BeckifyMath;
 		};
 		AECF00000000000000000009 /* BeckifyMath */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */;
+			productName = BeckifyMath;
+		};
+		BDCF00000000000000000009 /* BeckifyMath */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BECF0000000000000000002A /* XCLocalSwiftPackageReference "BeckifyMath" */;
 			productName = BeckifyMath;

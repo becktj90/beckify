@@ -2,7 +2,7 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-Two more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — and **Kestrel Heavy** (`com.beckify.kestrelheavy`) — a native SwiftUI shell that plays the Phaser 4 arcade from a local bundle. Neither is this toolbox. See [`LookCheck/README.md`](LookCheck/README.md) and [`KestrelHeavy/README.md`](KestrelHeavy/README.md).
+Three more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — **Kestrel Heavy** (`com.beckify.kestrelheavy`) — a native SwiftUI shell that plays the Phaser 4 arcade from a local bundle — and **Beckify Drive** (`com.beckify.drive`) — a Bluetooth LE OBD-II dashboard with a native CarPlay scene. None of them is this toolbox. See [`LookCheck/README.md`](LookCheck/README.md), [`KestrelHeavy/README.md`](KestrelHeavy/README.md), and [`BeckifyDrive/README.md`](BeckifyDrive/README.md).
 
 > **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive Toolbox with scheme **LookCheck** or **KestrelHeavy**. Those are separate ASC apps with their own Archive schemes. Keep Archive workflows separate. Kestrel Heavy is not a Toolbox catalog game; the website `/games/kestrel-heavy` stays.
 
@@ -32,10 +32,11 @@ Session state (`ExplicitCalculationState`, `LiveCalculationState`) is pure Swift
 
 ```text
 ios/
-  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, LookCheck, KestrelHeavy
+  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, LookCheck, KestrelHeavy, BeckifyDrive
   Beckify/               SwiftUI Toolbox app (Calculators + Sensors)
   LookCheck/             Standalone Look Check App Store app (`com.beckify.lookcheck`)
   KestrelHeavy/          Standalone Kestrel Heavy App Store app (`com.beckify.kestrelheavy`)
+  BeckifyDrive/          Standalone Beckify Drive app (`com.beckify.drive`) — OBD dashboard + CarPlay
   BeckifyMath/           Pure-Swift math + NEC tables + look-check JSON + XCTest
   docs/APP_STORE.md            Toolbox listing copy and App Store Connect checklist
   docs/FIVE_STAR_READINESS.md  Competitor 1★ patterns, review-ask policy, pre-submit gate
@@ -161,7 +162,7 @@ You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth o
 
 1. Install Xcode 15 or later.
 2. Open `ios/Beckify.xcodeproj`.
-3. Select the **Beckify** scheme (Toolbox), **LookCheck** (standalone roast app), or **KestrelHeavy** (standalone arcade).
+3. Select the **Beckify** scheme (Toolbox), **LookCheck** (standalone roast app), **KestrelHeavy** (standalone arcade), or **BeckifyDrive** (OBD dashboard and CarPlay).
 4. Select an iPhone or iPad simulator.
 5. Signing: Debug and Release set `DEVELOPMENT_TEAM` to `9TR6R5LV8M` (Apple’s team prefix at identifier registration). Confirm that Team in Signing & Capabilities on a Mac.
 6. Run.
@@ -187,6 +188,19 @@ xcodebuild \
   -project Beckify.xcodeproj \
   -destination 'generic/platform=iOS Simulator' \
   -scheme LookCheck \
+  -configuration Debug \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Beckify Drive (same project, **BeckifyDrive** scheme — native CarPlay templates, not a web view). A signed device build needs the driving-task entitlement on `com.beckify.drive` first. See [`BeckifyDrive/docs/APP_STORE.md`](BeckifyDrive/docs/APP_STORE.md).
+
+```bash
+cd ios
+xcodebuild \
+  -project Beckify.xcodeproj \
+  -destination 'generic/platform=iOS Simulator' \
+  -scheme BeckifyDrive \
   -configuration Debug \
   CODE_SIGNING_ALLOWED=NO \
   build
@@ -220,7 +234,7 @@ Push to `main`. Xcode Cloud then starts both Toolbox workflows:
 
 **Archive - iOS** is the TestFlight path. It must archive scheme **Beckify** (`com.beckify.toolbox`, App ID `6807908745`). A green archive is what App Store Connect can process for TestFlight. This repo does not submit that build.
 
-Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`) or **KestrelHeavy** (`com.beckify.kestrelheavy`). Those products keep their own Archive schemes and bundle IDs.
+Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`), **KestrelHeavy** (`com.beckify.kestrelheavy`), or **BeckifyDrive** (`com.beckify.drive`). Those products keep their own Archive schemes and bundle IDs. Beckify Drive does not change Toolbox build **159**.
 
 Connect version **1.0.1** must already exist (the **1.0** train is closed). Repo `CURRENT_PROJECT_VERSION` is **159**. If TestFlight or a previous Cloud upload is already **≥159**, bump that number before the next push.
 
