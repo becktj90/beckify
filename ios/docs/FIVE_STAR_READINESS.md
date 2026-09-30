@@ -1,6 +1,6 @@
 # Five-star readiness — Beckify iOS
 
-Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **156** (repo `CURRENT_PROJECT_VERSION` is **156**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on **1.0.1 (149)**, or on closed-train **1.0**.
+Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **159** (repo `CURRENT_PROJECT_VERSION` is **159**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on **1.0.1 (149)**, or on closed-train **1.0**.
 
 Listing copy, nutrition-label facts, and screenshot sizes stay in [`APP_STORE.md`](APP_STORE.md). Privacy text stays in [`PRIVACY.md`](PRIVACY.md). This file is the **rating and review-risk** plan.
 
@@ -138,7 +138,7 @@ Suggested block:
 ### Binary / ITMS-90382
 
 - [ ] After ~2026-09-05, upload **once** with a unique version/build. ITMS-90382 here is Apple’s “upload limit reached — wait 1 day,” usually from repeating the same tuple or hammering Transporter.
-- [ ] Do not bump marketing version just to spam uploads. **1.0 is approved and closed** — the next train must be **1.0.1** / `CURRENT_PROJECT_VERSION` **156**. Do not retry **1.0.1 (149)** or **1.0 (121)**. If Xcode Cloud already uploaded **≥156**, bump above that build before the next Archive.
+- [ ] Do not bump marketing version just to spam uploads. **1.0 is approved and closed** — the next train must be **1.0.1** / `CURRENT_PROJECT_VERSION` **159**. Do not retry **1.0.1 (149)** or **1.0 (121)**. If Xcode Cloud already uploaded **≥159**, bump above that build before the next Archive.
 - [ ] TestFlight already had **1.0.1 (149)** (~2026-09-17/18). This checklist is still **not** Submit for Review until screenshots + notes are attached.
 
 ---

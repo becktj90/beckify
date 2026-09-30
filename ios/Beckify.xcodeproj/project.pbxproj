@@ -30,6 +30,7 @@
 		BECF00000000000000000044 /* BluetoothScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000043 /* BluetoothScannerView.swift */; };
 		BECF00000000000000000046 /* NoiseMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000045 /* NoiseMeterView.swift */; };
 		BECF000000000000000000A2 /* AcousticImagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000A1 /* AcousticImagerView.swift */; };
+		BECF000000000000000000B7 /* SetupCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000B6 /* SetupCheckView.swift */; };
 		BECF000000000000000000A4 /* MicrophoneSpectrum.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000A3 /* MicrophoneSpectrum.swift */; };
 		BECF000000000000000000A6 /* SpectrumPlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000A5 /* SpectrumPlot.swift */; };
 		BECF000000000000000000A8 /* StillnessWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000A7 /* StillnessWatchView.swift */; };
@@ -123,6 +124,7 @@
 		BECF00000000000000000043 /* BluetoothScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothScannerView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000045 /* NoiseMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoiseMeterView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000A1 /* AcousticImagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcousticImagerView.swift; sourceTree = "<group>"; };
+		BECF000000000000000000B6 /* SetupCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupCheckView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000A3 /* MicrophoneSpectrum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneSpectrum.swift; sourceTree = "<group>"; };
 		BECF000000000000000000A5 /* SpectrumPlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumPlot.swift; sourceTree = "<group>"; };
 		BECF000000000000000000A7 /* StillnessWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StillnessWatchView.swift; sourceTree = "<group>"; };
@@ -387,6 +389,7 @@
 				BECF00000000000000000043 /* BluetoothScannerView.swift */,
 				BECF00000000000000000045 /* NoiseMeterView.swift */,
 				BECF000000000000000000A1 /* AcousticImagerView.swift */,
+				BECF000000000000000000B6 /* SetupCheckView.swift */,
 				BECF000000000000000000A3 /* MicrophoneSpectrum.swift */,
 				BECF000000000000000000A5 /* SpectrumPlot.swift */,
 				BECF000000000000000000A7 /* StillnessWatchView.swift */,
@@ -571,6 +574,7 @@
 				BECF00000000000000000044 /* BluetoothScannerView.swift in Sources */,
 				BECF00000000000000000046 /* NoiseMeterView.swift in Sources */,
 				BECF000000000000000000A2 /* AcousticImagerView.swift in Sources */,
+				BECF000000000000000000B7 /* SetupCheckView.swift in Sources */,
 				BECF000000000000000000A4 /* MicrophoneSpectrum.swift in Sources */,
 				BECF000000000000000000A6 /* SpectrumPlot.swift in Sources */,
 				BECF000000000000000000A8 /* StillnessWatchView.swift in Sources */,
@@ -745,7 +749,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 158;
+				CURRENT_PROJECT_VERSION = 159;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -788,7 +792,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 158;
+				CURRENT_PROJECT_VERSION = 159;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

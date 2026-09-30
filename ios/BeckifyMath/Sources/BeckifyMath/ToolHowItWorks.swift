@@ -228,7 +228,7 @@ public enum ToolHowItWorksCatalog {
             context: "Homework / field note: louder vs quieter, and which band is up, on this phone.",
             bullets: [
                 "Not an SLM, not OSHA-legal, not A-weighted dB(A). Bars are relative dBFS, not sound pressure.",
-                "Same on-device FFT tap as Acoustic Imager. This screen is the meter plus spectrum, not a sound camera.",
+                "Same on-device FFT tap as Acoustic Imager and Setup Check. Meter plus spectrum, not a sound camera.",
                 "Rough harmonic % is leftover mic-FFT energy, not THD and not SPL. Freeze holds the plot. Share saves a PNG, not audio.",
                 "Save stores the numeric dBFS snapshot only — never a recording.",
             ]
@@ -240,7 +240,17 @@ public enum ToolHowItWorksCatalog {
                 "AVAudioEngine tap plus Accelerate FFT. Not ultrasonic beamforming or a Fluke-style imager.",
                 "Not a calibrated SPL meter, and not a gas-leak certification tool.",
                 "One microphone shows level, spectrum, and recent time activity. It cannot place a leak.",
-                "Audio stays on device. Save stores numbers, never a recording.",
+                "Audio stays on device. Save stores numbers, never a recording. Setup Check shares this tap.",
+            ]
+        ),
+        "setupCheck": ToolHowItWorks(
+            summary: "Relative room and rig check: live FFT, rough RTA, level, and optional speaker signals.",
+            context: "A/B a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
+            bullets: [
+                "Phone speaker plus mic is not a calibrated measurement microphone. Relative shape and trends only. No invented dB SPL.",
+                "Same on-device FFT tap as Noise Meter. Pink noise, a log sweep, or tone bursts play locally and are not recorded.",
+                "Harmonic percent and the sweep curve are relative energy, not lab THD and not a certification plot.",
+                "Most iPhones show one mic path here, so stereo balance stays blank. Share saves a PNG, not audio.",
             ]
         ),
         "bubbleLevel": ToolHowItWorks(
