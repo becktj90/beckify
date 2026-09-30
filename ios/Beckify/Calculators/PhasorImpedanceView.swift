@@ -365,10 +365,10 @@ struct PhasorImpedanceView: View {
 
     private var sticky: String? {
         switch station {
-        case .waves: return wavesResult.success?.sentence
-        case .phasor: return phasorResult.success?.forms.polar
-        case .elements: return elementResult.success?.law
-        case .impedance: return impedanceResult.success?.headline
+        case .waves: return (try? wavesResult.get())?.sentence
+        case .phasor: return (try? phasorResult.get())?.forms.polar
+        case .elements: return (try? elementResult.get())?.law
+        case .impedance: return (try? impedanceResult.get())?.headline
         }
     }
 
