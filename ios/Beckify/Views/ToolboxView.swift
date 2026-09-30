@@ -267,6 +267,7 @@ struct CalculatorHostView: View {
             case .controlSystems: ControlSystemsLabView()
             case .controlStrategies: ControlStrategiesView()
             case .electronicsLab: ElectronicsLabView()
+            case .phasorImpedance: PhasorImpedanceView()
             case .ul508aPanelLab: UL508APanelLabView()
             }
         }

@@ -86,6 +86,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case controlSystems
     case controlStrategies
     case electronicsLab
+    case phasorImpedance
     case ul508aPanelLab
 
     var id: String { rawValue }
@@ -1006,6 +1007,15 @@ enum ToolboxCatalog {
             ],
             calculationMode: .live
         ),
+        ToolDefinition(
+            id: .phasorImpedance,
+            kind: .calculator,
+            title: "Phasors & Impedance",
+            subtitle: "Sinusoids, lead and lag, R L C laws, and Z with admittance.",
+            symbol: "wave.3.right.circle",
+            synonyms: ["phasor", "impedance", "admittance", "lead lag", "sinusoid", "reactance", "polar"],
+            calculationMode: .live
+        ),
     ]
 
     /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
@@ -1027,7 +1037,7 @@ enum ToolboxCatalog {
         .controls: [
             .ul508aPanelLab,
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
-            .controlSystems, .controlStrategies, .electronicsLab,
+            .controlSystems, .controlStrategies, .electronicsLab, .phasorImpedance,
         ],
         .homework: [
             .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
@@ -1121,7 +1131,7 @@ enum ToolboxCatalog {
         .coupledVibration: [.motionSnapshot, .bubbleLevel],
         .fieldPosition: [.magnetometer, .wifiStatus, .barometer],
         .deviceHealth: [.wifiStatus, .noiseMeter, .acousticImager],
-        .reactance: [.powerFactor, .frequencyWave, .ohmsLaw],
+        .reactance: [.phasorImpedance, .powerFactor, .frequencyWave, .ohmsLaw],
         .powerFactor: [.power, .reactance, .transformer],
         .shortCircuit: [.ul508aPanelLab, .transformer, .wireAmpacity, .motorFLA],
         .circularMils: [.conductorLength, .wireAmpacity, .voltageDrop],
@@ -1132,7 +1142,7 @@ enum ToolboxCatalog {
         .panelDirectory: [.ul508aPanelLab, .equipmentGround, .loadWorksheet, .necCircuit],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
-        .phasorDiagram: [.reactance, .power, .ohmsLaw],
+        .phasorDiagram: [.phasorImpedance, .reactance, .power, .ohmsLaw],
         .numberBase: [.modbusAddress, .signalScaling, .unitConverter],
         .batteryBank: [.power, .solarDesign, .ohmsLaw, .eBikePackDesigner, .eBikeRange],
         .solarDesign: [.batteryBank, .power, .bubbleLevel, .magnetometer],
@@ -1168,7 +1178,8 @@ enum ToolboxCatalog {
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
         .controlSystems: [.controlStrategies, .electronicsLab, .ul508aPanelLab, .signalScaling, .plcTimer, .analogWorkbench],
         .controlStrategies: [.controlSystems, .electronicsLab, .ul508aPanelLab, .signalScaling, .plcTimer, .analogWorkbench],
-        .electronicsLab: [.controlSystems, .analogWorkbench, .timer555, .voltageDivider],
+        .electronicsLab: [.phasorImpedance, .controlSystems, .analogWorkbench, .timer555, .voltageDivider],
+        .phasorImpedance: [.electronicsLab, .reactance, .phasorDiagram, .frequencyWave],
         .ul508aPanelLab: [.motorFLA, .equipmentGround, .conduitFill, .wireAmpacity, .panelDirectory, .cableSchedule, .transformer],
     ]
 }

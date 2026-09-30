@@ -21,7 +21,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "plcTimer", "rackCurrent", "powerFactor", "batteryBank",
             "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate",
             "motorNameplateOCR", "lookCheck", "necCircuit",
-            "controlSystems", "controlStrategies", "electronicsLab",
+            "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance",
         ]
         for id in field {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
@@ -118,7 +118,7 @@ final class ToolHomeAreaTests: XCTestCase {
     }
 
     func testFieldControlsStayLoopHelpers() {
-        for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "controlSystems", "controlStrategies", "electronicsLab", "ul508aPanelLab"] {
+        for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .controls, id)
         }
