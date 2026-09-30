@@ -71,7 +71,7 @@ Wire Size & Ampacity, Flexible Cable Ampacity, Conduit Fill (including the Count
 ### Power (facility / distribution only)
 
 - Power (DC identities + 1Ø / 3Ø). The formulas do not change with code. AS/NZS shows the nominal supply as 230 V single-phase and 400 V three-phase at 50 Hz. ToolID.powerWizard remains for saved jobs and is not listed.
-- Transformer Sizing & Protection (NEC 450.3(B) + Note 1). AS/NZS transformer protection is not in this tool; the screen says it is still showing NEC.
+- Transformer Sizing & Protection (NEC 450.3(B) + Note 1). Connection teach covers Δ–Y, Y–Δ, Δ–Δ, Y–Y, open delta, zig-zag, isolation, autotransformer, and buck-boost, plus high-leg, corner-grounded delta, ungrounded delta, grounded wye, and high-level resistance/reactance grounding notes. The winding and phasor diagram labels common North American conductor colors as code or practice; the AHJ and the project spec win. AS/NZS transformer protection is not in this tool; the screen says it is still showing NEC. Same ToolID.transformer.
 - Tap-Changer Calculator (DETC tap from measured secondary)
 - Power Factor Correction
 - Harmonics (THD) (current THD / IEEE 519 discussion bands)
