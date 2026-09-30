@@ -753,7 +753,7 @@ public enum ToolHowItWorksCatalog {
             summary: "College schematics with node voltages, branch currents, and a value you can solve for.",
             context: "Field → Controls. Passive, diodes, transistors, op-amps, 555, display, and matching.",
             bullets: [
-                "DC estimates and AC phasors for the topologies on the list. Not a SPICE netlist.",
+                "Each circuit draws Vin/Vout or a Bode trace. H(s) only when the stage is linear. Not a SPICE netlist.",
                 "BJT uses 0.7 V and constant β. MOSFETs use the square law or the Rds(on) you enter.",
                 "555, stubs, and matches are ideal. Real boards and vendor models differ.",
                 "Transmission-line tools are lossless planning aids, not a measured match.",

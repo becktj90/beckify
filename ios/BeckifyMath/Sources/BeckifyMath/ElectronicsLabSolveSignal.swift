@@ -100,6 +100,7 @@ extension LabSolve {
                 q("av", "Av", av, "", unknown != "gain"),
                 q("rf", "Rf", rf, "Ω", unknown == "rf"),
                 q("rg", "Rg", rg, "Ω", unknown == "rg"),
+                q("vin", "Vin", vin, "V"),
             ],
             steps: [
                 "Av = 1 + Rf/Rg = \(String(format: "%.3f", av))",
@@ -151,6 +152,10 @@ extension LabSolve {
                 q("rf", "Rf", rf, "Ω", unknown == "rf"),
                 q("i1", "I1", v1 / r1, "A"),
                 q("i2", "I2", v2 / r2, "A"),
+                q("v1", "V1", v1, "V"),
+                q("r1", "R1", r1, "Ω"),
+                q("v2", "V2", v2, "V"),
+                q("r2", "R2", r2, "Ω"),
             ],
             steps: [
                 "Vout = −Rf · (V1/R1 + V2/R2)",
@@ -206,6 +211,9 @@ extension LabSolve {
                 q("gain", "Gain", rf / r1, "", unknown == "rf"),
                 q("rf", "Rf", rf, "Ω", unknown == "rf"),
                 q("vp", "V+", vp, "V"),
+                q("v1", "V1", v1, "V"),
+                q("v2", "V2", v2, "V"),
+                q("r1", "Rin", r1, "Ω"),
             ],
             steps: [
                 "Matched pairs: Vout = (Rf/Rin)·(V2 − V1)",
@@ -269,6 +277,9 @@ extension LabSolve {
                 q("time", "t", t, "s", unknown == "time"),
                 q("c", "C", c, "F", unknown == "c"),
                 q("unity", "Unity f", 1 / (2 * .pi * r * c), "Hz"),
+                q("vin", "Vin", vin, "V"),
+                q("v0", "v(0)", v0, "V"),
+                q("r", "R", r, "Ω"),
             ],
             steps: [
                 "v(t) = v(0) − (Vin /(RC)) · t",
@@ -327,6 +338,7 @@ extension LabSolve {
                 q("ideal", "Ideal Vout", ideal, "V"),
                 q("r", "R", r, "Ω", unknown == "r"),
                 q("c", "C", c, "F", unknown == "c"),
+                q("slope", "Slope", slope, "V/s"),
             ],
             steps: [
                 "Vout = −RC · (dv/dt)",
@@ -368,6 +380,10 @@ extension LabSolve {
             quantities: [
                 q("vout", "Vout", vout, "V", true),
                 q("high", high ? "High" : "Low", high ? 1 : 0, ""),
+                q("vin", "Vin", vin, "V"),
+                q("vref", "Vref", vref, "V"),
+                q("voh", "High rail", voh, "V"),
+                q("vol", "Low rail", vol, "V"),
             ],
             steps: [
                 "No feedback. If Vin ≥ Vref, Vout = high rail.",

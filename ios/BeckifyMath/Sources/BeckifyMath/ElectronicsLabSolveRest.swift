@@ -52,6 +52,8 @@ extension LabSolve {
                 q("c", "C", c, "F", unknown == "c"),
                 q("tau", "τ", tau, "s"),
                 q("current", "i(t)", current, "A"),
+                q("v0", "v(0)", v0, "V"),
+                q("vinf", "v(∞)", vinf, "V"),
             ],
             steps: [
                 "τ = RC = \(eng(tau)) s",
@@ -113,6 +115,9 @@ extension LabSolve {
                 q("tau", "τ", tau, "s"),
                 q("vL", "vL", vL, "V"),
                 q("iInf", "i(∞)", iInf, "A"),
+                q("vs", "Vs", vs, "V"),
+                q("i0", "i(0)", i0, "A"),
+                q("r", "R", r, "Ω"),
             ],
             steps: [
                 "τ = L/R = \(eng(tau)) s,  i(∞) = Vs/R = \(eng(iInf)) A",
@@ -175,6 +180,8 @@ extension LabSolve {
                 q("c", "C", c, "F", unknown == "c"),
                 q("mag", "|H|", h.mag, ""),
                 q("phase", "Phase", h.deg, "°"),
+                q("f", "f", f, "Hz"),
+                q("lowpass", "Low-pass", low ? 1 : 0, ""),
             ],
             steps: [
                 "fc = 1 / (2πRC) = \(eng(fc)) Hz",
@@ -245,6 +252,7 @@ extension LabSolve {
                 q("zMag", "|Z|", z.mag, "Ω"),
                 q("zAng", "∠Z", z.deg, "°"),
                 q("x", "X", x, "Ω"),
+                q("f", "Drive", f, "Hz"),
             ],
             steps: [
                 "f0 = 1 / (2π √(LC)) = \(eng(f0)) Hz",
@@ -326,6 +334,10 @@ extension LabSolve {
                 q("ripple", "Ripple", ripple, "V", unknown == "c"),
                 q("c", "C", c, "F", unknown == "c"),
                 q("iload", "Iload", iCap, "A"),
+                q("f", "f", f, "Hz"),
+                q("vf", "Vf", vf, "V"),
+                q("vsrcpk", "Source peak", vrms * sqrt(2), "V"),
+                q("bridge", "Bridge", bridge ? 1 : 0, ""),
             ],
             steps: [
                 "Vp = Vrms·√2 − \(bridge ? "2" : "1")·Vf = \(eng(vpk)) V",
@@ -381,6 +393,7 @@ extension LabSolve {
                 q("vclip", "Clip level", vclip, "V"),
                 q("ipeak", "Ipeak", ipeak, "A"),
                 q("r", "R", r, "Ω", unknown == "r"),
+                q("vp", "Vp", vp, "V"),
             ],
             steps: [
                 "Clip level = Vbias + Vf = \(eng(vclip)) V",
