@@ -58,28 +58,29 @@ enum PlotScaleMath {
         magnification: CGFloat,
         logarithmic: Bool
     ) -> ClosedRange<Double> {
-        let mag = Double(max(magnification, 1))
-        let anchor = Double(min(1, max(0, anchor)))
+        // Parameter names `min` and `max` hide Swift.min / Swift.max. Qualify the calls.
+        let mag = Double(Swift.max(magnification, 1))
+        let anchor = Double(Swift.min(1, Swift.max(0, anchor)))
         if logarithmic {
-            let lo = log(max(min, 1e-9))
-            let hi = log(max(max, min * 1.000_001))
-            let span = max((hi - lo) / mag, 1e-6)
+            let lo = log(Swift.max(min, 1e-9))
+            let hi = log(Swift.max(max, min * 1.000_001))
+            let span = Swift.max((hi - lo) / mag, 1e-6)
             let mid = lo + (hi - lo) * anchor
             var start = mid - span / 2
             var end = mid + span / 2
             if start < lo { end += lo - start; start = lo }
             if end > hi { start -= end - hi; end = hi }
-            start = max(lo, start)
-            return exp(start)...exp(max(end, start + 1e-6))
+            start = Swift.max(lo, start)
+            return exp(start)...exp(Swift.max(end, start + 1e-6))
         }
-        let span = max((max - min) / mag, 1e-9)
+        let span = Swift.max((max - min) / mag, 1e-9)
         let mid = min + (max - min) * anchor
         var start = mid - span / 2
         var end = mid + span / 2
         if start < min { end += min - start; start = min }
         if end > max { start -= end - max; end = max }
-        start = max(min, min(start, max))
-        end = min(max, max(end, start))
+        start = Swift.max(min, Swift.min(start, max))
+        end = Swift.min(max, Swift.max(end, start))
         if end <= start { end = start + span }
         return start...end
     }
