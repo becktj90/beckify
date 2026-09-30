@@ -242,8 +242,11 @@ enum AudioBlockFFT {
                 vDSP_zvmags(&split, 1, &mags, 1, vDSP_Length(half))
             }
         }
+        // vDSP squares (vDSP_vsq / vDSP_zvmags) but has no element-wise square
+        // root. vDSP_vsqrt is not an Accelerate symbol, so Xcode Cloud reports
+        // "Cannot find 'vDSP_vsqrt' in scope". vForce is the vector sqrt.
         var rooted = [Float](repeating: 0, count: half)
-        vDSP_vsqrt(mags, 1, &rooted, 1, vDSP_Length(half))
+        vForce.sqrt(mags, result: &rooted)
         return rooted.map(Double.init)
     }
 }
