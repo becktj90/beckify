@@ -1,6 +1,6 @@
 # Five-star readiness — Beckify iOS
 
-Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed) and **1.0.1 is closed** (Connect rejected **1.0.1 (160)**: ITMS-90186 / ITMS-90062). Next Connect version is **1.0.2**, build **168** (repo `MARKETING_VERSION` is **1.0.2** and `CURRENT_PROJECT_VERSION` is **168**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). Xcode Cloud Build - iOS on repo **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive attempts **158** and **159** compiled and failed while preparing the upload. App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on closed-train **1.0.1 (160)**, on **1.0.1 (149)**, or on closed-train **1.0**. Bumping the build number on **1.0.1** will not reopen that train.
+Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed) and **1.0.1 is closed** (Connect rejected **1.0.1 (160)**: ITMS-90186 / ITMS-90062). Next Connect version is **1.0.2**, build **169** (repo `MARKETING_VERSION` is **1.0.2** and `CURRENT_PROJECT_VERSION` is **169**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). Xcode Cloud Build - iOS on repo **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive attempts **158** and **159** compiled and failed while preparing the upload. App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on closed-train **1.0.1 (160)**, on **1.0.1 (149)**, or on closed-train **1.0**. Bumping the build number on **1.0.1** will not reopen that train.
 
 Listing copy, nutrition-label facts, and screenshot sizes stay in [`APP_STORE.md`](APP_STORE.md). Privacy text stays in [`PRIVACY.md`](PRIVACY.md). This file is the **rating and review-risk** plan.
 
@@ -72,7 +72,7 @@ Sources (public):
 - [Southwire Conduit Fill Calc reviews](https://apps.apple.com/us/app/southwire-conduit-fill-calc/id509204523?see-all=reviews)
 - [Ugly’s Electrical References reviews](https://apps.apple.com/us/app/uglys-electrical-references/id1134770838?see-all=reviews)
 - [Electrical Calc Elite](https://apps.apple.com/us/app/electrical-calc-elite/id510284903) / [negative-review mirror](https://appsupports.co/510284903/electrical-calc-elite/negative-reviews)
-- [Electric Toolkit](https://apps.apple.com/us/app/electric-toolkit-calculator/id516862639) / [negative-review mirror](https://appsupports.co/516862639/electric-toolkit-calculator/negative-reviews)
+- [Electric Toolkit](https://apps.apple.com/us/app/electric-toolkit-calculator/id516962639) / [negative-review mirror](https://appsupports.co/516962639/electric-toolkit-calculator/negative-reviews)
 - Electrician’s Helper review excerpts via public customer-service mirrors
 - Apple: [Requesting App Store reviews](https://developer.apple.com/documentation/storekit/requesting-app-store-reviews), [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) 2.3, 5.1.1, 5.6.1–5.6.4, [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/)
 
@@ -138,7 +138,7 @@ Suggested block:
 ### Binary / ITMS-90382
 
 - [ ] After ~2026-09-05, upload **once** with a unique version/build. ITMS-90382 here is Apple’s “upload limit reached — wait 1 day,” usually from repeating the same tuple or hammering Transporter.
-- [ ] Do not bump marketing version just to spam uploads. **1.0 and 1.0.1 are closed** — the next train must be **1.0.2** / `CURRENT_PROJECT_VERSION` **168**. Do not retry **1.0.1 (160)**, **1.0.1 (149)**, **1.0 (121)**, or the failed prepare attempts **158** and **159**. A higher build on **1.0.1** will not upload (ITMS-90186 / ITMS-90062). If Xcode Cloud already uploaded **≥168**, bump above that build before the next Archive. Trevor must create Connect version **1.0.2** before Archive.
+- [ ] Do not bump marketing version just to spam uploads. **1.0 and 1.0.1 are closed** — the next train must be **1.0.2** / `CURRENT_PROJECT_VERSION` **169**. Do not retry **1.0.1 (160)**, **1.0.1 (149)**, **1.0 (121)**, or the failed prepare attempts **158** and **159**. A higher build on **1.0.1** will not upload (ITMS-90186 / ITMS-90062). If Xcode Cloud already uploaded **≥169**, bump above that build before the next Archive. Trevor must create Connect version **1.0.2** before Archive.
 - [ ] TestFlight already had **1.0.1 (149)** (~2026-09-17/18). This checklist is still **not** Submit for Review until screenshots + notes are attached.
 
 ---

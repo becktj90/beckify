@@ -1,6 +1,6 @@
 import Foundation
 
-public enum MotorNameplateType: String, Codable, CaseIterable, Sendable {
+public enum MotorNameplateType: String, Codable, CaseIterable, Sendable, Hashable {
     case singlePhase = "1ph"
     case squirrelCageOther = "sc-bde"
     case squirrelCageEnergyEfficient = "sc-ee"

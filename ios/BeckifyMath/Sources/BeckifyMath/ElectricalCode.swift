@@ -166,6 +166,7 @@ public enum ElectricalCodeSupport {
         "loadWorksheet",
         "motorNameplate",
         "conductorLength",
+        "ul508aPanelLab",
     ]
 
     public static func notice(toolID: String, code: ElectricalCode) -> ElectricalCodeNotice? {
@@ -239,6 +240,8 @@ public enum ElectricalCodeSupport {
             return "Overload, SCPD, and conductor rows cite the NEC. AS/NZS motor protection is not in this tool."
         case "conductorLength":
             return "Circular mils are NEC Chapter 9 Table 8. Metric resistance for a known mm² size is on Voltage Drop, not this screen."
+        case "ul508aPanelLab":
+            return "This lab is UL 508A and NEC planning. AS/NZS does not replace it. The IEC color note is a convention card, not an AS/NZS wiring design."
         default:
             return "Results below are NEC (US). They are not AS/NZS figures."
         }

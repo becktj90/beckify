@@ -758,6 +758,16 @@ public enum ToolHowItWorksCatalog {
                 "Transmission-line tools are lossless planning aids, not a measured match.",
             ]
         ),
+        "ul508aPanelLab": ToolHowItWorks(
+            summary: "Panel lab for SCCR, feeder and branch sizing, internal wire, enclosure, control power, and the nameplate.",
+            context: "Field → Controls. Shop planning for an industrial control panel.",
+            bullets: [
+                "SCCR uses marked ratings or assumed defaults labeled as Table SB4.1-style. The weakest applicable path wins.",
+                "Feeder math is 125% of the largest motor and heaters. Branch math reuses the motor FLA and nameplate helpers.",
+                "Enclosure, conduit, wire type, and colors are conventions. The Code, UL 508A, NFPA 79, and the spec win.",
+                "Educational planning aid. Not a UL certification or a substitute for the official text and the AHJ.",
+            ]
+        ),
         "controlStrategies": ToolHowItWorks(
             summary: "Compares bang-bang, PID, MPC, fuzzy, sliding mode, ADRC, and learned methods, then suggests one from your constraints.",
             context: "Field → Controls, next to the Control Systems lab. Open the lab when the pick is PID.",

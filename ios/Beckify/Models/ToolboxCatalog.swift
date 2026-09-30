@@ -86,6 +86,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case controlSystems
     case controlStrategies
     case electronicsLab
+    case ul508aPanelLab
 
     var id: String { rawValue }
 }
@@ -964,6 +965,18 @@ enum ToolboxCatalog {
             ]
         ),
         ToolDefinition(
+            id: .ul508aPanelLab,
+            kind: .calculator,
+            title: "UL 508A Panel Lab",
+            subtitle: "SCCR, feeder and branch sizing, wire, enclosure, control power, and the nameplate.",
+            symbol: "square.split.2x2",
+            synonyms: [
+                "ul 508a", "508a", "industrial control panel", "sccr", "short circuit current rating",
+                "supplement sb", "sb4.1", "feeder", "branch circuit", "panel nameplate", "nema",
+                "enclosure", "control transformer", "wire color", "mtw", "panel builder",
+            ]
+        ),
+        ToolDefinition(
             id: .controlStrategies,
             kind: .calculator,
             title: "Control Strategies",
@@ -1008,6 +1021,7 @@ enum ToolboxCatalog {
             .batteryBank, .solarDesign, .upsSizing,
         ],
         .controls: [
+            .ul508aPanelLab,
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
             .controlSystems, .controlStrategies, .electronicsLab,
         ],
@@ -1071,15 +1085,15 @@ enum ToolboxCatalog {
         .power: [.ohmsLaw, .transformer, .powerFactor],
         .powerWizard: [.power, .motorFLA, .transformer],
         .voltageDrop: [.wireAmpacity, .equipmentGround, .conductorCost, .conduitFill],
-        .conduitFill: [.cableLadder, .equipmentGround, .flexibleCable, .wireAmpacity, .voltageDrop],
+        .conduitFill: [.ul508aPanelLab, .cableLadder, .equipmentGround, .flexibleCable, .wireAmpacity, .voltageDrop],
         .cableLadder: [.conduitFill, .cableSchedule, .equipmentGround, .referenceLibrary],
-        .equipmentGround: [.cableLadder, .conduitFill, .flexibleCable, .wireAmpacity, .necCircuit],
+        .equipmentGround: [.ul508aPanelLab, .cableLadder, .conduitFill, .flexibleCable, .wireAmpacity, .necCircuit],
         .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
-        .transformer: [.power, .shortCircuit, .motorFLA],
+        .transformer: [.ul508aPanelLab, .power, .shortCircuit, .motorFLA],
         .timer555: [.electronicsLab, .plcTimer, .ledRC, .frequencyWave],
-        .motorFLA: [.motorNameplateOCR, .motorNameplate, .motorSpeed],
-        .wireAmpacity: [.flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
+        .motorFLA: [.ul508aPanelLab, .motorNameplateOCR, .motorNameplate, .motorSpeed],
+        .wireAmpacity: [.ul508aPanelLab, .flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
         .flexibleCable: [.wireAmpacity, .conduitFill, .equipmentGround, .cableSchedule],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.electronicsLab, .ohmsLaw, .seriesParallel, .ledRC],
@@ -1105,13 +1119,13 @@ enum ToolboxCatalog {
         .deviceHealth: [.wifiStatus, .noiseMeter, .acousticImager],
         .reactance: [.powerFactor, .frequencyWave, .ohmsLaw],
         .powerFactor: [.power, .reactance, .transformer],
-        .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],
+        .shortCircuit: [.ul508aPanelLab, .transformer, .wireAmpacity, .motorFLA],
         .circularMils: [.conductorLength, .wireAmpacity, .voltageDrop],
         .loadFactors: [.panelDirectory, .power, .motorFLA],
         .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems, .controlStrategies],
         .modbusAddress: [.signalScaling, .plcTimer],
         .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems, .controlStrategies],
-        .panelDirectory: [.equipmentGround, .loadWorksheet, .necCircuit],
+        .panelDirectory: [.ul508aPanelLab, .equipmentGround, .loadWorksheet, .necCircuit],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
         .phasorDiagram: [.reactance, .power, .ohmsLaw],
@@ -1141,15 +1155,16 @@ enum ToolboxCatalog {
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.equipmentGround, .wireAmpacity, .voltageDrop],
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
-        .cableSchedule: [.cableLadder, .flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
+        .cableSchedule: [.ul508aPanelLab, .cableLadder, .flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
         .analogWorkbench: [.electronicsLab, .voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
         .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],
         .linearRegulator: [.voltageDivider, .power, .ledRC],
         .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
-        .controlSystems: [.controlStrategies, .electronicsLab, .signalScaling, .plcTimer, .analogWorkbench],
-        .controlStrategies: [.controlSystems, .electronicsLab, .signalScaling, .plcTimer, .analogWorkbench],
+        .controlSystems: [.controlStrategies, .electronicsLab, .ul508aPanelLab, .signalScaling, .plcTimer, .analogWorkbench],
+        .controlStrategies: [.controlSystems, .electronicsLab, .ul508aPanelLab, .signalScaling, .plcTimer, .analogWorkbench],
         .electronicsLab: [.controlSystems, .analogWorkbench, .timer555, .voltageDivider],
+        .ul508aPanelLab: [.motorFLA, .equipmentGround, .conduitFill, .wireAmpacity, .panelDirectory, .cableSchedule, .transformer],
     ]
 }
