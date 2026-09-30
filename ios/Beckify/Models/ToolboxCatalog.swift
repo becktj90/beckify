@@ -84,6 +84,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case nickelStrip
     case controlSystems
     case controlStrategies
+    case electronicsLab
 
     var id: String { rawValue }
 }
@@ -962,6 +963,20 @@ enum ToolboxCatalog {
                 "gain schedule", "disturbance", "chattering", "selector", "servo strategy",
             ]
         ),
+        ToolDefinition(
+            id: .electronicsLab,
+            kind: .calculator,
+            title: "Electronics Lab",
+            subtitle: "College schematics — node voltages, branch currents, and solve-any-value.",
+            symbol: "point.3.connected.trianglepath.dotted",
+            synonyms: [
+                "electronics lab", "schematic", "bjt", "mosfet", "op amp", "op-amp", "555",
+                "thevenin", "norton", "rectifier", "clipper", "clamper", "7 segment", "seven segment",
+                "impedance match", "l match", "quarter wave", "stub", "complex", "polar", "phasor",
+                "voltage divider", "kirchhoff", "cmos", "buck", "class a", "led flasher",
+            ],
+            calculationMode: .live
+        ),
     ]
 
     /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
@@ -982,7 +997,7 @@ enum ToolboxCatalog {
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
-            .controlSystems, .controlStrategies,
+            .controlSystems, .controlStrategies, .electronicsLab,
         ],
         .homework: [
             .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
@@ -1049,12 +1064,12 @@ enum ToolboxCatalog {
         .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.power, .shortCircuit, .motorFLA],
-        .timer555: [.plcTimer, .ledRC, .frequencyWave],
+        .timer555: [.electronicsLab, .plcTimer, .ledRC, .frequencyWave],
         .motorFLA: [.motorNameplateOCR, .motorNameplate, .motorSpeed],
         .wireAmpacity: [.flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
         .flexibleCable: [.wireAmpacity, .conduitFill, .equipmentGround, .cableSchedule],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
-        .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
+        .voltageDivider: [.electronicsLab, .ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
         .resistorColor: [.seriesParallel, .ledRC, .unitConverter],
         .unitConverter: [.circularMils, .signalScaling, .wireAmpacity],
@@ -1115,12 +1130,13 @@ enum ToolboxCatalog {
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
         .cableSchedule: [.flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
-        .analogWorkbench: [.voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
+        .analogWorkbench: [.electronicsLab, .voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
         .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],
         .linearRegulator: [.voltageDivider, .power, .ledRC],
         .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
-        .controlSystems: [.controlStrategies, .signalScaling, .plcTimer, .analogWorkbench],
-        .controlStrategies: [.controlSystems, .signalScaling, .plcTimer, .analogWorkbench],
+        .controlSystems: [.controlStrategies, .electronicsLab, .signalScaling, .plcTimer, .analogWorkbench],
+        .controlStrategies: [.controlSystems, .electronicsLab, .signalScaling, .plcTimer, .analogWorkbench],
+        .electronicsLab: [.controlSystems, .analogWorkbench, .timer555, .voltageDivider],
     ]
 }

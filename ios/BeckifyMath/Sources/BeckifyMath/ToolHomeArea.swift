@@ -136,7 +136,7 @@ public enum ToolHomeAreaPolicy {
     /// audience already uses those tools on a loop. State-space studios stay web-only.
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
-        "controlSystems", "controlStrategies",
+        "controlSystems", "controlStrategies", "electronicsLab",
     ]
 
     /// Saved-job keys are short labels (`V`, `I`); stored fields are longer.

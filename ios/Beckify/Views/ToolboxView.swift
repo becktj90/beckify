@@ -265,6 +265,7 @@ struct CalculatorHostView: View {
             case .nickelStrip: NickelStripView()
             case .controlSystems: ControlSystemsLabView()
             case .controlStrategies: ControlStrategiesView()
+            case .electronicsLab: ElectronicsLabView()
             }
         }
     }
