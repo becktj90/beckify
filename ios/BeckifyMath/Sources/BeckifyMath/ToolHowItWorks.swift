@@ -397,12 +397,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Take a picture of a panel schedule; on-device Vision fills an editable table. Optional Analyze, then confirm demand.",
-            context: "Directory photo or typed legend — verify rows. Analyze uploads only if you tap it.",
+            summary: "Take a picture of a panel schedule. On-device Vision fills an editable table and shows a scan-quality score. Optional Analyze, then confirm demand.",
+            context: "Directory photo or typed legend — verify rows. A low score means retake. Analyze uploads only if you tap it.",
             bullets: [
-                "Vision stays on this device unless you tap Analyze. Yellow rows are guesses.",
-                "Analyze POSTs to /api/analyze-panel. Confirm marks reviewed before demand.",
-                "Trip is not measured load. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
+                "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
+                "Odd/even circuit numbers can be inferred when the print is missing. Yellow rows are guesses — confirm them.",
+                "Trip is not measured load. FLA and kAIC reads are not measured. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(

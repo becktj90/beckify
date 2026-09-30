@@ -2,7 +2,6 @@ import PhotosUI
 import SwiftUI
 import UIKit
 import ImageIO
-@preconcurrency import Vision
 import BeckifyMath
 
 /// Take a photo or pick a motor nameplate, run on-device Vision, then map lines
@@ -31,6 +30,7 @@ struct MotorNameplateOCRView: View {
     /// Vision lines with `VNRecognizedText.confidence`. Used by extract so
     /// low-confidence fields stay highlighted instead of the parser default.
     @State private var recognizedLines: [NameplateOCRLine] = []
+    @State private var scanQuality: Double?
     @State private var token = ""
     @State private var analyzing = false
     @State private var analyzeProgress: Double = 0
@@ -52,7 +52,7 @@ struct MotorNameplateOCRView: View {
             stickyAnswer: sticky,
             copyText: copyText,
             disclaimer: .designAidExtra(
-                "On-device Vision is the default. Recognition can misread a stamped plate — confirm every field against the photo before saving. The photo leaves this device only if you tap Analyze."
+                "On-device Vision is the default. The photo is flattened and contrast-lifted on this device before reading. A low scan-quality score means retake — it is not a confidence interval. Recognition can misread a stamped plate — confirm every field against the photo before saving. The photo leaves this device only if you tap Analyze."
             ),
             isResultStale: session.isStale
         ) {
@@ -89,6 +89,14 @@ struct MotorNameplateOCRView: View {
             }
 
             captureButtons
+
+            if let scanQuality, scanQuality < 0.45 {
+                let percent = Int((scanQuality * 100).rounded())
+                Text("Scan quality \(percent)% — retake a square-on photo with less glare. Fields stay editable. This is not a stamped nameplate reading.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.warn)
+                    .accessibilityIdentifier("nameplateScanQuality")
+            }
 
             if let recognizeError {
                 ErrorText(message: recognizeError)
@@ -460,6 +468,7 @@ struct MotorNameplateOCRView: View {
         draft = [:]
         confidence = [:]
         recognizedLines = []
+        scanQuality = nil
         confirmed = false
         session.reset()
     }
@@ -525,6 +534,7 @@ struct MotorNameplateOCRView: View {
     private func loadExample() {
         capturedImage = nil
         recognizedLines = []
+        scanQuality = nil
         analyzeError = nil
         analyzeProgress = 0
         analyzeStatus = ""
@@ -622,12 +632,14 @@ struct MotorNameplateOCRView: View {
 
     @MainActor
     private func applyRecognition(_ image: UIImage, textBefore: String) async throws {
-        let lines = try await Self.recognizeText(in: image)
+        let ocr = try await ResilientOCREngine.recognize(image, profile: .nameplate)
         guard text == textBefore else { return }
+        let lines = ocr.lines.map { NameplateOCRLine(text: $0.text, confidence: $0.confidence) }
         let trimmed = lines
             .map(\.text)
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        scanQuality = ocr.meanConfidence
         if trimmed.isEmpty {
             recognizeError = "No text found. Try a sharper, square-on shot of the nameplate."
             invalidateConfirmedReview()
@@ -637,60 +649,6 @@ struct MotorNameplateOCRView: View {
         text = trimmed
         session.markInputsChanged()
         confirmed = false
-    }
-
-    /// Vision text recognition. Nothing leaves the device. Keeps each
-    /// candidate's confidence so extract can flag uncertain fields.
-    private static func recognizeText(in image: UIImage) async throws -> [NameplateOCRLine] {
-        guard let cgImage = image.cgImage else { throw RecognitionError.unreadableImage }
-        let orientation = cgImageOrientation(from: image.imageOrientation)
-
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let request = VNRecognizeTextRequest { request, error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                        return
-                    }
-                    let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
-                    let lines: [NameplateOCRLine] = observations.compactMap { observation in
-                        guard let candidate = observation.topCandidates(1).first else { return nil }
-                        return NameplateOCRLine(
-                            text: candidate.string,
-                            confidence: Double(candidate.confidence)
-                        )
-                    }
-                    continuation.resume(returning: lines)
-                }
-                request.recognitionLevel = .accurate
-                request.usesLanguageCorrection = false
-
-                let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
-                do {
-                    try handler.perform([request])
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-
-    private static func cgImageOrientation(from orientation: UIImage.Orientation) -> CGImagePropertyOrientation {
-        switch orientation {
-        case .up: return .up
-        case .down: return .down
-        case .left: return .left
-        case .right: return .right
-        case .upMirrored: return .upMirrored
-        case .downMirrored: return .downMirrored
-        case .leftMirrored: return .leftMirrored
-        case .rightMirrored: return .rightMirrored
-        @unknown default: return .up
-        }
-    }
-
-    private enum RecognitionError: Error {
-        case unreadableImage
     }
 }
 

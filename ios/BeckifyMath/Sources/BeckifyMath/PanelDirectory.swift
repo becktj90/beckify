@@ -74,7 +74,25 @@ public enum PanelDirectory {
             let key = upper[upper.startIndex..<colon].trimmingCharacters(in: .whitespaces)
             if !looksLikeCircuit(key) { return true }
         }
+        // "65 kAIC" and "FLA 42.5" are nameplate reads, not circuit 65.
+        if isRatingOnlyLine(upper) { return true }
         return false
+    }
+
+    /// A line that only states FLA or kAIC, with no load name and no pole count.
+    static func isRatingOnlyLine(_ upper: String) -> Bool {
+        let isFLA = upper.range(of: #"\b(FLA|FULL\s*LOAD\s*AMPS?)\b"#, options: .regularExpression) != nil
+        let isKAIC = upper.range(of: #"\bKAIC\b|\bK\s*AIC\b"#, options: .regularExpression) != nil
+        guard isFLA || isKAIC else { return false }
+        if upper.range(of: #"\b[123]P\b"#, options: .regularExpression) != nil { return false }
+        let tokens = upper.split(separator: " ").map(String.init)
+        let label: Set<String> = ["FLA", "KAIC", "AIC", "AMP", "AMPS", "FULL", "LOAD", "RATING"]
+        let words = tokens.contains { token in
+            let letters = token.filter(\.isLetter)
+            guard letters.count >= 3 else { return false }
+            return !label.contains(String(letters))
+        }
+        return !words
     }
 
     // MARK: - Token classification

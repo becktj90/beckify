@@ -1,14 +1,51 @@
 import Foundation
 
+/// Normalized rectangle in Vision space: origin at the bottom-left, each edge in 0…1.
+public struct PanelOCRBox: Equatable, Sendable {
+    public var x: Double
+    public var y: Double
+    public var width: Double
+    public var height: Double
+
+    public init(x: Double, y: Double, width: Double, height: Double) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
+
+    public var midX: Double { x + width / 2 }
+    public var midY: Double { y + height / 2 }
+}
+
 /// One Vision (or fixture) line from a panel schedule / directory sticker.
 public struct PanelOCRLine: Equatable, Sendable {
     public var text: String
     /// Optional recognizer confidence in 0…1.
     public var confidence: Double?
+    /// Bounding box when the recognizer provided one. Absent for typed text.
+    public var box: PanelOCRBox?
+    /// Other recognizer strings for this line, best first, excluding `text`.
+    public var alternates: [String]
+    /// True when fuzzy cleanup rewrote the text (not a human edit).
+    public var guessed: Bool
+    /// True when odd-left / even-right filled a missing circuit number.
+    public var inferredCircuit: Bool
 
-    public init(text: String, confidence: Double? = nil) {
+    public init(
+        text: String,
+        confidence: Double? = nil,
+        box: PanelOCRBox? = nil,
+        alternates: [String] = [],
+        guessed: Bool = false,
+        inferredCircuit: Bool = false
+    ) {
         self.text = text
         self.confidence = confidence
+        self.box = box
+        self.alternates = alternates
+        self.guessed = guessed
+        self.inferredCircuit = inferredCircuit
     }
 }
 
@@ -134,6 +171,14 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
     public var rawLines: [String]
     public var agentID: String
     public var leavesDevice: Bool
+    /// 0…1 read quality from the last on-device scan. Nil for typed text that
+    /// has not been scored, and for cloud drafts.
+    public var scanQuality: Double?
+    public var fla: PanelHeaderField
+    public var kaic: PanelHeaderField
+    /// Circuit numbers the odd/even grid filled in because the print was missing.
+    public var inferredSlots: Int
+    public var scanNotes: [String]
 
     public init(
         circuits: [PanelCircuitDraft],
@@ -143,7 +188,12 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
         phases: PanelHeaderField = .empty,
         rawLines: [String],
         agentID: String,
-        leavesDevice: Bool
+        leavesDevice: Bool,
+        scanQuality: Double? = nil,
+        fla: PanelHeaderField = .empty,
+        kaic: PanelHeaderField = .empty,
+        inferredSlots: Int = 0,
+        scanNotes: [String] = []
     ) {
         self.circuits = circuits
         self.panelName = panelName
@@ -153,6 +203,11 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
         self.rawLines = rawLines
         self.agentID = agentID
         self.leavesDevice = leavesDevice
+        self.scanQuality = scanQuality
+        self.fla = fla
+        self.kaic = kaic
+        self.inferredSlots = inferredSlots
+        self.scanNotes = scanNotes
     }
 
     public var populatedCount: Int { circuits.count }
@@ -301,7 +356,14 @@ public enum PanelScheduleParser {
         let compacted = lines.compactMap { line -> PanelOCRLine? in
             let text = PanelDirectory.compact(line.text)
             guard !text.isEmpty else { return nil }
-            return PanelOCRLine(text: text, confidence: line.confidence)
+            return PanelOCRLine(
+                text: text,
+                confidence: line.confidence,
+                box: line.box,
+                alternates: line.alternates,
+                guessed: line.guessed,
+                inferredCircuit: line.inferredCircuit
+            )
         }
         let raw = compacted.map(\.text)
         let header = extractHeader(from: compacted)
@@ -311,17 +373,18 @@ public enum PanelScheduleParser {
         for line in compacted {
             if PanelDirectory.isIgnored(line.text) { continue }
             let guessed = guessHardToRead(line.text)
+            let didGuess = guessed.changed || line.guessed || line.inferredCircuit
             let parsed = PanelDirectory.parse(guessed.text)
             let vision = line.confidence
             for row in parsed {
                 let key = "\(row.circuit)|\(row.name)|\(row.trip)|\(row.poles)".uppercased()
                 if seen.contains(key) { continue }
                 seen.insert(key)
-                let base = rowBaseConfidence(row, guessed: guessed.changed)
+                let base = rowBaseConfidence(row, guessed: didGuess)
                 drafts.append(PanelCircuitDraft.from(
                     row,
                     confidence: scaled(base, vision),
-                    guessed: guessed.changed
+                    guessed: didGuess
                 ))
             }
         }

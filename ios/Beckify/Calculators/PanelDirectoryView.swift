@@ -2,13 +2,13 @@ import PhotosUI
 import SwiftUI
 import UIKit
 import ImageIO
-@preconcurrency import Vision
 import BeckifyMath
 
-/// Take a photo or pick a panel schedule / directory sticker, run on-device
-/// Vision, then map lines into an editable circuit table. A human must
-/// confirm before Saved Jobs or demand numbers are treated as reviewed.
-/// Optional cloud Analyze POSTs only after the user taps the button.
+/// Take a photo or pick a panel schedule / directory sticker, run the
+/// on-device image-to-data pipeline, then map lines into an editable circuit
+/// table. A human must confirm before Saved Jobs or demand numbers are
+/// treated as reviewed. Optional cloud Analyze POSTs only after the user taps
+/// the button.
 struct PanelDirectoryView: View {
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.openRelatedTool) private var openRelated
@@ -36,6 +36,10 @@ struct PanelDirectoryView: View {
     @State private var successTick = 0
     @State private var cameraUnavailable = false
     @State private var recognizedLines: [PanelOCRLine] = []
+    @State private var scanQuality: Double?
+    @State private var scanNotes: [String] = []
+    @State private var scanFLA = ""
+    @State private var scanKAIC = ""
     @State private var token = ""
     @State private var analyzing = false
     @State private var analyzeProgress: Double = 0
@@ -67,19 +71,21 @@ struct PanelDirectoryView: View {
             stickyAnswer: sticky,
             copyText: copyText,
             disclaimer: .designAidExtra(
-                "On-device Vision is the default. Recognition can invent or drop circuits — confirm every row against the photo before trusting demand or capacity-to-add. Breaker trip is not measured load. The photo leaves this device only if you tap Analyze."
+                "On-device Vision is the default. A scan-quality score can ask for a retake — it is not a confidence interval. Recognition can invent or drop circuits — confirm every row against the photo before trusting demand or capacity-to-add. Breaker trip is not measured load. FLA and kAIC reads are not measured values. The photo leaves this device only if you tap Analyze."
             ),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
                 toolID: .panelDirectory,
-                symbolic: "Vision lines → circuit · name · trip · poles → optional Analyze → confirm → 220.42 demand / remaining A",
+                symbolic: "Sanitize → multi-pass Vision → fuzzy grid → circuit · name · trip · poles → optional Analyze → confirm → 220.42 demand / remaining A",
                 substituted: substituted,
-                meaning: "On-device text recognition is evidence, not the sticker. The heuristic agent maps lines into an editable schedule (value + confidence + reviewed) and guesses common hard-to-read tokens. Optional Analyze POSTs upright JPEGs to /api/analyze-panel and fills empty rows. Confirm marks reviewed. Demand treats trip as a conservative connected-amp estimate, then uses the same NEC 220.42 worksheet as Load Calculation Worksheet. Capacity-to-add is remaining main amps after that demand. Design aid — not a PE stamp.",
+                meaning: "On-device text recognition is evidence, not the sticker. The photo is flattened and contrast-lifted on this device, then read in two Vision passes when the first pass is weak or drops circuit numbers. A fuzzy grid cleans common misreads and can infer odd-left / even-right numbers when the print is missing. The heuristic agent maps those lines into an editable schedule (value + confidence + reviewed). Optional Analyze POSTs upright JPEGs to /api/analyze-panel and fills empty rows. Confirm marks reviewed. Demand treats trip as a conservative connected-amp estimate, then uses the same NEC 220.42 worksheet as Load Calculation Worksheet. Capacity-to-add is remaining main amps after that demand. Design aid — not a PE stamp.",
                 citation: "Apple Vision on-device. Optional cloud Analyze uses the same JSON contract as the website. Parser is a heuristic agent unless you tap Analyze. NEC Table 220.42 as coded in Load Worksheet."
             )
 
             photoBlock
+
+            scanQualityBlock
 
             panelInputs
 
@@ -220,6 +226,39 @@ struct PanelDirectoryView: View {
                                 .accessibilityLabel("Panel schedule photo \(index + 1) of \(capturedImages.count). On-device unless you tap Analyze.")
                         }
                     }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var scanQualityBlock: some View {
+        if let scanQuality {
+            let percent = Int((scanQuality * 100).rounded())
+            VStack(alignment: .leading, spacing: 6) {
+                Text("SCAN QUALITY \(percent)%")
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(scanQuality < PanelScanResult.retakeThreshold ? Theme.warn : Theme.muted)
+                    .accessibilityIdentifier("panelScanQuality")
+                    .accessibilityLabel("Scan quality \(percent) percent")
+                if scanQuality < PanelScanResult.retakeThreshold {
+                    Text("Low scan quality — retake a flatter photo with less glare. The rows below stay editable. This is not a stamped schedule.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.warn)
+                }
+                if !scanFLA.isEmpty || !scanKAIC.isEmpty {
+                    let parts = [scanFLA.isEmpty ? nil : "FLA \(scanFLA)", scanKAIC.isEmpty ? nil : scanKAIC]
+                        .compactMap { $0 }
+                        .joined(separator: " · ")
+                    Text("Nameplate read (confirm): \(parts). Not a measured value.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+                ForEach(Array(scanNotes.filter { !$0.hasPrefix("Low scan quality") }.enumerated()), id: \.offset) { _, note in
+                    Text(note)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
                 }
             }
         }
@@ -577,6 +616,10 @@ struct PanelDirectoryView: View {
         if extracted.mainRating.isPresent {
             mainAmps = extracted.mainRating.value.replacingOccurrences(of: "A", with: "")
         }
+        scanQuality = extracted.scanQuality
+        scanNotes = extracted.scanNotes
+        scanFLA = extracted.fla.value
+        scanKAIC = extracted.kaic.value
         if let guess = PanelScheduleParser.parseVoltage(extracted.voltage.value) {
             if let ll = guess.lineToLine {
                 volts = ll == floor(ll) ? String(Int(ll)) : String(format: "%.1f", ll)
@@ -590,10 +633,10 @@ struct PanelDirectoryView: View {
     }
 
     private func extractionFromCurrentText() -> PanelScheduleExtraction {
-        if recognizedLinesMatchEditor() {
-            return PanelScheduleParser.extract(lines: recognizedLines)
-        }
-        return PanelScheduleParser.extract(text: text)
+        let scan = recognizedLinesMatchEditor()
+            ? PanelDataExtractor.extract(lines: recognizedLines)
+            : PanelDataExtractor.extract(text: text)
+        return scan.extraction
     }
 
     private func recognizedLinesMatchEditor() -> Bool {
@@ -624,6 +667,10 @@ struct PanelDirectoryView: View {
         pendingCameraImage = nil
         draft = []
         recognizedLines = []
+        scanQuality = nil
+        scanNotes = []
+        scanFLA = ""
+        scanKAIC = ""
         confirmed = false
         session.reset()
     }
@@ -692,6 +739,10 @@ struct PanelDirectoryView: View {
     private func loadExample() {
         capturedImages = []
         recognizedLines = []
+        scanQuality = nil
+        scanNotes = []
+        scanFLA = ""
+        scanKAIC = ""
         analyzeError = nil
         analyzeProgress = 0
         analyzeStatus = ""
@@ -805,22 +856,51 @@ struct PanelDirectoryView: View {
             if !replacingText, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 chunks.append(text.trimmingCharacters(in: .whitespacesAndNewlines))
             }
+            var qualities: [Double] = []
+            var notes: [String] = []
+            var fla = replacingText ? "" : scanFLA
+            var kaic = replacingText ? "" : scanKAIC
+            if !replacingText {
+                notes.append(contentsOf: scanNotes)
+                if let scanQuality { qualities.append(scanQuality) }
+            }
             for image in images {
-                let lines = try await Self.recognizeText(in: image)
-                allLines.append(contentsOf: lines)
-                let chunk = lines
+                let ocr = try await ResilientOCREngine.recognize(image, profile: .panel)
+                let scan = PanelDataExtractor.extract(
+                    lines: ocr.lines,
+                    usedFallback: ocr.usedFallback,
+                    didFlatten: ocr.didFlatten
+                )
+                allLines.append(contentsOf: scan.lines)
+                let chunk = scan.lines
                     .map(\.text)
                     .joined(separator: "\n")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !chunk.isEmpty { chunks.append(chunk) }
+                qualities.append(scan.quality)
+                notes.append(contentsOf: scan.extraction.scanNotes)
+                if fla.isEmpty, scan.extraction.fla.isPresent { fla = scan.extraction.fla.value }
+                if kaic.isEmpty, scan.extraction.kaic.isPresent { kaic = scan.extraction.kaic.value }
             }
             guard text == textBefore else { return }
             let trimmed = chunks.joined(separator: "\n")
             if trimmed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 recognizeError = "No text found. Try a sharper, flatter shot of the directory."
+                scanQuality = qualities.min()
+                scanNotes = notes
+                if replacingText {
+                    recognizedLines = []
+                    scanFLA = ""
+                    scanKAIC = ""
+                }
                 return
             }
             recognizedLines = allLines
+            scanQuality = qualities.min()
+            var seenNotes = Set<String>()
+            scanNotes = notes.filter { seenNotes.insert($0).inserted }
+            scanFLA = fla
+            scanKAIC = kaic
             text = trimmed
             session.markInputsChanged()
             confirmed = false
@@ -830,57 +910,4 @@ struct PanelDirectoryView: View {
         }
     }
 
-    /// Vision text recognition. Nothing leaves the device. Keeps each
-    /// candidate's confidence so extract can flag uncertain rows.
-    private static func recognizeText(in image: UIImage) async throws -> [PanelOCRLine] {
-        guard let cgImage = image.cgImage else { throw RecognitionError.unreadableImage }
-        let orientation = cgImageOrientation(from: image.imageOrientation)
-
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let request = VNRecognizeTextRequest { request, error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                        return
-                    }
-                    let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
-                    let lines: [PanelOCRLine] = observations.compactMap { observation in
-                        guard let candidate = observation.topCandidates(1).first else { return nil }
-                        return PanelOCRLine(
-                            text: candidate.string,
-                            confidence: Double(candidate.confidence)
-                        )
-                    }
-                    continuation.resume(returning: lines)
-                }
-                request.recognitionLevel = .accurate
-                request.usesLanguageCorrection = false
-
-                let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
-                do {
-                    try handler.perform([request])
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-
-    private static func cgImageOrientation(from orientation: UIImage.Orientation) -> CGImagePropertyOrientation {
-        switch orientation {
-        case .up: return .up
-        case .down: return .down
-        case .left: return .left
-        case .right: return .right
-        case .upMirrored: return .upMirrored
-        case .downMirrored: return .downMirrored
-        case .leftMirrored: return .leftMirrored
-        case .rightMirrored: return .rightMirrored
-        @unknown default: return .up
-        }
-    }
-
-    private enum RecognitionError: Error {
-        case unreadableImage
-    }
 }

@@ -1,6 +1,6 @@
 # Five-star readiness — Beckify iOS
 
-Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **≥150** (repo `CURRENT_PROJECT_VERSION` is **153**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on **1.0.1 (149)**, or on closed-train **1.0**.
+Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed). Next Connect version is **1.0.1**, build **154** (repo `CURRENT_PROJECT_VERSION` is **154**; TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18). App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on **1.0.1 (149)**, or on closed-train **1.0**.
 
 Listing copy, nutrition-label facts, and screenshot sizes stay in [`APP_STORE.md`](APP_STORE.md). Privacy text stays in [`PRIVACY.md`](PRIVACY.md). This file is the **rating and review-risk** plan.
 
@@ -18,7 +18,7 @@ Public sources only. No App Store Connect scrape. No password.
 - Field opens first. Cold start hides Recents. Favorites and Jobs empty states now send the operator back to Field.
 - Conduit fill already has mixed sizes **and** the nipple 60% toggle (Ch. 9 Table 1 Note 4) — the exact miss that got Southwire a “this app will lie to you” 1★.
 - Motor Nameplate OCR: on-device Vision, human confirm, MOCP/LRA never treated as FLA.
-- Panel Directory: on-device Vision, photo stays on screen, human confirm, demand/capacity-to-add is a design aid (trip ≠ measured load).
+- Panel Directory: on-device Vision (flatten / contrast, multi-pass), scan-quality retake prompt, photo stays on screen, human confirm, demand/capacity-to-add is a design aid (trip ≠ measured load).
 - iPhone **and** iPad (`TARGETED_DEVICE_FAMILY` 1,2). Do not claim iPad if screenshots are iPhone-only.
 
 **Would block 5★ (or a clean review) if we ship sloppy:**
@@ -138,7 +138,7 @@ Suggested block:
 ### Binary / ITMS-90382
 
 - [ ] After ~2026-09-05, upload **once** with a unique version/build. ITMS-90382 here is Apple’s “upload limit reached — wait 1 day,” usually from repeating the same tuple or hammering Transporter.
-- [ ] Do not bump marketing version just to spam uploads. **1.0 is approved and closed** — the next train must be **1.0.1** / `CURRENT_PROJECT_VERSION` **≥150**. Do not retry **1.0.1 (149)** or **1.0 (121)**. If Xcode Cloud already uploaded **≥150**, bump above that build before the next Archive.
+- [ ] Do not bump marketing version just to spam uploads. **1.0 is approved and closed** — the next train must be **1.0.1** / `CURRENT_PROJECT_VERSION` **154**. Do not retry **1.0.1 (149)** or **1.0 (121)**. If Xcode Cloud already uploaded **≥154**, bump above that build before the next Archive.
 - [ ] TestFlight already had **1.0.1 (149)** (~2026-09-17/18). This checklist is still **not** Submit for Review until screenshots + notes are attached.
 
 ---

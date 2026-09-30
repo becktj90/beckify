@@ -5,7 +5,7 @@
 **Developer:** Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com  
 **Public URL:** https://beckify.com/privacy  
-**Last updated:** 9 September 2026
+**Last updated:** 30 September 2026
 
 This is the privacy policy for the native Beckify iOS and iPadOS app. It is hosted at https://beckify.com/privacy (and https://beckify.com/privacy/). It describes the app, not the beckify.com website.
 
@@ -45,7 +45,7 @@ Structured nameplate fields and panel-schedule rows use the same honesty pattern
 
 **Look Check** (the catalog photo tool, not the Wi-Fi / Cellular Online / Captive card) is cloud-only, matching the website product. Taking or choosing a photo does not upload it. **Analyze Look** POSTs an upright JPEG to `https://api.beckify.com/api/analyze-look` (or a HTTPS endpoint you enter). The Beckify API may forward that photo to OpenAI and/or Anthropic. The result is an entertainment verdict (looks good / looks off / mixed / no person / not rated) plus lighting, framing, expression, sharpness, and overall scores, and a roast when the subject appears 18+ and is rated. It is not medical, dating, or beauty authority. Anyone who appears under 18 is not rated and gets no roast. The photo is not saved in Saved Jobs.
 
-**Motor Nameplate OCR** and **Panel Directory** keep Apple Vision on this device as the default. Optional **Analyze** POSTs an upright JPEG to `https://api.beckify.com/api/analyze-nameplate` or `https://api.beckify.com/api/analyze-panel` (or a HTTPS endpoint you enter) only when you tap the button. The Beckify API may forward that photo to OpenAI and/or Anthropic. The JSON draft fills editable fields; you still confirm before Saved Jobs or demand numbers are treated as reviewed. There are no ads and no in-app purchases.
+**Motor Nameplate OCR** and **Panel Directory** keep Apple Vision on this device as the default. Before that read, the photo can be perspective-flattened (when a page rectangle is found) and contrast-adjusted on this device so faded ink and glare are easier to read. That preprocessing does not leave the phone. Optional **Analyze** POSTs an upright JPEG to `https://api.beckify.com/api/analyze-nameplate` or `https://api.beckify.com/api/analyze-panel` (or a HTTPS endpoint you enter) only when you tap the button. The Beckify API may forward that photo to OpenAI and/or Anthropic. The JSON draft fills editable fields; you still confirm before Saved Jobs or demand numbers are treated as reviewed. A scan-quality score can ask you to retake. It is not uploaded. There are no ads and no in-app purchases.
 
 Share on an engineer plot renders a PNG on this device and opens the system share sheet (Save Image, Files, AirDrop, and so on). The image is written to a temporary file, or held as an in-memory `UIImage` if that write fails. Nothing is uploaded. Choosing Save Image in the system sheet does not require the app to request Photo Library full access.
 
