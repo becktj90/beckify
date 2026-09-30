@@ -205,6 +205,9 @@ struct CalculatorHostView: View {
             case .magnetometer: MagnetometerView()
             case .barometer: BarometerView()
             case .motionSnapshot: MotionSnapshotView()
+            case .stillnessWatch: StillnessWatchView()
+            case .breathFlute: BreathFluteView()
+            case .coupledVibration: CoupledVibrationView()
             case .fieldPosition: FieldPositionView()
             case .deviceHealth: DeviceHealthView()
             case .reactance: ReactanceView()
@@ -253,6 +256,7 @@ struct CalculatorHostView: View {
             case .eBikePackDesigner: EbikePackDesignerView()
             case .nickelStrip: NickelStripView()
             case .controlSystems: ControlSystemsLabView()
+            case .controlStrategies: ControlStrategiesView()
             }
         }
     }

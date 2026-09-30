@@ -118,8 +118,8 @@ public enum ToolHomeAreaPolicy {
     ]
 
     private static let instrumentIDs: Set<String> = [
-        "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "acousticImager", "bubbleLevel",
-        "magnetometer", "barometer", "motionSnapshot", "fieldPosition",
+        "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "acousticImager", "breathFlute", "bubbleLevel",
+        "magnetometer", "barometer", "stillnessWatch", "motionSnapshot", "coupledVibration", "fieldPosition",
         "deviceHealth",
     ]
 
@@ -136,7 +136,7 @@ public enum ToolHomeAreaPolicy {
     /// audience already uses those tools on a loop. State-space studios stay web-only.
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
-        "controlSystems",
+        "controlSystems", "controlStrategies",
     ]
 
     /// Saved-job keys are short labels (`V`, `I`); stored fields are longer.

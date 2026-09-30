@@ -223,10 +223,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "noiseMeter": ToolHowItWorks(
-            summary: "Uncalibrated microphone level in dBFS — a relative snapshot, not SPL.",
-            context: "Homework / field note: louder vs quieter on this phone.",
+            summary: "Uncalibrated microphone level and an audible-band FFT in dBFS — relative, not SPL.",
+            context: "Homework / field note: louder vs quieter, and which band is up, on this phone.",
             bullets: [
-                "Not an SLM, not OSHA-legal, not A-weighted dB(A).",
+                "Not an SLM, not OSHA-legal, not A-weighted dB(A). Bars are relative dBFS, not sound pressure.",
+                "Same on-device FFT tap as Acoustic Imager. This screen is the meter plus spectrum, not a sound camera.",
+                "Rough harmonic % is leftover mic-FFT energy, not THD and not SPL. Freeze holds the plot. Share saves a PNG, not audio.",
                 "Save stores the numeric dBFS snapshot only — never a recording.",
             ]
         ),
@@ -249,10 +251,11 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "magnetometer": ToolHowItWorks(
-            summary: "Magnetic heading and |B| in µT from the phone magnetometer.",
-            context: "Rough heading or a relative field note. Steel and cases distort |B|.",
+            summary: "Magnetic heading, |B| in µT, and Mag Sweep: |B| minus a captured baseline with peak hold.",
+            context: "Rough heading, or a walk to find steel, magnets, or speakers.",
             bullets: [
-                "Not a survey compass or a gauss-meter. Nearby iron swings the reading.",
+                "DC field only. Not a survey compass, stud finder, live-wire detector, or 60 Hz EMF meter.",
+                "The phone’s own magnets and case dominate |B|. A slow |B| spectrum is field variation only, not a 50/60 Hz meter.",
                 "Heading needs location/heading permission when iOS asks.",
             ]
         ),
@@ -269,7 +272,36 @@ public enum ToolHowItWorksCatalog {
             context: "Quick IMU read. Not a vibration analyzer or a ride logger.",
             bullets: [
                 "CoreMotion user acceleration, not a calibrated accelerometer chain.",
-                "A snapshot, not an FFT or an ISO vibration study.",
+                "A snapshot, not a spectrum. Coupled Vibration is the separate relative A/B tool.",
+            ]
+        ),
+        "stillnessWatch": ToolHowItWorks(
+            summary: "While the phone sits still, marks which of |B|, pressure, a mic impulse, or BLE advertisers crossed a session baseline.",
+            context: "A stillness log for a room or a machine bay. Not a ghost detector or a presence meter.",
+            bullets: [
+                "Not a ghost detector, presence meter, EMF meter, Trifield, live-wire finder, or RF/5G meter. DC field only.",
+                "Mic marks are impulses above this session’s noise floor, plus a small relative spectrum. Not recorded.",
+                "BLE marks mean advertiser IDs or RSSI changed. Not occupancy and not people.",
+                "If user acceleration crosses the bump gate, the row is “phone moved” and is not an anomaly.",
+            ]
+        ),
+        "breathFlute": ToolHowItWorks(
+            summary: "A play tool: blowing into the mic gates a local tone. Finger height or a fret sets the pitch.",
+            context: "A toy on the Instruments shelf. Not a meter, tuner, or recorder.",
+            bullets: [
+                "RMS or peak above this phone’s noise floor opens the gate. Quiet air stays silent.",
+                "The tone is generated on device. Audio is not recorded and is not uploaded.",
+                "Same microphone permission as Noise Meter. Not an SLM and not a pitch reference.",
+            ]
+        ),
+        "coupledVibration": ToolHowItWorks(
+            summary: "User-acceleration RMS and a short spectrum while the phone is pressed to a machine or duct, with session A/B compare.",
+            context: "A relative signature of this phone on a surface. Not a vibration analyzer.",
+            bullets: [
+                "Not ISO 10816 and not a calibrated pickup. Units are this phone’s user acceleration.",
+                "Distinct from g-Force Snapshot, which is one gravity and user-g reading without a spectrum.",
+                "Bandwidth stops at the delivered Nyquist (fs/2), not a claimed 0–400 Hz band.",
+                "Frequency × 60 is a relative RPM label for this phone mount, not a tachometer.",
             ]
         ),
         "fieldPosition": ToolHowItWorks(
@@ -669,7 +701,16 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Ziegler–Nichols from Ku/Pu or an FOPDT fit. Bode is a log sweep.",
                 "Educational RK4 / Durand–Kerner approximations — not safety-critical commissioning.",
-                "State-space LQR / Kalman / MPC stays on the website.",
+                "Bang-bang, MPC, ADRC, sliding mode, and learned methods are Control Strategies. This lab stays PID, Bode, and lead. State-space LQR / Kalman design stays on the website.",
+            ]
+        ),
+        "controlStrategies": ToolHowItWorks(
+            summary: "Compares bang-bang, PID, MPC, fuzzy, sliding mode, ADRC, and learned methods, then suggests one from your constraints.",
+            context: "Field → Controls, next to the Control Systems lab. Open the lab when the pick is PID.",
+            bullets: [
+                "Matrix, plant examples, and plots are teaching sketches — not a commissioned loop.",
+                "No cloud training. DRL, PINN, and ML-MPC stay explanatory.",
+                "Does not replace Signal Scaling, PLC Timer, or the PID / Bode lab.",
             ]
         ),
     ]

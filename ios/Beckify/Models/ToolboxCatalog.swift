@@ -28,6 +28,9 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case magnetometer
     case barometer
     case motionSnapshot
+    case stillnessWatch
+    case breathFlute
+    case coupledVibration
     case fieldPosition
     case deviceHealth
     case receptacleSelector
@@ -77,6 +80,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case eBikePackDesigner
     case nickelStrip
     case controlSystems
+    case controlStrategies
 
     var id: String { rawValue }
 }
@@ -441,9 +445,9 @@ enum ToolboxCatalog {
             id: .noiseMeter,
             kind: .sensor,
             title: "Noise Meter",
-            subtitle: "Uncalibrated microphone dBFS. Not an SLM.",
+            subtitle: "Uncalibrated dBFS plus an audible-band spectrum. Not an SLM.",
             symbol: "mic.fill",
-            synonyms: ["noise", "decibel", "db", "spl", "microphone", "sound", "dbfs"]
+            synonyms: ["noise", "decibel", "db", "spl", "microphone", "sound", "dbfs", "fft", "spectrum"]
         ),
         ToolDefinition(
             id: .acousticImager,
@@ -468,9 +472,9 @@ enum ToolboxCatalog {
             id: .magnetometer,
             kind: .sensor,
             title: "Magnetometer",
-            subtitle: "Heading and |B| in µT. Homework / field-ish.",
+            subtitle: "Heading, |B| in µT, and a Mag Sweep delta. DC field only.",
             symbol: "location.north.circle.fill",
-            synonyms: ["compass", "magnetometer", "tesla", "microtesla", "gauss", "magnetic", "heading"]
+            synonyms: ["compass", "magnetometer", "tesla", "microtesla", "gauss", "magnetic", "heading", "mag sweep", "sweep", "steel", "speaker"]
         ),
         ToolDefinition(
             id: .barometer,
@@ -484,9 +488,33 @@ enum ToolboxCatalog {
             id: .motionSnapshot,
             kind: .sensor,
             title: "g-Force Snapshot",
-            subtitle: "Device motion gravity and user acceleration.",
+            subtitle: "Gravity and user acceleration snapshot. Not a machine spectrum.",
             symbol: "gyroscope",
             synonyms: ["g-force", "gforce", "vibration", "accelerometer", "motion", "imu"]
+        ),
+        ToolDefinition(
+            id: .stillnessWatch,
+            kind: .sensor,
+            title: "Stillness Anomaly Watch",
+            subtitle: "Baseline ticks for |B|, pressure, mic impulses, and BLE advertisers. Not a presence meter.",
+            symbol: "dot.radiowaves.left.and.right",
+            synonyms: ["stillness", "anomaly", "baseline", "impulse", "advertisers", "pressure", "watch"]
+        ),
+        ToolDefinition(
+            id: .breathFlute,
+            kind: .sensor,
+            title: "Breath Flute",
+            subtitle: "Play tool. Blow gates a local tone; touch sets pitch. Nothing recorded.",
+            symbol: "music.note",
+            synonyms: ["flute", "breath", "blow", "toy", "play", "pitch", "tone"]
+        ),
+        ToolDefinition(
+            id: .coupledVibration,
+            kind: .sensor,
+            title: "Coupled Vibration",
+            subtitle: "Phone-on-machine user-acceleration RMS and spectrum. Relative A/B only.",
+            symbol: "waveform.path",
+            synonyms: ["vibration", "duct", "machine", "spectrum", "rms", "coupled", "fft"]
         ),
         ToolDefinition(
             id: .fieldPosition,
@@ -882,6 +910,18 @@ enum ToolboxCatalog {
                 "tuner", "g(s)", "overlay",
             ]
         ),
+        ToolDefinition(
+            id: .controlStrategies,
+            kind: .calculator,
+            title: "Control Strategies",
+            subtitle: "Compare bang-bang, PID, MPC, and ADRC — plots and a picker. Not a tuner.",
+            symbol: "arrow.triangle.branch",
+            synonyms: [
+                "control strategies", "bang bang", "bang-bang", "hysteresis", "mpc", "model predictive",
+                "adrc", "sliding mode", "smc", "fuzzy", "anfis", "drl", "reinforcement", "pinn",
+                "gain schedule", "disturbance", "chattering", "selector", "servo strategy",
+            ]
+        ),
     ]
 
     /// Display/grouping colors aligned to `ToolHomeAreaPolicy` shelves.
@@ -902,7 +942,7 @@ enum ToolboxCatalog {
         ],
         .controls: [
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
-            .controlSystems,
+            .controlSystems, .controlStrategies,
         ],
         .homework: [
             .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
@@ -914,8 +954,8 @@ enum ToolboxCatalog {
             .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
         ],
         .sensors: [
-            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .bubbleLevel,
-            .magnetometer, .barometer, .motionSnapshot, .fieldPosition, .deviceHealth,
+            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .breathFlute, .bubbleLevel,
+            .magnetometer, .barometer, .stillnessWatch, .motionSnapshot, .coupledVibration, .fieldPosition, .deviceHealth,
         ],
         .reference: [
             .referenceLibrary, .panelDirectory, .loadWorksheet, .cableSchedule,
@@ -980,13 +1020,16 @@ enum ToolboxCatalog {
         .ledRC: [.ohmsLaw, .timer555, .resistorColor],
         .wifiStatus: [.cellularStatus, .bluetoothScan, .deviceHealth],
         .cellularStatus: [.wifiStatus, .rfLink, .bluetoothScan],
-        .bluetoothScan: [.wifiStatus, .cellularStatus, .deviceHealth],
-        .noiseMeter: [.acousticImager, .deviceHealth],
-        .acousticImager: [.noiseMeter, .deviceHealth],
+        .bluetoothScan: [.stillnessWatch, .wifiStatus, .cellularStatus],
+        .noiseMeter: [.acousticImager, .breathFlute, .deviceHealth],
+        .acousticImager: [.noiseMeter, .breathFlute, .deviceHealth],
+        .breathFlute: [.noiseMeter, .acousticImager],
         .bubbleLevel: [.motionSnapshot, .magnetometer, .solarDesign],
-        .magnetometer: [.bubbleLevel, .solarDesign, .motionSnapshot],
-        .barometer: [.fieldPosition, .deviceHealth],
-        .motionSnapshot: [.bubbleLevel, .magnetometer],
+        .magnetometer: [.stillnessWatch, .bubbleLevel, .motionSnapshot],
+        .barometer: [.stillnessWatch, .fieldPosition, .deviceHealth],
+        .stillnessWatch: [.magnetometer, .barometer, .noiseMeter, .bluetoothScan],
+        .motionSnapshot: [.coupledVibration, .bubbleLevel, .magnetometer],
+        .coupledVibration: [.motionSnapshot, .bubbleLevel],
         .fieldPosition: [.magnetometer, .wifiStatus, .barometer],
         .deviceHealth: [.wifiStatus, .noiseMeter, .acousticImager],
         .reactance: [.powerFactor, .frequencyWave, .ohmsLaw],
@@ -994,9 +1037,9 @@ enum ToolboxCatalog {
         .shortCircuit: [.transformer, .wireAmpacity, .motorFLA],
         .circularMils: [.conductorLength, .wireAmpacity, .voltageDrop],
         .loadFactors: [.panelDirectory, .power, .motorFLA],
-        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems],
+        .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems, .controlStrategies],
         .modbusAddress: [.signalScaling, .plcTimer],
-        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems],
+        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems, .controlStrategies],
         .panelDirectory: [.loadWorksheet, .loadFactors, .wireAmpacity],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],
@@ -1034,6 +1077,7 @@ enum ToolboxCatalog {
         .linearRegulator: [.voltageDivider, .power, .ledRC],
         .instrumentationAmp: [.analogWorkbench, .voltageDivider, .signalScaling],
         .adcDac: [.signalScaling, .numberBase, .analogWorkbench],
-        .controlSystems: [.signalScaling, .plcTimer, .analogWorkbench, .transientCircuit],
+        .controlSystems: [.controlStrategies, .signalScaling, .plcTimer, .analogWorkbench],
+        .controlStrategies: [.controlSystems, .signalScaling, .plcTimer, .analogWorkbench],
     ]
 }

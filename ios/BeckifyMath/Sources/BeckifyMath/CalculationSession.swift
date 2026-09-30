@@ -152,7 +152,8 @@ public enum ToolCalculationPolicy {
             "resistorColor",
             "circularMils",
             "modbusAddress",
-            "numberBase":
+            "numberBase",
+            "controlStrategies":
             return .live
 
         case
@@ -164,7 +165,10 @@ public enum ToolCalculationPolicy {
             "bubbleLevel",
             "magnetometer",
             "barometer",
+            "stillnessWatch",
             "motionSnapshot",
+            "coupledVibration",
+            "breathFlute",
             "fieldPosition",
             "deviceHealth":
             return .sensor
@@ -180,8 +184,8 @@ public enum ToolCalculationPolicy {
         "timer555", "motorFLA", "wireAmpacity", "conductorCost", "conductorLength", "voltageDivider", "seriesParallel",
         "resistorColor", "unitConverter", "frequencyWave", "ledRC", "wifiStatus",
         "cellularStatus",
-        "bluetoothScan", "noiseMeter", "acousticImager", "bubbleLevel", "magnetometer", "barometer",
-        "motionSnapshot", "fieldPosition", "deviceHealth", "receptacleSelector",
+        "bluetoothScan", "noiseMeter", "acousticImager", "breathFlute", "bubbleLevel", "magnetometer", "barometer",
+        "stillnessWatch", "motionSnapshot", "coupledVibration", "fieldPosition", "deviceHealth", "receptacleSelector",
         "reactance", "powerFactor", "shortCircuit", "circularMils", "loadFactors",
         "signalScaling", "modbusAddress", "plcTimer", "panelDirectory",
         "motorSpeed", "rfLink", "phasorDiagram", "numberBase", "batteryBank",
@@ -194,7 +198,7 @@ public enum ToolCalculationPolicy {
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-        "controlSystems",
+        "controlSystems", "controlStrategies",
     ]
 
     public static var liveToolIDs: [String] {

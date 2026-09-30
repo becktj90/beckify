@@ -56,6 +56,23 @@ struct ReceptacleSelectorView: View {
     }
 
     var body: some View {
+        selectorScaffold
+            .onChange(of: selectionResetKey) { _, _ in
+                selectedID = nil
+            }
+            .onChange(of: inputFingerprint) { _, _ in
+                session.markInputsChanged()
+            }
+            .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    /// Clears the picked catalog row when the face identity changes.
+    /// Other fields only mark the session stale via `inputFingerprint`.
+    private var selectionResetKey: String {
+        "\(voltagePreset)|\(phase)|\(ampPreset)|\(family)|\(environment)"
+    }
+
+    private var selectorScaffold: some View {
         ToolScaffold(
             toolID: .receptacleSelector,
             stickyAnswer: sticky,
@@ -63,169 +80,212 @@ struct ReceptacleSelectorView: View {
             disclaimer: .designAidExtra("Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog before you buy or install."),
             isResultStale: session.isStale
         ) {
-            ShowWorkCard(
-                toolID: .receptacleSelector,
-                symbolic: "Match V · Ø · A · poles/wires to a NEMA, IEC 60309, household, or Meltric face",
-                substituted: substituted,
-                meaning: "Best-fit is a configuration match, not a listing. Hazardous is a flag only — not a classified-area stamp. Isolated ground and GFCI are callouts, not a different face."
-            )
+            showWork
+            voltageSection
+            phaseSection
+            currentSection
+            environmentSection
+            familySection
+            neutralSection
+            optionToggles
+            frequencySection
+            actionBar
+            validationMessage
+            committedResults
+        }
+    }
+
+    private var showWork: some View {
+        ShowWorkCard(
+            toolID: .receptacleSelector,
+            symbolic: "Match V · Ø · A · poles/wires to a NEMA, IEC 60309, household, or Meltric face",
+            substituted: substituted,
+            meaning: "Best-fit is a configuration match, not a listing. Hazardous is a flag only — not a classified-area stamp. Isolated ground and GFCI are callouts, not a different face."
+        )
+    }
+
+    private var voltageSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
             MenuField(title: "Voltage", selection: $voltagePreset, options: ReceptacleVoltagePreset.allCases) {
                 $0 == .custom ? "Custom" : "\($0.rawValue) V"
             }
             if voltagePreset == .custom {
                 NumberField(title: "Custom voltage", unit: "V", text: $customVolts)
             }
+        }
+    }
 
-            Picker("Phase", selection: $phase) {
-                ForEach(ReceptaclePhaseKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
-            }
-            .segmentedControlStyle()
+    private var phaseSection: some View {
+        Picker("Phase", selection: $phase) {
+            ForEach(ReceptaclePhaseKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
+        }
+        .segmentedControlStyle()
+    }
 
+    private var currentSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
             MenuField(title: "Current / ampacity", selection: $ampPreset, options: ReceptacleAmpPreset.allCases) {
                 $0 == .custom ? "Custom" : "\($0.rawValue) A"
             }
             if ampPreset == .custom {
                 NumberField(title: "Custom current", unit: "A", text: $customAmps)
             }
+        }
+    }
 
+    private var environmentSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
             MenuField(title: "Location / environment", selection: $environment, options: ReceptacleEnvironment.allCases) { $0.displayName }
             if environment == .hazardous {
                 Text("See listing / not a classified-area stamp. This tool will not pick a Class/Division or Zone fitting.")
                     .font(.caption)
                     .foregroundStyle(Theme.warn)
             }
+        }
+    }
 
-            MenuField(title: "Device family", selection: $family, options: ReceptacleFamilyFilter.allCases) { $0.displayName }
+    private var familySection: some View {
+        MenuField(title: "Device family", selection: $family, options: ReceptacleFamilyFilter.allCases) { $0.displayName }
+    }
 
-            Picker("Neutral", selection: $neutral) {
-                ForEach(NeutralChoice.allCases, id: \.self) { Text($0.displayName).tag($0) }
-            }
-            .segmentedControlStyle()
+    private var neutralSection: some View {
+        Picker("Neutral", selection: $neutral) {
+            ForEach(NeutralChoice.allCases, id: \.self) { Text($0.displayName).tag($0) }
+        }
+        .segmentedControlStyle()
+    }
 
+    private var optionToggles: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
             Toggle("Isolated ground", isOn: $isolatedGround)
                 .tint(Theme.accent)
                 .frame(minHeight: Theme.touchTarget)
             Toggle("Call out GFCI where it applies", isOn: $preferGFCI)
                 .tint(Theme.accent)
                 .frame(minHeight: Theme.touchTarget)
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("FREQUENCY")
-                    .font(.caption.weight(.semibold))
-                    .tracking(0.6)
-                    .foregroundStyle(Theme.muted)
-                Picker("Hz", selection: $frequencyHz) {
-                    Text("60 Hz").tag(60.0)
-                    Text("50 Hz").tag(50.0)
-                }
-                .segmentedControlStyle()
-                Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA, household, and Meltric faces do not change.")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.muted)
+    private var frequencySection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("FREQUENCY")
+                .font(.caption.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(Theme.muted)
+            Picker("Hz", selection: $frequencyHz) {
+                Text("60 Hz").tag(60.0)
+                Text("50 Hz").tag(50.0)
             }
+            .segmentedControlStyle()
+            Text("50 vs 60 Hz only changes IEC clock rows (e.g. 277 V 1P+N+E is 5h at 60 Hz). NEMA, household, and Meltric faces do not change.")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
+        }
+    }
 
-            CalculatorActionBar(
-                onCalculate: calculate,
-                onReset: reset,
-                onExample: {
-                    voltagePreset = .v120
-                    phase = .singlePhase2Wire
-                    ampPreset = .a15
-                    environment = .indoorDry
-                    family = .any
-                    neutral = .auto
-                    isolatedGround = false
-                    preferGFCI = false
-                    frequencyHz = 60
-                    selectedID = nil
-                    session.prepareForNewInputs()
-                },
-                exampleTitle: "120 V 1Ø 15 A indoor"
-            )
+    private var actionBar: some View {
+        CalculatorActionBar(
+            onCalculate: calculate,
+            onReset: reset,
+            onExample: applyExample,
+            exampleTitle: "120 V 1Ø 15 A indoor"
+        )
+    }
 
-            if let error = session.lastValidationError ?? session.error {
-                ErrorText(message: error.message)
+    @ViewBuilder
+    private var validationMessage: some View {
+        if let error = session.lastValidationError ?? session.error {
+            ErrorText(message: error.message)
+        }
+    }
+
+    @ViewBuilder
+    private var committedResults: some View {
+        if let committed = session.displayedResult {
+            committedResultStack(committed)
+        }
+    }
+
+    private func committedResultStack(_ committed: CommittedSelection) -> some View {
+        let list = committed.matches
+        let shown = selected(from: list)
+        let grounding = equipmentGround(for: committed)
+        return VStack(alignment: .leading, spacing: Theme.Space.md) {
+            VStack(alignment: .leading, spacing: Theme.Space.md) {
+                ReceptacleFaceCard(match: shown)
+                bestFitCard(shown)
+                EquipmentGroundingCard(recommendation: grounding)
+                reasonsCard(shown)
+                if !shown.caveats.isEmpty {
+                    notesCard(shown)
+                }
+                catalogCard(shown)
+                rankedList(list)
             }
-
-            if let committed = session.displayedResult {
-                let list = committed.matches
-                let shown = selected(from: list)
-                Group {
-                    ReceptacleFaceCard(match: shown)
-                    ResultCard(title: "Best fit", copyText: copyText) {
-                        ResultRow(label: "Configuration", value: shown.config.code, emphasis: true, tone: Theme.good)
-                        ResultRow(label: "Family", value: shown.config.family.displayName)
-                        ResultRow(label: "Voltage window", value: shown.config.voltageLabel)
-                        ResultRow(label: "Poles / wires", value: shown.config.polesWiresLabel)
-                        ResultRow(label: "Device rating", value: Format.amps(shown.config.amps))
-                        if let hour = shown.config.iecEarthHour {
-                            ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
-                        }
-                    }
-                    EquipmentGroundingCard(
-                        recommendation: EquipmentGrounding.recommend(
-                            amps: committed.amps,
-                            material: .copper,
-                            context: EquipmentGroundingContext.from(receptacle: committed.phase),
-                            ampsAreOCPDRating: true,
-                            extraNote: "Stand-in is the amp rating you entered, often the breaker on a dedicated receptacle. Use the real OCPD if it differs."
-                        )
-                    )
-                    ResultCard(title: "Why it fits") {
-                        ForEach(shown.reasons, id: \.self) { reason in
-                            Text("• \(reason)")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.foreground)
-                                .padding(.vertical, 2)
-                        }
-                    }
-                    if !shown.caveats.isEmpty {
-                        ResultCard(title: "Notes") {
-                            ForEach(shown.caveats, id: \.self) { note in
-                                Text("• \(note)")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.warn)
-                                    .padding(.vertical, 2)
-                            }
-                        }
-                    }
-                    catalogCard(shown)
-                    rankedList(list)
-                }
-                .opacity(session.isStale ? 0.72 : 1)
-                SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
-                    save(committed)
-                }
+            .opacity(session.isStale ? 0.72 : 1)
+            SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
+                save(committed)
             }
         }
-        .onChange(of: voltagePreset) { _, _ in
-            selectedID = nil
-            session.markInputsChanged()
+    }
+
+    private func equipmentGround(for committed: CommittedSelection) -> EquipmentGroundingRecommendation? {
+        EquipmentGrounding.recommend(
+            amps: committed.amps,
+            material: .copper,
+            context: EquipmentGroundingContext.from(receptacle: committed.phase),
+            ampsAreOCPDRating: true,
+            extraNote: "Stand-in is the amp rating you entered, often the breaker on a dedicated receptacle. Use the real OCPD if it differs."
+        )
+    }
+
+    private func bestFitCard(_ shown: ReceptacleMatch) -> some View {
+        ResultCard(title: "Best fit", copyText: copyText) {
+            ResultRow(label: "Configuration", value: shown.config.code, emphasis: true, tone: Theme.good)
+            ResultRow(label: "Family", value: shown.config.family.displayName)
+            ResultRow(label: "Voltage window", value: shown.config.voltageLabel)
+            ResultRow(label: "Poles / wires", value: shown.config.polesWiresLabel)
+            ResultRow(label: "Device rating", value: Format.amps(shown.config.amps))
+            if let hour = shown.config.iecEarthHour {
+                ResultRow(label: "IEC earth", value: "\(hour)h · \(shown.config.iecColor ?? "")")
+            }
         }
-        .onChange(of: phase) { _, _ in
-            selectedID = nil
-            session.markInputsChanged()
+    }
+
+    private func reasonsCard(_ shown: ReceptacleMatch) -> some View {
+        ResultCard(title: "Why it fits") {
+            ForEach(shown.reasons, id: \.self) { reason in
+                Text("• \(reason)")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.foreground)
+                    .padding(.vertical, 2)
+            }
         }
-        .onChange(of: ampPreset) { _, _ in
-            selectedID = nil
-            session.markInputsChanged()
+    }
+
+    private func notesCard(_ shown: ReceptacleMatch) -> some View {
+        ResultCard(title: "Notes") {
+            ForEach(shown.caveats, id: \.self) { note in
+                Text("• \(note)")
+                    .font(.caption)
+                    .foregroundStyle(Theme.warn)
+                    .padding(.vertical, 2)
+            }
         }
-        .onChange(of: family) { _, _ in
-            selectedID = nil
-            session.markInputsChanged()
-        }
-        .onChange(of: environment) { _, _ in
-            selectedID = nil
-            session.markInputsChanged()
-        }
-        .onChange(of: isolatedGround) { _, _ in session.markInputsChanged() }
-        .onChange(of: preferGFCI) { _, _ in session.markInputsChanged() }
-        .onChange(of: neutral) { _, _ in session.markInputsChanged() }
-        .onChange(of: frequencyHz) { _, _ in session.markInputsChanged() }
-        .onChange(of: customVolts) { _, _ in session.markInputsChanged() }
-        .onChange(of: customAmps) { _, _ in session.markInputsChanged() }
-        .onChange(of: inputFingerprint) { _, _ in session.markInputsChanged() }
-        .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func applyExample() {
+        voltagePreset = .v120
+        phase = .singlePhase2Wire
+        ampPreset = .a15
+        environment = .indoorDry
+        family = .any
+        neutral = .auto
+        isolatedGround = false
+        preferGFCI = false
+        frequencyHz = 60
+        selectedID = nil
+        session.prepareForNewInputs()
     }
 
     private func calculate() {
@@ -455,68 +515,79 @@ struct ReceptacleFaceView: View {
             }
 
             if diagram.kind == .iecClock {
-                for h in 0..<12 {
-                    let ang = Double(h) * .pi / 6 - .pi / 2
-                    let inner = r * 0.88
-                    let outer = r * 0.96
-                    var tick = Path()
-                    tick.move(to: CGPoint(x: cx + inner * cos(ang), y: cy + inner * sin(ang)))
-                    tick.addLine(to: CGPoint(x: cx + outer * cos(ang), y: cy + outer * sin(ang)))
-                    context.stroke(tick, with: .color(Theme.muted.opacity(h == (diagram.earthHour ?? -1) % 12 ? 1 : 0.35)), lineWidth: h % 3 == 0 ? 2 : 1)
-                }
-                if let hour = diagram.earthHour {
-                    let label = Text("\(hour)h")
-                        .font(.caption2.monospacedDigit().weight(.bold))
-                        .foregroundColor(Theme.accent)
-                    context.draw(label, at: CGPoint(x: cx, y: cy - r - 14))
-                }
+                drawClock(context: &context, cx: cx, cy: cy, radius: r)
             }
 
             for pin in diagram.pins {
-                let px = cx + pin.x * r
-                let py = cy - pin.y * r
-                let color = Self.color(for: pin.kind)
-                switch pin.shape {
-                case .slotVertical:
-                    let rect = CGRect(x: px - 6, y: py - 18, width: 12, height: 36)
-                    context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color))
-                case .slotHorizontal:
-                    let rect = CGRect(x: px - 18, y: py - 6, width: 36, height: 12)
-                    context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color))
-                case .slotT:
-                    let v = CGRect(x: px - 6, y: py - 18, width: 12, height: 36)
-                    let h = CGRect(x: px - 18, y: py - 6, width: 36, height: 12)
-                    context.fill(Path(roundedRect: v, cornerRadius: 3), with: .color(color))
-                    context.fill(Path(roundedRect: h, cornerRadius: 3), with: .color(color))
-                case .slotSlantedLeft, .slotSlantedRight:
-                    let slant: CGFloat = pin.shape == .slotSlantedLeft ? 0.45 : -0.45
-                    var slot = Path(roundedRect: CGRect(x: -6, y: -18, width: 12, height: 36), cornerRadius: 3)
-                    slot = slot.applying(CGAffineTransform(a: 1, b: slant, c: 0, d: 1, tx: px, ty: py))
-                    context.fill(slot, with: .color(color))
-                case .slotRect:
-                    let rect = CGRect(x: px - 7, y: py - 16, width: 14, height: 32)
-                    context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
-                case .earthClip:
-                    let rect = CGRect(x: px - 16, y: py - 4, width: 32, height: 8)
-                    context.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(color))
-                case .uGround:
-                    var u = Path()
-                    u.addArc(center: CGPoint(x: px, y: py), radius: 11, startAngle: .degrees(20), endAngle: .degrees(160), clockwise: false)
-                    context.stroke(u, with: .color(color), style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                case .round:
-                    context.fill(Path(ellipseIn: CGRect(x: px - 9, y: py - 9, width: 18, height: 18)), with: .color(color.opacity(0.85)))
-                    context.stroke(Path(ellipseIn: CGRect(x: px - 9, y: py - 9, width: 18, height: 18)), with: .color(color), lineWidth: 1.5)
-                case .roundLarge:
-                    context.fill(Path(ellipseIn: CGRect(x: px - 12, y: py - 12, width: 24, height: 24)), with: .color(color.opacity(0.9)))
-                    context.stroke(Path(ellipseIn: CGRect(x: px - 12, y: py - 12, width: 24, height: 24)), with: .color(color), lineWidth: 2)
-                }
-                let label = Text(pin.label)
-                    .font(.caption2.weight(.bold))
-                    .foregroundColor(Theme.foreground)
-                context.draw(label, at: CGPoint(x: px, y: py + 22))
+                drawPin(pin, context: &context, cx: cx, cy: cy, radius: r)
             }
         }
         .accessibilityLabel(diagram.caption)
+    }
+
+    private func drawClock(context: inout GraphicsContext, cx: CGFloat, cy: CGFloat, radius: CGFloat) {
+        let earth = (diagram.earthHour ?? -1) % 12
+        for h in 0..<12 {
+            let ang = Double(h) * .pi / 6 - .pi / 2
+            let inner = radius * 0.88
+            let outer = radius * 0.96
+            var tick = Path()
+            tick.move(to: CGPoint(x: cx + inner * cos(ang), y: cy + inner * sin(ang)))
+            tick.addLine(to: CGPoint(x: cx + outer * cos(ang), y: cy + outer * sin(ang)))
+            let opacity = h == earth ? 1.0 : 0.35
+            let width: CGFloat = h % 3 == 0 ? 2 : 1
+            context.stroke(tick, with: .color(Theme.muted.opacity(opacity)), lineWidth: width)
+        }
+        if let hour = diagram.earthHour {
+            let label = Text("\(hour)h")
+                .font(.caption2.monospacedDigit().weight(.bold))
+                .foregroundColor(Theme.accent)
+            context.draw(label, at: CGPoint(x: cx, y: cy - radius - 14))
+        }
+    }
+
+    private func drawPin(_ pin: FacePin, context: inout GraphicsContext, cx: CGFloat, cy: CGFloat, radius: CGFloat) {
+        let px = cx + pin.x * radius
+        let py = cy - pin.y * radius
+        let color = Self.color(for: pin.kind)
+        switch pin.shape {
+        case .slotVertical:
+            let rect = CGRect(x: px - 6, y: py - 18, width: 12, height: 36)
+            context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color))
+        case .slotHorizontal:
+            let rect = CGRect(x: px - 18, y: py - 6, width: 36, height: 12)
+            context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color))
+        case .slotT:
+            let v = CGRect(x: px - 6, y: py - 18, width: 12, height: 36)
+            let h = CGRect(x: px - 18, y: py - 6, width: 36, height: 12)
+            context.fill(Path(roundedRect: v, cornerRadius: 3), with: .color(color))
+            context.fill(Path(roundedRect: h, cornerRadius: 3), with: .color(color))
+        case .slotSlantedLeft, .slotSlantedRight:
+            let slant: CGFloat = pin.shape == .slotSlantedLeft ? 0.45 : -0.45
+            var slot = Path(roundedRect: CGRect(x: -6, y: -18, width: 12, height: 36), cornerRadius: 3)
+            slot = slot.applying(CGAffineTransform(a: 1, b: slant, c: 0, d: 1, tx: px, ty: py))
+            context.fill(slot, with: .color(color))
+        case .slotRect:
+            let rect = CGRect(x: px - 7, y: py - 16, width: 14, height: 32)
+            context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
+        case .earthClip:
+            let rect = CGRect(x: px - 16, y: py - 4, width: 32, height: 8)
+            context.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(color))
+        case .uGround:
+            var u = Path()
+            u.addArc(center: CGPoint(x: px, y: py), radius: 11, startAngle: .degrees(20), endAngle: .degrees(160), clockwise: false)
+            context.stroke(u, with: .color(color), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+        case .round:
+            context.fill(Path(ellipseIn: CGRect(x: px - 9, y: py - 9, width: 18, height: 18)), with: .color(color.opacity(0.85)))
+            context.stroke(Path(ellipseIn: CGRect(x: px - 9, y: py - 9, width: 18, height: 18)), with: .color(color), lineWidth: 1.5)
+        case .roundLarge:
+            context.fill(Path(ellipseIn: CGRect(x: px - 12, y: py - 12, width: 24, height: 24)), with: .color(color.opacity(0.9)))
+            context.stroke(Path(ellipseIn: CGRect(x: px - 12, y: py - 12, width: 24, height: 24)), with: .color(color), lineWidth: 2)
+        }
+        let label = Text(pin.label)
+            .font(.caption2.weight(.bold))
+            .foregroundColor(Theme.foreground)
+        context.draw(label, at: CGPoint(x: px, y: py + 22))
     }
 
     static func color(for kind: ContactKind) -> Color {

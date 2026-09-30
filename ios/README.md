@@ -76,6 +76,7 @@ ios/
 - Signal Scaling, Modbus Address, PLC Timer Preset
 - E-Bus / Rack Current
 - Control Systems (Field → Controls hub: plant library + custom G(s), P→PI→PID step with Ziegler–Nichols and Open/P/PI/PID overlay, Bode margins, lead compensator; educational — not commissioning)
+- Control Strategies (same shelf: matrix of bang-bang, PID / gain-scheduled PID, MPC, fuzzy, sliding mode, DRL, ADRC, and NN / PINN / ML-MPC; linear vs nonlinear, SISO vs MIMO, <1 ms vs >1 s; HVAC / drives / robotics / flight / BMS examples; constraint picker. Teaching plots only — not a tuner and not a trained policy. PID / Bode stays in Control Systems)
 
 ## Toolkit (basics, bench / homework, reference)
 
@@ -119,19 +120,22 @@ ios/
 - Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
 - Cable Schedule Generator (sequential IDs + CSV copy)
 
-Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, Analog Design Workbench Bode magnitude, and Control Systems step / PID overlay / Bode / lead. This is not a new tool list.
+Selected existing calculators show **engineer plots** (Swift Charts) and can **Share / save a PNG** through the system share sheet. Examples already in this catalog: Ohm's Law load line, Frequency / LC waveform, LED / RC charge–discharge, Reactance & Resonance, Transient Circuits, Semiconductor I-V, Phasor Diagram, 555 Timer monostable capacitor charge, Analog Design Workbench Bode magnitude, Control Systems step / PID overlay / Bode / lead, and Control Strategies step / hysteresis / sliding-mode / cost sketches. This is not a new tool list.
 
 ## Instruments (Field subsection — public APIs only)
 
 - Wi-Fi Path leads with **Online / Captive** (HTTP GET to Apple’s `captive.apple.com/hotspot-detect.html` — Success means no captive splash). Then Apple `signalStrength` 0…1 as percent/bars when `NEHotspotNetwork` returns it, optional local IPv4 from the probe’s Network `localEndpoint`, coverage heatmap, and TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. Raw `NWPathMonitor` chrome (interface names like `en0` / `pdp_ip0`, expensive/constrained) sits behind a collapsed **Advanced path** disclosure. iOS does not expose Wi-Fi RSSI/dBm to third-party apps; this tool does not invent dBm. RTT is TCP connect time — not ICMP ping. A LAN/gateway target may prompt for Local Network. Online / Captive is a public-host HTTP probe and does not need Local Network. It is not the catalog **Look Check** photo tool.
 - Cellular Path reuses the same **Online / Captive** probe, then `CTTelephonyNetworkInfo` carrier / MCC / MNC / ISO / RAT per service, `dataServiceIdentifier`, Network default + cellular path flags (collapsed under Advanced path), `CTCellularData`, and optional TCP **link quality (RTT)** while on cellular. Color gauges show **radio generation** (2G…5G from RAT) and **RTT milliseconds** — not RSRP/dBm. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps; this tool does not invent them. CTCarrier is deprecated as of iOS 16 with no public replacement.
 - BLE Scanner (CoreBluetooth): advertised name, identifier, RSSI, SIG manufacturer company ID, connectable, service-data UUIDs, kind hints, live radar, plus RF activity index, room mix, and device-ID churn (unique IDs — not occupancy). Device count ≠ people.
-- Noise Meter (microphone dBFS, uncalibrated)
-- Acoustic Imager (Field → Instruments, next to Noise Meter). On-device microphone FFT: relative level, audible spectrum, and recent time activity. Not a Fluke acoustic camera, not ultrasonic beamforming, and not a leak locator. Audio is processed on this device, is not recorded, and is not uploaded. Same microphone usage string as Noise Meter.
+- Noise Meter (microphone dBFS, uncalibrated, plus a live audible FFT). Same tap as Acoustic Imager. Shows fs, Nyquist, and a rough relative harmonic note — not THD, not dB SPL, not a nameplate. Freeze holds the plot. Share saves a PNG with a timestamp, not audio and not GPS.
+- Acoustic Imager (Field → Instruments, next to Noise Meter). On-device microphone FFT: relative level, audible spectrum, and recent time activity. Not a Fluke acoustic camera, not ultrasonic beamforming, and not a leak locator. Audio is processed on this device, is not recorded, and is not uploaded. Same microphone usage string and the same tap as Noise Meter.
+- Breath Flute (play tool on Instruments, not on the Quick row). Blow gates a local tone; touch or a fret sets pitch. Tiny relative spectrum. Nothing recorded or uploaded. Same microphone usage string as Noise Meter.
 - Bubble Level / plumb (CoreMotion)
-- Magnetometer (heading, µT)
+- Magnetometer (heading, µT) with Mag Sweep: |B| minus a captured baseline, peak hold, and a sparkline. A slow field-variation spectrum is DC |B| only — not AC EMF and not a 50/60 Hz meter. Phone magnets dominate.
 - Barometer / relative altitude
+- Stillness Anomaly Watch: baseline ticks for DC |B|, pressure, mic impulses, and BLE advertiser changes, plus a timeline. “Phone moved” is a bump gate, not an anomaly. Not a ghost detector, presence meter, EMF meter, or people counter. Audio is not recorded.
 - g-Force snapshot
+- Coupled Vibration: user-acceleration RMS and a spectrum up to the delivered Nyquist (not a claimed 0–400 Hz band), peak frequency, relative RPM (f × 60, phone-mounted), and session A/B. Not ISO 10816, not a calibrated pickup, not a tachometer, and not a bearing-fault tool. Distinct from g-Force Snapshot.
 - Position (location requested in-tool, not at launch)
 - Device Health (charge, Low Power Mode, thermal meaning, free storage, model / iOS, uptime — not Battery Health %)
 
@@ -202,9 +206,22 @@ Refresh the packed cabinet after arcade changes:
 python3 ios/scripts/pack_kestrelheavy_game.py
 ```
 
-### Archive (signed, on a Mac; upload still outstanding)
+### Archive → TestFlight (scheme Beckify only)
 
-**Xcode Cloud / Archive-iOS must pin scheme Beckify.** Archiving **LookCheck** or **KestrelHeavy** ships `com.beckify.lookcheck` or `com.beckify.kestrelheavy`, not Toolbox (`com.beckify.toolbox`), and will fail App Store Connect prepare for the Toolbox record. Each product has its own Archive workflow — do not share one.
+Push to `main`. Xcode Cloud then starts both Toolbox workflows:
+
+1. `Beckify | Beckify | Build - iOS`
+2. `Beckify | Beckify | Archive - iOS`
+
+**Archive - iOS** is the TestFlight path. It must archive scheme **Beckify** (`com.beckify.toolbox`, App ID `6807908745`). A green archive is what App Store Connect can process for TestFlight. This repo does not submit that build.
+
+Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`) or **KestrelHeavy** (`com.beckify.kestrelheavy`). Those products keep their own Archive schemes and bundle IDs.
+
+Connect version **1.0.1** must already exist (the **1.0** train is closed). Repo `CURRENT_PROJECT_VERSION` is **154**. If TestFlight or a previous Cloud upload is already **≥154**, bump that number before the next push.
+
+#### Mac fallback
+
+On a Mac, open `ios/Beckify.xcodeproj`, select scheme **Beckify**, confirm Team **9TR6R5LV8M** (already `DEVELOPMENT_TEAM` on the Beckify target), then **Product → Archive**. Distribute that archive to App Store Connect from Organizer. Or:
 
 ```bash
 cd ios
@@ -214,6 +231,7 @@ xcodebuild \
   -configuration Release \
   -destination 'generic/platform=iOS' \
   -archivePath build/Beckify.xcarchive \
+  DEVELOPMENT_TEAM=9TR6R5LV8M \
   archive
 
 xcodebuild \
@@ -223,11 +241,13 @@ xcodebuild \
   -exportPath build/export
 ```
 
-`ExportOptions.plist` is not in this repo. Team prefix `9TR6R5LV8M` is already in the Xcode project. Create an export plist on a Mac if you export from `xcodebuild`. See `docs/APP_STORE.md`.
+`ExportOptions.plist` is not in this repo. Create one on the Mac only if you export with `xcodebuild -exportArchive` instead of Organizer. See `docs/APP_STORE.md`.
+
+This Linux checkout did not run `xcodebuild`, sign a binary, install the app on a device, or upload to TestFlight. Do not treat a docs or source change as a green Archive.
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Next Connect version is **1.0.1**, build **152** (repo `CURRENT_PROJECT_VERSION` is **152**). Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥152**, bump again before the next Archive. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload 152.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Next Connect version is **1.0.1**, build **154** (repo `CURRENT_PROJECT_VERSION` is **154**). Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥154**, bump again before the next Archive. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload 154.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac
