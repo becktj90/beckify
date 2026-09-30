@@ -154,7 +154,8 @@ public enum ToolCalculationPolicy {
             "modbusAddress",
             "numberBase",
             "controlStrategies",
-            "electronicsLab":
+            "electronicsLab",
+            "phasorImpedance":
             return .live
 
         case
@@ -200,7 +201,7 @@ public enum ToolCalculationPolicy {
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-        "controlSystems", "controlStrategies", "electronicsLab", "ul508aPanelLab",
+        "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
     ]
 
     public static var liveToolIDs: [String] {

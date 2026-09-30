@@ -750,6 +750,16 @@ public enum ToolHowItWorksCatalog {
                 "Bang-bang, MPC, ADRC, sliding mode, and learned methods are Control Strategies. This lab stays PID, Bode, and lead. State-space LQR / Kalman design stays on the website.",
             ]
         ),
+        "phasorImpedance": ToolHowItWorks(
+            summary: "Sinusoids, peak phasors in rectangular, polar, and exponential form, plus R, L, and C laws and Z = R + jX.",
+            context: "Field → Controls. One frequency, ideal parts, waveforms, and the R–X plane.",
+            bullets: [
+                "Vm cos(ωt+φ) is the peak phasor Vm∠φ. A sine is that phasor minus 90°.",
+                "Inductor: voltage leads current by 90°, short at DC, open at high frequency. Capacitor does the opposite.",
+                "X > 0 lags (current behind voltage). X < 0 leads. Y = 1/Z = G + jB.",
+                "Ideal lumped parts at one frequency. Not SPICE and not a measured impedance.",
+            ]
+        ),
         "electronicsLab": ToolHowItWorks(
             summary: "College schematics with node voltages, branch currents, and a value you can solve for.",
             context: "Field → Controls. Passive, diodes, transistors, op-amps, 555, display, and matching.",

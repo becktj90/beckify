@@ -80,6 +80,7 @@
 		BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008D /* ControlSystemsLabView.swift */; };
 		BECF000000000000000000AF /* ControlStrategiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000AE /* ControlStrategiesView.swift */; };
 		BECF000000000000000000C7 /* ElectronicsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000C6 /* ElectronicsLabView.swift */; };
+		BECF000000000000000000E9 /* PhasorImpedanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E8 /* PhasorImpedanceView.swift */; };
 		BECF000000000000000000E5 /* UL508APanelLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E4 /* UL508APanelLabView.swift */; };
 		BECF000000000000000000D7 /* UL508ASCCRWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000D6 /* UL508ASCCRWizardView.swift */; };
 		BECF000000000000000000D9 /* UL508AFeederBranchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000D8 /* UL508AFeederBranchViews.swift */; };
@@ -192,6 +193,7 @@
 		BECF0000000000000000008D /* ControlSystemsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSystemsLabView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000AE /* ControlStrategiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlStrategiesView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000C6 /* ElectronicsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicsLabView.swift; sourceTree = "<group>"; };
+		BECF000000000000000000E8 /* PhasorImpedanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhasorImpedanceView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000E4 /* UL508APanelLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508APanelLabView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000D6 /* UL508ASCCRWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508ASCCRWizardView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000D8 /* UL508AFeederBranchViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508AFeederBranchViews.swift; sourceTree = "<group>"; };
@@ -447,6 +449,7 @@
 				BECF0000000000000000008D /* ControlSystemsLabView.swift */,
 				BECF000000000000000000AE /* ControlStrategiesView.swift */,
 				BECF000000000000000000C6 /* ElectronicsLabView.swift */,
+				BECF000000000000000000E8 /* PhasorImpedanceView.swift */,
 				BECF000000000000000000E4 /* UL508APanelLabView.swift */,
 				BECF000000000000000000D6 /* UL508ASCCRWizardView.swift */,
 				BECF000000000000000000D8 /* UL508AFeederBranchViews.swift */,
@@ -735,6 +738,7 @@
 				BECF0000000000000000008E /* ControlSystemsLabView.swift in Sources */,
 				BECF000000000000000000AF /* ControlStrategiesView.swift in Sources */,
 				BECF000000000000000000C7 /* ElectronicsLabView.swift in Sources */,
+				BECF000000000000000000E9 /* PhasorImpedanceView.swift in Sources */,
 				BECF000000000000000000E5 /* UL508APanelLabView.swift in Sources */,
 				BECF000000000000000000D7 /* UL508ASCCRWizardView.swift in Sources */,
 				BECF000000000000000000D9 /* UL508AFeederBranchViews.swift in Sources */,
@@ -878,7 +882,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 173;
+				CURRENT_PROJECT_VERSION = 174;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -921,7 +925,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 173;
+				CURRENT_PROJECT_VERSION = 174;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

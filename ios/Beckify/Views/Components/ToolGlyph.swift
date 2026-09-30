@@ -421,6 +421,7 @@ extension GlyphKind {
         case .controlSystems: return .controlSystems
         case .controlStrategies: return .controlStrategies
         case .electronicsLab: return .electronicsLab
+        case .phasorImpedance: return .phasorImpedance
         case .ul508aPanelLab: return .ul508aPanelLab
         }
     }
@@ -511,6 +512,7 @@ enum GlyphKind {
     case controlSystems
     case controlStrategies
     case electronicsLab
+    case phasorImpedance
     case ul508aPanelLab
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
@@ -551,6 +553,7 @@ enum GlyphKind {
         case .controlSystems: return Self.controlSystems(rect)
         case .controlStrategies: return Self.controlStrategies(rect)
         case .electronicsLab: return Self.electronicsLab(rect)
+        case .phasorImpedance: return Self.phasorImpedance(rect)
         case .ul508aPanelLab: return Self.ul508aPanelLab(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
@@ -1208,6 +1211,29 @@ enum GlyphKind {
         Glyph.line(&path, fork, CGPoint(x: r.maxX - r.width * 0.16, y: r.minY + r.height * 0.16))
         let node = r.width * 0.12
         path.addEllipse(in: CGRect(x: fork.x - node / 2, y: fork.y - node / 2, width: node, height: node))
+        return .stroke(path)
+    }
+
+    /// Sine wave with one phasor arrow — open mark.
+    private static func phasorImpedance(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let y = r.midY + r.height * 0.08
+        path.move(to: CGPoint(x: r.minX + r.width * 0.06, y: y))
+        path.addQuadCurve(
+            to: CGPoint(x: r.midX, y: y),
+            control: CGPoint(x: r.minX + r.width * 0.28, y: r.minY + r.height * 0.18)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: r.maxX - r.width * 0.06, y: y),
+            control: CGPoint(x: r.midX + r.width * 0.22, y: r.maxY - r.height * 0.08)
+        )
+        let origin = CGPoint(x: r.minX + r.width * 0.22, y: r.maxY - r.height * 0.22)
+        Glyph.arrow(
+            &path,
+            from: origin,
+            to: CGPoint(x: r.minX + r.width * 0.62, y: r.minY + r.height * 0.16),
+            head: r.width * 0.11
+        )
         return .stroke(path)
     }
 
