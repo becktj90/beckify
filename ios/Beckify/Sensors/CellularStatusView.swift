@@ -982,6 +982,19 @@ struct CellularNetworkGauges: View {
     var rttMeasuring: Bool
 
     var body: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            PlotFullscreenControl(title: "Cellular gauges", plotName: "cellular gauges") {
+                gauges
+                Text("Generation is the reported radio access technology, not RSRP. The other gauge is TCP connect time in milliseconds, not dBm.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            gauges
+        }
+    }
+
+    private var gauges: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .top, spacing: 18) {
                 generationGauge

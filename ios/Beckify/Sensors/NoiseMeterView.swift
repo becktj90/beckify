@@ -46,7 +46,12 @@ struct NoiseMeterView: View {
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, 6)
-                TraceSparkline(samples: levelTrace, accessibilityLabel: "Recent microphone level")
+                TraceSparkline(
+                    samples: levelTrace,
+                    accessibilityLabel: "Recent microphone level. Amplitude in dBFS versus time.",
+                    showsDBFSTimeAxes: true,
+                    fullscreenTitle: "Level"
+                )
             }
             DiagramCard(
                 title: frozenBands == nil ? "Spectrum" : "Spectrum frozen",

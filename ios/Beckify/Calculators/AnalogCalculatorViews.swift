@@ -48,8 +48,8 @@ private struct BodeMagnitudeChart: View {
                 series: [
                     EngineerSeries(name: "|H|", points: points, color: Theme.chartPrimary, fills: true),
                 ],
-                xLabel: "Hz",
-                yLabel: "dB",
+                xLabel: "Frequency (Hz)",
+                yLabel: "Magnitude (dB)",
                 xGuides: [
                     EngineerGuide(value: cornerHz, label: "fc", axis: .x),
                 ],

@@ -440,8 +440,8 @@ struct ControlSystemsLabView: View {
                             EngineerSeries(name: "Open loop", points: open, color: Theme.chartSecondary, fills: false),
                             EngineerSeries(name: result.mode == .open ? "Plant" : "Closed loop", points: closed, color: Theme.chartPrimary, fills: true),
                         ],
-                        xLabel: "s",
-                        yLabel: "y",
+                        xLabel: "Time (s)",
+                        yLabel: "Response",
                         yGuides: [EngineerGuide(value: 1, label: "1", axis: .y)],
                         height: 220
                     )
@@ -470,8 +470,8 @@ struct ControlSystemsLabView: View {
             ) {
                 EngineerLinePlot(
                     series: series,
-                    xLabel: "s",
-                    yLabel: "y",
+                    xLabel: "Time (s)",
+                    yLabel: "Response",
                     yGuides: [EngineerGuide(value: 1, label: "1", axis: .y)],
                     height: 240
                 )
@@ -507,8 +507,8 @@ struct ControlSystemsLabView: View {
                     EngineerSeries(name: "OL |G|", points: result.magnitude, color: Theme.chartPrimary, fills: true),
                     EngineerSeries(name: "CL |T|", points: result.closedMagnitude, color: Theme.chartSecondary, fills: false),
                 ],
-                xLabel: "rad/s",
-                yLabel: "dB",
+                xLabel: "Frequency (rad/s)",
+                yLabel: "Magnitude (dB)",
                 xGuides: result.margins.gainCrossover.map { [EngineerGuide(value: $0, label: "ωc", axis: .x)] } ?? [],
                 yGuides: [EngineerGuide(value: 0, label: "0 dB", axis: .y)],
                 logX: true,
@@ -524,8 +524,8 @@ struct ControlSystemsLabView: View {
                 series: [
                     EngineerSeries(name: "∠G", points: result.phase, color: Theme.chartPrimary, fills: false),
                 ],
-                xLabel: "rad/s",
-                yLabel: "deg",
+                xLabel: "Frequency (rad/s)",
+                yLabel: "Phase (deg)",
                 yGuides: [EngineerGuide(value: -180, label: "−180°", axis: .y)],
                 logX: true,
                 height: 200
@@ -545,8 +545,8 @@ struct ControlSystemsLabView: View {
                     EngineerSeries(name: "Plant", points: result.plantStep, color: Theme.chartSecondary, fills: false),
                     EngineerSeries(name: "With lead", points: result.leadStep, color: Theme.chartPrimary, fills: true),
                 ],
-                xLabel: "s",
-                yLabel: "y",
+                xLabel: "Time (s)",
+                yLabel: "Response",
                 yGuides: [EngineerGuide(value: 1, label: "1", axis: .y)],
                 height: 220
             )

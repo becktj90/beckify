@@ -297,8 +297,8 @@ struct SignalScalingChart: View {
                 .foregroundStyle(Theme.energized)
                 .symbolSize(64)
             }
-            .chartXAxisLabel("Raw")
-            .chartYAxisLabel("EU")
+            .chartXAxisLabel("Raw input")
+            .chartYAxisLabel("Engineering (EU)")
             .frame(height: 160)
             .accessibilityHidden(true)
         }
@@ -328,10 +328,12 @@ struct LoadFactorChart: View {
                     .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
                     .annotation(position: .top, alignment: .trailing) {
                         Text("Capacity")
-                            .font(.caption2)
-                            .foregroundStyle(Theme.muted)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.foreground)
                     }
             }
+            .chartXAxisLabel("Case")
+            .chartYAxisLabel("Demand (kW)")
             .frame(height: 160)
             .accessibilityHidden(true)
         }
@@ -382,7 +384,7 @@ struct ConduitFillDiagram: View {
     private var isOverLimit: Bool { fillPercent > limitPercent }
 
     var body: some View {
-        DiagramCard(title: "Raceway fill", accessibilitySummary: summary) {
+        DiagramCard(title: "Raceway fill", accessibilitySummary: summary, allowsMagnify: true) {
             EngineeringDiagramFrame(summary: summary) {
                 GeometryReader { geo in
                     crossSection(ConduitFillLayout(size: geo.size, conductorCount: conductorCount))
@@ -521,8 +523,8 @@ struct MotorTorqueCurveChart: View {
                     .foregroundStyle(Theme.energized)
                     .symbolSize(64)
             }
-            .chartXAxisLabel("RPM")
-            .chartYAxisLabel("lb·ft")
+            .chartXAxisLabel("Speed (RPM)")
+            .chartYAxisLabel("Torque (lb·ft)")
             .frame(height: 160)
             .accessibilityHidden(true)
         }
@@ -562,7 +564,7 @@ struct PathLossDistanceChart: View {
             }
             .chartXScale(type: .log)
             .chartXAxisLabel("Distance (m, log)")
-            .chartYAxisLabel("dB")
+            .chartYAxisLabel("Loss (dB)")
             .frame(height: 160)
             .accessibilityHidden(true)
         }
@@ -714,7 +716,8 @@ struct BatteryBankChart: View {
                 BarMark(x: .value("Metric", "Usable"), y: .value("Wh", usableWattHours))
                     .foregroundStyle(Theme.chartPrimary)
             }
-            .chartYAxisLabel("Wh")
+            .chartXAxisLabel("Portion")
+            .chartYAxisLabel("Energy (Wh)")
             .frame(height: 160)
             .accessibilityHidden(true)
         }
@@ -814,9 +817,70 @@ struct EngineerLinePlot: View {
     /// Catmull-Rom for smooth plant responses. Linear keeps relay and hysteresis corners square.
     var smooth: Bool = true
 
+    @State private var magnification: CGFloat = 1
+    @State private var pinchBase: CGFloat = 1
+    /// Turns on one-finger pan only after a pinch ends, so the pinch gesture is not rebuilt mid-gesture.
+    @State private var zoomed = false
+    @State private var anchorX: CGFloat = 0.5
+    @State private var anchorY: CGFloat = 0.5
+    @State private var anchorXBase: CGFloat = 0.5
+    @State private var anchorYBase: CGFloat = 0.5
+    @State private var inspectX: Double?
+    @Environment(\.plotSurfaceIsImmersive) private var immersive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            scaledChart
+            if let inspectCaption {
+                Text(inspectCaption)
+                    .font(Theme.TypeRole.hud)
+                    .foregroundStyle(Theme.foreground)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .accessibilityLabel(inspectCaption)
+            }
+            if magnification > 1.02 || immersive {
+                HStack(spacing: 8) {
+                    if magnification > 1.02 {
+                        Button("Reset zoom", action: resetZoom)
+                            .buttonStyle(.bordered)
+                            .tint(Theme.accent)
+                            .frame(minHeight: Theme.touchTarget)
+                            .accessibilityLabel("Reset zoom")
+                    }
+                    if immersive {
+                        Text("Drag to read a value. Pinch to zoom.")
+                            .font(Theme.TypeRole.hud)
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(yLabel) versus \(xLabel). \(inspectCaption ?? "")")
+        .simultaneousGesture(magnifyGesture)
+    }
+
+    @ViewBuilder
+    private var scaledChart: some View {
+        if logX {
+            baseChart
+                .chartXScale(domain: visibleX, type: .log)
+                .chartYScale(domain: visibleY)
+        } else {
+            baseChart
+                .chartXScale(domain: visibleX)
+                .chartYScale(domain: visibleY)
+        }
+    }
+
+    private var baseChart: some View {
         let interpolation: InterpolationMethod = smooth ? .catmullRom : .linear
-        let chart = Chart {
+        let oneFinger = immersive || zoomed
+        return Chart {
             ForEach(series) { s in
                 ForEach(Array(s.points.enumerated()), id: \.offset) { _, point in
                     LineMark(
@@ -846,29 +910,34 @@ struct EngineerLinePlot: View {
                     .symbolSize(72)
                     .annotation(position: .top, spacing: 4) {
                         Text(mark.label)
-                            .font(.caption2.weight(.bold))
+                            .font(.caption.weight(.bold))
                             .foregroundStyle(mark.color)
                     }
             }
             ForEach(xGuides) { guide in
                 RuleMark(x: .value(guide.label, guide.value))
-                    .foregroundStyle(Theme.muted.opacity(0.55))
+                    .foregroundStyle(Theme.foreground.opacity(0.45))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .annotation(position: .top, alignment: .trailing) {
                         Text(guide.label)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Theme.muted)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.foreground)
                     }
             }
             ForEach(yGuides) { guide in
                 RuleMark(y: .value(guide.label, guide.value))
-                    .foregroundStyle(Theme.muted.opacity(0.55))
+                    .foregroundStyle(Theme.foreground.opacity(0.45))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .annotation(position: .trailing, alignment: .leading) {
                         Text(guide.label)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Theme.muted)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.foreground)
                     }
+            }
+            if let inspectX {
+                RuleMark(x: .value(xLabel, inspectX))
+                    .foregroundStyle(Theme.foreground)
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
             }
         }
         .chartForegroundStyleScale(
@@ -881,7 +950,7 @@ struct EngineerLinePlot: View {
                     .foregroundStyle(Theme.chartGrid)
                 AxisTick()
                 AxisValueLabel(format: floatingFormat)
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption.monospacedDigit())
             }
         }
         .chartYAxis {
@@ -890,19 +959,148 @@ struct EngineerLinePlot: View {
                     .foregroundStyle(Theme.chartGrid)
                 AxisTick()
                 AxisValueLabel(format: floatingFormat)
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption.monospacedDigit())
             }
         }
         .chartXAxisLabel(xLabel, position: .bottom, alignment: .center)
         .chartYAxisLabel(yLabel, position: .leading, alignment: .center)
         .chartLegend(series.count > 1 ? .visible : .hidden)
+        .chartOverlay { proxy in
+            GeometryReader { geo in
+                let frame = geo[proxy.plotAreaFrame]
+                if oneFinger {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(inspectDrag(proxy: proxy, frame: frame))
+                        .simultaneousGesture(magnifyGesture)
+                } else {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(magnifyGesture)
+                }
+            }
+        }
         .frame(height: height)
-        .accessibilityHidden(true)
+    }
 
-        if logX {
-            chart.chartXScale(type: .log)
+    private var magnifyGesture: some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                magnification = min(12, max(1, pinchBase * value.magnification))
+            }
+            .onEnded { _ in
+                pinchBase = magnification
+                zoomed = magnification > 1.02
+                if magnification < 1.02 { resetZoom() }
+            }
+    }
+
+    private func inspectDrag(proxy: ChartProxy, frame: CGRect) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard frame.contains(value.location) || zoomed else { return }
+                if zoomed {
+                    let dx = value.translation.width / max(frame.width, 1)
+                    let dy = value.translation.height / max(frame.height, 1)
+                    anchorX = min(1, max(0, anchorXBase - dx))
+                    anchorY = min(1, max(0, anchorYBase + dy))
+                    inspectX = nil
+                } else if let x: Double = proxy.value(atX: value.location.x - frame.minX, as: Double.self) {
+                    inspectX = x
+                }
+            }
+            .onEnded { _ in
+                anchorXBase = anchorX
+                anchorYBase = anchorY
+            }
+    }
+
+    private var visibleX: ClosedRange<Double> {
+        let extent = xExtent
+        return PlotScaleMath.window(
+            min: extent.0,
+            max: extent.1,
+            anchor: anchorX,
+            magnification: magnification,
+            logarithmic: logX
+        )
+    }
+
+    private var visibleY: ClosedRange<Double> {
+        let extent = yExtent
+        return PlotScaleMath.window(
+            min: extent.0,
+            max: extent.1,
+            anchor: anchorY,
+            magnification: magnification,
+            logarithmic: false
+        )
+    }
+
+    private var xExtent: (Double, Double) {
+        extent(series.flatMap { $0.points.map(\.x) } + markers.map(\.x) + xGuides.map(\.value), logarithmic: logX)
+    }
+
+    private var yExtent: (Double, Double) {
+        extent(series.flatMap { $0.points.map(\.y) } + markers.map(\.y) + yGuides.map(\.value), logarithmic: false)
+    }
+
+    private func extent(_ raw: [Double], logarithmic: Bool) -> (Double, Double) {
+        var values = raw.filter(\.isFinite)
+        if logarithmic { values = values.filter { $0 > 0 } }
+        let lo = values.min() ?? (logarithmic ? 1 : 0)
+        let hi = values.max() ?? (lo + 1)
+        if hi <= lo { return logarithmic ? (max(lo, 1e-6), max(lo, 1e-6) * 10) : (lo, lo + 1) }
+        if logarithmic {
+            let loLog = log(lo)
+            let hiLog = log(hi)
+            let pad = max((hiLog - loLog) * 0.05, 0.02)
+            return (exp(loLog - pad), exp(hiLog + pad))
+        }
+        let pad = (hi - lo) * 0.05
+        return (lo - pad, hi + pad)
+    }
+
+    private var inspectCaption: String? {
+        guard let inspectX else { return nil }
+        var best: (name: String, x: Double, y: Double, distance: Double)?
+        for item in series {
+            for point in item.points where point.x.isFinite && point.y.isFinite {
+                let distance = abs(point.x - inspectX)
+                if best == nil || distance < best!.distance {
+                    best = (item.name, point.x, point.y, distance)
+                }
+            }
+        }
+        guard let best else { return "\(xLabel) \(formatTick(inspectX))" }
+        return "\(best.name): \(xLabel) \(formatTick(best.x)), \(yLabel) \(formatTick(best.y))"
+    }
+
+    private func formatTick(_ value: Double) -> String {
+        value.formatted(floatingFormat)
+    }
+
+    private func resetZoom() {
+        if reduceMotion {
+            magnification = 1
+            pinchBase = 1
+            zoomed = false
+            anchorX = 0.5
+            anchorY = 0.5
+            anchorXBase = 0.5
+            anchorYBase = 0.5
+            inspectX = nil
         } else {
-            chart
+            withAnimation(.snappy(duration: 0.2)) {
+                magnification = 1
+                pinchBase = 1
+                zoomed = false
+                anchorX = 0.5
+                anchorY = 0.5
+                anchorXBase = 0.5
+                anchorYBase = 0.5
+                inspectX = nil
+            }
         }
     }
 
@@ -971,7 +1169,7 @@ struct SineWaveChart: View {
             EngineerLinePlot(
                 series: [EngineerSeries(name: "v(t)", points: points, color: Theme.chartPrimary, fills: false)],
                 xLabel: "Time (s)",
-                yLabel: "Amplitude",
+                yLabel: "Amplitude (rel)",
                 yGuides: [
                     EngineerGuide(value: 0, label: "0", axis: .y),
                 ],

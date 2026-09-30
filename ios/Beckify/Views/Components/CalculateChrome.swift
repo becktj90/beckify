@@ -374,10 +374,14 @@ struct DiagramCard<Content: View>: View {
     var accessibilitySummary: String
     /// Optional file-friendly name used when sharing (without extension).
     var exportName: String = "beckify-plot"
+    /// Pinch-to-enlarge in place and in full screen. Off for charts that zoom themselves.
+    var allowsMagnify: Bool = false
     @ViewBuilder var content: Content
 
     @State private var sharePayload: SharePayload?
     @State private var exportFailed = false
+    @State private var fullscreen = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
@@ -387,6 +391,19 @@ struct DiagramCard<Content: View>: View {
                     .tracking(0.8)
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
+                Button {
+                    fullscreen = true
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.body.weight(.semibold))
+                        .frame(minWidth: Theme.touchTarget, minHeight: Theme.touchTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .tint(Theme.accent)
+                .accessibilityLabel("View \(title) full screen")
+                .accessibilityHint("Opens a large diagram. The Done button closes it.")
+                .accessibilityIdentifier("diagramFullscreenButton")
                 Button {
                     exportAndShare()
                 } label: {
@@ -401,7 +418,7 @@ struct DiagramCard<Content: View>: View {
                 .accessibilityIdentifier("diagramShareButton")
             }
 
-            content
+            diagramBody
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 160)
                 .padding(Theme.Space.sm)
@@ -416,10 +433,45 @@ struct DiagramCard<Content: View>: View {
         .sheet(item: $sharePayload) { payload in
             ActivityShareSheet(items: payload.items)
         }
+        .fullScreenCover(isPresented: $fullscreen) {
+            PlotFullscreenCover(title: title, reduceMotion: reduceMotion) {
+                VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                    if allowsMagnify {
+                        PlotGestureSurface(inspection: .magnify, accessibilityLabel: accessibilitySummary, readout: nil) {
+                            content
+                                .environment(\.plotFullscreenIsProvided, true)
+                                .frame(maxWidth: .infinity)
+                        }
+                    } else {
+                        content
+                            .environment(\.plotFullscreenIsProvided, true)
+                            .frame(maxWidth: .infinity)
+                    }
+                    Text(accessibilitySummary)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Design aid only — not a PE stamp or calibrated instrument.")
+                        .font(Theme.TypeRole.hud)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+        }
         .alert("Couldn’t export plot", isPresented: $exportFailed) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("The plot image couldn’t be rendered. Try again after the chart finishes drawing.")
+        }
+    }
+
+    @ViewBuilder
+    private var diagramBody: some View {
+        if allowsMagnify {
+            PlotGestureSurface(inspection: .magnify, accessibilityLabel: accessibilitySummary, readout: nil) {
+                content.environment(\.plotFullscreenIsProvided, true)
+            }
+        } else {
+            content.environment(\.plotFullscreenIsProvided, true)
         }
     }
 

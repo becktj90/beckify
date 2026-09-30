@@ -161,10 +161,19 @@ struct CoupledVibrationView: View {
                     trailingCaption: nyquistLabel,
                     footnote: "Magnitude FFT, Hann window. Peak dot is the tallest relative bin. Not ISO 10816.",
                     plotHeight: 140,
-                    accessibilityLabel: "Live relative vibration spectrum",
-                    peakIndex: plotHeights.indices.max { plotHeights[$0] < plotHeights[$1] }
+                    accessibilityLabel: "Live relative vibration spectrum. Frequency in hertz, magnitude relative to the peak in this window.",
+                    peakIndex: plotHeights.indices.max { plotHeights[$0] < plotHeights[$1] },
+                    xAxis: PlotAxis(title: "Frequency", unit: "Hz", start: "0 Hz", end: nyquistLabel),
+                    yAxis: PlotAxis(title: "Magnitude", unit: "relative", start: "0", mid: "0.5", end: "1"),
+                    barReadouts: vibrationReadouts
                 )
-                TraceSparkline(samples: model.trace, accessibilityLabel: "Recent user-acceleration trace")
+                TraceSparkline(
+                    samples: model.trace,
+                    accessibilityLabel: "Recent user-acceleration trace. Acceleration in g versus time.",
+                    yAxis: PlotAxis(title: "Acceleration", unit: "g", start: "", end: ""),
+                    xAxis: PlotAxis(title: "Time", unit: "", start: "older", end: "now"),
+                    fullscreenTitle: "Acceleration"
+                )
                     .padding(.top, 4)
             }
             ResultCard(title: "Session A / B") {
@@ -186,7 +195,12 @@ struct CoupledVibrationView: View {
                         leadingCaption: "A",
                         trailingCaption: "B",
                         plotHeight: 72,
-                        accessibilityLabel: "Session B minus session A by band"
+                        accessibilityLabel: "Session B minus session A by band. Difference is relative to the largest band.",
+                        xAxis: PlotAxis(title: "Band", unit: "", start: "Session A", end: "Session B"),
+                        yAxis: PlotAxis(title: "Difference", unit: "relative", start: "0", end: "1"),
+                        barReadouts: comparison.bandDeltas.enumerated().map { index, delta in
+                            "Band \(index + 1), Δ \(Format.number(delta, digits: 3)) g"
+                        }
                     )
                 } else {
                     Text("Capture two short presses. The difference is relative on this phone only.")
@@ -216,6 +230,12 @@ struct CoupledVibrationView: View {
             case .background: model.stop()
             default: break
             }
+        }
+    }
+
+    private var vibrationReadouts: [String] {
+        model.bands.map { band in
+            "\(Format.number(band.centerHz, digits: 1)) Hz, \(Format.number(band.magnitudeG, digits: 3)) g"
         }
     }
 
