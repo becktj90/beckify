@@ -449,11 +449,11 @@ enum ToolboxCatalog {
             id: .acousticImager,
             kind: .sensor,
             title: "Acoustic Imager",
-            subtitle: "Mic spectrum and level map. Not an ultrasonic imager.",
+            subtitle: "Mic level, spectrum, and time activity. Not a sound camera.",
             symbol: "waveform",
             synonyms: [
-                "acoustic", "imager", "spectrum", "fft", "spectrogram", "sound camera",
-                "level map", "microphone", "ultrasonic", "leak",
+                "acoustic", "imager", "spectrum", "fft", "spectrogram",
+                "level", "time activity", "microphone",
             ]
         ),
         ToolDefinition(

@@ -88,7 +88,7 @@ Do these on a Mac after the ITMS-90382 window. This environment cannot archive o
 - [ ] Do **not** declare Location / Microphone as collected: they are processed on device and never leave. Photos are collected only after Analyze Look.
 - [ ] Tracking = No. No advertising SDKs to declare. Look Check may forward a user-initiated photo through the Beckify API to OpenAI/Anthropic.
 - [ ] Privacy Policy URL live: https://beckify.com/privacy
-- [ ] Usage strings (already in the Xcode target) match the Review notes: mic = Noise Meter dBFS; location = Position / Wi‑Fi Path / optional Solar latitude; Local Network = TCP RTT to a LAN host; camera = Motor Nameplate OCR, Panel Directory, and Look Check; Bluetooth = BLE scanner.
+- [ ] Usage strings (already in the Xcode target) match the Review notes: mic = Noise Meter dBFS and Acoustic Imager spectrum / time activity (same usage string; not a sound camera); location = Position / Wi‑Fi Path / optional Solar latitude; Local Network = TCP RTT to a LAN host; camera = Motor Nameplate OCR, Panel Directory, and Look Check; Bluetooth = BLE scanner.
 
 ### Listing
 
@@ -121,11 +121,11 @@ Suggested block:
 
 > Beckify is a native SwiftUI field electrical toolbox (not a web wrapper). Free, no ads, no IAP, no account, no analytics. Saved Jobs and last-used inputs stay in UserDefaults on device.
 >
-> Permissions are requested only when that instrument or OCR tool is opened — not at launch. Microphone = uncalibrated Noise Meter (dBFS, not an SLM). Location When In Use = Position, Wi‑Fi Path (SSID / Apple 0–1 signalStrength / optional heatmap), optional Solar latitude. Local Network = optional TCP RTT to a LAN/gateway host (latency, not RF). Camera = Motor Nameplate OCR, Panel Directory, and Look Check. On-device Vision is the default for nameplate and panel. Photos leave the device only after the user taps Analyze / Analyze Look. Photo Library full access is not requested. Bluetooth = BLE scanner.
+> Permissions are requested only when that instrument or OCR tool is opened — not at launch. Microphone = uncalibrated Noise Meter (dBFS, not an SLM) and Acoustic Imager (on-device spectrum, level, and time activity — not a sound camera or a leak locator). Same microphone usage string. Audio is not recorded and is not uploaded. Location When In Use = Position, Wi‑Fi Path (SSID / Apple 0–1 signalStrength / optional heatmap), optional Solar latitude. Local Network = optional TCP RTT to a LAN/gateway host (latency, not RF). Camera = Motor Nameplate OCR, Panel Directory, and Look Check. On-device Vision is the default for nameplate and panel. Photos leave the device only after the user taps Analyze / Analyze Look. Photo Library full access is not requested. Bluetooth = BLE scanner.
 >
 > iOS does not expose Wi‑Fi RSSI/dBm or cellular RSRP/RSRQ/SINR/dBm to third-party apps. The Wi‑Fi and Cellular Path tools do not invent those numbers. Cellular color gauges are radio generation (from RAT) and TCP RTT milliseconds.
 >
-> NEC tools are a design aid citing table numbers (310.16, 430.248/250, Ch. 9 Tables 1/4/5, 450.3(B)). Not a PE stamp or a substitute for the code book.
+> NEC tools are a design aid citing table numbers (310.16, 250.122, 430.248/250, Ch. 9 Tables 1/4/5, 450.3(B)). Table 250.122 EGC rows appear on Conduit Fill, Wire Ampacity, Voltage Drop, and NEC Circuit when phase and amps imply a ground. Conduit fill does not add that conductor unless Count EGC is on. Not a PE stamp or a substitute for the code book.
 >
 > Encryption: ITSAppUsesNonExemptEncryption = NO (HTTPS links only).
 
@@ -170,7 +170,7 @@ Do **not** enable the review ask in your own head (or rely on soft-launch tester
 1. **Math:** `cd ios/BeckifyMath && swift test` green on this repo (includes `ReviewAskPolicyTests`).
 2. **Device smoke (Mac + phone):** cold launch → Field home → Voltage Drop or Ampacity Calculate → save a named job → Conductor Length milliohm example → Cellular Path (honest empty RSRP) → Wi‑Fi Path (no dBm row) → Nameplate OCR confirm → Jobs tab shows the note → Favorites star round-trip.
 3. **iPad:** Field | Toolkit, search, one plot Share, Jobs empty “Browse Field.”
-4. **Permissions:** first open of Noise Meter / Position / BLE / OCR / Wi‑Fi RTT-to-LAN each shows **one** system sheet with the Beckify string. Deny paths stay usable (blank reading + Settings link where we already have it).
+4. **Permissions:** first open of Noise Meter or Acoustic Imager / Position / BLE / OCR / Wi‑Fi RTT-to-LAN each shows **one** system sheet with the Beckify string. Deny paths stay usable (blank reading + Settings link where we already have it).
 5. **No prompt on first launch.** Dev builds always show the StoreKit sheet *if called* — confirm we do **not** call it on first open.
 6. **No crash reporter** by design. If a tester hits a crash, fix it before Submit. A 1★ crash review on day one is expensive.
 
@@ -183,7 +183,7 @@ Keep these. They are product, listing, and Review armor:
 - No fake Wi‑Fi RSSI/dBm. No fake cellular RSRP/RSRQ/SINR/dBm.
 - TCP RTT is not ICMP ping. LAN target may prompt Local Network; public hosts (1.1.1.1) should not.
 - CTCarrier may be empty (deprecated iOS 16+). Leave blanks blank.
-- Noise Meter is uncalibrated dBFS, not OSHA/SLM.
+- Noise Meter is uncalibrated dBFS, not OSHA/SLM. Acoustic Imager is the same microphone: level, spectrum, and time activity — not a sound camera or a leak locator.
 - Conductor Cost is planning $/kft, not LME or a bid.
 - Conductor Length is not a cable locator or TDR.
 - OCR is a suggestion; human confirm; nothing uploaded.

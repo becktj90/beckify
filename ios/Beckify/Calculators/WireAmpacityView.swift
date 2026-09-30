@@ -28,7 +28,7 @@ struct WireAmpacityView: View {
     @StoredChoice(.wireAmpacity, "mode", default: Mode.select) private var mode
     @StoredInput(.wireAmpacity, "amps", default: "95") private var amps
     @StoredChoice(.wireAmpacity, "material", default: ConductorMaterial.copper) private var material
-    @StoredChoice(.wireAmpacity, "circuit", default: EquipmentGroundingContext.threePhase) private var circuit
+    @StoredChoice(.wireAmpacity, "circuit", default: EquipmentGroundingContext.none) private var circuit
     @StoredChoice(.wireAmpacity, "insulation", default: TempChoice.c90) private var insulation
     @StoredChoice(.wireAmpacity, "termination", default: TempChoice.c75) private var termination
     @StoredInput(.wireAmpacity, "ambient", default: "30") private var ambient
@@ -344,6 +344,7 @@ struct WireAmpacityView: View {
 
     private func reset() {
         amps = ""
+        circuit = .none
         ambient = "30"
         ccc = "3"
         runs = "1"
@@ -358,6 +359,7 @@ struct WireAmpacityView: View {
         mode = .select
         amps = "95"
         material = .copper
+        circuit = .none
         insulation = .c90
         termination = .c75
         ambient = "30"

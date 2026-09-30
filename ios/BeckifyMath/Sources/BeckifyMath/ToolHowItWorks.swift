@@ -86,7 +86,7 @@ public enum ToolHowItWorksCatalog {
             context: "Raceway pick on the truck — EMT, IMC, RMC, PVC, ENT, FMC, LFMC.",
             bullets: [
                 "Fill % is area of conductors ÷ raceway area. 40% is the usual >2-wire limit.",
-                "3Ø or multiwire can add one Table 250.122 EGC from the OCPD (NEC 2023). Confirm Code / AHJ.",
+                "3Ø or multiwire can show one Table 250.122 EGC (NEC 2023). Fill counts it only if Count EGC is on. Confirm Code / AHJ.",
                 "Transcription of published tables — not a substitute for the NEC book.",
             ]
         ),
@@ -231,12 +231,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "acousticImager": ToolHowItWorks(
-            summary: "Live spectrum and level map from the microphone using an on-device FFT.",
-            context: "Where audible energy sits. Not a sound camera or a leak detector.",
+            summary: "Live spectrum and time activity from the microphone using an on-device FFT.",
+            context: "Level, spectrum, and recent bands. Not a sound camera or a leak locator.",
             bullets: [
                 "AVAudioEngine tap plus Accelerate FFT. Not ultrasonic beamforming or a Fluke-style imager.",
                 "Not a calibrated SPL meter, and not a gas-leak certification tool.",
-                "Left/right heat is channel balance from one or two mics, not a bearing.",
+                "One microphone shows level, spectrum, and recent time activity. It cannot place a leak.",
                 "Audio stays on device. Save stores numbers, never a recording.",
             ]
         ),
@@ -531,7 +531,6 @@ public enum ToolHowItWorksCatalog {
             context: "Nichrome / Kanthal element planning for wye or delta.",
             bullets: [
                 "I and R from watts and volts. Length from resistivity and gauge.",
-                "EGC uses NEC 2023 Table 250.122 from the suggested OCPD. Confirm Code / AHJ.",
                 "Not a thermal FEM or a listing. Verify the alloy datasheet.",
             ]
         ),
@@ -557,7 +556,6 @@ public enum ToolHowItWorksCatalog {
             context: "Service / feeder worksheet from lighting VA and added loads.",
             bullets: [
                 "Lighting demand follows 220.42. Other rows are the VA you enter.",
-                "If this total is a feeder, the EGC row is Table 250.122. A service GEC is 250.66.",
                 "Not a full dwelling 220.82 optional calc or a utility service study.",
             ]
         ),

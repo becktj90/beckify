@@ -45,19 +45,19 @@ ios/
 
 ### Jobsite
 
-- Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff)
+- Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff; 1Ø and 3Ø also show a NEC 2023 Table 250.122 EGC from the next standard OCPD — design aid, confirm Code / AHJ, not a PE stamp)
 - Conductor Cost Optimizer (compliant size × parallel-run ranking with planning $/kft and optional I²R energy — not a live quote)
 - Conductor Length by Resistance (length from a milliohm / mΩ reading — end-to-end or short-to-parallel; Cu/Al α compensation; estimated metal weight)
-- Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways)
+- Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways). 1Ø, multiwire, or 3Ø plus amps can show a NEC 2023 Table 250.122 EGC beside the fill. That conductor is added only if you turn Count EGC on — mixed fill math is otherwise unchanged.
 - Motor FLA (430.248 / 430.250)
 - Motor Speed & Torque (sync RPM, slip, shaft torque)
 - Motor Nameplate Analyzer (430.32 overload, Table 430.52 SCPD, 430.22 conductor, code-letter LRA)
 - Motor Nameplate OCR (camera or library photo, on-device Vision first, heuristic field extract into the shared nameplate schema — value + confidence + reviewed; human confirm sets reviewed. Optional Analyze POSTs to `/api/analyze-nameplate` only when you tap it. MOCP and LRA are never treated as FLA. Optional seed into FLA / Analyzer / Speed)
 - Look Check (camera or library photo, then Analyze Look for a playful look verdict plus lighting / framing / expression / sharpness metrics and a roast. Entertainment only — not medical, dating, or beauty authority. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Distinct from the Wi-Fi / Cellular **Online / Captive** hotspot-detect card.)
-- Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load)
+- Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load). Circuit defaults to phase conductors only. Choosing 1Ø, multiwire, or 3Ø shows a NEC 2023 Table 250.122 EGC beside the phase size.
 - Receptacle Selector (NEMA / IEC 60309 / international household / Meltric through 400 A, schematic pinout, cited public PNs — design aid)
 - Short-Circuit Current, Circular Mils, Load & Demand Factors
-- NEC Circuit Calculator (design current, derated conductor, VD, OCPD — live one-shot calc, not paperwork)
+- NEC Circuit Calculator (design current, derated conductor, VD, OCPD — live one-shot calc, not paperwork). When phase and amps imply a feeder ground, a NEC 2023 Table 250.122 EGC is shown. A service grounding electrode conductor is Table 250.66, not this row.
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
 
 ### Power (facility / distribution only)
@@ -127,6 +127,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 - Cellular Path reuses the same **Online / Captive** probe, then `CTTelephonyNetworkInfo` carrier / MCC / MNC / ISO / RAT per service, `dataServiceIdentifier`, Network default + cellular path flags (collapsed under Advanced path), `CTCellularData`, and optional TCP **link quality (RTT)** while on cellular. Color gauges show **radio generation** (2G…5G from RAT) and **RTT milliseconds** — not RSRP/dBm. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps; this tool does not invent them. CTCarrier is deprecated as of iOS 16 with no public replacement.
 - BLE Scanner (CoreBluetooth): advertised name, identifier, RSSI, SIG manufacturer company ID, connectable, service-data UUIDs, kind hints, live radar, plus RF activity index, room mix, and device-ID churn (unique IDs — not occupancy). Device count ≠ people.
 - Noise Meter (microphone dBFS, uncalibrated)
+- Acoustic Imager (Field → Instruments, next to Noise Meter). On-device microphone FFT: relative level, audible spectrum, and recent time activity. Not a Fluke acoustic camera, not ultrasonic beamforming, and not a leak locator. Audio is processed on this device, is not recorded, and is not uploaded. Same microphone usage string as Noise Meter.
 - Bubble Level / plumb (CoreMotion)
 - Magnetometer (heading, µT)
 - Barometer / relative altitude

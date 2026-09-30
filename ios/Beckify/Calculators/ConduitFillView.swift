@@ -27,7 +27,7 @@ struct ConduitFillView: View {
     @StoredInput(.conduitFill, "ocpd", default: "") private var ocpd
     @StoredInput(.conduitFill, "loadAmps", default: "") private var loadAmps
     @StoredChoice(.conduitFill, "egcMaterial", default: ConductorMaterial.copper) private var egcMaterial
-    @StoredToggle(.conduitFill, "countEGC", default: true) private var countEGC
+    @StoredToggle(.conduitFill, "countEGC", default: false) private var countEGC
     @StoredInput(.conduitFill, "mixedJSON", default: "") private var mixedJSON
     @StoredInput(.conduitFill, "jobName", default: "Conduit fill") private var jobName
     @State private var session = ExplicitCalculationState<ConduitFillResult>()
@@ -86,7 +86,7 @@ struct ConduitFillView: View {
                 NumberField(title: "Load current if no OCPD", unit: "A", text: $loadAmps, optional: true, fieldID: "loadAmps", onSubmit: calculate)
                 MenuField(title: "EGC material", selection: $egcMaterial, options: ConductorMaterial.allCases) { $0.displayName }
                 Toggle("Count EGC in fill", isOn: $countEGC)
-                Text("3Ø and multiwire use one Table 250.122 equipment grounding conductor. Turn the count off if that ground is already in the groups. Confirm the current Code and the AHJ.")
+                Text("Shows a Table 250.122 equipment grounding conductor beside this fill. Turn the count on to add that one conductor. Leave it off if the ground is already listed. Confirm the current Code and the AHJ.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
             }
@@ -284,9 +284,7 @@ struct ConduitFillView: View {
         guard let amps = explicit ? ocpd.parsedDouble : (loadText.isEmpty ? nil : loadAmps.parsedDouble) else {
             return nil
         }
-        let extra = grounding.countsInRacewayByDefault
-            ? "3Ø or multiwire: one EGC from the OCPD. Count it here unless you already listed that ground."
-            : "1Ø equipment ground from the same table. The count toggle adds that conductor to this raceway."
+        let extra = "Shown beside the fill. Turn Count EGC on to add one conductor. Leave it off if that ground is already listed."
         return EquipmentGrounding.recommend(
             amps: amps,
             material: egcMaterial,
@@ -308,7 +306,7 @@ struct ConduitFillView: View {
         ocpd = ""
         loadAmps = ""
         egcMaterial = .copper
-        countEGC = true
+        countEGC = false
         displayedEGC = nil
         egcCounted = false
         egcNote = nil

@@ -21,7 +21,7 @@ public enum EquipmentGroundingContext: String, Codable, CaseIterable, Sendable, 
 
     public var impliesEquipmentGround: Bool { self != .none }
 
-    /// Raceway fill should count one EGC when the user asked for 3Ø or a multiwire circuit.
+    /// 3Ø and multiwire usually include one EGC. Fill still waits for an explicit count toggle.
     public var countsInRacewayByDefault: Bool {
         self == .threePhase || self == .multiwire
     }

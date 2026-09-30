@@ -15,10 +15,10 @@ public struct AcousticDisplayBand: Equatable, Sendable {
     }
 }
 
-/// Fold a real-FFT magnitude vector into log-spaced audible bands and a
-/// left/right energy balance. This is a field visualization aid.
+/// Fold a real-FFT magnitude vector into log-spaced audible bands.
+/// This is a field visualization of level, spectrum, and time activity.
 ///
-/// It is not ultrasonic beamforming, not a bearing, and not a calibrated
+/// It is not ultrasonic beamforming, not a leak position, and not a calibrated
 /// sound level meter. The phone microphone and the sample rate set the band.
 public enum AcousticSpectrum {
     /// Display ceiling. Energy above this is not claimed, even if the FFT has bins there.
@@ -87,7 +87,7 @@ public enum AcousticSpectrum {
     }
 
     /// Right-minus-left energy, −1…+1. `nil` when either channel is missing or both are silent.
-    /// This is channel balance, not a bearing and not angle-of-arrival.
+    /// Stereo energy ratio only. Not a bearing, not a leak position, and not shown in the imager.
     public static func channelBalance(leftRMS: Double, rightRMS: Double) -> Double? {
         guard leftRMS.isFinite, rightRMS.isFinite, leftRMS >= 0, rightRMS >= 0 else { return nil }
         let sum = leftRMS + rightRMS
