@@ -155,6 +155,7 @@ public enum ElectricalCodeSupport {
     /// NEC-table tools. Selecting AS/NZS must not relabel their results.
     public static let necOnlyToolIDs: Set<String> = [
         "wireAmpacity",
+        "flexibleCable",
         "conduitFill",
         "equipmentGround",
         "motorFLA",
@@ -215,6 +216,8 @@ public enum ElectricalCodeSupport {
         switch toolID {
         case "wireAmpacity":
             return "Ampacity here is NEC Table 310.16. AS/NZS 3008 current-carrying capacity is not in this tool. The equipment grounding conductor is NEC Table 250.122, not AS/NZS Table 5.1. Use Voltage Drop for an AS/NZS resistance check and Table 5.1 earth."
+        case "flexibleCable":
+            return "Flexible cord and Type W ampacity here are NEC Table 400.5. AS/NZS current-carrying capacity is not in this tool. The table names stay NEC."
         case "conduitFill":
             return "Fill is NEC Chapter 9. Count EGC still adds a Table 250.122 conductor only when that toggle is on. AS/NZS conduit space factors are not in this tool."
         case "equipmentGround":

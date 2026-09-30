@@ -12,6 +12,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case timer555
     case motorFLA
     case wireAmpacity
+    case flexibleCable
     case conductorCost
     case conductorLength
     case voltageDivider
@@ -335,6 +336,18 @@ enum ToolboxCatalog {
             subtitle: "310.16 with ambient, CCC, termination cap, and continuous load.",
             symbol: "cable.connector.horizontal",
             synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor", "derating", "310.15"]
+        ),
+        ToolDefinition(
+            id: .flexibleCable,
+            kind: .calculator,
+            title: "Flexible Cable Ampacity",
+            subtitle: "Type W and SO/SJO cord from NEC Table 400.5, sized up to 400 A.",
+            symbol: "cable.connector",
+            synonyms: [
+                "type w", "type-w", "soow", "so cord", "sjo", "sjow", "sjoow", "sto", "sjt",
+                "portable cord", "flexible cord", "flexible cable", "mining cable", "400.5",
+                "article 400", "cord ampacity", "portable power",
+            ]
         ),
         ToolDefinition(
             id: .conductorCost,
@@ -958,7 +971,7 @@ enum ToolboxCatalog {
     /// Open PRs can keep appending to these arrays after updating the policy.
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
-            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .equipmentGround, .motorFLA, .motorSpeed, .motorNameplate,
+            .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR, .lookCheck,
             .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
@@ -1031,14 +1044,15 @@ enum ToolboxCatalog {
         .power: [.ohmsLaw, .transformer, .powerFactor],
         .powerWizard: [.power, .motorFLA, .transformer],
         .voltageDrop: [.wireAmpacity, .equipmentGround, .conductorCost, .conduitFill],
-        .conduitFill: [.equipmentGround, .wireAmpacity, .voltageDrop],
-        .equipmentGround: [.conduitFill, .wireAmpacity, .necCircuit],
+        .conduitFill: [.equipmentGround, .flexibleCable, .wireAmpacity, .voltageDrop],
+        .equipmentGround: [.conduitFill, .flexibleCable, .wireAmpacity, .necCircuit],
         .conductorCost: [.wireAmpacity, .voltageDrop, .conductorLength],
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.power, .shortCircuit, .motorFLA],
         .timer555: [.plcTimer, .ledRC, .frequencyWave],
         .motorFLA: [.motorNameplateOCR, .motorNameplate, .motorSpeed],
-        .wireAmpacity: [.equipmentGround, .voltageDrop, .conductorCost],
+        .wireAmpacity: [.flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
+        .flexibleCable: [.wireAmpacity, .conduitFill, .equipmentGround, .cableSchedule],
         .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
         .voltageDivider: [.ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
@@ -1099,7 +1113,7 @@ enum ToolboxCatalog {
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.equipmentGround, .wireAmpacity, .voltageDrop],
         .loadWorksheet: [.loadFactors, .panelDirectory, .necCircuit],
-        .cableSchedule: [.equipmentGround, .conduitFill, .panelDirectory],
+        .cableSchedule: [.flexibleCable, .equipmentGround, .conduitFill, .panelDirectory],
         .solenoidDesign: [.magneticCircuit, .reactance, .heaterDesign],
         .analogWorkbench: [.voltageDivider, .frequencyWave, .instrumentationAmp, .controlSystems],
         .noiseSNR: [.analogWorkbench, .rfLink, .ohmsLaw],
