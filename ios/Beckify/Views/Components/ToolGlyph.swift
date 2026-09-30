@@ -359,6 +359,7 @@ extension GlyphKind {
         case .bluetoothScan: return .bluetoothScan
         case .noiseMeter: return .noiseMeter
         case .acousticImager: return .acousticImager
+        case .setupCheck: return .setupCheck
         case .bubbleLevel: return .bubbleLevel
         case .magnetometer: return .magnetometer
         case .barometer: return .barometer
@@ -443,6 +444,7 @@ enum GlyphKind {
     case bluetoothScan
     case noiseMeter
     case acousticImager
+    case setupCheck
     case bubbleLevel
     case magnetometer
     case barometer
@@ -539,6 +541,7 @@ enum GlyphKind {
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
         case .acousticImager: return Self.acousticImager(rect)
+        case .setupCheck: return Self.setupCheck(rect)
         case .bubbleLevel: return Self.bubbleLevel(rect)
         case .magnetometer: return Self.magnetometer(rect)
         case .barometer: return Self.barometer(rect)
@@ -1186,6 +1189,34 @@ enum GlyphKind {
             endAngle: .degrees(70),
             clockwise: false
         )
+        return .both(fill: fill, stroke: stroke, openMark: true)
+    }
+
+    /// Speaker plus a short spectrum — a listening check, not a lab mic.
+    private static func setupCheck(_ r: CGRect) -> GlyphArtwork {
+        let cabinet = CGRect(
+            x: r.minX + r.width * 0.06, y: r.midY - r.height * 0.20,
+            width: r.width * 0.34, height: r.height * 0.42
+        )
+        let body = Glyph.roundedRect(cabinet, corner: 3)
+        let cone = Glyph.circlePath(CGPoint(x: cabinet.midX, y: cabinet.midY), cabinet.width * 0.18)
+        let fill = Glyph.punched(body, cone)
+        let heights: [CGFloat] = [0.26, 0.46, 0.34]
+        var stroke = Path()
+        let count = CGFloat(heights.count)
+        let gap = r.width * 0.03
+        let barW = (r.width * 0.40 - gap * (count - 1)) / count
+        let baseY = r.maxY - r.height * 0.22
+        let originX = r.minX + r.width * 0.50
+        for (index, height) in heights.enumerated() {
+            let x = originX + CGFloat(index) * (barW + gap)
+            let h = r.height * height
+            Glyph.line(
+                &stroke,
+                CGPoint(x: x + barW / 2, y: baseY),
+                CGPoint(x: x + barW / 2, y: baseY - h)
+            )
+        }
         return .both(fill: fill, stroke: stroke, openMark: true)
     }
 

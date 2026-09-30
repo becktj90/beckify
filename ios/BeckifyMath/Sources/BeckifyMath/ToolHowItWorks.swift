@@ -60,6 +60,7 @@ public enum ToolHowItWorksCatalog {
             context: "Nameplate or feeder power when you already have volts, amps, and PF.",
             bullets: [
                 "3Ø uses √3. Enter PF to split kW and kVAR from kVA.",
+                "The identities do not change with code. AS/NZS shows 230 V / 400 V at 50 Hz as the nominal supply.",
                 "Design aid — not a billing meter or a demand study.",
             ]
         ),
@@ -72,13 +73,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "voltageDrop": ToolHowItWorks(
-            summary: "K-factor voltage drop with conductor size, parallels, target %, and an ampacity check.",
+            summary: "Voltage drop for the code in Settings. NEC is the K-factor path. AS/NZS is a metric resistance path.",
             context: "Feeder or branch check before you pull wire.",
             bullets: [
-                "VD uses K, circular mils, current, and one-way length. 3Ø uses √3.",
-                "Parallels split current. Ampacity is a companion check, not 310.16 design.",
-                "1Ø and 3Ø also show a Table 250.122 EGC from the next standard OCPD. Confirm Code / AHJ.",
-                "Design aid — not a stamped study or a bid length.",
+                "NEC: VD uses K, circular mils, current, and one-way length. 3Ø uses √3. 3% and 5% are informational.",
+                "NEC ampacity is a companion check. 1Ø and 3Ø show a Table 250.122 EGC from the next standard OCPD.",
+                "AS/NZS: mm² sizes, IEC 60228 maximum R, Clause 3.6.2’s 5% limit, and a Table 5.1 copper earth. Not an AS/NZS 3008 mV/A·m or current-carrying-capacity table.",
+                "Design aid — not a PE or AEE stamp, and not a bid length.",
             ]
         ),
         "conduitFill": ToolHowItWorks(
@@ -227,7 +228,7 @@ public enum ToolHowItWorksCatalog {
             context: "Homework / field note: louder vs quieter, and which band is up, on this phone.",
             bullets: [
                 "Not an SLM, not OSHA-legal, not A-weighted dB(A). Bars are relative dBFS, not sound pressure.",
-                "Same on-device FFT tap as Acoustic Imager. This screen is the meter plus spectrum, not a sound camera.",
+                "Same on-device FFT tap as Acoustic Imager and Setup Check. Meter plus spectrum, not a sound camera.",
                 "Rough harmonic % is leftover mic-FFT energy, not THD and not SPL. Freeze holds the plot. Share saves a PNG, not audio.",
                 "Save stores the numeric dBFS snapshot only — never a recording.",
             ]
@@ -239,7 +240,17 @@ public enum ToolHowItWorksCatalog {
                 "AVAudioEngine tap plus Accelerate FFT. Not ultrasonic beamforming or a Fluke-style imager.",
                 "Not a calibrated SPL meter, and not a gas-leak certification tool.",
                 "One microphone shows level, spectrum, and recent time activity. It cannot place a leak.",
-                "Audio stays on device. Save stores numbers, never a recording.",
+                "Audio stays on device. Save stores numbers, never a recording. Setup Check shares this tap.",
+            ]
+        ),
+        "setupCheck": ToolHowItWorks(
+            summary: "Relative room and rig check: live FFT, rough RTA, level, and optional speaker signals.",
+            context: "A/B a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
+            bullets: [
+                "Phone speaker plus mic is not a calibrated measurement microphone. Relative shape and trends only. No invented dB SPL.",
+                "Same on-device FFT tap as Noise Meter. Pink noise, a log sweep, or tone bursts play locally and are not recorded.",
+                "Harmonic percent and the sweep curve are relative energy, not lab THD and not a certification plot.",
+                "Most iPhones show one mic path here, so stereo balance stays blank. Share saves a PNG, not audio.",
             ]
         ),
         "bubbleLevel": ToolHowItWorks(
@@ -327,7 +338,7 @@ public enum ToolHowItWorksCatalog {
             context: "Which receptacle family matches the circuit, before you order.",
             bullets: [
                 "Amp presets through 400 A. Public Meltric/Hubbell PNs only when a catalog page is cited.",
-                "Household faces are schematic (Schuko, BS 1363, Type I), not manufacturer artwork.",
+                "Household faces are schematic. AS/NZS ranks Type I (3112) first near 230 V. The catalog is not copied per code.",
                 "EGC row is NEC 2023 Table 250.122 from the amp rating you entered. Confirm the breaker.",
                 "Not a UL listing, distributor cross, or classified-area stamp. Confirm current catalog.",
             ]

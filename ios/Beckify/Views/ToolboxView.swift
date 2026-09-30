@@ -69,6 +69,11 @@ struct ToolboxView: View {
             }
             .navigationTitle("Beckify")
             .searchable(text: $query, prompt: "Search Field and Toolkit…")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsToolbarButton()
+                }
+            }
             .safeAreaInset(edge: .top) {
                 if !isSearching {
                     Picker("Home area", selection: $homeArea) {
@@ -201,6 +206,7 @@ struct CalculatorHostView: View {
             case .bluetoothScan: BluetoothScannerView()
             case .noiseMeter: NoiseMeterView()
             case .acousticImager: AcousticImagerView()
+            case .setupCheck: SetupCheckView()
             case .bubbleLevel: BubbleLevelView()
             case .magnetometer: MagnetometerView()
             case .barometer: BarometerView()

@@ -46,7 +46,14 @@ struct FavoritesView: View {
             }
             .navigationTitle("Favorites")
             .toolbar {
-                if !tools.isEmpty { EditButton() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsToolbarButton()
+                }
+                if !tools.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        EditButton()
+                    }
+                }
             }
             .background {
                 ZStack {

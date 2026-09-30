@@ -17,6 +17,7 @@ struct PowerView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
+    @AppStorage(ToolboxPreferenceKey.electricalCode) private var codeRaw = ElectricalCode.nec.rawValue
     @StoredChoice(.power, "mode", default: Mode.ac3) private var mode
     @StoredInput(.power, "v", default: "480") private var v
     @StoredInput(.power, "i", default: "66.8") private var i
@@ -27,7 +28,9 @@ struct PowerView: View {
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var inputFingerprint: String { "\(mode)|\(v)|\(i)|\(r)|\(pf)" }
+    private var code: ElectricalCode { ElectricalCode(rawValue: codeRaw) ?? .nec }
+
+    private var inputFingerprint: String { "\(code.rawValue)|\(mode)|\(v)|\(i)|\(r)|\(pf)" }
 
     var body: some View {
         ToolScaffold(
@@ -57,19 +60,16 @@ struct PowerView: View {
                 NumberField(title: "Voltage", unit: "V", text: $v, fieldID: "v", onSubmit: calculate)
                 NumberField(title: "Current", unit: "A", text: $i, fieldID: "i", onSubmit: calculate)
                 NumberField(title: "Power factor", unit: "%", text: $pf, fieldID: "pf", onSubmit: calculate)
+                Text(code.nominalSupply.note)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
             }
 
             CalculatorActionBar(
                 onCalculate: calculate,
                 onReset: reset,
-                onExample: {
-                    mode = .ac3
-                    v = "480"
-                    i = "66.8"
-                    pf = "90"
-                    session.prepareForNewInputs()
-                },
-                exampleTitle: "480 V 3Ø, 66.8 A, PF 90%"
+                onExample: loadExample,
+                exampleTitle: code == .asnzs ? "400 V 3Ø, 32 A, PF 90%" : "480 V 3Ø, 66.8 A, PF 90%"
             )
 
             if let error = session.lastValidationError ?? session.error {
@@ -118,6 +118,7 @@ struct PowerView: View {
             ResultRow(label: "Reactive", value: "\(Format.number(ac.kVAR, digits: 3)) kVAR")
             ResultRow(label: "PF", value: Format.percent(ac.powerFactor * 100))
             ResultRow(label: "θ", value: "\(Format.number(ac.phaseAngleDegrees, digits: 1)) °")
+            ResultRow(label: "Nominal supply", value: code.nominalSupply.summary, tone: Theme.muted)
         }
         .opacity(session.isStale ? 0.72 : 1)
         SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
@@ -128,6 +129,19 @@ struct PowerView: View {
                 outputs: ["kVA": Format.number(ac.kVA), "kW": Format.number(ac.kW)]
             ))
         }
+    }
+
+    private func loadExample() {
+        mode = .ac3
+        if code == .asnzs {
+            v = "400"
+            i = "32"
+        } else {
+            v = "480"
+            i = "66.8"
+        }
+        pf = "90"
+        session.prepareForNewInputs()
     }
 
     private func calculate() {

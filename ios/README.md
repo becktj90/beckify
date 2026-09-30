@@ -8,6 +8,8 @@ Three more App Store products live in the same Xcode project: **Look Check** (`c
 
 Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench homework, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
+**Settings** (gear on Toolbox, Favorites, and Saved Jobs) stores the electrical code, length units, and appearance on device. Default code is **NEC (US)**. **AS/NZS** is the other selectable code. IEC 60364, CEC, and BS 7671 are named and not selectable. Tools are not duplicated per code. Where AS/NZS tables are not in the app, the tool says **“AS/NZS not available for this tool yet — showing NEC”** and keeps the NEC result labeled as NEC. Appearance defaults to the system (light or dark). It does not force dark mode.
+
 This is not a website wrapper. There is no `WKWebView` of beckify.com and no website project gallery. Calculator and sensor math helpers live in a pure Swift package so they can be tested on Linux without Xcode. Website toolbox IA is a follow-up, not this app.
 
 ## Design system
@@ -46,7 +48,7 @@ ios/
 
 ### Jobsite
 
-- Voltage Drop (K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff; 1Ø and 3Ø also show a NEC 2023 Table 250.122 EGC from the next standard OCPD — design aid, confirm Code / AHJ, not a PE stamp)
+- Voltage Drop. **NEC (default):** K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff; 1Ø and 3Ø also show a NEC 2023 Table 250.122 EGC from the next standard OCPD. **AS/NZS:** metric mm² sizes, resistance-only drop from IEC 60228 maximum R (reactance omitted — not an AS/NZS 3008 mV/A·m table), AS/NZS 3000:2018 Clause 3.6.2’s 5% installation limit, and a copper earth from Table 5.1. Current-carrying capacity is not checked on the AS/NZS path. Design aid — not a PE or AEE stamp.
 - Conductor Cost Optimizer (compliant size × parallel-run ranking with planning $/kft and optional I²R energy — not a live quote)
 - Conductor Length by Resistance (length from a milliohm / mΩ reading — end-to-end or short-to-parallel; Cu/Al α compensation; estimated metal weight)
 - Conduit Fill (same-size or mixed Chapter 9 fill; EMT and other Table 4 raceways). 1Ø, multiwire, or 3Ø plus amps can show a NEC 2023 Table 250.122 EGC beside the fill. That conductor is added only if you turn Count EGC on — mixed fill math is otherwise unchanged.
@@ -56,15 +58,17 @@ ios/
 - Motor Nameplate OCR (camera or library photo; on-device flatten and contrast lift, then multi-pass Vision, then heuristic field extract into the shared nameplate schema — value + confidence + reviewed; a low scan-quality score asks for a retake. Human confirm sets reviewed. Optional Analyze POSTs to `/api/analyze-nameplate` only when you tap it. MOCP and LRA are never treated as FLA. Optional seed into FLA / Analyzer / Speed)
 - Look Check (camera or library photo, then Analyze Look for a playful look verdict plus lighting / framing / expression / sharpness metrics and a roast. Entertainment only — not medical, dating, or beauty authority. The photo stays on this device until you tap Analyze Look. Same `/api/analyze-look` contract as the website. Distinct from the Wi-Fi / Cellular **Online / Captive** hotspot-detect card.)
 - Wire Size & Ampacity (310.16 with ambient, CCC, termination cap, continuous load). Circuit defaults to phase conductors only. Choosing 1Ø, multiwire, or 3Ø shows a NEC 2023 Table 250.122 EGC beside the phase size.
-- Receptacle Selector (NEMA / IEC 60309 / international household / Meltric through 400 A, schematic pinout, cited public PNs — design aid)
+- Receptacle Selector (NEMA / IEC 60309 / international household / Meltric through 400 A, schematic pinout, cited public PNs — design aid). AS/NZS ranks AS/NZS 3112 Type I ahead of other household faces near 230 V. The list is not copied into a second tool.
 - Short-Circuit Current, Circular Mils, Load & Demand Factors
 - NEC Circuit Calculator (design current, derated conductor, VD, OCPD — live one-shot calc, not paperwork). When phase and amps imply a feeder ground, a NEC 2023 Table 250.122 EGC is shown. A service grounding electrode conductor is Table 250.66, not this row.
 - IS Loop Verifier (Entity Concept Voc/Isc/Ca/La vs device + cable)
 
+Wire Size & Ampacity, Conduit Fill (including the Count EGC toggle), Motor FLA, Conductor Cost, Conductor Length, NEC Circuit, Load Calculation Worksheet, and Motor Nameplate Analyzer stay on their NEC tables when AS/NZS is selected. The banner names that. Mixed conduit fill math is unchanged.
+
 ### Power (facility / distribution only)
 
-- Power (DC identities + 1Ø / 3Ø). ToolID.powerWizard remains for saved jobs and is not listed.
-- Transformer Sizing & Protection (NEC 450.3(B) + Note 1)
+- Power (DC identities + 1Ø / 3Ø). The formulas do not change with code. AS/NZS shows the nominal supply as 230 V single-phase and 400 V three-phase at 50 Hz. ToolID.powerWizard remains for saved jobs and is not listed.
+- Transformer Sizing & Protection (NEC 450.3(B) + Note 1). AS/NZS transformer protection is not in this tool; the screen says it is still showing NEC.
 - Tap-Changer Calculator (DETC tap from measured secondary)
 - Power Factor Correction
 - Harmonics (THD) (current THD / IEEE 519 discussion bands)
@@ -128,8 +132,9 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 - Wi-Fi Path leads with **Online / Captive** (HTTP GET to Apple’s `captive.apple.com/hotspot-detect.html` — Success means no captive splash). Then Apple `signalStrength` 0…1 as percent/bars when `NEHotspotNetwork` returns it, optional local IPv4 from the probe’s Network `localEndpoint`, coverage heatmap, and TCP **link quality (RTT)** to the path gateway or a host such as 1.1.1.1 / beckify.com. Raw `NWPathMonitor` chrome (interface names like `en0` / `pdp_ip0`, expensive/constrained) sits behind a collapsed **Advanced path** disclosure. iOS does not expose Wi-Fi RSSI/dBm to third-party apps; this tool does not invent dBm. RTT is TCP connect time — not ICMP ping. A LAN/gateway target may prompt for Local Network. Online / Captive is a public-host HTTP probe and does not need Local Network. It is not the catalog **Look Check** photo tool.
 - Cellular Path reuses the same **Online / Captive** probe, then `CTTelephonyNetworkInfo` carrier / MCC / MNC / ISO / RAT per service, `dataServiceIdentifier`, Network default + cellular path flags (collapsed under Advanced path), `CTCellularData`, and optional TCP **link quality (RTT)** while on cellular. Color gauges show **radio generation** (2G…5G from RAT) and **RTT milliseconds** — not RSRP/dBm. iOS does not expose cellular RSRP/RSRQ/SINR/dBm to third-party apps; this tool does not invent them. CTCarrier is deprecated as of iOS 16 with no public replacement.
 - BLE Scanner (CoreBluetooth): advertised name, identifier, RSSI, SIG manufacturer company ID, connectable, service-data UUIDs, kind hints, live radar, plus RF activity index, room mix, and device-ID churn (unique IDs — not occupancy). Device count ≠ people.
-- Noise Meter (microphone dBFS, uncalibrated, plus a live audible FFT). Same tap as Acoustic Imager. Shows fs, Nyquist, and a rough relative harmonic note — not THD, not dB SPL, not a nameplate. Freeze holds the plot. Share saves a PNG with a timestamp, not audio and not GPS.
-- Acoustic Imager (Field → Instruments, next to Noise Meter). On-device microphone FFT: relative level, audible spectrum, and recent time activity. Not a Fluke acoustic camera, not ultrasonic beamforming, and not a leak locator. Audio is processed on this device, is not recorded, and is not uploaded. Same microphone usage string and the same tap as Noise Meter.
+- Noise Meter (microphone dBFS, uncalibrated, plus a live audible FFT). Same MicrophoneSpectrum tap as Acoustic Imager and Setup Check. Shows fs, Nyquist, and a rough relative harmonic note — not THD, not dB SPL, not a nameplate. Freeze holds the plot. Share saves a PNG with a timestamp, not audio and not GPS.
+- Acoustic Imager (Field → Instruments, next to Noise Meter). On-device microphone FFT: relative level, audible spectrum, and recent time activity. Not a Fluke acoustic camera, not ultrasonic beamforming, and not a leak locator. Audio is processed on this device, is not recorded, and is not uploaded. Same microphone usage string and the same MicrophoneSpectrum tap as Noise Meter and Setup Check.
+- Setup Check (Field → Instruments, next to Noise Meter and Acoustic Imager). One room-and-rig screen: live FFT, a short spectrogram, approximate 1/3-octave RTA, level versus time, crest factor, clipping, and a rough speaker-to-mic delay when a burst is audible. Optional pink noise, log sweep, or tone bursts play from the phone speaker on the same microphone engine. Relative A/B and trends only — not a calibrated measurement mic, not REW, not THX, and not absolute dB SPL. Most iPhones expose one mic path, so stereo balance stays blank. Share saves a PNG with a timestamp, not audio. Same microphone usage string. Noise Meter and Acoustic Imager link here.
 - Breath Flute (play tool on Instruments, not on the Quick row). Blow gates a local tone; touch or a fret sets pitch. Tiny relative spectrum. Nothing recorded or uploaded. Same microphone usage string as Noise Meter.
 - Bubble Level / plumb (CoreMotion)
 - Magnetometer (heading, µT) with Mag Sweep: |B| minus a captured baseline, peak hold, and a sparkline. A slow field-variation spectrum is DC |B| only — not AC EMF and not a 50/60 Hz meter. Phone magnets dominate.
@@ -151,7 +156,7 @@ cd ios/BeckifyMath
 swift test
 ```
 
-You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth on Linux. Simulator, signing, archive, and App Store upload require a Mac. This repository does not claim those happened.
+You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth on Linux. Simulator, signing, archive, and App Store upload require a Mac. This repository does not claim those happened. The electrical-code Settings screen and in-tool banners were not exercised in Simulator or on a device.
 
 ## Mac — open and run
 
@@ -229,9 +234,9 @@ Push to `main`. Xcode Cloud then starts both Toolbox workflows:
 
 **Archive - iOS** is the TestFlight path. It must archive scheme **Beckify** (`com.beckify.toolbox`, App ID `6807908745`). A green archive is what App Store Connect can process for TestFlight. This repo does not submit that build.
 
-Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`), **KestrelHeavy** (`com.beckify.kestrelheavy`), or **BeckifyDrive** (`com.beckify.drive`). Those products keep their own Archive schemes and bundle IDs. Beckify Drive does not change Toolbox build **154**.
+Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`), **KestrelHeavy** (`com.beckify.kestrelheavy`), or **BeckifyDrive** (`com.beckify.drive`). Those products keep their own Archive schemes and bundle IDs. Beckify Drive does not change Toolbox build **159**.
 
-Connect version **1.0.1** must already exist (the **1.0** train is closed). Repo `CURRENT_PROJECT_VERSION` is **154**. If TestFlight or a previous Cloud upload is already **≥154**, bump that number before the next push.
+Connect version **1.0.1** must already exist (the **1.0** train is closed). Repo `CURRENT_PROJECT_VERSION` is **159**. If TestFlight or a previous Cloud upload is already **≥159**, bump that number before the next push.
 
 #### Mac fallback
 
@@ -261,7 +266,7 @@ This Linux checkout did not run `xcodebuild`, sign a binary, install the app on 
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Next Connect version is **1.0.1**, build **154** (repo `CURRENT_PROJECT_VERSION` is **154**). Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥154**, bump again before the next Archive. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload 154.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays **Free, no in-app purchases, no ads** (Trevor: v1 is $0, no IAP). **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Next Connect version is **1.0.1**, build **159** (repo `CURRENT_PROJECT_VERSION` is **159**). Xcode Cloud may auto-bump; if TestFlight or Cloud already has **≥159**, bump again before the next Archive. Trevor must create or select **1.0.1** in Connect before uploading. Archive the **Beckify** scheme, not LookCheck or KestrelHeavy. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload 159.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac

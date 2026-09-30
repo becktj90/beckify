@@ -32,7 +32,7 @@ Permissions are requested only when the related tool is used, not at launch (exc
 
 | Permission | Tools | What happens |
 | --- | --- | --- |
-| Microphone | Noise Meter, Acoustic Imager, Breath Flute, Stillness Anomaly Watch | Relative dBFS, an on-device audible spectrum, a blow-gated local tone, and impulse marks. Not recorded, not uploaded, not a calibrated SLM, and not a leak position. Breath Flute is a play tool. Stillness does not save audio. |
+| Microphone | Noise Meter, Acoustic Imager, Setup Check, Breath Flute, Stillness Anomaly Watch | Relative dBFS, an on-device audible spectrum, optional speaker test signals (pink noise, a sweep, or tone bursts) for a room and rig A/B, a blow-gated local tone, and impulse marks. Not recorded, not uploaded, not a calibrated SLM, not absolute dB SPL, and not a leak position. Setup Check is a relative listening check on this phone, not a lab measurement. Breath Flute is a play tool. Stillness does not save audio. |
 | Bluetooth | BLE Scanner, Stillness Anomaly Watch | Nearby BLE advertisements. The scanner shows name, identifier, RSSI, and advertised fields. Stillness uses advertiser IDs, count, and RSSI jumps only — not names as people, and not occupancy. Not uploaded. Device count is not a people count. |
 | Location (When In Use) | Position; Wi-Fi Path; Solar Design Wizard (optional latitude) | Coordinates, current SSID, Apple `signalStrength` 0…1, on-device heatmap samples, optional latitude for PV tilt advice. Not used at launch. Not uploaded. |
 | Local Network | Wi-Fi Path (optional); Cellular Path (optional) | TCP connect timing to a LAN or default-gateway host the user chooses. Used only when measuring **link quality (RTT)** to a private/LAN host. Not uploaded. Public hosts such as 1.1.1.1, and **Online / Captive** to `captive.apple.com`, do not need this permission. |
@@ -60,6 +60,8 @@ iOS does **not** give third-party apps cellular RSRP, RSRQ, SINR, RSSI, or dBm. 
 Named **Saved Jobs** are lightweight on-device notes (homework or field snapshots of calculator inputs/results or sensor numbers the user chooses to save). They use Apple’s `UserDefaults`. They are not a project gallery and are not uploaded. Deleting the app removes them, subject to the user’s device backup settings.
 
 Last-used calculator and sensor form values (the numbers and picker choices in each tool) also stay in on-device `UserDefaults` so a tool reopens where you left it. They are not uploaded and are not a projects product.
+
+Settings choices — electrical code (NEC or AS/NZS), preferred length units, and appearance (system, light, or dark) — stay in on-device `UserDefaults` as well. They are not uploaded.
 
 ## Children’s privacy
 
