@@ -223,7 +223,7 @@ final class ConduitFillTests: XCTestCase {
         let tight = try ConduitFill.calculate(groups: groups, raceway: .emt, tradeSize: "1-1/2")
         XCTAssertEqual(tight.maxFillPercent, 40)
         XCTAssertFalse(tight.passes)
-        // 3×250 + 2/0 + 4 AWG = 1.4957 in²; 2" EMT at 40% is only 1.3424 in².
+        // 3×250 + 2/0 + 4 AWG = 1.4957 in²; 2" EMT at 40% is 1.342 in², so the next trade is 2½.
         XCTAssertEqual(tight.suggestedTradeSize, "2-1/2")
 
         let suggested = try ConduitFill.suggestedTradeSize(groups: groups, raceway: .emt)

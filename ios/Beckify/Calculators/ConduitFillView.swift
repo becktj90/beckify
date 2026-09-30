@@ -16,6 +16,7 @@ struct ConduitFillView: View {
     }
 
     @EnvironmentObject private var jobs: JobStore
+    @AppStorage(ToolboxPreferenceKey.electricalCode) private var codeRaw = ElectricalCode.nec.rawValue
     @StoredChoice(.conduitFill, "mode", default: FillMode.same) private var mode
     @StoredInput(.conduitFill, "qty", default: "4") private var qty
     @StoredInput(.conduitFill, "size", default: "12") private var size
@@ -23,6 +24,7 @@ struct ConduitFillView: View {
     @StoredChoice(.conduitFill, "raceway", default: RacewayKind.emt) private var raceway
     @StoredChoice(.conduitFill, "insulation", default: ConductorInsulationKind.thhn) private var insulation
     @StoredToggle(.conduitFill, "nipple", default: false) private var nipple
+    @StoredChoice(.conduitFill, "phaseTint", default: ConduitDistributionColors.off) private var distributionColors
     @StoredChoice(.conduitFill, "grounding", default: EquipmentGroundingContext.none) private var grounding
     @StoredInput(.conduitFill, "ocpd", default: "") private var ocpd
     @StoredInput(.conduitFill, "loadAmps", default: "") private var loadAmps
@@ -36,8 +38,11 @@ struct ConduitFillView: View {
     @State private var displayedEGC: EquipmentGroundingRecommendation?
     @State private var egcCounted = false
     @State private var egcNote: String?
+    @State private var egcGroupIndex: Int?
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var code: ElectricalCode { ElectricalCode(rawValue: codeRaw) ?? .nec }
 
     private var sizes: [String] {
         NECTables.wireSizeOrder.filter { NECTables.thhnArea[$0] != nil }
@@ -61,7 +66,7 @@ struct ConduitFillView: View {
                 toolID: .conduitFill,
                 symbolic: "1 wire → 53%    2 wires → 31%    3+ → 40%    nipple → 60%",
                 substituted: substituted,
-                meaning: "Fill percent is the sum of Chapter 9 Table 5 conductor areas over the Table 4 raceway area. Equipment grounding conductors count toward the conductor total. Same-size Annex C counts govern at an exact boundary.",
+                meaning: "Fill percent is the sum of Chapter 9 Table 5 areas over the Table 4 raceway area. The cross-section packs those circles in the bore as an illustration — it is not a jam or pulling calculation. An equipment grounding conductor counts only when Count EGC is on.",
                 citation: "NEC Chapter 9 Table 1 (and Note 4). Areas from Table 4 and Table 5. Optional EGC: NEC 2023 Table 250.122. Confirm Code / AHJ."
             )
 
@@ -79,6 +84,11 @@ struct ConduitFillView: View {
             MenuField(title: "Raceway", selection: $raceway, options: RacewayKind.allCases) { $0.displayName }
             MenuField(title: "Trade size", selection: $trade, options: trades, label: { "\($0)\"" })
             Toggle("Nipple — 24 in or shorter (60% fill)", isOn: $nipple)
+            MenuField(title: "Phase tint", selection: $distributionColors, options: ConduitDistributionColors.allCases) { $0.displayName }
+            Text("Optional legend. 120/208 and 277/480 names match Reference Library. Pick 1Ø, multiwire, or 3Ø so phase, neutral, and EGC can be marked.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
 
             MenuField(title: "Circuit", selection: $grounding, options: EquipmentGroundingContext.allCases) { $0.displayName }
             if grounding.impliesEquipmentGround {
@@ -150,12 +160,14 @@ struct ConduitFillView: View {
             }
 
             if let r = session.displayedResult {
-                ConduitFillDiagram(
-                    fillPercent: r.actualFillPercent,
-                    limitPercent: r.maxFillPercent,
-                    conductorCount: r.conductorCount
-                )
-                .opacity(session.isStale ? 0.72 : 1)
+                if let section = sectionLayout(for: r) {
+                    ConduitFillDiagram(
+                        layout: section,
+                        showsASNZSGuidance: code == .asnzs,
+                        recommendedEGCNote: recommendedEGCNote
+                    )
+                    .opacity(session.isStale ? 0.72 : 1)
+                }
                 ResultCard(copyText: copyText) {
                     if r.isMixed || r.groups.count > 1 {
                         ForEach(Array(r.groups.enumerated()), id: \.offset) { index, group in
@@ -169,6 +181,22 @@ struct ConduitFillView: View {
                     ResultRow(label: "Table 1 limit", value: Format.percent(r.maxFillPercent))
                     ResultRow(label: "Basis", value: r.fillBasis, tone: Theme.muted)
                     ResultRow(label: "Actual fill", value: Format.percent(r.actualFillPercent), emphasis: true, tone: r.passes ? Theme.good : Theme.bad)
+                    if let section = sectionLayout(for: r) {
+                        ResultRow(label: "Free area", value: Format.percent(section.freeAreaPercent), tone: Theme.muted)
+                        if let annex = section.annexCMaximum {
+                            ResultRow(label: "Annex C style max", value: "\(annex)", tone: Theme.muted)
+                        }
+                        if code == .asnzs {
+                            ResultRow(
+                                label: "AS/NZS C6.2 guidance",
+                                value: Format.percent(section.asnzsSpaceFactorPercent),
+                                tone: section.exceedsASNZSGuidance ? Theme.warn : Theme.muted
+                            )
+                        }
+                        if let ratio = section.jamRatio, section.jamNote != nil {
+                            ResultRow(label: "Jam ratio", value: Format.number(ratio, digits: 2), tone: Theme.warn)
+                        }
+                    }
                     ResultRow(label: "Status", value: r.passes ? "PASS" : "FAIL — exceeds Table 1", tone: r.passes ? Theme.good : Theme.bad)
                     if let displayedEGC {
                         ResultRow(
@@ -228,6 +256,7 @@ struct ConduitFillView: View {
         var recommendation: EquipmentGroundingRecommendation?
         var counted: Bool
         var note: String?
+        var egcGroupIndex: Int?
     }
 
     private func calculate() {
@@ -254,6 +283,7 @@ struct ConduitFillView: View {
             displayedEGC = prepared.recommendation
             egcCounted = prepared.counted
             egcNote = prepared.note
+            egcGroupIndex = prepared.egcGroupIndex
             if !reduceMotion { successTick += 1 }
         }
     }
@@ -273,12 +303,14 @@ struct ConduitFillView: View {
         let recommendation = equipmentGroundRecommendation()
         var counted = false
         var note: String?
+        var egcGroupIndex: Int?
         if let recommendation {
             if countEGC {
                 let egcInsulation: ConductorInsulationKind = mode == .same ? insulation : .thhn
                 if NECTables.conductorArea(size: recommendation.size, insulation: egcInsulation) != nil {
                     groups.append(ConduitFillGroup(quantity: 1, size: recommendation.size, insulation: egcInsulation))
                     counted = true
+                    egcGroupIndex = groups.count - 1
                     note = "Added 1 × \(recommendation.label)"
                 } else {
                     note = "No Table 5 area — not added"
@@ -287,7 +319,27 @@ struct ConduitFillView: View {
                 note = "Recommended, not added"
             }
         }
-        return PreparedFill(groups: groups, recommendation: recommendation, counted: counted, note: note)
+        return PreparedFill(
+            groups: groups,
+            recommendation: recommendation,
+            counted: counted,
+            note: note,
+            egcGroupIndex: egcGroupIndex
+        )
+    }
+
+    private func sectionLayout(for result: ConduitFillResult) -> ConduitCrossSectionLayout? {
+        ConduitCrossSection.make(
+            result: result,
+            egcGroupIndex: egcGroupIndex,
+            context: grounding,
+            colors: distributionColors
+        )
+    }
+
+    private var recommendedEGCNote: String? {
+        guard let displayedEGC, !egcCounted else { return nil }
+        return "EGC \(displayedEGC.label) \(displayedEGC.material.displayName) is recommended and is not drawn in this bore."
     }
 
     private func equipmentGroundRecommendation() -> EquipmentGroundingRecommendation? {
@@ -320,9 +372,11 @@ struct ConduitFillView: View {
         loadAmps = ""
         egcMaterial = .copper
         countEGC = false
+        distributionColors = .off
         displayedEGC = nil
         egcCounted = false
         egcNote = nil
+        egcGroupIndex = nil
         mixedRows = Self.defaultMixedRows()
         persistMixedRows()
         importedBanner = nil

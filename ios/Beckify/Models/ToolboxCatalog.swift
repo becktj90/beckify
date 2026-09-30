@@ -292,9 +292,9 @@ enum ToolboxCatalog {
             id: .conduitFill,
             kind: .calculator,
             title: "Conduit Fill",
-            subtitle: "Same-size or mixed THHN (and other Table 5) fill vs Table 1.",
+            subtitle: "Chapter 9 fill with a to-scale bore, wall, and conductor packing.",
             symbol: "circle.hexagongrid.fill",
-            synonyms: ["conduit", "fill", "emt", "thhn", "raceway", "chapter 9", "40 percent", "annex c", "mixed sizes"]
+            synonyms: ["conduit", "fill", "emt", "thhn", "raceway", "chapter 9", "40 percent", "annex c", "mixed sizes", "cross section", "nipple"]
         ),
         ToolDefinition(
             id: .cableLadder,
