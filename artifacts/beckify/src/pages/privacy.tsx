@@ -213,6 +213,18 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="font-display text-xl font-bold tracking-tight">Beckify Drive (vehicle dashboard)</h2>
+            <p className="text-base leading-relaxed">
+              The standalone <strong>Beckify Drive</strong> app (bundle ID{" "}
+              <code className="font-mono text-[0.9em]">com.beckify.drive</code>) is a separate App Store
+              product from Beckify Toolbox. It connects to a Bluetooth LE OBD-II adapter you choose and shows
+              readings on the phone and, when Apple has enabled the CarPlay entitlement, on the CarPlay screen.
+              Vehicle readings, the last adapter, and planning numbers stay on the device. They are not uploaded.
+              It is an enthusiast design aid, not a certified diagnostic tool.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="font-display text-xl font-bold tracking-tight">Kestrel Heavy (standalone iOS game)</h2>
             <p className="text-base leading-relaxed">
               The standalone <strong>Kestrel Heavy</strong> app (bundle ID{" "}
