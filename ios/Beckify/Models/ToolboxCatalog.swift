@@ -24,6 +24,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case bluetoothScan
     case noiseMeter
     case acousticImager
+    case setupCheck
     case bubbleLevel
     case magnetometer
     case barometer
@@ -458,6 +459,18 @@ enum ToolboxCatalog {
             synonyms: [
                 "acoustic", "imager", "spectrum", "fft", "spectrogram",
                 "level", "time activity", "microphone",
+            ]
+        ),
+        ToolDefinition(
+            id: .setupCheck,
+            kind: .sensor,
+            title: "Setup Check",
+            subtitle: "Room and rig A/B. Relative FFT, RTA, and optional speaker signals.",
+            symbol: "speaker.wave.2.fill",
+            synonyms: [
+                "setup check", "room", "rig", "audiophile", "listening", "rta",
+                "fft", "spectrogram", "pink noise", "sweep", "speaker",
+                "frequency response", "crest", "waterfall",
             ]
         ),
         ToolDefinition(
@@ -954,7 +967,7 @@ enum ToolboxCatalog {
             .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
         ],
         .sensors: [
-            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .breathFlute, .bubbleLevel,
+            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .setupCheck, .breathFlute, .bubbleLevel,
             .magnetometer, .barometer, .stillnessWatch, .motionSnapshot, .coupledVibration, .fieldPosition, .deviceHealth,
         ],
         .reference: [
@@ -1021,9 +1034,10 @@ enum ToolboxCatalog {
         .wifiStatus: [.cellularStatus, .bluetoothScan, .deviceHealth],
         .cellularStatus: [.wifiStatus, .rfLink, .bluetoothScan],
         .bluetoothScan: [.stillnessWatch, .wifiStatus, .cellularStatus],
-        .noiseMeter: [.acousticImager, .breathFlute, .deviceHealth],
-        .acousticImager: [.noiseMeter, .breathFlute, .deviceHealth],
-        .breathFlute: [.noiseMeter, .acousticImager],
+        .noiseMeter: [.setupCheck, .acousticImager, .breathFlute],
+        .acousticImager: [.setupCheck, .noiseMeter, .breathFlute],
+        .setupCheck: [.noiseMeter, .acousticImager, .breathFlute],
+        .breathFlute: [.noiseMeter, .acousticImager, .setupCheck],
         .bubbleLevel: [.motionSnapshot, .magnetometer, .solarDesign],
         .magnetometer: [.stillnessWatch, .bubbleLevel, .motionSnapshot],
         .barometer: [.stillnessWatch, .fieldPosition, .deviceHealth],

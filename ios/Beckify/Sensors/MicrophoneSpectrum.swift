@@ -5,11 +5,12 @@ import os
 import SwiftUI
 import BeckifyMath
 
-/// One microphone tap for Noise Meter, Acoustic Imager, and Stillness Anomaly Watch.
+/// One microphone tap for Noise Meter, Acoustic Imager, Stillness Anomaly Watch, and Setup Check.
 ///
 /// A second screen that wants the mic joins this tap instead of installing another
 /// `AVAudioEngine` tap. Breath Flute calls `suspendForTone()` so a play-along
-/// tone does not fight the metering engine.
+/// tone does not fight the metering engine. Setup Check plays pink noise, a log
+/// sweep, or a tone burst on this same engine — it does not start a second FFT.
 @MainActor
 final class MicrophoneSpectrumCenter: ObservableObject {
     static let shared = MicrophoneSpectrumCenter()
@@ -20,6 +21,15 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     @Published private(set) var peakHz: Double?
     @Published private(set) var sampleRateHz: Double = 0
     @Published private(set) var harmonicRatio: Double?
+    @Published private(set) var rtaBands: [AcousticDisplayBand] = []
+    @Published private(set) var crestDB: Double?
+    @Published private(set) var clipFraction: Double = 0
+    @Published private(set) var stimulus: RoomRigStimulusKind = .listen
+    @Published private(set) var stimulusHz: Double?
+    @Published private(set) var inputChannelCount: Int = 0
+    @Published private(set) var channelBalance: Double?
+    @Published private(set) var latencySeconds: Double?
+    @Published private(set) var harmonicOrders: [RoomRigHarmonic] = []
     @Published var windowKind: SpectrumWindowKind = .hann {
         didSet { windowBox.set(windowKind) }
     }
@@ -32,6 +42,9 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     private var tokens: [UUID: String] = [:]
     private var playbackHolds = 0
     private let engine = AVAudioEngine()
+    private let player = RoomStimulusPlayer()
+    private var sourceNode: AVAudioSourceNode?
+    private var playAndRecord = false
     private var installed = false
     private var sessionActive = false
     private var fftSetup: FFTSetup?
@@ -70,6 +83,34 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         startEngineIfNeeded()
     }
 
+    /// Play a test signal on this engine, or return to listen-only metering.
+    /// Crossing between listen and playback restarts the session category.
+    /// Staying inside playback (pink → sweep) keeps the tap and only changes the player.
+    func setStimulus(_ kind: RoomRigStimulusKind) {
+        let needsPlay = kind != .listen
+        player.setKind(kind)
+        stimulus = kind
+        if kind == .listen {
+            stimulusHz = nil
+            harmonicOrders = []
+        }
+        latencySeconds = nil
+        guard playbackHolds == 0, !tokens.isEmpty, running || installed else { return }
+        if needsPlay != playAndRecord {
+            recycleAndStart()
+        }
+    }
+
+    /// Drop a test signal without restarting. Used when the screen is leaving
+    /// and `release` is about to stop the engine.
+    func endStimulus() {
+        player.setKind(.listen)
+        stimulus = .listen
+        stimulusHz = nil
+        harmonicOrders = []
+        latencySeconds = nil
+    }
+
     private func startEngineIfNeeded() {
         guard playbackHolds == 0, !tokens.isEmpty else { return }
         if running, installed { return }
@@ -84,6 +125,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
             installed = false
         }
         if engine.isRunning { engine.stop() }
+        detachStimulus()
         if let fftSetup {
             vDSP_destroy_fftsetup(fftSetup)
             self.fftSetup = nil
@@ -93,6 +135,26 @@ final class MicrophoneSpectrumCenter: ObservableObject {
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             sessionActive = false
         }
+    }
+
+    private func recycleAndStart() {
+        if installed {
+            engine.inputNode.removeTap(onBus: 0)
+            installed = false
+        }
+        if engine.isRunning { engine.stop() }
+        detachStimulus()
+        running = false
+        beginEngine()
+    }
+
+    private func detachStimulus() {
+        if let sourceNode {
+            engine.disconnectNodeOutput(sourceNode)
+            engine.detach(sourceNode)
+            self.sourceNode = nil
+        }
+        playAndRecord = false
     }
 
     private func requestThenRun() {
@@ -116,9 +178,15 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         if running, installed { return }
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: [.mixWithOthers])
+            let wantsPlay = player.kind != .listen
+            if wantsPlay {
+                try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .mixWithOthers])
+            } else {
+                try session.setCategory(.record, mode: .measurement, options: [.mixWithOthers])
+            }
             try session.setActive(true)
             sessionActive = true
+            playAndRecord = wantsPlay
             let input = engine.inputNode
             let format = input.outputFormat(forBus: 0)
             guard format.sampleRate > 0, format.channelCount > 0 else {
@@ -126,6 +194,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
                 running = false
                 return
             }
+            inputChannelCount = Int(format.channelCount)
             if fftSetup == nil {
                 fftSetup = AudioBlockFFT.makeSetup()
             }
@@ -143,8 +212,10 @@ final class MicrophoneSpectrumCenter: ObservableObject {
             let scratch = frameBuffer
             let length = AudioBlockFFT.length
             let windows = windowBox
+            let stimulusPlayer = player
             input.installTap(onBus: 0, bufferSize: AVAudioFrameCount(length), format: format) { [weak self] buffer, _ in
                 scratch.append(buffer)
+                let reading = roomRigChannelReading(buffer)
                 while let frame = scratch.pop(count: length) {
                     guard let magnitudes = AudioBlockFFT.magnitudes(
                         samples: frame,
@@ -156,51 +227,253 @@ final class MicrophoneSpectrumCenter: ObservableObject {
                         sampleRate: sampleRate,
                         fftLength: length
                     )
-                    let levels = BreathFluteMath.levelDBFS(samples: frame)
+                    let rta = RoomRigMath.thirdOctaveBands(
+                        linearMagnitudes: magnitudes,
+                        sampleRate: sampleRate,
+                        fftLength: length
+                    )
+                    let stats = RoomRigMath.frameStats(samples: frame.map(Double.init))
+                    let snap = stimulusPlayer.snapshot()
+                    let heardAt = Date().timeIntervalSinceReferenceDate
+                    let latency = stimulusPlayer.noteHeard(at: heardAt, linearPeak: stats.linearPeak)
                     let peak = AcousticSpectrum.peakBand(bands)?.centerHz
                     let ratio = RelativeHarmonicEnergy.ratio(linearMagnitudes: magnitudes)
+                    let harmonics: [RoomRigHarmonic]
+                    if let hz = snap.hz, snap.kind == .sweep || snap.kind == .burst {
+                        harmonics = RoomRigMath.harmonicOrders(
+                            linearMagnitudes: magnitudes,
+                            fundamentalHz: hz,
+                            sampleRate: sampleRate,
+                            fftLength: length
+                        ) ?? []
+                    } else {
+                        harmonics = []
+                    }
                     Task { @MainActor in
                         self?.publish(
                             bands: bands,
-                            rms: levels.rms,
-                            peak: levels.peak,
+                            rta: rta,
+                            rms: stats.rmsDBFS,
+                            peak: stats.peakDBFS,
+                            crestDB: stats.crestDB,
+                            clipFraction: stats.clipFraction,
                             peakHz: peak,
                             sampleRateHz: sampleRate,
-                            harmonicRatio: ratio
+                            harmonicRatio: ratio,
+                            harmonics: harmonics,
+                            stimulusHz: snap.hz,
+                            channelCount: reading.count,
+                            balance: reading.balance,
+                            latency: latency
                         )
                     }
                 }
             }
             installed = true
+            if wantsPlay {
+                attachStimulus(format: format)
+            }
             try engine.start()
             running = true
-            status = sharing ? "Shared microphone tap · audible FFT" : "Metering (uncalibrated dBFS)"
+            status = engineStatus(playing: wantsPlay)
         } catch {
             status = "Could not start audio: \(error.localizedDescription)"
             running = false
         }
     }
 
+    private func attachStimulus(format: AVAudioFormat) {
+        detachStimulus()
+        playAndRecord = true
+        let stimulusPlayer = player
+        let node = AVAudioSourceNode { _, _, frameCount, audioBufferList -> OSStatus in
+            let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
+            for buffer in buffers {
+                guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
+                stimulusPlayer.fill(data, frames: Int(frameCount), sampleRate: format.sampleRate)
+            }
+            return noErr
+        }
+        sourceNode = node
+        engine.attach(node)
+        engine.connect(node, to: engine.mainMixerNode, format: format)
+    }
+
+    private func engineStatus(playing: Bool) -> String {
+        if playing {
+            return sharing ? "Shared tap · phone speaker test signal" : "Phone speaker · relative mic"
+        }
+        return sharing ? "Shared microphone tap · audible FFT" : "Metering (uncalibrated dBFS)"
+    }
+
     private func publish(
         bands: [AcousticDisplayBand],
+        rta: [AcousticDisplayBand],
         rms: Double,
         peak: Double,
+        crestDB: Double?,
+        clipFraction: Double,
         peakHz: Double?,
         sampleRateHz: Double,
-        harmonicRatio: Double?
+        harmonicRatio: Double?,
+        harmonics: [RoomRigHarmonic],
+        stimulusHz: Double?,
+        channelCount: Int,
+        balance: Double?,
+        latency: Double?
     ) {
+        if let latency {
+            latencySeconds = latency
+        }
         let now = Date()
         guard now.timeIntervalSince(lastPublish) >= 1.0 / 20.0 else { return }
         lastPublish = now
         self.bands = bands
+        rtaBands = rta
         rmsDBFS = rms
         peakDBFS = peak
+        self.crestDB = crestDB
+        self.clipFraction = clipFraction
         self.peakHz = peakHz
         self.sampleRateHz = sampleRateHz
         self.harmonicRatio = harmonicRatio
+        harmonicOrders = harmonics
+        self.stimulusHz = stimulusHz
+        if channelCount > 0 { inputChannelCount = channelCount }
+        channelBalance = balance
         hasReading = true
-        if sharing, running {
-            status = "Shared microphone tap · audible FFT"
+        if running {
+            status = engineStatus(playing: playAndRecord)
+        }
+    }
+}
+
+private func roomRigChannelReading(_ buffer: AVAudioPCMBuffer) -> (count: Int, balance: Double?) {
+    let count = Int(buffer.format.channelCount)
+    guard let channels = buffer.floatChannelData else { return (count, nil) }
+    let frames = Int(buffer.frameLength)
+    guard frames > 0, count >= 2 else { return (count, nil) }
+    func rms(_ index: Int) -> Double {
+        guard index < count else { return 0 }
+        var sum = 0.0
+        let pointer = channels[index]
+        for offset in 0..<frames {
+            let value = Double(pointer[offset])
+            if value.isFinite { sum += value * value }
+        }
+        return sqrt(sum / Double(frames))
+    }
+    return (count, AcousticSpectrum.channelBalance(leftRMS: rms(0), rightRMS: rms(1)))
+}
+
+/// Thread-safe test-signal player for the shared microphone engine.
+private final class RoomStimulusPlayer: @unchecked Sendable {
+    struct Snapshot: Sendable {
+        var kind: RoomRigStimulusKind
+        var hz: Double?
+    }
+
+    private struct State {
+        var kind: RoomRigStimulusKind = .listen
+        var pink = PinkNoiseGenerator(seed: 0xBEC5_5101)
+        var phase = 0.0
+        var sweepSamples = 0
+        var burstCursor = 0
+        var hz: Double?
+        var armedAt: Double?
+        var generation = 0
+        var heardGeneration = -1
+    }
+
+    private let lock = OSAllocatedUnfairLock(initialState: State())
+
+    var kind: RoomRigStimulusKind {
+        lock.withLock { $0.kind }
+    }
+
+    func setKind(_ kind: RoomRigStimulusKind) {
+        lock.withLock { state in
+            state.kind = kind
+            state.phase = 0
+            state.sweepSamples = 0
+            state.burstCursor = 0
+            state.pink = PinkNoiseGenerator(seed: 0xBEC5_5101)
+            state.hz = kind == .burst ? RoomRigMath.burstHz : nil
+            state.armedAt = nil
+            state.generation = 0
+            state.heardGeneration = -1
+        }
+    }
+
+    func snapshot() -> Snapshot {
+        lock.withLock { Snapshot(kind: $0.kind, hz: $0.hz) }
+    }
+
+    /// Latch the first loud input after a burst leaves the speaker. One estimate per burst.
+    func noteHeard(at heardAt: Double, linearPeak: Double) -> Double? {
+        lock.withLock { state in
+            guard state.kind == .burst, let armed = state.armedAt, state.heardGeneration != state.generation else {
+                return nil
+            }
+            guard linearPeak >= 0.08 else { return nil }
+            guard let latency = RoomRigMath.latencySeconds(playedAt: armed, heardAt: heardAt) else { return nil }
+            state.heardGeneration = state.generation
+            return latency
+        }
+    }
+
+    func fill(_ data: UnsafeMutablePointer<Float>, frames: Int, sampleRate: Double) {
+        lock.withLock { state in
+            let rate = sampleRate.isFinite && sampleRate > 0 ? sampleRate : 48_000
+            let gap = Int(rate * 0.65)
+            let period = RoomRigMath.burstLength + max(gap, 1)
+            for index in 0..<frames {
+                let sample: Double
+                switch state.kind {
+                case .listen:
+                    sample = 0
+                    state.hz = nil
+                case .pink:
+                    sample = state.pink.next(amplitude: RoomRigMath.playbackAmplitude)
+                    state.hz = nil
+                case .sweep:
+                    let elapsed = Double(state.sweepSamples) / rate
+                    let hz = RoomRigMath.sweepHz(elapsed: elapsed)
+                    let step = BreathFluteMath.sineSample(
+                        phase: state.phase,
+                        frequencyHz: hz,
+                        sampleRate: rate,
+                        amplitude: RoomRigMath.playbackAmplitude
+                    )
+                    state.phase = step.nextPhase
+                    state.hz = hz
+                    state.sweepSamples += 1
+                    sample = step.sample
+                case .burst:
+                    let position = state.burstCursor % period
+                    if position < RoomRigMath.burstLength {
+                        if position == 0 {
+                            state.armedAt = Date().timeIntervalSinceReferenceDate
+                            state.generation &+= 1
+                        }
+                        let envelope = RoomRigMath.burstEnvelope(index: position, length: RoomRigMath.burstLength)
+                        let step = BreathFluteMath.sineSample(
+                            phase: state.phase,
+                            frequencyHz: RoomRigMath.burstHz,
+                            sampleRate: rate,
+                            amplitude: RoomRigMath.playbackAmplitude * envelope
+                        )
+                        state.phase = step.nextPhase
+                        state.hz = RoomRigMath.burstHz
+                        sample = step.sample
+                    } else {
+                        sample = 0
+                        state.hz = RoomRigMath.burstHz
+                    }
+                    state.burstCursor += 1
+                }
+                data[index] = Float(sample)
+            }
         }
     }
 }
