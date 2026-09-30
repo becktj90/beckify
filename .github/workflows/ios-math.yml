@@ -2,6 +2,8 @@
 
 # Runs the pure-Swift BeckifyMath package on Ubuntu.
 # This is not an iOS Simulator, Xcode, or SwiftUI UI build.
+# App and Xcode project changes run the same suite so a compile-only
+# Beckify fix still gets a green swift test check.
 
 name: iOS math (Linux)
 
@@ -9,12 +11,16 @@ on:
   pull_request:
     paths:
       - "ios/BeckifyMath/**"
+      - "ios/Beckify/**"
+      - "ios/Beckify.xcodeproj/**"
       - ".github/workflows/ios-math.yml"
   push:
     branches:
       - main
     paths:
       - "ios/BeckifyMath/**"
+      - "ios/Beckify/**"
+      - "ios/Beckify.xcodeproj/**"
       - ".github/workflows/ios-math.yml"
   workflow_dispatch:
 
