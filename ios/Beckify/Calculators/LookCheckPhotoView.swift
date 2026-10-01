@@ -280,6 +280,9 @@ struct LookCheckPhotoView: View {
                     Text(draft.roast)
                         .font(.body.weight(.medium))
                         .foregroundStyle(Theme.foreground)
+                    Text("Entertainment only. Comedy roast of this frame — not a beauty score. Photo assessment stays honest.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)

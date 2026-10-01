@@ -321,8 +321,14 @@ async function lookRunAnalysis() {
       const result = await Vlm.analyzeLook(lookState.file, {
         enhanceOn: true,
         roastMode: lookRandomSurpriseTone(),
-        onProgress: function (frac, label) {
-          lookSetProgress(Math.round(18 + frac * 70), label);
+        onProgress: function (frac) {
+          // Never pipe shared VLM OCR "AI enhance / AI draft" labels into #look-status.
+          var f = Number(frac) || 0;
+          var label = 'Preparing photo…';
+          if (f >= 0.95) label = 'Finishing look check…';
+          else if (f >= 0.7) label = 'Reading the verdict…';
+          else if (f >= 0.35) label = 'Sending upright photo…';
+          lookSetProgress(Math.round(18 + f * 70), label);
         },
       });
       draft = result.draft;
@@ -332,10 +338,19 @@ async function lookRunAnalysis() {
     }
     lookSetProgress(92, 'Reading the verdict…');
     lookRenderDraft(draft);
-    lookSetProgress(100, 'Done. ' + LOOK_SURPRISE_COPY + ' Entertainment only — not a beauty contest.');
+    lookSetProgress(100, 'Done. Entertainment only — not a beauty contest.');
     if (typeof window.showToast === 'function') window.showToast('Look check complete');
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown look-check error';
+    let message = error instanceof Error ? error.message : 'Unknown look-check error';
+    // Never show the word AI (or OCR assist copy) on the Look Check path.
+    if (/\bAI\b/i.test(message) || /on-device OCR/i.test(message)) {
+      const Vlm = window.BeckifyVlmOcr;
+      if (Vlm && typeof Vlm.formatLookError === 'function' && error && error.status) {
+        message = Vlm.formatLookError(error);
+      } else {
+        message = 'Look check failed. Please try again.';
+      }
+    }
     lookSetStatus(message);
     if (typeof window.showToast === 'function') window.showToast(message);
     lookSetProgress(0, 'Look check failed');

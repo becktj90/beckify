@@ -243,12 +243,19 @@ struct LookCheckRootView: View {
                     .foregroundStyle(verdictColor(draft.verdict))
                 Spacer()
                 if draft.showsScore, let score = draft.score {
-                    Text("\(score)")
-                        .font(.title.weight(.bold).monospacedDigit())
-                        .foregroundStyle(LookTheme.foreground)
-                    + Text(" / 100")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(LookTheme.muted)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(PhotoLookCheck.photoAssessmentLabel)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(LookTheme.muted)
+                        Text("\(score)")
+                            .font(.title.weight(.bold).monospacedDigit())
+                            .foregroundStyle(LookTheme.foreground)
+                        + Text(" / 100")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(LookTheme.muted)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(PhotoLookCheck.photoAssessmentLabel) \(score) out of 100")
                 }
             }
 
