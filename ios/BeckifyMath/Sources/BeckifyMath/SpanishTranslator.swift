@@ -119,10 +119,41 @@ public enum SpanishTranslatorAPI {
         "Can you hear me up there?",
     ]
 
+    /// Short English attention seeds for the prominent Hey! / Get attention button.
+    /// Beckify AI rewrite (Clean vs Jobsite) + `/api/speak` produce the spoken Spanish —
+    /// Jobsite tends toward oye / mira / espérate energy; Clean stays polite and polished.
+    /// UI labels stay generic ("Hey!", "Get attention") — no dialect branding.
+    public static let attentionCallPhrases: [String] = [
+        "Hey!",
+        "Look!",
+        "Hold up!",
+        "Wait a second!",
+        "Hey — over here!",
+        "Look over here!",
+    ]
+
+    /// Chrome label for the attention-getter control (never dialect / geography).
+    public static let attentionButtonTitle = "Hey!"
+    public static let attentionButtonAccessibilityLabel = "Get attention"
+    public static let attentionButtonHelp =
+        "One tap — translate + speak a short attention call on the active Clean or Jobsite mode."
+
     /// Rotating test pool (same lines as quick chips). Avoids immediate repeat when possible.
     public static func nextRandomTestPhrase(excluding previous: String? = nil) -> String {
-        let pool = quickTranslatePhrases
-        guard !pool.isEmpty else { return "Hello." }
+        nextRotatingPhrase(from: quickTranslatePhrases, excluding: previous, fallback: "Hello.")
+    }
+
+    /// Rotating attention-call English seed for one-tap translate → speak.
+    public static func nextAttentionCallPhrase(excluding previous: String? = nil) -> String {
+        nextRotatingPhrase(from: attentionCallPhrases, excluding: previous, fallback: "Hey!")
+    }
+
+    private static func nextRotatingPhrase(
+        from pool: [String],
+        excluding previous: String?,
+        fallback: String
+    ) -> String {
+        guard !pool.isEmpty else { return fallback }
         if pool.count == 1 { return pool[0] }
         let prior = (previous ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         var pick = pool.randomElement() ?? pool[0]
@@ -135,7 +166,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is rough banter; Clean is polished and warm). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
+        "Speech stays on this device for recognition. Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is rough banter; Clean is polished and warm). A Hey! button runs a short attention call through translate + speak on the active mode. If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)

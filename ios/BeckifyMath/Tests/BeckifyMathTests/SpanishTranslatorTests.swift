@@ -118,6 +118,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertFalse(joined.contains("profane"))
         XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation"))
         XCTAssertTrue(joined.contains("chip") || joined.contains("quick") || joined.contains("test"))
+        XCTAssertTrue(joined.contains("hey") || joined.contains("attention"))
         XCTAssertTrue(joined.contains("/api/speak") || joined.contains("neural") || joined.contains("openai"))
     }
 
@@ -140,6 +141,34 @@ final class SpanishTranslatorTests: XCTestCase {
             // Best-effort: avoid immediate repeat when pool allows.
             XCTAssertNotEqual(a, b)
         }
+    }
+
+    func testAttentionCallPhrasesAndLabels() {
+        let phrases = SpanishTranslatorAPI.attentionCallPhrases
+        XCTAssertGreaterThanOrEqual(phrases.count, 4)
+        XCTAssertLessThanOrEqual(phrases.count, 8)
+        XCTAssertEqual(Set(phrases).count, phrases.count, "attention phrases must be unique")
+        for phrase in phrases {
+            XCTAssertFalse(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertLessThanOrEqual(phrase.count, 40)
+        }
+        XCTAssertTrue(phrases.contains(where: { $0.lowercased().contains("hey") }))
+        XCTAssertTrue(phrases.contains(where: { $0.lowercased().contains("look") || $0.lowercased().contains("hold") || $0.lowercased().contains("wait") }))
+        let a = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: nil)
+        XCTAssertTrue(phrases.contains(a))
+        let b = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: a)
+        XCTAssertTrue(phrases.contains(b))
+        if phrases.count > 1 {
+            XCTAssertNotEqual(a, b)
+        }
+        XCTAssertEqual(SpanishTranslatorAPI.attentionButtonTitle, "Hey!")
+        XCTAssertEqual(SpanishTranslatorAPI.attentionButtonAccessibilityLabel, "Get attention")
+        let help = SpanishTranslatorAPI.attentionButtonHelp.lowercased()
+        XCTAssertTrue(help.contains("attention") || help.contains("translate"))
+        XCTAssertFalse(help.contains("cuban"))
+        XCTAssertFalse(help.contains("florida"))
+        XCTAssertFalse(SpanishTranslatorAPI.attentionButtonTitle.lowercased().contains("cuban"))
+        XCTAssertFalse(SpanishTranslatorAPI.attentionButtonAccessibilityLabel.lowercased().contains("oy"))
     }
 
     func testVoiceModeLabelsAndRequestBodies() throws {
@@ -243,6 +272,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(d.contains("/api/speak") || d.contains("neural"))
         XCTAssertTrue(d.contains("fallback") || d.contains("avspeech") || d.contains("apple"))
         XCTAssertTrue(d.contains("clean") && d.contains("jobsite"))
+        XCTAssertTrue(d.contains("hey") || d.contains("attention"))
         XCTAssertFalse(d.contains("cuban"))
         XCTAssertFalse(d.contains("florida"))
         XCTAssertFalse(d.contains("profane"))

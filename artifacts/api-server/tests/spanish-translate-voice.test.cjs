@@ -26,4 +26,7 @@ assert.match(speak, /do not beep|sanitize|soften/i);
 assert.match(speak, /polished|elegant|warm/i);
 assert.match(speak, /speakDefaultVoiceForMode|SPEAK_CLEAN_VOICE/);
 
+
+assert.match(translate, /Oye|Mira|Esp[eé]rate|attention-getters/i);
+assert.match(translate, /Disculpe|Permiso|Un momento|polite polished attention/i);
 console.log("spanish-translate-voice.test.cjs: ok");

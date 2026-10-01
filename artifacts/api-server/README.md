@@ -37,7 +37,7 @@ After merge, Fly auto-deploys when `artifacts/api-server` changes (needs `FLY_AP
 
 ### `POST /api/translate`
 
-Text-only English → Spanish for the Toolbox **Spanish Translator** tool. Optional `voiceMode`: `jobsite` (rough banter) or `clean` (polished). Body: `{ "text": "…", "sourceLanguage": "en", "targetLanguage": "es", "voiceMode": "jobsite" }`. Uses `OPENAI_API_KEY` (optional `TRANSLATE_MODEL`, defaults to `REVIEW_MODEL` or `gpt-4o-mini`). Success JSON includes `translation`, `dialect`, `voiceMode`, `sourceText`. Empty body → **400**.
+Text-only English → Spanish for the Toolbox **Spanish Translator** tool. Optional `voiceMode`: `jobsite` (rough banter; short attention seeds lean oye/mira/espérate) or `clean` (polished; short attention seeds stay polite). Body: `{ "text": "…", "sourceLanguage": "en", "targetLanguage": "es", "voiceMode": "jobsite" }`. Uses `OPENAI_API_KEY` (optional `TRANSLATE_MODEL`, defaults to `REVIEW_MODEL` or `gpt-4o-mini`). Success JSON includes `translation`, `dialect`, `voiceMode`, `sourceText`. Empty body → **400**.
 
 ### `POST /api/speak`
 
