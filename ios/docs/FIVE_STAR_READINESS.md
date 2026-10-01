@@ -25,7 +25,7 @@ Public sources only. No App Store Connect scrape. No password.
 
 - Inaccurate NEC math (conduit fill, ampacity derate, Ohm’s Law). One inspector-failed pull becomes a 1★ that sits on the product page forever.
 - Listing / screenshot / What’s New that overclaims Cellular Path, Wi‑Fi dBm, OCR accuracy, or outdoor glare.
-- Permission surprise (mic / speech recognition / Local Network / location) without the usage string matching the tool. Spanish Translator needs mic + speech recognition; cloud text upload only after Stop / Translate.
+- Permission surprise (mic / speech recognition / Local Network / location) without the usage string matching the tool. Spanish Translator needs mic + speech recognition; cloud text upload only after Stop / Translate on the Beckify AI path (on-device Apple Translation fallback stays local on iOS 18+).
 - Review nag on first launch or a custom “Rate us 5 stars” sheet (Ugly’s lost stars for this; Apple rejects custom prompts under 5.6.1 and early-onboarding asks under 5.6.3).
 - Broken OCR presented as truth. Confirm-before-save is the mitigation — keep it visible.
 - Crashes on first Calculate / Continue (Electrician’s Helper pattern). No crash SDK: **you** are the quality gate.

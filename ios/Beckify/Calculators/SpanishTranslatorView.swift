@@ -1,9 +1,11 @@
 import SwiftUI
 import AVFoundation
 import Speech
+import Translation
 import BeckifyMath
 
 /// Toolkit → Reference: record English → Beckify AI Cuban / Florida LatAm Spanish → loud TTS.
+/// Falls back to on-device Apple Translation (iOS 18+) when `/api/translate` fails.
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
 
@@ -40,6 +42,12 @@ struct SpanishTranslatorView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .spanishOnDeviceTranslation(
+            requestID: engine.onDeviceRequestID,
+            english: engine.pendingOnDeviceEnglish
+        ) { result in
+            engine.handleOnDeviceResult(result)
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 engine.stopListening(translateAfter: false)
@@ -68,6 +76,7 @@ struct SpanishTranslatorView: View {
         if !engine.englishText.isEmpty { lines.append("EN: \(engine.englishText)") }
         if !engine.spanishText.isEmpty { lines.append("ES: \(engine.spanishText)") }
         if !engine.dialectLabel.isEmpty { lines.append(engine.dialectLabel) }
+        if !engine.engineLabel.isEmpty { lines.append(engine.engineLabel) }
         if !engine.voiceNote.isEmpty { lines.append(engine.voiceNote) }
         lines.append(SpanishTranslatorAPI.disclaimer)
         return lines.joined(separator: "\n")
@@ -85,7 +94,7 @@ struct SpanishTranslatorView: View {
             if !engine.voiceNote.isEmpty {
                 ResultRow(label: "Voice", value: engine.voiceNote)
             }
-            Text("Listening → Translating → Speaking. Hold the phone so the bottom mic hears you clearly.")
+            Text("Listening → Translating → Speaking. Hold the phone so the bottom mic hears you clearly. Prefers Beckify AI; falls back to on-device Apple Translation on iOS 18+ when the API is down.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
@@ -98,7 +107,12 @@ struct SpanishTranslatorView: View {
         case .translating: return Theme.copper
         case .speaking: return Theme.warn
         case .error: return Theme.warn
-        case .idle: return Theme.muted
+        case .idle:
+            if engine.statusLabel == SpanishTranslatorAPI.statusViaBeckifyAI
+                || engine.statusLabel == SpanishTranslatorAPI.statusOnDevice {
+                return Theme.good
+            }
+            return Theme.muted
         }
     }
 
@@ -202,7 +216,7 @@ struct SpanishTranslatorView: View {
                 .keyboardType(.URL)
             SecureField("Bearer token for custom endpoint only", text: $apiToken)
                 .textFieldStyle(.roundedBorder)
-            Text("Leave blank to use https://api.beckify.com/api/translate. A personal token is not sent to Beckify unless you set a custom URL.")
+            Text("Leave blank to use https://api.beckify.com/api/translate. A personal token is not sent to Beckify unless you set a custom URL. If the API fails, the app tries on-device Apple Translation on iOS 18+.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
         }
@@ -213,7 +227,113 @@ struct SpanishTranslatorView: View {
            PhotoLookCheck.httpsBase(customEndpoint) != nil {
             return "Custom translate URL is set."
         }
-        return "Uses https://api.beckify.com/api/translate when the custom URL is blank."
+        return "Uses https://api.beckify.com/api/translate when the custom URL is blank. On-device Apple Translation is the fallback."
+    }
+}
+
+// MARK: - On-device Translation (iOS 18+)
+
+extension View {
+    /// Triggers Apple TranslationSession when `requestID` increments (API fallback path).
+    @ViewBuilder
+    func spanishOnDeviceTranslation(
+        requestID: UInt64,
+        english: String,
+        onResult: @escaping (Result<(text: String, targetLanguageID: String), Error>) -> Void
+    ) -> some View {
+        if #available(iOS 18.0, *) {
+            modifier(
+                SpanishOnDeviceTranslationModifier(
+                    requestID: requestID,
+                    english: english,
+                    onResult: onResult
+                )
+            )
+        } else {
+            self
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct SpanishOnDeviceTranslationModifier: ViewModifier {
+    let requestID: UInt64
+    let english: String
+    let onResult: (Result<(text: String, targetLanguageID: String), Error>) -> Void
+
+    @State private var configuration: TranslationSession.Configuration?
+    @State private var activeTargetID = "es"
+
+    func body(content: Content) -> some View {
+        content
+            .translationTask(configuration) { session in
+                let source = english.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !source.isEmpty else { return }
+                do {
+                    try await session.prepareTranslation()
+                    let response = try await session.translate(source)
+                    let translated = response.targetText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !translated.isEmpty else {
+                        await MainActor.run {
+                            onResult(.failure(
+                                NSError(
+                                    domain: "BeckifySpanishTranslator",
+                                    code: 1,
+                                    userInfo: [NSLocalizedDescriptionKey: "On-device translation returned empty Spanish."]
+                                )
+                            ))
+                        }
+                        return
+                    }
+                    let targetID = activeTargetID
+                    await MainActor.run {
+                        onResult(.success((text: translated, targetLanguageID: targetID)))
+                    }
+                } catch {
+                    await MainActor.run {
+                        onResult(.failure(error))
+                    }
+                }
+            }
+            .onChange(of: requestID) { _, newID in
+                guard newID > 0 else { return }
+                Task { @MainActor in
+                    await armConfiguration()
+                }
+            }
+    }
+
+    @MainActor
+    private func armConfiguration() async {
+        let source = Locale.Language(identifier: "en")
+        let targetID = await Self.preferredSpanishTargetID()
+        activeTargetID = targetID
+        let target = Locale.Language(identifier: targetID)
+        if var config = configuration {
+            config.source = source
+            config.target = target
+            config.invalidate()
+            configuration = config
+        } else {
+            configuration = TranslationSession.Configuration(source: source, target: target)
+        }
+    }
+
+    /// Prefer LatAm / Florida-relevant Spanish pairs when Apple has them installed or downloadable.
+    private static func preferredSpanishTargetID() async -> String {
+        let availability = LanguageAvailability()
+        let source = Locale.Language(identifier: "en")
+        for id in SpanishTranslatorAPI.preferredAppleSpanishLanguageIDs {
+            let target = Locale.Language(identifier: id)
+            let status = await availability.status(from: source, to: target)
+            switch status {
+            case .installed, .supported:
+                return id
+            default:
+                continue
+            }
+        }
+        return "es"
     }
 }
 
@@ -233,6 +353,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     @Published var voiceNote = ""
     @Published var errorMessage: String?
     @Published var statusLabel = "Ready"
+    /// Incremented to ask the view for an on-device TranslationSession pass.
+    @Published var onDeviceRequestID: UInt64 = 0
+    /// English snapshot for the in-flight on-device request.
+    @Published var pendingOnDeviceEnglish = ""
 
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -242,6 +366,9 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private var selectedVoice: AVSpeechSynthesisVoice?
     private var pendingCustomEndpoint = ""
     private var pendingToken = ""
+    private var lastSuccessStatus = ""
+    private var lastAPIError: String?
+    private var translateGeneration: UInt64 = 0
 
     override init() {
         super.init()
@@ -257,6 +384,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         spanishText = ""
         dialectLabel = ""
         engineLabel = ""
+        lastSuccessStatus = ""
+        lastAPIError = nil
 
         SFSpeechRecognizer.requestAuthorization { [weak self] auth in
             Task { @MainActor in
@@ -311,7 +440,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         phase = .translating
         statusLabel = "Translating"
         errorMessage = nil
-        engineLabel = "Beckify API…"
+        engineLabel = "Beckify AI…"
+        lastAPIError = nil
+        translateGeneration &+= 1
+        let generation = translateGeneration
 
         Task {
             do {
@@ -320,16 +452,51 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     customEndpoint: customEndpoint,
                     token: token
                 )
-                applyDraft(draft)
-                speakSpanish(draft.translation)
+                guard generation == translateGeneration else { return }
+                finishWithDraft(draft, successStatus: SpanishTranslatorAPI.statusViaBeckifyAI)
             } catch {
-                phase = .error
-                statusLabel = "Translate failed"
-                engineLabel = ""
-                errorMessage = (error as? LocalizedError)?.errorDescription
+                guard generation == translateGeneration else { return }
+                let message = (error as? LocalizedError)?.errorDescription
                     ?? error.localizedDescription
-                // English text stays on screen for retry when the Beckify API returns.
+                let status = (error as? VisionHTTPError)?.status ?? 0
+                lastAPIError = message
+
+                if SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: status) {
+                    beginOnDeviceFallback(source: source, apiError: message)
+                } else {
+                    phase = .error
+                    statusLabel = "Translate failed"
+                    engineLabel = ""
+                    errorMessage = message
+                }
             }
+        }
+    }
+
+    func handleOnDeviceResult(_ result: Result<(text: String, targetLanguageID: String), Error>) {
+        switch result {
+        case .success(let payload):
+            let draft = SpanishTranslatorAPI.appleOnDeviceDraft(
+                translation: payload.text,
+                sourceText: pendingOnDeviceEnglish.isEmpty ? englishText : pendingOnDeviceEnglish,
+                targetLanguageID: payload.targetLanguageID
+            )
+            // Soft note: Beckify AI was down; on-device succeeded.
+            if let api = lastAPIError, !api.isEmpty {
+                errorMessage = "Beckify AI unavailable — used on-device Apple Translation. (\(api))"
+            } else {
+                errorMessage = nil
+            }
+            finishWithDraft(draft, successStatus: SpanishTranslatorAPI.statusOnDevice)
+        case .failure(let error):
+            phase = .error
+            statusLabel = "Translate failed"
+            engineLabel = ""
+            errorMessage = SpanishTranslatorAPI.bothPathsFailedMessage(
+                apiError: lastAPIError,
+                onDeviceError: (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            )
+            pendingOnDeviceEnglish = ""
         }
     }
 
@@ -345,16 +512,39 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         }
     }
 
+    private func beginOnDeviceFallback(source: String, apiError: String) {
+        if #available(iOS 18.0, *) {
+            phase = .translating
+            statusLabel = "Translating on device…"
+            engineLabel = "Apple Translation…"
+            pendingOnDeviceEnglish = source
+            onDeviceRequestID &+= 1
+        } else {
+            phase = .error
+            statusLabel = "Translate failed"
+            engineLabel = ""
+            errorMessage = SpanishTranslatorAPI.onDeviceUnavailableMessage(apiError: apiError)
+        }
+    }
+
+    private func finishWithDraft(_ draft: SpanishTranslationDraft, successStatus: String) {
+        applyDraft(draft)
+        lastSuccessStatus = successStatus
+        statusLabel = successStatus
+        speakSpanish(draft.translation)
+        pendingOnDeviceEnglish = ""
+    }
+
     private func applyDraft(_ draft: SpanishTranslationDraft) {
         spanishText = draft.translation
         dialectLabel = draft.displayDialect
         if draft.engine == "apple" {
-            engineLabel = "Apple Translation (on-device fallback)"
+            engineLabel = "Translated on device · Apple Translation"
         } else if !draft.provider.isEmpty {
-            engineLabel = "Beckify API · \(draft.provider)"
+            engineLabel = "Translated via Beckify AI · \(draft.provider)"
                 + (draft.model.isEmpty ? "" : " · \(draft.model)")
         } else {
-            engineLabel = "Beckify API"
+            engineLabel = "Translated via Beckify AI"
         }
     }
 
@@ -524,7 +714,7 @@ extension SpanishTranslatorEngine: AVSpeechSynthesizerDelegate {
         Task { @MainActor in
             if phase == .speaking {
                 phase = .idle
-                statusLabel = "Ready"
+                statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
             }
         }
     }
@@ -533,7 +723,7 @@ extension SpanishTranslatorEngine: AVSpeechSynthesizerDelegate {
         Task { @MainActor in
             if phase == .speaking {
                 phase = .idle
-                statusLabel = "Ready"
+                statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
             }
         }
     }

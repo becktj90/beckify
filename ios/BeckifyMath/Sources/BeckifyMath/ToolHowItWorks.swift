@@ -802,11 +802,11 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Record English, translate to Cuban / Florida LatAm Spanish via the Beckify API, and speak it loudly.",
+            summary: "Record English, translate to Cuban / Florida LatAm Spanish via Beckify AI (or on-device Apple Translation when the API is down), and speak it loudly.",
             context: "Toolkit → Reference. Field interpreter for job sites and everyday talk — not a certified interpreter.",
             bullets: [
                 "Mic + on-device Speech recognition. Audio is not uploaded; recognized text may POST to api.beckify.com/api/translate when you stop or tap Translate.",
-                "Prompt asks for Cuban / South Florida LatAm Spanish, not formal Spain Spanish. If the Beckify API is unreachable, English stays on screen for retry — no paid third-party keys.",
+                "Prefers Beckify AI Cuban / South Florida LatAm Spanish. If that API fails (404 / network / 5xx), falls back to on-device Apple Translation on iOS 18+ (generic Spanish, closest LatAm pair when available). Status shows Translated via Beckify AI or Translated on device.",
                 "TTS prefers es-US, then es-MX / other LatAm voices, then es-ES. Cuban es-CU is not typically shipped by Apple. Volume is maxed to the speaker.",
             ]
         ),

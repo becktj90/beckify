@@ -57,7 +57,7 @@ public enum SpanishTranslatorAPI {
     public static let translatePath = "/api/translate"
     public static let maxSourceCharacters = 2000
     public static let disclaimer =
-        "Speech stays on this device for recognition. Translation text uploads only when you stop recording or tap Translate. Prefers Cuban / Florida LatAm Spanish via the Beckify API (api.beckify.com). Not a certified interpreter."
+        "Speech stays on this device for recognition. Prefers Cuban / Florida LatAm Spanish via the Beckify API (api.beckify.com). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish, not Cuban-tuned). Translation text uploads only when the Beckify path runs. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -112,6 +112,73 @@ public enum SpanishTranslatorAPI {
         if trimmed.count <= maxSourceCharacters { return trimmed }
         let end = trimmed.index(trimmed.startIndex, offsetBy: maxSourceCharacters)
         return String(trimmed[..<end])
+    }
+
+    /// Sticky / phase label after a successful Beckify API translation.
+    public static let statusViaBeckifyAI = "Translated via Beckify AI"
+    /// Sticky / phase label after a successful on-device Apple Translation fallback.
+    public static let statusOnDevice = "Translated on device"
+
+    /// Minimum OS for Apple TranslationSession (Translation framework).
+    public static let onDeviceTranslationMinimumOS = "iOS 18"
+
+    /// Preferred Apple Translation target language identifiers (LatAm / Florida-relevant first).
+    public static let preferredAppleSpanishLanguageIDs: [String] = [
+        "es-MX",
+        "es-US",
+        "es-419",
+        "es",
+    ]
+
+    public static func appleOnDeviceDraft(
+        translation: String,
+        sourceText: String,
+        targetLanguageID: String = "es"
+    ) -> SpanishTranslationDraft {
+        SpanishTranslationDraft(
+            translation: translation.trimmingCharacters(in: .whitespacesAndNewlines),
+            dialect: "apple_on_device_es",
+            sourceText: sourceText,
+            sourceLanguage: "en",
+            targetLanguage: targetLanguageID,
+            provider: "apple",
+            model: "TranslationSession",
+            notes: "On-device Apple Translation. Generic Spanish (closest LatAm pair when available) — not Cuban / Florida-tuned like Beckify AI.",
+            engine: "apple"
+        )
+    }
+
+    /// Network / HTTP failures that should trigger on-device fallback (not auth-only client errors we cannot recover).
+    public static func shouldAttemptOnDeviceFallback(httpStatus: Int) -> Bool {
+        if httpStatus == 0 { return true } // transport / DNS / offline
+        if httpStatus == 404 || httpStatus == 405 { return true }
+        if httpStatus == 408 || httpStatus == 429 { return true }
+        if httpStatus >= 500 { return true }
+        // Treat unexpected 3xx / other failures as fallback-worthy so the Answer never sticks on English-only.
+        if httpStatus < 200 || httpStatus >= 300 { return true }
+        return false
+    }
+
+    public static func onDeviceUnavailableMessage(apiError: String?) -> String {
+        let api = (apiError ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let need = "On-device Apple Translation needs \(onDeviceTranslationMinimumOS) or later (or languages are not installed). English stays on screen for retry."
+        if api.isEmpty { return need }
+        return "\(api) \(need)"
+    }
+
+    public static func bothPathsFailedMessage(apiError: String?, onDeviceError: String?) -> String {
+        let api = (apiError ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let device = (onDeviceError ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        switch (api.isEmpty, device.isEmpty) {
+        case (false, false):
+            return "Beckify AI: \(api) On-device: \(device)"
+        case (false, true):
+            return api
+        case (true, false):
+            return "On-device translation failed: \(device)"
+        case (true, true):
+            return "Translation failed. Check the network or install English ↔ Spanish in Apple Translate, then try again."
+        }
     }
 
     public static func normalizeDraft(_ raw: Any?, fallbackSource: String = "") -> SpanishTranslationDraft? {
