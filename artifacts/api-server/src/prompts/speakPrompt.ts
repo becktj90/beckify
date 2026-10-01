@@ -33,7 +33,25 @@ export function speakDefaultVoiceForMode(mode: TranslateVoiceMode): string {
   return mode === "clean" ? SPEAK_CLEAN_VOICE : SPEAK_DEFAULT_VOICE;
 }
 
-export function speakVoiceInstructions(mode: TranslateVoiceMode): string {
+/** Loud field English. Do not force a Spanish accent onto English words. */
+export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Speak clear field English, loud enough for a noisy jobsite. General American English. Blunt coworker energy: direct, projected, intelligible over site noise. Deliver swearing that is already in the text; do not add words, do not beep, and do not invent slurs or hate speech. Not a cartoon, not a whisper, not a Spanish accent laid over English. Pace stays a touch slower than a shout so the words land.`;
+
+/** Clear polished English. Do not force a Spanish accent onto English words. */
+export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `Speak clear polished English. General American English. Warm, easy to hear, and unhurried, with enough projection for a room. Do not add swearing. Do not invent slurs. Not a cartoon, not a whisper, not a Spanish accent laid over English.`;
+
+/** `en` / `en-*` selects English delivery. Anything else, including omitted, stays Spanish. */
+export function normalizeSpeakLanguage(raw: unknown): "en" | "es" {
+  if (typeof raw !== "string") return "es";
+  const folded = raw.trim().toLowerCase().replace(/_/g, "-");
+  const primary = folded.split("-")[0] ?? "";
+  if (primary === "en") return "en";
+  return "es";
+}
+
+export function speakVoiceInstructions(mode: TranslateVoiceMode, language: "en" | "es" = "es"): string {
+  if (language === "en") {
+    return mode === "clean" ? SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS : SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS;
+  }
   return mode === "clean" ? SPEAK_CLEAN_VOICE_INSTRUCTIONS : SPEAK_JOBSITE_VOICE_INSTRUCTIONS;
 }
 

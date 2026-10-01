@@ -2,7 +2,9 @@ import { Router, type IRouter } from "express";
 import {
   TRANSLATE_MAX_OUTPUT_TOKENS,
   TRANSLATE_MAX_SOURCE_CHARS,
+  englishResponseDialect,
   normalizeTranslateVoiceMode,
+  resolveTranslateDirection,
   translateSystemPrompt,
   translateUserPrompt,
 } from "../prompts/translatePrompt.js";
@@ -32,7 +34,7 @@ router.post("/translate", async (req, res) => {
   const sourceText = pickText(body);
   if (!sourceText) {
     return res.status(400).json({
-      error: "Provide English (or mixed) text in `text` or `sourceText` (1–2000 characters).",
+      error: "Provide text in `text` or `sourceText` (1–2000 characters).",
     });
   }
   if (sourceText.length > TRANSLATE_MAX_SOURCE_CHARS) {
@@ -43,9 +45,10 @@ router.post("/translate", async (req, res) => {
 
   const sourceLanguage = asShortString(body.sourceLanguage, "en");
   const targetLanguage = asShortString(body.targetLanguage, "es");
-  if (targetLanguage !== "es" && !targetLanguage.toLowerCase().startsWith("es")) {
+  const direction = resolveTranslateDirection(sourceLanguage, targetLanguage);
+  if (!direction) {
     return res.status(400).json({
-      error: "This route translates to Spanish (`targetLanguage` es / es-*).",
+      error: "This route translates English → Spanish (`targetLanguage` es / es-*) or Spanish → English (`sourceLanguage` es / es-*, `targetLanguage` en / en-*).",
     });
   }
 
@@ -86,8 +89,8 @@ router.post("/translate", async (req, res) => {
         response_format: { type: "json_object" },
         max_tokens: TRANSLATE_MAX_OUTPUT_TOKENS,
         messages: [
-          { role: "system", content: translateSystemPrompt(voiceMode) },
-          { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode) },
+          { role: "system", content: translateSystemPrompt(voiceMode, direction) },
+          { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode, direction) },
         ],
       }),
     });
@@ -111,13 +114,18 @@ router.post("/translate", async (req, res) => {
       return res.status(502).json({ error: "The translation provider returned invalid JSON." });
     }
 
+    const responseTarget = direction === "es-to-en" ? "en" : "es";
+    const dialect = direction === "es-to-en"
+      ? englishResponseDialect(voiceMode, parsed.dialect)
+      : (parsed.dialect || (voiceMode === "clean" ? "cuban_florida_clean" : "cuban_florida_jobsite"));
+
     return res.json({
       task: "translate",
       provider: "openai",
       model,
       sourceLanguage,
-      targetLanguage: "es",
-      dialect: parsed.dialect || (voiceMode === "clean" ? "cuban_florida_clean" : "cuban_florida_jobsite"),
+      targetLanguage: responseTarget,
+      dialect,
       voiceMode,
       sourceText,
       translation: parsed.translation,
