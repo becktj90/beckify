@@ -730,9 +730,9 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Spanish Translator",
-            subtitle: "Speak English, hear Cuban / South Florida jobsite Spanish — Beckify AI neural TTS (/api/speak), Apple TTS fallback, on-device translate fallback.",
+            subtitle: "Speak English, hear Spanish via Beckify AI — Clean or Jobsite mode, neural TTS (/api/speak), Apple TTS and on-device translate fallbacks.",
             symbol: "character.bubble",
-            synonyms: ["translator", "spanish", "cuban", "florida spanish", "translate", "interpreter", "español", "latam", "miami", "speech", "neural", "speak", "tts"]
+            synonyms: ["translator", "spanish", "translate", "interpreter", "español", "speech", "neural", "speak", "tts", "jobsite", "clean"]
         ),
         ToolDefinition(
             id: .magneticCircuit,

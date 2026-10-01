@@ -4,16 +4,23 @@ import Speech
 import Translation
 import BeckifyMath
 
-/// Toolkit → Reference: record English → Beckify AI Cuban / South Florida jobsite Spanish → OpenAI neural TTS (Apple fallback).
+/// Toolkit → Reference: record English → Beckify AI Spanish (Clean / Jobsite) → OpenAI neural TTS (Apple fallback).
 /// Falls back to on-device Apple Translation (iOS 18+) when `/api/translate` fails.
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var engine = SpanishTranslatorEngine()
+    @AppStorage(SpanishVoiceMode.storageKey) private var voiceModeRaw = SpanishVoiceMode.jobsite.rawValue
     @State private var typedEnglish = ""
     @State private var customEndpoint = ""
     @State private var apiToken = ""
     @State private var showAdvanced = false
+    @State private var lastTestPhrase = ""
+
+    private var voiceMode: SpanishVoiceMode {
+        get { SpanishVoiceMode.parse(voiceModeRaw) }
+        nonmutating set { voiceModeRaw = newValue.rawValue }
+    }
 
     var body: some View {
         ToolScaffold(
@@ -23,7 +30,9 @@ struct SpanishTranslatorView: View {
             disclaimer: .designAidExtra(SpanishTranslatorAPI.disclaimer)
         ) {
             statusCard
+            modeCard
             recordCard
+            quickPhrasesCard
             textCards
             speakCard
             if showAdvanced {
@@ -53,6 +62,10 @@ struct SpanishTranslatorView: View {
                 engine.stopListening(translateAfter: false)
                 engine.stopSpeaking()
             }
+        }
+        .onAppear { engine.voiceMode = voiceMode }
+        .onChange(of: voiceModeRaw) { _, raw in
+            engine.voiceMode = SpanishVoiceMode.parse(raw)
         }
         .onDisappear {
             engine.stopListening(translateAfter: false)
@@ -94,7 +107,7 @@ struct SpanishTranslatorView: View {
             if !engine.voiceNote.isEmpty {
                 ResultRow(label: "Voice", value: engine.voiceNote)
             }
-            Text("Listening → Translating → Speaking. Beckify AI aims for blunt Cuban / South Florida jobsite Spanish. Falls back to on-device Apple Translation on iOS 18+ when the API is down. Playback prefers OpenAI neural TTS (onyx) from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
+            Text("Listening → Translating → Speaking. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Beckify AI rewrites on the selected mode. On-device Apple Translation (iOS 18+) is the fallback when the API is down. Playback prefers OpenAI neural TTS from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
@@ -116,12 +129,31 @@ struct SpanishTranslatorView: View {
         }
     }
 
+    private var modeCard: some View {
+        ResultCard(title: "Mode", copyText: voiceMode.uiLabel) {
+            Picker("Mode", selection: $voiceModeRaw) {
+                ForEach(SpanishVoiceMode.allCases, id: \.rawValue) { mode in
+                    Text(mode.uiLabel).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("spanishTranslator.voiceMode")
+            Text(voiceMode == .clean
+                 ? "Clean: polished, warm Spanish. Jobsite: rough banter on the same Beckify AI path."
+                 : "Jobsite: rough banter Spanish. Clean: polished and warm on the same Beckify AI path.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .padding(.top, 4)
+        }
+    }
+
     private var recordCard: some View {
         VStack(spacing: 14) {
             Button {
                 if engine.phase == .listening {
                     engine.stopListening(translateAfter: true)
                 } else {
+                    engine.voiceMode = voiceMode
                     engine.startListening(customEndpoint: customEndpoint, token: apiToken)
                 }
             } label: {
@@ -140,6 +172,7 @@ struct SpanishTranslatorView: View {
                 Button {
                     let typed = typedEnglish.trimmingCharacters(in: .whitespacesAndNewlines)
                     let source = typed.isEmpty ? engine.englishText : typed
+                    engine.voiceMode = voiceMode
                     engine.translateText(
                         source,
                         customEndpoint: customEndpoint,
@@ -169,17 +202,81 @@ struct SpanishTranslatorView: View {
                 .accessibilityIdentifier("spanishTranslator.speakAgain")
             }
 
+            Button {
+                let phrase = SpanishTranslatorAPI.nextRandomTestPhrase(excluding: lastTestPhrase)
+                lastTestPhrase = phrase
+                typedEnglish = phrase
+                engine.voiceMode = voiceMode
+                engine.translateText(
+                    phrase,
+                    customEndpoint: customEndpoint,
+                    token: apiToken
+                )
+            } label: {
+                Label("Test", systemImage: "shuffle")
+                    .font(.headline.weight(.bold))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.copper)
+            .disabled(engine.phase == .listening || engine.phase == .translating)
+            .accessibilityIdentifier("spanishTranslator.testRandom")
+            .accessibilityLabel("Test with a random phrase")
+
             TextField("Or type English here", text: $typedEnglish, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...5)
                 .onSubmit {
+                    engine.voiceMode = voiceMode
                     engine.translateText(typedEnglish, customEndpoint: customEndpoint, token: apiToken)
                 }
         }
         .padding(.vertical, 4)
     }
 
+    private var quickPhrasesCard: some View {
+        ResultCard(title: "Quick lines", copyText: SpanishTranslatorAPI.quickTranslatePhrases.joined(separator: " · ")) {
+            Text("Tap a chip to fill English and run Beckify AI translate + speak on the selected mode.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(SpanishTranslatorAPI.quickTranslatePhrases.enumerated()), id: \.offset) { index, phrase in
+                        Button {
+                            typedEnglish = phrase
+                            engine.voiceMode = voiceMode
+                            engine.translateText(
+                                phrase,
+                                customEndpoint: customEndpoint,
+                                token: apiToken
+                            )
+                        } label: {
+                            Text(phrase)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.foreground)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Theme.surfaceRaised.opacity(0.9), in: Capsule(style: .continuous))
+                                .overlay(
+                                    Capsule(style: .continuous)
+                                        .stroke(Theme.border, lineWidth: 1)
+                                )
+                                .frame(minHeight: Theme.touchTarget)
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(engine.phase == .listening || engine.phase == .translating)
+                        .accessibilityIdentifier("spanishTranslator.quickPhrase.\(index)")
+                        .accessibilityLabel("Quick translate: \(phrase)")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
     private var textCards: some View {
+
         VStack(spacing: 12) {
             ResultCard(title: "English (heard / typed)", copyText: engine.englishText) {
                 Text(engine.englishText.isEmpty ? "—" : engine.englishText)
@@ -187,7 +284,7 @@ struct SpanishTranslatorView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
-            ResultCard(title: "Spanish (Cuban / Florida LatAm)", copyText: engine.spanishText) {
+            ResultCard(title: "Spanish", copyText: engine.spanishText) {
                 Text(engine.spanishText.isEmpty ? "—" : engine.spanishText)
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -198,7 +295,7 @@ struct SpanishTranslatorView: View {
 
     private var speakCard: some View {
         ResultCard(title: "Loud playback", copyText: engine.voiceNote) {
-            Text("Loud jobsite playback: OpenAI neural TTS (onyx / gpt-4o-mini-tts) from api.beckify.com with Cuban yell instructions, max speaker volume. Falls back to the deepest male es-US/es-MX Apple voice if cloud TTS fails. Media volume still matters if the phone is muted.")
+            Text("Loud playback: OpenAI neural TTS from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple Spanish voice if cloud TTS fails. Media volume still matters if the phone is muted.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
         }
@@ -319,7 +416,7 @@ private struct SpanishOnDeviceTranslationModifier: ViewModifier {
         }
     }
 
-    /// Prefer LatAm / Florida-relevant Spanish pairs when Apple has them installed or downloadable.
+    /// Prefer common Spanish locale pairs when Apple has them installed or downloadable.
     private static func preferredSpanishTargetID() async -> String {
         let availability = LanguageAvailability()
         let source = Locale.Language(identifier: "en")
@@ -454,7 +551,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                 let draft = try await Self.postTranslate(
                     text: source,
                     customEndpoint: customEndpoint,
-                    token: token
+                    token: token,
+                    voiceMode: voiceMode
                 )
                 guard generation == translateGeneration else { return }
                 finishWithDraft(draft, successStatus: SpanishTranslatorAPI.statusViaBeckifyAI)
@@ -677,16 +775,22 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
         Task {
             do {
+                let mode = voiceMode
                 let result = try await Self.postSpeak(
                     text: trimmed,
                     customEndpoint: pendingCustomEndpoint,
-                    token: pendingToken
+                    token: pendingToken,
+                    voiceMode: mode
                 )
                 guard generation == speakGeneration else { return }
                 lastTTSModel = result.model ?? lastTTSModel
                 lastTTSVoice = result.voice ?? lastTTSVoice
                 try playNeuralAudio(result.data)
-                voiceNote = SpanishTranslatorAPI.neuralVoiceNote(model: lastTTSModel, voice: lastTTSVoice)
+                voiceNote = SpanishTranslatorAPI.neuralVoiceNote(
+                    model: lastTTSModel,
+                    voice: lastTTSVoice,
+                    voiceMode: mode
+                )
             } catch {
                 guard generation == speakGeneration else { return }
                 // Soft note only — translation already succeeded.
@@ -720,7 +824,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = selectedVoice
         utterance.volume = 1.0
-        // Slower than default so Cuban jobsite Spanish stays intelligible over site noise.
+        // Slightly slower than default so playback stays intelligible over site noise.
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * SpanishTranslatorAPI.jobsiteSpeechRateFactor
         // Slightly lower pitch reads a bit deeper / thicker on many Apple voices.
         utterance.pitchMultiplier = SpanishTranslatorAPI.jobsitePitchMultiplier
@@ -746,7 +850,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private static func postSpeak(
         text: String,
         customEndpoint: String,
-        token: String
+        token: String,
+        voiceMode: SpanishVoiceMode
     ) async throws -> (data: Data, model: String?, voice: String?) {
         guard let url = SpanishTranslatorAPI.speakURL(customEndpoint: customEndpoint) else {
             throw VisionHTTPError(
@@ -754,7 +859,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                 message: "Speak needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com."
             )
         }
-        let body = try SpanishTranslatorAPI.speakRequestJSON(text: text)
+        let body = try SpanishTranslatorAPI.speakRequestJSON(text: text, voiceMode: voiceMode)
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
         do {
             let result = try await BeckifyAIClient.postAudio(
@@ -777,7 +882,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private static func postTranslate(
         text: String,
         customEndpoint: String,
-        token: String
+        token: String,
+        voiceMode: SpanishVoiceMode
     ) async throws -> SpanishTranslationDraft {
         guard let url = SpanishTranslatorAPI.translateURL(customEndpoint: customEndpoint) else {
             throw VisionHTTPError(
@@ -785,7 +891,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                 message: "Translate needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com, or enter a https:// URL."
             )
         }
-        let body = try SpanishTranslatorAPI.requestJSON(text: text)
+        let body = try SpanishTranslatorAPI.requestJSON(text: text, voiceMode: voiceMode)
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
         do {
             let payload = try await BeckifyAIClient.postJSON(

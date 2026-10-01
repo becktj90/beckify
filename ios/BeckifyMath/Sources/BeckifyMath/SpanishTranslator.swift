@@ -1,5 +1,43 @@
 import Foundation
 
+/// Cloud translate / speak register. UI labels stay generic (`Clean` / `Jobsite`).
+public enum SpanishVoiceMode: String, CaseIterable, Codable, Sendable {
+    case jobsite
+    case clean
+
+    public static let storageKey = "spanishTranslator.voiceMode"
+
+    public var apiValue: String { rawValue }
+
+    /// Chrome label — never "princess" / "profane".
+    public var uiLabel: String {
+        switch self {
+        case .jobsite: return "Jobsite"
+        case .clean: return "Clean"
+        }
+    }
+
+    public var defaultSpeakVoice: String {
+        switch self {
+        case .jobsite: return "onyx"
+        case .clean: return "nova"
+        }
+    }
+
+    public var dialectHint: String {
+        switch self {
+        case .jobsite: return "cuban_florida_jobsite"
+        case .clean: return "cuban_florida_clean"
+        }
+    }
+
+    public static func parse(_ raw: String?) -> SpanishVoiceMode {
+        let folded = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if folded == "clean" || folded == "polished" || folded == "a" { return .clean }
+        return .jobsite
+    }
+}
+
 /// Outcome of one `/api/translate` call (Beckify AI → Cuban / Florida LatAm Spanish).
 public struct SpanishTranslationDraft: Equatable, Sendable {
     public var translation: String
@@ -37,15 +75,20 @@ public struct SpanishTranslationDraft: Equatable, Sendable {
 
     public var displayDialect: String {
         let folded = dialect.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if folded.contains("cuba") || folded.contains("florida") || folded.contains("miami") {
-            return "Cuban / Florida Spanish"
+        if folded.contains("clean") || folded.contains("polish") {
+            return "Spanish · Clean"
         }
-        if folded.contains("latam") || folded.contains("latin") || folded.contains("mx") || folded.contains("mexico") {
-            return "Latin American Spanish"
+        if folded.contains("jobsite") || folded.contains("smartass") || folded.contains("smart-ass") {
+            return "Spanish · Jobsite"
         }
         if engine == "apple" { return "On-device Spanish (Apple)" }
-        if dialect.isEmpty { return "LatAm Spanish" }
-        return dialect
+        if dialect.isEmpty { return "Spanish" }
+        // Never surface geographic dialect branding in UI.
+        if folded.contains("cuba") || folded.contains("florida") || folded.contains("miami")
+            || folded.contains("latam") || folded.contains("latin") {
+            return "Spanish"
+        }
+        return "Spanish"
     }
 }
 
@@ -59,8 +102,40 @@ public enum SpanishTranslatorAPI {
     /// Short neural TTS clips (cost control).
     public static let maxSpeakCharacters = 500
     public static let maxSourceCharacters = 2000
+
+    /// Common English jobsite lines for one-tap translate → speak on the Beckify AI path.
+    public static let quickTranslatePhrases: [String] = [
+        "Where's the breaker?",
+        "Kill the power.",
+        "That's live — don't touch it.",
+        "Hand me that conduit.",
+        "We need more wire.",
+        "Move the ladder.",
+        "Watch your head.",
+        "Hold this for a second.",
+        "Who left this mess?",
+        "Lunch break.",
+        "Let's wrap it up.",
+        "Can you hear me up there?",
+    ]
+
+    /// Rotating test pool (same lines as quick chips). Avoids immediate repeat when possible.
+    public static func nextRandomTestPhrase(excluding previous: String? = nil) -> String {
+        let pool = quickTranslatePhrases
+        guard !pool.isEmpty else { return "Hello." }
+        if pool.count == 1 { return pool[0] }
+        let prior = (previous ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var pick = pool.randomElement() ?? pool[0]
+        var guardCount = 0
+        while pick == prior, guardCount < 8 {
+            pick = pool.randomElement() ?? pool[0]
+            guardCount += 1
+        }
+        return pick
+    }
+
     public static let disclaimer =
-        "Speech stays on this device for recognition. Prefers blunt Cuban / South Florida jobsite Spanish via the Beckify API (api.beckify.com). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish, not Cuban-tuned). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
+        "Speech stays on this device for recognition. Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is rough banter; Clean is polished and warm). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -101,25 +176,30 @@ public enum SpanishTranslatorAPI {
 
     public static func speakRequestBody(
         text: String,
-        voice: String = "onyx",
+        voiceMode: SpanishVoiceMode = .jobsite,
+        voice: String? = nil,
         format: String = "mp3"
     ) -> [String: Any] {
-        [
+        let resolvedVoice = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return [
             "task": "speak",
             "text": text,
-            "voice": voice,
+            "voice": resolvedVoice.isEmpty ? voiceMode.defaultSpeakVoice : resolvedVoice,
             "format": format,
             "language": "es",
+            "voiceMode": voiceMode.apiValue,
+            "mode": voiceMode.apiValue,
         ]
     }
 
     public static func speakRequestJSON(
         text: String,
-        voice: String = "onyx",
+        voiceMode: SpanishVoiceMode = .jobsite,
+        voice: String? = nil,
         format: String = "mp3"
     ) throws -> Data {
         try JSONSerialization.data(
-            withJSONObject: speakRequestBody(text: text, voice: voice, format: format),
+            withJSONObject: speakRequestBody(text: text, voiceMode: voiceMode, voice: voice, format: format),
             options: []
         )
     }
@@ -166,7 +246,8 @@ public enum SpanishTranslatorAPI {
     public static func requestBody(
         text: String,
         sourceLanguage: String = "en",
-        targetLanguage: String = "es"
+        targetLanguage: String = "es",
+        voiceMode: SpanishVoiceMode = .jobsite
     ) -> [String: Any] {
         [
             "task": task,
@@ -174,20 +255,24 @@ public enum SpanishTranslatorAPI {
             "sourceText": text,
             "sourceLanguage": sourceLanguage,
             "targetLanguage": targetLanguage,
-            "dialect": "cuban_florida_latam",
+            "dialect": voiceMode.dialectHint,
+            "voiceMode": voiceMode.apiValue,
+            "mode": voiceMode.apiValue,
         ]
     }
 
     public static func requestJSON(
         text: String,
         sourceLanguage: String = "en",
-        targetLanguage: String = "es"
+        targetLanguage: String = "es",
+        voiceMode: SpanishVoiceMode = .jobsite
     ) throws -> Data {
         try JSONSerialization.data(
             withJSONObject: requestBody(
                 text: text,
                 sourceLanguage: sourceLanguage,
-                targetLanguage: targetLanguage
+                targetLanguage: targetLanguage,
+                voiceMode: voiceMode
             ),
             options: []
         )
@@ -229,7 +314,7 @@ public enum SpanishTranslatorAPI {
             targetLanguage: targetLanguageID,
             provider: "apple",
             model: "TranslationSession",
-            notes: "On-device Apple Translation. Generic Spanish (closest LatAm pair when available) — not Cuban jobsite register like Beckify AI.",
+            notes: "On-device Apple Translation. Generic Spanish — not the Beckify AI Clean/Jobsite cloud rewrite.",
             engine: "apple"
         )
     }
@@ -401,11 +486,17 @@ public enum SpanishTranslatorAPI {
     }
 
 
-    public static func neuralVoiceNote(model: String = "gpt-4o-mini-tts", voice: String = "onyx") -> String {
+    public static func neuralVoiceNote(
+        model: String = "gpt-4o-mini-tts",
+        voice: String = "onyx",
+        voiceMode: SpanishVoiceMode = .jobsite
+    ) -> String {
         let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
         let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
-        let label = [v.isEmpty ? "onyx" : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
-        return "Neural TTS · \(label) · Cuban / South Florida jobsite yell · max speaker volume"
+        let fallbackVoice = voiceMode.defaultSpeakVoice
+        let label = [v.isEmpty ? fallbackVoice : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
+        let register = voiceMode == .clean ? "Clean" : "Jobsite"
+        return "Neural TTS · \(label) · \(register) · max speaker volume"
     }
 
     public static func voiceFallbackNote(
@@ -415,7 +506,7 @@ public enum SpanishTranslatorAPI {
     ) -> String {
         let lang = (selectedLanguage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if lang.isEmpty {
-            return "No Spanish system voice found for Apple fallback. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Prefers OpenAI neural TTS from api.beckify.com/api/speak (onyx / gpt-4o-mini-tts)."
+            return "No Spanish system voice found for Apple fallback. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Prefers OpenAI neural TTS from api.beckify.com/api/speak."
         }
         let gender = (genderLabel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let name = (voiceName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -431,13 +522,13 @@ public enum SpanishTranslatorAPI {
         let folded = lang.lowercased()
         let localeNote: String
         if folded.hasPrefix("es-us") {
-            localeNote = "US / Florida-relevant"
+            localeNote = "es-US"
         } else if folded.hasPrefix("es-mx") {
-            localeNote = "LatAm (Cuban es-CU is not shipped by Apple)"
+            localeNote = "es-MX"
         } else if folded.hasPrefix("es-es") {
-            localeNote = "Spain — prefer installing male es-US or es-MX"
+            localeNote = "es-ES — prefer es-US or es-MX if available"
         } else {
-            localeNote = "closest available Spanish"
+            localeNote = "closest Spanish"
         }
         return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (onyx) from api.beckify.com when reachable; this note is the on-device fallback path."
     }
