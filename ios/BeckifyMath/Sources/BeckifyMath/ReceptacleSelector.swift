@@ -227,6 +227,16 @@ public enum PinShape: String, Codable, Sendable, Hashable {
     case earthClip
     /// Rectangular pin used on BS 1363 (Type G).
     case slotRect
+
+    /// Flat blade opening. Round pins, the U-ground, and rim earth clips are not blades.
+    var isFlatBlade: Bool {
+        switch self {
+        case .slotVertical, .slotHorizontal, .slotT, .slotSlantedLeft, .slotSlantedRight, .slotRect:
+            return true
+        case .uGround, .round, .roundLarge, .earthClip:
+            return false
+        }
+    }
 }
 
 public struct FacePin: Equatable, Sendable, Hashable {
@@ -264,6 +274,12 @@ public enum FaceKind: String, Codable, Sendable, Hashable {
     case household
 }
 
+/// Plate outline for the one face. Locking and IEC stay round. Straight blade and household blade faces are rectangular.
+public enum FaceOutline: String, Sendable, Hashable {
+    case round
+    case rectangular
+}
+
 public struct FaceDiagram: Equatable, Sendable, Hashable {
     public var kind: FaceKind
     public var pins: [FacePin]
@@ -283,6 +299,18 @@ public struct FaceDiagram: Equatable, Sendable, Hashable {
         self.earthHour = earthHour
         self.keywayAtSix = keywayAtSix
         self.caption = caption
+    }
+
+    /// Round for locking, IEC, and pin-and-sleeve. Rectangular for straight blade and household faces whose contacts are blades.
+    public var outline: FaceOutline {
+        switch kind {
+        case .nemaLocking, .iecClock, .pinSleeve:
+            return .round
+        case .nemaStraight:
+            return .rectangular
+        case .household:
+            return pins.contains(where: { $0.shape.isFlatBlade }) ? .rectangular : .round
+        }
     }
 }
 
@@ -326,6 +354,21 @@ public struct ReceptacleConfig: Equatable, Sendable, Identifiable, Hashable {
     public var gfciApplies: Bool
 
     public var polesWiresLabel: String { "\(poles)P\(wires)W" }
+
+    /// VoiceOver for the one face. Configuration, amps, and voltage come first. The last sentence is `face.caption`.
+    public var faceVoiceOver: String {
+        var lead = [code, Self.spokenAmps(amps), voltageLabel, polesWiresLabel]
+        if let hour = iecEarthHour {
+            lead.append("\(hour) h earth")
+        }
+        return lead.joined(separator: ", ") + ". " + face.caption
+    }
+
+    private static func spokenAmps(_ value: Double) -> String {
+        let compact = FormatAmps.amps(value)
+        guard compact.hasSuffix("A"), compact.count > 1 else { return compact }
+        return String(compact.dropLast()) + " A"
+    }
 
     public var summary: String {
         if family == .iec60309, let poles = iecPolesLabel {

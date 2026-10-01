@@ -36,7 +36,7 @@ The holes that still matter in the field are narrower:
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
-4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
+4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one plate: round for locking and IEC, rectangular for straight blade and household blade faces. Isolated ground and GFCI stay callouts. Short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
 
 Textbook ship-order items that are **not** Hold move to **P1**: ampacity derating stack (today a numbered list), harmonics bars, heater Δ/Y sketch, UPS runtime tank, load-worksheet bars, and a protection-side skin-depth / aperture sketch. **Conduit fill is Hold.** It already draws a to-scale bore, conductor circles, and fill percent against the Chapter 9 Table 1 allowance (including the nipple case). Do not put it on a rebuild wave.
@@ -117,7 +117,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Coupled Vibration | `coupledVibration` | Instruments | RMS and spectrum of user acceleration | Strong | Keep | Hold | Phone on the machine. Relative A/B only. | `SpectrumPlot` |
 | Position | `fieldPosition` | Instruments | Coordinates, speed, altitude, distance | None | None | P2 | A map is a new surface, not a result sketch | — |
 | Device Health | `deviceHealth` | Instruments | Battery, thermal, storage, uptime rows | None | None | P2 | Diagnostics of this phone, not a plant meter | Battery fill only if it reuses the tank kit later |
-| Receptacle Selector | `receptacleSelector` | Jobsite | Schematic pinout on a circle, IEC clock ticks when relevant | Partial | One faceplate: round locking / IEC versus straight-blade outline, pins from the catalog face | P0 | Schematic of the configuration, not a photo of a listed device. Hazardous remains a flag. | `ReceptacleFaceView` |
+| Receptacle Selector | `receptacleSelector` | Jobsite | One face: round locking and IEC, rectangular straight blade and household blades. IEC clock on the round face. | Shipped | One faceplate. Pins from the catalog face. | Done | Schematic, not a photo. Isolated ground and GFCI stay callouts. Hazardous remains a flag. | `ReceptacleFaceView` |
 | Reactance & Resonance | `reactance` | Bench | Series: XL and/or XC vs f, marker at the entered f. Resonance: \|Z\| with f0 and Q bandwidth when R is set. | Shipped | One picture per mode. No phasor on this tool. | Done | Ideal lumped parts. Phasors & Impedance stays the phasor home. | `ReactanceSweepChart`, `ResonanceImpedanceChart` |
 | Power Factor Correction | `powerFactor` | Power & AC | One triangle, existing and target kVAR, fixed kW leg, bank µF label | Shipped | Before and after on the same kW leg. | Done | Reduce Motion shows both legs with no shrink. Stale inputs dim with the result card. | `PowerTriangleDiagram` |
 | Short-Circuit Current | `shortCircuit` | Jobsite | Small XFMR box, arrow, and “Isc (infinite bus)” caption | Partial | One callout: available fault amps, method named “infinite-bus secondary” | P0 | No gear AIC field. Do not draw a pass/fail against an interrupting rating the operator did not enter. | Replace `ShortCircuitDiagram` in place |
@@ -190,7 +190,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 | Callout card | Motor FLA plate shipped in `MotorFLAView`. Short-circuit is still a thin box. | Motor FLA | Short-circuit Isc, grounding size, regulator Pd |
 | Gauge / tank | Partial. Cellular arcs and the conduit fill bar exist. Wi-Fi gauge exists. | IS-loop worst margin; UPS tank | Rack headroom, e-bike range. Never a fake RF dBm arc. |
 | Discrete spectrum bars | Not shipped. `SpectrumPlot` is a microphone FFT with a dBFS scale. | Harmonics orders | Do not point entered harmonics at `SpectrumPlot` |
-| Faceplate | Shipped as `ReceptacleFaceView` (always an ellipse today) | Receptacle family outline | — |
+| Faceplate | Shipped as `ReceptacleFaceView`. Round for locking and IEC. Rectangular for straight blade and household blade faces. | Receptacle family outline | — |
 | Basics sketch | Not shipped | Divider, series/parallel, resistor bands | In-amp sketch at P2 |
 | Pack matrix | Not shipped | Battery pack designer | — |
 | Phasor plane | Two implementations: `PhasorPolarDiagram` (quick sum) and `ComplexPlaneCanvas` (Phasors stations). | Do not add a third. P0 does not restyle the plane. | — |
@@ -253,11 +253,11 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 6. Receptacle faceplate — `receptacleSelector`
 
-**Now.** `ReceptacleFaceView` draws every family on a circle, with pins from `FaceDiagram` and an IEC clock when `kind == .iecClock`.
+**Now.** `ReceptacleFaceView` draws one face on the existing canvas. The outline is round for locking and IEC, including pin-and-sleeve, and rectangular for straight blade and household blade faces. Pins still come from `FaceDiagram`. The IEC clock stays on the round face when `kind == .iecClock`. The caption under the face is `face.caption`. VoiceOver leads with the configuration, amps, and voltage, then that caption. Isolated ground and GFCI stay notes and catalog rows.
 
-**Target.** Keep that canvas and the pin model. Change the outline: round for locking and IEC, rectangular for straight blade and the household faces that are blades. One face. No manufacturer photo, no second diagram.
+**Target.** Met on this screen. One face. No manufacturer photo and no second diagram.
 
-**Files.** `ReceptacleSelectorView.swift` (`ReceptacleFaceView`, `ReceptacleFaceCard`).
+**Files.** `ReceptacleSelectorView.swift` (`ReceptacleFaceView`, `ReceptacleFaceCard`). Outline on `FaceDiagram`.
 
 **Done when.** Switching family changes the outline, the caption still matches `face.caption`, and isolated-ground / GFCI stay callouts rather than a different face.
 
