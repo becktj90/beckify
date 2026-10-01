@@ -1027,6 +1027,7 @@ enum ToolboxCatalog {
                 "thevenin", "norton", "rectifier", "clipper", "clamper", "7 segment", "seven segment",
                 "impedance match", "l match", "quarter wave", "stub", "complex", "polar", "phasor",
                 "voltage divider", "kirchhoff", "cmos", "buck", "class a", "led flasher",
+                "meter", "microamp", "µA", "milliamp", "ammeter", "voltmeter",
             ],
             calculationMode: .live
         ),
