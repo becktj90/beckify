@@ -33,7 +33,7 @@ The toolbox is not uniformly text. Raceway and tray sections, transformer windin
 
 The holes that still matter in the field are narrower:
 
-1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
+1. **Phasors & Impedance** time waveform chrome is the sample scale: two cycles in seconds, a symmetric volt window, and current on its own amp scale when that station has one. Drag reads those numbers first. The complex plane, series sketch, and XL/XC sweep still sit beside that waveform on Phasor, R L C, and Z. Sum stays the polar plot.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
 4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one plate: round for locking and IEC, rectangular for straight blade and household blade faces. Isolated ground and GFCI stay callouts. Short-circuit current is one callout: available fault amps, kA when the fault is at least 1 kA, and the method line “Infinite-bus secondary. Isc = FLA × 100 / %Z.” None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task. Wire Size & Ampacity is one derating stack: 310.16 base, ambient, bundling, and the 110.14(C) terminal limit, with required current marked. The final stage is good when usable ampacity meets that required current and bad when it is short. NEC Circuit Calculator is that same voltage-drop strip, with an ampacity chip on it. The chip is good when usable ampacity meets design current and bad when it is short. This tool has no preferred drop target. Design current, conductor, drop, and OCPD stay rows.
@@ -57,7 +57,7 @@ One queue for implementers. One tool per PR unless the note says a kit lands fir
 
 **P0 — staff in this order**
 
-1. `phasorImpedance` — time waveform chrome only.
+1. `phasorImpedance` — time waveform chrome shipped (build 202). Do not redraw the scale. Plane, series sketch, and XL/XC sweep still sit on their stations.
 2. `reactance` — XL/XC versus frequency as the only picture (resonance mode: the \|Z\| peak instead).
 3. `powerFactor` — before/after triangle on the existing component.
 4. `voltageDrop` — turn the existing run into the 3% / 5% strip. Not a second chart.
@@ -166,7 +166,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Control Systems | `controlSystems` | Controls | Unit-step overlays, Bode magnitude and phase, lead | Strong | Keep | Hold | Approximations (RK4, log sweep). Not a commissioning record. Copy tone is a separate pass. | `EngineerLinePlot` |
 | Control Strategies | `controlStrategies` | Controls | Strategy comparison plots (step and effort) | Strong | Keep | Hold | Comparison tool, not a tuner. Several plots are the product; do not collapse them in this train. | `EngineerLinePlot` |
 | Electronics Lab | `electronicsLab` | Bench | Schematic with node volts and branch currents, solderless breadboard, meters, monospaced transfer text, line plots where a circuit has them | Strong | Typeset transfer expression and a DC versus AC source mark on the existing schematic | P0 | **In flight elsewhere. Do not open a second PR from this audit.** | Existing schematic canvas and `BreadboardCanvas` |
-| Phasors & Impedance | `phasorImpedance` | Controls | Per station: time waveform in `LabeledPlotChrome`, plus a raw complex-plane canvas, a series sketch, and often an XL/XC sweep | Partial | Waves / phasor / RLC / Z: one time waveform whose chrome is the sample scale in volts and seconds, with a readout | P0 | See the shortlist. Sum keeps `PhasorPolarDiagram` only. Do not add a phasor home. | `LabeledPlotChrome`, `WaveformCard` |
+| Phasors & Impedance | `phasorImpedance` | Controls | Waves / phasor / R L C / Z: time waveform whose chrome is the sample scale (two cycles in seconds, symmetric volts, amps on the right when present, inspect readout). Sum is the polar plot. Phasor, R L C, and Z still also stack a plane, a series sketch, and often an XL/XC sweep | Partial | Keep the waveform scale. Extra pictures stay until a later pass. | Hold | Chrome shipped in build 202. Do not staff a second scale. Sum keeps `PhasorPolarDiagram`. Do not add a phasor home. | `LabeledPlotChrome`, `WaveformCard` |
 | UL 508A Panel Lab | `ul508aPanelLab` | Controls | Feeder–panel one-line and path kA list (`PanelOneLineDiagram`) | Partial | Keep that one-line | P2 | Checklist and calculators, not a panel-layout editor | Existing one-line |
 | Magnetics Lab | `magneticsLab` | Magnetics & Fields | Core path, three-leg path, machine role sketch | Strong | Keep | Hold | Ideal magnetic circuit. Not a finite-element plot. | `MagneticsDiagrams` |
 | EM Fields | `emFields` | Magnetics & Fields | Faraday loop, charge plane, Lorentz sketch, sample-field arrows | Strong | Keep | Hold | Sketches of the entered vectors. Not a measured field. | `MagneticsDiagrams` |
@@ -179,7 +179,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 
 | Kit | Status | First users | Later users |
 | --- | --- | --- | --- |
-| `LabeledPlotChrome` | Shipped. Tick labels, expand, optional inspect readout. | Phasor time waveform must use it as the scale, `inspection: .inspect`, readout in volts and seconds. | Harmonics bars, load-worksheet bars, any new line plot |
+| `LabeledPlotChrome` | Shipped. Tick labels, expand, optional inspect readout. | Phasor time waveform uses it as the scale, `inspection: .inspect`, readout in seconds then volts (and amps on the right when that station has current). | Harmonics bars, load-worksheet bars, any new line plot |
 | `EngineerLinePlot` | Shipped. Used by load line, sine, reactance sweep, Bode, control, diode, transients. | Reactance keeps `ReactanceSweepChart` / `ResonanceImpedanceChart`. | Do not fork a third line plot |
 | `DiagramCard` | Shipped frame, summary, export. | Every new picture | — |
 | `PowerTriangleDiagram` | Shipped. Before/after Q on one kW leg. Single-Q mode remains. | Power factor correction | Power tool AC result |
@@ -203,13 +203,13 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 1. Phasors & Impedance — `phasorImpedance`
 
-**Now.** `WaveformCard` wraps `LabeledPlotChrome` with Time (s) and Voltage (V). The canvas then draws its own grid and scales itself. `inspection` is `.look`, so there is no drag readout. The y title is always “Voltage”, including stations that also plot current. Phasor, R L C, and Z also stack a raw plane (`PlaneCard` / `ComplexPlaneCanvas` has no PlotChrome), a series sketch, and often `sweepCard`.
+**Now.** `WaveformCard` uses `LabeledPlotChrome` as the scale. Time start, mid, and end are the sample times across two cycles, in seconds. Voltage uses a symmetric window: the largest |sample| is an end tick and 0 is the center tick. The canvas draws edge to edge in that window. R L C and Z put current on the right-hand amp scale. Amps are not drawn on the volt axis. `inspection` is `.inspect`. The readout and VoiceOver lead with seconds, then volts, and amps when that scale is present. Reduce Motion leaves the cycle cursor parked. Sum is `PhasorPolarDiagram` only. Phasor, R L C, and Z still also show `PlaneCard`. R L C and Z still show a series sketch and often `sweepCard`.
 
-**Target.** One time waveform. Chrome start, mid, and end match the samples. Readout reports volts and seconds. If a current trace is on that station, give it its own scale or leave it off this picture — do not plot amps on a volt axis. Sum station keeps the existing polar plot and does not gain a waveform twin.
+**Target.** Met for the time-waveform scale. Do not redraw that chrome. The extra pictures were left on their stations.
 
-**Files.** `PhasorImpedanceView.swift` (`WaveformCard`, `WaveformCanvas`). `PlotChrome.swift`.
+**Files.** `PhasorImpedanceView.swift` (`WaveformCard`, `WaveformCanvas`). `PlotChrome.swift`. Window math in `PhasorImpedance.swift` (`timeWindow`, `symmetricAmplitudeWindow`).
 
-**Done when.** One picture per station, VoiceOver leads with the sentence and the readout, Reduce Motion leaves the cursor still, and Quick sum is untouched.
+**Done when.** The ticks match the samples, current is not on the volt axis, the drag readout leads with the numbers, Reduce Motion parks the cursor, and Quick sum is still only the polar plot.
 
 ### 2. Reactance & Resonance — `reactance`
 
