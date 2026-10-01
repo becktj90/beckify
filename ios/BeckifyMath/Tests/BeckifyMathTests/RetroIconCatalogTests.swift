@@ -7,18 +7,16 @@ import XCTest
 /// `Retro/<ToolID>` and falls back to the canvas glyph when the imageset
 /// is absent. This does not render SwiftUI.
 final class RetroIconCatalogTests: XCTestCase {
-    /// No approved tile. Hidden Power Wizard was excluded from the pack.
-    /// Statistics and Spanish were added to the live grid after the pack.
+    /// Hidden Power Wizard was excluded from the pack and stays off the grid.
+    /// Every live toolbox tool, including statistics and Spanish, has a tile.
     private let canvasFallbackToolIDs: Set<String> = [
         "powerWizard",
-        "statistics",
-        "spanishTranslator",
     ]
 
     /// Off the toolbox list, but related tools and deep links still draw a well.
     private let hiddenWithTile: Set<String> = ["phasorDiagram"]
 
-    func testApprovedPackIs88OriginalColorTiles() throws {
+    func testEveryLiveToolHasAnOriginalColorTile() throws {
         let root = retroRoot()
         let entries = try FileManager.default.contentsOfDirectory(
             at: root,
@@ -27,7 +25,7 @@ final class RetroIconCatalogTests: XCTestCase {
         let imagesets = entries
             .filter { $0.pathExtension == "imageset" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        XCTAssertEqual(imagesets.count, 88, "approved retro pack is 88 ToolID tiles")
+        XCTAssertEqual(imagesets.count, 90, "88-tool pack plus statistics and spanishTranslator")
 
         var shipped = Set<String>()
         for imageset in imagesets {
@@ -49,8 +47,11 @@ final class RetroIconCatalogTests: XCTestCase {
         }
 
         let liveGrid = known.subtracting(["powerWizard", "phasorDiagram"])
-        XCTAssertEqual(liveGrid.subtracting(shipped), ["statistics", "spanishTranslator"])
-        XCTAssertEqual(liveGrid.intersection(shipped).count, 87)
+        let missingLive = liveGrid.subtracting(shipped).sorted()
+        XCTAssertTrue(missingLive.isEmpty, "live tools still missing a tile: \(missingLive.joined(separator: ", "))")
+        XCTAssertEqual(liveGrid.intersection(shipped).count, liveGrid.count)
+        XCTAssertTrue(shipped.contains("statistics"))
+        XCTAssertTrue(shipped.contains("spanishTranslator"))
 
         let folder = try Data(contentsOf: root.appendingPathComponent("Contents.json"))
         let folderJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: folder) as? [String: Any])
