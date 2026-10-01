@@ -127,7 +127,7 @@ extension LabSolve {
             ],
             notes: [
                 "Midband estimate. Coupling and bypass capacitors are shorts for the signal.",
-                "Vt is 26 mV, room-temperature teaching value.",
+                "Vt is 26 mV, a room-temperature value.",
                 "Rout is about Rc. The load is AC-coupled and does not move the DC point.",
             ],
             warning: warning

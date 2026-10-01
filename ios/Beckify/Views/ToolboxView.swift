@@ -99,7 +99,7 @@ struct ToolboxView: View {
                 ContentUnavailableView(
                     "Choose a tool",
                     systemImage: "wrench.and.screwdriver",
-                    description: Text("Field is the jobsite home. Toolkit holds basics, bench homework, and references. Search covers both. Saved Jobs are on-device notes, not a project gallery.")
+                    description: Text("Field is the jobsite home. Toolkit holds basics, bench, and references. Search covers both. Saved Jobs are on-device notes, not a project gallery.")
                 )
             }
         }

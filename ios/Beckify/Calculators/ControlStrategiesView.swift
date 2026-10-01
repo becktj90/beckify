@@ -362,7 +362,7 @@ struct ControlStrategiesView: View {
                     smooth: false
                 )
             }
-            Text("Chatter index \(slide.chatterIndex, format: .number.precision(.fractionLength(3))). Thin φ switches hard after the error reaches the line. A wider layer spends the effort inside the band. Sampled teaching sketch — not a drive tune.")
+            Text("Chatter index \(slide.chatterIndex, format: .number.precision(.fractionLength(3))). Thin φ switches hard after the error reaches the line. A wider layer spends the effort inside the band. Sampled planning sketch — not a drive tune.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)

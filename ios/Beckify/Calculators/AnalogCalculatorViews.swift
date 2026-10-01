@@ -113,7 +113,7 @@ struct AnalogDesignWorkbenchView: View {
             toolID: .analogWorkbench,
             stickyAnswer: sticky,
             copyText: sticky,
-            disclaimer: .designAidExtra("Ideal op-amp golden rules and textbook filter magnitude only — not a SPICE run, not layout parasitics, not a measured Bode plot."),
+            disclaimer: .designAidExtra("Ideal op-amp golden rules and ideal filter magnitude only — not a SPICE run, not layout parasitics, not a measured Bode plot."),
             isResultStale: session.isStale
         ) {
             ShowWorkCard(
@@ -885,7 +885,7 @@ struct ADCDACView: View {
                 toolID: .adcDac,
                 symbolic: "LSB = FS / 2ⁿ    Ncodes = 2ⁿ    SNR_ideal ≈ 6.02n + 1.76 dB    Nyquist = Fs/2",
                 substituted: substituted,
-                meaning: "The SNR formula is the textbook full-scale sine into an ideal quantizer — it is not the SNR of your front-end, and it is not ENOB. Suggested anti-alias fc is 0.4·Fs, a starting corner below Nyquist, not a filter order."
+                meaning: "The SNR formula is the ideal full-scale sine into an ideal quantizer — it is not the SNR of your front-end, and it is not ENOB. Suggested anti-alias fc is 0.4·Fs, a starting corner below Nyquist, not a filter order."
             )
 
             NumberField(title: "Bits n", unit: "", text: $bits, fieldID: "bits", onSubmit: calculate)

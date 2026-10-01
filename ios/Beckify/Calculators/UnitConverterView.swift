@@ -79,7 +79,7 @@ struct UnitConverterView: View {
                 toolID: .unitConverter,
                 symbolic: formula,
                 substituted: substituted,
-                meaning: "Homework conversions. dB uses 20 log10 for voltage/current ratios and 10 log10 for power."
+                meaning: "Bench conversions. dB uses 20 log10 for voltage/current ratios and 10 log10 for power."
             )
             TryExampleButton(title: exampleTitle) {
                 applyExample()

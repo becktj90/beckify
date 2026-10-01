@@ -454,7 +454,7 @@ public enum ControlSystems {
         ControlPlant(
             id: .secondOrder,
             name: "Second-order, lightly damped",
-            summary: "ζ = 0.3, ωₙ = 2 rad/s. The textbook ringing response.",
+            summary: "ζ = 0.3, ωₙ = 2 rad/s. The underdamped ringing response.",
             teaches: "Derivative action damps the ringing. Push Kp up without Kd and the overshoot grows fast.",
             display: "4 / (s² + 1.2s + 4)",
             transferFunction: ControlTransferFunction(numerator: [4], denominator: [1, 1.2, 4]),

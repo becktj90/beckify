@@ -187,7 +187,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .closedForm,
             expression: "V_R2 / Vs = R2 / (R1 + R2) = \(fmt(gain))",
-            detail: "Resistive. The sine is a 1 kHz teaching drive; the ratio is the same at DC. I / Vs = 1 / (R1 + R2).",
+            detail: "Resistive. The sine is a 1 kHz bench drive; the ratio is the same at DC. I / Vs = 1 / (R1 + R2).",
             plots: wave
         )
     }
@@ -200,7 +200,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .closedForm,
             expression: "It / Vs = 1/R1 + 1/R2 = \(fmt(1 / r1 + 1 / r2)) S",
-            detail: "Resistive. The 1 kHz sine is a teaching drive. Branch currents add.",
+            detail: "Resistive. The 1 kHz sine is a bench drive. Branch currents add.",
             plots: [
                 volts("Source", times: times, samples: times.map { sineValue(frequency: 1_000, time: $0, amplitude: vs) }, name: "Vs"),
                 amps("Branch currents", times: times, series: [
@@ -409,7 +409,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .none,
             expression: "No linear transfer function — see the waveforms.",
-            detail: "Shunt clipper. The output follows the source until it reaches Vbias + Vf, then it holds. A 1 kHz teaching sine.",
+            detail: "Shunt clipper. The output follows the source until it reaches Vbias + Vf, then it holds. A 1 kHz bench sine.",
             plots: [
                 LabPlot(id: "clip", title: "Clipper", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),
@@ -431,7 +431,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .none,
             expression: "No linear transfer function — see the waveforms.",
-            detail: "Steady clamp. The negative peak sits at −Vf and the sine is shifted up by Vp − Vf. A 1 kHz teaching sine.",
+            detail: "Steady clamp. The negative peak sits at −Vf and the sine is shifted up by Vp − Vf. A 1 kHz bench sine.",
             plots: [
                 LabPlot(id: "clamp", title: "Clamper", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),
@@ -487,7 +487,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .closedForm,
             expression: "H ≈ Av = \(fmt(av))   (midband)",
-            detail: "\(name). A 10 mV peak teaching sine. Coupling and bypass capacitors are shorts. Not a full hybrid-π with Cπ and Cμ.",
+            detail: "\(name). A 10 mV peak bench sine. Coupling and bypass capacitors are shorts. Not a full hybrid-π with Cπ and Cμ.",
             plots: [
                 LabPlot(id: "sine", title: "Midband sine", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "vin", times, times.map { sineValue(frequency: f, time: $0, amplitude: peak) }),
@@ -573,7 +573,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .closedForm,
             expression: "\(expression) = \(fmt(av))",
-            detail: "Ideal op-amp, 1 kHz teaching sine. A swing limit on the DC node is not folded into this trace.",
+            detail: "Ideal op-amp, 1 kHz bench sine. A swing limit on the DC node is not folded into this trace.",
             plots: [
                 LabPlot(id: "sine", title: "Input and output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, times.map { sineValue(frequency: f, time: $0, amplitude: vinPeak) }),
@@ -683,7 +683,7 @@ public enum LabSignals {
         return LabIO(
             transferKind: .none,
             expression: "No linear transfer function — see the waveforms.",
-            detail: "Open loop. A teaching sine crosses Vref; the output sits on the high or low rail. No hysteresis.",
+            detail: "Open loop. A bench sine crosses Vref; the output sits on the high or low rail. No hysteresis.",
             plots: [
                 LabPlot(id: "cmp", title: "Comparator", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),

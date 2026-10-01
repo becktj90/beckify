@@ -500,7 +500,7 @@ public struct ControlSlidingSketch: Equatable, Sendable {
 public enum ControlStrategyGuide {
     public static let noTrainedPolicy = "This app does not train, download, or run a learned policy. The note is when-to-use only."
 
-    public static let computeSketchNote = "Relative on-device cost versus how clean the textbook lag looks. Not a FLOP count, not your PLC, and not a score that says one method wins."
+    public static let computeSketchNote = "Relative on-device cost versus how clean the ideal lag looks. Not a FLOP count, not your PLC, and not a score that says one method wins."
 
     public static let industryOrder = ["HVAC", "Motor drives", "Robotics", "Flight / launch", "BMS"]
 
@@ -669,7 +669,7 @@ public enum ControlStrategyGuide {
                 compute: "A few states",
                 maintainability: "Fair",
                 summary: "Treat everything you did not model — load, friction, a wrong gain — as one disturbance and cancel it. You need b0 in the right ballpark, not a full state-space model.",
-                limit: "Observer bandwidth too high follows noise. The plot is a first-order teaching sketch, not your PLC’s commissioned loop.",
+                limit: "Observer bandwidth too high follows noise. The plot is a first-order planning sketch, not your PLC’s commissioned loop.",
                 explanatoryOnly: false,
                 linear: .typical,
                 nonlinear: .typical,
@@ -975,7 +975,7 @@ public enum ControlStrategyGuide {
             alternate: .adrc,
             alternateReason: "If a load step still walks the process variable after the PID is honest, ADRC is the next single-loop tool.",
             lab: true,
-            caution: "Not a guarantee the loop is stable on your hardware. The lab uses a textbook plant."
+            caution: "Not a guarantee the loop is stable on your hardware. The lab uses an ideal plant."
         )
     }
 

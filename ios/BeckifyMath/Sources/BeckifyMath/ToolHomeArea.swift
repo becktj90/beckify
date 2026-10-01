@@ -1,7 +1,7 @@
 import Foundation
 
 /// Top-level home areas on the iOS toolbox. Field is the jobsite home;
-/// Toolkit is basics, bench homework, and references.
+/// Toolkit is basics, bench, and references.
 public enum ToolHomeArea: String, CaseIterable, Sendable, Hashable {
     case field
     case toolkit
@@ -92,8 +92,9 @@ public enum ToolHomeAreaPolicy {
     private static let toolkitIDs: Set<String> = [
         "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
         "ledRC", "frequencyWave", "unitConverter", "timer555",
-        "reactance", "phasorDiagram", "numberBase", "magneticCircuit",
+        "reactance", "numberBase", "magneticCircuit",
         "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
+        "electronicsLab",
         "referenceLibrary",
         "analogWorkbench", "noiseSNR", "linearRegulator",
         "instrumentationAmp", "adcDac",
@@ -108,8 +109,9 @@ public enum ToolHomeAreaPolicy {
     ]
 
     private static let benchIDs: Set<String> = [
-        "reactance", "phasorDiagram", "numberBase", "magneticCircuit",
+        "reactance", "numberBase", "magneticCircuit",
         "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
+        "electronicsLab",
         "analogWorkbench", "noiseSNR", "linearRegulator",
         "instrumentationAmp", "adcDac",
         "heaterDesign", "solenoidDesign", "empEmc",
@@ -145,7 +147,7 @@ public enum ToolHomeAreaPolicy {
 
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
-        "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
+        "controlSystems", "controlStrategies", "phasorImpedance", "phasorDiagram", "ul508aPanelLab",
     ]
 
     /// Field → Analysis: distributions, rescale, paired normals, covariance.
