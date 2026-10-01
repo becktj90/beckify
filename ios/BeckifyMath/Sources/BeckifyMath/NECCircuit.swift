@@ -42,6 +42,107 @@ public struct NECCircuitResult: Equatable, Sendable {
     public var vdPercent: Double
     public var ocpdAmps: Int?
     public var formula: String
+    /// Supply the drop was calculated from. Kept on the result so a stale picture does not follow a later edit.
+    public var supplyVolts: Double
+    public var oneWayFeet: Double
+}
+
+/// Ampacity chip on the voltage-drop strip. Meet when usable ampacity covers design current, short when it does not.
+public enum NECCircuitAmpacityVerdict: Equatable, Sendable {
+    case meets
+    case short
+}
+
+/// Numbers for the NEC circuit picture: one voltage-drop run, plus the ampacity chip on that strip.
+/// This tool has no preferred drop target. The 3% and 5% marks stay informational.
+public struct NECCircuitRunReadout: Equatable, Sendable {
+    public var supplyVolts: Double
+    public var dropVolts: Double
+    public var receivingVolts: Double
+    public var dropPercent: Double
+    public var oneWayFeet: Double
+    public var parallelRuns: Int
+    public var designAmps: Double
+    public var usableAmps: Double
+    public var verdict: NECCircuitAmpacityVerdict
+
+    public init?(result: NECCircuitResult) {
+        guard result.supplyVolts.isFinite, result.supplyVolts > 0,
+              result.vdVolts.isFinite, result.vdVolts >= 0,
+              result.vdPercent.isFinite, result.vdPercent >= 0,
+              result.oneWayFeet.isFinite, result.oneWayFeet > 0,
+              result.designAmps.isFinite, result.designAmps > 0,
+              result.deratedAmpacity.isFinite, result.deratedAmpacity > 0
+        else { return nil }
+        let receiving = result.supplyVolts - result.vdVolts
+        guard receiving.isFinite else { return nil }
+        supplyVolts = result.supplyVolts
+        dropVolts = result.vdVolts
+        receivingVolts = receiving
+        dropPercent = result.vdPercent
+        oneWayFeet = result.oneWayFeet
+        parallelRuns = 1
+        designAmps = result.designAmps
+        usableAmps = result.deratedAmpacity
+        verdict = usableAmps + 1e-9 >= designAmps ? .meets : .short
+    }
+
+    public var designLabel: String { DeratingStackReadout.ampsLabel(designAmps) }
+    public var usableLabel: String { DeratingStackReadout.ampsLabel(usableAmps) }
+    public var dropVoltsLabel: String { DeratingStackReadout.siLabel(dropVolts, unit: "V") }
+    public var supplyLabel: String { DeratingStackReadout.siLabel(supplyVolts, unit: "V") }
+    public var receivingLabel: String { DeratingStackReadout.siLabel(receivingVolts, unit: "V") }
+    public var dropPercentLabel: String { Self.percentLabel(dropPercent) }
+    public var oneWayLabel: String { "\(Self.quantityLabel(oneWayFeet, digits: 1)) ft" }
+
+    /// Visible chip. Usable amps, the verdict, and the design current the result row already shows.
+    public var chipLine: String {
+        switch verdict {
+        case .meets: return "\(usableLabel) usable · MEETS \(designLabel)"
+        case .short: return "\(usableLabel) usable · SHORT \(designLabel)"
+        }
+    }
+
+    /// VoiceOver. Design current, drop, and the ampacity verdict come first. The canvas is not the value.
+    public var announcement: String {
+        let verdictSentence: String
+        switch verdict {
+        case .meets:
+            verdictSentence = "\(usableLabel) usable, meets \(designLabel) required."
+        case .short:
+            verdictSentence = "\(usableLabel) usable, short of \(designLabel) required."
+        }
+        let runs = parallelRuns == 1 ? "1 parallel run" : "\(parallelRuns) parallel runs"
+        return [
+            "\(designLabel) design.",
+            "\(dropVoltsLabel) drop, \(dropPercentLabel).",
+            verdictSentence,
+            "\(supplyLabel) supply.",
+            "\(receivingLabel) load.",
+            "\(oneWayLabel) one-way.",
+            "\(runs).",
+            "3% and 5% marks are informational.",
+        ].joined(separator: " ")
+    }
+
+    public static func percentLabel(_ value: Double) -> String {
+        "\(quantityLabel(value, digits: 2)) %"
+    }
+
+    /// Same rounding as the Toolbox `Format.number` row.
+    public static func quantityLabel(_ value: Double, digits: Int) -> String {
+        guard value.isFinite else { return "—" }
+        let magnitude = abs(value)
+        if magnitude >= 1_000_000 { return String(format: "%.2e", value) }
+        if magnitude != 0 && magnitude < 0.001 { return String(format: "%.3e", value) }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = digits
+        formatter.usesGroupingSeparator = true
+        return formatter.string(from: NSNumber(value: value)) ?? "—"
+    }
 }
 
 /// One-shot NEC branch/feeder sketch: design current → derated ampacity → VD → OCPD.
@@ -121,7 +222,9 @@ public enum NECCircuitCalc {
             vdVolts: vdVolts,
             vdPercent: vdPct,
             ocpdAmps: ocpd,
-            formula: "I_des = FLA×mult; pick conductor with derated ampacity ≥ I_des; VD = φ·K·I·L/CM"
+            formula: "I_des = FLA×mult; pick conductor with derated ampacity ≥ I_des; VD = φ·K·I·L/CM",
+            supplyVolts: v,
+            oneWayFeet: dist
         )
     }
 }

@@ -31,9 +31,9 @@ private struct VoltageDropStripLayout {
     let nodeRadius: CGFloat
     let scaleMax: Double
     let dropPercent: Double
-    let targetPercent: Double
+    let targetPercent: Double?
 
-    init(size: CGSize, dropPercent: Double, targetPercent: Double) {
+    init(size: CGSize, dropPercent: Double, targetPercent: Double?) {
         let w: Double = Double(size.width)
         let h: Double = Double(size.height)
         let inset: Double = min(28, w * 0.08)
@@ -47,7 +47,7 @@ private struct VoltageDropStripLayout {
         trackY = CGFloat(h * 0.34)
         runMinX = trackMinX + nodeRadius + 8
         runMaxX = trackMaxX - nodeRadius - 8
-        let span: Double = max(dropPercent, targetPercent, 5)
+        let span: Double = max(dropPercent, targetPercent ?? 0, 5)
         scaleMax = span * 1.12
         self.dropPercent = dropPercent
         self.targetPercent = targetPercent
@@ -82,7 +82,11 @@ private struct VoltageDropStripLayout {
         return path
     }
 
+    /// Sits in the slot the preferred-target label uses, when this tool has no target.
+    var ampacityChipY: CGFloat { min(height - 18, bandLabelYStacked + 30) }
+
     var targetMark: Path {
+        guard let targetPercent else { return Path() }
         let x: CGFloat = x(for: targetPercent)
         let y: CGFloat = targetMarkY
         var path = Path()
@@ -100,6 +104,12 @@ private struct VoltageDropStripLayout {
     var stacksBandLabels: Bool { bandGap < 36 }
 }
 
+/// Ampacity status drawn on the voltage-drop strip. Meet is good, short is bad.
+struct VoltageDropAmpacityChip: Equatable {
+    var line: String
+    var meets: Bool
+}
+
 struct VoltageDropDiagram: View {
     let supply: Double
     let drop: Double
@@ -107,30 +117,43 @@ struct VoltageDropDiagram: View {
     let dropPercent: Double
     let oneWayLength: String
     let parallelRuns: Int
-    let targetPercent: Double
-    let meetsTarget: Bool
+    var targetPercent: Double? = nil
+    var meetsTarget: Bool? = nil
+    var ampacityChip: VoltageDropAmpacityChip? = nil
+    /// When set, the run fill uses this tone instead of the 3% / 5% good-warn-bad scale.
+    /// The 3% and 5% marks stay informational either way.
+    var dropFill: Color? = nil
+    /// When set, VoiceOver reads this instead of the strip's own sentence. Numbers first.
+    var spokenSummary: String? = nil
+    var exportName: String = "voltage-drop-run"
+    var accessibilityID: String? = nil
 
     private var summary: String {
-        let clauses: [String] = [
+        if let spokenSummary { return spokenSummary }
+        var clauses: [String] = [
             "\(Format.volts(drop)) drop, \(Format.percent(dropPercent))",
             "\(Format.volts(supply)) supply",
             "\(Format.volts(receiving)) load",
             "\(oneWayLength) one-way",
             "\(parallelRuns) \(parallelRuns == 1 ? "parallel run" : "parallel runs")",
-            "\(Format.percent(targetPercent)) preferred target, \(meetsTarget ? "meets" : "over")",
-            "3% and 5% marks are informational",
         ]
+        if let targetPercent {
+            clauses.append("\(Format.percent(targetPercent)) preferred target, \((meetsTarget ?? false) ? "meets" : "over")")
+        }
+        clauses.append("3% and 5% marks are informational")
         return clauses.joined(separator: ". ") + "."
     }
 
-    /// Within 3% good, between 3% and 5% warn, over 5% bad.
+    /// Within 3% good, between 3% and 5% warn, over 5% bad — unless the caller
+    /// already has a drop tone of its own. Bands stay notes in either case.
     private var dropTone: Color {
+        if let dropFill { return dropFill }
         if dropPercent <= 3 { return Theme.good }
         if dropPercent <= 5 { return Theme.warn }
         return Theme.bad
     }
 
-    private var targetTone: Color { meetsTarget ? Theme.good : Theme.warn }
+    private var targetTone: Color { (meetsTarget ?? false) ? Theme.good : Theme.warn }
 
     private var lengthLine: String {
         let runs = parallelRuns == 1 ? "1 run" : "\(parallelRuns) runs"
@@ -139,10 +162,13 @@ struct VoltageDropDiagram: View {
 
     private var dropLine: String { "\(Format.volts(drop)) · \(Format.percent(dropPercent))" }
 
-    private var targetLine: String { "\(Format.percent(targetPercent)) · \(meetsTarget ? "MEETS" : "OVER")" }
+    private var targetLine: String {
+        guard let targetPercent else { return "" }
+        return "\(Format.percent(targetPercent)) · \((meetsTarget ?? false) ? "MEETS" : "OVER")"
+    }
 
     var body: some View {
-        DiagramCard(title: "Conductor run", accessibilitySummary: summary, exportName: "voltage-drop-run") {
+        DiagramCard(title: "Conductor run", accessibilitySummary: summary, exportName: exportName) {
             VStack(alignment: .leading, spacing: 6) {
                 EngineeringDiagramFrame(summary: summary) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -173,6 +199,7 @@ struct VoltageDropDiagram: View {
                     .accessibilityHidden(true)
             }
         }
+        .modifier(OptionalAccessibilityID(accessibilityID))
     }
 
     private func endpoint(_ title: String, _ value: String, alignment: HorizontalAlignment) -> some View {
@@ -215,10 +242,31 @@ struct VoltageDropDiagram: View {
                 .overlay(RoundedRectangle(cornerRadius: 3).stroke(Theme.energized, lineWidth: Theme.Stroke.emphasis))
                 .frame(width: layout.nodeRadius * 2, height: layout.nodeRadius * 2)
                 .position(layout.load)
-            layout.targetMark
-                .fill(targetTone)
+            if layout.targetPercent != nil {
+                layout.targetMark
+                    .fill(targetTone)
+            }
             stripLabels(layout)
+            if let ampacityChip, layout.targetPercent == nil {
+                ampacityChipView(ampacityChip, layout: layout)
+            }
         }
+    }
+
+    private func ampacityChipView(_ chip: VoltageDropAmpacityChip, layout: VoltageDropStripLayout) -> some View {
+        let tone = chip.meets ? Theme.good : Theme.bad
+        return Text(chip.line)
+            .font(.caption.monospacedDigit().weight(.semibold))
+            .foregroundStyle(tone)
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(tone.opacity(0.16), in: Capsule())
+            .overlay(Capsule().stroke(tone, lineWidth: Theme.Stroke.hairline))
+            .frame(maxWidth: max(layout.width - 24, 40))
+            .position(x: layout.midX, y: layout.ampacityChipY)
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -237,12 +285,14 @@ struct VoltageDropDiagram: View {
             y: layout.stacksBandLabels ? layout.bandLabelYStacked : layout.bandLabelY
         )
 
-        Text(targetLine)
-            .font(.caption2.monospacedDigit().weight(.semibold))
-            .foregroundStyle(targetTone)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .position(x: clampedLabelX(layout.x(for: layout.targetPercent), width: layout.width), y: layout.targetLabelY)
+        if let targetPercent = layout.targetPercent {
+            Text(targetLine)
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(targetTone)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .position(x: clampedLabelX(layout.x(for: targetPercent), width: layout.width), y: layout.targetLabelY)
+        }
     }
 
     private func bandLabel(_ text: String, at x: CGFloat, y: CGFloat) -> some View {
@@ -264,17 +314,28 @@ struct VoltageDropDiagram: View {
         dropPercent: Double,
         oneWayLength: String,
         parallelRuns: Int,
-        targetPercent: Double,
-        meetsTarget: Bool
+        targetPercent: Double? = nil,
+        meetsTarget: Bool? = nil,
+        ampacityChip: VoltageDropAmpacityChip? = nil,
+        dropFill: Color? = nil,
+        spokenSummary: String? = nil,
+        exportName: String = "voltage-drop-run",
+        accessibilityID: String? = nil
     ) -> VoltageDropDiagram? {
         guard supply.isFinite, supply > 0,
               drop.isFinite, drop >= 0,
               receiving.isFinite,
               dropPercent.isFinite, dropPercent >= 0,
-              targetPercent.isFinite, targetPercent > 0,
               parallelRuns >= 1,
               !oneWayLength.isEmpty
         else { return nil }
+        if let targetPercent {
+            guard targetPercent.isFinite, targetPercent > 0 else { return nil }
+        } else if meetsTarget != nil {
+            return nil
+        }
+        if let ampacityChip, ampacityChip.line.isEmpty { return nil }
+        if let spokenSummary, spokenSummary.isEmpty { return nil }
         return VoltageDropDiagram(
             supply: supply,
             drop: drop,
@@ -283,8 +344,26 @@ struct VoltageDropDiagram: View {
             oneWayLength: oneWayLength,
             parallelRuns: parallelRuns,
             targetPercent: targetPercent,
-            meetsTarget: meetsTarget
+            meetsTarget: meetsTarget,
+            ampacityChip: ampacityChip,
+            dropFill: dropFill,
+            spokenSummary: spokenSummary,
+            exportName: exportName,
+            accessibilityID: accessibilityID
         )
+    }
+}
+
+/// Applies an accessibility identifier only when the caller has one.
+private struct OptionalAccessibilityID: ViewModifier {
+    var id: String?
+
+    func body(content: Content) -> some View {
+        if let id {
+            content.accessibilityIdentifier(id)
+        } else {
+            content
+        }
     }
 }
 

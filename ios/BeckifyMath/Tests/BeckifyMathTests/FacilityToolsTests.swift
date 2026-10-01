@@ -151,6 +151,101 @@ final class NECCircuitTests: XCTestCase {
         XCTAssertGreaterThan(r.fla, 0)
         XCTAssertFalse(r.conductorSize.isEmpty)
         XCTAssertNotNil(r.ocpdAmps)
+        XCTAssertEqual(r.supplyVolts, 480, accuracy: 1e-9)
+        XCTAssertEqual(r.oneWayFeet, 150, accuracy: 1e-9)
+    }
+
+    func testRunReadoutMatchesDropAndAmpacityVerdict() throws {
+        let r = try NECCircuitCalc.solve(
+            loadKW: 15,
+            voltage: 480,
+            phases: 3,
+            powerFactor: 0.9,
+            loadType: .continuous,
+            oneWayFeet: 150
+        )
+        let fla = 15_000 / (sqrt(3) * 480 * 0.9)
+        XCTAssertEqual(r.fla, fla, accuracy: 1e-6)
+        XCTAssertEqual(r.designAmps, fla * 1.25, accuracy: 1e-6)
+        XCTAssertEqual(r.vdPercent, r.vdVolts / 480 * 100, accuracy: 1e-9)
+        XCTAssertGreaterThanOrEqual(r.deratedAmpacity + 1e-9, r.designAmps)
+
+        let run = try XCTUnwrap(NECCircuitRunReadout(result: r))
+        XCTAssertEqual(run.verdict, .meets)
+        XCTAssertEqual(run.parallelRuns, 1)
+        XCTAssertEqual(run.dropVolts, r.vdVolts, accuracy: 1e-12)
+        XCTAssertEqual(run.dropPercent, r.vdPercent, accuracy: 1e-12)
+        XCTAssertEqual(run.designAmps, r.designAmps, accuracy: 1e-12)
+        XCTAssertEqual(run.usableAmps, r.deratedAmpacity, accuracy: 1e-12)
+        XCTAssertEqual(run.receivingVolts, r.supplyVolts - r.vdVolts, accuracy: 1e-9)
+        XCTAssertEqual(run.designLabel, DeratingStackReadout.ampsLabel(r.designAmps))
+        XCTAssertEqual(run.usableLabel, DeratingStackReadout.ampsLabel(r.deratedAmpacity))
+        XCTAssertEqual(run.dropVoltsLabel, DeratingStackReadout.siLabel(r.vdVolts, unit: "V"))
+        XCTAssertEqual(run.supplyLabel, DeratingStackReadout.siLabel(r.supplyVolts, unit: "V"))
+        XCTAssertEqual(run.receivingLabel, DeratingStackReadout.siLabel(run.receivingVolts, unit: "V"))
+        XCTAssertEqual(run.dropPercentLabel, NECCircuitRunReadout.percentLabel(r.vdPercent))
+        XCTAssertEqual(run.oneWayLabel, "150 ft")
+        XCTAssertEqual(run.chipLine, "\(run.usableLabel) usable · MEETS \(run.designLabel)")
+        XCTAssertEqual(run.announcement.hasPrefix("\(run.designLabel) design."), true)
+        XCTAssertEqual(run.announcement.first?.isNumber, true)
+        XCTAssertTrue(run.announcement.contains("\(run.dropVoltsLabel) drop, \(run.dropPercentLabel)."))
+        XCTAssertTrue(run.announcement.contains("\(run.usableLabel) usable, meets \(run.designLabel) required."))
+        XCTAssertTrue(run.announcement.contains("3% and 5% marks are informational."))
+        XCTAssertFalse(run.announcement.localizedCaseInsensitiveContains("short"))
+        XCTAssertFalse(run.chipLine.localizedCaseInsensitiveContains("short"))
+    }
+
+    func testRunReadoutShortWhenUsableIsBelowDesign() throws {
+        let r = NECCircuitResult(
+            fla: 100,
+            designAmps: 125,
+            ambientFactor: 1,
+            cccFactor: 1,
+            totalDerating: 1,
+            conductorSize: "8",
+            baseAmpacity: 55,
+            deratedAmpacity: 50,
+            vdVolts: 4.2,
+            vdPercent: 3.5,
+            ocpdAmps: 150,
+            formula: "test",
+            supplyVolts: 120,
+            oneWayFeet: 80
+        )
+        let run = try XCTUnwrap(NECCircuitRunReadout(result: r))
+        XCTAssertEqual(run.verdict, .short)
+        XCTAssertEqual(run.receivingVolts, 115.8, accuracy: 1e-9)
+        XCTAssertEqual(run.chipLine, "50 A usable · SHORT 125 A")
+        XCTAssertEqual(
+            run.announcement,
+            "125 A design. 4.2 V drop, 3.5 %. 50 A usable, short of 125 A required. 120 V supply. 116 V load. 80 ft one-way. 1 parallel run. 3% and 5% marks are informational."
+        )
+        XCTAssertEqual(run.announcement.first?.isNumber, true)
+        XCTAssertFalse(run.announcement.localizedCaseInsensitiveContains("meets"))
+    }
+
+    func testRunReadoutRejectsUnusableNumbers() {
+        var r = NECCircuitResult(
+            fla: 100,
+            designAmps: 125,
+            ambientFactor: 1,
+            cccFactor: 1,
+            totalDerating: 1,
+            conductorSize: "8",
+            baseAmpacity: 55,
+            deratedAmpacity: 50,
+            vdVolts: 4.2,
+            vdPercent: 3.5,
+            ocpdAmps: 150,
+            formula: "test",
+            supplyVolts: 120,
+            oneWayFeet: 80
+        )
+        r.supplyVolts = 0
+        XCTAssertNil(NECCircuitRunReadout(result: r))
+        r.supplyVolts = 120
+        r.designAmps = 0
+        XCTAssertNil(NECCircuitRunReadout(result: r))
     }
 }
 
