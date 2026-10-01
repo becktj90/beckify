@@ -35,20 +35,56 @@ struct ConductorCostView: View {
     @StoredInput(.conductorCost, "target", default: "3") private var target
     @StoredInput(.conductorCost, "maxRuns", default: "4") private var maxRuns
     @StoredInput(.conductorCost, "kft", default: "") private var dollarsPerKft
+    @StoredInput(.conductorCost, "priceJSON", default: "") private var priceJSON
+    @StoredToggle(.conductorCost, "includeEGC", default: false) private var includeEGC
+    @StoredChoice(.conductorCost, "egcMaterial", default: ConductorMaterial.copper) private var egcMaterial
     @StoredInput(.conductorCost, "kwh", default: "") private var dollarsPerKwh
     @StoredInput(.conductorCost, "hours", default: "") private var hours
     @StoredInput(.conductorCost, "jobName", default: "Conductor cost") private var jobName
     @State private var session = ExplicitCalculationState<ConductorCostResult>()
     @State private var importedBanner: String?
     @State private var successTick = 0
+    @State private var showPriceBook = false
+    @State private var priceDrafts: [String: String] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var groundingContext: EquipmentGroundingContext {
+        EquipmentGroundingContext.from(system: system)
+    }
+
+    private var liveGround: EquipmentGroundingRecommendation? {
+        guard includeEGC, groundingContext.impliesEquipmentGround else { return nil }
+        let amps: Double?
+        if loadUnit == .amps {
+            amps = load.parsedDouble
+        } else if let raw = load.parsedDouble, let volts = voltage.parsedDouble, volts > 0 {
+            amps = try? ConductorCost.loadCurrent(
+                system: system,
+                supplyVolts: volts,
+                loadValue: raw,
+                loadUnit: loadUnit,
+                powerFactor: powerFactor.parsedDouble ?? 0.9
+            ).amps
+        } else {
+            amps = nil
+        }
+        guard let amps, amps > 0 else { return nil }
+        let design = continuous ? amps * 1.25 : amps
+        return EquipmentGrounding.recommend(
+            amps: design,
+            material: egcMaterial,
+            context: groundingContext,
+            ampsAreOCPDRating: false
+        )
+    }
 
     private var inputFingerprint: String {
         [
             system.rawValue, voltage, load, loadUnit.rawValue, powerFactor,
             material.rawValue, construction.rawValue, insulation.rawValue, termination.rawValue,
             ambient, ccc, continuous ? "1" : "0", length, target, maxRuns,
-            dollarsPerKft, dollarsPerKwh, hours,
+            dollarsPerKft, priceJSON, includeEGC ? "1" : "0", egcMaterial.rawValue,
+            dollarsPerKwh, hours,
         ].joined(separator: "|")
     }
 
@@ -63,8 +99,8 @@ struct ConductorCostView: View {
                 toolID: .conductorCost,
                 symbolic: "Rank size × runs by first-cost after 310.16 + VD",
                 substituted: substituted,
-                meaning: "Every option must clear derated ampacity (310.16 / 310.15 / 110.14(C)) and the preferred voltage-drop target. Parallels are offered only for 1/0 AWG and larger. Dollars are a planning allowance you enter or the default book — not LME, not a bid.",
-                citation: "NEC 2023 Table 310.16 · 310.15 · 110.14(C) · 310.10(G) · Ch.9 Tables 1 / 4 / 5 / 8 / 9."
+                meaning: "Every option must clear derated ampacity (310.16 / 310.15 / 110.14(C)) and the preferred voltage-drop target. Parallels are offered only for 1/0 AWG and larger. Dollars use the default planning book, a line override, or a uniform $/kft — not LME, not a bid. Turn Include recommended EGC on to add one Table 250.122 ground per run into first-cost and suggested EMT.",
+                citation: "NEC 2023 Table 310.16 · 310.15 · 110.14(C) · 310.10(G) · Table 250.122 · Ch.9 Tables 1 / 4 / 5 / 8 / 9."
             )
 
             if let importedBanner {
@@ -102,12 +138,33 @@ struct ConductorCostView: View {
             NumberField(title: "Current-carrying conductors", unit: "CCC", text: $ccc, fieldID: "ccc", onSubmit: calculate)
             NumberField(title: "Max parallel runs", unit: "runs", text: $maxRuns, fieldID: "maxRuns", onSubmit: calculate)
 
+            if groundingContext.impliesEquipmentGround {
+                Toggle("Include recommended EGC in cost", isOn: $includeEGC)
+                if includeEGC {
+                    MenuField(title: "EGC material", selection: $egcMaterial, options: ConductorMaterial.allCases) { $0.displayName }
+                    Text("Adds one NEC 2023 Table 250.122 equipment grounding conductor per run into modeled first-cost and the suggested EMT fill. Design aid — confirm the Code and the AHJ. Not a PE stamp.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let live = liveGround {
+                        EquipmentGroundingSummary(recommendation: live)
+                    }
+                } else {
+                    Text("Leave off if the ground is already in the takeoff. Turn on to size a Table 250.122 EGC and include it in the rank.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            priceBookSection
+
             NumberField(
-                title: "Planning $/kft",
+                title: "Uniform $/kft (optional)",
                 unit: "$/kft",
                 text: $dollarsPerKft,
                 optional: true,
-                helpText: "Leave blank to use the default planning book for each size. Not a live quote.",
+                helpText: "Applies to sizes without a line override. Leave blank to use the book (and any line edits).",
                 fieldID: "kft",
                 onSubmit: calculate
             )
@@ -132,12 +189,72 @@ struct ConductorCostView: View {
         .onChange(of: inputFingerprint) { _, _ in
             session.markInputsChanged()
         }
-        .onAppear(perform: applyIncomingHandoff)
+        .onChange(of: material) { _, _ in
+            syncPriceDraftsFromStore()
+        }
+        .onAppear {
+            syncPriceDraftsFromStore()
+            applyIncomingHandoff()
+        }
         .sensoryFeedback(.success, trigger: successTick)
     }
 
     @ViewBuilder
+    private var priceBookSection: some View {
+        DisclosureGroup(isExpanded: $showPriceBook) {
+            Text("Default planning book in $/kft. Edit a line to override that size. Clear a field to return to the book. Not a live quote.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 4)
+
+            ForEach(ConductorCost.bookSizes(for: material), id: \.self) { size in
+                HStack(spacing: Theme.Space.sm) {
+                    Text(NECTables.wireLabel(size))
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .frame(width: 72, alignment: .leading)
+                    Text(bookLabel(for: size))
+                        .font(.caption2)
+                        .foregroundStyle(Theme.muted)
+                        .frame(width: 70, alignment: .trailing)
+                    TextField("Override", text: bindingForPrice(size))
+                        .keyboardType(.decimalPad)
+                        .font(.caption.monospacedDigit())
+                        .multilineTextAlignment(.trailing)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                        .frame(minHeight: Theme.touchTarget)
+                        .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .accessibilityLabel("Override $/kft for \(NECTables.wireLabel(size))")
+                }
+            }
+
+            HStack {
+                Button("Clear line overrides") {
+                    priceDrafts = [:]
+                    persistPriceOverrides()
+                }
+                .buttonStyle(.bordered)
+                Spacer()
+            }
+            .padding(.top, 4)
+        } label: {
+            Text("Planning price book")
+                .font(.subheadline.weight(.semibold))
+        }
+        .padding(12)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    @ViewBuilder
     private func results(_ r: ConductorCostResult) -> some View {
+        ConductorCostRankingDiagram(
+            options: r.options,
+            recommendedID: r.recommended.typeString,
+            includeEGC: r.includeEGC
+        )
+        .opacity(session.isStale ? 0.72 : 1)
+
         ResultCard(copyText: copyText) {
             ResultRow(label: "Load current", value: Format.amps(r.loadAmps), emphasis: true)
             ResultRow(label: "Basis", value: r.currentBasis, tone: Theme.muted)
@@ -146,12 +263,21 @@ struct ConductorCostView: View {
             }
             ResultRow(label: "Lowest first-cost", value: r.recommended.typeString, emphasis: true, tone: Theme.good)
             ResultRow(label: "Modeled first-cost", value: Format.dollars(r.recommended.firstCost), emphasis: true, tone: Theme.good)
+            if r.recommended.includedEGC {
+                ResultRow(label: "Phase cost", value: Format.dollars(r.recommended.phaseCost), tone: Theme.muted)
+                ResultRow(
+                    label: "EGC cost",
+                    value: Format.dollars(r.recommended.egcCost) + " · " + (r.recommended.egcLabel ?? "—"),
+                    tone: Theme.copper
+                )
+            }
             ResultRow(label: "Usable ampacity", value: Format.amps(r.recommended.usableAmpacity), tone: Theme.good)
             ResultRow(label: "Voltage drop", value: "\(Format.volts(r.recommended.dropVolts))  ·  \(Format.percent(r.recommended.dropPercent))")
             if let emt = r.recommended.suggestedEMT {
                 ResultRow(label: "Suggested EMT / run", value: "\(emt)\"  (\(r.recommended.conductorsPerRun) cond.)")
             }
             ResultRow(label: "Price source", value: r.priceSource, tone: Theme.muted)
+            ResultRow(label: "Pick $/kft", value: Format.number(r.recommended.dollarsPerKftUsed, digits: 0), tone: Theme.muted)
             if let watts = r.recommended.i2rWatts {
                 ResultRow(label: "I²R (operating I)", value: Format.watts(watts), tone: Theme.muted)
             }
@@ -165,14 +291,19 @@ struct ConductorCostView: View {
         .opacity(session.isStale ? 0.72 : 1)
 
         EquipmentGroundingCard(
-            recommendation: EquipmentGrounding.recommend(
-                amps: r.designCurrent,
-                material: material,
-                context: EquipmentGroundingContext.from(system: system),
-                ampsAreOCPDRating: false,
-                ungroundedSize: r.recommended.size,
-                extraNote: "Sized from the design current (continuous loads already include 125%). Not included in the $/kft rank."
-            )
+            recommendation: r.equipmentGrounding ?? (groundingContext.impliesEquipmentGround
+                ? EquipmentGrounding.recommend(
+                    amps: r.designCurrent,
+                    material: egcMaterial,
+                    context: groundingContext,
+                    ampsAreOCPDRating: false,
+                    ungroundedSize: r.recommended.size,
+                    extraNote: r.includeEGC
+                        ? nil
+                        : "Shown for reference. Turn Include recommended EGC on to add it to the $/kft rank and suggested fill."
+                )
+                : nil),
+            countedInFill: r.includeEGC ? true : nil
         )
         .opacity(session.isStale ? 0.72 : 1)
 
@@ -198,6 +329,11 @@ struct ConductorCostView: View {
                             Text("EMT \(emt)\"")
                                 .font(.caption2)
                                 .foregroundStyle(Theme.muted)
+                        }
+                        if option.includedEGC, let egc = option.egcLabel {
+                            Text("EGC \(egc)")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.copper)
                         }
                         if let life = option.lifecycleCost {
                             Text("life \(Format.dollars(life))")
@@ -281,11 +417,13 @@ struct ConductorCostView: View {
                         "L": length,
                         "mat": material.displayName,
                         "runs": "\(r.recommended.parallelRuns)",
+                        "egc": includeEGC ? "yes" : "no",
                     ],
                     outputs: [
                         "pick": r.recommended.typeString,
                         "cost": Format.dollars(r.recommended.firstCost),
                         "vd": Format.percent(r.recommended.dropPercent),
+                        "EGC": r.equipmentGrounding?.copyLine ?? "",
                     ]
                 ))
             }
@@ -293,6 +431,7 @@ struct ConductorCostView: View {
     }
 
     private func calculate() {
+        persistPriceOverrides()
         session.calculate {
             try ConductorCost.optimize(ConductorCostInput(
                 system: system,
@@ -311,6 +450,9 @@ struct ConductorCostView: View {
                 maxParallelRuns: Int(maxRuns.parsedDouble ?? 0),
                 construction: construction,
                 dollarsPerKft: optionalPositive(dollarsPerKft),
+                priceOverridesBySize: parsedPriceOverrides(),
+                includeEGC: includeEGC && groundingContext.impliesEquipmentGround,
+                egcMaterial: egcMaterial,
                 dollarsPerKwh: optionalPositive(dollarsPerKwh),
                 hoursPerYear: optionalPositive(hours)
             ))
@@ -326,6 +468,59 @@ struct ConductorCostView: View {
         return value
     }
 
+    private func bookLabel(for size: String) -> String {
+        guard let book = ConductorCost.planningDollarsPerKft(size: size, material: material) else {
+            return "—"
+        }
+        return Format.number(book, digits: 0)
+    }
+
+    private func bindingForPrice(_ size: String) -> Binding<String> {
+        Binding(
+            get: { priceDrafts[size] ?? "" },
+            set: { newValue in
+                let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty {
+                    priceDrafts.removeValue(forKey: size)
+                } else {
+                    priceDrafts[size] = trimmed
+                }
+                persistPriceOverrides()
+            }
+        )
+    }
+
+    private func parsedPriceOverrides() -> [String: Double] {
+        var map: [String: Double] = [:]
+        for (size, text) in priceDrafts {
+            if let value = optionalPositive(text) {
+                map[size] = value
+            }
+        }
+        return map
+    }
+
+    private func persistPriceOverrides() {
+        let map = parsedPriceOverrides()
+        guard let data = try? JSONEncoder().encode(map),
+              let json = String(data: data, encoding: .utf8) else {
+            priceJSON = ""
+            return
+        }
+        priceJSON = json
+    }
+
+    private func syncPriceDraftsFromStore() {
+        guard let data = priceJSON.data(using: .utf8),
+              let map = try? JSONDecoder().decode([String: Double].self, from: data) else {
+            priceDrafts = [:]
+            return
+        }
+        priceDrafts = Dictionary(uniqueKeysWithValues: map.map { key, value in
+            (key, Format.number(value, digits: value >= 100 ? 0 : 2))
+        })
+    }
+
     private func reset() {
         voltage = ""
         load = ""
@@ -337,6 +532,9 @@ struct ConductorCostView: View {
         dollarsPerKft = ""
         dollarsPerKwh = ""
         hours = ""
+        includeEGC = false
+        priceDrafts = [:]
+        priceJSON = ""
         importedBanner = nil
         session.reset()
     }
@@ -360,6 +558,8 @@ struct ConductorCostView: View {
         dollarsPerKft = ""
         dollarsPerKwh = ""
         hours = ""
+        includeEGC = true
+        egcMaterial = .copper
         session.prepareForNewInputs()
     }
 
@@ -388,6 +588,9 @@ struct ConductorCostView: View {
 
     private var sticky: String? {
         guard let r = session.displayedResult else { return nil }
+        if r.includeEGC, let egc = r.recommended.egcLabel {
+            return "\(r.recommended.typeString)  ·  \(Format.dollars(r.recommended.firstCost))  ·  EGC \(egc)"
+        }
         return "\(r.recommended.typeString)  ·  \(Format.dollars(r.recommended.firstCost))"
     }
 

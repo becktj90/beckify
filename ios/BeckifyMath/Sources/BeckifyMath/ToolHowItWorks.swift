@@ -164,7 +164,7 @@ public enum ToolHowItWorksCatalog {
             context: "Pick a copper or aluminum size that still carries the load after derating.",
             bullets: [
                 "Smallest size whose derated ampacity ≥ required amps (125% continuous when checked).",
-                "1Ø, multiwire, and 3Ø show a Table 250.122 EGC beside the phase size. Confirm Code / AHJ.",
+                "Circuit opt-in: 1Ø / multiwire / 3Ø shows Table 250.122 EGC in the sticky result. Confirm Code / AHJ.",
                 "Termination temperature caps the column. Design aid — verify the edition you are under.",
             ]
         ),
@@ -172,9 +172,9 @@ public enum ToolHowItWorksCatalog {
             summary: "Ranks compliant sizes and parallel runs using a planning $/kft and optional I²R energy.",
             context: "When two legal sizes both work and you want a cheaper planning pick.",
             bullets: [
-                "Uses your $/kft or a default book — not LME, not a distributor quote.",
-                "EGC size is NEC 2023 Table 250.122 from the design current. It is not in the $/kft rank.",
-                "I²R is optional energy, not a life-cycle study. Design aid only.",
+                "Default book $/kft with per-line or uniform overrides — not LME, not a quote.",
+                "Opt-in Include EGC adds one Table 250.122 ground per run into first-cost and EMT fill.",
+                "I²R is optional energy, not a life-cycle study. Design aid — confirm Code / AHJ.",
             ]
         ),
         "conductorLength": ToolHowItWorks(

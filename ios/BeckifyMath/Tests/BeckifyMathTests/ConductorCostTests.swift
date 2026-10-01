@@ -195,4 +195,128 @@ final class ConductorCostTests: XCTestCase {
         XCTAssertEqual(ConductorCost.planningPricePerFoot(size: "1/0", material: .aluminum), 0.88)
         XCTAssertNil(ConductorCost.planningPricePerFoot(size: "14", material: .aluminum))
     }
+
+
+    func testIncludeEGCAddsTable250_122CostAndFill() throws {
+        let without = try ConductorCost.optimize(ConductorCostInput(
+            system: .threePhase,
+            supplyVolts: 480,
+            loadValue: 150,
+            loadUnit: .amps,
+            material: .copper,
+            continuousLoad: true,
+            oneWayFeet: 250,
+            targetDropPercent: 3,
+            maxParallelRuns: 2,
+            includeEGC: false
+        ))
+        let with = try ConductorCost.optimize(ConductorCostInput(
+            system: .threePhase,
+            supplyVolts: 480,
+            loadValue: 150,
+            loadUnit: .amps,
+            material: .copper,
+            continuousLoad: true,
+            oneWayFeet: 250,
+            targetDropPercent: 3,
+            maxParallelRuns: 2,
+            includeEGC: true,
+            egcMaterial: .copper
+        ))
+
+        XCTAssertFalse(without.includeEGC)
+        XCTAssertNil(without.equipmentGrounding)
+        XCTAssertTrue(with.includeEGC)
+        XCTAssertNotNil(with.equipmentGrounding)
+        XCTAssertTrue(with.recommended.includedEGC)
+        XCTAssertGreaterThan(with.recommended.egcCost, 0)
+        XCTAssertEqual(
+            with.recommended.firstCost,
+            with.recommended.phaseCost + with.recommended.egcCost,
+            accuracy: 1e-6
+        )
+        XCTAssertEqual(with.recommended.conductorsPerRun, with.recommended.insulatedCores + 1)
+        XCTAssertTrue(with.recommended.typeString.contains("EGC"))
+        XCTAssertTrue(with.citations.contains(where: { $0.articleOrTable == "Table 250.122" }))
+    }
+
+    func testPerSizePriceOverrideBeatsBookAndUniform() throws {
+        let book = try ConductorCost.optimize(ConductorCostInput(
+            system: .threePhase,
+            supplyVolts: 480,
+            loadValue: 150,
+            loadUnit: .amps,
+            material: .copper,
+            continuousLoad: true,
+            oneWayFeet: 250,
+            targetDropPercent: 3,
+            maxParallelRuns: 1
+        ))
+        let pickSize = book.recommended.size
+        let override = try ConductorCost.optimize(ConductorCostInput(
+            system: .threePhase,
+            supplyVolts: 480,
+            loadValue: 150,
+            loadUnit: .amps,
+            material: .copper,
+            continuousLoad: true,
+            oneWayFeet: 250,
+            targetDropPercent: 3,
+            maxParallelRuns: 1,
+            dollarsPerKft: 9_999,
+            priceOverridesBySize: [pickSize: 1_000]
+        ))
+        let match = override.options.first { $0.size == pickSize && $0.parallelRuns == book.recommended.parallelRuns }
+        let matched = try XCTUnwrap(match)
+        XCTAssertEqual(matched.dollarsPerKftUsed, 1_000, accuracy: 1e-9)
+        XCTAssertEqual(matched.priceSourceLabel, "Line override")
+        XCTAssertTrue(matched.usedUserPrice)
+
+        let resolved = try XCTUnwrap(ConductorCost.resolvedDollarsPerKft(
+            size: "4/0",
+            material: .copper,
+            uniformDollarsPerKft: 8000,
+            overridesBySize: ["4/0": 1234]
+        ))
+        XCTAssertEqual(resolved.dollarsPerKft, 1234, accuracy: 1e-9)
+        XCTAssertEqual(resolved.source, .lineOverride)
+
+        let uniform = try XCTUnwrap(ConductorCost.resolvedDollarsPerKft(
+            size: "4/0",
+            material: .copper,
+            uniformDollarsPerKft: 8000,
+            overridesBySize: [:]
+        ))
+        XCTAssertEqual(uniform.dollarsPerKft, 8000, accuracy: 1e-9)
+        XCTAssertEqual(uniform.source, .uniform)
+
+        let defaultBook = try XCTUnwrap(ConductorCost.resolvedDollarsPerKft(
+            size: "4/0",
+            material: .copper,
+            uniformDollarsPerKft: nil,
+            overridesBySize: [:]
+        ))
+        XCTAssertEqual(defaultBook.dollarsPerKft, 5750, accuracy: 1e-9)
+        XCTAssertEqual(defaultBook.source, .book)
+    }
+
+    func testIncludeEGCIgnoredForDC() throws {
+        let result = try ConductorCost.optimize(ConductorCostInput(
+            system: .dc,
+            supplyVolts: 48,
+            loadValue: 40,
+            loadUnit: .amps,
+            material: .copper,
+            continuousLoad: false,
+            oneWayFeet: 50,
+            targetDropPercent: 5,
+            maxParallelRuns: 1,
+            construction: .twoPlusE,
+            includeEGC: true
+        ))
+        XCTAssertFalse(result.includeEGC)
+        XCTAssertNil(result.equipmentGrounding)
+        XCTAssertFalse(result.recommended.includedEGC)
+        XCTAssertEqual(result.recommended.egcCost, 0, accuracy: 1e-9)
+    }
 }
