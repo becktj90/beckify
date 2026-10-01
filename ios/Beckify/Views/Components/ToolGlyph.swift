@@ -238,6 +238,7 @@ enum CategoryGlyphKind {
     case homework
     case sensors
     case reference
+    case analysis
 
     init(_ category: ToolCategory) {
         switch category {
@@ -247,6 +248,7 @@ enum CategoryGlyphKind {
         case .homework: self = .homework
         case .sensors: self = .sensors
         case .reference: self = .reference
+        case .analysis: self = .analysis
         }
     }
 
@@ -258,6 +260,7 @@ enum CategoryGlyphKind {
         case .homework: return Self.homework(rect)
         case .sensors: return Self.sensors(rect)
         case .reference: return Self.reference(rect)
+        case .analysis: return Self.analysis(rect)
         }
     }
 
@@ -330,6 +333,25 @@ enum CategoryGlyphKind {
             height: book.height * 0.84
         ))
         return .fill(Glyph.punched(body, spine))
+    }
+
+    /// Bell curve — distributions shelf. Open mark.
+    private static func analysis(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let baseline = r.maxY - r.height * 0.22
+        let left = CGPoint(x: r.minX + r.width * 0.10, y: baseline)
+        let peak = CGPoint(x: r.midX, y: r.minY + r.height * 0.16)
+        let right = CGPoint(x: r.maxX - r.width * 0.10, y: baseline)
+        path.move(to: left)
+        path.addQuadCurve(
+            to: peak,
+            control: CGPoint(x: r.minX + r.width * 0.30, y: r.minY + r.height * 0.18)
+        )
+        path.addQuadCurve(
+            to: right,
+            control: CGPoint(x: r.maxX - r.width * 0.30, y: r.minY + r.height * 0.18)
+        )
+        return .stroke(path)
     }
 }
 
@@ -426,6 +448,7 @@ extension GlyphKind {
         case .ul508aPanelLab: return .ul508aPanelLab
         case .magneticsLab: return .magneticsLab
         case .emFields: return .emFields
+        case .statistics: return .statistics
         }
     }
 }
@@ -520,6 +543,7 @@ enum GlyphKind {
     case ul508aPanelLab
     case magneticsLab
     case emFields
+    case statistics
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -564,6 +588,7 @@ enum GlyphKind {
         case .ul508aPanelLab: return Self.ul508aPanelLab(rect)
         case .magneticsLab: return Self.magneticsLab(rect)
         case .emFields: return Self.emFields(rect)
+        case .statistics: return Self.statistics(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -1294,6 +1319,23 @@ enum GlyphKind {
             head: r.width * 0.11
         )
         return .stroke(path)
+    }
+
+    /// Histogram bars — distributions and correlation.
+    private static func statistics(_ r: CGRect) -> GlyphArtwork {
+        let base = r.maxY - r.height * 0.16
+        let heights: [CGFloat] = [0.28, 0.48, 0.76, 0.42]
+        let gap = r.width * 0.06
+        let count = CGFloat(heights.count)
+        let width = (r.width * 0.76 - gap * (count - 1)) / count
+        var fill = Path()
+        var x = r.minX + r.width * 0.12
+        for height in heights {
+            let bar = CGRect(x: x, y: base - r.height * height, width: width, height: r.height * height)
+            fill.addPath(Glyph.roundedRect(bar, corner: 1.5))
+            x += width + gap
+        }
+        return .fill(fill)
     }
 
     /// Op-amp triangle with a series resistor — open mark for the lab shelf.

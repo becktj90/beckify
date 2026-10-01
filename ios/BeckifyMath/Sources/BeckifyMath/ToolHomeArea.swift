@@ -13,6 +13,7 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
     case power
     case controls
     case magnetics
+    case analysis
     case instruments
     case basics
     case bench
@@ -20,7 +21,7 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
 
     public var homeArea: ToolHomeArea {
         switch self {
-        case .jobsite, .power, .controls, .magnetics, .instruments: return .field
+        case .jobsite, .power, .controls, .magnetics, .analysis, .instruments: return .field
         case .basics, .bench, .reference: return .toolkit
         }
     }
@@ -47,6 +48,7 @@ public enum ToolHomeAreaPolicy {
         if referenceIDs.contains(id) { return .reference }
         if powerIDs.contains(id) { return .power }
         if controlsIDs.contains(id) { return .controls }
+        if analysisIDs.contains(id) { return .analysis }
         return .jobsite
     }
 
@@ -144,6 +146,11 @@ public enum ToolHomeAreaPolicy {
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
         "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
+    ]
+
+    /// Field → Analysis: distributions, rescale, paired normals, covariance.
+    private static let analysisIDs: Set<String> = [
+        "statistics",
     ]
 
     /// Saved-job keys are short labels (`V`, `I`); stored fields are longer.
