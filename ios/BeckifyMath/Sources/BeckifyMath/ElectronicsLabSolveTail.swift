@@ -169,6 +169,9 @@ extension LabSolve {
                 q("duty", "Duty", timed.dutyPercent, "%"),
                 q("c", "C", c, "F", unknown == "c"),
                 q("rled", "Rled", rled, "Ω", unknown == "rled"),
+                q("r1", "R1", r1, "Ω"),
+                q("r2", "R2", r2, "Ω"),
+                q("vcc", "Vcc", vcc, "V"),
                 q("iled", "ILED high", iled, "A"),
                 q("iavg", "ILED average", iled * timed.dutyPercent / 100, "A"),
             ],
@@ -229,6 +232,7 @@ extension LabSolve {
                 q("itotal", "I total", total, "A"),
                 q("r", "R each", r, "Ω", unknown == "r"),
                 q("digit", "Digit", Double(digit), ""),
+                q("vcc", "Vcc", vcc, "V"),
             ],
             steps: [
                 "Common cathode. Each lit segment has its own resistor.",

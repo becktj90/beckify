@@ -771,13 +771,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "electronicsLab": ToolHowItWorks(
-            summary: "College schematics with node voltages, branch currents, and a value you can solve for.",
+            summary: "Schematics with node voltages, branch currents, and a value you can solve for. Some circuits also show a solderless breadboard.",
             context: "Field → Controls. Passive, diodes, transistors, op-amps, 555, display, and matching.",
             bullets: [
                 "Each circuit draws Vin/Vout or a Bode trace. H(s) only when the stage is linear. Not a SPICE netlist.",
+                "Breadboard is an illustrative solderless hookup of the nodes that fit a DIP or discrete part. It is not a SPICE board file.",
                 "BJT uses 0.7 V and constant β. MOSFETs use the square law or the Rds(on) you enter.",
                 "555, stubs, and matches are ideal. Real boards and vendor models differ.",
-                "Transmission-line tools are lossless planning aids, not a measured match.",
             ]
         ),
         "ul508aPanelLab": ToolHowItWorks(

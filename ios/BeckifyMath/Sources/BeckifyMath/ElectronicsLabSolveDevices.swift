@@ -50,6 +50,9 @@ extension LabSolve {
                 q("vce", "Vce", bias.vce, "V"),
                 q("re", "Re", re, "Ω", unknown == "re"),
                 q("rc", "Rc", rc, "Ω", unknown == "rc"),
+                q("r1", "R1", r1, "Ω"),
+                q("r2", "R2", r2, "Ω"),
+                q("vcc", "Vcc", vcc, "V"),
             ],
             steps: [
                 "Vbb = Vcc·R2/(R1+R2) = \(eng(bias.vbb)) V",
@@ -179,6 +182,8 @@ extension LabSolve {
             ],
             quantities: [
                 q("rb", "Rb", rb, "Ω", unknown == "rb"),
+                q("rc", "Rc", rc, "Ω"),
+                q("vin", "Vin", vin, "V"),
                 q("ib", "Ib", ib, "A"),
                 q("ic", "Ic", ic, "A"),
                 q("vc", "Vc", vc, "V"),
@@ -330,6 +335,8 @@ extension LabSolve {
                 q("id", "Id", id, "A"),
                 q("vds", "Vds", vds, "V"),
                 q("rdson", "Rds(on)", rdson, "Ω", unknown == "rdson"),
+                q("rd", "Rd", rd, "Ω"),
+                q("vgs", "Vgs", vgs, "V"),
                 q("state", on ? "On" : "Off", on ? 1 : 0, ""),
                 q("vdd", "Vdd", vdd, "V"),
             ],

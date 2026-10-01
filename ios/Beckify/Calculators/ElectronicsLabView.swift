@@ -1,10 +1,25 @@
 import SwiftUI
 import BeckifyMath
 
+private enum LabPicture: String, CaseIterable, Identifiable, Hashable {
+    case schematic
+    case breadboard
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .schematic: return "Schematic"
+        case .breadboard: return "Breadboard"
+        }
+    }
+}
+
 struct ElectronicsLabView: View {
     @StateObject private var model = ElectronicsLabModel()
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var picture: LabPicture = .schematic
 
     var body: some View {
         ToolScaffold(
@@ -22,7 +37,7 @@ struct ElectronicsLabView: View {
 
     private var hub: some View {
         VStack(alignment: .leading, spacing: Theme.Space.md) {
-            Text("Pick a circuit. The schematic, node readings, and current arrows update as you edit.")
+            Text("Pick a circuit. The schematic, node readings, and current arrows update as you edit. A circuit that sits on a solderless board also has a Breadboard view.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -106,6 +121,19 @@ struct ElectronicsLabView: View {
             }
 
             if let solution = model.solution {
+                let breadboard = BreadboardLayouts.make(solution)
+                if breadboard != nil {
+                    Picker("View", selection: $picture) {
+                        ForEach(LabPicture.allCases) { item in
+                            Text(item.title).tag(item)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("electronicsLab.viewMode")
+                }
+                if picture == .breadboard, let breadboard {
+                    BreadboardCard(layout: breadboard)
+                } else {
                 SchematicCard(
                     solution: solution,
                     pickedNodeID: model.pickedNodeID,
@@ -114,6 +142,7 @@ struct ElectronicsLabView: View {
                     onPickNode: { model.pickedNodeID = $0; model.pickedBranchID = nil },
                     onPickBranch: { model.pickedBranchID = $0; model.pickedNodeID = nil }
                 )
+                }
                 if let callout = model.callout {
                     Text(callout)
                         .font(.subheadline.weight(.semibold))
@@ -152,11 +181,20 @@ struct ElectronicsLabView: View {
                             .foregroundStyle(Theme.muted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    if BreadboardLayouts.supports(circuit) {
+                        Text("• \(BreadboardLayouts.disclosure)")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 SaveJobBar(jobName: $model.jobName, canSave: true) {
                     save(info: info, solution: solution)
                 }
             }
+        }
+        .onChange(of: model.circuit?.rawValue) { _, _ in
+            picture = .schematic
         }
     }
 
