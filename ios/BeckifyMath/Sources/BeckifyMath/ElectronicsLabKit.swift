@@ -59,6 +59,25 @@ enum LabKit {
         return value
     }
 
+    /// True when the source is an ideal sine. Missing key stays AC so older drafts keep the demo.
+    static func acSource(_ inputs: [String: String]) throws -> Bool {
+        try choice(inputs, "source", ["ac", "dc"], fallback: "ac", name: "Source") == "ac"
+    }
+
+    /// A missing key keeps `fallback`. A blank field is an error, so clearing the box does not silently revert.
+    static func posIfPresent(
+        _ inputs: [String: String],
+        _ key: String,
+        _ name: String,
+        fallback: Double
+    ) throws -> Double {
+        guard let raw = inputs[key] else { return fallback }
+        if raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw CalcError.missing(name)
+        }
+        return try pos(inputs, key, name)
+    }
+
     static func eng(_ value: Double) -> String {
         guard value.isFinite else { return "—" }
         let sign = value < 0 ? "-" : ""

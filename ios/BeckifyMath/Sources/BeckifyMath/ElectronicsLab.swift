@@ -208,6 +208,8 @@ public struct LabField: Equatable, Sendable, Identifiable {
     public var help: String
     public var choices: [LabChoice]
     public var optional: Bool
+    /// `"ac"` or `"dc"` when this field belongs to one source kind. Nil stays visible either way.
+    public var sourceMode: String?
 
     public init(
         id: String,
@@ -215,7 +217,8 @@ public struct LabField: Equatable, Sendable, Identifiable {
         unit: String,
         help: String = "",
         choices: [LabChoice] = [],
-        optional: Bool = false
+        optional: Bool = false,
+        sourceMode: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -223,6 +226,7 @@ public struct LabField: Equatable, Sendable, Identifiable {
         self.help = help
         self.choices = choices
         self.optional = optional
+        self.sourceMode = sourceMode
     }
 }
 
@@ -329,8 +333,12 @@ public enum ElectronicsLab {
         catalog.filter { $0.family == family }
     }
 
-    public static func fields(for circuit: ElectronicsCircuit, unknown: String) -> [LabField] {
-        LabCatalog.fields(for: circuit, unknown: unknown)
+    public static func fields(
+        for circuit: ElectronicsCircuit,
+        unknown: String,
+        inputs: [String: String] = [:]
+    ) -> [LabField] {
+        LabCatalog.fields(for: circuit, unknown: unknown, inputs: inputs)
     }
 
     public static func solve(

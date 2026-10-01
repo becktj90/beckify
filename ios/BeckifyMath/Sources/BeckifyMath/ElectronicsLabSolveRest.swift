@@ -133,8 +133,11 @@ extension LabSolve {
     }
 
     static func filter(_ unknown: String, _ inputs: [String: String]) throws -> LabSolution {
+        let ac = try LabKit.acSource(inputs)
         let kind = try LabKit.choice(inputs, "kind", ["lowpass", "highpass"], fallback: "lowpass", name: "Response")
-        let f = try pos(inputs, "f", "f")
+        let vp = ac ? try LabKit.posIfPresent(inputs, "vp", "Vp", fallback: 1) : 0
+        let vdc = ac ? 0 : try LabKit.posIfPresent(inputs, "vdc", "Vdc", fallback: 1)
+        let f = ac ? try pos(inputs, "f", "f") : 0
         var r = 0.0, c = 0.0, fc = 0.0
         switch unknown {
         case "cutoff":
@@ -148,18 +151,56 @@ extension LabSolve {
             c = 1 / (2 * .pi * fc * r)
         default: throw badUnknown
         }
-        let ratio = f / fc
-        let h: LabKit.CX
-        if kind == "lowpass" {
-            h = LabKit.CX(r: 1, i: 0) / LabKit.CX(r: 1, i: ratio)
-        } else {
-            h = LabKit.CX(r: 0, i: ratio) / LabKit.CX(r: 1, i: ratio)
-        }
         let low = kind == "lowpass"
+        let h: LabKit.CX
+        let vout: Double
+        let current: Double
+        if ac {
+            let ratio = f / fc
+            if low {
+                h = LabKit.CX(r: 1, i: 0) / LabKit.CX(r: 1, i: ratio)
+            } else {
+                h = LabKit.CX(r: 0, i: ratio) / LabKit.CX(r: 1, i: ratio)
+            }
+            vout = vp * h.mag
+            let shunt = low ? (1 / (2 * .pi * f * c)) : r
+            current = vout / shunt
+        } else {
+            h = LabKit.CX(r: low ? 1 : 0, i: 0)
+            vout = low ? vdc : 0
+            current = 0
+        }
+        let drive = ac ? vp : vdc
+        let sourceDetail = ac ? eng(vp) + " Vpk" : eng(vdc) + " Vdc"
+        var quantities = [
+            q("fc", "fc", fc, "Hz", unknown == "cutoff"),
+            q("r", "R", r, "Ω", unknown == "r"),
+            q("c", "C", c, "F", unknown == "c"),
+            q("mag", "|H|", h.mag, ""),
+            q("phase", "Phase", h.deg, "°"),
+            q("lowpass", "Low-pass", low ? 1 : 0, ""),
+            q("ac", "AC sine", ac ? 1 : 0, ""),
+        ]
+        if ac {
+            quantities += [q("vp", "Vp", vp, "V"), q("f", "f", f, "Hz")]
+        } else {
+            quantities.append(q("vdc", "Vdc", vdc, "V"))
+        }
+        let magnitudeNote = ac
+            ? "Magnitude and phase are for a \(eng(vp)) V peak sine, not RMS."
+            : (low
+                ? "At DC the capacitor is open. Vout equals Vdc and current is zero."
+                : "At DC the capacitor is open. Vout is zero.")
+        let hStep = ac
+            ? (low ? "H = 1 / (1 + j f/fc)" : "H = j(f/fc) / (1 + j f/fc)")
+            : (low ? "At DC the capacitor is open. Vout = Vdc." : "At DC the capacitor is open. Vout = 0.")
+        let readingStep = ac
+            ? "|H| = \(String(format: "%.4f", h.mag)),  ∠ \(String(format: "%.2f", h.deg))°"
+            : (low ? "I = 0 after the capacitor charges." : "I = 0. High-pass blocks DC.")
         return pack(
             .firstOrderFilter, headline: "fc = \(eng(fc)) Hz",
             elements: [
-                src("in", "Vin", "1 V", 16, 58, 16, 22),
+                src("in", "Vin", sourceDetail, 16, 58, 16, 22),
                 wire("a", 16, 22, 40, 22),
                 low ? res("r", "R", eng(r) + " Ω", 40, 22, 64, 22) : cap("c", "C", eng(c) + " F", 40, 22, 64, 22),
                 wire("b", 64, 22, 64, 40),
@@ -169,35 +210,30 @@ extension LabSolve {
                 gnd("gnd", 64, 68),
             ],
             nodes: [
-                node("in", "Vin", 1, "V", 16, 22),
-                node("out", "|Vout|", h.mag, "V", 86, 40),
+                node("in", ac ? "Vp" : "Vdc", drive, "V", 16, 22),
+                node("out", "|Vout|", vout, "V", 86, 40),
                 node("gnd", "GND", 0, "V", 64, 68),
             ],
-            branches: [branch("i", "I at f", h.mag / (low ? (1 / (2 * .pi * f * c)) : r), "A", 44, 22, 60, 22)],
-            quantities: [
-                q("fc", "fc", fc, "Hz", unknown == "cutoff"),
-                q("r", "R", r, "Ω", unknown == "r"),
-                q("c", "C", c, "F", unknown == "c"),
-                q("mag", "|H|", h.mag, ""),
-                q("phase", "Phase", h.deg, "°"),
-                q("f", "f", f, "Hz"),
-                q("lowpass", "Low-pass", low ? 1 : 0, ""),
-            ],
+            branches: [branch("i", ac ? "I at f" : "I", current, "A", 44, 22, 60, 22)],
+            quantities: quantities,
             steps: [
                 "fc = 1 / (2πRC) = \(eng(fc)) Hz",
-                low ? "H = 1 / (1 + j f/fc)" : "H = j(f/fc) / (1 + j f/fc)",
-                "|H| = \(String(format: "%.4f", h.mag)),  ∠ \(String(format: "%.2f", h.deg))°",
+                hStep,
+                readingStep,
             ],
             notes: [
                 low ? "Low-pass: the capacitor shunts highs to ground." : "High-pass: the capacitor blocks DC and passes highs.",
-                "Magnitude and phase are for a 1 V phasor at the drive frequency.",
+                magnitudeNote,
                 "First-order only. No source resistance and no load.",
             ]
         )
     }
 
     static func rlc(_ unknown: String, _ inputs: [String: String]) throws -> LabSolution {
-        let f = try pos(inputs, "f", "Drive f")
+        let ac = try LabKit.acSource(inputs)
+        let vp = ac ? try LabKit.posIfPresent(inputs, "vp", "Vp", fallback: 1) : 0
+        let vdc = ac ? 0 : try LabKit.posIfPresent(inputs, "vdc", "Vdc", fallback: 1)
+        let f = ac ? try pos(inputs, "f", "Drive f") : 0
         var r = 0.0, l = 0.0, c = 0.0
         switch unknown {
         case "response":
@@ -220,14 +256,49 @@ extension LabSolve {
         let f0 = 1 / (2 * .pi * sqrt(l * c))
         let qFactor = (2 * .pi * f0 * l) / r
         let bw = f0 / qFactor
-        let omega = 2 * .pi * f
-        let x = omega * l - 1 / (omega * c)
-        let z = LabKit.CX(r: r, i: x)
-        let iMag = 1 / z.mag
+        let drive = ac ? vp : vdc
+        let sourceDetail = ac ? eng(vp) + " Vpk ∠0" : eng(vdc) + " Vdc"
+        var nodes = [
+            node("src", ac ? "Vp" : "Vdc", drive, "V", 14, 22),
+            node("gnd", "GND", 0, "V", 88, 68),
+        ]
+        var quantities = [
+            q("f0", "f0", f0, "Hz"),
+            q("q", "Q", qFactor, "", unknown == "r"),
+            q("bw", "Bandwidth", bw, "Hz"),
+            q("r", "R", r, "Ω", unknown == "r"),
+            q("l", "L", l, "H", unknown == "l"),
+            q("c", "C", c, "F", unknown == "c"),
+            q("ac", "AC sine", ac ? 1 : 0, ""),
+        ]
+        let iMag: Double
+        let zStep: String
+        let driveNote: String
+        if ac {
+            let omega = 2 * .pi * f
+            let x = omega * l - 1 / (omega * c)
+            let z = LabKit.CX(r: r, i: x)
+            iMag = vp / z.mag
+            nodes.insert(node("z", "|Z|", z.mag, "Ω", 48, 22), at: 1)
+            quantities += [
+                q("zMag", "|Z|", z.mag, "Ω"),
+                q("zAng", "∠Z", z.deg, "°"),
+                q("x", "X", x, "Ω"),
+                q("f", "Drive", f, "Hz"),
+                q("vp", "Vp", vp, "V"),
+            ]
+            zStep = "Z = R + j(ωL − 1/ωC) = \(eng(z.r)) + j\(eng(z.i)) Ω"
+            driveNote = "The current arrow is the phasor magnitude for a \(eng(vp)) V peak drive, not RMS."
+        } else {
+            iMag = 0
+            quantities.append(q("vdc", "Vdc", vdc, "V"))
+            zStep = "At DC the series capacitor is open, so I = 0."
+            driveNote = "Series C is an open circuit at DC. Steady current is zero. |Z| is not a finite DC number."
+        }
         return pack(
             .seriesRLC, headline: "f0 = \(eng(f0)) Hz",
             elements: [
-                src("vs", "Vs", "1 V ∠0", 14, 58, 14, 22),
+                src("vs", "Vs", sourceDetail, 14, 58, 14, 22),
                 wire("a", 14, 22, 30, 22),
                 res("r", "R", eng(r) + " Ω", 30, 22, 48, 22),
                 ind("l", "L", eng(l) + " H", 48, 22, 68, 22),
@@ -236,61 +307,76 @@ extension LabSolve {
                 wire("g", 14, 68, 88, 68),
                 gnd("gnd", 88, 68),
             ],
-            nodes: [
-                node("src", "Vs", 1, "V", 14, 22),
-                node("z", "|Z|", z.mag, "Ω", 48, 22),
-                node("gnd", "GND", 0, "V", 88, 68),
-            ],
+            nodes: nodes,
             branches: [branch("i", "|I|", iMag, "A", 20, 22, 80, 22)],
-            quantities: [
-                q("f0", "f0", f0, "Hz"),
-                q("q", "Q", qFactor, "", unknown == "r"),
-                q("bw", "Bandwidth", bw, "Hz"),
-                q("r", "R", r, "Ω", unknown == "r"),
-                q("l", "L", l, "H", unknown == "l"),
-                q("c", "C", c, "F", unknown == "c"),
-                q("zMag", "|Z|", z.mag, "Ω"),
-                q("zAng", "∠Z", z.deg, "°"),
-                q("x", "X", x, "Ω"),
-                q("f", "Drive", f, "Hz"),
-            ],
+            quantities: quantities,
             steps: [
                 "f0 = 1 / (2π √(LC)) = \(eng(f0)) Hz",
                 "Q = ω0 L / R = \(String(format: "%.3f", qFactor)),  BW = f0/Q",
-                "Z = R + j(ωL − 1/ωC) = \(eng(z.r)) + j\(eng(z.i)) Ω",
+                zStep,
             ],
             notes: [
                 "Series resonance is where XL and XC cancel and |Z| = R.",
-                "The current arrow is the phasor magnitude for a 1 V drive.",
+                driveNote,
                 "Ideal L and C. This is not a loaded tank or a crystal model.",
             ]
         )
     }
 
     static func rectifier(_ unknown: String, _ inputs: [String: String], bridge: Bool) throws -> LabSolution {
-        let vrms = try pos(inputs, "vrms", "Vrms")
+        let ac = try LabKit.acSource(inputs)
         let vf = try LabKit.nonNeg(inputs, "vf", "Vf")
-        let f = try pos(inputs, "f", "f")
         let rload = try pos(inputs, "rload", "Rload")
         let drops = bridge ? 2.0 : 1.0
-        let vpk = vrms * sqrt(2) - drops * vf
-        guard vpk > 0 else { throw CalcError.outOfRange("The peak never clears the diode drop. Raise Vrms or lower Vf.") }
-        let vdcAvg = (bridge ? 2 : 1) * vpk / .pi
-        let vdcCap = vpk
-        let iCap = vdcCap / rload
-        let c: Double
-        if unknown == "c" {
-            let ripple = try pos(inputs, "ripple", "Ripple")
-            c = iCap / ((bridge ? 2 : 1) * f * ripple)
-        } else if unknown == "report" {
-            c = try pos(inputs, "c", "C")
-        } else {
-            throw badUnknown
-        }
-        let ripple = iCap / ((bridge ? 2 : 1) * f * c)
         let circuit: ElectronicsCircuit = bridge ? .fullBridge : .halfWave
+        let vrms: Double
+        let vdcIn: Double
+        let f: Double
+        let vpk: Double
+        let vdcAvg: Double
+        let vdcCap: Double
+        let iCap: Double
+        let c: Double
+        let ripple: Double
+        if ac {
+            vrms = try pos(inputs, "vrms", "Vrms")
+            vdcIn = 0
+            f = try pos(inputs, "f", "f")
+            let peak = vrms * sqrt(2) - drops * vf
+            guard peak > 0 else { throw CalcError.outOfRange("The peak never clears the diode drop. Raise Vrms or lower Vf.") }
+            vpk = peak
+            vdcAvg = (bridge ? 2 : 1) * vpk / .pi
+            vdcCap = vpk
+            iCap = vdcCap / rload
+            if unknown == "c" {
+                let target = try pos(inputs, "ripple", "Ripple")
+                c = iCap / ((bridge ? 2 : 1) * f * target)
+            } else if unknown == "report" {
+                c = try pos(inputs, "c", "C")
+            } else {
+                throw badUnknown
+            }
+            ripple = iCap / ((bridge ? 2 : 1) * f * c)
+        } else {
+            if unknown == "c" {
+                throw CalcError.outOfRange("Ripple is zero on a DC source, so C is not set by a ripple target. Switch the source to AC sine to size C.")
+            }
+            guard unknown == "report" else { throw badUnknown }
+            vdcIn = try LabKit.posIfPresent(inputs, "vdc", "Vdc", fallback: 12)
+            vrms = 0
+            f = 0
+            let held = max(vdcIn - drops * vf, 0)
+            vpk = held
+            vdcAvg = held
+            vdcCap = held
+            iCap = held / rload
+            c = try pos(inputs, "c", "C")
+            ripple = 0
+        }
+        let sourceName = ac ? "Vac" : "Vdc"
+        let sourceDetail = ac ? eng(vrms) + " Vrms" : eng(vdcIn) + " Vdc"
         var elements: [LabElement] = [
-            src("ac", "Vac", eng(vrms) + " Vrms", 14, 58, 14, 24),
+            src("ac", sourceName, sourceDetail, 14, 58, 14, 24),
         ]
         if bridge {
             elements += [
@@ -318,44 +404,70 @@ extension LabSolve {
                 gnd("g", 78, 64),
             ]
         }
-        return pack(
-            circuit, headline: "Vpeak out = \(eng(vpk)) V",
-            elements: elements,
-            nodes: [
-                node("ac", "Vrms", vrms, "V", 14, 24),
-                node("out", "Vpeak", vpk, "V", bridge ? 84 : 78, bridge ? 16 : 24),
-                node("gnd", "GND", 0, "V", bridge ? 84 : 78, bridge ? 62 : 64),
-            ],
-            branches: [branch("i", "Iload (cap)", iCap, "A", bridge ? 72 : 64, 28, bridge ? 72 : 64, 56)],
-            quantities: [
-                q("vpk", "Vpeak out", vpk, "V"),
-                q("vdcAvg", "Vdc average", vdcAvg, "V"),
-                q("vdcCap", "Vdc with C", vdcCap, "V"),
-                q("ripple", "Ripple", ripple, "V", unknown == "c"),
-                q("c", "C", c, "F", unknown == "c"),
-                q("iload", "Iload", iCap, "A"),
-                q("rload", "Rload", rload, "Ω"),
+        var quantities = [
+            q("vpk", ac ? "Vpeak out" : "Vout", vpk, "V"),
+            q("vdcAvg", ac ? "Vdc average" : "Vdc out", vdcAvg, "V"),
+            q("vdcCap", "Vdc with C", vdcCap, "V"),
+            q("ripple", "Ripple", ripple, "V", unknown == "c"),
+            q("c", "C", c, "F", unknown == "c"),
+            q("iload", "Iload", iCap, "A"),
+            q("rload", "Rload", rload, "Ω"),
+            q("vf", "Vf", vf, "V"),
+            q("ac", "AC sine", ac ? 1 : 0, ""),
+            q("bridge", "Bridge", bridge ? 1 : 0, ""),
+        ]
+        if ac {
+            quantities += [
                 q("f", "f", f, "Hz"),
-                q("vf", "Vf", vf, "V"),
                 q("vrms", "Vrms", vrms, "V"),
                 q("vsrcpk", "Source peak", vrms * sqrt(2), "V"),
-                q("bridge", "Bridge", bridge ? 1 : 0, ""),
-            ],
-            steps: [
+            ]
+        } else {
+            quantities.append(q("vdc", "Vdc", vdcIn, "V"))
+        }
+        let steps = ac
+            ? [
                 "Vp = Vrms·√2 − \(bridge ? "2" : "1")·Vf = \(eng(vpk)) V",
                 bridge ? "No-cap average = 2·Vp/π" : "No-cap average = Vp/π",
                 "Cap-input ripple ≈ I / (\(bridge ? "2f" : "f")·C) = \(eng(ripple)) V",
-            ],
-            notes: [
+            ]
+            : [
+                "Vout = Vdc − \(bridge ? "2" : "1")·Vf = \(eng(vpk)) V",
+                "Forward polarity. This model does not conduct a reverse DC source.",
+                "Ripple is 0. The capacitor does not set the DC level.",
+            ]
+        let notes = ac
+            ? [
                 bridge ? "Bridge: two diodes conduct each half cycle." : "Half-wave: the diode conducts on one half cycle.",
                 "The capacitor estimate assumes light load and a peak near Vp minus the drops.",
                 "Ripple is the ideal I/(fC) sketch, not a simulated waveform.",
             ]
+            : [
+                bridge ? "Bridge: two diode drops in series with the DC source." : "Half-wave: one diode drop in series with the DC source.",
+                "Steady DC, forward polarity. Not an RMS or peak sine.",
+                "Ripple is zero. Switch to AC sine to size C from a ripple target.",
+            ]
+        return pack(
+            circuit, headline: ac ? "Vpeak out = \(eng(vpk)) V" : "Vout = \(eng(vpk)) V",
+            elements: elements,
+            nodes: [
+                node("ac", ac ? "Vrms" : "Vdc", ac ? vrms : vdcIn, "V", 14, 24),
+                node("out", ac ? "Vpeak" : "Vout", vpk, "V", bridge ? 84 : 78, bridge ? 16 : 24),
+                node("gnd", "GND", 0, "V", bridge ? 84 : 78, bridge ? 62 : 64),
+            ],
+            branches: [branch("i", "Iload (cap)", iCap, "A", bridge ? 72 : 64, 28, bridge ? 72 : 64, 56)],
+            quantities: quantities,
+            steps: steps,
+            notes: notes
         )
     }
 
     static func clipper(_ unknown: String, _ inputs: [String: String]) throws -> LabSolution {
-        let vp = try pos(inputs, "vp", "Source peak")
+        let ac = try LabKit.acSource(inputs)
+        let drive = ac
+            ? try pos(inputs, "vp", "Vp")
+            : try LabKit.posIfPresent(inputs, "vdc", "Vdc", fallback: 10)
+        let f = ac ? try LabKit.posIfPresent(inputs, "f", "f", fallback: 1000) : 0
         let vf = try LabKit.nonNeg(inputs, "vf", "Vf")
         let vbias = try LabKit.finite(inputs, "vbias", "Bias")
         let vclip = vbias + vf
@@ -363,19 +475,37 @@ extension LabSolve {
         let ipeak: Double
         if unknown == "r" {
             ipeak = try pos(inputs, "ipeak", "Ipeak")
-            guard vp > vclip else { throw CalcError.outOfRange("The source peak never reaches the clip level, so R is not set by that current.") }
-            r = (vp - vclip) / ipeak
+            guard drive > vclip else {
+                throw CalcError.outOfRange("The source never reaches the clip level, so R is not set by that current.")
+            }
+            r = (drive - vclip) / ipeak
         } else if unknown == "report" {
             r = try pos(inputs, "r", "R")
-            ipeak = vp > vclip ? (vp - vclip) / r : 0
+            ipeak = drive > vclip ? (drive - vclip) / r : 0
         } else {
             throw badUnknown
         }
-        let vout = min(vp, vclip)
+        let vout = min(drive, vclip)
+        let sourceName = ac ? "Vp" : "Vdc"
+        let sourceDetail = ac ? eng(drive) + " Vpk" : eng(drive) + " Vdc"
+        var quantities = [
+            q("vout", ac ? "Vout peak" : "Vout", vout, "V"),
+            q("vclip", "Clip level", vclip, "V"),
+            q("ipeak", ac ? "Ipeak" : "I", ipeak, "A"),
+            q("r", "R", r, "Ω", unknown == "r"),
+            q("vf", "Vf", vf, "V"),
+            q("vbias", "Vbias", vbias, "V"),
+            q("ac", "AC sine", ac ? 1 : 0, ""),
+        ]
+        if ac {
+            quantities += [q("vp", "Vp", drive, "V"), q("f", "f", f, "Hz")]
+        } else {
+            quantities.append(q("vdc", "Vdc", drive, "V"))
+        }
         return pack(
-            .shuntClipper, headline: "Vout peak = \(eng(vout)) V",
+            .shuntClipper, headline: ac ? "Vout peak = \(eng(vout)) V" : "Vout = \(eng(vout)) V",
             elements: [
-                src("vs", "Vp", eng(vp) + " V", 16, 60, 16, 22),
+                src("vs", sourceName, sourceDetail, 16, 60, 16, 22),
                 wire("a", 16, 22, 40, 22),
                 res("r", "R", eng(r) + " Ω", 40, 22, 64, 22),
                 wire("b", 64, 22, 82, 22),
@@ -385,27 +515,23 @@ extension LabSolve {
                 gnd("gnd", 82, 72),
             ],
             nodes: [
-                node("in", "Vp", vp, "V", 16, 22),
+                node("in", sourceName, drive, "V", 16, 22),
                 node("out", "Vout", vout, "V", 82, 22),
                 node("gnd", "GND", 0, "V", 82, 72),
             ],
-            branches: [branch("i", "Ipeak", ipeak, "A", 44, 22, 60, 22)],
-            quantities: [
-                q("vout", "Vout peak", vout, "V"),
-                q("vclip", "Clip level", vclip, "V"),
-                q("ipeak", "Ipeak", ipeak, "A"),
-                q("r", "R", r, "Ω", unknown == "r"),
-                q("vp", "Vp", vp, "V"),
-                q("vf", "Vf", vf, "V"),
-                q("vbias", "Vbias", vbias, "V"),
-            ],
+            branches: [branch("i", ac ? "Ipeak" : "I", ipeak, "A", 44, 22, 60, 22)],
+            quantities: quantities,
             steps: [
                 "Clip level = Vbias + Vf = \(eng(vclip)) V",
-                vp > vclip ? "Ipeak = (Vp − Vclip) / R" : "Peak stays under the clip. Diode current is 0.",
+                drive > vclip
+                    ? (ac ? "Ipeak = (Vp − Vclip) / R" : "I = (Vdc − Vclip) / R")
+                    : (ac ? "Peak stays under the clip. Diode current is 0." : "DC stays under the clip. Diode current is 0."),
             ],
             notes: [
                 "Shunt clipper. The diode conducts only after the output tries to pass the clip level.",
-                "Below the clip, this ideal model ignores the diode and passes the peak.",
+                ac
+                    ? "Below the clip, this ideal model ignores the diode and passes the peak."
+                    : "On DC the output is Vdc until that level passes the clip, then it holds.",
                 "A real diode is not a perfect threshold. Softness is not modeled.",
             ]
         )
@@ -413,7 +539,7 @@ extension LabSolve {
 
     static func clamper(_ unknown: String, _ inputs: [String: String]) throws -> LabSolution {
         guard unknown == "report" else { throw badUnknown }
-        let vp = try pos(inputs, "vp", "Source peak")
+        let vp = try pos(inputs, "vp", "Vp")
         let vf = try LabKit.nonNeg(inputs, "vf", "Vf")
         let vmin = -vf
         let vmax = 2 * vp - vf

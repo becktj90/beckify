@@ -101,7 +101,7 @@ struct ElectronicsLabView: View {
 
             unknownPicker(info)
 
-            ForEach(ElectronicsLab.fields(for: circuit, unknown: model.unknown)) { field in
+            ForEach(ElectronicsLab.fields(for: circuit, unknown: model.unknown, inputs: model.values)) { field in
                 if field.choices.isEmpty {
                     NumberField(
                         title: field.title,
@@ -117,7 +117,7 @@ struct ElectronicsLabView: View {
                 }
             }
 
-            Text("Part values are yours to edit. The transfer updates as you type.")
+            Text("Part values are yours to edit. Where a circuit has a source, switch DC or AC sine and set the magnitude. The transfer updates as you type.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)

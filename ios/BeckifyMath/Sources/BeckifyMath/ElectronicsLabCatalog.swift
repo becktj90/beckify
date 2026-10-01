@@ -7,10 +7,13 @@ enum LabCatalog {
         spec(circuit).info
     }
 
-    static func fields(for circuit: ElectronicsCircuit, unknown: String) -> [LabField] {
+    static func fields(for circuit: ElectronicsCircuit, unknown: String, inputs: [String: String] = [:]) -> [LabField] {
         let item = spec(circuit)
         let ids = item.visible[unknown] ?? item.visible[item.defaultUnknown] ?? []
+        let raw = inputs["source"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let mode = (raw == "dc" || raw == "ac") ? raw : "ac"
         return ids.compactMap { id in item.fields.first { $0.id == id } }
+            .filter { $0.sourceMode == nil || $0.sourceMode == mode }
     }
 
     static func spec(_ circuit: ElectronicsCircuit) -> Spec {
@@ -44,8 +47,20 @@ enum LabCatalog {
         }
     }
 
-    private static func n(_ id: String, _ title: String, _ unit: String, _ help: String = "") -> LabField {
-        LabField(id: id, title: title, unit: unit, help: help)
+    private static let dcHelp = "DC source. Not an AC model."
+
+    private static func sourceField() -> LabField {
+        ch("source", "Source", [("ac", "AC sine"), ("dc", "DC")], "DC is a steady voltage. AC is an ideal sine.")
+    }
+
+    private static func n(
+        _ id: String,
+        _ title: String,
+        _ unit: String,
+        _ help: String = "",
+        sourceMode: String? = nil
+    ) -> LabField {
+        LabField(id: id, title: title, unit: unit, help: help, sourceMode: sourceMode)
     }
 
     private static func opt(_ id: String, _ title: String, _ unit: String, _ help: String) -> LabField {
@@ -67,7 +82,7 @@ enum LabCatalog {
             blurb: "One loop. Current is shared. Drops add to the source.",
             defaultUnknown: "current",
             unknowns: [u("current", "Current"), u("vs", "Source"), u("r1", "R1"), u("r2", "R2")],
-            fields: [n("vs", "Vs", "V"), n("r1", "R1", "Ω"), n("r2", "R2", "Ω"), n("i", "I", "A")],
+            fields: [n("vs", "Vs", "V", dcHelp), n("r1", "R1", "Ω"), n("r2", "R2", "Ω"), n("i", "I", "A")],
             visible: [
                 "current": ["vs", "r1", "r2"],
                 "vs": ["i", "r1", "r2"],
@@ -82,7 +97,7 @@ enum LabCatalog {
             blurb: "Same voltage on each branch. Currents add at the source.",
             defaultUnknown: "sourceCurrent",
             unknowns: [u("sourceCurrent", "Source current"), u("vs", "Source"), u("r1", "R1"), u("r2", "R2")],
-            fields: [n("vs", "Vs", "V"), n("r1", "R1", "Ω"), n("r2", "R2", "Ω"), n("it", "It", "A"), n("i1", "I1", "A"), n("i2", "I2", "A")],
+            fields: [n("vs", "Vs", "V", dcHelp), n("r1", "R1", "Ω"), n("r2", "R2", "Ω"), n("it", "It", "A"), n("i1", "I1", "A"), n("i2", "I2", "A")],
             visible: [
                 "sourceCurrent": ["vs", "r1", "r2"],
                 "vs": ["it", "r1", "r2"],
@@ -97,7 +112,7 @@ enum LabCatalog {
             blurb: "Unloaded divider. R1 is the top resistor. R2 goes to ground.",
             defaultUnknown: "vout",
             unknowns: [u("vout", "Vout"), u("vin", "Vin"), u("r1", "R1"), u("r2", "R2")],
-            fields: [n("vin", "Vin", "V"), n("vout", "Vout", "V"), n("r1", "R1 (top)", "Ω"), n("r2", "R2 (to GND)", "Ω")],
+            fields: [n("vin", "Vin", "V", dcHelp), n("vout", "Vout", "V"), n("r1", "R1 (top)", "Ω"), n("r2", "R2 (to GND)", "Ω")],
             visible: [
                 "vout": ["vin", "r1", "r2"],
                 "vin": ["vout", "r1", "r2"],
@@ -112,7 +127,7 @@ enum LabCatalog {
             blurb: "Three series resistors. KVL: the drops sum to the source.",
             defaultUnknown: "current",
             unknowns: [u("current", "Current"), u("vs", "Source"), u("r1", "R1"), u("r2", "R2"), u("r3", "R3")],
-            fields: [n("vs", "Vs", "V"), n("r1", "R1", "Ω"), n("r2", "R2", "Ω"), n("r3", "R3", "Ω"), n("i", "I", "A")],
+            fields: [n("vs", "Vs", "V", dcHelp), n("r1", "R1", "Ω"), n("r2", "R2", "Ω"), n("r3", "R3", "Ω"), n("i", "I", "A")],
             visible: [
                 "current": ["vs", "r1", "r2", "r3"],
                 "vs": ["i", "r1", "r2", "r3"],
@@ -129,7 +144,7 @@ enum LabCatalog {
             defaultUnknown: "load",
             unknowns: [u("load", "Loaded output"), u("rl", "Load R"), u("r2", "R2 for Vth")],
             fields: [
-                n("vs", "Vs", "V"), n("r1", "R1 (series)", "Ω"), n("r2", "R2 (shunt)", "Ω"),
+                n("vs", "Vs", "V", dcHelp), n("r1", "R1 (series)", "Ω"), n("r2", "R2 (shunt)", "Ω"),
                 n("rl", "RL", "Ω"), n("vl", "Target VL", "V"), n("vth", "Target Vth", "V"),
             ],
             visible: [
@@ -164,7 +179,7 @@ enum LabCatalog {
             defaultUnknown: "current",
             unknowns: [u("current", "i(t)"), u("time", "Time"), u("l", "L")],
             fields: [
-                n("vs", "Vs", "V"), n("r", "R", "Ω"), n("l", "L", "H"),
+                n("vs", "Vs", "V", dcHelp), n("r", "R", "Ω"), n("l", "L", "H"),
                 n("i0", "i(0)", "A"), n("t", "t", "s"), n("it", "i(t) target", "A"),
             ],
             visible: [
@@ -177,86 +192,107 @@ enum LabCatalog {
         Spec(
             circuit: .firstOrderFilter, family: .transient,
             title: "First-order filter",
-            blurb: "RC low-pass or high-pass. Cutoff, magnitude, and phase at one frequency.",
+            blurb: "RC low-pass or high-pass. Drive it with DC or a sine peak.",
             defaultUnknown: "cutoff",
             unknowns: [u("cutoff", "Cutoff"), u("r", "R"), u("c", "C")],
             fields: [
+                sourceField(),
                 ch("kind", "Response", [("lowpass", "Low-pass"), ("highpass", "High-pass")]),
-                n("r", "R", "Ω"), n("c", "C", "F"), n("f", "f", "Hz"), n("fc", "fc", "Hz"),
+                n("vp", "Vp", "V", "Peak of the sine, not RMS.", sourceMode: "ac"),
+                n("vdc", "Vdc", "V", "Steady volts. Not RMS.", sourceMode: "dc"),
+                n("r", "R", "Ω"), n("c", "C", "F"),
+                n("f", "f", "Hz", "Frequency of the sine.", sourceMode: "ac"),
+                n("fc", "fc", "Hz"),
             ],
             visible: [
-                "cutoff": ["kind", "r", "c", "f"],
-                "r": ["kind", "c", "fc", "f"],
-                "c": ["kind", "r", "fc", "f"],
+                "cutoff": ["source", "kind", "vp", "vdc", "r", "c", "f"],
+                "r": ["source", "kind", "vp", "vdc", "c", "fc", "f"],
+                "c": ["source", "kind", "vp", "vdc", "r", "fc", "f"],
             ],
-            defaults: ["kind": "lowpass", "r": "10000", "c": "0.00000001", "f": "1000", "fc": "1591.5"]
+            defaults: ["source": "ac", "kind": "lowpass", "vp": "1", "vdc": "1", "r": "10000", "c": "0.00000001", "f": "1000", "fc": "1591.5"]
         ),
         Spec(
             circuit: .seriesRLC, family: .transient,
             title: "Series RLC",
-            blurb: "Resonance, Q, bandwidth, and the phasor impedance at one drive frequency.",
+            blurb: "Resonance, Q, and impedance. Drive it with DC or a sine peak.",
             defaultUnknown: "response",
             unknowns: [u("response", "At this f"), u("l", "L from f0"), u("c", "C from f0"), u("r", "R from Q")],
             fields: [
+                sourceField(),
+                n("vp", "Vp", "V", "Peak of the sine, not RMS.", sourceMode: "ac"),
+                n("vdc", "Vdc", "V", "Steady volts. Series C is open at DC.", sourceMode: "dc"),
                 n("r", "R", "Ω"), n("l", "L", "H"), n("c", "C", "F"),
-                n("f", "Drive f", "Hz"), n("f0", "f0", "Hz"), n("q", "Q", ""),
+                n("f", "Drive f", "Hz", "Frequency of the sine.", sourceMode: "ac"),
+                n("f0", "f0", "Hz"), n("q", "Q", ""),
             ],
             visible: [
-                "response": ["r", "l", "c", "f"],
-                "l": ["r", "c", "f0", "f"],
-                "c": ["r", "l", "f0", "f"],
-                "r": ["l", "c", "q", "f"],
+                "response": ["source", "vp", "vdc", "r", "l", "c", "f"],
+                "l": ["source", "vp", "vdc", "r", "c", "f0", "f"],
+                "c": ["source", "vp", "vdc", "r", "l", "f0", "f"],
+                "r": ["source", "vp", "vdc", "l", "c", "q", "f"],
             ],
-            defaults: ["r": "10", "l": "0.001", "c": "0.0000001", "f": "15915", "f0": "15915", "q": "10"]
+            defaults: ["source": "ac", "vp": "1", "vdc": "1", "r": "10", "l": "0.001", "c": "0.0000001", "f": "15915", "f0": "15915", "q": "10"]
         ),
         Spec(
             circuit: .halfWave, family: .diode,
             title: "Half-wave rectifier",
-            blurb: "One diode. Average of a sine, plus a capacitor-input ripple estimate.",
+            blurb: "One diode. AC sine (RMS) or a steady DC source. Ripple sizing is for the sine.",
             defaultUnknown: "report",
             unknowns: [u("report", "Readings"), u("c", "C for ripple")],
             fields: [
-                n("vrms", "Vrms", "V"), n("vf", "Vf", "V"), n("f", "f", "Hz"),
+                sourceField(),
+                n("vrms", "Vrms", "V", "RMS of the sine. Peak is Vrms·√2, before diode drops.", sourceMode: "ac"),
+                n("vdc", "Vdc", "V", "Steady volts, forward polarity. Not RMS.", sourceMode: "dc"),
+                n("vf", "Vf", "V"),
+                n("f", "f", "Hz", "Line frequency of the sine.", sourceMode: "ac"),
                 n("c", "C", "F"), n("rload", "Rload", "Ω"), n("ripple", "Ripple target", "V"),
             ],
             visible: [
-                "report": ["vrms", "vf", "f", "c", "rload"],
-                "c": ["vrms", "vf", "f", "rload", "ripple"],
+                "report": ["source", "vrms", "vdc", "vf", "f", "c", "rload"],
+                "c": ["source", "vrms", "vdc", "vf", "f", "rload", "ripple"],
             ],
-            defaults: ["vrms": "12", "vf": "0.7", "f": "60", "c": "0.0001", "rload": "100", "ripple": "1"]
+            defaults: ["source": "ac", "vrms": "12", "vdc": "12", "vf": "0.7", "f": "60", "c": "0.0001", "rload": "100", "ripple": "1"]
         ),
         Spec(
             circuit: .fullBridge, family: .diode,
             title: "Full-wave bridge",
-            blurb: "Four diodes, two drops. Average uses 2/π. Ripple uses 2f.",
+            blurb: "Four diodes, two drops. AC uses 2/π and ripple at 2f. DC is a steady source.",
             defaultUnknown: "report",
             unknowns: [u("report", "Readings"), u("c", "C for ripple")],
             fields: [
-                n("vrms", "Vrms", "V"), n("vf", "Vf each", "V"), n("f", "Line f", "Hz"),
+                sourceField(),
+                n("vrms", "Vrms", "V", "RMS of the sine. Peak is Vrms·√2, before diode drops.", sourceMode: "ac"),
+                n("vdc", "Vdc", "V", "Steady volts, forward polarity. Not RMS.", sourceMode: "dc"),
+                n("vf", "Vf each", "V"),
+                n("f", "Line f", "Hz", "Line frequency of the sine.", sourceMode: "ac"),
                 n("c", "C", "F"), n("rload", "Rload", "Ω"), n("ripple", "Ripple target", "V"),
             ],
             visible: [
-                "report": ["vrms", "vf", "f", "c", "rload"],
-                "c": ["vrms", "vf", "f", "rload", "ripple"],
+                "report": ["source", "vrms", "vdc", "vf", "f", "c", "rload"],
+                "c": ["source", "vrms", "vdc", "vf", "f", "rload", "ripple"],
             ],
-            defaults: ["vrms": "12", "vf": "0.7", "f": "60", "c": "0.0001", "rload": "100", "ripple": "0.5"]
+            defaults: ["source": "ac", "vrms": "12", "vdc": "12", "vf": "0.7", "f": "60", "c": "0.0001", "rload": "100", "ripple": "0.5"]
         ),
         Spec(
             circuit: .shuntClipper, family: .diode,
             title: "Shunt clipper",
-            blurb: "Series resistor, diode shunt. The peak sticks near the clip level.",
+            blurb: "Series resistor, diode shunt. The source is a DC level or a sine peak.",
             defaultUnknown: "report",
             unknowns: [u("report", "Clipped peak"), u("r", "R for Ipeak")],
             fields: [
-                n("vp", "Source peak", "V"), n("r", "R series", "Ω"), n("vf", "Vf", "V"),
+                sourceField(),
+                n("vp", "Vp", "V", "Peak of the sine, not RMS.", sourceMode: "ac"),
+                n("vdc", "Vdc", "V", "Steady volts. Not RMS.", sourceMode: "dc"),
+                n("f", "f", "Hz", "Frequency of the sketch sine.", sourceMode: "ac"),
+                n("r", "R series", "Ω"), n("vf", "Vf", "V"),
                 n("vbias", "Bias under diode", "V", "0 V clips near Vf above ground."),
                 n("ipeak", "Ipeak limit", "A"),
             ],
             visible: [
-                "report": ["vp", "r", "vf", "vbias"],
-                "r": ["vp", "vf", "vbias", "ipeak"],
+                "report": ["source", "vp", "vdc", "f", "r", "vf", "vbias"],
+                "r": ["source", "vp", "vdc", "f", "vf", "vbias", "ipeak"],
             ],
-            defaults: ["vp": "10", "r": "1000", "vf": "0.7", "vbias": "0", "ipeak": "0.01"]
+            defaults: ["source": "ac", "vp": "10", "vdc": "10", "f": "1000", "r": "1000", "vf": "0.7", "vbias": "0", "ipeak": "0.01"]
         ),
         Spec(
             circuit: .clamper, family: .diode,
@@ -264,7 +300,7 @@ enum LabCatalog {
             blurb: "Series capacitor and a diode to ground. The sine shifts; the swing stays.",
             defaultUnknown: "report",
             unknowns: [u("report", "Shifted peaks")],
-            fields: [n("vp", "Source peak", "V"), n("vf", "Vf", "V")],
+            fields: [n("vp", "Vp", "V", "Peak of the AC sine. This clamp is not a DC model."), n("vf", "Vf", "V")],
             visible: ["report": ["vp", "vf"]],
             defaults: ["vp": "10", "vf": "0.7"]
         ),
@@ -274,7 +310,7 @@ enum LabCatalog {
             blurb: "One LED, one resistor. R = (Vs − Vf) / If.",
             defaultUnknown: "resistance",
             unknowns: [u("resistance", "R"), u("current", "If"), u("supply", "Vs")],
-            fields: [n("vs", "Vs", "V"), n("vf", "Vf", "V"), n("if", "If", "A"), n("r", "R", "Ω")],
+            fields: [n("vs", "Vs", "V", dcHelp), n("vf", "Vf", "V"), n("if", "If", "A"), n("r", "R", "Ω")],
             visible: [
                 "resistance": ["vs", "vf", "if"],
                 "current": ["vs", "vf", "r"],
