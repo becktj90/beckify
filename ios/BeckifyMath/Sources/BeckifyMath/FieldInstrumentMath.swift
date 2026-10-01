@@ -429,7 +429,14 @@ public enum MagSweepMath {
 // MARK: - Breath Flute
 
 public enum BreathFluteMath {
-    public static let marginDB = 12.0
+    /// Open the gate this many dB above the quiet floor. Higher than ambient mic jitter.
+    public static let marginDB = 18.0
+    /// Keep the gate open until breath falls this far above the floor (hysteresis).
+    public static let closeMarginDB = 10.0
+    /// Ignore digital-silence / missing-band seeds so ambient never looks like +37 dB.
+    public static let minSeedDBFS = -95.0
+    /// Quiet-air samples collected before the gate may open.
+    public static let calibrationSampleCount = 10
     /// G3. Bottom of the touch pad.
     public static let lowHz = 196.0
     /// C6. Top of the touch pad.
@@ -463,7 +470,7 @@ public enum BreathFluteMath {
         guard rmsDBFS.isFinite, peakDBFS.isFinite, noiseFloorDBFS.isFinite, marginDB.isFinite else {
             return false
         }
-        return (rmsDBFS - noiseFloorDBFS) > marginDB || (peakDBFS - noiseFloorDBFS) > marginDB
+        return (rmsDBFS - noiseFloorDBFS) >= marginDB || (peakDBFS - noiseFloorDBFS) >= marginDB
     }
 
     /// Peak relative dBFS in bands at or above `minHz`. Empty or silent bands return the silence floor.
@@ -482,14 +489,29 @@ public enum BreathFluteMath {
         return found ? peak : SoundLevel.silenceFloorDBFS
     }
 
-    /// Gate from breath-band energy versus a breath noise floor. Same margin as the broadband gate.
+    /// Gate from breath-band energy versus a breath noise floor.
+    /// Uses open/close hysteresis so ambient jitter does not chatter the tone.
     public static func breathGateOpen(
         breathDBFS: Double,
         noiseFloorDBFS: Double,
-        marginDB: Double = marginDB
+        wasOpen: Bool = false,
+        openMarginDB: Double = marginDB,
+        closeMarginDB: Double = closeMarginDB
     ) -> Bool {
-        guard breathDBFS.isFinite, noiseFloorDBFS.isFinite, marginDB.isFinite else { return false }
-        return (breathDBFS - noiseFloorDBFS) > marginDB
+        guard breathDBFS.isFinite, noiseFloorDBFS.isFinite,
+              openMarginDB.isFinite, closeMarginDB.isFinite else { return false }
+        // Refuse a digital-silence floor — that made quiet rooms look like +30…40 dB blows.
+        guard noiseFloorDBFS >= minSeedDBFS else { return false }
+        let above = breathDBFS - noiseFloorDBFS
+        if wasOpen {
+            return above >= min(openMarginDB, closeMarginDB)
+        }
+        return above >= openMarginDB
+    }
+
+    /// True when a breath-band reading is real enough to seed or ease the quiet floor.
+    public static func isUsableBreathLevel(_ dbFS: Double) -> Bool {
+        dbFS.isFinite && dbFS >= minSeedDBFS
     }
 
     /// 0 at the bottom of the pad, 1 at the top. Pitch is exponential so octaves stay even.
@@ -525,14 +547,44 @@ public enum BreathFluteMath {
     }
 
     /// Quiet air eases the floor. A blow does not raise it.
+    /// Never seeds from digital silence / missing HF bands (`silenceFloorDBFS`).
     public static func updateNoiseFloor(currentDBFS: Double, floor: Double?, marginDB: Double = marginDB) -> Double {
-        guard currentDBFS.isFinite else { return floor ?? SoundLevel.silenceFloorDBFS }
-        guard let floor, floor.isFinite else { return currentDBFS }
-        if currentDBFS > floor + marginDB * 0.5 {
+        guard isUsableBreathLevel(currentDBFS) else {
+            return floor ?? SoundLevel.silenceFloorDBFS
+        }
+        guard let floor, floor.isFinite, floor >= minSeedDBFS else { return currentDBFS }
+        // Hold through blows and loud spikes — only quiet air moves the floor.
+        if currentDBFS > floor + marginDB * 0.45 {
             return floor
         }
-        let alpha = currentDBFS < floor ? 0.15 : 0.02
+        let alpha = currentDBFS < floor ? 0.18 : 0.03
         return floor + (currentDBFS - floor) * alpha
+    }
+
+    /// Median of finite usable samples. Empty → nil (gate stays closed until calibrated).
+    public static func calibrationFloor(samples: [Double]) -> Double? {
+        let usable = samples.filter(isUsableBreathLevel).sorted()
+        guard !usable.isEmpty else { return nil }
+        let mid = usable.count / 2
+        if usable.count % 2 == 1 { return usable[mid] }
+        return (usable[mid - 1] + usable[mid]) / 2
+    }
+
+    /// Append one quiet-air sample. Ignores non-usable / blow-like spikes once a floor exists.
+    public static func appendCalibrationSample(
+        _ sample: Double,
+        into samples: inout [Double],
+        limit: Int = calibrationSampleCount
+    ) {
+        guard isUsableBreathLevel(sample), limit > 0 else { return }
+        if let floor = calibrationFloor(samples: samples),
+           sample > floor + marginDB * 0.45 {
+            return
+        }
+        samples.append(sample)
+        if samples.count > limit {
+            samples.removeFirst(samples.count - limit)
+        }
     }
 
     /// Louder blows are louder. Below the gate margin the amplitude is exactly zero.

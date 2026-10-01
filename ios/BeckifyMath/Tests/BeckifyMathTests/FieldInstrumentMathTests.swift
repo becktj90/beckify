@@ -250,12 +250,12 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertEqual(BreathFluteMath.fretFrequencyHz(fret: 12), BreathFluteMath.rootHz * 2, accuracy: 1e-6)
 
         XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 0), 0, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 11.9), 0, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 12), BreathFluteMath.quietAmplitude, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 36), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 17.9), 0, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 18), BreathFluteMath.quietAmplitude, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 42), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
         XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 80), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
-        let soft = BreathFluteMath.amplitude(aboveFloorDB: 18)
-        let hard = BreathFluteMath.amplitude(aboveFloorDB: 30)
+        let soft = BreathFluteMath.amplitude(aboveFloorDB: 24)
+        let hard = BreathFluteMath.amplitude(aboveFloorDB: 36)
         XCTAssertGreaterThan(hard, soft)
         XCTAssertGreaterThan(soft, BreathFluteMath.quietAmplitude)
         XCTAssertEqual(BreathFluteMath.coveredFromEmbouchure(holesCovered: [false, true, true]), 0)
@@ -272,11 +272,30 @@ final class FieldInstrumentMathTests: XCTestCase {
 
         let seeded = BreathFluteMath.updateNoiseFloor(currentDBFS: -40, floor: nil)
         XCTAssertEqual(seeded, -40, accuracy: 1e-9)
+        let refuseSilence = BreathFluteMath.updateNoiseFloor(
+            currentDBFS: SoundLevel.silenceFloorDBFS,
+            floor: nil
+        )
+        XCTAssertEqual(refuseSilence, SoundLevel.silenceFloorDBFS, accuracy: 1e-9)
+        XCTAssertFalse(BreathFluteMath.isUsableBreathLevel(SoundLevel.silenceFloorDBFS))
+        XCTAssertTrue(BreathFluteMath.isUsableBreathLevel(-55))
         let held = BreathFluteMath.updateNoiseFloor(currentDBFS: -10, floor: -40)
         XCTAssertEqual(held, -40, accuracy: 1e-9)
         let eased = BreathFluteMath.updateNoiseFloor(currentDBFS: -46, floor: -40)
         XCTAssertLessThan(eased, -40)
         XCTAssertGreaterThan(eased, -46)
+
+        var cal: [Double] = []
+        for sample in [-58.0, -56.0, -57.0, -55.0, -59.0, -56.5, -57.5, -56.0, -58.0, -57.0] {
+            BreathFluteMath.appendCalibrationSample(sample, into: &cal)
+        }
+        XCTAssertEqual(cal.count, BreathFluteMath.calibrationSampleCount)
+        let calFloor = BreathFluteMath.calibrationFloor(samples: cal)
+        XCTAssertNotNil(calFloor)
+        XCTAssertEqual(calFloor!, -57.0, accuracy: 1.5)
+        let before = cal.count
+        BreathFluteMath.appendCalibrationSample(-20, into: &cal)
+        XCTAssertEqual(cal.count, before)
 
         let fluteToneBand = AcousticDisplayBand(lowHz: 400, highHz: 600, centerHz: 490, dbFS: -18)
         let breathBand = AcousticDisplayBand(lowHz: 2_000, highHz: 3_000, centerHz: 2_450, dbFS: -28)
@@ -297,7 +316,20 @@ final class FieldInstrumentMathTests: XCTestCase {
             accuracy: 1e-9
         )
         XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -40, noiseFloorDBFS: -48))
+        XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -30.1, noiseFloorDBFS: -48))
         XCTAssertTrue(BreathFluteMath.breathGateOpen(breathDBFS: -30, noiseFloorDBFS: -48))
+        XCTAssertFalse(
+            BreathFluteMath.breathGateOpen(
+                breathDBFS: -55,
+                noiseFloorDBFS: SoundLevel.silenceFloorDBFS
+            )
+        )
+        XCTAssertTrue(
+            BreathFluteMath.breathGateOpen(breathDBFS: -37, noiseFloorDBFS: -48, wasOpen: true)
+        )
+        XCTAssertFalse(
+            BreathFluteMath.breathGateOpen(breathDBFS: -39, noiseFloorDBFS: -48, wasOpen: true)
+        )
 
         let levels = BreathFluteMath.levelDBFS(samples: [Float](repeating: 0.1, count: 4))
         XCTAssertEqual(levels.rms, SoundLevel.dbfs(rms: 0.1), accuracy: 1e-6)
