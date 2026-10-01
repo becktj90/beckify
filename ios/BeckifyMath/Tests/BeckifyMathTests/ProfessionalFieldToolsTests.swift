@@ -119,6 +119,119 @@ final class AmpacityDeratingTests: XCTestCase {
         XCTAssertEqual(seed.loadAmps, 95, accuracy: 1e-9)
         XCTAssertEqual(seed.sourceToolID, "wireAmpacity")
     }
+
+    func testDeratingStackMatchesTraceAndRequiredCurrent() throws {
+        let r = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3",
+            material: .copper,
+            insulation: .c90,
+            termination: .c75,
+            ambientC: 30,
+            currentCarryingCount: 3,
+            loadAmps: 95
+        ))
+        let stack = try XCTUnwrap(DeratingStackReadout(result: r))
+        XCTAssertEqual(stack.stages.map(\.id), DeratingStackReadout.stageIDs)
+        XCTAssertEqual(stack.designCurrent ?? -1, r.requiredAmpacity ?? -2, accuracy: 1e-9)
+        XCTAssertEqual(stack.verdict, .meetsRequired)
+
+        let trace = Dictionary(uniqueKeysWithValues: r.trace.map { ($0.id, $0.value) })
+        XCTAssertEqual(stack.stages[0].perConductorAmps, trace["base"] ?? -1, accuracy: 1e-9)
+        XCTAssertEqual(stack.stages[1].perConductorAmps, trace["ambient"] ?? -1, accuracy: 1e-9)
+        XCTAssertEqual(stack.stages[2].perConductorAmps, trace["ccc"] ?? -1, accuracy: 1e-9)
+        let capped = min(trace["ccc"] ?? 0, trace["termination"] ?? 0)
+        XCTAssertEqual(stack.stages[3].perConductorAmps, capped, accuracy: 1e-9)
+        XCTAssertEqual(stack.stages[3].ampacity, trace["usable"] ?? -1, accuracy: 1e-6)
+        XCTAssertEqual(stack.terminationCapAmps, trace["termination"] ?? -1, accuracy: 1e-9)
+        XCTAssertEqual(stack.stages.map(\.ampacity).count, 4)
+        for (got, want) in zip(stack.stages.map(\.ampacity), [115.0, 115, 115, 100]) {
+            XCTAssertEqual(got, want, accuracy: 1e-6)
+        }
+        XCTAssertLessThanOrEqual(stack.plottedFraction(stageID: "bundling") ?? 2, (stack.plottedFraction(stageID: "ambient") ?? 0) + 1e-9)
+        XCTAssertLessThanOrEqual(stack.plottedFraction(stageID: "terminal") ?? 2, (stack.plottedFraction(stageID: "bundling") ?? 0) + 1e-9)
+        XCTAssertEqual(
+            stack.announcement,
+            "100 A usable, 95 A required. 310.16 115 A. Ambient 115 A. Bundling 115 A. 110.14(C) 100 A. Meets required. Clamped at the 75 °C column, 100 A. \(DeratingStackReadout.methodLine)"
+        )
+        XCTAssertEqual(stack.announcement.first?.isNumber, true)
+        XCTAssertTrue(stack.announcement.hasPrefix(stack.usableLabel))
+        XCTAssertTrue(stack.announcement.contains(DeratingStackReadout.methodLine))
+    }
+
+    func testDeratingStackBundlingDoesNotGrowAndFailStaysBelowRequired() throws {
+        let r = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "2",
+            material: .copper,
+            insulation: .c75,
+            termination: .c75,
+            ambientC: 30,
+            currentCarryingCount: 6,
+            loadAmps: 100
+        ))
+        let stack = try XCTUnwrap(DeratingStackReadout(result: r))
+        XCTAssertEqual(r.passesLoad, false)
+        XCTAssertEqual(stack.verdict, .belowRequired)
+        XCTAssertFalse(stack.limitedByTermination)
+        XCTAssertLessThanOrEqual(stack.stages[2].ampacity, stack.stages[1].ampacity + 1e-6)
+        XCTAssertEqual(stack.stages[3].ampacity, stack.stages[2].ampacity, accuracy: 1e-6)
+        XCTAssertEqual(stack.usableLabel, "92 A")
+        XCTAssertEqual(stack.designCurrentLabel, "100 A")
+        XCTAssertTrue(stack.announcement.hasPrefix("92 A usable, 100 A required."))
+        XCTAssertTrue(stack.announcement.contains("Below required."))
+        XCTAssertTrue(stack.announcement.contains("75 °C column 115 A does not reduce ampacity."))
+        XCTAssertFalse(stack.announcement.localizedCaseInsensitiveContains("warn"))
+    }
+
+    func testDeratingStackCoolAmbientCanLengthenBeforeTheCap() throws {
+        let r = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3",
+            material: .copper,
+            insulation: .c90,
+            termination: .c75,
+            ambientC: 25,
+            currentCarryingCount: 3,
+            loadAmps: 95
+        ))
+        let stack = try XCTUnwrap(DeratingStackReadout(result: r))
+        XCTAssertEqual(r.ambientFactor, 1.04, accuracy: 1e-9)
+        XCTAssertGreaterThan(stack.stages[1].ampacity, stack.stages[0].ampacity)
+        XCTAssertLessThanOrEqual(stack.stages[2].ampacity, stack.stages[1].ampacity + 1e-6)
+        XCTAssertLessThanOrEqual(stack.stages[3].ampacity, stack.stages[2].ampacity + 1e-6)
+        XCTAssertEqual(stack.stages[3].ampacity, 100, accuracy: 1e-6)
+        XCTAssertEqual(stack.verdict, .meetsRequired)
+    }
+
+    func testDeratingStackParallelRunsStayOnTheRequiredTotal() throws {
+        let r = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3",
+            material: .copper,
+            insulation: .c90,
+            termination: .c75,
+            ambientC: 30,
+            currentCarryingCount: 3,
+            parallelRuns: 2,
+            loadAmps: 180
+        ))
+        let stack = try XCTUnwrap(DeratingStackReadout(result: r))
+        XCTAssertEqual(stack.parallelRuns, 2)
+        XCTAssertEqual(stack.stages[0].perConductorAmps, 115, accuracy: 1e-6)
+        XCTAssertEqual(stack.stages[0].ampacity, 230, accuracy: 1e-6)
+        XCTAssertEqual(stack.stages[3].ampacity, r.usableTotal, accuracy: 1e-6)
+        XCTAssertEqual(stack.designCurrent ?? -1, 180, accuracy: 1e-9)
+        XCTAssertEqual(stack.verdict, .meetsRequired)
+        XCTAssertTrue(stack.announcement.contains("200 A usable, 180 A required."))
+        XCTAssertTrue(stack.announcement.contains("2 parallel runs."))
+        XCTAssertTrue(stack.caption.contains("Per conductor: 310.16 115 A"))
+    }
+
+    func testDeratingStackLabelMatchesResultRowRounding() {
+        XCTAssertEqual(DeratingStackReadout.ampsLabel(115), "115 A")
+        XCTAssertEqual(DeratingStackReadout.ampsLabel(92), "92 A")
+        XCTAssertEqual(DeratingStackReadout.ampsLabel(88), "88 A")
+        XCTAssertEqual(DeratingStackReadout.ampsLabel(1000), "1 kA")
+        XCTAssertEqual(DeratingStackReadout.ampsLabel(1500), "1.5 kA")
+        XCTAssertEqual(DeratingStackReadout.ampsLabel(12028), "12 kA")
+    }
 }
 
 final class VoltageDropSizingTests: XCTestCase {

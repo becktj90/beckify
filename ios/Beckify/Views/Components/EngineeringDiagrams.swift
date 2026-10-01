@@ -995,56 +995,190 @@ struct BatteryBankChart: View {
     }
 }
 
-// MARK: - Ampacity derating waterfall
+// MARK: - Ampacity derating stack
 
-struct AmpacityWaterfallDiagram: View {
-    let steps: [CalculationTraceStep]
+/// Shared bar column. Stages share a left rail. Length is ampacity on one scale
+/// that also fits the required-current mark.
+private struct DeratingStackLayout {
+    let width: CGFloat
+    let height: CGFloat
+    let titleWidth: CGFloat
+    let valueWidth: CGFloat
+    let stageCount: Int
+    let scale: Double
+    let designCurrent: Double?
 
-    private var summary: String {
-        let parts = steps.map { "\($0.title) \($0.displayValue)" }
-        return "Ampacity calculation stages: " + parts.joined(separator: ", then ")
+    init(size: CGSize, scale: Double, stageCount: Int, designCurrent: Double?) {
+        width = size.width
+        height = size.height
+        titleWidth = min(78, max(56, size.width * 0.24))
+        valueWidth = min(76, max(52, size.width * 0.22))
+        self.stageCount = max(stageCount, 1)
+        self.scale = scale
+        self.designCurrent = designCurrent
+    }
+
+    var showsRequired: Bool { designCurrent != nil }
+    var plotMinX: CGFloat { titleWidth + 8 }
+    var plotMaxX: CGFloat { max(plotMinX + 1, width - valueWidth - 8) }
+    var plotWidth: CGFloat { max(plotMaxX - plotMinX, 1) }
+    var footer: CGFloat { showsRequired ? 22 : 4 }
+    var rowsHeight: CGFloat { max(height - footer, 1) }
+
+    private func rowHeight() -> CGFloat { rowsHeight / CGFloat(stageCount) }
+
+    func rowMidY(_ index: Int) -> CGFloat {
+        let span = rowHeight()
+        return CGFloat(index) * span + span / 2
+    }
+
+    private func barThickness() -> CGFloat { min(12, rowHeight() * 0.46) }
+
+    func trackRect(_ index: Int) -> CGRect {
+        let thickness = barThickness()
+        return CGRect(
+            x: plotMinX,
+            y: rowMidY(index) - thickness / 2,
+            width: plotWidth,
+            height: thickness
+        )
+    }
+
+    func barRect(_ index: Int, ampacity: Double) -> CGRect {
+        let track = trackRect(index)
+        let fraction = scale > 0 ? min(max(ampacity / scale, 0), 1) : 0
+        return CGRect(x: track.minX, y: track.minY, width: track.width * CGFloat(fraction), height: track.height)
+    }
+
+    func markX() -> CGFloat? {
+        guard let designCurrent, scale > 0 else { return nil }
+        let fraction = min(max(designCurrent / scale, 0), 1)
+        return plotMinX + CGFloat(fraction) * plotWidth
+    }
+
+    var requiredLabelY: CGFloat { height - 9 }
+
+    func clampedLabelX(_ x: CGFloat) -> CGFloat {
+        let half: CGFloat = 58
+        return min(max(x, half), max(width - half, half))
+    }
+
+    var rail: Path {
+        var path = Path()
+        let x = plotMinX - 3
+        path.move(to: CGPoint(x: x, y: trackRect(0).minY))
+        path.addLine(to: CGPoint(x: x, y: trackRect(stageCount - 1).maxY))
+        return path
+    }
+
+    func markLine() -> Path? {
+        guard let x = markX() else { return nil }
+        var path = Path()
+        path.move(to: CGPoint(x: x, y: trackRect(0).minY - 3))
+        path.addLine(to: CGPoint(x: x, y: trackRect(stageCount - 1).maxY + 4))
+        return path
+    }
+}
+
+/// One picture of the ampacity trace: 310.16 base, ambient, bundling, 110.14(C).
+/// Required current is a mark. The canvas is not the VoiceOver value.
+struct DeratingStack: View {
+    let readout: DeratingStackReadout
+
+    private var verdictColor: Color? {
+        switch readout.verdict {
+        case .meetsRequired: return Theme.good
+        case .belowRequired: return Theme.bad
+        case .notCompared: return nil
+        }
     }
 
     var body: some View {
-        DiagramCard(title: "Ampacity waterfall", accessibilitySummary: summary) {
-            EngineeringDiagramFrame(summary: summary) {
-                VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                    ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                        HStack(alignment: .firstTextBaseline, spacing: Theme.Space.sm) {
-                            Text("\(index + 1)")
-                                .font(.caption.monospacedDigit().weight(.bold))
-                                .foregroundStyle(Theme.accent)
-                                .frame(width: 18, alignment: .trailing)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(step.title)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Theme.foreground)
-                                if let note = step.note {
-                                    Text(note)
-                                        .font(.caption2)
-                                        .foregroundStyle(Theme.muted)
-                                }
-                            }
-                            Spacer(minLength: 8)
-                            Text(step.displayValue)
-                                .font(.subheadline.monospacedDigit().weight(.semibold))
-                                .foregroundStyle(index == steps.count - 1 ? Theme.good : Theme.foreground)
+        DiagramCard(
+            title: "Derating stack",
+            accessibilitySummary: readout.announcement,
+            exportName: "derating-stack"
+        ) {
+            VStack(alignment: .leading, spacing: 6) {
+                GeometryReader { geo in
+                    ZStack(alignment: .topLeading) {
+                        Canvas { context, size in
+                            drawStack(in: context, size: size)
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(step.title): \(step.displayValue). \(step.note ?? "")")
-
-                        if index < steps.count - 1 {
-                            Image(systemName: "arrow.down")
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(Theme.muted)
-                                .padding(.leading, 4)
-                                .accessibilityHidden(true)
-                        }
+                        stackLabels(in: geo.size)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: readout.designCurrent == nil ? 148 : 172)
+                .accessibilityHidden(true)
+                Text(readout.caption)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
             }
         }
+        .accessibilityIdentifier("wireAmpacity.deratingStack")
+    }
+
+    private func drawStack(in context: GraphicsContext, size: CGSize) {
+        let layout = layout(for: size)
+        context.stroke(
+            layout.rail,
+            with: .color(Theme.foreground.opacity(0.45)),
+            style: StrokeStyle(lineWidth: 1.5, lineCap: .round)
+        )
+        for (index, stage) in readout.stages.enumerated() {
+            let track = Path(roundedRect: layout.trackRect(index), cornerRadius: 3)
+            context.fill(track, with: .color(Theme.chartGrid))
+            let barRect = layout.barRect(index, ampacity: stage.ampacity)
+            guard barRect.width > 0.4 else { continue }
+            let bar = Path(roundedRect: barRect, cornerRadius: min(3, barRect.height / 2))
+            let fill = index == readout.stages.count - 1 ? (verdictColor ?? Theme.accent) : Theme.accent
+            context.fill(bar, with: .color(fill))
+        }
+        if let line = layout.markLine(), let verdictColor {
+            context.stroke(line, with: .color(Theme.surface), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+            context.stroke(line, with: .color(verdictColor), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+        }
+    }
+
+    private func stackLabels(in size: CGSize) -> some View {
+        let layout = layout(for: size)
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(readout.stages.enumerated()), id: \.element.id) { index, stage in
+                Text(stage.title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: layout.titleWidth, alignment: .leading)
+                    .position(x: layout.titleWidth / 2, y: layout.rowMidY(index))
+                Text(DeratingStackReadout.ampsLabel(stage.ampacity))
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(index == readout.stages.count - 1 ? (verdictColor ?? Theme.foreground) : Theme.foreground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: layout.valueWidth, alignment: .trailing)
+                    .position(x: layout.width - layout.valueWidth / 2, y: layout.rowMidY(index))
+            }
+            if let required = readout.designCurrentLabel, let mark = layout.markX() {
+                Text("Required \(required)")
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(verdictColor ?? Theme.foreground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .position(x: layout.clampedLabelX(mark), y: layout.requiredLabelY)
+            }
+        }
+    }
+
+    private func layout(for size: CGSize) -> DeratingStackLayout {
+        DeratingStackLayout(
+            size: size,
+            scale: readout.scaleAmpacity,
+            stageCount: readout.stages.count,
+            designCurrent: readout.designCurrent
+        )
     }
 }
 
