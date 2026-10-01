@@ -700,7 +700,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             try session.overrideOutputAudioPort(.speaker)
         } catch {
@@ -786,6 +786,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             switch gender {
             case .male: genderLabel = "male"
             case .female: genderLabel = "female"
+            case .unspecified: genderLabel = "unspecified"
             @unknown default: genderLabel = "unspecified"
             }
         } else {
