@@ -245,7 +245,7 @@ struct ToolGridView: View {
     /// One card per shelf in the selected home area — opens a dedicated grid.
     @ViewBuilder
     private var homeShelfCards: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
             HStack(spacing: 8) {
                 Capsule(style: .continuous)
                     .fill(Theme.accent.opacity(0.85))
@@ -257,14 +257,16 @@ struct ToolGridView: View {
             }
             .padding(.top, 4)
 
-            ForEach(ToolShelfKind.shelves(in: homeArea), id: \.self) { shelf in
-                let tools = ToolboxCatalog.tools(on: shelf)
-                if !tools.isEmpty {
-                    NavigationLink(value: ToolboxHomeRoute.shelf(shelf)) {
-                        ShelfCard(shelf: shelf, previewTools: Array(tools.prefix(4)))
+            VStack(alignment: .leading, spacing: Theme.Space.lg) {
+                ForEach(ToolShelfKind.shelves(in: homeArea), id: \.self) { shelf in
+                    let tools = ToolboxCatalog.tools(on: shelf)
+                    if !tools.isEmpty {
+                        NavigationLink(value: ToolboxHomeRoute.shelf(shelf)) {
+                            ShelfCard(shelf: shelf, previewTools: Array(tools.prefix(4)))
+                        }
+                        .buttonStyle(ToolTileButtonStyle())
+                        .accessibilityIdentifier("shelfCard.\(shelf.rawValue)")
                     }
-                    .buttonStyle(ToolTileButtonStyle())
-                    .accessibilityIdentifier("shelfCard.\(shelf.rawValue)")
                 }
             }
         }
@@ -453,6 +455,20 @@ struct ToolCategoryGrid: View {
 
 // MARK: - Shelf card
 
+/// Four 40pt preview wells in a light fan. Spacing of -6 is 15% overlap.
+/// The slot is that fan's natural width (142pt) so a short frame cannot
+/// squeeze the wells tighter than the spacing says.
+private enum ShelfPreviewFan {
+    static let well: CGFloat = 40
+    static let spacing: CGFloat = -6
+    static let count = 4
+
+    static var slotWidth: CGFloat {
+        let n = CGFloat(count)
+        return well * n + spacing * (n - 1)
+    }
+}
+
 /// Compact home entry for one shelf — preview wells, no tool-count capsule.
 private struct ShelfCard: View {
     let shelf: ToolShelfKind
@@ -463,28 +479,29 @@ private struct ShelfCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
-            HStack(spacing: -10) {
+        HStack(spacing: 16) {
+            HStack(spacing: ShelfPreviewFan.spacing) {
                 ForEach(previewTools) { tool in
-                    IconWell(toolID: tool.id, size: 40, circular: true)
+                    IconWell(toolID: tool.id, size: ShelfPreviewFan.well, circular: true)
                         .overlay {
                             Circle()
                                 .stroke(Theme.surface.opacity(0.95), lineWidth: 2)
                         }
                 }
                 if previewTools.isEmpty {
-                    IconWell(toolID: .ohmsLaw, size: 40, circular: true)
+                    IconWell(toolID: .ohmsLaw, size: ShelfPreviewFan.well, circular: true)
                         .opacity(0.35)
                         .accessibilityHidden(true)
                 }
             }
-            .frame(width: 112, alignment: .leading)
+            .frame(width: ShelfPreviewFan.slotWidth, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(shelf.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 Text(shelfHomeHint)
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
@@ -499,8 +516,8 @@ private struct ShelfCard: View {
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
         .glassCard(corner: Theme.Radius.tile, tint: borderTint)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)
