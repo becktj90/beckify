@@ -173,7 +173,7 @@ private struct MathFlow: Layout {
         var cursor = 0
         for line in lines {
             var x = bounds.minX
-            for index in 0..<line.count {
+            for _ in 0..<line.count {
                 let sub = subviews[cursor]
                 let size = sub.sizeThatFits(.unspecified)
                 let dy = line.height - size.height
