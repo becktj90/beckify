@@ -178,6 +178,9 @@ public enum PowerWizard {
             formula = "I = kW × 1000 ÷ (\(multText)V × PF)"
         case .horsepower(let value):
             hp = try Positive.require(value, name: "Horsepower")
+            guard safeEff < 1 else {
+                throw CalcError.outOfRange("Enter motor efficiency under 100%. 100% treats the motor as lossless and undersizes the wire. 430.22 and Table 430.52 use Tables 430.248/250 (430.6(A)(1)), not this estimate.")
+            }
             kw = (hp * 746) / (safeEff * 1000)
             kva = kw / pf
             amps = (kw * 1000) / (mult * v * pf)

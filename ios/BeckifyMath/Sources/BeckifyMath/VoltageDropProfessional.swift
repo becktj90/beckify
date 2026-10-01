@@ -40,7 +40,7 @@ public enum VoltageDropMethod: String, Codable, CaseIterable, Sendable, Hashable
     public var displayName: String {
         switch self {
         case .kFactorApproximation:
-            return "K-factor approximation (Ch.9 Table 9)"
+            return "Field K approximation (~75 °C)"
         }
     }
 
@@ -124,14 +124,15 @@ public struct VoltageDropSizingResult: Equatable, Sendable {
     }
 }
 
-/// Professional voltage-drop / conductor-sizing workflow built on the Chapter 9
-/// Table 9 K-factor approximation. AC R+X impedance is a follow-up when Table 9
-/// reactance data is wired in; this path never claims exact AC impedance.
+/// Professional voltage-drop / conductor-sizing workflow built on field K
+/// (≈12.9 Cu / 21.2 Al near 75 °C). That K is effective resistivity, not
+/// Chapter 9 Table 9. Table 9 is AC impedance. This path does not claim an
+/// exact R·cosθ + X·sinθ result.
 public enum VoltageDropSizing {
     private static let kCitation = CodeCitation(
-        articleOrTable: "Chapter 9 Table 9",
+        articleOrTable: "Field K ≈ 12.9 Cu / 21.2 Al",
         units: "V",
-        sourceDescription: "Approximate DC resistance constant K at 75 °C for voltage-drop estimates"
+        sourceDescription: "Approximate effective resistivity near 75 °C. Not Chapter 9 Table 9. Large or long 480 V feeders want Table 8 R + Table 9 X."
     )
 
     private static let noteCitation = CodeCitation(
@@ -195,7 +196,7 @@ public enum VoltageDropSizing {
         var warnings: [DesignWarning] = [
             DesignWarning(
                 severity: .info,
-                message: "K-factor method is an engineering approximation from Chapter 9 Table 9 constants, not an exact AC impedance (R·cosθ + X·sinθ) calculation.",
+                message: "Field K (≈12.9 Cu / 21.2 Al near 75 °C) is an effective-resistivity estimate, not Chapter 9 Table 9 and not an exact AC impedance (R·cosθ + X·sinθ) calculation.",
                 provenance: .engineeringApproximation
             ),
             DesignWarning(
@@ -216,6 +217,14 @@ public enum VoltageDropSizing {
                 severity: .caution,
                 message: "Drop \(FormatTrace.percent(selected.dropPercent)) exceeds the preferred target \(FormatTrace.percent(target)).",
                 provenance: .designPreference
+            ))
+        }
+        let twoAwgCM = NECTables.circularMils["2"] ?? 66_360
+        if cm + 1e-9 >= twoAwgCM, vs >= 440, length >= 100 {
+            warnings.append(DesignWarning(
+                severity: .caution,
+                message: "This run is 2 AWG or larger on a long 480 V-class feeder. Reactance matters — use Chapter 9 Table 8 R plus Table 9 X. Steel raceway takes the higher Table 9 X column. Enter operating amps here; ampacity is still continuous × 1.25 and the 110.14(C) cap.",
+                provenance: .engineeringApproximation
             ))
         }
         if runs > 1, let minParallel = NECTables.circularMils["1/0"], cm + 1e-9 < minParallel {

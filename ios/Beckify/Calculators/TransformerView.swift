@@ -43,8 +43,8 @@ struct TransformerView: View {
                     ? "I = kVA × 1000 ÷ (√3 × V)    OCPD per 450.3(B)"
                     : "I = kVA × 1000 ÷ V    OCPD per 450.3(B)",
                 substituted: substituted,
-                meaning: "Standard kVA is the next catalog rating at or above the design kVA. Note 1 allows the next standard OCPD size up only on 125% rows. 167% and 300% are ceilings.",
-                citation: "NEC 450.3(B) for transformers 1000 V or less, including Note 1."
+                meaning: "Standard kVA is the next catalog rating at or above the design kVA. 450.3(B) sizes the transformer OCPD — Note 1 allows the next standard size up only on 125% rows. Fault current comes from %Z and the source, not from 450.3. High-leg and corner-ground change the bond. A separately derived system grounding electrode conductor is 250.30. The equipment ground is 250.122.",
+                citation: "NEC 450.3(B) including Note 1. GEC 250.30. EGC Table 250.122. Available fault is %Z, not 450.3."
             )
             Picker("System", selection: $system) {
                 Text("1Ø").tag(ElectricalSystem.singlePhase)

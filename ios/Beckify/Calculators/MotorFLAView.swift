@@ -41,10 +41,10 @@ struct MotorFLAView: View {
         ) {
             ShowWorkCard(
                 toolID: .motorFLA,
-                symbolic: "Use table FLA, not nameplate, for conductors and OCPD (430.6(A)(1)).",
+                symbolic: "Table FLA for 430.22 and Table 430.52. Overload is 430.32 on the nameplate.",
                 substituted: substituted,
-                meaning: "480 V systems use the 460 V column. Conductors at 125% of table FLA (430.22). This is table current, not a nameplate reading.",
-                citation: "NEC 430.248 single-phase · 430.250 three-phase squirrel-cage."
+                meaning: "480 V systems use the 460 V column. Conductors are at least 125% of table FLA (430.22). SCPD percent is Table 430.52 of that table FLA (430.6(A)(1)). Overload is 430.32 on nameplate FLA — not 430.52.",
+                citation: "NEC 430.6(A)(1) · 430.22 · 430.32 · Table 430.52 · Tables 430.248 / 430.250."
             )
             Picker("Table", selection: $threePhase) {
                 Text("430.248 1Ø").tag(false)

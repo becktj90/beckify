@@ -16,7 +16,7 @@ struct PowerWizardView: View {
     @StoredInput(.powerWizard, "value", default: "50") private var value
     @StoredInput(.powerWizard, "voltage", default: "480") private var voltage
     @StoredInput(.powerWizard, "pf", default: "90") private var pf
-    @StoredInput(.powerWizard, "eff", default: "100") private var eff
+    @StoredInput(.powerWizard, "eff", default: "") private var eff
     @StoredInput(.powerWizard, "jobName", default: "Power Wizard") private var jobName
     @State private var session = ExplicitCalculationState<PowerWizardResult>()
     @State private var successTick = 0
@@ -37,7 +37,9 @@ struct PowerWizardView: View {
                 toolID: .powerWizard,
                 symbolic: symbolic,
                 substituted: substituted,
-                meaning: "Current from known kW, kVA, amps, or HP. PF is a decimal after the % field (90 → 0.90). Efficiency only matters on the HP path."
+                meaning: known == .hp
+                    ? "HP current is an estimate: I = HP × 746 ÷ (V × PF × Eff), with √3 on 3Ø. 100% efficiency is rejected — it undersizes the wire. Do not use this number for 430.22 or Table 430.52. Those use Tables 430.248/250 (430.6(A)(1)). Locked-rotor amps come from the NEMA code letter (430.7(B))."
+                    : "Current from known kW, kVA, or amps. PF is a decimal after the % field (90 → 0.90)."
             )
             Picker("System", selection: $system) {
                 ForEach(ElectricalSystem.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -66,7 +68,7 @@ struct PowerWizardView: View {
                     value = "50"
                     voltage = "480"
                     pf = "90"
-                    eff = "100"
+                    eff = "90"
                     session.prepareForNewInputs()
                 },
                 exampleTitle: "480 V 3Ø 50 kW PF 0.90 → 66.8 A"
@@ -78,7 +80,15 @@ struct PowerWizardView: View {
 
             if let r = session.displayedResult {
                 ResultCard(copyText: copyText) {
-                    ResultRow(label: "Current", value: Format.amps(r.amps), emphasis: true, tone: Theme.good)
+                    ResultRow(
+                        label: known == .hp ? "Estimated current" : "Current",
+                        value: Format.amps(r.amps),
+                        emphasis: true,
+                        tone: Theme.good
+                    )
+                    if known == .hp {
+                        ResultRow(label: "430.22 / 430.52", value: "Use Tables 430.248/250")
+                    }
                     ResultRow(label: "Apparent", value: "\(Format.number(r.kVA, digits: 3)) kVA")
                     ResultRow(label: "Real", value: "\(Format.number(r.kW, digits: 3)) kW")
                     if r.system != .dc {
@@ -124,12 +134,13 @@ struct PowerWizardView: View {
             case .kva: knownEnum = .kilovoltAmps(knownValue)
             case .hp: knownEnum = .horsepower(knownValue)
             }
+            let efficiency = known == .hp ? (eff.parsedDouble ?? .nan) / 100 : 1.0
             return try PowerWizard.solve(
                 system: system,
                 known: knownEnum,
                 voltage: voltage.parsedDouble ?? .nan,
                 powerFactor: (pf.parsedDouble ?? .nan) / 100,
-                efficiency: (eff.parsedDouble ?? .nan) / 100
+                efficiency: efficiency
             )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
@@ -141,7 +152,7 @@ struct PowerWizardView: View {
         value = ""
         voltage = ""
         pf = "90"
-        eff = "100"
+        eff = ""
         session.reset()
     }
 

@@ -79,27 +79,28 @@ public enum ToolHowItWorksCatalog {
             context: "Saved-job deep link. New work uses Power on the Field shelf.",
             bullets: [
                 "Same identities as Power; kept so old jobs still open.",
-                "Not a separate product — results are planning numbers.",
+                "HP current is an estimate. Not for 430.22 or Table 430.52 — use Tables 430.248/250 (430.6(A)(1)).",
+                "Locked-rotor amps come from the NEMA code letter (430.7(B)), not HP × 746.",
             ]
         ),
         "voltageDrop": ToolHowItWorks(
-            summary: "Voltage drop for the code in Settings. NEC is the K-factor path. AS/NZS is a metric resistance path.",
+            summary: "Voltage drop for the code in Settings. NEC is a field-K estimate. AS/NZS is a metric resistance path.",
             context: "Feeder or branch check before you pull wire.",
             bullets: [
-                "NEC: VD uses K, circular mils, current, and one-way length. 3Ø uses √3. 3% and 5% are informational.",
-                "NEC ampacity is a companion check. 1Ø and 3Ø show a Table 250.122 EGC from the next standard OCPD.",
-                "AS/NZS: mm² sizes, IEC 60228 maximum R, Clause 3.6.2’s 5% limit, and a Table 5.1 copper earth. Not an AS/NZS 3008 mV/A·m or current-carrying-capacity table.",
-                "Design aid — not a PE or AEE stamp, and not a bid length.",
+                "NEC VD uses field K (≈12.9 Cu / 21.2 Al near 75 °C), CM, operating amps, and one-way feet. K is not Ch.9 Table 9.",
+                "3% branch and 5% total are Informational Notes (210.19(A), 215.2(A)). Ampacity is still continuous × 1.25, then 110.14(C).",
+                "Long 480 V feeders at 2 AWG and up: Table 8 R plus Table 9 X. Steel raceway uses the higher Table 9 X column.",
+                "AS/NZS: mm² sizes, IEC 60228 maximum R, Clause 3.6.2’s 5% limit, and a Table 5.1 copper earth. Not an AS/NZS 3008 mV/A·m table.",
             ]
         ),
         "conduitFill": ToolHowItWorks(
             summary: "Chapter 9 fill with a to-scale bore: wall, each conductor, and the Table 1 limit for this run.",
             context: "Raceway pick on the truck — EMT, IMC, RMC, PVC, ENT, FMC, LFMC.",
             bullets: [
-                "Fill % is Table 5 area over Table 4 area. 53% / 31% / 40%, or 60% on a nipple 24 in or shorter.",
-                "The cross-section is illustrative packing. A pass is not a jam check and not a promise the pull will go.",
-                "1Ø, multiwire, or 3Ø can show Table 250.122. Count EGC adds that conductor. Phase tints are a legend only.",
-                "AS/NZS shows Appendix C C6.2 (50/33/40) as guidance. Pass/fail stays NEC. Metric bores are not listed.",
+                "Areas are Ch.9 Table 4 and Table 5. Annex C is same-size max counts, not the area source. Nipple ≤ 24 in is 60% (Note 4).",
+                "Compact or XHHW uses that insulation’s Table 5, not the THHN column. The cross-section is a sketch, not a pull check.",
+                "Count EGC adds the Table 250.122 conductor to fill. The EGC is not a current-carrying conductor.",
+                "AS/NZS shows Appendix C C6.2 (50/33/40) as guidance. The pass/fail row stays NEC Table 1. Metric bores are not listed.",
             ]
         ),
         "cableLadder": ToolHowItWorks(
@@ -126,10 +127,10 @@ public enum ToolHowItWorksCatalog {
             summary: "Picks a standard kVA and 450.3(B) primary/secondary OCPD, including Note 1.",
             context: "Dry-type or small power transformer sizing on a job.",
             bullets: [
-                "kVA from volts and amps (√3 on 3Ø). Protection follows 450.3(B).",
-                "Primary and secondary EGC rows use NEC 2023 Table 250.122 from those OCPDs. Confirm AHJ.",
+                "kVA from volts and amps (√3 on 3Ø). 450.3(B) sizes the transformer OCPD. Fault amps come from %Z, not 450.3.",
+                "High-leg and corner-ground change the bond. SDS grounding electrode conductor is 250.30. EGC is 250.122.",
                 "Not a coordination study or inrush calc. Secondary Z refers by (Np/Ns)². Line loss holds watts fixed and omits transformer loss.",
-                "Connection diagram: windings, the bond, and North American colors. High-leg orange is code. 480Y brown/orange/yellow is practice. The AHJ and the spec win.",
+                "Connection diagram: windings, the bond, and North American colors. High-leg orange is code. 480Y brown/orange/yellow is practice. The AHJ wins.",
             ]
         ),
         "timer555": ToolHowItWorks(
@@ -142,10 +143,11 @@ public enum ToolHowItWorksCatalog {
         ),
         "motorFLA": ToolHowItWorks(
             summary: "Looks up NEC Table 430.248 (1Ø) or 430.250 (3Ø) full-load current from HP and volts.",
-            context: "Conductor and OCPD starting point when the nameplate FLA is missing.",
+            context: "Conductor and SCPD starting point when the nameplate FLA is missing.",
             bullets: [
-                "Table current, not the nameplate. Use Motor Nameplate Analyzer when you have the plate.",
-                "EGC uses Table 250.122 from the next device ≥ 125% FLA. 430.52 breakers are often larger.",
+                "Table FLA is for conductors and the branch SCPD (430.6(A)(1)). Overload is 430.32 on the nameplate, not 430.52.",
+                "SCPD percent is Table 430.52 of this table FLA. Conductors are 430.22 — at least 125% of table FLA.",
+                "EGC uses Table 250.122 from the device you install. A Table 430.52 breaker is often larger than 125%.",
                 "Squirrel-cage / induction tables only — not DC, wound-rotor, or servo.",
             ]
         ),
@@ -163,9 +165,10 @@ public enum ToolHowItWorksCatalog {
             summary: "NEC Table 310.16 ampacity with ambient correction, CCC adjustment, termination cap, and continuous load.",
             context: "Pick a copper or aluminum size that still carries the load after derating.",
             bullets: [
-                "Smallest size whose derated ampacity ≥ required amps (125% continuous when checked).",
-                "Circuit opt-in: 1Ø / multiwire / 3Ø shows Table 250.122 EGC in the sticky result. Confirm Code / AHJ.",
-                "Termination temperature caps the column. Design aid — verify the edition you are under.",
+                "Usable ampacity = min(table × ambient × CCC, termination column). The result names which clamp won.",
+                "A neutral is a CCC when it carries unbalanced or harmonic current. A balanced motor neutral is not.",
+                "The EGC counts in fill. It is not a CCC. Steel raceway X is the higher Chapter 9 Table 9 column.",
+                "Continuous loads use 125% as the required amps. Ambient is 310.15(B)(1). CCC adjustment is 310.15(C)(1).",
             ]
         ),
         "conductorCost": ToolHowItWorks(
@@ -404,10 +407,11 @@ public enum ToolHowItWorksCatalog {
         ),
         "shortCircuit": ToolHowItWorks(
             summary: "Infinite-bus secondary fault current from transformer kVA, volts, and %Z.",
-            context: "First-pass AIC / available fault at the secondary terminals.",
+            context: "First-pass available fault at the secondary terminals.",
             bullets: [
-                "Isc = FLA × 100 / %Z. A real study adds source and conductor impedance.",
-                "That extra impedance lowers this number. Not a stamped short-circuit study.",
+                "Symmetrical infinite-bus amps at the lugs — an upper bound. Conductor Z lowers it. Motors on the bus can raise it.",
+                "First-cycle asymmetrical is K = √(1 + 2·exp(−2π/(X/R))), not a flat ~1.25. AIC ≥ available (110.9 / 110.10).",
+                "Not an IEEE 1584 arc-flash study and not a stamped short-circuit study.",
             ]
         ),
         "circularMils": ToolHowItWorks(

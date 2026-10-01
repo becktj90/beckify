@@ -168,6 +168,28 @@ final class VoltageDropSizingTests: XCTestCase {
         XCTAssertTrue(r.warnings.contains { $0.provenance == .informationalNote })
     }
 
+    func testLargeFeederPointsAtTable8RPlusTable9X() throws {
+        let r = try VoltageDropSizing.calculate(VoltageDropSizingInput(
+            system: .threePhase,
+            supplyVolts: 480,
+            current: 80,
+            oneWayFeet: 200,
+            size: "2",
+            material: .copper
+        ))
+        XCTAssertFalse(r.citations.contains { $0.articleOrTable.contains("Table 9") && $0.sourceDescription.contains("K-factor") })
+        XCTAssertTrue(r.citations.contains { $0.sourceDescription.contains("Not Chapter 9 Table 9") })
+        XCTAssertTrue(r.warnings.contains { $0.message.contains("Table 8 R") && $0.message.contains("Table 9 X") })
+        XCTAssertEqual(r.method.displayName, "Field K approximation (~75 °C)")
+    }
+
+    func testSmallBranchDoesNotForceReactanceWarning() throws {
+        let r = try VoltageDropSizing.calculate(VoltageDropSizingInput(
+            system: .singlePhase, supplyVolts: 120, current: 16, oneWayFeet: 80, size: "12", material: .copper
+        ))
+        XCTAssertFalse(r.warnings.contains { $0.message.contains("Table 8 R") })
+    }
+
     func testRejectsBlankCurrent() {
         XCTAssertThrowsError(try VoltageDropSizing.calculate(VoltageDropSizingInput(
             system: .singlePhase, supplyVolts: 120, current: .nan, oneWayFeet: 100, size: "12", material: .copper

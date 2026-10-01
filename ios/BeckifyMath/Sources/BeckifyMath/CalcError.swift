@@ -59,7 +59,10 @@ public enum ConductorMaterial: String, Codable, CaseIterable, Sendable, Hashable
         }
     }
 
-    /// NEC Chapter 9 Table 9 DC resistance constant K at 75 °C (Ω·CM/ft).
+    /// Field K at about 75 °C (Ω·CM/ft): ≈12.9 copper, ≈21.2 aluminum.
+    /// Approximate effective resistivity for a quick VD estimate. Not Chapter 9
+    /// Table 9 — that table is AC impedance. Large or long feeders want Table 8 R
+    /// plus Table 9 X.
     public var resistivityK: Double {
         switch self {
         case .copper: return 12.9

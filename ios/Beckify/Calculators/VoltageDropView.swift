@@ -78,8 +78,8 @@ struct VoltageDropView: View {
             toolID: .voltageDrop,
             symbolic: "VD ≈ (M × K × I × L) / (CM × runs)",
             substituted: necSubstituted,
-            meaning: "M is 2 for 1Ø/DC or √3 for 3Ø. K is 12.9 Cu / 21.2 Al at 75 °C. This is a K-factor approximation, not an exact AC impedance calculation. 3% and 5% are informational notes.",
-            citation: "NEC Chapter 9 Table 9 K-factor · ampacity cross-check Table 310.16 75 °C · Informational Notes on 3%/5%.",
+            meaning: "M is 2 for 1Ø/DC or √3 for 3Ø. K ≈ 12.9 Cu / 21.2 Al is a field resistivity near 75 °C, not Chapter 9 Table 9. Table 9 is AC impedance. Enter the amps the load is drawing. 3% and 5% are Informational Notes. Ampacity is still continuous × 1.25 and the 110.14(C) cap. Long 480 V feeders at 2 AWG and larger want Table 8 R plus Table 9 X.",
+            citation: "Field K near 75 °C · Ch.9 Table 8 R + Table 9 X when reactance matters · Table 310.16 · 210.19(A) and 215.2(A) Informational Notes.",
             referenceTool: .wireAmpacity
         )
 
@@ -147,13 +147,13 @@ struct VoltageDropView: View {
                     tone: r.meetsTarget ? Theme.good : Theme.warn
                 )
                 ResultRow(
-                    label: "≤ 3% informational",
-                    value: r.meets3Percent ? "PASS" : "OVER 3%",
+                    label: "3% branch note",
+                    value: r.meets3Percent ? "WITHIN NOTE" : "OVER NOTE",
                     tone: r.meets3Percent ? Theme.good : Theme.warn
                 )
                 ResultRow(
-                    label: "≤ 5% informational",
-                    value: r.meets5Percent ? "PASS" : "OVER 5%",
+                    label: "5% feeder+branch note",
+                    value: r.meets5Percent ? "WITHIN NOTE" : "OVER NOTE",
                     tone: r.meets5Percent ? Theme.good : Theme.bad
                 )
                 if let amp = r.ampacity75C {

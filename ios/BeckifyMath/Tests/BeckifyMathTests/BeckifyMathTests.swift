@@ -87,6 +87,36 @@ final class PowerWizardTests: XCTestCase {
         }
     }
 
+    func testHorsepowerRejectsLosslessEfficiency() {
+        XCTAssertThrowsError(
+            try PowerWizard.solve(
+                system: .threePhase,
+                known: .horsepower(10),
+                voltage: 480,
+                powerFactor: 0.9,
+                efficiency: 1
+            )
+        ) { error in
+            guard case .outOfRange(let detail) = error as? CalcError else {
+                return XCTFail("expected outOfRange")
+            }
+            XCTAssertTrue(detail.contains("430.248"))
+        }
+    }
+
+    func testHorsepowerIncludesEfficiency() throws {
+        let lossless = 10 * 746 / (480 * 0.9 * sqrt(3))
+        let r = try PowerWizard.solve(
+            system: .threePhase,
+            known: .horsepower(10),
+            voltage: 480,
+            powerFactor: 0.9,
+            efficiency: 0.9
+        )
+        XCTAssertEqual(r.amps, lossless / 0.9, accuracy: 1e-6)
+        XCTAssertGreaterThan(r.amps, lossless)
+    }
+
     func testInvalidEfficiencyOnAmpsThrows() {
         XCTAssertThrowsError(
             try PowerWizard.solve(

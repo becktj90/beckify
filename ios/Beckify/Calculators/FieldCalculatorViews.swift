@@ -368,7 +368,7 @@ struct ShortCircuitView: View {
                     ? "I_FLA = kVA·1000 / (√3·V)    I_SC = I_FLA × 100/%Z"
                     : "I_FLA = kVA·1000 / V    I_SC = I_FLA × 100/%Z",
                 substituted: substituted,
-                meaning: "Assumes an infinite source behind the transformer, so this is the worst case. Equipment interrupting ratings must exceed it."
+                meaning: "Symmetrical infinite-bus amps at the secondary lugs — an upper bound. Conductor impedance lowers it. Motors on the bus can raise available fault current. First-cycle asymmetrical is K = √(1 + 2·exp(−2π/(X/R))), not a flat ~1.25. AIC must be at least the available fault current (110.9 / 110.10). Not an IEEE 1584 arc-flash study."
             )
             MenuField(title: "System", selection: $system, options: [ElectricalSystem.singlePhase, ElectricalSystem.threePhase]) { $0.displayName }
             NumberField(title: "Transformer", unit: "kVA", text: $kva, fieldID: "kva", onSubmit: calculate)
