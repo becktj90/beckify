@@ -806,7 +806,7 @@ public enum ToolHowItWorksCatalog {
             context: "Toolkit → Reference. Interpreter vibe — not a certified interpreter.",
             bullets: [
                 "Mic + on-device Speech. Audio stays local; recognized text POSTs to /api/translate only on Stop or Translate (Beckify AI path).",
-                "Clean or Jobsite mode (persisted). Hey! / Get attention one-taps a short attention call (translate + speak). Quick chips and Test pick a random line, then translate + speak. API down → on-device Apple Translation (iOS 18+).",
+                "Clean or Jobsite mode (persisted). Hey! one-taps translate + speak for attention. Chips/Test pick a line too. API down → on-device Apple Translation (iOS 18+).",
                 "Playback POSTs short Spanish to /api/speak (OpenAI neural TTS; voice follows mode). Apple AVSpeech is the fallback. Max speaker volume.",
             ]
         ),
