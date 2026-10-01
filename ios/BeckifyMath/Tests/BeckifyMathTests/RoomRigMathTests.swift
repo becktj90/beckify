@@ -168,15 +168,29 @@ final class RoomRigMathTests: XCTestCase {
         let copy = ToolHowItWorksCatalog.copy(forToolID: "setupCheck")
         XCTAssertNotNil(copy)
         let blob = ([copy?.summary, copy?.context].compactMap { $0 } + (copy?.bullets ?? [])).joined(separator: " ")
+        XCTAssertTrue(blob.localizedCaseInsensitiveContains("RigScope"))
         XCTAssertTrue(blob.localizedCaseInsensitiveContains("relative"))
         XCTAssertTrue(blob.localizedCaseInsensitiveContains("calibrat"))
-        XCTAssertTrue(blob.localizedCaseInsensitiveContains("FFT") || blob.localizedCaseInsensitiveContains("RTA"))
+        XCTAssertTrue(blob.localizedCaseInsensitiveContains("Music") || blob.localizedCaseInsensitiveContains("Gaming"))
         XCTAssertFalse(blob.localizedCaseInsensitiveContains("THX certification"))
         XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "setupCheck"), .field)
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "setupCheck"), .instruments)
         XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "setupCheck"), .sensor)
         XCTAssertTrue(RoomRigMath.honestLimit.localizedCaseInsensitiveContains("not a calibrated"))
         XCTAssertTrue(RoomRigMath.honestLimit.localizedCaseInsensitiveContains("dB SPL"))
+        XCTAssertEqual(RoomRigDisplayName.title, "RigScope")
+    }
+
+    func testListeningPurposeTargetNotes() {
+        XCTAssertEqual(RoomRigListeningPurpose.parse("movies"), .movies)
+        XCTAssertEqual(RoomRigListeningPurpose.parse("nope"), .music)
+        for purpose in RoomRigListeningPurpose.allCases {
+            XCTAssertFalse(purpose.targetCurveNote.isEmpty)
+            XCTAssertTrue(purpose.targetCurveNote.localizedCaseInsensitiveContains("not scored yet"))
+            XCTAssertTrue(purpose.scoreTargetLabel.localizedCaseInsensitiveContains("future score"))
+            XCTAssertLessThanOrEqual(purpose.targetCurveNote.count, 180)
+        }
+        XCTAssertTrue(RoomRigTestCopy.purposeHelp.localizedCaseInsensitiveContains("future score"))
     }
 
     func testListenTestCentroidBalanceAndSnapshot() {
@@ -321,6 +335,14 @@ final class RoomRigMathTests: XCTestCase {
         )
         XCTAssertFalse(RoomRigABMath.canCompare(a: metadata, b: listenMeta))
         XCTAssertTrue(RoomRigABMath.canCompare(a: metadata, b: metadata))
+        let gamingMeta = RoomRigPassMetadata(
+            stimulus: .pink,
+            fingerprint: fingerprint,
+            windowKind: "Hann",
+            listeningPurpose: .gaming,
+            isPhoneSpeakerDemo: true
+        )
+        XCTAssertFalse(RoomRigABMath.canCompare(a: metadata, b: gamingMeta))
         XCTAssertEqual(RoomRigMath.liveFFTLength, 1_024)
         XCTAssertEqual(RoomRigMath.bassFFTLengthPreferred, 16_384)
         XCTAssertEqual(RoomRigMath.bassFFTLengthLong, 32_768)

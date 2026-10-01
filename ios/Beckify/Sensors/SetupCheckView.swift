@@ -1,7 +1,7 @@
 import SwiftUI
 import BeckifyMath
 
-/// Field → Instruments. Room & Rig Check on the shared microphone FFT.
+/// Field → Instruments. RigScope (tool ID setupCheck) on the shared microphone FFT.
 /// Optional test signals play from the phone speaker on that same engine.
 struct SetupCheckView: View {
     @EnvironmentObject private var jobs: JobStore
@@ -21,7 +21,8 @@ struct SetupCheckView: View {
     @State private var frozenSpectrogram: [[Double]]?
     @State private var frozenTrace: [Double]?
     @State private var frozenResponse: [RoomRigPoint]?
-    @StoredInput(.setupCheck, "jobName", default: "Room and rig") private var jobName
+    @StoredInput(.setupCheck, "jobName", default: "RigScope") private var jobName
+    @StoredInput(.setupCheck, "listeningPurpose", default: "music") private var listeningPurposeRaw
     @State private var notes = ""
     @State private var testRunning = false
     @State private var testStarted: Date?
@@ -52,12 +53,13 @@ struct SetupCheckView: View {
                 toolID: .setupCheck,
                 symbolic: "relative dBFS    crest = 20·log₁₀(peak / RMS)    sweep shape, not SPL",
                 substituted: sticky,
-                meaning: "The DSP worker draws the live spectrum, RTA bands, and a short spectrogram from timestamped frames. Pink noise, a log sweep, or a tone burst can play from this phone’s speaker as a labeled demo so you can A/B a seat or a rig. Capture an explicit quiet-room baseline first. The curve is a shape on this phone, not a calibrated frequency response."
+                meaning: "RigScope’s DSP worker draws the live spectrum, RTA bands, and a short spectrogram from timestamped frames. Pink noise, a log sweep, or a tone burst can play from this phone’s speaker as a labeled demo so you can A/B a seat or a rig. Capture an explicit quiet-room baseline first. The curve is a shape on this phone, not a calibrated frequency response."
             )
             Text(RoomRigMath.honestLimit)
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
+            listeningPurposeCard
             Text("Leave this open while you listen. The meters and spectrum stay live. Start test when you want numbers for an A/B.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.foreground)
@@ -65,7 +67,7 @@ struct SetupCheckView: View {
             if spectrum.permissionDenied {
                 ToolEmptyState(
                     title: "Microphone is off",
-                    detail: "Room & Rig Check needs the microphone for a relative spectrum. Test signals stay on this phone. Nothing is recorded or uploaded.",
+                    detail: "RigScope needs the microphone for a relative spectrum. Test signals stay on this phone. Nothing is recorded or uploaded.",
                     systemImage: "mic.slash",
                     showsSettings: true
                 )
@@ -310,7 +312,7 @@ struct SetupCheckView: View {
             Text("How to A/B a room or a rig")
                 .font(Theme.TypeRole.fieldLabel)
                 .foregroundStyle(Theme.foreground)
-            Text("1. Capture a quiet-room baseline. Leave the screen open. Play music, or pick a labeled phone-speaker demo (Pink, Sweep, Burst). The plots stay live.")
+            Text("1. Pick Music, Movies, or Gaming. Capture a quiet-room baseline. Leave the screen open. Play content, or pick a labeled phone-speaker demo (Pink, Sweep, Burst). The plots stay live.")
             Text("2. Tap Start test. It listens for about \(Format.number(RoomRigTestMath.windowSeconds, digits: 0)) seconds, or until you tap Stop. Each number underneath says what it means.")
             Text("3. Keep that pass as spot A. Move the phone or change the rig, run the test again, and read this pass minus A.")
             Text("4. Pink noise fills the band so two spots are easier to compare. Sweep draws a shape — 0 dB is that pass’s peak, not a calibration. Burst is a rough speaker-to-mic delay.")
@@ -437,7 +439,7 @@ struct SetupCheckView: View {
 
     private var sticky: String? {
         guard spectrum.hasReading else { return nil }
-        return "\(Format.dbfs(spectrum.rmsDBFS)) · \(crestLabel) crest"
+        return "\(Format.dbfs(spectrum.rmsDBFS)) · \(crestLabel) crest · \(listeningPurpose.title)"
     }
 
     private var copyText: String? {
@@ -478,7 +480,11 @@ struct SetupCheckView: View {
 
     private func testResultCard(_ snap: RoomRigTestSnapshot) -> some View {
         ResultCard(title: "Test · \(snap.stimulus)", copyText: testCopy(snap)) {
-            Text("\(Format.number(snap.durationSeconds, digits: 0)) s on this phone. Relative A/B only — not SPL, not a lab RTA.")
+            Text("\(Format.number(snap.durationSeconds, digits: 0)) s · \(listeningPurpose.title). Relative A/B only — not SPL, not a lab RTA. Score protocol not in this build.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(listeningPurpose.targetCurveNote)
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -563,6 +569,37 @@ struct SetupCheckView: View {
 
     private func testCopy(_ snap: RoomRigTestSnapshot) -> String {
         "\(snap.stimulus) \(Format.number(snap.durationSeconds, digits: 0)) s, \(Format.dbfs(snap.levelDBFS)), crest \(snap.crestDB.map { Format.number($0, digits: 1) } ?? "—") dB. Relative phone mic. Not SPL."
+    }
+
+    private var listeningPurpose: RoomRigListeningPurpose {
+        get { RoomRigListeningPurpose.parse(listeningPurposeRaw) }
+        nonmutating set { listeningPurposeRaw = newValue.rawValue }
+    }
+
+    private var listeningPurposeCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Listening purpose")
+                .font(Theme.TypeRole.fieldLabel)
+                .foregroundStyle(Theme.foreground)
+            Picker("Listening purpose", selection: $listeningPurposeRaw) {
+                ForEach(RoomRigListeningPurpose.allCases) { purpose in
+                    Text(purpose.title).tag(purpose.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Listening purpose")
+            Text(listeningPurpose.scoreTargetLabel)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.copper)
+            Text(listeningPurpose.targetCurveNote)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(RoomRigTestCopy.purposeHelp)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var baselineControls: some View {
@@ -711,6 +748,7 @@ struct SetupCheckView: View {
             liveFFTLength: RoomRigMath.liveFFTLength,
             bassFFTLength: spectrum.bassFFTLength > 0 ? spectrum.bassFFTLength : nil,
             windowKind: spectrum.windowKind.title,
+            listeningPurpose: listeningPurpose,
             isPhoneSpeakerDemo: stimulus != .listen
         )
     }
@@ -782,7 +820,7 @@ struct SetupCheckView: View {
     }
 
     private func retainMic() {
-        spectrum.retain(micToken, role: "Room & Rig Check")
+        spectrum.retain(micToken, role: "RigScope")
         if stimulus != .listen {
             spectrum.setStimulus(stimulus)
         }
@@ -813,6 +851,7 @@ struct SetupCheckView: View {
             notes: notes,
             inputs: [
                 "signal": stimulus.title,
+                "listeningPurpose": listeningPurpose.title,
                 "formula": "shared mic FFT, relative dBFS",
             ],
             outputs: [

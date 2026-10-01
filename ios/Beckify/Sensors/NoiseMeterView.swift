@@ -19,7 +19,7 @@ struct NoiseMeterView: View {
             toolID: .noiseMeter,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Spectrum bars are relative dBFS in the audible band, not calibrated dB SPL. Saving stores the numeric snapshot only — not a recording. Acoustic Imager and Room & Rig Check share this microphone tap.")
+            disclaimer: .sensor(extra: "Spectrum bars are relative dBFS in the audible band, not calibrated dB SPL. Saving stores the numeric snapshot only — not a recording. Acoustic Imager and RigScope share this microphone tap.")
         ) {
             ShowWorkCard(
                 toolID: .noiseMeter,

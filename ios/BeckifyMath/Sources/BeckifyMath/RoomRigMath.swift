@@ -53,7 +53,7 @@ public struct RoomRigFrameStats: Equatable, Sendable {
     }
 }
 
-/// What Room & Rig Check may play from the phone speaker while the shared mic tap listens.
+/// What RigScope may play from the phone speaker while the shared mic tap listens.
 public enum RoomRigStimulusKind: String, CaseIterable, Sendable {
     case listen
     case pink
@@ -70,7 +70,56 @@ public enum RoomRigStimulusKind: String, CaseIterable, Sendable {
     }
 }
 
-/// Room and rig helpers for Room & Rig Check.
+/// Listening purpose for RigScope. Persisted; future score targets (PR3) key off this.
+/// Notes are honest target-curve intent — not a scored protocol yet.
+public enum RoomRigListeningPurpose: String, CaseIterable, Sendable, Identifiable {
+    case music
+    case movies
+    case gaming
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .music: return "Music"
+        case .movies: return "Movies"
+        case .gaming: return "Gaming"
+        }
+    }
+
+    /// Short label for sticky / results. Not a score.
+    public var scoreTargetLabel: String {
+        switch self {
+        case .music: return "Music target (future score)"
+        case .movies: return "Movies target (future score)"
+        case .gaming: return "Gaming target (future score)"
+        }
+    }
+
+    /// Honest intended target-curve differences. Score protocol is not shipping in PR1.
+    public var targetCurveNote: String {
+        switch self {
+        case .music:
+            return "Music intent: relatively flat midband with controlled bass lift. Not a Harman or THX curve, and not scored yet."
+        case .movies:
+            return "Movies intent: dialogue clarity in the midrange, with room for LFE. Not a cinema X-curve, and not scored yet."
+        case .gaming:
+            return "Gaming intent: clear positional cues and attack transients over boom. Not a headset profile, and not scored yet."
+        }
+    }
+
+    public static func parse(_ raw: String) -> RoomRigListeningPurpose {
+        RoomRigListeningPurpose(rawValue: raw.lowercased()) ?? .music
+    }
+}
+
+public enum RoomRigDisplayName {
+    /// User-facing tool name. Tool ID stays `setupCheck` for Codable / deep links / saves.
+    public static let title = "RigScope"
+    public static let legacyTitles = ["Room & Rig Check", "Setup Check", "Room and Rig"]
+}
+
+/// RigScope (tool ID `setupCheck`) helpers.
 ///
 /// Every number here is relative to this phone’s speaker and microphone.
 /// It is not a calibrated measurement microphone, not REW, and not a THX certificate.
@@ -483,6 +532,8 @@ public enum RoomRigTestCopy {
     public static let signalAboveBackground = aboveFloor
     public static let baselineHelp =
         "Capture a quiet-room baseline explicitly. It invalidates if the audio route or input gain changes. Phone-speaker stimuli stay labeled demo."
+    public static let purposeHelp =
+        "Listening purpose sets future score targets (Music / Movies / Gaming). Notes below are intent only — the scored protocol is not in this build."
     public static let peakHz =
         "The strongest band during the pass. On pink noise, a peak that moves between seats is a relative tilt, not a certified room mode."
     public static let centroid =
@@ -633,6 +684,7 @@ public struct RoomRigPassMetadata: Equatable, Sendable {
     public var liveFFTLength: Int
     public var bassFFTLength: Int?
     public var windowKind: String
+    public var listeningPurpose: RoomRigListeningPurpose
     /// Phone speaker stimuli are demos, not calibrated generators.
     public var isPhoneSpeakerDemo: Bool
 
@@ -642,6 +694,7 @@ public struct RoomRigPassMetadata: Equatable, Sendable {
         liveFFTLength: Int = RoomRigMath.liveFFTLength,
         bassFFTLength: Int? = nil,
         windowKind: String,
+        listeningPurpose: RoomRigListeningPurpose = .music,
         isPhoneSpeakerDemo: Bool
     ) {
         self.stimulus = stimulus
@@ -649,6 +702,7 @@ public struct RoomRigPassMetadata: Equatable, Sendable {
         self.liveFFTLength = liveFFTLength
         self.bassFFTLength = bassFFTLength
         self.windowKind = windowKind
+        self.listeningPurpose = listeningPurpose
         self.isPhoneSpeakerDemo = isPhoneSpeakerDemo
     }
 
@@ -658,6 +712,7 @@ public struct RoomRigPassMetadata: Equatable, Sendable {
             && liveFFTLength == other.liveFFTLength
             && bassFFTLength == other.bassFFTLength
             && windowKind == other.windowKind
+            && listeningPurpose == other.listeningPurpose
             && isPhoneSpeakerDemo == other.isPhoneSpeakerDemo
     }
 }

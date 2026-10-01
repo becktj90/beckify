@@ -5,14 +5,14 @@ import os
 import SwiftUI
 import BeckifyMath
 
-/// One microphone tap for Noise Meter, Acoustic Imager, Stillness Anomaly Watch, and Room & Rig Check.
+/// One microphone tap for Noise Meter, Acoustic Imager, Stillness Anomaly Watch, and RigScope.
 ///
 /// A second screen that wants the mic joins this tap instead of installing another
 /// `AVAudioEngine` tap. Breath Flute calls `suspendForTone()` so a play-along
-/// tone does not fight the metering engine. Room & Rig Check plays pink noise, a log
+/// tone does not fight the metering engine. RigScope plays pink noise, a log
 /// sweep, or a tone burst on this same engine — it does not start a second FFT.
 ///
-/// # Measurement path (Setup Check PR1)
+/// # Measurement path (RigScope PR1)
 /// The audio tap only copies samples into a preallocated ring buffer and advances a
 /// sample counter. A serial DSP worker aggregates timestamped / sample-counted frames,
 /// runs the live FFT (and optional longer overlapping bass FFT), and publishes.
@@ -36,7 +36,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     @Published private(set) var channelBalance: Double?
     @Published private(set) var latencySeconds: Double?
     @Published private(set) var harmonicOrders: [RoomRigHarmonic] = []
-    /// Latest DSP-worker frame. Setup Check aggregates from `frameID`, not rms onChange.
+    /// Latest DSP-worker frame. RigScope aggregates from `frameID`, not rms onChange.
     @Published private(set) var latestFrame: RoomRigMeasurementFrame?
     @Published private(set) var frameID: UInt64 = 0
     @Published private(set) var totalSampleCount: UInt64 = 0

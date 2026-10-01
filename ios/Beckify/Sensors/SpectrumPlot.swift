@@ -13,7 +13,7 @@ struct SpectrumPlot: View {
     /// 0…1 from the bottom. A median or display floor, not a calibrated noise spec.
     var referenceHeight: Double?
     var peakIndex: Int?
-    /// Room & Rig Check opts in. The axis titles stay on every spectrum either way.
+    /// RigScope opts in. The axis titles stay on every spectrum either way.
     var showsRelativeDBFSScale: Bool
     var xAxis: PlotAxis
     var yAxis: PlotAxis
