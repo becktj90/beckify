@@ -36,7 +36,7 @@ The holes that still matter in the field are narrower:
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
-4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one plate: round for locking and IEC, rectangular for straight blade and household blade faces. Isolated ground and GFCI stay callouts. Short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
+4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one plate: round for locking and IEC, rectangular for straight blade and household blade faces. Isolated ground and GFCI stay callouts. Short-circuit current is one callout: available fault amps, kA when the fault is at least 1 kA, and the method line “Infinite-bus secondary. Isc = FLA × 100 / %Z.” None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
 
 Textbook ship-order items that are **not** Hold move to **P1**: ampacity derating stack (today a numbered list), harmonics bars, heater Δ/Y sketch, UPS runtime tank, load-worksheet bars, and a protection-side skin-depth / aperture sketch. **Conduit fill is Hold.** It already draws a to-scale bore, conductor circles, and fill percent against the Chapter 9 Table 1 allowance (including the nipple case). Do not put it on a rebuild wave.
@@ -120,7 +120,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Receptacle Selector | `receptacleSelector` | Jobsite | One face: round locking and IEC, rectangular straight blade and household blades. IEC clock on the round face. | Shipped | One faceplate. Pins from the catalog face. | Done | Schematic, not a photo. Isolated ground and GFCI stay callouts. Hazardous remains a flag. | `ReceptacleFaceView` |
 | Reactance & Resonance | `reactance` | Bench | Series: XL and/or XC vs f, marker at the entered f. Resonance: \|Z\| with f0 and Q bandwidth when R is set. | Shipped | One picture per mode. No phasor on this tool. | Done | Ideal lumped parts. Phasors & Impedance stays the phasor home. | `ReactanceSweepChart`, `ResonanceImpedanceChart` |
 | Power Factor Correction | `powerFactor` | Power & AC | One triangle, existing and target kVAR, fixed kW leg, bank µF label | Shipped | Before and after on the same kW leg. | Done | Reduce Motion shows both legs with no shrink. Stale inputs dim with the result card. | `PowerTriangleDiagram` |
-| Short-Circuit Current | `shortCircuit` | Jobsite | Small XFMR box, arrow, and “Isc (infinite bus)” caption | Partial | One callout: available fault amps, method named “infinite-bus secondary” | P0 | No gear AIC field. Do not draw a pass/fail against an interrupting rating the operator did not enter. | Replace `ShortCircuitDiagram` in place |
+| Short-Circuit Current | `shortCircuit` | Jobsite | One callout: available fault amps, kA at 1 kA and up, method “Infinite-bus secondary. Isc = FLA × 100 / %Z.” | Shipped | One callout. No AIC bar. | Done | No gear AIC field. The picture does not pass or fail an interrupting rating. | `ShortCircuitDiagram` |
 | Circular Mils | `circularMils` | Jobsite | Diameter and area as numbers | None | Optional circle scaled to diameter | P2 | Low impact | Cross-section kit, later |
 | Load & Demand Factors | `loadFactors` | Jobsite | Average / peak / capacity bars | Strong | Keep | Hold | Metered inputs, not a load study | `LoadFactorChart` |
 | Signal Scaling | `signalScaling` | Controls | 4–20 transfer curve, linear or square-root | Partial | Keep that curve as the one picture; mark the live milliamp and engineering unit on it | P1 | A separate gauge would be a second picture. Square-root stays on the curve. | `SignalScalingChart` |
@@ -187,7 +187,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 | Connection drawing | Shipped inside `TransformerView` (delta, wye, high-leg, corner, open delta). Three-phase has its own canvas. | Heater Δ/Y should call the same winding sketch, not a new one | — |
 | Run strip | Shipped as `VoltageDropDiagram`. Supply, one-way length, load, volt drop, informational 3% and 5% marks, preferred target. | Voltage drop | NEC circuit chip on the same strip |
 | Derating stack | Not shipped. The waterfall is a numbered list. | Wire ampacity | NEC circuit reads it; does not redraw it |
-| Callout card | Motor FLA plate shipped in `MotorFLAView`. Short-circuit is still a thin box. | Motor FLA | Short-circuit Isc, grounding size, regulator Pd |
+| Callout card | Motor FLA plate shipped in `MotorFLAView`. Short-circuit callout shipped as `ShortCircuitDiagram`: fault amps, kA when readable, method line. No AIC bar. | Motor FLA, short-circuit | Grounding size, regulator Pd |
 | Gauge / tank | Partial. Cellular arcs and the conduit fill bar exist. Wi-Fi gauge exists. | IS-loop worst margin; UPS tank | Rack headroom, e-bike range. Never a fake RF dBm arc. |
 | Discrete spectrum bars | Not shipped. `SpectrumPlot` is a microphone FFT with a dBFS scale. | Harmonics orders | Do not point entered harmonics at `SpectrumPlot` |
 | Faceplate | Shipped as `ReceptacleFaceView`. Round for locking and IEC. Rectangular for straight blade and household blade faces. | Receptacle family outline | — |
@@ -263,11 +263,11 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 7. Short-circuit callout — `shortCircuit`
 
-**Now.** `ShortCircuitDiagram` is a rounded “XFMR”, an arrow, the fault amps, and the caption “Isc (infinite bus)”. The scaffold disclaimer already says infinite-bus at the secondary terminals.
+**Now.** One `ShortCircuitDiagram` callout. Large available fault amps, and kA when the fault is at least 1 kA. The method line “Infinite-bus secondary. Isc = FLA × 100 / %Z.” is on the card. The scaffold disclaimer and Show Work still say infinite-bus secondary, motor contribution, X/R, and 110.9–110.10. Stale inputs dim the card with the result card. VoiceOver leads with the amps, then the method. No AIC bar and no pass or fail.
 
-**Target.** One callout, large amps and kA, method line “Infinite-bus secondary. Isc = FLA × 100 / %Z.” Keep the disclaimer. Do not add a gear-rating bar unless a later change adds an optional interrupting-rating **input**. A picture must not invent AIC.
+**Target.** Met on this screen. No gear-rating bar unless a later change adds an optional interrupting-rating input.
 
-**Files.** `FieldCalculatorViews.swift` (`ShortCircuitView`). `EngineeringDiagrams.swift` (`ShortCircuitDiagram`).
+**Files.** `FieldCalculatorViews.swift` (`ShortCircuitView`). `EngineeringDiagrams.swift` (`ShortCircuitDiagram`). Readout strings in `FieldCalcs.swift` (`ShortCircuitCallout`).
 
 **Done when.** The method is visible without opening Show Work, and there is still no pass/fail against equipment that was not entered.
 

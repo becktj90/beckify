@@ -221,6 +221,65 @@ public enum ShortCircuit {
     }
 }
 
+/// Readout for the short-circuit callout. Infinite-bus secondary only.
+/// This tool has no interrupting-rating input, so the card does not pass or fail gear AIC.
+public struct ShortCircuitCallout: Equatable, Sendable {
+    public var availableFaultAmps: Double
+
+    /// Visible on the result picture without opening Show Work.
+    public static let methodLine = "Infinite-bus secondary. Isc = FLA × 100 / %Z."
+
+    /// Kept from the previous diagram so the card does not drop the design-aid line.
+    public static let designAidLine = "Design aid — verify with utility data and interrupting ratings."
+
+    /// kA sits beside the amps once the fault reaches 1 kA. Below that, amps are the readable figure.
+    public static let kiloampFloorAmps: Double = 1_000
+
+    public init?(availableFaultAmps: Double) {
+        guard availableFaultAmps.isFinite, availableFaultAmps > 0 else { return nil }
+        self.availableFaultAmps = availableFaultAmps
+    }
+
+    public init?(result: ShortCircuitResult) {
+        self.init(availableFaultAmps: result.availableFaultAmps)
+    }
+
+    public var showsKiloamps: Bool { availableFaultAmps >= Self.kiloampFloorAmps }
+
+    /// Same rounding as the Available fault result row: grouped, no fraction digits.
+    public var faultAmpsLabel: String { "\(Self.grouped(availableFaultAmps, digits: 0)) A" }
+
+    /// Same rounding as the In kA result row. Always available so the row and the picture cannot drift.
+    public var kiloampsReadout: String { "\(Self.grouped(availableFaultAmps / 1000, digits: 2)) kA" }
+
+    /// Nil when kA is the less readable of the two figures.
+    public var kiloampsLabel: String? { showsKiloamps ? kiloampsReadout : nil }
+
+    /// VoiceOver. Fault amps first, kA when shown, then the method line. The canvas is not this string.
+    public var announcement: String {
+        var head = "\(faultAmpsLabel) available fault"
+        if let kiloampsLabel {
+            head += ". \(kiloampsLabel)"
+        }
+        return "\(head). \(Self.methodLine) \(Self.designAidLine)"
+    }
+
+    /// Matches `Format.number` in the Toolbox target: grouped decimal, fraction digits trimmed.
+    private static func grouped(_ value: Double, digits: Int) -> String {
+        guard value.isFinite else { return "—" }
+        let magnitude = abs(value)
+        if magnitude >= 1_000_000 { return String(format: "%.2e", value) }
+        if magnitude != 0 && magnitude < 0.001 { return String(format: "%.3e", value) }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = digits
+        formatter.usesGroupingSeparator = true
+        return formatter.string(from: NSNumber(value: value)) ?? "—"
+    }
+}
+
 // MARK: - Circular mils
 
 public enum CircularMils {

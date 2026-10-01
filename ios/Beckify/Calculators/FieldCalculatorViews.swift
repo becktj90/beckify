@@ -397,12 +397,12 @@ struct ShortCircuitView: View {
                 ErrorText(message: error.message)
             }
 
-            if let r = session.displayedResult {
-                ShortCircuitDiagram(faultAmps: r.availableFaultAmps)
+            if let r = session.displayedResult, let callout = ShortCircuitCallout(result: r) {
+                ShortCircuitDiagram(callout: callout)
                     .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: sticky) {
-                    ResultRow(label: "Available fault", value: "\(Format.number(r.availableFaultAmps, digits: 0)) A", emphasis: true, tone: Theme.bad)
-                    ResultRow(label: "In kA", value: "\(Format.number(r.availableFaultAmps / 1000, digits: 2)) kA", emphasis: true)
+                    ResultRow(label: "Available fault", value: callout.faultAmpsLabel, emphasis: true)
+                    ResultRow(label: "In kA", value: callout.kiloampsReadout, emphasis: true)
                     ResultRow(label: "Secondary FLA", value: Format.amps(r.fullLoadAmps))
                     ResultRow(label: "Multiplier", value: "×\(Format.number(r.multiplier, digits: 2))")
                 }
@@ -412,7 +412,7 @@ struct ShortCircuitView: View {
                         name: jobName,
                         toolID: .shortCircuit,
                         inputs: ["kVA": kva, "V": volts, "%Z": impedance, "system": system.displayName],
-                        outputs: ["ISC": "\(Format.number(r.availableFaultAmps, digits: 0)) A", "FLA": Format.amps(r.fullLoadAmps)]
+                        outputs: ["ISC": callout.faultAmpsLabel, "FLA": Format.amps(r.fullLoadAmps)]
                     ))
                 }
             }
@@ -445,13 +445,13 @@ struct ShortCircuitView: View {
     }
 
     private var substituted: String? {
-        guard let r = session.displayedResult else { return nil }
-        return "I_FLA = \(Format.amps(r.fullLoadAmps))    I_SC = \(Format.amps(r.fullLoadAmps)) × \(Format.number(r.multiplier, digits: 2)) = \(Format.number(r.availableFaultAmps, digits: 0)) A"
+        guard let r = session.displayedResult, let callout = ShortCircuitCallout(result: r) else { return nil }
+        return "I_FLA = \(Format.amps(r.fullLoadAmps))    I_SC = \(Format.amps(r.fullLoadAmps)) × \(Format.number(r.multiplier, digits: 2)) = \(callout.faultAmpsLabel)"
     }
 
     private var sticky: String? {
-        guard let r = session.displayedResult else { return nil }
-        return "\(Format.number(r.availableFaultAmps / 1000, digits: 2)) kA available"
+        guard let r = session.displayedResult, let callout = ShortCircuitCallout(result: r) else { return nil }
+        return "\(callout.kiloampsReadout) available"
     }
 }
 

@@ -151,6 +151,52 @@ final class ShortCircuitTests: XCTestCase {
             kVA: 500, secondaryVolts: 480, impedancePercent: 5, system: .dc
         ))
     }
+
+    func testCalloutMatchesInfiniteBusRows() throws {
+        let result = try ShortCircuit.transformerSecondary(
+            kVA: 500,
+            secondaryVolts: 480,
+            impedancePercent: 5
+        )
+        let callout = try XCTUnwrap(ShortCircuitCallout(result: result))
+        XCTAssertEqual(callout.faultAmpsLabel, "12,028 A")
+        XCTAssertEqual(callout.kiloampsReadout, "12.03 kA")
+        XCTAssertEqual(callout.kiloampsLabel, "12.03 kA")
+        XCTAssertEqual(callout.showsKiloamps, true)
+        XCTAssertEqual(ShortCircuitCallout.methodLine, "Infinite-bus secondary. Isc = FLA × 100 / %Z.")
+        XCTAssertEqual(
+            callout.announcement,
+            "12,028 A available fault. 12.03 kA. Infinite-bus secondary. Isc = FLA × 100 / %Z. Design aid — verify with utility data and interrupting ratings."
+        )
+        XCTAssertEqual(callout.announcement.first?.isNumber, true)
+        XCTAssertTrue(callout.announcement.hasPrefix(callout.faultAmpsLabel))
+        XCTAssertTrue(callout.announcement.contains(ShortCircuitCallout.methodLine))
+        XCTAssertNil(callout.announcement.range(of: #"\b(pass|fail|AIC)\b"#, options: .regularExpression))
+    }
+
+    func testCalloutHidesKiloampsBelowOneKiloamp() throws {
+        let result = try ShortCircuit.transformerSecondary(
+            kVA: 15,
+            secondaryVolts: 480,
+            impedancePercent: 5
+        )
+        let callout = try XCTUnwrap(ShortCircuitCallout(result: result))
+        XCTAssertLessThan(result.availableFaultAmps, ShortCircuitCallout.kiloampFloorAmps)
+        XCTAssertEqual(callout.faultAmpsLabel, "361 A")
+        XCTAssertEqual(callout.kiloampsReadout, "0.36 kA")
+        XCTAssertNil(callout.kiloampsLabel)
+        XCTAssertFalse(callout.showsKiloamps)
+        XCTAssertTrue(callout.announcement.hasPrefix("361 A"))
+        XCTAssertFalse(callout.announcement.contains("kA"))
+        XCTAssertTrue(callout.announcement.contains(ShortCircuitCallout.methodLine))
+    }
+
+    func testCalloutRejectsNonPositiveFault() {
+        XCTAssertNil(ShortCircuitCallout(availableFaultAmps: 0))
+        XCTAssertNil(ShortCircuitCallout(availableFaultAmps: -12))
+        XCTAssertNil(ShortCircuitCallout(availableFaultAmps: .nan))
+        XCTAssertEqual(ShortCircuitCallout(availableFaultAmps: 1_000)?.kiloampsLabel, "1 kA")
+    }
 }
 
 final class CircularMilsTests: XCTestCase {
