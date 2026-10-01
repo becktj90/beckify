@@ -496,6 +496,9 @@ struct ReceptacleFaceCard: View {
                 }
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(match.config.faceVoiceOver)
+        .accessibilityIdentifier("receptacle.face")
     }
 
     private var legend: [(kind: ContactKind, label: String, color: Color)] {
@@ -518,11 +521,11 @@ struct ReceptacleFaceView: View {
             let cy = size.height / 2
             let r = s * 0.38
 
-            let face = Path(ellipseIn: CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2))
+            let face = facePath(cx: cx, cy: cy, radius: r)
             context.fill(face, with: .color(Color.white.opacity(0.06)))
             context.stroke(face, with: .color(Theme.border), lineWidth: 2)
 
-            if diagram.keywayAtSix {
+            if diagram.outline == .round, diagram.keywayAtSix {
                 var key = Path()
                 let kw = r * 0.16
                 key.addRect(CGRect(x: cx - kw / 2, y: cy + r - 4, width: kw, height: 14))
@@ -538,7 +541,20 @@ struct ReceptacleFaceView: View {
                 drawPin(pin, context: &context, cx: cx, cy: cy, radius: r)
             }
         }
-        .accessibilityLabel(diagram.caption)
+        .accessibilityHidden(true)
+    }
+
+    /// Same pin field as before. Only the plate outline changes with the family.
+    private func facePath(cx: CGFloat, cy: CGFloat, radius: CGFloat) -> Path {
+        switch diagram.outline {
+        case .round:
+            return Path(ellipseIn: CGRect(x: cx - radius, y: cy - radius, width: radius * 2, height: radius * 2))
+        case .rectangular:
+            let width = radius * 1.92
+            let height = radius * 2.28
+            let rect = CGRect(x: cx - width / 2, y: cy - height / 2, width: width, height: height)
+            return Path(roundedRect: rect, cornerRadius: radius * 0.14)
+        }
     }
 
     private func drawClock(context: inout GraphicsContext, cx: CGFloat, cy: CGFloat, radius: CGFloat) {

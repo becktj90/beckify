@@ -312,4 +312,85 @@ final class ReceptacleSelectorTests: XCTestCase {
         let earth = face.pins.first { $0.kind == .ground }
         XCTAssertEqual(earth?.clockAngle, 210)
     }
+
+    func testFaceOutlineFollowsFamily() throws {
+        XCTAssertEqual(ReceptacleFaces.nema5_15().outline, .rectangular)
+        XCTAssertEqual(ReceptacleFaces.nema6_20().outline, .rectangular)
+        XCTAssertEqual(ReceptacleFaces.nema14().outline, .rectangular)
+        XCTAssertEqual(ReceptacleFaces.nema15().outline, .rectangular)
+        XCTAssertEqual(ReceptacleFaces.locking(wires: 3, hasNeutral: true, hasThirdHot: false).outline, .round)
+        XCTAssertEqual(ReceptacleFaces.iec(poles: .twoPlusE, hour: 4).outline, .round)
+        XCTAssertEqual(ReceptacleFaces.meltric(hasNeutral: false, hots: 3).outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdBS1363().outline, .rectangular)
+        XCTAssertEqual(ReceptacleFaces.householdTypeI().outline, .rectangular)
+        XCTAssertEqual(ReceptacleFaces.householdTypeC().outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdSchuko().outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdTypeE().outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdTypeJ().outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdTypeK().outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdTypeL().outline, .round)
+        XCTAssertEqual(ReceptacleFaces.householdTypeM().outline, .round)
+
+        let straight = try ReceptacleSelector.select(
+            ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 15, family: .straight)
+        )
+        let locking = try ReceptacleSelector.select(
+            ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 15, family: .locking)
+        )
+        XCTAssertEqual(straight[0].config.face.outline, .rectangular)
+        XCTAssertEqual(locking[0].config.face.outline, .round)
+        XCTAssertEqual(straight[0].config.face.caption, ReceptacleFaces.nema5_15().caption)
+        XCTAssertNotEqual(straight[0].config.face.caption, locking[0].config.face.caption)
+    }
+
+    func testFaceVoiceOverLeadsWithIdentityAndKeepsCaption() throws {
+        let matches = try ReceptacleSelector.select(
+            ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 15, family: .straight)
+        )
+        let config = matches[0].config
+        let spoken = config.faceVoiceOver
+        XCTAssertTrue(spoken.hasPrefix("5-15R, 15 A, 125 V, 2P3W. "))
+        XCTAssertTrue(spoken.hasSuffix(config.face.caption))
+        let captionAt = try XCTUnwrap(spoken.range(of: config.face.caption)?.lowerBound)
+        let ampsAt = try XCTUnwrap(spoken.range(of: "15 A")?.lowerBound)
+        XCTAssertLessThan(ampsAt, captionAt)
+
+        let iec = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 480,
+                phase: .threePhase,
+                amps: 30,
+                family: .iecPinSleeve,
+                neutral: .none
+            )
+        )
+        let iecSpoken = iec[0].config.faceVoiceOver
+        XCTAssertTrue(iecSpoken.hasPrefix(iec[0].config.code))
+        XCTAssertTrue(iecSpoken.contains("7 h earth"))
+        XCTAssertTrue(iecSpoken.hasSuffix(iec[0].config.face.caption))
+        XCTAssertEqual(iec[0].config.face.outline, .round)
+    }
+
+    func testIsolatedGroundAndGFCIStayCalloutsOnTheSameFace() throws {
+        let plain = try ReceptacleSelector.select(
+            ReceptacleQuery(volts: 120, phase: .singlePhase2Wire, amps: 15, family: .straight)
+        )
+        let calledOut = try ReceptacleSelector.select(
+            ReceptacleQuery(
+                volts: 120,
+                phase: .singlePhase2Wire,
+                amps: 15,
+                family: .straight,
+                isolatedGround: true,
+                preferGFCI: true
+            )
+        )
+        XCTAssertEqual(plain[0].config.id, calledOut[0].config.id)
+        XCTAssertEqual(plain[0].config.face, calledOut[0].config.face)
+        XCTAssertEqual(plain[0].config.face.caption, calledOut[0].config.face.caption)
+        XCTAssertEqual(plain[0].config.face.outline, calledOut[0].config.face.outline)
+        XCTAssertEqual(plain[0].config.faceVoiceOver, calledOut[0].config.faceVoiceOver)
+        XCTAssertTrue(calledOut[0].catalog.contains { $0.partNumber == "IG5262" })
+        XCTAssertTrue(calledOut[0].caveats.contains { $0.localizedCaseInsensitiveContains("GFCI") })
+    }
 }
