@@ -13,73 +13,85 @@ struct LabMathView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    @ViewBuilder
-    private func node(_ math: LabMath, size: CGFloat, wrap: Bool) -> some View {
+    /// Recursive builders return `AnyView` so Archive can type-check the mutual
+    /// calls (`node` ↔ `fraction` / `radical` / `script` / `delimited`) without an
+    /// opaque `some View` cycle.
+    private func node(_ math: LabMath, size: CGFloat, wrap: Bool) -> AnyView {
         switch math {
         case .row(let items):
             if wrap {
-                MathFlow(spacing: size * 0.12, lineSpacing: size * 0.22) {
-                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                        node(item, size: size, wrap: false)
+                return AnyView(
+                    MathFlow(spacing: size * 0.12, lineSpacing: size * 0.22) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                            node(item, size: size, wrap: false)
+                        }
                     }
-                }
+                )
             } else {
-                HStack(alignment: .center, spacing: size * 0.04) {
-                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                        node(item, size: size, wrap: false)
+                return AnyView(
+                    HStack(alignment: .center, spacing: size * 0.04) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                            node(item, size: size, wrap: false)
+                        }
                     }
-                }
-                .fixedSize()
+                    .fixedSize()
+                )
             }
         case .fraction(let numerator, let denominator):
-            fraction(numerator, denominator, size: size)
+            return fraction(numerator, denominator, size: size)
         case .radical(let body):
-            radical(body, size: size)
+            return radical(body, size: size)
         case .glyph(let text, let face):
-            Text(text)
-                .font(faceFont(size: size, face: face))
-                .padding(.horizontal, horizontalPad(face, size: size))
-                .fixedSize()
+            return AnyView(
+                Text(text)
+                    .font(faceFont(size: size, face: face))
+                    .padding(.horizontal, horizontalPad(face, size: size))
+                    .fixedSize()
+            )
         case .script(let base, let sub, let sup):
-            script(base, sub: sub, sup: sup, size: size)
+            return script(base, sub: sub, sup: sup, size: size)
         case .delimited(let body, let open, let close):
-            delimited(body, open: open, close: close, size: size)
+            return delimited(body, open: open, close: close, size: size)
         }
     }
 
-    private func fraction(_ numerator: LabMath, _ denominator: LabMath, size: CGFloat) -> some View {
+    private func fraction(_ numerator: LabMath, _ denominator: LabMath, size: CGFloat) -> AnyView {
         let child = size * 0.86
-        return VStack(spacing: max(2, size * 0.16)) {
-            node(numerator, size: child, wrap: false)
-            node(denominator, size: child, wrap: false)
-        }
-        .fixedSize()
-        .overlay {
-            Rectangle()
-                .fill(Theme.foreground)
-                .frame(height: max(1, size * 0.06))
-        }
-        .accessibilityElement(children: .ignore)
+        return AnyView(
+            VStack(spacing: max(2, size * 0.16)) {
+                node(numerator, size: child, wrap: false)
+                node(denominator, size: child, wrap: false)
+            }
+            .fixedSize()
+            .overlay {
+                Rectangle()
+                    .fill(Theme.foreground)
+                    .frame(height: max(1, size * 0.06))
+            }
+            .accessibilityElement(children: .ignore)
+        )
     }
 
-    private func radical(_ body: LabMath, size: CGFloat) -> some View {
+    private func radical(_ body: LabMath, size: CGFloat) -> AnyView {
         let tall = body.fractionCount > 0
-        return HStack(alignment: .center, spacing: 0) {
-            Text("√")
-                .font(faceFont(size: size * (tall ? 1.65 : 1.2), face: .upright))
-            node(body, size: size * 0.92, wrap: false)
-                .padding(.horizontal, size * 0.12)
-                .padding(.top, size * 0.08)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Theme.foreground)
-                        .frame(height: max(1, size * 0.06))
-                }
-        }
-        .fixedSize()
+        return AnyView(
+            HStack(alignment: .center, spacing: 0) {
+                Text("√")
+                    .font(faceFont(size: size * (tall ? 1.65 : 1.2), face: .upright))
+                node(body, size: size * 0.92, wrap: false)
+                    .padding(.horizontal, size * 0.12)
+                    .padding(.top, size * 0.08)
+                    .overlay(alignment: .top) {
+                        Rectangle()
+                            .fill(Theme.foreground)
+                            .frame(height: max(1, size * 0.06))
+                    }
+            }
+            .fixedSize()
+        )
     }
 
-    private func script(_ base: LabMath, sub: LabMath?, sup: LabMath?, size: CGFloat) -> some View {
+    private func script(_ base: LabMath, sub: LabMath?, sup: LabMath?, size: CGFloat) -> AnyView {
         let scriptSize = size * 0.62
         // Padding on the base (not offset) so the subscript hangs below the line
         // and the layout still reserves the space.
@@ -89,32 +101,36 @@ struct LabMathView: View {
             if sup != nil { return scriptSize * 0.95 }
             return 0
         }()
-        return HStack(alignment: .bottom, spacing: 0) {
-            node(base, size: size, wrap: false)
-                .padding(.bottom, bottomPad)
-            VStack(alignment: .leading, spacing: 0) {
-                if let sup {
-                    node(sup, size: scriptSize, wrap: false)
-                }
-                if let sub {
-                    node(sub, size: scriptSize, wrap: false)
+        return AnyView(
+            HStack(alignment: .bottom, spacing: 0) {
+                node(base, size: size, wrap: false)
+                    .padding(.bottom, bottomPad)
+                VStack(alignment: .leading, spacing: 0) {
+                    if let sup {
+                        node(sup, size: scriptSize, wrap: false)
+                    }
+                    if let sub {
+                        node(sub, size: scriptSize, wrap: false)
+                    }
                 }
             }
-        }
-        .fixedSize()
+            .fixedSize()
+        )
     }
 
-    private func delimited(_ body: LabMath, open: String, close: String, size: CGFloat) -> some View {
+    private func delimited(_ body: LabMath, open: String, close: String, size: CGFloat) -> AnyView {
         let tall = body.fractionCount > 0
         let paren = size * (tall ? 1.9 : 1.05)
-        return HStack(alignment: .center, spacing: 1) {
-            Text(open)
-                .font(faceFont(size: paren, face: .upright))
-            node(body, size: size, wrap: false)
-            Text(close)
-                .font(faceFont(size: paren, face: .upright))
-        }
-        .fixedSize()
+        return AnyView(
+            HStack(alignment: .center, spacing: 1) {
+                Text(open)
+                    .font(faceFont(size: paren, face: .upright))
+                node(body, size: size, wrap: false)
+                Text(close)
+                    .font(faceFont(size: paren, face: .upright))
+            }
+            .fixedSize()
+        )
     }
 
     private func faceFont(size: CGFloat, face: LabMathFace) -> Font {
