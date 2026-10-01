@@ -341,16 +341,6 @@ public enum ToolHowItWorksCatalog {
                 "If user acceleration crosses the bump gate, the row is “phone moved” and is not an anomaly.",
             ]
         ),
-        "breathFlute": ToolHowItWorks(
-            summary: "Immersive play relic flute. Hold holes to change pitch while you blow. Warm quena-like tone. Silent until you blow.",
-            context: "Opens straight to the instrument. Soft breathy attack when you blow lightly. Honesty copy stays behind the info button.",
-            bullets: [
-                "Press-and-hold holes retune immediately while blowing. Each hole is a distinct pitch. Holes alone stay silent.",
-                "Quiet-air calibration and a tight blow gate keep ambient mic noise from starting a tone by itself.",
-                "Warm Peruvian quena-style tone on device — breathy, airy harmonics. Not a calibrated wind instrument.",
-                "Audio is not recorded and is not uploaded. Same mic permission as Noise Meter.",
-            ]
-        ),
         "coupledVibration": ToolHowItWorks(
             summary: "User-acceleration RMS and a short spectrum while the phone is pressed to a machine or duct, with session A/B compare.",
             context: "A relative signature of this phone on a surface. Not a vibration analyzer.",
@@ -809,9 +799,9 @@ public enum ToolHowItWorksCatalog {
             summary: "Record English or Spanish, translate the other way with Beckify AI (Clean or Jobsite), and play it loud — or fall back to on-device Apple Translation.",
             context: "Toolkit → Reference. Field helper — not a certified interpreter.",
             bullets: [
-                "Direction persists. English → Spanish hears English. Spanish → English hears Spanish (es-US, then es-MX / es). Audio stays local; /api/translate runs on Stop or Translate.",
-                "Clean or Jobsite mode (persisted). Hey! is English → Spanish only. Chips and Test follow the direction. API down → on-device Apple Translation (iOS 18+) in the same direction.",
-                "Playback POSTs short Spanish or English to /api/speak (OpenAI neural TTS; voice follows mode). Apple AVSpeech is the fallback. Max speaker volume.",
+                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish (es-US→es-MX/es). Audio local; translate on Stop.",
+                "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → on-device Apple Translation (iOS 18+).",
+                "Speak uses /api/speak (neural TTS). Spanish → English is California surfer-stoner English (onyx). Preparing audio… until play; AVSpeech fallback.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

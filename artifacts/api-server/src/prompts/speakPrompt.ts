@@ -29,15 +29,29 @@ export function speakVoiceMode(raw: unknown): TranslateVoiceMode {
   return normalizeTranslateVoiceMode(raw);
 }
 
-export function speakDefaultVoiceForMode(mode: TranslateVoiceMode): string {
+/** Male lower voice for Spanish → English (California surfer-stoner path). */
+export const SPEAK_EN_VOICE = "onyx";
+
+/**
+ * Spanish delivery still follows Clean (nova) / Jobsite (onyx).
+ * English delivery always uses the male surfer voice (`onyx`) — not nova.
+ */
+export function speakDefaultVoiceForMode(
+  mode: TranslateVoiceMode,
+  language: "en" | "es" = "es",
+): string {
+  if (language === "en") return SPEAK_EN_VOICE;
   return mode === "clean" ? SPEAK_CLEAN_VOICE : SPEAK_DEFAULT_VOICE;
 }
 
-/** Loud field English. Do not force a Spanish accent onto English words. */
-export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Speak clear field English, loud enough for a noisy jobsite. General American English. Blunt coworker energy: direct, projected, intelligible over site noise. Deliver swearing that is already in the text; do not add words, do not beep, and do not invent slurs or hate speech. Not a cartoon, not a whisper, not a Spanish accent laid over English. Pace stays a touch slower than a shout so the words land.`;
+/**
+ * Chill California surfer-stoner guy English for Spanish → English.
+ * Not corporate California. Not a cartoon parody. Still clear.
+ */
+export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Speak like a chill California surfer-stoner guy — laid-back West Coast male, SoCal beach cadence, relaxed and a little stoney, but still clear and understandable on a jobsite. Deep male voice energy. Think sandy parking lot after a session, not a tech-campus corporate California accent, not Midwestern, not Southern, not New York, not British. Easygoing and mellow; do not rush. Deliver swearing that is already in the text; do not add words, do not beep, and do not invent slurs or hate speech. Not a cartoon surfer parody, not Spicoli overacting, not a whisper, not a Spanish accent laid over English. Words stay intelligible — chill, not mushy.`;
 
-/** Clear polished English. Do not force a Spanish accent onto English words. */
-export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `Speak clear polished English. General American English. Warm, easy to hear, and unhurried, with enough projection for a room. Do not add swearing. Do not invent slurs. Not a cartoon, not a whisper, not a Spanish accent laid over English.`;
+/** Same California surfer-stoner male for Clean mode English; a touch softer, still not corporate. */
+export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `Speak like a chill California surfer-stoner guy — laid-back West Coast male, SoCal beach cadence, relaxed and a little stoney, warm and easy. Deep male voice energy. Not a tech-campus corporate California accent, not Midwestern, not Southern, not New York, not British. Soft projection for a room. Do not add swearing. Do not invent slurs. Not a cartoon surfer parody, not Spicoli overacting, not a whisper, not a Spanish accent laid over English. Stay clear and understandable while keeping that mellow surfer vibe.`;
 
 /** `en` / `en-*` selects English delivery. Anything else, including omitted, stays Spanish. */
 export function normalizeSpeakLanguage(raw: unknown): "en" | "es" {

@@ -400,6 +400,18 @@ struct SpanishTranslatorView: View {
 
     private var speakCard: some View {
         ResultCard(title: "Loud playback", copyText: engine.voiceNote) {
+            if engine.isPreparingSpeak {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text(SpanishTranslatorAPI.preparingAudioStatus)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(SpanishTranslatorAPI.preparingAudioStatus)
+                .accessibilityIdentifier("spanishTranslator.preparingAudio")
+            }
             Text(SpanishTranslatorAPI.playbackHelp(direction: direction))
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
@@ -566,6 +578,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     @Published var dialectLabel = ""
     @Published var engineLabel = ""
     @Published var voiceNote = ""
+    /// True from speak start until first audio plays (or error / cancel).
+    @Published var isPreparingSpeak = false
     @Published var errorMessage: String?
     @Published var statusLabel = "Ready"
     /// Incremented to ask the view for an on-device TranslationSession pass.
@@ -590,6 +604,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private var pendingToken = ""
     private var lastSuccessStatus = ""
     private var speakGeneration: UInt64 = 0
+    private var speakTask: Task<Void, Never>?
     private var lastTTSModel = "gpt-4o-mini-tts"
     private var lastTTSVoice = "onyx"
     private var lastAPIError: String?
@@ -776,6 +791,9 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
     func stopSpeaking() {
         speakGeneration &+= 1
+        speakTask?.cancel()
+        speakTask = nil
+        isPreparingSpeak = false
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
@@ -1008,41 +1026,50 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private func speakResult(_ text: String) {
         let trimmed = SpanishTranslatorAPI.clampSpeakText(text)
         guard !trimmed.isEmpty else { return }
-        // stopSpeaking bumps speakGeneration so in-flight fetches are ignored.
+        // stopSpeaking bumps speakGeneration and cancels any in-flight fetch.
         stopSpeaking()
         let generation = speakGeneration
         phase = .speaking
-        statusLabel = "Speaking…"
-        voiceNote = "Fetching neural TTS…"
+        isPreparingSpeak = true
+        statusLabel = SpanishTranslatorAPI.preparingAudioStatus
+        voiceNote = SpanishTranslatorAPI.preparingAudioStatus
 
-        Task {
+        speakTask = Task { [weak self] in
+            guard let self else { return }
             do {
-                let mode = voiceMode
-                let speakLanguage = direction.speakLanguage
+                let mode = self.voiceMode
+                let speakLanguage = self.direction.speakLanguage
                 let result = try await Self.postSpeak(
                     text: trimmed,
-                    customEndpoint: pendingCustomEndpoint,
-                    token: pendingToken,
+                    customEndpoint: self.pendingCustomEndpoint,
+                    token: self.pendingToken,
                     voiceMode: mode,
                     language: speakLanguage
                 )
-                guard generation == speakGeneration else { return }
-                lastTTSModel = result.model ?? lastTTSModel
-                lastTTSVoice = result.voice ?? lastTTSVoice
-                try playNeuralAudio(result.data)
-                voiceNote = SpanishTranslatorAPI.neuralVoiceNote(
-                    model: lastTTSModel,
-                    voice: lastTTSVoice,
-                    voiceMode: mode
+                try Task.checkCancellation()
+                guard generation == self.speakGeneration else { return }
+                self.lastTTSModel = result.model ?? self.lastTTSModel
+                self.lastTTSVoice = result.voice ?? self.lastTTSVoice
+                try self.playNeuralAudio(result.data)
+                self.isPreparingSpeak = false
+                self.voiceNote = SpanishTranslatorAPI.neuralVoiceNote(
+                    model: self.lastTTSModel,
+                    voice: self.lastTTSVoice,
+                    voiceMode: mode,
+                    language: speakLanguage
                 )
+            } catch is CancellationError {
+                guard generation == self.speakGeneration else { return }
+                self.isPreparingSpeak = false
             } catch {
-                guard generation == speakGeneration else { return }
+                guard generation == self.speakGeneration else { return }
+                self.isPreparingSpeak = false
                 // Soft note only — translation already succeeded.
                 let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 if !detail.isEmpty {
-                    errorMessage = "Neural TTS unavailable — Apple voice. (\(detail))"
+                    self.errorMessage = "Neural TTS unavailable — Apple voice. (\(detail))"
                 }
-                speakWithAppleFallback(trimmed)
+                self.speakWithAppleFallback(trimmed)
             }
         }
     }
@@ -1052,10 +1079,12 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let player = try AVAudioPlayer(data: data)
         player.delegate = self
         player.volume = 1.0
+        // Decode ASAP so play() can start on the first buffer.
         player.prepareToPlay()
         audioPlayer = player
         phase = .speaking
         statusLabel = "Speaking"
+        isPreparingSpeak = false
         guard player.play() else {
             throw VisionHTTPError(status: 0, message: "AVAudioPlayer failed to start.")
         }
@@ -1072,11 +1101,13 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * SpanishTranslatorAPI.jobsiteSpeechRateFactor
         // Slightly lower pitch reads a bit deeper / thicker on many Apple voices.
         utterance.pitchMultiplier = SpanishTranslatorAPI.jobsitePitchMultiplier
-        utterance.preUtteranceDelay = 0.05
+        // Start ASAP — no pre-delay while the user is already watching Preparing audio.
+        utterance.preUtteranceDelay = 0
         utterance.postUtteranceDelay = 0.08
 
         phase = .speaking
         statusLabel = "Speaking"
+        isPreparingSpeak = false
         synthesizer.speak(utterance)
     }
 
@@ -1175,6 +1206,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 extension SpanishTranslatorEngine: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
+            isPreparingSpeak = false
             if phase == .speaking {
                 phase = .idle
                 statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
@@ -1184,6 +1216,7 @@ extension SpanishTranslatorEngine: AVSpeechSynthesizerDelegate {
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         Task { @MainActor in
+            isPreparingSpeak = false
             if phase == .speaking {
                 phase = .idle
                 statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
@@ -1195,6 +1228,7 @@ extension SpanishTranslatorEngine: AVSpeechSynthesizerDelegate {
 extension SpanishTranslatorEngine: AVAudioPlayerDelegate {
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
+            isPreparingSpeak = false
             if phase == .speaking {
                 phase = .idle
                 statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus

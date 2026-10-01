@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   SPEAK_DEFAULT_MODEL,
   SPEAK_DEFAULT_VOICE,
+  SPEAK_EN_VOICE,
   SPEAK_MAX_INPUT_CHARS,
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
@@ -62,7 +63,7 @@ router.post("/speak", async (req, res) => {
 
   const voiceMode = speakVoiceMode(body.voiceMode ?? body.mode ?? body.style);
   const language = normalizeSpeakLanguage(body.language);
-  const voice = pickVoice(body.voice, voiceMode);
+  const voice = pickVoice(body.voice, voiceMode, language);
   const format = pickFormat(body.format);
   const model =
     (typeof body.model === "string" && body.model.trim()) ||
@@ -168,12 +169,24 @@ function pickText(body: SpeakBody): string {
   return "";
 }
 
-function pickVoice(raw: unknown, mode: ReturnType<typeof speakVoiceMode> = "jobsite"): string {
+function pickVoice(
+  raw: unknown,
+  mode: ReturnType<typeof speakVoiceMode> = "jobsite",
+  language: "en" | "es" = "es",
+): string {
+  if (language === "en") {
+    if (typeof raw === "string") {
+      const voice = raw.trim().toLowerCase();
+      // English surfer-stoner path is male. Ignore female-leaning Clean defaults (nova/shimmer).
+      if (ALLOWED_VOICES.has(voice) && voice !== "nova" && voice !== "shimmer") return voice;
+    }
+    return SPEAK_EN_VOICE;
+  }
   if (typeof raw === "string") {
     const voice = raw.trim().toLowerCase();
     if (ALLOWED_VOICES.has(voice)) return voice;
   }
-  return speakDefaultVoiceForMode(mode) || SPEAK_DEFAULT_VOICE;
+  return speakDefaultVoiceForMode(mode, language) || SPEAK_DEFAULT_VOICE;
 }
 
 function pickFormat(raw: unknown): "mp3" | "wav" {

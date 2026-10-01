@@ -473,7 +473,7 @@ final class FieldInstrumentMathTests: XCTestCase {
     }
 
     func testNewInstrumentsStayOffTheQuickRow() {
-        for id in ["stillnessWatch", "breathFlute", "coupledVibration"] {
+        for id in ["stillnessWatch", "coupledVibration"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .instruments, id)
             XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: id), .sensor, id)
@@ -481,9 +481,9 @@ final class FieldInstrumentMathTests: XCTestCase {
             let copy = ToolHowItWorksCatalog.copy(forToolID: id)
             XCTAssertNotNil(copy, id)
         }
-        let flute = ToolHowItWorksCatalog.copy(forToolID: "breathFlute")
-        XCTAssertTrue(flute?.summary.localizedCaseInsensitiveContains("play") == true)
-        XCTAssertTrue(flute?.bullets.contains { $0.localizedCaseInsensitiveContains("not recorded") } == true)
+        // Breath Flute removed from catalog / navigation (build 232). Math stays for unit tests.
+        XCTAssertNil(ToolHowItWorksCatalog.copy(forToolID: "breathFlute"))
+        XCTAssertFalse(ToolCalculationPolicy.knownToolIDs.contains("breathFlute"))
         let watch = ToolHowItWorksCatalog.copy(forToolID: "stillnessWatch")
         XCTAssertTrue(watch?.bullets.contains { $0.localizedCaseInsensitiveContains("ghost") } == true)
         XCTAssertTrue(watch?.bullets.contains { $0.localizedCaseInsensitiveContains("not occupancy") || $0.localizedCaseInsensitiveContains("not people") } == true)

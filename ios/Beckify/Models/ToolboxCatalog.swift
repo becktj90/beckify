@@ -583,14 +583,6 @@ enum ToolboxCatalog {
             synonyms: ["stillness", "anomaly", "baseline", "impulse", "advertisers", "pressure", "watch"]
         ),
         ToolDefinition(
-            id: .breathFlute,
-            kind: .sensor,
-            title: "Breath Flute",
-            subtitle: "Immersive relic flute. Hold holes, blow the bottom edge. Quena-like tone.",
-            symbol: "music.note",
-            synonyms: ["flute", "quena", "peruvian", "breath", "blow", "hold", "blow here", "bottom mic", "finger holes", "toy", "play", "pitch", "tone", "relic", "wood"]
-        ),
-        ToolDefinition(
             id: .coupledVibration,
             kind: .sensor,
             title: "Coupled Vibration",
@@ -1114,7 +1106,7 @@ enum ToolboxCatalog {
             .eBikeTorqueRPM, .eBikeSprocket, .eBikeRange, .eBikePackDesigner, .nickelStrip,
         ],
         .sensors: [
-            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .setupCheck, .breathFlute, .bubbleLevel,
+            .wifiStatus, .cellularStatus, .bluetoothScan, .noiseMeter, .acousticImager, .setupCheck, .bubbleLevel,
             .magnetometer, .barometer, .stillnessWatch, .motionSnapshot, .coupledVibration, .fieldPosition, .deviceHealth,
         ],
         .reference: [
@@ -1193,10 +1185,9 @@ enum ToolboxCatalog {
         .wifiStatus: [.cellularStatus, .bluetoothScan, .deviceHealth],
         .cellularStatus: [.wifiStatus, .rfLink, .bluetoothScan],
         .bluetoothScan: [.stillnessWatch, .wifiStatus, .cellularStatus],
-        .noiseMeter: [.setupCheck, .acousticImager, .breathFlute],
-        .acousticImager: [.setupCheck, .noiseMeter, .breathFlute],
-        .setupCheck: [.noiseMeter, .acousticImager, .breathFlute],
-        .breathFlute: [.noiseMeter, .acousticImager, .setupCheck],
+        .noiseMeter: [.setupCheck, .acousticImager],
+        .acousticImager: [.setupCheck, .noiseMeter],
+        .setupCheck: [.noiseMeter, .acousticImager],
         .bubbleLevel: [.motionSnapshot, .magnetometer, .solarDesign],
         .magnetometer: [.stillnessWatch, .bubbleLevel, .motionSnapshot],
         .barometer: [.stillnessWatch, .fieldPosition, .deviceHealth],
