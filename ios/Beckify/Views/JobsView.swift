@@ -61,7 +61,7 @@ struct JobsView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Field Notes")
+            .navigationTitle("Jobs")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     SettingsToolbarButton()

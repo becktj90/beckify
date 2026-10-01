@@ -149,7 +149,7 @@ final class ToolHomeAreaTests: XCTestCase {
         }
     }
 
-    func testFieldQuickStripIsJobsitePinnedSet() {
+    func testDefaultPinnedSeedsAreJobsiteSet() {
         XCTAssertEqual(
             ToolHomeAreaPolicy.fieldQuickIDs,
             ["voltageDrop", "wireAmpacity", "motorFLA", "receptacleSelector", "wifiStatus", "conduitFill"]

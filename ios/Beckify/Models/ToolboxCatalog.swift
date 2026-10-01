@@ -114,7 +114,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     /// Operator-facing shelf title. Raw values stay unchanged for merge stability.
     var displayName: String {
         switch self {
-        case .field: return "Field"
+        case .field: return "Jobsite"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .homework: return "Bench"
@@ -143,9 +143,9 @@ extension ToolHomeArea {
     var blurb: String {
         switch self {
         case .field:
-            return "Field calculators, wizards, and instruments."
+            return "Jobsite calcs and instruments."
         case .toolkit:
-            return "Basics, bench, and references."
+            return "Basics, bench, references."
         }
     }
 }
@@ -153,7 +153,7 @@ extension ToolHomeArea {
 extension ToolShelfKind {
     var title: String {
         switch self {
-        case .jobsite: return "Field"
+        case .jobsite: return "Jobsite"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .magnetics: return "Magnetics & Fields"
@@ -533,7 +533,7 @@ enum ToolboxCatalog {
             id: .setupCheck,
             kind: .sensor,
             title: "RigScope",
-            subtitle: "Relative listen test for Music, Movies, or Gaming. Not a lab mic.",
+            subtitle: "Speaker and room analysis.",
             symbol: "speaker.wave.2.fill",
             synonyms: [
                 "rigscope", "rig scope", "room & rig", "room and rig", "room & rig check",
@@ -541,6 +541,7 @@ enum ToolboxCatalog {
                 "room", "rig", "audiophile", "listening", "rta", "test",
                 "fft", "spectrogram", "pink noise", "sweep", "speaker",
                 "frequency response", "crest", "waterfall", "music", "movies", "gaming",
+                "speaker analysis", "room analysis",
             ]
         ),
         ToolDefinition(

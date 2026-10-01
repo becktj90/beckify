@@ -7,7 +7,9 @@ struct FavoritesView: View {
     @Environment(\.browseFieldHome) private var browseFieldHome
 
     private var tools: [ToolDefinition] {
-        ToolboxCatalog.tools.filter { favorites.isFavorite($0.id) }
+        favorites.orderedIDs.compactMap { id in
+            ToolboxCatalog.tools.first { $0.id == id }
+        }
     }
 
     var body: some View {
@@ -15,9 +17,9 @@ struct FavoritesView: View {
             Group {
                 if tools.isEmpty {
                     ContentUnavailableView {
-                        Label("No favorites yet", systemImage: "star")
+                        Label("No pinned tools yet", systemImage: "star")
                     } description: {
-                        Text("Star tools you use on the job so they show up here for one-tap access.")
+                        Text("Pin tools from a shelf or search — including Spanish Translator — for one-tap access here and on home.")
                     } actions: {
                         Button("Browse Field") {
                             browseFieldHome()
@@ -39,6 +41,7 @@ struct FavoritesView: View {
                         .onDelete { offsets in
                             for index in offsets { favorites.toggle(tools[index].id) }
                         }
+                        .onMove { favorites.move(from: $0, to: $1) }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)

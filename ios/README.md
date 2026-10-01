@@ -6,7 +6,7 @@ Three more App Store products live in the same Xcode project: **Look Check** (`c
 
 > **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive Toolbox with scheme **LookCheck** or **KestrelHeavy**. Those are separate ASC apps with their own Archive schemes. Keep Archive workflows separate. Kestrel Heavy is not a Toolbox catalog game; the website `/games/kestrel-heavy` stays.
 
-Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Quick** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
+Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Pinned** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
 **Settings** (gear on Toolbox, Favorites, and Saved Jobs) stores the electrical code, length units, and appearance on device. Default code is **NEC (US)**. **AS/NZS** is the other selectable code. IEC 60364, CEC, and BS 7671 are named and not selectable. Tools are not duplicated per code. Where AS/NZS tables are not in the app, the tool says **“AS/NZS not available for this tool yet — showing NEC”** and keeps the NEC result labeled as NEC. Appearance defaults to the system (light or dark). It does not force dark mode.
 
@@ -16,7 +16,7 @@ This is not a website wrapper. There is no `WKWebView` of beckify.com and no web
 
 Reusable tokens live in `Beckify/Theme/Theme.swift` (surfaces, semantic accents, spacing, radius, stroke, typography, chart colors, motion). Calculator chrome — identity header, Calculate / Reset / Example, stale-result banner, diagrams, and the shared **How it works** disclosure — lives under `Beckify/Views/Components/`. About copy is data-driven in `BeckifyMath` (`ToolHowItWorksCatalog`, keyed by ToolID) so a new tool cannot forget it. Field stays collapsed / inputs-first; bench tools default open like Show Work.
 
-Toolbox tiles draw the approved retro CRT set (`Assets.xcassets/Retro/<ToolID>`, original color, nearest-neighbor) through `IconWell` — grid, Quick strip, shelf cards, search, favorites, related tools, and the tool header. Vector `ToolGlyph` remains the fallback for hidden `powerWizard`, which has no shipped tile. Every live grid tool has one. Category shelf marks stay vector. SF Symbols stay on chrome.
+Toolbox tiles draw the approved retro CRT set (`Assets.xcassets/Retro/<ToolID>`, original color, nearest-neighbor) through `IconWell` — grid, Pinned strip, shelf cards, search, favorites, related tools, and the tool header. Vector `ToolGlyph` remains the fallback for hidden `powerWizard`, which has no shipped tile. Every live grid tool has one. Category shelf marks stay vector. SF Symbols stay on chrome.
 
 ### Calculation modes
 
@@ -44,9 +44,9 @@ ios/
 
 ## Field (jobsite — opens first)
 
-`ToolHomeAreaPolicy` owns home area + shelf. Toolbox home lists short shelf cards (Field, Power, Instruments, …) that open a dedicated grid — not one long root LazyVGrid — so Field/Toolkit browsing stays stable when scrolling, starring, searching, or returning from a tool. Field home (not while searching) still shows a Quick strip of pinned Field tools: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
+`ToolHomeAreaPolicy` owns home area + shelf. Toolbox home lists short shelf cards (Jobsite, Power, Instruments, …) that open a dedicated grid — not one long root LazyVGrid — so Field/Toolkit browsing stays stable when scrolling, starring, searching, or returning from a tool. Field home (not while searching) still shows a Pinned strip of pinned Field tools: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
-### Field
+### Jobsite
 
 - Voltage Drop. **NEC (default):** K-factor VD, parallels, target %, ampacity check, optional ampacity→VD handoff; 1Ø and 3Ø also show a NEC 2023 Table 250.122 EGC from the next standard OCPD. **AS/NZS:** metric mm² sizes, resistance-only drop from IEC 60228 maximum R (reactance omitted — not an AS/NZS 3008 mV/A·m table), AS/NZS 3000:2018 Clause 3.6.2’s 5% installation limit, and a copper earth from Table 5.1. Current-carrying capacity is not checked on the AS/NZS path. Design aid — not a PE or AEE stamp.
 - Conductor Cost Optimizer (compliant size × parallel-run ranking with a planning book $/kft, per-line or uniform overrides, and optional I²R energy — not a live quote). Opt-in Include recommended EGC adds one NEC 2023 Table 250.122 ground per run into first-cost and suggested EMT. Design aid.
