@@ -35,7 +35,7 @@ The holes that still matter in the field are narrower:
 
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
-3. **Power factor** draws the triangle after correction only.
+3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
 4. **Jobsite cluster:** voltage drop is a declining line without the 3% / 5% bands; Motor FLA is a table with no card; the receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
 
@@ -119,7 +119,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Device Health | `deviceHealth` | Instruments | Battery, thermal, storage, uptime rows | None | None | P2 | Diagnostics of this phone, not a plant meter | Battery fill only if it reuses the tank kit later |
 | Receptacle Selector | `receptacleSelector` | Jobsite | Schematic pinout on a circle, IEC clock ticks when relevant | Partial | One faceplate: round locking / IEC versus straight-blade outline, pins from the catalog face | P0 | Schematic of the configuration, not a photo of a listed device. Hazardous remains a flag. | `ReceptacleFaceView` |
 | Reactance & Resonance | `reactance` | Bench | Series: XL and/or XC vs f, marker at the entered f. Resonance: \|Z\| with f0 and Q bandwidth when R is set. | Shipped | One picture per mode. No phasor on this tool. | Done | Ideal lumped parts. Phasors & Impedance stays the phasor home. | `ReactanceSweepChart`, `ResonanceImpedanceChart` |
-| Power Factor Correction | `powerFactor` | Power & AC | Triangle of the corrected Q only (`title: "After correction"`) | Partial | One triangle that shows Q before and after; bank µF stays a number on that picture | P0 | Animate the shrink only when Reduce Motion is off. Real power stays the long leg. | `PowerTriangleDiagram` |
+| Power Factor Correction | `powerFactor` | Power & AC | One triangle, existing and target kVAR, fixed kW leg, bank µF label | Shipped | Before and after on the same kW leg. | Done | Reduce Motion shows both legs with no shrink. Stale inputs dim with the result card. | `PowerTriangleDiagram` |
 | Short-Circuit Current | `shortCircuit` | Jobsite | Small XFMR box, arrow, and “Isc (infinite bus)” caption | Partial | One callout: available fault amps, method named “infinite-bus secondary” | P0 | No gear AIC field. Do not draw a pass/fail against an interrupting rating the operator did not enter. | Replace `ShortCircuitDiagram` in place |
 | Circular Mils | `circularMils` | Jobsite | Diameter and area as numbers | None | Optional circle scaled to diameter | P2 | Low impact | Cross-section kit, later |
 | Load & Demand Factors | `loadFactors` | Jobsite | Average / peak / capacity bars | Strong | Keep | Hold | Metered inputs, not a load study | `LoadFactorChart` |
@@ -182,7 +182,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 | `LabeledPlotChrome` | Shipped. Tick labels, expand, optional inspect readout. | Phasor time waveform must use it as the scale, `inspection: .inspect`, readout in volts and seconds. | Harmonics bars, load-worksheet bars, any new line plot |
 | `EngineerLinePlot` | Shipped. Used by load line, sine, reactance sweep, Bode, control, diode, transients. | Reactance keeps `ReactanceSweepChart` / `ResonanceImpedanceChart`. | Do not fork a third line plot |
 | `DiagramCard` | Shipped frame, summary, export. | Every new picture | — |
-| `PowerTriangleDiagram` | Shipped. Single Q. | PF before/after (extend, do not copy) | Power tool AC result |
+| `PowerTriangleDiagram` | Shipped. Before/after Q on one kW leg. Single-Q mode remains. | Power factor correction | Power tool AC result |
 | Raceway cross-section | Shipped as `ConduitFillDiagram` | Nobody new in P0. It is finished. | Nickel strip and circular mils may share **geometry helpers** later. Do not generalize by rewriting conduit. |
 | Connection drawing | Shipped inside `TransformerView` (delta, wye, high-leg, corner, open delta). Three-phase has its own canvas. | Heater Δ/Y should call the same winding sketch, not a new one | — |
 | Run strip | Not shipped. `VoltageDropDiagram` is a polyline. | Voltage drop | NEC circuit chip on the same strip |
@@ -223,9 +223,9 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 3. Power factor correction — `powerFactor`
 
-**Now.** `PowerTriangleDiagram` runs only after a fresh calculate, and only for the corrected kVAR (`title: "After correction"`). Existing kVAR is a row.
+**Now.** One `PowerTriangleDiagram`. The long leg is kW at one length for the existing kVAR leg and the target kVAR leg. The target leg shrinks into place when Reduce Motion is off. Bank microfarads are a label. Stale inputs dim the picture with the result card.
 
-**Target.** One triangle. Long leg is kW. Show the existing kVAR leg and the target leg (or animate the shrink when Reduce Motion is off). Bank microfarads stay a label, not a second drawing. Stale inputs dim the picture the way the result card already dims.
+**Target.** Met on this screen. Both Q values stay visible, kW does not change length, and the caption does not claim a utility bill.
 
 **Files.** `FieldCalculatorViews.swift` (`PowerFactorView`). `EngineeringDiagrams.swift` (`PowerTriangleDiagram`).
 

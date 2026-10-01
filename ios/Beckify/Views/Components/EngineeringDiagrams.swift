@@ -155,23 +155,119 @@ private struct PowerTriangleLayout {
     }
 }
 
+/// Before/after legs in one drawing. kW is resolved once from the shared scale.
+private struct PowerFactorTriangleLayout {
+    let origin: CGPoint
+    let realLeg: CGFloat
+    let existingLeg: CGFloat
+    let targetLeg: CGFloat
+
+    init(size: CGSize, comparison: PowerTriangleComparison) {
+        let w: Double = Double(size.width)
+        let h: Double = Double(size.height)
+        let maxLeg: Double = min(w * 0.56, h * 0.52)
+        origin = CGPoint(x: CGFloat(w * 0.12), y: CGFloat(h * 0.72))
+        realLeg = CGFloat(comparison.realLeg * maxLeg)
+        existingLeg = CGFloat(comparison.existingReactiveLeg * maxLeg)
+        targetLeg = CGFloat(comparison.targetReactiveLeg * maxLeg)
+    }
+}
+
+/// Right triangle whose reactive leg can shrink. The real leg is not animatable.
+private struct RightTriangleShape: Shape {
+    var origin: CGPoint
+    var realLeg: CGFloat
+    var reactiveLeg: CGFloat
+
+    var animatableData: CGFloat {
+        get { reactiveLeg }
+        set { reactiveLeg = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: origin)
+        path.addLine(to: CGPoint(x: origin.x + realLeg, y: origin.y))
+        path.addLine(to: CGPoint(x: origin.x + realLeg, y: origin.y - reactiveLeg))
+        path.closeSubpath()
+        return path
+    }
+}
+
 struct PowerTriangleDiagram: View {
     let kw: Double
     let kvar: Double
     let kva: Double
     var title: String = "Power triangle"
+    var comparison: PowerTriangleComparison? = nil
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shrinkProgress: CGFloat = 0
+
+    init(kw: Double, kvar: Double, kva: Double, title: String = "Power triangle") {
+        self.kw = kw
+        self.kvar = kvar
+        self.kva = kva
+        self.title = title
+        self.comparison = nil
+    }
+
+    init(comparison: PowerTriangleComparison) {
+        self.kw = comparison.realPowerKW
+        self.kvar = comparison.targetKVAR
+        self.kva = comparison.scaleKVA
+        self.title = "Power triangle"
+        self.comparison = comparison
+    }
 
     private var summary: String {
-        "Power triangle. True \(Format.number(kw, digits: 2)) kW, reactive \(Format.number(kvar, digits: 2)) kVAR, apparent \(Format.number(kva, digits: 2)) kVA."
+        if let comparison {
+            return comparison.announcement
+        }
+        return "Power triangle. True \(Format.number(kw, digits: 2)) kW, reactive \(Format.number(kvar, digits: 2)) kVAR, apparent \(Format.number(kva, digits: 2)) kVA."
     }
 
     var body: some View {
+        if let comparison {
+            beforeAfter(comparison)
+        } else {
+            singleTriangle
+        }
+    }
+
+    private var singleTriangle: some View {
         DiagramCard(title: title, accessibilitySummary: summary) {
             EngineeringDiagramFrame(summary: summary) {
                 GeometryReader { geo in
                     triangle(PowerTriangleLayout(size: geo.size, kw: kw, kvar: kvar, kva: kva))
                 }
             }
+        }
+    }
+
+    private func beforeAfter(_ comparison: PowerTriangleComparison) -> some View {
+        DiagramCard(title: "Power triangle", accessibilitySummary: comparison.announcement) {
+            VStack(alignment: .leading, spacing: 6) {
+                EngineeringDiagramFrame(summary: comparison.announcement) {
+                    GeometryReader { geo in
+                        comparisonCanvas(
+                            PowerFactorTriangleLayout(size: geo.size, comparison: comparison),
+                            comparison: comparison
+                        )
+                    }
+                }
+                .frame(minHeight: 168)
+                if let caption = comparison.bankCaption {
+                    Text(caption)
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(Theme.foreground)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .onAppear(perform: playShrink)
+        .onChange(of: comparison) { _, _ in
+            replayShrink()
         }
     }
 
@@ -202,6 +298,74 @@ struct PowerTriangleDiagram: View {
             .font(.caption2.weight(.semibold))
             .foregroundStyle(Theme.accent2)
             .position(x: origin.x + p / 2 - 8, y: origin.y - q / 2 - 8)
+    }
+
+    private func comparisonCanvas(_ layout: PowerFactorTriangleLayout, comparison: PowerTriangleComparison) -> some View {
+        let moving: CGFloat = movingLeg(layout)
+        return ZStack {
+            RightTriangleShape(origin: layout.origin, realLeg: layout.realLeg, reactiveLeg: layout.existingLeg)
+                .stroke(Theme.warn, style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+            RightTriangleShape(origin: layout.origin, realLeg: layout.realLeg, reactiveLeg: moving)
+                .fill(Theme.good.opacity(0.16))
+            RightTriangleShape(origin: layout.origin, realLeg: layout.realLeg, reactiveLeg: moving)
+                .stroke(Theme.good, lineWidth: 2.5)
+            Path { path in
+                path.move(to: layout.origin)
+                path.addLine(to: CGPoint(x: layout.origin.x + layout.realLeg, y: layout.origin.y))
+            }
+            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            comparisonLabels(layout, comparison: comparison)
+        }
+    }
+
+    /// Reduce Motion draws the target leg in place. Otherwise the good triangle eases down from the existing leg.
+    private func movingLeg(_ layout: PowerFactorTriangleLayout) -> CGFloat {
+        if reduceMotion { return layout.targetLeg }
+        return layout.existingLeg + (layout.targetLeg - layout.existingLeg) * shrinkProgress
+    }
+
+    private func comparisonLabels(_ layout: PowerFactorTriangleLayout, comparison: PowerTriangleComparison) -> some View {
+        let origin: CGPoint = layout.origin
+        let real: CGFloat = layout.realLeg
+        let existing: CGFloat = layout.existingLeg
+        let target: CGFloat = layout.targetLeg
+        let crowded: Bool = abs(existing - target) < 26
+        return ZStack {
+            Text(comparison.realLabel)
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .position(x: origin.x + real / 2, y: origin.y + 14)
+            Text(comparison.existingLabel)
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.warn)
+                .position(x: origin.x + real + 46, y: origin.y - existing)
+            Text(comparison.targetLabel)
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.good)
+                .position(x: origin.x + real + (crowded ? -46 : 46), y: origin.y - target)
+        }
+    }
+
+    private func playShrink() {
+        guard !reduceMotion else {
+            shrinkProgress = 1
+            return
+        }
+        shrinkProgress = 0
+        withAnimation(.easeInOut(duration: 0.7)) {
+            shrinkProgress = 1
+        }
+    }
+
+    private func replayShrink() {
+        guard !reduceMotion else {
+            shrinkProgress = 1
+            return
+        }
+        shrinkProgress = 0
+        withAnimation(.easeInOut(duration: 0.7).delay(0.02)) {
+            shrinkProgress = 1
+        }
     }
 }
 
