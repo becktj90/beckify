@@ -200,7 +200,7 @@ extension LabSolve {
         return pack(
             .firstOrderFilter, headline: "fc = \(eng(fc)) Hz",
             elements: [
-                src("in", "Vin", sourceDetail, 16, 58, 16, 22),
+                src("in", "Vin", sourceDetail, 16, 58, 16, 22, flags: ac ? LabSourceSpeech.acSineFlag : 0),
                 wire("a", 16, 22, 40, 22),
                 low ? res("r", "R", eng(r) + " Ω", 40, 22, 64, 22) : cap("c", "C", eng(c) + " F", 40, 22, 64, 22),
                 wire("b", 64, 22, 64, 40),
@@ -298,7 +298,7 @@ extension LabSolve {
         return pack(
             .seriesRLC, headline: "f0 = \(eng(f0)) Hz",
             elements: [
-                src("vs", "Vs", sourceDetail, 14, 58, 14, 22),
+                src("vs", "Vs", sourceDetail, 14, 58, 14, 22, flags: ac ? LabSourceSpeech.acSineFlag : 0),
                 wire("a", 14, 22, 30, 22),
                 res("r", "R", eng(r) + " Ω", 30, 22, 48, 22),
                 ind("l", "L", eng(l) + " H", 48, 22, 68, 22),
@@ -376,7 +376,7 @@ extension LabSolve {
         let sourceName = ac ? "Vac" : "Vdc"
         let sourceDetail = ac ? eng(vrms) + " Vrms" : eng(vdcIn) + " Vdc"
         var elements: [LabElement] = [
-            src("ac", sourceName, sourceDetail, 14, 58, 14, 24),
+            src("ac", sourceName, sourceDetail, 14, 58, 14, 24, flags: ac ? LabSourceSpeech.acSineFlag : 0),
         ]
         if bridge {
             elements += [
@@ -505,7 +505,7 @@ extension LabSolve {
         return pack(
             .shuntClipper, headline: ac ? "Vout peak = \(eng(vout)) V" : "Vout = \(eng(vout)) V",
             elements: [
-                src("vs", sourceName, sourceDetail, 16, 60, 16, 22),
+                src("vs", sourceName, sourceDetail, 16, 60, 16, 22, flags: ac ? LabSourceSpeech.acSineFlag : 0),
                 wire("a", 16, 22, 40, 22),
                 res("r", "R", eng(r) + " Ω", 40, 22, 64, 22),
                 wire("b", 64, 22, 82, 22),
@@ -546,7 +546,7 @@ extension LabSolve {
         return pack(
             .clamper, headline: "Vmax = \(eng(vmax)) V",
             elements: [
-                src("vs", "Vp", eng(vp) + " Vpk", 16, 58, 16, 28),
+                src("vs", "Vp", eng(vp) + " Vpk", 16, 58, 16, 28, flags: LabSourceSpeech.acSineFlag),
                 wire("a", 16, 28, 36, 28),
                 cap("c", "C", "DC block", 36, 28, 58, 28),
                 wire("b", 58, 28, 84, 28),

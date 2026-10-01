@@ -14,6 +14,8 @@ struct NumberField: View {
     var errorMessage: String? = nil
     var helpText: String? = nil
     var fieldID: String? = nil
+    /// Spoken name when the visible title is a symbol such as Vrms or Vp.
+    var spokenLabel: String? = nil
     var onSubmit: (() -> Void)? = nil
     var lowConfidence: Bool = false
 
@@ -45,7 +47,7 @@ struct NumberField: View {
                     .submitLabel(onSubmit == nil ? .done : .go)
                     .onSubmit { onSubmit?() }
                     .formFieldFocus(fieldID ?? title)
-                    .accessibilityLabel(title)
+                    .accessibilityLabel(spokenLabel ?? title)
                     .accessibilityHint(accessibilityHint)
                     .accessibilityIdentifier(fieldID.map { "numberField.\($0)" } ?? "numberField.\(title)")
                 Text(unit)

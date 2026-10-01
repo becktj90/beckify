@@ -276,6 +276,16 @@ final class ElectronicsLabTests: XCTestCase {
         )
         XCTAssertEqual(acRect.quantity("vpk") ?? -1, 12 * sqrt(2) - 0.7, accuracy: 1e-9)
         XCTAssertEqual(acRect.quantity("ac") ?? -1, 1, accuracy: 0.1)
+        let acMark = try XCTUnwrap(acRect.elements.first { $0.part == .voltageSource })
+        XCTAssertEqual(acMark.flags, LabSourceSpeech.acSineFlag)
+        XCTAssertTrue(acMark.detail.contains("Vrms"))
+        let acSpoken = LabSourceSpeech.schematicSummary(acRect.elements)
+        XCTAssertTrue(acSpoken.contains("AC sine"))
+        XCTAssertTrue(acSpoken.contains("Vrms"))
+        XCTAssertEqual(
+            LabSourceSpeech.pairedAmplitude(id: "vrms", raw: "12"),
+            "Peak \(LabKit.eng(12 * sqrt(2))) volts, from \(LabKit.eng(12)) volts RMS"
+        )
 
         var five = ElectronicsLab.info(.halfWave).defaults
         five["vrms"] = "5"
@@ -290,6 +300,18 @@ final class ElectronicsLabTests: XCTestCase {
         XCTAssertEqual(dcRect.quantity("ripple") ?? -1, 0, accuracy: 1e-12)
         XCTAssertEqual(dcRect.quantity("ac") ?? -1, 0, accuracy: 0.1)
         XCTAssertNil(dcRect.quantity("vrms"))
+        let dcMark = try XCTUnwrap(dcRect.elements.first { $0.part == .voltageSource })
+        XCTAssertEqual(dcMark.flags, 0)
+        XCTAssertTrue(dcMark.detail.contains("Vdc"))
+        let dcSpoken = LabSourceSpeech.schematicSummary(dcRect.elements)
+        XCTAssertTrue(dcSpoken.contains("DC source"))
+        XCTAssertFalse(dcSpoken.contains("AC sine"))
+        let divider = try ElectronicsLab.solve(
+            .voltageDivider,
+            unknown: "vout",
+            inputs: ElectronicsLab.info(.voltageDivider).defaults
+        )
+        XCTAssertFalse(divider.elements.contains { $0.flags & LabSourceSpeech.acSineFlag != 0 })
         let dcBoard = try XCTUnwrap(BreadboardLayouts.make(dcRect))
         XCTAssertTrue(dcBoard.supplies.contains { $0.label.contains("Vdc") })
         XCTAssertThrowsError(try ElectronicsLab.solve(.halfWave, unknown: "c", inputs: dcRectInputs))
@@ -311,6 +333,8 @@ final class ElectronicsLabTests: XCTestCase {
         let lowDC = try ElectronicsLab.solve(.firstOrderFilter, unknown: "cutoff", inputs: filt)
         XCTAssertEqual(lowDC.node("out")?.value ?? -1, 5, accuracy: 1e-9)
         XCTAssertEqual(lowDC.branch("i")?.value ?? -1, 0, accuracy: 1e-12)
+        XCTAssertEqual(lowDC.elements.first { $0.part == .voltageSource }?.flags, 0)
+        XCTAssertTrue(LabSourceSpeech.schematicSummary(lowDC.elements).contains("Vdc"))
         filt["kind"] = "highpass"
         let highDC = try ElectronicsLab.solve(.firstOrderFilter, unknown: "cutoff", inputs: filt)
         XCTAssertEqual(highDC.node("out")?.value ?? -1, 0, accuracy: 1e-12)
@@ -325,6 +349,9 @@ final class ElectronicsLabTests: XCTestCase {
         let acLow = try ElectronicsLab.solve(.firstOrderFilter, unknown: "cutoff", inputs: acFilt)
         XCTAssertEqual(acLow.node("out")?.value ?? -1, 2 / sqrt(2), accuracy: 1e-6)
         XCTAssertEqual(acLow.io.expressionTeX, #"H(s) = \frac{1}{1 + sRC}"#)
+        XCTAssertEqual(acLow.elements.first { $0.part == .voltageSource }?.flags, LabSourceSpeech.acSineFlag)
+        XCTAssertTrue(LabSourceSpeech.schematicSummary(acLow.elements).contains("Vpk"))
+        XCTAssertTrue((LabSourceSpeech.pairedAmplitude(id: "vp", raw: "2") ?? "").contains("volts peak"))
 
         var rlc = ElectronicsLab.info(.seriesRLC).defaults
         rlc["source"] = "dc"
