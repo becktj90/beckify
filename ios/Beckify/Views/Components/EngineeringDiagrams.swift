@@ -17,32 +17,87 @@ struct EngineeringDiagramFrame<Content: View>: View {
 
 // MARK: - Voltage drop conductor run
 
-/// Point geometry for the conductor run, resolved in `Double` space so the
-/// view builders below stay free of `Double`/`CGFloat` mixing.
-private struct VoltageDropLayout {
+/// Strip geometry in `Double` space. The run is 0% at the supply node through
+/// a scale that always keeps the 3% and 5% marks on the bar.
+private struct VoltageDropStripLayout {
     let width: CGFloat
-    let axisY: CGFloat
-    let sagY: CGFloat
-    let loadY: CGFloat
+    let height: CGFloat
+    let trackMinX: CGFloat
+    let trackMaxX: CGFloat
+    let runMinX: CGFloat
+    let runMaxX: CGFloat
+    let trackY: CGFloat
+    let trackHeight: CGFloat
+    let nodeRadius: CGFloat
+    let scaleMax: Double
+    let dropPercent: Double
+    let targetPercent: Double
 
-    init(size: CGSize) {
+    init(size: CGSize, dropPercent: Double, targetPercent: Double) {
         let w: Double = Double(size.width)
         let h: Double = Double(size.height)
-        let y: Double = h * 0.55
+        let inset: Double = min(28, w * 0.08)
 
         width = CGFloat(w)
-        axisY = CGFloat(y)
-        sagY = CGFloat(y - h * 0.12)
-        loadY = CGFloat(y + h * 0.08)
+        height = CGFloat(h)
+        trackMinX = CGFloat(inset)
+        trackMaxX = CGFloat(w - inset)
+        nodeRadius = 8
+        trackHeight = 14
+        trackY = CGFloat(h * 0.34)
+        runMinX = trackMinX + nodeRadius + 8
+        runMaxX = trackMaxX - nodeRadius - 8
+        let span: Double = max(dropPercent, targetPercent, 5)
+        scaleMax = span * 1.12
+        self.dropPercent = dropPercent
+        self.targetPercent = targetPercent
     }
 
-    var runPath: Path {
+    var supply: CGPoint { CGPoint(x: trackMinX, y: trackY) }
+    var load: CGPoint { CGPoint(x: trackMaxX, y: trackY) }
+    var midX: CGFloat { (runMinX + runMaxX) / 2 }
+    var runWidth: CGFloat { max(runMaxX - runMinX, 1) }
+
+    func x(for percent: Double) -> CGFloat {
+        guard scaleMax > 0 else { return runMinX }
+        let t: Double = min(max(percent / scaleMax, 0), 1)
+        return runMinX + CGFloat(t) * runWidth
+    }
+
+    var fillWidth: CGFloat { max(0, x(for: dropPercent) - runMinX) }
+
+    var dropLabelY: CGFloat { max(trackY - 22, 12) }
+    var bandLabelY: CGFloat { trackY + trackHeight / 2 + 22 }
+    var bandLabelYStacked: CGFloat { bandLabelY + 16 }
+    var targetMarkY: CGFloat { bandLabelYStacked + 18 }
+    var targetLabelY: CGFloat { targetMarkY + 14 }
+
+    func tick(at percent: Double) -> Path {
+        let x: CGFloat = x(for: percent)
+        let top: CGFloat = trackY - trackHeight / 2 - 2
+        let bottom: CGFloat = trackY + trackHeight / 2 + 12
         var path = Path()
-        path.move(to: CGPoint(x: 28, y: axisY))
-        path.addLine(to: CGPoint(x: width * 0.45, y: sagY))
-        path.addLine(to: CGPoint(x: width - 28, y: loadY))
+        path.move(to: CGPoint(x: x, y: top))
+        path.addLine(to: CGPoint(x: x, y: bottom))
         return path
     }
+
+    var targetMark: Path {
+        let x: CGFloat = x(for: targetPercent)
+        let y: CGFloat = targetMarkY
+        var path = Path()
+        path.move(to: CGPoint(x: x, y: y - 7))
+        path.addLine(to: CGPoint(x: x - 5, y: y + 2))
+        path.addLine(to: CGPoint(x: x + 5, y: y + 2))
+        path.closeSubpath()
+        return path
+    }
+
+    var bandGap: CGFloat { abs(x(for: 5) - x(for: 3)) }
+    /// Room for the word "note" under each mark. Narrow runs keep the percent only.
+    var showsBandNote: Bool { bandGap >= 68 }
+    /// Percent labels move to two rows when the marks themselves are close.
+    var stacksBandLabels: Bool { bandGap < 36 }
 }
 
 struct VoltageDropDiagram: View {
@@ -50,73 +105,185 @@ struct VoltageDropDiagram: View {
     let drop: Double
     let receiving: Double
     let dropPercent: Double
+    let oneWayLength: String
+    let parallelRuns: Int
+    let targetPercent: Double
+    let meetsTarget: Bool
 
     private var summary: String {
-        "Conductor run from \(Format.volts(supply)) supply to \(Format.volts(receiving)) load. Drop \(Format.volts(drop)), \(Format.percent(dropPercent))."
+        let clauses: [String] = [
+            "\(Format.volts(drop)) drop, \(Format.percent(dropPercent))",
+            "\(Format.volts(supply)) supply",
+            "\(Format.volts(receiving)) load",
+            "\(oneWayLength) one-way",
+            "\(parallelRuns) \(parallelRuns == 1 ? "parallel run" : "parallel runs")",
+            "\(Format.percent(targetPercent)) preferred target, \(meetsTarget ? "meets" : "over")",
+            "3% and 5% marks are informational",
+        ]
+        return clauses.joined(separator: ". ") + "."
     }
 
+    /// Within 3% good, between 3% and 5% warn, over 5% bad.
     private var dropTone: Color {
-        if dropPercent > 5 { return Theme.bad }
-        if dropPercent > 3 { return Theme.warn }
-        return Theme.good
+        if dropPercent <= 3 { return Theme.good }
+        if dropPercent <= 5 { return Theme.warn }
+        return Theme.bad
     }
+
+    private var targetTone: Color { meetsTarget ? Theme.good : Theme.warn }
+
+    private var lengthLine: String {
+        let runs = parallelRuns == 1 ? "1 run" : "\(parallelRuns) runs"
+        return "\(oneWayLength) · \(runs)"
+    }
+
+    private var dropLine: String { "\(Format.volts(drop)) · \(Format.percent(dropPercent))" }
+
+    private var targetLine: String { "\(Format.percent(targetPercent)) · \(meetsTarget ? "MEETS" : "OVER")" }
 
     var body: some View {
-        DiagramCard(title: "Conductor run", accessibilitySummary: summary) {
-            EngineeringDiagramFrame(summary: summary) {
-                GeometryReader { geo in
-                    conductorRun(VoltageDropLayout(size: geo.size))
+        DiagramCard(title: "Conductor run", accessibilitySummary: summary, exportName: "voltage-drop-run") {
+            VStack(alignment: .leading, spacing: 6) {
+                EngineeringDiagramFrame(summary: summary) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline) {
+                            endpoint("Supply", Format.volts(supply), alignment: .leading)
+                            Spacer(minLength: 8)
+                            endpoint("Load", Format.volts(receiving), alignment: .trailing)
+                        }
+                        Text(lengthLine)
+                            .font(.caption2.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        GeometryReader { geo in
+                            strip(VoltageDropStripLayout(
+                                size: geo.size,
+                                dropPercent: dropPercent,
+                                targetPercent: targetPercent
+                            ))
+                        }
+                        .frame(minHeight: 164)
+                    }
                 }
+                Text("3% and 5% marks are informational.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityHidden(true)
             }
         }
     }
 
-    @ViewBuilder
-    private func conductorRun(_ layout: VoltageDropLayout) -> some View {
-        ZStack {
-            // Source node
-            Circle()
-                .stroke(Theme.accent, lineWidth: Theme.Stroke.emphasis)
-                .frame(width: 16, height: 16)
-                .position(x: 18, y: layout.axisY)
-            // Load node
-            RoundedRectangle(cornerRadius: 3)
-                .stroke(Theme.energized, lineWidth: Theme.Stroke.emphasis)
-                .frame(width: 18, height: 18)
-                .position(x: layout.width - 18, y: layout.axisY)
-            // Declining potential polyline
-            layout.runPath
-                .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-
-            potentialLabels(layout)
+    private func endpoint(_ title: String, _ value: String, alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 0) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
     @ViewBuilder
-    private func potentialLabels(_ layout: VoltageDropLayout) -> some View {
-        label(Format.volts(supply), tone: Theme.foreground)
-            .position(x: 40, y: layout.axisY - 28)
-        label("−\(Format.volts(drop))", tone: dropTone)
-            .position(x: layout.width * 0.5, y: layout.axisY - 36)
-        label(Format.volts(receiving), tone: Theme.foreground)
-            .position(x: layout.width - 44, y: layout.axisY - 28)
+    private func strip(_ layout: VoltageDropStripLayout) -> some View {
+        ZStack {
+            Capsule()
+                .fill(Theme.chartGrid)
+                .frame(width: layout.runWidth, height: layout.trackHeight)
+                .position(x: layout.midX, y: layout.trackY)
+            if layout.fillWidth > 0.5 {
+                Capsule()
+                    .fill(dropTone)
+                    .frame(width: layout.fillWidth, height: layout.trackHeight)
+                    .position(x: layout.runMinX + layout.fillWidth / 2, y: layout.trackY)
+            }
+            layout.tick(at: 3)
+                .stroke(Theme.foreground.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            layout.tick(at: 5)
+                .stroke(Theme.foreground.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            Circle()
+                .fill(Theme.surfaceRaised)
+                .overlay(Circle().stroke(Theme.accent, lineWidth: Theme.Stroke.emphasis))
+                .frame(width: layout.nodeRadius * 2, height: layout.nodeRadius * 2)
+                .position(layout.supply)
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Theme.surfaceRaised)
+                .overlay(RoundedRectangle(cornerRadius: 3).stroke(Theme.energized, lineWidth: Theme.Stroke.emphasis))
+                .frame(width: layout.nodeRadius * 2, height: layout.nodeRadius * 2)
+                .position(layout.load)
+            layout.targetMark
+                .fill(targetTone)
+            stripLabels(layout)
+        }
     }
 
-    private func label(_ text: String, tone: Color) -> some View {
+    @ViewBuilder
+    private func stripLabels(_ layout: VoltageDropStripLayout) -> some View {
+        Text(dropLine)
+            .font(.caption.monospacedDigit().weight(.semibold))
+            .foregroundStyle(dropTone)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .position(x: layout.midX, y: layout.dropLabelY)
+
+        bandLabel(layout.showsBandNote ? "3% note" : "3%", at: layout.x(for: 3), y: layout.bandLabelY)
+        bandLabel(
+            layout.showsBandNote ? "5% note" : "5%",
+            at: layout.x(for: 5),
+            y: layout.stacksBandLabels ? layout.bandLabelYStacked : layout.bandLabelY
+        )
+
+        Text(targetLine)
+            .font(.caption2.monospacedDigit().weight(.semibold))
+            .foregroundStyle(targetTone)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .position(x: clampedLabelX(layout.x(for: layout.targetPercent), width: layout.width), y: layout.targetLabelY)
+    }
+
+    private func bandLabel(_ text: String, at x: CGFloat, y: CGFloat) -> some View {
         Text(text)
             .font(.caption2.monospacedDigit().weight(.semibold))
-            .foregroundStyle(tone)
+            .foregroundStyle(Theme.muted)
+            .lineLimit(1)
+            .position(x: x, y: y)
     }
 
-    static func model(from r: VoltageDropResult) -> VoltageDropDiagram? {
-        guard r.dropVolts.isFinite, r.receivingVolts.isFinite else { return nil }
-        // supply recovered from receiving + drop
-        let supply = r.receivingVolts + r.dropVolts
+    private func clampedLabelX(_ x: CGFloat, width: CGFloat) -> CGFloat {
+        min(max(x, 40), max(width - 40, 40))
+    }
+
+    static func model(
+        supply: Double,
+        drop: Double,
+        receiving: Double,
+        dropPercent: Double,
+        oneWayLength: String,
+        parallelRuns: Int,
+        targetPercent: Double,
+        meetsTarget: Bool
+    ) -> VoltageDropDiagram? {
+        guard supply.isFinite, supply > 0,
+              drop.isFinite, drop >= 0,
+              receiving.isFinite,
+              dropPercent.isFinite, dropPercent >= 0,
+              targetPercent.isFinite, targetPercent > 0,
+              parallelRuns >= 1,
+              !oneWayLength.isEmpty
+        else { return nil }
         return VoltageDropDiagram(
             supply: supply,
-            drop: r.dropVolts,
-            receiving: r.receivingVolts,
-            dropPercent: r.dropPercent
+            drop: drop,
+            receiving: receiving,
+            dropPercent: dropPercent,
+            oneWayLength: oneWayLength,
+            parallelRuns: parallelRuns,
+            targetPercent: targetPercent,
+            meetsTarget: meetsTarget
         )
     }
 }

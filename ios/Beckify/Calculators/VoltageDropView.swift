@@ -132,7 +132,16 @@ struct VoltageDropView: View {
         }
 
         if let r = session.displayedResult {
-            if let diagram = VoltageDropDiagram.model(from: r.legacy) {
+            if let diagram = VoltageDropDiagram.model(
+                supply: r.supplyVolts,
+                drop: r.dropVolts,
+                receiving: r.receivingVolts,
+                dropPercent: r.dropPercent,
+                oneWayLength: lengthLabel(fromFeet: r.oneWayFeet),
+                parallelRuns: r.parallelRuns,
+                targetPercent: r.targetDropPercent,
+                meetsTarget: r.meetsTarget
+            ) {
                 diagram.opacity(session.isStale ? 0.72 : 1)
             }
 
@@ -319,18 +328,16 @@ struct VoltageDropView: View {
         }
 
         if let r = asnzsSession.displayedResult {
-            if let diagram = VoltageDropDiagram.model(from: VoltageDropResult(
-                dropVolts: r.dropVolts,
+            if let diagram = VoltageDropDiagram.model(
+                supply: r.supplyVolts,
+                drop: r.dropVolts,
+                receiving: r.receivingVolts,
                 dropPercent: r.dropPercent,
-                receivingVolts: r.receivingVolts,
-                meets3Percent: r.dropPercent <= 3,
-                meets5Percent: r.meetsInstallationLimit,
-                conductorSize: r.token,
-                conductorLabel: r.label,
-                ampacity75C: nil,
-                ampacityOK: nil,
-                formula: r.formula
-            )) {
+                oneWayLength: "\(Format.number(r.oneWayMetres, digits: 2)) m",
+                parallelRuns: r.parallelRuns,
+                targetPercent: r.targetDropPercent,
+                meetsTarget: r.meetsTarget
+            ) {
                 diagram.opacity(asnzsSession.isStale ? 0.72 : 1)
             }
 
@@ -578,6 +585,18 @@ struct VoltageDropView: View {
             importedBanner = "Imported from \(seed.sourceSummary). Edit freely, then Calculate."
         }
         session.prepareForNewInputs()
+    }
+
+    /// One-way length in the unit on screen, from the feet the NEC result used.
+    private func lengthLabel(fromFeet feet: Double) -> String {
+        let shown: Double
+        switch lengthUnit {
+        case .feet:
+            shown = feet
+        case .metres:
+            shown = FieldLengthUnit.feet.metres(from: feet)
+        }
+        return "\(Format.number(shown, digits: 1)) \(lengthUnit.symbol)"
     }
 
     private var necSubstituted: String? {

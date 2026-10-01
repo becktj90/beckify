@@ -36,7 +36,7 @@ The holes that still matter in the field are narrower:
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
-4. **Jobsite cluster:** voltage drop is a declining line without the 3% / 5% bands; Motor FLA is a table with no card; the receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
+4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is a table with no card; the receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
 
 Textbook ship-order items that are **not** Hold move to **P1**: ampacity derating stack (today a numbered list), harmonics bars, heater Δ/Y sketch, UPS runtime tank, load-worksheet bars, and a protection-side skin-depth / aperture sketch. **Conduit fill is Hold.** It already draws a to-scale bore, conductor circles, and fill percent against the Chapter 9 Table 1 allowance (including the nipple case). Do not put it on a rebuild wave.
@@ -85,7 +85,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Power | `power` | Power & AC | Result rows only | None | One P–Q triangle for the AC result | P1 | DC mode stays numbers. Do not add a Y/Δ here. | `PowerTriangleDiagram` after the PF pass |
 | Three-Phase Power | `threePhasePower` | Power & AC | Power triangle, connection canvas, line/phase arrows | Strong | Keep. Connection glyph already covers Y and Δ. | Hold | Several pictures already; do not add another. | Existing canvases |
 | Power Wizard | `powerWizard` | Power & AC | Hidden deep link. Rows only. | None | No picture of its own | P2 | Off the grid. Waveforms, if any, belong on Power. | — |
-| Voltage Drop | `voltageDrop` | Jobsite | Declining source-to-load polyline (`VoltageDropDiagram`). 3% and 5% are text rows. | Partial | One run strip: panel → length → load, drop colored against 3% and 5% bands | P0 | Informational bands, not a Code pass. Same view, not a second chart. | Upgrade `VoltageDropDiagram` |
+| Voltage Drop | `voltageDrop` | Jobsite | Run strip: supply, one-way length, load, drop in volts, 3% and 5% informational marks, preferred target | Shipped | One run strip colored within 3%, between 3% and 5%, or over 5%. | Done | Bands stay informational. Parallels and the preferred target use the same numbers as the rows. | `VoltageDropDiagram` |
 | Conduit Fill | `conduitFill` | Jobsite | To-scale bore, wall, conductor circles, fill bar vs allowed percent (Table 1, including nipple) | Strong | Keep | Hold | Do not rebuild. Jam and packing notes stay text. | `ConduitFillDiagram` is the cross-section kit |
 | Cable Ladder | `cableLadder` | Jobsite | Tray cross-section plus support elevation | Strong | Keep | Hold | — | Sibling of the conduit section, not a copy |
 | Equipment Grounding | `equipmentGround` | Jobsite | Table 250.122 rows | None | Optional size callout only | P2 | Low field impact beside ampacity and conduit | Callout kit, later |
@@ -185,7 +185,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 | `PowerTriangleDiagram` | Shipped. Before/after Q on one kW leg. Single-Q mode remains. | Power factor correction | Power tool AC result |
 | Raceway cross-section | Shipped as `ConduitFillDiagram` | Nobody new in P0. It is finished. | Nickel strip and circular mils may share **geometry helpers** later. Do not generalize by rewriting conduit. |
 | Connection drawing | Shipped inside `TransformerView` (delta, wye, high-leg, corner, open delta). Three-phase has its own canvas. | Heater Δ/Y should call the same winding sketch, not a new one | — |
-| Run strip | Not shipped. `VoltageDropDiagram` is a polyline. | Voltage drop | NEC circuit chip on the same strip |
+| Run strip | Shipped as `VoltageDropDiagram`. Supply, one-way length, load, volt drop, informational 3% and 5% marks, preferred target. | Voltage drop | NEC circuit chip on the same strip |
 | Derating stack | Not shipped. The waterfall is a numbered list. | Wire ampacity | NEC circuit reads it; does not redraw it |
 | Callout card | Not shipped. Short-circuit is a thin box. | Motor FLA card, short-circuit Isc | Grounding size, regulator Pd, later |
 | Gauge / tank | Partial. Cellular arcs and the conduit fill bar exist. Wi-Fi gauge exists. | IS-loop worst margin; UPS tank | Rack headroom, e-bike range. Never a fake RF dBm arc. |
@@ -233,9 +233,9 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 4. Voltage drop — `voltageDrop`
 
-**Now.** `VoltageDropDiagram` is a source dot, a load square, and a declining stroke. Percent versus 3% and 5% is text (`meets3Percent`, `meets5Percent`).
+**Now.** One `VoltageDropDiagram` strip. Supply node, one-way length, parallel runs, load node, and the drop in volts on the run. Marks at 3% and 5% are labeled informational. The preferred target uses the same meets / over tone as the result row. Within 3% is good, between 3% and 5% is warn, over 5% is bad. Stale inputs dim the picture with the result card.
 
-**Target.** Rebuild that same view into a strip: supply node, one-way length, load node, drop in volts on the run, and two band marks at 3% and 5%. Tone follows the existing rules (within 3 good, between 3 and 5 warn, over 5 bad). Do not add a chart beside it.
+**Target.** Met on this screen. No second chart. Bands stay informational.
 
 **Files.** `VoltageDropView.swift`. `EngineeringDiagrams.swift` (`VoltageDropDiagram`).
 
