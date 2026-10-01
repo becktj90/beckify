@@ -235,9 +235,10 @@ final class FieldInstrumentMathTests: XCTestCase {
     }
 
     func testBreathFluteGatePitchAndSine() {
+        // Legacy RMS/peak gate shares marginDB (now 24).
         XCTAssertFalse(BreathFluteMath.gateOpen(rmsDBFS: -40, peakDBFS: -36, noiseFloorDBFS: -48))
-        XCTAssertTrue(BreathFluteMath.gateOpen(rmsDBFS: -30, peakDBFS: -28, noiseFloorDBFS: -48))
-        XCTAssertTrue(BreathFluteMath.gateOpen(rmsDBFS: -40, peakDBFS: -30, noiseFloorDBFS: -48))
+        XCTAssertTrue(BreathFluteMath.gateOpen(rmsDBFS: -24, peakDBFS: -22, noiseFloorDBFS: -48))
+        XCTAssertTrue(BreathFluteMath.gateOpen(rmsDBFS: -40, peakDBFS: -24, noiseFloorDBFS: -48))
         XCTAssertFalse(BreathFluteMath.gateOpen(rmsDBFS: .nan, peakDBFS: 0, noiseFloorDBFS: -48))
 
         XCTAssertEqual(BreathFluteMath.frequencyHz(touchY: 0), BreathFluteMath.lowHz, accuracy: 1e-9)
