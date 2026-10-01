@@ -76,36 +76,13 @@ struct ReactanceView: View {
             }
 
             if let output = session.displayedResult {
-                if case .series(let r) = output, r.impedance.isFinite, r.netReactance.isFinite {
-                    // Derive R from the committed Z/X so a stale diagram cannot
-                    // drift when the text field is edited.
-                    let committedR = max(0, (r.impedance * r.impedance - r.netReactance * r.netReactance)).squareRoot()
-                    ReactancePhasorDiagram(
-                        resistance: committedR,
-                        netReactance: r.netReactance,
-                        impedance: r.impedance,
-                        angleDegrees: r.phaseAngleDegrees
-                    )
-                    .opacity(session.isStale ? 0.72 : 1)
-                    if let L = inductance.parsedDouble, L > 0,
-                       farads.isFinite, farads > 0,
-                       let f = frequency.parsedDouble, f > 0 {
-                        ReactanceSweepChart(inductance: L, capacitance: farads, frequency: f)
-                            .opacity(session.isStale ? 0.72 : 1)
-                    }
+                if case .series = output, let sweep = seriesSweep {
+                    sweep
+                        .opacity(session.isStale ? 0.72 : 1)
                 }
-                if case .resonance(let r) = output,
-                   let L = inductance.parsedDouble, L > 0,
-                   farads > 0,
-                   let R = resistance.parsedDouble, R >= 0,
-                   r.frequency.isFinite, r.frequency > 0 {
-                    ResonanceImpedanceChart(
-                        resistance: R,
-                        inductance: L,
-                        capacitance: farads,
-                        resonantFrequency: r.frequency
-                    )
-                    .opacity(session.isStale ? 0.72 : 1)
+                if case .resonance(let r) = output, let chart = resonanceChart(r) {
+                    chart
+                        .opacity(session.isStale ? 0.72 : 1)
                 }
                 ResultCard(copyText: sticky) { rows(for: output) }
                     .opacity(session.isStale ? 0.72 : 1)
@@ -169,6 +146,41 @@ struct ReactanceView: View {
         inductance = ""
         capacitance = ""
         session.reset()
+    }
+
+    /// Live frequency so the marker moves when f changes, including a stale result.
+    private var seriesSweep: ReactanceSweepChart? {
+        guard let f = frequency.parsedDouble, f.isFinite, f > 0 else { return nil }
+        let henries = inductance.parsedDouble ?? .nan
+        let hasL = henries.isFinite && henries > 0
+        let hasC = farads.isFinite && farads > 0
+        guard hasL || hasC else { return nil }
+        return ReactanceSweepChart(
+            inductance: hasL ? henries : 0,
+            capacitance: hasC ? farads : 0,
+            frequency: f
+        )
+    }
+
+    private func resonanceChart(_ result: ResonanceResult) -> ResonanceImpedanceChart? {
+        guard let henries = inductance.parsedDouble, henries > 0,
+              farads.isFinite, farads > 0,
+              result.frequency.isFinite, result.frequency > 0
+        else { return nil }
+        let enteredR: Double
+        if resistance.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            enteredR = 0
+        } else {
+            enteredR = resistance.parsedDouble ?? .nan
+        }
+        guard enteredR.isFinite, enteredR >= 0 else { return nil }
+        return ResonanceImpedanceChart(
+            resistance: enteredR,
+            inductance: henries,
+            capacitance: farads,
+            resonantFrequency: result.frequency,
+            bandwidth: result.bandwidth
+        )
     }
 
     private var substituted: String? {

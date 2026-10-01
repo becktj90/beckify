@@ -34,7 +34,7 @@ The toolbox is not uniformly text. Raceway and tray sections, transformer windin
 The holes that still matter in the field are narrower:
 
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
-2. **Reactance** already computes XL and XC versus frequency, then leads with a phasor. The sweep should be the only picture. The phasor home is Phasors & Impedance.
+2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws the triangle after correction only.
 4. **Jobsite cluster:** voltage drop is a declining line without the 3% / 5% bands; Motor FLA is a table with no card; the receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
@@ -118,7 +118,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Position | `fieldPosition` | Instruments | Coordinates, speed, altitude, distance | None | None | P2 | A map is a new surface, not a result sketch | — |
 | Device Health | `deviceHealth` | Instruments | Battery, thermal, storage, uptime rows | None | None | P2 | Diagnostics of this phone, not a plant meter | Battery fill only if it reuses the tank kit later |
 | Receptacle Selector | `receptacleSelector` | Jobsite | Schematic pinout on a circle, IEC clock ticks when relevant | Partial | One faceplate: round locking / IEC versus straight-blade outline, pins from the catalog face | P0 | Schematic of the configuration, not a photo of a listed device. Hazardous remains a flag. | `ReceptacleFaceView` |
-| Reactance & Resonance | `reactance` | Bench | Series: phasor plus XL/XC sweep when both L and C are set. Resonance: \|Z\| peak with f0. | Partial | Series: XL and XC vs f as the only picture, marker at the entered f. Resonance: the \|Z\| peak as the only picture. | P0 | Sweep needs both L and C. Retire the phasor on this screen so Phasors stays the only phasor home. | `ReactanceSweepChart`, `ResonanceImpedanceChart` |
+| Reactance & Resonance | `reactance` | Bench | Series: XL and/or XC vs f, marker at the entered f. Resonance: \|Z\| with f0 and Q bandwidth when R is set. | Shipped | One picture per mode. No phasor on this tool. | Done | Ideal lumped parts. Phasors & Impedance stays the phasor home. | `ReactanceSweepChart`, `ResonanceImpedanceChart` |
 | Power Factor Correction | `powerFactor` | Power & AC | Triangle of the corrected Q only (`title: "After correction"`) | Partial | One triangle that shows Q before and after; bank µF stays a number on that picture | P0 | Animate the shrink only when Reduce Motion is off. Real power stays the long leg. | `PowerTriangleDiagram` |
 | Short-Circuit Current | `shortCircuit` | Jobsite | Small XFMR box, arrow, and “Isc (infinite bus)” caption | Partial | One callout: available fault amps, method named “infinite-bus secondary” | P0 | No gear AIC field. Do not draw a pass/fail against an interrupting rating the operator did not enter. | Replace `ShortCircuitDiagram` in place |
 | Circular Mils | `circularMils` | Jobsite | Diameter and area as numbers | None | Optional circle scaled to diameter | P2 | Low impact | Cross-section kit, later |
@@ -213,9 +213,9 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 2. Reactance & Resonance — `reactance`
 
-**Now.** Series mode draws `ReactancePhasorDiagram` and, only when L, C, and f are all positive, `ReactanceSweepChart` (log frequency, XL and XC, markers at f). Resonance mode draws `ResonanceImpedanceChart` (\|Z\| with f0). The phasor duplicates Phasors & Impedance.
+**Now.** Series mode draws `ReactanceSweepChart` only: XL, XC, or both, with a marker at the entered f. Resonance mode draws `ResonanceImpedanceChart` (\|Z\|, f0, and the Q bandwidth when R is present). No phasor on this tool.
 
-**Target.** Series: the sweep is the only picture, including when one of L or C is missing (draw the curve that exists). Resonance: the \|Z\| peak is the only picture, f0 and the Q bandwidth marked if R is present. No phasor on this tool.
+**Target.** Met on this screen. Phasors & Impedance stays the phasor home. Captions stay “ideal lumped parts.”
 
 **Files.** `FieldCalculatorViews.swift` (`ReactanceView`). `EngineeringDiagrams.swift` (`ReactanceSweepChart`, `ResonanceImpedanceChart`).
 

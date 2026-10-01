@@ -133,7 +133,10 @@ public enum PlotSampling {
         }
     }
 
-    /// Inductive and capacitive reactance vs frequency (two companion series).
+    /// Inductive and capacitive reactance vs frequency.
+    /// A missing or non-positive part returns an empty series. The other curve
+    /// still draws. Both come back empty when the frequency span is unusable
+    /// or neither part is present.
     public static func reactanceVsFrequency(
         inductance: Double,
         capacitance: Double,
@@ -141,22 +144,165 @@ public enum PlotSampling {
         fMax: Double,
         samples: Int = 80
     ) -> (xl: [PlotPoint], xc: [PlotPoint]) {
-        guard inductance.isFinite, inductance > 0,
-              capacitance.isFinite, capacitance > 0,
-              fMin.isFinite, fMax.isFinite, fMin > 0, fMax > fMin, samples >= 2
-        else { return ([], []) }
+        guard fMin.isFinite, fMax.isFinite, fMin > 0, fMax > fMin, samples >= 2 else {
+            return ([], [])
+        }
+        let drawL = inductance.isFinite && inductance > 0
+        let drawC = capacitance.isFinite && capacitance > 0
+        guard drawL || drawC else { return ([], []) }
 
         let logMin = log10(fMin)
         let logMax = log10(fMax)
         var xl: [PlotPoint] = []
         var xc: [PlotPoint] = []
-        xl.reserveCapacity(samples)
-        xc.reserveCapacity(samples)
+        if drawL { xl.reserveCapacity(samples) }
+        if drawC { xc.reserveCapacity(samples) }
         for i in 0..<samples {
             let f = pow(10, logMin + (logMax - logMin) * Double(i) / Double(samples - 1))
-            xl.append(PlotPoint(x: f, y: 2 * .pi * f * inductance))
-            xc.append(PlotPoint(x: f, y: 1 / (2 * .pi * f * capacitance)))
+            if drawL { xl.append(PlotPoint(x: f, y: 2 * .pi * f * inductance)) }
+            if drawC { xc.append(PlotPoint(x: f, y: 1 / (2 * .pi * f * capacitance))) }
         }
         return (xl, xc)
+    }
+
+    /// Half-power edges of a series RLC notch. `high − low` equals `bandwidth`.
+    /// Returns nil when R is absent (bandwidth not finite) or the edges are not usable.
+    public static func seriesHalfPowerBand(
+        resonantFrequency: Double,
+        bandwidth: Double
+    ) -> (low: Double, high: Double)? {
+        guard resonantFrequency.isFinite, resonantFrequency > 0,
+              bandwidth.isFinite, bandwidth > 0
+        else { return nil }
+        let q = resonantFrequency / bandwidth
+        guard q.isFinite, q > 0 else { return nil }
+        let half = 1 / (2 * q)
+        let root = (1 + half * half).squareRoot()
+        let low = resonantFrequency * (root - half)
+        let high = resonantFrequency * (root + half)
+        guard low.isFinite, high.isFinite, low > 0, high > low else { return nil }
+        return (low, high)
+    }
+}
+
+/// Spoken marker for the Reactance tool. The sentence starts with the frequency
+/// number and unit, then the reactance or |Z| number and unit.
+public enum ReactancePlotReadout {
+    public struct SeriesMarker: Equatable, Sendable {
+        public var hertz: Double
+        public var inductiveOhms: Double?
+        public var capacitiveOhms: Double?
+
+        public init(hertz: Double, inductiveOhms: Double?, capacitiveOhms: Double?) {
+            self.hertz = hertz
+            self.inductiveOhms = inductiveOhms
+            self.capacitiveOhms = capacitiveOhms
+        }
+    }
+
+    public struct ResonanceMarker: Equatable, Sendable {
+        public var resonantHertz: Double
+        public var impedanceOhms: Double
+        public var bandwidthHertz: Double?
+        public var lowHertz: Double?
+        public var highHertz: Double?
+
+        public init(
+            resonantHertz: Double,
+            impedanceOhms: Double,
+            bandwidthHertz: Double?,
+            lowHertz: Double?,
+            highHertz: Double?
+        ) {
+            self.resonantHertz = resonantHertz
+            self.impedanceOhms = impedanceOhms
+            self.bandwidthHertz = bandwidthHertz
+            self.lowHertz = lowHertz
+            self.highHertz = highHertz
+        }
+    }
+
+    /// Marker at the entered frequency. Nil when f is unusable or neither L nor C is set.
+    public static func seriesMarker(
+        hertz: Double,
+        inductance: Double,
+        capacitance: Double
+    ) -> SeriesMarker? {
+        guard hertz.isFinite, hertz > 0 else { return nil }
+        let xl: Double? = (inductance.isFinite && inductance > 0) ? 2 * .pi * hertz * inductance : nil
+        let xc: Double? = (capacitance.isFinite && capacitance > 0) ? 1 / (2 * .pi * hertz * capacitance) : nil
+        guard xl != nil || xc != nil else { return nil }
+        return SeriesMarker(hertz: hertz, inductiveOhms: xl, capacitiveOhms: xc)
+    }
+
+    /// |Z| at f0 is R for a series RLC. Bandwidth edges appear only when R > 0.
+    public static func resonanceMarker(
+        resonantHertz: Double,
+        resistance: Double,
+        bandwidth: Double
+    ) -> ResonanceMarker? {
+        guard resonantHertz.isFinite, resonantHertz > 0,
+              resistance.isFinite, resistance >= 0
+        else { return nil }
+        var bw: Double?
+        var low: Double?
+        var high: Double?
+        if resistance > 0,
+           let band = PlotSampling.seriesHalfPowerBand(
+            resonantFrequency: resonantHertz,
+            bandwidth: bandwidth
+           ) {
+            bw = bandwidth
+            low = band.low
+            high = band.high
+        }
+        return ResonanceMarker(
+            resonantHertz: resonantHertz,
+            impedanceOhms: resistance,
+            bandwidthHertz: bw,
+            lowHertz: low,
+            highHertz: high
+        )
+    }
+
+    public static func seriesAnnouncement(_ marker: SeriesMarker) -> String {
+        var parts = [hertz(marker.hertz)]
+        if let xl = marker.inductiveOhms { parts.append("\(ohms(xl)) XL") }
+        if let xc = marker.capacitiveOhms { parts.append("\(ohms(xc)) XC") }
+        return "\(parts.joined(separator: ", ")). Ideal lumped parts."
+    }
+
+    public static func resonanceAnnouncement(_ marker: ResonanceMarker) -> String {
+        var sentence = "\(hertz(marker.resonantHertz)), \(ohms(marker.impedanceOhms)) |Z|"
+        if let bw = marker.bandwidthHertz, let low = marker.lowHertz, let high = marker.highHertz {
+            sentence += ", \(hertz(bw)) bandwidth, \(hertz(low)) to \(hertz(high))"
+        }
+        return "\(sentence). Ideal lumped parts."
+    }
+
+    private static func hertz(_ hz: Double) -> String {
+        guard hz.isFinite, hz > 0 else { return "—" }
+        if hz >= 1e6 { return "\(plain(hz / 1e6, digits: 4)) MHz" }
+        if hz >= 1e3 { return "\(plain(hz / 1e3, digits: 4)) kHz" }
+        return "\(plain(hz, digits: 4)) Hz"
+    }
+
+    private static func ohms(_ value: Double) -> String {
+        guard value.isFinite else { return "—" }
+        return "\(plain(value, digits: 3)) Ω"
+    }
+
+    private static func plain(_ value: Double, digits: Int) -> String {
+        let absv = abs(value)
+        if absv >= 1_000_000 || (absv != 0 && absv < 0.001) {
+            let spec = absv >= 1_000_000 ? "%.2e" : "%.3e"
+            return String(format: spec, locale: Locale(identifier: "en_US_POSIX"), value)
+        }
+        var text = String(format: "%.\(digits)f", locale: Locale(identifier: "en_US_POSIX"), value)
+        if text.contains(".") {
+            while text.hasSuffix("0") { text.removeLast() }
+            if text.hasSuffix(".") { text.removeLast() }
+        }
+        return text
     }
 }
