@@ -47,6 +47,7 @@ try {
     "/api/analyze-panel",
     "/api/analyze-tdr",
     "/api/translate",
+    "/api/speak",
   ]) {
     assert(posted.includes(path), `healthz.routes.post must list ${path}`);
   }
@@ -162,6 +163,24 @@ try {
   assert(
     typeof translateEmpty.json?.error === "string" && /text|sourceText/i.test(translateEmpty.json.error),
     `POST /api/translate {} should explain the missing text`,
+  );
+
+  const speakEmpty = await request("/api/speak", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  assert(
+    speakEmpty.response.status === 400,
+    `POST /api/speak {} expected 400, got ${speakEmpty.response.status}`,
+  );
+  assert(
+    !/cannot post/i.test(speakEmpty.text),
+    `POST /api/speak must not return Express Cannot POST`,
+  );
+  assert(
+    typeof speakEmpty.json?.error === "string" && /text|input|translation/i.test(speakEmpty.json.error),
+    `POST /api/speak {} should explain the missing text`,
   );
 } finally {
   await new Promise((resolve) => server.close(resolve));

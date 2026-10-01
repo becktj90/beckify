@@ -55,9 +55,12 @@ public enum SpanishTranslatorAPI {
     public static let task = "translate"
     public static let defaultAPIBase = PhotoLookCheck.defaultAPIBase
     public static let translatePath = "/api/translate"
+    public static let speakPath = "/api/speak"
+    /// Short neural TTS clips (cost control).
+    public static let maxSpeakCharacters = 500
     public static let maxSourceCharacters = 2000
     public static let disclaimer =
-        "Speech stays on this device for recognition. Prefers blunt Cuban / South Florida jobsite Spanish via the Beckify API (api.beckify.com). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish, not Cuban-tuned). Translation text uploads only when the Beckify path runs. Loud male system TTS when available. Not a certified interpreter."
+        "Speech stays on this device for recognition. Prefers blunt Cuban / South Florida jobsite Spanish via the Beckify API (api.beckify.com). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish, not Cuban-tuned). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -70,6 +73,89 @@ public enum SpanishTranslatorAPI {
         }
         guard let base = PhotoLookCheck.httpsBase(apiBase), !base.isEmpty else { return nil }
         return URL(string: base + translatePath)
+    }
+
+
+    public static func defaultSpeakURL() -> URL? {
+        speakURL(customEndpoint: nil, apiBase: defaultAPIBase)
+    }
+
+    /// Neural TTS endpoint. Custom HTTPS URL that ends with `/api/translate` maps to `/api/speak`
+    /// on the same host; other custom URLs still fall back to `{apiBase}/api/speak` so a private
+    /// translate proxy without TTS does not break loud playback.
+    public static func speakURL(customEndpoint: String?, apiBase: String? = defaultAPIBase) -> URL? {
+        if let custom = PhotoLookCheck.httpsBase(customEndpoint), let url = URL(string: custom) {
+            let absolute = url.absoluteString
+            if absolute.lowercased().contains("/api/translate") {
+                let mapped = absolute.replacingOccurrences(
+                    of: "/api/translate",
+                    with: speakPath,
+                    options: [.caseInsensitive]
+                )
+                if let speak = URL(string: mapped) { return speak }
+            }
+        }
+        guard let base = PhotoLookCheck.httpsBase(apiBase), !base.isEmpty else { return nil }
+        return URL(string: base + speakPath)
+    }
+
+    public static func speakRequestBody(
+        text: String,
+        voice: String = "onyx",
+        format: String = "mp3"
+    ) -> [String: Any] {
+        [
+            "task": "speak",
+            "text": text,
+            "voice": voice,
+            "format": format,
+            "language": "es",
+        ]
+    }
+
+    public static func speakRequestJSON(
+        text: String,
+        voice: String = "onyx",
+        format: String = "mp3"
+    ) throws -> Data {
+        try JSONSerialization.data(
+            withJSONObject: speakRequestBody(text: text, voice: voice, format: format),
+            options: []
+        )
+    }
+
+    public static func clampSpeakText(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.count <= maxSpeakCharacters { return trimmed }
+        let end = trimmed.index(trimmed.startIndex, offsetBy: maxSpeakCharacters)
+        return String(trimmed[..<end])
+    }
+
+    public static func formatSpeakError(
+        status: Int,
+        message: String?,
+        endpoint: String
+    ) -> String {
+        let trimmed = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if status == 0 {
+            return trimmed.isEmpty
+                ? "Could not reach the Beckify speak API. Falling back to Apple TTS."
+                : trimmed
+        }
+        if !trimmed.isEmpty { return trimmed }
+        if status == 404 || status == 405 {
+            return "Speak is not on this API host yet (HTTP \(status)). Redeploy api.beckify.com, or Apple TTS will play."
+        }
+        if status == 429 {
+            return "Too many speak requests right now. Using Apple TTS this time."
+        }
+        if status == 503 {
+            return "The Beckify speak API is missing a provider key (HTTP 503)."
+        }
+        if PhotoLookCheck.hostIsGitHubPages(endpoint) {
+            return "GitHub Pages cannot accept speak POSTs. Use https://api.beckify.com."
+        }
+        return "The Beckify speak API is unavailable (HTTP \(status))."
     }
 
     /// Same Authorization rule as Look Check / vision: token only for a custom endpoint.
@@ -314,6 +400,14 @@ public enum SpanishTranslatorAPI {
         return ranked.first?.0
     }
 
+
+    public static func neuralVoiceNote(model: String = "gpt-4o-mini-tts", voice: String = "onyx") -> String {
+        let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
+        let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
+        let label = [v.isEmpty ? "onyx" : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
+        return "Neural TTS · \(label) · Cuban / South Florida jobsite yell · max speaker volume"
+    }
+
     public static func voiceFallbackNote(
         selectedLanguage: String?,
         genderLabel: String? = nil,
@@ -321,7 +415,7 @@ public enum SpanishTranslatorAPI {
     ) -> String {
         let lang = (selectedLanguage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if lang.isEmpty {
-            return "No Spanish system voice found. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Apple TTS is limited; a future Beckify API cloud voice (ElevenLabs / OpenAI TTS) would sound more realistic."
+            return "No Spanish system voice found for Apple fallback. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Prefers OpenAI neural TTS from api.beckify.com/api/speak (onyx / gpt-4o-mini-tts)."
         }
         let gender = (genderLabel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let name = (voiceName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -345,7 +439,7 @@ public enum SpanishTranslatorAPI {
         } else {
             localeNote = "closest available Spanish"
         }
-        return "Speaking with \(who), \(sex), \(localeNote). Max volume + slower rate for site noise. Apple voices can still sound robotic — optional next step is ElevenLabs/OpenAI TTS on the Beckify API."
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (onyx) from api.beckify.com when reachable; this note is the on-device fallback path."
     }
 
     // MARK: - Internals

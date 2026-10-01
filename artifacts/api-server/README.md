@@ -12,6 +12,7 @@ Registered POST routes (must be present after every production deploy):
 - `/api/analyze-tdr`
 - `/api/review-calculation`
 - `/api/translate`
+- `/api/speak`
 
 `GET /api/healthz` returns `status: "ok"` plus that route list.
 
@@ -37,6 +38,10 @@ After merge, Fly auto-deploys when `artifacts/api-server` changes (needs `FLY_AP
 ### `POST /api/translate`
 
 Text-only English → Cuban / Florida LatAm Spanish for the Toolbox **Spanish Translator** tool. Body: `{ "text": "…", "sourceLanguage": "en", "targetLanguage": "es" }`. Uses `OPENAI_API_KEY` (optional `TRANSLATE_MODEL`, defaults to `REVIEW_MODEL` or `gpt-4o-mini`). Success JSON includes `translation`, `dialect`, `sourceText`. Empty body → **400**.
+
+### `POST /api/speak`
+
+Short Spanish (or mixed) text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3" }`. Defaults: voice **onyx** (deep male-ish), model **gpt-4o-mini-tts** with Cuban / South Florida jobsite yell `instructions` (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters. Empty body → **400**. Used by Spanish Translator loud playback; Apple AVSpeech remains the on-device fallback.
 
 ## Local
 
@@ -115,7 +120,7 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
 
 | Variable | Required | Notes |
 |---|---|---|
-| `OPENAI_API_KEY` | Yes (for vision / translate / review) | Set via `fly secrets set` |
+| `OPENAI_API_KEY` | Yes (for vision / translate / speak / review) | Set via `fly secrets set` |
 | `ANTHROPIC_API_KEY` | Optional | Alternate vision provider |
 | `CORS_ORIGINS` | Optional | Comma-separated; defaults include `https://beckify.com` |
 | `TRANSLATE_MODEL` | Optional | Defaults to `REVIEW_MODEL` or `gpt-4o-mini` |

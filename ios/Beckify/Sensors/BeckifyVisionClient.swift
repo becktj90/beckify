@@ -9,8 +9,8 @@ struct VisionHTTPError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-/// Small shared HTTPS JSON POST helper for Beckify API text routes (translate today;
-/// Look Check / OCR photo clients stay separate until a later consolidation).
+/// Small shared HTTPS POST helper for Beckify API text routes (translate / speak);
+/// Look Check / OCR photo clients stay separate until a later consolidation.
 enum BeckifyAIClient {
     /// POST `application/json` and return the decoded object on 2xx.
     /// Throws `VisionHTTPError` with HTTP status (0 = transport) on failure.
@@ -27,6 +27,53 @@ enum BeckifyAIClient {
             try await Task.sleep(nanoseconds: 800_000_000)
             return try await postOnce(url: url, body: body, bearerToken: bearerToken, timeout: timeout)
         }
+    }
+
+    /// POST `application/json` and return raw audio bytes on 2xx (`audio/mpeg` / `audio/wav`).
+    /// On error responses that are JSON, surfaces `error` when present.
+    static func postAudio(
+        url: URL,
+        body: Data,
+        bearerToken: String = "",
+        timeout: TimeInterval = 30
+    ) async throws -> (data: Data, contentType: String, model: String?, voice: String?) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("audio/mpeg, audio/wav, application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = timeout
+        let trimmed = bearerToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            request.setValue("Bearer \(trimmed)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = body
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw VisionHTTPError(status: 0, message: error.localizedDescription)
+        }
+        let http = response as? HTTPURLResponse
+        let status = http?.statusCode ?? 0
+        let contentType = (http?.value(forHTTPHeaderField: "Content-Type") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        if status < 200 || status >= 300 {
+            let payload = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+            let message = (payload["error"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            throw VisionHTTPError(
+                status: status,
+                message: (message?.isEmpty == false) ? message! : "Beckify speak API unavailable (HTTP \(status))."
+            )
+        }
+        guard !data.isEmpty else {
+            throw VisionHTTPError(status: status, message: "Speak returned empty audio.")
+        }
+        let model = http?.value(forHTTPHeaderField: "X-Beckify-TTS-Model")
+        let voice = http?.value(forHTTPHeaderField: "X-Beckify-TTS-Voice")
+        return (data, contentType, model, voice)
     }
 
     private static func postOnce(

@@ -88,7 +88,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(us.lowercased().contains("male"))
         let empty = SpanishTranslatorAPI.voiceFallbackNote(selectedLanguage: nil)
         XCTAssertTrue(empty.lowercased().contains("no spanish"))
-        XCTAssertTrue(empty.lowercased().contains("elevenlabs") || empty.lowercased().contains("openai"))
+        XCTAssertTrue(empty.lowercased().contains("openai") || empty.lowercased().contains("neural"))
     }
 
     func testJobsiteVoiceScorePrefersMaleUS() {
@@ -113,8 +113,10 @@ final class SpanishTranslatorTests: XCTestCase {
             || copy!.bullets.joined(separator: " ").lowercased().contains("florida"))
         let joined = copy!.bullets.joined(separator: " ").lowercased()
         XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation"))
+        XCTAssertTrue(joined.contains("/api/speak") || joined.contains("neural") || joined.contains("openai"))
         XCTAssertTrue(joined.contains("translated via beckify") || joined.contains("translated on device")
-            || copy!.summary.lowercased().contains("on-device"))
+            || copy!.summary.lowercased().contains("on-device")
+            || copy!.summary.lowercased().contains("neural"))
     }
 
     func testStatusLabelsAndAppleDraft() {
@@ -155,4 +157,47 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(need.contains("HTTP 404"))
         XCTAssertTrue(need.contains("iOS 18"))
     }
+
+
+    func testSpeakURLDefaultsToApiBeckify() {
+        let url = SpanishTranslatorAPI.defaultSpeakURL()
+        XCTAssertEqual(url?.absoluteString, "https://api.beckify.com/api/speak")
+    }
+
+    func testSpeakURLMapsTranslateCustomEndpoint() {
+        let url = SpanishTranslatorAPI.speakURL(
+            customEndpoint: "https://example.com/api/translate"
+        )
+        XCTAssertEqual(url?.absoluteString, "https://example.com/api/speak")
+    }
+
+    func testSpeakURLFallsBackWhenCustomIsNotTranslate() {
+        let url = SpanishTranslatorAPI.speakURL(
+            customEndpoint: "https://example.com/custom-translate"
+        )
+        XCTAssertEqual(url?.absoluteString, "https://api.beckify.com/api/speak")
+    }
+
+    func testClampSpeakTextAndRequestBody() throws {
+        let short = SpanishTranslatorAPI.clampSpeakText("  ¡Oye!  ")
+        XCTAssertEqual(short, "¡Oye!")
+        let long = String(repeating: "a", count: SpanishTranslatorAPI.maxSpeakCharacters + 40)
+        XCTAssertEqual(SpanishTranslatorAPI.clampSpeakText(long).count, SpanishTranslatorAPI.maxSpeakCharacters)
+        let body = SpanishTranslatorAPI.speakRequestBody(text: "Hola")
+        XCTAssertEqual(body["task"] as? String, "speak")
+        XCTAssertEqual(body["voice"] as? String, "onyx")
+        XCTAssertEqual(body["format"] as? String, "mp3")
+        let data = try SpanishTranslatorAPI.speakRequestJSON(text: "Hola")
+        XCTAssertFalse(data.isEmpty)
+        let note = SpanishTranslatorAPI.neuralVoiceNote(model: "gpt-4o-mini-tts", voice: "onyx")
+        XCTAssertTrue(note.lowercased().contains("onyx"))
+        XCTAssertTrue(note.lowercased().contains("neural"))
+    }
+
+    func testDisclaimerMentionsSpeakAPI() {
+        let d = SpanishTranslatorAPI.disclaimer.lowercased()
+        XCTAssertTrue(d.contains("/api/speak") || d.contains("neural"))
+        XCTAssertTrue(d.contains("fallback") || d.contains("avspeech") || d.contains("apple"))
+    }
+
 }
