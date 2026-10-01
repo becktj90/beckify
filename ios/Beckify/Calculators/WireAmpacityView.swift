@@ -65,7 +65,7 @@ struct WireAmpacityView: View {
                 toolID: .wireAmpacity,
                 symbolic: "I_allow = min(I_base × F_amb × F_CCC, I_term) × runs",
                 substituted: substituted,
-                meaning: "Correction and adjustment use the insulation column (310.15). Usable ampacity is then capped by the termination column (110.14(C)). Continuous loads use 125% of the load current as the required ampacity. Choosing 1Ø, multiwire, or 3Ø opts in a NEC 2023 Table 250.122 EGC beside the phase size — design aid, confirm Code / AHJ.",
+                meaning: "Usable ampacity is the minimum of (table × ambient × CCC) and the termination column. The result names which clamp won. Ambient correction is 310.15(B)(1). CCC adjustment is 310.15(C)(1). A neutral is a CCC when it carries unbalanced or harmonic current. The EGC is in the fill, not in the CCC count. Continuous loads use 125% as the required amps, then the 110.14(C) cap.",
                 citation: "NEC 2023 Table 310.16 · 310.15(B)(1) · 310.15(C)(1) · 110.14(C) · Table 250.122."
             )
 
@@ -154,6 +154,7 @@ struct WireAmpacityView: View {
             ResultRow(label: "Required ampacity", value: Format.amps(r.requiredAmpacity), emphasis: true)
             ResultRow(label: "Selected size", value: r.selected.label, emphasis: true, tone: Theme.good)
             ResultRow(label: "Usable ampacity", value: Format.amps(r.selected.usableTotal), tone: Theme.good)
+            ResultRow(label: "Clamp that won", value: clampLabel(r.selected))
             ResultRow(label: "Base table", value: Format.amps(r.selected.baseAmpacity))
             ResultRow(label: "After ambient × CCC", value: Format.amps(r.selected.correctedAmpacity))
             ResultRow(label: "Termination cap", value: Format.amps(r.selected.terminationCap))
@@ -225,7 +226,7 @@ struct WireAmpacityView: View {
             if let margin = r.marginAmps {
                 ResultRow(label: "Margin", value: Format.amps(margin), tone: margin >= 0 ? Theme.good : Theme.bad)
             }
-            ResultRow(label: "Governed by", value: r.limitedByTermination ? "Termination rating" : "Derating factors")
+            ResultRow(label: "Clamp that won", value: clampLabel(r))
             if let next = r.nextLargerSize {
                 ResultRow(label: "Next larger", value: NECTables.wireLabel(next))
             }
@@ -423,6 +424,10 @@ struct WireAmpacityView: View {
         importedBanner = "Imported from \(seed.sourceSummary). Edit freely, then Calculate."
         session.prepareForNewInputs()
         evaluateSession.prepareForNewInputs()
+    }
+
+    private func clampLabel(_ result: AmpacityDeratingResult) -> String {
+        result.limitedByTermination ? "Termination (110.14(C))" : "Ambient × CCC"
     }
 
     private var substituted: String? {

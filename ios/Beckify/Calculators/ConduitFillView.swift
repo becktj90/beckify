@@ -66,8 +66,8 @@ struct ConduitFillView: View {
                 toolID: .conduitFill,
                 symbolic: "1 wire → 53%    2 wires → 31%    3+ → 40%    nipple → 60%",
                 substituted: substituted,
-                meaning: "Fill percent is the sum of Chapter 9 Table 5 areas over the Table 4 raceway area. The cross-section packs those circles in the bore as an illustration — it is not a jam or pulling calculation. An equipment grounding conductor counts only when Count EGC is on.",
-                citation: "NEC Chapter 9 Table 1 (and Note 4). Areas from Table 4 and Table 5. Optional EGC: NEC 2023 Table 250.122. Confirm Code / AHJ."
+                meaning: "Fill percent is Table 5 area over Table 4 area. Annex C is the same-size count table, not the area source. A nipple 24 in or shorter is 60% (Table 1 Note 4). Compact or XHHW uses that insulation’s Table 5. The EGC counts in fill when Count EGC is on, and it is not a current-carrying conductor. The cross-section is a sketch, not a pull check.",
+                citation: "NEC Chapter 9 Table 1 and Note 4. Areas from Table 4 and Table 5. Annex C is same-size counts. Optional EGC: Table 250.122. Confirm Code / AHJ."
             )
 
             if let importedBanner {

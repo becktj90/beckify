@@ -2284,14 +2284,17 @@
     <section id="sec-vdrop" class="section">
       <div class="section-header">
         <h2>📉 Voltage Drop</h2>
-        <p>NEC recommends ≤3% voltage drop on branch circuits; ≤5% total (feeder + branch).</p>
+        <p>3% branch and 5% feeder-plus-branch are Informational Notes (210.19(A), 215.2(A)), not a pass/fail.</p>
         <details class="section-info">
           <summary>ℹ More Info — Voltage Drop</summary>
           <div class="section-info-body">
-            <strong>Voltage Drop</strong> occurs across conductor resistance in long runs. Excessive VD causes equipment malfunction, motor overheating, and NEC compliance issues.<br><br>
-            <strong>Formula:</strong> VD = (M × K × I × L) / CM, where M = 2 (single-phase) or √3 (three-phase), K = 12.9 (Cu) or 21.2 (Al), L = one-way feet, CM = circular mils<br><br>
-            <ul><li><strong>NEC Recommendation:</strong> ≤3% on branch circuits; ≤5% total (feeder + branch) — NEC 210.19(A) Informational Note</li><li><strong>Calculate VD%:</strong> Select conductor size and enter run parameters to check compliance</li><li><strong>Min Wire Size:</strong> Enter max allowed VD% and the tool finds the minimum conductor size</li></ul>
-            <strong>Tip:</strong> For long runs, consider going up 1–2 wire sizes to reduce VD even if ampacity allows smaller conductors.
+            <strong>Voltage Drop</strong> is the volts you lose in the wire. Enter the amps the load is actually drawing.<br><br>
+            <strong>Formula:</strong> VD = (M × K × I × L) / CM, where M = 2 (single-phase) or √3 (three-phase), K ≈ 12.9 (Cu) or 21.2 (Al) near 75 °C, L = one-way feet, CM = circular mils. That K is a field resistivity, not Chapter 9 Table 9. Table 9 is AC impedance.<br><br>
+            <ul>
+              <li><strong>Informational Notes:</strong> 3% on a branch and 5% feeder plus branch — 210.19(A) and 215.2(A). Within the note or over the note. Not a Code pass/fail.</li>
+              <li><strong>Operating amps:</strong> Voltage drop uses the current that is flowing. Ampacity is a separate check: continuous load × 1.25, then the 110.14(C) termination cap.</li>
+              <li><strong>Long 480 V feeders, 2 AWG and larger:</strong> use Chapter 9 Table 8 R plus Table 9 X. Steel raceway takes the higher Table 9 X column.</li>
+            </ul>
           </div>
         </details>
       </div>
@@ -2663,10 +2666,14 @@
         <details class="section-info">
           <summary>ℹ More Info — Motor Calculations</summary>
           <div class="section-info-body">
-            <strong>Motor Calculations</strong> convert between horsepower (HP), voltage, current, efficiency, and power factor.<br><br>
-            <ul><li><strong>HP from FLA:</strong> Calculates shaft output horsepower given measured current — useful for verifying actual motor loading</li><li><strong>FLA from HP:</strong> Calculates expected nameplate current from rated HP — used for conductor and OCPD sizing</li><li><strong>NEC Branch Circuit:</strong> Size conductors at FLA × 1.25 per NEC 430.22</li></ul>
-            <strong>Typical values:</strong> Efficiency 88–95% (NEMA Premium), Power Factor 0.80–0.92 lagging.<br>
-            <strong>Note:</strong> Always verify against NEC Tables 430.248/430.250 for conductor sizing — do not use calculated FLA alone.
+            <strong>Motor Calculations</strong> estimate shaft horsepower or line current from voltage, efficiency, and power factor. This is an estimate.<br><br>
+            <ul>
+              <li><strong>HP from current:</strong> Shaft output from the amps you measured. Useful for “how hard is it loaded,” not for a breaker.</li>
+              <li><strong>Current from HP:</strong> An estimate. Not for 430.22 conductors or Table 430.52. Those use Tables 430.248 / 430.250 per 430.6(A)(1).</li>
+              <li><strong>125% of this estimate</strong> is not a Code conductor size. Leaving efficiency out treats the motor as 100% and undersizes the wire.</li>
+              <li><strong>Locked rotor:</strong> NEMA code letter and 430.7(B), not this formula.</li>
+            </ul>
+            <strong>Typical values:</strong> Efficiency 88–95% (NEMA Premium), power factor 0.80–0.92 lagging.
           </div>
         </details>
       </div>
@@ -2699,9 +2706,9 @@
           <div class="card-title">Calculate FLA from Horsepower</div>
           <div class="card-body">
             <div class="formula-box">
-              I = (HP × 746) / (V × Eff × PF)  &nbsp; [1Ø]<br>
-              I = (HP × 746) / (V × √3 × Eff × PF)  &nbsp; [3Ø]<br>
-              NEC Branch Circuit = FLA × 1.25
+              I ≈ (HP × 746) / (V × Eff × PF)  &nbsp; [1Ø]<br>
+              I ≈ (HP × 746) / (V × √3 × Eff × PF)  &nbsp; [3Ø]<br>
+              Estimate only — not 430.22 and not Table 430.52
             </div>
             <div class="input-group">
               <div><label>Phase</label><select id="mfla_phase"><option value="1">Single-Phase</option><option value="3">Three-Phase</option></select></div>
@@ -3034,10 +3041,10 @@
             <ul>
               <li><strong>Turns Ratio:</strong> a = Vp/Vs = Np/Ns = Is/Ip</li>
               <li><strong>Primary Current:</strong> Ip = kVA×1000/Vp (1Ø) or kVA×1000/(√3×Vp) (3Ø)</li>
-              <li><strong>Protection:</strong> use Sizing &amp; 450.3 for primary-only vs primary+secondary, Note 1, and continuous 125%.</li>
-              <li><strong>Conductors:</strong> Cu/Al, insulation, parallels, VD, conduit, EGC/GEC live on Conductors / OCPD / VD.</li>
-              <li><strong>High-Leg Delta:</strong> B-phase to neutral = V_LL × √3/2 ≈ 208V on 240V system. Tag orange per NEC 110.15.</li>
-              <li><strong>Corner-Grounded Delta:</strong> One corner at ground potential — no neutral for single-phase loads.</li>
+              <li><strong>Protection:</strong> 450.3 sizes the transformer OCPD. Available fault current comes from %Z and the source, not from 450.3.</li>
+              <li><strong>Grounds:</strong> Separately derived system grounding electrode conductor is 250.30. Equipment grounding conductor is 250.122.</li>
+              <li><strong>High-leg:</strong> B-phase to neutral ≈ 208 V on a 240 V system. Tag orange (110.15).</li>
+              <li><strong>Corner-ground:</strong> One corner is at ground. No neutral for 120 V loads.</li>
             </ul>
           </div>
         </details>
@@ -3167,7 +3174,7 @@
           <div class="section-info-body">
             <strong>Conduit Fill</strong> limits how many conductors can be installed in a raceway to prevent overheating and allow future pulls.<br><br>
             <strong>NEC Chapter 9, Table 1 limits:</strong><ul><li>1 conductor → 53% maximum fill</li><li>2 conductors → 31% maximum fill</li><li>3 or more conductors → 40% maximum fill</li></ul>
-            This calculator uses <strong>EMT conduit areas</strong> and <strong>THHN/THWN-2 conductor areas</strong> from NEC Annex C. For mixed sizes, sum the individual conductor areas manually and compare to the conduit's allowed fill area.
+            Conductor and raceway areas come from <strong>Chapter 9, Table 5</strong> and <strong>Table 4</strong>. Annex C is the same-size maximum-count table, not the area source. A nipple 24 in or shorter is 60% (Table 1 Note 4). Compact or XHHW uses that insulation’s Table 5, not the THHN column. The equipment grounding conductor counts in fill. It is not a current-carrying conductor. Mixed sizes: use Mixed Conduit Fill.
           </div>
         </details>
       </div>
@@ -3245,7 +3252,7 @@
               • Use NEC Table 5 for conductor areas<br>
               • Use NEC Table 4 for conduit areas
             </div>
-            <div class="note">ℹ This calculator uses EMT conduit areas and THHN/THWN-2 conductor areas from NEC Annex C.</div>
+            <div class="note">ℹ EMT area is Chapter 9 Table 4. THHN/THWN-2 area is Table 5. Annex C is same-size counts only. Nipple ≤ 24 in → 60% (Table 1 Note 4). EGC is in the fill, not in the CCC count.</div>
           </div>
         </div>
 
@@ -3270,7 +3277,7 @@
               <li>Over 2 conductors → 40%</li>
               <li>Nipples 24&nbsp;in or shorter → 60% (Table 1, Note 4)</li>
             </ul>
-            Raceway areas come from <strong>Chapter 9, Table 4</strong> and conductor areas from <strong>Table 5</strong>. Because Table 5 areas are published rounded, a computed conductor count can land one below the Annex C table at an exact boundary — Annex C governs when every conductor is the same size.
+            Raceway areas come from <strong>Chapter 9, Table 4</strong> and conductor areas from <strong>Table 5</strong> for the insulation you picked (compact and XHHW are not the THHN column). A nipple 24 in or shorter is 60% (Table 1 Note 4). The EGC counts in fill. It is not a current-carrying conductor. Because Table 5 areas are published rounded, a computed count can land one below Annex C at an exact boundary — Annex C is the same-size maximum-count table.
           </div>
         </details>
       </div>
@@ -3864,7 +3871,7 @@
               <li>Secondary under 9 A → <strong>167%</strong></li>
             </ul>
             The primary device is allowed to be much larger under the second method because the secondary device provides the closer protection. <strong>Note 1</strong> permits rounding up to the next standard rating from 240.6(A) only where the calculation is 125% and does not land on a standard size — the 167% and 300% rows are hard ceilings.<br><br>
-            These limits protect <strong>the transformer</strong>. Conductors need their own protection under Article 240, and secondary conductors under 240.21(C).
+            These limits protect <strong>the transformer</strong>. They are not the available fault current — that comes from %Z and the source. Conductors need their own protection under Article 240, and secondary conductors under 240.21(C). A separately derived system grounding electrode conductor is 250.30. The equipment grounding conductor is 250.122. High-leg and corner-ground change which conductor is bonded.
           </div>
         </details>
       </div>
@@ -3982,7 +3989,10 @@
               <li><strong>Ampacity</strong> — NEC Table 310.16, corrected for ambient temperature (310.15(B)(1)), adjusted for more than three current-carrying conductors (310.15(C)(1)), then capped by the equipment termination rating (110.14(C)). Continuous loads are sized at 125% per 210.19(A)/215.2(A).</li>
               <li><strong>Voltage drop</strong> — not a hard NEC requirement, but 3% on a branch circuit and 5% total is the long-standing informational-note guidance (210.19(A) and 215.2(A) FPNs).</li>
             </ul>
-            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. The default <strong>planning allowance</strong> ($/ft) is a modeled comparison book — not live market, LME, or a bid. Optional I²R uses NEC Chapter 9 Table 8 DC Ω/kft and the <em>operating</em> current, not the 125% design current. There is no lb/kft table in this toolbox; enter $/kft if you have a takeoff.
+            <strong>Usable ampacity</strong> is the minimum of (table × ambient × CCC) and the termination column. The result names which clamp won. Ambient is 310.15(B)(1). More than three current-carrying conductors is 310.15(C)(1).<br><br>
+            A neutral is a CCC when it carries unbalanced current, including a harmonic-rich neutral. A balanced motor neutral is not. The equipment grounding conductor counts in fill. It is not a CCC. Steel raceway uses the higher Chapter 9 Table 9 X column.<br><br>
+            <strong>HP mode</strong> needs efficiency. I = HP×746 / (V×√3×PF) with no Eff treats the motor as 100% and undersizes the wire. That current is still an estimate — 430.22 and Table 430.52 use Tables 430.248/250 per 430.6(A)(1).<br><br>
+            <strong>Parallel runs</strong> are permitted in 1/0 and larger only (310.10(G)), and every conductor of a paralleled set must be the same length, size, material and insulation, and terminate the same way. The default <strong>planning allowance</strong> ($/ft) is a modeled comparison book — not live market, LME, or a bid. Optional I²R uses NEC Chapter 9 Table 8 DC Ω/kft and the <em>operating</em> current, not the 125% design current. Voltage drop on this screen uses Table 8 R plus Table 9 X. There is no lb/kft table in this toolbox; enter $/kft if you have a takeoff.
           </div>
         </details>
       </div>
@@ -4022,7 +4032,12 @@
                 <label>Power Factor</label>
                 <input type="number" id="ws_pf" value="0.9" min="0.1" max="1" step="0.01">
               </div>
+              <div>
+                <label>Efficiency (HP only)</label>
+                <input type="number" id="ws_eff" min="0.5" max="0.99" step="0.01" placeholder="e.g. 0.90" aria-describedby="ws_eff_help">
+              </div>
             </div>
+            <p id="ws_eff_help" class="tool-note">HP without efficiency treats the motor as 100% and undersizes the wire. Enter a decimal under 1. That current is an estimate — motor conductors and the branch SCPD use Tables 430.248/250 (430.6(A)(1)), not this number.</p>
             <div class="input-group">
               <div>
                 <label>One-Way Length (ft)</label>
@@ -4356,14 +4371,17 @@
     <section id="sec-sc" class="section">
       <div class="section-header">
         <h2>⚡ Short Circuit — Available Fault Current</h2>
-        <p>Simplified transformer-only calculation. For full arc flash studies, use IEEE 1584.</p>
+        <p>Infinite-bus symmetrical amps at the secondary lugs, plus a first-cycle factor from X/R. Not an arc-flash study.</p>
         <details class="section-info">
           <summary>ℹ More Info — Short Circuit</summary>
           <div class="section-info-body">
-            <strong>Available Fault Current</strong> is the maximum short-circuit current that can flow at a given point in the electrical system. All equipment must be rated to safely interrupt this current.<br><br>
-            <strong>Simplified formula:</strong> I_SC = (kVA × 1000) / (√3 × V × %Z/100)<br><br>
-            <ul><li>Assumes infinite bus primary (unlimited source capacity) — conservative/worst-case</li><li>Does not account for conductor impedance between transformer and fault point</li><li>Asymmetrical multiplier of ~1.25 applied (actual value depends on X/R ratio)</li><li><strong>NEC 110.9/110.10:</strong> All equipment must be rated ≥ available fault current</li></ul>
-            <strong>For arc flash analysis:</strong> Use IEEE 1584-2018 with a full Short Circuit Study including all cable and bus impedances.
+            <strong>Available fault current</strong> here is the transformer secondary with an infinite bus behind it. That is an upper bound at the lugs. Conductor impedance lowers it. Motors on the bus can raise it.<br><br>
+            <strong>Symmetrical:</strong> I_SC = (kVA × 1000) / (√3 × V × %Z/100) for three-phase. Single-phase drops the √3.<br><br>
+            <ul>
+              <li>First-cycle asymmetrical uses K = √(1 + 2·exp(−2π/(X/R))). Not a flat ~1.25.</li>
+              <li><strong>110.9 / 110.10:</strong> Interrupting rating (AIC) has to be at least the available fault current.</li>
+              <li>This is not an IEEE 1584 arc-flash study and not a stamped short-circuit study.</li>
+            </ul>
           </div>
         </details>
       </div>
@@ -4412,8 +4430,9 @@
               ≤ 15 kVA dry-type: 2–4%<br>
               15–500 kVA dry-type: 4–6%<br>
               Liquid-filled: 5.75% (common)<br><br>
-              <strong>Asymmetrical factor:</strong><br>
-              Multiply by 1.25–1.732 (X/R ratio dependent)<br><br>
+              <strong>First-cycle factor from X/R:</strong><br>
+              K = √(1 + 2·exp(−2π/(X/R)))<br>
+              Not a flat ~1.25<br><br>
               <strong>NEC 110.9 / 110.10:</strong><br>
               Equipment must be rated for the available fault current.
             </div>
@@ -4434,7 +4453,7 @@
           <summary>ℹ More Info — Conductor Reference</summary>
           <div class="section-info-body">
             <strong>NEC Table 310.16</strong> provides ampacity for conductors installed in a raceway, cable, or earth with ≤3 current-carrying conductors at 30°C ambient.<br><br>
-            <strong>Important derating rules:</strong><ul><li><strong>More than 3 conductors:</strong> Apply NEC 310.15(C)(1) adjustment factors (e.g., 4–6 conductors = 80% of listed ampacity)</li><li><strong>Ambient temperature:</strong> Apply NEC Table 310.15(B)(2) correction factors for temperatures other than 30°C</li><li><strong>Continuous loads:</strong> Conductor must be sized at 125% of continuous load per NEC 210.19</li><li><strong>Terminal ratings:</strong> Most equipment is rated 75°C; do not use 90°C column for final ampacity (only for derating math)</li></ul>
+            <strong>Important derating rules:</strong><ul><li><strong>More than 3 current-carrying conductors:</strong> 310.15(C)(1) adjustment (4–6 conductors = 80%). The EGC is in the fill. It is not a CCC. A neutral is a CCC only when it carries unbalanced or harmonic current.</li><li><strong>Ambient temperature:</strong> 310.15(B)(1) correction for temperatures other than 30°C. Not 310.15(B)(2).</li><li><strong>Usable ampacity</strong> is the minimum of the corrected value and the termination column (110.14(C)). The clamp that is lower wins.</li><li><strong>Continuous loads:</strong> Size at 125% per 210.19(A) / 215.2(A), then apply that cap.</li></ul>
           </div>
         </details>
       </div>
@@ -4488,14 +4507,14 @@
           <div class="card-title">K Values for Voltage Drop</div>
           <div class="card-body">
             <div class="formula-box">
-              K = resistance constant in ohms/circular mil/foot<br><br>
-              Copper (Cu):   K = 12.9<br>
-              Aluminum (Al): K = 21.2<br><br>
-              Used in: VD = (M × K × I × L) / CM<br>
+              Field K near 75 °C, ohms per circular mil per foot<br>
+              Not Chapter 9 Table 9. Table 9 is AC impedance.<br><br>
+              Copper (Cu):   K ≈ 12.9<br>
+              Aluminum (Al): K ≈ 21.2<br><br>
+              Used in: VD ≈ (M × K × I × L) / CM<br>
               M = 2 (single-phase) | √3 ≈ 1.732 (three-phase)<br><br>
-              CM = circular mils of conductor<br>
-              L  = one-way length in feet<br>
-              I  = current in amperes
+              Enter operating amps. Ampacity is still continuous × 1.25 and 110.14(C).<br>
+              2 AWG and larger on a long 480 V feeder: Table 8 R + Table 9 X.
             </div>
           </div>
         </div>
@@ -4513,7 +4532,7 @@
           <summary>ℹ More Info — Motor FLA Tables</summary>
           <div class="section-info-body">
             <strong>NEC Motor FLA Tables</strong> provide Full-Load Ampere values used for conductor and OCPD sizing — not necessarily the nameplate current.<br><br>
-            <ul><li><strong>NEC 430.248:</strong> Single-phase AC motors</li><li><strong>NEC 430.250:</strong> Three-phase AC induction motors (squirrel-cage and wound-rotor)</li><li><strong>Conductor sizing:</strong> Size at 125% of NEC table FLA per NEC 430.22</li><li><strong>OCPD sizing:</strong> Use NEC Table 430.52 multipliers (inverse-time breaker: 250% of FLA typical)</li><li><strong>Overload protection:</strong> Set at ≤115–125% of nameplate FLA per NEC 430.52</li></ul>
+            <ul><li><strong>NEC 430.248:</strong> Single-phase AC motors</li><li><strong>NEC 430.250:</strong> Three-phase squirrel-cage and wound-rotor</li><li><strong>Conductors (430.22):</strong> At least 125% of table FLA. Use the table, not the nameplate (430.6(A)(1)).</li><li><strong>Branch SCPD:</strong> Table 430.52 percent of that same table FLA. The percent depends on the motor type and the device.</li><li><strong>Overload (430.32):</strong> Nameplate FLA, not table FLA, and not 430.52. 430.52 is the short-circuit and ground-fault device.</li></ul>
             <strong>Note:</strong> For motors rated at voltages other than listed, use the closest listed voltage that is ≥ actual voltage.
           </div>
         </details>
@@ -4553,7 +4572,7 @@
                     </tbody>
                   </table>
                 </div>
-                <div class="note">ℹ Values from NEC Table 430.248. Use for conductor sizing, OCPD sizing, and overload protection. Not to be confused with nameplate FLA.</div>
+                <div class="note">ℹ Table 430.248 values are for conductors (430.22) and the branch SCPD (Table 430.52) per 430.6(A)(1). Overload is 430.32 on the nameplate, not this table and not 430.52.</div>
               </div>
             </div>
           </div>
@@ -8512,7 +8531,7 @@
             <ul>
               <li><strong>Table 310.16:</strong> Allowable ampacity for conductors in raceways and cables at 30°C ambient, ≤3 current-carrying conductors.</li>
               <li><strong>Table 310.15(C)(1):</strong> Adjustment factors when more than 3 current-carrying conductors are bundled in a conduit or cable.</li>
-              <li><strong>Table 310.15(B)(2)(a):</strong> Ambient temperature correction factors applied to ampacity values.</li>
+              <li><strong>310.15(B)(1):</strong> Ambient temperature correction. Not the older 310.15(B)(2) numbering.</li>
               <li><strong>Table 240.6(A):</strong> Standard ampere ratings for fuses and inverse-time circuit breakers.</li>
               <li><strong>Table 250.122:</strong> Minimum equipment grounding conductor (EGC) sizes based on OCPD rating.</li>
               <li><strong>Table 430.52:</strong> Maximum motor branch-circuit OCPD ratings as a percentage of motor FLA.</li>
@@ -8632,7 +8651,7 @@
               </div>
             </div>
             <div class="card">
-              <div class="card-title">NEC Table 310.15(B)(2)(a) — Ambient Temperature Correction Factors</div>
+              <div class="card-title">NEC 310.15(B)(1) — Ambient Temperature Correction Factors</div>
               <div class="card-body">
                 <div class="note">&#9432; Multiply the base ampacity by the correction factor for the actual ambient temperature. Base ampacity is at 30°C (86°F). Apply BOTH CCC and temperature factors simultaneously: Derated Ampacity = Base &times; CCC Factor &times; Temp Factor.</div>
                 <div class="ref-table-wrap" style="margin-top:10px">
@@ -9964,7 +9983,7 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">NEC 310.16 &#8212; Ampacity Reference (75&deg;C Column, Copper &amp; Aluminum)</div>
           <div class="card-body">
-            <div class="note">&#9432; 75&deg;C column used per NEC 110.14(C). Conductors in conduit in free air, not more than 3 CCC, 30&deg;C ambient. Apply temperature correction (NEC 310.15(B)(2)(a)) and conduit fill derating (NEC 310.15(B)(3)(a)) as needed.</div>
+            <div class="note">&#9432; 75&deg;C column used per NEC 110.14(C). Not more than 3 CCC, 30&deg;C ambient. Ambient correction is 310.15(B)(1). More than three current-carrying conductors is 310.15(C)(1). The EGC is in the fill, not in the CCC count.</div>
             <div class="ref-table-wrap" style="margin-top:10px">
               <table class="ref-table">
                 <thead>
@@ -10662,15 +10681,14 @@
         <details class="section-info">
           <summary>ℹ More Info — Lighting VD Optimizer</summary>
           <div class="section-info-body">
-            <strong>This tool</strong> applies linear programming (LP) to select the most cost-effective conductor size for a lighting branch circuit while keeping voltage drop at or below the target (typically 3%).<br><br>
+            <strong>This tool</strong> finds the smallest wire that keeps the K-factor voltage drop at or under your target. That winner is not the Code size.<br><br>
             <strong>How it works:</strong><ul>
-              <li><strong>Total Load:</strong> Luminaire count × watts/fixture gives total connected load in watts</li>
-              <li><strong>Current:</strong> I = Total Watts / Supply Voltage (120 V assumed single-phase)</li>
-              <li><strong>Objective:</strong> Minimize relative wire cost (smaller wire = lower cost)</li>
-              <li><strong>Constraint:</strong> VD% = (2 × K × I × L) / (CM × V) × 100 ≤ target VD%</li>
-              <li><strong>LP Solver:</strong> javascript-lp-solver (loaded from CDN) evaluates all standard AWG sizes and returns the smallest passing size</li>
+              <li><strong>Load:</strong> Luminaire count × watts per fixture.</li>
+              <li><strong>Current:</strong> I = total watts / supply voltage. Enter those operating amps into the drop.</li>
+              <li><strong>Drop:</strong> VD% = (2 × K × I × L) / (CM × V) × 100. K ≈ 12.9 Cu / 21.2 Al near 75 °C. Not Chapter 9 Table 9.</li>
+              <li><strong>3% note:</strong> 210.19(A) Informational Note. Within the note or over the note — not a Code pass/fail.</li>
+              <li><strong>Ampacity is separate:</strong> Continuous lighting is sized at 125% (210.19(A) / 210.20(A)), then Table 310.16 with 310.15(B)(1), 310.15(C)(1), and the 110.14(C) cap. The VD winner can be smaller than that.</li>
             </ul>
-            <strong>NEC guidance:</strong> NEC 210.19 recommends ≤3% VD on branch circuits. Use 120 V for typical lighting; 277 V for fluorescent/LED in commercial.
           </div>
         </details>
       </div>

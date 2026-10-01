@@ -905,7 +905,7 @@ struct NECCircuitView: View {
                 symbolic: "I_des = FLA×mult; ampacity ≥ I_des; VD = φ·K·I·L/CM",
                 substituted: substituted,
                 meaning: "One-shot branch/feeder sketch: design current, derated ampacity pick, voltage drop, and OCPD. Leave FLA blank to compute from kW.",
-                citation: "NEC 210.19 / 215.2 continuous, Table 310.16, Ch.9 Table 8 (CM) and Table 9 (K-factor VD). Design aid."
+                citation: "NEC 210.19 / 215.2 continuous, Table 310.16, 310.15(B)(1), 310.15(C)(1). VD uses field K near 75 °C, not Ch.9 Table 9. Design aid."
             )
 
             NumberField(title: "FLA (optional)", unit: "A", text: $fla, optional: true, fieldID: "fla", onSubmit: calculate)

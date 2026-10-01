@@ -37,8 +37,9 @@ public struct VoltageDropResult: Equatable, Sendable {
     }
 }
 
-/// Approximate voltage drop using NEC Chapter 9 Table 9 K-factor at 75 °C.
-/// 3 % / 5 % flags are informational (NEC Informational Note), not a hard code limit.
+/// Approximate voltage drop using field K at about 75 °C (≈12.9 Cu / 21.2 Al).
+/// K is effective resistivity, not Chapter 9 Table 9. Table 9 is AC impedance.
+/// 3 % / 5 % flags follow Informational Notes, not a hard code limit.
 public enum VoltageDrop {
     public static func calculate(
         system: ElectricalSystem,

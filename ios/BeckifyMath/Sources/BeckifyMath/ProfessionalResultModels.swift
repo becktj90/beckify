@@ -19,7 +19,7 @@ public enum ResultProvenance: String, Codable, CaseIterable, Sendable, Hashable 
     case designPreference
     /// Value that depends on a specific manufacturer product.
     case manufacturerDependent
-    /// Engineering approximation (e.g. Chapter 9 Table 9 K-factor).
+    /// Engineering approximation (e.g. field-K voltage drop, not Ch.9 Table 9).
     case engineeringApproximation
     /// Required input was not supplied; no claim is made.
     case missingInformation

@@ -530,7 +530,7 @@ public enum ConductorCost {
             ),
             DesignWarning(
                 severity: .info,
-                message: "Voltage drop uses the Chapter 9 Table 9 K-factor approximation. 3% / 5% figures are informational notes, not a hard NEC limit.",
+                message: "Voltage drop uses field K (≈12.9 Cu / 21.2 Al near 75 °C), not Chapter 9 Table 9. 3% / 5% figures are Informational Notes, not a hard NEC limit. Long 480 V feeders at 2 AWG and larger want Table 8 R plus Table 9 X.",
                 provenance: .informationalNote
             ),
             DesignWarning(
@@ -582,9 +582,9 @@ public enum ConductorCost {
                 sourceDescription: "Paralleled conductors generally 1/0 AWG and larger, same length/size/material"
             ),
             CodeCitation(
-                articleOrTable: "Chapter 9 Table 9",
+                articleOrTable: "Field K ≈ 12.9 Cu / 21.2 Al",
                 units: "V",
-                sourceDescription: "K-factor voltage-drop approximation"
+                sourceDescription: "Effective resistivity near 75 °C. Not Chapter 9 Table 9. Large feeders: Table 8 R + Table 9 X."
             ),
             CodeCitation(
                 articleOrTable: "Chapter 9 Table 8",

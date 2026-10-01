@@ -570,13 +570,20 @@ window.calcWireSelection = function () {
       ? 'I = kW×1000 / (√3 × V × PF)'
       : 'I = kW×1000 / (V × PF)';
   } else {
-    const watts = loadValue * 746;
+    const eff = val('ws_eff');
+    if (!isPos(eff) || eff >= 1) {
+      return showError(
+        'ws_result',
+        'Enter motor efficiency as a decimal under 1 (example 0.90). Leaving it out treats the motor as 100% and undersizes the wire. For 430.22 conductors and Table 430.52, use Tables 430.248/250 per 430.6(A)(1) — not this estimate.'
+      );
+    }
+    const watts = (loadValue * 746) / eff;
     current = phase === '3ph'
       ? watts / (sqrt3 * voltage * powerFactor)
       : watts / (voltage * powerFactor);
     currentBasis = phase === '3ph'
-      ? 'I = hp×746 / (√3 × V × PF)'
-      : 'I = hp×746 / (V × PF)';
+      ? 'Estimate I = hp×746 / (√3 × V × PF × Eff) — not table FLA'
+      : 'Estimate I = hp×746 / (V × PF × Eff) — not table FLA';
   }
 
   /* 210.19(A)/215.2(A): size for 125% of a continuous load. */
@@ -682,8 +689,14 @@ window.calcWireSelection = function () {
   wtRow(el, 'Bundling adjustment', '×' + refAmp.bundleFactor.toFixed(2) +
     '  (' + ccc + ' current-carrying)');
   wtRow(el, 'Termination limit', insulTemp === terminationTemp
-    ? 'Not limiting'
+    ? 'Same column as insulation'
     : terminationTemp + '°C column — NEC 110.14(C)');
+  wtRow(el, 'Clamp that won', refAmp.derated <= refAmp.terminationCap + 1e-6
+    ? 'Ambient × CCC on the insulation column'
+    : 'Termination column (110.14(C))');
+  if (loadUnit === 'hp') {
+    wtRow(el, 'HP current', 'Estimate only. 430.22 and Table 430.52 use Tables 430.248/250.');
+  }
 
   /* ---- Recommendation ---- */
   wtHeading(el, 'Lowest modeled material cost');

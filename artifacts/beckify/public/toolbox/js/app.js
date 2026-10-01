@@ -440,7 +440,7 @@ const KCMIL_SIZES = new Set(['250', '300', '350', '400', '500']);
 const WIRE_SIZES  = ['14', '12', '10', '8', '6', '4', '3', '2', '1',
                      '1/0', '2/0', '3/0', '4/0',
                      '250', '300', '350', '400', '500'];
-/* Resistivity constants (Ω·CM/ft) — NEC Ch.9 Table 9 at 75°C */
+/* Field K near 75°C (Ω·CM/ft). Effective resistivity, not Ch.9 Table 9. */
 const K_CU = 12.9;  // Copper
 const K_AL = 21.2;  // Aluminum
 
@@ -465,8 +465,8 @@ window.calcVDrop = function (phase) {
     ['Voltage Drop (VD)', fmt(VD, 2) + ' V'],
     ['Voltage Drop %', fmt(VDpct, 2) + ' %'],
     ['Receiving End Voltage', fmt(Vs - VD, 2) + ' V'],
-    ['NEC Recommendation (\u2264 3%)', VDpct <= 3 ? '\u2714 PASS' : '\u2718 EXCEEDS 3%'],
-    ['Combined Drop Guideline (\u2264 5%)', VDpct <= 5 ? '\u2714 PASS' : '\u2718 EXCEEDS 5%'],
+    ['3% branch note (210.19(A) IN)', VDpct <= 3 ? 'WITHIN NOTE' : 'OVER NOTE'],
+    ['5% feeder+branch note (215.2(A) IN)', VDpct <= 5 ? 'WITHIN NOTE' : 'OVER NOTE'],
     ['Conductor Ampacity', ampNote]
   ]);
 };
@@ -649,13 +649,18 @@ window.calcMotorFLA = function () {
   const HP = val('mfla_hp'), V = val('mfla_v'), eff = val('mfla_eff') / 100, PF = val('mfla_pf') / 100;
   const ph = document.getElementById('mfla_phase').value;
   if (!isPos(HP, V, eff, PF)) return showError('mfla_result', 'Enter all values > 0.');
+  if (eff >= 1) {
+    return showError('mfla_result', 'Enter efficiency under 100%. 100% treats the motor as lossless and undersizes the wire. 430.22 and Table 430.52 use Tables 430.248/250 (430.6(A)(1)), not this estimate.');
+  }
   const mult = ph === '3' ? Math.sqrt(3) : 1;
   const I = HP * 746 / (V * mult * eff * PF);
-  const branchCircuit = I * 1.25;
+  const estimate125 = I * 1.25;
   showResult('mfla_result', [
-    ['Full-Load Current (FLA)', fmt(I, 2) + ' A'],
-    ['NEC Branch Circuit (125%)', fmt(branchCircuit, 2) + ' A'],
-    ['Formula', ph === '3' ? 'I = HP×746 / (V×√3×Eff×PF)' : 'I = HP×746 / (V×Eff×PF)']
+    ['Estimated current', fmt(I, 2) + ' A'],
+    ['125% of this estimate', fmt(estimate125, 2) + ' A — not a 430.22 size'],
+    ['Use for 430.22 / 430.52', 'Tables 430.248 / 430.250 (430.6(A)(1))'],
+    ['Locked rotor', 'NEMA code letter / 430.7(B)'],
+    ['Formula', ph === '3' ? 'I ≈ HP×746 / (V×√3×Eff×PF)' : 'I ≈ HP×746 / (V×Eff×PF)']
   ]);
 };
 
@@ -927,16 +932,17 @@ window.calcSC = function () {
     : kVA * 1000 / (Math.sqrt(3) * Vs);
   const I_fault = I_base / Zp;  // simplified (neglects line impedance)
   const I_sym  = I_fault;
-  // IEEE asymmetrical factor calculation based on X/R ratio
+  // First-cycle factor from X/R. Not a flat ~1.25 and not IEEE 1584.
   const asymmetricalFactor = Math.sqrt(1 + 2 * Math.exp(-2 * Math.PI / xRatio));
   const I_asym = I_fault * asymmetricalFactor;
   showResult('sc_result', [
     ['System', phase === '1ph' ? '1-Phase' : '3-Phase'],
     ['Base Current (I_base)', fmt(I_base, 2) + ' A'],
     ['Available Short Circuit (Symmetrical)', fmt(I_sym, 0) + ' A'],
-    ['Asymmetrical Factor (IEEE, X/R=' + fmt(xRatio, 2) + ')', fmt(asymmetricalFactor, 4)],
-    ['Available Short Circuit (Asymmetrical)', fmt(I_asym, 0) + ' A'],
-    ['Note', 'Simplified \u2014 excludes conductor/bus impedance']
+    ['First-cycle K from X/R=' + fmt(xRatio, 2), fmt(asymmetricalFactor, 4) + '  (\u221a(1+2\u00b7exp(\u22122\u03c0/(X/R))))'],
+    ['First-cycle asymmetrical', fmt(I_asym, 0) + ' A'],
+    ['AIC', 'Must be \u2265 available fault current (110.9 / 110.10)'],
+    ['Note', 'Infinite-bus upper bound. Conductor Z lowers it. Motors can raise it. Not IEEE 1584.']
   ]);
 };
 
@@ -1668,7 +1674,7 @@ const EGC_TABLE = [
   { maxOCPD: 1200, cu: '3/0',    al: '250 kcmil' }
 ];
 
-/* NEC 310.15(B)(2)(a) temperature correction factors */
+/* NEC 310.15(B)(1) ambient correction. Not the older (B)(2)(a) number. */
 function necTempFactor(ambientC, insulRating) {
   // 90°C-rated insulation (THHN, XHHW-2, etc.)
   const f90 = [[25,1.04],[30,1.00],[35,0.96],[40,0.91],[45,0.87],[50,0.82],[55,0.76],[60,0.71]];
@@ -1775,13 +1781,13 @@ window.calcNEC = function () {
   const deratedAmp  = baseAmp * totalDerating;
 
   // Step 5 — voltage drop
-  // K = 12.9 Ω·CM/ft (Cu @ 75°C), 21.2 (Al @ 75°C)
-  // 1-phase: VD = 2×K×I×L / CM; 3-phase: VD = 1.732×K×I×L / CM
+  // Field K near 75°C (Cu 12.9, Al 21.2). Not Ch.9 Table 9.
+  // 1-phase: VD = 2×K×I×L / CM; 3-phase: VD = √3×K×I×L / CM
   const K          = material === 'cu' ? 12.9 : 21.2;
   const phaseFactor = phases === 3 ? Math.sqrt(3) : 2.0;
   const vdVolts    = phaseFactor * K * fla * dist / conductor.cm;
   const vdPct      = (vdVolts / voltage) * 100;
-  const vdFlag     = vdPct > 5 ? ' EXCEEDS 5% — CRITICAL' : (vdPct > 3 ? ' EXCEEDS 3% — WARNING' : ' OK');
+  const vdFlag     = vdPct > 5 ? ' OVER 5% NOTE' : (vdPct > 3 ? ' OVER 3% NOTE' : ' WITHIN 3% NOTE');
 
   // Step 6 — OCPD sizing
   const ocpdMult   = NEC_OCPD_MULT[loadType] || 1.25;
@@ -1810,8 +1816,8 @@ window.calcNEC = function () {
   showResult('nec_result', [
     ['Load FLA',                                     fmt(fla, 2) + ' A'],
     ['NEC Conductor Mult (NEC ' + necCodeRef(loadType) + ')', '\u00d7' + condMult + ' \u2192 Design I = ' + fmt(designI, 2) + ' A'],
-    ['Temp Correction @ ' + ambientC + '\u00b0C',    '\u00d7' + fmt(tempFactor, 3) + ' (NEC 310.15(B)(2)(a), ' + insulR + '\u00b0C insul)'],
-    ['Conduit Fill Derating',                        '\u00d7' + cccDF.toFixed(2) + ' (NEC 310.15(B)(3)(a))'],
+    ['Temp Correction @ ' + ambientC + '\u00b0C',    '\u00d7' + fmt(tempFactor, 3) + ' (NEC 310.15(B)(1), ' + insulR + '\u00b0C insul)'],
+    ['CCC adjustment',                               '\u00d7' + cccDF.toFixed(2) + ' (NEC 310.15(C)(1))'],
     ['Total Derating Factor',                        '\u00d7' + fmt(totalDerating, 3)],
     ['Selected Conductor',                           conductor.label + ' ' + (material === 'cu' ? 'Cu' : 'Al') + ' THHN'],
     ['Base Ampacity (NEC 310.16 75\u00b0C)',  baseAmp + ' A'],
@@ -2342,10 +2348,19 @@ window.calcLightingOptimizer = function () {
     ['Run Length',            fmt(length) + ' ft (one-way)'],
     ['Conductor Material',    matEl.value === 'CU' ? 'Copper (K=12.9)' : 'Aluminum (K=21.2)'],
     ['Target VD%',            fmt(vdPct, 1) + '%'],
-    ['Optimal Wire Size',     chosen.awg + ' AWG'],
+    ['VD-only size',          chosen.awg + ' AWG — not the Code size'],
     ['Actual VD at this size',fmt(actualVd, 2) + ' V (' + fmt(actualVdPct, 2) + '%)'],
-    ['VD Constraint',         actualVdPct <= vdPct ? 'PASS ✓' : 'EXCEED — see note']
+    ['3% / target note',      actualVdPct <= vdPct ? 'WITHIN NOTE' : 'OVER NOTE']
   ];
+  const ampTable = matEl.value === 'CU' ? WIRE_AMP_CU75 : WIRE_AMP_AL75;
+  const lightingAmp = ampTable[String(chosen.awg)];
+  const continuousNeed = I * 1.25;
+  if (typeof lightingAmp === 'number') {
+    rows.push(['Continuous lighting ampacity', continuousNeed.toFixed(1) + ' A needed (×1.25). 75°C table lists ' + lightingAmp + ' A' +
+      (lightingAmp + 1e-9 >= continuousNeed ? ' — table column covers it before other derates.' : ' — VD winner is undersized for continuous ampacity.')]);
+  } else {
+    rows.push(['Continuous lighting ampacity', 'Size at 125% of operating amps (210.19(A)), then Table 310.16. VD winner is not that size.']);
+  }
   if (note) rows.push(['⚠ Note', note]);
   showResult('lo_result', rows);
 };
