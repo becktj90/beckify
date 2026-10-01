@@ -587,6 +587,107 @@ public enum BreathFluteMath {
         if next < 0 { next += twoPi }
         return (sample, next)
     }
+
+    /// Soft attack / release for the blow gate. Light blows ease in more slowly.
+    /// Target is 0 whenever the gate is closed so finger covers alone stay silent.
+    public static func envelopeStep(
+        current: Double,
+        target: Double,
+        sampleRate: Double,
+        lightBlow: Bool
+    ) -> Double {
+        let rate = sampleRate.isFinite && sampleRate > 0 ? sampleRate : 44_100
+        let from = current.isFinite ? min(1, max(0, current)) : 0
+        let to = target.isFinite ? min(1, max(0, target)) : 0
+        // Soft attack (~70–110 ms). Faster release so silence snaps when breath stops.
+        let attackSeconds = lightBlow ? 0.11 : 0.07
+        let releaseSeconds = 0.035
+        let seconds = to > from ? attackSeconds : releaseSeconds
+        let alpha = 1 - exp(-1.0 / max(1, rate * seconds))
+        return from + (to - from) * alpha
+    }
+
+    /// Breathy harmonic flute tone. Fundamental plus soft even/odd partials and a
+    /// little filtered air noise. Amplitude 0 (or envelope 0) yields exact silence.
+    public static func angelicSample(
+        phase: Double,
+        phase2: Double,
+        phase3: Double,
+        phase4: Double,
+        phase5: Double,
+        noise: Double,
+        noiseSeed: UInt64,
+        frequencyHz: Double,
+        sampleRate: Double,
+        amplitude: Double,
+        envelope: Double
+    ) -> (
+        sample: Double,
+        nextPhase: Double,
+        nextPhase2: Double,
+        nextPhase3: Double,
+        nextPhase4: Double,
+        nextPhase5: Double,
+        nextNoise: Double,
+        nextSeed: UInt64
+    ) {
+        let rate = sampleRate.isFinite && sampleRate > 0 ? sampleRate : 44_100
+        let hz = frequencyHz.isFinite && frequencyHz > 0 ? frequencyHz : 0
+        let amp = amplitude.isFinite ? min(1, max(0, amplitude)) : 0
+        let env = envelope.isFinite ? min(1, max(0, envelope)) : 0
+        let gain = amp * env
+        let twoPi = 2 * Double.pi
+
+        func advance(_ phase: Double, multiple: Double) -> Double {
+            let current = phase.isFinite ? phase : 0
+            var next = current + twoPi * hz * multiple / rate
+            next = next.truncatingRemainder(dividingBy: twoPi)
+            if next < 0 { next += twoPi }
+            return next
+        }
+
+        // Tiny LCG — deterministic, no Foundation RNG on the audio thread.
+        var seed = noiseSeed &+ 0x9E37_79B9_7F4A_7C15
+        seed = seed &* 0xBF58_476D_1CE4_E5B9 &+ 0x94D0_49BB_1331_11EB
+        let unit = Double(seed & 0xFFFF_FFFF) / Double(UInt32.max)
+        let white = unit * 2 - 1
+        let prior = noise.isFinite ? noise : 0
+        // Soft one-pole air (~1.2 kHz-ish feel at 44.1 kHz).
+        let nextNoise = prior + 0.18 * (white - prior)
+
+        if gain <= 1e-9 || hz <= 0 {
+            return (0, advance(phase, multiple: 1), advance(phase2, multiple: 2),
+                    advance(phase3, multiple: 3), advance(phase4, multiple: 4),
+                    advance(phase5, multiple: 5), nextNoise, seed)
+        }
+
+        let p1 = phase.isFinite ? phase : 0
+        let p2 = phase2.isFinite ? phase2 : 0
+        let p3 = phase3.isFinite ? phase3 : 0
+        let p4 = phase4.isFinite ? phase4 : 0
+        let p5 = phase5.isFinite ? phase5 : 0
+        // Soft partials: strong fundamental, gentle 2nd (air), 3rd (flute body),
+        // whisper of 4th/5th. Breath rises a little on light blows.
+        let breathWeight = 0.045 + 0.04 * (1 - min(1, amp / max(loudAmplitude, 1e-9)))
+        let raw =
+            1.00 * sin(p1)
+            + 0.28 * sin(p2)
+            + 0.18 * sin(p3)
+            + 0.07 * sin(p4)
+            + 0.04 * sin(p5)
+            + breathWeight * nextNoise
+        let sample = raw * gain * 0.55
+        return (
+            sample,
+            advance(p1, multiple: 1),
+            advance(p2, multiple: 2),
+            advance(p3, multiple: 3),
+            advance(p4, multiple: 4),
+            advance(p5, multiple: 5),
+            nextNoise,
+            seed
+        )
+    }
 }
 
 // MARK: - Coupled Vibration

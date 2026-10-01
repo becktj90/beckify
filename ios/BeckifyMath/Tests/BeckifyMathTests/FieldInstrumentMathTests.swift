@@ -309,6 +309,40 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertEqual(step.sample, 0.5, accuracy: 1e-9)
         let wrap = BreathFluteMath.sineSample(phase: 0, frequencyHz: 48_000, sampleRate: 48_000, amplitude: 1)
         XCTAssertEqual(wrap.nextPhase, 0, accuracy: 1e-6)
+
+        // Soft attack: light blow rises slower than a firm blow; closed gate falls fast.
+        let attackLight = BreathFluteMath.envelopeStep(current: 0, target: 1, sampleRate: 48_000, lightBlow: true)
+        let attackFirm = BreathFluteMath.envelopeStep(current: 0, target: 1, sampleRate: 48_000, lightBlow: false)
+        XCTAssertGreaterThan(attackFirm, attackLight)
+        XCTAssertGreaterThan(attackLight, 0)
+        let release = BreathFluteMath.envelopeStep(current: 1, target: 0, sampleRate: 48_000, lightBlow: false)
+        XCTAssertLessThan(release, 1)
+        XCTAssertGreaterThan(release, 0)
+
+        // Angelic tone is silent when amplitude or envelope is zero (touch-only).
+        let silentTone = BreathFluteMath.angelicSample(
+            phase: 0, phase2: 0, phase3: 0, phase4: 0, phase5: 0,
+            noise: 0, noiseSeed: 1,
+            frequencyHz: BreathFluteMath.rootHz, sampleRate: 48_000,
+            amplitude: 0, envelope: 1
+        )
+        XCTAssertEqual(silentTone.sample, 0, accuracy: 1e-12)
+        let gatedOff = BreathFluteMath.angelicSample(
+            phase: 0.4, phase2: 0.8, phase3: 1.2, phase4: 1.6, phase5: 2.0,
+            noise: 0.1, noiseSeed: 42,
+            frequencyHz: BreathFluteMath.rootHz, sampleRate: 48_000,
+            amplitude: 0.4, envelope: 0
+        )
+        XCTAssertEqual(gatedOff.sample, 0, accuracy: 1e-12)
+        let voiced = BreathFluteMath.angelicSample(
+            phase: .pi / 2, phase2: 0, phase3: 0, phase4: 0, phase5: 0,
+            noise: 0, noiseSeed: 7,
+            frequencyHz: BreathFluteMath.rootHz, sampleRate: 48_000,
+            amplitude: 0.4, envelope: 1
+        )
+        XCTAssertNotEqual(voiced.sample, 0, accuracy: 1e-9)
+        XCTAssertLessThan(abs(voiced.sample), 1.0)
+
         XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("play tool"))
         XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("not a meter"))
         XCTAssertTrue(BreathFluteMath.honestLimit.localizedCaseInsensitiveContains("silence"))

@@ -1553,7 +1553,8 @@ enum GlyphKind {
         return .fill(ticks)
     }
 
-    /// Filled flute tube with finger holes punched through.
+    /// Filled handmade flute tube: embouchure notch + finger holes punched through.
+    /// Solid fill with even-odd holes — no SF Symbol, no gradient ink.
     private static func breathFlute(_ r: CGRect) -> GlyphArtwork {
         let tube = CGRect(
             x: r.minX + r.width * 0.04,
@@ -1562,12 +1563,22 @@ enum GlyphKind {
             height: r.height * 0.24
         )
         let body = Glyph.roundedRect(tube, corner: tube.height / 2)
-        var holes = Path()
-        for index in 0..<4 {
-            let x = tube.minX + tube.width * (0.22 + CGFloat(index) * 0.18)
-            holes.addPath(Glyph.circlePath(CGPoint(x: x, y: tube.midY), tube.height * 0.22))
+        var cutouts = Path()
+        // Embouchure oval near the left (mouth) end.
+        cutouts.addEllipse(in: CGRect(
+            x: tube.minX + tube.width * 0.06,
+            y: tube.midY - tube.height * 0.18,
+            width: tube.width * 0.10,
+            height: tube.height * 0.36
+        ))
+        // Slightly uneven hole spacing so the mark reads handmade, not CNC.
+        let holeXs: [CGFloat] = [0.28, 0.44, 0.59, 0.76]
+        let holeRs: [CGFloat] = [0.20, 0.22, 0.19, 0.21]
+        for (xFrac, rFrac) in zip(holeXs, holeRs) {
+            let x = tube.minX + tube.width * xFrac
+            cutouts.addPath(Glyph.circlePath(CGPoint(x: x, y: tube.midY), tube.height * rFrac))
         }
-        return .fill(Glyph.punched(body, holes))
+        return .fill(Glyph.punched(body, cutouts))
     }
 
     /// Machine block with a waveform cut out. Solid fill, distinct from the g-force phone.
