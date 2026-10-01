@@ -14,8 +14,10 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(url?.absoluteString, "https://example.com/custom-translate")
     }
 
-    func testRejectsHTTPCustomEndpoint() {
-        XCTAssertNil(SpanishTranslatorAPI.translateURL(customEndpoint: "http://insecure.example/translate"))
+    func testHTTPCustomEndpointFallsBackToDefault() {
+        // Same rule as PhotoLookCheck: non-HTTPS custom is ignored; default API wins.
+        let url = SpanishTranslatorAPI.translateURL(customEndpoint: "http://insecure.example/translate")
+        XCTAssertEqual(url?.absoluteString, "https://api.beckify.com/api/translate")
     }
 
     func testClampSourceText() {
@@ -85,7 +87,7 @@ final class SpanishTranslatorTests: XCTestCase {
 
     func testCatalogPolicyAndHowItWorks() {
         XCTAssertTrue(ToolCalculationPolicy.knownToolIDs.contains("spanishTranslator"))
-        XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "spanishTranslator"), .sensor)
+        XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "spanishTranslator"), .explicit)
         XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "spanishTranslator"), .toolkit)
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "spanishTranslator"), .reference)
         let copy = ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")

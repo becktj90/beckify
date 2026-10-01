@@ -176,8 +176,7 @@ public enum ToolCalculationPolicy {
             "coupledVibration",
             "breathFlute",
             "fieldPosition",
-            "deviceHealth",
-            "spanishTranslator":
+            "deviceHealth":
             return .sensor
 
         default:
