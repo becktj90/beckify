@@ -435,6 +435,75 @@ final class MotorFLATests: XCTestCase {
         XCTAssertEqual(MotorFLA.lookup(horsepower: "50", voltageColumn: "460", threePhase: true), 65)
         XCTAssertEqual(MotorFLA.conductorAmps(fla: 65), 81.25, accuracy: 1e-9)
     }
+
+    func testTablePlateReadoutFor10HP480() throws {
+        let plate = try XCTUnwrap(TableFLAPlate(
+            horsepower: "10",
+            columnVolts: "460",
+            systemVolts: 480,
+            threePhase: true,
+            tableAmps: 14
+        ))
+        XCTAssertEqual(plate.tableFLALabel, "14 A")
+        XCTAssertEqual(plate.conductorLabel, "17.5 A")
+        XCTAssertEqual(plate.horsepowerLabel, "10 HP")
+        XCTAssertEqual(plate.voltageLabel, "460 V")
+        XCTAssertEqual(plate.phaseLabel, "3 phase")
+        XCTAssertEqual(plate.article, "430.250")
+        XCTAssertEqual(plate.columnNote, "480 V system uses the 460 V column.")
+        XCTAssertEqual(
+            plate.announcement,
+            "14 A table FLA. 17.5 A conductor minimum, 125% of table FLA. 10 HP. 460 V table column. 480 V system uses the 460 V column. 3 phase. Table 430.250. Nameplate FLA is on Motor Nameplate, not this card."
+        )
+        XCTAssertTrue(plate.announcement.hasPrefix("14 A"))
+        XCTAssertTrue(plate.announcement.contains(TableFLAPlate.nameplateRedirect))
+    }
+
+    func testTablePlateMatchesColumnWhenSystemIsListed() throws {
+        let plate = try XCTUnwrap(TableFLAPlate(
+            horsepower: "10",
+            columnVolts: "230",
+            systemVolts: 230,
+            threePhase: false,
+            tableAmps: 50
+        ))
+        XCTAssertNil(plate.columnNote)
+        XCTAssertEqual(plate.phaseLabel, "1 phase")
+        XCTAssertEqual(plate.article, "430.248")
+        XCTAssertEqual(plate.tableFLALabel, "50 A")
+        XCTAssertEqual(plate.conductorLabel, "62.5 A")
+        XCTAssertFalse(plate.announcement.contains("system uses"))
+    }
+
+    func testTablePlateSmallCurrentUsesMilliamps() throws {
+        let plate = try XCTUnwrap(TableFLAPlate(
+            horsepower: "1/2",
+            columnVolts: "575",
+            systemVolts: 575,
+            threePhase: true,
+            tableAmps: 0.9
+        ))
+        XCTAssertEqual(plate.tableFLALabel, "900 mA")
+        XCTAssertEqual(plate.horsepowerLabel, "1/2 HP")
+        XCTAssertTrue(plate.announcement.hasPrefix("900 mA"))
+    }
+
+    func testTablePlateRejectsBlankLookup() {
+        XCTAssertNil(TableFLAPlate(
+            horsepower: " ",
+            columnVolts: "460",
+            systemVolts: 480,
+            threePhase: true,
+            tableAmps: 14
+        ))
+        XCTAssertNil(TableFLAPlate(
+            horsepower: "10",
+            columnVolts: "460",
+            systemVolts: 480,
+            threePhase: true,
+            tableAmps: 0
+        ))
+    }
 }
 
 final class WireAmpacityTests: XCTestCase {
