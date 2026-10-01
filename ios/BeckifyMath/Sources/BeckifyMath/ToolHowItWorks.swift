@@ -801,7 +801,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Audio stays local; translate on Stop.",
                 "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → Apple Translation (iOS 18+).",
-                "Speak uses neural TTS. Spanish → English is California stoner English (onyx). Preparing audio… until play; Apple voice fallback.",
+                "Neural TTS: Preparing voice… then Playing (never early). Cancel skips Apple fallback; Stop silences. Still preparing… Ns ~3s.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

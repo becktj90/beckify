@@ -869,8 +869,37 @@ public enum SpanishTranslatorAPI {
         return "Neural TTS · \(label) · \(register)\(accent) · max speaker volume"
     }
 
-    /// Status while neural TTS is fetching / buffering before first audio.
-    public static let preparingAudioStatus = "Preparing audio…"
+    /// Legacy alias — prefer `statusPreparingVoice` / `stillPreparingVoiceStatus(elapsedSeconds:)`.
+    public static let preparingAudioStatus = statusPreparingVoice
+
+    /// Distinct turn phases for Spanish Translator chrome (PR1 visible states).
+    public static let statusReady = "Ready"
+    public static let statusListening = "Listening"
+    public static let statusListeningSpanish = "Listening · Spanish"
+    public static let statusFinishingTranscript = "Finishing transcript"
+    public static let statusTranslating = "Translating"
+    public static let statusPreparingVoice = "Preparing voice…"
+    public static let statusPlaying = "Playing"
+    public static let statusCancelled = "Cancelled"
+    public static let statusFailed = "Failed"
+    public static let cancelActionTitle = "Cancel"
+    public static let stopActionTitle = "Stop"
+    public static let speakNowDeviceVoiceTitle = "Speak now with device voice"
+
+    /// After ~3s of voice prep, show elapsed seconds (no fake %).
+    public static let preparingVoiceLongThresholdSeconds = 3
+
+    public static func stillPreparingVoiceStatus(elapsedSeconds: Int) -> String {
+        let secs = max(0, elapsedSeconds)
+        return "Still preparing your voice… \(secs)s"
+    }
+
+    public static func preparingVoiceStatus(elapsedSeconds: Int) -> String {
+        if elapsedSeconds >= preparingVoiceLongThresholdSeconds {
+            return stillPreparingVoiceStatus(elapsedSeconds: elapsedSeconds)
+        }
+        return statusPreparingVoice
+    }
 
     public static func voiceFallbackNote(
         selectedLanguage: String?,
