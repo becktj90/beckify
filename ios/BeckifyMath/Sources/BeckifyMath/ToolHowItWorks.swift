@@ -339,7 +339,7 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "breathFlute": ToolHowItWorks(
-            summary: "Immersive handmade relic flute. Hold holes to change pitch while you blow. Warm quena-like tone. Silent until you blow.",
+            summary: "Immersive play relic flute. Hold holes to change pitch while you blow. Warm quena-like tone. Silent until you blow.",
             context: "Opens straight to the instrument. Soft breathy attack when you blow lightly. Honesty copy stays behind the info button.",
             bullets: [
                 "Press-and-hold holes retune immediately while blowing. Each hole is a distinct pitch. Holes alone stay silent.",
