@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "filename": "eBikeRange.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "eBikeRange@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "eBikeRange@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "template-rendering-intent": "original"
+  }
+}

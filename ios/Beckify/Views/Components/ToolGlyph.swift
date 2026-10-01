@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Beckify Flat Glyph System (app-only)
 //
@@ -15,6 +16,11 @@ import SwiftUI
 // motorFLA — then the rest of the shelves.
 // No SF Symbols in wells, no Meshy, no dual under-ink. 1:1 ToolID→GlyphKind.
 // Design grid is 24×24 with a 10% canvas inset. SF stays on chrome only.
+//
+// Toolbox wells draw the approved retro CRT tiles
+// (`Assets.xcassets/Retro/<ToolID>`, original color, nearest-neighbor).
+// The canvas paths in this file are the fallback when a ToolID has no
+// shipped tile, and the language category shelf marks still use.
 
 /// Stroke curve for pictogram linework. 44pt is the reference size.
 /// Open-only marks use `iconOpen` (3.2, floor 2.2). Overlay ticks on filled
@@ -56,11 +62,11 @@ struct GlyphArtwork {
 }
 
 /// Solid-fill / open-stroke pictogram for one toolbox tool. Drawn as vector
-/// paths so it stays crisp at any size, follows the theme, and ships no
-/// image assets.
+/// paths so the fallback stays crisp at any size and follows the shelf color.
 ///
-/// Each `ToolID` maps 1:1 to a distinct `GlyphKind`. When a category is known
-/// the ink is that shelf’s solid primary — never a gradient.
+/// `IconWell` prefers the retro CRT image when one is shipped. This canvas
+/// mark covers ToolIDs that have no tile. Each `ToolID` maps 1:1 to a distinct
+/// `GlyphKind`. When a category is known the ink is that shelf’s solid primary.
 struct ToolGlyph: View {
     let kind: GlyphKind
     var size: CGFloat = 44
@@ -107,8 +113,23 @@ struct ToolGlyph: View {
     }
 }
 
-/// Soft colored well that frames a `ToolGlyph` — the graphic unit of the grid
-/// and list rows (quiet category tint + solid/open pictogram).
+/// Approved CRT pixel tile (`Retro/<ToolID>`), or nil when this id has no
+/// shipped image. Original color — these are not template assets.
+enum RetroToolIcon {
+    static func assetName(for id: ToolID) -> String {
+        "Retro/\(id.rawValue)"
+    }
+
+    static func image(for id: ToolID) -> Image? {
+        let name = assetName(for: id)
+        guard UIImage(named: name) != nil else { return nil }
+        return Image(decorative: name)
+    }
+}
+
+/// Category-tinted well for one toolbox tool. Ships the retro CRT tile when
+/// `Retro/<ToolID>` is in the asset catalog; otherwise the canvas `ToolGlyph`.
+/// The image is decorative — the adjacent title is the accessible name.
 struct IconWell: View {
     let toolID: ToolID
     var glyphSize: CGFloat? = nil
@@ -145,32 +166,39 @@ struct IconWell: View {
         return Theme.Radius.control
     }
 
+    private var wellShape: AnyShape {
+        if circular {
+            AnyShape(Circle())
+        } else {
+            AnyShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+        }
+    }
+
+    private var wellStroke: Color {
+        category.map(Theme.categoryWellStroke) ?? Theme.accent.opacity(0.35)
+    }
+
     var body: some View {
         ZStack {
-            if circular {
-                Circle()
-                    .fill(category.map(Theme.categoryIconGradient) ?? Theme.iconGradient)
-                Circle()
-                    .stroke(
-                        category.map(Theme.categoryWellStroke) ?? Theme.accent.opacity(0.35),
-                        lineWidth: Theme.Stroke.hairline
-                    )
+            wellShape.fill(category.map(Theme.categoryIconGradient) ?? Theme.iconGradient)
+            if let retro = RetroToolIcon.image(for: toolID) {
+                retro
+                    .renderingMode(.original)
+                    .resizable()
+                    .interpolation(.none)
+                    .antialiased(false)
+                    .frame(width: size, height: size)
+                    .clipShape(wellShape)
             } else {
-                RoundedRectangle(cornerRadius: corner, style: .continuous)
-                    .fill(category.map(Theme.categoryIconGradient) ?? Theme.iconGradient)
-                RoundedRectangle(cornerRadius: corner, style: .continuous)
-                    .stroke(
-                        category.map(Theme.categoryWellStroke) ?? Theme.accent.opacity(0.35),
-                        lineWidth: Theme.Stroke.hairline
-                    )
+                ToolGlyph(
+                    kind: .forTool(toolID),
+                    size: resolvedGlyph,
+                    selected: selected,
+                    toolID: toolID,
+                    category: category
+                )
             }
-            ToolGlyph(
-                kind: .forTool(toolID),
-                size: resolvedGlyph,
-                selected: selected,
-                toolID: toolID,
-                category: category
-            )
+            wellShape.stroke(wellStroke, lineWidth: Theme.Stroke.hairline)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)

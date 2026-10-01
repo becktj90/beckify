@@ -16,7 +16,7 @@ This is not a website wrapper. There is no `WKWebView` of beckify.com and no web
 
 Reusable tokens live in `Beckify/Theme/Theme.swift` (surfaces, semantic accents, spacing, radius, stroke, typography, chart colors, motion). Calculator chrome — identity header, Calculate / Reset / Example, stale-result banner, diagrams, and the shared **How it works** disclosure — lives under `Beckify/Views/Components/`. About copy is data-driven in `BeckifyMath` (`ToolHowItWorksCatalog`, keyed by ToolID) so a new tool cannot forget it. Field stays collapsed / inputs-first; bench tools default open like Show Work.
 
-Every primary tool has an original vector `ToolGlyph` (not a shared SF Symbol).
+Toolbox tiles draw the approved retro CRT set (`Assets.xcassets/Retro/<ToolID>`, original color, nearest-neighbor) through `IconWell` — grid, Quick strip, shelf cards, search, favorites, related tools, and the tool header. Vector `ToolGlyph` remains the fallback for ids without a shipped tile (`statistics`, `spanishTranslator`, and hidden `powerWizard`). Category shelf marks stay vector. SF Symbols stay on chrome.
 
 ### Calculation modes
 

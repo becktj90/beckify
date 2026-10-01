@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "filename": "eBikeSprocket.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "eBikeSprocket@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "eBikeSprocket@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "template-rendering-intent": "original"
+  }
+}
