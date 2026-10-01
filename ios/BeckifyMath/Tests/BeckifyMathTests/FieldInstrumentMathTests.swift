@@ -266,6 +266,16 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertGreaterThan(soft, BreathFluteMath.quietAmplitude)
         XCTAssertEqual(BreathFluteMath.coveredFromEmbouchure(holesCovered: [false, true, true]), 0)
         XCTAssertEqual(BreathFluteMath.coveredFromEmbouchure(holesCovered: [true, true, false, true]), 2)
+        // Phone depth: a single far hole still retunes (not stuck on open C5).
+        XCTAssertEqual(BreathFluteMath.coveredDepth(holesCovered: [false, false, true]), 3)
+        XCTAssertEqual(BreathFluteMath.coveredDepth(holesCovered: [true, false, true]), 3)
+        XCTAssertEqual(BreathFluteMath.coveredDepth(holesCovered: [false, false, false]), 0)
+        XCTAssertEqual(BreathFluteMath.coversForDepth(3), [true, true, true, false, false, false, false])
+        XCTAssertNotEqual(
+            BreathFluteMath.frequencyHz(coveredFromEmbouchure: 0),
+            BreathFluteMath.frequencyHz(coveredFromEmbouchure: 3),
+            accuracy: 1e-6
+        )
         XCTAssertEqual(
             BreathFluteMath.frequencyHz(coveredFromEmbouchure: 0),
             BreathFluteMath.fretFrequencyHz(fret: 12),

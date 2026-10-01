@@ -434,12 +434,13 @@ struct BreathFluteView: View {
     var body: some View {
         ToolScaffold(
             toolID: .breathFlute,
-            stickyAnswer: sticky,
-            copyText: copyText,
-            disclaimer: .sensor(extra: BreathFluteMath.honestLimit),
+            stickyAnswer: nil,
+            copyText: nil,
+            disclaimer: .none,
             showsIdentityHeader: false,
             showsAboutWhenCollapsed: false,
-            showsRelatedTools: false
+            showsRelatedTools: false,
+            immersivePlay: true
         ) {
             if model.permissionDenied {
                 ToolEmptyState(
@@ -466,8 +467,14 @@ struct BreathFluteView: View {
         }
     }
 
+    /// Deepest held hole from embouchure — each hole is a distinct pitch on phone.
     private var coveredCount: Int {
-        BreathFluteMath.coveredFromEmbouchure(holesCovered: covering)
+        BreathFluteMath.coveredDepth(holesCovered: covering)
+    }
+
+    /// Fill covers from embouchure through the deepest press (flute tube length).
+    private var displayCovered: [Bool] {
+        BreathFluteMath.coversForDepth(coveredCount)
     }
 
     private var noteName: String {
@@ -483,14 +490,14 @@ struct BreathFluteView: View {
         return "Silent"
     }
 
-    /// Fill most of the phone: portrait uses ~68% of screen height; landscape stays short.
+    /// Immersive play: fill nearly the whole phone under the nav bar.
     private var fluteCanvasHeight: CGFloat {
-        if verticalSizeClass == .compact { return 200 }
+        if verticalSizeClass == .compact { return 220 }
         let screen = UIScreen.main.bounds.height
         if horizontalSizeClass == .regular {
-            return min(560, max(360, screen * 0.58))
+            return min(640, max(400, screen * 0.72))
         }
-        return min(620, max(420, screen * 0.68))
+        return min(720, max(480, screen * 0.78))
     }
 
     private var landscapeFlute: Bool {
@@ -512,7 +519,7 @@ struct BreathFluteView: View {
                 Spacer(minLength: 0)
             }
             FingerFlute(
-                covered: covering,
+                covered: displayCovered,
                 landscape: landscapeFlute,
                 onTouching: { next in
                     covering = next
@@ -525,7 +532,7 @@ struct BreathFluteView: View {
             .accessibilityLabel("Handmade relic flute. Hold finger holes and blow at the bottom edge of the phone.")
             .accessibilityValue("\(noteName), \(model.gateOpen ? breathWord : "silent"). \(coveredCount) holes covered from the mouthpiece.")
             .accessibilityAdjustableAction { direction in
-                let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: covering)
+                let count = coveredCount
                 let target: Int
                 switch direction {
                 case .increment:
@@ -535,28 +542,20 @@ struct BreathFluteView: View {
                 @unknown default:
                     target = count
                 }
-                // VoiceOver: consecutive covers from the embouchure (flute fingering).
-                covering = (0..<BreathFluteMath.fingerHoleCount).map { $0 < target }
+                // VoiceOver: cover through target depth (same as press-and-hold deepest hole).
+                covering = BreathFluteMath.coversForDepth(target)
                 applyFingering()
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func applyFingering() {
-        let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: covering)
+        let count = BreathFluteMath.coveredDepth(holesCovered: covering)
         // Pitch only — remaps immediately while the blow gate is open.
         // Gate stays closed until breath clears the mic margin.
         model.setFrequency(BreathFluteMath.frequencyHz(coveredFromEmbouchure: count))
     }
-
-    private var sticky: String? {
-        guard model.hasReading else { return nil }
-        if model.isCalibrating { return "Quiet… · \(Format.number(model.frequencyHz, digits: 0)) Hz" }
-        return "\(model.gateOpen ? "Tone" : "Silent") · \(Format.number(model.frequencyHz, digits: 0)) Hz · \(noteName)"
-    }
-
-    private var copyText: String? { sticky }
 }
 
 /// Handmade wood / bone / clay relic. Embouchure toward the phone bottom mic.
