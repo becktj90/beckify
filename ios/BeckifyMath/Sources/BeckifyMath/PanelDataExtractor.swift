@@ -61,6 +61,30 @@ public enum PanelDataExtractor {
         extraction.fla = fla
         extraction.kaic = kaic
         extraction.inferredSlots = prepared.inferredSlots
+        extraction.circuits = extraction.circuits.map { row in
+            var next = row
+            let key = "\(row.circuit) ".uppercased()
+            if prepared.lines.contains(where: { $0.inferredCircuit && $0.text.uppercased().hasPrefix(key) }) {
+                next.circuitNumberInferred = true
+                next.reviewState = .needsReview
+                next.evidence = PanelFieldEvidence(
+                    source: .heuristic,
+                    method: .inferredOddEven,
+                    rawText: row.name,
+                    review: .needsReview
+                )
+            }
+            next.slotKind = PanelSlotKind.infer(fromName: next.name, poles: next.poles)
+            if next.isLowConfidence || next.guessed { next.reviewState = .needsReview }
+            return next
+        }
+        extraction.voltageNeedsVerify = extraction.voltage.isPresent
+        extraction.phasesNeedsVerify = extraction.phases.isPresent
+        extraction.coverage = PanelCoverage.from(
+            circuits: extraction.circuits,
+            expectedSlots: extraction.expectedSlotCount,
+            inferredSlots: prepared.inferredSlots
+        )
 
         let quality = score(
             lines: prepared.lines,

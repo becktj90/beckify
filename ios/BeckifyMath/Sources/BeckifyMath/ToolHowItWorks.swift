@@ -445,13 +445,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Take a picture of a panel schedule. On-device Vision fills an editable table and shows a scan-quality score. Optional Analyze, then confirm demand.",
-            context: "Directory photo or typed legend — verify rows. A low score means retake. Analyze uploads only if you tap it.",
+            summary: "Photograph a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
+            context: "Directory / Nameplate / Deadfront roles. Confirming the schedule is not measured load — no capacity-to-add from trips alone.",
             bullets: [
                 "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
-                "Odd/even circuit numbers can be inferred when the print is missing. Yellow rows are guesses — confirm them.",
-                "Trip is not measured load. FLA and kAIC reads are not measured. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
-                "A main rating shows a copper Table 250.122 feeder EGC. Aluminum is Equipment Grounding. Not a service GEC.",
+                "Conflicts queue instead of silent first-wins. Inferred circuit numbers and incomplete coverage stay visible.",
+                "Trip-as-conservative-connected is a labeled scenario — not measured load and not available capacity from OCR.",
+                "Worksheet handoff previews merge or replace with provenance. Design aid — not a PE stamp or code-compliance claim.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(
