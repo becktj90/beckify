@@ -1020,7 +1020,7 @@ enum ToolboxCatalog {
             id: .electronicsLab,
             kind: .calculator,
             title: "Electronics Lab",
-            subtitle: "Schematics and a solderless breadboard — node voltages, branch currents, and solve-any-value.",
+            subtitle: "Schematics and a full solderless breadboard — node volts, branch currents (A / mA / µA), on-board meters.",
             symbol: "point.3.connected.trianglepath.dotted",
             synonyms: [
                 "electronics lab", "schematic", "breadboard", "bjt", "mosfet", "op amp", "op-amp", "555",
