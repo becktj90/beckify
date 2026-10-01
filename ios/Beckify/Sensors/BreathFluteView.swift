@@ -224,7 +224,7 @@ final class BreathFluteModel: ObservableObject {
         try? session.overrideOutputAudioPort(.speaker)
         running = true
         micRoute = route
-        status = "Ready"
+        status = "Ready · \(echoLabel)"
         pushSynth()
     }
 
@@ -608,7 +608,7 @@ private struct RelicFluteCanvas: View {
     }
 
     private func drawBody(context: GraphicsContext, tube: CGRect) {
-        var path = Path(roundedRect: tube, cornerRadius: layout.tubeCorner, style: .continuous)
+        let path = Path(roundedRect: tube, cornerRadius: layout.tubeCorner, style: .continuous)
         // Warm hardwood → bone highlight → clay shadow.
         context.fill(
             path,

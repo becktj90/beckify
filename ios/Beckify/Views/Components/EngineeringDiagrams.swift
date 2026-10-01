@@ -962,7 +962,7 @@ struct EngineerLinePlot: View {
         .chartLegend(series.count > 1 ? .visible : .hidden)
         .chartOverlay { proxy in
             GeometryReader { geo in
-                let frame = geo[proxy.plotAreaFrame]
+                let frame = proxy.plotFrame.map { geo[$0] } ?? .zero
                 if oneFinger {
                     Color.clear
                         .contentShape(Rectangle())
