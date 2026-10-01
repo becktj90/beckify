@@ -122,3 +122,106 @@ public enum MotorFLA {
         return value > 0 && value.isFinite ? value : nil
     }
 }
+
+/// Readout for the Motor FLA table card. This is NEC table current, not nameplate amps.
+public struct TableFLAPlate: Equatable, Sendable {
+    public var horsepower: String
+    public var columnVolts: String
+    public var systemVolts: Double?
+    public var threePhase: Bool
+    public var tableAmps: Double
+
+    /// Nameplate current stays on Motor Nameplate. This card does not carry it.
+    public static let nameplateRedirect = "Nameplate FLA is on Motor Nameplate, not this card."
+
+    public init?(
+        horsepower: String,
+        columnVolts: String,
+        systemVolts: Double?,
+        threePhase: Bool,
+        tableAmps: Double
+    ) {
+        let hp = horsepower.trimmingCharacters(in: .whitespacesAndNewlines)
+        let column = columnVolts.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !hp.isEmpty,
+              let columnValue = Double(column), columnValue.isFinite, columnValue > 0,
+              tableAmps.isFinite, tableAmps > 0
+        else { return nil }
+        self.horsepower = hp
+        self.columnVolts = column
+        if let systemVolts, systemVolts.isFinite, systemVolts > 0 {
+            self.systemVolts = systemVolts
+        } else {
+            self.systemVolts = nil
+        }
+        self.threePhase = threePhase
+        self.tableAmps = tableAmps
+    }
+
+    public var article: String { threePhase ? "430.250" : "430.248" }
+    public var conductorAmps: Double { MotorFLA.conductorAmps(fla: tableAmps) }
+
+    public var horsepowerLabel: String { "\(horsepower) HP" }
+    public var voltageLabel: String { "\(columnVolts) V" }
+    public var phaseLabel: String { threePhase ? "3 phase" : "1 phase" }
+    public var tableFLALabel: String { Self.amps(tableAmps) }
+    public var conductorLabel: String { Self.amps(conductorAmps) }
+
+    /// Present when the job voltage is not the table column, as with 480 V on the 460 V column.
+    public var columnNote: String? {
+        guard let systemVolts,
+              let column = Double(columnVolts),
+              abs(systemVolts - column) >= 0.5
+        else { return nil }
+        return "\(Self.volts(systemVolts)) system uses the \(voltageLabel) column."
+    }
+
+    /// VoiceOver. Each clause leads with the number and its unit. The nameplate redirect is last.
+    public var announcement: String {
+        var clauses = [
+            "\(tableFLALabel) table FLA",
+            "\(conductorLabel) conductor minimum, 125% of table FLA",
+            horsepowerLabel,
+            "\(voltageLabel) table column",
+        ]
+        if let columnNote {
+            clauses.append(columnNote.trimmingCharacters(in: CharacterSet(charactersIn: ".")))
+        }
+        clauses.append(phaseLabel)
+        clauses.append("Table \(article)")
+        return clauses.joined(separator: ". ") + ". " + Self.nameplateRedirect
+    }
+
+    /// Same rounding as the Toolbox amp readout for values in the motor tables.
+    private static func amps(_ value: Double) -> String { quantity(value, unit: "A") }
+    private static func volts(_ value: Double) -> String { quantity(value, unit: "V") }
+
+    private static func quantity(_ value: Double, unit: String) -> String {
+        guard value.isFinite else { return "—" }
+        let magnitude = abs(value)
+        if magnitude == 0 { return "0 \(unit)" }
+        let decade = floor(log10(magnitude) / 3) * 3
+        let clamped = min(12.0, max(-12.0, decade))
+        let scaled = magnitude / pow(10, clamped)
+        let prefix: String
+        switch Int(clamped) {
+        case 3: prefix = "k"
+        case 0: prefix = ""
+        case -3: prefix = "m"
+        default: prefix = ""
+        }
+        let digits = scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)
+        let signed = value < 0 ? -scaled : scaled
+        let body = trim(signed, digits: digits)
+        return prefix.isEmpty ? "\(body) \(unit)" : "\(body) \(prefix)\(unit)"
+    }
+
+    private static func trim(_ value: Double, digits: Int) -> String {
+        var text = String(format: "%.\(digits)f", locale: Locale(identifier: "en_US_POSIX"), value)
+        if text.contains(".") {
+            while text.hasSuffix("0") { text.removeLast() }
+            if text.hasSuffix(".") { text.removeLast() }
+        }
+        return text
+    }
+}

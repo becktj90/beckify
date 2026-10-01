@@ -72,10 +72,14 @@ struct MotorFLAView: View {
             }
 
             if let r = session.displayedResult {
+                if let plate = plate(for: r) {
+                    TableFLAPlateCard(plate: plate)
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 ResultCard(copyText: copyText) {
-                    ResultRow(label: "Table column", value: "\(r.column) V", tone: Theme.muted)
-                    ResultRow(label: "Table FLA", value: Format.amps(r.fla), emphasis: true, tone: Theme.good)
-                    ResultRow(label: "Conductor min (430.22)", value: Format.amps(MotorFLA.conductorAmps(fla: r.fla)))
+                    ResultRow(label: "Table column", value: plate(for: r)?.voltageLabel ?? "\(r.column) V", tone: Theme.muted)
+                    ResultRow(label: "Table FLA", value: plate(for: r)?.tableFLALabel ?? Format.amps(r.fla), emphasis: true, tone: Theme.good)
+                    ResultRow(label: "Conductor min (430.22)", value: plate(for: r)?.conductorLabel ?? Format.amps(MotorFLA.conductorAmps(fla: r.fla)))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
                 EquipmentGroundingCard(
@@ -150,15 +154,132 @@ struct MotorFLAView: View {
         session.reset()
     }
 
+    private func plate(for result: LookupResult) -> TableFLAPlate? {
+        TableFLAPlate(
+            horsepower: result.horsepower,
+            columnVolts: result.column,
+            systemVolts: systemVolts.parsedDouble,
+            threePhase: result.threePhase,
+            tableAmps: result.fla
+        )
+    }
+
     private var substituted: String? {
-        guard let r = session.displayedResult else { return nil }
-        return "Table \(r.article), \(r.horsepower) HP @ \(r.column) V column = \(Format.amps(r.fla)). Conductor min = 1.25 × FLA = \(Format.amps(MotorFLA.conductorAmps(fla: r.fla)))."
+        guard let r = session.displayedResult, let plate = plate(for: r) else { return nil }
+        return "Table \(plate.article), \(plate.horsepowerLabel) @ \(plate.voltageLabel) column = \(plate.tableFLALabel). Conductor min = 125% of table FLA = \(plate.conductorLabel)."
     }
 
     private var sticky: String? {
-        guard let r = session.displayedResult else { return nil }
-        return "\(Format.amps(r.fla))  ·  \(r.horsepower) HP @ \(r.column) V"
+        guard let r = session.displayedResult, let plate = plate(for: r) else { return nil }
+        return "\(plate.tableFLALabel)  ·  \(plate.horsepowerLabel) @ \(plate.voltageLabel)"
     }
 
     private var copyText: String? { sticky }
+}
+
+/// One plate for NEC table current. Horsepower, table-column volts, phase, table FLA, and 125% conductor current.
+private struct TableFLAPlateCard: View {
+    let plate: TableFLAPlate
+
+    var body: some View {
+        DiagramCard(title: "Table FLA", accessibilitySummary: plate.announcement, exportName: "table-fla") {
+            VStack(alignment: .leading, spacing: 8) {
+                plateFace
+                Text(TableFLAPlate.nameplateRedirect)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityIdentifier("motorFLA.tablePlate")
+    }
+
+    private var plateFace: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Table \(plate.article)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+                .lineLimit(1)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                spec("HP", plate.horsepowerLabel)
+                Spacer(minLength: 8)
+                spec("Table column", plate.voltageLabel)
+                Spacer(minLength: 8)
+                spec("Phase", plate.phaseLabel)
+            }
+            Rectangle()
+                .fill(Theme.border)
+                .frame(height: Theme.Stroke.hairline)
+            callout(plate.tableFLALabel, "Table FLA", tone: Theme.good, prominent: true)
+            callout(plate.conductorLabel, "125% conductor", tone: Theme.energized, prominent: false)
+            if let note = plate.columnNote {
+                Text(note)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            Canvas { context, size in
+                platePath(in: context, size: size)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func spec(_ caption: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(caption)
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func callout(_ value: String, _ caption: String, tone: Color, prominent: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(value)
+                .font(prominent ? .title2.monospacedDigit().weight(.bold) : .title3.monospacedDigit().weight(.semibold))
+                .foregroundStyle(tone)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(caption)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(tone)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+    }
+
+    /// Drawn plate: double border and corner ticks. No motor body, no screw heads, no brand block.
+    private func platePath(in context: GraphicsContext, size: CGSize) {
+        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 1.25, dy: 1.25)
+        let outer = Path(roundedRect: rect, cornerRadius: 8)
+        context.fill(outer, with: .color(Theme.surface))
+        context.stroke(outer, with: .color(Theme.foreground.opacity(0.88)), lineWidth: Theme.Stroke.emphasis)
+        let inner = Path(roundedRect: rect.insetBy(dx: 5, dy: 5), cornerRadius: 4)
+        context.stroke(inner, with: .color(Theme.border), lineWidth: Theme.Stroke.hairline)
+        let tick: CGFloat = 9
+        let inset: CGFloat = 9
+        let corners: [(CGPoint, CGFloat, CGFloat)] = [
+            (CGPoint(x: rect.minX + inset, y: rect.minY + inset), 1, 1),
+            (CGPoint(x: rect.maxX - inset, y: rect.minY + inset), -1, 1),
+            (CGPoint(x: rect.minX + inset, y: rect.maxY - inset), 1, -1),
+            (CGPoint(x: rect.maxX - inset, y: rect.maxY - inset), -1, -1),
+        ]
+        for (origin, sx, sy) in corners {
+            var path = Path()
+            path.move(to: CGPoint(x: origin.x, y: origin.y + sy * tick))
+            path.addLine(to: origin)
+            path.addLine(to: CGPoint(x: origin.x + sx * tick, y: origin.y))
+            context.stroke(path, with: .color(Theme.accent), style: StrokeStyle(lineWidth: Theme.Stroke.hairline, lineCap: .round, lineJoin: .round))
+        }
+    }
 }

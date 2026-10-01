@@ -36,7 +36,7 @@ The holes that still matter in the field are narrower:
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
-4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is a table with no card; the receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
+4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one circle for every family; short-circuit current is a small “infinite bus” caption, not a callout. None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
 
 Textbook ship-order items that are **not** Hold move to **P1**: ampacity derating stack (today a numbered list), harmonics bars, heater Δ/Y sketch, UPS runtime tank, load-worksheet bars, and a protection-side skin-depth / aperture sketch. **Conduit fill is Hold.** It already draws a to-scale bore, conductor circles, and fill percent against the Chapter 9 Table 1 allowance (including the nipple case). Do not put it on a rebuild wave.
@@ -91,7 +91,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Equipment Grounding | `equipmentGround` | Jobsite | Table 250.122 rows | None | Optional size callout only | P2 | Low field impact beside ampacity and conduit | Callout kit, later |
 | Transformer Sizing | `transformer` | Power & AC | Winding canvas: Δ, Y, high-leg, corner-ground, open delta, zig-zag, buck-boost | Strong | Keep | Hold | Colors are common practice; the spec wins. Do not redraw. | `TransformerView` connection canvas is the connection kit |
 | 555 Timer | `timer555` | Basics | Astable waveform and monostable charge curve | Strong | Keep | Hold | Ideal timing, not a scope capture | `Timer555WaveformDiagram`, `MonostableCapChargeChart` |
-| Motor FLA Tables | `motorFLA` | Jobsite | Table current as rows | None | One plate-shaped card: HP, volts, phase, **table** FLA, 125% conductor current | P0 | Headline is table current (430.248 / 430.250), not a photographed nameplate. Nameplate FLA stays on the nameplate tools. | New callout card; no torque curve (that is Motor Speed) |
+| Motor FLA Tables | `motorFLA` | Jobsite | Plate titled Table FLA: HP, table-column volts, phase, table FLA, 125% conductor current | Shipped | One plate. Not a motor photo and not nameplate amps. | Done | Nameplate FLA stays on Motor Nameplate. 480 V systems use the 460 V column. | `TableFLAPlateCard` in `MotorFLAView` |
 | Wire Size & Ampacity | `wireAmpacity` | Jobsite | “Ampacity waterfall” is a numbered text list inside `DiagramCard` | Partial | One derating stack: 310.16 base → ambient → bundling → 110.14(C) terminal limit, against design current | P1 | Graphic shows the same steps the tool already traces. No new factors. | New `DeratingStack`; keep the text as the VoiceOver source |
 | Flexible Cable Ampacity | `flexibleCable` | Jobsite | Bar chart of table ampacity vs size | Strong | Keep | Hold | Table 400.5 column, not a measured cable | Swift Charts bar |
 | Conductor Cost Optimizer | `conductorCost` | Jobsite | Horizontal first-cost bars, recommended size marked | Strong | Keep | Hold | Book dollars plus overrides, not a quote | `ConductorCostRankingDiagram` |
@@ -187,7 +187,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 | Connection drawing | Shipped inside `TransformerView` (delta, wye, high-leg, corner, open delta). Three-phase has its own canvas. | Heater Δ/Y should call the same winding sketch, not a new one | — |
 | Run strip | Shipped as `VoltageDropDiagram`. Supply, one-way length, load, volt drop, informational 3% and 5% marks, preferred target. | Voltage drop | NEC circuit chip on the same strip |
 | Derating stack | Not shipped. The waterfall is a numbered list. | Wire ampacity | NEC circuit reads it; does not redraw it |
-| Callout card | Not shipped. Short-circuit is a thin box. | Motor FLA card, short-circuit Isc | Grounding size, regulator Pd, later |
+| Callout card | Motor FLA plate shipped in `MotorFLAView`. Short-circuit is still a thin box. | Motor FLA | Short-circuit Isc, grounding size, regulator Pd |
 | Gauge / tank | Partial. Cellular arcs and the conduit fill bar exist. Wi-Fi gauge exists. | IS-loop worst margin; UPS tank | Rack headroom, e-bike range. Never a fake RF dBm arc. |
 | Discrete spectrum bars | Not shipped. `SpectrumPlot` is a microphone FFT with a dBFS scale. | Harmonics orders | Do not point entered harmonics at `SpectrumPlot` |
 | Faceplate | Shipped as `ReceptacleFaceView` (always an ellipse today) | Receptacle family outline | — |
@@ -243,11 +243,11 @@ Enough for a follow-up implementer. One picture each. Original SwiftUI (`Canvas`
 
 ### 5. Motor FLA — `motorFLA`
 
-**Now.** No drawing. Copy already says table current, not nameplate, and 480 V systems use the 460 V column.
+**Now.** One plate, `TableFLAPlateCard`, titled “Table FLA”. Horsepower, the table-column voltage, phase, table FLA, and 125% of table FLA for the conductor are on that plate. A line sends nameplate FLA to Motor Nameplate. 480 V systems use the 460 V column. Stale inputs dim the plate with the result card. No motor drawing and no torque curve.
 
-**Target.** One card in the shape of a plate: horsepower, voltage, phase, table FLA, and 125% of table FLA for the conductor. Title is “Table FLA”. A line points nameplate FLA at Motor Nameplate, not at this card.
+**Target.** Met on this screen. The card stays table current.
 
-**Files.** `MotorFLAView.swift`. New card beside the callout kit; do not import `MotorTorqueCurveChart`.
+**Files.** `MotorFLAView.swift` (`TableFLAPlateCard`). Readout strings in `MotorFLA.swift` (`TableFLAPlate`).
 
 **Done when.** The card cannot be read as a photo of a motor or as nameplate amps.
 
