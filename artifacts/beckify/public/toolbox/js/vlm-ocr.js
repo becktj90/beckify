@@ -334,11 +334,12 @@
       framing: asLookScore(src.framing),
       expression: asLookScore(src.expression),
       sharpness: asLookScore(src.sharpness != null ? src.sharpness : src.focus),
+      outfit: asLookScore(src.outfit),
       overall: asLookScore(src.overall),
     };
     if (metrics.overall == null) metrics.overall = overallScore;
     if (verdict === 'declined') {
-      return { lighting: null, framing: null, expression: null, sharpness: null, overall: null };
+      return { lighting: null, framing: null, expression: null, sharpness: null, outfit: null, overall: null };
     }
     if (verdict === 'no_person') metrics.expression = null;
     return metrics;
@@ -451,6 +452,7 @@
         task: task,
       };
       if (task === TASK_PANEL && opts.view) body.view = String(opts.view);
+      if (task === TASK_LOOK && opts.roastMode) body.roastMode = String(opts.roastMode);
       var token = config.mode === 'custom' ? config.token : '';
       return postVision(url, body, token).then(function (payload) {
         report(0.85, 'Reading AI draft…');

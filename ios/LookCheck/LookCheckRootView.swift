@@ -40,7 +40,7 @@ struct LookCheckRootView: View {
                     } else if preview == nil {
                         emptyHint(
                             title: "Take or choose a photo",
-                            detail: "Then tap Analyze. Entertainment only. Do not use this on photos of children."
+                            detail: "\(PhotoLookCheck.surprisePreAnalyze) Then tap Analyze. Entertainment only. Do not use this on photos of children."
                         )
                     } else {
                         emptyHint(
@@ -96,7 +96,10 @@ struct LookCheckRootView: View {
             Text("Pick a photo. Tap Analyze. Get a verdict and a surprise roast.")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(LookTheme.foreground)
-            Text("AI comedy. Not medical, dating, or beauty authority.")
+            Text(PhotoLookCheck.surprisePreAnalyze)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(LookTheme.foreground)
+            Text("Not medical, dating, or beauty authority.")
                 .font(.subheadline)
                 .foregroundStyle(LookTheme.muted)
         }
@@ -270,7 +273,7 @@ struct LookCheckRootView: View {
 
             if draft.showsMetrics {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("PHOTO METRICS")
+                    Text(PhotoLookCheck.photoScoresLabel.uppercased())
                         .font(.caption.weight(.semibold))
                         .tracking(0.6)
                         .foregroundStyle(LookTheme.muted)
@@ -468,7 +471,7 @@ struct LookCheckRoastCard: View {
                 .font(.body.weight(.medium))
                 .foregroundStyle(LookTheme.foreground)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Entertainment only. Comedy roast of this frame — not a beauty score.")
+            Text("Entertainment only. Comedy roast of this frame — not a beauty score. Photo assessment stays honest.")
                 .font(.caption)
                 .foregroundStyle(LookTheme.muted)
         }

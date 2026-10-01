@@ -8,6 +8,14 @@
 
 const LOOK_MAX_BYTES = 12 * 1024 * 1024;
 
+/** Secret mean|nice coin — never shown in UI. Matches iOS LookRoastMode.randomStandaloneTone. */
+function lookRandomSurpriseTone() {
+  return Math.random() < 0.5 ? 'mean' : 'nice';
+}
+
+const LOOK_SURPRISE_COPY = 'Honest photo feedback. You might get hyped. You might get fucking roasted.';
+
+
 const lookState = {
   file: null,
   imageUrl: '',
@@ -140,6 +148,7 @@ const LOOK_METRIC_ROWS = [
   { key: 'framing', label: 'Framing' },
   { key: 'expression', label: 'Expression' },
   { key: 'sharpness', label: 'Sharpness' },
+  { key: 'outfit', label: 'Outfit' },
   { key: 'overall', label: 'Overall' },
 ];
 
@@ -150,6 +159,16 @@ function lookRenderMetrics(draft) {
   lookEl.metrics.hidden = !show;
   lookEl.metrics.replaceChildren();
   if (!show) return;
+  const heading = document.createElement('div');
+  heading.className = 'look-metric-heading';
+  heading.textContent = 'Photo scores';
+  heading.style.gridColumn = '1 / -1';
+  heading.style.fontWeight = '700';
+  heading.style.fontSize = '0.85rem';
+  heading.style.letterSpacing = '0.04em';
+  heading.style.textTransform = 'uppercase';
+  heading.style.opacity = '0.75';
+  lookEl.metrics.appendChild(heading);
   LOOK_METRIC_ROWS.forEach((row) => {
     const value = metrics[row.key];
     const article = document.createElement('article');
@@ -276,6 +295,7 @@ async function lookRunSameOrigin(file) {
       imageBase64: dataUrl,
       mimeType,
       task: 'look',
+      roastMode: lookRandomSurpriseTone(),
     }),
   });
   const payload = await response.json().catch(() => ({}));
@@ -300,6 +320,7 @@ async function lookRunAnalysis() {
     if (Vlm && typeof Vlm.shouldUpload === 'function' && Vlm.shouldUpload(true) && typeof Vlm.analyzeLook === 'function') {
       const result = await Vlm.analyzeLook(lookState.file, {
         enhanceOn: true,
+        roastMode: lookRandomSurpriseTone(),
         onProgress: function (frac, label) {
           lookSetProgress(Math.round(18 + frac * 70), label);
         },
@@ -311,7 +332,7 @@ async function lookRunAnalysis() {
     }
     lookSetProgress(92, 'Reading the verdict…');
     lookRenderDraft(draft);
-    lookSetProgress(100, 'Done. Entertainment only — not a beauty contest.');
+    lookSetProgress(100, 'Done. ' + LOOK_SURPRISE_COPY + ' Entertainment only — not a beauty contest.');
     if (typeof window.showToast === 'function') window.showToast('Look check complete');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown look-check error';
