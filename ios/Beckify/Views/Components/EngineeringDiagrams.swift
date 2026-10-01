@@ -205,47 +205,6 @@ struct PowerTriangleDiagram: View {
     }
 }
 
-// MARK: - Reactance phasor
-
-struct ReactancePhasorDiagram: View {
-    let resistance: Double
-    let netReactance: Double
-    let impedance: Double
-    let angleDegrees: Double
-
-    private var summary: String {
-        "Phasor diagram. R \(Format.number(resistance, digits: 2)) ohms, net X \(Format.number(netReactance, digits: 2)) ohms, Z \(Format.number(impedance, digits: 2)) ohms at \(Format.degrees(angleDegrees))."
-    }
-
-    var body: some View {
-        DiagramCard(title: "Phasor", accessibilitySummary: summary) {
-            EngineeringDiagramFrame(summary: summary) {
-                GeometryReader { geo in
-                    let c = CGPoint(x: geo.size.width * 0.2, y: geo.size.height * 0.7)
-                    let scale = min(geo.size.width, geo.size.height) * 0.55 / max(impedance, 0.001)
-                    let rx = CGFloat(resistance) * scale
-                    let xy = CGFloat(netReactance) * scale
-                    Path { path in
-                        path.move(to: c)
-                        path.addLine(to: CGPoint(x: c.x + rx, y: c.y))
-                    }
-                    .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
-                    Path { path in
-                        path.move(to: CGPoint(x: c.x + rx, y: c.y))
-                        path.addLine(to: CGPoint(x: c.x + rx, y: c.y - xy))
-                    }
-                    .stroke(Theme.energized, lineWidth: 2)
-                    Path { path in
-                        path.move(to: c)
-                        path.addLine(to: CGPoint(x: c.x + rx, y: c.y - xy))
-                    }
-                    .stroke(Theme.accent2, lineWidth: 2.5)
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Signal scaling transfer curve
 
 struct SignalScalingChart: View {
@@ -1209,34 +1168,82 @@ struct ResonanceImpedanceChart: View {
     let inductance: Double
     let capacitance: Double
     let resonantFrequency: Double
+    var bandwidth: Double = .nan
+
+    private var marker: ReactancePlotReadout.ResonanceMarker? {
+        ReactancePlotReadout.resonanceMarker(
+            resonantHertz: resonantFrequency,
+            resistance: resistance,
+            bandwidth: bandwidth
+        )
+    }
 
     private var points: [PlotPoint] {
-        PlotSampling.seriesImpedanceMagnitude(
+        var fMin = max(resonantFrequency / 20, 1e-3)
+        var fMax = max(resonantFrequency * 20, fMin * 10)
+        if let low = marker?.lowHertz, low > 0, low < fMin {
+            fMin = max(low / 1.5, 1e-3)
+        }
+        if let high = marker?.highHertz, high.isFinite, high > fMax {
+            fMax = high * 1.25
+        }
+        guard fMax > fMin else { return [] }
+        return PlotSampling.seriesImpedanceMagnitude(
             resistance: resistance,
             inductance: inductance,
             capacitance: capacitance,
-            fMin: max(resonantFrequency / 20, 1e-3),
-            fMax: resonantFrequency * 20
+            fMin: fMin,
+            fMax: fMax
         )
     }
 
     private var summary: String {
-        "Series |Z| vs frequency. Resonance near \(Format.frequency(resonantFrequency)), R = \(Format.number(resistance, digits: 3)) Ω."
+        guard let marker else { return "Ideal lumped parts." }
+        return ReactancePlotReadout.resonanceAnnouncement(marker)
     }
 
     var body: some View {
-        DiagramCard(title: "|Z| vs frequency", accessibilitySummary: summary, exportName: "rlc-impedance") {
+        let mark = marker
+        return DiagramCard(title: "|Z| vs frequency", accessibilitySummary: summary, exportName: "rlc-impedance") {
             EngineerLinePlot(
                 series: [EngineerSeries(name: "|Z|", points: points, color: Theme.chartPrimary, fills: true)],
                 xLabel: "Frequency (Hz)",
                 yLabel: "|Z| (Ω)",
-                xGuides: [
-                    EngineerGuide(value: resonantFrequency, label: "f₀", axis: .x),
-                ],
+                markers: impedanceMarkers(mark),
+                xGuides: impedanceGuides(mark),
                 logX: true,
                 height: 220
             )
+            Text("Ideal lumped parts.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHidden(true)
         }
+    }
+
+    private func impedanceMarkers(_ mark: ReactancePlotReadout.ResonanceMarker?) -> [EngineerMarker] {
+        guard let mark else { return [] }
+        return [
+            EngineerMarker(
+                x: mark.resonantHertz,
+                y: mark.impedanceOhms,
+                label: "f0",
+                color: Theme.energized
+            ),
+        ]
+    }
+
+    private func impedanceGuides(_ mark: ReactancePlotReadout.ResonanceMarker?) -> [EngineerGuide] {
+        guard let mark else { return [] }
+        var guides = [EngineerGuide(value: mark.resonantHertz, label: "f0", axis: .x)]
+        if let low = mark.lowHertz {
+            guides.append(EngineerGuide(value: low, label: "BW", axis: .x))
+        }
+        if let high = mark.highHertz {
+            guides.append(EngineerGuide(value: high, label: "BW", axis: .x))
+        }
+        return guides
     }
 }
 
@@ -1246,6 +1253,14 @@ struct ReactanceSweepChart: View {
     let inductance: Double
     let capacitance: Double
     let frequency: Double
+
+    private var marker: ReactancePlotReadout.SeriesMarker? {
+        ReactancePlotReadout.seriesMarker(
+            hertz: frequency,
+            inductance: inductance,
+            capacitance: capacitance
+        )
+    }
 
     private var curves: (xl: [PlotPoint], xc: [PlotPoint]) {
         let lo = max(frequency / 20, 0.1)
@@ -1259,28 +1274,61 @@ struct ReactanceSweepChart: View {
     }
 
     private var summary: String {
-        "X_L rises and X_C falls with frequency. Marker at \(Format.frequency(frequency))."
+        guard let marker else { return "Ideal lumped parts." }
+        return ReactancePlotReadout.seriesAnnouncement(marker)
+    }
+
+    private var title: String {
+        switch (marker?.inductiveOhms != nil, marker?.capacitiveOhms != nil) {
+        case (true, true): return "XL and XC vs f"
+        case (true, false): return "XL vs f"
+        case (false, true): return "XC vs f"
+        default: return "Reactance vs f"
+        }
     }
 
     var body: some View {
-        let xl = 2 * Double.pi * frequency * inductance
-        let xc = 1 / (2 * Double.pi * frequency * capacitance)
-        return DiagramCard(title: "X_L & X_C vs f", accessibilitySummary: summary, exportName: "reactance-sweep") {
+        let sampled = curves
+        let mark = marker
+        return DiagramCard(title: title, accessibilitySummary: summary, exportName: "reactance-sweep") {
             EngineerLinePlot(
-                series: [
-                    EngineerSeries(name: "X_L", points: curves.xl, color: Theme.chartPrimary, fills: false),
-                    EngineerSeries(name: "X_C", points: curves.xc, color: Theme.chartSecondary, fills: false),
-                ],
+                series: sweepSeries(sampled),
                 xLabel: "Frequency (Hz)",
                 yLabel: "Reactance (Ω)",
-                markers: [
-                    EngineerMarker(x: frequency, y: xl, label: "X_L", color: Theme.chartPrimary),
-                    EngineerMarker(x: frequency, y: xc, label: "X_C", color: Theme.chartSecondary),
-                ],
+                markers: sweepMarkers(mark),
+                xGuides: mark.map { [EngineerGuide(value: $0.hertz, label: "f", axis: .x)] } ?? [],
                 logX: true,
                 height: 220
             )
+            Text("Ideal lumped parts.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHidden(true)
         }
+    }
+
+    private func sweepSeries(_ sampled: (xl: [PlotPoint], xc: [PlotPoint])) -> [EngineerSeries] {
+        var rows: [EngineerSeries] = []
+        if sampled.xl.count >= 2 {
+            rows.append(EngineerSeries(name: "XL", points: sampled.xl, color: Theme.chartPrimary, fills: false))
+        }
+        if sampled.xc.count >= 2 {
+            rows.append(EngineerSeries(name: "XC", points: sampled.xc, color: Theme.chartSecondary, fills: false))
+        }
+        return rows
+    }
+
+    private func sweepMarkers(_ mark: ReactancePlotReadout.SeriesMarker?) -> [EngineerMarker] {
+        guard let mark else { return [] }
+        var rows: [EngineerMarker] = []
+        if let xl = mark.inductiveOhms {
+            rows.append(EngineerMarker(x: mark.hertz, y: xl, label: "XL", color: Theme.chartPrimary))
+        }
+        if let xc = mark.capacitiveOhms {
+            rows.append(EngineerMarker(x: mark.hertz, y: xc, label: "XC", color: Theme.chartSecondary))
+        }
+        return rows
     }
 }
 
