@@ -588,7 +588,7 @@ enum ToolboxCatalog {
             title: "Breath Flute",
             subtitle: "Immersive relic flute. Hold holes, blow the bottom edge. Quena-like tone.",
             symbol: "music.note",
-            synonyms: ["flute", "breath", "blow", "blow here", "bottom mic", "finger holes", "toy", "play", "pitch", "tone", "relic", "wood"]
+            synonyms: ["flute", "quena", "peruvian", "breath", "blow", "hold", "blow here", "bottom mic", "finger holes", "toy", "play", "pitch", "tone", "relic", "wood"]
         ),
         ToolDefinition(
             id: .coupledVibration,
