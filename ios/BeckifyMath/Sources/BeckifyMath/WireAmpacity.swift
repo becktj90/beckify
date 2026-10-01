@@ -558,11 +558,13 @@ public struct DeratingStackReadout: Equatable, Sendable {
         return parts.joined(separator: " ")
     }
 
-    /// Same rounding as the Toolbox `Format.amps` row, so the picture and the result cannot drift.
-    public static func ampsLabel(_ value: Double) -> String {
+    /// Same rounding as the Toolbox `Format.amps` / `Format.volts` rows, so the picture and the result cannot drift.
+    public static func ampsLabel(_ value: Double) -> String { siLabel(value, unit: "A") }
+
+    public static func siLabel(_ value: Double, unit: String) -> String {
         guard value.isFinite else { return "—" }
         let magnitude = abs(value)
-        if magnitude == 0 { return "0 A" }
+        if magnitude == 0 { return "0 \(unit)" }
         let decade = floor(log10(magnitude) / 3) * 3
         let clamped = min(12.0, max(-12.0, decade))
         let scaled = magnitude / pow(10, clamped)
@@ -582,7 +584,7 @@ public struct DeratingStackReadout: Equatable, Sendable {
         let digits = scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)
         let signed = value < 0 ? -scaled : scaled
         let body = grouped(signed, digits: digits)
-        return prefix.isEmpty ? "\(body) A" : "\(body) \(prefix)A"
+        return prefix.isEmpty ? "\(body) \(unit)" : "\(body) \(prefix)\(unit)"
     }
 
     private static func grouped(_ value: Double, digits: Int) -> String {

@@ -937,10 +937,30 @@ struct NECCircuitView: View {
             }
 
             if let r = session.displayedResult {
+                let run = NECCircuitRunReadout(result: r)
+                if let run, let diagram = VoltageDropDiagram.model(
+                    supply: run.supplyVolts,
+                    drop: run.dropVolts,
+                    receiving: run.receivingVolts,
+                    dropPercent: run.dropPercent,
+                    oneWayLength: run.oneWayLabel,
+                    parallelRuns: run.parallelRuns,
+                    ampacityChip: VoltageDropAmpacityChip(line: run.chipLine, meets: run.verdict == .meets),
+                    dropFill: run.dropPercent > 3 ? Theme.warn : Theme.chartPrimary,
+                    spokenSummary: run.announcement,
+                    exportName: "nec-circuit-run",
+                    accessibilityID: "necCircuit.runStrip"
+                ) {
+                    diagram.opacity(session.isStale ? 0.72 : 1)
+                }
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "FLA", value: Format.amps(r.fla))
                     ResultRow(label: "Design current", value: Format.amps(r.designAmps), emphasis: true)
-                    ResultRow(label: "Conductor", value: "\(r.conductorSize) Cu · \(Format.amps(r.deratedAmpacity)) usable", tone: Theme.good)
+                    ResultRow(
+                        label: "Conductor",
+                        value: "\(r.conductorSize) Cu · \(Format.amps(r.deratedAmpacity)) usable",
+                        tone: run?.verdict == .short ? Theme.bad : Theme.good
+                    )
                     ResultRow(label: "Voltage drop", value: "\(Format.volts(r.vdVolts)) (\(Format.percent(r.vdPercent)))", tone: r.vdPercent > 3 ? Theme.warn : Theme.foreground)
                     ResultRow(label: "OCPD", value: r.ocpdAmps.map { "\($0) A" } ?? "—", emphasis: true, tone: Theme.copper)
                 }
