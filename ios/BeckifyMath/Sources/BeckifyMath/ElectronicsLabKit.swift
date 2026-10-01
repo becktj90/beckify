@@ -12,7 +12,7 @@ enum LabKit {
 
     static func num(_ inputs: [String: String], _ key: String, _ name: String) throws -> Double {
         let raw = inputs[key]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if let value = NumericParse.parse(raw, locale: Locale(identifier: "en_US_POSIX")) ?? NumericParse.parse(raw) {
+        if let value = NumericParse.parseEngineering(raw, locale: Locale(identifier: "en_US_POSIX")) ?? NumericParse.parseEngineering(raw) {
             return value
         }
         throw CalcError.missing(name)

@@ -357,6 +357,23 @@ final class NumericParseTests: XCTestCase {
             XCTAssertTrue(formatted.unicodeScalars.contains("\u{2212}"))
         }
     }
+
+    func testEngineeringSuffixes() {
+        let us = Locale(identifier: "en_US_POSIX")
+        XCTAssertEqual(NumericParse.parseEngineering("10k", locale: us), 10_000)
+        XCTAssertEqual(NumericParse.parseEngineering("10K", locale: us), 10_000)
+        XCTAssertEqual(NumericParse.parseEngineering("0.1u", locale: us) ?? .nan, 1e-7, accuracy: 1e-18)
+        XCTAssertEqual(NumericParse.parseEngineering("0.1µ", locale: us) ?? .nan, 1e-7, accuracy: 1e-18)
+        XCTAssertEqual(NumericParse.parseEngineering("0.1μ", locale: us) ?? .nan, 1e-7, accuracy: 1e-18)
+        XCTAssertEqual(NumericParse.parseEngineering("2.2n", locale: us) ?? .nan, 2.2e-9, accuracy: 1e-20)
+        XCTAssertEqual(NumericParse.parseEngineering("4.7M", locale: us) ?? .nan, 4.7e6, accuracy: 1)
+        XCTAssertEqual(NumericParse.parseEngineering("100m", locale: us) ?? .nan, 0.1, accuracy: 1e-12)
+        XCTAssertEqual(NumericParse.parseEngineering("12.5", locale: us), 12.5)
+        XCTAssertNil(NumericParse.parseEngineering("12.5abc", locale: us))
+        XCTAssertNil(NumericParse.parseEngineering("k", locale: us))
+        XCTAssertNil(NumericParse.parseEngineering("10k5", locale: us))
+        XCTAssertNil(NumericParse.parse("10k", locale: us))
+    }
 }
 
 final class Timer555Tests: XCTestCase {

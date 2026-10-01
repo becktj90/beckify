@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import BeckifyMath
 
 struct NumberField: View {
@@ -8,6 +9,8 @@ struct NumberField: View {
     var placeholder: String = "0"
     var optional: Bool = false
     var allowsScientific: Bool = false
+    /// Accept `10k`, `0.1u`, `2.2n` and switch to a keyboard that can type the suffix.
+    var allowsEngineering: Bool = false
     var errorMessage: String? = nil
     var helpText: String? = nil
     var fieldID: String? = nil
@@ -34,7 +37,7 @@ struct NumberField: View {
             }
             HStack(alignment: .firstTextBaseline) {
                 TextField(placeholder, text: $text)
-                    .keyboardType(allowsScientific ? .numbersAndPunctuation : .decimalPad)
+                    .keyboardType(keyboard)
                     .font(.title3.monospacedDigit().weight(.medium))
                     .foregroundStyle(Theme.foreground)
                     .textInputAutocapitalization(.never)
@@ -43,7 +46,7 @@ struct NumberField: View {
                     .onSubmit { onSubmit?() }
                     .formFieldFocus(fieldID ?? title)
                     .accessibilityLabel(title)
-                    .accessibilityHint(optional ? "Optional. Unit \(unit)." : "Unit \(unit).")
+                    .accessibilityHint(accessibilityHint)
                     .accessibilityIdentifier(fieldID.map { "numberField.\($0)" } ?? "numberField.\(title)")
                 Text(unit)
                     .font(.subheadline.weight(.medium))
@@ -67,6 +70,20 @@ struct NumberField: View {
                 FieldValidationText(message: errorMessage)
             }
         }
+    }
+
+    private var keyboard: UIKeyboardType {
+        if allowsEngineering { return .asciiCapable }
+        if allowsScientific { return .numbersAndPunctuation }
+        return .decimalPad
+    }
+
+    private var accessibilityHint: String {
+        let unitBit = optional ? "Optional. Unit \(unit)." : "Unit \(unit)."
+        if allowsEngineering {
+            return "\(unitBit) Suffixes such as k, M, m, u, n, and p are accepted."
+        }
+        return unitBit
     }
 
     private var strokeColor: Color {
