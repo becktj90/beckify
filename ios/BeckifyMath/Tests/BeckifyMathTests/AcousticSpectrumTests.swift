@@ -33,14 +33,16 @@ final class AcousticSpectrumTests: XCTestCase {
     func testKnownSinePeaksNearZeroDBFSAfterCoherentGain() {
         let n = 1024
         let sampleRate = 48_000.0
-        let hz = 1_000.0
+        // Exact FFT bin — off-bin tones (e.g. 1 kHz → bin 21.333) leak under Hann
+        // and peak ~0.93 (−0.63 dBFS), which is window scallop, not a scale bug.
+        let bin = 32
+        let hz = Double(bin) * sampleRate / Double(n) // 1_500 Hz
         let amplitude = 1.0
         let samples = (0..<n).map { index in
             amplitude * sin(2 * Double.pi * hz * Double(index) / sampleRate)
         }
         // CoupledVibrationMath already applies coherent gain + one-sided ×2.
         let magnitudes = CoupledVibrationMath.magnitudeSpectrum(samples: samples, window: .hann)
-        let bin = Int((hz * Double(n) / sampleRate).rounded())
         XCTAssertGreaterThan(magnitudes.count, bin)
         let peak = magnitudes[bin]
         XCTAssertEqual(peak, amplitude, accuracy: 0.05)
