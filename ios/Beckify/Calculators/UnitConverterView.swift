@@ -195,7 +195,7 @@ struct UnitConverterView: View {
                 ForEach(SIKind.allCases) { Text($0.rawValue).tag($0) }
             }
             .segmentedControlStyle()
-            NumberField(title: "Value", unit: fromP.rawValue + siKind.rawValue, text: $value, allowsScientific: true)
+            NumberField(title: "Value", unit: fromP.rawValue + siKind.rawValue, text: $value, allowsScientific: true, helpText: "Magnitude in the From prefix. Scientific notation is fine.", fieldID: "value")
             MenuField(title: "From", selection: $fromP, options: Array(SIPrefix.allCases)) { $0.label }
             MenuField(title: "To", selection: $toP, options: Array(SIPrefix.allCases)) { $0.label }
         case .db:
@@ -208,19 +208,19 @@ struct UnitConverterView: View {
                 Text("dB → ratio").tag(false)
             }
             .segmentedControlStyle()
-            NumberField(title: dbModeRatio ? "Ratio" : "dB", unit: dbModeRatio ? "—" : "dB", text: $value)
+            NumberField(title: dbModeRatio ? "Ratio" : "dB", unit: dbModeRatio ? "—" : "dB", text: $value, helpText: "Power uses 10 log10; field/voltage uses 20 log10.", fieldID: "value")
         case .temp:
             Picker("From", selection: $tempDir) {
                 ForEach(TempDir.allCases) { Text($0.label).tag($0) }
             }
             .segmentedControlStyle()
-            NumberField(title: "Temperature", unit: tempDir.unit, text: $value)
+            NumberField(title: "Temperature", unit: tempDir.unit, text: $value, helpText: "Direction is the From picker above.", fieldID: "value")
         case .length:
             Picker("From", selection: $lengthDir) {
                 ForEach(LengthDir.allCases) { Text($0.label).tag($0) }
             }
             .segmentedControlStyle()
-            NumberField(title: "Length", unit: lengthDir.unit, text: $value)
+            NumberField(title: "Length", unit: lengthDir.unit, text: $value, helpText: "m ↔ ft or mils ↔ mm from the From picker.", fieldID: "value")
         }
     }
 

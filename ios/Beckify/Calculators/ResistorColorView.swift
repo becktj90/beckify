@@ -50,7 +50,7 @@ struct ResistorColorView: View {
             }
             .segmentedControlStyle()
             if mode == .encode {
-                NumberField(title: "Resistance", unit: "Ω", text: $ohms)
+                NumberField(title: "Resistance", unit: "Ω", text: $ohms, helpText: "Encode paints the nearest standard bands for this ohms value.", fieldID: "ohms")
                 Picker("Bands", selection: $encodeBands) {
                     Text("4").tag(4)
                     Text("5").tag(5)

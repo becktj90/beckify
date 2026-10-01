@@ -184,7 +184,7 @@ struct Timer555View: View {
 
     private func unitField(_ title: String, text: Binding<String>) -> some View {
         HStack(alignment: .bottom, spacing: 12) {
-            NumberField(title: title, unit: rUnit.rawValue, text: text, onSubmit: calculate)
+            NumberField(title: title, unit: rUnit.rawValue, text: text, helpText: "Pick the Ω / kΩ / MΩ unit beside the field.", fieldID: title.lowercased(), onSubmit: calculate)
             Picker("R unit", selection: $rUnit) {
                 ForEach(RUnit.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -197,7 +197,7 @@ struct Timer555View: View {
 
     private func capField() -> some View {
         HStack(alignment: .bottom, spacing: 12) {
-            NumberField(title: "C", unit: cUnit.rawValue, text: $c, onSubmit: calculate)
+            NumberField(title: "C", unit: cUnit.rawValue, text: $c, helpText: "Timing capacitor. Pick nF / µF / mF beside the field.", fieldID: "c", onSubmit: calculate)
             Picker("C unit", selection: $cUnit) {
                 ForEach(CUnit.allCases) { Text($0.rawValue).tag($0) }
             }

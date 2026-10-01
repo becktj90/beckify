@@ -73,12 +73,20 @@ final class DeviceHealthModel: ObservableObject {
             uptimeSeconds: wallUptime,
             bootDate: boot,
             now: now,
-            brightness: Double(UIScreen.main.brightness),
+            brightness: Self.screenBrightness(),
             physicalMemoryBytes: info.physicalMemory,
             appHeadroomBytes: Self.appHeadroomBytes(),
             activeProcessors: info.activeProcessorCount,
             installedProcessors: info.processorCount
         )
+    }
+
+    /// Window-scene brightness — avoids deprecated `UIScreen.main` on Archive SDKs.
+    private static func screenBrightness() -> Double {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let screen = scenes.first(where: { $0.activationState == .foregroundActive })?.screen
+            ?? scenes.first?.screen
+        return Double(screen?.brightness ?? 0)
     }
 
     private static func charge(_ state: UIDevice.BatteryState) -> DeviceHealthCharge {
