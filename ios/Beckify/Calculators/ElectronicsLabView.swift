@@ -108,6 +108,7 @@ struct ElectronicsLabView: View {
                         unit: field.unit,
                         text: model.binding(field.id),
                         optional: field.optional,
+                        allowsEngineering: true,
                         helpText: field.help.isEmpty ? nil : field.help,
                         fieldID: field.id
                     )
@@ -115,6 +116,12 @@ struct ElectronicsLabView: View {
                     choiceField(field)
                 }
             }
+
+            Text("Part values are yours to edit. The transfer updates as you type.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("electronicsLab.editHint")
 
             if let errorMessage = model.errorMessage {
                 ErrorText(message: errorMessage)
@@ -422,11 +429,13 @@ private struct LabResponseCard: View {
                 .font(Theme.TypeRole.sectionLabel)
                 .tracking(0.8)
                 .foregroundStyle(Theme.muted)
-            Text(io.expression)
-                .font(.subheadline.monospacedDigit().weight(.semibold))
-                .foregroundStyle(Theme.foreground)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("electronicsLab.transfer")
+            transferLine
+            if let evaluated = io.evaluated, !evaluated.isEmpty {
+                Text("= \(evaluated)")
+                    .font(.title3.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .accessibilityHidden(true)
+            }
             if !io.detail.isEmpty {
                 Text(io.detail)
                     .font(.footnote)
@@ -436,7 +445,7 @@ private struct LabResponseCard: View {
             ForEach(io.plots) { plot in
                 DiagramCard(
                     title: plot.title,
-                    accessibilitySummary: "\(plot.title). \(plot.yLabel) versus \(plot.xLabel). \(io.expression)",
+                    accessibilitySummary: plotSummary(plot),
                     exportName: "electronics-lab-\(plot.id)"
                 ) {
                     EngineerLinePlot(
@@ -458,6 +467,27 @@ private struct LabResponseCard: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var transferLine: some View {
+        if let tex = io.expressionTeX, let math = LabMath.parse(tex) {
+            LabMathView(math: math)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(io.expression)
+                .accessibilityIdentifier("electronicsLab.transfer")
+        } else {
+            Text(io.expression)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel(io.expression)
+                .accessibilityIdentifier("electronicsLab.transfer")
+        }
+    }
+
+    private func plotSummary(_ plot: LabPlot) -> String {
+        "\(plot.title). \(plot.yLabel) versus \(plot.xLabel). \(io.expression)"
     }
 }
 

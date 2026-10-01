@@ -40,6 +40,32 @@ public enum NumericParse {
         return value
     }
 
+    /// Parses a decimal the same way as `parse`, then a single engineering suffix.
+    /// `10k` and `10K` are 10×10³, `0.1u` / `0.1µ` / `0.1μ` are 0.1×10⁻⁶, `2.2n` is 2.2×10⁻⁹.
+    /// `M` is mega and `m` is milli. Trailing junk (`12.5abc`) is still rejected.
+    public static func parseEngineering(_ raw: String, locale: Locale = .current) -> Double? {
+        if let plain = parse(raw, locale: locale) { return plain }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let suffix = trimmed.last else { return nil }
+        let factor: Double
+        switch suffix {
+        case "T": factor = 1e12
+        case "G": factor = 1e9
+        case "M": factor = 1e6
+        case "k", "K": factor = 1e3
+        case "m": factor = 1e-3
+        case "u", "µ", "μ": factor = 1e-6
+        case "n": factor = 1e-9
+        case "p": factor = 1e-12
+        default: return nil
+        }
+        let head = String(trimmed.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let base = parse(head, locale: locale) else { return nil }
+        let value = base * factor
+        guard value.isFinite else { return nil }
+        return value
+    }
+
     /// Rejects prefix matches that NumberFormatter still accepts (`12.5.6`, `1e2e3`, `1,,2`).
     private static func isSingleNumericToken(_ raw: String, decimal: String, grouping: String) -> Bool {
         let bidi = CharacterSet(charactersIn: "\u{200E}\u{200F}")

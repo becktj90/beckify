@@ -60,15 +60,30 @@ public struct LabPlot: Equatable, Sendable, Identifiable {
 
 public struct LabIO: Equatable, Sendable {
     public var transferKind: LabTransferKind
+    /// Plain-language form. VoiceOver reads this, including the numeric result.
     public var expression: String
+    /// TeX-lite symbolic form (`\frac`, subscripts). Nil when there is nothing to typeset.
+    public var expressionTeX: String?
+    /// Formatted numeric evaluation, without a leading equals sign. Nil when the
+    /// symbolic line is the whole result.
+    public var evaluated: String?
     public var detail: String
     public var plots: [LabPlot]
 
-    public init(transferKind: LabTransferKind, expression: String, detail: String, plots: [LabPlot]) {
+    public init(
+        transferKind: LabTransferKind,
+        expression: String,
+        detail: String,
+        expressionTeX: String? = nil,
+        evaluated: String? = nil,
+        plots: [LabPlot]
+    ) {
         self.transferKind = transferKind
         self.expression = expression
         self.detail = detail
         self.plots = plots
+        self.expressionTeX = expressionTeX
+        self.evaluated = evaluated
     }
 
     public static let empty = LabIO(
@@ -79,7 +94,7 @@ public struct LabIO: Equatable, Sendable {
     )
 }
 
-/// Closed-form teaching responses and the samples drawn under each schematic.
+/// Closed-form bench responses and the samples drawn under each schematic.
 /// Ideal models only — the same approximations as the node table, not a transient SPICE run.
 public enum LabSignals {
     public static func dividerRatio(r1: Double, r2: Double) -> Double {
@@ -154,8 +169,8 @@ public enum LabSignals {
         case .csAmp: return midband(bag, name: "CS midband")
         case .mosSwitch: return mosSwitch(bag)
         case .cmosInverter: return cmos(bag)
-        case .invertingAmp: return gainSine(bag, expression: "H = −Rf / Rin", signed: true)
-        case .nonInvertingAmp: return gainSine(bag, expression: "H = 1 + Rf / Rg", signed: false)
+        case .invertingAmp: return gainSine(bag, expression: "H = −Rf / Rin", tex: #"H = -\frac{R_f}{R_{in}}"#, signed: true)
+        case .nonInvertingAmp: return gainSine(bag, expression: "H = 1 + Rf / Rg", tex: #"H = 1 + \frac{R_f}{R_g}"#, signed: false)
         case .summingAmp: return summing(bag)
         case .diffAmp: return difference(bag)
         case .integrator: return integrator(bag)
@@ -166,7 +181,7 @@ public enum LabSignals {
         case .ledFlasher: return flasher(bag)
         case .sevenSegment: return segments(bag)
         case .classOverview: return classPower(bag)
-        case .opAmpPower: return gainSine(bag, expression: "H = −Rf / Rin", signed: true)
+        case .opAmpPower: return gainSine(bag, expression: "H = −Rf / Rin", tex: #"H = -\frac{R_f}{R_{in}}"#, signed: true)
         case .linearDrop: return linearDrop(bag)
         case .idealBuck: return buck(bag)
         case .complexConvert: return complexPlane(bag)
@@ -188,6 +203,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "V_R2 / Vs = R2 / (R1 + R2) = \(fmt(gain))",
             detail: "Resistive. The sine is a 1 kHz bench drive; the ratio is the same at DC. I / Vs = 1 / (R1 + R2).",
+            expressionTeX: #"\frac{V_{R2}}{V_s} = \frac{R_2}{R_1 + R_2}"#,
+            evaluated: fmt(gain),
             plots: wave
         )
     }
@@ -201,6 +218,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "It / Vs = 1/R1 + 1/R2 = \(fmt(1 / r1 + 1 / r2)) S",
             detail: "Resistive. The 1 kHz sine is a bench drive. Branch currents add.",
+            expressionTeX: #"\frac{I_t}{V_s} = \frac{1}{R_1} + \frac{1}{R_2}"#,
+            evaluated: "\(fmt(1 / r1 + 1 / r2)) S",
             plots: [
                 volts("Source", times: times, samples: times.map { sineValue(frequency: 1_000, time: $0, amplitude: vs) }, name: "Vs"),
                 amps("Branch currents", times: times, series: [
@@ -220,6 +239,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "H = Vout / Vin = R2 / (R1 + R2) = \(fmt(gain))",
             detail: "Real and flat. The 1 kHz sine uses the solved Vin as its peak.",
+            expressionTeX: #"H = \frac{V_{out}}{V_{in}} = \frac{R_2}{R_1 + R_2}"#,
+            evaluated: fmt(gain),
             plots: resistiveSine(vinPeak: vin, gain: gain, currentPeak: current)
         )
     }
@@ -236,6 +257,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "I / Vs = 1 / (R1 + R2 + R3) = \(fmt(1 / sum)) S",
             detail: "One loop. The drops are the same 1 kHz sine, scaled by each resistor.",
+            expressionTeX: #"\frac{I}{V_s} = \frac{1}{R_1 + R_2 + R_3}"#,
+            evaluated: "\(fmt(1 / sum)) S",
             plots: [
                 LabPlot(
                     id: "drops",
@@ -263,6 +286,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "VL / Vth = RL / (Rth + RL) = \(fmt(gain))",
             detail: "Norton current is Vth / Rth. The sine is Vth at 1 kHz.",
+            expressionTeX: #"\frac{V_L}{V_{th}} = \frac{R_L}{R_{th} + R_L}"#,
+            evaluated: fmt(gain),
             plots: resistiveSine(vinPeak: vth, gain: gain, currentPeak: vth / denom, vinName: "Vth", voutName: "VL")
         )
     }
@@ -278,6 +303,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "Vc(s) / Vs(s) = 1 / (1 + sRC)",
             detail: "Zero-state form. The trace starts at v(0) and settles toward v(∞). τ = RC.",
+            expressionTeX: #"\frac{V_c(s)}{V_s(s)} = \frac{1}{1 + sRC}"#,
             plots: [
                 LabPlot(id: "vc", title: "Step response", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "v(∞)", times, vin),
@@ -300,6 +326,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "I(s) / Vs(s) = 1 / (R + sL)",
             detail: "Current cannot step. vL is what is left after the resistor drop. τ = L/R.",
+            expressionTeX: #"\frac{I(s)}{V_s(s)} = \frac{1}{R + sL}"#,
             plots: [
                 LabPlot(id: "i", title: "Inductor current", xLabel: "Time (s)", yLabel: "Current (A)", series: [
                     trace("iinf", "i(∞)", times, times.map { _ in iInf }),
@@ -322,10 +349,12 @@ public enum LabSignals {
         let vin = times.map { sineValue(frequency: drive, time: $0, amplitude: 1) }
         let vout = times.map { sineValue(frequency: drive, time: $0, amplitude: h.magnitude, phaseDeg: h.phaseDeg) }
         let expression = low ? "H(s) = 1 / (1 + sRC)" : "H(s) = sRC / (1 + sRC)"
+        let tex = low ? #"H(s) = \frac{1}{1 + sRC}"# : #"H(s) = \frac{sRC}{1 + sRC}"#
         return LabIO(
             transferKind: .closedForm,
             expression: expression,
             detail: "fc = 1/(2πRC). Bode is unloaded. The time trace is a 1 V sine at the drive frequency.",
+            expressionTeX: tex,
             plots: bode + [
                 LabPlot(id: "time", title: "Drive and output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),
@@ -354,6 +383,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "I/V = 1 / (R + sL + 1/(sC))",
             detail: "Series combination, 1 V drive. At f0 the reactances cancel and |I| = 1/R.",
+            expressionTeX: #"\frac{I}{V} = \frac{1}{R + sL + \frac{1}{sC}}"#,
             plots: [
                 LabPlot(id: "mag", title: "|I/V|", xLabel: "Frequency (Hz)", yLabel: "|I/V| (S)", series: [
                     trace("h", "|I/V|", freqs, gain),
@@ -451,6 +481,7 @@ public enum LabSignals {
             transferKind: .operatingPoint,
             expression: "If = (Vs − Vf) / R",
             detail: "DC sweep of the supply. The LED is a fixed drop. No H(s).",
+            expressionTeX: #"I_f = \frac{V_s - V_f}{R}"#,
             plots: [
                 LabPlot(id: "led", title: "LED current vs supply", xLabel: "Vs (V)", yLabel: "If (A)", series: [
                     trace("if", "If", xs, currents),
@@ -469,6 +500,7 @@ public enum LabSignals {
             transferKind: .operatingPoint,
             expression: discrete ? "Pq = Ic · Vce" : "Ic ≈ (Vb − 0.7) / Re   while active",
             detail: "DC load line Ic = (Vcc − Vce) / Rc. The marker is the solved point. No linear H(s).",
+            expressionTeX: discrete ? #"P_q = I_c \cdot V_{ce}"# : #"I_c \approx \frac{V_b - 0.7}{R_e}"#,
             plots: [
                 LabPlot(id: "ll", title: "Collector load line", xLabel: "Vce (V)", yLabel: "Ic (A)", series: [
                     trace("ll", "Load line", xs, load),
@@ -488,6 +520,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "H ≈ Av = \(fmt(av))   (midband)",
             detail: "\(name). A 10 mV peak bench sine. Coupling and bypass capacitors are shorts. Not a full hybrid-π with Cπ and Cμ.",
+            expressionTeX: #"H \approx A_v"#,
+            evaluated: "\(fmt(av)) midband",
             plots: [
                 LabPlot(id: "sine", title: "Midband sine", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "vin", times, times.map { sineValue(frequency: f, time: $0, amplitude: peak) }),
@@ -563,7 +597,7 @@ public enum LabSignals {
 
     // MARK: - Op-amps and timers
 
-    private static func gainSine(_ bag: Bag, expression: String, signed: Bool) -> LabIO {
+    private static func gainSine(_ bag: Bag, expression: String, tex: String, signed: Bool) -> LabIO {
         guard let av = bag["av"] else { return .empty }
         let vinPeak = max(abs(bag["vin"] ?? 0.1), 1e-4)
         let f = 1_000.0
@@ -574,6 +608,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "\(expression) = \(fmt(av))",
             detail: "Ideal op-amp, 1 kHz bench sine. A swing limit on the DC node is not folded into this trace.",
+            expressionTeX: tex,
+            evaluated: fmt(av),
             plots: [
                 LabPlot(id: "sine", title: "Input and output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, times.map { sineValue(frequency: f, time: $0, amplitude: vinPeak) }),
@@ -591,6 +627,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "Vout = −Rf (V1/R1 + V2/R2) = \(fmt(vout)) V",
             detail: "Two DC inputs. There is no single H(s). The lines are the solved voltages.",
+            expressionTeX: #"V_{out} = -R_f (\frac{V_1}{R_1} + \frac{V_2}{R_2})"#,
+            evaluated: "\(fmt(vout)) V",
             plots: [
                 LabPlot(id: "sum", title: "Summing voltages", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("v1", "V1", times, times.map { _ in v1 }),
@@ -612,6 +650,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "Vout / (V2 − V1) = Rf / Rin = \(fmt(gain))",
             detail: "V1 is held at the solved value. V2 is a 1 kHz sine of peak \(fmt(amp)) V so the difference is visible.",
+            expressionTeX: #"\frac{V_{out}}{V_2 - V_1} = \frac{R_f}{R_{in}}"#,
+            evaluated: fmt(gain),
             plots: [
                 LabPlot(id: "diff", title: "Difference", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("v1", "V1", times, times.map { _ in v1 }),
@@ -634,6 +674,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "H(s) = −1 / (sRC)",
             detail: "Constant Vin makes a ramp. |H| = 1 at 1/(2πRC), and the phase of −1/(jωRC) is −90°.",
+            expressionTeX: #"H(s) = -\frac{1}{sRC}"#,
             plots: [
                 LabPlot(id: "ramp", title: "Ramp", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, times.map { _ in vin }),
@@ -661,6 +702,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "H(s) = −sRC",
             detail: "A constant slope in gives a constant voltage out. |H| = ωRC and the phase of −jωRC is −90°.",
+            expressionTeX: #"H(s) = -sRC"#,
             plots: [
                 LabPlot(id: "ramp", title: "Slope in, level out", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),
@@ -800,6 +842,8 @@ public enum LabSignals {
             transferKind: .operatingPoint,
             expression: "η = Pout / Psupply = \(fmt(eta))%",
             detail: "Planning figure for the class, not a measured stage and not an H(s). The lines are supply power, load power, and heat.",
+            expressionTeX: #"\eta = \frac{P_{out}}{P_{supply}}"#,
+            evaluated: "\(fmt(eta))%",
             plots: [
                 LabPlot(id: "pwr", title: "Power split", xLabel: "Sketch", yLabel: "Power (W)", series: [
                     trace("pdc", "Supply", [0, 1], [pdc, pdc]),
@@ -818,6 +862,7 @@ public enum LabSignals {
             transferKind: .operatingPoint,
             expression: "Vout = Vin − Vdrop",
             detail: "DC drop across the pass element. Not a control-loop transfer function and not ripple rejection.",
+            expressionTeX: #"V_{out} = V_{in} - V_{drop}"#,
             plots: [
                 LabPlot(id: "reg", title: "Regulator voltages", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, times.map { _ in vin }),
@@ -840,6 +885,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "Vout / Vin = D = \(fmt(duty))",
             detail: "Ideal continuous buck. The switch node is drawn at an arbitrary 20 kHz. Inductor ripple is not computed.",
+            expressionTeX: #"\frac{V_{out}}{V_{in}} = D"#,
+            evaluated: fmt(duty),
             plots: [
                 LabPlot(id: "buck", title: "Switch node and output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("sw", "Switch", times, sw),
@@ -860,6 +907,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "z = x + jy = |z| ∠ θ",
             detail: "\(fmt(mag)) ∠ \(fmt(deg))°. Same number in rectangular, polar, and exponential form.",
+            expressionTeX: #"z = x + jy = |z| \angle \theta"#,
             plots: [
                 LabPlot(id: "z", title: "Complex plane", xLabel: "Real", yLabel: "Imag", series: [
                     trace("z", "z", xs, ys),
@@ -876,6 +924,8 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "Z = R + jX    |Z| = \(fmt(mag)) Ω",
             detail: "One frequency. Positive X is inductive. The arrow is the voltage phasor for a 1 A current.",
+            expressionTeX: #"Z = R + jX"#,
+            evaluated: "\(fmt(mag)) Ω",
             plots: [
                 LabPlot(id: "z", title: "Impedance phasor", xLabel: "R (Ω)", yLabel: "X (Ω)", series: [
                     trace("z", "Z", xs, ys),
@@ -901,6 +951,8 @@ public enum LabSignals {
             detail: low
                 ? "Low-pass L-section at one frequency: series L, shunt C. |Xs| = Q·Rlo and |Xp| = Rhi/Q. Not a broadband H(s)."
                 : "High-pass L-section at one frequency: series C, shunt L. Not a broadband H(s).",
+            expressionTeX: #"Q = \sqrt{\frac{R_{hi}}{R_{lo}} - 1}"#,
+            evaluated: fmt(q),
             plots: [
                 LabPlot(id: "x", title: "Arm reactance", xLabel: "Frequency (Hz)", yLabel: "X (Ω)", series: [
                     trace("xs", "Series X", freqs, seriesX),
@@ -932,6 +984,7 @@ public enum LabSignals {
             transferKind: .closedForm,
             expression: "Zin(f0) = Z0² / Zload",
             detail: "Ideal lossless line, real load. The length is 90° only at f0. |Zin| repeats every odd quarter-wave.",
+            expressionTeX: #"Z_{in}(f_0) = \frac{Z_0^{2}}{Z_{load}}"#,
             plots: [
                 LabPlot(id: "zin", title: "|Zin|", xLabel: "Frequency (Hz)", yLabel: "|Zin| (Ω)", series: [
                     trace("zin", "|Zin|", freqs, zin),
@@ -953,10 +1006,12 @@ public enum LabSignals {
             return min(max(raw, -8 * z0), 8 * z0)
         }
         let expression = shorted ? "jX = j Z0 tan(βℓ)" : "jX = −j Z0 cot(βℓ)"
+        let tex = shorted ? #"jX = j Z_0 \tan(\beta\ell)"# : #"jX = -j Z_0 \cot(\beta\ell)"#
         return LabIO(
             transferKind: .closedForm,
             expression: expression,
             detail: "Ideal lossless stub. The curve is clipped at ±8 Z0 so the poles stay on the chart. The marker is the design frequency.",
+            expressionTeX: tex,
             plots: [
                 LabPlot(id: "stub", title: "Stub reactance", xLabel: "Frequency (Hz)", yLabel: "X (Ω)", series: [
                     trace("x", "X", freqs, reactance),

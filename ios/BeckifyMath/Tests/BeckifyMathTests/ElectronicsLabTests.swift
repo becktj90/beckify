@@ -191,4 +191,80 @@ final class ElectronicsLabTests: XCTestCase {
         XCTAssertEqual(bias.io.transferKind, .operatingPoint)
         XCTAssertFalse(bias.io.plots.isEmpty)
     }
+
+    func testEngineeringSuffixesSolveTheBench() throws {
+        let divider = try ElectronicsLab.solve(
+            .voltageDivider,
+            unknown: "vout",
+            inputs: ["vin": "12", "r1": "10k", "r2": "10k"]
+        )
+        XCTAssertEqual(divider.quantity("vout") ?? -1, 6, accuracy: 1e-6)
+
+        let filter = try ElectronicsLab.solve(
+            .firstOrderFilter,
+            unknown: "cutoff",
+            inputs: ["kind": "lowpass", "r": "10k", "c": "10n", "f": "1k"]
+        )
+        let expected = 1 / (2 * .pi * 10_000 * 10e-9)
+        XCTAssertEqual(filter.quantity("fc") ?? -1, expected, accuracy: 1e-3)
+    }
+
+    func testClosedFormTransfersAreTypeset() throws {
+        let divider = try ElectronicsLab.solve(
+            .voltageDivider,
+            unknown: "vout",
+            inputs: ["vin": "12", "r1": "10000", "r2": "10000"]
+        )
+        let dividerTex = try XCTUnwrap(divider.io.expressionTeX)
+        XCTAssertEqual(dividerTex, #"H = \frac{V_{out}}{V_{in}} = \frac{R_2}{R_1 + R_2}"#)
+        XCTAssertEqual(divider.io.evaluated, "0.5")
+        let dividerMath = try XCTUnwrap(LabMath.parse(dividerTex))
+        XCTAssertEqual(dividerMath.fractionCount, 2)
+        XCTAssertTrue(divider.io.expression.contains("0.5"))
+
+        let low = try ElectronicsLab.solve(
+            .firstOrderFilter,
+            unknown: "cutoff",
+            inputs: ElectronicsLab.info(.firstOrderFilter).defaults
+        )
+        XCTAssertEqual(low.io.expressionTeX, #"H(s) = \frac{1}{1 + sRC}"#)
+        XCTAssertEqual(LabMath.parse(low.io.expressionTeX ?? "")?.fractionCount, 1)
+
+        let high = try ElectronicsLab.solve(
+            .firstOrderFilter,
+            unknown: "cutoff",
+            inputs: ["kind": "highpass", "r": "10000", "c": "0.00000001", "f": "1000"]
+        )
+        XCTAssertEqual(high.io.expressionTeX, #"H(s) = \frac{sRC}{1 + sRC}"#)
+
+        let integrator = try ElectronicsLab.solve(
+            .integrator,
+            unknown: ElectronicsLab.info(.integrator).defaultUnknown,
+            inputs: ElectronicsLab.info(.integrator).defaults
+        )
+        XCTAssertEqual(integrator.io.expressionTeX, #"H(s) = -\frac{1}{sRC}"#)
+        XCTAssertEqual(LabMath.parse(integrator.io.expressionTeX ?? "")?.fractionCount, 1)
+
+        let amp = try ElectronicsLab.solve(
+            .invertingAmp,
+            unknown: "gain",
+            inputs: ElectronicsLab.info(.invertingAmp).defaults
+        )
+        XCTAssertEqual(amp.io.expressionTeX, #"H = -\frac{R_f}{R_{in}}"#)
+        XCTAssertFalse(amp.io.evaluated?.isEmpty ?? true)
+
+        for info in ElectronicsLab.catalog {
+            let solved = try ElectronicsLab.solve(info.id, unknown: info.defaultUnknown, inputs: info.defaults)
+            if solved.io.transferKind == .closedForm {
+                let tex = try XCTUnwrap(solved.io.expressionTeX, info.title)
+                XCTAssertNotNil(LabMath.parse(tex), "\(info.title): \(tex)")
+            } else if solved.io.transferKind == .none {
+                XCTAssertNil(solved.io.expressionTeX, info.title)
+            }
+            if let tex = solved.io.expressionTeX {
+                XCTAssertNotNil(LabMath.parse(tex), "\(info.title): \(tex)")
+            }
+            XCTAssertFalse(solved.io.expression.isEmpty, info.title)
+        }
+    }
 }
