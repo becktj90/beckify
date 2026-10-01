@@ -430,11 +430,13 @@ public enum MagSweepMath {
 
 public enum BreathFluteMath {
     /// Open the gate this many dB above the quiet floor. Higher than ambient mic jitter.
-    public static let marginDB = 18.0
+    public static let marginDB = 24.0
     /// Keep the gate open until breath falls this far above the floor (hysteresis).
-    public static let closeMarginDB = 10.0
+    public static let closeMarginDB = 14.0
     /// Ignore digital-silence / missing-band seeds so ambient never looks like +37 dB.
     public static let minSeedDBFS = -95.0
+    /// Refuse to open (or stay open) when HF breath energy is quieter than this absolute level.
+    public static let minOpenBreathDBFS = -50.0
     /// Quiet-air samples collected before the gate may open.
     public static let calibrationSampleCount = 10
     /// G3. Bottom of the touch pad.
@@ -443,12 +445,11 @@ public enum BreathFluteMath {
     public static let highHz = 1_046.5
     /// C4. Fret 0.
     public static let rootHz = 261.625565
-    /// Breath is broadband. Gate on bands above the playable flute range so the
-    /// speaker sine (C4–C5) does not hold the gate open by itself.
-    public static let breathBandMinHz = 1_500.0
+    /// Breath is broadband. Gate above flute partials (~5×C5) so speaker tone cannot hold the gate.
+    public static let breathBandMinHz = 2_800.0
 
     public static let honestLimit =
-        "Play tool. Silence until a breath clears the gate; a harder blow is louder. Not a calibrated wind instrument, not a meter, tuner, or SLM. Nothing is recorded or uploaded."
+        "Play tool. Hold finger holes to change pitch while you blow. Silence until a breath clears the gate; a harder blow is louder. Not a calibrated wind instrument, not a meter, tuner, or SLM. Nothing is recorded or uploaded."
 
     /// Output gain at the gate threshold. Below the margin the tone is exactly zero.
     public static let quietAmplitude = 0.14
@@ -496,12 +497,16 @@ public enum BreathFluteMath {
         noiseFloorDBFS: Double,
         wasOpen: Bool = false,
         openMarginDB: Double = marginDB,
-        closeMarginDB: Double = closeMarginDB
+        closeMarginDB: Double = closeMarginDB,
+        minBreathDBFS: Double = minOpenBreathDBFS
     ) -> Bool {
         guard breathDBFS.isFinite, noiseFloorDBFS.isFinite,
-              openMarginDB.isFinite, closeMarginDB.isFinite else { return false }
+              openMarginDB.isFinite, closeMarginDB.isFinite,
+              minBreathDBFS.isFinite else { return false }
         // Refuse a digital-silence floor — that made quiet rooms look like +30…40 dB blows.
         guard noiseFloorDBFS >= minSeedDBFS else { return false }
+        // Absolute floor: room HF at −60 dBFS never opens even if the quiet floor is lower.
+        guard breathDBFS >= minBreathDBFS else { return false }
         let above = breathDBFS - noiseFloorDBFS
         if wasOpen {
             return above >= min(openMarginDB, closeMarginDB)
@@ -653,7 +658,7 @@ public enum BreathFluteMath {
         let to = target.isFinite ? min(1, max(0, target)) : 0
         // Soft attack (~70–110 ms). Faster release so silence snaps when breath stops.
         let attackSeconds = lightBlow ? 0.11 : 0.07
-        let releaseSeconds = 0.035
+        let releaseSeconds = 0.022
         let seconds = to > from ? attackSeconds : releaseSeconds
         let alpha = 1 - exp(-1.0 / max(1, rate * seconds))
         return from + (to - from) * alpha

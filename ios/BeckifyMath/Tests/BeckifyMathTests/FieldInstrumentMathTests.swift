@@ -249,13 +249,18 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertEqual(BreathFluteMath.fretFrequencyHz(fret: 0), BreathFluteMath.rootHz, accuracy: 1e-9)
         XCTAssertEqual(BreathFluteMath.fretFrequencyHz(fret: 12), BreathFluteMath.rootHz * 2, accuracy: 1e-6)
 
+        let margin = BreathFluteMath.marginDB
         XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 0), 0, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 17.9), 0, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 18), BreathFluteMath.quietAmplitude, accuracy: 1e-9)
-        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 42), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: margin - 0.1), 0, accuracy: 1e-9)
+        XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: margin), BreathFluteMath.quietAmplitude, accuracy: 1e-9)
+        XCTAssertEqual(
+            BreathFluteMath.amplitude(aboveFloorDB: margin + BreathFluteMath.loudSpanDB),
+            BreathFluteMath.loudAmplitude,
+            accuracy: 1e-9
+        )
         XCTAssertEqual(BreathFluteMath.amplitude(aboveFloorDB: 80), BreathFluteMath.loudAmplitude, accuracy: 1e-9)
-        let soft = BreathFluteMath.amplitude(aboveFloorDB: 24)
-        let hard = BreathFluteMath.amplitude(aboveFloorDB: 36)
+        let soft = BreathFluteMath.amplitude(aboveFloorDB: margin + 6)
+        let hard = BreathFluteMath.amplitude(aboveFloorDB: margin + 18)
         XCTAssertGreaterThan(hard, soft)
         XCTAssertGreaterThan(soft, BreathFluteMath.quietAmplitude)
         XCTAssertEqual(BreathFluteMath.coveredFromEmbouchure(holesCovered: [false, true, true]), 0)
@@ -298,8 +303,9 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertEqual(cal.count, before)
 
         let fluteToneBand = AcousticDisplayBand(lowHz: 400, highHz: 600, centerHz: 490, dbFS: -18)
-        let breathBand = AcousticDisplayBand(lowHz: 2_000, highHz: 3_000, centerHz: 2_450, dbFS: -28)
-        let quietHF = AcousticDisplayBand(lowHz: 2_000, highHz: 3_000, centerHz: 2_450, dbFS: -55)
+        let breathBand = AcousticDisplayBand(lowHz: 3_000, highHz: 4_000, centerHz: 3_400, dbFS: -28)
+        let quietHF = AcousticDisplayBand(lowHz: 3_000, highHz: 4_000, centerHz: 3_400, dbFS: -55)
+        let midPartial = AcousticDisplayBand(lowHz: 2_000, highHz: 2_600, centerHz: 2_300, dbFS: -20)
         XCTAssertEqual(
             BreathFluteMath.breathLevelDBFS(bands: [fluteToneBand, quietHF]),
             -55,
@@ -310,25 +316,34 @@ final class FieldInstrumentMathTests: XCTestCase {
             -28,
             accuracy: 1e-9
         )
+        // Partials below breathBandMinHz must not count as breath.
+        XCTAssertEqual(
+            BreathFluteMath.breathLevelDBFS(bands: [fluteToneBand, midPartial]),
+            SoundLevel.silenceFloorDBFS,
+            accuracy: 1e-9
+        )
         XCTAssertEqual(
             BreathFluteMath.breathLevelDBFS(bands: [fluteToneBand]),
             SoundLevel.silenceFloorDBFS,
             accuracy: 1e-9
         )
+        // Open needs marginDB (24) above floor and absolute minOpenBreathDBFS (−50).
         XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -40, noiseFloorDBFS: -48))
-        XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -30.1, noiseFloorDBFS: -48))
-        XCTAssertTrue(BreathFluteMath.breathGateOpen(breathDBFS: -30, noiseFloorDBFS: -48))
+        XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -24.1, noiseFloorDBFS: -48))
+        XCTAssertTrue(BreathFluteMath.breathGateOpen(breathDBFS: -24, noiseFloorDBFS: -48))
         XCTAssertFalse(
             BreathFluteMath.breathGateOpen(
                 breathDBFS: -55,
                 noiseFloorDBFS: SoundLevel.silenceFloorDBFS
             )
         )
+        // Absolute quiet HF never opens even with a very low floor.
+        XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -55, noiseFloorDBFS: -80))
         XCTAssertTrue(
-            BreathFluteMath.breathGateOpen(breathDBFS: -37, noiseFloorDBFS: -48, wasOpen: true)
+            BreathFluteMath.breathGateOpen(breathDBFS: -34, noiseFloorDBFS: -48, wasOpen: true)
         )
         XCTAssertFalse(
-            BreathFluteMath.breathGateOpen(breathDBFS: -39, noiseFloorDBFS: -48, wasOpen: true)
+            BreathFluteMath.breathGateOpen(breathDBFS: -34.1, noiseFloorDBFS: -48, wasOpen: true)
         )
 
         let levels = BreathFluteMath.levelDBFS(samples: [Float](repeating: 0.1, count: 4))
