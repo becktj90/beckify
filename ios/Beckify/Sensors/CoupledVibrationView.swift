@@ -192,15 +192,14 @@ struct CoupledVibrationView: View {
                     )
                     SpectrumPlot(
                         heights: comparisonHeights(comparison),
-                        leadingCaption: "A",
-                        trailingCaption: "B",
+                        leadingCaption: comparisonLow,
+                        trailingCaption: comparisonHigh,
+                        footnote: "Left to right is frequency, not session A versus session B. Height is the size of B − A, scaled to the largest band. The readout has the sign, in g. Not ISO 10816.",
                         plotHeight: 72,
-                        accessibilityLabel: "Session B minus session A by band. Difference is relative to the largest band.",
-                        xAxis: PlotAxis(title: "Band", unit: "", start: "Session A", end: "Session B"),
-                        yAxis: PlotAxis(title: "Difference", unit: "relative", start: "0", end: "1"),
-                        barReadouts: comparison.bandDeltas.enumerated().map { index, delta in
-                            "Band \(index + 1), Δ \(Format.number(delta, digits: 3)) g"
-                        }
+                        accessibilityLabel: "Session B minus session A by frequency band, from \(comparisonLow) to \(comparisonHigh). Bar height is the absolute change scaled to the largest band.",
+                        xAxis: PlotAxis(title: "Frequency", unit: "Hz", start: comparisonLow, end: comparisonHigh),
+                        yAxis: PlotAxis(title: "|B − A|", unit: "vs largest", start: "0", mid: "0.5", end: "1"),
+                        barReadouts: comparisonReadouts(comparison)
                     )
                 } else {
                     Text("Capture two short presses. The difference is relative on this phone only.")
@@ -243,6 +242,38 @@ struct CoupledVibrationView: View {
         let peak = model.bands.map(\.magnitudeG).max() ?? 0
         guard peak > 1e-6 else { return model.bands.map { _ in 0 } }
         return model.bands.map { min(1, max(0, $0.magnitudeG / peak)) }
+    }
+
+    private var comparisonLow: String {
+        guard let hz = model.signatureA?.bands.first?.lowHz else { return "low" }
+        return bandHz(hz)
+    }
+
+    private var comparisonHigh: String {
+        guard let hz = model.signatureA?.bands.last?.highHz else { return "high" }
+        return bandHz(hz)
+    }
+
+    private func comparisonReadouts(_ comparison: VibrationComparison) -> [String] {
+        let bands = model.signatureA?.bands ?? []
+        return comparison.bandDeltas.enumerated().map { index, delta in
+            let span: String
+            if bands.indices.contains(index) {
+                span = "\(bandHz(bands[index].lowHz))–\(bandHz(bands[index].highHz))"
+            } else {
+                span = "Band \(index + 1)"
+            }
+            return "\(span), B − A \(signedG(delta))"
+        }
+    }
+
+    private func bandHz(_ hz: Double) -> String {
+        guard hz.isFinite, hz >= 0 else { return "—" }
+        if hz >= 1000 {
+            return "\(Format.number(hz / 1000, digits: hz >= 10_000 ? 0 : 1)) kHz"
+        }
+        if hz < 0.5 { return "0 Hz" }
+        return "\(Format.number(hz, digits: hz >= 100 ? 0 : 1)) Hz"
     }
 
     private func comparisonHeights(_ comparison: VibrationComparison) -> [Double] {

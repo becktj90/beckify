@@ -99,6 +99,11 @@ struct SetupCheckView: View {
                         .foregroundStyle(Theme.muted)
                         .padding(.top, 6)
                 }
+                Text("Crest is peaks above the typical level. Harmonics are leftover mic energy, not THD. Loop delay shows up on bursts as a rough speaker-to-mic gap. Above quiet and relative range wait for a quiet Listen moment.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 6)
             }
 
             DiagramCard(

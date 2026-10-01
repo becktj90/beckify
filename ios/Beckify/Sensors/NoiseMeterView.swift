@@ -40,6 +40,10 @@ struct NoiseMeterView: View {
                 ResultRow(label: "Peak hold", value: Format.dbfs(peak), tone: Theme.warn)
                 ResultRow(label: "Peak band", value: peakLabel, tone: Theme.copper)
                 ResultRow(label: "Rough harmonics", value: harmonicLabel)
+                Text("Leftover energy outside the loudest bin on this microphone. Not THD and not dB SPL.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 ResultRow(label: "Engine", value: spectrum.status)
                 levelBar
                 Text("Level over the last moments. Not a recording.")

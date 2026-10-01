@@ -42,7 +42,7 @@ struct AcousticImagerView: View {
                 .padding(.top, 8)
             }
             ResultCard(title: "Time activity") {
-                Text("Recent audible bands. Brighter means more relative energy on this phone. Not a leak position, not SPL, not ultrasonic.")
+                Text("Recent audible bands. Left is lower frequency, bottom is newer. Brighter means more relative energy on this phone. Not a leak position, not SPL, not ultrasonic.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                 AcousticLevelMap(
