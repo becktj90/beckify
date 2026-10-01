@@ -13,10 +13,8 @@ struct BreadboardCard: View {
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
                 PlotFullscreenControl(title: "Breadboard", plotName: "breadboard") {
-                    ScrollView([.horizontal, .vertical]) {
-                        BreadboardPicture(layout: layout, pitch: 22)
-                            .padding(12)
-                    }
+                    BreadboardFitView(layout: layout, baseHeight: 420)
+                    meterStrip
                     Text(layout.caption)
                         .font(Theme.TypeRole.help)
                         .foregroundStyle(Theme.muted)
@@ -27,13 +25,108 @@ struct BreadboardCard: View {
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
-            ScrollView(.horizontal, showsIndicators: true) {
-                BreadboardPicture(layout: layout, pitch: 17)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 4)
-            }
-            .accessibilityIdentifier("electronicsLab.breadboard")
+            BreadboardFitView(layout: layout, baseHeight: 220)
+                .accessibilityIdentifier("electronicsLab.breadboard")
+            meterStrip
+            Text("Whole board on open. Pinch to zoom, drag when zoomed, double-tap to reset.")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
         }
+    }
+
+    @ViewBuilder
+    private var meterStrip: some View {
+        let line = BreadboardMeters.summaryLine(layout.meters)
+        if !line.isEmpty {
+            Text(line)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                        .stroke(Theme.border, lineWidth: Theme.Stroke.hairline)
+                )
+                .accessibilityIdentifier("electronicsLab.breadboard.meters")
+                .accessibilityLabel("Readings \(line)")
+        }
+    }
+}
+
+/// Fits the full solderless board into the available width, then allows pinch/pan.
+struct BreadboardFitView: View {
+    var layout: BreadboardLayout
+    var baseHeight: CGFloat
+
+    @State private var zoom: CGFloat = 1
+    @State private var liveZoom: CGFloat = 1
+    @State private var pan: CGSize = .zero
+    @State private var panOrigin: CGSize = .zero
+
+    var body: some View {
+        GeometryReader { geo in
+            let fitted = Self.fitPitch(forWidth: geo.size.width, height: geo.size.height)
+            let picture = BreadboardPicture(layout: layout, pitch: fitted)
+            let size = BreadboardPaint.size(pitch: fitted)
+            let framed = picture
+                .frame(width: size.width, height: size.height)
+                .scaleEffect(zoom * liveZoom, anchor: .center)
+                .offset(pan)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .contentShape(Rectangle())
+                .gesture(magnify)
+                .onTapGesture(count: 2) {
+                    zoom = 1
+                    liveZoom = 1
+                    pan = .zero
+                    panOrigin = .zero
+                }
+            Group {
+                if zoom > 1.02 {
+                    framed.simultaneousGesture(panGesture)
+                } else {
+                    framed
+                }
+            }
+        }
+        .frame(height: baseHeight)
+        .clipped()
+        .background(Theme.surface.opacity(0.35), in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+        .accessibilityHint("Shows the whole breadboard. Pinch to zoom. Double-tap to reset.")
+    }
+
+    private static func fitPitch(forWidth width: CGFloat, height: CGFloat) -> CGFloat {
+        // size = (92 + columns*pitch + 16, 28 + 15.4*pitch + 20)
+        let pad: CGFloat = 8
+        let usableW = max(width - pad * 2, 40)
+        let usableH = max(height - pad * 2, 40)
+        let pitchW = (usableW - 92 - 16) / CGFloat(BreadboardBoard.columns)
+        let pitchH = (usableH - 28 - 20) / 15.4
+        return max(4.5, min(pitchW, pitchH, 22))
+    }
+
+    private var magnify: some Gesture {
+        MagnificationGesture()
+            .onChanged { liveZoom = $0 }
+            .onEnded { value in
+                zoom = min(4, max(1, zoom * value))
+                liveZoom = 1
+            }
+    }
+
+    private var panGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                pan = CGSize(
+                    width: panOrigin.width + value.translation.width,
+                    height: panOrigin.height + value.translation.height
+                )
+            }
+            .onEnded { _ in
+                panOrigin = pan
+            }
     }
 }
 
@@ -59,7 +152,9 @@ enum BreadboardPaint {
 
     static func summary(_ layout: BreadboardLayout) -> String {
         let parts = layout.components.map { partName($0) }.joined(separator: ", ")
-        return "Breadboard. \(parts). \(layout.caption)"
+        let meters = BreadboardMeters.summaryLine(layout.meters)
+        let meterBit = meters.isEmpty ? "" : " Readings: \(meters)."
+        return "Breadboard. \(parts). \(layout.caption)\(meterBit)"
     }
 
     static func draw(_ layout: BreadboardLayout, in context: GraphicsContext, pitch: CGFloat) {
@@ -76,6 +171,9 @@ enum BreadboardPaint {
         }
         for jumper in layout.jumpers {
             drawJumper(jumper, in: context, map: map)
+        }
+        for meter in layout.meters {
+            drawMeter(meter, in: context, map: map)
         }
     }
 
@@ -252,6 +350,12 @@ enum BreadboardPaint {
         case .led(let label):
             guard component.leads.count == 2 else { return }
             drawLED(anode: map.center(component.leads[0].hole), cathode: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
+        case .diode(let label):
+            guard component.leads.count == 2 else { return }
+            drawDiode(anode: map.center(component.leads[0].hole), cathode: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
+        case .inductor(_, let label):
+            guard component.leads.count == 2 else { return }
+            drawInductor(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
         case .npn(let name):
             drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["E", "B", "C"], pitch: map.pitch, in: context)
         case .nmos(let name):
@@ -485,6 +589,82 @@ enum BreadboardPaint {
         segment(2, CGRect(x: face.maxX - t - 1, y: midY + 2, width: t, height: lower))
     }
 
+    private static func drawDiode(anode: CGPoint, cathode: CGPoint, label: String, pitch: CGFloat, in context: GraphicsContext) {
+        lead(from: anode, to: cathode, pitch: pitch, in: context)
+        let mid = CGPoint(x: (anode.x + cathode.x) / 2, y: (anode.y + cathode.y) / 2)
+        let angle = atan2(cathode.y - anode.y, cathode.x - anode.x)
+        let body = pitch * 0.55
+        let half = pitch * 0.28
+        var triangle = Path()
+        triangle.move(to: CGPoint(x: -body / 2, y: -half))
+        triangle.addLine(to: CGPoint(x: body / 2, y: 0))
+        triangle.addLine(to: CGPoint(x: -body / 2, y: half))
+        triangle.closeSubpath()
+        let transform = CGAffineTransform(translationX: mid.x, y: mid.y).rotated(by: angle)
+        context.fill(triangle.applying(transform), with: .color(rgb(0x2B2B2B)))
+        var bar = Path()
+        bar.move(to: CGPoint(x: body / 2, y: -half))
+        bar.addLine(to: CGPoint(x: body / 2, y: half))
+        context.stroke(bar.applying(transform), with: .color(rgb(0xE8E2D8)), lineWidth: max(1.4, pitch * 0.1))
+        labelAbove(label, at: CGPoint(x: mid.x, y: mid.y - pitch * 0.15), pitch: pitch, in: context)
+    }
+
+    private static func drawInductor(from a: CGPoint, to b: CGPoint, label: String, pitch: CGFloat, in context: GraphicsContext) {
+        lead(from: a, to: b, pitch: pitch, in: context)
+        let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+        let angle = atan2(b.y - a.y, b.x - a.x)
+        let length = max(hypot(b.x - a.x, b.y - a.y) * 0.55, pitch * 1.1)
+        let amp = pitch * 0.22
+        var coils = Path()
+        let turns = 4
+        coils.move(to: CGPoint(x: -length / 2, y: 0))
+        for index in 0..<turns {
+            let x0 = -length / 2 + CGFloat(index) * length / CGFloat(turns)
+            let x1 = x0 + length / CGFloat(turns)
+            coils.addCurve(
+                to: CGPoint(x: x1, y: 0),
+                control1: CGPoint(x: x0 + (x1 - x0) * 0.25, y: -amp),
+                control2: CGPoint(x: x0 + (x1 - x0) * 0.75, y: -amp)
+            )
+        }
+        let transform = CGAffineTransform(translationX: mid.x, y: mid.y).rotated(by: angle)
+        context.stroke(
+            coils.applying(transform),
+            with: .color(rgb(0x4A5560)),
+            style: StrokeStyle(lineWidth: max(1.6, pitch * 0.12), lineCap: .round, lineJoin: .round)
+        )
+        labelAbove(label, at: CGPoint(x: mid.x, y: mid.y - pitch * 0.2), pitch: pitch, in: context)
+    }
+
+    private static func drawMeter(_ meter: BBMeter, in context: GraphicsContext, map: Map) {
+        let anchor = map.center(meter.hole)
+        let pitch = map.pitch
+        let title = "\(meter.title) \(meter.reading)"
+        let fontSize = max(8, pitch * 0.38)
+        let resolved = context.resolve(
+            Text(title)
+                .font(.system(size: fontSize, weight: .bold).monospacedDigit())
+                .foregroundColor(meter.kind == .current ? rgb(0x0B3D91) : rgb(0x1B5E20))
+        )
+        let textSize = resolved.measure(in: CGSize(width: 240, height: 40))
+        let padX: CGFloat = 6
+        let padY: CGFloat = 3
+        let width = textSize.width + padX * 2
+        let height = max(textSize.height + padY * 2, pitch * 0.7)
+        let offsetY: CGFloat = meter.kind == .current ? -pitch * 0.95 : -pitch * 0.72
+        let rect = CGRect(
+            x: anchor.x - width / 2,
+            y: anchor.y + offsetY - height / 2,
+            width: width,
+            height: height
+        )
+        let fill = meter.kind == .current ? rgb(0xD6E6FF) : rgb(0xDFF5E2)
+        let stroke = meter.kind == .current ? rgb(0x3D6FB4) : rgb(0x3D8B4F)
+        context.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(fill.opacity(0.94)))
+        context.stroke(Path(roundedRect: rect, cornerRadius: 5), with: .color(stroke), lineWidth: 1)
+        context.draw(resolved, at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
+    }
+
     private static func lead(from a: CGPoint, to b: CGPoint, pitch: CGFloat, in context: GraphicsContext) {
         var path = Path()
         path.move(to: a)
@@ -519,7 +699,8 @@ enum BreadboardPaint {
         switch component.part {
         case .resistor(_, let label, _): return label
         case .ceramic(_, let label), .electrolytic(_, let label): return label
-        case .led(let label): return label
+        case .led(let label), .diode(let label): return label
+        case .inductor(_, let label): return label
         case .npn(let name), .nmos(let name): return name
         case .dip8(let name, _): return name
         case .display(let name, let digit, _, _): return "\(name) digit \(digit)"

@@ -37,7 +37,7 @@ struct ElectronicsLabView: View {
 
     private var hub: some View {
         VStack(alignment: .leading, spacing: Theme.Space.md) {
-            Text("Pick a circuit. The schematic, node readings, and current arrows update as you edit. A circuit that sits on a solderless board also has a Breadboard view.")
+            Text("Pick a circuit. The schematic, node voltages, and branch currents (A / mA / µA) update as you edit. Circuits that fit a solderless board also open a Breadboard with the whole board in view and on-board meters.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -285,6 +285,9 @@ private func labReading(_ value: Double, unit: String) -> String {
     case "V": return Format.volts(value)
     case "A": return Format.amps(value)
     case "W": return Format.watts(value)
+    case "Ω", "ohm", "Ohms": return Format.si(value, unit: "Ω")
+    case "F": return Format.si(value, unit: "F")
+    case "H": return Format.si(value, unit: "H")
     case "Hz": return Format.frequency(value)
     case "s": return value > 0 ? Format.time(value) : Format.number(value, digits: 4) + " s"
     case "°": return Format.degrees(value)
@@ -489,12 +492,12 @@ private struct SchematicCard: View {
                         schematic(phase: phase)
                             .frame(minHeight: 420)
                     }
-                    Text("Tap a node for its reading. Tap a branch for current. This is a schematic, not an X–Y plot.")
+                    Text("Node voltages and branch currents sit on the drawing. Tap a node or branch to highlight. This is a schematic, not an X–Y plot.")
                         .font(Theme.TypeRole.help)
                         .foregroundStyle(Theme.muted)
                 }
             }
-            Text("Tap a node for its reading. Tap a branch for current.")
+            Text("Node volts and branch currents (A / mA / µA) are labeled on the schematic.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
             TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
@@ -710,6 +713,20 @@ private enum SchematicDraw {
         let dotCenter = CGPoint(x: start.x + delta.x * travel, y: start.y + delta.y * travel)
         let dot = Path(ellipseIn: CGRect(x: dotCenter.x - 3, y: dotCenter.y - 3, width: 6, height: 6))
         context.fill(dot, with: .color(Theme.energized.opacity(0.9)))
+        let normal = CGPoint(x: -unit.y, y: unit.x)
+        let labelAt = CGPoint(
+            x: start.x + delta.x * 0.45 + normal.x * 11,
+            y: start.y + delta.y * 0.45 + normal.y * 11
+        )
+        let unitText = branch.unit.isEmpty ? "" : branch.unit
+        let reading = labReading(abs(branch.value), unit: unitText.isEmpty ? "A" : unitText)
+        let label = "\(branch.name) \(reading)"
+        let resolved = context.resolve(
+            Text(label)
+                .font(.system(size: emphasized ? 11 : 10, weight: .semibold).monospacedDigit())
+                .foregroundColor(emphasized ? Theme.good : Theme.energized)
+        )
+        context.draw(resolved, at: labelAt, anchor: .center)
     }
 
     private static func stroke(_ path: Path, in context: GraphicsContext, color: Color, width: CGFloat) {

@@ -24,8 +24,9 @@ final class BreadboardLayoutTests: XCTestCase {
 
     func testHiddenCircuitsStayOffTheBoard() throws {
         let hidden: [ElectronicsCircuit] = [
-            .seriesRLC, .fullBridge, .halfWave, .cmosInverter, .ceAmp, .csAmp,
-            .idealBuck, .quarterWave, .stubCancel, .lMatch, .classOverview, .summingAmp,
+            .seriesRLC, .fullBridge, .cmosInverter, .ceAmp, .csAmp,
+            .idealBuck, .quarterWave, .stubCancel, .lMatch, .classOverview,
+            .discretePower, .opAmpPower, .complexConvert, .impedanceCombo,
         ]
         for circuit in hidden {
             XCTAssertFalse(BreadboardLayouts.supports(circuit))
@@ -288,6 +289,39 @@ final class BreadboardLayoutTests: XCTestCase {
             caption: "clash"
         )
         XCTAssertFalse(BreadboardNetlist.audit(clash).clashes.isEmpty)
+    }
+
+    func testNewDiodeAndOpAmpBoardsAudit() throws {
+        let extras: [ElectronicsCircuit] = [
+            .theveninNorton, .rlStep, .halfWave, .shuntClipper, .clamper,
+            .summingAmp, .diffAmp, .integrator, .differentiator, .comparator, .linearDrop,
+        ]
+        for circuit in extras {
+            XCTAssertTrue(BreadboardLayouts.supports(circuit), circuit.rawValue)
+            let board = try layout(circuit)
+            let audit = BreadboardNetlist.audit(board)
+            XCTAssertTrue(audit.ok, "\(circuit.rawValue) \(audit)")
+            XCTAssertFalse(board.meters.isEmpty, circuit.rawValue)
+        }
+    }
+
+    func testMetersUseSensibleCurrentUnits() throws {
+        let board = try layout(.voltageDivider)
+        XCTAssertFalse(board.meters.isEmpty)
+        let currents = board.meters.filter { $0.kind == .current }
+        XCTAssertFalse(currents.isEmpty)
+        // Default divider is 12 V / 20 kΩ = 0.6 mA.
+        XCTAssertTrue(currents.contains { $0.reading.contains("mA") || $0.reading.contains("µA") || $0.reading.contains("A") })
+        let volts = board.meters.filter { $0.kind == .voltage }
+        XCTAssertTrue(volts.contains { $0.reading.contains("V") })
+    }
+
+    func testLabKitSICurrentPrefixes() {
+        XCTAssertEqual(LabKit.si(0.6, unit: "A"), "600 mA")
+        XCTAssertEqual(LabKit.si(0.0006, unit: "A"), "600 µA")
+        XCTAssertEqual(LabKit.si(1.5, unit: "A"), "1.50 A")
+        XCTAssertEqual(LabKit.si(12, unit: "V"), "12.0 V")
+        XCTAssertEqual(LabKit.si(0.012, unit: "V"), "12.0 mV")
     }
 
     private func layout(_ circuit: ElectronicsCircuit) throws -> BreadboardLayout {

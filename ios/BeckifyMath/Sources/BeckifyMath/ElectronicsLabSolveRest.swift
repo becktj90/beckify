@@ -334,8 +334,10 @@ extension LabSolve {
                 q("ripple", "Ripple", ripple, "V", unknown == "c"),
                 q("c", "C", c, "F", unknown == "c"),
                 q("iload", "Iload", iCap, "A"),
+                q("rload", "Rload", rload, "Ω"),
                 q("f", "f", f, "Hz"),
                 q("vf", "Vf", vf, "V"),
+                q("vrms", "Vrms", vrms, "V"),
                 q("vsrcpk", "Source peak", vrms * sqrt(2), "V"),
                 q("bridge", "Bridge", bridge ? 1 : 0, ""),
             ],
@@ -394,6 +396,8 @@ extension LabSolve {
                 q("ipeak", "Ipeak", ipeak, "A"),
                 q("r", "R", r, "Ω", unknown == "r"),
                 q("vp", "Vp", vp, "V"),
+                q("vf", "Vf", vf, "V"),
+                q("vbias", "Vbias", vbias, "V"),
             ],
             steps: [
                 "Clip level = Vbias + Vf = \(eng(vclip)) V",
@@ -434,6 +438,8 @@ extension LabSolve {
                 q("vmax", "Vmax", vmax, "V"),
                 q("vmin", "Vmin", vmin, "V"),
                 q("swing", "Swing", vmax - vmin, "V"),
+                q("vp", "Vp", vp, "V"),
+                q("vf", "Vf", vf, "V"),
             ],
             steps: [
                 "Negative peak clamps near −Vf.",

@@ -84,6 +84,48 @@ enum LabKit {
         return sign + String(format: "%.\(digits)f", scaled) + suffix
     }
 
+    /// Student-friendly SI readout: `600 µA`, `12.0 V`, `4.70 kΩ`.
+    static func si(_ value: Double, unit: String) -> String {
+        guard value.isFinite else { return "—" }
+        let trimmed = unit.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return eng(value) }
+        switch trimmed {
+        case "A", "V", "W", "Ω", "ohm", "Ohms", "F", "H", "s", "Hz":
+            let base: String = {
+                switch trimmed {
+                case "ohm", "Ohms": return "Ω"
+                default: return trimmed
+                }
+            }()
+            let magnitude = abs(value)
+            if magnitude == 0 { return "0 \(base)" }
+            let decade = floor(log10(magnitude) / 3) * 3
+            let clamped = min(12, max(-12, decade))
+            let scaled = magnitude / pow(10, clamped)
+            let prefix: String
+            switch Int(clamped) {
+            case 12: prefix = "T"
+            case 9: prefix = "G"
+            case 6: prefix = "M"
+            case 3: prefix = "k"
+            case 0: prefix = ""
+            case -3: prefix = "m"
+            case -6: prefix = "µ"
+            case -9: prefix = "n"
+            case -12: prefix = "p"
+            default: prefix = ""
+            }
+            let digits = scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)
+            let number = String(format: "%.\(digits)f", scaled)
+            let sign = value < 0 ? "-" : ""
+            let spaced = prefix.isEmpty ? "\(number) \(base)" : "\(number) \(prefix)\(base)"
+            return sign + spaced
+        default:
+            let number = eng(value)
+            return "\(number) \(trimmed)"
+        }
+    }
+
     static func wire(_ id: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {
         LabElement(id: id, part: .wire, label: "", detail: "", a: LabPoint(x: x1, y: y1), b: LabPoint(x: x2, y: y2))
     }
@@ -337,6 +379,7 @@ func pos(_ inputs: [String: String], _ key: String, _ name: String) throws -> Do
 }
 
 func eng(_ value: Double) -> String { LabKit.eng(value) }
+func si(_ value: Double, unit: String) -> String { LabKit.si(value, unit: unit) }
 func wire(_ id: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement { LabKit.wire(id, x1, y1, x2, y2) }
 func res(_ id: String, _ label: String, _ detail: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {
     LabKit.res(id, label, detail, x1, y1, x2, y2)

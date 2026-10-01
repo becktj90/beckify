@@ -391,6 +391,9 @@ enum LabSolve {
                 branch("il", "Load", il, "A", 78, 44, 78, 64),
             ],
             quantities: [
+                q("vs", "Vs", vs, "V"),
+                q("r1", "R1", r1, "Ω"),
+                q("r2", "R2", r2, "Ω"),
                 q("vth", "Vth", vth, "V", unknown == "r2"),
                 q("rth", "Rth", rth, "Ω"),
                 q("norton", "In", norton, "A"),

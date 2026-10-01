@@ -455,6 +455,7 @@ extension LabSolve {
                 q("eta", "η", eta * 100, "%"),
                 q("iload", "Iload", iload, "A", unknown == "iload"),
                 q("vin", "Vin", vin, "V", unknown == "vin"),
+                q("vout", "Vout", vout, "V"),
                 q("pload", "Pload", vout * iload, "W"),
             ],
             steps: [

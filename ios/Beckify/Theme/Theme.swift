@@ -392,9 +392,35 @@ enum Format {
         return formatter.string(from: NSNumber(value: value)) ?? "—"
     }
 
-    static func amps(_ value: Double) -> String { "\(number(value, digits: 2)) A" }
-    static func volts(_ value: Double) -> String { "\(number(value, digits: 2)) V" }
-    static func watts(_ value: Double) -> String { "\(number(value, digits: 2)) W" }
+    static func amps(_ value: Double) -> String { si(value, unit: "A") }
+    static func volts(_ value: Double) -> String { si(value, unit: "V") }
+    static func watts(_ value: Double) -> String { si(value, unit: "W") }
+
+    /// SI-prefixed readout for bench tools: `600 µA`, `12.0 V`, `4.70 mW`.
+    static func si(_ value: Double, unit: String) -> String {
+        guard value.isFinite else { return "—" }
+        let magnitude = abs(value)
+        if magnitude == 0 { return "0 \(unit)" }
+        let decade = floor(log10(magnitude) / 3) * 3
+        let clamped = min(12.0, max(-12.0, decade))
+        let scaled = magnitude / pow(10, clamped)
+        let prefix: String
+        switch Int(clamped) {
+        case 12: prefix = "T"
+        case 9: prefix = "G"
+        case 6: prefix = "M"
+        case 3: prefix = "k"
+        case 0: prefix = ""
+        case -3: prefix = "m"
+        case -6: prefix = "µ"
+        case -9: prefix = "n"
+        case -12: prefix = "p"
+        default: prefix = ""
+        }
+        let digits = scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)
+        let body = number(value < 0 ? -scaled : scaled, digits: digits)
+        return prefix.isEmpty ? "\(body) \(unit)" : "\(body) \(prefix)\(unit)"
+    }
     static func percent(_ value: Double) -> String { "\(number(value, digits: 2)) %" }
     static func degrees(_ value: Double) -> String { "\(number(value, digits: 2)) °" }
     static func microtesla(_ value: Double) -> String { "\(number(value, digits: 2)) µT" }
