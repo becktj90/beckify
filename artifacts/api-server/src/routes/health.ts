@@ -8,7 +8,7 @@ router.get("/healthz", (_req, res) => {
     status: "ok",
     routes: {
       get: ["/api/healthz"],
-      post: [...VISION_POST_PATHS, "/api/review-calculation"],
+      post: [...VISION_POST_PATHS, "/api/review-calculation", "/api/translate"],
     },
   });
 });

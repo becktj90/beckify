@@ -176,7 +176,8 @@ public enum ToolCalculationPolicy {
             "coupledVibration",
             "breathFlute",
             "fieldPosition",
-            "deviceHealth":
+            "deviceHealth",
+            "spanishTranslator":
             return .sensor
 
         default:
@@ -206,6 +207,7 @@ public enum ToolCalculationPolicy {
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
         "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
         "magneticsLab", "emFields", "statistics",
+        "spanishTranslator",
     ]
 
     public static var liveToolIDs: [String] {

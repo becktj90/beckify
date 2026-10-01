@@ -9,6 +9,7 @@ Registered POST routes (must be present after every production deploy):
 - `/api/analyze-panel`
 - `/api/analyze-tdr`
 - `/api/review-calculation`
+- `/api/translate`
 
 `GET /api/healthz` returns `status: "ok"` plus that route list.
 
@@ -30,6 +31,10 @@ Body (existing clients unchanged):
 `roastMode` is `mean` | `nice` | `bro`. Omitted, blank, or unknown values default to **`bro`** (short BroGPT one-liner used by the website and Beckify Toolbox). The standalone **Look Check** iOS app (`com.beckify.lookcheck`) secretly coins `mean` or `nice` on each Analyze for a longer, exaggerated roast (several sentences) and does not show the choice. Safety rails are the same in every mode: anyone who appears under 18 is `declined` with no roast and no appearance rating; no sexual/graphic content; no race, disability, or body-shaming. Success JSON includes `roastMode` next to `analysis`.
 
 Redeploy `artifacts/api-server` on Vercel after merge so `api.beckify.com` serves the new field. Old clients that omit `roastMode` keep the BroGPT prompt.
+
+### `POST /api/translate`
+
+Text-only English → Cuban / Florida LatAm Spanish for the Toolbox **Spanish Translator** tool. Body: `{ "text": "…", "sourceLanguage": "en", "targetLanguage": "es" }`. Uses `OPENAI_API_KEY` (optional `TRANSLATE_MODEL`, defaults to `REVIEW_MODEL` or `gpt-4o-mini`). Success JSON includes `translation`, `dialect`, `sourceText`. Empty body → **400**.
 
 ## Local
 

@@ -449,6 +449,7 @@ extension GlyphKind {
         case .magneticsLab: return .magneticsLab
         case .emFields: return .emFields
         case .statistics: return .statistics
+        case .spanishTranslator: return .spanishTranslator
         }
     }
 }
@@ -544,6 +545,7 @@ enum GlyphKind {
     case magneticsLab
     case emFields
     case statistics
+    case spanishTranslator
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -589,6 +591,7 @@ enum GlyphKind {
         case .magneticsLab: return Self.magneticsLab(rect)
         case .emFields: return Self.emFields(rect)
         case .statistics: return Self.statistics(rect)
+        case .spanishTranslator: return Self.spanishTranslator(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -2092,6 +2095,31 @@ enum GlyphKind {
     }
 
     // MARK: - Toolkit · Reference
+
+
+    /// Speech bubble + EN→ES mark for the Reference translator.
+    private static func spanishTranslator(_ r: CGRect) -> GlyphArtwork {
+        var path = Path()
+        let bubble = CGRect(
+            x: r.minX + r.width * 0.12,
+            y: r.minY + r.height * 0.10,
+            width: r.width * 0.76,
+            height: r.height * 0.58
+        )
+        path.addRoundedRect(in: bubble, cornerSize: CGSize(width: 5, height: 5))
+        // Tail
+        path.move(to: CGPoint(x: bubble.minX + bubble.width * 0.28, y: bubble.maxY))
+        path.addLine(to: CGPoint(x: bubble.minX + bubble.width * 0.18, y: bubble.maxY + r.height * 0.16))
+        path.addLine(to: CGPoint(x: bubble.minX + bubble.width * 0.42, y: bubble.maxY))
+        // Arrow bar
+        let midY = bubble.midY
+        Glyph.line(&path, CGPoint(x: bubble.minX + bubble.width * 0.18, y: midY), CGPoint(x: bubble.maxX - bubble.width * 0.18, y: midY))
+        path.move(to: CGPoint(x: bubble.maxX - bubble.width * 0.18, y: midY))
+        path.addLine(to: CGPoint(x: bubble.maxX - bubble.width * 0.30, y: midY - bubble.height * 0.16))
+        path.move(to: CGPoint(x: bubble.maxX - bubble.width * 0.18, y: midY))
+        path.addLine(to: CGPoint(x: bubble.maxX - bubble.width * 0.30, y: midY + bubble.height * 0.16))
+        return .stroke(path)
+    }
 
     /// Filled book + spine hole.
     private static func referenceLibrary(_ r: CGRect) -> GlyphArtwork {

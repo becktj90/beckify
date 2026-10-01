@@ -101,6 +101,7 @@ public enum ToolHomeAreaPolicy {
         "heaterDesign", "solenoidDesign", "empEmc",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
         "panelDirectory", "loadWorksheet", "cableSchedule",
+        "spanishTranslator",
     ]
 
     private static let basicsIDs: Set<String> = [
@@ -121,6 +122,7 @@ public enum ToolHomeAreaPolicy {
     private static let referenceIDs: Set<String> = [
         "referenceLibrary",
         "panelDirectory", "loadWorksheet", "cableSchedule",
+        "spanishTranslator",
     ]
 
     private static let instrumentIDs: Set<String> = [

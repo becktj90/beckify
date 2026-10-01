@@ -235,6 +235,7 @@ struct CalculatorHostView: View {
             case .numberBase: NumberBaseView()
             case .batteryBank: BatteryBankView()
             case .referenceLibrary: ReferenceLibraryView()
+            case .spanishTranslator: SpanishTranslatorView()
             case .magneticCircuit: MagneticCircuitView()
             case .fiberLink: FiberLinkView()
             case .gaussianBeam: GaussianBeamView()

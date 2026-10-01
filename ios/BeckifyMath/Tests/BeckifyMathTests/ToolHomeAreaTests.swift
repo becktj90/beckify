@@ -34,7 +34,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "ledRC", "frequencyWave", "unitConverter", "timer555",
             "reactance", "electronicsLab", "numberBase", "magneticCircuit",
             "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
-            "referenceLibrary",
+            "referenceLibrary", "spanishTranslator",
             "heaterDesign", "solenoidDesign", "empEmc",
             "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
             "panelDirectory", "loadWorksheet", "cableSchedule",
@@ -92,7 +92,7 @@ final class ToolHomeAreaTests: XCTestCase {
     }
 
     func testPaperworkFormsAreToolkitReference() {
-        for id in ["panelDirectory", "loadWorksheet", "cableSchedule"] {
+        for id in ["panelDirectory", "loadWorksheet", "cableSchedule", "spanishTranslator"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .reference, id)
         }

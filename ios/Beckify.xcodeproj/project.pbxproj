@@ -84,6 +84,7 @@
 		BECF000000000000000000F4 /* BreadboardCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000F5 /* BreadboardCanvas.swift */; };
 		BECF000000000000000000E9 /* PhasorImpedanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E8 /* PhasorImpedanceView.swift */; };
 		BECF000000000000000000F2 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000F3 /* StatisticsView.swift */; };
+		BECF000000000000000000F6 /* SpanishTranslatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000F7 /* SpanishTranslatorView.swift */; };
 		BECF000000000000000000E5 /* UL508APanelLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E4 /* UL508APanelLabView.swift */; };
 		BECF000000000000000000F1 /* MagneticsLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000F0 /* MagneticsLabView.swift */; };
 		BECF000000000000000000ED /* EMFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000EC /* EMFieldsView.swift */; };
@@ -203,6 +204,7 @@
 		BECF000000000000000000F5 /* BreadboardCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreadboardCanvas.swift; sourceTree = "<group>"; };
 		BECF000000000000000000E8 /* PhasorImpedanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhasorImpedanceView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000F3 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
+		BECF000000000000000000F7 /* SpanishTranslatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanishTranslatorView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000E4 /* UL508APanelLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508APanelLabView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000F0 /* MagneticsLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagneticsLabView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000EC /* EMFieldsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMFieldsView.swift; sourceTree = "<group>"; };
@@ -465,6 +467,7 @@
 				BECF000000000000000000F5 /* BreadboardCanvas.swift */,
 				BECF000000000000000000E8 /* PhasorImpedanceView.swift */,
 				BECF000000000000000000F3 /* StatisticsView.swift */,
+				BECF000000000000000000F7 /* SpanishTranslatorView.swift */,
 				BECF000000000000000000E4 /* UL508APanelLabView.swift */,
 				BECF000000000000000000F0 /* MagneticsLabView.swift */,
 				BECF000000000000000000EC /* EMFieldsView.swift */,
@@ -760,6 +763,7 @@
 				BECF000000000000000000F4 /* BreadboardCanvas.swift in Sources */,
 				BECF000000000000000000E9 /* PhasorImpedanceView.swift in Sources */,
 				BECF000000000000000000F2 /* StatisticsView.swift in Sources */,
+				BECF000000000000000000F6 /* SpanishTranslatorView.swift in Sources */,
 				BECF000000000000000000E5 /* UL508APanelLabView.swift in Sources */,
 				BECF000000000000000000F1 /* MagneticsLabView.swift in Sources */,
 				BECF000000000000000000ED /* EMFieldsView.swift in Sources */,
@@ -906,7 +910,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 183;
+				CURRENT_PROJECT_VERSION = 184;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -918,7 +922,8 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition, or a Look Check photo. Nameplate and panel photos stay on this device. A Look Check photo uploads only when you tap Analyze Look.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, Room & Rig Check, Breath Flute, Stillness) and for on-device speech recognition in Spanish Translator. Audio is processed on this device, is not recorded as a file, and is not uploaded. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts your speech to text in Spanish Translator on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -949,7 +954,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 183;
+				CURRENT_PROJECT_VERSION = 184;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -961,7 +966,8 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition, or a Look Check photo. Nameplate and panel photos stay on this device. A Look Check photo uploads only when you tap Analyze Look.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone to estimate relative sound level for field notes. Audio is processed on this device, is not recorded, and is not uploaded. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, Room & Rig Check, Breath Flute, Stillness) and for on-device speech recognition in Spanish Translator. Audio is processed on this device, is not recorded as a file, and is not uploaded. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts your speech to text in Spanish Translator on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
