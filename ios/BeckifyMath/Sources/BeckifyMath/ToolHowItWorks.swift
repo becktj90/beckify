@@ -800,6 +800,16 @@ public enum ToolHowItWorksCatalog {
                 "Two dice enumerate all 36 faces. That screen is exact.",
             ]
         ),
+
+        "spanishTranslator": ToolHowItWorks(
+            summary: "Record English, translate to Cuban / Florida LatAm Spanish via the Beckify API, and speak it loudly.",
+            context: "Toolkit → Reference. Field interpreter for job sites and everyday talk — not a certified interpreter.",
+            bullets: [
+                "Mic + on-device Speech recognition. Audio is not uploaded; recognized text may POST to api.beckify.com/api/translate when you stop or tap Translate.",
+                "Prompt asks for Cuban / South Florida LatAm Spanish, not formal Spain Spanish. If the Beckify API is unreachable, English stays on screen for retry — no paid third-party keys.",
+                "TTS prefers es-US, then es-MX / other LatAm voices, then es-ES. Cuban es-CU is not typically shipped by Apple. Volume is maxed to the speaker.",
+            ]
+        ),
         "controlStrategies": ToolHowItWorks(
             summary: "Compares bang-bang, PID, MPC, fuzzy, sliding mode, ADRC, and learned methods, then suggests one from your constraints.",
             context: "Field → Controls, next to the Control Systems lab. Open the lab when the pick is PID.",

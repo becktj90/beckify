@@ -5,6 +5,7 @@ import analyzePanelRouter from "./analyze-panel.js";
 import analyzeLookRouter from "./analyze-look.js";
 import healthRouter from "./health.js";
 import reviewCalculationRouter from "./review-calculation.js";
+import translateRouter from "./translate.js";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(analyzePanelRouter);
 router.use(analyzeLookRouter);
 router.use(healthRouter);
 router.use(reviewCalculationRouter);
+router.use(translateRouter);
 
 export default router;

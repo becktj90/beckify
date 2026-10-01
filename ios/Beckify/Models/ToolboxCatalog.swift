@@ -92,6 +92,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case magneticsLab
     case emFields
     case statistics
+    case spanishTranslator
 
     var id: String { rawValue }
 }
@@ -726,6 +727,14 @@ enum ToolboxCatalog {
             synonyms: ["nema", "ip rating", "enclosure", "conductor color", "wire color", "hazardous", "classified", "insulation", "thhn", "torque", "bolt", "conduit", "fittings", "standard sizes", "reference", "table"]
         ),
         ToolDefinition(
+            id: .spanishTranslator,
+            kind: .sensor,
+            title: "Spanish Translator",
+            subtitle: "Speak English, hear Cuban / Florida LatAm Spanish — loud playback for the job site.",
+            symbol: "character.bubble",
+            synonyms: ["translator", "spanish", "cuban", "florida spanish", "translate", "interpreter", "español", "latam", "miami", "speech"]
+        ),
+        ToolDefinition(
             id: .magneticCircuit,
             kind: .calculator,
             title: "Magnetic Circuit",
@@ -1107,7 +1116,7 @@ enum ToolboxCatalog {
             .magnetometer, .barometer, .stillnessWatch, .motionSnapshot, .coupledVibration, .fieldPosition, .deviceHealth,
         ],
         .reference: [
-            .referenceLibrary, .panelDirectory, .loadWorksheet, .cableSchedule,
+            .referenceLibrary, .spanishTranslator, .panelDirectory, .loadWorksheet, .cableSchedule,
         ],
     ]
 
@@ -1214,7 +1223,8 @@ enum ToolboxCatalog {
         .eBikeRange: [.eBikePackDesigner, .batteryBank, .eBikeTorqueRPM],
         .eBikePackDesigner: [.batteryBank, .nickelStrip, .eBikeRange],
         .nickelStrip: [.eBikePackDesigner, .batteryBank, .circularMils],
-        .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector],
+        .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector, .spanishTranslator],
+        .spanishTranslator: [.referenceLibrary, .noiseMeter, .lookCheck],
         .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
         .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],
         .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],

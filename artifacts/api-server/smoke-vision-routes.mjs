@@ -46,6 +46,7 @@ try {
     "/api/analyze-nameplate",
     "/api/analyze-panel",
     "/api/analyze-tdr",
+    "/api/translate",
   ]) {
     assert(posted.includes(path), `healthz.routes.post must list ${path}`);
   }
@@ -143,6 +144,24 @@ try {
   assert(
     optionsSafari.response.headers.get("access-control-allow-origin") === "https://beckify.com",
     "Safari preflight must allow https://beckify.com",
+  );
+
+  const translateEmpty = await request("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  assert(
+    translateEmpty.response.status === 400,
+    `POST /api/translate {} expected 400, got ${translateEmpty.response.status}`,
+  );
+  assert(
+    !/cannot post/i.test(translateEmpty.text),
+    `POST /api/translate must not return Express Cannot POST`,
+  );
+  assert(
+    typeof translateEmpty.json?.error === "string" && /text|sourceText/i.test(translateEmpty.json.error),
+    `POST /api/translate {} should explain the missing text`,
   );
 } finally {
   await new Promise((resolve) => server.close(resolve));

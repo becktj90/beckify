@@ -206,6 +206,7 @@ public enum ToolCalculationPolicy {
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
         "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
         "magneticsLab", "emFields", "statistics",
+        "spanishTranslator",
     ]
 
     public static var liveToolIDs: [String] {
