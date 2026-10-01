@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Contract: translate + speak prompts keep the crass Cuban / South Florida jobsite voice.
+ * Contract: translate + speak prompts keep Jobsite (rough) and Clean (polished) modes.
  * Run: node ./tests/spanish-translate-voice.test.cjs
  */
 
@@ -13,14 +13,17 @@ const root = path.join(__dirname, "..", "src", "prompts");
 const translate = fs.readFileSync(path.join(root, "translatePrompt.ts"), "utf8");
 const speak = fs.readFileSync(path.join(root, "speakPrompt.ts"), "utf8");
 
+assert.match(translate, /TranslateVoiceMode/);
+assert.match(translate, /TRANSLATE_JOBSITE_SYSTEM_PROMPT/);
+assert.match(translate, /TRANSLATE_CLEAN_SYSTEM_PROMPT/);
 assert.match(translate, /smart-ass/i);
 assert.match(translate, /profane|swear freely|workplace cussing/i);
-assert.match(translate, /cuban/i);
+assert.match(translate, /elegant|polished|warm/i);
+assert.match(translate, /No swearing|no dirty slang|never crude/i);
 assert.match(translate, /protected classes|hate/i);
-assert.match(translate, /Do NOT produce a sanitized|Do not sanitize/i);
+assert.match(speak, /SPEAK_JOBSITE_VOICE_INSTRUCTIONS|SPEAK_CLEAN_VOICE_INSTRUCTIONS/);
 assert.match(speak, /do not beep|sanitize|soften/i);
-assert.match(speak, /swear|profanity|vulgarity/i);
-assert.match(speak, /cuban|south florida/i);
-assert.doesNotMatch(speak, /No hate, no slurs, no mocking/);
+assert.match(speak, /polished|elegant|warm/i);
+assert.match(speak, /speakDefaultVoiceForMode|SPEAK_CLEAN_VOICE/);
 
 console.log("spanish-translate-voice.test.cjs: ok");

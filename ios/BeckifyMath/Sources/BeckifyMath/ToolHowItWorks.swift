@@ -802,12 +802,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Record English, get a smart-ass Cuban / South Florida jobsite rewrite via Beckify AI (or cleaner on-device Apple Translation), and yell it loud with neural TTS.",
-            context: "Toolkit → Reference. Profane jobsite banter vibe — not a certified interpreter.",
+            summary: "Record English, get Spanish via Beckify AI (Clean or Jobsite), and play it loud with neural TTS — or fall back to on-device Apple Translation.",
+            context: "Toolkit → Reference. Interpreter vibe — not a certified interpreter.",
             bullets: [
                 "Mic + on-device Speech. Audio stays local; recognized text POSTs to /api/translate only on Stop or Translate (Beckify AI path).",
-                "Beckify AI: smart-ass, super-profane Cuban / Miami jobsite rewrite. Quick chips fill + translate + speak. API down → cleaner on-device Apple Translation (iOS 18+).",
-                "Playback POSTs short Spanish to /api/speak (OpenAI onyx / gpt-4o-mini-tts; swears spoken fully). Apple AVSpeech is the fallback. Max speaker volume.",
+                "Clean or Jobsite mode (persisted). Quick chips and Test pick a random line, then translate + speak. API down → on-device Apple Translation (iOS 18+).",
+                "Playback POSTs short Spanish to /api/speak (OpenAI neural TTS; voice follows mode). Apple AVSpeech is the fallback. Max speaker volume.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

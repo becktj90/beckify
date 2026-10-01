@@ -3,8 +3,10 @@ import {
   SPEAK_DEFAULT_MODEL,
   SPEAK_DEFAULT_VOICE,
   SPEAK_MAX_INPUT_CHARS,
-  SPEAK_VOICE_INSTRUCTIONS,
+  speakDefaultVoiceForMode,
   speakSupportsInstructions,
+  speakVoiceInstructions,
+  speakVoiceMode,
 } from "../prompts/speakPrompt.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
 
@@ -16,6 +18,9 @@ interface SpeakBody {
   model?: unknown;
   format?: unknown;
   language?: unknown;
+  voiceMode?: unknown;
+  mode?: unknown;
+  style?: unknown;
 }
 
 const router: IRouter = Router();
@@ -54,7 +59,8 @@ router.post("/speak", async (req, res) => {
     });
   }
 
-  const voice = pickVoice(body.voice);
+  const voiceMode = speakVoiceMode(body.voiceMode ?? body.mode ?? body.style);
+  const voice = pickVoice(body.voice, voiceMode);
   const format = pickFormat(body.format);
   const model =
     (typeof body.model === "string" && body.model.trim()) ||
@@ -88,7 +94,7 @@ router.post("/speak", async (req, res) => {
       response_format: format,
     };
     if (speakSupportsInstructions(model)) {
-      payload.instructions = SPEAK_VOICE_INSTRUCTIONS;
+      payload.instructions = speakVoiceInstructions(voiceMode);
     }
 
     const response = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -117,6 +123,7 @@ router.post("/speak", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Beckify-TTS-Model", model);
     res.setHeader("X-Beckify-TTS-Voice", voice);
+    res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
     res.setHeader("Content-Length", String(audio.length));
     return res.status(200).send(audio);
   } catch (error) {
@@ -158,12 +165,12 @@ function pickText(body: SpeakBody): string {
   return "";
 }
 
-function pickVoice(raw: unknown): string {
-  if (typeof raw !== "string") return SPEAK_DEFAULT_VOICE;
-  const voice = raw.trim().toLowerCase();
-  if (ALLOWED_VOICES.has(voice)) return voice;
-  // Prefer deepest male-ish when client sends a hint we do not recognize.
-  return SPEAK_DEFAULT_VOICE;
+function pickVoice(raw: unknown, mode: ReturnType<typeof speakVoiceMode> = "jobsite"): string {
+  if (typeof raw === "string") {
+    const voice = raw.trim().toLowerCase();
+    if (ALLOWED_VOICES.has(voice)) return voice;
+  }
+  return speakDefaultVoiceForMode(mode) || SPEAK_DEFAULT_VOICE;
 }
 
 function pickFormat(raw: unknown): "mp3" | "wav" {

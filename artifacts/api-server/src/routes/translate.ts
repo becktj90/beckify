@@ -2,7 +2,8 @@ import { Router, type IRouter } from "express";
 import {
   TRANSLATE_MAX_OUTPUT_TOKENS,
   TRANSLATE_MAX_SOURCE_CHARS,
-  TRANSLATE_SYSTEM_PROMPT,
+  normalizeTranslateVoiceMode,
+  translateSystemPrompt,
   translateUserPrompt,
 } from "../prompts/translatePrompt.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
@@ -14,6 +15,9 @@ interface TranslateBody {
   targetLanguage?: unknown;
   task?: unknown;
   dialect?: unknown;
+  voiceMode?: unknown;
+  mode?: unknown;
+  style?: unknown;
 }
 
 const router: IRouter = Router();
@@ -44,6 +48,8 @@ router.post("/translate", async (req, res) => {
       error: "This route translates to Spanish (`targetLanguage` es / es-*).",
     });
   }
+
+  const voiceMode = normalizeTranslateVoiceMode(body.voiceMode ?? body.mode ?? body.style ?? body.dialect);
 
   const clientKey = getClientKey(req);
   const bucket = consumeLocalRateLimit(clientKey);
@@ -80,8 +86,8 @@ router.post("/translate", async (req, res) => {
         response_format: { type: "json_object" },
         max_tokens: TRANSLATE_MAX_OUTPUT_TOKENS,
         messages: [
-          { role: "system", content: TRANSLATE_SYSTEM_PROMPT },
-          { role: "user", content: translateUserPrompt(sourceText, sourceLanguage) },
+          { role: "system", content: translateSystemPrompt(voiceMode) },
+          { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode) },
         ],
       }),
     });
@@ -111,7 +117,8 @@ router.post("/translate", async (req, res) => {
       model,
       sourceLanguage,
       targetLanguage: "es",
-      dialect: parsed.dialect || "cuban_florida_jobsite",
+      dialect: parsed.dialect || (voiceMode === "clean" ? "cuban_florida_clean" : "cuban_florida_jobsite"),
+      voiceMode,
       sourceText,
       translation: parsed.translation,
       notes: parsed.notes || undefined,

@@ -41,8 +41,9 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(draft?.translation, "¿Dónde está el breaker?")
         XCTAssertEqual(draft?.sourceText, "Where is the breaker?")
         XCTAssertEqual(draft?.engine, "beckify")
-        XCTAssertTrue(draft?.displayDialect.lowercased().contains("florida") == true
-            || draft?.displayDialect.lowercased().contains("cuban") == true)
+        XCTAssertTrue(draft?.displayDialect.lowercased().contains("spanish") == true)
+        XCTAssertFalse(draft?.displayDialect.lowercased().contains("cuban") == true)
+        XCTAssertFalse(draft?.displayDialect.lowercased().contains("florida") == true)
     }
 
     func testNormalizeDraftRejectsEmptyTranslation() {
@@ -109,21 +110,18 @@ final class SpanishTranslatorTests: XCTestCase {
         let copy = ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")
         XCTAssertNotNil(copy)
         XCTAssertTrue(copy!.summary.lowercased().contains("spanish"))
-        XCTAssertTrue(copy!.summary.lowercased().contains("smart-ass")
-            || copy!.bullets.joined(separator: " ").lowercased().contains("smart-ass")
-            || copy!.bullets.joined(separator: " ").lowercased().contains("profane"))
-        XCTAssertTrue(copy!.bullets.joined(separator: " ").lowercased().contains("cuban")
-            || copy!.bullets.joined(separator: " ").lowercased().contains("florida"))
-        let joined = copy!.bullets.joined(separator: " ").lowercased()
+        let joined = (copy!.summary + " " + copy!.bullets.joined(separator: " ")).lowercased()
+        XCTAssertTrue(joined.contains("clean") && joined.contains("jobsite"))
+        XCTAssertFalse(joined.contains("cuban"))
+        XCTAssertFalse(joined.contains("florida"))
+        XCTAssertFalse(joined.contains("smart-ass"))
+        XCTAssertFalse(joined.contains("profane"))
         XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation"))
-        XCTAssertTrue(joined.contains("chip") || joined.contains("quick"))
+        XCTAssertTrue(joined.contains("chip") || joined.contains("quick") || joined.contains("test"))
         XCTAssertTrue(joined.contains("/api/speak") || joined.contains("neural") || joined.contains("openai"))
-        XCTAssertTrue(joined.contains("translated via beckify") || joined.contains("translated on device")
-            || copy!.summary.lowercased().contains("on-device")
-            || copy!.summary.lowercased().contains("neural"))
     }
 
-    func testQuickTranslatePhrases() {
+    func testQuickTranslatePhrasesAndRandom() {
         let phrases = SpanishTranslatorAPI.quickTranslatePhrases
         XCTAssertGreaterThanOrEqual(phrases.count, 8)
         XCTAssertLessThanOrEqual(phrases.count, 12)
@@ -134,6 +132,35 @@ final class SpanishTranslatorTests: XCTestCase {
         }
         XCTAssertTrue(phrases.contains(where: { $0.lowercased().contains("breaker") }))
         XCTAssertTrue(phrases.contains(where: { $0.lowercased().contains("power") }))
+        let a = SpanishTranslatorAPI.nextRandomTestPhrase(excluding: nil)
+        XCTAssertTrue(phrases.contains(a))
+        let b = SpanishTranslatorAPI.nextRandomTestPhrase(excluding: a)
+        XCTAssertTrue(phrases.contains(b))
+        if phrases.count > 1 {
+            // Best-effort: avoid immediate repeat when pool allows.
+            XCTAssertNotEqual(a, b)
+        }
+    }
+
+    func testVoiceModeLabelsAndRequestBodies() throws {
+        XCTAssertEqual(SpanishVoiceMode.jobsite.uiLabel, "Jobsite")
+        XCTAssertEqual(SpanishVoiceMode.clean.uiLabel, "Clean")
+        XCTAssertEqual(SpanishVoiceMode.jobsite.defaultSpeakVoice, "onyx")
+        XCTAssertEqual(SpanishVoiceMode.clean.defaultSpeakVoice, "nova")
+        XCTAssertFalse(SpanishVoiceMode.jobsite.uiLabel.lowercased().contains("cuban"))
+        XCTAssertFalse(SpanishVoiceMode.clean.uiLabel.lowercased().contains("princess"))
+        let jobsite = SpanishTranslatorAPI.requestBody(text: "Hello", voiceMode: .jobsite)
+        XCTAssertEqual(jobsite["voiceMode"] as? String, "jobsite")
+        let clean = try SpanishTranslatorAPI.speakRequestJSON(text: "Hola", voiceMode: .clean)
+        XCTAssertFalse(clean.isEmpty)
+        let note = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .clean)
+        XCTAssertTrue(note.lowercased().contains("clean"))
+        XCTAssertFalse(note.lowercased().contains("cuban"))
+        XCTAssertFalse(note.lowercased().contains("florida"))
+        let draft = SpanishTranslationDraft(translation: "Hola", dialect: "cuban_florida_jobsite")
+        XCTAssertEqual(draft.displayDialect, "Spanish · Jobsite")
+        let cleanDraft = SpanishTranslationDraft(translation: "Hola", dialect: "cuban_florida_clean")
+        XCTAssertEqual(cleanDraft.displayDialect, "Spanish · Clean")
     }
 
     func testStatusLabelsAndAppleDraft() {
@@ -215,8 +242,11 @@ final class SpanishTranslatorTests: XCTestCase {
         let d = SpanishTranslatorAPI.disclaimer.lowercased()
         XCTAssertTrue(d.contains("/api/speak") || d.contains("neural"))
         XCTAssertTrue(d.contains("fallback") || d.contains("avspeech") || d.contains("apple"))
-        XCTAssertTrue(d.contains("profane") || d.contains("smart-ass") || d.contains("cuss"))
-        XCTAssertTrue(d.contains("cleaner") || d.contains("generic"))
+        XCTAssertTrue(d.contains("clean") && d.contains("jobsite"))
+        XCTAssertFalse(d.contains("cuban"))
+        XCTAssertFalse(d.contains("florida"))
+        XCTAssertFalse(d.contains("profane"))
+        XCTAssertFalse(d.contains("smart-ass"))
     }
 
 }
