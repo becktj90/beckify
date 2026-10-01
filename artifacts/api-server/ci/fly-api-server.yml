@@ -1,0 +1,52 @@
+# Deploy artifacts/api-server to Fly.io when the API package (or this workflow) changes.
+# Requires repository secret FLY_API_TOKEN (do not commit tokens).
+# Setup: see artifacts/api-server/README.md → Fly.io production path.
+
+name: Deploy API to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "artifacts/api-server/**"
+      - ".github/workflows/fly-api-server.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fly-api-server
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: fly deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: artifacts/api-server
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Require FLY_API_TOKEN
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::error::Missing repository secret FLY_API_TOKEN."
+            echo "Create a Fly deploy token (fly tokens create deploy -x 999999h),"
+            echo "then add it at https://github.com/becktj90/beckify/settings/secrets/actions"
+            echo "as FLY_API_TOKEN. See artifacts/api-server/README.md."
+            exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

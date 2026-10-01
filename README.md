@@ -41,4 +41,12 @@ After the Fly app is created, secrets are set, and `fly deploy` (or the GitHub A
    ```
 
 4. In Vercel, remove or idle the custom domain `api.beckify.com` so only Fly answers that name.
-5. Optional: add GitHub Actions secret **`FLY_API_TOKEN`** (`fly tokens create deploy -x 999999h`) so pushes that touch `artifacts/api-server/**` auto-deploy. See `artifacts/api-server/README.md`. Do not put the token in a PR or commit.
+5. Copy the workflow into place (blocked from automated PRs without `workflow` scope):
+
+   ```bash
+   cp artifacts/api-server/ci/fly-api-server.yml .github/workflows/fly-api-server.yml
+   ```
+
+   Commit and push that file on `main` (or this branch) with your local git credentials.
+
+6. Optional: add GitHub Actions secret **`FLY_API_TOKEN`** (`fly tokens create deploy -x 999999h`) so pushes that touch `artifacts/api-server/**` auto-deploy. See `artifacts/api-server/README.md`. Do not put the token in a PR or commit.

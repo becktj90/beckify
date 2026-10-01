@@ -56,7 +56,7 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
 
 - `Dockerfile` — multi-stage Node 20 build → `dist/index.mjs`
 - `fly.toml` — app name **`beckify-api`**, region `iad`, internal port `8080`, health check `GET /api/healthz`
-- `.github/workflows/fly-api-server.yml` — deploys on push to `main` only when `artifacts/api-server/**` (or the workflow) changes
+- `artifacts/api-server/ci/fly-api-server.yml` — workflow source (copy to `.github/workflows/fly-api-server.yml` once; OAuth deploys cannot create workflow files without the `workflow` scope). Deploys on push to `main` only when `artifacts/api-server/**` (or the workflow) changes
 
 ### One-time setup (Trevor)
 
@@ -85,13 +85,22 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
    fly deploy --remote-only
    ```
 
-5. Add the GitHub Actions secret (repo Settings → Secrets and variables → Actions):
+5. Install the deploy workflow (one-time; GitHub blocks creating `.github/workflows/*` without the `workflow` OAuth scope):
+
+   ```bash
+   cp artifacts/api-server/ci/fly-api-server.yml .github/workflows/fly-api-server.yml
+   git add .github/workflows/fly-api-server.yml
+   git commit -m "ci(api): enable Fly.io deploy workflow"
+   git push
+   ```
+
+6. Add the GitHub Actions secret (repo Settings → Secrets and variables → Actions):
 
    - Name: **`FLY_API_TOKEN`**
    - Value: output of `fly tokens create deploy -x 999999h` (include the `FlyV1 ` prefix)
    - Do **not** paste the token into the PR or commit it
 
-6. Point DNS **`api.beckify.com`** at Fly (see root `README.md` cutover). Verify:
+7. Point DNS **`api.beckify.com`** at Fly (see root `README.md` cutover). Verify:
 
    ```bash
    curl -sS https://api.beckify.com/api/healthz
