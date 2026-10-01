@@ -79,6 +79,23 @@ final class ToolHowItWorksTests: XCTestCase {
         XCTAssertTrue(health?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("invent") }) == true)
     }
 
+    func testOperatorCopyAvoidsCourseWords() {
+        let banned = ["textbook", "course", "homework", "teaching", "lab assignment"]
+        for id in ToolCalculationPolicy.knownToolIDs {
+            guard let copy = ToolHowItWorksCatalog.copy(forToolID: id) else { continue }
+            let blob = ([copy.summary, copy.context] + copy.bullets).joined(separator: "\n").lowercased()
+            for word in banned {
+                XCTAssertFalse(blob.contains(word), "\(id) contains \(word)")
+            }
+        }
+        for info in LabCatalog.infos {
+            let blob = "\(info.title)\n\(info.blurb)".lowercased()
+            for word in banned {
+                XCTAssertFalse(blob.contains(word), "\(info.title) contains \(word)")
+            }
+        }
+    }
+
     func testHomeworkDefaultsOpenFieldDefaultsCollapsed() {
         XCTAssertTrue(ToolHowItWorksCatalog.defaultExpanded(forToolID: "voltageDivider"))
         XCTAssertTrue(ToolHowItWorksCatalog.defaultExpanded(forToolID: "analogWorkbench"))

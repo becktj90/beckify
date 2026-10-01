@@ -52,7 +52,7 @@ struct BubbleLevelView: View {
             toolID: .bubbleLevel,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: "Homework: these angles are from the phone IMU, not a machinist level.")
+            disclaimer: .sensor(extra: "These angles are from the phone IMU, not a machinist level.")
         ) {
             ShowWorkCard(
                 toolID: .bubbleLevel,

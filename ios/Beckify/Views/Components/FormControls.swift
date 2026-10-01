@@ -251,7 +251,7 @@ struct SaveJobBar: View {
                 .font(.caption.weight(.semibold))
                 .tracking(0.8)
                 .foregroundStyle(Theme.muted)
-            Text("On-device homework / field snapshot. Not a project gallery.")
+            Text("On-device bench / field snapshot. Not a project gallery.")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
             HStack(alignment: .center, spacing: 10) {

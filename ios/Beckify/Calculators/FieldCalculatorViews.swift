@@ -1186,7 +1186,27 @@ struct RFLinkView: View {
 
 // MARK: - Phasor diagram
 
+/// Deep link and saved-job host. The shelf entry is the Quick sum station in Phasors & Impedance.
 struct PhasorDiagramView: View {
+    @State private var stickyText: String?
+    @State private var resultStale = false
+
+    var body: some View {
+        ToolScaffold(
+            toolID: .phasorDiagram,
+            stickyAnswer: stickyText,
+            copyText: stickyText,
+            isResultStale: resultStale
+        ) {
+            PhasorQuickSumForm(stickyText: $stickyText, resultStale: $resultStale)
+        }
+    }
+}
+
+struct PhasorQuickSumForm: View {
+    var stickyText: Binding<String?>
+    var resultStale: Binding<Bool>
+
     @EnvironmentObject private var jobs: JobStore
     @StoredInput(.phasorDiagram, "mag1", default: "120") private var mag1
     @StoredInput(.phasorDiagram, "angle1", default: "0") private var angle1
@@ -1205,12 +1225,7 @@ struct PhasorDiagramView: View {
     }
 
     var body: some View {
-        ToolScaffold(
-            toolID: .phasorDiagram,
-            stickyAnswer: sticky,
-            copyText: sticky,
-            isResultStale: session.isStale
-        ) {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
             ShowWorkCard(
                 toolID: .phasorDiagram,
                 symbolic: "resultant = Σ (magnitude ∠ angle)",
@@ -1272,8 +1287,14 @@ struct PhasorDiagramView: View {
         }
         .onChange(of: inputFingerprint) { _, _ in
             session.markInputsChanged()
+            publishChrome()
         }
         .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func publishChrome() {
+        stickyText.wrappedValue = sticky
+        resultStale.wrappedValue = session.isStale
     }
 
     private func calculate() {
@@ -1290,6 +1311,7 @@ struct PhasorDiagramView: View {
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
             successTick += 1
         }
+        publishChrome()
     }
 
     private func reset() {
@@ -1297,6 +1319,7 @@ struct PhasorDiagramView: View {
         mag2 = ""; angle2 = ""
         mag3 = ""; angle3 = ""
         session.reset()
+        publishChrome()
     }
 
     private var substituted: String? {
@@ -1726,7 +1749,7 @@ struct FiberLinkView: View {
                 toolID: .fiberLink,
                 symbolic: "NA = √(n₁² − n₂²)     θ = arcsin(NA)     V = 2π a NA / λ",
                 substituted: substituted,
-                meaning: "NA sets the acceptance cone — how much of a light source's spread the fiber can actually capture. The V-number below 2.405 is the textbook single-mode cutoff for step-index fiber."
+                meaning: "NA sets the acceptance cone — how much of a light source's spread the fiber can actually capture. The V-number below 2.405 is the step-index single-mode cutoff for this fiber."
             )
             TryExampleButton(title: "62.5/125 µm multimode at 1310 nm") {
                 coreIndex = "1.48"; claddingIndex = "1.46"

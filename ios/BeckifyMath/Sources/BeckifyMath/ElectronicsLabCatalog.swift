@@ -583,7 +583,7 @@ enum LabCatalog {
         ),
         Spec(
             circuit: .discretePower, family: .amplifier,
-            title: "Discrete teaching amp",
+            title: "Discrete CE stage",
             blurb: "Class-A CE stage. Quiescent transistor power and resistor power from the bias point.",
             defaultUnknown: "power",
             unknowns: [u("power", "Quiescent power")],

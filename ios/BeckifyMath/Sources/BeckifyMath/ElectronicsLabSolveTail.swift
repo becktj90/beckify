@@ -298,7 +298,7 @@ extension LabSolve {
                 "Psupply = Pout / η,  heat = Psupply − Pout",
             ],
             notes: [
-                "Efficiencies are ideal teaching figures, or the override you typed.",
+                "Efficiencies are ideal class figures, or the override you typed.",
                 "Class A here is the resistively loaded 25% case, not a transformer-coupled 50% case.",
                 "Not a heatsink design and not a measured amplifier.",
             ]

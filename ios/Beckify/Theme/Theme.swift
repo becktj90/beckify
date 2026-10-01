@@ -271,7 +271,7 @@ enum Theme {
     // MARK: Copy
 
     static let disclaimer = "Design aid only — not a PE stamp, permit, or substitute for the NEC or a qualified engineer."
-    static let sensorDisclaimer = "Not a calibrated instrument. Not a legal sound-level meter, survey, compass, or PE stamp. For field notes and homework only. Readings stay on this device unless you save a numeric snapshot."
+    static let sensorDisclaimer = "Not a calibrated instrument. Not a legal sound-level meter, survey, compass, or PE stamp. For field notes and bench checks only. Readings stay on this device unless you save a numeric snapshot."
     static let staleResultMessage = "Inputs changed — Calculate again."
 
     /// Brand wash for home header / empty states — not for calculator work areas.

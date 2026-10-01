@@ -347,7 +347,7 @@ extension LabSolve {
             notes: [
                 bridge ? "Bridge: two diodes conduct each half cycle." : "Half-wave: the diode conducts on one half cycle.",
                 "The capacitor estimate assumes light load and a peak near Vp minus the drops.",
-                "Ripple is the textbook I/(fC) sketch, not a simulated waveform.",
+                "Ripple is the ideal I/(fC) sketch, not a simulated waveform.",
             ]
         )
     }

@@ -116,7 +116,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
         case .field: return "Jobsite"
         case .power: return "Power & AC"
         case .controls: return "Controls"
-        case .homework: return "Bench / homework"
+        case .homework: return "Bench"
         case .sensors: return "Instruments"
         case .reference: return "Reference"
         case .analysis: return "Analysis"
@@ -144,7 +144,7 @@ extension ToolHomeArea {
         case .field:
             return "Jobsite calculators, wizards, and instruments."
         case .toolkit:
-            return "Basics, bench homework, and references."
+            return "Basics, bench, and references."
         }
     }
 }
@@ -159,7 +159,7 @@ extension ToolShelfKind {
         case .analysis: return "Analysis"
         case .instruments: return "Instruments"
         case .basics: return "Basics"
-        case .bench: return "Bench / homework"
+        case .bench: return "Bench"
         case .reference: return "Reference"
         }
     }
@@ -601,7 +601,7 @@ enum ToolboxCatalog {
             id: .fieldPosition,
             kind: .sensor,
             title: "Position",
-            subtitle: "GPS coordinates, speed, altitude, homework distance.",
+            subtitle: "GPS coordinates, speed, altitude, field distance.",
             symbol: "location.fill",
             synonyms: ["gps", "location", "coordinates", "latitude", "longitude", "distance", "haversine", "position"]
         ),
@@ -700,14 +700,6 @@ enum ToolboxCatalog {
             subtitle: "dBm to watts, VSWR and return loss, and free-space path loss vs. distance.",
             symbol: "antenna.radiowaves.left.and.right",
             synonyms: ["rf", "dbm", "watts", "vswr", "swr", "return loss", "antenna", "path loss", "fspl", "link budget", "reflection"]
-        ),
-        ToolDefinition(
-            id: .phasorDiagram,
-            kind: .homework,
-            title: "Phasor Diagram",
-            subtitle: "Plot 2–3 phasors and sum them — the balanced 3-phase set is one tap away.",
-            symbol: "chart.dots.scatter",
-            synonyms: ["phasor", "vector", "three phase", "balanced", "polar", "angle", "resultant"]
         ),
         ToolDefinition(
             id: .numberBase,
@@ -1035,7 +1027,7 @@ enum ToolboxCatalog {
             title: "Phasors & Impedance",
             subtitle: "Sinusoids, lead and lag, R L C laws, and Z with admittance.",
             symbol: "wave.3.right.circle",
-            synonyms: ["phasor", "impedance", "admittance", "lead lag", "sinusoid", "reactance", "polar"],
+            synonyms: ["phasor", "impedance", "admittance", "lead lag", "sinusoid", "reactance", "polar", "phasor diagram", "quick sum", "three phase", "resultant"],
             calculationMode: .live
         ),
         ToolDefinition(
@@ -1096,7 +1088,7 @@ enum ToolboxCatalog {
         .controls: [
             .ul508aPanelLab,
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
-            .controlSystems, .controlStrategies, .electronicsLab, .phasorImpedance,
+            .controlSystems, .controlStrategies, .phasorImpedance,
         ],
         .analysis: [
             .statistics,
@@ -1104,7 +1096,7 @@ enum ToolboxCatalog {
         .homework: [
             .ohmsLaw, .voltageDivider, .seriesParallel, .resistorColor, .timer555,
             .frequencyWave, .ledRC, .unitConverter,
-            .reactance, .phasorDiagram, .numberBase, .magneticCircuit,
+            .electronicsLab, .reactance, .numberBase, .magneticCircuit,
             .fiberLink, .gaussianBeam, .transientCircuit, .diodeIV, .rfLink,
             .analogWorkbench, .noiseSNR, .linearRegulator, .instrumentationAmp, .adcDac,
             .heaterDesign, .solenoidDesign, .empEmc,
@@ -1127,6 +1119,14 @@ enum ToolboxCatalog {
 
     /// Saved-job / deep-link IDs that stay off the toolbox list.
     private static let hiddenTools: [ToolDefinition] = [
+        ToolDefinition(
+            id: .phasorDiagram,
+            kind: .homework,
+            title: "Quick sum",
+            subtitle: "2–3 phasors and their resultant. The same sum lives in Phasors & Impedance.",
+            symbol: "chart.dots.scatter",
+            synonyms: ["phasor diagram", "quick sum", "vector", "three phase", "balanced", "polar", "angle", "resultant"]
+        ),
         ToolDefinition(
             id: .powerWizard,
             kind: .calculator,
@@ -1242,7 +1242,7 @@ enum ToolboxCatalog {
         .controlSystems: [.controlStrategies, .electronicsLab, .ul508aPanelLab, .signalScaling, .plcTimer, .analogWorkbench],
         .controlStrategies: [.controlSystems, .electronicsLab, .ul508aPanelLab, .signalScaling, .plcTimer, .analogWorkbench],
         .electronicsLab: [.phasorImpedance, .controlSystems, .analogWorkbench, .timer555, .voltageDivider],
-        .phasorImpedance: [.electronicsLab, .reactance, .phasorDiagram, .frequencyWave],
+        .phasorImpedance: [.electronicsLab, .reactance, .frequencyWave, .threePhasePower],
         .ul508aPanelLab: [.motorFLA, .equipmentGround, .conduitFill, .wireAmpacity, .panelDirectory, .cableSchedule, .transformer],
         .magneticsLab: [.emFields, .transformer, .solenoidDesign, .magneticCircuit],
         .emFields: [.magneticsLab, .magnetometer, .solenoidDesign],

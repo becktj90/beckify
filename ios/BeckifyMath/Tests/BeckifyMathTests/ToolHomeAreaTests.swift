@@ -21,7 +21,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "plcTimer", "rackCurrent", "powerFactor", "batteryBank",
             "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate",
             "motorNameplateOCR", "lookCheck", "necCircuit",
-            "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance",
+            "controlSystems", "controlStrategies", "phasorDiagram", "phasorImpedance",
         ]
         for id in field {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
@@ -32,7 +32,7 @@ final class ToolHomeAreaTests: XCTestCase {
         let toolkit = [
             "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
             "ledRC", "frequencyWave", "unitConverter", "timer555",
-            "reactance", "phasorDiagram", "numberBase", "magneticCircuit",
+            "reactance", "electronicsLab", "numberBase", "magneticCircuit",
             "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
             "referenceLibrary",
             "heaterDesign", "solenoidDesign", "empEmc",
@@ -125,8 +125,13 @@ final class ToolHomeAreaTests: XCTestCase {
         XCTAssertEqual(ToolShelfKind.magnetics.homeArea, .field)
     }
 
+    func testElectronicsLabIsToolkitBench() {
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "electronicsLab"), .toolkit)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "electronicsLab"), .bench)
+    }
+
     func testFieldControlsStayLoopHelpers() {
-        for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab"] {
+        for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "controlSystems", "controlStrategies", "phasorDiagram", "phasorImpedance", "ul508aPanelLab"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .controls, id)
         }

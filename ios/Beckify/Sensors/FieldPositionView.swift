@@ -111,7 +111,7 @@ struct FieldPositionView: View {
                 toolID: .fieldPosition,
                 symbolic: "d = 2R atan2(sqrt(a), sqrt(1-a))    haversine, R = 6371 km",
                 substituted: distanceWork,
-                meaning: "Location is requested when this tool opens, not at app launch. Homework distance uses two saved points on this device."
+                meaning: "Location is requested when this tool opens, not at app launch. Field distance uses two saved points on this device."
             )
             if model.denied {
                 ToolEmptyState(

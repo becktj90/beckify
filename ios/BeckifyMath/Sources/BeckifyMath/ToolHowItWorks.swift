@@ -134,7 +134,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "timer555": ToolHowItWorks(
             summary: "Astable period/duty and monostable pulse width from the classic ln(2) / ln(3) identities.",
-            context: "Bench 555 homework — not a PLC timer (that is PLC Timer Preset).",
+            context: "Bench 555 timer — not a PLC timer (that is PLC Timer Preset).",
             bullets: [
                 "Astable: t_high = ln(2)·(R_A+R_B)·C, t_low = ln(2)·R_B·C.",
                 "Ideal NE555 math. Real parts, leakage, and rail sag shift the edge.",
@@ -189,7 +189,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "voltageDivider": ToolHowItWorks(
             summary: "Vout from Vin, R1, and R2 — or solves the missing resistor.",
-            context: "Homework unloaded divider. A load on Vout changes the answer.",
+            context: "Unloaded divider. A load on Vout changes the answer.",
             bullets: [
                 "Vout = Vin · R2 / (R1 + R2). Leave one unknown blank.",
                 "Ideal DC, no source resistance. Not a potentiometer taper model.",
@@ -221,7 +221,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "frequencyWave": ToolHowItWorks(
             summary: "Frequency, period, free-space wavelength, and LC resonance f = 1/(2π√(LC)).",
-            context: "Homework wave / tank-circuit identities.",
+            context: "Wave and tank-circuit identities.",
             bullets: [
                 "λ = c/f uses c = 3×10⁸ m/s in free space, not in cable.",
                 "LC is the ideal lossless tank. Real ESR and stray C move f₀.",
@@ -267,7 +267,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "noiseMeter": ToolHowItWorks(
             summary: "Uncalibrated microphone level and an audible-band FFT in dBFS — relative, not SPL.",
-            context: "Homework / field note: louder vs quieter, and which band is up, on this phone.",
+            context: "Field note: louder vs quieter, and which band is up, on this phone.",
             bullets: [
                 "Not an SLM, not OSHA-legal, not A-weighted dB(A). Bars are relative dBFS, not sound pressure.",
                 "Same on-device FFT tap as Acoustic Imager and Room & Rig Check. Meter plus spectrum, not a sound camera.",
@@ -300,7 +300,7 @@ public enum ToolHowItWorksCatalog {
             context: "Conduit, panel, or phone-on-the-rail check — not a machinist level.",
             bullets: [
                 "Gravity vector from the IMU. Case sit and calibration offset the bubble.",
-                "Homework / field-ish. Not a survey instrument.",
+                "Field check. Not a survey instrument.",
             ]
         ),
         "magnetometer": ToolHowItWorks(
@@ -359,11 +359,11 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "fieldPosition": ToolHowItWorks(
-            summary: "GPS coordinates, speed, and altitude, plus a homework haversine distance.",
+            summary: "GPS coordinates, speed, and altitude, plus a field haversine distance.",
             context: "Pin a location when you open the tool — location is not requested at launch.",
             bullets: [
                 "Accuracy is the phone GNSS. Indoor fixes are often several meters off.",
-                "Haversine is great-circle homework, not a legal property line.",
+                "Haversine is great-circle distance, not a legal property line.",
             ]
         ),
         "deviceHealth": ToolHowItWorks(
@@ -388,7 +388,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "reactance": ToolHowItWorks(
             summary: "X_L, X_C, series Z and angle, or LC resonance with Q and bandwidth.",
-            context: "AC homework / filter ballpark from R, L, C, and f.",
+            context: "Bench AC and filter ballpark from R, L, C, and f.",
             bullets: [
                 "X_L = 2πfL, X_C = 1/(2πfC). Resonance f₀ = 1/(2π√(LC)).",
                 "Ideal lumped parts. Not a measured impedance or a Smith chart.",
@@ -462,7 +462,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "motorSpeed": ToolHowItWorks(
             summary: "Synchronous RPM, slip from a nameplate RPM, and shaft torque from HP (5252 rule).",
-            context: "Nameplate poles / RPM / HP — the curve is a teaching sketch.",
+            context: "Nameplate poles / RPM / HP — the curve is a planning sketch.",
             bullets: [
                 "n_s = 120 f / poles. Torque (lb·ft) ≈ 5252 × HP / RPM.",
                 "Not a torque-speed lab measurement or a VFD model.",
@@ -470,15 +470,15 @@ public enum ToolHowItWorksCatalog {
         ),
         "rfLink": ToolHowItWorks(
             summary: "dBm ↔ watts, VSWR / return loss, and free-space path loss versus distance.",
-            context: "Radio homework / a first-pass link budget — not a site survey.",
+            context: "Radio bench check — a first-pass link budget, not a site survey.",
             bullets: [
                 "FSPL is the Friis free-space model. Terrain, antennas, and fade are on you.",
                 "Not a substitute for the Wi-Fi or Cellular path instruments.",
             ]
         ),
         "phasorDiagram": ToolHowItWorks(
-            summary: "Plots 2–3 phasors and their sum. The balanced 3-phase set is one tap away.",
-            context: "Homework vector addition — polar in, resultant out.",
+            summary: "Quick sum of 2–3 phasors. The balanced 3-phase set is one tap away.",
+            context: "Same sum as Phasors & Impedance. Polar in, resultant out.",
             bullets: [
                 "Ideal phasors at one frequency. Not a measured oscilloscope capture.",
                 "Balanced 3Ø is 120° apart at equal magnitude.",
@@ -486,7 +486,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "numberBase": ToolHowItWorks(
             summary: "Binary, octal, decimal, hex — plus an 8/16/32-bit signed read of the same bits.",
-            context: "Register / Modbus / homework bit patterns. Live as you type.",
+            context: "Register and Modbus bit patterns. Live as you type.",
             bullets: [
                 "Signed view is two’s complement of the width you pick.",
                 "Not a floating-point decoder or a PLC data-type catalog.",
@@ -510,7 +510,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "magneticCircuit": ToolHowItWorks(
             summary: "Reluctance, flux, and flux density from mmf, path length, area, and µr.",
-            context: "Homework magnetic Ohm’s law for a simple core.",
+            context: "Magnetic Ohm’s law for a simple core.",
             bullets: [
                 "ℜ = ℓ / (µr µ0 A), Φ = ℱ / ℜ, B = Φ / A.",
                 "Linear µr, no leakage or saturation curve.",
@@ -518,7 +518,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "fiberLink": ToolHowItWorks(
             summary: "Numerical aperture and acceptance angle from core/cladding index, plus V-number.",
-            context: "Photonics homework — will this fiber be single-mode at this λ?",
+            context: "Fiber check — will this fiber be single-mode at this λ?",
             bullets: [
                 "NA = √(n_core² − n_clad²). V = 2π a NA / λ.",
                 "Step-index ideal. Not an OTDR or a link-loss budget.",
@@ -526,7 +526,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "gaussianBeam": ToolHowItWorks(
             summary: "Rayleigh range, divergence, and beam radius at a distance from a waist.",
-            context: "Laser / photonics homework from w₀ and λ.",
+            context: "Laser and photonics bench check from w₀ and λ.",
             bullets: [
                 "z_R = π w₀² / λ. w(z) = w₀ √(1 + (z/z_R)²).",
                 "Fundamental Gaussian, free space. Not a measured M².",
@@ -534,7 +534,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "transientCircuit": ToolHowItWorks(
             summary: "RC or RL charge/discharge — value at a time, percent complete, and the curve.",
-            context: "Homework step response. τ = RC or L/R.",
+            context: "Step response. τ = RC or L/R.",
             bullets: [
                 "First-order only. v(t) or i(t) from the classic exponential.",
                 "Not RLC ringing and not a SPICE transient.",
@@ -550,7 +550,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "diodeIV": ToolHowItWorks(
             summary: "Shockley diode forward current and an I–V curve from Is, n, and Vt.",
-            context: "Semiconductor homework — the exponential, not a curve tracer.",
+            context: "Semiconductor bench — the exponential, not a curve tracer.",
             bullets: [
                 "I = Is (e^{V/(n Vt)} − 1). Series R and self-heating are omitted.",
                 "Not a datasheet SPICE model.",
@@ -623,9 +623,9 @@ public enum ToolHowItWorksCatalog {
         ),
         "empEmc": ToolHowItWorks(
             summary: "Skin depth, sheet shielding effectiveness, Faraday-loop voltage, and aperture leakage.",
-            context: "Protection-side EMC homework — not pulse-source or weapon design.",
+            context: "Protection-side EMC check — not pulse-source or weapon design.",
             bullets: [
-                "Textbook skin depth and SE / aperture estimates.",
+                "Ideal skin depth and SE / aperture estimates.",
                 "Educational. Not a TEMPEST, MIL-STD, or enclosure qualification.",
             ]
         ),
@@ -659,7 +659,7 @@ public enum ToolHowItWorksCatalog {
             summary: "Winding pack, center B, inductance, copper loss, axial field, and plunger force.",
             context: "Air-core / simple plunger coil first pass.",
             bullets: [
-                "Ampere-turns and textbook B / force estimates. Plots are teaching sketches.",
+                "Ampere-turns and ideal B / force estimates. Plots are planning sketches.",
                 "Not a saturated FEM or a valve-vendor sizer.",
             ]
         ),
@@ -673,15 +673,15 @@ public enum ToolHowItWorksCatalog {
         ),
         "analogWorkbench": ToolHowItWorks(
             summary: "Ideal op-amp golden-rule stages and RC / Sallen–Key filters with a magnitude Bode sketch.",
-            context: "AoE-style homework — inverting, follower, integrator, and the usual 2nd-order set.",
+            context: "Bench op-amp set — inverting, follower, integrator, and the usual 2nd-order set.",
             bullets: [
-                "Ideal op-amp (infinite gain, no offset). Filters use textbook magnitude.",
+                "Ideal op-amp (infinite gain, no offset). Filters use ideal magnitude.",
                 "Not a SPICE run, not layout parasitics, not a measured Bode.",
             ]
         ),
         "noiseSNR": ToolHowItWorks(
             summary: "Johnson and optional shot noise, amp e_n / i_n, total referred noise, SNR, and a rough NF.",
-            context: "Spot / brick-wall input-referred estimate for a homework front end.",
+            context: "Spot / brick-wall input-referred estimate for a bench front end.",
             bullets: [
                 "√(4kTRB) plus the terms you enable. Bandwidth is a hard brick wall.",
                 "Not a SPICE .noise run and not a measured spectrum.",
@@ -697,7 +697,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "instrumentationAmp": ToolHowItWorks(
             summary: "3-op-amp InAmp gain from Rg, or a 4-resistor difference amp, plus swing vs rails.",
-            context: "Bridge / thermocouple front-end homework.",
+            context: "Bridge and thermocouple front end.",
             bullets: [
                 "Classic G = 1 + 2R/Rg. Difference amp is the 4-resistor ratio.",
                 "Ideal resistors and user-entered rails. Not a measured CMRR.",
@@ -705,7 +705,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "adcDac": ToolHowItWorks(
             summary: "LSB, code count, ideal quantization SNR, Nyquist, and optional DAC code → voltage.",
-            context: "Converter homework. 4–20 mA scaling stays in Signal Scaling.",
+            context: "Converter bench. 4–20 mA scaling stays in Signal Scaling.",
             bullets: [
                 "LSB = FS / 2ⁿ. Ideal SNR ≈ 6.02 n + 1.76 dB. Nyquist is fs/2.",
                 "Not ENOB, INL, or an anti-alias filter design.",
@@ -753,7 +753,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "controlSystems": ToolHowItWorks(
             summary: "Pocket servo lab: plant library or G(s), PID overlays, Bode margins, and a lead compensator.",
-            context: "Field → Controls teaching lab. Simulate Open / P / PI / PID on one chart.",
+            context: "Field → Controls. Simulate Open / P / PI / PID on one chart.",
             bullets: [
                 "Ziegler–Nichols from Ku/Pu or an FOPDT fit. Bode is a log sweep.",
                 "Educational RK4 / Durand–Kerner approximations — not safety-critical commissioning.",
@@ -761,7 +761,7 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "phasorImpedance": ToolHowItWorks(
-            summary: "Sinusoids, peak phasors in rectangular, polar, and exponential form, plus R, L, and C laws and Z = R + jX.",
+            summary: "Sinusoids, a quick sum of 2–3 phasors, rectangular, polar, and exponential form, plus R, L, and C laws and Z = R + jX.",
             context: "Field → Controls. One frequency, ideal parts, waveforms, and the R–X plane.",
             bullets: [
                 "Vm cos(ωt+φ) is the peak phasor Vm∠φ. A sine is that phasor minus 90°.",
@@ -772,7 +772,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "electronicsLab": ToolHowItWorks(
             summary: "Schematics with node voltages, branch currents, and a value you can solve for. Some circuits also show a solderless breadboard.",
-            context: "Field → Controls. Passive, diodes, transistors, op-amps, 555, display, and matching.",
+            context: "Toolkit → Bench. Passive, diodes, transistors, op-amps, 555, display, and matching.",
             bullets: [
                 "Each circuit draws Vin/Vout or a Bode trace. H(s) only when the stage is linear. Not a SPICE netlist.",
                 "Breadboard is an illustrative solderless hookup of the nodes that fit a DIP or discrete part. It is not a SPICE board file.",
@@ -804,7 +804,7 @@ public enum ToolHowItWorksCatalog {
             summary: "Compares bang-bang, PID, MPC, fuzzy, sliding mode, ADRC, and learned methods, then suggests one from your constraints.",
             context: "Field → Controls, next to the Control Systems lab. Open the lab when the pick is PID.",
             bullets: [
-                "Matrix, plant examples, and plots are teaching sketches — not a commissioned loop.",
+                "Matrix, plant examples, and plots are planning sketches — not a commissioned loop.",
                 "No cloud training. DRL, PINN, and ML-MPC stay explanatory.",
                 "Does not replace Signal Scaling, PLC Timer, or the PID / Bode lab.",
             ]

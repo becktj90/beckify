@@ -6,6 +6,7 @@ struct PhasorImpedanceView: View {
     private enum Station: String, CaseIterable, Identifiable {
         case waves
         case phasor
+        case sum
         case elements
         case impedance
 
@@ -15,6 +16,7 @@ struct PhasorImpedanceView: View {
             switch self {
             case .waves: return "Waves"
             case .phasor: return "Phasor"
+            case .sum: return "Sum"
             case .elements: return "R L C"
             case .impedance: return "Z / Y"
             }
@@ -79,6 +81,7 @@ struct PhasorImpedanceView: View {
                 switch station {
                 case .waves: wavesStation
                 case .phasor: phasorStation
+                case .sum: sumStation
                 case .elements: elementStation
                 case .impedance: impedanceStation
                 }
@@ -132,6 +135,16 @@ struct PhasorImpedanceView: View {
                     summary: snapshot.sentence
                 )
             }
+        }
+    }
+
+    private var sumStation: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.md) {
+            Text("Quick sum of two or three phasors. The balanced three-phase set is one tap away.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            PhasorQuickSumForm(stickyText: .constant(nil), resultStale: .constant(false))
         }
     }
 
@@ -901,11 +914,41 @@ private struct WaveformCard: View {
     }
 
     var body: some View {
-        DiagramCard(title: "Time", accessibilitySummary: summary, exportName: "phasors-waveform") {
-            WaveformCanvas(traces: traces, hertz: hertz, cycle: cycle, colors: colors)
-                .frame(height: 220)
+        DiagramCard(title: "Waveform", accessibilitySummary: "Voltage in volts versus time in seconds. \(summary)", exportName: "phasors-waveform") {
+            LabeledPlotChrome(
+                xAxis: PlotAxis(
+                    title: "Time",
+                    unit: "s",
+                    start: "0",
+                    end: Format.number(timeEnd, digits: 4)
+                ),
+                yAxis: PlotAxis(
+                    title: "Voltage",
+                    unit: "V",
+                    start: Format.number(-voltagePeak, digits: 2),
+                    mid: "0",
+                    end: Format.number(voltagePeak, digits: 2)
+                ),
+                accessibilityLabel: "Voltage in volts versus time in seconds. \(summary)",
+                inspection: .look,
+                plotHeight: 220,
+                fullscreenTitle: "Time waveform"
+            ) {
+                WaveformCanvas(traces: traces, hertz: hertz, cycle: cycle, colors: colors)
+            }
             legend
         }
+    }
+
+    private var voltagePeak: Double {
+        max(traces.map(\.positivePeak).max() ?? 1, 1e-9)
+    }
+
+    private var timeEnd: Double {
+        guard let trace = traces.first else { return 1 }
+        let start = trace.samples.first?.time ?? 0
+        let end = trace.samples.last?.time ?? start
+        return max(end - start, 0)
     }
 
     private var legend: some View {
@@ -933,7 +976,7 @@ private struct WaveformCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            let inset = CGSize(width: 28, height: 22)
+            let inset = CGSize(width: 8, height: 8)
             let plot = CGRect(
                 x: inset.width,
                 y: 8,
@@ -998,10 +1041,6 @@ private struct WaveformCanvas: View {
                 context.stroke(cursor, with: .color(Theme.foreground.opacity(0.55)), style: StrokeStyle(lineWidth: 1, dash: [2, 3]))
             }
 
-            let axis = context.resolve(Text("t").font(.system(size: 11, weight: .medium)).foregroundColor(Theme.muted))
-            context.draw(axis, at: CGPoint(x: plot.maxX, y: y(0) + 12), anchor: .topTrailing)
-            let zeroLabel = context.resolve(Text("0").font(.system(size: 10, weight: .medium)).foregroundColor(Theme.muted))
-            context.draw(zeroLabel, at: CGPoint(x: plot.minX - 4, y: y(0)), anchor: .trailing)
         }
         .accessibilityHidden(true)
     }
