@@ -281,15 +281,9 @@ struct PowerFactorView: View {
             }
 
             if let r = session.displayedResult {
-                if !session.isStale,
-                   let kwValue = kw.parsedDouble, kwValue > 0,
-                   r.targetKVAR.isFinite, r.newKVA.isFinite, r.newKVA > 0 {
-                    PowerTriangleDiagram(
-                        kw: kwValue,
-                        kvar: r.targetKVAR,
-                        kva: r.newKVA,
-                        title: "After correction"
-                    )
+                if let picture = PowerTriangleComparison.correction(from: r) {
+                    PowerTriangleDiagram(comparison: picture)
+                        .opacity(session.isStale ? 0.72 : 1)
                 }
                 ResultCard(copyText: sticky) {
                     ResultRow(label: "Correction", value: "\(Format.number(r.correctionKVAR, digits: 2)) kVAR", emphasis: true, tone: Theme.good)
