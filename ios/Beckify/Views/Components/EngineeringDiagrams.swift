@@ -667,42 +667,103 @@ struct Timer555WaveformDiagram: View {
     }
 }
 
-// MARK: - Short-circuit emphasis
+// MARK: - Short-circuit callout
 
+/// One field callout for infinite-bus secondary fault current.
+/// The plate is an original flag, not a transformer drawing and not an AIC bar.
 struct ShortCircuitDiagram: View {
-    let faultAmps: Double
-
-    private var summary: String {
-        "Simplified transformer secondary fault path. Fault current \(Format.amps(faultAmps))."
-    }
+    let callout: ShortCircuitCallout
 
     var body: some View {
-        DiagramCard(title: "Fault path", accessibilitySummary: summary) {
-            EngineeringDiagramFrame(summary: summary) {
-                VStack(spacing: 8) {
-                    HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Theme.accent, lineWidth: 2)
-                            .frame(width: 64, height: 40)
-                            .overlay(Text("XFMR").font(.caption2.weight(.bold)).foregroundStyle(Theme.muted))
-                        Image(systemName: "arrow.right")
-                            .foregroundStyle(Theme.bad)
-                        VStack(spacing: 2) {
-                            Text(Format.amps(faultAmps))
-                                .font(.title3.monospacedDigit().weight(.bold))
-                                .foregroundStyle(Theme.bad)
-                            Text("Isc (infinite bus)")
-                                .font(.caption2)
-                                .foregroundStyle(Theme.muted)
-                        }
-                    }
-                    Text("Design aid — verify with utility data and interrupting ratings.")
-                        .font(.caption2)
-                        .foregroundStyle(Theme.muted)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+        DiagramCard(
+            title: "Available fault",
+            accessibilitySummary: callout.announcement,
+            exportName: "short-circuit-fault"
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                calloutFace
+                Text(ShortCircuitCallout.designAidLine)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
             }
         }
+        .accessibilityIdentifier("shortCircuit.callout")
+    }
+
+    private var calloutFace: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(callout.faultAmpsLabel)
+                    .font(.largeTitle.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Theme.foreground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                if let kiloamps = callout.kiloampsLabel {
+                    Text(kiloamps)
+                        .font(.title2.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            Text("Available fault")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+            Rectangle()
+                .fill(Theme.border)
+                .frame(height: Theme.Stroke.hairline)
+            Text(ShortCircuitCallout.methodLine)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.leading, 28)
+        .padding(.trailing, 16)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            Canvas { context, size in
+                calloutPath(in: context, size: size)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Rounded plate with a left pointer. No windings, no gear bar, no pass or fail mark.
+    private func calloutPath(in context: GraphicsContext, size: CGSize) {
+        let pointer: CGFloat = 14
+        let radius: CGFloat = 10
+        let inset: CGFloat = 1.25
+        let left = pointer
+        let right = size.width - inset
+        let top = inset
+        let bottom = max(top + radius * 2, size.height - inset)
+        let tipY = min(max(size.height * 0.38, top + radius + 12), bottom - radius - 12)
+        let notch: CGFloat = 11
+
+        var path = Path()
+        path.move(to: CGPoint(x: left + radius, y: top))
+        path.addLine(to: CGPoint(x: right - radius, y: top))
+        path.addQuadCurve(to: CGPoint(x: right, y: top + radius), control: CGPoint(x: right, y: top))
+        path.addLine(to: CGPoint(x: right, y: bottom - radius))
+        path.addQuadCurve(to: CGPoint(x: right - radius, y: bottom), control: CGPoint(x: right, y: bottom))
+        path.addLine(to: CGPoint(x: left + radius, y: bottom))
+        path.addQuadCurve(to: CGPoint(x: left, y: bottom - radius), control: CGPoint(x: left, y: bottom))
+        path.addLine(to: CGPoint(x: left, y: tipY + notch))
+        path.addLine(to: CGPoint(x: inset, y: tipY))
+        path.addLine(to: CGPoint(x: left, y: tipY - notch))
+        path.addLine(to: CGPoint(x: left, y: top + radius))
+        path.addQuadCurve(to: CGPoint(x: left + radius, y: top), control: CGPoint(x: left, y: top))
+        path.closeSubpath()
+
+        context.fill(path, with: .color(Theme.surface))
+        context.stroke(
+            path,
+            with: .color(Theme.foreground.opacity(0.88)),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineJoin: .round)
+        )
     }
 }
 
