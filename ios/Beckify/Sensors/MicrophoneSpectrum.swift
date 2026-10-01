@@ -11,6 +11,12 @@ import BeckifyMath
 /// `AVAudioEngine` tap. Breath Flute calls `suspendForTone()` so a play-along
 /// tone does not fight the metering engine. Room & Rig Check plays pink noise, a log
 /// sweep, or a tone burst on this same engine — it does not start a second FFT.
+///
+/// # Measurement path (Setup Check PR1)
+/// The audio tap only copies samples into a preallocated ring buffer and advances a
+/// sample counter. A serial DSP worker aggregates timestamped / sample-counted frames,
+/// runs the live FFT (and optional longer overlapping bass FFT), and publishes.
+/// SwiftUI `.onChange(of: rmsDBFS)` is not the sample clock.
 @MainActor
 final class MicrophoneSpectrumCenter: ObservableObject {
     static let shared = MicrophoneSpectrumCenter()
@@ -30,6 +36,15 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     @Published private(set) var channelBalance: Double?
     @Published private(set) var latencySeconds: Double?
     @Published private(set) var harmonicOrders: [RoomRigHarmonic] = []
+    /// Latest DSP-worker frame. Setup Check aggregates from `frameID`, not rms onChange.
+    @Published private(set) var latestFrame: RoomRigMeasurementFrame?
+    @Published private(set) var frameID: UInt64 = 0
+    @Published private(set) var totalSampleCount: UInt64 = 0
+    @Published private(set) var routeFingerprint: RoomRigRouteFingerprint?
+    @Published private(set) var routeEpoch: UInt64 = 0
+    @Published private(set) var bassBands: [AcousticDisplayBand] = []
+    @Published private(set) var bassFFTLength: Int = 0
+    @Published var enableBassAnalysis = true
     @Published var windowKind: SpectrumWindowKind = .hann {
         didSet { windowBox.set(windowKind) }
     }
@@ -47,12 +62,40 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     private var playAndRecord = false
     private var installed = false
     private var sessionActive = false
-    private var fftSetup: FFTSetup?
-    private let frameBuffer = AudioFrameBuffer()
+    private var fftSetupLive: FFTSetup?
+    private var fftSetupBass: FFTSetup?
+    private let ring = AudioRingBuffer(capacity: RoomRigMath.bassFFTLengthLong * 2)
     private let windowBox = WindowBox()
+    private let worker = DispatchQueue(label: "com.beckify.toolbox.mic-dsp", qos: .userInitiated)
+    private let workerLock = OSAllocatedUnfairLock(initialState: WorkerFlags())
     private var lastPublish = Date.distantPast
+    private var routeObserver: NSObjectProtocol?
+    private var mediaResetObserver: NSObjectProtocol?
+    private var nextFrameID: UInt64 = 0
 
-    private init() {}
+    private struct WorkerFlags: Sendable {
+        var running = false
+        var enableBass = true
+        var fingerprint = RoomRigRouteFingerprint(
+            sampleRateHz: 0,
+            channelCount: 0,
+            routeUID: "unknown",
+            inputGain: 0
+        )
+    }
+
+    private init() {
+        observeRouteChanges()
+    }
+
+    deinit {
+        if let routeObserver {
+            NotificationCenter.default.removeObserver(routeObserver)
+        }
+        if let mediaResetObserver {
+            NotificationCenter.default.removeObserver(mediaResetObserver)
+        }
+    }
 
     func retain(_ token: UUID, role: String) {
         tokens[token] = role
@@ -71,7 +114,6 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         stopEngine(status: "Microphone idle")
     }
 
-    /// Breath Flute owns playback. Drop the metering tap until the tone screen leaves.
     func suspendForTone() {
         playbackHolds += 1
         stopEngine(status: tokens.isEmpty ? "Microphone idle" : "Microphone paused while a tone plays")
@@ -83,9 +125,6 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         startEngineIfNeeded()
     }
 
-    /// Play a test signal on this engine, or return to listen-only metering.
-    /// Crossing between listen and playback restarts the session category.
-    /// Staying inside playback (pink → sweep) keeps the tap and only changes the player.
     func setStimulus(_ kind: RoomRigStimulusKind) {
         let needsPlay = kind != .listen
         player.setKind(kind)
@@ -101,14 +140,54 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         }
     }
 
-    /// Drop a test signal without restarting. Used when the screen is leaving
-    /// and `release` is about to stop the engine.
     func endStimulus() {
         player.setKind(.listen)
         stimulus = .listen
         stimulusHz = nil
         harmonicOrders = []
         latencySeconds = nil
+    }
+
+    private func observeRouteChanges() {
+        let center = NotificationCenter.default
+        routeObserver = center.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.noteRouteOrGainChange() }
+        }
+        mediaResetObserver = center.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.noteRouteOrGainChange() }
+        }
+    }
+
+    private func noteRouteOrGainChange() {
+        routeEpoch &+= 1
+        let fingerprint = currentFingerprint()
+        routeFingerprint = fingerprint
+        workerLock.withLock { $0.fingerprint = fingerprint }
+        if running {
+            status = engineStatus(playing: playAndRecord) + " · route changed"
+        }
+    }
+
+    private func currentFingerprint() -> RoomRigRouteFingerprint {
+        let session = AVAudioSession.sharedInstance()
+        let inputs = session.currentRoute.inputs.map(\.portName).joined(separator: "+")
+        let outputs = session.currentRoute.outputs.map(\.portName).joined(separator: "+")
+        let routeUID = [inputs, outputs].filter { !$0.isEmpty }.joined(separator: "→")
+        let gain = Double(session.inputGain)
+        return RoomRigRouteFingerprint(
+            sampleRateHz: sampleRateHz > 0 ? sampleRateHz : session.sampleRate,
+            channelCount: max(inputChannelCount, Int(session.inputNumberOfChannels)),
+            routeUID: routeUID.isEmpty ? "unknown" : routeUID,
+            inputGain: gain.isFinite ? gain : 0
+        )
     }
 
     private func startEngineIfNeeded() {
@@ -118,6 +197,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     }
 
     private func stopEngine(status: String) {
+        workerLock.withLock { $0.running = false }
         running = false
         self.status = status
         if installed {
@@ -126,11 +206,15 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         }
         if engine.isRunning { engine.stop() }
         detachStimulus()
-        if let fftSetup {
-            vDSP_destroy_fftsetup(fftSetup)
-            self.fftSetup = nil
+        if let fftSetupLive {
+            vDSP_destroy_fftsetup(fftSetupLive)
+            self.fftSetupLive = nil
         }
-        frameBuffer.reset()
+        if let fftSetupBass {
+            vDSP_destroy_fftsetup(fftSetupBass)
+            self.fftSetupBass = nil
+        }
+        ring.reset()
         if sessionActive {
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             sessionActive = false
@@ -138,6 +222,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     }
 
     private func recycleAndStart() {
+        workerLock.withLock { $0.running = false }
         if installed {
             engine.inputNode.removeTap(onBus: 0)
             installed = false
@@ -195,10 +280,20 @@ final class MicrophoneSpectrumCenter: ObservableObject {
                 return
             }
             inputChannelCount = Int(format.channelCount)
-            if fftSetup == nil {
-                fftSetup = AudioBlockFFT.makeSetup()
+            sampleRateHz = format.sampleRate
+            let fingerprint = currentFingerprint()
+            routeFingerprint = fingerprint
+            workerLock.withLock {
+                $0.fingerprint = fingerprint
+                $0.enableBass = enableBassAnalysis
             }
-            guard let fftSetup else {
+            if fftSetupLive == nil {
+                fftSetupLive = AudioBlockFFT.makeSetup(length: RoomRigMath.liveFFTLength)
+            }
+            if enableBassAnalysis, fftSetupBass == nil {
+                fftSetupBass = AudioBlockFFT.makeSetup(length: RoomRigMath.bassFFTLengthPreferred)
+            }
+            guard let fftSetupLive else {
                 status = "FFT setup failed"
                 running = false
                 return
@@ -207,67 +302,12 @@ final class MicrophoneSpectrumCenter: ObservableObject {
                 input.removeTap(onBus: 0)
                 installed = false
             }
-            frameBuffer.reset()
+            ring.reset()
             let sampleRate = format.sampleRate
-            let scratch = frameBuffer
-            let length = AudioBlockFFT.length
-            let windows = windowBox
-            let stimulusPlayer = player
-            input.installTap(onBus: 0, bufferSize: AVAudioFrameCount(length), format: format) { [weak self] buffer, _ in
+            let scratch = ring
+            // Minimal callback: copy + count only. No FFT on the audio thread.
+            input.installTap(onBus: 0, bufferSize: AVAudioFrameCount(RoomRigMath.liveFFTLength), format: format) { buffer, _ in
                 scratch.append(buffer)
-                let reading = roomRigChannelReading(buffer)
-                while let frame = scratch.pop(count: length) {
-                    guard let magnitudes = AudioBlockFFT.magnitudes(
-                        samples: frame,
-                        setup: fftSetup,
-                        window: windows.get()
-                    ) else { continue }
-                    let bands = AcousticSpectrum.fold(
-                        linearMagnitudes: magnitudes,
-                        sampleRate: sampleRate,
-                        fftLength: length
-                    )
-                    let rta = RoomRigMath.thirdOctaveBands(
-                        linearMagnitudes: magnitudes,
-                        sampleRate: sampleRate,
-                        fftLength: length
-                    )
-                    let stats = RoomRigMath.frameStats(samples: frame.map(Double.init))
-                    let snap = stimulusPlayer.snapshot()
-                    let heardAt = Date().timeIntervalSinceReferenceDate
-                    let latency = stimulusPlayer.noteHeard(at: heardAt, linearPeak: stats.linearPeak)
-                    let peak = AcousticSpectrum.peakBand(bands)?.centerHz
-                    let ratio = RelativeHarmonicEnergy.ratio(linearMagnitudes: magnitudes)
-                    let harmonics: [RoomRigHarmonic]
-                    if let hz = snap.hz, snap.kind == .sweep || snap.kind == .burst {
-                        harmonics = RoomRigMath.harmonicOrders(
-                            linearMagnitudes: magnitudes,
-                            fundamentalHz: hz,
-                            sampleRate: sampleRate,
-                            fftLength: length
-                        ) ?? []
-                    } else {
-                        harmonics = []
-                    }
-                    Task { @MainActor in
-                        self?.publish(
-                            bands: bands,
-                            rta: rta,
-                            rms: stats.rmsDBFS,
-                            peak: stats.peakDBFS,
-                            crestDB: stats.crestDB,
-                            clipFraction: stats.clipFraction,
-                            peakHz: peak,
-                            sampleRateHz: sampleRate,
-                            harmonicRatio: ratio,
-                            harmonics: harmonics,
-                            stimulusHz: snap.hz,
-                            channelCount: reading.count,
-                            balance: reading.balance,
-                            latency: latency
-                        )
-                    }
-                }
             }
             installed = true
             if wantsPlay {
@@ -275,10 +315,127 @@ final class MicrophoneSpectrumCenter: ObservableObject {
             }
             try engine.start()
             running = true
+            workerLock.withLock { $0.running = true }
             status = engineStatus(playing: wantsPlay)
+            kickWorker(sampleRate: sampleRate, liveSetup: fftSetupLive, bassSetup: fftSetupBass)
         } catch {
             status = "Could not start audio: \(error.localizedDescription)"
             running = false
+        }
+    }
+
+    private func kickWorker(sampleRate: Double, liveSetup: FFTSetup, bassSetup: FFTSetup?) {
+        let liveLength = RoomRigMath.liveFFTLength
+        let bassLength = RoomRigMath.bassFFTLengthPreferred
+        let bassHop = bassLength / 4
+        let windows = windowBox
+        let stimulusPlayer = player
+        let ringBuffer = ring
+        let flags = workerLock
+        worker.async { [weak self] in
+            var bassCursor: UInt64 = 0
+            while flags.withLock({ $0.running }) {
+                let kind = windows.get()
+                let enableBass = flags.withLock { $0.enableBass }
+                let fingerprint = flags.withLock { $0.fingerprint }
+                guard let block = ringBuffer.popLiveBlock(count: liveLength) else {
+                    Thread.sleep(forTimeInterval: 0.004)
+                    continue
+                }
+                let gain = AcousticSpectrum.coherentGain(count: liveLength, kind: kind)
+                guard let magnitudes = AudioBlockFFT.magnitudes(
+                    samples: block.samples,
+                    setup: liveSetup,
+                    length: liveLength,
+                    window: kind,
+                    coherentGain: gain
+                ) else { continue }
+
+                let bands = AcousticSpectrum.fold(
+                    linearMagnitudes: magnitudes,
+                    sampleRate: sampleRate,
+                    fftLength: liveLength
+                )
+                let rta = RoomRigMath.thirdOctaveBands(
+                    linearMagnitudes: magnitudes,
+                    sampleRate: sampleRate,
+                    fftLength: liveLength
+                )
+                let stats = RoomRigMath.frameStats(samples: block.samples.map(Double.init))
+                let snap = stimulusPlayer.snapshot()
+                let heardAt = Date().timeIntervalSinceReferenceDate
+                let latency = stimulusPlayer.noteHeard(at: heardAt, linearPeak: stats.linearPeak)
+                let peak = AcousticSpectrum.peakBand(bands)?.centerHz
+                let ratio = RelativeHarmonicEnergy.ratio(linearMagnitudes: magnitudes)
+                let harmonics: [RoomRigHarmonic]
+                if let hz = snap.hz, snap.kind == .sweep || snap.kind == .burst {
+                    harmonics = RoomRigMath.harmonicOrders(
+                        linearMagnitudes: magnitudes,
+                        fundamentalHz: hz,
+                        sampleRate: sampleRate,
+                        fftLength: liveLength
+                    ) ?? []
+                } else {
+                    harmonics = []
+                }
+
+                var bassResult: (bands: [AcousticDisplayBand], length: Int)?
+                if enableBass, let bassSetup {
+                    let total = block.endSampleCount
+                    if total >= UInt64(bassLength), total &- bassCursor >= UInt64(bassHop) {
+                        if let bassSamples = ringBuffer.latest(count: bassLength) {
+                            let bassGain = AcousticSpectrum.coherentGain(count: bassLength, kind: kind)
+                            if let bassMags = AudioBlockFFT.magnitudes(
+                                samples: bassSamples,
+                                setup: bassSetup,
+                                length: bassLength,
+                                window: kind,
+                                coherentGain: bassGain
+                            ) {
+                                bassResult = (
+                                    AcousticSpectrum.fold(
+                                        linearMagnitudes: bassMags,
+                                        sampleRate: sampleRate,
+                                        fftLength: bassLength,
+                                        bandCount: 24
+                                    ),
+                                    bassLength
+                                )
+                            }
+                        }
+                        bassCursor = total
+                    }
+                }
+
+                let frame = RoomRigMeasurementFrame(
+                    frameID: 0,
+                    sampleCount: block.endSampleCount,
+                    hostTimeSeconds: heardAt,
+                    rmsDBFS: stats.rmsDBFS,
+                    peakDBFS: stats.peakDBFS,
+                    crestDB: stats.crestDB,
+                    clipFraction: stats.clipFraction,
+                    peakHz: peak,
+                    bands: bands,
+                    rtaBands: rta,
+                    fingerprint: fingerprint,
+                    headroomDB: RoomRigMeasurementFrame.headroomDB(peakDBFS: stats.peakDBFS)
+                )
+
+                DispatchQueue.main.async {
+                    self?.publish(
+                        frame: frame,
+                        harmonicRatio: ratio,
+                        harmonics: harmonics,
+                        stimulusHz: snap.hz,
+                        channelCount: block.channelCount,
+                        balance: block.balance,
+                        latency: latency,
+                        sampleRateHz: sampleRate,
+                        bass: bassResult
+                    )
+                }
+            }
         }
     }
 
@@ -301,47 +458,54 @@ final class MicrophoneSpectrumCenter: ObservableObject {
 
     private func engineStatus(playing: Bool) -> String {
         if playing {
-            return sharing ? "Shared tap · phone speaker test signal" : "Phone speaker · relative mic"
+            return sharing ? "Shared tap · phone speaker demo" : "Phone speaker demo · relative mic"
         }
         return sharing ? "Shared microphone tap · audible FFT" : "Metering (uncalibrated dBFS)"
     }
 
     private func publish(
-        bands: [AcousticDisplayBand],
-        rta: [AcousticDisplayBand],
-        rms: Double,
-        peak: Double,
-        crestDB: Double?,
-        clipFraction: Double,
-        peakHz: Double?,
-        sampleRateHz: Double,
+        frame: RoomRigMeasurementFrame,
         harmonicRatio: Double?,
         harmonics: [RoomRigHarmonic],
         stimulusHz: Double?,
         channelCount: Int,
         balance: Double?,
-        latency: Double?
+        latency: Double?,
+        sampleRateHz: Double,
+        bass: (bands: [AcousticDisplayBand], length: Int)?
     ) {
         if let latency {
             latencySeconds = latency
         }
-        let now = Date()
-        guard now.timeIntervalSince(lastPublish) >= 1.0 / 20.0 else { return }
-        lastPublish = now
-        self.bands = bands
-        rtaBands = rta
-        rmsDBFS = rms
-        peakDBFS = peak
-        self.crestDB = crestDB
-        self.clipFraction = clipFraction
-        self.peakHz = peakHz
-        self.sampleRateHz = sampleRateHz
+        nextFrameID &+= 1
+        var stamped = frame
+        stamped.frameID = nextFrameID
+        latestFrame = stamped
+        frameID = nextFrameID
+        totalSampleCount = stamped.sampleCount
         self.harmonicRatio = harmonicRatio
         harmonicOrders = harmonics
         self.stimulusHz = stimulusHz
         if channelCount > 0 { inputChannelCount = channelCount }
         channelBalance = balance
+        self.sampleRateHz = sampleRateHz
         hasReading = true
+        if let bass {
+            bassBands = bass.bands
+            bassFFTLength = bass.length
+        }
+        workerLock.withLock { $0.enableBass = enableBassAnalysis }
+
+        let now = Date()
+        guard now.timeIntervalSince(lastPublish) >= 1.0 / 20.0 else { return }
+        lastPublish = now
+        bands = stamped.bands
+        rtaBands = stamped.rtaBands
+        rmsDBFS = stamped.rmsDBFS
+        peakDBFS = stamped.peakDBFS
+        crestDB = stamped.crestDB
+        clipFraction = stamped.clipFraction
+        peakHz = stamped.peakHz
         if running {
             status = engineStatus(playing: playAndRecord)
         }
@@ -487,52 +651,6 @@ private final class RoomStimulusPlayer: @unchecked Sendable {
     }
 }
 
-/// Real FFT of a 1024-sample mic block. Bin k is `k * sampleRate / 1024`.
-enum AudioBlockFFT {
-    static let length = 1024
-    static let log2n: vDSP_Length = 10
-
-    static func makeSetup() -> FFTSetup? {
-        vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2))
-    }
-
-    static func magnitudes(
-        samples: [Float],
-        setup: FFTSetup,
-        window kind: SpectrumWindowKind = .hann
-    ) -> [Double]? {
-        let n = samples.count
-        guard n == length else { return nil }
-        let half = n / 2
-        let window = CoupledVibrationMath.window(count: n, kind: kind).map { Float($0) }
-        var windowed = [Float](repeating: 0, count: n)
-        vDSP_vmul(samples, 1, window, 1, &windowed, 1, vDSP_Length(n))
-
-        var realp = [Float](repeating: 0, count: half)
-        var imagp = [Float](repeating: 0, count: half)
-        var mags = [Float](repeating: 0, count: half)
-        realp.withUnsafeMutableBufferPointer { realBuf in
-            imagp.withUnsafeMutableBufferPointer { imagBuf in
-                guard let realBase = realBuf.baseAddress, let imagBase = imagBuf.baseAddress else { return }
-                var split = DSPSplitComplex(realp: realBase, imagp: imagBase)
-                windowed.withUnsafeBufferPointer { samplesBuf in
-                    samplesBuf.baseAddress?.withMemoryRebound(to: DSPComplex.self, capacity: half) { complex in
-                        vDSP_ctoz(complex, 2, &split, 1, vDSP_Length(half))
-                    }
-                }
-                vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(kFFTDirection_Forward))
-                vDSP_zvmags(&split, 1, &mags, 1, vDSP_Length(half))
-            }
-        }
-        // vDSP squares (vDSP_vsq / vDSP_zvmags) but has no element-wise square
-        // root. vDSP_vsqrt is not an Accelerate symbol, so Xcode Cloud reports
-        // "Cannot find 'vDSP_vsqrt' in scope". vForce is the vector sqrt.
-        var rooted = [Float](repeating: 0, count: half)
-        vForce.sqrt(mags, result: &rooted)
-        return rooted.map(Double.init)
-    }
-}
-
 /// Accumulates the first mic channel until a power-of-two FFT block is ready.
 final class AudioFrameBuffer: @unchecked Sendable {
     private var samples: [Float] = []
@@ -557,6 +675,203 @@ final class AudioFrameBuffer: @unchecked Sendable {
         let block = Array(samples.prefix(count))
         samples.removeFirst(count)
         return block
+    }
+}
+
+
+/// Real FFT with documented vDSP packing and coherent-gain normalization.
+///
+/// After `vDSP_fft_zrip` forward:
+/// - `realp[0]` = DC (real), `imagp[0]` = Nyquist (real)
+/// - `realp[k], imagp[k]` for k = 1…N/2−1 are the complex bins
+///
+/// Magnitudes returned here are **one-sided peak amplitudes** (sample units),
+/// matching `CoupledVibrationMath.magnitudeSpectrum` and the
+/// `AcousticSpectrum` contract. Do not feed packed splits into `vDSP_zvmags`.
+enum AudioBlockFFT {
+    static let length = RoomRigMath.liveFFTLength
+
+    static func log2n(for length: Int) -> vDSP_Length? {
+        guard length > 1, length & (length - 1) == 0 else { return nil }
+        return vDSP_Length(log2(Double(length)))
+    }
+
+    static func makeSetup(length: Int = RoomRigMath.liveFFTLength) -> FFTSetup? {
+        guard let log2n = log2n(for: length) else { return nil }
+        return vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2))
+    }
+
+    /// Breath Flute / legacy call site. Amplitude-normalized Hann (or chosen window).
+    static func magnitudes(
+        samples: [Float],
+        setup: FFTSetup,
+        window kind: SpectrumWindowKind = .hann
+    ) -> [Double]? {
+        let gain = AcousticSpectrum.coherentGain(count: samples.count, kind: kind)
+        return magnitudes(
+            samples: samples,
+            setup: setup,
+            length: samples.count,
+            window: kind,
+            coherentGain: gain
+        )
+    }
+
+    static func magnitudes(
+        samples: [Float],
+        setup: FFTSetup,
+        length: Int,
+        window kind: SpectrumWindowKind = .hann,
+        coherentGain: Double
+    ) -> [Double]? {
+        let n = samples.count
+        guard n == length, let log2n = log2n(for: n) else { return nil }
+        let half = n / 2
+        let window = CoupledVibrationMath.window(count: n, kind: kind).map { Float($0) }
+        var windowed = [Float](repeating: 0, count: n)
+        vDSP_vmul(samples, 1, window, 1, &windowed, 1, vDSP_Length(n))
+
+        var realp = [Float](repeating: 0, count: half)
+        var imagp = [Float](repeating: 0, count: half)
+        realp.withUnsafeMutableBufferPointer { realBuf in
+            imagp.withUnsafeMutableBufferPointer { imagBuf in
+                guard let realBase = realBuf.baseAddress, let imagBase = imagBuf.baseAddress else { return }
+                var split = DSPSplitComplex(realp: realBase, imagp: imagBase)
+                windowed.withUnsafeBufferPointer { samplesBuf in
+                    samplesBuf.baseAddress?.withMemoryRebound(to: DSPComplex.self, capacity: half) { complex in
+                        vDSP_ctoz(complex, 2, &split, 1, vDSP_Length(half))
+                    }
+                }
+                vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(kFFTDirection_Forward))
+            }
+        }
+
+        let dc = Double(realp[0])
+        let nyquist = Double(imagp[0])
+        var amplitudes = [Double](repeating: 0, count: half + 1)
+        amplitudes[0] = AcousticSpectrum.amplitudeFromRawVDSP(
+            rawMagnitude: abs(dc),
+            fftLength: n,
+            coherentGain: coherentGain,
+            isNyquistOrDC: true
+        )
+        amplitudes[half] = AcousticSpectrum.amplitudeFromRawVDSP(
+            rawMagnitude: abs(nyquist),
+            fftLength: n,
+            coherentGain: coherentGain,
+            isNyquistOrDC: true
+        )
+        if half > 1 {
+            for k in 1..<half {
+                let re = Double(realp[k])
+                let im = Double(imagp[k])
+                let raw = sqrt(re * re + im * im)
+                amplitudes[k] = AcousticSpectrum.amplitudeFromRawVDSP(
+                    rawMagnitude: raw,
+                    fftLength: n,
+                    coherentGain: coherentGain,
+                    isNyquistOrDC: false
+                )
+            }
+        }
+        return amplitudes
+    }
+}
+
+/// Preallocated mono ring. The audio tap only writes here.
+final class AudioRingBuffer: @unchecked Sendable {
+    struct LiveBlock {
+        var samples: [Float]
+        var endSampleCount: UInt64
+        var channelCount: Int
+        var balance: Double?
+    }
+
+    private struct State {
+        var storage: [Float]
+        var total: UInt64
+        var write: Int
+        var count: Int
+        var channelCount: Int
+        var balance: Double?
+        let capacity: Int
+    }
+
+    private let lock: OSAllocatedUnfairLock<State>
+
+    init(capacity: Int) {
+        let cap = max(capacity, RoomRigMath.liveFFTLength * 2)
+        lock = OSAllocatedUnfairLock(initialState: State(
+            storage: [Float](repeating: 0, count: cap),
+            total: 0,
+            write: 0,
+            count: 0,
+            channelCount: 0,
+            balance: nil,
+            capacity: cap
+        ))
+    }
+
+    func reset() {
+        lock.withLock { state in
+            state.total = 0
+            state.write = 0
+            state.count = 0
+            state.channelCount = 0
+            state.balance = nil
+        }
+    }
+
+    func append(_ buffer: AVAudioPCMBuffer) {
+        let reading = roomRigChannelReading(buffer)
+        guard let channels = buffer.floatChannelData else { return }
+        let frames = Int(buffer.frameLength)
+        guard frames > 0 else { return }
+        let source = UnsafeBufferPointer(start: channels[0], count: frames)
+        lock.withLock { state in
+            state.channelCount = reading.count
+            state.balance = reading.balance
+            for sample in source {
+                state.storage[state.write] = sample
+                state.write += 1
+                if state.write >= state.capacity { state.write = 0 }
+                if state.count < state.capacity {
+                    state.count += 1
+                }
+                state.total &+= 1
+            }
+        }
+    }
+
+    func popLiveBlock(count: Int) -> LiveBlock? {
+        lock.withLock { state in
+            guard state.count >= count else { return nil }
+            var samples = [Float](repeating: 0, count: count)
+            // Oldest sample index in the filled region.
+            let oldest = (state.write - state.count + state.capacity) % state.capacity
+            for index in 0..<count {
+                samples[index] = state.storage[(oldest + index) % state.capacity]
+            }
+            state.count -= count
+            return LiveBlock(
+                samples: samples,
+                endSampleCount: state.total - UInt64(state.count),
+                channelCount: state.channelCount,
+                balance: state.balance
+            )
+        }
+    }
+
+    func latest(count: Int) -> [Float]? {
+        lock.withLock { state in
+            guard state.count >= count else { return nil }
+            var samples = [Float](repeating: 0, count: count)
+            let start = (state.write - count + state.capacity) % state.capacity
+            for index in 0..<count {
+                samples[index] = state.storage[(start + index) % state.capacity]
+            }
+            return samples
+        }
     }
 }
 

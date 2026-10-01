@@ -87,6 +87,14 @@ public enum RoomRigMath {
     public static let playbackAmplitude = 0.12
     public static let clipThreshold = 0.98
     public static let latencyMaxSeconds = 0.75
+    /// Live plot FFT. Short enough for responsive UI.
+    public static let liveFFTLength = 1_024
+    /// Optional overlapping bass analysis windows. Prefer 16384; 32768 when the ring allows.
+    public static let bassFFTLengthPreferred = 16_384
+    public static let bassFFTLengthLong = 32_768
+    /// Headroom barrier: peak above this aborts an in-flight capture.
+    public static let headroomAbortDBFS = -0.5
+    public static let clipAbortFraction = 0.01
 
     /// Nominal 1/3-octave centers from 50 Hz through 8 kHz. Display bands, not IEC 61260 class.
     public static let thirdOctaveCenters: [Double] = [
@@ -228,11 +236,15 @@ public enum RoomRigMath {
                 bins += 1
             }
             let magnitude = bins > 0 ? sqrt(energy) : 0
+            let available = bins > 0 && magnitude > 0 && magnitude.isFinite
             return AcousticDisplayBand(
                 lowHz: edges.low,
                 highHz: min(edges.high, nyquist),
                 centerHz: center,
-                dbFS: AcousticSpectrum.dbFS(linearMagnitude: magnitude, fftLength: fftLength)
+                dbFS: available
+                    ? AcousticSpectrum.dbFS(amplitude: magnitude)
+                    : SoundLevel.silenceFloorDBFS,
+                isAvailable: available
             )
         }
     }
@@ -424,7 +436,7 @@ public struct RoomRigTestCapture: Equatable, Sendable {
         if let crestDB, crestDB.isFinite { crests.append(crestDB) }
         if clipFraction.isFinite { clips.append(min(1, max(0, clipFraction))) }
         if let peakHz, peakHz.isFinite, peakHz > 0 { self.peakHz.append(peakHz) }
-        for band in bands where band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
+        for band in bands where band.isAvailable && band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
             self.bands.append(band)
         }
     }
@@ -467,7 +479,10 @@ public enum RoomRigTestCopy {
     public static let clip =
         "Share of the window at full scale. Any clip means it was too hot — turn it down and run the test again."
     public static let aboveFloor =
-        "How far this pass sat above the quiet floor from Listen. A small gap means the signal is barely out of the room noise on this mic."
+        "Signal above background: how far this pass sat above the captured quiet-room baseline. Not SNR. A small gap means the signal is barely out of the room noise on this mic."
+    public static let signalAboveBackground = aboveFloor
+    public static let baselineHelp =
+        "Capture a quiet-room baseline explicitly. It invalidates if the audio route or input gain changes. Phone-speaker stimuli stay labeled demo."
     public static let peakHz =
         "The strongest band during the pass. On pink noise, a peak that moves between seats is a relative tilt, not a certified room mode."
     public static let centroid =
@@ -495,7 +510,7 @@ public enum RoomRigTestMath {
     public static func centroidHz(bands: [AcousticDisplayBand]) -> Double? {
         var weight = 0.0
         var moment = 0.0
-        for band in bands where band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
+        for band in bands where band.isAvailable && band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
             let power = pow(10, band.dbFS / 10)
             guard power.isFinite, power > 0 else { continue }
             weight += power
@@ -510,7 +525,7 @@ public enum RoomRigTestMath {
         func energy(_ include: (Double) -> Bool) -> Double? {
             var sum = 0.0
             var hits = 0
-            for band in bands where band.centerHz.isFinite && band.dbFS.isFinite && include(band.centerHz) {
+            for band in bands where band.isAvailable && band.centerHz.isFinite && band.dbFS.isFinite && include(band.centerHz) {
                 let power = pow(10, band.dbFS / 10)
                 guard power.isFinite, power > 0 else { continue }
                 sum += power
@@ -538,7 +553,7 @@ public enum RoomRigTestMath {
     public static func averageBands(_ bands: [AcousticDisplayBand]) -> [AcousticDisplayBand] {
         var power: [Double: Double] = [:]
         var hits: [Double: Int] = [:]
-        for band in bands where band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
+        for band in bands where band.isAvailable && band.centerHz.isFinite && band.centerHz > 0 && band.dbFS.isFinite {
             let linear = pow(10, band.dbFS / 10)
             guard linear.isFinite, linear > 0 else { continue }
             power[band.centerHz, default: 0] += linear
@@ -550,9 +565,290 @@ public enum RoomRigTestMath {
                 lowHz: hz,
                 highHz: hz,
                 centerHz: hz,
-                dbFS: 10 * log10(sum / Double(count))
+                dbFS: 10 * log10(sum / Double(count)),
+                isAvailable: true
             )
         }
+    }
+}
+
+// MARK: - Measurement foundation (PR1)
+
+/// Audio route / gain fingerprint. A quiet baseline or A/B pass is invalid when this changes.
+public struct RoomRigRouteFingerprint: Equatable, Sendable, Hashable {
+    public var sampleRateHz: Double
+    public var channelCount: Int
+    /// AVAudioSession port / route name when known.
+    public var routeUID: String
+    /// Input gain when the session exposes it; otherwise 0.
+    public var inputGain: Double
+
+    public init(sampleRateHz: Double, channelCount: Int, routeUID: String, inputGain: Double) {
+        self.sampleRateHz = sampleRateHz
+        self.channelCount = channelCount
+        self.routeUID = routeUID
+        self.inputGain = inputGain
+    }
+
+    /// Coarse equality for protocol matching (gain rounded to 0.01).
+    public func matches(_ other: RoomRigRouteFingerprint, gainTolerance: Double = 0.01) -> Bool {
+        abs(sampleRateHz - other.sampleRateHz) < 0.5
+            && channelCount == other.channelCount
+            && routeUID == other.routeUID
+            && abs(inputGain - other.inputGain) <= gainTolerance
+    }
+}
+
+/// Explicit quiet-room baseline. Not SNR — signal-above-background uses this floor.
+public struct RoomRigQuietBaseline: Equatable, Sendable {
+    public var floorDBFS: Double
+    public var bandFloorsDBFS: [Double]
+    public var fingerprint: RoomRigRouteFingerprint
+    public var sampleCount: UInt64
+    public var capturedAt: Double
+
+    public init(
+        floorDBFS: Double,
+        bandFloorsDBFS: [Double] = [],
+        fingerprint: RoomRigRouteFingerprint,
+        sampleCount: UInt64,
+        capturedAt: Double
+    ) {
+        self.floorDBFS = floorDBFS
+        self.bandFloorsDBFS = bandFloorsDBFS
+        self.fingerprint = fingerprint
+        self.sampleCount = sampleCount
+        self.capturedAt = capturedAt
+    }
+
+    public func isValid(for fingerprint: RoomRigRouteFingerprint) -> Bool {
+        self.fingerprint.matches(fingerprint) && floorDBFS.isFinite
+    }
+}
+
+/// Locked for one capture pass. A/B requires matching metadata.
+public struct RoomRigPassMetadata: Equatable, Sendable {
+    public var stimulus: RoomRigStimulusKind
+    public var fingerprint: RoomRigRouteFingerprint
+    public var liveFFTLength: Int
+    public var bassFFTLength: Int?
+    public var windowKind: String
+    /// Phone speaker stimuli are demos, not calibrated generators.
+    public var isPhoneSpeakerDemo: Bool
+
+    public init(
+        stimulus: RoomRigStimulusKind,
+        fingerprint: RoomRigRouteFingerprint,
+        liveFFTLength: Int = RoomRigMath.liveFFTLength,
+        bassFFTLength: Int? = nil,
+        windowKind: String,
+        isPhoneSpeakerDemo: Bool
+    ) {
+        self.stimulus = stimulus
+        self.fingerprint = fingerprint
+        self.liveFFTLength = liveFFTLength
+        self.bassFFTLength = bassFFTLength
+        self.windowKind = windowKind
+        self.isPhoneSpeakerDemo = isPhoneSpeakerDemo
+    }
+
+    public func matchesForAB(_ other: RoomRigPassMetadata) -> Bool {
+        stimulus == other.stimulus
+            && fingerprint.matches(other.fingerprint)
+            && liveFFTLength == other.liveFFTLength
+            && bassFFTLength == other.bassFFTLength
+            && windowKind == other.windowKind
+            && isPhoneSpeakerDemo == other.isPhoneSpeakerDemo
+    }
+}
+
+/// One DSP-worker spectrum frame. Timestamped and sample-counted — not a SwiftUI publish clock.
+public struct RoomRigMeasurementFrame: Equatable, Sendable {
+    public var frameID: UInt64
+    public var sampleCount: UInt64
+    public var hostTimeSeconds: Double
+    public var rmsDBFS: Double
+    public var peakDBFS: Double
+    public var crestDB: Double?
+    public var clipFraction: Double
+    public var peakHz: Double?
+    public var bands: [AcousticDisplayBand]
+    public var rtaBands: [AcousticDisplayBand]
+    public var fingerprint: RoomRigRouteFingerprint
+    public var headroomDB: Double?
+
+    public init(
+        frameID: UInt64,
+        sampleCount: UInt64,
+        hostTimeSeconds: Double,
+        rmsDBFS: Double,
+        peakDBFS: Double,
+        crestDB: Double?,
+        clipFraction: Double,
+        peakHz: Double?,
+        bands: [AcousticDisplayBand],
+        rtaBands: [AcousticDisplayBand],
+        fingerprint: RoomRigRouteFingerprint,
+        headroomDB: Double?
+    ) {
+        self.frameID = frameID
+        self.sampleCount = sampleCount
+        self.hostTimeSeconds = hostTimeSeconds
+        self.rmsDBFS = rmsDBFS
+        self.peakDBFS = peakDBFS
+        self.crestDB = crestDB
+        self.clipFraction = clipFraction
+        self.peakHz = peakHz
+        self.bands = bands
+        self.rtaBands = rtaBands
+        self.fingerprint = fingerprint
+        self.headroomDB = headroomDB
+    }
+
+    /// dB below full scale from the peak reading. Nil when peak is unusable.
+    public static func headroomDB(peakDBFS: Double) -> Double? {
+        guard peakDBFS.isFinite else { return nil }
+        return 0 - peakDBFS
+    }
+}
+
+public enum RoomRigCaptureCancelReason: String, Equatable, Sendable {
+    case userStop
+    case incompleteWindow
+    case routeOrGainChanged
+    case clipping
+    case lowHeadroom
+    case leftScreen
+    case backgrounded
+}
+
+/// Protocol-locked capture. Aggregate frames from the DSP worker only.
+public struct RoomRigCaptureProtocol: Equatable, Sendable {
+    public var metadata: RoomRigPassMetadata
+    public var capture: RoomRigTestCapture
+    public var startedSampleCount: UInt64
+    public var startedHostTime: Double
+    public var locked: Bool
+    public var cancelReason: RoomRigCaptureCancelReason?
+
+    public init(
+        metadata: RoomRigPassMetadata,
+        capture: RoomRigTestCapture = RoomRigTestCapture(),
+        startedSampleCount: UInt64,
+        startedHostTime: Double,
+        locked: Bool = true,
+        cancelReason: RoomRigCaptureCancelReason? = nil
+    ) {
+        self.metadata = metadata
+        self.capture = capture
+        self.startedSampleCount = startedSampleCount
+        self.startedHostTime = startedHostTime
+        self.locked = locked
+        self.cancelReason = cancelReason
+    }
+
+    public mutating func append(_ frame: RoomRigMeasurementFrame) -> RoomRigCaptureCancelReason? {
+        guard locked, cancelReason == nil else { return cancelReason }
+        if !metadata.fingerprint.matches(frame.fingerprint) {
+            cancelReason = .routeOrGainChanged
+            locked = false
+            return cancelReason
+        }
+        if frame.clipFraction >= RoomRigMath.clipAbortFraction {
+            cancelReason = .clipping
+            locked = false
+            return cancelReason
+        }
+        if frame.peakDBFS.isFinite, frame.peakDBFS >= RoomRigMath.headroomAbortDBFS {
+            cancelReason = .lowHeadroom
+            locked = false
+            return cancelReason
+        }
+        capture.append(
+            levelDBFS: frame.rmsDBFS,
+            peakDBFS: frame.peakDBFS,
+            crestDB: frame.crestDB,
+            clipFraction: frame.clipFraction,
+            peakHz: frame.peakHz,
+            bands: frame.rtaBands
+        )
+        return nil
+    }
+
+    public mutating func cancel(_ reason: RoomRigCaptureCancelReason) {
+        cancelReason = reason
+        locked = false
+    }
+
+    /// Finished snapshot only when the protocol stayed locked and enough energy arrived.
+    public func finish(
+        durationSeconds: Double,
+        floorDBFS: Double?
+    ) -> RoomRigTestSnapshot? {
+        guard locked, cancelReason == nil else { return nil }
+        let label: String
+        if metadata.isPhoneSpeakerDemo && metadata.stimulus != .listen {
+            label = "\(metadata.stimulus.title) · demo"
+        } else {
+            label = metadata.stimulus.title
+        }
+        return capture.snapshot(
+            stimulus: label,
+            durationSeconds: durationSeconds,
+            floorDBFS: floorDBFS
+        )
+    }
+}
+
+public enum RoomRigBaselineMath {
+    /// Build a quiet-room baseline from worker frames gathered during an explicit capture.
+    public static func baseline(
+        levels: [Double],
+        bandRows: [[Double]] = [],
+        fingerprint: RoomRigRouteFingerprint,
+        sampleCount: UInt64,
+        capturedAt: Double
+    ) -> RoomRigQuietBaseline? {
+        guard let floor = RoomRigMath.percentile(levels, p: 0.2), floor.isFinite else { return nil }
+        var bandFloors: [Double] = []
+        if let width = bandRows.map(\.count).max(), width > 0 {
+            for column in 0..<width {
+                let columnLevels = bandRows.compactMap { row -> Double? in
+                    guard row.indices.contains(column), row[column].isFinite else { return nil }
+                    return row[column]
+                }
+                if let p = RoomRigMath.percentile(columnLevels, p: 0.2) {
+                    bandFloors.append(p)
+                } else {
+                    bandFloors.append(SoundLevel.silenceFloorDBFS)
+                }
+            }
+        }
+        return RoomRigQuietBaseline(
+            floorDBFS: floor,
+            bandFloorsDBFS: bandFloors,
+            fingerprint: fingerprint,
+            sampleCount: sampleCount,
+            capturedAt: capturedAt
+        )
+    }
+
+    /// Signal above background. Not SNR.
+    public static func signalAboveBackgroundDB(levelDBFS: Double, baseline: RoomRigQuietBaseline?) -> Double? {
+        guard let baseline, baseline.floorDBFS.isFinite else { return nil }
+        return RoomRigMath.signalAboveFloorDB(levelDBFS: levelDBFS, floorDBFS: baseline.floorDBFS)
+    }
+}
+
+public enum RoomRigABMath {
+    /// A/B is only honest when both passes share protocol metadata.
+    public static func canCompare(a: RoomRigPassMetadata, b: RoomRigPassMetadata) -> Bool {
+        a.matchesForAB(b)
+    }
+
+    public static func levelDeltaDB(current: RoomRigTestSnapshot, spotA: RoomRigTestSnapshot) -> Double? {
+        guard current.levelDBFS.isFinite, spotA.levelDBFS.isFinite else { return nil }
+        return current.levelDBFS - spotA.levelDBFS
     }
 }
 

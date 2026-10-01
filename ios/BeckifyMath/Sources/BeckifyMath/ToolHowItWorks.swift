@@ -292,10 +292,10 @@ public enum ToolHowItWorksCatalog {
             summary: "Room & Rig Check: leave it open while you listen, then run a short relative FFT test.",
             context: "Compare a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
             bullets: [
-                "Phone speaker plus mic is not a calibrated measurement microphone. Relative shape and trends only. No invented dB SPL.",
-                "Plots stay live while music or a test signal plays. Start test captures about 8 seconds and explains each number.",
-                "The live FFT and approximate RTA label frequency, relative dBFS, and time. Pink noise, a sweep, or bursts are not recorded.",
-                "Harmonic percent, band balance, and the sweep are relative energy, not lab THD. One mic path, so stereo stays blank. Share saves a PNG, not audio.",
+                "Phone speaker demos plus mic are not a calibrated measurement mic. Relative shape and trends only. No invented dB SPL.",
+                "Capture a quiet-room baseline first. Signal above background is not SNR. Route or gain changes invalidate it.",
+                "Plots stay live from the DSP worker. Start test locks the protocol ~8 s; A/B needs matching stimulus and route.",
+                "Live FFT plus optional long bass window. Empty bands stay unavailable. Share saves a PNG, not audio.",
             ]
         ),
         "bubbleLevel": ToolHowItWorks(
