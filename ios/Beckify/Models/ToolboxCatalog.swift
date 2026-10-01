@@ -1020,7 +1020,7 @@ enum ToolboxCatalog {
             id: .electronicsLab,
             kind: .calculator,
             title: "Electronics Lab",
-            subtitle: "Schematics and a full solderless breadboard — node volts, branch currents (A / mA / µA), on-board meters.",
+            subtitle: "Schematics and breadboard meters. DC or AC sine where the model has an AC path.",
             symbol: "point.3.connected.trianglepath.dotted",
             synonyms: [
                 "electronics lab", "schematic", "breadboard", "bjt", "mosfet", "op amp", "op-amp", "555",
@@ -1028,6 +1028,7 @@ enum ToolboxCatalog {
                 "impedance match", "l match", "quarter wave", "stub", "complex", "polar", "phasor",
                 "voltage divider", "kirchhoff", "cmos", "buck", "class a", "led flasher",
                 "meter", "microamp", "µA", "milliamp", "ammeter", "voltmeter",
+                "dc source", "ac source", "ac sine", "vrms", "vdc", "vp",
             ],
             calculationMode: .live
         ),

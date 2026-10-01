@@ -679,7 +679,15 @@ extension BreadboardBuilder {
     mutating func filter() -> BreadboardLayout? {
         guard let r = qty("r"), let c = qty("c") else { return nil }
         let low = filterIsLowpass()
-        singleSupply("Vin", "Vin", "GND")
+        let chip: String
+        if (qty("ac") ?? 1) >= 0.5, let vp = qty("vp") {
+            chip = BreadboardFormat.trim(vp) + " Vpk"
+        } else if let vdc = qty("vdc") {
+            chip = BreadboardFormat.trim(vdc) + " Vdc"
+        } else {
+            chip = "Vin"
+        }
+        singleSupply(chip, "Vin", "GND")
         if low {
             resistor("r", "R", r, hole(6, .c, "Vin"), hole(16, .c, "Vout"))
             capacitor("c", "C", c, hole(16, .e, "Vout"), hole(16, .f, "GND"))
@@ -979,23 +987,50 @@ extension BreadboardBuilder {
     }
 
     mutating func halfWave() -> BreadboardLayout? {
-        guard let c = qty("c"), let rload = qty("rload"), let vrms = qty("vrms") else { return nil }
-        singleSupply(BreadboardFormat.trim(vrms) + " Vrms", "Vac", "GND")
-        diode("d", "D", hole(8, .c, "Vac"), hole(16, .c, "Vpk"))
+        guard let c = qty("c"), let rload = qty("rload") else { return nil }
+        let ac = (qty("ac") ?? 1) >= 0.5
+        let label: String
+        let net: String
+        if ac {
+            guard let vrms = qty("vrms") else { return nil }
+            label = BreadboardFormat.trim(vrms) + " Vrms"
+            net = "Vac"
+        } else {
+            guard let vdc = qty("vdc") else { return nil }
+            label = BreadboardFormat.trim(vdc) + " Vdc"
+            net = "Vdc"
+        }
+        singleSupply(label, net, "GND")
+        diode("d", "D", hole(8, .c, net), hole(16, .c, "Vpk"))
         resistor("rl", "RL", rload, hole(16, .e, "Vpk"), hole(16, .f, "GND"))
         capacitor("c", "C", c, hole(22, .e, "Vpk"), hole(22, .f, "GND"))
-        jumper("ac", "Vac", 8, .a, 8, .topPlus, .red)
+        jumper("ac", net, 8, .a, 8, .topPlus, .red)
         jumper("out", "Vpk", 16, .b, 22, .b, .yellow)
         jumper("g1", "GND", 16, .j, 16, .botMinus, .black)
         jumper("g2", "GND", 22, .j, 22, .botMinus, .black)
-        return finish(caption("Half-wave: diode anode on the red rail (AC source stand-in), cathode to the filter node. RL and C share Vpeak across the gutter. Banded end is the cathode."))
+        let captionText = ac
+            ? "Half-wave: diode anode on the red rail (AC source stand-in), cathode to the filter node. RL and C share Vpeak across the gutter. Banded end is the cathode."
+            : "Half-wave on a DC source: diode anode on the red rail, cathode to the filter node. RL and C share that node. Banded end is the cathode."
+        return finish(caption(captionText))
     }
 
     mutating func clipper() -> BreadboardLayout? {
-        guard let r = qty("r"), let vp = qty("vp") else { return nil }
+        guard let r = qty("r") else { return nil }
+        let ac = (qty("ac") ?? 1) >= 0.5
+        let label: String
+        let net: String
+        if ac {
+            guard let vp = qty("vp") else { return nil }
+            label = BreadboardFormat.trim(vp) + " Vpk"
+            net = "Vp"
+        } else {
+            guard let vdc = qty("vdc") else { return nil }
+            label = BreadboardFormat.trim(vdc) + " Vdc"
+            net = "Vdc"
+        }
         let vbias = qty("vbias") ?? 0
-        singleSupply(BreadboardFormat.trim(vp) + " Vpk", "Vp", "GND")
-        resistor("r", "R", r, hole(6, .c, "Vp"), hole(16, .c, "Vout"))
+        singleSupply(label, net, "GND")
+        resistor("r", "R", r, hole(6, .c, net), hole(16, .c, "Vout"))
         if abs(vbias) < 1e-12 {
             // Zero bias: cathode is ground — do not invent a second Vb net on the blue rail.
             diode("d", "D", hole(16, .e, "Vout"), hole(16, .f, "GND"))
@@ -1010,7 +1045,7 @@ extension BreadboardBuilder {
             jumper("bias", "Vb", 16, .i, 22, .i, .blue)
             jumper("bg", "GND", 22, .j, 22, .botMinus, .black)
         }
-        jumper("src", "Vp", 6, .a, 6, .topPlus, .red)
+        jumper("src", net, 6, .a, 6, .topPlus, .red)
         jumper("tap", "Vout", 16, .b, 24, .b, .yellow)
         jumper("gnd", "GND", 24, .j, 24, .botMinus, .black)
         return finish(caption("Series R into a shunt diode. The banded cathode sits toward the bias/ground side. Yellow is the clipped output node."))

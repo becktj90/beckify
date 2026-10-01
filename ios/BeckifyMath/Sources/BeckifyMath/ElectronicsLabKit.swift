@@ -59,6 +59,25 @@ enum LabKit {
         return value
     }
 
+    /// True when the source is an ideal sine. Missing key stays AC so older drafts keep the demo.
+    static func acSource(_ inputs: [String: String]) throws -> Bool {
+        try choice(inputs, "source", ["ac", "dc"], fallback: "ac", name: "Source") == "ac"
+    }
+
+    /// A missing key keeps `fallback`. A blank field is an error, so clearing the box does not silently revert.
+    static func posIfPresent(
+        _ inputs: [String: String],
+        _ key: String,
+        _ name: String,
+        fallback: Double
+    ) throws -> Double {
+        guard let raw = inputs[key] else { return fallback }
+        if raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw CalcError.missing(name)
+        }
+        return try pos(inputs, key, name)
+    }
+
     static func eng(_ value: Double) -> String {
         guard value.isFinite else { return "—" }
         let sign = value < 0 ? "-" : ""
@@ -142,8 +161,17 @@ enum LabKit {
         part(id, .inductor, label, detail, x1, y1, x2, y2)
     }
 
-    static func src(_ id: String, _ label: String, _ detail: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {
-        part(id, .voltageSource, label, detail, x1, y1, x2, y2)
+    static func src(
+        _ id: String,
+        _ label: String,
+        _ detail: String,
+        _ x1: Double,
+        _ y1: Double,
+        _ x2: Double,
+        _ y2: Double,
+        flags: Int = 0
+    ) -> LabElement {
+        part(id, .voltageSource, label, detail, x1, y1, x2, y2, flags: flags)
     }
 
     static func dio(_ id: String, _ label: String, _ detail: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {
@@ -384,8 +412,17 @@ func wire(_ id: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) 
 func res(_ id: String, _ label: String, _ detail: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {
     LabKit.res(id, label, detail, x1, y1, x2, y2)
 }
-func src(_ id: String, _ label: String, _ detail: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {
-    LabKit.src(id, label, detail, x1, y1, x2, y2)
+func src(
+    _ id: String,
+    _ label: String,
+    _ detail: String,
+    _ x1: Double,
+    _ y1: Double,
+    _ x2: Double,
+    _ y2: Double,
+    flags: Int = 0
+) -> LabElement {
+    LabKit.src(id, label, detail, x1, y1, x2, y2, flags: flags)
 }
 func gnd(_ id: String, _ x: Double, _ y: Double) -> LabElement { LabKit.gnd(id, x, y) }
 func cap(_ id: String, _ label: String, _ detail: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) -> LabElement {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// College electronics lab: textbook topologies, node readings, and solve-any-value.
+/// Field electronics bench: ideal topologies, node readings, and solve-any-value.
 ///
 /// DC results are nodal / sequential. AC results are phasors. BJT bias uses a
 /// fixed 0.7 V base-emitter drop and constant β. MOSFETs use the square law.
@@ -208,6 +208,8 @@ public struct LabField: Equatable, Sendable, Identifiable {
     public var help: String
     public var choices: [LabChoice]
     public var optional: Bool
+    /// `"ac"` or `"dc"` when this field belongs to one source kind. Nil stays visible either way.
+    public var sourceMode: String?
 
     public init(
         id: String,
@@ -215,7 +217,8 @@ public struct LabField: Equatable, Sendable, Identifiable {
         unit: String,
         help: String = "",
         choices: [LabChoice] = [],
-        optional: Bool = false
+        optional: Bool = false,
+        sourceMode: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -223,6 +226,7 @@ public struct LabField: Equatable, Sendable, Identifiable {
         self.help = help
         self.choices = choices
         self.optional = optional
+        self.sourceMode = sourceMode
     }
 }
 
@@ -318,6 +322,45 @@ public enum LabCanvas {
     public static let height: Double = 80
 }
 
+/// Spoken source kind and the schematic mark. `acSineFlag` on a voltage source draws a sine, not a DC plus.
+public enum LabSourceSpeech {
+    public static let acSineFlag = 1
+
+    public static func kind(ac: Bool) -> String {
+        ac ? "AC sine" : "DC"
+    }
+
+    /// One sentence per source symbol. VoiceOver uses this so VAC and VDC are not the same word.
+    public static func schematicSummary(_ elements: [LabElement]) -> String {
+        let sources = elements.filter { $0.part == .voltageSource }
+        guard !sources.isEmpty else { return "" }
+        return sources.map { element in
+            let kind = kind(ac: element.flags & acSineFlag != 0)
+            let marked = [element.label, element.detail].filter { !$0.isEmpty }.joined(separator: " ")
+            return marked.isEmpty ? "\(kind) source" : "\(kind) source, \(marked)"
+        }.joined(separator: ". ")
+    }
+
+    /// The other amplitude, so a Vrms field also speaks peak and a Vp field also speaks RMS.
+    public static func pairedAmplitude(id: String, raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = NumericParse.parseEngineering(trimmed, locale: Locale(identifier: "en_US_POSIX"))
+            ?? NumericParse.parseEngineering(trimmed),
+            value.isFinite, value > 0
+        else { return nil }
+        switch id {
+        case "vrms":
+            let peak = value * sqrt(2)
+            return "Peak \(LabKit.eng(peak)) volts, from \(LabKit.eng(value)) volts RMS"
+        case "vp":
+            let rms = value / sqrt(2)
+            return "RMS \(LabKit.eng(rms)) volts, from \(LabKit.eng(value)) volts peak"
+        default:
+            return nil
+        }
+    }
+}
+
 public enum ElectronicsLab {
     public static var catalog: [ElectronicsCircuitInfo] { LabCatalog.infos }
 
@@ -329,8 +372,12 @@ public enum ElectronicsLab {
         catalog.filter { $0.family == family }
     }
 
-    public static func fields(for circuit: ElectronicsCircuit, unknown: String) -> [LabField] {
-        LabCatalog.fields(for: circuit, unknown: unknown)
+    public static func fields(
+        for circuit: ElectronicsCircuit,
+        unknown: String,
+        inputs: [String: String] = [:]
+    ) -> [LabField] {
+        LabCatalog.fields(for: circuit, unknown: unknown, inputs: inputs)
     }
 
     public static func solve(

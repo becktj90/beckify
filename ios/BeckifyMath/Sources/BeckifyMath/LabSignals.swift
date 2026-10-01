@@ -342,31 +342,49 @@ public enum LabSignals {
     private static func filter(_ bag: Bag) -> LabIO {
         guard let fc = bag["fc"], let r = bag["r"], let c = bag["c"], fc > 0, r > 0, c > 0 else { return .empty }
         let low = (bag["lowpass"] ?? 1) >= 0.5
-        let drive = bag["f"] ?? fc
+        let ac = (bag["ac"] ?? 1) >= 0.5
         let bode = bodeFirstOrder(fc: fc, lowpass: low)
-        let h = low ? lowpassPhasor(frequency: drive, cutoff: fc) : highpassPhasor(frequency: drive, cutoff: fc)
-        let times = sineTimes(frequency: drive, cycles: 2)
-        let vin = times.map { sineValue(frequency: drive, time: $0, amplitude: 1) }
-        let vout = times.map { sineValue(frequency: drive, time: $0, amplitude: h.magnitude, phaseDeg: h.phaseDeg) }
         let expression = low ? "H(s) = 1 / (1 + sRC)" : "H(s) = sRC / (1 + sRC)"
         let tex = low ? #"H(s) = \frac{1}{1 + sRC}"# : #"H(s) = \frac{sRC}{1 + sRC}"#
+        let time: LabPlot
+        let detail: String
+        if ac {
+            let drive = bag["f"] ?? fc
+            guard drive > 0 else { return .empty }
+            let peak = bag["vp"] ?? 1
+            let h = low ? lowpassPhasor(frequency: drive, cutoff: fc) : highpassPhasor(frequency: drive, cutoff: fc)
+            let times = sineTimes(frequency: drive, cycles: 2)
+            let vin = times.map { sineValue(frequency: drive, time: $0, amplitude: peak) }
+            let vout = times.map { sineValue(frequency: drive, time: $0, amplitude: peak * h.magnitude, phaseDeg: h.phaseDeg) }
+            time = LabPlot(id: "time", title: "Drive and output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
+                trace("vin", "Vin", times, vin),
+                trace("vout", "Vout", times, vout),
+            ], showZero: true, xGuide: 1 / drive, xGuideLabel: "T")
+            detail = "fc = 1/(2πRC). Bode is unloaded. The time trace is the entered peak (not RMS) at the drive frequency."
+        } else {
+            let vdc = bag["vdc"] ?? 0
+            let held = low ? vdc : 0
+            let times = linspace(0, 1 / fc, samples: 41)
+            time = LabPlot(id: "time", title: "DC steady state", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
+                trace("vin", "Vin", times, times.map { _ in vdc }),
+                trace("vout", "Vout", times, times.map { _ in held }),
+            ], smooth: false, showZero: true)
+            detail = low
+                ? "fc = 1/(2πRC). Bode is unloaded. At DC the capacitor is open, so Vout equals Vdc."
+                : "fc = 1/(2πRC). Bode is unloaded. At DC the capacitor is open, so Vout is zero."
+        }
         return LabIO(
             transferKind: .closedForm,
             expression: expression,
-            detail: "fc = 1/(2πRC). Bode is unloaded. The time trace is a 1 V sine at the drive frequency.",
+            detail: detail,
             expressionTeX: tex,
-            plots: bode + [
-                LabPlot(id: "time", title: "Drive and output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
-                    trace("vin", "Vin", times, vin),
-                    trace("vout", "Vout", times, vout),
-                ], showZero: true, xGuide: 1 / drive, xGuideLabel: "T"),
-            ]
+            plots: bode + [time]
         )
     }
 
     private static func rlc(_ bag: Bag) -> LabIO {
         guard let r = bag["r"], let l = bag["l"], let c = bag["c"], let f0 = bag["f0"], r > 0, l > 0, c > 0, f0 > 0 else { return .empty }
-        let drive = bag["f"] ?? f0
+        let ac = (bag["ac"] ?? 1) >= 0.5
         let freqs = logspace(f0 / 30, f0 * 30, samples: 81)
         let gain = freqs.map { seriesRLCCurrentGain(resistance: r, inductance: l, capacitance: c, frequency: $0) }
         let phase = freqs.map { frequency -> Double in
@@ -374,15 +392,35 @@ public enum LabSignals {
             let x = omega * l - 1 / (omega * c)
             return -atan2(x, r) * 180 / .pi
         }
-        let h = seriesRLCCurrentGain(resistance: r, inductance: l, capacitance: c, frequency: drive)
-        let omega = 2 * .pi * drive
-        let x = omega * l - 1 / (omega * c)
-        let phaseDrive = -atan2(x, r) * 180 / .pi
-        let times = sineTimes(frequency: drive, cycles: 2)
+        let time: LabPlot
+        let detail: String
+        if ac {
+            let drive = bag["f"] ?? f0
+            guard drive > 0 else { return .empty }
+            let peak = bag["vp"] ?? 1
+            let h = seriesRLCCurrentGain(resistance: r, inductance: l, capacitance: c, frequency: drive)
+            let omega = 2 * .pi * drive
+            let x = omega * l - 1 / (omega * c)
+            let phaseDrive = -atan2(x, r) * 180 / .pi
+            let times = sineTimes(frequency: drive, cycles: 2)
+            time = LabPlot(id: "time", title: "Drive and current", xLabel: "Time (s)", yLabel: "Vin (V), I (A)", series: [
+                trace("vin", "Vin", times, times.map { sineValue(frequency: drive, time: $0, amplitude: peak) }),
+                trace("i", "I", times, times.map { sineValue(frequency: drive, time: $0, amplitude: peak * h, phaseDeg: phaseDrive) }),
+            ], showZero: true)
+            detail = "Series combination. The time trace uses the entered peak, not RMS. At f0 the reactances cancel and |I| = Vp/R."
+        } else {
+            let vdc = bag["vdc"] ?? 0
+            let times = linspace(0, 1 / f0, samples: 41)
+            time = LabPlot(id: "time", title: "DC steady state", xLabel: "Time (s)", yLabel: "Vin (V), I (A)", series: [
+                trace("vin", "Vin", times, times.map { _ in vdc }),
+                trace("i", "I", times, times.map { _ in 0 }),
+            ], smooth: false, showZero: true)
+            detail = "Series combination. At DC the capacitor is open and steady current is zero. The Bode curve is |I/V| and does not depend on the source."
+        }
         return LabIO(
             transferKind: .closedForm,
             expression: "I/V = 1 / (R + sL + 1/(sC))",
-            detail: "Series combination, 1 V drive. At f0 the reactances cancel and |I| = 1/R.",
+            detail: detail,
             expressionTeX: #"\frac{I}{V} = \frac{1}{R + sL + \frac{1}{sC}}"#,
             plots: [
                 LabPlot(id: "mag", title: "|I/V|", xLabel: "Frequency (Hz)", yLabel: "|I/V| (S)", series: [
@@ -391,10 +429,7 @@ public enum LabSignals {
                 LabPlot(id: "ang", title: "Phase of I", xLabel: "Frequency (Hz)", yLabel: "Phase (°)", series: [
                     trace("p", "∠I", freqs, phase),
                 ], logX: true, smooth: true, showZero: true, xGuide: f0, xGuideLabel: "f0"),
-                LabPlot(id: "time", title: "1 V drive and current", xLabel: "Time (s)", yLabel: "Vin (V), I (A)", series: [
-                    trace("vin", "Vin", times, times.map { sineValue(frequency: drive, time: $0, amplitude: 1) }),
-                    trace("i", "I", times, times.map { sineValue(frequency: drive, time: $0, amplitude: h, phaseDeg: phaseDrive) }),
-                ], showZero: true),
+                time,
             ]
         )
     }
@@ -403,24 +438,42 @@ public enum LabSignals {
 
     private static func rectifier(_ bag: Bag, bridge: Bool) -> LabIO {
         let isBridge = bridge || (bag["bridge"] ?? 0) >= 0.5
-        guard let f = bag["f"], let vf = bag["vf"], f > 0 else { return .empty }
-        let sourcePeak = bag["vsrcpk"] ?? 0
-        guard sourcePeak > 0 else { return .empty }
+        guard let vf = bag["vf"] else { return .empty }
+        let ac = (bag["ac"] ?? 1) >= 0.5
         let drops = isBridge ? 2.0 : 1.0
-        let times = sineTimes(frequency: f, cycles: 2, samples: 201)
-        let vin = times.map { sineValue(frequency: f, time: $0, amplitude: sourcePeak) }
-        let vout = vin.map { sample -> Double in
-            if isBridge {
-                return max(abs(sample) - drops * vf, 0)
+        let times: [Double]
+        let vin: [Double]
+        let vout: [Double]
+        let detail: String
+        if ac {
+            guard let f = bag["f"], f > 0 else { return .empty }
+            let sourcePeak = bag["vsrcpk"] ?? 0
+            guard sourcePeak > 0 else { return .empty }
+            times = sineTimes(frequency: f, cycles: 2, samples: 201)
+            vin = times.map { sineValue(frequency: f, time: $0, amplitude: sourcePeak) }
+            vout = vin.map { sample -> Double in
+                if isBridge {
+                    return max(abs(sample) - drops * vf, 0)
+                }
+                return max(sample - vf, 0)
             }
-            return max(sample - vf, 0)
+            detail = isBridge
+                ? "Ideal bridge. Two diode drops per half cycle. The capacitor is not on this trace."
+                : "Ideal half-wave. One diode drop. The capacitor is not on this trace."
+        } else {
+            guard let vdc = bag["vdc"] else { return .empty }
+            let held = max(vdc - drops * vf, 0)
+            times = linspace(0, 0.02, samples: 41)
+            vin = times.map { _ in vdc }
+            vout = times.map { _ in held }
+            detail = isBridge
+                ? "Ideal bridge on a steady DC source, forward polarity. Two diode drops. Ripple is zero."
+                : "Ideal half-wave on a steady DC source, forward polarity. One diode drop. Ripple is zero."
         }
         return LabIO(
             transferKind: .none,
             expression: "No linear transfer function — see the waveforms.",
-            detail: isBridge
-                ? "Ideal bridge. Two diode drops per half cycle. The capacitor is not on this trace."
-                : "Ideal half-wave. One diode drop. The capacitor is not on this trace.",
+            detail: detail,
             plots: [
                 LabPlot(id: "rect", title: "Source and rectified output", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),
@@ -431,15 +484,32 @@ public enum LabSignals {
     }
 
     private static func clipper(_ bag: Bag) -> LabIO {
-        guard let vp = bag["vp"], let vclip = bag["vclip"], vp > 0 else { return .empty }
-        let f = 1_000.0
-        let times = sineTimes(frequency: f, cycles: 2, samples: 201)
-        let vin = times.map { sineValue(frequency: f, time: $0, amplitude: vp) }
-        let vout = vin.map { min($0, vclip) }
+        guard let vclip = bag["vclip"] else { return .empty }
+        let ac = (bag["ac"] ?? 1) >= 0.5
+        let times: [Double]
+        let vin: [Double]
+        let vout: [Double]
+        let detail: String
+        if ac {
+            guard let vp = bag["vp"], vp > 0 else { return .empty }
+            let f = bag["f"] ?? 1_000
+            guard f > 0 else { return .empty }
+            times = sineTimes(frequency: f, cycles: 2, samples: 201)
+            vin = times.map { sineValue(frequency: f, time: $0, amplitude: vp) }
+            vout = vin.map { min($0, vclip) }
+            detail = "Shunt clipper. The output follows the sine until it reaches Vbias + Vf, then it holds. Peak, not RMS."
+        } else {
+            guard let vdc = bag["vdc"] else { return .empty }
+            let held = min(vdc, vclip)
+            times = linspace(0, 0.001, samples: 41)
+            vin = times.map { _ in vdc }
+            vout = times.map { _ in held }
+            detail = "Shunt clipper on a steady DC source. The output is Vdc until that level passes Vbias + Vf, then it holds."
+        }
         return LabIO(
             transferKind: .none,
             expression: "No linear transfer function — see the waveforms.",
-            detail: "Shunt clipper. The output follows the source until it reaches Vbias + Vf, then it holds. A 1 kHz bench sine.",
+            detail: detail,
             plots: [
                 LabPlot(id: "clip", title: "Clipper", xLabel: "Time (s)", yLabel: "Voltage (V)", series: [
                     trace("vin", "Vin", times, vin),

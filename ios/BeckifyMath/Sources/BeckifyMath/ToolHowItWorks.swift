@@ -778,10 +778,10 @@ public enum ToolHowItWorksCatalog {
             summary: "Schematics with node volts, branch currents (A / mA / µA), and solve-any-value. Many circuits also open a full solderless breadboard with on-board meters.",
             context: "Toolkit → Bench. Passive, diodes, transistors, op-amps, 555, display, and matching.",
             bullets: [
-                "Each circuit draws Vin/Vout or a Bode trace. H(s) only when the stage is linear. Not a SPICE netlist.",
+                "Each circuit draws Vin/Vout or a Bode trace. H(s) only when the stage is linear. 555, stubs, and matches are ideal — not SPICE.",
                 "Breadboard opens fit-to-view with on-board I/V chips. Pinch to zoom. Illustrative hookup — not a SPICE board file.",
                 "BJT uses 0.7 V and constant β. MOSFETs use the square law or the Rds(on) you enter.",
-                "555, stubs, and matches are ideal. Real boards and vendor models differ.",
+                "Rectifier, filter, series RLC, and shunt clipper switch DC or AC sine (Vdc, Vrms, Vp). The schematic mark follows. Ideal models — not SPICE.",
             ]
         ),
         "ul508aPanelLab": ToolHowItWorks(

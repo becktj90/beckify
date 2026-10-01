@@ -101,7 +101,7 @@ struct ElectronicsLabView: View {
 
             unknownPicker(info)
 
-            ForEach(ElectronicsLab.fields(for: circuit, unknown: model.unknown)) { field in
+            ForEach(ElectronicsLab.fields(for: circuit, unknown: model.unknown, inputs: model.values)) { field in
                 if field.choices.isEmpty {
                     NumberField(
                         title: field.title,
@@ -110,14 +110,21 @@ struct ElectronicsLabView: View {
                         optional: field.optional,
                         allowsEngineering: true,
                         helpText: field.help.isEmpty ? nil : field.help,
-                        fieldID: field.id
+                        fieldID: field.id,
+                        spokenLabel: spokenAmplitude(field.id)
                     )
+                    if let paired = LabSourceSpeech.pairedAmplitude(id: field.id, raw: model.values[field.id] ?? "") {
+                        Text(paired)
+                            .font(Theme.TypeRole.help)
+                            .foregroundStyle(Theme.muted)
+                            .accessibilityLabel(paired)
+                    }
                 } else {
                     choiceField(field)
                 }
             }
 
-            Text("Part values are yours to edit. The transfer updates as you type.")
+            Text("Part values are yours to edit. Where a circuit has a source, switch DC or AC sine and set the magnitude. The transfer updates as you type.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -228,6 +235,23 @@ struct ElectronicsLabView: View {
         }
     }
 
+    private func spokenAmplitude(_ id: String) -> String? {
+        switch id {
+        case "vrms": return "Vrms, volts RMS"
+        case "vp": return "Vp, volts peak"
+        case "vdc": return "Vdc, volts DC"
+        case "f": return "Frequency, hertz"
+        default: return nil
+        }
+    }
+
+    private func choiceAccessibilityLabel(_ field: LabField) -> String {
+        guard field.id == "source" else { return field.title }
+        let raw = model.values["source"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let spoken = LabSourceSpeech.kind(ac: raw != "dc")
+        return "Source, \(spoken)"
+    }
+
     private func choiceField(_ field: LabField) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             sectionLabel(field.title)
@@ -238,6 +262,7 @@ struct ElectronicsLabView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("electronicsLab.choice.\(field.id)")
+            .accessibilityLabel(choiceAccessibilityLabel(field))
             if !field.help.isEmpty {
                 Text(field.help)
                     .font(Theme.TypeRole.help)
@@ -577,7 +602,11 @@ private struct SchematicCard: View {
     private var accessibilitySummary: String {
         let nodes = solution.nodes.map { "\($0.name) \(labReading($0.value, unit: $0.unit))" }.joined(separator: ", ")
         let branches = solution.branches.map { "\($0.name) \(labReading($0.value, unit: $0.unit))" }.joined(separator: ", ")
-        return "Schematic. Nodes: \(nodes). Branches: \(branches)."
+        let sources = LabSourceSpeech.schematicSummary(solution.elements)
+        if sources.isEmpty {
+            return "Schematic. Nodes: \(nodes). Branches: \(branches)."
+        }
+        return "Schematic. \(sources). Nodes: \(nodes). Branches: \(branches)."
     }
 }
 
@@ -659,7 +688,7 @@ private enum SchematicDraw {
             inductor(from: a, to: b, into: &path)
             stroke(path, in: context, color: Theme.foreground, width: 1.7)
         case .voltageSource:
-            source(from: a, to: b, into: &path)
+            source(from: a, to: b, ac: element.flags & LabSourceSpeech.acSineFlag != 0, into: &path)
             stroke(path, in: context, color: Theme.accent, width: 1.7)
         case .diode:
             diode(from: a, to: b, led: false, into: &path)
@@ -840,7 +869,7 @@ private enum SchematicDraw {
         path.addLine(to: b)
     }
 
-    private static func source(from a: CGPoint, to b: CGPoint, into path: inout Path) {
+    private static func source(from a: CGPoint, to b: CGPoint, ac: Bool, into path: inout Path) {
         guard let axis = axis(from: a, to: b) else { return }
         let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
         let radius = min(11, axis.length * 0.28)
@@ -849,14 +878,35 @@ private enum SchematicDraw {
         path.addEllipse(in: CGRect(x: mid.x - radius, y: mid.y - radius, width: radius * 2, height: radius * 2))
         path.move(to: CGPoint(x: mid.x + axis.unit.x * radius, y: mid.y + axis.unit.y * radius))
         path.addLine(to: b)
-        let plus = CGPoint(x: mid.x - axis.unit.x * radius * 0.45, y: mid.y - axis.unit.y * radius * 0.45)
-        path.move(to: CGPoint(x: plus.x - 3, y: plus.y))
-        path.addLine(to: CGPoint(x: plus.x + 3, y: plus.y))
-        path.move(to: CGPoint(x: plus.x, y: plus.y - 3))
-        path.addLine(to: CGPoint(x: plus.x, y: plus.y + 3))
-        let minus = CGPoint(x: mid.x + axis.unit.x * radius * 0.45, y: mid.y + axis.unit.y * radius * 0.45)
-        path.move(to: CGPoint(x: minus.x - 3, y: minus.y))
-        path.addLine(to: CGPoint(x: minus.x + 3, y: minus.y))
+        if ac {
+            let perp = CGPoint(x: -axis.unit.y, y: axis.unit.x)
+            let samples = 8
+            let amp = radius * 0.42
+            let span = radius * 1.35
+            for index in 0...samples {
+                let t = CGFloat(index) / CGFloat(samples)
+                let along = (t - 0.5) * span
+                let wave = sin(t * 2 * .pi) * amp
+                let point = CGPoint(
+                    x: mid.x + axis.unit.x * along + perp.x * wave,
+                    y: mid.y + axis.unit.y * along + perp.y * wave
+                )
+                if index == 0 {
+                    path.move(to: point)
+                } else {
+                    path.addLine(to: point)
+                }
+            }
+        } else {
+            let plus = CGPoint(x: mid.x - axis.unit.x * radius * 0.45, y: mid.y - axis.unit.y * radius * 0.45)
+            path.move(to: CGPoint(x: plus.x - 3, y: plus.y))
+            path.addLine(to: CGPoint(x: plus.x + 3, y: plus.y))
+            path.move(to: CGPoint(x: plus.x, y: plus.y - 3))
+            path.addLine(to: CGPoint(x: plus.x, y: plus.y + 3))
+            let minus = CGPoint(x: mid.x + axis.unit.x * radius * 0.45, y: mid.y + axis.unit.y * radius * 0.45)
+            path.move(to: CGPoint(x: minus.x - 3, y: minus.y))
+            path.addLine(to: CGPoint(x: minus.x + 3, y: minus.y))
+        }
     }
 
     private static func diode(from a: CGPoint, to b: CGPoint, led: Bool, into path: inout Path) {
