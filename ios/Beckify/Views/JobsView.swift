@@ -22,7 +22,7 @@ struct JobsView: View {
             Group {
                 if jobs.jobs.isEmpty {
                     ContentUnavailableView {
-                        Label("No saved jobs", systemImage: "note.text")
+                        Label("No field notes yet", systemImage: "note.text")
                     } description: {
                         Text("Run a Field calc, then save the result as an on-device note. Nothing is uploaded — this is not a project gallery.")
                     } actions: {
@@ -61,7 +61,7 @@ struct JobsView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Saved Jobs")
+            .navigationTitle("Field Notes")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     SettingsToolbarButton()

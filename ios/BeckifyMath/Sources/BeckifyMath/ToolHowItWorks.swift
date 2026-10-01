@@ -799,9 +799,9 @@ public enum ToolHowItWorksCatalog {
             summary: "Record English or Spanish, translate the other way with Beckify AI (Clean or Jobsite), and play it loud — or fall back to on-device Apple Translation.",
             context: "Toolkit → Reference. Field helper — not a certified interpreter.",
             bullets: [
-                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish (es-US→es-MX/es). Audio local; translate on Stop.",
-                "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → on-device Apple Translation (iOS 18+).",
-                "Speak uses /api/speak (neural TTS). Spanish → English is California surfer-stoner English (onyx). Preparing audio… until play; AVSpeech fallback.",
+                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Audio stays local; translate on Stop.",
+                "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → Apple Translation (iOS 18+).",
+                "Speak uses neural TTS. Spanish → English is California stoner English (onyx). Preparing audio… until play; Apple voice fallback.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

@@ -166,6 +166,10 @@ struct MagnetometerView: View {
                     ResultRow(label: "By", value: Format.microtesla(model.y))
                     ResultRow(label: "Bz", value: Format.microtesla(model.z))
                     ResultRow(label: "Source", value: model.status)
+                    Text("|B| is DC field strength at the phone (phone magnets dominate). Heading is compass direction. Not AC EMF.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .padding(.top, 4)
                 }
             } else {
                 ResultCard(title: "Mag Sweep", copyText: copyText) {

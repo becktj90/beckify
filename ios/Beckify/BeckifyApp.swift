@@ -44,7 +44,7 @@ struct RootView: View {
                 .tag(RootTab.favorites)
             JobsView()
                 .tabItem {
-                    Label("Jobs", systemImage: "note.text")
+                    Label("Field", systemImage: "note.text")
                 }
                 .tag(RootTab.jobs)
         }

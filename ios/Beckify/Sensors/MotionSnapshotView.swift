@@ -89,6 +89,10 @@ struct MotionSnapshotView: View {
                 ResultRow(label: "Peak |user|", value: "\(Format.number(model.peakUserG, digits: 3)) g")
                 ResultRow(label: "|user| m/s²", value: "\(Format.number(MotionMath.metersPerSecondSquared(fromG: model.userG), digits: 2)) m/s²")
                 ResultRow(label: "Source", value: model.status)
+                Text("|gravity| is pull toward the floor. |user| is how hard you are moving the phone (gravity removed). Peak holds the biggest bump this session.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 4)
             }
             Button("Reset peak") { model.resetPeak() }
                 .buttonStyle(.bordered)

@@ -60,7 +60,7 @@ struct ToolboxView: View {
                                     Text("Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer.")
                                 }
                                 if shelf == .instruments {
-                                    Text("Wi-Fi Path leads with Online / Captive (Apple hotspot-detect — local / online), then Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows the same Online / Captive card, carrier / RAT, and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP). Look Check is the separate photo verdict tool on Jobsite.")
+                                    Text("Wi-Fi Path leads with Online / Captive (Apple hotspot-detect — local / online), then Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows the same Online / Captive card, carrier / RAT, and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP). Look Check is the separate photo verdict tool on Field.")
                                 }
                             }
                         }
@@ -123,7 +123,7 @@ struct ToolboxView: View {
             || query.localizedCaseInsensitiveContains("captive")
             || query.localizedCaseInsensitiveContains("online")
         {
-            return "Wi-Fi Path leads with Online / Captive (Apple hotspot-detect), then Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports the same Online / Captive card, carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR). Look Check is the photo verdict tool on Jobsite."
+            return "Wi-Fi Path leads with Online / Captive (Apple hotspot-detect), then Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports the same Online / Captive card, carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR). Look Check is the photo verdict tool on Field."
         }
         if query.localizedCaseInsensitiveContains("look check")
             || query.localizedCaseInsensitiveContains("analyze look")

@@ -43,5 +43,6 @@ assert.match(speak, /surfer|stoner/i);
 assert.match(speak, /California|West Coast|SoCal/i);
 assert.match(speak, /SPEAK_EN_VOICE|onyx/);
 assert.match(speak, /not a cartoon surfer|not Spicoli|not.*corporate/i);
+assert.match(speak, /dude|man energy|drawl|mellow/i);
 assert.match(speak, /language: "en" \| "es" = "es"/);
 console.log("spanish-translate-voice.test.cjs: ok");

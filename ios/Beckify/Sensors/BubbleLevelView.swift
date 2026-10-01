@@ -68,11 +68,18 @@ struct BubbleLevelView: View {
                 )
             }
             bubble
+            Text("Bubble sits at center when the phone face is level. Roll and pitch move it; plumb is how far you are from upright.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
             ResultCard(title: "Angles", copyText: copyText) {
                 ResultRow(label: "Roll (face-up)", value: Format.degrees(model.roll), emphasis: true)
                 ResultRow(label: "Pitch (face-up)", value: Format.degrees(model.pitch), emphasis: true)
                 ResultRow(label: "Plumb deviation", value: Format.degrees(model.plumb), tone: Theme.warn)
                 ResultRow(label: "Source", value: model.status)
+                Text("Degrees from the phone IMU. Face-up for a surface; plumb for a panel or conduit.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 4)
             }
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
