@@ -36,10 +36,10 @@ The holes that still matter in the field are narrower:
 1. **Phasors & Impedance** draws a time waveform inside `LabeledPlotChrome`, but the chrome is not a real volts-versus-seconds scale (see P0). Several other pictures sit on the same station.
 2. **Reactance** series is the XL/XC sweep, with a marker at the entered frequency, including when only L or only C is set. Resonance is the |Z| curve, with f0 and the Q bandwidth when R is set. Phasors & Impedance stays the phasor home.
 3. **Power factor** draws one triangle: existing kVAR and target kVAR on a fixed kW leg. Bank µF is a label. Reduce Motion skips the shrink.
-4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one plate: round for locking and IEC, rectangular for straight blade and household blade faces. Isolated ground and GFCI stay callouts. Short-circuit current is one callout: available fault amps, kA when the fault is at least 1 kA, and the method line “Infinite-bus secondary. Isc = FLA × 100 / %Z.” None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task.
+4. **Jobsite cluster:** voltage drop is one run strip — supply, one-way length, load, drop in volts, informational 3% and 5% marks, and the preferred target. Motor FLA is one plate titled Table FLA: horsepower, table-column volts, phase, table FLA, and 125% conductor current. Nameplate FLA stays on Motor Nameplate. The receptacle face is one plate: round for locking and IEC, rectangular for straight blade and household blade faces. Isolated ground and GFCI stay callouts. Short-circuit current is one callout: available fault amps, kA when the fault is at least 1 kA, and the method line “Infinite-bus secondary. Isc = FLA × 100 / %Z.” None of these tools collect a gear AIC, so a pass/fail against interrupting rating is not a drawing task. Wire Size & Ampacity is one derating stack: 310.16 base, ambient, bundling, and the 110.14(C) terminal limit, with required current marked. The final stage is good when usable ampacity meets that required current and bad when it is short.
 5. **Electronics Lab** is already strong. Typeset transfer text and a clearer DC versus AC source are in flight elsewhere. This audit does not open a second lab PR.
 
-Textbook ship-order items that are **not** Hold move to **P1**: ampacity derating stack (today a numbered list), harmonics bars, heater Δ/Y sketch, UPS runtime tank, load-worksheet bars, and a protection-side skin-depth / aperture sketch. **Conduit fill is Hold.** It already draws a to-scale bore, conductor circles, and fill percent against the Chapter 9 Table 1 allowance (including the nipple case). Do not put it on a rebuild wave.
+Textbook ship-order items that are **not** Hold move to **P1**: harmonics bars, heater Δ/Y sketch, UPS runtime tank, load-worksheet bars, and a protection-side skin-depth / aperture sketch. The ampacity derating stack has shipped on Wire Size & Ampacity. **Conduit fill is Hold.** It already draws a to-scale bore, conductor circles, and fill percent against the Chapter 9 Table 1 allowance (including the nipple case). Do not put it on a rebuild wave.
 
 ## Reconciliation
 
@@ -69,7 +69,7 @@ Do **not** staff `electronicsLab` from this document. Residual transfer typesett
 
 **P1 — after those land**
 
-Ampacity stack (`wireAmpacity`, then `necCircuit` consumes it). Harmonics bars. IS-loop margin gauge. Heater Δ/Y using the transformer connection drawing. UPS tank. Load-worksheet bars. EMP protection sketch. Power-tool triangle (reuse the PF component; do not draw another Y/Δ). Basics sketches for divider, series/parallel, and resistor bands. Pack cell matrix. Signal-scaling marker on the curve that already exists. Statistics is a design check of charts that already exist, not a new plot kit.
+`necCircuit` consumes the shipped `DeratingStack` (do not redraw it). Harmonics bars. IS-loop margin gauge. Heater Δ/Y using the transformer connection drawing. UPS tank. Load-worksheet bars. EMP protection sketch. Power-tool triangle (reuse the PF component; do not draw another Y/Δ). Basics sketches for divider, series/parallel, and resistor bands. Pack cell matrix. Signal-scaling marker on the curve that already exists. Statistics is a design check of charts that already exist, not a new plot kit.
 
 **Do not staff**
 
@@ -92,7 +92,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Transformer Sizing | `transformer` | Power & AC | Winding canvas: Δ, Y, high-leg, corner-ground, open delta, zig-zag, buck-boost | Strong | Keep | Hold | Colors are common practice; the spec wins. Do not redraw. | `TransformerView` connection canvas is the connection kit |
 | 555 Timer | `timer555` | Basics | Astable waveform and monostable charge curve | Strong | Keep | Hold | Ideal timing, not a scope capture | `Timer555WaveformDiagram`, `MonostableCapChargeChart` |
 | Motor FLA Tables | `motorFLA` | Jobsite | Plate titled Table FLA: HP, table-column volts, phase, table FLA, 125% conductor current | Shipped | One plate. Not a motor photo and not nameplate amps. | Done | Nameplate FLA stays on Motor Nameplate. 480 V systems use the 460 V column. | `TableFLAPlateCard` in `MotorFLAView` |
-| Wire Size & Ampacity | `wireAmpacity` | Jobsite | “Ampacity waterfall” is a numbered text list inside `DiagramCard` | Partial | One derating stack: 310.16 base → ambient → bundling → 110.14(C) terminal limit, against design current | P1 | Graphic shows the same steps the tool already traces. No new factors. | New `DeratingStack`; keep the text as the VoiceOver source |
+| Wire Size & Ampacity | `wireAmpacity` | Jobsite | One derating stack: 310.16 base, ambient, bundling, and the 110.14(C) terminal limit, with required current marked | Shipped | Horizontal stages from the same trace. Final stage is good when usable meets required and bad when it is short. | Done | No new factors. A cooler ambient can lengthen that stage. Pass or fail is only against required ampacity. | `DeratingStack` |
 | Flexible Cable Ampacity | `flexibleCable` | Jobsite | Bar chart of table ampacity vs size | Strong | Keep | Hold | Table 400.5 column, not a measured cable | Swift Charts bar |
 | Conductor Cost Optimizer | `conductorCost` | Jobsite | Horizontal first-cost bars, recommended size marked | Strong | Keep | Hold | Book dollars plus overrides, not a quote | `ConductorCostRankingDiagram` |
 | Conductor Length by Resistance | `conductorLength` | Jobsite | DMM measurement sketch (end-to-end or shorted parallel) | Strong | Keep | Hold | Path factor is labeled on the sketch | `ConductorLengthView` diagram |
@@ -186,7 +186,7 @@ Build these once. Later tools take them. Do not add a one-off canvas when the ki
 | Raceway cross-section | Shipped as `ConduitFillDiagram` | Nobody new in P0. It is finished. | Nickel strip and circular mils may share **geometry helpers** later. Do not generalize by rewriting conduit. |
 | Connection drawing | Shipped inside `TransformerView` (delta, wye, high-leg, corner, open delta). Three-phase has its own canvas. | Heater Δ/Y should call the same winding sketch, not a new one | — |
 | Run strip | Shipped as `VoltageDropDiagram`. Supply, one-way length, load, volt drop, informational 3% and 5% marks, preferred target. | Voltage drop | NEC circuit chip on the same strip |
-| Derating stack | Not shipped. The waterfall is a numbered list. | Wire ampacity | NEC circuit reads it; does not redraw it |
+| Derating stack | Shipped as `DeratingStack`. 310.16 base, ambient, bundling, 110.14(C), required-current mark. | Wire ampacity | NEC circuit reads it; does not redraw it |
 | Callout card | Motor FLA plate shipped in `MotorFLAView`. Short-circuit callout shipped as `ShortCircuitDiagram`: fault amps, kA when readable, method line. No AIC bar. | Motor FLA, short-circuit | Grounding size, regulator Pd |
 | Gauge / tank | Partial. Cellular arcs and the conduit fill bar exist. Wi-Fi gauge exists. | IS-loop worst margin; UPS tank | Rack headroom, e-bike range. Never a fake RF dBm arc. |
 | Discrete spectrum bars | Not shipped. `SpectrumPlot` is a microphone FFT with a dBFS scale. | Harmonics orders | Do not point entered harmonics at `SpectrumPlot` |
@@ -283,7 +283,7 @@ Staff only after the P0 kits exist. Each item is still one picture.
 
 | ID | Picture | Honesty |
 | --- | --- | --- |
-| `wireAmpacity` | Horizontal stages, each ampacity shorter or equal, design current as a mark | Same trace the waterfall lists today |
+| `wireAmpacity` | Shipped. Horizontal stages from the trace, required current marked | Bundling and the terminal stage stay at or under the prior stage. Ambient can grow when its factor is above 1. |
 | `necCircuit` | The voltage-drop strip, with an ampacity chip | No third graphic |
 | `harmonicsTHD` | Order bars, triplens tinted, THD beside them | Typed spectrum, not a capture. Not `SpectrumPlot`. |
 | `isLoopVerifier` | Worst of the four margins | Fail if any entity check fails. Not a loop CAD. |

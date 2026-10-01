@@ -147,8 +147,10 @@ struct WireAmpacityView: View {
 
     @ViewBuilder
     private func selectionResults(_ r: ConductorSelectionResult) -> some View {
-        AmpacityWaterfallDiagram(steps: r.selected.trace)
-            .opacity(session.isStale ? 0.72 : 1)
+        if let readout = DeratingStackReadout(result: r.selected) {
+            DeratingStack(readout: readout)
+                .opacity(session.isStale ? 0.72 : 1)
+        }
 
         ResultCard(copyText: copyText) {
             ResultRow(label: "Required ampacity", value: Format.amps(r.requiredAmpacity), emphasis: true)
@@ -215,8 +217,10 @@ struct WireAmpacityView: View {
 
     @ViewBuilder
     private func evaluateResults(_ r: AmpacityDeratingResult) -> some View {
-        AmpacityWaterfallDiagram(steps: r.trace)
-            .opacity(evaluateSession.isStale ? 0.72 : 1)
+        if let readout = DeratingStackReadout(result: r) {
+            DeratingStack(readout: readout)
+                .opacity(evaluateSession.isStale ? 0.72 : 1)
+        }
 
         ResultCard(copyText: copyText) {
             ResultRow(label: "Usable ampacity", value: Format.amps(r.usableTotal), emphasis: true, tone: r.passesLoad == false ? Theme.bad : Theme.good)

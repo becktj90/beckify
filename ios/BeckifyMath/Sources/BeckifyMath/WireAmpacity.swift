@@ -401,6 +401,205 @@ public enum WireAmpacity {
     }
 }
 
+/// One stage on the derating stack. Ampacity is the circuit total
+/// (per conductor × parallel runs). `perConductorAmps` is the trace value.
+public struct DeratingStackStage: Equatable, Sendable, Identifiable {
+    public var id: String
+    public var title: String
+    public var ampacity: Double
+    public var perConductorAmps: Double
+
+    public init(id: String, title: String, ampacity: Double, perConductorAmps: Double) {
+        self.id = id
+        self.title = title
+        self.ampacity = ampacity
+        self.perConductorAmps = perConductorAmps
+    }
+}
+
+/// How usable ampacity sits against the required current this tool already reports.
+/// No near-miss band: the result is meets or below, or there is no load to compare.
+public enum DeratingStackVerdict: Equatable, Sendable {
+    case notCompared
+    case meetsRequired
+    case belowRequired
+}
+
+/// Numbers for `DeratingStack`. Four stages, same math as the ampacity trace:
+/// 310.16 base, ambient correction, CCC bundling, then the 110.14(C) cap.
+/// Bundling and the terminal stage are never longer than the stage before them.
+/// Ambient can be longer than the base when the correction factor is above 1.
+public struct DeratingStackReadout: Equatable, Sendable {
+    public static let stageIDs = ["base", "ambient", "bundling", "terminal"]
+
+    /// Spoken and shown after the ampacity numbers.
+    public static let methodLine = "Table 310.16, then ambient correction, bundling, and the 110.14(C) cap."
+
+    public var stages: [DeratingStackStage]
+    /// Required ampacity the result already compares to usable total. Nil when no load was entered.
+    public var designCurrent: Double?
+    public var verdict: DeratingStackVerdict
+    public var parallelRuns: Int
+    public var usableAmps: Double
+    public var limitedByTermination: Bool
+    public var terminationColumn: String
+    public var terminationCapAmps: Double
+
+    public init?(result: AmpacityDeratingResult) {
+        let runs = result.parallelRuns
+        guard runs >= 1,
+              result.baseAmpacity.isFinite, result.baseAmpacity > 0,
+              result.ambientFactor.isFinite, result.ambientFactor > 0,
+              result.cccFactor.isFinite, result.cccFactor > 0, result.cccFactor <= 1 + 1e-12,
+              result.correctedAmpacity.isFinite, result.correctedAmpacity > 0,
+              result.usablePerRun.isFinite, result.usablePerRun > 0,
+              result.usableTotal.isFinite, result.usableTotal > 0,
+              result.terminationCap.isFinite, result.terminationCap > 0
+        else { return nil }
+
+        let base = result.baseAmpacity
+        let afterAmbient = base * result.ambientFactor
+        let afterBundling = result.correctedAmpacity
+        let afterTerminal = result.usablePerRun
+        guard afterAmbient.isFinite, afterAmbient > 0,
+              afterBundling <= afterAmbient + 1e-6,
+              afterTerminal <= afterBundling + 1e-6,
+              abs(afterTerminal * Double(runs) - result.usableTotal) <= 1e-4
+        else { return nil }
+
+        let multiplier = Double(runs)
+        stages = [
+            DeratingStackStage(id: "base", title: "310.16", ampacity: base * multiplier, perConductorAmps: base),
+            DeratingStackStage(id: "ambient", title: "Ambient", ampacity: afterAmbient * multiplier, perConductorAmps: afterAmbient),
+            DeratingStackStage(id: "bundling", title: "Bundling", ampacity: afterBundling * multiplier, perConductorAmps: afterBundling),
+            DeratingStackStage(id: "terminal", title: "110.14(C)", ampacity: afterTerminal * multiplier, perConductorAmps: afterTerminal),
+        ]
+        let required = result.requiredAmpacity
+        if let required, required.isFinite, required > 0 {
+            designCurrent = required
+            if let passes = result.passesLoad {
+                verdict = passes ? .meetsRequired : .belowRequired
+            } else {
+                verdict = result.usableTotal + 1e-9 >= required ? .meetsRequired : .belowRequired
+            }
+        } else {
+            designCurrent = nil
+            verdict = .notCompared
+        }
+        parallelRuns = runs
+        usableAmps = result.usableTotal
+        limitedByTermination = result.limitedByTermination
+        terminationColumn = result.termination.displayName
+        terminationCapAmps = result.terminationCap
+    }
+
+    public var usableLabel: String { Self.ampsLabel(usableAmps) }
+    public var designCurrentLabel: String? { designCurrent.map(Self.ampsLabel) }
+    public var terminationCapLabel: String { Self.ampsLabel(terminationCapAmps) }
+
+    public var scaleAmpacity: Double {
+        let peak = stages.map(\.ampacity).max() ?? usableAmps
+        guard let designCurrent else { return peak }
+        return max(peak, designCurrent)
+    }
+
+    /// Share of the common scale. Terminal is never a larger share than bundling.
+    public func plottedFraction(stageID: String) -> Double? {
+        guard scaleAmpacity > 0, let stage = stages.first(where: { $0.id == stageID }) else { return nil }
+        return stage.ampacity / scaleAmpacity
+    }
+
+    public var clampSentence: String {
+        if limitedByTermination {
+            return "Clamped at the \(terminationColumn) column, \(terminationCapLabel)."
+        }
+        return "\(terminationColumn) column \(terminationCapLabel) does not reduce ampacity."
+    }
+
+    public var perConductorClause: String? {
+        guard parallelRuns > 1 else { return nil }
+        let parts = stages.map { "\($0.title) \(Self.ampsLabel($0.perConductorAmps))" }
+        return "Per conductor: \(parts.joined(separator: ", "))."
+    }
+
+    /// Visible line under the stack. The same words close the VoiceOver summary.
+    public var caption: String {
+        var parts: [String] = []
+        if parallelRuns > 1 {
+            parts.append("\(parallelRuns) parallel runs.")
+            if let perConductorClause {
+                parts.append(perConductorClause)
+            }
+        }
+        parts.append(clampSentence)
+        parts.append(Self.methodLine)
+        return parts.joined(separator: " ")
+    }
+
+    /// VoiceOver. Usable amps and required amps first, then each stage, then the method.
+    public var announcement: String {
+        let lead: String
+        if let designCurrentLabel {
+            lead = "\(usableLabel) usable, \(designCurrentLabel) required."
+        } else {
+            lead = "\(usableLabel) usable."
+        }
+        let stageSentence = stages.map { "\($0.title) \(Self.ampsLabel($0.ampacity))" }.joined(separator: ". ") + "."
+        var parts = [lead, stageSentence]
+        switch verdict {
+        case .meetsRequired:
+            parts.append("Meets required.")
+        case .belowRequired:
+            parts.append("Below required.")
+        case .notCompared:
+            break
+        }
+        parts.append(caption)
+        return parts.joined(separator: " ")
+    }
+
+    /// Same rounding as the Toolbox `Format.amps` row, so the picture and the result cannot drift.
+    public static func ampsLabel(_ value: Double) -> String {
+        guard value.isFinite else { return "—" }
+        let magnitude = abs(value)
+        if magnitude == 0 { return "0 A" }
+        let decade = floor(log10(magnitude) / 3) * 3
+        let clamped = min(12.0, max(-12.0, decade))
+        let scaled = magnitude / pow(10, clamped)
+        let prefix: String
+        switch Int(clamped) {
+        case 12: prefix = "T"
+        case 9: prefix = "G"
+        case 6: prefix = "M"
+        case 3: prefix = "k"
+        case 0: prefix = ""
+        case -3: prefix = "m"
+        case -6: prefix = "µ"
+        case -9: prefix = "n"
+        case -12: prefix = "p"
+        default: prefix = ""
+        }
+        let digits = scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)
+        let signed = value < 0 ? -scaled : scaled
+        let body = grouped(signed, digits: digits)
+        return prefix.isEmpty ? "\(body) A" : "\(body) \(prefix)A"
+    }
+
+    private static func grouped(_ value: Double, digits: Int) -> String {
+        guard value.isFinite else { return "—" }
+        let magnitude = abs(value)
+        if magnitude >= 1_000_000 { return String(format: "%.2e", value) }
+        if magnitude != 0 && magnitude < 0.001 { return String(format: "%.3e", value) }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = digits
+        formatter.usesGroupingSeparator = true
+        return formatter.string(from: NSNumber(value: value)) ?? "—"
+    }
+}
+
 /// Tiny formatting helpers inside BeckifyMath (UI Format lives in the app).
 enum FormatTrace {
     static func amps(_ value: Double) -> String {
