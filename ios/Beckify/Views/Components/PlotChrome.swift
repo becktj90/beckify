@@ -90,6 +90,8 @@ enum PlotScaleMath {
 struct LabeledPlotChrome<Content: View>: View {
     var xAxis: PlotAxis
     var yAxis: PlotAxis
+    /// Optional right-hand scale. Use it when a second series is not in `yAxis` units.
+    var secondaryYAxis: PlotAxis? = nil
     var accessibilityLabel: String
     var inspection: PlotInspection = .inspect
     var plotHeight: CGFloat = 160
@@ -112,6 +114,13 @@ struct LabeledPlotChrome<Content: View>: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityHidden(true)
                 Spacer(minLength: 8)
+                if let secondaryYAxis {
+                    Text(secondaryYAxis.titleWithUnit)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.foreground)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityHidden(true)
+                }
                 if !fullscreenProvided {
                     expandButton
                 }
@@ -119,17 +128,23 @@ struct LabeledPlotChrome<Content: View>: View {
             HStack(alignment: .top, spacing: 6) {
                 tickColumn(top: yAxis.end, mid: yAxis.mid, bottom: yAxis.start)
                     .frame(height: plotHeight)
-                PlotGestureSurface(
-                    inspection: inspection,
-                    plotHeight: plotHeight,
-                    accessibilityLabel: accessibilityLabel,
-                    readout: readout
-                ) {
-                    plot()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(alignment: .leading, spacing: 2) {
+                    PlotGestureSurface(
+                        inspection: inspection,
+                        plotHeight: plotHeight,
+                        accessibilityLabel: accessibilityLabel,
+                        readout: readout
+                    ) {
+                        plot()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    xCaption
+                }
+                if let secondaryYAxis {
+                    tickColumn(top: secondaryYAxis.end, mid: secondaryYAxis.mid, bottom: secondaryYAxis.start, markLeading: true)
+                        .frame(height: plotHeight)
                 }
             }
-            xCaption
             if immersive, inspection == .inspect {
                 Text("Drag to read a value. Pinch to zoom.")
                     .font(Theme.TypeRole.hud)
@@ -143,6 +158,7 @@ struct LabeledPlotChrome<Content: View>: View {
                 LabeledPlotChrome(
                     xAxis: xAxis,
                     yAxis: yAxis,
+                    secondaryYAxis: secondaryYAxis,
                     accessibilityLabel: accessibilityLabel,
                     inspection: inspection,
                     plotHeight: 420,
@@ -173,11 +189,13 @@ struct LabeledPlotChrome<Content: View>: View {
     private var xCaption: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline) {
-                tickLabel(xAxis.start)
+                tickLabel(xAxis.start, markLeading: true)
                 Spacer(minLength: 4)
                 Text(xAxis.titleWithUnit)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.foreground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .multilineTextAlignment(.center)
                 Spacer(minLength: 4)
                 tickLabel(xAxis.end)
@@ -192,31 +210,40 @@ struct LabeledPlotChrome<Content: View>: View {
         .accessibilityHidden(true)
     }
 
-    private func tickColumn(top: String, mid: String?, bottom: String) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            tickLabel(top)
+    private func tickColumn(top: String, mid: String?, bottom: String, markLeading: Bool = false) -> some View {
+        VStack(alignment: markLeading ? .leading : .trailing, spacing: 0) {
+            tickLabel(top, markLeading: markLeading)
             Spacer(minLength: 0)
             if let mid, !mid.isEmpty {
-                tickLabel(mid)
+                tickLabel(mid, markLeading: markLeading)
                 Spacer(minLength: 0)
             }
-            tickLabel(bottom)
+            tickLabel(bottom, markLeading: markLeading)
         }
         .accessibilityHidden(true)
     }
 
-    private func tickLabel(_ text: String) -> some View {
+    private func tickLabel(_ text: String, markLeading: Bool = false) -> some View {
         HStack(spacing: 3) {
+            if markLeading {
+                tickMark
+            }
             Text(text)
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
-            Rectangle()
-                .fill(Theme.foreground)
-                .frame(width: 6, height: 1)
-                .accessibilityHidden(true)
+            if !markLeading {
+                tickMark
+            }
         }
         .font(Theme.TypeRole.hud)
         .foregroundStyle(Theme.foreground)
+    }
+
+    private var tickMark: some View {
+        Rectangle()
+            .fill(Theme.foreground)
+            .frame(width: 6, height: 1)
+            .accessibilityHidden(true)
     }
 }
 

@@ -131,8 +131,7 @@ struct PhasorImpedanceView: View {
                 WaveformCard(
                     traces: snapshot.traces,
                     hertz: snapshot.hertz,
-                    cycle: displayedCycle,
-                    summary: snapshot.sentence
+                    cycle: displayedCycle
                 )
             }
         }
@@ -167,8 +166,7 @@ struct PhasorImpedanceView: View {
                 WaveformCard(
                     traces: snapshot.traces,
                     hertz: snapshot.hertz,
-                    cycle: displayedCycle,
-                    summary: snapshot.forms.polar
+                    cycle: displayedCycle
                 )
                 PlaneCard(
                     title: "Phasor",
@@ -226,8 +224,7 @@ struct PhasorImpedanceView: View {
                 WaveformCard(
                     traces: snapshot.traces,
                     hertz: snapshot.hertz,
-                    cycle: displayedCycle,
-                    summary: "\(snapshot.law) \(snapshot.ends)"
+                    cycle: displayedCycle
                 )
                 PlaneCard(
                     title: "V and I",
@@ -278,8 +275,7 @@ struct PhasorImpedanceView: View {
                 WaveformCard(
                     traces: snapshot.traces,
                     hertz: snapshot.hertz,
-                    cycle: displayedCycle,
-                    summary: snapshot.headline
+                    cycle: displayedCycle
                 )
                 PlaneCard(
                     title: "V and I",
@@ -346,7 +342,7 @@ struct PhasorImpedanceView: View {
             .accessibilityLabel("Position in the cycle")
             .accessibilityValue("\(Int((min(1, max(0, cycle)) * 100).rounded())) percent")
             if reduceMotion {
-                Text("Motion is reduced, so the vectors stay where you park them.")
+                Text("Motion is reduced, so the cursor and the vectors stay where you park them.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
             }
@@ -483,10 +479,13 @@ struct PhasorImpedanceView: View {
                 basis: basisB
             )
             let lead = try PhasorImpedance.leadLag(first: a, firstName: "A", second: b, secondName: "B")
-            var signals: [(String, PhasorImpedance.Sinusoid)] = [("A", a), ("B", b)]
+            var signals: [(name: String, sinusoid: PhasorImpedance.Sinusoid, unit: String)] = [
+                (name: "A", sinusoid: a, unit: "V"),
+                (name: "B", sinusoid: b, unit: "V"),
+            ]
             if showSum {
                 let sum = try PhasorImpedance.sinusoid(from: a.peakPhasor + b.peakPhasor, hertz: hertz, basis: .cosine)
-                signals.append(("A+B", sum))
+                signals.append((name: "A+B", sinusoid: sum, unit: "V"))
             }
             return WavesSnapshot(
                 sentence: leadSentence(lead),
@@ -511,7 +510,7 @@ struct PhasorImpedanceView: View {
                 equations: [equation(wave, symbol: "v")],
                 forms: PhasorForms(phasor, unit: "V"),
                 rmsLine: "RMS  \(PhasorForms(wave.rmsPhasor, unit: "V").polar)",
-                traces: try PhasorImpedance.traces([("v", wave)]),
+                traces: try PhasorImpedance.traces([(name: "v", sinusoid: wave, unit: "V")]),
                 hertz: wave.hertz
             )
         }
@@ -538,7 +537,10 @@ struct PhasorImpedanceView: View {
                 currentLine: "I  \(PhasorForms(law.current, unit: "A").polar)",
                 parts: [sketchPart(for: element, value: value)],
                 voltageText: PhasorForms(law.voltage, unit: "V").polar,
-                traces: try PhasorImpedance.traces([("V", voltageWave), ("I", currentWave)]),
+                traces: try PhasorImpedance.traces([
+                    (name: "V", sinusoid: voltageWave, unit: "V"),
+                    (name: "I", sinusoid: currentWave, unit: "A"),
+                ]),
                 hertz: hertz,
                 voltage: law.voltage,
                 current: law.current,
@@ -585,7 +587,10 @@ struct PhasorImpedanceView: View {
                 planeHint: planeHint(solved.character),
                 parts: parts,
                 voltageText: PhasorForms(solved.voltage, unit: "V").polar,
-                traces: try PhasorImpedance.traces([("V", voltageWave), ("I", currentWave)]),
+                traces: try PhasorImpedance.traces([
+                    (name: "V", sinusoid: voltageWave, unit: "V"),
+                    (name: "I", sinusoid: currentWave, unit: "A"),
+                ]),
                 hertz: hertz,
                 voltage: solved.voltage,
                 current: solved.current,
@@ -909,58 +914,147 @@ private struct WaveformCard: View {
     var traces: [PhasorImpedance.TimeTrace]
     var hertz: Double
     var cycle: Double
-    var summary: String
 
-    private var colors: [Color] {
-        [Theme.chartPrimary, Theme.chartSecondary, Theme.chartTertiary, Theme.good]
+    private var voltTraces: [PhasorImpedance.TimeTrace] {
+        traces.filter { $0.unit == "V" }
+    }
+
+    private var ampTraces: [PhasorImpedance.TimeTrace] {
+        traces.filter { $0.unit == "A" }
+    }
+
+    /// Voltage traces, then current. Anything else stays off both axes.
+    private var plotted: [PhasorImpedance.TimeTrace] {
+        voltTraces + ampTraces
+    }
+
+    private var timeWindow: PhasorImpedance.SampleWindow {
+        PhasorImpedance.timeWindow(of: plotted)
+    }
+
+    private var voltWindow: PhasorImpedance.SampleWindow? {
+        guard !voltTraces.isEmpty else { return nil }
+        return PhasorImpedance.symmetricAmplitudeWindow(of: voltTraces)
+    }
+
+    private var ampWindow: PhasorImpedance.SampleWindow? {
+        guard !ampTraces.isEmpty else { return nil }
+        return PhasorImpedance.symmetricAmplitudeWindow(of: ampTraces)
+    }
+
+    /// Parked cycle cursor. Nil when frequency is not a positive number.
+    private var cursorTime: Double? {
+        guard hertz.isFinite, hertz > 0, cycle.isFinite else { return nil }
+        return min(1, max(0, cycle)) / hertz
+    }
+
+    private var scaleNote: String {
+        if voltTraces.isEmpty {
+            return "Current versus time."
+        }
+        if ampTraces.isEmpty {
+            return "Voltage versus time."
+        }
+        return "Volts on the left scale, amps on the right."
+    }
+
+    private var parkedDescription: String {
+        describe(at: cursorTime ?? timeWindow.start)
     }
 
     var body: some View {
-        DiagramCard(title: "Waveform", accessibilitySummary: "Voltage in volts versus time in seconds. \(summary)", exportName: "phasors-waveform") {
+        DiagramCard(title: "Waveform", accessibilitySummary: parkedDescription, exportName: "phasors-waveform") {
             LabeledPlotChrome(
                 xAxis: PlotAxis(
                     title: "Time",
                     unit: "s",
-                    start: "0",
-                    end: Format.number(timeEnd, digits: 4)
+                    start: tick(timeWindow.start, digits: 4),
+                    mid: tick(timeWindow.mid, digits: 4),
+                    end: tick(timeWindow.end, digits: 4)
                 ),
-                yAxis: PlotAxis(
-                    title: "Voltage",
-                    unit: "V",
-                    start: Format.number(-voltagePeak, digits: 2),
-                    mid: "0",
-                    end: Format.number(voltagePeak, digits: 2)
-                ),
-                accessibilityLabel: "Voltage in volts versus time in seconds. \(summary)",
-                inspection: .look,
+                yAxis: primaryAxis,
+                secondaryYAxis: secondaryAxis,
+                accessibilityLabel: parkedDescription,
+                inspection: .inspect,
                 plotHeight: 220,
-                fullscreenTitle: "Time waveform"
+                fullscreenTitle: "Time waveform",
+                readout: { x, _ in
+                    describe(at: timeWindow.value(atFraction: Double(x)))
+                }
             ) {
-                WaveformCanvas(traces: traces, hertz: hertz, cycle: cycle, colors: colors)
+                WaveformCanvas(
+                    voltTraces: voltTraces,
+                    ampTraces: ampTraces,
+                    time: timeWindow,
+                    volts: voltWindow,
+                    amps: ampWindow,
+                    cursorTime: cursorTime
+                )
             }
+            Text(parkedDescription)
+                .font(Theme.TypeRole.hud)
+                .foregroundStyle(Theme.foreground)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHidden(true)
             legend
         }
     }
 
-    private var voltagePeak: Double {
-        max(traces.map(\.positivePeak).max() ?? 1, 1e-9)
+    private var primaryAxis: PlotAxis {
+        if let voltWindow {
+            return amplitudeAxis(title: "Voltage", unit: "V", window: voltWindow)
+        }
+        return amplitudeAxis(title: "Current", unit: "A", window: ampWindow ?? PhasorImpedance.symmetricAmplitudeWindow(of: []))
     }
 
-    private var timeEnd: Double {
-        guard let trace = traces.first else { return 1 }
-        let start = trace.samples.first?.time ?? 0
-        let end = trace.samples.last?.time ?? start
-        return max(end - start, 0)
+    private var secondaryAxis: PlotAxis? {
+        guard voltWindow != nil, let ampWindow else { return nil }
+        return amplitudeAxis(title: "Current", unit: "A", window: ampWindow)
+    }
+
+    private func amplitudeAxis(title: String, unit: String, window: PhasorImpedance.SampleWindow) -> PlotAxis {
+        PlotAxis(
+            title: title,
+            unit: unit,
+            start: tick(window.start, digits: 2),
+            mid: tick(window.mid, digits: 2),
+            end: tick(window.end, digits: 2)
+        )
+    }
+
+    private func tick(_ value: Double, digits: Int) -> String {
+        Format.number(value, digits: digits)
+    }
+
+    /// Numbers first, then which scale those numbers use.
+    private func describe(at time: Double) -> String {
+        var parts = ["\(Format.number(time, digits: 4)) s"]
+        if voltTraces.count == 1, ampTraces.isEmpty, let trace = voltTraces.first {
+            parts.append(Format.volts(trace.value(at: time)))
+        } else {
+            for trace in voltTraces {
+                parts.append("\(trace.name) \(Format.volts(trace.value(at: time)))")
+            }
+            for trace in ampTraces {
+                parts.append("\(trace.name) \(Format.amps(trace.value(at: time)))")
+            }
+        }
+        return "\(parts.joined(separator: ", ")). \(scaleNote)"
+    }
+
+    private func color(at index: Int) -> Color {
+        let palette = [Theme.chartPrimary, Theme.chartSecondary, Theme.chartTertiary, Theme.good]
+        return palette[index % palette.count]
     }
 
     private var legend: some View {
         HStack(spacing: 12) {
-            ForEach(Array(traces.enumerated()), id: \.element.name) { index, trace in
+            ForEach(Array(plotted.enumerated()), id: \.element.name) { index, trace in
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(colors[index % colors.count])
+                        .fill(color(at: index))
                         .frame(width: 8, height: 8)
-                    Text(trace.name)
+                    Text("\(trace.name) (\(trace.unit))")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Theme.foreground)
                 }
@@ -971,80 +1065,81 @@ private struct WaveformCard: View {
 }
 
 private struct WaveformCanvas: View {
-    var traces: [PhasorImpedance.TimeTrace]
-    var hertz: Double
-    var cycle: Double
-    var colors: [Color]
+    var voltTraces: [PhasorImpedance.TimeTrace]
+    var ampTraces: [PhasorImpedance.TimeTrace]
+    var time: PhasorImpedance.SampleWindow
+    var volts: PhasorImpedance.SampleWindow?
+    var amps: PhasorImpedance.SampleWindow?
+    var cursorTime: Double?
 
     var body: some View {
         Canvas { context, size in
-            let inset = CGSize(width: 8, height: 8)
-            let plot = CGRect(
-                x: inset.width,
-                y: 8,
-                width: max(1, size.width - inset.width - 8),
-                height: max(1, size.height - inset.height - 8)
-            )
-            let span = traces.first.map { trace -> (Double, Double) in
-                let start = trace.samples.first?.time ?? 0
-                let end = trace.samples.last?.time ?? start + 1
-                return (start, max(end, start + 1e-9))
-            } ?? (0, 1)
-            let peak = max(traces.map(\.positivePeak).max() ?? 1, 1e-9)
-            func x(_ time: Double) -> CGFloat {
-                let fraction = (time - span.0) / (span.1 - span.0)
-                return plot.minX + CGFloat(fraction) * plot.width
-            }
-            func y(_ value: Double) -> CGFloat {
-                let fraction = (value + peak) / (2 * peak)
-                return plot.maxY - CGFloat(fraction) * plot.height
+            let zeroWindow = volts ?? amps
+            if let zeroWindow {
+                var zero = Path()
+                let y = y(0, in: zeroWindow, height: size.height)
+                zero.move(to: CGPoint(x: 0, y: y))
+                zero.addLine(to: CGPoint(x: size.width, y: y))
+                context.stroke(zero, with: .color(Theme.muted.opacity(0.7)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
             }
 
-            var grid = Path()
-            for mark in [0.25, 0.5, 0.75] {
-                let gx = plot.minX + CGFloat(mark) * plot.width
-                grid.move(to: CGPoint(x: gx, y: plot.minY))
-                grid.addLine(to: CGPoint(x: gx, y: plot.maxY))
-            }
-            context.stroke(grid, with: .color(Theme.chartGrid), lineWidth: 1)
-
-            var zero = Path()
-            zero.move(to: CGPoint(x: plot.minX, y: y(0)))
-            zero.addLine(to: CGPoint(x: plot.maxX, y: y(0)))
-            context.stroke(zero, with: .color(Theme.muted.opacity(0.7)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-
-            for (index, trace) in traces.enumerated() {
-                var path = Path()
-                for (sampleIndex, sample) in trace.samples.enumerated() {
-                    let point = CGPoint(x: x(sample.time), y: y(sample.value))
-                    if sampleIndex == 0 { path.move(to: point) } else { path.addLine(to: point) }
+            if let volts {
+                for (index, trace) in voltTraces.enumerated() {
+                    stroke(trace, in: volts, color: color(at: index), context: &context, size: size)
                 }
-                context.stroke(
-                    path,
-                    with: .color(colors[index % colors.count]),
-                    style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
-                )
-                let peakPoint = CGPoint(x: x(trace.positivePeakTime), y: y(trace.positivePeak))
-                let marker = Path(ellipseIn: CGRect(x: peakPoint.x - 4, y: peakPoint.y - 4, width: 8, height: 8))
-                context.fill(marker, with: .color(colors[index % colors.count]))
-                let label = context.resolve(
-                    Text(trace.name)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(colors[index % colors.count])
-                )
-                context.draw(label, at: CGPoint(x: peakPoint.x, y: peakPoint.y - 10), anchor: .bottom)
+            }
+            if let amps {
+                for (index, trace) in ampTraces.enumerated() {
+                    stroke(trace, in: amps, color: color(at: voltTraces.count + index), context: &context, size: size)
+                }
             }
 
-            if hertz > 0 {
-                let cursorTime = cycle / hertz
+            if let cursorTime {
                 var cursor = Path()
-                cursor.move(to: CGPoint(x: x(cursorTime), y: plot.minY))
-                cursor.addLine(to: CGPoint(x: x(cursorTime), y: plot.maxY))
+                let x = x(cursorTime, width: size.width)
+                cursor.move(to: CGPoint(x: x, y: 0))
+                cursor.addLine(to: CGPoint(x: x, y: size.height))
                 context.stroke(cursor, with: .color(Theme.foreground.opacity(0.55)), style: StrokeStyle(lineWidth: 1, dash: [2, 3]))
             }
-
         }
         .accessibilityHidden(true)
+    }
+
+    private func stroke(
+        _ trace: PhasorImpedance.TimeTrace,
+        in window: PhasorImpedance.SampleWindow,
+        color: Color,
+        context: inout GraphicsContext,
+        size: CGSize
+    ) {
+        var path = Path()
+        for (index, sample) in trace.samples.enumerated() {
+            let point = CGPoint(x: x(sample.time, width: size.width), y: y(sample.value, in: window, height: size.height))
+            if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        context.stroke(
+            path,
+            with: .color(color),
+            style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
+        )
+        if let peak = trace.samples.max(by: { $0.value < $1.value }) {
+            let peakPoint = CGPoint(x: x(peak.time, width: size.width), y: y(peak.value, in: window, height: size.height))
+            let marker = Path(ellipseIn: CGRect(x: peakPoint.x - 3.5, y: peakPoint.y - 3.5, width: 7, height: 7))
+            context.fill(marker, with: .color(color))
+        }
+    }
+
+    private func x(_ time: Double, width: CGFloat) -> CGFloat {
+        CGFloat(self.time.fraction(time)) * width
+    }
+
+    private func y(_ value: Double, in window: PhasorImpedance.SampleWindow, height: CGFloat) -> CGFloat {
+        (1 - CGFloat(window.fraction(value))) * height
+    }
+
+    private func color(at index: Int) -> Color {
+        let palette = [Theme.chartPrimary, Theme.chartSecondary, Theme.chartTertiary, Theme.good]
+        return palette[index % palette.count]
     }
 }
 

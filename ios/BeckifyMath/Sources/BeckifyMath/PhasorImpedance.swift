@@ -216,10 +216,55 @@ public enum PhasorImpedance {
 
     public struct TimeTrace: Equatable, Sendable {
         public var name: String
+        /// Engineering unit of `samples`, such as "V" or "A".
+        /// A volt axis must not carry an amp trace.
+        public var unit: String
         public var samples: [TimeSample]
         /// Time of the positive peak inside [0, period).
         public var positivePeakTime: Double
         public var positivePeak: Double
+
+        /// Linear value at `time`. Samples are ordered by time.
+        public func value(at time: Double) -> Double {
+            let samples = self.samples.filter { $0.time.isFinite && $0.value.isFinite }
+            guard let first = samples.first else { return 0 }
+            if !time.isFinite || time <= first.time { return first.value }
+            guard let last = samples.last else { return first.value }
+            if time >= last.time { return last.value }
+            var low = 0
+            var high = samples.count - 1
+            while low + 1 < high {
+                let mid = (low + high) / 2
+                if samples[mid].time <= time { low = mid } else { high = mid }
+            }
+            let left = samples[low]
+            let right = samples[high]
+            let span = right.time - left.time
+            guard span > 0 else { return left.value }
+            let fraction = (time - left.time) / span
+            return left.value + (right.value - left.value) * fraction
+        }
+    }
+
+    /// Closed window for one waveform axis.
+    /// `start` is the left or bottom tick, `end` is the far tick, `mid` is the center tick.
+    public struct SampleWindow: Equatable, Sendable {
+        public var start: Double
+        public var mid: Double
+        public var end: Double
+
+        /// 0 at `start`, 1 at `end`. Values outside the window sit on the nearer edge.
+        public func fraction(_ value: Double) -> Double {
+            let span = end - start
+            guard span > 0, value.isFinite else { return 0 }
+            return min(1, max(0, (value - start) / span))
+        }
+
+        public func value(atFraction fraction: Double) -> Double {
+            let clamped = min(1, max(0, fraction))
+            guard clamped.isFinite else { return start }
+            return start + (end - start) * clamped
+        }
     }
 
     /// Fold degrees into (−180, 180].
@@ -438,7 +483,7 @@ public enum PhasorImpedance {
     }
 
     public static func traces(
-        _ signals: [(name: String, sinusoid: Sinusoid)],
+        _ signals: [(name: String, sinusoid: Sinusoid, unit: String)],
         cycles: Double = 2,
         samples sampleCount: Int = 241
     ) throws -> [TimeTrace] {
@@ -461,11 +506,28 @@ public enum PhasorImpedance {
             }
             return TimeTrace(
                 name: item.name,
+                unit: item.unit,
                 samples: samples,
                 positivePeakTime: positivePeakTime(item.sinusoid),
                 positivePeak: item.sinusoid.peak
             )
         }
+    }
+
+    /// Time ticks for every sample on the traces. Empty input is a tiny window at 0.
+    public static func timeWindow(of traces: [TimeTrace]) -> SampleWindow {
+        let times = traces.flatMap(\.samples).map(\.time).filter(\.isFinite)
+        let start = times.min() ?? 0
+        var end = times.max() ?? start
+        if !(end > start) { end = start + 1e-9 }
+        return SampleWindow(start: start, mid: (start + end) / 2, end: end)
+    }
+
+    /// Symmetric volt or amp window. The largest |sample| lands on an end tick, and 0 is the center tick.
+    public static func symmetricAmplitudeWindow(of traces: [TimeTrace]) -> SampleWindow {
+        let peak = traces.flatMap(\.samples).map(\.value).filter(\.isFinite).reduce(0.0) { max($0, abs($1)) }
+        let extent = max(peak, 1e-9)
+        return SampleWindow(start: -extent, mid: 0, end: extent)
     }
 
     /// First positive peak inside [0, period).
