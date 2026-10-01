@@ -59,8 +59,24 @@ public enum SpanishTranslatorAPI {
     /// Short neural TTS clips (cost control).
     public static let maxSpeakCharacters = 500
     public static let maxSourceCharacters = 2000
+
+    /// Common English jobsite lines for one-tap translate → speak on the Beckify AI path.
+    public static let quickTranslatePhrases: [String] = [
+        "Where's the breaker?",
+        "Kill the power.",
+        "That's live — don't touch it.",
+        "Hand me that conduit.",
+        "We need more wire.",
+        "Move the ladder.",
+        "Watch your head.",
+        "Hold this for a second.",
+        "Who left this mess?",
+        "Lunch break.",
+        "Let's wrap it up.",
+        "Can you hear me up there?",
+    ]
     public static let disclaimer =
-        "Speech stays on this device for recognition. Prefers blunt Cuban / South Florida jobsite Spanish via the Beckify API (api.beckify.com). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish, not Cuban-tuned). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
+        "Speech stays on this device for recognition. Prefers a smart-ass, super-profane Cuban / South Florida jobsite rewrite via the Beckify API (api.beckify.com) — workplace cussing OK; no hate slurs targeting protected classes. If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (cleaner generic Spanish, not Cuban-tuned or deliberately dirty). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips, swears spoken fully); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -229,7 +245,7 @@ public enum SpanishTranslatorAPI {
             targetLanguage: targetLanguageID,
             provider: "apple",
             model: "TranslationSession",
-            notes: "On-device Apple Translation. Generic Spanish (closest LatAm pair when available) — not Cuban jobsite register like Beckify AI.",
+            notes: "On-device Apple Translation. Cleaner generic Spanish (closest LatAm pair when available) — not the smart-ass / profane Cuban jobsite rewrite of Beckify AI.",
             engine: "apple"
         )
     }
@@ -405,7 +421,7 @@ public enum SpanishTranslatorAPI {
         let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
         let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
         let label = [v.isEmpty ? "onyx" : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
-        return "Neural TTS · \(label) · Cuban / South Florida jobsite yell · max speaker volume"
+        return "Neural TTS · \(label) · Cuban / South Florida jobsite yell (swears fully) · max speaker volume"
     }
 
     public static func voiceFallbackNote(

@@ -76,7 +76,7 @@ router.post("/translate", async (req, res) => {
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       body: JSON.stringify({
         model,
-        temperature: 0.45,
+        temperature: 0.75,
         response_format: { type: "json_object" },
         max_tokens: TRANSLATE_MAX_OUTPUT_TOKENS,
         messages: [

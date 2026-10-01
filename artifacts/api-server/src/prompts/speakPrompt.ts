@@ -12,7 +12,7 @@ export const SPEAK_DEFAULT_MODEL = "gpt-4o-mini-tts";
 
 export const SPEAK_MAX_INPUT_CHARS = 500;
 
-export const SPEAK_VOICE_INSTRUCTIONS = `Speak like a real Cuban / South Florida construction guy yelling across a noisy jobsite — loud, clear, projected so someone on a scaffold can hear you. Warm Cuban-American Florida Spanish cadence. Deep male coworker energy: blunt, friendly, urgent when the words are urgent. Not a studio whisper, not a cartoon, not Castilian Spain. No hate, no slurs, no mocking caricature accents. Keep the pace intelligible over site noise: a touch slower than rapid Miami chatter, still energetic and projected.`;
+export const SPEAK_VOICE_INSTRUCTIONS = `Speak like a real Cuban / South Florida construction guy yelling across a noisy jobsite — loud, clear, projected so someone on a scaffold can hear you. Warm Cuban-American Florida Spanish cadence. Deep male coworker energy: blunt, cocky, urgent when the words are urgent. Deliver every swear word and dirty slang in the text fully and naturally — do not beep, skip, soften, whisper, or sanitize profanity or sexual vulgarity. Workplace cussing and insult-as-banter should land hard and clear. Not a studio whisper, not a cartoon, not Castilian Spain, not a mocking caricature accent. Never invent hate slurs aimed at protected classes; if the text has ordinary jobsite swearing, speak it. Keep the pace intelligible over site noise: a touch slower than rapid Miami chatter, still energetic and projected.`;
 
 export function speakSupportsInstructions(model: string): boolean {
   const name = (model || "").toLowerCase();

@@ -109,14 +109,31 @@ final class SpanishTranslatorTests: XCTestCase {
         let copy = ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")
         XCTAssertNotNil(copy)
         XCTAssertTrue(copy!.summary.lowercased().contains("spanish"))
+        XCTAssertTrue(copy!.summary.lowercased().contains("smart-ass")
+            || copy!.bullets.joined(separator: " ").lowercased().contains("smart-ass")
+            || copy!.bullets.joined(separator: " ").lowercased().contains("profane"))
         XCTAssertTrue(copy!.bullets.joined(separator: " ").lowercased().contains("cuban")
             || copy!.bullets.joined(separator: " ").lowercased().contains("florida"))
         let joined = copy!.bullets.joined(separator: " ").lowercased()
         XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation"))
+        XCTAssertTrue(joined.contains("chip") || joined.contains("quick"))
         XCTAssertTrue(joined.contains("/api/speak") || joined.contains("neural") || joined.contains("openai"))
         XCTAssertTrue(joined.contains("translated via beckify") || joined.contains("translated on device")
             || copy!.summary.lowercased().contains("on-device")
             || copy!.summary.lowercased().contains("neural"))
+    }
+
+    func testQuickTranslatePhrases() {
+        let phrases = SpanishTranslatorAPI.quickTranslatePhrases
+        XCTAssertGreaterThanOrEqual(phrases.count, 8)
+        XCTAssertLessThanOrEqual(phrases.count, 12)
+        XCTAssertEqual(Set(phrases).count, phrases.count, "quick phrases must be unique")
+        for phrase in phrases {
+            XCTAssertFalse(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertLessThanOrEqual(phrase.count, 80)
+        }
+        XCTAssertTrue(phrases.contains(where: { $0.lowercased().contains("breaker") }))
+        XCTAssertTrue(phrases.contains(where: { $0.lowercased().contains("power") }))
     }
 
     func testStatusLabelsAndAppleDraft() {
@@ -198,6 +215,8 @@ final class SpanishTranslatorTests: XCTestCase {
         let d = SpanishTranslatorAPI.disclaimer.lowercased()
         XCTAssertTrue(d.contains("/api/speak") || d.contains("neural"))
         XCTAssertTrue(d.contains("fallback") || d.contains("avspeech") || d.contains("apple"))
+        XCTAssertTrue(d.contains("profane") || d.contains("smart-ass") || d.contains("cuss"))
+        XCTAssertTrue(d.contains("cleaner") || d.contains("generic"))
     }
 
 }

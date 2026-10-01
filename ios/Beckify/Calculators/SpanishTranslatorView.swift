@@ -4,8 +4,8 @@ import Speech
 import Translation
 import BeckifyMath
 
-/// Toolkit → Reference: record English → Beckify AI Cuban / South Florida jobsite Spanish → OpenAI neural TTS (Apple fallback).
-/// Falls back to on-device Apple Translation (iOS 18+) when `/api/translate` fails.
+/// Toolkit → Reference: record English → Beckify AI smart-ass / profane Cuban jobsite Spanish → OpenAI neural TTS (Apple fallback).
+/// Falls back to on-device Apple Translation (iOS 18+) when `/api/translate` fails (cleaner Spanish).
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
 
@@ -24,6 +24,7 @@ struct SpanishTranslatorView: View {
         ) {
             statusCard
             recordCard
+            quickPhrasesCard
             textCards
             speakCard
             if showAdvanced {
@@ -94,7 +95,7 @@ struct SpanishTranslatorView: View {
             if !engine.voiceNote.isEmpty {
                 ResultRow(label: "Voice", value: engine.voiceNote)
             }
-            Text("Listening → Translating → Speaking. Beckify AI aims for blunt Cuban / South Florida jobsite Spanish. Falls back to on-device Apple Translation on iOS 18+ when the API is down. Playback prefers OpenAI neural TTS (onyx) from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
+            Text("Listening → Translating → Speaking. Beckify AI does a smart-ass, super-profane Cuban / South Florida jobsite rewrite (workplace cussing OK). On-device Apple Translation fallback (iOS 18+) is cleaner generic Spanish — not the dirty cloud voice. Playback prefers OpenAI neural TTS (onyx) from api.beckify.com and speaks swears fully; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
@@ -179,7 +180,48 @@ struct SpanishTranslatorView: View {
         .padding(.vertical, 4)
     }
 
+    private var quickPhrasesCard: some View {
+        ResultCard(title: "Quick jobsite lines", copyText: SpanishTranslatorAPI.quickTranslatePhrases.joined(separator: " · ")) {
+            Text("Tap a chip to fill English and run Beckify AI translate + speak (same cloud path).")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(SpanishTranslatorAPI.quickTranslatePhrases.enumerated()), id: \.offset) { index, phrase in
+                        Button {
+                            typedEnglish = phrase
+                            engine.translateText(
+                                phrase,
+                                customEndpoint: customEndpoint,
+                                token: apiToken
+                            )
+                        } label: {
+                            Text(phrase)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.foreground)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Theme.surfaceRaised.opacity(0.9), in: Capsule(style: .continuous))
+                                .overlay(
+                                    Capsule(style: .continuous)
+                                        .stroke(Theme.border, lineWidth: 1)
+                                )
+                                .frame(minHeight: Theme.touchTarget)
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(engine.phase == .listening || engine.phase == .translating)
+                        .accessibilityIdentifier("spanishTranslator.quickPhrase.\(index)")
+                        .accessibilityLabel("Quick translate: \(phrase)")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
     private var textCards: some View {
+
         VStack(spacing: 12) {
             ResultCard(title: "English (heard / typed)", copyText: engine.englishText) {
                 Text(engine.englishText.isEmpty ? "—" : engine.englishText)
@@ -187,7 +229,7 @@ struct SpanishTranslatorView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
-            ResultCard(title: "Spanish (Cuban / Florida LatAm)", copyText: engine.spanishText) {
+            ResultCard(title: "Spanish (Cuban / Florida jobsite)", copyText: engine.spanishText) {
                 Text(engine.spanishText.isEmpty ? "—" : engine.spanishText)
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -198,7 +240,7 @@ struct SpanishTranslatorView: View {
 
     private var speakCard: some View {
         ResultCard(title: "Loud playback", copyText: engine.voiceNote) {
-            Text("Loud jobsite playback: OpenAI neural TTS (onyx / gpt-4o-mini-tts) from api.beckify.com with Cuban yell instructions, max speaker volume. Falls back to the deepest male es-US/es-MX Apple voice if cloud TTS fails. Media volume still matters if the phone is muted.")
+            Text("Loud jobsite playback: OpenAI neural TTS (onyx / gpt-4o-mini-tts) from api.beckify.com with Cuban yell instructions that keep swears full volume — no beep/sanitize. Falls back to the deepest male es-US/es-MX Apple voice if cloud TTS fails. Media volume still matters if the phone is muted.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
         }
