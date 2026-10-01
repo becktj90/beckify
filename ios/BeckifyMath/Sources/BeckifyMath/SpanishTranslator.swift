@@ -694,8 +694,8 @@ public enum SpanishTranslatorAPI {
             sex = "system"
         }
         let folded = normalizeLocaleID(lang)
-        let localeNote = folded.hasPrefix("en-us") ? "en-US" : folded
-        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS from api.beckify.com when reachable; this note is the on-device English fallback."
+        let localeNote = folded.hasPrefix("en-us") ? "en-US (California-leaning American)" : folded
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (California / West Coast American English) from api.beckify.com when reachable; this note is the on-device English fallback."
     }
 
     public static func normalizeLocaleID(_ raw: String) -> String {
@@ -802,14 +802,14 @@ public enum SpanishTranslatorAPI {
 
     public static func statusHelp(direction: SpanishTranslateDirection) -> String {
         if direction.listensInSpanish {
-            return "Listening → Translating → Speaking. Spanish speech in, English out. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Hey! stays on English → Spanish. Beckify AI translates; on-device Apple Translation (iOS 18+) is the fallback in this same direction. Playback prefers OpenAI neural TTS in English; Apple English speech if that fails."
+            return "Listening → Translating → Speaking. Spanish speech in, English out. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Hey! stays on English → Spanish. Beckify AI translates; on-device Apple Translation (iOS 18+) is the fallback in this same direction. Playback prefers OpenAI neural TTS in California American English; Apple en-US speech if that fails."
         }
         return "Listening → Translating → Speaking. Pick Clean or Jobsite, then tap Hey! for a short attention call, or record, type, tap a chip, or Test. Beckify AI rewrites on the selected mode. On-device Apple Translation (iOS 18+) is the fallback when the API is down. Playback prefers OpenAI neural TTS from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly."
     }
 
     public static func playbackHelp(direction: SpanishTranslateDirection) -> String {
         if direction.listensInSpanish {
-            return "Loud playback: OpenAI neural TTS in English from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple English voice if cloud TTS fails. Media volume still matters if the phone is muted."
+            return "Loud playback: OpenAI neural TTS in California / West Coast American English from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple en-US voice if cloud TTS fails. Media volume still matters if the phone is muted."
         }
         return "Loud playback: OpenAI neural TTS from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple Spanish voice if cloud TTS fails. Media volume still matters if the phone is muted."
     }
@@ -841,15 +841,26 @@ public enum SpanishTranslatorAPI {
     public static func neuralVoiceNote(
         model: String = "gpt-4o-mini-tts",
         voice: String = "onyx",
-        voiceMode: SpanishVoiceMode = .jobsite
+        voiceMode: SpanishVoiceMode = .jobsite,
+        language: String = "es"
     ) -> String {
         let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
         let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackVoice = voiceMode.defaultSpeakVoice
         let label = [v.isEmpty ? fallbackVoice : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
         let register = voiceMode == .clean ? "Clean" : "Jobsite"
-        return "Neural TTS · \(label) · \(register) · max speaker volume"
+        let folded = normalizeLocaleID(language)
+        let accent: String
+        if localePrimary(folded) == "en" {
+            accent = " · California American English"
+        } else {
+            accent = ""
+        }
+        return "Neural TTS · \(label) · \(register)\(accent) · max speaker volume"
     }
+
+    /// Status while neural TTS is fetching / buffering before first audio.
+    public static let preparingAudioStatus = "Preparing audio…"
 
     public static func voiceFallbackNote(
         selectedLanguage: String?,

@@ -216,7 +216,7 @@ struct CalculatorHostView: View {
             case .barometer: BarometerView()
             case .motionSnapshot: MotionSnapshotView()
             case .stillnessWatch: StillnessWatchView()
-            case .breathFlute: BreathFluteView()
+            case .breathFlute: EmptyView() // Removed from catalog (build 232); ToolID kept for Codable.
             case .coupledVibration: CoupledVibrationView()
             case .fieldPosition: FieldPositionView()
             case .deviceHealth: DeviceHealthView()

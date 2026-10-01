@@ -16,6 +16,9 @@ final class RetroIconCatalogTests: XCTestCase {
     /// Off the toolbox list, but related tools and deep links still draw a well.
     private let hiddenWithTile: Set<String> = ["phasorDiagram"]
 
+    /// Shipped imagesets kept for asset continuity after the tool left the catalog.
+    private let retiredImagesets: Set<String> = ["breathFlute"]
+
     func testEveryLiveToolHasAnOriginalColorTile() throws {
         let root = retroRoot()
         let entries = try FileManager.default.contentsOfDirectory(
@@ -25,7 +28,7 @@ final class RetroIconCatalogTests: XCTestCase {
         let imagesets = entries
             .filter { $0.pathExtension == "imageset" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        XCTAssertEqual(imagesets.count, 90, "88-tool pack plus statistics and spanishTranslator")
+        XCTAssertEqual(imagesets.count, 90, "88-tool pack plus statistics, spanishTranslator, and retired breathFlute")
 
         var shipped = Set<String>()
         for imageset in imagesets {
@@ -35,8 +38,12 @@ final class RetroIconCatalogTests: XCTestCase {
         }
 
         let known = Set(ToolCalculationPolicy.knownToolIDs)
-        let unknown = shipped.subtracting(known).sorted()
+        let unknown = shipped.subtracting(known).subtracting(retiredImagesets).sorted()
         XCTAssertTrue(unknown.isEmpty, "imagesets that are not ToolIDs: \(unknown.joined(separator: ", "))")
+        for id in retiredImagesets {
+            XCTAssertTrue(shipped.contains(id), "retired imageset missing: \(id)")
+            XCTAssertFalse(known.contains(id), "retired tool still in knownToolIDs: \(id)")
+        }
         XCTAssertEqual(
             known.subtracting(shipped),
             canvasFallbackToolIDs,

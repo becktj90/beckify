@@ -39,5 +39,6 @@ assert.match(translate, /english_clean|clear_english_clean/);
 assert.match(speak, /normalizeSpeakLanguage/);
 assert.match(speak, /SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS/);
 assert.match(speak, /SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS/);
+assert.match(speak, /California|West Coast/i);
 assert.match(speak, /language: "en" \| "es" = "es"/);
 console.log("spanish-translate-voice.test.cjs: ok");

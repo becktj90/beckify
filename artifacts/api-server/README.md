@@ -46,7 +46,7 @@ Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sou
 
 ### `POST /api/speak`
 
-Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for English playback on the reverse translator path; omitted or Spanish tags keep the Spanish instructions. Defaults: model **gpt-4o-mini-tts**; voice **onyx** for Jobsite or **nova** for Clean (`voiceMode`), with mode-matched `instructions` (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters. Empty body → **400**. Used by Spanish Translator loud playback; Apple AVSpeech remains the on-device fallback (Spanish voice for es, English voice for en).
+Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for English playback on the reverse translator path (California / West Coast American English delivery); omitted or Spanish tags keep the Spanish instructions. Defaults: model **gpt-4o-mini-tts**; voice **onyx** for Jobsite or **nova** for Clean (`voiceMode`), with mode-matched `instructions` (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters. Empty body → **400**. Used by Spanish Translator loud playback; Apple AVSpeech remains the on-device fallback (Spanish voice for es, English voice for en).
 
 ## Local
 

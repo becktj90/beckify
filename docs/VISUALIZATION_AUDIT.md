@@ -77,7 +77,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 
 ## Inventory
 
-91 tools, including hidden `powerWizard` and `phasorDiagram`. Shelf is `ToolHomeAreaPolicy`.
+90 live known tools after Breath Flute left the catalog (build 232), including hidden `powerWizard` and `phasorDiagram`. Shelf is `ToolHomeAreaPolicy`.
 
 | Tool | ID | Shelf | viz_now | Gap | viz_target | tier | blockers | reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -113,7 +113,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | Barometer | `barometer` | Instruments | Pressure and relative altitude rows | None | None on this train | P2 | Phone altimeter, not a weather station | `TraceSparkline` only if a trace is added later |
 | g-Force Snapshot | `motionSnapshot` | Instruments | Gravity and user-acceleration numbers | None | None | P2 | The tool says it is not a machine spectrum. Do not add an FFT. | — |
 | Stillness Anomaly Watch | `stillnessWatch` | Instruments | Baseline ticks; mic impulse spectrum | Strong | Keep | Hold | Not a presence meter | `SpectrumPlot` |
-| Breath Flute | `breathFlute` | Instruments | Relic flute canvas, covered holes, breath | Strong | Keep | Hold | Toy. Out of the field-result queue. Do not restyle. | `RelicFluteCanvas` |
+| Breath Flute | `breathFlute` | — (removed build 232) | Relic flute canvas (source kept) | — | Removed from catalog | Hold | Toy. Removed from navigation; do not restyle or re-staff. | `RelicFluteCanvas` |
 | Coupled Vibration | `coupledVibration` | Instruments | RMS and spectrum of user acceleration | Strong | Keep | Hold | Phone on the machine. Relative A/B only. | `SpectrumPlot` |
 | Position | `fieldPosition` | Instruments | Coordinates, speed, altitude, distance | None | None | P2 | A map is a new surface, not a result sketch | — |
 | Device Health | `deviceHealth` | Instruments | Battery, thermal, storage, uptime rows | None | None | P2 | Diagnostics of this phone, not a plant meter | Battery fill only if it reuses the tank kit later |

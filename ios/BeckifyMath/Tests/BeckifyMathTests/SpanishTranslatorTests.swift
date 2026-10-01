@@ -445,7 +445,13 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertGreaterThan(maleUS, femaleUS)
         let note = SpanishTranslatorAPI.englishVoiceFallbackNote(selectedLanguage: "en-US", genderLabel: "male", voiceName: "Aaron")
         XCTAssertTrue(note.lowercased().contains("en-us") || note.lowercased().contains("aaron"))
+        XCTAssertTrue(note.lowercased().contains("california"))
         XCTAssertFalse(note.lowercased().contains("cuban"))
+        let neuralEN = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .jobsite, language: "en")
+        XCTAssertTrue(neuralEN.lowercased().contains("california"))
+        let neuralES = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .jobsite, language: "es")
+        XCTAssertFalse(neuralES.lowercased().contains("california"))
+        XCTAssertEqual(SpanishTranslatorAPI.preparingAudioStatus, "Preparing audio…")
     }
 
     func testDisclaimerMentionsSpeakAPI() {

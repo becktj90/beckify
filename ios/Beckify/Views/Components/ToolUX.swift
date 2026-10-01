@@ -40,7 +40,7 @@ struct ToolScaffold<Content: View>: View {
     /// When false, the How It Works card is hidden until the toolbar `i` expands it.
     var showsAboutWhenCollapsed: Bool = true
     var showsRelatedTools: Bool = true
-    /// Play-surface tools (Breath Flute): skip scroll chrome, sticky answer, and disclaimer.
+    /// Play-surface tools (legacy immersive flag): skip scroll chrome, sticky answer, and disclaimer.
     /// Toolbar favorite + How-it-works `i` stay so honesty copy is one tap away.
     var immersivePlay: Bool = false
     var isResultStale: Bool = false
