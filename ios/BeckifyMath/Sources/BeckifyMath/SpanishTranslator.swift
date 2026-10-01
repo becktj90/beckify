@@ -24,6 +24,16 @@ public enum SpanishVoiceMode: String, CaseIterable, Codable, Sendable {
         }
     }
 
+    /// Neural TTS voice id for `/api/speak`. English (ES→EN) always uses male `onyx`
+    /// for the California surfer-stoner path; Spanish still follows Clean / Jobsite.
+    public func defaultSpeakVoice(language: String) -> String {
+        let folded = SpanishTranslatorAPI.normalizeLocaleID(language)
+        if SpanishTranslatorAPI.localePrimary(folded) == "en" {
+            return "onyx"
+        }
+        return defaultSpeakVoice
+    }
+
     public var dialectHint: String {
         switch self {
         case .jobsite: return "cuban_florida_jobsite"
@@ -317,7 +327,7 @@ public enum SpanishTranslatorAPI {
         return [
             "task": "speak",
             "text": text,
-            "voice": resolvedVoice.isEmpty ? voiceMode.defaultSpeakVoice : resolvedVoice,
+            "voice": resolvedVoice.isEmpty ? voiceMode.defaultSpeakVoice(language: resolvedLanguage.isEmpty ? "es" : resolvedLanguage) : resolvedVoice,
             "format": format,
             "language": resolvedLanguage.isEmpty ? "es" : resolvedLanguage,
             "voiceMode": voiceMode.apiValue,
@@ -694,8 +704,8 @@ public enum SpanishTranslatorAPI {
             sex = "system"
         }
         let folded = normalizeLocaleID(lang)
-        let localeNote = folded.hasPrefix("en-us") ? "en-US (California-leaning American)" : folded
-        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (California / West Coast American English) from api.beckify.com when reachable; this note is the on-device English fallback."
+        let localeNote = folded.hasPrefix("en-us") ? "en-US (chill California male)" : folded
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS — chill California surfer-stoner male (onyx) — from api.beckify.com when reachable; this note is the on-device English fallback."
     }
 
     public static func normalizeLocaleID(_ raw: String) -> String {
@@ -802,14 +812,14 @@ public enum SpanishTranslatorAPI {
 
     public static func statusHelp(direction: SpanishTranslateDirection) -> String {
         if direction.listensInSpanish {
-            return "Listening → Translating → Speaking. Spanish speech in, English out. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Hey! stays on English → Spanish. Beckify AI translates; on-device Apple Translation (iOS 18+) is the fallback in this same direction. Playback prefers OpenAI neural TTS in California American English; Apple en-US speech if that fails."
+            return "Listening → Translating → Speaking. Spanish speech in, English out. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Hey! stays on English → Spanish. Beckify AI translates; on-device Apple Translation (iOS 18+) is the fallback in this same direction. Playback prefers OpenAI neural TTS as a chill California surfer-stoner male (onyx); Apple male en-US if that fails."
         }
         return "Listening → Translating → Speaking. Pick Clean or Jobsite, then tap Hey! for a short attention call, or record, type, tap a chip, or Test. Beckify AI rewrites on the selected mode. On-device Apple Translation (iOS 18+) is the fallback when the API is down. Playback prefers OpenAI neural TTS from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly."
     }
 
     public static func playbackHelp(direction: SpanishTranslateDirection) -> String {
         if direction.listensInSpanish {
-            return "Loud playback: OpenAI neural TTS in California / West Coast American English from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple en-US voice if cloud TTS fails. Media volume still matters if the phone is muted."
+            return "Loud playback: OpenAI neural TTS — chill California surfer-stoner male (onyx) — from api.beckify.com. Falls back to a male Apple en-US voice if cloud TTS fails. Media volume still matters if the phone is muted."
         }
         return "Loud playback: OpenAI neural TTS from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple Spanish voice if cloud TTS fails. Media volume still matters if the phone is muted."
     }
@@ -846,13 +856,13 @@ public enum SpanishTranslatorAPI {
     ) -> String {
         let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
         let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
-        let fallbackVoice = voiceMode.defaultSpeakVoice
+        let fallbackVoice = voiceMode.defaultSpeakVoice(language: language)
         let label = [v.isEmpty ? fallbackVoice : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
         let register = voiceMode == .clean ? "Clean" : "Jobsite"
         let folded = normalizeLocaleID(language)
         let accent: String
         if localePrimary(folded) == "en" {
-            accent = " · California American English"
+            accent = " · California surfer-stoner male"
         } else {
             accent = ""
         }

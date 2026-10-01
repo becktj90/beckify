@@ -801,7 +801,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Direction persists. English → Spanish hears English. Spanish → English hears Spanish (es-US, then es-MX / es). Audio stays local; /api/translate runs on Stop or Translate.",
                 "Clean or Jobsite mode (persisted). Hey! is English → Spanish only. Chips and Test follow the direction. API down → on-device Apple Translation (iOS 18+) in the same direction.",
-                "Playback POSTs short Spanish or English to /api/speak (OpenAI neural TTS; voice follows mode). Spanish → English uses California American English. Shows Preparing audio… until play starts; flips cancel in-flight speak. Apple AVSpeech is the fallback.",
+                "Playback POSTs short Spanish or English to /api/speak (OpenAI neural TTS; voice follows mode). Spanish → English uses a chill California surfer-stoner male voice (onyx). Shows Preparing audio… until play starts; flips cancel in-flight speak. Apple AVSpeech is the fallback.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

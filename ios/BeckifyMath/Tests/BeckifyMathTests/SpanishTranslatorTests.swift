@@ -176,6 +176,9 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(SpanishVoiceMode.clean.uiLabel, "Clean")
         XCTAssertEqual(SpanishVoiceMode.jobsite.defaultSpeakVoice, "onyx")
         XCTAssertEqual(SpanishVoiceMode.clean.defaultSpeakVoice, "nova")
+        XCTAssertEqual(SpanishVoiceMode.clean.defaultSpeakVoice(language: "en"), "onyx")
+        XCTAssertEqual(SpanishVoiceMode.jobsite.defaultSpeakVoice(language: "en"), "onyx")
+        XCTAssertEqual(SpanishVoiceMode.clean.defaultSpeakVoice(language: "es"), "nova")
         XCTAssertFalse(SpanishVoiceMode.jobsite.uiLabel.lowercased().contains("cuban"))
         XCTAssertFalse(SpanishVoiceMode.clean.uiLabel.lowercased().contains("princess"))
         let jobsite = SpanishTranslatorAPI.requestBody(text: "Hello", voiceMode: .jobsite)
@@ -305,8 +308,18 @@ final class SpanishTranslatorTests: XCTestCase {
         )
         XCTAssertEqual(speak["language"] as? String, "en")
         XCTAssertEqual(speak["task"] as? String, "speak")
+        XCTAssertEqual(speak["voice"] as? String, "onyx")
+        let speakCleanEN = SpanishTranslatorAPI.speakRequestBody(
+            text: "Kill the power.",
+            voiceMode: .clean,
+            language: "en"
+        )
+        XCTAssertEqual(speakCleanEN["voice"] as? String, "onyx", "ES→EN stays male surfer voice even in Clean")
         let defaultSpeak = SpanishTranslatorAPI.speakRequestBody(text: "Hola")
         XCTAssertEqual(defaultSpeak["language"] as? String, "es")
+        XCTAssertEqual(defaultSpeak["voice"] as? String, "onyx")
+        let cleanES = SpanishTranslatorAPI.speakRequestBody(text: "Hola", voiceMode: .clean, language: "es")
+        XCTAssertEqual(cleanES["voice"] as? String, "nova")
     }
 
     func testSpanishQuickPhrasesAndSpeechLocales() {
@@ -428,6 +441,7 @@ final class SpanishTranslatorTests: XCTestCase {
         let joined = ((how?.summary ?? "") + " " + (how?.bullets.joined(separator: " ") ?? "")).lowercased()
         XCTAssertTrue(joined.contains("spanish → english") || joined.contains("spanish speech"))
         XCTAssertTrue(joined.contains("english → spanish") || joined.contains("english speech"))
+        XCTAssertTrue(joined.contains("surfer") || joined.contains("stoner") || joined.contains("onyx"))
     }
 
     func testEnglishVoiceRankingPrefersUS() {
@@ -445,10 +459,12 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertGreaterThan(maleUS, femaleUS)
         let note = SpanishTranslatorAPI.englishVoiceFallbackNote(selectedLanguage: "en-US", genderLabel: "male", voiceName: "Aaron")
         XCTAssertTrue(note.lowercased().contains("en-us") || note.lowercased().contains("aaron"))
-        XCTAssertTrue(note.lowercased().contains("california"))
+        XCTAssertTrue(note.lowercased().contains("california") || note.lowercased().contains("surfer"))
+        XCTAssertTrue(note.lowercased().contains("stoner") || note.lowercased().contains("surfer") || note.lowercased().contains("chill"))
         XCTAssertFalse(note.lowercased().contains("cuban"))
-        let neuralEN = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .jobsite, language: "en")
-        XCTAssertTrue(neuralEN.lowercased().contains("california"))
+        let neuralEN = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .clean, language: "en")
+        XCTAssertTrue(neuralEN.lowercased().contains("surfer") || neuralEN.lowercased().contains("stoner"))
+        XCTAssertTrue(neuralEN.lowercased().contains("onyx"))
         let neuralES = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .jobsite, language: "es")
         XCTAssertFalse(neuralES.lowercased().contains("california"))
         XCTAssertEqual(SpanishTranslatorAPI.preparingAudioStatus, "Preparing audio…")
