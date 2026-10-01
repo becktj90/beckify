@@ -1028,7 +1028,7 @@ enum ToolboxCatalog {
                 "impedance match", "l match", "quarter wave", "stub", "complex", "polar", "phasor",
                 "voltage divider", "kirchhoff", "cmos", "buck", "class a", "led flasher",
                 "meter", "microamp", "µA", "milliamp", "ammeter", "voltmeter",
-                "dc source", "ac source", "vrms", "vdc", "vp",
+                "dc source", "ac source", "ac sine", "vrms", "vdc", "vp",
             ],
             calculationMode: .live
         ),

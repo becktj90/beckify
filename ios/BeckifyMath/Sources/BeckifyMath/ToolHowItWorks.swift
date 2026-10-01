@@ -781,7 +781,7 @@ public enum ToolHowItWorksCatalog {
                 "Each circuit draws Vin/Vout or a Bode trace. H(s) only when the stage is linear. 555, stubs, and matches are ideal — not SPICE.",
                 "Breadboard opens fit-to-view with on-board I/V chips. Pinch to zoom. Illustrative hookup — not a SPICE board file.",
                 "BJT uses 0.7 V and constant β. MOSFETs use the square law or the Rds(on) you enter.",
-                "Rectifier, first-order filter, series RLC, and shunt clipper switch DC or an AC sine and edit Vdc, Vrms, or Vp. Strictly DC stays one DC source. Ideal models — not SPICE.",
+                "Rectifier, filter, series RLC, and shunt clipper switch DC or AC sine (Vdc, Vrms, Vp). The schematic mark follows. Ideal models — not SPICE.",
             ]
         ),
         "ul508aPanelLab": ToolHowItWorks(
