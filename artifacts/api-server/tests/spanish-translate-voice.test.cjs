@@ -29,4 +29,15 @@ assert.match(speak, /speakDefaultVoiceForMode|SPEAK_CLEAN_VOICE/);
 
 assert.match(translate, /Oye|Mira|Esp[eé]rate|attention-getters/i);
 assert.match(translate, /Disculpe|Permiso|Un momento|polite polished attention/i);
+assert.match(translate, /TRANSLATE_ES_EN_JOBSITE_SYSTEM_PROMPT/);
+assert.match(translate, /TRANSLATE_ES_EN_CLEAN_SYSTEM_PROMPT/);
+assert.match(translate, /resolveTranslateDirection/);
+assert.match(translate, /blunt field English/i);
+assert.match(translate, /polished English|clear, polished English/i);
+assert.match(translate, /english_jobsite|field_english_jobsite/);
+assert.match(translate, /english_clean|clear_english_clean/);
+assert.match(speak, /normalizeSpeakLanguage/);
+assert.match(speak, /SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS/);
+assert.match(speak, /SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS/);
+assert.match(speak, /language: "en" \| "es" = "es"/);
 console.log("spanish-translate-voice.test.cjs: ok");

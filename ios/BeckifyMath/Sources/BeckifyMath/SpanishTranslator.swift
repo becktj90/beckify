@@ -38,6 +38,55 @@ public enum SpanishVoiceMode: String, CaseIterable, Codable, Sendable {
     }
 }
 
+/// Which way Spanish Translator runs. English → Spanish stays the default.
+public enum SpanishTranslateDirection: String, CaseIterable, Codable, Sendable {
+    case englishToSpanish
+    case spanishToEnglish
+
+    public static let storageKey = "spanishTranslator.direction"
+
+    public var uiLabel: String {
+        switch self {
+        case .englishToSpanish: return "English → Spanish"
+        case .spanishToEnglish: return "Spanish → English"
+        }
+    }
+
+    /// BCP-47-ish tag sent as `sourceLanguage`.
+    public var sourceLanguage: String {
+        switch self {
+        case .englishToSpanish: return "en"
+        case .spanishToEnglish: return "es"
+        }
+    }
+
+    /// BCP-47-ish tag sent as `targetLanguage`.
+    public var targetLanguage: String {
+        switch self {
+        case .englishToSpanish: return "es"
+        case .spanishToEnglish: return "en"
+        }
+    }
+
+    /// `/api/speak` `language` and the Apple fallback voice family.
+    public var speakLanguage: String { targetLanguage }
+
+    public var listensInSpanish: Bool { self == .spanishToEnglish }
+
+    public static func parse(_ raw: String?) -> SpanishTranslateDirection {
+        let folded = (raw ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "_", with: "-")
+        switch folded {
+        case "spanishtoenglish", "es-en", "es→en", "reverse", "spanish-to-english":
+            return .spanishToEnglish
+        default:
+            return .englishToSpanish
+        }
+    }
+}
+
 /// Outcome of one `/api/translate` call (Beckify AI → Cuban / Florida LatAm Spanish).
 public struct SpanishTranslationDraft: Equatable, Sendable {
     public var translation: String
@@ -73,22 +122,33 @@ public struct SpanishTranslationDraft: Equatable, Sendable {
         self.engine = engine
     }
 
+    /// Result language for chrome. English when `targetLanguage` is en / en-*.
+    public var resultLanguageLabel: String {
+        let target = targetLanguage
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "_", with: "-")
+            .lowercased()
+        if target == "en" || target.hasPrefix("en-") { return "English" }
+        return "Spanish"
+    }
+
     public var displayDialect: String {
         let folded = dialect.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let lang = resultLanguageLabel
         if folded.contains("clean") || folded.contains("polish") {
-            return "Spanish · Clean"
+            return "\(lang) · Clean"
         }
         if folded.contains("jobsite") || folded.contains("smartass") || folded.contains("smart-ass") {
-            return "Spanish · Jobsite"
+            return "\(lang) · Jobsite"
         }
-        if engine == "apple" { return "On-device Spanish (Apple)" }
-        if dialect.isEmpty { return "Spanish" }
+        if engine == "apple" { return "On-device \(lang) (Apple)" }
+        if dialect.isEmpty { return lang }
         // Never surface geographic dialect branding in UI.
         if folded.contains("cuba") || folded.contains("florida") || folded.contains("miami")
             || folded.contains("latam") || folded.contains("latin") {
-            return "Spanish"
+            return lang
         }
-        return "Spanish"
+        return lang
     }
 }
 
@@ -119,6 +179,30 @@ public enum SpanishTranslatorAPI {
         "Can you hear me up there?",
     ]
 
+    /// Spanish jobsite lines for one-tap translate → English speak. Same count and jobs as the English chips.
+    /// Natural Cuban / Florida LatAm field speech — not Castilian textbook.
+    public static let quickSpanishTranslatePhrases: [String] = [
+        "¿Dónde está el breaker?",
+        "Corta la corriente.",
+        "Eso está vivo — no lo toques.",
+        "Pásame ese conduit.",
+        "Falta alambre.",
+        "Mueve la escalera.",
+        "Cuidado con la cabeza.",
+        "Agárrame esto un segundo.",
+        "¿Quién dejó este relajo?",
+        "Vamos a almorzar.",
+        "Ya vámonos, a recoger.",
+        "¿Me oyes allá arriba?",
+    ]
+
+    public static func quickPhrases(direction: SpanishTranslateDirection) -> [String] {
+        switch direction {
+        case .englishToSpanish: return quickTranslatePhrases
+        case .spanishToEnglish: return quickSpanishTranslatePhrases
+        }
+    }
+
     /// Short English attention seeds for the prominent Hey! / Get attention button.
     /// Beckify AI rewrite (Clean vs Jobsite) + `/api/speak` produce the spoken Spanish —
     /// Jobsite tends toward oye / mira / espérate energy; Clean stays polite and polished.
@@ -138,9 +222,25 @@ public enum SpanishTranslatorAPI {
     public static let attentionButtonHelp =
         "One tap — translate + speak a short attention call on the active Clean or Jobsite mode."
 
+    /// Shown instead of Hey! when the direction is Spanish → English.
+    public static let reverseAttentionHelp =
+        "Hey! is for English → Spanish. This way, speak or type Spanish and you’ll hear English."
+
     /// Rotating test pool (same lines as quick chips). Avoids immediate repeat when possible.
     public static func nextRandomTestPhrase(excluding previous: String? = nil) -> String {
-        nextRotatingPhrase(from: quickTranslatePhrases, excluding: previous, fallback: "Hello.")
+        nextRandomTestPhrase(direction: .englishToSpanish, excluding: previous)
+    }
+
+    public static func nextRandomTestPhrase(
+        direction: SpanishTranslateDirection,
+        excluding previous: String? = nil
+    ) -> String {
+        let fallback = direction == .spanishToEnglish ? "Hola." : "Hello."
+        return nextRotatingPhrase(
+            from: quickPhrases(direction: direction),
+            excluding: previous,
+            fallback: fallback
+        )
     }
 
     /// Rotating attention-call English seed for one-tap translate → speak.
@@ -166,7 +266,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is rough banter; Clean is polished and warm). A Hey! button runs a short attention call through translate + speak on the active mode. If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish). Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short clips); Apple AVSpeech is the fallback if cloud TTS fails. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default: Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is rough banter; Clean is polished and warm). A Hey! button runs a short attention call on that direction only. Spanish → English listens in Spanish and returns English on the same API (Jobsite is blunt field English; Clean is clear and polished). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short Spanish or English clips); Apple AVSpeech is the fallback if cloud TTS fails. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -209,15 +309,17 @@ public enum SpanishTranslatorAPI {
         text: String,
         voiceMode: SpanishVoiceMode = .jobsite,
         voice: String? = nil,
-        format: String = "mp3"
+        format: String = "mp3",
+        language: String = "es"
     ) -> [String: Any] {
         let resolvedVoice = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedLanguage = language.trimmingCharacters(in: .whitespacesAndNewlines)
         return [
             "task": "speak",
             "text": text,
             "voice": resolvedVoice.isEmpty ? voiceMode.defaultSpeakVoice : resolvedVoice,
             "format": format,
-            "language": "es",
+            "language": resolvedLanguage.isEmpty ? "es" : resolvedLanguage,
             "voiceMode": voiceMode.apiValue,
             "mode": voiceMode.apiValue,
         ]
@@ -227,10 +329,17 @@ public enum SpanishTranslatorAPI {
         text: String,
         voiceMode: SpanishVoiceMode = .jobsite,
         voice: String? = nil,
-        format: String = "mp3"
+        format: String = "mp3",
+        language: String = "es"
     ) throws -> Data {
         try JSONSerialization.data(
-            withJSONObject: speakRequestBody(text: text, voiceMode: voiceMode, voice: voice, format: format),
+            withJSONObject: speakRequestBody(
+                text: text,
+                voiceMode: voiceMode,
+                voice: voice,
+                format: format,
+                language: language
+            ),
             options: []
         )
     }
@@ -324,7 +433,7 @@ public enum SpanishTranslatorAPI {
     /// Minimum OS for Apple TranslationSession (Translation framework).
     public static let onDeviceTranslationMinimumOS = "iOS 18"
 
-    /// Preferred Apple Translation target language identifiers (LatAm / Florida-relevant first).
+    /// Preferred Apple Translation Spanish identifiers (LatAm / Florida-relevant first).
     public static let preferredAppleSpanishLanguageIDs: [String] = [
         "es-MX",
         "es-US",
@@ -332,20 +441,46 @@ public enum SpanishTranslatorAPI {
         "es",
     ]
 
+    /// Preferred Apple Translation English identifiers for Spanish → English.
+    public static let preferredAppleEnglishLanguageIDs: [String] = [
+        "en-US",
+        "en",
+        "en-GB",
+    ]
+
+    /// Source/target candidates for an on-device `TranslationSession` in `direction`.
+    /// First entry of each list is the default if nothing is installed.
+    public static func appleTranslationCandidates(
+        direction: SpanishTranslateDirection
+    ) -> (sources: [String], targets: [String]) {
+        switch direction {
+        case .englishToSpanish:
+            return (["en"], preferredAppleSpanishLanguageIDs)
+        case .spanishToEnglish:
+            return (preferredAppleSpanishLanguageIDs, preferredAppleEnglishLanguageIDs)
+        }
+    }
+
     public static func appleOnDeviceDraft(
         translation: String,
         sourceText: String,
-        targetLanguageID: String = "es"
+        targetLanguageID: String = "es",
+        sourceLanguageID: String = "en"
     ) -> SpanishTranslationDraft {
-        SpanishTranslationDraft(
+        let target = targetLanguageID.trimmingCharacters(in: .whitespacesAndNewlines)
+        let source = sourceLanguageID.trimmingCharacters(in: .whitespacesAndNewlines)
+        let targetEnglish = target.lowercased().hasPrefix("en")
+        return SpanishTranslationDraft(
             translation: translation.trimmingCharacters(in: .whitespacesAndNewlines),
-            dialect: "apple_on_device_es",
+            dialect: targetEnglish ? "apple_on_device_en" : "apple_on_device_es",
             sourceText: sourceText,
-            sourceLanguage: "en",
-            targetLanguage: targetLanguageID,
+            sourceLanguage: source.isEmpty ? (targetEnglish ? "es" : "en") : source,
+            targetLanguage: target.isEmpty ? (targetEnglish ? "en" : "es") : target,
             provider: "apple",
             model: "TranslationSession",
-            notes: "On-device Apple Translation. Generic Spanish — not the Beckify AI Clean/Jobsite cloud rewrite.",
+            notes: targetEnglish
+                ? "On-device Apple Translation. Generic English — not the Beckify AI Clean/Jobsite cloud rewrite."
+                : "On-device Apple Translation. Generic Spanish — not the Beckify AI Clean/Jobsite cloud rewrite.",
             engine: "apple"
         )
     }
@@ -490,6 +625,90 @@ public enum SpanishTranslatorAPI {
         return 50
     }
 
+    /// Preferred `AVSpeechSynthesisVoice.language` codes for English playback, best first.
+    public static let preferredEnglishVoiceLanguages: [String] = [
+        "en-US",
+        "en-GB",
+        "en-AU",
+        "en-CA",
+        "en",
+    ]
+
+    public static func englishVoiceScore(language: String) -> Int {
+        let folded = normalizeLocaleID(language)
+        guard localePrimary(folded) == "en" else { return -1 }
+        for (index, preferred) in preferredEnglishVoiceLanguages.enumerated() {
+            if folded == preferred.lowercased() {
+                return 1000 - index
+            }
+        }
+        if folded.hasPrefix("en-us") { return 999 }
+        if folded.hasPrefix("en-gb") { return 900 }
+        if folded.hasPrefix("en-") { return 500 }
+        if folded == "en" { return 100 }
+        return 50
+    }
+
+    public static func bestEnglishVoiceLanguage(from languages: [String]) -> String? {
+        let ranked = languages
+            .map { ($0, englishVoiceScore(language: $0)) }
+            .filter { $0.1 >= 0 }
+            .sorted { lhs, rhs in
+                if lhs.1 != rhs.1 { return lhs.1 > rhs.1 }
+                return lhs.0 < rhs.0
+            }
+        return ranked.first?.0
+    }
+
+    /// Male + en-US first, same shape as `jobsiteVoiceScore` for Spanish.
+    public static func englishPlaybackVoiceScore(language: String, genderRaw: Int, qualityRaw: Int) -> Int {
+        let locale = englishVoiceScore(language: language)
+        guard locale >= 0 else { return -1 }
+        let genderBonus: Int
+        switch genderRaw {
+        case 1: genderBonus = 5000
+        case 0: genderBonus = 1000
+        default: genderBonus = 0
+        }
+        return genderBonus + locale * 10 + max(0, qualityRaw)
+    }
+
+    public static func englishVoiceFallbackNote(
+        selectedLanguage: String?,
+        genderLabel: String? = nil,
+        voiceName: String? = nil
+    ) -> String {
+        let lang = (selectedLanguage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if lang.isEmpty {
+            return "No English system voice found for Apple fallback. Install an English voice in Settings → Accessibility → Spoken Content → Voices. Prefers OpenAI neural TTS from api.beckify.com/api/speak."
+        }
+        let gender = (genderLabel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let name = (voiceName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let who = name.isEmpty ? lang : "\(name) (\(lang))"
+        let sex: String
+        if gender == "male" {
+            sex = "male"
+        } else if gender == "female" {
+            sex = "female"
+        } else {
+            sex = "system"
+        }
+        let folded = normalizeLocaleID(lang)
+        let localeNote = folded.hasPrefix("en-us") ? "en-US" : folded
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS from api.beckify.com when reachable; this note is the on-device English fallback."
+    }
+
+    public static func normalizeLocaleID(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "_", with: "-")
+            .lowercased()
+    }
+
+    public static func localePrimary(_ raw: String) -> String {
+        let folded = normalizeLocaleID(raw)
+        return folded.split(separator: "-").first.map(String.init) ?? folded
+    }
+
     /// Combined rank for jobsite playback: male + LatAm locale + higher quality first.
     /// `genderRaw` matches `AVSpeechSynthesisVoiceGender.rawValue` (1 = male, 2 = female, 0 = unspecified on Apple platforms).
     public static func jobsiteVoiceScore(language: String, genderRaw: Int, qualityRaw: Int) -> Int {
@@ -502,6 +721,108 @@ public enum SpanishTranslatorAPI {
         default: genderBonus = 0    // female / other
         }
         return genderBonus + locale * 10 + max(0, qualityRaw)
+    }
+
+    /// Preferred on-device Speech locales for Spanish → English (es-US, then es-MX, then es, then other Spanish).
+    public static let preferredSpanishSpeechLocales: [String] = [
+        "es-US",
+        "es-MX",
+        "es",
+        "es-419",
+        "es-CO",
+        "es-AR",
+        "es-CL",
+        "es-PE",
+        "es-VE",
+        "es-ES",
+    ]
+
+    public static let preferredEnglishSpeechLocales: [String] = [
+        "en-US",
+        "en-GB",
+        "en-AU",
+        "en",
+    ]
+
+    public static func speechLocaleCandidates(direction: SpanishTranslateDirection) -> [String] {
+        switch direction {
+        case .englishToSpanish: return preferredEnglishSpeechLocales
+        case .spanishToEnglish: return preferredSpanishSpeechLocales
+        }
+    }
+
+    /// Best installed Speech locale for `direction`, or nil when that language is not available.
+    /// `available` is typically `SFSpeechRecognizer.supportedLocales()` identifiers (`es-US` or `es_US`).
+    public static func bestSpeechLocale(direction: SpanishTranslateDirection, available: [String]) -> String? {
+        let prefix = direction.listensInSpanish ? "es" : "en"
+        let matches = available.filter { localePrimary($0) == prefix }
+        guard !matches.isEmpty else { return nil }
+        for candidate in speechLocaleCandidates(direction: direction) {
+            let wanted = normalizeLocaleID(candidate)
+            if let exact = matches.first(where: { normalizeLocaleID($0) == wanted }) {
+                return exact
+            }
+        }
+        return matches.sorted { lhs, rhs in
+            let l = direction.listensInSpanish
+                ? spanishVoiceScore(language: lhs)
+                : englishVoiceScore(language: lhs)
+            let r = direction.listensInSpanish
+                ? spanishVoiceScore(language: rhs)
+                : englishVoiceScore(language: rhs)
+            if l != r { return l > r }
+            return lhs < rhs
+        }.first
+    }
+
+    public static func speechUnavailableMessage(direction: SpanishTranslateDirection) -> String {
+        if direction.listensInSpanish {
+            return "Spanish speech recognition isn’t available on this device. Type the Spanish, or add a Spanish dictation language in Settings."
+        }
+        return "English speech recognition is not available on this device right now."
+    }
+
+    public static func emptySourceMessage(direction: SpanishTranslateDirection) -> String {
+        if direction.listensInSpanish {
+            return "Say or type something in Spanish first."
+        }
+        return "Say or type something in English first."
+    }
+
+    public static func modeHelp(direction: SpanishTranslateDirection, voiceMode: SpanishVoiceMode) -> String {
+        if direction.listensInSpanish {
+            return voiceMode == .clean
+                ? "Clean: clear, polished English. Jobsite: blunt field English on the same Beckify AI path."
+                : "Jobsite: blunt field English. Clean: clear and polished on the same Beckify AI path."
+        }
+        return voiceMode == .clean
+            ? "Clean: polished, warm Spanish. Jobsite: rough banter on the same Beckify AI path."
+            : "Jobsite: rough banter Spanish. Clean: polished and warm on the same Beckify AI path."
+    }
+
+    public static func statusHelp(direction: SpanishTranslateDirection) -> String {
+        if direction.listensInSpanish {
+            return "Listening → Translating → Speaking. Spanish speech in, English out. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Hey! stays on English → Spanish. Beckify AI translates; on-device Apple Translation (iOS 18+) is the fallback in this same direction. Playback prefers OpenAI neural TTS in English; Apple English speech if that fails."
+        }
+        return "Listening → Translating → Speaking. Pick Clean or Jobsite, then tap Hey! for a short attention call, or record, type, tap a chip, or Test. Beckify AI rewrites on the selected mode. On-device Apple Translation (iOS 18+) is the fallback when the API is down. Playback prefers OpenAI neural TTS from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly."
+    }
+
+    public static func playbackHelp(direction: SpanishTranslateDirection) -> String {
+        if direction.listensInSpanish {
+            return "Loud playback: OpenAI neural TTS in English from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple English voice if cloud TTS fails. Media volume still matters if the phone is muted."
+        }
+        return "Loud playback: OpenAI neural TTS from api.beckify.com (voice follows Clean / Jobsite). Falls back to an Apple Spanish voice if cloud TTS fails. Media volume still matters if the phone is muted."
+    }
+
+    public static func quickLinesHelp(direction: SpanishTranslateDirection) -> String {
+        if direction.listensInSpanish {
+            return "Tap a chip to fill Spanish and run Beckify AI translate + English speak on the selected mode."
+        }
+        return "Tap a chip to fill English and run Beckify AI translate + speak on the selected mode."
+    }
+
+    public static func typedPlaceholder(direction: SpanishTranslateDirection) -> String {
+        direction.listensInSpanish ? "Or type Spanish here" : "Or type English here"
     }
 
     /// Pick the best language code from an installed-voice list.

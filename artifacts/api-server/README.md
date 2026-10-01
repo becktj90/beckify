@@ -37,11 +37,16 @@ After merge, Fly auto-deploys when `artifacts/api-server` changes (needs `FLY_AP
 
 ### `POST /api/translate`
 
-Text-only English → Spanish for the Toolbox **Spanish Translator** tool. Optional `voiceMode`: `jobsite` (rough banter; short attention seeds lean oye/mira/espérate) or `clean` (polished; short attention seeds stay polite). Body: `{ "text": "…", "sourceLanguage": "en", "targetLanguage": "es", "voiceMode": "jobsite" }`. Uses `OPENAI_API_KEY` (optional `TRANSLATE_MODEL`, defaults to `REVIEW_MODEL` or `gpt-4o-mini`). Success JSON includes `translation`, `dialect`, `voiceMode`, `sourceText`. Empty body → **400**.
+Text translation for the Toolbox **Spanish Translator** tool. Omitting languages stays **English → Spanish** (`sourceLanguage` defaults to `en`, `targetLanguage` defaults to `es`). Optional `voiceMode`: `jobsite` or `clean`.
+
+- **en → es** (default): Jobsite is rough banter (short attention seeds lean oye/mira/espérate); Clean is polished. Body: `{ "text": "…", "sourceLanguage": "en", "targetLanguage": "es", "voiceMode": "jobsite" }`. Success `targetLanguage` is `es`.
+- **es → en**: spoken Spanish (including Cuban / Florida LatAm / jobsite) into English. Jobsite English is blunt and matches the energy without adding hate speech. Clean English is clear and does not amplify cussing. Body: `{ "text": "…", "sourceLanguage": "es", "targetLanguage": "en", "voiceMode": "jobsite" }`. `es-US` / `en-US` are accepted. Success `targetLanguage` is `en` and `dialect` is `english_jobsite` or `english_clean` (no geographic branding).
+
+Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sourceText`, `sourceLanguage`, `targetLanguage`. Uses `OPENAI_API_KEY` (optional `TRANSLATE_MODEL`, defaults to `REVIEW_MODEL` or `gpt-4o-mini`). Empty body → **400**. Any other pair (for example `fr`, or Spanish → Spanish) → **400**.
 
 ### `POST /api/speak`
 
-Short Spanish (or mixed) text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3" }`. Defaults: model **gpt-4o-mini-tts**; voice **onyx** for Jobsite or **nova** for Clean (`voiceMode`), with mode-matched `instructions` (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters. Empty body → **400**. Used by Spanish Translator loud playback; Apple AVSpeech remains the on-device fallback.
+Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for English playback on the reverse translator path; omitted or Spanish tags keep the Spanish instructions. Defaults: model **gpt-4o-mini-tts**; voice **onyx** for Jobsite or **nova** for Clean (`voiceMode`), with mode-matched `instructions` (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters. Empty body → **400**. Used by Spanish Translator loud playback; Apple AVSpeech remains the on-device fallback (Spanish voice for es, English voice for en).
 
 ## Local
 

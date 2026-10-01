@@ -5,6 +5,7 @@ import {
   SPEAK_MAX_INPUT_CHARS,
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
+  normalizeSpeakLanguage,
   speakVoiceInstructions,
   speakVoiceMode,
 } from "../prompts/speakPrompt.js";
@@ -50,7 +51,7 @@ router.post("/speak", async (req, res) => {
   const text = pickText(body);
   if (!text) {
     return res.status(400).json({
-      error: "Provide Spanish (or mixed) text in `text`, `input`, or `translation` (1–500 characters).",
+      error: "Provide text in `text`, `input`, or `translation` (1–500 characters).",
     });
   }
   if (text.length > SPEAK_MAX_INPUT_CHARS) {
@@ -60,6 +61,7 @@ router.post("/speak", async (req, res) => {
   }
 
   const voiceMode = speakVoiceMode(body.voiceMode ?? body.mode ?? body.style);
+  const language = normalizeSpeakLanguage(body.language);
   const voice = pickVoice(body.voice, voiceMode);
   const format = pickFormat(body.format);
   const model =
@@ -94,7 +96,7 @@ router.post("/speak", async (req, res) => {
       response_format: format,
     };
     if (speakSupportsInstructions(model)) {
-      payload.instructions = speakVoiceInstructions(voiceMode);
+      payload.instructions = speakVoiceInstructions(voiceMode, language);
     }
 
     const response = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -124,6 +126,7 @@ router.post("/speak", async (req, res) => {
     res.setHeader("X-Beckify-TTS-Model", model);
     res.setHeader("X-Beckify-TTS-Voice", voice);
     res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
+    res.setHeader("X-Beckify-TTS-Language", language);
     res.setHeader("Content-Length", String(audio.length));
     return res.status(200).send(audio);
   } catch (error) {

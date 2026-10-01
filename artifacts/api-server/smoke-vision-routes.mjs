@@ -182,6 +182,86 @@ try {
     typeof speakEmpty.json?.error === "string" && /text|input|translation/i.test(speakEmpty.json.error),
     `POST /api/speak {} should explain the missing text`,
   );
+
+  const nonsenseTarget = await request("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: "hola", sourceLanguage: "es", targetLanguage: "fr" }),
+  });
+  assert(
+    nonsenseTarget.response.status === 400,
+    `POST /api/translate es→fr expected 400, got ${nonsenseTarget.response.status}`,
+  );
+  assert(
+    typeof nonsenseTarget.json?.error === "string" && /english|spanish|targetLanguage/i.test(nonsenseTarget.json.error),
+    "POST /api/translate es→fr should explain the supported pairs",
+  );
+
+  const spanishToSpanish = await request("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: "hola", sourceLanguage: "es", targetLanguage: "es" }),
+  });
+  assert(
+    spanishToSpanish.response.status === 400,
+    `POST /api/translate es→es expected 400, got ${spanishToSpanish.response.status}`,
+  );
+
+  const savedKey = process.env.OPENAI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  try {
+    const reverse = await request("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "¿Dónde está el breaker?",
+        sourceLanguage: "es-US",
+        targetLanguage: "en",
+        voiceMode: "jobsite",
+      }),
+    });
+    assert(
+      reverse.response.status === 503,
+      `POST /api/translate es→en should pass validation (503 without a key), got ${reverse.response.status} ${reverse.text}`,
+    );
+    assert(
+      typeof reverse.json?.error === "string" && /OPENAI_API_KEY|provider key/i.test(reverse.json.error),
+      "POST /api/translate es→en without a key should report the missing provider key",
+    );
+
+    const omitted = await request("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "Where is the breaker?" }),
+    });
+    assert(
+      omitted.response.status === 503,
+      `POST /api/translate with omitted langs should stay en→es (503 without a key), got ${omitted.response.status} ${omitted.text}`,
+    );
+
+    const speakEnglish = await request("/api/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "Kill the power.", language: "en", voiceMode: "jobsite" }),
+    });
+    assert(
+      speakEnglish.response.status === 503,
+      `POST /api/speak language=en should be accepted (503 without a key), got ${speakEnglish.response.status} ${speakEnglish.text}`,
+    );
+
+    const speakSpanish = await request("/api/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "Corta la corriente.", language: "es", voiceMode: "clean" }),
+    });
+    assert(
+      speakSpanish.response.status === 503,
+      `POST /api/speak language=es should still be accepted, got ${speakSpanish.response.status}`,
+    );
+  } finally {
+    if (savedKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = savedKey;
+  }
 } finally {
   await new Promise((resolve) => server.close(resolve));
 }

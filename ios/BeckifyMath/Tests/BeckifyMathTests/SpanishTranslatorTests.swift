@@ -267,6 +267,187 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(note.lowercased().contains("neural"))
     }
 
+    func testReverseDirectionRequestAndSpeakBodies() throws {
+        XCTAssertEqual(SpanishTranslateDirection.parse(nil), .englishToSpanish)
+        XCTAssertEqual(SpanishTranslateDirection.parse("spanishToEnglish"), .spanishToEnglish)
+        XCTAssertEqual(SpanishTranslateDirection.parse("es-en"), .spanishToEnglish)
+        XCTAssertEqual(SpanishTranslateDirection.englishToSpanish.sourceLanguage, "en")
+        XCTAssertEqual(SpanishTranslateDirection.englishToSpanish.targetLanguage, "es")
+        XCTAssertEqual(SpanishTranslateDirection.spanishToEnglish.sourceLanguage, "es")
+        XCTAssertEqual(SpanishTranslateDirection.spanishToEnglish.targetLanguage, "en")
+        XCTAssertEqual(SpanishTranslateDirection.spanishToEnglish.speakLanguage, "en")
+        XCTAssertEqual(SpanishTranslateDirection.storageKey, "spanishTranslator.direction")
+
+        let body = SpanishTranslatorAPI.requestBody(
+            text: "¿Dónde está el breaker?",
+            sourceLanguage: SpanishTranslateDirection.spanishToEnglish.sourceLanguage,
+            targetLanguage: SpanishTranslateDirection.spanishToEnglish.targetLanguage,
+            voiceMode: .jobsite
+        )
+        XCTAssertEqual(body["sourceLanguage"] as? String, "es")
+        XCTAssertEqual(body["targetLanguage"] as? String, "en")
+        XCTAssertEqual(body["voiceMode"] as? String, "jobsite")
+        XCTAssertEqual(body["mode"] as? String, "jobsite")
+        let data = try SpanishTranslatorAPI.requestJSON(
+            text: "Corta la corriente.",
+            sourceLanguage: "es",
+            targetLanguage: "en",
+            voiceMode: .clean
+        )
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(object["targetLanguage"] as? String, "en")
+        XCTAssertEqual(object["voiceMode"] as? String, "clean")
+
+        let speak = SpanishTranslatorAPI.speakRequestBody(
+            text: "Kill the power.",
+            voiceMode: .jobsite,
+            language: SpanishTranslateDirection.spanishToEnglish.speakLanguage
+        )
+        XCTAssertEqual(speak["language"] as? String, "en")
+        XCTAssertEqual(speak["task"] as? String, "speak")
+        let defaultSpeak = SpanishTranslatorAPI.speakRequestBody(text: "Hola")
+        XCTAssertEqual(defaultSpeak["language"] as? String, "es")
+    }
+
+    func testSpanishQuickPhrasesAndSpeechLocales() {
+        let phrases = SpanishTranslatorAPI.quickSpanishTranslatePhrases
+        XCTAssertEqual(phrases.count, SpanishTranslatorAPI.quickTranslatePhrases.count)
+        XCTAssertGreaterThanOrEqual(phrases.count, 8)
+        XCTAssertLessThanOrEqual(phrases.count, 12)
+        XCTAssertEqual(Set(phrases).count, phrases.count)
+        let joined = phrases.joined(separator: " ").lowercased()
+        XCTAssertTrue(joined.contains("breaker"))
+        XCTAssertTrue(joined.contains("corriente") || joined.contains("vivo"))
+        XCTAssertTrue(joined.contains("conduit"))
+        XCTAssertTrue(joined.contains("alambre") || joined.contains("wire"))
+        XCTAssertTrue(joined.contains("escalera"))
+        XCTAssertTrue(joined.contains("cabeza"))
+        XCTAssertFalse(joined.contains("vosotros"))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.quickPhrases(direction: .englishToSpanish),
+            SpanishTranslatorAPI.quickTranslatePhrases
+        )
+        let pick = SpanishTranslatorAPI.nextRandomTestPhrase(direction: .spanishToEnglish, excluding: nil)
+        XCTAssertTrue(phrases.contains(pick))
+
+        XCTAssertEqual(
+            SpanishTranslatorAPI.bestSpeechLocale(
+                direction: .spanishToEnglish,
+                available: ["en-US", "es-ES", "es-MX", "es_US"]
+            ),
+            "es_US"
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.bestSpeechLocale(
+                direction: .spanishToEnglish,
+                available: ["en-US", "es-ES", "es-MX"]
+            ),
+            "es-MX"
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.bestSpeechLocale(
+                direction: .spanishToEnglish,
+                available: ["en-US", "fr-FR"]
+            ),
+            nil
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.bestSpeechLocale(
+                direction: .englishToSpanish,
+                available: ["es-US", "en-GB", "en-US"]
+            ),
+            "en-US"
+        )
+        let unavailable = SpanishTranslatorAPI.speechUnavailableMessage(direction: .spanishToEnglish).lowercased()
+        XCTAssertTrue(unavailable.contains("spanish"))
+        XCTAssertTrue(unavailable.contains("type"))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.emptySourceMessage(direction: .englishToSpanish),
+            "Say or type something in English first."
+        )
+    }
+
+    func testAppleDraftReverseDirection() {
+        let draft = SpanishTranslatorAPI.appleOnDeviceDraft(
+            translation: "  Kill the power.  ",
+            sourceText: "Corta la corriente.",
+            targetLanguageID: "en-US",
+            sourceLanguageID: "es-US"
+        )
+        XCTAssertEqual(draft.translation, "Kill the power.")
+        XCTAssertEqual(draft.engine, "apple")
+        XCTAssertEqual(draft.sourceLanguage, "es-US")
+        XCTAssertEqual(draft.targetLanguage, "en-US")
+        XCTAssertEqual(draft.resultLanguageLabel, "English")
+        XCTAssertTrue(draft.displayDialect.lowercased().contains("english"))
+        XCTAssertTrue(draft.displayDialect.lowercased().contains("on-device")
+            || draft.displayDialect.lowercased().contains("apple"))
+        XCTAssertFalse(draft.displayDialect.lowercased().contains("cuban"))
+        XCTAssertFalse(draft.displayDialect.lowercased().contains("florida"))
+
+        let cloud = SpanishTranslationDraft(
+            translation: "Where's the breaker?",
+            dialect: "english_jobsite",
+            sourceText: "¿Dónde está el breaker?",
+            sourceLanguage: "es",
+            targetLanguage: "en",
+            engine: "beckify"
+        )
+        XCTAssertEqual(cloud.displayDialect, "English · Jobsite")
+        let clean = SpanishTranslationDraft(
+            translation: "Where is the breaker?",
+            dialect: "english_clean",
+            sourceLanguage: "es",
+            targetLanguage: "en"
+        )
+        XCTAssertEqual(clean.displayDialect, "English · Clean")
+        let pair = SpanishTranslatorAPI.appleTranslationCandidates(direction: .spanishToEnglish)
+        XCTAssertEqual(pair.targets.first, "en-US")
+        XCTAssertTrue(pair.sources.first?.hasPrefix("es") == true)
+        let forward = SpanishTranslatorAPI.appleTranslationCandidates(direction: .englishToSpanish)
+        XCTAssertEqual(forward.sources, ["en"])
+        XCTAssertEqual(forward.targets.first, "es-MX")
+    }
+
+    func testReverseHelpCopyHasNoDialectBranding() {
+        let help = (
+            SpanishTranslatorAPI.reverseAttentionHelp + " "
+            + SpanishTranslatorAPI.modeHelp(direction: .spanishToEnglish, voiceMode: .jobsite) + " "
+            + SpanishTranslatorAPI.statusHelp(direction: .spanishToEnglish) + " "
+            + SpanishTranslatorAPI.playbackHelp(direction: .spanishToEnglish)
+        ).lowercased()
+        XCTAssertTrue(help.contains("english"))
+        XCTAssertTrue(help.contains("spanish"))
+        XCTAssertFalse(help.contains("cuban"))
+        XCTAssertFalse(help.contains("florida"))
+        XCTAssertTrue(SpanishTranslatorAPI.reverseAttentionHelp.lowercased().contains("hey"))
+        let forward = SpanishTranslatorAPI.statusHelp(direction: .englishToSpanish).lowercased()
+        XCTAssertTrue(forward.contains("hey"))
+        XCTAssertTrue(forward.contains("apple"))
+        let how = ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")
+        let joined = ((how?.summary ?? "") + " " + (how?.bullets.joined(separator: " ") ?? "")).lowercased()
+        XCTAssertTrue(joined.contains("spanish → english") || joined.contains("spanish speech"))
+        XCTAssertTrue(joined.contains("english → spanish") || joined.contains("english speech"))
+    }
+
+    func testEnglishVoiceRankingPrefersUS() {
+        XCTAssertGreaterThan(
+            SpanishTranslatorAPI.englishVoiceScore(language: "en-US"),
+            SpanishTranslatorAPI.englishVoiceScore(language: "en-GB")
+        )
+        XCTAssertEqual(SpanishTranslatorAPI.englishVoiceScore(language: "es-US"), -1)
+        XCTAssertEqual(
+            SpanishTranslatorAPI.bestEnglishVoiceLanguage(from: ["es-MX", "en-GB", "en-US"]),
+            "en-US"
+        )
+        let maleUS = SpanishTranslatorAPI.englishPlaybackVoiceScore(language: "en-US", genderRaw: 1, qualityRaw: 1)
+        let femaleUS = SpanishTranslatorAPI.englishPlaybackVoiceScore(language: "en-US", genderRaw: 2, qualityRaw: 2)
+        XCTAssertGreaterThan(maleUS, femaleUS)
+        let note = SpanishTranslatorAPI.englishVoiceFallbackNote(selectedLanguage: "en-US", genderLabel: "male", voiceName: "Aaron")
+        XCTAssertTrue(note.lowercased().contains("en-us") || note.lowercased().contains("aaron"))
+        XCTAssertFalse(note.lowercased().contains("cuban"))
+    }
+
     func testDisclaimerMentionsSpeakAPI() {
         let d = SpanishTranslatorAPI.disclaimer.lowercased()
         XCTAssertTrue(d.contains("/api/speak") || d.contains("neural"))
