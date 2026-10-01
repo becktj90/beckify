@@ -242,11 +242,18 @@ final class PhasorImpedanceTests: XCTestCase {
         XCTAssertEqual(sine.value(at: 0), 0, accuracy: 1e-12)
         XCTAssertEqual(PhasorImpedance.positivePeakTime(sine), 0.005, accuracy: 1e-12)
 
-        let traces = try PhasorImpedance.traces([("V", cosine), ("I", sine)], cycles: 2, samples: 21)
+        let traces = try PhasorImpedance.traces([
+            (name: "V", sinusoid: cosine, unit: "V"),
+            (name: "I", sinusoid: sine, unit: "A"),
+        ], cycles: 2, samples: 21)
         XCTAssertEqual(traces.count, 2)
+        XCTAssertEqual(traces[0].unit, "V")
+        XCTAssertEqual(traces[1].unit, "A")
         XCTAssertEqual(traces[0].samples.first?.value ?? 0, 4, accuracy: 1e-9)
         XCTAssertEqual(traces[0].samples.last?.time ?? 0, 2 / 50, accuracy: 1e-12)
         XCTAssertEqual(traces[0].positivePeak, 4, accuracy: 1e-12)
+        XCTAssertEqual(traces[0].value(at: 0), 4, accuracy: 1e-9)
+        XCTAssertEqual(traces[0].value(at: 0.005), 0, accuracy: 1e-6)
 
         let time = 0.003
         XCTAssertEqual(
@@ -261,6 +268,39 @@ final class PhasorImpedanceTests: XCTestCase {
         )
         let spun = PhasorImpedance.rotate(cosine.peakPhasor, hertz: 50, time: 0)
         XCTAssertEqual(spun.angleDegrees, cosine.peakPhasor.angleDegrees, accuracy: 1e-6)
+    }
+
+    func testWaveformWindowsKeepVoltsAndAmpsApart() throws {
+        let voltage = try PhasorImpedance.makeSinusoid(peak: 10, hertz: 60, phaseDegrees: 0, basis: .cosine)
+        let current = try PhasorImpedance.makeSinusoid(peak: 2, hertz: 60, phaseDegrees: -90, basis: .cosine)
+        let traces = try PhasorImpedance.traces([
+            (name: "V", sinusoid: voltage, unit: "V"),
+            (name: "I", sinusoid: current, unit: "A"),
+        ])
+        let volts = traces.filter { $0.unit == "V" }
+        let amps = traces.filter { $0.unit == "A" }
+        let time = PhasorImpedance.timeWindow(of: volts + amps)
+        XCTAssertEqual(time.start, 0, accuracy: 1e-12)
+        XCTAssertEqual(time.end, 2 / 60, accuracy: 1e-12)
+        XCTAssertEqual(time.mid, time.end / 2, accuracy: 1e-12)
+        XCTAssertEqual(time.fraction(time.start), 0, accuracy: 1e-12)
+        XCTAssertEqual(time.fraction(time.end), 1, accuracy: 1e-12)
+        XCTAssertEqual(time.fraction(time.mid), 0.5, accuracy: 1e-12)
+        XCTAssertEqual(time.value(atFraction: 0.5), time.mid, accuracy: 1e-12)
+
+        let voltWindow = PhasorImpedance.symmetricAmplitudeWindow(of: volts)
+        let ampWindow = PhasorImpedance.symmetricAmplitudeWindow(of: amps)
+        XCTAssertEqual(voltWindow.mid, 0, accuracy: 1e-12)
+        XCTAssertEqual(voltWindow.start, -voltWindow.end, accuracy: 1e-9)
+        XCTAssertEqual(voltWindow.end, 10, accuracy: 1e-6)
+        XCTAssertEqual(ampWindow.end, 2, accuracy: 1e-6)
+        XCTAssertLessThan(ampWindow.end, voltWindow.end)
+        XCTAssertEqual(voltWindow.fraction(0), 0.5, accuracy: 1e-12)
+        XCTAssertEqual(voltWindow.fraction(voltWindow.end), 1, accuracy: 1e-12)
+
+        let quiet = PhasorImpedance.symmetricAmplitudeWindow(of: [])
+        XCTAssertEqual(quiet.mid, 0, accuracy: 1e-12)
+        XCTAssertGreaterThan(quiet.end, 0)
     }
 
     func testNegativePeakAndBlankFrequencyFail() {
