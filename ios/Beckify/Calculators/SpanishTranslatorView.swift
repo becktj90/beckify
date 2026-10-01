@@ -37,14 +37,16 @@ struct SpanishTranslatorView: View {
             copyText: copyText,
             disclaimer: .designAidExtra(SpanishTranslatorAPI.disclaimer)
         ) {
-            statusCard
+            phaseLine
             directionCard
             modeCard
             attentionCard
             recordCard
             quickPhrasesCard
             textCards
-            speakCard
+            if engine.isPreparingSpeak {
+                preparingLine
+            }
             if showAdvanced {
                 advancedCard
             } else {
@@ -117,23 +119,27 @@ struct SpanishTranslatorView: View {
         return lines.joined(separator: "\n")
     }
 
-    private var statusCard: some View {
-        ResultCard(title: "Status", copyText: engine.statusLabel) {
-            ResultRow(label: "Phase", value: engine.statusLabel, emphasis: true, tone: statusTone)
-            if !engine.engineLabel.isEmpty {
-                ResultRow(label: "Engine", value: engine.engineLabel)
-            }
-            if !engine.dialectLabel.isEmpty {
-                ResultRow(label: "Dialect", value: engine.dialectLabel)
-            }
-            if !engine.voiceNote.isEmpty {
-                ResultRow(label: "Voice", value: engine.voiceNote)
-            }
-            Text(SpanishTranslatorAPI.statusHelp(direction: direction))
+    /// One short phase word — no STATUS essay, engine/URL notes, or voice tech.
+    private var phaseLine: some View {
+        Text(engine.statusLabel)
+            .font(.system(size: 20, weight: .bold, design: .rounded))
+            .foregroundStyle(statusTone)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("spanishTranslator.phase")
+            .accessibilityLabel(engine.statusLabel)
+    }
+
+    private var preparingLine: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+            Text(SpanishTranslatorAPI.preparingAudioStatus)
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
-                .padding(.top, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(SpanishTranslatorAPI.preparingAudioStatus)
+        .accessibilityIdentifier("spanishTranslator.preparingAudio")
     }
 
     private var statusTone: Color {
@@ -152,7 +158,7 @@ struct SpanishTranslatorView: View {
     }
 
     private var modeCard: some View {
-        ResultCard(title: "Mode", copyText: voiceMode.uiLabel) {
+        ResultCard(title: "Clean / Jobsite", copyText: voiceMode.uiLabel) {
             Picker("Mode", selection: $voiceModeRaw) {
                 ForEach(SpanishVoiceMode.allCases, id: \.rawValue) { mode in
                     Text(mode.uiLabel).tag(mode.rawValue)
@@ -160,10 +166,6 @@ struct SpanishTranslatorView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("spanishTranslator.voiceMode")
-            Text(SpanishTranslatorAPI.modeHelp(direction: direction, voiceMode: voiceMode))
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .padding(.top, 4)
         }
     }
 
@@ -176,52 +178,36 @@ struct SpanishTranslatorView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("spanishTranslator.direction")
-            Text(direction.listensInSpanish
-                 ? "Listen or type Spanish. You get English back, then English speech."
-                 : "Listen or type English. You get Spanish back, then Spanish speech.")
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .padding(.top, 4)
         }
     }
 
     private var attentionCard: some View {
-        VStack(spacing: 8) {
-            if direction.listensInSpanish {
-                Text(SpanishTranslatorAPI.reverseAttentionHelp)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-            Button {
-                let phrase = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: lastAttentionPhrase)
-                lastAttentionPhrase = phrase
-                typedLine = phrase
-                engine.voiceMode = voiceMode
-                engine.setDirection(direction)
-                engine.translateText(
-                    phrase,
-                    customEndpoint: customEndpoint,
-                    token: apiToken
-                )
-            } label: {
-                Label(SpanishTranslatorAPI.attentionButtonTitle, systemImage: "hand.wave.fill")
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
-                    .frame(maxWidth: .infinity, minHeight: 76)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.warn)
-            .disabled(engine.phase == .listening || engine.phase == .translating)
-            .accessibilityIdentifier("spanishTranslator.attention")
-            .accessibilityLabel(SpanishTranslatorAPI.attentionButtonAccessibilityLabel)
-
-            Text(SpanishTranslatorAPI.attentionButtonHelp)
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        Group {
+            if !direction.listensInSpanish {
+                Button {
+                    let phrase = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: lastAttentionPhrase)
+                    lastAttentionPhrase = phrase
+                    typedLine = phrase
+                    engine.voiceMode = voiceMode
+                    engine.setDirection(direction)
+                    engine.translateText(
+                        phrase,
+                        customEndpoint: customEndpoint,
+                        token: apiToken
+                    )
+                } label: {
+                    Label(SpanishTranslatorAPI.attentionButtonTitle, systemImage: "hand.wave.fill")
+                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .frame(maxWidth: .infinity, minHeight: 76)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.warn)
+                .disabled(engine.phase == .listening || engine.phase == .translating)
+                .accessibilityIdentifier("spanishTranslator.attention")
+                .accessibilityLabel(SpanishTranslatorAPI.attentionButtonAccessibilityLabel)
+                .padding(.vertical, 4)
             }
         }
-        .padding(.vertical, 4)
     }
 
     private var recordCard: some View {
@@ -268,7 +254,7 @@ struct SpanishTranslatorView: View {
                 Button {
                     engine.speakResultAgain()
                 } label: {
-                    Label("Speak again", systemImage: "speaker.wave.3.fill")
+                    Label("Speak", systemImage: "speaker.wave.3.fill")
                         .font(.headline.weight(.bold))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
@@ -335,9 +321,6 @@ struct SpanishTranslatorView: View {
 
     private var quickPhrasesCard: some View {
         ResultCard(title: "Quick lines", copyText: quickPhrases.joined(separator: " · ")) {
-            Text(SpanishTranslatorAPI.quickLinesHelp(direction: direction))
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Array(quickPhrases.enumerated()), id: \.offset) { index, phrase in
@@ -379,10 +362,10 @@ struct SpanishTranslatorView: View {
         VStack(spacing: 12) {
             if direction.listensInSpanish {
                 languageCard(title: "Spanish (heard / typed)", text: engine.spanishText, prominent: false)
-                languageCard(title: "English", text: engine.englishText, prominent: true)
+                languageCard(title: "Answer · English", text: engine.englishText, prominent: true)
             } else {
                 languageCard(title: "English (heard / typed)", text: engine.englishText, prominent: false)
-                languageCard(title: "Spanish", text: engine.spanishText, prominent: true)
+                languageCard(title: "Answer · Spanish", text: engine.spanishText, prominent: true)
             }
         }
     }
@@ -395,26 +378,6 @@ struct SpanishTranslatorView: View {
                       : Theme.TypeRole.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
-        }
-    }
-
-    private var speakCard: some View {
-        ResultCard(title: "Loud playback", copyText: engine.voiceNote) {
-            if engine.isPreparingSpeak {
-                HStack(spacing: 10) {
-                    ProgressView()
-                    Text(SpanishTranslatorAPI.preparingAudioStatus)
-                        .font(Theme.TypeRole.help)
-                        .foregroundStyle(Theme.muted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(SpanishTranslatorAPI.preparingAudioStatus)
-                .accessibilityIdentifier("spanishTranslator.preparingAudio")
-            }
-            Text(SpanishTranslatorAPI.playbackHelp(direction: direction))
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
         }
     }
 

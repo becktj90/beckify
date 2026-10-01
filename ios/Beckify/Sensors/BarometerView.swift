@@ -180,6 +180,10 @@ struct BarometerView: View {
                     tone: Theme.good
                 )
                 ResultRow(label: "Source", value: model.status)
+                Text("Pressure is what the phone barometer feels right now. Relative Δh is height change since you opened this tool — not sea level.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 4)
             }
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.kPa != nil) { save() }
         }

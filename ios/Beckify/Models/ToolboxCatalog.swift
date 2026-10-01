@@ -114,7 +114,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     /// Operator-facing shelf title. Raw values stay unchanged for merge stability.
     var displayName: String {
         switch self {
-        case .field: return "Jobsite"
+        case .field: return "Field"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .homework: return "Bench"
@@ -143,7 +143,7 @@ extension ToolHomeArea {
     var blurb: String {
         switch self {
         case .field:
-            return "Jobsite calculators, wizards, and instruments."
+            return "Field calculators, wizards, and instruments."
         case .toolkit:
             return "Basics, bench, and references."
         }
@@ -153,7 +153,7 @@ extension ToolHomeArea {
 extension ToolShelfKind {
     var title: String {
         switch self {
-        case .jobsite: return "Jobsite"
+        case .jobsite: return "Field"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .magnetics: return "Magnetics & Fields"
@@ -722,7 +722,7 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Spanish Translator",
-            subtitle: "English → Spanish or Spanish → English. Clean or Jobsite, Hey! on the English side, neural TTS, Apple fallbacks.",
+            subtitle: "English ↔ Spanish. Clean or Jobsite, Hey!, Speak. Simple controls — not a certified interpreter.",
             symbol: "character.bubble",
             synonyms: ["translator", "spanish", "translate", "interpreter", "español", "speech", "neural", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen"]
         ),

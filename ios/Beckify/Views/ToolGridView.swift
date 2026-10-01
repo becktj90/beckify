@@ -180,52 +180,40 @@ struct ToolGridView: View {
     // MARK: - Header
 
     private var homeHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("BECKIFY")
-                .font(Theme.TypeRole.hud)
-                .tracking(2.4)
-                .foregroundStyle(Color.white.opacity(0.72))
-            Text(homeArea.headline)
-                .font(Theme.TypeRole.heroBrand)
-                .foregroundStyle(Color.white)
-            Text(homeArea.blurb)
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Color.white.opacity(0.82))
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Beckify")
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(Color.white.opacity(0.62))
+                Text(homeArea.headline)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.white)
+                Text(homeArea.blurb)
+                    .font(.caption)
+                    .foregroundStyle(Color.white.opacity(0.78))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            IconWell(
+                toolID: homeArea == .field ? .voltageDrop : .ohmsLaw,
+                size: 44,
+                selected: true
+            )
+            .opacity(0.35)
+            .accessibilityHidden(true)
         }
-        .padding(.horizontal, Theme.Space.lg)
+        .padding(.horizontal, Theme.Space.md)
         .padding(.vertical, Theme.Space.sm)
-        .padding(.trailing, 80)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
                 .fill(Theme.instrumentPanel)
-                .overlay {
-                    // Concentric instrument rings — depth cue inspired by
-                    // premium mobile heroes, drawn in brand teal not purple.
-                    ConcentricRings()
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous))
-                }
-                .overlay {
-                    BlueprintGridBackground(opacity: 0.10)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous))
-                }
                 .overlay(
-                    RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: Theme.Stroke.hairline)
+                    RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: Theme.Stroke.hairline)
                 )
-                .overlay(alignment: .trailing) {
-                    IconWell(
-                        toolID: homeArea == .field ? .voltageDrop : .ohmsLaw,
-                        size: 92,
-                        selected: true
-                    )
-                    .opacity(0.28)
-                    .padding(.trailing, 16)
-                    .accessibilityHidden(true)
-                }
         }
-        .brandGlow(radius: 18, opacity: 0.18)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Beckify. \(homeArea.headline). \(homeArea.blurb)")
         .accessibilityIdentifier("homeHeader")
@@ -257,7 +245,7 @@ struct ToolGridView: View {
             }
             .padding(.top, 4)
 
-            VStack(alignment: .leading, spacing: Theme.Space.lg) {
+            VStack(alignment: .leading, spacing: Theme.Space.md) {
                 ForEach(ToolShelfKind.shelves(in: homeArea), id: \.self) { shelf in
                     let tools = ToolboxCatalog.tools(on: shelf)
                     if !tools.isEmpty {
@@ -395,12 +383,13 @@ struct ToolShelfScreen: View {
 
 enum ToolShelfGridLayout {
     static func columns(sizeClass: UserInterfaceSizeClass?) -> [GridItem] {
-        let minimum: CGFloat = sizeClass == .regular ? 148 : 156
-        return [GridItem(.adaptive(minimum: minimum), spacing: 14)]
+        // Denser tiles so more icons show on home shelf screens.
+        let minimum: CGFloat = sizeClass == .regular ? 128 : 118
+        return [GridItem(.adaptive(minimum: minimum), spacing: 10)]
     }
 
     /// Fixed tile height so LazyVGrid rows do not reflow as cells appear.
-    static let tileHeight: CGFloat = 176
+    static let tileHeight: CGFloat = 148
 }
 
 /// Section chrome + LazyVGrid of tool tiles. Used by search results and shelf screens.
@@ -427,7 +416,7 @@ struct ToolCategoryGrid: View {
                 .padding(.top, 4)
             }
 
-            LazyVGrid(columns: columns, spacing: 16) {
+            LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(tools) { tool in
                     NavigationLink(value: ToolboxHomeRoute.tool(tool.id)) {
                         ToolTile(
@@ -556,11 +545,11 @@ struct ToolTile: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 6) {
             ZStack(alignment: .topTrailing) {
-                IconWell(toolID: tool.id, size: 72)
+                IconWell(toolID: tool.id, size: 56)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 4)
+                    .padding(.top, 2)
 
                 if isFavorite {
                     Image(systemName: "star.fill")

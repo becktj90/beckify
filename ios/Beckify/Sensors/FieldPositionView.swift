@@ -128,6 +128,10 @@ struct FieldPositionView: View {
                 ResultRow(label: "Speed", value: speedText)
                 ResultRow(label: "H. accuracy", value: model.accuracy.map { Format.meters($0) } ?? "—")
                 ResultRow(label: "Status", value: model.status)
+                Text("Phone GPS right now. H. accuracy is how far off the pin might be (indoors often several meters). Not a survey.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 4)
             }
             ThumbButtonRow {
                 Button("Mark A") { model.markA() }
@@ -146,6 +150,10 @@ struct FieldPositionView: View {
                 ResultRow(label: "Point B", value: pointText(model.pointB))
                 ResultRow(label: "Distance", value: model.distanceMeters.map { Format.meters($0) } ?? "—", emphasis: true, tone: Theme.good)
                 ResultRow(label: "Bearing", value: model.bearingDegrees.map { Format.degrees($0) } ?? "—")
+                Text("Great-circle distance and initial bearing between two marks you save on this device. Not a legal property line.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, 4)
             }
             SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.latitude != nil) { save() }
         }
