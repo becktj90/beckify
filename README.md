@@ -21,7 +21,7 @@
 
 ## API (`api.beckify.com`)
 
-Express vision + review + translate lives in `artifacts/api-server/`.
+Express vision + review + translate + speak (OpenAI neural TTS) lives in `artifacts/api-server/`.
 
 **Production host:** [Fly.io](https://fly.io) app **`beckify-api`** (see `artifacts/api-server/fly.toml` and that package’s README).  
 Vercel config remains in-tree for rollback only; do not treat Vercel as the active production path after cutover.

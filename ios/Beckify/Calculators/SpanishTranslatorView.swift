@@ -4,7 +4,7 @@ import Speech
 import Translation
 import BeckifyMath
 
-/// Toolkit → Reference: record English → Beckify AI Cuban / South Florida jobsite Spanish → loud male TTS.
+/// Toolkit → Reference: record English → Beckify AI Cuban / South Florida jobsite Spanish → OpenAI neural TTS (Apple fallback).
 /// Falls back to on-device Apple Translation (iOS 18+) when `/api/translate` fails.
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -94,7 +94,7 @@ struct SpanishTranslatorView: View {
             if !engine.voiceNote.isEmpty {
                 ResultRow(label: "Voice", value: engine.voiceNote)
             }
-            Text("Listening → Translating → Speaking. Beckify AI aims for blunt Cuban / South Florida jobsite Spanish. Falls back to on-device Apple Translation on iOS 18+ when the API is down. Hold the phone so the bottom mic hears you clearly.")
+            Text("Listening → Translating → Speaking. Beckify AI aims for blunt Cuban / South Florida jobsite Spanish. Falls back to on-device Apple Translation on iOS 18+ when the API is down. Playback prefers OpenAI neural TTS (onyx) from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
@@ -198,7 +198,7 @@ struct SpanishTranslatorView: View {
 
     private var speakCard: some View {
         ResultCard(title: "Loud playback", copyText: engine.voiceNote) {
-            Text("Loud jobsite playback: deepest male es-US/es-MX voice available, max volume, slower clear rate, speaker route. Apple system voices can still sound robotic — cloud TTS (ElevenLabs / OpenAI) via the Beckify API is the next upgrade if needed. Media volume still matters if the phone is muted.")
+            Text("Loud jobsite playback: OpenAI neural TTS (onyx / gpt-4o-mini-tts) from api.beckify.com with Cuban yell instructions, max speaker volume. Falls back to the deepest male es-US/es-MX Apple voice if cloud TTS fails. Media volume still matters if the phone is muted.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
         }
@@ -227,7 +227,7 @@ struct SpanishTranslatorView: View {
            PhotoLookCheck.httpsBase(customEndpoint) != nil {
             return "Custom translate URL is set."
         }
-        return "Uses https://api.beckify.com/api/translate when the custom URL is blank. On-device Apple Translation is the fallback."
+        return "Uses https://api.beckify.com/api/translate and /api/speak when the custom URL is blank. On-device Apple Translation + Apple TTS are fallbacks."
     }
 }
 
@@ -363,10 +363,14 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     private let synthesizer = AVSpeechSynthesizer()
+    private var audioPlayer: AVAudioPlayer?
     private var selectedVoice: AVSpeechSynthesisVoice?
     private var pendingCustomEndpoint = ""
     private var pendingToken = ""
     private var lastSuccessStatus = ""
+    private var speakGeneration: UInt64 = 0
+    private var lastTTSModel = "gpt-4o-mini-tts"
+    private var lastTTSVoice = "onyx"
     private var lastAPIError: String?
     private var translateGeneration: UInt64 = 0
 
@@ -507,9 +511,14 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     func stopSpeaking() {
+        speakGeneration &+= 1
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
+        if let player = audioPlayer, player.isPlaying {
+            player.stop()
+        }
+        audioPlayer = nil
     }
 
     private func beginOnDeviceFallback(source: String, apiError: String) {
@@ -657,21 +666,58 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     private func speakSpanish(_ text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = SpanishTranslatorAPI.clampSpeakText(text)
         guard !trimmed.isEmpty else { return }
-        refreshVoice()
+        // stopSpeaking bumps speakGeneration so in-flight fetches are ignored.
         stopSpeaking()
+        let generation = speakGeneration
+        phase = .speaking
+        statusLabel = "Speaking…"
+        voiceNote = "Fetching neural TTS…"
 
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
-            try session.overrideOutputAudioPort(.speaker)
-        } catch {
-            // Still attempt utterance; route may already be speaker.
+        Task {
+            do {
+                let result = try await Self.postSpeak(
+                    text: trimmed,
+                    customEndpoint: pendingCustomEndpoint,
+                    token: pendingToken
+                )
+                guard generation == speakGeneration else { return }
+                lastTTSModel = result.model ?? lastTTSModel
+                lastTTSVoice = result.voice ?? lastTTSVoice
+                try playNeuralAudio(result.data)
+                voiceNote = SpanishTranslatorAPI.neuralVoiceNote(model: lastTTSModel, voice: lastTTSVoice)
+            } catch {
+                guard generation == speakGeneration else { return }
+                // Soft note only — translation already succeeded.
+                let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                if !detail.isEmpty {
+                    errorMessage = "Neural TTS unavailable — Apple voice. (\(detail))"
+                }
+                speakWithAppleFallback(trimmed)
+            }
         }
+    }
 
-        let utterance = AVSpeechUtterance(string: trimmed)
+    private func playNeuralAudio(_ data: Data) throws {
+        prepareLoudPlaybackSession()
+        let player = try AVAudioPlayer(data: data)
+        player.delegate = self
+        player.volume = 1.0
+        player.prepareToPlay()
+        audioPlayer = player
+        phase = .speaking
+        statusLabel = "Speaking"
+        guard player.play() else {
+            throw VisionHTTPError(status: 0, message: "AVAudioPlayer failed to start.")
+        }
+    }
+
+    private func speakWithAppleFallback(_ text: String) {
+        refreshVoice()
+        prepareLoudPlaybackSession()
+
+        let utterance = AVSpeechUtterance(string: text)
         utterance.voice = selectedVoice
         utterance.volume = 1.0
         // Slower than default so Cuban jobsite Spanish stays intelligible over site noise.
@@ -684,6 +730,48 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         phase = .speaking
         statusLabel = "Speaking"
         synthesizer.speak(utterance)
+    }
+
+    private func prepareLoudPlaybackSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            try session.overrideOutputAudioPort(.speaker)
+        } catch {
+            // Still attempt utterance; route may already be speaker.
+        }
+    }
+
+    private static func postSpeak(
+        text: String,
+        customEndpoint: String,
+        token: String
+    ) async throws -> (data: Data, model: String?, voice: String?) {
+        guard let url = SpanishTranslatorAPI.speakURL(customEndpoint: customEndpoint) else {
+            throw VisionHTTPError(
+                status: 0,
+                message: "Speak needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com."
+            )
+        }
+        let body = try SpanishTranslatorAPI.speakRequestJSON(text: text)
+        let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
+        do {
+            let result = try await BeckifyAIClient.postAudio(
+                url: url,
+                body: body,
+                bearerToken: auth,
+                timeout: 30
+            )
+            return (result.data, result.model, result.voice)
+        } catch let error as VisionHTTPError {
+            let message = SpanishTranslatorAPI.formatSpeakError(
+                status: error.status,
+                message: error.message,
+                endpoint: url.absoluteString
+            )
+            throw VisionHTTPError(status: error.status, message: message)
+        }
     }
 
     private static func postTranslate(
@@ -737,6 +825,34 @@ extension SpanishTranslatorEngine: AVSpeechSynthesizerDelegate {
             if phase == .speaking {
                 phase = .idle
                 statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
+            }
+        }
+    }
+}
+
+extension SpanishTranslatorEngine: AVAudioPlayerDelegate {
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            if phase == .speaking {
+                phase = .idle
+                statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
+            }
+            audioPlayer = nil
+        }
+    }
+
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        Task { @MainActor in
+            audioPlayer = nil
+            if phase == .speaking {
+                let fallback = spanishText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !fallback.isEmpty {
+                    errorMessage = "Neural audio decode failed — Apple voice."
+                    speakWithAppleFallback(SpanishTranslatorAPI.clampSpeakText(fallback))
+                } else {
+                    phase = .idle
+                    statusLabel = lastSuccessStatus.isEmpty ? "Ready" : lastSuccessStatus
+                }
             }
         }
     }
