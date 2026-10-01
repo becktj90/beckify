@@ -382,6 +382,8 @@ struct PhasorImpedanceView: View {
         case .phasor: return (try? phasorResult.get())?.forms.polar
         case .elements: return (try? elementResult.get())?.law
         case .impedance: return (try? impedanceResult.get())?.headline
+        // Quick sum publishes its own sticky and save. The parent note stays empty.
+        case .sum: return nil
         }
     }
 

@@ -225,7 +225,6 @@ extension LabSolve {
         let id: Double
         let vgs: Double
         let vs: Double
-        let warning: String?
         if let drive = over, drive > 0 {
             id = 0.5 * kn * drive * drive
             vgs = vt + drive
