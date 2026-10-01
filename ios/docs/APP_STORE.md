@@ -156,7 +156,7 @@ Spanish Translator on Toolkit → Reference: record English (or type it), rewrit
 **Copyright:** 2026 Trevor Beck  
 **Contact:** trevorjohnbeck@gmail.com
 
-**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md). Look Check **Analyze Look**, Motor Nameplate **Analyze**, and Panel Directory **Analyze** are user-initiated photo uploads (Photos — App Functionality, not linked, not tracking). Spanish Translator **Translate** / stop-after-record may upload recognized or typed text (Other User Content — App Functionality, not linked, not tracking).
+**Privacy Policy URL:** https://beckify.com/privacy (live; also served at https://beckify.com/privacy/). App Store Connect needs this public HTTPS URL. Source text: [`PRIVACY.md`](PRIVACY.md). Look Check **Analyze Look**, Motor Nameplate **Analyze**, and Panel Directory **Analyze** are user-initiated photo uploads (Photos — App Functionality, not linked, not tracking). Spanish Translator **Translate** / stop-after-record may upload recognized or typed text to the Beckify translate API and, after a successful translation, short Spanish text to `/api/speak` for neural TTS (Other User Content — App Functionality, not linked, not tracking). On-device Apple Translation / Apple TTS fallbacks do not upload.
 
 ## Cellular App Store limitation (honest)
 
@@ -168,7 +168,7 @@ Public iOS APIs do **not** provide Wi-Fi RSSI or dBm to third-party apps (Apple 
 
 ## App privacy (nutrition label)
 
-Data collection: **Photos** when the user taps **Analyze Look** / **Analyze** in Look Check, Motor Nameplate OCR, or Panel Directory; **Other User Content** when Spanish Translator sends recognized or typed text to the Beckify translate API (see [`PRIVACY.md`](PRIVACY.md)). Not linked to identity. Not used for tracking.
+Data collection: **Photos** when the user taps **Analyze Look** / **Analyze** in Look Check, Motor Nameplate OCR, or Panel Directory; **Other User Content** when Spanish Translator sends recognized or typed text to the Beckify translate API and, after a successful translation, short Spanish text to the Beckify speak API (`/api/speak`) for neural TTS (on-device Apple Translation / Apple TTS fallbacks do not upload; see [`PRIVACY.md`](PRIVACY.md)). Not linked to identity. Not used for tracking.
 
 - No analytics
 - No tracking
@@ -177,12 +177,12 @@ Data collection: **Photos** when the user taps **Analyze Look** / **Analyze** in
 - Saved jobs, last-used tool inputs, and Settings (electrical code, length units, appearance) use on-device storage only (`UserDefaults`)
 - Microphone, Bluetooth, location, and CoreTelephony radio identity are processed on device inside those tools; numeric snapshots are saved only if the user taps Save
 - Look Check, Motor Nameplate OCR, and Panel Directory photos stay on device until the user taps Analyze / Analyze Look
-- Spanish Translator keeps mic audio on device for Speech recognition; recognized/typed text uploads only on Stop / Translate
+- Spanish Translator keeps mic audio on device for Speech recognition; recognized/typed text uploads on Stop / Translate when the Beckify AI path runs, and short Spanish may leave for `/api/speak` neural TTS (on-device Apple Translation / Apple TTS fallbacks stay on device)
 
 Privacy manifest: `Beckify/PrivacyInfo.xcprivacy`  
 - `NSPrivacyTracking` = false  
 - Photos or Videos collected for App Functionality, not linked, not used for tracking  
-- Other User Content (translate text) collected for App Functionality, not linked, not used for tracking  
+- Other User Content (translate text and short Spanish for `/api/speak` neural TTS) collected for App Functionality, not linked, not used for tracking  
 - UserDefaults accessed with reason CA92.1 (app functionality: saved jobs, last-used inputs, and settings)
 
 Usage strings (generated Info.plist via `INFOPLIST_KEY_*` on the Beckify target, Debug + Release): microphone, **Speech Recognition** (`NSSpeechRecognitionUsageDescription` — Spanish Translator), Bluetooth Always / Peripheral, location When In Use, Local Network (Wi-Fi Path or Cellular Path TCP RTT to a LAN host), camera, **Motion** (`NSMotionUsageDescription` — Barometer / relative altitude, Bubble Level, Magnetometer, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, optional Solar Design Wizard panel aim). Microphone covers Noise Meter, Acoustic Imager, Room & Rig Check, Breath Flute, Stillness, and Spanish Translator; Stillness reuses the BLE Scanner sentence. Photo Library full access is not requested; Look Check, Motor Nameplate OCR, and Panel Directory use the system picker and/or camera. Cellular Path does not request location. Build **113** crashed in App Review (`TCC` / `kTCCServiceMotion`) because this Motion key was missing.
