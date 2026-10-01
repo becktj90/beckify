@@ -76,7 +76,7 @@ router.post("/translate", async (req, res) => {
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       body: JSON.stringify({
         model,
-        temperature: 0.35,
+        temperature: 0.45,
         response_format: { type: "json_object" },
         max_tokens: TRANSLATE_MAX_OUTPUT_TOKENS,
         messages: [
@@ -111,7 +111,7 @@ router.post("/translate", async (req, res) => {
       model,
       sourceLanguage,
       targetLanguage: "es",
-      dialect: parsed.dialect || "cuban_florida_latam",
+      dialect: parsed.dialect || "cuban_florida_jobsite",
       sourceText,
       translation: parsed.translation,
       notes: parsed.notes || undefined,

@@ -730,7 +730,7 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Spanish Translator",
-            subtitle: "Speak English, hear Cuban / Florida LatAm Spanish (Beckify AI, on-device fallback) — loud playback.",
+            subtitle: "Speak English, hear Cuban / South Florida jobsite Spanish (Beckify AI, on-device fallback) — loud male TTS.",
             symbol: "character.bubble",
             synonyms: ["translator", "spanish", "cuban", "florida spanish", "translate", "interpreter", "español", "latam", "miami", "speech"]
         ),

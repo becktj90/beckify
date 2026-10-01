@@ -137,7 +137,7 @@ Wire Size & Ampacity, Flexible Cable Ampacity, Conduit Fill (including the Count
 ### Reference
 
 - Reference Library (NEMA, IP, colors, hazardous areas, insulation, torque, conduit, standard sizes)
-- Spanish Translator (record or type English → Beckify AI Cuban / Florida LatAm Spanish, or on-device Apple Translation fallback on iOS 18+ → loud TTS; audio not uploaded; text uploads only on the Beckify AI path)
+- Spanish Translator (record or type English → Beckify AI Cuban / South Florida jobsite Spanish, or on-device Apple Translation fallback on iOS 18+ → loud male TTS; audio not uploaded; text uploads only on the Beckify AI path)
 - Panel Directory (camera or library photo stays on screen; on-device flatten, contrast lift, and multi-pass Vision, then a fuzzy grid into an editable schedule — circuit, name, trip, poles, class — value + confidence + reviewed. A 0–1 scan-quality score can ask for a retake. Odd/even numbers may be inferred when the print is missing. Optional Analyze POSTs to `/api/analyze-panel` only when you tap it; confirm, then demand / capacity-to-add via the same 220.42 worksheet as Load Calculation Worksheet. Trip is not measured load. FLA and kAIC reads are not measured. Optional seed into Load Calculation Worksheet)
 - Load Calculation Worksheet (NEC 220.42 lighting demand + category VA)
 - Cable Schedule Generator (sequential IDs + CSV copy)

@@ -79,10 +79,26 @@ final class SpanishTranslatorTests: XCTestCase {
     }
 
     func testVoiceFallbackNote() {
-        let us = SpanishTranslatorAPI.voiceFallbackNote(selectedLanguage: "es-US")
-        XCTAssertTrue(us.lowercased().contains("es-us"))
+        let us = SpanishTranslatorAPI.voiceFallbackNote(
+            selectedLanguage: "es-US",
+            genderLabel: "male",
+            voiceName: "Juan"
+        )
+        XCTAssertTrue(us.lowercased().contains("es-us") || us.lowercased().contains("juan"))
+        XCTAssertTrue(us.lowercased().contains("male"))
         let empty = SpanishTranslatorAPI.voiceFallbackNote(selectedLanguage: nil)
         XCTAssertTrue(empty.lowercased().contains("no spanish"))
+        XCTAssertTrue(empty.lowercased().contains("elevenlabs") || empty.lowercased().contains("openai"))
+    }
+
+    func testJobsiteVoiceScorePrefersMaleUS() {
+        let maleUS = SpanishTranslatorAPI.jobsiteVoiceScore(language: "es-US", genderRaw: 1, qualityRaw: 2)
+        let femaleUS = SpanishTranslatorAPI.jobsiteVoiceScore(language: "es-US", genderRaw: 2, qualityRaw: 2)
+        let maleMX = SpanishTranslatorAPI.jobsiteVoiceScore(language: "es-MX", genderRaw: 1, qualityRaw: 1)
+        XCTAssertGreaterThan(maleUS, femaleUS)
+        XCTAssertGreaterThan(maleUS, maleMX)
+        XCTAssertEqual(SpanishTranslatorAPI.jobsiteSpeechRateFactor, Float(0.84), accuracy: 0.001)
+        XCTAssertEqual(SpanishTranslatorAPI.jobsitePitchMultiplier, Float(0.92), accuracy: 0.001)
     }
 
     func testCatalogPolicyAndHowItWorks() {

@@ -4,7 +4,7 @@ import Speech
 import Translation
 import BeckifyMath
 
-/// Toolkit → Reference: record English → Beckify AI Cuban / Florida LatAm Spanish → loud TTS.
+/// Toolkit → Reference: record English → Beckify AI Cuban / South Florida jobsite Spanish → loud male TTS.
 /// Falls back to on-device Apple Translation (iOS 18+) when `/api/translate` fails.
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -94,7 +94,7 @@ struct SpanishTranslatorView: View {
             if !engine.voiceNote.isEmpty {
                 ResultRow(label: "Voice", value: engine.voiceNote)
             }
-            Text("Listening → Translating → Speaking. Hold the phone so the bottom mic hears you clearly. Prefers Beckify AI; falls back to on-device Apple Translation on iOS 18+ when the API is down.")
+            Text("Listening → Translating → Speaking. Beckify AI aims for blunt Cuban / South Florida jobsite Spanish. Falls back to on-device Apple Translation on iOS 18+ when the API is down. Hold the phone so the bottom mic hears you clearly.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
@@ -198,7 +198,7 @@ struct SpanishTranslatorView: View {
 
     private var speakCard: some View {
         ResultCard(title: "Loud playback", copyText: engine.voiceNote) {
-            Text("Playback uses maximum utterance volume and routes to the speaker. Media volume still matters — turn the Ring/Silent switch up if the phone is muted for media.")
+            Text("Loud jobsite playback: deepest male es-US/es-MX voice available, max volume, slower clear rate, speaker route. Apple system voices can still sound robotic — cloud TTS (ElevenLabs / OpenAI) via the Beckify API is the next upgrade if needed. Media volume still matters if the phone is muted.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
         }
@@ -617,20 +617,43 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     private func refreshVoice() {
-        let languages = AVSpeechSynthesisVoice.speechVoices().map(\.language)
-        let bestLang = SpanishTranslatorAPI.bestSpanishVoiceLanguage(from: languages)
-        if let bestLang {
-            selectedVoice = AVSpeechSynthesisVoice.speechVoices()
-                .filter { $0.language.caseInsensitiveCompare(bestLang) == .orderedSame }
-                .sorted { $0.quality.rawValue > $1.quality.rawValue }
-                .first
-                ?? AVSpeechSynthesisVoice(language: bestLang)
-        } else {
-            selectedVoice = AVSpeechSynthesisVoice(language: "es-US")
-                ?? AVSpeechSynthesisVoice(language: "es-MX")
-                ?? AVSpeechSynthesisVoice(language: "es-ES")
+        let voices = AVSpeechSynthesisVoice.speechVoices().filter {
+            SpanishTranslatorAPI.spanishVoiceScore(language: $0.language) >= 0
         }
-        voiceNote = SpanishTranslatorAPI.voiceFallbackNote(selectedLanguage: selectedVoice?.language)
+        let ranked = voices.sorted { lhs, rhs in
+            let l = SpanishTranslatorAPI.jobsiteVoiceScore(
+                language: lhs.language,
+                genderRaw: lhs.gender.rawValue,
+                qualityRaw: lhs.quality.rawValue
+            )
+            let r = SpanishTranslatorAPI.jobsiteVoiceScore(
+                language: rhs.language,
+                genderRaw: rhs.gender.rawValue,
+                qualityRaw: rhs.quality.rawValue
+            )
+            if l != r { return l > r }
+            return lhs.identifier < rhs.identifier
+        }
+        selectedVoice = ranked.first
+            ?? AVSpeechSynthesisVoice(language: "es-US")
+            ?? AVSpeechSynthesisVoice(language: "es-MX")
+            ?? AVSpeechSynthesisVoice(language: "es-ES")
+
+        let genderLabel: String
+        if let gender = selectedVoice?.gender {
+            switch gender {
+            case .male: genderLabel = "male"
+            case .female: genderLabel = "female"
+            @unknown default: genderLabel = "unspecified"
+            }
+        } else {
+            genderLabel = "unspecified"
+        }
+        voiceNote = SpanishTranslatorAPI.voiceFallbackNote(
+            selectedLanguage: selectedVoice?.language,
+            genderLabel: genderLabel,
+            voiceName: selectedVoice?.name
+        )
     }
 
     private func speakSpanish(_ text: String) {
@@ -651,11 +674,12 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let utterance = AVSpeechUtterance(string: trimmed)
         utterance.voice = selectedVoice
         utterance.volume = 1.0
-        // Slightly under default rate for field intelligibility while staying loud/clear.
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.92
-        utterance.pitchMultiplier = 1.0
+        // Slower than default so Cuban jobsite Spanish stays intelligible over site noise.
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * SpanishTranslatorAPI.jobsiteSpeechRateFactor
+        // Slightly lower pitch reads a bit deeper / thicker on many Apple voices.
+        utterance.pitchMultiplier = SpanishTranslatorAPI.jobsitePitchMultiplier
         utterance.preUtteranceDelay = 0.05
-        utterance.postUtteranceDelay = 0.05
+        utterance.postUtteranceDelay = 0.08
 
         phase = .speaking
         statusLabel = "Speaking"
@@ -674,37 +698,26 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             )
         }
         let body = try SpanishTranslatorAPI.requestJSON(text: text)
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 30
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
-        if !auth.isEmpty {
-            request.setValue("Bearer \(auth)", forHTTPHeaderField: "Authorization")
-        }
-        request.httpBody = body
-
-        let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch {
-            throw VisionHTTPError(status: 0, message: error.localizedDescription)
-        }
-        let http = response as? HTTPURLResponse
-        let status = http?.statusCode ?? 0
-        let payload = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        if status < 200 || status >= 300 {
+            let payload = try await BeckifyAIClient.postJSON(
+                url: url,
+                body: body,
+                bearerToken: auth,
+                timeout: 30
+            )
+            guard let draft = SpanishTranslatorAPI.normalizeDraft(payload, fallbackSource: text) else {
+                throw VisionHTTPError(status: 200, message: "Translate returned no Spanish text.")
+            }
+            return draft
+        } catch let error as VisionHTTPError {
             let message = SpanishTranslatorAPI.formatTranslateError(
-                status: status,
-                message: payload["error"] as? String,
+                status: error.status,
+                message: error.message,
                 endpoint: url.absoluteString
             )
-            throw VisionHTTPError(status: status, message: message)
+            throw VisionHTTPError(status: error.status, message: message)
         }
-        guard let draft = SpanishTranslatorAPI.normalizeDraft(payload, fallbackSource: text) else {
-            throw VisionHTTPError(status: status, message: "Translate returned no Spanish text.")
-        }
-        return draft
     }
 
 }

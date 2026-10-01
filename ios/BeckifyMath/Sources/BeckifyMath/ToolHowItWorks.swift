@@ -802,12 +802,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Record English, translate to Cuban / Florida LatAm Spanish via Beckify AI (or on-device Apple Translation when the API is down), and speak it loudly.",
-            context: "Toolkit → Reference. Field interpreter for job sites and everyday talk — not a certified interpreter.",
+            summary: "Record English, get Cuban / South Florida jobsite Spanish via Beckify AI (or on-device Apple Translation), and speak it loud.",
+            context: "Toolkit → Reference. Jobsite interpreter vibe — not a certified interpreter.",
             bullets: [
-                "Mic + on-device Speech recognition. Audio is not uploaded; recognized text may POST to api.beckify.com/api/translate when you stop or tap Translate.",
-                "Prefers Beckify AI Cuban / South Florida LatAm Spanish. If that API fails (404 / network / 5xx), falls back to on-device Apple Translation on iOS 18+ (generic Spanish, closest LatAm pair when available). Status shows Translated via Beckify AI or Translated on device.",
-                "TTS prefers es-US, then es-MX / other LatAm voices, then es-ES. Cuban es-CU is not typically shipped by Apple. Volume is maxed to the speaker.",
+                "Mic + on-device Speech. Audio stays local; recognized text POSTs to /api/translate only on Stop or Translate (Beckify AI path).",
+                "Beckify AI aims for blunt Cuban / Miami jobsite Spanish. API down → on-device Apple Translation (iOS 18+). Status: Beckify AI vs on device.",
+                "TTS picks the deepest male es-US/es-MX voice it can, max volume, slower for site noise. Apple TTS can still sound robotic.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(
