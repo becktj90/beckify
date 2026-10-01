@@ -29,6 +29,9 @@ final class BreathFluteModel: ObservableObject {
     private var didSuspendSpectrum = false
     private var sampleRate = 44_100.0
     private var triedVoiceFallback = false
+    /// Nil until the first breath-band reading seeds the floor. Never start at the digital silence floor.
+    private var trackedFloor: Double?
+    @Published var breathDBFS = SoundLevel.silenceFloorDBFS
 
     func start() {
         wantsRunning = true
@@ -73,6 +76,9 @@ final class BreathFluteModel: ObservableObject {
         blowBands = []
         micRoute = "Mic route pending"
         triedVoiceFallback = false
+        trackedFloor = nil
+        breathDBFS = SoundLevel.silenceFloorDBFS
+        noiseFloor = SoundLevel.silenceFloorDBFS
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         if didSuspendSpectrum {
             didSuspendSpectrum = false
@@ -92,15 +98,18 @@ final class BreathFluteModel: ObservableObject {
             pushSynth()
             return
         }
-        let plan: SessionPlan = triedVoiceFallback ? .measurement : .voiceChat
+        // Measurement first: voice-chat noise suppression treats a blow like wind and
+        // can zero the mic. Breath gating uses high bands so the speaker sine does not
+        // hold the gate. Voice-chat is only a boot fallback.
+        let plan: SessionPlan = triedVoiceFallback ? .voiceChat : .measurement
         do {
             try boot(plan)
         } catch {
             tearDownPartial()
-            if plan.voiceProcessing, !triedVoiceFallback, !(error is FluteAudioError) {
+            if !plan.voiceProcessing, !triedVoiceFallback {
                 triedVoiceFallback = true
                 do {
-                    try boot(.measurement)
+                    try boot(.voiceChat)
                 } catch {
                     reportStartFailure(error)
                 }
@@ -119,8 +128,8 @@ final class BreathFluteModel: ObservableObject {
         }
     }
 
-    /// Voice chat lets iOS echo-cancel the speaker so the gate follows breath.
-    /// Measurement is the fallback when that route will not start. Neither mode is a calibration.
+    /// Measurement is preferred so a blow is not noise-suppressed. Voice chat is only
+    /// a boot fallback. Neither mode is a calibration.
     private struct SessionPlan {
         var mode: AVAudioSession.Mode
         var voiceProcessing: Bool
@@ -144,6 +153,8 @@ final class BreathFluteModel: ObservableObject {
             } catch {
                 echoLabel = "echo cancel unavailable"
             }
+        } else {
+            try? input.setVoiceProcessingEnabled(false)
         }
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
@@ -181,25 +192,30 @@ final class BreathFluteModel: ObservableObject {
                 )
             }
             Task { @MainActor in
-                self?.apply(levels)
-                if let bands { self?.blowBands = bands }
+                self?.apply(levels, bands: bands)
             }
         }
         installed = true
         if source == nil {
+            // Play in the mixer/output format. Wiring the mic format into the mixer
+            // can leave the tone silent on some routes after category changes.
+            let mixerFormat = engine.mainMixerNode.outputFormat(forBus: 0)
+            let playFormat = mixerFormat.sampleRate > 0 && mixerFormat.channelCount > 0 ? mixerFormat : format
+            let playRate = playFormat.sampleRate
             let node = AVAudioSourceNode { [synth] _, _, frameCount, audioBufferList -> OSStatus in
                 let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
                 for buffer in buffers {
                     guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
-                    synth.fill(data, frames: Int(frameCount), sampleRate: format.sampleRate)
+                    synth.fill(data, frames: Int(frameCount), sampleRate: playRate)
                 }
                 return noErr
             }
             source = node
             engine.attach(node)
-            engine.connect(node, to: engine.mainMixerNode, format: format)
+            engine.connect(node, to: engine.mainMixerNode, format: playFormat)
         }
         try engine.start()
+        try? session.overrideOutputAudioPort(.speaker)
         running = true
         micRoute = route
         status = "Play tool · \(route) · \(echoLabel) · not recording"
@@ -246,18 +262,25 @@ final class BreathFluteModel: ObservableObject {
         try? engine.inputNode.setVoiceProcessingEnabled(false)
     }
 
-    private func apply(_ levels: (rms: Double, peak: Double)) {
+    private func apply(_ levels: (rms: Double, peak: Double), bands: [AcousticDisplayBand]?) {
         hasReading = true
         rmsDBFS = levels.rms
         peakDBFS = levels.peak
-        let level = max(levels.rms, levels.peak)
-        noiseFloor = BreathFluteMath.updateNoiseFloor(currentDBFS: levels.rms, floor: noiseFloor)
-        gateOpen = BreathFluteMath.gateOpen(
-            rmsDBFS: levels.rms,
-            peakDBFS: levels.peak,
-            noiseFloorDBFS: noiseFloor
-        )
-        let above = level - noiseFloor
+        if let bands {
+            blowBands = bands
+        }
+        // Wait for an FFT block so the gate can ignore the speaker fundamental.
+        guard let bands, !bands.isEmpty else {
+            pushSynth()
+            return
+        }
+        let breath = BreathFluteMath.breathLevelDBFS(bands: bands)
+        breathDBFS = breath
+        trackedFloor = BreathFluteMath.updateNoiseFloor(currentDBFS: breath, floor: trackedFloor)
+        let floor = trackedFloor ?? breath
+        noiseFloor = floor
+        gateOpen = BreathFluteMath.breathGateOpen(breathDBFS: breath, noiseFloorDBFS: floor)
+        let above = breath - floor
         synth.set(
             gate: gateOpen,
             hz: frequencyHz,
@@ -266,7 +289,7 @@ final class BreathFluteModel: ObservableObject {
     }
 
     private func pushSynth() {
-        let above = max(rmsDBFS, peakDBFS) - noiseFloor
+        let above = breathDBFS - noiseFloor
         synth.set(
             gate: gateOpen,
             hz: frequencyHz,
@@ -344,9 +367,9 @@ struct BreathFluteView: View {
         ) {
             ShowWorkCard(
                 toolID: .breathFlute,
-                symbolic: "gate when RMS or peak > noise floor + margin    f = f₀ · 2^(n/12)",
+                symbolic: "gate when breath band > quiet floor + margin    f = f₀ · 2^(n/12)",
                 substituted: sticky,
-                meaning: "Blow into the bottom edge of the phone. Cover the round holes with your fingers. Silence until you blow. A harder blow is louder. Play tool, not a calibrated wind instrument. Nothing is recorded or uploaded."
+                meaning: "Blow into the bottom edge of the phone. Cover the round holes with your fingers. Silence until breath clears the gate. A harder blow is louder. Play tool, not a calibrated wind instrument. Nothing is recorded or uploaded."
             )
             playSteps
             if model.permissionDenied {
@@ -362,6 +385,14 @@ struct BreathFluteView: View {
                 .foregroundStyle(model.gateOpen ? Theme.good : Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .accessibilityLabel(model.gateOpen ? breathWord : "Silent until you blow")
+            if !model.permissionDenied {
+                ResultRow(label: "Listening", value: listeningLabel, tone: model.running ? Theme.good : Theme.warn)
+                ResultRow(label: "Blow vs quiet", value: aboveLabel)
+                Text(model.status)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             fingerFlute
             Text("Quiet until you blow. Blow harder, it gets louder.")
                 .font(Theme.TypeRole.help)
@@ -400,10 +431,15 @@ struct BreathFluteView: View {
     }
 
     private var breathWord: String {
-        let above = max(model.rmsDBFS, model.peakDBFS) - model.noiseFloor
+        let above = model.breathDBFS - model.noiseFloor
         let amplitude = BreathFluteMath.amplitude(aboveFloorDB: above)
         if amplitude >= BreathFluteMath.loudAmplitude * 0.75 { return "Loud" }
         return "Playing"
+    }
+
+    private var listeningLabel: String {
+        if !model.running { return model.status }
+        return model.micRoute
     }
 
     private var playSteps: some View {
@@ -485,9 +521,10 @@ struct BreathFluteView: View {
     }
 
     private var aboveLabel: String {
-        guard model.hasReading else { return "—" }
-        let above = max(model.rmsDBFS, model.peakDBFS) - model.noiseFloor
-        return String(format: "%+.1f dB", above)
+        guard model.hasReading, !model.blowBands.isEmpty else { return "Waiting for mic…" }
+        let above = model.breathDBFS - model.noiseFloor
+        guard above.isFinite else { return "—" }
+        return String(format: "%+.1f dB over quiet air", above)
     }
 
     private var sticky: String? {
