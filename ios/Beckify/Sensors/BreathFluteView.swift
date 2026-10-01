@@ -306,17 +306,32 @@ private final class FluteSynth: @unchecked Sendable {
     struct State {
         var gate = false
         var hz = BreathFluteMath.rootHz
+        /// Target gain from the blow gate. Finger covers never raise this alone.
         var amplitude = 0.0
+        var envelope = 0.0
         var phase = 0.0
+        var phase2 = 0.0
+        var phase3 = 0.0
+        var phase4 = 0.0
+        var phase5 = 0.0
+        var noise = 0.0
+        var noiseSeed: UInt64 = 0xC0FF_EE12_3456_789A
     }
 
     private let lock = OSAllocatedUnfairLock(initialState: State())
 
     func set(gate: Bool, hz: Double, amplitude: Double) {
         lock.withLock { state in
+            // Touching holes only changes pitch via setFrequency; it cannot open
+            // the gate. While gated off we keep the last amplitude so the
+            // envelope can release softly — output is still amp × envelope.
             state.gate = gate
             state.hz = hz
-            state.amplitude = amplitude
+            if gate {
+                state.amplitude = amplitude
+            } else if state.envelope <= 1e-4 {
+                state.amplitude = 0
+            }
         }
     }
 
@@ -325,18 +340,37 @@ private final class FluteSynth: @unchecked Sendable {
         // Render into Sendable storage, then copy into the buffer on this thread.
         let rendered: ContiguousArray<Float> = lock.withLock { state in
             var samples = ContiguousArray<Float>(repeating: 0, count: frames)
-            let silent = !state.gate || state.amplitude <= 0 || state.hz <= 0
-            if !silent {
-                for index in 0..<frames {
-                    let step = BreathFluteMath.sineSample(
-                        phase: state.phase,
-                        frequencyHz: state.hz,
-                        sampleRate: sampleRate,
-                        amplitude: state.amplitude
-                    )
-                    samples[index] = Float(step.sample)
-                    state.phase = step.nextPhase
-                }
+            for index in 0..<frames {
+                let target = (state.gate && state.amplitude > 0 && state.hz > 0) ? 1.0 : 0.0
+                let light = state.amplitude > 0
+                    && state.amplitude <= BreathFluteMath.quietAmplitude * 1.35
+                state.envelope = BreathFluteMath.envelopeStep(
+                    current: state.envelope,
+                    target: target,
+                    sampleRate: sampleRate,
+                    lightBlow: light
+                )
+                let step = BreathFluteMath.angelicSample(
+                    phase: state.phase,
+                    phase2: state.phase2,
+                    phase3: state.phase3,
+                    phase4: state.phase4,
+                    phase5: state.phase5,
+                    noise: state.noise,
+                    noiseSeed: state.noiseSeed,
+                    frequencyHz: state.hz,
+                    sampleRate: sampleRate,
+                    amplitude: state.amplitude,
+                    envelope: state.envelope
+                )
+                samples[index] = Float(step.sample)
+                state.phase = step.nextPhase
+                state.phase2 = step.nextPhase2
+                state.phase3 = step.nextPhase3
+                state.phase4 = step.nextPhase4
+                state.phase5 = step.nextPhase5
+                state.noise = step.nextNoise
+                state.noiseSeed = step.nextSeed
             }
             return samples
         }
@@ -351,6 +385,8 @@ private final class FluteSynth: @unchecked Sendable {
 struct BreathFluteView: View {
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var model = BreathFluteModel()
     @StoredInput(.breathFlute, "jobName", default: "Breath flute") private var jobName
     @State private var notes = ""
@@ -369,7 +405,7 @@ struct BreathFluteView: View {
                 toolID: .breathFlute,
                 symbolic: "gate when breath band > quiet floor + margin    f = f₀ · 2^(n/12)",
                 substituted: sticky,
-                meaning: "Blow into the bottom edge of the phone. Cover the round holes with your fingers. Silence until breath clears the gate. A harder blow is louder. Play tool, not a calibrated wind instrument. Nothing is recorded or uploaded."
+                meaning: "Blow into the bottom edge of the phone. Cover the round holes with your fingers. Silence until breath clears the gate — touching holes alone makes no sound. A light blow is soft and breathy; a harder blow is louder. Play tool, not a calibrated wind instrument. Nothing is recorded or uploaded."
             )
             playSteps
             if model.permissionDenied {
@@ -385,6 +421,7 @@ struct BreathFluteView: View {
                 .foregroundStyle(model.gateOpen ? Theme.good : Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .accessibilityLabel(model.gateOpen ? breathWord : "Silent until you blow")
+            fingerFlute
             if !model.permissionDenied {
                 ResultRow(label: "Listening", value: listeningLabel, tone: model.running ? Theme.good : Theme.warn)
                 ResultRow(label: "Blow vs quiet", value: aboveLabel)
@@ -393,8 +430,7 @@ struct BreathFluteView: View {
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            fingerFlute
-            Text("Quiet until you blow. Blow harder, it gets louder.")
+            Text("Quiet until you blow. Touching holes alone stays silent.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -442,6 +478,17 @@ struct BreathFluteView: View {
         return model.micRoute
     }
 
+    /// Compact height so all finger holes fit on one phone screen (and in landscape).
+    private var fluteCanvasHeight: CGFloat {
+        if verticalSizeClass == .compact { return 168 }
+        if horizontalSizeClass == .regular { return 300 }
+        return 280
+    }
+
+    private var landscapeFlute: Bool {
+        verticalSizeClass == .compact
+    }
+
     private var playSteps: some View {
         HStack(alignment: .top, spacing: 8) {
             playStep("1", "Blow the bottom")
@@ -457,7 +504,7 @@ struct BreathFluteView: View {
             Text(index)
                 .font(Theme.TypeRole.numericEmphasis)
                 .foregroundStyle(Theme.accent)
-                .frame(width: 36, height: 36)
+                .frame(width: 28, height: 28)
                 .background(Theme.accent.opacity(0.15), in: Circle())
             Text(words)
                 .font(Theme.TypeRole.fieldLabel)
@@ -469,7 +516,7 @@ struct BreathFluteView: View {
     }
 
     private var fingerFlute: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(noteName)
                     .font(Theme.TypeRole.numericHero)
@@ -485,6 +532,7 @@ struct BreathFluteView: View {
             }
             FingerFlute(
                 covered: coveredHoles,
+                landscape: landscapeFlute,
                 onTouching: { next in
                     touching = next
                     applyFingering(down: next)
@@ -495,9 +543,10 @@ struct BreathFluteView: View {
                     applyFingering(held: latched)
                 }
             )
-            .frame(height: 560)
+            .frame(height: fluteCanvasHeight)
+            .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Finger flute. Blow here, at the bottom edge of the phone.")
+            .accessibilityLabel("Handmade relic flute. Blow here, at the bottom edge of the phone.")
             .accessibilityValue("\(noteName), \(model.gateOpen ? breathWord : "silent"). \(coveredCount) holes covered from the mouthpiece.")
             .accessibilityAdjustableAction { direction in
                 let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: latched)
@@ -517,6 +566,7 @@ struct BreathFluteView: View {
     private func applyFingering(held: [Bool]? = nil, down: [Bool]? = nil) {
         let holes = zip(held ?? latched, down ?? touching).map { $0 || $1 }
         let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: holes)
+        // Pitch only. Gate stays closed until breath clears the mic margin.
         model.setFrequency(BreathFluteMath.frequencyHz(coveredFromEmbouchure: count))
     }
 
@@ -549,21 +599,18 @@ struct BreathFluteView: View {
     }
 }
 
-/// Vertical flute. The embouchure sits at the bottom so it points at the phone mic.
+/// Handmade wood / bone / clay relic. Embouchure toward the phone bottom mic.
 private struct FingerFlute: View {
     var covered: [Bool]
+    var landscape: Bool
     var onTouching: ([Bool]) -> Void
     var onTap: (Int) -> Void
 
     var body: some View {
         GeometryReader { geo in
-            let layout = FingerFluteLayout(size: geo.size, holeCount: covered.count)
+            let layout = FingerFluteLayout(size: geo.size, holeCount: covered.count, landscape: landscape)
             ZStack {
-                fluteBody(layout)
-                ForEach(covered.indices, id: \.self) { index in
-                    hole(index, layout: layout)
-                }
-                embouchure(layout)
+                RelicFluteCanvas(layout: layout, covered: covered)
                 FluteTouchOverlay(
                     centers: (0..<covered.count).map { layout.holeCenter($0) },
                     hitRadius: layout.hitRadius,
@@ -573,108 +620,266 @@ private struct FingerFlute: View {
             }
         }
     }
+}
 
-    private func fluteBody(_ layout: FingerFluteLayout) -> some View {
-        let tube = layout.tubeRect
-        return ZStack {
-            RoundedRectangle(cornerRadius: tube.width / 2, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(white: 0.62),
-                            Color(white: 0.94),
-                            Color(white: 0.70),
-                            Color(white: 0.84),
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: tube.width / 2, style: .continuous)
-                        .stroke(Color.black.opacity(0.28), lineWidth: 1)
-                )
-                .frame(width: tube.width, height: tube.height)
-                .position(x: tube.midX, y: tube.midY)
-            Capsule()
-                .fill(Color(white: 0.78))
-                .overlay(Capsule().stroke(Color.black.opacity(0.25), lineWidth: 1))
-                .frame(width: tube.width * 1.16, height: 34)
-                .position(x: tube.midX, y: tube.maxY - 22)
+/// Canvas drawing — aged wood body, bone ends, clay-dark holes. No SF Symbol chrome.
+private struct RelicFluteCanvas: View {
+    var layout: FingerFluteLayout
+    var covered: [Bool]
+
+    var body: some View {
+        Canvas { context, _ in
+            let tube = layout.tubeRect
+            drawBody(context: context, tube: tube)
+            drawGrain(context: context, tube: tube)
+            drawEnds(context: context, tube: tube)
+            drawHoles(context: context)
+            drawEmbouchure(context: context)
+            drawBlowCue(context: context)
         }
+        .allowsHitTesting(false)
     }
 
-    private func hole(_ index: Int, layout: FingerFluteLayout) -> some View {
-        let center = layout.holeCenter(index)
-        let closed = covered.indices.contains(index) && covered[index]
-        return ZStack {
-            Circle()
-                .fill(Color.black.opacity(0.88))
-                .overlay(Circle().stroke(Color.white.opacity(0.9), lineWidth: 3))
-                .frame(width: layout.holeRadius * 2, height: layout.holeRadius * 2)
-            if closed {
-                Circle()
-                    .fill(Color(red: 0.76, green: 0.58, blue: 0.44))
-                    .overlay(Circle().stroke(Color.white.opacity(0.45), lineWidth: 1))
-                    .frame(width: layout.holeRadius * 1.9, height: layout.holeRadius * 1.9)
+    private func drawBody(context: GraphicsContext, tube: CGRect) {
+        var path = Path(roundedRect: tube, cornerRadius: layout.tubeCorner, style: .continuous)
+        // Warm hardwood → bone highlight → clay shadow.
+        context.fill(
+            path,
+            with: .linearGradient(
+                Gradient(colors: [
+                    Color(red: 0.42, green: 0.26, blue: 0.14),
+                    Color(red: 0.72, green: 0.52, blue: 0.32),
+                    Color(red: 0.88, green: 0.78, blue: 0.58),
+                    Color(red: 0.55, green: 0.36, blue: 0.20),
+                    Color(red: 0.36, green: 0.22, blue: 0.12),
+                ]),
+                startPoint: layout.landscape
+                    ? CGPoint(x: tube.midX, y: tube.minY)
+                    : CGPoint(x: tube.minX, y: tube.midY),
+                endPoint: layout.landscape
+                    ? CGPoint(x: tube.midX, y: tube.maxY)
+                    : CGPoint(x: tube.maxX, y: tube.midY)
+            )
+        )
+        context.stroke(
+            path,
+            with: .color(Color(red: 0.22, green: 0.12, blue: 0.06).opacity(0.85)),
+            lineWidth: 1.5
+        )
+        // Soft clay wash along one edge — handmade, not CNC.
+        var wash = Path()
+        if layout.landscape {
+            wash.addEllipse(in: CGRect(
+                x: tube.minX + tube.width * 0.08,
+                y: tube.minY - 2,
+                width: tube.width * 0.7,
+                height: tube.height * 0.35
+            ))
+        } else {
+            wash.addEllipse(in: CGRect(
+                x: tube.minX - 2,
+                y: tube.minY + tube.height * 0.1,
+                width: tube.width * 0.38,
+                height: tube.height * 0.7
+            ))
+        }
+        context.fill(wash, with: .color(Color(red: 0.62, green: 0.42, blue: 0.28).opacity(0.22)))
+    }
+
+    private func drawGrain(context: GraphicsContext, tube: CGRect) {
+        var grain = Path()
+        let lines = 7
+        for i in 0..<lines {
+            let t = CGFloat(i + 1) / CGFloat(lines + 1)
+            if layout.landscape {
+                let y = tube.minY + tube.height * t
+                grain.move(to: CGPoint(x: tube.minX + 10, y: y))
+                grain.addQuadCurve(
+                    to: CGPoint(x: tube.maxX - 10, y: y + (i.isMultiple(of: 2) ? 1.5 : -1.2)),
+                    control: CGPoint(x: tube.midX, y: y + (i.isMultiple(of: 2) ? -2 : 2))
+                )
+            } else {
+                let x = tube.minX + tube.width * t
+                grain.move(to: CGPoint(x: x, y: tube.minY + 12))
+                grain.addQuadCurve(
+                    to: CGPoint(x: x + (i.isMultiple(of: 2) ? 1.4 : -1.1), y: tube.maxY - 12),
+                    control: CGPoint(x: x + (i.isMultiple(of: 2) ? -2 : 2), y: tube.midY)
+                )
             }
         }
-        .position(center)
-        .allowsHitTesting(false)
+        context.stroke(
+            grain,
+            with: .color(Color(red: 0.28, green: 0.16, blue: 0.08).opacity(0.28)),
+            lineWidth: 0.8
+        )
     }
 
-    private func embouchure(_ layout: FingerFluteLayout) -> some View {
-        VStack(spacing: 4) {
-            Ellipse()
-                .fill(Color.black.opacity(0.92))
-                .overlay(Ellipse().stroke(Color.white.opacity(0.9), lineWidth: 2))
-                .frame(width: 36, height: 20)
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Theme.accent)
-            Text("Blow here")
-                .font(Theme.TypeRole.lead)
-                .foregroundStyle(Theme.foreground)
-            Text("Bottom edge of the phone")
-                .font(Theme.TypeRole.fieldLabel)
-                .foregroundStyle(Theme.accent)
+    private func drawEnds(context: GraphicsContext, tube: CGRect) {
+        let bone = Color(red: 0.90, green: 0.84, blue: 0.70)
+        let boneEdge = Color(red: 0.55, green: 0.45, blue: 0.30)
+        if layout.landscape {
+            let left = CGRect(x: tube.minX - 4, y: tube.minY + 2, width: 18, height: tube.height - 4)
+            let right = CGRect(x: tube.maxX - 14, y: tube.minY + 2, width: 18, height: tube.height - 4)
+            for rect in [left, right] {
+                let path = Path(roundedRect: rect, cornerRadius: rect.height / 2, style: .continuous)
+                context.fill(path, with: .color(bone))
+                context.stroke(path, with: .color(boneEdge.opacity(0.7)), lineWidth: 1)
+            }
+        } else {
+            let top = CGRect(x: tube.minX + 2, y: tube.minY - 4, width: tube.width - 4, height: 18)
+            let bottom = CGRect(x: tube.minX + 2, y: tube.maxY - 14, width: tube.width - 4, height: 18)
+            for rect in [top, bottom] {
+                let path = Path(roundedRect: rect, cornerRadius: rect.width / 2, style: .continuous)
+                context.fill(path, with: .color(bone))
+                context.stroke(path, with: .color(boneEdge.opacity(0.7)), lineWidth: 1)
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Theme.accent, lineWidth: 2)
+    }
+
+    private func drawHoles(context: GraphicsContext) {
+        for index in covered.indices {
+            let center = layout.holeCenter(index)
+            let r = layout.holeRadius
+            let rim = Path(ellipseIn: CGRect(x: center.x - r - 2, y: center.y - r - 2, width: (r + 2) * 2, height: (r + 2) * 2))
+            context.fill(rim, with: .color(Color(red: 0.30, green: 0.18, blue: 0.10).opacity(0.9)))
+            let pit = Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
+            context.fill(
+                pit,
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color(red: 0.08, green: 0.05, blue: 0.03),
+                        Color(red: 0.18, green: 0.10, blue: 0.06),
+                        Color.black.opacity(0.95),
+                    ]),
+                    center: CGPoint(x: center.x - r * 0.2, y: center.y - r * 0.25),
+                    startRadius: 0,
+                    endRadius: r
+                )
+            )
+            if covered[index] {
+                let finger = Path(ellipseIn: CGRect(
+                    x: center.x - r * 0.92,
+                    y: center.y - r * 0.92,
+                    width: r * 1.84,
+                    height: r * 1.84
+                ))
+                context.fill(
+                    finger,
+                    with: .radialGradient(
+                        Gradient(colors: [
+                            Color(red: 0.78, green: 0.58, blue: 0.42),
+                            Color(red: 0.55, green: 0.36, blue: 0.26),
+                        ]),
+                        center: CGPoint(x: center.x - r * 0.15, y: center.y - r * 0.2),
+                        startRadius: 0,
+                        endRadius: r
+                    )
+                )
+            }
+        }
+    }
+
+    private func drawEmbouchure(context: GraphicsContext) {
+        let c = layout.embouchureCenter
+        let slot = layout.landscape
+            ? CGRect(x: c.x - 8, y: c.y - 14, width: 16, height: 28)
+            : CGRect(x: c.x - 14, y: c.y - 8, width: 28, height: 16)
+        let oval = Path(ellipseIn: slot)
+        context.fill(oval, with: .color(Color.black.opacity(0.9)))
+        context.stroke(oval, with: .color(Color(red: 0.92, green: 0.86, blue: 0.72).opacity(0.85)), lineWidth: 1.5)
+    }
+
+    private func drawBlowCue(context: GraphicsContext) {
+        let c = layout.blowLabelCenter
+        let box = CGRect(x: c.x - 64, y: c.y - 22, width: 128, height: 44)
+        let plate = Path(roundedRect: box, cornerRadius: 12, style: .continuous)
+        context.fill(plate, with: .color(Color(red: 0.20, green: 0.14, blue: 0.09).opacity(0.88)))
+        context.stroke(plate, with: .color(Color(red: 0.78, green: 0.58, blue: 0.32)), lineWidth: 1.5)
+        // Chevron toward the phone bottom (no SF Symbol).
+        var chevron = Path()
+        let tip = CGPoint(x: c.x, y: box.maxY - 6)
+        chevron.move(to: CGPoint(x: c.x - 8, y: tip.y - 10))
+        chevron.addLine(to: tip)
+        chevron.addLine(to: CGPoint(x: c.x + 8, y: tip.y - 10))
+        context.stroke(chevron, with: .color(Color(red: 0.92, green: 0.78, blue: 0.48)), style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+        context.draw(
+            Text("Blow here")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(Color(red: 0.96, green: 0.90, blue: 0.78)),
+            at: CGPoint(x: c.x, y: box.minY + 14),
+            anchor: .center
         )
-        .position(layout.embouchureCenter)
-        .allowsHitTesting(false)
     }
 }
 
 private struct FingerFluteLayout {
     var size: CGSize
     var holeCount: Int
+    var landscape: Bool
+
+    var tubeCorner: CGFloat { landscape ? tubeRect.height / 2 : tubeRect.width / 2 }
 
     var tubeRect: CGRect {
-        let width: CGFloat = 112
-        let height = max(160, size.height - 8)
+        if landscape {
+            let height: CGFloat = min(72, max(52, size.height * 0.42))
+            let width = max(220, size.width - 16)
+            return CGRect(
+                x: (size.width - width) / 2,
+                y: (size.height - height) / 2 - 8,
+                width: width,
+                height: height
+            )
+        }
+        let width: CGFloat = min(88, max(64, size.width * 0.28))
+        // Leave room for the blow cue under the tube so every hole stays on-canvas.
+        let height = max(120, size.height - 56)
         return CGRect(x: (size.width - width) / 2, y: 4, width: width, height: height)
     }
 
-    /// Big enough for a fingertip. The hit target is larger than the drawn hole.
-    var holeRadius: CGFloat { 22 }
-    var hitRadius: CGFloat { 32 }
+    var holeRadius: CGFloat {
+        if landscape {
+            return min(16, max(11, tubeRect.height * 0.22))
+        }
+        let span = max(holeSpanLength, 1)
+        let fit = span / CGFloat(max(holeCount, 1)) * 0.32
+        return min(18, max(11, fit))
+    }
+
+    var hitRadius: CGFloat { holeRadius + 10 }
+
+    private var holeSpanLength: CGFloat {
+        if landscape {
+            return max(tubeRect.width - 110, 40)
+        }
+        return max(tubeRect.height - 96, 40)
+    }
 
     func holeCenter(_ index: Int) -> CGPoint {
-        let top = tubeRect.minY + 28
-        let bottom = tubeRect.maxY - 168
-        let span = max(bottom - top, 1)
         let t = holeCount <= 1 ? 0 : CGFloat(index) / CGFloat(max(holeCount - 1, 1))
+        if landscape {
+            // Index 0 nearest embouchure (toward trailing / bottom-mic side).
+            let trailing = tubeRect.maxX - 58
+            let leading = tubeRect.minX + 52
+            return CGPoint(x: trailing - t * (trailing - leading), y: tubeRect.midY)
+        }
+        let top = tubeRect.minY + 22
+        let bottom = tubeRect.maxY - 52
+        let span = max(bottom - top, 1)
         return CGPoint(x: tubeRect.midX, y: bottom - t * span)
     }
 
     var embouchureCenter: CGPoint {
-        CGPoint(x: tubeRect.midX, y: tubeRect.maxY - 74)
+        if landscape {
+            return CGPoint(x: tubeRect.maxX - 28, y: tubeRect.midY)
+        }
+        return CGPoint(x: tubeRect.midX, y: tubeRect.maxY - 26)
+    }
+
+    var blowLabelCenter: CGPoint {
+        if landscape {
+            return CGPoint(x: size.width / 2, y: min(size.height - 24, tubeRect.maxY + 28))
+        }
+        return CGPoint(x: size.width / 2, y: min(size.height - 22, tubeRect.maxY + 28))
     }
 }
 
