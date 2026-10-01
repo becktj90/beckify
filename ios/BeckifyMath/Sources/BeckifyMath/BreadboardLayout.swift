@@ -80,6 +80,8 @@ public enum BBPart: Equatable, Sendable {
     case npn(name: String)
     /// Leads S, G, D. 2N7000, flat face up.
     case nmos(name: String)
+    /// Leads S, G, D. P-channel TO-92 stand-in, flat face up.
+    case pmos(name: String)
     /// Leads are pins 1…8. Pin 1 is the notch end on the top strip.
     case dip8(name: String, pins: [String])
     /// Leads are pins 1…10 of a common-cathode 5161AS-style digit. `mask` bits are a…g.
@@ -369,7 +371,7 @@ public enum BreadboardNetlist {
                 return ["\(component.id) is shorted by one breadboard node"]
             }
             return []
-        case .npn, .nmos:
+        case .npn, .nmos, .pmos:
             guard leads.count == 3 else { return ["\(component.id) needs three leads"] }
             let nets = Set(leads.map(\.net))
             if nets.count < 3 { return ["\(component.id) leads are not three nodes"] }
@@ -413,9 +415,9 @@ public enum BreadboardLayouts {
 
     public static let supported: [ElectronicsCircuit] = [
         .seriesResistors, .parallelResistors, .voltageDivider, .kirchhoffLoop, .theveninNorton,
-        .rcStep, .rlStep, .firstOrderFilter, .ledSeries,
-        .halfWave, .shuntClipper, .clamper,
-        .bjtBias, .bjtSwitch, .mosSwitch,
+        .rcStep, .rlStep, .firstOrderFilter, .seriesRLC, .ledSeries,
+        .halfWave, .fullBridge, .shuntClipper, .clamper,
+        .bjtBias, .ceAmp, .bjtSwitch, .csAmp, .mosSwitch, .cmosInverter,
         .invertingAmp, .nonInvertingAmp, .summingAmp, .diffAmp, .integrator, .differentiator, .comparator,
         .astable555, .monostable555, .ledFlasher, .sevenSegment,
         .linearDrop,
@@ -437,13 +439,18 @@ public enum BreadboardLayouts {
         case .rcStep: return built.rcStep()
         case .rlStep: return built.rlStep()
         case .firstOrderFilter: return built.filter()
+        case .seriesRLC: return built.seriesRLC()
         case .ledSeries: return built.led()
         case .halfWave: return built.halfWave()
+        case .fullBridge: return built.fullBridge()
         case .shuntClipper: return built.clipper()
         case .clamper: return built.clamper()
         case .bjtBias: return built.bjtBias()
+        case .ceAmp: return built.ceAmp()
         case .bjtSwitch: return built.bjtSwitch()
+        case .csAmp: return built.csAmp()
         case .mosSwitch: return built.mosSwitch()
+        case .cmosInverter: return built.cmosInverter()
         case .invertingAmp: return built.inverting()
         case .nonInvertingAmp: return built.nonInverting()
         case .summingAmp: return built.summing()
@@ -1172,6 +1179,167 @@ extension BreadboardBuilder {
     }
 }
 
+
+
+// MARK: - Priority breadboard circuits (bridge, RLC, CE/CS, CMOS)
+
+extension BreadboardBuilder {
+    mutating func seriesRLC() -> BreadboardLayout? {
+        guard let r = qty("r"), let l = qty("l"), let c = qty("c") else { return nil }
+        let ac = (qty("ac") ?? 1) >= 0.5
+        let label: String
+        let net: String
+        if ac {
+            guard let vp = qty("vp") else { return nil }
+            label = BreadboardFormat.trim(vp) + " Vpk"
+            net = "Vp"
+        } else {
+            guard let vdc = qty("vdc") else { return nil }
+            label = BreadboardFormat.trim(vdc) + " Vdc"
+            net = "Vdc"
+        }
+        singleSupply(label, net, "GND")
+        resistor("r", "R", r, hole(6, .c, net), hole(12, .c, "N1"))
+        inductor("l", "L", l, hole(12, .a, "N1"), hole(18, .a, "N2"))
+        capacitor("c", "C", c, hole(18, .e, "N2"), hole(24, .e, "GND"))
+        jumper("src", net, 6, .e, 6, .topPlus, .red)
+        jumper("n1", "N1", 12, .b, 12, .e, .orange)
+        jumper("n2", "N2", 18, .b, 18, .d, .yellow)
+        jumper("gnd", "GND", 24, .b, 24, .topMinus, .black)
+        jumper("gndb", "GND", 24, .a, 24, .botMinus, .black)
+        let drive = ac
+            ? "AC peak on the red rail drives series R–L–C. At DC the capacitor is open — steady current is zero."
+            : "DC on the red rail into series R–L–C. Series C is an open at DC, so steady current is zero."
+        return finish(caption(drive + " Orange is after R; yellow is after L."))
+    }
+
+    mutating func fullBridge() -> BreadboardLayout? {
+        guard let c = qty("c"), let rload = qty("rload") else { return nil }
+        let ac = (qty("ac") ?? 1) >= 0.5
+        if ac {
+            guard let vrms = qty("vrms") else { return nil }
+            singleSupply("Vpk", "Vpk", "GND")
+            components.append(BBComponent(
+                id: "ac",
+                part: .source(label: BreadboardFormat.trim(vrms) + " Vrms"),
+                leads: [hole(5, .e, "VacA"), hole(5, .f, "VacB")]
+            ))
+            diode("d1", "D1", hole(8, .c, "VacA"), hole(14, .c, "Vpk"))
+            diode("d2", "D2", hole(10, .j, "VacB"), hole(14, .j, "Vpk"))
+            diode("d3", "D3", hole(7, .f, "GND"), hole(8, .i, "VacA"))
+            diode("d4", "D4", hole(9, .f, "GND"), hole(10, .h, "VacB"))
+            jumper("aBus", "VacA", 5, .c, 8, .a, .yellow)
+            jumper("aCross", "VacA", 8, .e, 8, .f, .yellow)
+            jumper("bBus", "VacB", 5, .j, 10, .g, .violet)
+            jumper("vpkCross", "Vpk", 14, .e, 14, .f, .red)
+            jumper("plus", "Vpk", 14, .a, 14, .topPlus, .red)
+            jumper("plusb", "Vpk", 14, .h, 20, .h, .red)
+            jumper("g3", "GND", 7, .j, 7, .botMinus, .black)
+            jumper("g4", "GND", 9, .j, 9, .botMinus, .black)
+            resistor("rl", "RL", rload, hole(20, .e, "Vpk"), hole(20, .f, "GND"))
+            capacitor("c", "C", c, hole(24, .e, "Vpk"), hole(24, .f, "GND"))
+            jumper("out", "Vpk", 20, .b, 24, .b, .red)
+            jumper("lg", "GND", 20, .j, 20, .botMinus, .black)
+            jumper("cg", "GND", 24, .j, 24, .botMinus, .black)
+            return finish(caption("Full-wave bridge: AC secondary between VacA and VacB (not the DC rails). D1/D2 cathodes feed Vpk on the red rail; D3/D4 anodes sit on the blue rail. RL and C share Vpeak. Banded ends are cathodes. Illustrative — not a transformer pinout."))
+        } else {
+            guard let vdc = qty("vdc") else { return nil }
+            singleSupply(BreadboardFormat.trim(vdc) + " Vdc", "Vdc", "GND")
+            diode("d1", "D1", hole(6, .c, "Vdc"), hole(12, .c, "Mid"))
+            diode("d2", "D2", hole(12, .a, "Mid"), hole(18, .a, "Vpk"))
+            resistor("rl", "RL", rload, hole(18, .e, "Vpk"), hole(18, .f, "GND"))
+            capacitor("c", "C", c, hole(24, .e, "Vpk"), hole(24, .f, "GND"))
+            jumper("src", "Vdc", 6, .a, 6, .topPlus, .red)
+            jumper("mid", "Mid", 12, .b, 12, .e, .orange)
+            jumper("out", "Vpk", 18, .b, 24, .b, .yellow)
+            jumper("g1", "GND", 18, .j, 18, .botMinus, .black)
+            jumper("g2", "GND", 24, .j, 24, .botMinus, .black)
+            return finish(caption("Bridge on a DC source is two forward drops in series (D1 then D2) into RL || C. Ripple is zero on DC — switch to AC sine to size C from a ripple target."))
+        }
+    }
+
+    mutating func ceAmp() -> BreadboardLayout? {
+        guard let r1 = qty("r1"), let r2 = qty("r2"), let rc = qty("rc"), let re = qty("re"),
+              let vcc = qty("vcc"), let rl = qty("rl") else { return nil }
+        singleSupply(BreadboardFormat.trim(vcc) + " V", "Vcc", "GND")
+        transistor(npn: true)
+        resistor("r1", "R1", r1, hole(11, .i, "Vcc"), hole(17, .i, "Vb"))
+        resistor("r2", "R2", r2, hole(17, .j, "Vb"), hole(22, .j, "GND"))
+        resistor("rc", "Rc", rc, hole(18, .g, "Vc"), hole(24, .g, "Vcc"))
+        resistor("re", "Re", re, hole(16, .j, "Ve"), hole(12, .j, "GND"))
+        capacitor("cc", "Cc", 1e-6, hole(20, .c, "Vc"), hole(26, .c, "Vout"))
+        resistor("rl", "RL", rl, hole(26, .e, "Vout"), hole(26, .f, "GND"))
+        jumper("v1", "Vcc", 11, .g, 11, .botPlus, .red)
+        jumper("v2", "Vcc", 24, .j, 24, .botPlus, .red)
+        jumper("g1", "GND", 22, .g, 22, .botMinus, .black)
+        jumper("g2", "GND", 12, .h, 12, .botMinus, .black)
+        jumper("col", "Vc", 18, .i, 20, .e, .orange)
+        jumper("loadg", "GND", 26, .j, 26, .botMinus, .black)
+        let unbypassed = solution.steps.contains { $0.contains("/ (1 + gm·Re)") }
+        if !unbypassed {
+            capacitor("ce", "Ce", 10e-6, hole(16, .h, "Ve"), hole(14, .h, "GND"))
+            jumper("ceg", "GND", 14, .j, 14, .botMinus, .black)
+        }
+        return finish(caption("CE stage on a 2N3904 (E B C). Bias matches the BJT bias board; Cc couples the collector into RL. Ce is illustrative when the emitter is bypassed for midband gain. Coupling/bypass are AC shorts in the solve — not a SPICE transient."))
+    }
+
+    mutating func csAmp() -> BreadboardLayout? {
+        guard let rd = qty("rd"), let vdd = qty("vdd"), let vg = qty("vg") else { return nil }
+        let rs = qty("rs") ?? 0
+        singleSupply(BreadboardFormat.trim(vdd) + " V", "Vdd", "GND")
+        let sourceNet = rs > 1e-12 ? "Vs" : "GND"
+        components.append(BBComponent(id: "m", part: .nmos(name: "2N7000"), leads: [
+            hole(16, .f, sourceNet),
+            hole(17, .f, "Vg"),
+            hole(18, .f, "Vd"),
+        ]))
+        components.append(BBComponent(id: "vg", part: .source(label: "Vg " + BreadboardFormat.trim(vg) + " V"), leads: [
+            hole(6, .e, "Vg"),
+            hole(6, .f, "GND"),
+        ]))
+        resistor("rd", "Rd", rd, hole(18, .i, "Vd"), hole(24, .i, "Vdd"))
+        if rs > 1e-12 {
+            resistor("rs", "Rs", rs, hole(16, .j, "Vs"), hole(12, .j, "GND"))
+            jumper("rsg", "GND", 12, .h, 12, .botMinus, .black)
+        } else {
+            jumper("src", "GND", 16, .j, 16, .botMinus, .black)
+        }
+        jumper("gate", "Vg", 6, .c, 17, .i, .yellow)
+        jumper("srcg", "GND", 6, .j, 6, .botMinus, .black)
+        jumper("vdd", "Vdd", 24, .g, 24, .botPlus, .red)
+        return finish(caption("CS stage on a 2N7000 (S G D). Rd is the drain load. Rs is present only when degeneration is non-zero; Rs = 0 ties the source to the blue rail. Square-law bias — not a SPICE model card."))
+    }
+
+    mutating func cmosInverter() -> BreadboardLayout? {
+        guard let vdd = qty("vdd") else { return nil }
+        let vin = qty("vin") ?? (qty("vm") ?? (vdd / 2))
+        singleSupply(BreadboardFormat.trim(vdd) + " V", "Vdd", "GND")
+        components.append(BBComponent(id: "p", part: .pmos(name: "PMOS"), leads: [
+            hole(18, .c, "Vdd"),
+            hole(17, .c, "Vin"),
+            hole(16, .c, "Vout"),
+        ]))
+        components.append(BBComponent(id: "n", part: .nmos(name: "NMOS"), leads: [
+            hole(14, .f, "GND"),
+            hole(15, .f, "Vin"),
+            hole(16, .f, "Vout"),
+        ]))
+        components.append(BBComponent(id: "vin", part: .source(label: "Vin " + BreadboardFormat.trim(vin) + " V"), leads: [
+            hole(6, .e, "Vin"),
+            hole(6, .f, "GND"),
+        ]))
+        jumper("out", "Vout", 16, .e, 16, .d, .green)
+        jumper("gatep", "Vin", 6, .c, 17, .a, .yellow)
+        jumper("gaten", "Vin", 15, .i, 17, .e, .yellow)
+        jumper("ps", "Vdd", 18, .a, 18, .topPlus, .red)
+        jumper("ns", "GND", 14, .j, 14, .botMinus, .black)
+        jumper("srcg", "GND", 6, .j, 6, .botMinus, .black)
+        jumper("probe", "Vout", 16, .b, 24, .b, .green)
+        jumper("pgnd", "GND", 24, .j, 24, .botMinus, .black)
+        return finish(caption("CMOS inverter sketch: discrete PMOS (top strip) and NMOS (bottom strip) sharing Vin and Vout across the gutter. Ideal rail-to-rail logic — static current is zero in the solve. Not a matched IC process or a SPICE deck."))
+    }
+}
+
 // MARK: - On-board meters
 
 public enum BreadboardMeters {
@@ -1209,7 +1377,8 @@ public enum BreadboardMeters {
             if compact != node.name { names.append(compact) }
             // Common lab aliases
             if node.name == "Vth node" { names.append("Vth") }
-            if node.name == "Vpeak" { names.append("Vpk") }
+            if node.name == "Vpeak" { names.append(contentsOf: ["Vpk", "Vpeak"]) }
+            if node.name == "Vrms" { names.append(contentsOf: ["Vac", "Vrms"]) }
             if node.name == "Open" { names.append("Vth") }
             if node.name == "VL" { names.append("Vth") }
             return names
