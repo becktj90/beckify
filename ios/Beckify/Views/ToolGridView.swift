@@ -2,15 +2,27 @@ import SwiftUI
 import StoreKit
 import BeckifyMath
 
+/// Navigation destinations from Toolbox home. Shelves and tools share one stack
+/// so related-tool deep links and the review-ask-on-return path stay intact.
+private enum ToolboxHomeRoute: Hashable {
+    case shelf(ToolShelfKind)
+    case tool(ToolID)
+}
+
 /// Premium adaptive tool launcher — Field vs Toolkit, search, favorites,
 /// recents, and shelf hierarchy with original schematic icons in soft wells.
+///
+/// Home shows short shelf cards (not every tile). Opening a shelf pushes a
+/// dedicated grid screen. That keeps scroll identity stable when favoriting,
+/// returning from a tool, toggling Field/Toolkit, or dismissing search — the
+/// long LazyVGrid no longer lives on the root scroll view.
 struct ToolGridView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     @ObservedObject private var reviewAsk = ReviewAskStore.shared
     @ObservedObject private var recents = RecentToolsStore.shared
     @Binding var homeArea: ToolHomeArea
     @State private var query = ""
-    @State private var path: [ToolID] = []
+    @State private var path: [ToolboxHomeRoute] = []
     @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -24,8 +36,7 @@ struct ToolGridView: View {
     /// fit on iPhone without a mid-word ellipsis. Compact phones land on
     /// two columns; iPad still uses an adaptive grid.
     private var columns: [GridItem] {
-        let minimum: CGFloat = sizeClass == .regular ? 148 : 156
-        return [GridItem(.adaptive(minimum: minimum), spacing: 14)]
+        ToolShelfGridLayout.columns(sizeClass: sizeClass)
     }
 
     private var searchResults: [ToolDefinition] {
@@ -55,18 +66,13 @@ struct ToolGridView: View {
                         homeHeader
                             .opacity(appeared || reduceMotion ? 1 : 0)
                             .offset(y: appeared || reduceMotion ? 0 : 10)
-                        areaPicker
                         if !favoriteTools.isEmpty {
                             avatarStrip(title: "Favorites", tools: favoriteTools)
-                                .opacity(appeared || reduceMotion ? 1 : 0)
-                                .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
                         // Cold start: hide Recents entirely. Do not seed fake
                         // tools or leave an empty strip for App Store shots.
                         if !recents.tools.isEmpty {
                             avatarStrip(title: "Recent", tools: Array(recents.tools.prefix(5)))
-                                .opacity(appeared || reduceMotion ? 1 : 0)
-                                .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
                         if homeArea == .field {
                             avatarStrip(
@@ -74,22 +80,25 @@ struct ToolGridView: View {
                                 tools: fieldQuickTools,
                                 accessibilityNamePrefix: "Quick"
                             )
-                            .opacity(appeared || reduceMotion ? 1 : 0)
-                            .offset(y: appeared || reduceMotion ? 0 : 8)
                             .accessibilityIdentifier("fieldQuickStrip")
                         }
-                    }
-
-                    if isSearching {
-                        searchResultSections
+                        homeShelfCards
                     } else {
-                        homeShelfSections
+                        searchResultSections
                     }
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 28)
                 .padding(.top, 10)
+                // Favorites / Recents membership changes must not animate the
+                // root layout — that was the main "menu hop" when starring or
+                // returning from a tool that updates Recents.
+                .animation(nil, value: favorites.ids)
+                .animation(nil, value: recents.recentIDs)
+                .animation(nil, value: homeArea)
+                .animation(nil, value: isSearching)
             }
+            .scrollDismissesKeyboard(.immediately)
             .background {
                 ZStack {
                     Theme.ambientBackground.ignoresSafeArea()
@@ -99,6 +108,11 @@ struct ToolGridView: View {
             .navigationTitle("Beckify")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Search Field and Toolkit…")
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if !isSearching && path.isEmpty {
+                    stickyAreaPicker
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     SettingsToolbarButton()
@@ -109,13 +123,18 @@ struct ToolGridView: View {
                     ContentUnavailableView.search(text: query)
                 }
             }
-            .navigationDestination(for: ToolID.self) { id in
-                CalculatorHostView(toolID: id)
-                    .onAppear { recents.record(id) }
+            .navigationDestination(for: ToolboxHomeRoute.self) { route in
+                switch route {
+                case .shelf(let shelf):
+                    ToolShelfScreen(shelf: shelf, columns: columns)
+                case .tool(let id):
+                    CalculatorHostView(toolID: id)
+                        .onAppear { recents.record(id) }
+                }
             }
             .onChange(of: path) { oldPath, newPath in
-                // End of a tool sequence — user is back on Field home. Never
-                // ask from a Save tap or from first-launch onAppear.
+                // End of a tool / shelf sequence — user is back on home.
+                // Never ask from a Save tap or from first-launch onAppear.
                 if !oldPath.isEmpty && newPath.isEmpty {
                     reviewAsk.presentIfEligible(
                         { requestReview() },
@@ -123,7 +142,12 @@ struct ToolGridView: View {
                     )
                 }
             }
+            .onChange(of: homeArea) { _, _ in
+                // Area switch replaces shelf cards only; keep scroll calm.
+                query = ""
+            }
             .onAppear {
+                guard !appeared else { return }
                 BeckifyMotion.withOptionalAnimation(
                     BeckifyMotion.homeReveal,
                     reduceMotion: reduceMotion
@@ -133,21 +157,27 @@ struct ToolGridView: View {
             }
         }
         .environment(\.openRelatedTool, { id in
-            path.append(id)
+            path.append(.tool(id))
             recents.record(id)
         })
     }
 
-    // MARK: - Header
+    // MARK: - Sticky chrome
 
-    private var areaPicker: some View {
+    private var stickyAreaPicker: some View {
         Picker("Home area", selection: $homeArea) {
             Text(ToolHomeArea.field.title).tag(ToolHomeArea.field)
             Text(ToolHomeArea.toolkit.title).tag(ToolHomeArea.toolkit)
         }
         .segmentedControlStyle()
+        .padding(.horizontal, 18)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
         .accessibilityIdentifier("homeAreaPicker")
     }
+
+    // MARK: - Header
 
     private var homeHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -207,40 +237,50 @@ struct ToolGridView: View {
     /// does not have to solve the filter + ForEach in one expression.
     @ViewBuilder
     private var searchResultSections: some View {
-        ForEach(Array(ToolHomeArea.allCases.enumerated()), id: \.element) { index, area in
-            searchAreaBlock(index: index, area: area)
+        ForEach(ToolHomeArea.allCases, id: \.self) { area in
+            searchAreaBlock(area: area)
         }
     }
 
-    /// Field / Toolkit shelves for the selected home area.
+    /// One card per shelf in the selected home area — opens a dedicated grid.
     @ViewBuilder
-    private var homeShelfSections: some View {
-        ForEach(Array(ToolShelfKind.shelves(in: homeArea).enumerated()), id: \.element) { index, shelf in
-            homeShelfBlock(index: index, shelf: shelf)
+    private var homeShelfCards: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            HStack(spacing: 8) {
+                Capsule(style: .continuous)
+                    .fill(Theme.accent.opacity(0.85))
+                    .frame(width: 3, height: 12)
+                Text("SHELVES")
+                    .font(Theme.TypeRole.sectionLabel)
+                    .tracking(1.0)
+                    .foregroundStyle(Theme.muted)
+            }
+            .padding(.top, 4)
+
+            ForEach(ToolShelfKind.shelves(in: homeArea), id: \.self) { shelf in
+                let tools = ToolboxCatalog.tools(on: shelf)
+                if !tools.isEmpty {
+                    NavigationLink(value: ToolboxHomeRoute.shelf(shelf)) {
+                        ShelfCard(shelf: shelf, previewTools: Array(tools.prefix(4)))
+                    }
+                    .buttonStyle(ToolTileButtonStyle())
+                    .accessibilityIdentifier("shelfCard.\(shelf.rawValue)")
+                }
+            }
         }
+        .opacity(appeared || reduceMotion ? 1 : 0)
+        .offset(y: appeared || reduceMotion ? 0 : 12)
     }
 
     @ViewBuilder
-    private func searchAreaBlock(index: Int, area: ToolHomeArea) -> some View {
+    private func searchAreaBlock(area: ToolHomeArea) -> some View {
         let tools = searchResults.filter { ToolboxCatalog.area(of: $0.id) == area }
         if !tools.isEmpty {
-            categoryBlock(
+            ToolCategoryGrid(
                 title: area.title,
                 tools: tools,
-                delay: Double(index) * 0.04,
+                columns: columns,
                 showAreaBadge: true
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func homeShelfBlock(index: Int, shelf: ToolShelfKind) -> some View {
-        let tools = ToolboxCatalog.tools(on: shelf)
-        if !tools.isEmpty {
-            categoryBlock(
-                title: shelf.title,
-                tools: tools,
-                delay: Double(index) * 0.04
             )
         }
     }
@@ -282,7 +322,7 @@ struct ToolGridView: View {
         tool: ToolDefinition,
         accessibilityNamePrefix: String?
     ) -> some View {
-        let link = NavigationLink(value: tool.id) {
+        let link = NavigationLink(value: ToolboxHomeRoute.tool(tool.id)) {
             VStack(spacing: 6) {
                 IconWell(toolID: tool.id, size: 52, circular: true)
                     .tileLift(
@@ -312,29 +352,82 @@ struct ToolGridView: View {
             link
         }
     }
+}
 
-    @ViewBuilder
-    private func categoryBlock(
-        title: String,
-        tools: [ToolDefinition],
-        delay: Double,
-        showAreaBadge: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Space.sm) {
-            HStack(spacing: 8) {
-                Capsule(style: .continuous)
-                    .fill(Theme.accent.opacity(0.85))
-                    .frame(width: 3, height: 12)
-                Text(title.uppercased())
-                    .font(Theme.TypeRole.sectionLabel)
-                    .tracking(1.0)
-                    .foregroundStyle(Theme.muted)
+// MARK: - Shelf screen
+
+/// Dedicated grid for one shelf. Keeps home scroll short and identity-stable.
+struct ToolShelfScreen: View {
+    let shelf: ToolShelfKind
+    let columns: [GridItem]
+
+    private var tools: [ToolDefinition] {
+        ToolboxCatalog.tools(on: shelf)
+    }
+
+    var body: some View {
+        ScrollView {
+            ToolCategoryGrid(
+                title: shelf.title,
+                tools: tools,
+                columns: columns,
+                showAreaBadge: false,
+                showsSectionChrome: false
+            )
+            .padding(.horizontal, 18)
+            .padding(.bottom, 28)
+            .padding(.top, 10)
+        }
+        .background {
+            ZStack {
+                Theme.ambientBackground.ignoresSafeArea()
+                AmbientGlowOrbs()
             }
-            .padding(.top, 4)
+        }
+        .navigationTitle(shelf.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Shared grid
+
+enum ToolShelfGridLayout {
+    static func columns(sizeClass: UserInterfaceSizeClass?) -> [GridItem] {
+        let minimum: CGFloat = sizeClass == .regular ? 148 : 156
+        return [GridItem(.adaptive(minimum: minimum), spacing: 14)]
+    }
+
+    /// Fixed tile height so LazyVGrid rows do not reflow as cells appear.
+    static let tileHeight: CGFloat = 176
+}
+
+/// Section chrome + LazyVGrid of tool tiles. Used by search results and shelf screens.
+struct ToolCategoryGrid: View {
+    let title: String
+    let tools: [ToolDefinition]
+    let columns: [GridItem]
+    var showAreaBadge: Bool = false
+    var showsSectionChrome: Bool = true
+    @EnvironmentObject private var favorites: FavoritesStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            if showsSectionChrome {
+                HStack(spacing: 8) {
+                    Capsule(style: .continuous)
+                        .fill(Theme.accent.opacity(0.85))
+                        .frame(width: 3, height: 12)
+                    Text(title.uppercased())
+                        .font(Theme.TypeRole.sectionLabel)
+                        .tracking(1.0)
+                        .foregroundStyle(Theme.muted)
+                }
+                .padding(.top, 4)
+            }
 
             LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(tools) { tool in
-                    NavigationLink(value: tool.id) {
+                    NavigationLink(value: ToolboxHomeRoute.tool(tool.id)) {
                         ToolTile(
                             tool: tool,
                             isFavorite: favorites.isFavorite(tool.id),
@@ -355,12 +448,79 @@ struct ToolGridView: View {
                 }
             }
         }
-        .opacity(appeared || reduceMotion || isSearching ? 1 : 0)
-        .offset(y: appeared || reduceMotion || isSearching ? 0 : 12)
-        .animation(
-            reduceMotion ? nil : BeckifyMotion.homeReveal.delay(delay),
-            value: appeared
-        )
+    }
+}
+
+// MARK: - Shelf card
+
+/// Compact home entry for one shelf — preview wells, no tool-count capsule.
+private struct ShelfCard: View {
+    let shelf: ToolShelfKind
+    let previewTools: [ToolDefinition]
+
+    private var borderTint: Color {
+        Theme.categoryColors(shelf.category).primary
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: -10) {
+                ForEach(previewTools) { tool in
+                    IconWell(toolID: tool.id, size: 40, circular: true)
+                        .overlay {
+                            Circle()
+                                .stroke(Theme.surface.opacity(0.95), lineWidth: 2)
+                        }
+                }
+                if previewTools.isEmpty {
+                    IconWell(toolID: .ohmsLaw, size: 40, circular: true)
+                        .opacity(0.35)
+                        .accessibilityHidden(true)
+                }
+            }
+            .frame(width: 112, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(shelf.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                    .lineLimit(1)
+                Text(shelfHomeHint)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+        .glassCard(corner: Theme.Radius.tile, tint: borderTint)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(shelf.title)
+        .accessibilityHint(shelfHomeHint)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var shelfHomeHint: String {
+        switch shelf {
+        case .jobsite: return "Voltage drop, fill, motors, receptacles…"
+        case .power: return "kVA, transformers, solar, UPS…"
+        case .controls: return "Loops, panels, phasors, Modbus…"
+        case .magnetics: return "Cores, flux, and EM fields."
+        case .analysis: return "Distributions and Monte Carlo."
+        case .instruments: return "RF, mic, motion, Breath Flute…"
+        case .basics: return "Ohm's Law, divider, RC, units…"
+        case .bench: return "Lab, RF, e-bike, analog…"
+        case .reference: return "Tables, schedules, Spanish…"
+        }
     }
 }
 
@@ -401,7 +561,6 @@ struct ToolTile: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.88)
-                    .fixedSize(horizontal: false, vertical: true)
                 if showArea {
                     HomeAreaBadge(area: area)
                 }
@@ -410,14 +569,16 @@ struct ToolTile: View {
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 4)
             .padding(.bottom, 4)
+
+            Spacer(minLength: 0)
         }
         .padding(10)
         .frame(maxWidth: .infinity)
+        .frame(height: ToolShelfGridLayout.tileHeight, alignment: .top)
         .glassCard(corner: Theme.Radius.tile, tint: borderTint)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)
