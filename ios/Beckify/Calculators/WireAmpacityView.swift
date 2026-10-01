@@ -65,8 +65,8 @@ struct WireAmpacityView: View {
                 toolID: .wireAmpacity,
                 symbolic: "I_allow = min(I_base × F_amb × F_CCC, I_term) × runs",
                 substituted: substituted,
-                meaning: "Correction and adjustment use the insulation column (310.15). Usable ampacity is then capped by the termination column (110.14(C)). Continuous loads use 125% of the load current as the required ampacity.",
-                citation: "NEC 2023 Table 310.16 · 310.15(B)(1) · 310.15(C)(1) · 110.14(C)."
+                meaning: "Correction and adjustment use the insulation column (310.15). Usable ampacity is then capped by the termination column (110.14(C)). Continuous loads use 125% of the load current as the required ampacity. Choosing 1Ø, multiwire, or 3Ø opts in a NEC 2023 Table 250.122 EGC beside the phase size — design aid, confirm Code / AHJ.",
+                citation: "NEC 2023 Table 310.16 · 310.15(B)(1) · 310.15(C)(1) · 110.14(C) · Table 250.122."
             )
 
             if let importedBanner {
@@ -86,6 +86,15 @@ struct WireAmpacityView: View {
             }
             .segmentedControlStyle()
             MenuField(title: "Circuit", selection: $circuit, options: EquipmentGroundingContext.allCases) { $0.displayName }
+            if circuit.impliesEquipmentGround {
+                Text("Opt-in: shows the NEC 2023 Table 250.122 minimum EGC beside the phase result. Leave Phase conductors only if you do not want a ground recommendation. Design aid — confirm Code / AHJ.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let live = liveGroundPreview {
+                    EquipmentGroundingSummary(recommendation: live)
+                }
+            }
 
             NumberField(title: "Load current", unit: "A", text: $amps, fieldID: "amps", onSubmit: calculate)
             MenuField(title: "Insulation", selection: $insulation, options: TempChoice.allCases) { $0.label }
@@ -158,13 +167,8 @@ struct WireAmpacityView: View {
         .opacity(session.isStale ? 0.72 : 1)
 
         EquipmentGroundingCard(
-            recommendation: EquipmentGrounding.recommend(
-                amps: r.requiredAmpacity,
-                material: material,
-                context: circuit,
-                ampsAreOCPDRating: false,
-                ungroundedSize: r.selected.size
-            )
+            recommendation: selectGround(for: r),
+            countedInFill: nil
         )
         .opacity(session.isStale ? 0.72 : 1)
 
@@ -201,13 +205,7 @@ struct WireAmpacityView: View {
                         "size": r.selected.label,
                         "usable": Format.amps(r.selected.usableTotal),
                         "required": Format.amps(r.requiredAmpacity),
-                        "EGC": EquipmentGrounding.recommend(
-                            amps: r.requiredAmpacity,
-                            material: material,
-                            context: circuit,
-                            ampsAreOCPDRating: false,
-                            ungroundedSize: r.selected.size
-                        )?.copyLine ?? "",
+                        "EGC": selectGround(for: r)?.copyLine ?? "",
                     ]
                 ))
             }
@@ -234,7 +232,10 @@ struct WireAmpacityView: View {
         }
         .opacity(evaluateSession.isStale ? 0.72 : 1)
 
-        EquipmentGroundingCard(recommendation: evaluateGround(for: r))
+        EquipmentGroundingCard(
+            recommendation: evaluateGround(for: r),
+            countedInFill: nil
+        )
             .opacity(evaluateSession.isStale ? 0.72 : 1)
 
         warningList(r.warnings)
@@ -294,7 +295,44 @@ struct WireAmpacityView: View {
         }
     }
 
+    private var liveGroundPreview: EquipmentGroundingRecommendation? {
+        guard circuit.impliesEquipmentGround else { return nil }
+        let ocpdText = ocpd.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !ocpdText.isEmpty, let rating = ocpd.parsedDouble {
+            return EquipmentGrounding.recommend(
+                amps: rating,
+                material: material,
+                context: circuit,
+                ampsAreOCPDRating: true
+            )
+        }
+        guard let load = amps.parsedDouble else { return nil }
+        let basis = continuous ? load * 1.25 : load
+        return EquipmentGrounding.recommend(
+            amps: basis,
+            material: material,
+            context: circuit,
+            ampsAreOCPDRating: false
+        )
+    }
+
+    private func selectGround(for result: ConductorSelectionResult) -> EquipmentGroundingRecommendation? {
+        guard circuit.impliesEquipmentGround else { return nil }
+        let ocpdText = ocpd.trimmingCharacters(in: .whitespacesAndNewlines)
+        let explicit = !ocpdText.isEmpty
+        let basis = explicit ? ocpd.parsedDouble : Optional(result.requiredAmpacity)
+        guard let basis else { return nil }
+        return EquipmentGrounding.recommend(
+            amps: basis,
+            material: material,
+            context: circuit,
+            ampsAreOCPDRating: explicit,
+            ungroundedSize: result.selected.size
+        )
+    }
+
     private func evaluateGround(for result: AmpacityDeratingResult) -> EquipmentGroundingRecommendation? {
+        guard circuit.impliesEquipmentGround else { return nil }
         let ocpdText = ocpd.trimmingCharacters(in: .whitespacesAndNewlines)
         let explicit = !ocpdText.isEmpty
         let basis = explicit ? ocpd.parsedDouble : amps.parsedDouble
@@ -359,7 +397,7 @@ struct WireAmpacityView: View {
         mode = .select
         amps = "95"
         material = .copper
-        circuit = .none
+        circuit = .threePhase
         insulation = .c90
         termination = .c75
         ambient = "30"
@@ -399,9 +437,15 @@ struct WireAmpacityView: View {
 
     private var sticky: String? {
         if mode == .select, let r = session.displayedResult {
+            if let egc = selectGround(for: r) {
+                return "\(r.selected.label)  ·  \(Format.amps(r.selected.usableTotal))  ·  EGC \(egc.label)"
+            }
             return "\(r.selected.label)  ·  \(Format.amps(r.selected.usableTotal))"
         }
         if mode == .evaluate, let r = evaluateSession.displayedResult {
+            if let egc = evaluateGround(for: r) {
+                return "\(r.label)  ·  \(Format.amps(r.usableTotal))  ·  EGC \(egc.label)"
+            }
             return "\(r.label)  ·  \(Format.amps(r.usableTotal))"
         }
         return nil

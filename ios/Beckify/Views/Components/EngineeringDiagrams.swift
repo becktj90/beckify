@@ -697,6 +697,81 @@ struct AmpacityWaterfallDiagram: View {
     }
 }
 
+
+// MARK: - Conductor cost ranking
+
+struct ConductorCostRankingDiagram: View {
+    let options: [ConductorCostOption]
+    let recommendedID: String
+    var includeEGC: Bool = false
+
+    private var rows: [ConductorCostOption] {
+        Array(options.prefix(8))
+    }
+
+    private var summary: String {
+        guard let first = rows.first else { return "No compliant options." }
+        var parts = ["Lowest first-cost \(first.typeString) at \(Format.dollars(first.firstCost))."]
+        if includeEGC {
+            parts.append("Ranking includes the recommended Table 250.122 EGC.")
+        }
+        return parts.joined(separator: " ")
+    }
+
+    var body: some View {
+        DiagramCard(title: "First-cost ranking", accessibilitySummary: summary, exportName: "conductor-cost-rank") {
+            Chart(rows, id: \.typeString) { option in
+                BarMark(
+                    x: .value("Cost", option.firstCost),
+                    y: .value("Option", shortLabel(option))
+                )
+                .foregroundStyle(option.typeString == recommendedID ? Theme.good : Theme.chartPrimary.opacity(0.72))
+                .annotation(position: .trailing, alignment: .leading, spacing: 4) {
+                    Text(Format.dollars(option.firstCost))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+            .chartXAxisLabel("Modeled first-cost ($)")
+            .chartYAxis {
+                AxisMarks { _ in
+                    AxisValueLabel()
+                        .font(.caption2)
+                }
+            }
+            .chartXAxis {
+                AxisMarks(position: .bottom) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let dollars = value.as(Double.self) {
+                            Text(Format.dollars(dollars))
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .frame(height: max(160, CGFloat(rows.count) * 28 + 40))
+            .accessibilityHidden(true)
+
+            if includeEGC {
+                Text("Bars include one Table 250.122 EGC per run when Include recommended EGC is on. Planning allowance — not a bid.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func shortLabel(_ option: ConductorCostOption) -> String {
+        let run = option.parallelRuns > 1 ? "\(option.parallelRuns)× " : ""
+        var label = "\(run)\(option.label)"
+        if option.includedEGC, let egc = option.egcLabel {
+            label += " +E \(egc)"
+        }
+        return label
+    }
+}
+
 // MARK: - Shared engineer XY plot (Swift Charts — Charty-class craft)
 
 struct EngineerSeries: Identifiable {

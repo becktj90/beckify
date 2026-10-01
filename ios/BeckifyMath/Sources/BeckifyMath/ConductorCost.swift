@@ -60,8 +60,13 @@ public struct ConductorCostInput: Equatable, Sendable {
     public var targetDropPercent: Double
     public var maxParallelRuns: Int
     public var construction: LVConstruction
-    /// User planning allowance in $/kft. When nil or ≤ 0, the default book is used per size.
+    /// Uniform planning allowance in $/kft for every size. When nil or ≤ 0, each size uses its override or the default book.
     public var dollarsPerKft: Double?
+    /// Per-size planning $/kft overrides (wire size key → $/kft). Wins over the book; loses to a uniform $/kft only when that size has no override.
+    public var priceOverridesBySize: [String: Double]
+    /// When true and the system implies a ground, add one Table 250.122 EGC per run into first-cost and suggested fill.
+    public var includeEGC: Bool
+    public var egcMaterial: ConductorMaterial
     public var dollarsPerKwh: Double?
     public var hoursPerYear: Double?
 
@@ -82,6 +87,9 @@ public struct ConductorCostInput: Equatable, Sendable {
         maxParallelRuns: Int = 4,
         construction: LVConstruction? = nil,
         dollarsPerKft: Double? = nil,
+        priceOverridesBySize: [String: Double] = [:],
+        includeEGC: Bool = false,
+        egcMaterial: ConductorMaterial? = nil,
         dollarsPerKwh: Double? = nil,
         hoursPerYear: Double? = nil
     ) {
@@ -101,6 +109,9 @@ public struct ConductorCostInput: Equatable, Sendable {
         self.maxParallelRuns = maxParallelRuns
         self.construction = construction ?? LVConstruction.default(for: system)
         self.dollarsPerKft = dollarsPerKft
+        self.priceOverridesBySize = priceOverridesBySize
+        self.includeEGC = includeEGC
+        self.egcMaterial = egcMaterial ?? material
         self.dollarsPerKwh = dollarsPerKwh
         self.hoursPerYear = hoursPerYear
     }
@@ -120,11 +131,19 @@ public struct ConductorCostOption: Equatable, Sendable {
     public var conductorsPerRun: Int
     public var insulatedCores: Int
     public var firstCost: Double
+    /// Phase / insulated-core first-cost only (before optional EGC).
+    public var phaseCost: Double
+    public var egcCost: Double
+    public var egcSize: String?
+    public var egcLabel: String?
+    public var includedEGC: Bool
     public var i2rWatts: Double?
     public var annualEnergyCost: Double?
     public var lifecycleCost: Double?
     public var dollarsPerKftUsed: Double
+    public var egcDollarsPerKftUsed: Double?
     public var usedUserPrice: Bool
+    public var priceSourceLabel: String
     public var typeString: String
 }
 
@@ -145,6 +164,8 @@ public struct ConductorCostResult: Equatable, Sendable {
     public var warnings: [DesignWarning]
     public var citations: [CodeCitation]
     public var modeledEnergy: Bool
+    public var includeEGC: Bool
+    public var equipmentGrounding: EquipmentGroundingRecommendation?
 
     public var seed: ConductorDesignSeed {
         let costLabel: String
@@ -199,6 +220,49 @@ public enum ConductorCost {
         }
     }
 
+    /// Wire sizes present in the planning book for a material, AWG/kcmil order.
+    public static func bookSizes(for material: ConductorMaterial) -> [String] {
+        let keys: Set<String>
+        switch material {
+        case .copper: keys = Set(planningPricePerFootCopper.keys)
+        case .aluminum: keys = Set(planningPricePerFootAluminum.keys)
+        }
+        return NECTables.wireSizeOrder.filter { keys.contains($0) }
+    }
+
+    public enum PriceSourceKind: String, Sendable {
+        case lineOverride
+        case uniform
+        case book
+
+        public var label: String {
+            switch self {
+            case .lineOverride: return "Line override"
+            case .uniform: return "Uniform $/kft"
+            case .book: return "Default book"
+            }
+        }
+    }
+
+    /// Resolution order: per-size override → uniform $/kft → default book.
+    public static func resolvedDollarsPerKft(
+        size: String,
+        material: ConductorMaterial,
+        uniformDollarsPerKft: Double?,
+        overridesBySize: [String: Double]
+    ) -> (dollarsPerKft: Double, source: PriceSourceKind)? {
+        if let raw = overridesBySize[size], raw.isFinite, raw > 0 {
+            return (raw, .lineOverride)
+        }
+        if let uniform = uniformDollarsPerKft, uniform.isFinite, uniform > 0 {
+            return (uniform, .uniform)
+        }
+        if let book = planningDollarsPerKft(size: size, material: material) {
+            return (book, .book)
+        }
+        return nil
+    }
+
     public static func loadCurrent(
         system: ElectricalSystem,
         supplyVolts: Double,
@@ -247,9 +311,35 @@ public enum ConductorCost {
             throw CalcError.outOfRange("Planning $/kft cannot be negative.")
         }
         let userKft = input.dollarsPerKft.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
+        let cleanedOverrides: [String: Double] = Dictionary(uniqueKeysWithValues:
+            input.priceOverridesBySize.compactMap { key, value in
+                guard value.isFinite, value > 0 else { return nil }
+                return (key, value)
+            }
+        )
         let designCurrent = input.continuousLoad ? current * 1.25 : current
         let minParallelCM = NECTables.circularMils["1/0"] ?? 105_600
         let energyReady = (input.dollarsPerKwh ?? 0) > 0 && (input.hoursPerYear ?? 0) > 0
+
+        let groundingContext = EquipmentGroundingContext.from(system: input.system)
+        let egcRecommendation: EquipmentGroundingRecommendation?
+        if input.includeEGC, groundingContext.impliesEquipmentGround {
+            egcRecommendation = EquipmentGrounding.recommend(
+                amps: designCurrent,
+                material: input.egcMaterial,
+                context: groundingContext,
+                ampsAreOCPDRating: false,
+                ungroundedSize: nil,
+                extraNote: "Opt-in: one Table 250.122 EGC per run is added to first-cost and suggested EMT fill. Design aid — confirm Code / AHJ."
+            )
+        } else {
+            egcRecommendation = nil
+        }
+        if input.includeEGC, groundingContext.impliesEquipmentGround, egcRecommendation == nil {
+            throw CalcError.outOfRange(
+                "Include EGC is on, but no Table 250.122 row covers this design current. Confirm the amps or turn the EGC option off."
+            )
+        }
 
         var options: [ConductorCostOption] = []
         for runs in 1...maxRuns {
@@ -282,20 +372,71 @@ public enum ConductorCost {
                 ))
                 guard vd.meetsTarget else { continue }
 
-                let bookFt = planningPricePerFoot(size: size, material: input.material)
-                let pricePerFt: Double
-                let usedUser: Bool
-                if let userKft {
-                    pricePerFt = userKft / 1000
-                    usedUser = true
-                } else if let bookFt {
-                    pricePerFt = bookFt
-                    usedUser = false
-                } else {
-                    continue
+                guard let phasePrice = resolvedDollarsPerKft(
+                    size: size,
+                    material: input.material,
+                    uniformDollarsPerKft: userKft,
+                    overridesBySize: cleanedOverrides
+                ) else { continue }
+
+                let pricePerFt = phasePrice.dollarsPerKft / 1000
+                let phaseCost = pricePerFt * length * Double(input.construction.insulatedCores) * Double(runs)
+
+                var egcCost = 0.0
+                var egcDollars: Double?
+                var egcSize: String?
+                var egcLabel: String?
+                var includedEGC = false
+                var conductorsPerRun = input.construction.insulatedCores
+                var fillGroups: [ConduitFillGroup] = [
+                    ConduitFillGroup(
+                        quantity: input.construction.insulatedCores,
+                        size: size,
+                        insulation: .thhn
+                    ),
+                ]
+
+                if let egc = egcRecommendation {
+                    // Cap the EGC to the ungrounded size for this option (250.122(A)).
+                    let capped = EquipmentGrounding.recommend(
+                        amps: designCurrent,
+                        material: input.egcMaterial,
+                        context: groundingContext,
+                        ampsAreOCPDRating: false,
+                        ungroundedSize: size,
+                        extraNote: "Opt-in: one Table 250.122 EGC per run is added to first-cost and suggested EMT fill. Design aid — confirm Code / AHJ."
+                    ) ?? egc
+                    guard let egcPrice = resolvedDollarsPerKft(
+                        size: capped.size,
+                        material: input.egcMaterial,
+                        uniformDollarsPerKft: userKft,
+                        overridesBySize: cleanedOverrides
+                    ) else {
+                        // Skip options whose EGC size is not in the book / overrides.
+                        continue
+                    }
+                    egcCost = (egcPrice.dollarsPerKft / 1000) * length * Double(runs)
+                    egcDollars = egcPrice.dollarsPerKft
+                    egcSize = capped.size
+                    egcLabel = capped.label
+                    includedEGC = true
+                    conductorsPerRun = input.construction.insulatedCores + 1
+                    fillGroups.append(
+                        ConduitFillGroup(quantity: 1, size: capped.size, insulation: .thhn)
+                    )
+                } else if input.construction.conductorsPerRun > input.construction.insulatedCores {
+                    // Construction name still says +E, but the opt-in is off — keep legacy same-size EGC in fill only.
+                    conductorsPerRun = input.construction.conductorsPerRun
+                    fillGroups = [
+                        ConduitFillGroup(
+                            quantity: input.construction.conductorsPerRun,
+                            size: size,
+                            insulation: .thhn
+                        ),
+                    ]
                 }
 
-                let first = pricePerFt * length * Double(input.construction.insulatedCores) * Double(runs)
+                let first = phaseCost + egcCost
                 let i2r = i2rWatts(
                     current: current,
                     size: size,
@@ -311,13 +452,6 @@ public enum ConductorCost {
                     annual = nil
                 }
 
-                let fillGroups = [
-                    ConduitFillGroup(
-                        quantity: input.construction.conductorsPerRun,
-                        size: size,
-                        insulation: .thhn
-                    ),
-                ]
                 let emt = try? ConduitFill.suggestedTradeSize(groups: fillGroups, raceway: .emt)
 
                 let matTag = input.material == .copper ? "Cu" : "Al"
@@ -328,8 +462,12 @@ public enum ConductorCost {
                 case .c60: insulTag = "TW"
                 }
                 let runPrefix = runs > 1 ? "\(runs) × " : ""
-                let typeString = "\(runPrefix)\(input.construction.displayName) \(NECTables.wireLabel(size)) \(matTag) \(insulTag)"
-                    .replacingOccurrences(of: "  ", with: " ")
+                var typeString = "\(runPrefix)\(input.construction.displayName) \(NECTables.wireLabel(size)) \(matTag) \(insulTag)"
+                if includedEGC, let egcLabel {
+                    let egcMat = input.egcMaterial == .copper ? "Cu" : "Al"
+                    typeString += " + EGC \(egcLabel) \(egcMat)"
+                }
+                typeString = typeString.replacingOccurrences(of: "  ", with: " ")
 
                 options.append(ConductorCostOption(
                     size: size,
@@ -342,14 +480,21 @@ public enum ConductorCost {
                     dropPercent: vd.dropPercent,
                     meetsVoltageDrop: true,
                     suggestedEMT: emt,
-                    conductorsPerRun: input.construction.conductorsPerRun,
+                    conductorsPerRun: conductorsPerRun,
                     insulatedCores: input.construction.insulatedCores,
                     firstCost: first,
+                    phaseCost: phaseCost,
+                    egcCost: egcCost,
+                    egcSize: egcSize,
+                    egcLabel: egcLabel,
+                    includedEGC: includedEGC,
                     i2rWatts: i2r,
                     annualEnergyCost: annual,
                     lifecycleCost: annual.map { first + $0 },
-                    dollarsPerKftUsed: pricePerFt * 1000,
-                    usedUserPrice: usedUser,
+                    dollarsPerKftUsed: phasePrice.dollarsPerKft,
+                    egcDollarsPerKftUsed: egcDollars,
+                    usedUserPrice: phasePrice.source != .book,
+                    priceSourceLabel: phasePrice.source.label,
                     typeString: typeString
                 ))
             }
@@ -380,7 +525,7 @@ public enum ConductorCost {
         var warnings: [DesignWarning] = [
             DesignWarning(
                 severity: .info,
-                message: "Planning allowance only — not a live market quote, LME print, or bid. Enter your takeoff $/kft when you have one.",
+                message: "Planning allowance only — not a live market quote, LME print, or bid. Edit the book lines or enter a uniform $/kft when you have takeoff numbers.",
                 provenance: .engineeringApproximation
             ),
             DesignWarning(
@@ -401,6 +546,60 @@ public enum ConductorCost {
                 provenance: .codeRequirement
             ))
         }
+        if let egcRecommendation {
+            warnings.append(DesignWarning(
+                severity: .info,
+                message: "Recommended EGC \(egcRecommendation.label) \(egcRecommendation.material.displayName) (Table 250.122) is included in first-cost and suggested EMT. Confirm the Code and the AHJ — not a PE stamp.",
+                provenance: .codeRequirement
+            ))
+        } else if groundingContext.impliesEquipmentGround {
+            warnings.append(DesignWarning(
+                severity: .info,
+                message: "A Table 250.122 EGC is available for this system. Turn Include recommended EGC on to add it to first-cost and fill.",
+                provenance: .informationalNote
+            ))
+        }
+
+        let priceSource: String
+        if !cleanedOverrides.isEmpty, userKft != nil {
+            priceSource = "Line overrides + uniform $/kft (planning — not a quote)"
+        } else if !cleanedOverrides.isEmpty {
+            priceSource = "Line overrides over default book (planning — not a quote)"
+        } else if userKft != nil {
+            priceSource = "User planning $/kft"
+        } else {
+            priceSource = "Default planning allowance book (not a quote)"
+        }
+
+        var citations: [CodeCitation] = [
+            NECAmpacityFactors.tableCitation,
+            NECAmpacityFactors.ambientCitation,
+            NECAmpacityFactors.cccCitation,
+            NECAmpacityFactors.terminationCitation,
+            CodeCitation(
+                articleOrTable: "310.10(G)",
+                units: "",
+                sourceDescription: "Paralleled conductors generally 1/0 AWG and larger, same length/size/material"
+            ),
+            CodeCitation(
+                articleOrTable: "Chapter 9 Table 9",
+                units: "V",
+                sourceDescription: "K-factor voltage-drop approximation"
+            ),
+            CodeCitation(
+                articleOrTable: "Chapter 9 Table 8",
+                units: "Ω/kft",
+                sourceDescription: "DC resistance used for optional I²R energy"
+            ),
+            CodeCitation(
+                articleOrTable: "Chapter 9 Tables 1 / 4 / 5",
+                units: "in²",
+                sourceDescription: "Suggested EMT from THHN areas at Table 1 fill"
+            ),
+        ]
+        if egcRecommendation != nil {
+            citations.append(EquipmentGrounding.citation)
+        }
 
         return ConductorCostResult(
             loadAmps: current,
@@ -414,40 +613,35 @@ public enum ConductorCost {
             termination: input.termination,
             options: ranked,
             recommended: recommended,
-            priceSource: userKft != nil
-                ? "User planning $/kft"
-                : "Default planning allowance book (not a quote)",
-            formula: input.continuousLoad
-                ? "Required = 1.25 × I; rank compliant size×runs by modeled first-cost"
-                : "Required = I; rank compliant size×runs by modeled first-cost",
+            priceSource: priceSource,
+            formula: input.includeEGC && egcRecommendation != nil
+                ? (input.continuousLoad
+                    ? "Required = 1.25 × I; rank size×runs by first-cost including Table 250.122 EGC"
+                    : "Required = I; rank size×runs by first-cost including Table 250.122 EGC")
+                : (input.continuousLoad
+                    ? "Required = 1.25 × I; rank compliant size×runs by modeled first-cost"
+                    : "Required = I; rank compliant size×runs by modeled first-cost"),
             warnings: warnings,
-            citations: [
-                NECAmpacityFactors.tableCitation,
-                NECAmpacityFactors.ambientCitation,
-                NECAmpacityFactors.cccCitation,
-                NECAmpacityFactors.terminationCitation,
-                CodeCitation(
-                    articleOrTable: "310.10(G)",
-                    units: "",
-                    sourceDescription: "Paralleled conductors generally 1/0 AWG and larger, same length/size/material"
-                ),
-                CodeCitation(
-                    articleOrTable: "Chapter 9 Table 9",
-                    units: "V",
-                    sourceDescription: "K-factor voltage-drop approximation"
-                ),
-                CodeCitation(
-                    articleOrTable: "Chapter 9 Table 8",
-                    units: "Ω/kft",
-                    sourceDescription: "DC resistance used for optional I²R energy"
-                ),
-                CodeCitation(
-                    articleOrTable: "Chapter 9 Tables 1 / 4 / 5",
-                    units: "in²",
-                    sourceDescription: "Suggested EMT from THHN areas at Table 1 fill"
-                ),
-            ],
-            modeledEnergy: energyReady
+            citations: citations,
+            modeledEnergy: energyReady,
+            includeEGC: egcRecommendation != nil,
+            equipmentGrounding: {
+                guard egcRecommendation != nil else { return nil }
+                let costNote: String
+                if recommended.egcCost >= 100 {
+                    costNote = String(format: "$%.0f", recommended.egcCost)
+                } else {
+                    costNote = String(format: "$%.2f", recommended.egcCost)
+                }
+                return EquipmentGrounding.recommend(
+                    amps: designCurrent,
+                    material: input.egcMaterial,
+                    context: groundingContext,
+                    ampsAreOCPDRating: false,
+                    ungroundedSize: recommended.size,
+                    extraNote: "Opt-in: included in first-cost (\(costNote)) and suggested EMT. Design aid — confirm Code / AHJ."
+                ) ?? egcRecommendation
+            }()
         )
     }
 
