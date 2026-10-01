@@ -1,13 +1,21 @@
 import Foundation
+import BeckifyMath
 
-/// On-device favorites list — pinned tools for one-tap access from the Favorites tab.
-/// Not synced, not analytics; nothing leaves the device.
+/// On-device pinned / favorites list — one-tap access from home Pinned strip and Favorites tab.
+/// Ordered; not synced; nothing leaves the device.
 @MainActor
 final class FavoritesStore: ObservableObject {
-    @Published private(set) var ids: Set<ToolID> = []
+    /// Pin order (newest pin first when toggled on).
+    @Published private(set) var orderedIDs: [ToolID] = []
+
+    /// Membership set for cheap lookups and animation identity.
+    var ids: Set<ToolID> { Set(orderedIDs) }
 
     private let key = "com.beckify.toolbox.favorites"
     private let defaults: UserDefaults
+
+    /// First-launch / empty-store seeds — former Field Quick strip, editable after.
+    private static let defaultPinnedRaw: [String] = ToolHomeAreaPolicy.fieldQuickIDs
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -15,24 +23,37 @@ final class FavoritesStore: ObservableObject {
     }
 
     func isFavorite(_ id: ToolID) -> Bool {
-        ids.contains(id)
+        orderedIDs.contains(id)
     }
 
     func toggle(_ id: ToolID) {
-        if ids.contains(id) {
-            ids.remove(id)
+        if let idx = orderedIDs.firstIndex(of: id) {
+            orderedIDs.remove(at: idx)
         } else {
-            ids.insert(id)
+            orderedIDs.insert(id, at: 0)
         }
         persist()
     }
 
+    /// Reorder within the Favorites tab edit mode.
+    func move(from offsets: IndexSet, to destination: Int) {
+        orderedIDs.move(fromOffsets: offsets, toOffset: destination)
+        persist()
+    }
+
     private func load() {
-        guard let raw = defaults.stringArray(forKey: key) else { return }
-        ids = Set(raw.compactMap(ToolID.init(rawValue:)))
+        // Missing key → first launch: seed former Quick strip (editable).
+        // Empty array → user cleared every pin; respect that.
+        guard let raw = defaults.stringArray(forKey: key) else {
+            orderedIDs = Self.defaultPinnedRaw.compactMap(ToolID.init(rawValue:))
+            persist()
+            return
+        }
+        var seen = Set<ToolID>()
+        orderedIDs = raw.compactMap { ToolID(rawValue: $0) }.filter { seen.insert($0).inserted }
     }
 
     private func persist() {
-        defaults.set(ids.map(\.rawValue), forKey: key)
+        defaults.set(orderedIDs.map(\.rawValue), forKey: key)
     }
 }

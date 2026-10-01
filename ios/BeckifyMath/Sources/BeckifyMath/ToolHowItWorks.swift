@@ -289,7 +289,7 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "setupCheck": ToolHowItWorks(
-            summary: "RigScope: leave it open while you listen, then run a short relative FFT test.",
+            summary: "RigScope: speaker and room analysis — leave it open while you listen, then run a short relative FFT test.",
             context: "Compare a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
             bullets: [
                 "Phone speaker demos plus mic are not a calibrated measurement mic. Relative shape and trends only. No invented dB SPL.",

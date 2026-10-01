@@ -472,7 +472,7 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertFalse(MagSweepMath.variationSpectrumLabel.localizedCaseInsensitiveContains("isolate"))
     }
 
-    func testNewInstrumentsStayOffTheQuickRow() {
+    func testNewInstrumentsStayOffDefaultPinnedSeeds() {
         for id in ["stillnessWatch", "coupledVibration"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .instruments, id)
