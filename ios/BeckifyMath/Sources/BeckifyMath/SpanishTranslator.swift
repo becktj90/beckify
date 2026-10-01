@@ -57,7 +57,7 @@ public enum SpanishTranslatorAPI {
     public static let translatePath = "/api/translate"
     public static let maxSourceCharacters = 2000
     public static let disclaimer =
-        "Speech stays on this device for recognition. Translation text uploads only when you stop recording or tap Translate. Prefers Cuban / Florida LatAm Spanish via the Beckify API (api.beckify.com). Not a certified interpreter."
+        "Speech stays on this device for recognition. Prefers blunt Cuban / South Florida jobsite Spanish via the Beckify API (api.beckify.com). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ (generic Spanish, not Cuban-tuned). Translation text uploads only when the Beckify path runs. Loud male system TTS when available. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -112,6 +112,73 @@ public enum SpanishTranslatorAPI {
         if trimmed.count <= maxSourceCharacters { return trimmed }
         let end = trimmed.index(trimmed.startIndex, offsetBy: maxSourceCharacters)
         return String(trimmed[..<end])
+    }
+
+    /// Sticky / phase label after a successful Beckify API translation.
+    public static let statusViaBeckifyAI = "Translated via Beckify AI"
+    /// Sticky / phase label after a successful on-device Apple Translation fallback.
+    public static let statusOnDevice = "Translated on device"
+
+    /// Minimum OS for Apple TranslationSession (Translation framework).
+    public static let onDeviceTranslationMinimumOS = "iOS 18"
+
+    /// Preferred Apple Translation target language identifiers (LatAm / Florida-relevant first).
+    public static let preferredAppleSpanishLanguageIDs: [String] = [
+        "es-MX",
+        "es-US",
+        "es-419",
+        "es",
+    ]
+
+    public static func appleOnDeviceDraft(
+        translation: String,
+        sourceText: String,
+        targetLanguageID: String = "es"
+    ) -> SpanishTranslationDraft {
+        SpanishTranslationDraft(
+            translation: translation.trimmingCharacters(in: .whitespacesAndNewlines),
+            dialect: "apple_on_device_es",
+            sourceText: sourceText,
+            sourceLanguage: "en",
+            targetLanguage: targetLanguageID,
+            provider: "apple",
+            model: "TranslationSession",
+            notes: "On-device Apple Translation. Generic Spanish (closest LatAm pair when available) — not Cuban jobsite register like Beckify AI.",
+            engine: "apple"
+        )
+    }
+
+    /// Network / HTTP failures that should trigger on-device fallback (not auth-only client errors we cannot recover).
+    public static func shouldAttemptOnDeviceFallback(httpStatus: Int) -> Bool {
+        if httpStatus == 0 { return true } // transport / DNS / offline
+        if httpStatus == 404 || httpStatus == 405 { return true }
+        if httpStatus == 408 || httpStatus == 429 { return true }
+        if httpStatus >= 500 { return true }
+        // Treat unexpected 3xx / other failures as fallback-worthy so the Answer never sticks on English-only.
+        if httpStatus < 200 || httpStatus >= 300 { return true }
+        return false
+    }
+
+    public static func onDeviceUnavailableMessage(apiError: String?) -> String {
+        let api = (apiError ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let need = "On-device Apple Translation needs \(onDeviceTranslationMinimumOS) or later (or languages are not installed). English stays on screen for retry."
+        if api.isEmpty { return need }
+        return "\(api) \(need)"
+    }
+
+    public static func bothPathsFailedMessage(apiError: String?, onDeviceError: String?) -> String {
+        let api = (apiError ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let device = (onDeviceError ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        switch (api.isEmpty, device.isEmpty) {
+        case (false, false):
+            return "Beckify AI: \(api) On-device: \(device)"
+        case (false, true):
+            return api
+        case (true, false):
+            return "On-device translation failed: \(device)"
+        case (true, true):
+            return "Translation failed. Check the network or install English ↔ Spanish in Apple Translate, then try again."
+        }
     }
 
     public static func normalizeDraft(_ raw: Any?, fallbackSource: String = "") -> SpanishTranslationDraft? {
@@ -180,11 +247,11 @@ public enum SpanishTranslatorAPI {
         return "The Beckify translate API is unavailable (HTTP \(status))."
     }
 
-    // MARK: - Voice locale ranking (Florida / Cuban / LatAm)
+    // MARK: - Voice locale ranking (Florida / Cuban jobsite TTS)
 
     /// Preferred `AVSpeechSynthesisVoice.language` codes, best first.
     /// Apple does not ship a dedicated Cuban (`es-CU`) voice on most devices;
-    /// `es-US` is the Florida-relevant choice, then Mexican / other LatAm, then Spain.
+    /// `es-US` / `es-MX` are the Florida / LatAm choices, then other LatAm, then Spain.
     public static let preferredSpanishVoiceLanguages: [String] = [
         "es-US",
         "es-MX",
@@ -197,6 +264,11 @@ public enum SpanishTranslatorAPI {
         "es-ES",
         "es",
     ]
+
+    /// Speech rate multiplier vs `AVSpeechUtteranceDefaultSpeechRate` for noisy sites.
+    public static let jobsiteSpeechRateFactor: Float = 0.84
+    /// Slight pitch drop so male system voices read a bit thicker / deeper.
+    public static let jobsitePitchMultiplier: Float = 0.92
 
     /// Score a voice language for Florida Cuban / LatAm preference. Higher is better.
     public static func spanishVoiceScore(language: String) -> Int {
@@ -216,6 +288,20 @@ public enum SpanishTranslatorAPI {
         return 50
     }
 
+    /// Combined rank for jobsite playback: male + LatAm locale + higher quality first.
+    /// `genderRaw` matches `AVSpeechSynthesisVoiceGender.rawValue` (1 = male, 2 = female, 0 = unspecified on Apple platforms).
+    public static func jobsiteVoiceScore(language: String, genderRaw: Int, qualityRaw: Int) -> Int {
+        let locale = spanishVoiceScore(language: language)
+        guard locale >= 0 else { return -1 }
+        let genderBonus: Int
+        switch genderRaw {
+        case 1: genderBonus = 5000  // male
+        case 0: genderBonus = 1000  // unspecified
+        default: genderBonus = 0    // female / other
+        }
+        return genderBonus + locale * 10 + max(0, qualityRaw)
+    }
+
     /// Pick the best language code from an installed-voice list.
     public static func bestSpanishVoiceLanguage(from languages: [String]) -> String? {
         let ranked = languages
@@ -228,22 +314,38 @@ public enum SpanishTranslatorAPI {
         return ranked.first?.0
     }
 
-    public static func voiceFallbackNote(selectedLanguage: String?) -> String {
+    public static func voiceFallbackNote(
+        selectedLanguage: String?,
+        genderLabel: String? = nil,
+        voiceName: String? = nil
+    ) -> String {
         let lang = (selectedLanguage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if lang.isEmpty {
-            return "No Spanish system voice found. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices, or iOS will use a default voice."
+            return "No Spanish system voice found. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Apple TTS is limited; a future Beckify API cloud voice (ElevenLabs / OpenAI TTS) would sound more realistic."
+        }
+        let gender = (genderLabel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let name = (voiceName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let who = name.isEmpty ? lang : "\(name) (\(lang))"
+        let sex: String
+        if gender == "male" {
+            sex = "male"
+        } else if gender == "female" {
+            sex = "female (no male Spanish voice installed — add a male es-US/es-MX voice in Spoken Content for the jobsite vibe)"
+        } else {
+            sex = "system"
         }
         let folded = lang.lowercased()
+        let localeNote: String
         if folded.hasPrefix("es-us") {
-            return "Speaking with es-US (US / Florida-relevant Spanish)."
+            localeNote = "US / Florida-relevant"
+        } else if folded.hasPrefix("es-mx") {
+            localeNote = "LatAm (Cuban es-CU is not shipped by Apple)"
+        } else if folded.hasPrefix("es-es") {
+            localeNote = "Spain — prefer installing male es-US or es-MX"
+        } else {
+            localeNote = "closest available Spanish"
         }
-        if folded.hasPrefix("es-mx") {
-            return "Speaking with es-MX (closest LatAm voice; Cuban es-CU is not shipped by Apple)."
-        }
-        if folded.hasPrefix("es-es") {
-            return "Only es-ES (Spain) is installed — accents may sound Peninsular. Prefer installing es-US or es-MX in Spoken Content."
-        }
-        return "Speaking with \(lang) (closest available Spanish voice; Cuban es-CU is not typically shipped)."
+        return "Speaking with \(who), \(sex), \(localeNote). Max volume + slower rate for site noise. Apple voices can still sound robotic — optional next step is ElevenLabs/OpenAI TTS on the Beckify API."
     }
 
     // MARK: - Internals

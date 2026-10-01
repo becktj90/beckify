@@ -79,10 +79,26 @@ final class SpanishTranslatorTests: XCTestCase {
     }
 
     func testVoiceFallbackNote() {
-        let us = SpanishTranslatorAPI.voiceFallbackNote(selectedLanguage: "es-US")
-        XCTAssertTrue(us.lowercased().contains("es-us"))
+        let us = SpanishTranslatorAPI.voiceFallbackNote(
+            selectedLanguage: "es-US",
+            genderLabel: "male",
+            voiceName: "Juan"
+        )
+        XCTAssertTrue(us.lowercased().contains("es-us") || us.lowercased().contains("juan"))
+        XCTAssertTrue(us.lowercased().contains("male"))
         let empty = SpanishTranslatorAPI.voiceFallbackNote(selectedLanguage: nil)
         XCTAssertTrue(empty.lowercased().contains("no spanish"))
+        XCTAssertTrue(empty.lowercased().contains("elevenlabs") || empty.lowercased().contains("openai"))
+    }
+
+    func testJobsiteVoiceScorePrefersMaleUS() {
+        let maleUS = SpanishTranslatorAPI.jobsiteVoiceScore(language: "es-US", genderRaw: 1, qualityRaw: 2)
+        let femaleUS = SpanishTranslatorAPI.jobsiteVoiceScore(language: "es-US", genderRaw: 2, qualityRaw: 2)
+        let maleMX = SpanishTranslatorAPI.jobsiteVoiceScore(language: "es-MX", genderRaw: 1, qualityRaw: 1)
+        XCTAssertGreaterThan(maleUS, femaleUS)
+        XCTAssertGreaterThan(maleUS, maleMX)
+        XCTAssertEqual(SpanishTranslatorAPI.jobsiteSpeechRateFactor, Float(0.84), accuracy: 0.001)
+        XCTAssertEqual(SpanishTranslatorAPI.jobsitePitchMultiplier, Float(0.92), accuracy: 0.001)
     }
 
     func testCatalogPolicyAndHowItWorks() {
@@ -95,5 +111,48 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(copy!.summary.lowercased().contains("spanish"))
         XCTAssertTrue(copy!.bullets.joined(separator: " ").lowercased().contains("cuban")
             || copy!.bullets.joined(separator: " ").lowercased().contains("florida"))
+        let joined = copy!.bullets.joined(separator: " ").lowercased()
+        XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation"))
+        XCTAssertTrue(joined.contains("translated via beckify") || joined.contains("translated on device")
+            || copy!.summary.lowercased().contains("on-device"))
+    }
+
+    func testStatusLabelsAndAppleDraft() {
+        XCTAssertEqual(SpanishTranslatorAPI.statusViaBeckifyAI, "Translated via Beckify AI")
+        XCTAssertEqual(SpanishTranslatorAPI.statusOnDevice, "Translated on device")
+        let draft = SpanishTranslatorAPI.appleOnDeviceDraft(
+            translation: "  Hola  ",
+            sourceText: "Hello",
+            targetLanguageID: "es-MX"
+        )
+        XCTAssertEqual(draft.translation, "Hola")
+        XCTAssertEqual(draft.engine, "apple")
+        XCTAssertEqual(draft.provider, "apple")
+        XCTAssertEqual(draft.targetLanguage, "es-MX")
+        XCTAssertTrue(draft.displayDialect.lowercased().contains("on-device")
+            || draft.displayDialect.lowercased().contains("apple"))
+    }
+
+    func testShouldAttemptOnDeviceFallback() {
+        XCTAssertTrue(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 0))
+        XCTAssertTrue(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 404))
+        XCTAssertTrue(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 405))
+        XCTAssertTrue(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 503))
+        XCTAssertTrue(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 500))
+        XCTAssertTrue(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 429))
+        // Successful 2xx should not request fallback from this helper.
+        XCTAssertFalse(SpanishTranslatorAPI.shouldAttemptOnDeviceFallback(httpStatus: 200))
+    }
+
+    func testBothPathsFailedMessage() {
+        let both = SpanishTranslatorAPI.bothPathsFailedMessage(
+            apiError: "Cannot POST",
+            onDeviceError: "languages missing"
+        )
+        XCTAssertTrue(both.contains("Cannot POST"))
+        XCTAssertTrue(both.lowercased().contains("on-device") || both.contains("languages"))
+        let need = SpanishTranslatorAPI.onDeviceUnavailableMessage(apiError: "HTTP 404")
+        XCTAssertTrue(need.contains("HTTP 404"))
+        XCTAssertTrue(need.contains("iOS 18"))
     }
 }

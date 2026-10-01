@@ -9,6 +9,63 @@ struct VisionHTTPError: LocalizedError {
     var errorDescription: String? { message }
 }
 
+/// Small shared HTTPS JSON POST helper for Beckify API text routes (translate today;
+/// Look Check / OCR photo clients stay separate until a later consolidation).
+enum BeckifyAIClient {
+    /// POST `application/json` and return the decoded object on 2xx.
+    /// Throws `VisionHTTPError` with HTTP status (0 = transport) on failure.
+    static func postJSON(
+        url: URL,
+        body: Data,
+        bearerToken: String = "",
+        timeout: TimeInterval = 30,
+        retryOnBadGateway: Bool = false
+    ) async throws -> [String: Any] {
+        do {
+            return try await postOnce(url: url, body: body, bearerToken: bearerToken, timeout: timeout)
+        } catch let error as VisionHTTPError where retryOnBadGateway && (error.status == 502 || error.status == 504) {
+            try await Task.sleep(nanoseconds: 800_000_000)
+            return try await postOnce(url: url, body: body, bearerToken: bearerToken, timeout: timeout)
+        }
+    }
+
+    private static func postOnce(
+        url: URL,
+        body: Data,
+        bearerToken: String,
+        timeout: TimeInterval
+    ) async throws -> [String: Any] {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = timeout
+        let trimmed = bearerToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            request.setValue("Bearer \(trimmed)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = body
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw VisionHTTPError(status: 0, message: error.localizedDescription)
+        }
+        let http = response as? HTTPURLResponse
+        let status = http?.statusCode ?? 0
+        let payload = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+        if status < 200 || status >= 300 {
+            let message = (payload["error"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            throw VisionHTTPError(
+                status: status,
+                message: (message?.isEmpty == false) ? message! : "Beckify API unavailable (HTTP \(status))."
+            )
+        }
+        return payload
+    }
+}
+
 /// URLSession client for `/api/analyze-nameplate` and `/api/analyze-panel`.
 /// JPEG encode matches Look Check (8 MB / 2048 edge). Look Check keeps its
 /// own `PhotoLookCheckClient`. Photos are encoded only after Analyze.
