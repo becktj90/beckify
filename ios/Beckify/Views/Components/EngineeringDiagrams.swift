@@ -199,7 +199,7 @@ struct VoltageDropDiagram: View {
                     .accessibilityHidden(true)
             }
         }
-        .modifier(OptionalAccessibilityID(accessibilityID))
+        .modifier(OptionalAccessibilityID(id: accessibilityID))
     }
 
     private func endpoint(_ title: String, _ value: String, alignment: HorizontalAlignment) -> some View {
