@@ -207,14 +207,14 @@ struct EMFieldsView: View {
             switch FaradayMode(rawValue: faradayMode) ?? .rate {
             case .rate:
                 NumberField(title: "Loop area", unit: "cm²", text: $areaCm2, fieldID: "area")
-                NumberField(title: "dB/dt", unit: "T/s", text: $densityRate, fieldID: "dBdt", helpText: "Positive means B toward you is increasing.")
+                NumberField(title: "dB/dt", unit: "T/s", text: $densityRate, helpText: "Positive means B toward you is increasing.", fieldID: "dBdt")
             case .span:
                 NumberField(title: "Loop area", unit: "cm²", text: $areaCm2, fieldID: "area")
                 NumberField(title: "Starting B", unit: "T", text: $startB, fieldID: "b0")
                 NumberField(title: "Ending B", unit: "T", text: $endB, fieldID: "b1")
                 NumberField(title: "Time span", unit: "s", text: $seconds, fieldID: "dt")
             case .flux:
-                NumberField(title: "dΦ/dt", unit: "Wb/s", text: $fluxRate, fieldID: "dPhi", helpText: "Positive flux is toward you.")
+                NumberField(title: "dΦ/dt", unit: "Wb/s", text: $fluxRate, helpText: "Positive flux is toward you.", fieldID: "dPhi")
             }
             if let failure = faradayFailure {
                 ErrorText(message: failure)
@@ -255,7 +255,7 @@ struct EMFieldsView: View {
             NumberField(title: "x", unit: "m", text: $px, fieldID: "px")
             NumberField(title: "y", unit: "m", text: $py, fieldID: "py")
             NumberField(title: "z", unit: "m", text: $pz, fieldID: "pz")
-            NumberField(title: "Test charge", unit: "nC", text: $testNano, optional: true, fieldID: "qt", helpText: "Leave blank to skip the force.")
+            NumberField(title: "Test charge", unit: "nC", text: $testNano, optional: true, helpText: "Leave blank to skip the force.", fieldID: "qt")
             if let failure = chargeFailure {
                 ErrorText(message: failure)
             } else if let result = chargeResult {
@@ -294,7 +294,7 @@ struct EMFieldsView: View {
             triple($vx, $vy, $vz, unit: "m/s", prefix: "v")
             sectionLabel("B")
             triple($bx, $by, $bz, unit: "T", prefix: "b")
-            NumberField(title: "Mass", unit: "g", text: $massGrams, optional: true, fieldID: "mass", helpText: "Needed only for the arc radius.")
+            NumberField(title: "Mass", unit: "g", text: $massGrams, optional: true, helpText: "Needed only for the arc radius.", fieldID: "mass")
             if let failure = lorentzFailure {
                 ErrorText(message: failure)
             } else if let result = lorentzResult {

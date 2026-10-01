@@ -197,8 +197,9 @@ struct ThreeLegDiagram: View {
         let thick: CGFloat = 12
         let steel = Theme.foreground.opacity(0.88)
         var yoke = Path()
-        yoke.addRoundedRect(in: CGRect(x: xs[0] - thick / 2, y: yTop - thick / 2, width: xs[2] - xs[0] + thick, height: thick), cornerRadius: 3)
-        yoke.addRoundedRect(in: CGRect(x: xs[0] - thick / 2, y: yBot - thick / 2, width: xs[2] - xs[0] + thick, height: thick), cornerRadius: 3)
+        let yokeRadii = RectangleCornerRadii(topLeading: 3, bottomLeading: 3, bottomTrailing: 3, topTrailing: 3)
+        yoke.addRoundedRect(in: CGRect(x: xs[0] - thick / 2, y: yTop - thick / 2, width: xs[2] - xs[0] + thick, height: thick), cornerRadii: yokeRadii)
+        yoke.addRoundedRect(in: CGRect(x: xs[0] - thick / 2, y: yBot - thick / 2, width: xs[2] - xs[0] + thick, height: thick), cornerRadii: yokeRadii)
         context.fill(yoke, with: .color(steel))
         for (index, x) in xs.enumerated() {
             let gap = index != 1
@@ -286,8 +287,8 @@ struct MachineRoleDiagram: View {
     private func transformer(_ context: inout GraphicsContext, size: CGSize) {
         let core = CGRect(x: size.width * 0.28, y: 28, width: size.width * 0.44, height: size.height * 0.62)
         context.stroke(Path(roundedRect: core, cornerRadius: 8), with: .color(Theme.foreground), lineWidth: 10)
-        coil(context, x: core.minX, y: core.midY, label: "N1", color: Theme.copper)
-        coil(context, x: core.maxX, y: core.midY, label: "N2", color: Theme.accent)
+        coil(&context, x: core.minX, y: core.midY, label: "N1", color: Theme.copper)
+        coil(&context, x: core.maxX, y: core.midY, label: "N2", color: Theme.accent)
         FieldSketch.arrow(
             &context,
             from: CGPoint(x: core.minX + 24, y: core.minY + 22),

@@ -1238,9 +1238,9 @@ enum GlyphKind {
     private static func magneticsLab(_ r: CGRect) -> GlyphArtwork {
         var path = Path()
         let core = r.insetBy(dx: r.width * 0.18, dy: r.height * 0.16)
-        path.addRoundedRect(in: core, cornerRadius: 4)
+        path.addRoundedRect(in: core, cornerRadii: RectangleCornerRadii(topLeading: 4, bottomLeading: 4, bottomTrailing: 4, topTrailing: 4))
         let inner = core.insetBy(dx: core.width * 0.28, dy: core.height * 0.22)
-        path.addRoundedRect(in: inner, cornerRadius: 2)
+        path.addRoundedRect(in: inner, cornerRadii: RectangleCornerRadii(topLeading: 2, bottomLeading: 2, bottomTrailing: 2, topTrailing: 2))
         for step in -1...1 {
             let y = core.midY + CGFloat(step) * core.height * 0.12
             path.move(to: CGPoint(x: core.minX - r.width * 0.06, y: y))
