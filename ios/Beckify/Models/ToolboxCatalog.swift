@@ -532,14 +532,15 @@ enum ToolboxCatalog {
         ToolDefinition(
             id: .setupCheck,
             kind: .sensor,
-            title: "Room & Rig Check",
-            subtitle: "Leave it open, then run a relative listen test. Not a lab mic.",
+            title: "RigScope",
+            subtitle: "Relative listen test for Music, Movies, or Gaming. Not a lab mic.",
             symbol: "speaker.wave.2.fill",
             synonyms: [
-                "room & rig check", "room and rig", "setup check", "speaker setup", "acoustic setup",
+                "rigscope", "rig scope", "room & rig", "room and rig", "room & rig check",
+                "setup check", "setupcheck", "speaker setup", "acoustic setup",
                 "room", "rig", "audiophile", "listening", "rta", "test",
                 "fft", "spectrogram", "pink noise", "sweep", "speaker",
-                "frequency response", "crest", "waterfall",
+                "frequency response", "crest", "waterfall", "music", "movies", "gaming",
             ]
         ),
         ToolDefinition(

@@ -273,7 +273,7 @@ public enum ToolHowItWorksCatalog {
             context: "Field note: louder vs quieter, and which band is up, on this phone.",
             bullets: [
                 "Not an SLM, not OSHA-legal, not A-weighted dB(A). Bars are relative dBFS, not sound pressure.",
-                "Same on-device FFT tap as Acoustic Imager and Room & Rig Check. Meter plus spectrum, not a sound camera.",
+                "Same on-device FFT tap as Acoustic Imager and RigScope. Meter plus spectrum, not a sound camera.",
                 "Rough harmonic % is leftover mic-FFT energy, not THD and not SPL. Freeze holds the plot. Share saves a PNG, not audio.",
                 "Save stores the numeric dBFS snapshot only — never a recording.",
             ]
@@ -285,17 +285,17 @@ public enum ToolHowItWorksCatalog {
                 "AVAudioEngine tap plus Accelerate FFT. Not ultrasonic beamforming or a Fluke-style imager.",
                 "Not a calibrated SPL meter, and not a gas-leak certification tool.",
                 "One microphone shows level, spectrum, and recent time activity. It cannot place a leak.",
-                "Audio stays on device. Save stores numbers, never a recording. Room & Rig Check shares this tap.",
+                "Audio stays on device. Save stores numbers, never a recording. RigScope shares this tap.",
             ]
         ),
         "setupCheck": ToolHowItWorks(
-            summary: "Room & Rig Check: leave it open while you listen, then run a short relative FFT test.",
+            summary: "RigScope: leave it open while you listen, then run a short relative FFT test.",
             context: "Compare a listening spot or a rig on this phone. Not a lab mic and not a certificate.",
             bullets: [
-                "Phone speaker plus mic is not a calibrated measurement microphone. Relative shape and trends only. No invented dB SPL.",
-                "Plots stay live while music or a test signal plays. Start test captures about 8 seconds and explains each number.",
-                "The live FFT and approximate RTA label frequency, relative dBFS, and time. Pink noise, a sweep, or bursts are not recorded.",
-                "Harmonic percent, band balance, and the sweep are relative energy, not lab THD. One mic path, so stereo stays blank. Share saves a PNG, not audio.",
+                "Phone speaker demos plus mic are not a calibrated measurement mic. Relative shape and trends only. No invented dB SPL.",
+                "Pick Music, Movies, or Gaming for future score targets. Notes are intent only — scoring is not in this build.",
+                "Capture a quiet-room baseline first. Signal above background is not SNR. Route or gain changes invalidate it.",
+                "Plots stay live from the DSP worker. Start test locks ~8 s; A/B needs matching stimulus and route.",
             ]
         ),
         "bubbleLevel": ToolHowItWorks(

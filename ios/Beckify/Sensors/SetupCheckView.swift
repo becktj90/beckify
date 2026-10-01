@@ -1,7 +1,7 @@
 import SwiftUI
 import BeckifyMath
 
-/// Field → Instruments. Room & Rig Check on the shared microphone FFT.
+/// Field → Instruments. RigScope (tool ID setupCheck) on the shared microphone FFT.
 /// Optional test signals play from the phone speaker on that same engine.
 struct SetupCheckView: View {
     @EnvironmentObject private var jobs: JobStore
@@ -21,7 +21,8 @@ struct SetupCheckView: View {
     @State private var frozenSpectrogram: [[Double]]?
     @State private var frozenTrace: [Double]?
     @State private var frozenResponse: [RoomRigPoint]?
-    @StoredInput(.setupCheck, "jobName", default: "Room and rig") private var jobName
+    @StoredInput(.setupCheck, "jobName", default: "RigScope") private var jobName
+    @StoredInput(.setupCheck, "listeningPurpose", default: "music") private var listeningPurposeRaw
     @State private var notes = ""
     @State private var testRunning = false
     @State private var testStarted: Date?
@@ -29,6 +30,17 @@ struct SetupCheckView: View {
     @State private var capture = RoomRigTestCapture()
     @State private var testResult: RoomRigTestSnapshot?
     @State private var spotA: RoomRigTestSnapshot?
+    @State private var spotAMetadata: RoomRigPassMetadata?
+    @State private var passMetadata: RoomRigPassMetadata?
+    @State private var captureProtocol: RoomRigCaptureProtocol?
+    @State private var quietBaseline: RoomRigQuietBaseline?
+    @State private var baselineCapturing = false
+    @State private var baselineLevels: [Double] = []
+    @State private var baselineBandRows: [[Double]] = []
+    @State private var baselineStartedSample: UInt64 = 0
+    @State private var lastHandledFrameID: UInt64 = 0
+    @State private var cancelNotice: String?
+    @State private var abBlockedReason: String?
 
     var body: some View {
         ToolScaffold(
@@ -41,12 +53,13 @@ struct SetupCheckView: View {
                 toolID: .setupCheck,
                 symbolic: "relative dBFS    crest = 20·log₁₀(peak / RMS)    sweep shape, not SPL",
                 substituted: sticky,
-                meaning: "The shared microphone FFT draws the live spectrum, RTA bands, and a short spectrogram. Pink noise, a log sweep, or a tone burst can play from this phone’s speaker so you can A/B a seat or a rig. The curve is a shape on this phone, not a calibrated frequency response."
+                meaning: "RigScope’s DSP worker draws the live spectrum, RTA bands, and a short spectrogram from timestamped frames. Pink noise, a log sweep, or a tone burst can play from this phone’s speaker as a labeled demo so you can A/B a seat or a rig. Capture an explicit quiet-room baseline first. The curve is a shape on this phone, not a calibrated frequency response."
             )
             Text(RoomRigMath.honestLimit)
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
+            listeningPurposeCard
             Text("Leave this open while you listen. The meters and spectrum stay live. Start test when you want numbers for an A/B.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.foreground)
@@ -54,7 +67,7 @@ struct SetupCheckView: View {
             if spectrum.permissionDenied {
                 ToolEmptyState(
                     title: "Microphone is off",
-                    detail: "Room & Rig Check needs the microphone for a relative spectrum. Test signals stay on this phone. Nothing is recorded or uploaded.",
+                    detail: "RigScope needs the microphone for a relative spectrum. Test signals stay on this phone. Nothing is recorded or uploaded.",
                     systemImage: "mic.slash",
                     showsSettings: true
                 )
@@ -70,6 +83,19 @@ struct SetupCheckView: View {
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
+            baselineControls
+            if let cancelNotice {
+                Text(cancelNotice)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.bad)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let abBlockedReason {
+                Text(abBlockedReason)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.warn)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             testControls
             if let testResult {
                 testResultCard(testResult)
@@ -79,7 +105,7 @@ struct SetupCheckView: View {
                 ResultRow(label: "Level", value: Format.dbfs(spectrum.rmsDBFS), emphasis: true, tone: Theme.good)
                 ResultRow(label: "Peak hold", value: Format.dbfs(peakHold), tone: Theme.warn)
                 ResultRow(label: "Crest", value: crestLabel, tone: Theme.copper)
-                ResultRow(label: "Above quiet", value: aboveLabel)
+                ResultRow(label: "Signal above background", value: aboveLabel)
                 ResultRow(label: "Relative range", value: rangeLabel)
                 ResultRow(label: "Clip", value: clipLabel, tone: spectrum.clipFraction >= 0.01 ? Theme.bad : Theme.foreground)
                 ResultRow(label: "Harmonics", value: harmonicLabel)
@@ -99,7 +125,7 @@ struct SetupCheckView: View {
                         .foregroundStyle(Theme.muted)
                         .padding(.top, 6)
                 }
-                Text("Crest is peaks above the typical level. Harmonics are leftover mic energy, not THD. Loop delay shows up on bursts as a rough speaker-to-mic gap. Above quiet and relative range wait for a quiet Listen moment.")
+                Text("Crest is peaks above the typical level. Harmonics are leftover mic energy, not THD. Loop delay shows up on bursts as a rough speaker-to-mic gap. Signal above background uses the quiet-room baseline you capture — not SNR. Relative range waits for that baseline.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -199,8 +225,6 @@ struct SetupCheckView: View {
                     .tint(Theme.accent)
                 Button("Reset peak") {
                     peakHold = spectrum.rmsDBFS
-                    noiseFloor = nil
-                    quietTrace = []
                 }
                 .buttonStyle(.bordered)
                 .tint(Theme.accent)
@@ -211,6 +235,8 @@ struct SetupCheckView: View {
         .preferredColorScheme(.dark)
         .onAppear { retainMic() }
         .onDisappear {
+            if testRunning { cancelTest(.leftScreen) }
+            if baselineCapturing { cancelBaseline() }
             spectrum.endStimulus()
             spectrum.release(micToken)
         }
@@ -219,7 +245,8 @@ struct SetupCheckView: View {
             case .active:
                 retainMic()
             case .background:
-                if testRunning { finishTest() }
+                if testRunning { cancelTest(.backgrounded) }
+                if baselineCapturing { cancelBaseline() }
                 stimulus = .listen
                 spectrum.endStimulus()
                 spectrum.release(micToken)
@@ -229,26 +256,16 @@ struct SetupCheckView: View {
         }
         .onChange(of: stimulus) { _, kind in
             if kind == .sweep { response = [] }
+            if testRunning { cancelTest(.userStop) }
             spectrum.setStimulus(kind)
         }
-        .onChange(of: spectrum.rmsDBFS) { _, db in
-            guard spectrum.hasReading, db.isFinite else { return }
-            if testRunning {
-                capture.append(
-                    levelDBFS: db,
-                    peakDBFS: spectrum.peakDBFS,
-                    crestDB: spectrum.crestDB,
-                    clipFraction: spectrum.clipFraction,
-                    peakHz: spectrum.peakHz,
-                    bands: spectrum.rtaBands
-                )
-            }
-            guard !frozen else { return }
-            if db > peakHold { peakHold = db }
-            levelTrace = MagSweepMath.appendTrace(levelTrace, sample: db, limit: 120)
-            guard stimulus == .listen, !testRunning else { return }
-            quietTrace = MagSweepMath.appendTrace(quietTrace, sample: db, limit: 40)
-            noiseFloor = RoomRigMath.percentile(quietTrace, p: 0.2)
+        .onChange(of: spectrum.frameID) { _, id in
+            handleWorkerFrame(id)
+        }
+        .onChange(of: spectrum.routeEpoch) { _, _ in
+            invalidateBaselineForRoute()
+            if testRunning { cancelTest(.routeOrGainChanged) }
+            if baselineCapturing { cancelBaseline(route: true) }
         }
         .task(id: testRunID) {
             guard testRunning, let testStarted else { return }
@@ -259,20 +276,19 @@ struct SetupCheckView: View {
             guard !Task.isCancelled, testRunning else { return }
             finishTest()
         }
-        .onChange(of: spectrum.bands) { _, bands in
-            guard !frozen, !bands.isEmpty else { return }
-            spectrogram = RoomRigMath.appendSpectrogram(spectrogram, row: bands.map(\.dbFS), limit: 48)
-        }
-        .onChange(of: spectrum.stimulusHz) { _, hz in
-            guard !frozen, spectrum.stimulus == .sweep, let hz, hz > 0 else { return }
-            guard let band = spectrum.rtaBands.min(by: {
-                abs(log(max($0.centerHz, 1)) - log(hz)) < abs(log(max($1.centerHz, 1)) - log(hz))
-            }) else { return }
-            response = RoomRigMath.updateResponse(response, hz: hz, db: band.dbFS)
+        .task(id: baselineCapturing) {
+            guard baselineCapturing else { return }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            guard !Task.isCancelled, baselineCapturing else { return }
+            finishBaseline()
         }
     }
 
-    private var shownBands: [AcousticDisplayBand] { frozenBands ?? spectrum.bands }
+    private var shownBands: [AcousticDisplayBand] {
+        if let frozenBands { return frozenBands }
+        if spectrum.bassBands.isEmpty { return spectrum.bands }
+        return mergeBass(live: spectrum.bands, bass: spectrum.bassBands)
+    }
     private var shownRTA: [AcousticDisplayBand] { frozenRTA ?? spectrum.rtaBands }
     private var shownSpectrogram: [[Double]] { frozenSpectrogram ?? spectrogram }
 
@@ -296,7 +312,7 @@ struct SetupCheckView: View {
             Text("How to A/B a room or a rig")
                 .font(Theme.TypeRole.fieldLabel)
                 .foregroundStyle(Theme.foreground)
-            Text("1. Leave the screen open. Play music, or pick Pink, Sweep, or Burst. The plots stay live.")
+            Text("1. Pick Music, Movies, or Gaming. Capture a quiet-room baseline. Leave the screen open. Play content, or pick a labeled phone-speaker demo (Pink, Sweep, Burst). The plots stay live.")
             Text("2. Tap Start test. It listens for about \(Format.number(RoomRigTestMath.windowSeconds, digits: 0)) seconds, or until you tap Stop. Each number underneath says what it means.")
             Text("3. Keep that pass as spot A. Move the phone or change the rig, run the test again, and read this pass minus A.")
             Text("4. Pink noise fills the band so two spots are easier to compare. Sweep draws a shape — 0 dB is that pass’s peak, not a calibration. Burst is a rough speaker-to-mic delay.")
@@ -326,13 +342,13 @@ struct SetupCheckView: View {
     private var signalCaption: String {
         switch stimulus {
         case .listen:
-            return "Listening only. A quiet moment here sets the floor the test compares against. Turn on a signal when you want the phone speaker in the A/B."
+            return "Listening only. Capture a quiet-room baseline explicitly for signal-above-background (not SNR). Phone-speaker signals are demos when you turn them on."
         case .pink:
-            return "Pink noise from this phone’s speaker. Use it to compare seats or rigs. Not a reference generator."
+            return "Pink noise demo from this phone’s speaker. Use it to compare seats or rigs. Not a reference generator."
         case .sweep:
-            return "Log sweep, \(Format.number(RoomRigMath.sweepStartHz, digits: 0))–\(Format.number(RoomRigMath.sweepEndHz, digits: 0)) Hz. The shape fills in over about \(Format.number(RoomRigMath.sweepDuration, digits: 0)) seconds. 0 dB is this pass’s peak."
+            return "Log sweep demo, \(Format.number(RoomRigMath.sweepStartHz, digits: 0))–\(Format.number(RoomRigMath.sweepEndHz, digits: 0)) Hz. The shape fills in over about \(Format.number(RoomRigMath.sweepDuration, digits: 0)) seconds. 0 dB is this pass’s peak."
         case .burst:
-            return "1 kHz tone bursts. Loop delay is a rough speaker-to-mic gap when the burst rises out of the room."
+            return "1 kHz tone-burst demo. Loop delay is a rough speaker-to-mic gap when the burst rises out of the room."
         }
     }
 
@@ -342,14 +358,19 @@ struct SetupCheckView: View {
     }
 
     private var aboveLabel: String {
-        guard let floor = noiseFloor, let above = RoomRigMath.signalAboveFloorDB(levelDBFS: spectrum.rmsDBFS, floorDBFS: floor) else {
-            return "Listen quietly first"
+        guard let above = RoomRigBaselineMath.signalAboveBackgroundDB(
+            levelDBFS: spectrum.rmsDBFS,
+            baseline: quietBaseline
+        ) else {
+            return "Capture quiet baseline"
         }
         return String(format: "%+.1f dB", above)
     }
 
     private var rangeLabel: String {
-        guard let floor = noiseFloor, let range = RoomRigMath.relativeDynamicRangeDB(peakDBFS: peakHold, floorDBFS: floor) else {
+        guard let floor = quietBaseline?.floorDBFS,
+              let range = RoomRigMath.relativeDynamicRangeDB(peakDBFS: peakHold, floorDBFS: floor)
+        else {
             return "—"
         }
         return "\(Format.number(range, digits: 1)) dB"
@@ -418,7 +439,7 @@ struct SetupCheckView: View {
 
     private var sticky: String? {
         guard spectrum.hasReading else { return nil }
-        return "\(Format.dbfs(spectrum.rmsDBFS)) · \(crestLabel) crest"
+        return "\(Format.dbfs(spectrum.rmsDBFS)) · \(crestLabel) crest · \(listeningPurpose.title)"
     }
 
     private var copyText: String? {
@@ -459,7 +480,11 @@ struct SetupCheckView: View {
 
     private func testResultCard(_ snap: RoomRigTestSnapshot) -> some View {
         ResultCard(title: "Test · \(snap.stimulus)", copyText: testCopy(snap)) {
-            Text("\(Format.number(snap.durationSeconds, digits: 0)) s on this phone. Relative A/B only — not SPL, not a lab RTA.")
+            Text("\(Format.number(snap.durationSeconds, digits: 0)) s · \(listeningPurpose.title). Relative A/B only — not SPL, not a lab RTA. Score protocol not in this build.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(listeningPurpose.targetCurveNote)
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -473,9 +498,9 @@ struct SetupCheckView: View {
                 tone: snap.clipFraction >= 0.01 ? Theme.bad : Theme.foreground
             )
             explained(
-                "Above quiet",
-                snap.aboveFloorDB.map { String(format: "%+.1f dB", $0) } ?? "Listen quietly first",
-                RoomRigTestCopy.aboveFloor
+                "Signal above background",
+                snap.aboveFloorDB.map { String(format: "%+.1f dB", $0) } ?? "Capture quiet baseline",
+                RoomRigTestCopy.signalAboveBackground
             )
             explained("Peak freq", snap.peakHz.map { "\(Format.number($0, digits: 0)) Hz" } ?? "—", RoomRigTestCopy.peakHz)
             explained("Centroid", snap.centroidHz.map { "\(Format.number($0, digits: 0)) Hz" } ?? "—", RoomRigTestCopy.centroid)
@@ -489,26 +514,36 @@ struct SetupCheckView: View {
                 explained("Bands vs loudest", "—", RoomRigTestCopy.balance)
             }
             if let spotA, spotA != snap {
-                Text(RoomRigTestCopy.versusA)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 4)
-                ResultRow(
-                    label: "Level vs A",
-                    value: String(format: "%+.1f dB", snap.levelDBFS - spotA.levelDBFS),
-                    emphasis: true,
-                    tone: Theme.copper
-                )
-                if let crest = snap.crestDB, let crestA = spotA.crestDB {
-                    ResultRow(label: "Crest vs A", value: String(format: "%+.1f dB", crest - crestA))
-                }
-                if let here = snap.centroidHz, let there = spotA.centroidHz {
-                    ResultRow(label: "Centroid vs A", value: String(format: "%+.0f Hz", here - there))
+                if let meta = passMetadata, let aMeta = spotAMetadata, RoomRigABMath.canCompare(a: aMeta, b: meta) {
+                    Text(RoomRigTestCopy.versusA)
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+                    ResultRow(
+                        label: "Level vs A",
+                        value: String(format: "%+.1f dB", snap.levelDBFS - spotA.levelDBFS),
+                        emphasis: true,
+                        tone: Theme.copper
+                    )
+                    if let crest = snap.crestDB, let crestA = spotA.crestDB {
+                        ResultRow(label: "Crest vs A", value: String(format: "%+.1f dB", crest - crestA))
+                    }
+                    if let here = snap.centroidHz, let there = spotA.centroidHz {
+                        ResultRow(label: "Centroid vs A", value: String(format: "%+.0f Hz", here - there))
+                    }
+                } else {
+                    Text(abBlockedReason ?? "A/B needs matching stimulus, route, gain, and FFT settings.")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.warn)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
                 }
             }
             Button(spotA == nil ? "Keep as spot A" : "Replace spot A") {
                 spotA = snap
+                spotAMetadata = passMetadata
+                abBlockedReason = nil
             }
             .buttonStyle(.bordered)
             .tint(Theme.accent)
@@ -536,7 +571,205 @@ struct SetupCheckView: View {
         "\(snap.stimulus) \(Format.number(snap.durationSeconds, digits: 0)) s, \(Format.dbfs(snap.levelDBFS)), crest \(snap.crestDB.map { Format.number($0, digits: 1) } ?? "—") dB. Relative phone mic. Not SPL."
     }
 
+    private var listeningPurpose: RoomRigListeningPurpose {
+        get { RoomRigListeningPurpose.parse(listeningPurposeRaw) }
+        nonmutating set { listeningPurposeRaw = newValue.rawValue }
+    }
+
+    private var listeningPurposeCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Listening purpose")
+                .font(Theme.TypeRole.fieldLabel)
+                .foregroundStyle(Theme.foreground)
+            Picker("Listening purpose", selection: $listeningPurposeRaw) {
+                ForEach(RoomRigListeningPurpose.allCases) { purpose in
+                    Text(purpose.title).tag(purpose.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Listening purpose")
+            Text(listeningPurpose.scoreTargetLabel)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.copper)
+            Text(listeningPurpose.targetCurveNote)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(RoomRigTestCopy.purposeHelp)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var baselineControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(baselineCapturing ? "Capturing quiet…" : (quietBaseline == nil ? "Capture quiet-room baseline" : "Recapture quiet baseline")) {
+                if baselineCapturing {
+                    cancelBaseline()
+                } else {
+                    startBaseline()
+                }
+            }
+            .buttonStyle(.bordered)
+            .tint(Theme.accent)
+            .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+            .disabled(testRunning || stimulus != .listen)
+            Text(RoomRigTestCopy.baselineHelp)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            if let quietBaseline {
+                Text("Baseline \(Format.dbfs(quietBaseline.floorDBFS)) · signal above background, not SNR.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.good)
+            }
+            if spectrum.bassFFTLength > 0 {
+                Text("Bass analysis window \(spectrum.bassFFTLength) samples (overlapping). Live plots stay on \(RoomRigMath.liveFFTLength).")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+    }
+
+    private func handleWorkerFrame(_ id: UInt64) {
+        guard id != lastHandledFrameID, let frame = spectrum.latestFrame, frame.frameID == id else { return }
+        lastHandledFrameID = id
+        let db = frame.rmsDBFS
+        guard db.isFinite else { return }
+
+        if baselineCapturing, stimulus == .listen {
+            baselineLevels.append(db)
+            let row = frame.bands.filter(\.isAvailable).map(\.dbFS)
+            if !row.isEmpty {
+                baselineBandRows.append(row)
+            }
+        }
+
+        if testRunning, var proto = captureProtocol {
+            if let reason = proto.append(frame) {
+                captureProtocol = proto
+                cancelTest(reason)
+                return
+            }
+            captureProtocol = proto
+            capture = proto.capture
+        }
+
+        guard !frozen else { return }
+        if db > peakHold { peakHold = db }
+        levelTrace = MagSweepMath.appendTrace(levelTrace, sample: db, limit: 120)
+        let plotBands = spectrum.bassBands.isEmpty ? frame.bands : mergeBass(live: frame.bands, bass: spectrum.bassBands)
+        if !plotBands.isEmpty {
+            spectrogram = RoomRigMath.appendSpectrogram(
+                spectrogram,
+                row: plotBands.map { $0.isAvailable ? $0.dbFS : AcousticSpectrum.displayFloorDBFS },
+                limit: 48
+            )
+        }
+        if spectrum.stimulus == .sweep, let hz = spectrum.stimulusHz, hz > 0 {
+            let source = frame.rtaBands.filter(\.isAvailable)
+            if let band = source.min(by: {
+                abs(log(max($0.centerHz, 1)) - log(hz)) < abs(log(max($1.centerHz, 1)) - log(hz))
+            }) {
+                response = RoomRigMath.updateResponse(response, hz: hz, db: band.dbFS)
+            }
+        }
+    }
+
+    private func mergeBass(live: [AcousticDisplayBand], bass: [AcousticDisplayBand]) -> [AcousticDisplayBand] {
+        // Prefer longer-FFT availability below ~200 Hz; keep live above.
+        live.map { band in
+            guard band.centerHz < 200 else { return band }
+            if let better = bass.first(where: { abs(log(max($0.centerHz, 1)) - log(max(band.centerHz, 1))) < 0.15 }),
+               better.isAvailable {
+                return better
+            }
+            return band
+        }
+    }
+
+    private func startBaseline() {
+        guard stimulus == .listen, !testRunning else { return }
+        cancelNotice = nil
+        baselineLevels = []
+        baselineBandRows = []
+        baselineStartedSample = spectrum.totalSampleCount
+        baselineCapturing = true
+    }
+
+    private func finishBaseline() {
+        guard baselineCapturing else { return }
+        baselineCapturing = false
+        guard let fingerprint = spectrum.routeFingerprint else {
+            cancelNotice = "Baseline cancelled — no route fingerprint yet."
+            return
+        }
+        quietBaseline = RoomRigBaselineMath.baseline(
+            levels: baselineLevels,
+            bandRows: baselineBandRows,
+            fingerprint: fingerprint,
+            sampleCount: spectrum.totalSampleCount &- baselineStartedSample,
+            capturedAt: Date().timeIntervalSinceReferenceDate
+        )
+        noiseFloor = quietBaseline?.floorDBFS
+        if quietBaseline == nil {
+            cancelNotice = "Baseline incomplete — stay quiet and try again."
+        } else {
+            cancelNotice = nil
+        }
+    }
+
+    private func cancelBaseline(route: Bool = false) {
+        baselineCapturing = false
+        baselineLevels = []
+        baselineBandRows = []
+        if route {
+            quietBaseline = nil
+            noiseFloor = nil
+            cancelNotice = "Quiet baseline invalidated — audio route or gain changed."
+        }
+    }
+
+    private func invalidateBaselineForRoute() {
+        guard let baseline = quietBaseline, let fingerprint = spectrum.routeFingerprint else { return }
+        if !baseline.isValid(for: fingerprint) {
+            quietBaseline = nil
+            noiseFloor = nil
+            cancelNotice = "Quiet baseline invalidated — audio route or gain changed."
+        }
+    }
+
+    private func makePassMetadata() -> RoomRigPassMetadata? {
+        guard let fingerprint = spectrum.routeFingerprint else { return nil }
+        return RoomRigPassMetadata(
+            stimulus: stimulus,
+            fingerprint: fingerprint,
+            liveFFTLength: RoomRigMath.liveFFTLength,
+            bassFFTLength: spectrum.bassFFTLength > 0 ? spectrum.bassFFTLength : nil,
+            windowKind: spectrum.windowKind.title,
+            listeningPurpose: listeningPurpose,
+            isPhoneSpeakerDemo: stimulus != .listen
+        )
+    }
+
     private func startTest() {
+        cancelNotice = nil
+        abBlockedReason = nil
+        guard let metadata = makePassMetadata() else {
+            cancelNotice = "Cannot lock protocol — wait for the mic route."
+            return
+        }
+        if let spotAMetadata, !RoomRigABMath.canCompare(a: spotAMetadata, b: metadata) {
+            abBlockedReason = "Spot A used different stimulus/route/FFT. Keep A only for matching passes, or replace A."
+        }
+        let proto = RoomRigCaptureProtocol(
+            metadata: metadata,
+            startedSampleCount: spectrum.totalSampleCount,
+            startedHostTime: Date().timeIntervalSinceReferenceDate
+        )
+        captureProtocol = proto
+        passMetadata = metadata
         capture = RoomRigTestCapture()
         testStarted = Date()
         testRunning = true
@@ -547,20 +780,47 @@ struct SetupCheckView: View {
         guard testRunning else { return }
         let started = testStarted ?? Date()
         let duration = min(RoomRigTestMath.windowSeconds, max(0, Date().timeIntervalSince(started)))
-        let snap = capture.snapshot(
-            stimulus: stimulus.title,
-            durationSeconds: duration,
-            floorDBFS: noiseFloor
-        )
+        let floor = quietBaseline?.floorDBFS
+        let snap = captureProtocol?.finish(durationSeconds: duration, floorDBFS: floor)
+            ?? capture.snapshot(
+                stimulus: stimulus == .listen ? stimulus.title : "\(stimulus.title) · demo",
+                durationSeconds: duration,
+                floorDBFS: floor
+            )
         testRunning = false
         testStarted = nil
         if let snap {
             testResult = snap
+            cancelNotice = nil
+        } else {
+            cancelNotice = "Capture incomplete — no snapshot."
         }
     }
 
+    private func cancelTest(_ reason: RoomRigCaptureCancelReason) {
+        guard testRunning else { return }
+        if var proto = captureProtocol {
+            proto.cancel(reason)
+            captureProtocol = proto
+        }
+        testRunning = false
+        testStarted = nil
+        let message: String
+        switch reason {
+        case .userStop: message = "Capture cancelled."
+        case .incompleteWindow: message = "Capture cancelled — incomplete window."
+        case .routeOrGainChanged: message = "Capture cancelled — route or gain changed."
+        case .clipping: message = "Capture cancelled — clipping."
+        case .lowHeadroom: message = "Capture cancelled — low headroom."
+        case .leftScreen: message = "Capture cancelled — left screen."
+        case .backgrounded: message = "Capture cancelled — backgrounded."
+        }
+        cancelNotice = message
+        testResult = nil
+    }
+
     private func retainMic() {
-        spectrum.retain(micToken, role: "Room & Rig Check")
+        spectrum.retain(micToken, role: "RigScope")
         if stimulus != .listen {
             spectrum.setStimulus(stimulus)
         }
@@ -591,6 +851,7 @@ struct SetupCheckView: View {
             notes: notes,
             inputs: [
                 "signal": stimulus.title,
+                "listeningPurpose": listeningPurpose.title,
                 "formula": "shared mic FFT, relative dBFS",
             ],
             outputs: [

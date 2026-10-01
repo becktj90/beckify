@@ -107,7 +107,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | BLE Scanner | `bluetoothScan` | Instruments | Radar of advertisers, RSSI as range | Strong | Keep | Hold | Device count is not people | Radar canvas |
 | Noise Meter | `noiseMeter` | Instruments | dBFS sparkline and audible-band spectrum | Strong | Keep | Hold | Uncalibrated. Not an SLM. | `SpectrumPlot`, `TraceSparkline` |
 | Acoustic Imager | `acousticImager` | Instruments | Level, spectrum, time activity | Strong | Keep | Hold | Not a sound camera | `SpectrumPlot` |
-| Room & Rig Check | `setupCheck` | Instruments | Relative spectrum, traces, crest | Strong | Keep | Hold | Listen-test aid, not a lab mic | `SpectrumPlot`, `LabeledPlotChrome` |
+| RigScope | `setupCheck` | Instruments | Relative spectrum, traces, crest | Strong | Keep | Hold | Listen-test aid, not a lab mic | `SpectrumPlot`, `LabeledPlotChrome` |
 | Bubble Level | `bubbleLevel` | Instruments | Face-up bubble; plumb angle | Strong | Keep | Hold | Phone gravity, not a machinist level | Existing bubble |
 | Magnetometer | `magnetometer` | Instruments | Heading, \|B\| in µT, Mag Sweep sparkline and spectrum | Strong | Keep | Hold | DC field on the phone. Not an AC EMF survey. | `SpectrumPlot`, `TraceSparkline` |
 | Barometer | `barometer` | Instruments | Pressure and relative altitude rows | None | None on this train | P2 | Phone altimeter, not a weather station | `TraceSparkline` only if a trace is added later |
