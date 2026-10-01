@@ -436,6 +436,9 @@ public enum BreathFluteMath {
     public static let highHz = 1_046.5
     /// C4. Fret 0.
     public static let rootHz = 261.625565
+    /// Breath is broadband. Gate on bands above the playable flute range so the
+    /// speaker sine (C4–C5) does not hold the gate open by itself.
+    public static let breathBandMinHz = 1_500.0
 
     public static let honestLimit =
         "Play tool. Silence until a breath clears the gate; a harder blow is louder. Not a calibrated wind instrument, not a meter, tuner, or SLM. Nothing is recorded or uploaded."
@@ -461,6 +464,32 @@ public enum BreathFluteMath {
             return false
         }
         return (rmsDBFS - noiseFloorDBFS) > marginDB || (peakDBFS - noiseFloorDBFS) > marginDB
+    }
+
+    /// Peak relative dBFS in bands at or above `minHz`. Empty or silent bands return the silence floor.
+    public static func breathLevelDBFS(
+        bands: [AcousticDisplayBand],
+        minHz: Double = breathBandMinHz
+    ) -> Double {
+        guard minHz.isFinite else { return SoundLevel.silenceFloorDBFS }
+        var peak = SoundLevel.silenceFloorDBFS
+        var found = false
+        for band in bands {
+            guard band.centerHz.isFinite, band.centerHz >= minHz, band.dbFS.isFinite else { continue }
+            found = true
+            peak = max(peak, band.dbFS)
+        }
+        return found ? peak : SoundLevel.silenceFloorDBFS
+    }
+
+    /// Gate from breath-band energy versus a breath noise floor. Same margin as the broadband gate.
+    public static func breathGateOpen(
+        breathDBFS: Double,
+        noiseFloorDBFS: Double,
+        marginDB: Double = marginDB
+    ) -> Bool {
+        guard breathDBFS.isFinite, noiseFloorDBFS.isFinite, marginDB.isFinite else { return false }
+        return (breathDBFS - noiseFloorDBFS) > marginDB
     }
 
     /// 0 at the bottom of the pad, 1 at the top. Pitch is exponential so octaves stay even.

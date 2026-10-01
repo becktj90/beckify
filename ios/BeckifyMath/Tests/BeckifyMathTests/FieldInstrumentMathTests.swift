@@ -278,6 +278,27 @@ final class FieldInstrumentMathTests: XCTestCase {
         XCTAssertLessThan(eased, -40)
         XCTAssertGreaterThan(eased, -46)
 
+        let fluteToneBand = AcousticDisplayBand(lowHz: 400, highHz: 600, centerHz: 490, dbFS: -18)
+        let breathBand = AcousticDisplayBand(lowHz: 2_000, highHz: 3_000, centerHz: 2_450, dbFS: -28)
+        let quietHF = AcousticDisplayBand(lowHz: 2_000, highHz: 3_000, centerHz: 2_450, dbFS: -55)
+        XCTAssertEqual(
+            BreathFluteMath.breathLevelDBFS(bands: [fluteToneBand, quietHF]),
+            -55,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            BreathFluteMath.breathLevelDBFS(bands: [fluteToneBand, breathBand]),
+            -28,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            BreathFluteMath.breathLevelDBFS(bands: [fluteToneBand]),
+            SoundLevel.silenceFloorDBFS,
+            accuracy: 1e-9
+        )
+        XCTAssertFalse(BreathFluteMath.breathGateOpen(breathDBFS: -40, noiseFloorDBFS: -48))
+        XCTAssertTrue(BreathFluteMath.breathGateOpen(breathDBFS: -30, noiseFloorDBFS: -48))
+
         let levels = BreathFluteMath.levelDBFS(samples: [Float](repeating: 0.1, count: 4))
         XCTAssertEqual(levels.rms, SoundLevel.dbfs(rms: 0.1), accuracy: 1e-6)
         XCTAssertEqual(levels.peak, SoundLevel.dbfs(rms: 0.1), accuracy: 1e-6)
