@@ -16,6 +16,7 @@ struct SpanishTranslatorView: View {
     @State private var apiToken = ""
     @State private var showAdvanced = false
     @State private var lastTestPhrase = ""
+    @State private var lastAttentionPhrase = ""
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -31,6 +32,7 @@ struct SpanishTranslatorView: View {
         ) {
             statusCard
             modeCard
+            attentionCard
             recordCard
             quickPhrasesCard
             textCards
@@ -107,7 +109,7 @@ struct SpanishTranslatorView: View {
             if !engine.voiceNote.isEmpty {
                 ResultRow(label: "Voice", value: engine.voiceNote)
             }
-            Text("Listening → Translating → Speaking. Pick Clean or Jobsite, then record, type, tap a chip, or Test. Beckify AI rewrites on the selected mode. On-device Apple Translation (iOS 18+) is the fallback when the API is down. Playback prefers OpenAI neural TTS from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
+            Text("Listening → Translating → Speaking. Pick Clean or Jobsite, then tap Hey! for a short attention call, or record, type, tap a chip, or Test. Beckify AI rewrites on the selected mode. On-device Apple Translation (iOS 18+) is the fallback when the API is down. Playback prefers OpenAI neural TTS from api.beckify.com; Apple AVSpeech if that fails. Hold the phone so the bottom mic hears you clearly.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
@@ -145,6 +147,37 @@ struct SpanishTranslatorView: View {
                 .foregroundStyle(Theme.muted)
                 .padding(.top, 4)
         }
+    }
+
+    private var attentionCard: some View {
+        VStack(spacing: 8) {
+            Button {
+                let phrase = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: lastAttentionPhrase)
+                lastAttentionPhrase = phrase
+                typedEnglish = phrase
+                engine.voiceMode = voiceMode
+                engine.translateText(
+                    phrase,
+                    customEndpoint: customEndpoint,
+                    token: apiToken
+                )
+            } label: {
+                Label(SpanishTranslatorAPI.attentionButtonTitle, systemImage: "hand.wave.fill")
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                    .frame(maxWidth: .infinity, minHeight: 76)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.warn)
+            .disabled(engine.phase == .listening || engine.phase == .translating)
+            .accessibilityIdentifier("spanishTranslator.attention")
+            .accessibilityLabel(SpanishTranslatorAPI.attentionButtonAccessibilityLabel)
+
+            Text(SpanishTranslatorAPI.attentionButtonHelp)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 4)
     }
 
     private var recordCard: some View {
@@ -454,6 +487,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     @Published var onDeviceRequestID: UInt64 = 0
     /// English snapshot for the in-flight on-device request.
     @Published var pendingOnDeviceEnglish = ""
+    /// Active Clean / Jobsite register for translate + speak (set from the view).
+    var voiceMode: SpanishVoiceMode = .jobsite
 
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
