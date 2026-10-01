@@ -3,6 +3,7 @@ import AVFoundation
 import Combine
 import os
 import SwiftUI
+import UIKit
 import BeckifyMath
 
 @MainActor
@@ -29,9 +30,12 @@ final class BreathFluteModel: ObservableObject {
     private var didSuspendSpectrum = false
     private var sampleRate = 44_100.0
     private var triedVoiceFallback = false
-    /// Nil until the first breath-band reading seeds the floor. Never start at the digital silence floor.
+    /// Quiet-air samples collected before the gate may open.
+    private var calibrationSamples: [Double] = []
+    /// Nil until calibration finishes with a usable quiet floor.
     private var trackedFloor: Double?
     @Published var breathDBFS = SoundLevel.silenceFloorDBFS
+    @Published var isCalibrating = true
 
     func start() {
         wantsRunning = true
@@ -76,7 +80,9 @@ final class BreathFluteModel: ObservableObject {
         blowBands = []
         micRoute = "Mic route pending"
         triedVoiceFallback = false
+        calibrationSamples = []
         trackedFloor = nil
+        isCalibrating = true
         breathDBFS = SoundLevel.silenceFloorDBFS
         noiseFloor = SoundLevel.silenceFloorDBFS
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -218,7 +224,7 @@ final class BreathFluteModel: ObservableObject {
         try? session.overrideOutputAudioPort(.speaker)
         running = true
         micRoute = route
-        status = "Play tool · \(route) · \(echoLabel) · not recording"
+        status = "Ready"
         pushSynth()
     }
 
@@ -276,10 +282,37 @@ final class BreathFluteModel: ObservableObject {
         }
         let breath = BreathFluteMath.breathLevelDBFS(bands: bands)
         breathDBFS = breath
+        // Missing HF bands return digital silence — never seed the floor from that.
+        guard BreathFluteMath.isUsableBreathLevel(breath) else {
+            gateOpen = false
+            pushSynth()
+            return
+        }
+
+        if trackedFloor == nil {
+            BreathFluteMath.appendCalibrationSample(breath, into: &calibrationSamples)
+            if calibrationSamples.count >= BreathFluteMath.calibrationSampleCount,
+               let seeded = BreathFluteMath.calibrationFloor(samples: calibrationSamples) {
+                trackedFloor = seeded
+                isCalibrating = false
+            } else {
+                isCalibrating = true
+                noiseFloor = BreathFluteMath.calibrationFloor(samples: calibrationSamples) ?? breath
+                gateOpen = false
+                pushSynth()
+                return
+            }
+        }
+
         trackedFloor = BreathFluteMath.updateNoiseFloor(currentDBFS: breath, floor: trackedFloor)
         let floor = trackedFloor ?? breath
         noiseFloor = floor
-        gateOpen = BreathFluteMath.breathGateOpen(breathDBFS: breath, noiseFloorDBFS: floor)
+        let wasOpen = gateOpen
+        gateOpen = BreathFluteMath.breathGateOpen(
+            breathDBFS: breath,
+            noiseFloorDBFS: floor,
+            wasOpen: wasOpen
+        )
         let above = breath - floor
         synth.set(
             gate: gateOpen,
@@ -383,13 +416,10 @@ private final class FluteSynth: @unchecked Sendable {
 }
 
 struct BreathFluteView: View {
-    @EnvironmentObject private var jobs: JobStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var model = BreathFluteModel()
-    @StoredInput(.breathFlute, "jobName", default: "Breath flute") private var jobName
-    @State private var notes = ""
     /// Sticky covers. Index 0 is the hole nearest the embouchure (bottom of the screen).
     @State private var latched = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
     @State private var touching = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
@@ -399,15 +429,11 @@ struct BreathFluteView: View {
             toolID: .breathFlute,
             stickyAnswer: sticky,
             copyText: copyText,
-            disclaimer: .sensor(extra: BreathFluteMath.honestLimit)
+            disclaimer: .sensor(extra: BreathFluteMath.honestLimit),
+            showsIdentityHeader: false,
+            showsAboutWhenCollapsed: false,
+            showsRelatedTools: false
         ) {
-            ShowWorkCard(
-                toolID: .breathFlute,
-                symbolic: "gate when breath band > quiet floor + margin    f = f₀ · 2^(n/12)",
-                substituted: sticky,
-                meaning: "Blow into the bottom edge of the phone. Cover the round holes with your fingers. Silence until breath clears the gate — touching holes alone makes no sound. A light blow is soft and breathy; a harder blow is louder. Play tool, not a calibrated wind instrument. Nothing is recorded or uploaded."
-            )
-            playSteps
             if model.permissionDenied {
                 ToolEmptyState(
                     title: "Microphone is off",
@@ -415,30 +441,9 @@ struct BreathFluteView: View {
                     systemImage: "mic.slash",
                     showsSettings: true
                 )
+            } else {
+                playStage
             }
-            Text(model.gateOpen ? breathWord : "Silent")
-                .font(Theme.TypeRole.numericHero)
-                .foregroundStyle(model.gateOpen ? Theme.good : Theme.muted)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .accessibilityLabel(model.gateOpen ? breathWord : "Silent until you blow")
-            fingerFlute
-            if !model.permissionDenied {
-                ResultRow(label: "Listening", value: listeningLabel, tone: model.running ? Theme.good : Theme.warn)
-                ResultRow(label: "Blow vs quiet", value: aboveLabel)
-                Text(model.status)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Text("Quiet until you blow. Touching holes alone stays silent.")
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .frame(maxWidth: .infinity, alignment: .center)
-            Text(BreathFluteMath.honestLimit)
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .fixedSize(horizontal: false, vertical: true)
-            SaveJobBar(jobName: $jobName, notes: $notes, canSave: model.hasReading) { save() }
         }
         .onAppear {
             applyFingering()
@@ -467,68 +472,49 @@ struct BreathFluteView: View {
     }
 
     private var breathWord: String {
+        if model.isCalibrating { return "…" }
         let above = model.breathDBFS - model.noiseFloor
         let amplitude = BreathFluteMath.amplitude(aboveFloorDB: above)
         if amplitude >= BreathFluteMath.loudAmplitude * 0.75 { return "Loud" }
-        return "Playing"
+        if model.gateOpen { return "Playing" }
+        return "Silent"
     }
 
-    private var listeningLabel: String {
-        if !model.running { return model.status }
-        return model.micRoute
-    }
-
-    /// Compact height so all finger holes fit on one phone screen (and in landscape).
+    /// Fill most of the phone: portrait uses ~68% of screen height; landscape stays short.
     private var fluteCanvasHeight: CGFloat {
-        if verticalSizeClass == .compact { return 168 }
-        if horizontalSizeClass == .regular { return 300 }
-        return 280
+        if verticalSizeClass == .compact { return 200 }
+        let screen = UIScreen.main.bounds.height
+        if horizontalSizeClass == .regular {
+            return min(560, max(360, screen * 0.58))
+        }
+        return min(620, max(420, screen * 0.68))
     }
 
     private var landscapeFlute: Bool {
         verticalSizeClass == .compact
     }
 
-    private var playSteps: some View {
-        HStack(alignment: .top, spacing: 8) {
-            playStep("1", "Blow the bottom")
-            playStep("2", "Cover the holes")
-            playStep("3", "Sound when you blow")
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Blow the bottom of the phone. Cover the holes with your fingers. Sound only when you blow.")
-    }
-
-    private func playStep(_ index: String, _ words: String) -> some View {
-        VStack(spacing: 4) {
-            Text(index)
-                .font(Theme.TypeRole.numericEmphasis)
-                .foregroundStyle(Theme.accent)
-                .frame(width: 28, height: 28)
-                .background(Theme.accent.opacity(0.15), in: Circle())
-            Text(words)
-                .font(Theme.TypeRole.fieldLabel)
-                .foregroundStyle(Theme.foreground)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var fingerFlute: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
+    /// Instrument + tiny note/loudness affordance. How-it-works stays behind the toolbar `i`.
+    private var playStage: some View {
+        VStack(spacing: Theme.Space.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(noteName)
                     .font(Theme.TypeRole.numericHero)
                     .foregroundStyle(Theme.copper)
-                Spacer()
-                Button("Clear fingers") {
+                    .accessibilityLabel("Note \(noteName)")
+                Text(breathWord)
+                    .font(Theme.TypeRole.numericEmphasis)
+                    .foregroundStyle(model.gateOpen ? Theme.good : Theme.muted)
+                    .accessibilityLabel(model.gateOpen ? breathWord : "Silent until you blow")
+                Spacer(minLength: 0)
+                Button("Clear") {
                     latched = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
                     touching = latched
                     applyFingering(held: latched, down: touching)
                 }
                 .buttonStyle(.bordered)
                 .tint(Theme.accent)
+                .accessibilityLabel("Clear fingers")
             }
             FingerFlute(
                 covered: coveredHoles,
@@ -546,7 +532,7 @@ struct BreathFluteView: View {
             .frame(height: fluteCanvasHeight)
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Handmade relic flute. Blow here, at the bottom edge of the phone.")
+            .accessibilityLabel("Handmade relic flute. Blow at the bottom edge of the phone.")
             .accessibilityValue("\(noteName), \(model.gateOpen ? breathWord : "silent"). \(coveredCount) holes covered from the mouthpiece.")
             .accessibilityAdjustableAction { direction in
                 let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: latched)
@@ -561,6 +547,7 @@ struct BreathFluteView: View {
                 applyFingering(held: latched)
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func applyFingering(held: [Bool]? = nil, down: [Bool]? = nil) {
@@ -570,33 +557,13 @@ struct BreathFluteView: View {
         model.setFrequency(BreathFluteMath.frequencyHz(coveredFromEmbouchure: count))
     }
 
-    private var aboveLabel: String {
-        guard model.hasReading, !model.blowBands.isEmpty else { return "Waiting for mic…" }
-        let above = model.breathDBFS - model.noiseFloor
-        guard above.isFinite else { return "—" }
-        return String(format: "%+.1f dB over quiet air", above)
-    }
-
     private var sticky: String? {
         guard model.hasReading else { return nil }
-        return "\(model.gateOpen ? "Tone" : "Silent") · \(Format.number(model.frequencyHz, digits: 0)) Hz"
+        if model.isCalibrating { return "Quiet… · \(Format.number(model.frequencyHz, digits: 0)) Hz" }
+        return "\(model.gateOpen ? "Tone" : "Silent") · \(Format.number(model.frequencyHz, digits: 0)) Hz · \(noteName)"
     }
 
     private var copyText: String? { sticky }
-
-    private func save() {
-        jobs.save(SavedJob(
-            name: jobName,
-            toolID: .breathFlute,
-            notes: notes,
-            inputs: ["kind": "play tool"],
-            outputs: [
-                "gate": model.gateOpen ? "open" : "silent",
-                "Hz": Format.number(model.frequencyHz, digits: 1),
-                "audio": "not recorded",
-            ]
-        ))
-    }
 }
 
 /// Handmade wood / bone / clay relic. Embouchure toward the phone bottom mic.
@@ -790,24 +757,17 @@ private struct RelicFluteCanvas: View {
     }
 
     private func drawBlowCue(context: GraphicsContext) {
+        // Tiny embouchure cue only — no how-to plate on the play surface.
         let c = layout.blowLabelCenter
-        let box = CGRect(x: c.x - 64, y: c.y - 22, width: 128, height: 44)
-        let plate = Path(roundedRect: box, cornerRadius: 12, style: .continuous)
-        context.fill(plate, with: .color(Color(red: 0.20, green: 0.14, blue: 0.09).opacity(0.88)))
-        context.stroke(plate, with: .color(Color(red: 0.78, green: 0.58, blue: 0.32)), lineWidth: 1.5)
-        // Chevron toward the phone bottom (no SF Symbol).
         var chevron = Path()
-        let tip = CGPoint(x: c.x, y: box.maxY - 6)
-        chevron.move(to: CGPoint(x: c.x - 8, y: tip.y - 10))
+        let tip = CGPoint(x: c.x, y: c.y + 6)
+        chevron.move(to: CGPoint(x: c.x - 7, y: tip.y - 9))
         chevron.addLine(to: tip)
-        chevron.addLine(to: CGPoint(x: c.x + 8, y: tip.y - 10))
-        context.stroke(chevron, with: .color(Color(red: 0.92, green: 0.78, blue: 0.48)), style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
-        context.draw(
-            Text("Blow here")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundColor(Color(red: 0.96, green: 0.90, blue: 0.78)),
-            at: CGPoint(x: c.x, y: box.minY + 14),
-            anchor: .center
+        chevron.addLine(to: CGPoint(x: c.x + 7, y: tip.y - 9))
+        context.stroke(
+            chevron,
+            with: .color(Color(red: 0.92, green: 0.78, blue: 0.48).opacity(0.85)),
+            style: StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round)
         )
     }
 }
@@ -830,10 +790,10 @@ private struct FingerFluteLayout {
                 height: height
             )
         }
-        let width: CGFloat = min(88, max(64, size.width * 0.28))
-        // Leave room for the blow cue under the tube so every hole stays on-canvas.
-        let height = max(120, size.height - 56)
-        return CGRect(x: (size.width - width) / 2, y: 4, width: width, height: height)
+        let width: CGFloat = min(108, max(72, size.width * 0.34))
+        // Tall play canvas: leave a slim embouchure cue under the tube.
+        let height = max(160, size.height - 36)
+        return CGRect(x: (size.width - width) / 2, y: 8, width: width, height: height)
     }
 
     var holeRadius: CGFloat {
@@ -841,8 +801,8 @@ private struct FingerFluteLayout {
             return min(16, max(11, tubeRect.height * 0.22))
         }
         let span = max(holeSpanLength, 1)
-        let fit = span / CGFloat(max(holeCount, 1)) * 0.32
-        return min(18, max(11, fit))
+        let fit = span / CGFloat(max(holeCount, 1)) * 0.34
+        return min(22, max(13, fit))
     }
 
     var hitRadius: CGFloat { holeRadius + 10 }

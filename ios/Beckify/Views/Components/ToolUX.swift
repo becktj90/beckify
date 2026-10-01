@@ -37,6 +37,9 @@ struct ToolScaffold<Content: View>: View {
     var copyText: String? = nil
     var disclaimer: ToolDisclaimer = .designAid
     var showsIdentityHeader: Bool = true
+    /// When false, the How It Works card is hidden until the toolbar `i` expands it.
+    var showsAboutWhenCollapsed: Bool = true
+    var showsRelatedTools: Bool = true
     var isResultStale: Bool = false
     @ViewBuilder var content: Content
 
@@ -64,7 +67,7 @@ struct ToolScaffold<Content: View>: View {
                 if showsIdentityHeader {
                     ToolIdentityHeader(toolID: toolID)
                 }
-                AboutToolCard(toolID: toolID)
+                AboutToolCard(toolID: toolID, showsWhenCollapsed: showsAboutWhenCollapsed)
                 if let codeNotice {
                     ElectricalCodeBannerView(notice: codeNotice)
                 }
@@ -72,7 +75,9 @@ struct ToolScaffold<Content: View>: View {
                     StaleResultBanner()
                 }
                 content
-                RelatedToolsSection(current: toolID)
+                if showsRelatedTools {
+                    RelatedToolsSection(current: toolID)
+                }
                 disclaimerView
             }
             .padding(Theme.Space.lg)
@@ -335,11 +340,13 @@ struct HowItWorksToolbarButton: View {
 /// Collapsed-by-default Field About card. Homework tools start open, matching Show Work.
 struct AboutToolCard: View {
     let toolID: ToolID
+    var showsWhenCollapsed: Bool = true
     @AppStorage private var expanded: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(toolID: ToolID) {
+    init(toolID: ToolID, showsWhenCollapsed: Bool = true) {
         self.toolID = toolID
+        self.showsWhenCollapsed = showsWhenCollapsed
         _expanded = AppStorage(
             wrappedValue: HowItWorksExpansion.defaultExpanded(for: toolID),
             HowItWorksExpansion.storageKey(for: toolID)
@@ -347,7 +354,7 @@ struct AboutToolCard: View {
     }
 
     var body: some View {
-        if let copy = ToolboxCatalog.tool(toolID).howItWorks {
+        if let copy = ToolboxCatalog.tool(toolID).howItWorks, showsWhenCollapsed || expanded {
             VStack(alignment: .leading, spacing: Theme.Space.xs) {
                 Button {
                     BeckifyMotion.withOptionalAnimation(BeckifyMotion.staleReveal, reduceMotion: reduceMotion) {
