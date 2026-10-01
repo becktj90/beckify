@@ -246,7 +246,7 @@ Do not point either workflow at scheme **LookCheck** (`com.beckify.lookcheck`), 
 Before that archive can land on TestFlight:
 
 - Create Connect version **1.0.2**. The **1.0** and **1.0.1** trains are closed (ITMS-90186 / ITMS-90062 on **1.0 (121)** and **1.0.1 (160)**). A higher build on **1.0.1** will not upload.
-- Repo `MARKETING_VERSION` is **1.0.2** and `CURRENT_PROJECT_VERSION` is **184**. If TestFlight or Xcode Cloud already has **≥186**, raise that number before the next push to `main`.
+- Repo `MARKETING_VERSION` is **1.0.2** and `CURRENT_PROJECT_VERSION` is **186**. If TestFlight or Xcode Cloud already has **≥186**, raise that number before the next push to `main`.
 
 ### Mac fallback
 
