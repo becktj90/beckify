@@ -493,11 +493,19 @@ struct BreathFluteView: View {
     /// Immersive play: fill nearly the whole phone under the nav bar.
     private var fluteCanvasHeight: CGFloat {
         if verticalSizeClass == .compact { return 220 }
-        let screen = UIScreen.main.bounds.height
+        let screen = Self.windowScreenHeight
         if horizontalSizeClass == .regular {
             return min(640, max(400, screen * 0.72))
         }
         return min(720, max(480, screen * 0.78))
+    }
+
+    /// Prefer the foreground window scene so Archive SDKs do not warn on `UIScreen.main`.
+    private static var windowScreenHeight: CGFloat {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let screen = scenes.first(where: { $0.activationState == .foregroundActive })?.screen
+            ?? scenes.first?.screen
+        return screen?.bounds.height ?? 844
     }
 
     private var landscapeFlute: Bool {

@@ -59,8 +59,8 @@ struct SeriesParallelView: View {
             .segmentedControlStyle()
             NumberField(title: "Value 1", unit: unit, text: $v1, allowsScientific: true, fieldID: "v1", onSubmit: calculate)
             NumberField(title: "Value 2", unit: unit, text: $v2, allowsScientific: true, fieldID: "v2", onSubmit: calculate)
-            NumberField(title: "Value 3", unit: unit, text: $v3, optional: true, allowsScientific: true, onSubmit: calculate)
-            NumberField(title: "Value 4", unit: unit, text: $v4, optional: true, allowsScientific: true, onSubmit: calculate)
+            NumberField(title: "Value 3", unit: unit, text: $v3, optional: true, allowsScientific: true, helpText: "Leave blank to use two parts only.", fieldID: "v3", onSubmit: calculate)
+            NumberField(title: "Value 4", unit: unit, text: $v4, optional: true, allowsScientific: true, helpText: "Optional fourth part in the same series or parallel set.", fieldID: "v4", onSubmit: calculate)
 
             CalculatorActionBar(
                 onCalculate: calculate,

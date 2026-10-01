@@ -114,7 +114,7 @@ struct ReceptacleSelectorView: View {
                 $0 == .custom ? "Custom" : "\($0.rawValue) V"
             }
             if voltagePreset == .custom {
-                NumberField(title: "Custom voltage", unit: "V", text: $customVolts)
+                NumberField(title: "Custom voltage", unit: "V", text: $customVolts, helpText: "Line-to-line or single-phase volts for the face you need.", fieldID: "customVolts")
             }
         }
     }
@@ -132,7 +132,7 @@ struct ReceptacleSelectorView: View {
                 $0 == .custom ? "Custom" : "\($0.rawValue) A"
             }
             if ampPreset == .custom {
-                NumberField(title: "Custom current", unit: "A", text: $customAmps)
+                NumberField(title: "Custom current", unit: "A", text: $customAmps, helpText: "Ampacity of the receptacle configuration, not branch OCPD.", fieldID: "customAmps")
             }
         }
     }

@@ -92,10 +92,10 @@ struct SignalScalingView: View {
                 fieldID: "value",
                 onSubmit: calculate
             )
-            NumberField(title: "Raw min", unit: "raw", text: $rawMin, onSubmit: calculate)
-            NumberField(title: "Raw max", unit: "raw", text: $rawMax, onSubmit: calculate)
-            NumberField(title: "EU min", unit: "EU", text: $euMin, onSubmit: calculate)
-            NumberField(title: "EU max", unit: "EU", text: $euMax, onSubmit: calculate)
+            NumberField(title: "Raw min", unit: "raw", text: $rawMin, helpText: "Bottom of the transmitter span (often 4 mA).", fieldID: "rawMin", onSubmit: calculate)
+            NumberField(title: "Raw max", unit: "raw", text: $rawMax, helpText: "Top of the transmitter span (often 20 mA).", fieldID: "rawMax", onSubmit: calculate)
+            NumberField(title: "EU min", unit: "EU", text: $euMin, helpText: "Engineering units at raw min (process zero).", fieldID: "euMin", onSubmit: calculate)
+            NumberField(title: "EU max", unit: "EU", text: $euMax, helpText: "Engineering units at raw max (process full scale).", fieldID: "euMax", onSubmit: calculate)
             if direction == .toEngineering {
                 Toggle("Detect a below-range live-zero fault", isOn: $detectLiveZeroFault)
             }
@@ -254,9 +254,9 @@ struct ModbusAddressView: View {
             MenuField(title: "Table", selection: $table, options: ModbusTable.allCases) { $0.displayName }
             MenuField(title: "Enter", selection: $entry, options: Entry.allCases) { $0.rawValue }
             if entry == .offset {
-                NumberField(title: "PDU offset", unit: "0-based", text: $offset)
+                NumberField(title: "PDU offset", unit: "0-based", text: $offset, helpText: "Zero-based address on the wire. Display 40001 is offset 0.", fieldID: "offset")
             } else {
-                NumberField(title: "Display address", unit: "40001", text: $display)
+                NumberField(title: "Display address", unit: "40001", text: $display, helpText: "5/6-digit convention such as 40001. Converts to PDU offset.", fieldID: "display")
             }
 
             if let error = live.error {
