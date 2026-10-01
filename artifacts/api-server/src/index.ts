@@ -4,7 +4,7 @@ import { logger } from "./lib/logger.js";
 export default app;
 
 // Vercel owns the HTTP listener for serverless deployments. Keep the listener
-// for local and long-running service deployments.
+// for local and long-running service deployments (Fly.io, Docker, Replit).
 if (!process.env["VERCEL"]) {
   const rawPort = process.env["PORT"];
 
@@ -20,7 +20,8 @@ if (!process.env["VERCEL"]) {
     throw new Error(`Invalid PORT value: "${rawPort}"`);
   }
 
-  app.listen(port, (err) => {
+  // Bind all interfaces so container platforms (Fly.io) can reach the process.
+  app.listen(port, "0.0.0.0", (err) => {
     if (err) {
       logger.error({ err }, "Error listening on port");
       process.exit(1);

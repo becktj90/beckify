@@ -6,9 +6,12 @@ import { logger } from "./lib/logger.js";
 
 const app: Express = express();
 
-// Vercel terminates the client connection at a trusted proxy. Preserve the
-// client IP there so per-client abuse controls do not collapse into one bucket.
-app.set("trust proxy", process.env["VERCEL"] ? 1 : false);
+// Vercel and Fly terminate TLS at a trusted proxy. Preserve the client IP
+// there so per-client abuse controls do not collapse into one bucket.
+app.set(
+  "trust proxy",
+  process.env["VERCEL"] || process.env["FLY_APP_NAME"] ? 1 : false,
+);
 
 const defaultCorsOrigins = [
   "https://beckify.com",

@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.vercel
+.replit-artifact
+.tsbuildinfo
+*.md
+tests
+smoke-vision-routes.mjs
+.dockerignore
+Dockerfile
+fly.toml
