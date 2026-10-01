@@ -236,9 +236,9 @@ struct ToolDefinition: Identifiable {
     var kind: ToolKind
     var title: String
     var subtitle: String
-    /// SF Symbol used only as a fallback / related-row chevron context — primary
-    /// artwork is the Beckify instrument glyph set (`IconWell` / `ToolGlyph` —
-    /// solid fill + even-odd holes; open marks stay stroke).
+    /// SF Symbol used only as chrome (rows, chevrons). Primary tile artwork is
+    /// the retro CRT set drawn by `IconWell` (`Retro/<ToolID>`, original color).
+    /// `ToolGlyph` is the canvas fallback when that imageset is absent.
     var symbol: String
     var synonyms: [String]
     /// Live converters update on valid input; explicit tools require Calculate.

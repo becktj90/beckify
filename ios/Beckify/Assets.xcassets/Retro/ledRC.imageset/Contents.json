@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "filename": "ledRC.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "ledRC@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "ledRC@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "template-rendering-intent": "original"
+  }
+}
