@@ -40,6 +40,9 @@ struct ToolScaffold<Content: View>: View {
     /// When false, the How It Works card is hidden until the toolbar `i` expands it.
     var showsAboutWhenCollapsed: Bool = true
     var showsRelatedTools: Bool = true
+    /// Play-surface tools (Breath Flute): skip scroll chrome, sticky answer, and disclaimer.
+    /// Toolbar favorite + How-it-works `i` stay so honesty copy is one tap away.
+    var immersivePlay: Bool = false
     var isResultStale: Bool = false
     @ViewBuilder var content: Content
 
@@ -62,33 +65,50 @@ struct ToolScaffold<Content: View>: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Space.md) {
-                if showsIdentityHeader {
-                    ToolIdentityHeader(toolID: toolID)
+        Group {
+            if immersivePlay {
+                VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                    // How-it-works only after toolbar `i` — no on-open essay.
+                    AboutToolCard(toolID: toolID, showsWhenCollapsed: false)
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
-                AboutToolCard(toolID: toolID, showsWhenCollapsed: showsAboutWhenCollapsed)
-                if let codeNotice {
-                    ElectricalCodeBannerView(notice: codeNotice)
+                .padding(.horizontal, Theme.Space.md)
+                .padding(.top, Theme.Space.xs)
+                .padding(.bottom, Theme.Space.sm)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Theme.Space.md) {
+                        if showsIdentityHeader {
+                            ToolIdentityHeader(toolID: toolID)
+                        }
+                        AboutToolCard(toolID: toolID, showsWhenCollapsed: showsAboutWhenCollapsed)
+                        if let codeNotice {
+                            ElectricalCodeBannerView(notice: codeNotice)
+                        }
+                        if isResultStale {
+                            StaleResultBanner()
+                        }
+                        content
+                        if showsRelatedTools {
+                            RelatedToolsSection(current: toolID)
+                        }
+                        disclaimerView
+                    }
+                    .padding(Theme.Space.lg)
+                    .onPreferenceChange(FormFieldOrderKey.self) { chrome.replaceFieldIDs($0) }
                 }
-                if isResultStale {
-                    StaleResultBanner()
-                }
-                content
-                if showsRelatedTools {
-                    RelatedToolsSection(current: toolID)
-                }
-                disclaimerView
+                .scrollDismissesKeyboard(.interactively)
             }
-            .padding(Theme.Space.lg)
-            .onPreferenceChange(FormFieldOrderKey.self) { chrome.replaceFieldIDs($0) }
         }
-        .scrollDismissesKeyboard(.interactively)
-        .navigationTitle(tool.title)
+        .navigationTitle(immersivePlay ? "" : tool.title)
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            stickyChrome
+            if !immersivePlay {
+                stickyChrome
+            }
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {

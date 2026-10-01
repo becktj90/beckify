@@ -430,11 +430,13 @@ public enum MagSweepMath {
 
 public enum BreathFluteMath {
     /// Open the gate this many dB above the quiet floor. Higher than ambient mic jitter.
-    public static let marginDB = 18.0
+    public static let marginDB = 24.0
     /// Keep the gate open until breath falls this far above the floor (hysteresis).
-    public static let closeMarginDB = 10.0
+    public static let closeMarginDB = 14.0
     /// Ignore digital-silence / missing-band seeds so ambient never looks like +37 dB.
     public static let minSeedDBFS = -95.0
+    /// Refuse to open (or stay open) when HF breath energy is quieter than this absolute level.
+    public static let minOpenBreathDBFS = -50.0
     /// Quiet-air samples collected before the gate may open.
     public static let calibrationSampleCount = 10
     /// G3. Bottom of the touch pad.
@@ -443,12 +445,11 @@ public enum BreathFluteMath {
     public static let highHz = 1_046.5
     /// C4. Fret 0.
     public static let rootHz = 261.625565
-    /// Breath is broadband. Gate on bands above the playable flute range so the
-    /// speaker sine (C4–C5) does not hold the gate open by itself.
-    public static let breathBandMinHz = 1_500.0
+    /// Breath is broadband. Gate above flute partials (~5×C5) so speaker tone cannot hold the gate.
+    public static let breathBandMinHz = 2_800.0
 
     public static let honestLimit =
-        "Play tool. Silence until a breath clears the gate; a harder blow is louder. Not a calibrated wind instrument, not a meter, tuner, or SLM. Nothing is recorded or uploaded."
+        "Play tool. Hold finger holes to change pitch while you blow — warm quena-like tone. Silence until a breath clears the gate. Not a calibrated wind instrument, not a meter, tuner, or SLM. Nothing is recorded or uploaded."
 
     /// Output gain at the gate threshold. Below the margin the tone is exactly zero.
     public static let quietAmplitude = 0.14
@@ -496,12 +497,16 @@ public enum BreathFluteMath {
         noiseFloorDBFS: Double,
         wasOpen: Bool = false,
         openMarginDB: Double = marginDB,
-        closeMarginDB: Double = closeMarginDB
+        closeMarginDB: Double = closeMarginDB,
+        minBreathDBFS: Double = minOpenBreathDBFS
     ) -> Bool {
         guard breathDBFS.isFinite, noiseFloorDBFS.isFinite,
-              openMarginDB.isFinite, closeMarginDB.isFinite else { return false }
+              openMarginDB.isFinite, closeMarginDB.isFinite,
+              minBreathDBFS.isFinite else { return false }
         // Refuse a digital-silence floor — that made quiet rooms look like +30…40 dB blows.
         guard noiseFloorDBFS >= minSeedDBFS else { return false }
+        // Absolute floor: room HF at −60 dBFS never opens even if the quiet floor is lower.
+        guard breathDBFS >= minBreathDBFS else { return false }
         let above = breathDBFS - noiseFloorDBFS
         if wasOpen {
             return above >= min(openMarginDB, closeMarginDB)
@@ -610,6 +615,23 @@ public enum BreathFluteMath {
         return count
     }
 
+    /// Phone fingering depth: the farthest held hole from the embouchure.
+    /// Pressing hole k alone counts as covering 0…k so each hole is a distinct pitch
+    /// (strict consecutive covers made every single-finger press sound the same open note).
+    public static func coveredDepth(holesCovered: [Bool]) -> Int {
+        var deepest = -1
+        for (index, covered) in holesCovered.enumerated() where covered {
+            deepest = max(deepest, index)
+        }
+        return deepest + 1
+    }
+
+    /// Visual covers for depth: holes nearer the embouchure fill in through the deepest press.
+    public static func coversForDepth(_ depth: Int) -> [Bool] {
+        let d = min(fingerHoleCount, max(0, depth))
+        return (0..<fingerHoleCount).map { $0 < d }
+    }
+
     /// Pitch for a simple flute: all covered is low C4, all open is high C5.
     public static func frequencyHz(coveredFromEmbouchure count: Int) -> Double {
         let index = min(fingerHoleCount, max(0, count))
@@ -652,15 +674,16 @@ public enum BreathFluteMath {
         let from = current.isFinite ? min(1, max(0, current)) : 0
         let to = target.isFinite ? min(1, max(0, target)) : 0
         // Soft attack (~70–110 ms). Faster release so silence snaps when breath stops.
-        let attackSeconds = lightBlow ? 0.11 : 0.07
-        let releaseSeconds = 0.035
+        let attackSeconds = lightBlow ? 0.14 : 0.08
+        let releaseSeconds = 0.022
         let seconds = to > from ? attackSeconds : releaseSeconds
         let alpha = 1 - exp(-1.0 / max(1, rate * seconds))
         return from + (to - from) * alpha
     }
 
-    /// Breathy harmonic flute tone. Fundamental plus soft even/odd partials and a
-    /// little filtered air noise. Amplitude 0 (or envelope 0) yields exact silence.
+    /// Warm Peruvian quena / Andean wood-flute tone: strong fundamental, open-tube
+    /// odd partials, soft wood 2nd, and filtered air noise (not a square/sine beep).
+    /// Amplitude 0 (or envelope 0) yields exact silence.
     public static func angelicSample(
         phase: Double,
         phase2: Double,
@@ -704,8 +727,8 @@ public enum BreathFluteMath {
         let unit = Double(seed & 0xFFFF_FFFF) / Double(UInt32.max)
         let white = unit * 2 - 1
         let prior = noise.isFinite ? noise : 0
-        // Soft one-pole air (~1.2 kHz-ish feel at 44.1 kHz).
-        let nextNoise = prior + 0.18 * (white - prior)
+        // Soft one-pole air (~900 Hz-ish feel) — quena chiff / breath edge.
+        let nextNoise = prior + 0.12 * (white - prior)
 
         if gain <= 1e-9 || hz <= 0 {
             return (0, advance(phase, multiple: 1), advance(phase2, multiple: 2),
@@ -714,28 +737,35 @@ public enum BreathFluteMath {
         }
 
         let p1 = phase.isFinite ? phase : 0
+        // Slight inharmonic wood stretch on higher partials (not equal-tempered beep).
         let p2 = phase2.isFinite ? phase2 : 0
         let p3 = phase3.isFinite ? phase3 : 0
         let p4 = phase4.isFinite ? phase4 : 0
         let p5 = phase5.isFinite ? phase5 : 0
-        // Soft partials: strong fundamental, gentle 2nd (air), 3rd (flute body),
-        // whisper of 4th/5th. Breath rises a little on light blows.
-        let breathWeight = 0.045 + 0.04 * (1 - min(1, amp / max(loudAmplitude, 1e-9)))
+        // Quena: airy fundamental, reserved even (wood), stronger odd open-tube partials.
+        // Breath weight rises on light blows so soft notes stay airy, not thin sine.
+        let light = 1 - min(1, amp / max(loudAmplitude, 1e-9))
+        // Extra air on soft attack (low envelope) — quena chiff, not a hard beep.
+        let chiff = 1 + 0.65 * (1 - env) * light
+        let breathWeight = (0.09 + 0.08 * light) * chiff
         let raw =
             1.00 * sin(p1)
-            + 0.28 * sin(p2)
-            + 0.18 * sin(p3)
-            + 0.07 * sin(p4)
-            + 0.04 * sin(p5)
+            + 0.10 * sin(p2)
+            + 0.26 * sin(p3)
+            + 0.05 * sin(p4)
+            + 0.14 * sin(p5)
             + breathWeight * nextNoise
-        let sample = raw * gain * 0.55
+        // Soft clip / tube warmth — keeps peaks musical without square edges.
+        let shaped = tanh(raw * 0.92)
+        let sample = shaped * gain * 0.52
         return (
             sample,
             advance(p1, multiple: 1),
-            advance(p2, multiple: 2),
-            advance(p3, multiple: 3),
-            advance(p4, multiple: 4),
-            advance(p5, multiple: 5),
+            // Tiny wood stretch — partials sit off exact harmonics (not a pure synth).
+            advance(p2, multiple: 2.004),
+            advance(p3, multiple: 2.997),
+            advance(p4, multiple: 4.01),
+            advance(p5, multiple: 4.99),
             nextNoise,
             seed
         )

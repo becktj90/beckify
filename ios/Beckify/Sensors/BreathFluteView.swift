@@ -356,14 +356,15 @@ private final class FluteSynth: @unchecked Sendable {
     func set(gate: Bool, hz: Double, amplitude: Double) {
         lock.withLock { state in
             // Touching holes only changes pitch via setFrequency; it cannot open
-            // the gate. While gated off we keep the last amplitude so the
-            // envelope can release softly — output is still amp × envelope.
+            // the gate. While gated off we keep the last amplitude briefly so the
+            // envelope can release — then hard-zero so idle stays silent.
             state.gate = gate
             state.hz = hz
             if gate {
                 state.amplitude = amplitude
-            } else if state.envelope <= 1e-4 {
+            } else if state.envelope <= 1e-3 {
                 state.amplitude = 0
+                state.envelope = 0
             }
         }
     }
@@ -373,6 +374,12 @@ private final class FluteSynth: @unchecked Sendable {
         // Render into Sendable storage, then copy into the buffer on this thread.
         let rendered: ContiguousArray<Float> = lock.withLock { state in
             var samples = ContiguousArray<Float>(repeating: 0, count: frames)
+            // Fully closed and released — leave the zeroed buffer (no hiss/click loops).
+            if !state.gate && state.envelope <= 1e-4 {
+                state.amplitude = 0
+                state.envelope = 0
+                return samples
+            }
             for index in 0..<frames {
                 let target = (state.gate && state.amplitude > 0 && state.hz > 0) ? 1.0 : 0.0
                 let light = state.amplitude > 0
@@ -420,19 +427,20 @@ struct BreathFluteView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var model = BreathFluteModel()
-    /// Sticky covers. Index 0 is the hole nearest the embouchure (bottom of the screen).
-    @State private var latched = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
-    @State private var touching = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
+    /// Press-and-hold covers. Index 0 is nearest the embouchure (bottom of the screen).
+    /// VoiceOver adjustable action also writes consecutive covers here.
+    @State private var covering = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
 
     var body: some View {
         ToolScaffold(
             toolID: .breathFlute,
-            stickyAnswer: sticky,
-            copyText: copyText,
-            disclaimer: .sensor(extra: BreathFluteMath.honestLimit),
+            stickyAnswer: nil,
+            copyText: nil,
+            disclaimer: .none,
             showsIdentityHeader: false,
             showsAboutWhenCollapsed: false,
-            showsRelatedTools: false
+            showsRelatedTools: false,
+            immersivePlay: true
         ) {
             if model.permissionDenied {
                 ToolEmptyState(
@@ -459,12 +467,14 @@ struct BreathFluteView: View {
         }
     }
 
-    private var coveredHoles: [Bool] {
-        zip(latched, touching).map { $0 || $1 }
+    /// Deepest held hole from embouchure — each hole is a distinct pitch on phone.
+    private var coveredCount: Int {
+        BreathFluteMath.coveredDepth(holesCovered: covering)
     }
 
-    private var coveredCount: Int {
-        BreathFluteMath.coveredFromEmbouchure(holesCovered: coveredHoles)
+    /// Fill covers from embouchure through the deepest press (flute tube length).
+    private var displayCovered: [Bool] {
+        BreathFluteMath.coversForDepth(coveredCount)
     }
 
     private var noteName: String {
@@ -480,14 +490,14 @@ struct BreathFluteView: View {
         return "Silent"
     }
 
-    /// Fill most of the phone: portrait uses ~68% of screen height; landscape stays short.
+    /// Immersive play: fill nearly the whole phone under the nav bar.
     private var fluteCanvasHeight: CGFloat {
-        if verticalSizeClass == .compact { return 200 }
+        if verticalSizeClass == .compact { return 220 }
         let screen = UIScreen.main.bounds.height
         if horizontalSizeClass == .regular {
-            return min(560, max(360, screen * 0.58))
+            return min(640, max(400, screen * 0.72))
         }
-        return min(620, max(420, screen * 0.68))
+        return min(720, max(480, screen * 0.78))
     }
 
     private var landscapeFlute: Bool {
@@ -507,63 +517,45 @@ struct BreathFluteView: View {
                     .foregroundStyle(model.gateOpen ? Theme.good : Theme.muted)
                     .accessibilityLabel(model.gateOpen ? breathWord : "Silent until you blow")
                 Spacer(minLength: 0)
-                Button("Clear") {
-                    latched = Array(repeating: false, count: BreathFluteMath.fingerHoleCount)
-                    touching = latched
-                    applyFingering(held: latched, down: touching)
-                }
-                .buttonStyle(.bordered)
-                .tint(Theme.accent)
-                .accessibilityLabel("Clear fingers")
             }
             FingerFlute(
-                covered: coveredHoles,
+                covered: displayCovered,
                 landscape: landscapeFlute,
                 onTouching: { next in
-                    touching = next
-                    applyFingering(down: next)
-                },
-                onTap: { index in
-                    guard latched.indices.contains(index) else { return }
-                    latched[index].toggle()
-                    applyFingering(held: latched)
+                    covering = next
+                    applyFingering()
                 }
             )
             .frame(height: fluteCanvasHeight)
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Handmade relic flute. Blow at the bottom edge of the phone.")
+            .accessibilityLabel("Handmade relic flute. Hold finger holes and blow at the bottom edge of the phone.")
             .accessibilityValue("\(noteName), \(model.gateOpen ? breathWord : "silent"). \(coveredCount) holes covered from the mouthpiece.")
             .accessibilityAdjustableAction { direction in
-                let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: latched)
+                let count = coveredCount
+                let target: Int
                 switch direction {
                 case .increment:
-                    if count > 0 { latched[count - 1] = false }
+                    target = max(0, count - 1)
                 case .decrement:
-                    if count < BreathFluteMath.fingerHoleCount { latched[count] = true }
+                    target = min(BreathFluteMath.fingerHoleCount, count + 1)
                 @unknown default:
-                    break
+                    target = count
                 }
-                applyFingering(held: latched)
+                // VoiceOver: cover through target depth (same as press-and-hold deepest hole).
+                covering = BreathFluteMath.coversForDepth(target)
+                applyFingering()
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private func applyFingering(held: [Bool]? = nil, down: [Bool]? = nil) {
-        let holes = zip(held ?? latched, down ?? touching).map { $0 || $1 }
-        let count = BreathFluteMath.coveredFromEmbouchure(holesCovered: holes)
-        // Pitch only. Gate stays closed until breath clears the mic margin.
+    private func applyFingering() {
+        let count = BreathFluteMath.coveredDepth(holesCovered: covering)
+        // Pitch only — remaps immediately while the blow gate is open.
+        // Gate stays closed until breath clears the mic margin.
         model.setFrequency(BreathFluteMath.frequencyHz(coveredFromEmbouchure: count))
     }
-
-    private var sticky: String? {
-        guard model.hasReading else { return nil }
-        if model.isCalibrating { return "Quiet… · \(Format.number(model.frequencyHz, digits: 0)) Hz" }
-        return "\(model.gateOpen ? "Tone" : "Silent") · \(Format.number(model.frequencyHz, digits: 0)) Hz · \(noteName)"
-    }
-
-    private var copyText: String? { sticky }
 }
 
 /// Handmade wood / bone / clay relic. Embouchure toward the phone bottom mic.
@@ -571,7 +563,6 @@ private struct FingerFlute: View {
     var covered: [Bool]
     var landscape: Bool
     var onTouching: ([Bool]) -> Void
-    var onTap: (Int) -> Void
 
     var body: some View {
         GeometryReader { geo in
@@ -581,8 +572,7 @@ private struct FingerFlute: View {
                 FluteTouchOverlay(
                     centers: (0..<covered.count).map { layout.holeCenter($0) },
                     hitRadius: layout.hitRadius,
-                    onTouching: onTouching,
-                    onTap: onTap
+                    onTouching: onTouching
                 )
             }
         }
@@ -805,7 +795,7 @@ private struct FingerFluteLayout {
         return min(22, max(13, fit))
     }
 
-    var hitRadius: CGFloat { holeRadius + 10 }
+    var hitRadius: CGFloat { holeRadius + 14 }
 
     private var holeSpanLength: CGFloat {
         if landscape {
@@ -847,12 +837,10 @@ private struct FluteTouchOverlay: UIViewRepresentable {
     var centers: [CGPoint]
     var hitRadius: CGFloat
     var onTouching: ([Bool]) -> Void
-    var onTap: (Int) -> Void
 
     func makeUIView(context: Context) -> FluteTouchView {
         let view = FluteTouchView()
         view.onTouching = onTouching
-        view.onTap = onTap
         return view
     }
 
@@ -860,7 +848,6 @@ private struct FluteTouchOverlay: UIViewRepresentable {
         uiView.centers = centers
         uiView.hitRadius = hitRadius
         uiView.onTouching = onTouching
-        uiView.onTap = onTap
     }
 }
 
@@ -868,14 +855,6 @@ private final class FluteTouchView: UIView {
     var centers: [CGPoint] = []
     var hitRadius: CGFloat = 28
     var onTouching: (([Bool]) -> Void)?
-    var onTap: ((Int) -> Void)?
-    private var tracks: [ObjectIdentifier: Track] = [:]
-
-    private struct Track {
-        var start: CGPoint
-        var time: TimeInterval
-        var hole: Int?
-    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -889,10 +868,6 @@ private final class FluteTouchView: UIView {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for touch in touches {
-            let point = touch.location(in: self)
-            tracks[ObjectIdentifier(touch)] = Track(start: point, time: touch.timestamp, hole: holeIndex(at: point))
-        }
         publish(event)
     }
 
@@ -901,24 +876,10 @@ private final class FluteTouchView: UIView {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for touch in touches {
-            let key = ObjectIdentifier(touch)
-            let point = touch.location(in: self)
-            if let track = tracks[key], let hole = track.hole ?? holeIndex(at: point) {
-                let travel = hypot(point.x - track.start.x, point.y - track.start.y)
-                if travel < 18, touch.timestamp - track.time < 0.28 {
-                    onTap?(hole)
-                }
-            }
-            tracks[key] = nil
-        }
         publish(event)
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for touch in touches {
-            tracks[ObjectIdentifier(touch)] = nil
-        }
         publish(event)
     }
 

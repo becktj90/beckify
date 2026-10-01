@@ -339,13 +339,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "breathFlute": ToolHowItWorks(
-            summary: "A full-screen play tool shaped like a handmade wood/bone/clay relic. Blow the bottom edge. Finger holes set the pitch. Silent until you blow.",
-            context: "Open and play. Soft breathy tone when you blow lightly. How-it-works stays behind the info button. Not a meter, tuner, or recorder.",
+            summary: "Immersive play relic flute. Hold holes to change pitch while you blow. Warm quena-like tone. Silent until you blow.",
+            context: "Opens straight to the instrument. Soft breathy attack when you blow lightly. Honesty copy stays behind the info button.",
             bullets: [
-                "Full-screen relic with finger holes ready to play. Sound only while you blow — holes alone stay silent. Light blow soft; harder blow louder.",
-                "Quiet-air calibration and a relative blow gate keep ambient mic noise from starting a tone by itself.",
-                "The bottom built-in mic is preferred when iOS lists one. Not a calibrated wind instrument.",
-                "Angelic harmonic tone on device. Audio is not recorded and is not uploaded. Same mic permission as Noise Meter.",
+                "Press-and-hold holes retune immediately while blowing. Each hole is a distinct pitch. Holes alone stay silent.",
+                "Quiet-air calibration and a tight blow gate keep ambient mic noise from starting a tone by itself.",
+                "Warm Peruvian quena-style tone on device — breathy, airy harmonics. Not a calibrated wind instrument.",
+                "Audio is not recorded and is not uploaded. Same mic permission as Noise Meter.",
             ]
         ),
         "coupledVibration": ToolHowItWorks(
