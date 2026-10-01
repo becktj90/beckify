@@ -307,6 +307,8 @@ struct VoltageDropDiagram: View {
         min(max(x, 40), max(width - 40, 40))
     }
 
+    /// Prefer `VoltageDropRunReadout` / `NECCircuitRunReadout` so table % and strip % share one model field.
+    /// Pass `dropPercent` (never volts) into the percent slot — volts-as-% made the classic #4 Cu example read ~6%.
     static func model(
         supply: Double,
         drop: Double,

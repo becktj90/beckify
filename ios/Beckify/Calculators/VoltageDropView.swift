@@ -78,7 +78,7 @@ struct VoltageDropView: View {
             toolID: .voltageDrop,
             symbolic: "VD ≈ (M × K × I × L) / (CM × runs)",
             substituted: necSubstituted,
-            meaning: "M is 2 for 1Ø/DC or √3 for 3Ø. K ≈ 12.9 Cu / 21.2 Al is a field resistivity near 75 °C, not Chapter 9 Table 9. Table 9 is AC impedance. Enter the amps the load is drawing. 3% and 5% are Informational Notes. Ampacity is still continuous × 1.25 and the 110.14(C) cap. Long 480 V feeders at 2 AWG and larger want Table 8 R plus Table 9 X.",
+            meaning: "M is 2 for 1Ø/DC or √3 for 3Ø. K ≈ 12.9 Cu / 21.2 Al is a field resistivity near 75 °C, not Chapter 9 Table 9. Table 9 is AC impedance. Enter the amps the load is drawing. 3% and 5% Informational Notes compare this single run — the form has no separate feeder+branch segments. The ampacity row is Table 310.16 75 °C × runs vs those amps; continuous × 1.25 and 110.14(C) still apply when you size the circuit. Long 480 V feeders at 2 AWG and larger want Table 8 R plus Table 9 X.",
             citation: "Field K near 75 °C · Ch.9 Table 8 R + Table 9 X when reactance matters · Table 310.16 · 210.19(A) and 215.2(A) Informational Notes.",
             referenceTool: .wireAmpacity
         )
@@ -132,15 +132,16 @@ struct VoltageDropView: View {
         }
 
         if let r = session.displayedResult {
-            if let diagram = VoltageDropDiagram.model(
-                supply: r.supplyVolts,
-                drop: r.dropVolts,
-                receiving: r.receivingVolts,
-                dropPercent: r.dropPercent,
-                oneWayLength: lengthLabel(fromFeet: r.oneWayFeet),
-                parallelRuns: r.parallelRuns,
-                targetPercent: r.targetDropPercent,
-                meetsTarget: r.meetsTarget
+            let run = VoltageDropRunReadout(result: r)
+            if let run, let diagram = VoltageDropDiagram.model(
+                supply: run.supplyVolts,
+                drop: run.chartDropVolts,
+                receiving: run.receivingVolts,
+                dropPercent: run.chartDropPercent,
+                oneWayLength: lengthLabel(fromFeet: run.oneWayFeet),
+                parallelRuns: run.parallelRuns,
+                targetPercent: run.targetDropPercent,
+                meetsTarget: run.meetsTarget
             ) {
                 diagram.opacity(session.isStale ? 0.72 : 1)
             }
@@ -155,22 +156,28 @@ struct VoltageDropView: View {
                     value: r.meetsTarget ? "MEETS" : "OVER",
                     tone: r.meetsTarget ? Theme.good : Theme.warn
                 )
-                ResultRow(
-                    label: "3% branch note",
-                    value: r.meets3Percent ? "WITHIN NOTE" : "OVER NOTE",
-                    tone: r.meets3Percent ? Theme.good : Theme.warn
-                )
-                ResultRow(
-                    label: "5% feeder+branch note",
-                    value: r.meets5Percent ? "WITHIN NOTE" : "OVER NOTE",
-                    tone: r.meets5Percent ? Theme.good : Theme.bad
-                )
+                if let run {
+                    ResultRow(
+                        label: run.note3Label,
+                        value: run.note3Value,
+                        tone: run.meets3Percent ? Theme.good : Theme.warn
+                    )
+                    ResultRow(
+                        label: run.note5Label,
+                        value: run.note5Value,
+                        tone: run.meets5Percent ? Theme.good : Theme.bad
+                    )
+                }
                 if let amp = r.ampacity75C {
                     ResultRow(
-                        label: "310.16 75 °C × runs",
+                        label: run?.ampacityRowLabel ?? "310.16 75 °C × runs (≤3 CCC, 30 °C)",
                         value: "\(amp) A" + (r.ampacityOK ? "  meets load" : "  undersized"),
                         tone: r.ampacityOK ? Theme.good : Theme.bad
                     )
+                    Text(run?.ampacityAssumptionCaption ?? VoltageDropRunReadout.ampacityAssumptionFallback)
+                        .font(.caption2)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 if let ampMin = r.ampacityMinimumSize {
                     ResultRow(label: "Ampacity minimum", value: NECTables.wireLabel(ampMin))

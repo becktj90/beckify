@@ -335,3 +335,77 @@ extension VoltageDrop {
         )
     }
 }
+
+/// Shared result → visual mapping for the NEC voltage-drop strip and result rows.
+///
+/// Table % and chart % both read `dropPercent` from the sizing result. Never feed
+/// `dropVolts` into a percent slot (the classic 480 V / 45 A / 250 ft / #4 Cu case
+/// is ~6.02 V / ~1.25% — wiring volts into the strip made the chart read ~6%).
+///
+/// This form is a single run. It does not collect a separate feeder and branch, so
+/// the 5% Informational Note is labeled as this-run only — not a combined
+/// feeder+branch guideline PASS.
+public struct VoltageDropRunReadout: Equatable, Sendable {
+    public var supplyVolts: Double
+    public var dropVolts: Double
+    public var receivingVolts: Double
+    public var dropPercent: Double
+    public var oneWayFeet: Double
+    public var parallelRuns: Int
+    public var targetDropPercent: Double
+    public var meetsTarget: Bool
+    public var meets3Percent: Bool
+    public var meets5Percent: Bool
+    public var ampacity75C: Int?
+    public var ampacityOK: Bool
+
+    public init?(result: VoltageDropSizingResult) {
+        guard result.supplyVolts.isFinite, result.supplyVolts > 0,
+              result.dropVolts.isFinite, result.dropVolts >= 0,
+              result.receivingVolts.isFinite,
+              result.dropPercent.isFinite, result.dropPercent >= 0,
+              result.oneWayFeet.isFinite, result.oneWayFeet > 0,
+              result.parallelRuns >= 1,
+              result.targetDropPercent.isFinite, result.targetDropPercent > 0
+        else { return nil }
+        supplyVolts = result.supplyVolts
+        dropVolts = result.dropVolts
+        receivingVolts = result.receivingVolts
+        // Chart % is always the model percent — never dropVolts.
+        dropPercent = result.dropPercent
+        oneWayFeet = result.oneWayFeet
+        parallelRuns = result.parallelRuns
+        targetDropPercent = result.targetDropPercent
+        meetsTarget = result.meetsTarget
+        meets3Percent = result.meets3Percent
+        meets5Percent = result.meets5Percent
+        ampacity75C = result.ampacity75C
+        ampacityOK = result.ampacityOK
+    }
+
+    /// Same model value the Drop result row shows — the strip fill and % label use this.
+    public var chartDropPercent: Double { dropPercent }
+
+    /// Same model value the Voltage drop result row shows.
+    public var chartDropVolts: Double { dropVolts }
+
+    /// 3% Informational Note vs this single entered run (not a branch-only claim).
+    public var note3Label: String { "3% informational note (this run)" }
+
+    /// 5% Informational Note vs this single entered run. Not a combined feeder+branch check.
+    public var note5Label: String { "5% informational note (this run)" }
+
+    public var note3Value: String { meets3Percent ? "WITHIN NOTE" : "OVER NOTE" }
+    public var note5Value: String { meets5Percent ? "WITHIN NOTE" : "OVER NOTE" }
+
+    /// 310.16 75 °C column × parallel runs vs the amps entered (operating). Does not apply continuous × 1.25 or 110.14(C).
+    public var ampacityRowLabel: String { "310.16 75 °C × runs (≤3 CCC, 30 °C)" }
+
+    public var ampacityAssumptionCaption: String { Self.ampacityAssumptionFallback }
+
+    public static let ampacityAssumptionFallback =
+        "Ampacity row compares Table 310.16 75 °C × parallel runs to the amps you entered. Continuous × 1.25 and the 110.14(C) termination cap are not applied on this row."
+
+    public var dropPercentLabel: String { NECCircuitRunReadout.percentLabel(dropPercent) }
+    public var dropVoltsLabel: String { DeratingStackReadout.siLabel(dropVolts, unit: "V") }
+}
