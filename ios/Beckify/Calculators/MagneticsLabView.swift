@@ -169,9 +169,9 @@ struct MagneticsLabView: View {
             NumberField(title: "Mean steel length", unit: "m", text: $length, fieldID: "length")
             NumberField(title: "Steel area", unit: "cm²", text: $areaCm2, fieldID: "area")
             NumberField(title: "Relative permeability", unit: "µr", text: $muR, fieldID: "muR")
-            NumberField(title: "Air gap", unit: "mm", text: $gapMm, fieldID: "gap", helpText: "Zero is a closed steel path.")
-            NumberField(title: "Stacking factor", unit: "", text: $stacking, fieldID: "stack", helpText: "Share of the stack that is steel. 1 if it is solid.")
-            NumberField(title: "Gap fringing", unit: "", text: $fringing, fieldID: "fringe", helpText: "1 ignores bulge. 1.05 is a modest wider gap face.")
+            NumberField(title: "Air gap", unit: "mm", text: $gapMm, helpText: "Zero is a closed steel path.", fieldID: "gap")
+            NumberField(title: "Stacking factor", unit: "", text: $stacking, helpText: "Share of the stack that is steel. 1 if it is solid.", fieldID: "stack")
+            NumberField(title: "Gap fringing", unit: "", text: $fringing, helpText: "1 ignores bulge. 1.05 is a modest wider gap face.", fieldID: "fringe")
         }
     }
 
@@ -213,7 +213,7 @@ struct MagneticsLabView: View {
             switch MachineKind(rawValue: machineRaw) ?? .transformer {
             case .transformer:
                 NumberField(title: "Secondary turns", unit: "", text: $secondaryTurns, fieldID: "n2")
-                NumberField(title: "Primary voltage", unit: "V", text: $primaryVolts, optional: true, fieldID: "v1", helpText: "Optional. With frequency, shows the sine peak flux for that voltage.")
+                NumberField(title: "Primary voltage", unit: "V", text: $primaryVolts, optional: true, helpText: "Optional. With frequency, shows the sine peak flux for that voltage.", fieldID: "v1")
                 NumberField(title: "Frequency", unit: "Hz", text: $hertz, optional: true, fieldID: "hertz")
             case .motor:
                 NumberField(title: "Conductor current", unit: "A", text: $wireCurrent, fieldID: "iWire")

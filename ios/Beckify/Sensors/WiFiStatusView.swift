@@ -782,7 +782,7 @@ struct WiFiStrengthGauge: View {
     private var dial: some View {
         let s = strength ?? 0
         let bars = WiFiCoverageMath.bars(s)
-        VStack(spacing: 14) {
+        return VStack(spacing: 14) {
             ZStack {
                 Circle()
                     .stroke(Theme.border, lineWidth: 14)
