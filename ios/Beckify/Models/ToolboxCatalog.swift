@@ -377,7 +377,7 @@ enum ToolboxCatalog {
             title: "Wire Size & Ampacity",
             subtitle: "310.16 derating plus optional Table 250.122 EGC when you pick a circuit.",
             symbol: "cable.connector.horizontal",
-            synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor", "derating", "310.15"]
+            synonyms: ["wire size", "ampacity", "awg", "310.16", "75c", "kcmil", "copper", "aluminum", "conductor", "derating", "310.15", "egc", "250.122"]
         ),
         ToolDefinition(
             id: .flexibleCable,
@@ -397,7 +397,7 @@ enum ToolboxCatalog {
             title: "Conductor Cost Optimizer",
             subtitle: "Book $/kft with line overrides, optional Table 250.122 EGC, and I²R.",
             symbol: "dollarsign.circle",
-            synonyms: ["conductor cost", "optimize", "planning allowance", "parallel runs", "copper cost", "aluminum cost", "i2r", "kft", "wire select"]
+            synonyms: ["conductor cost", "optimize", "planning allowance", "parallel runs", "copper cost", "aluminum cost", "i2r", "kft", "wire select", "egc", "250.122"]
         ),
         ToolDefinition(
             id: .conductorLength,
