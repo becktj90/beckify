@@ -309,7 +309,45 @@ final class VoltageDropSizingTests: XCTestCase {
         )))
     }
 
+    func testRunReadoutTableAndChartPercentShareModelValue() throws {
+        // Classic example: table ~6.02 V / 1.25%. Chart must not show volts as %.
+        let r = try VoltageDropSizing.calculate(VoltageDropSizingInput(
+            system: .threePhase,
+            supplyVolts: 480,
+            current: 45,
+            oneWayFeet: 250,
+            size: "4",
+            material: .copper,
+            parallelRuns: 1,
+            targetDropPercent: 3
+        ))
+        XCTAssertEqual(r.dropVolts, 6.02, accuracy: 0.02)
+        XCTAssertEqual(r.dropPercent, r.dropVolts / 480 * 100, accuracy: 1e-9)
+        XCTAssertEqual(r.dropPercent, 1.25, accuracy: 0.02)
+
+        let run = try XCTUnwrap(VoltageDropRunReadout(result: r))
+        XCTAssertEqual(run.chartDropPercent, r.dropPercent, accuracy: 1e-12)
+        XCTAssertEqual(run.chartDropVolts, r.dropVolts, accuracy: 1e-12)
+        XCTAssertEqual(run.dropPercentLabel, NECCircuitRunReadout.percentLabel(r.dropPercent))
+        // Regression: volts-as-percent would be ~6.0, not ~1.25.
+        XCTAssertLessThan(run.chartDropPercent, 2)
+        XCTAssertGreaterThan(r.dropVolts, 5)
+        XCTAssertGreaterThan(abs(run.chartDropPercent - r.dropVolts), 3)
+
+        XCTAssertEqual(run.note3Label, "3% informational note (this run)")
+        XCTAssertEqual(run.note5Label, "5% informational note (this run)")
+        XCTAssertFalse(run.note5Label.localizedCaseInsensitiveContains("feeder"))
+        XCTAssertFalse(run.note5Label.localizedCaseInsensitiveContains("combined"))
+        XCTAssertFalse(run.note5Value.localizedCaseInsensitiveContains("PASS"))
+        XCTAssertEqual(run.note3Value, "WITHIN NOTE")
+        XCTAssertEqual(run.note5Value, "WITHIN NOTE")
+        XCTAssertTrue(run.ampacityRowLabel.contains("≤3 CCC"))
+        XCTAssertTrue(run.ampacityAssumptionCaption.contains("Continuous × 1.25"))
+        XCTAssertTrue(run.ampacityAssumptionCaption.contains("not applied on this row"))
+    }
+
     func testCandidateTableIncludesSelectedSize() throws {
+
         let r = try VoltageDropSizing.calculate(VoltageDropSizingInput(
             system: .dc, supplyVolts: 48, current: 20, oneWayFeet: 50, size: "10", material: .copper
         ))

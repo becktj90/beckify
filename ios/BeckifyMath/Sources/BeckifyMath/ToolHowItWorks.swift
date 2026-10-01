@@ -88,7 +88,7 @@ public enum ToolHowItWorksCatalog {
             context: "Feeder or branch check before you pull wire.",
             bullets: [
                 "NEC VD uses field K (≈12.9 Cu / 21.2 Al near 75 °C), CM, operating amps, and one-way feet. K is not Ch.9 Table 9.",
-                "3% branch and 5% total are Informational Notes (210.19(A), 215.2(A)). Ampacity is still continuous × 1.25, then 110.14(C).",
+                "Strip and table % both use dropPercent. 3%/5% notes are this-run Informational Notes, not feeder+branch. Ampacity row: 310.16 × runs vs entered amps.",
                 "Long 480 V feeders at 2 AWG and up: Table 8 R plus Table 9 X. Steel raceway uses the higher Table 9 X column.",
                 "AS/NZS: mm² sizes, IEC 60228 maximum R, Clause 3.6.2’s 5% limit, and a Table 5.1 copper earth. Not an AS/NZS 3008 mV/A·m table.",
             ]
