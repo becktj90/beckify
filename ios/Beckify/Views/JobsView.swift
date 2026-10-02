@@ -125,8 +125,17 @@ struct JobsView: View {
     }
 
     private func importArchive(_ result: Result<[URL], Error>) {
+        let url: URL
         do {
-            guard let url = try result.get().first else { return }
+            guard let selectedURL = try result.get().first else { return }
+            url = selectedURL
+        } catch {
+            guard !isCancellation(error) else { return }
+            presentTransferMessage("Could not import saved notes: \(error.localizedDescription)")
+            return
+        }
+
+        let importTask = Task.detached(priority: .userInitiated) { () throws -> SavedJobsArchive in
             let canAccess = url.startAccessingSecurityScopedResource()
             defer {
                 if canAccess { url.stopAccessingSecurityScopedResource() }
@@ -135,13 +144,21 @@ struct JobsView: View {
             guard let size = values.fileSize, size <= SavedJobsArchive.maximumFileSize else {
                 throw SavedJobsArchiveError.fileTooLarge
             }
-            let imported = try jobs.importArchive(Data(contentsOf: url))
-            presentTransferMessage(imported == 0
-                ? "No new notes were imported. Notes with IDs already on this device were left unchanged."
-                : "Imported \(imported) saved \(imported == 1 ? "note" : "notes"). Existing notes were left unchanged.")
-        } catch {
-            guard !isCancellation(error) else { return }
-            presentTransferMessage("Could not import saved notes: \(error.localizedDescription)")
+            let data = try Data(contentsOf: url)
+            return try SavedJobsArchive.decode(data)
+        }
+
+        Task { @MainActor in
+            do {
+                let archive = try await importTask.value
+                let imported = try jobs.importArchive(archive)
+                presentTransferMessage(imported == 0
+                    ? "No new notes were imported. Notes with IDs already on this device were left unchanged."
+                    : "Imported \(imported) saved \(imported == 1 ? "note" : "notes"). Existing notes were left unchanged.")
+            } catch {
+                guard !isCancellation(error) else { return }
+                presentTransferMessage("Could not import saved notes: \(error.localizedDescription)")
+            }
         }
     }
 

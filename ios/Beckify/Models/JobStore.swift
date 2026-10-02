@@ -95,8 +95,7 @@ final class JobStore: ObservableObject {
     }
 
     @discardableResult
-    func importArchive(_ data: Data) throws -> Int {
-        let archive = try SavedJobsArchive.decode(data)
+    func importArchive(_ archive: SavedJobsArchive) throws -> Int {
         let existingIDs = Set(jobs.map(\.id))
         let additions = archive.jobs.compactMap { record -> SavedJob? in
             guard let id = UUID(uuidString: record.id),
