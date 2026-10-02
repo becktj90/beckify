@@ -221,6 +221,18 @@ final class BreadboardLayoutTests: XCTestCase {
         XCTAssertEqual(bias.component("r2")?.leads.map(\.net), ["Vb", "GND"])
         XCTAssertEqual(bias.component("rc")?.leads.map(\.net), ["Vc", "Vcc"])
         XCTAssertEqual(bias.component("re")?.leads.map(\.net), ["Ve", "GND"])
+        XCTAssertEqual(
+            BreadboardBoard.group(try XCTUnwrap(bias.component("r1")).leads[1].hole),
+            BreadboardBoard.group(npn.leads[1].hole)
+        )
+        XCTAssertEqual(
+            BreadboardBoard.group(try XCTUnwrap(bias.component("rc")).leads[0].hole),
+            BreadboardBoard.group(npn.leads[2].hole)
+        )
+        XCTAssertEqual(
+            BreadboardBoard.group(try XCTUnwrap(bias.component("re")).leads[0].hole),
+            BreadboardBoard.group(npn.leads[0].hole)
+        )
         if case .resistor(let ohms, _, let bands) = bias.component("r1")?.part {
             XCTAssertEqual(ohms, 47_000, accuracy: 1)
             XCTAssertEqual(bands.first, "yellow")
