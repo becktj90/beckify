@@ -23,6 +23,7 @@ private enum RootTab: Hashable {
 }
 
 struct RootView: View {
+    @EnvironmentObject private var jobs: JobStore
     @State private var tab: RootTab = .toolbox
     @State private var toolboxArea: ToolHomeArea = .field
     @State private var didFinishFirstAppear = false
@@ -53,6 +54,16 @@ struct RootView: View {
         // Frosted tab chrome — reads as a floating bar over the ambient wash.
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
+        .alert("Could not save note", isPresented: Binding(
+            get: { jobs.saveError != nil },
+            set: { if !$0 { jobs.clearSaveError() } }
+        )) {
+            Button("OK", role: .cancel) {
+                jobs.clearSaveError()
+            }
+        } message: {
+            Text(jobs.saveError ?? "")
+        }
         .environment(\.browseFieldHome) {
             toolboxArea = .field
             tab = .toolbox

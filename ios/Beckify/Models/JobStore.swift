@@ -40,6 +40,7 @@ struct SavedJob: Identifiable, Codable, Equatable {
 @MainActor
 final class JobStore: ObservableObject {
     @Published private(set) var jobs: [SavedJob] = []
+    @Published private(set) var saveError: String?
 
     private let key = "com.beckify.toolbox.savedJobs"
     private let defaults: UserDefaults
@@ -58,13 +59,42 @@ final class JobStore: ObservableObject {
             savedJob.calculationBasis = "\(notice.title). \(notice.message)"
         }
 
+        var updatedJobs = jobs
         if let idx = jobs.firstIndex(where: { $0.id == savedJob.id }) {
-            jobs[idx] = savedJob
+            updatedJobs[idx] = savedJob
         } else {
-            jobs.insert(savedJob, at: 0)
+            updatedJobs.insert(savedJob, at: 0)
         }
+
+        do {
+            try SavedJobsArchive(jobs: [Self.archiveRecord(for: savedJob)]).validate()
+        } catch {
+            saveError = error.localizedDescription
+            return
+        }
+
+        do {
+            try SavedJobsArchive(
+                jobs: updatedJobs.map { Self.archiveRecord(for: $0) }
+            ).encodedData()
+        } catch {
+            let currentArchiveIsValid = (try? SavedJobsArchive(
+                jobs: jobs.map { Self.archiveRecord(for: $0) }
+            ).encodedData()) != nil
+            saveError = currentArchiveIsValid
+                ? error.localizedDescription
+                : "Existing saved notes exceed archive limits. Delete legacy notes before saving."
+            return
+        }
+
+        saveError = nil
+        jobs = updatedJobs
         persist()
         ReviewAskStore.shared.recordSavedJob()
+    }
+
+    func clearSaveError() {
+        saveError = nil
     }
 
     func delete(at offsets: IndexSet) {
@@ -78,19 +108,7 @@ final class JobStore: ObservableObject {
     }
 
     func archiveData() throws -> Data {
-        let records = jobs.map { job in
-            SavedJobArchiveRecord(
-                id: job.id.uuidString,
-                name: job.name,
-                toolID: job.toolID.rawValue,
-                notes: job.notes,
-                calculationBasis: job.calculationBasis,
-                inputs: job.inputs,
-                outputs: job.outputs,
-                createdAt: job.createdAt,
-                updatedAt: job.updatedAt
-            )
-        }
+        let records = jobs.map { Self.archiveRecord(for: $0) }
         return try SavedJobsArchive(jobs: records).encodedData()
     }
 
@@ -135,5 +153,19 @@ final class JobStore: ObservableObject {
         if let data = try? JSONEncoder().encode(jobs) {
             defaults.set(data, forKey: key)
         }
+    }
+
+    private static func archiveRecord(for job: SavedJob) -> SavedJobArchiveRecord {
+        SavedJobArchiveRecord(
+            id: job.id.uuidString,
+            name: job.name,
+            toolID: job.toolID.rawValue,
+            notes: job.notes,
+            calculationBasis: job.calculationBasis,
+            inputs: job.inputs,
+            outputs: job.outputs,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt
+        )
     }
 }
