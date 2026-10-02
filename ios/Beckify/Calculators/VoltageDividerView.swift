@@ -62,6 +62,8 @@ struct VoltageDividerView: View {
             }
 
             if let r = session.displayedResult {
+                VoltageDividerCircuitDiagram(vin: r.vin, vout: r.vout, r1: r.r1, r2: r.r2)
+                    .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Vin", value: Format.volts(r.vin))
                     ResultRow(label: "Vout", value: Format.volts(r.vout), emphasis: true, tone: Theme.good)

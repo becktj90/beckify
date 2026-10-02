@@ -77,6 +77,13 @@ struct SeriesParallelView: View {
             }
 
             if let eq = session.displayedResult {
+                SeriesParallelNetworkDiagram(
+                    values: eq.filledValues.compactMap(\.parsedDouble),
+                    unit: eq.unit,
+                    kind: eq.kind,
+                    isCapacitor: eq.part == .capacitors
+                )
+                .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: copyText) {
                     ResultRow(
                         label: "Equivalent",

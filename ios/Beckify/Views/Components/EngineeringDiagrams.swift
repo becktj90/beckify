@@ -2756,3 +2756,242 @@ struct ResistorColorBandsDiagram: View {
         }
     }
 }
+
+// MARK: - Voltage divider
+
+/// Vin → R1 → Vout tap → R2 → ground. Unloaded divider only — no load
+/// resistor is drawn, matching the math this tool actually computes.
+struct VoltageDividerCircuitDiagram: View {
+    let vin: Double
+    let vout: Double
+    let r1: Double
+    let r2: Double
+
+    private var summary: String {
+        "Vin \(Format.volts(vin)) through R1 \(Format.number(r1, digits: 3)) ohms to the Vout tap at \(Format.volts(vout)), then through R2 \(Format.number(r2, digits: 3)) ohms to ground."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Voltage divider", accessibilitySummary: summary, exportName: "voltage-divider") {
+            GeometryReader { geo in
+                draw(in: geo.size)
+            }
+            .frame(height: 240)
+        }
+        .accessibilityIdentifier("voltageDivider.circuitDiagram")
+    }
+
+    @ViewBuilder
+    private func draw(in size: CGSize) -> some View {
+        let x = size.width * 0.38
+        let topY: CGFloat = 14
+        let r1TopY: CGFloat = 36
+        let tapY = size.height * 0.46
+        let r2BottomY = size.height - 60
+        let gndY = size.height - 38
+        let railRight = size.width - 16
+
+        Canvas { context, _ in
+            var rail = Path()
+            rail.move(to: CGPoint(x: x, y: topY))
+            rail.addLine(to: CGPoint(x: x, y: r1TopY))
+            context.stroke(rail, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+
+            context.stroke(
+                verticalZigzag(x: x, topY: r1TopY, bottomY: tapY),
+                with: .color(Theme.accent),
+                style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+            )
+            context.stroke(
+                verticalZigzag(x: x, topY: tapY, bottomY: r2BottomY),
+                with: .color(Theme.accent),
+                style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+            )
+
+            var toGround = Path()
+            toGround.move(to: CGPoint(x: x, y: r2BottomY))
+            toGround.addLine(to: CGPoint(x: x, y: gndY))
+            context.stroke(toGround, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+
+            // Ground symbol: three shrinking horizontal bars.
+            var ground = Path()
+            let widths: [CGFloat] = [22, 14, 7]
+            for (i, w) in widths.enumerated() {
+                let y = gndY + CGFloat(i) * 6
+                ground.move(to: CGPoint(x: x - w / 2, y: y))
+                ground.addLine(to: CGPoint(x: x + w / 2, y: y))
+            }
+            context.stroke(ground, with: .color(Theme.muted), lineWidth: 2)
+
+            // Tap node + wire to the readout.
+            context.fill(Path(ellipseIn: CGRect(x: x - 4, y: tapY - 4, width: 8, height: 8)), with: .color(Theme.energized))
+            var tapWire = Path()
+            tapWire.move(to: CGPoint(x: x, y: tapY))
+            tapWire.addLine(to: CGPoint(x: railRight, y: tapY))
+            context.stroke(tapWire, with: .color(Theme.energized.opacity(0.8)), lineWidth: Theme.Stroke.hairline)
+
+            context.draw(Text("Vin").font(.caption.weight(.semibold)).foregroundColor(Theme.muted), at: CGPoint(x: x, y: topY - 8))
+            context.draw(
+                Text("R1: \(Format.number(r1, digits: 2)) Ω").font(.caption2.monospacedDigit()).foregroundColor(Theme.foreground),
+                at: CGPoint(x: x + 54, y: (r1TopY + tapY) / 2)
+            )
+            context.draw(
+                Text("R2: \(Format.number(r2, digits: 2)) Ω").font(.caption2.monospacedDigit()).foregroundColor(Theme.foreground),
+                at: CGPoint(x: x + 54, y: (tapY + r2BottomY) / 2)
+            )
+            context.draw(
+                Text("Vout \(Format.volts(vout))").font(.caption.weight(.semibold)).foregroundColor(Theme.energized),
+                at: CGPoint(x: min(railRight, x + 90), y: tapY - 12)
+            )
+            context.draw(Text("GND").font(.caption2).foregroundColor(Theme.muted), at: CGPoint(x: x, y: gndY + 24))
+        }
+    }
+
+    private func verticalZigzag(x: CGFloat, topY: CGFloat, bottomY: CGFloat) -> Path {
+        let segments = 6
+        let amplitude: CGFloat = 8
+        let span = bottomY - topY
+        var path = Path()
+        path.move(to: CGPoint(x: x, y: topY))
+        for i in 0..<segments {
+            let t0 = CGFloat(i) / CGFloat(segments)
+            let t1 = CGFloat(i + 1) / CGFloat(segments)
+            let y0 = topY + span * t0
+            let y1 = topY + span * t1
+            let dx: CGFloat = (i % 2 == 0) ? amplitude : -amplitude
+            path.addLine(to: CGPoint(x: x + dx, y: (y0 + y1) / 2))
+            path.addLine(to: CGPoint(x: x, y: y1))
+        }
+        return path
+    }
+}
+
+// MARK: - Series / parallel network
+
+/// Up to four resistors or capacitors, drawn as an actual series chain or
+/// parallel ladder rather than just the computed equivalent value.
+struct SeriesParallelNetworkDiagram: View {
+    let values: [Double]
+    let unit: String
+    let kind: NetworkKind
+    let isCapacitor: Bool
+
+    private var summary: String {
+        let joiner = kind == .series ? "in series" : "in parallel"
+        let list = values.map { "\(Format.number($0, digits: 3)) \(unit)" }.joined(separator: ", ")
+        return "\(values.count) parts \(joiner): \(list)."
+    }
+
+    var body: some View {
+        DiagramCard(title: kind == .series ? "Series network" : "Parallel network", accessibilitySummary: summary, exportName: "series-parallel-network") {
+            GeometryReader { geo in
+                kind == .series ? AnyView(drawSeries(in: geo.size)) : AnyView(drawParallel(in: geo.size))
+            }
+            .frame(height: kind == .series ? 120 : CGFloat(60 + values.count * 36))
+        }
+        .accessibilityIdentifier("seriesParallel.networkDiagram")
+    }
+
+    @ViewBuilder
+    private func drawSeries(in size: CGSize) -> some View {
+        let count = values.count
+        let partWidth = min(56, (size.width - 40) / CGFloat(max(count, 1)))
+        let totalWidth = partWidth * CGFloat(count)
+        let startX = (size.width - totalWidth) / 2
+        let midY = size.height / 2
+
+        Canvas { context, _ in
+            let componentWidth = partWidth * 0.78
+            var lead = Path()
+            var cursorX: CGFloat = 8
+            for index in 0..<max(count, 1) {
+                let centerX = startX + partWidth * (CGFloat(index) + 0.5)
+                let leftEdge = centerX - componentWidth / 2
+                lead.move(to: CGPoint(x: cursorX, y: midY))
+                lead.addLine(to: CGPoint(x: leftEdge, y: midY))
+                cursorX = centerX + componentWidth / 2
+            }
+            lead.move(to: CGPoint(x: cursorX, y: midY))
+            lead.addLine(to: CGPoint(x: size.width - 8, y: midY))
+            context.stroke(lead, with: .color(Theme.muted.opacity(0.5)), lineWidth: 2)
+
+            for (index, value) in values.enumerated() {
+                let centerX = startX + partWidth * (CGFloat(index) + 0.5)
+                drawComponent(context: context, centerX: centerX, centerY: midY, width: componentWidth)
+                context.draw(
+                    Text(Format.number(value, digits: value >= 1000 ? 0 : 3))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundColor(Theme.foreground),
+                    at: CGPoint(x: centerX, y: midY + 22)
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func drawParallel(in size: CGSize) -> some View {
+        let count = max(values.count, 1)
+        let leftX = size.width * 0.22
+        let rightX = size.width * 0.78
+        let topY: CGFloat = 28
+        let bottomY = size.height - 16
+        let branchSpacing = count > 1 ? (bottomY - topY) / CGFloat(count - 1) : 0
+
+        Canvas { context, _ in
+            var rails = Path()
+            rails.move(to: CGPoint(x: leftX, y: topY))
+            rails.addLine(to: CGPoint(x: leftX, y: bottomY))
+            rails.move(to: CGPoint(x: rightX, y: topY))
+            rails.addLine(to: CGPoint(x: rightX, y: bottomY))
+            context.stroke(rails, with: .color(Theme.muted), lineWidth: 2)
+
+            let centerX = (leftX + rightX) / 2
+            let componentWidth = (rightX - leftX) * 0.4
+            for (index, value) in values.enumerated() {
+                let y = count > 1 ? topY + branchSpacing * CGFloat(index) : (topY + bottomY) / 2
+                var branch = Path()
+                branch.move(to: CGPoint(x: leftX, y: y))
+                branch.addLine(to: CGPoint(x: centerX - componentWidth / 2, y: y))
+                branch.move(to: CGPoint(x: centerX + componentWidth / 2, y: y))
+                branch.addLine(to: CGPoint(x: rightX, y: y))
+                context.stroke(branch, with: .color(Theme.accent.opacity(0.3)), lineWidth: 1.5)
+
+                drawComponent(context: context, centerX: centerX, centerY: y, width: componentWidth)
+                context.draw(
+                    Text(Format.number(value, digits: value >= 1000 ? 0 : 3))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundColor(Theme.foreground),
+                    at: CGPoint(x: centerX, y: y - 14)
+                )
+            }
+        }
+    }
+
+    private func drawComponent(context: GraphicsContext, centerX: CGFloat, centerY: CGFloat, width: CGFloat) {
+        if isCapacitor {
+            let gap: CGFloat = 6
+            let plateHeight = min(width, 24)
+            var plates = Path()
+            plates.move(to: CGPoint(x: centerX - gap / 2, y: centerY - plateHeight / 2))
+            plates.addLine(to: CGPoint(x: centerX - gap / 2, y: centerY + plateHeight / 2))
+            plates.move(to: CGPoint(x: centerX + gap / 2, y: centerY - plateHeight / 2))
+            plates.addLine(to: CGPoint(x: centerX + gap / 2, y: centerY + plateHeight / 2))
+            context.stroke(plates, with: .color(Theme.accent), lineWidth: 3)
+        } else {
+            let segments = 6
+            let amplitude: CGFloat = 7
+            var zigzag = Path()
+            zigzag.move(to: CGPoint(x: centerX - width / 2, y: centerY))
+            for i in 0..<segments {
+                let t0 = CGFloat(i) / CGFloat(segments)
+                let t1 = CGFloat(i + 1) / CGFloat(segments)
+                let x0 = centerX - width / 2 + width * t0
+                let x1 = centerX - width / 2 + width * t1
+                let dy: CGFloat = (i % 2 == 0) ? -amplitude : amplitude
+                zigzag.addLine(to: CGPoint(x: (x0 + x1) / 2, y: centerY + dy))
+                zigzag.addLine(to: CGPoint(x: x1, y: centerY))
+            }
+            context.stroke(zigzag, with: .color(Theme.accent), style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round))
+        }
+    }
+}
