@@ -70,6 +70,7 @@ struct ResistorColorView: View {
             if let error = live.error {
                 ErrorText(message: error.message)
             } else if let r = live.result {
+                ResistorColorBandsDiagram(bands: r.bands)
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Resistance", value: "\(Format.number(r.ohms, digits: 4)) Ω", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Tolerance", value: "± \(Format.number(r.tolerancePercent, digits: 2)) %")

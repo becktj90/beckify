@@ -2642,3 +2642,117 @@ struct SolenoidAxialFieldChart: View {
         }
     }
 }
+
+// MARK: - Resistor color bands
+
+extension ResistorBand {
+    /// Standard IEC 60062 band color. Gold/silver get their own metallic
+    /// tones rather than a literal `.yellow`/`.gray` reuse.
+    var swiftUIColor: Color {
+        switch self {
+        case .black: return Color(red: 0.07, green: 0.07, blue: 0.07)
+        case .brown: return Color(red: 0.45, green: 0.26, blue: 0.13)
+        case .red: return Color(red: 0.86, green: 0.08, blue: 0.08)
+        case .orange: return Color(red: 0.95, green: 0.52, blue: 0.09)
+        case .yellow: return Color(red: 0.96, green: 0.86, blue: 0.09)
+        case .green: return Color(red: 0.13, green: 0.58, blue: 0.22)
+        case .blue: return Color(red: 0.11, green: 0.35, blue: 0.80)
+        case .violet: return Color(red: 0.49, green: 0.24, blue: 0.68)
+        case .gray: return Color(red: 0.55, green: 0.55, blue: 0.55)
+        case .white: return Color(red: 0.97, green: 0.97, blue: 0.97)
+        case .gold: return Color(red: 0.72, green: 0.58, blue: 0.20)
+        case .silver: return Color(red: 0.75, green: 0.75, blue: 0.78)
+        }
+    }
+
+    /// True for bands light enough that a thin dark outline keeps them
+    /// visible against the resistor body (white, yellow, silver).
+    var needsOutline: Bool {
+        switch self {
+        case .white, .yellow, .silver: return true
+        default: return false
+        }
+    }
+}
+
+/// Drawn resistor body with its actual colored bands, left to right in the
+/// same order they're read on a real part — not just the color names as text.
+struct ResistorColorBandsDiagram: View {
+    let bands: [ResistorBand]
+
+    private var summary: String {
+        "Resistor body with \(bands.count) bands, left to right: " + bands.map(\.displayName).joined(separator: ", ") + "."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Resistor", accessibilitySummary: summary, exportName: "resistor-color-bands") {
+            GeometryReader { geo in
+                drawResistor(in: geo.size)
+            }
+            .frame(height: 110)
+        }
+        .accessibilityIdentifier("resistorColor.bandsDiagram")
+    }
+
+    @ViewBuilder
+    private func drawResistor(in size: CGSize) -> some View {
+        let bodyWidth = min(size.width * 0.62, 260)
+        let bodyHeight: CGFloat = 46
+        let bodyX = (size.width - bodyWidth) / 2
+        let bodyY = (size.height - bodyHeight) / 2
+        let leadY = size.height / 2
+
+        ZStack(alignment: .topLeading) {
+            // Leads.
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: leadY))
+                path.addLine(to: CGPoint(x: bodyX, y: leadY))
+                path.move(to: CGPoint(x: bodyX + bodyWidth, y: leadY))
+                path.addLine(to: CGPoint(x: size.width, y: leadY))
+            }
+            .stroke(Theme.muted, lineWidth: 3)
+
+            // Body.
+            RoundedRectangle(cornerRadius: bodyHeight / 2.4, style: .continuous)
+                .fill(Color(red: 0.86, green: 0.76, blue: 0.58))
+                .overlay(
+                    RoundedRectangle(cornerRadius: bodyHeight / 2.4, style: .continuous)
+                        .stroke(Theme.foreground.opacity(0.35), lineWidth: 1)
+                )
+                .frame(width: bodyWidth, height: bodyHeight)
+                .position(x: bodyX + bodyWidth / 2, y: bodyY + bodyHeight / 2)
+
+            // Bands. The tolerance band (last) sits with extra gap near the
+            // right edge, matching how real resistors space it apart from
+            // the significant-digit/multiplier bands.
+            bandMarks(bodyX: bodyX, bodyY: bodyY, bodyWidth: bodyWidth, bodyHeight: bodyHeight)
+        }
+    }
+
+    @ViewBuilder
+    private func bandMarks(bodyX: CGFloat, bodyY: CGFloat, bodyWidth: CGFloat, bodyHeight: CGFloat) -> some View {
+        let bandWidth: CGFloat = 10
+        let inset = bodyWidth * 0.12
+        let toleranceGap = bodyWidth * 0.14
+        let groupCount = max(bands.count - 1, 1)
+        let groupSpan = bodyWidth - 2 * inset - toleranceGap
+        let step = groupCount > 0 ? groupSpan / CGFloat(groupCount) : 0
+
+        ForEach(Array(bands.enumerated()), id: \.offset) { index, band in
+            let isLast = index == bands.count - 1
+            let x = isLast
+                ? bodyX + bodyWidth - inset - bandWidth / 2
+                : bodyX + inset + CGFloat(index) * step + bandWidth / 2
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(band.swiftUIColor)
+                .overlay {
+                    if band.needsOutline {
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .stroke(Theme.foreground.opacity(0.4), lineWidth: 1)
+                    }
+                }
+                .frame(width: bandWidth, height: bodyHeight - 6)
+                .position(x: x, y: bodyY + bodyHeight / 2)
+        }
+    }
+}
