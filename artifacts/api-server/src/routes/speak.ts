@@ -2,7 +2,8 @@ import { Router, type IRouter } from "express";
 import {
   SPEAK_DEFAULT_MODEL,
   SPEAK_DEFAULT_VOICE,
-  SPEAK_EN_VOICE,
+  SPEAK_DEEP_SOUTH_VOICE,
+  SPEAK_EN_CALIFORNIA_VOICE,
   SPEAK_MAX_INPUT_CHARS,
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
@@ -175,13 +176,14 @@ function pickVoice(
   mode: ReturnType<typeof speakVoiceMode> = "jobsite",
   language: SpeakLanguage = "es",
 ): string {
-  if (language === "en") {
+  const maleEnglish = mode === "deepSouth" || mode === "california" || language === "en";
+  if (maleEnglish && mode !== "cuban") {
     if (typeof raw === "string") {
       const voice = raw.trim().toLowerCase();
-      // English surfer-stoner path is male. Ignore female-leaning Clean defaults (nova/shimmer).
+      // California and Deep South stay male. Ignore female Clean defaults.
       if (ALLOWED_VOICES.has(voice) && voice !== "nova" && voice !== "shimmer") return voice;
     }
-    return SPEAK_EN_VOICE;
+    return mode === "deepSouth" ? SPEAK_DEEP_SOUTH_VOICE : SPEAK_EN_CALIFORNIA_VOICE;
   }
   if (typeof raw === "string") {
     const voice = raw.trim().toLowerCase();

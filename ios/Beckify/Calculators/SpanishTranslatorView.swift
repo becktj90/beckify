@@ -22,12 +22,6 @@ struct SpanishTranslatorView: View {
     @State private var lastTestPhrase = ""
     @State private var lastAttentionPhrase = ""
 
-    // Deep South: comedy-only English dialect stylizer. Same-language
-    // wordplay, not a translation and not an accent/voice impression — see
-    // `DeepSouthDialect.honestLimit`. Playback uses the shared speech pipeline.
-    @State private var deepSouthOutput = ""
-    @State private var deepSouthSeed = 0
-
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
         nonmutating set { voiceModeRaw = newValue.rawValue }
@@ -85,18 +79,13 @@ struct SpanishTranslatorView: View {
             engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
             engine.setDirection(direction)
         }
-        .onChange(of: engine.englishText) { _, _ in
-            deepSouthOutput = ""
-        }
         .onChange(of: voiceModeRaw) { _, raw in
-            deepSouthOutput = ""
             engine.applyVoiceMode(SpanishVoiceMode.parse(raw), invalidateInFlight: true)
         }
         .onChange(of: directionRaw) { _, raw in
             typedLine = ""
             lastTestPhrase = ""
             lastAttentionPhrase = ""
-            deepSouthOutput = ""
             engine.setDirection(SpanishTranslateDirection.parse(raw))
         }
         .onDisappear {
@@ -168,7 +157,7 @@ struct SpanishTranslatorView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("spanishTranslator.voiceMode")
-            Text("Jobsite: gravelly, weathered tradesman. Clean: smooth and warm.")
+            Text(SpanishTranslatorAPI.modeHelp(direction: direction, voiceMode: voiceMode))
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
         }
@@ -476,51 +465,25 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    /// Comedy-only: stylizes whatever English text is on screen into an
-    /// exaggerated "Deep South" drawl. Not a translation, not a real accent —
-    /// see `DeepSouthDialect.honestLimit`. Uses coordinated translator playback.
+    /// English-only neural character. Speaks the English already on screen.
+    /// Does not rewrite the words. Share uses the same clip as Speak.
     @ViewBuilder
     private var deepSouthCard: some View {
         if !engine.englishText.isEmpty {
-            ResultCard(title: "Deep South (comedy)", copyText: deepSouthOutput.isEmpty ? nil : deepSouthOutput) {
-                Text(DeepSouthDialect.honestLimit)
+            ResultCard(title: SpanishTranslatorAPI.deepSouthCardTitle, copyText: engine.englishText) {
+                Text(SpanishTranslatorAPI.deepSouthHelp)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
-
-                if !deepSouthOutput.isEmpty {
-                    Text(deepSouthOutput)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
+                Button(SpanishTranslatorAPI.deepSouthButtonTitle) {
+                    engine.speakDeepSouth(engine.englishText)
                 }
-
-                ThumbButtonRow {
-                    Button("Make it Deep South") {
-                        deepSouthSeed += 1
-                        deepSouthOutput = DeepSouthDialect.stylize(engine.englishText, seed: deepSouthSeed)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accent)
-                    .frame(minHeight: Theme.touchTarget)
-                    .accessibilityIdentifier("spanishTranslator.deepSouthButton")
-
-                    if !deepSouthOutput.isEmpty {
-                        Button("Speak it") {
-                            speakDeepSouth()
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(Theme.accent)
-                        .frame(minHeight: Theme.touchTarget)
-                    }
-                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+                .accessibilityIdentifier("spanishTranslator.deepSouthButton")
             }
         }
-    }
-
-    private func speakDeepSouth() {
-        guard !deepSouthOutput.isEmpty else { return }
-        engine.speakComedy(deepSouthOutput)
     }
 
     private var advancedCard: some View {
@@ -1346,7 +1309,11 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         }
     }
 
-    private func speakResult(_ text: String, preferNeural: Bool) {
+    func speakDeepSouth(_ text: String) {
+        speakResult(text, preferNeural: true, delivery: SpanishTranslatorAPI.deepSouthDelivery)
+    }
+
+    private func speakResult(_ text: String, preferNeural: Bool, delivery: String? = nil) {
         let trimmed = SpanishTranslatorAPI.clampSpeakText(text)
         guard !trimmed.isEmpty else { return }
         allowAppleSpeakFallback = preferNeural
@@ -1355,7 +1322,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let generation = speakGeneration
         let turn = turnID
         let snapshotMode = turnVoiceMode
-        let speakLanguage = turnDirection.speakLanguage
+        let snapshotDelivery = delivery
+        let speakLanguage = snapshotDelivery == SpanishTranslatorAPI.deepSouthDelivery
+            ? "en"
+            : turnDirection.speakLanguage
 
         phase = .preparingVoice
         isPreparingSpeak = true
@@ -1365,7 +1335,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         startPreparingTicker(turn: turn)
 
         guard preferNeural else {
-            speakWithAppleFallback(trimmed, turn: turn, speakGen: generation)
+            speakWithAppleFallback(trimmed, turn: turn, speakGen: generation, delivery: snapshotDelivery)
             return
         }
 
@@ -1377,7 +1347,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     customEndpoint: self.pendingCustomEndpoint,
                     token: self.pendingToken,
                     voiceMode: snapshotMode,
-                    language: speakLanguage
+                    language: speakLanguage,
+                    delivery: snapshotDelivery
                 )
                 try Task.checkCancellation()
                 guard generation == self.speakGeneration, turn == self.turnID else { return }
@@ -1388,7 +1359,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     model: self.lastTTSModel,
                     voice: self.lastTTSVoice,
                     voiceMode: snapshotMode,
-                    language: speakLanguage
+                    language: speakLanguage,
+                    delivery: snapshotDelivery
                 )
             } catch is CancellationError {
                 guard generation == self.speakGeneration else { return }
@@ -1408,7 +1380,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                 if !detail.isEmpty {
                     self.errorMessage = "Neural TTS unavailable — Apple voice. (\(detail))"
                 }
-                self.speakWithAppleFallback(trimmed, turn: turn, speakGen: generation)
+                self.speakWithAppleFallback(trimmed, turn: turn, speakGen: generation, delivery: snapshotDelivery)
             }
         }
     }
@@ -1474,22 +1446,21 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         statusLabel = SpanishTranslatorAPI.statusPlaying
     }
 
-    func speakComedy(_ text: String) {
-        invalidateOutdatedWork(markCancelled: false)
-        allowAppleSpeakFallback = true
-        speakWithAppleFallback(text, turn: turnID, speakGen: speakGeneration, language: "en-US")
-    }
-
-    private func speakWithAppleFallback(_ text: String, turn: UInt64, speakGen: UInt64, language: String? = nil) {
+    private func speakWithAppleFallback(_ text: String, turn: UInt64, speakGen: UInt64, language: String? = nil, delivery: String? = nil) {
         guard turn == turnID, speakGen == speakGeneration else { return }
         refreshVoice()
         prepareLoudPlaybackSession()
 
+        let deepSouth = delivery == SpanishTranslatorAPI.deepSouthDelivery
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
+        if deepSouth {
+            utterance.voice = AVSpeechSynthesisVoice(language: "en-US") ?? selectedVoice
+        } else {
+            utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
+        }
         utterance.volume = 1.0
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * SpanishTranslatorAPI.speechRateFactor(voiceMode: voiceMode)
-        utterance.pitchMultiplier = SpanishTranslatorAPI.speechPitchMultiplier(voiceMode: voiceMode)
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * (deepSouth ? 0.72 : SpanishTranslatorAPI.speechRateFactor(voiceMode: voiceMode))
+        utterance.pitchMultiplier = deepSouth ? 0.82 : SpanishTranslatorAPI.speechPitchMultiplier(voiceMode: voiceMode)
         utterance.preUtteranceDelay = 0
         utterance.postUtteranceDelay = 0.08
 
@@ -1533,7 +1504,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         customEndpoint: String,
         token: String,
         voiceMode: SpanishVoiceMode,
-        language: String
+        language: String,
+        delivery: String? = nil
     ) async throws -> (data: Data, model: String?, voice: String?) {
         guard let url = SpanishTranslatorAPI.speakURL(customEndpoint: customEndpoint) else {
             throw VisionHTTPError(
@@ -1544,7 +1516,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let body = try SpanishTranslatorAPI.speakRequestJSON(
             text: text,
             voiceMode: voiceMode,
-            language: language
+            language: language,
+            delivery: delivery
         )
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
         do {

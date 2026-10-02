@@ -39,12 +39,16 @@ assert.match(translate, /english_clean|clear_english_clean/);
 assert.match(speak, /normalizeSpeakLanguage/);
 assert.match(speak, /SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS/);
 assert.match(speak, /SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS/);
-assert.match(speak, /surfer|stoner/i);
-assert.match(speak, /California|West Coast|SoCal/i);
-assert.match(speak, /SPEAK_EN_VOICE|onyx/);
-assert.match(speak, /not a cartoon surfer|not Spicoli|not.*corporate/i);
-assert.match(speak, /dude|man energy|drawl|mellow/i);
+assert.match(speak, /SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS/);
+assert.match(speak, /SPEAK_EN_CALIFORNIA_VOICE = "echo"/);
+assert.match(speak, /SPEAK_DEEP_SOUTH_VOICE = "ballad"/);
+assert.match(speak, /SPEAK_DEFAULT_MODEL = "gpt-4o-mini-tts"/);
+assert.match(speak, /California/);
+assert.match(speak, /Deep South/);
+assert.match(speak, /not a stoner/i);
+assert.match(speak, /not a surfer cartoon/i);
 assert.match(speak, /language: SpeakLanguage = "es"/);
+assert.doesNotMatch(speak, /Cheech|Spicoli|Cheech and Chong/i);
 
 // Japanese speak path: a real third language, not silently mapped to Spanish.
 assert.match(speak, /SpeakLanguage = "en" \| "es" \| "ja"/);
@@ -53,13 +57,30 @@ assert.match(speak, /SPEAK_JA_CLEAN_VOICE_INSTRUCTIONS/);
 assert.match(speak, /if \(primary === "ja"\) return "ja";/);
 assert.match(speak, /not an accent impression|not a mocking caricature/i);
 
-for (const name of ["SPEAK_JOBSITE_VOICE_INSTRUCTIONS", "SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS"]) {
-  const block = speak.match(new RegExp("export const " + name + " = `([\\s\\S]*?)`;"))[1];
+{
+  const block = speak.match(/export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `([\s\S]*?)`;/)[1];
   assert.match(block, /fifty years of cigarettes/i);
   assert.match(block, /gravel|rasp/i);
+  assert.match(block, /South American/i);
   assert.match(block, /numbers, units/i);
   assert.match(block, /Do not add words/i);
   assert.match(block, /Preserve the text and its meaning/i);
+  assert.match(block, /not slapstick|never slapstick/i);
 }
+for (const name of ["SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS", "SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS", "SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS"]) {
+  const block = speak.match(new RegExp("export const " + name + " = `([\\s\\S]*?)`;"))[1];
+  assert.match(block, /Read the supplied English text exactly/i);
+  assert.match(block, /Do not add words/i);
+  assert.match(block, /Preserve the text and its meaning/i);
+  assert.match(block, /numbers, units/i);
+  assert.match(block, /slur/i);
+  assert.doesNotMatch(block, /word-swap bit that replaces/i);
+}
+const california = speak.match(/export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `([\s\S]*?)`;/)[1];
+const deepSouth = speak.match(/export const SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS = `([\s\S]*?)`;/)[1];
+assert.match(california, /West Coast|California/i);
+assert.match(deepSouth, /Deep South/i);
+assert.notEqual(california, deepSouth);
+assert.match(speak, /if \(mode === "deepSouth"\) return SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS/);
 
 console.log("spanish-translate-voice.test.cjs: ok");
