@@ -379,10 +379,14 @@ public enum FuzzyPanelGrid {
     }
 
     private static func notePrinted(_ number: Int, nextOdd: inout Int, nextEven: inout Int) {
+        // Keep the opposite column in lockstep so a printed 21 yields 22 next,
+        // not a restart at 2 (which would invent a top-of-panel from a mid-frame).
         if number % 2 == 0 {
             nextEven = max(nextEven, number + 2)
+            nextOdd = max(nextOdd, number + 1)
         } else {
             nextOdd = max(nextOdd, number + 2)
+            nextEven = max(nextEven, number + 1)
         }
     }
 

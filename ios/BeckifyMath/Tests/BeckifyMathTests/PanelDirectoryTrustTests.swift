@@ -159,7 +159,7 @@ final class PanelDirectoryTrustTests: XCTestCase {
         ]
         let assigned = FuzzyPanelGrid.assign(lines)
         XCTAssertGreaterThanOrEqual(assigned.inferredSlots, 1)
-        XCTAssertTrue(assigned.lines.contains { $0.inferredCircuit && $0.text.contains("22") || $0.text.hasPrefix("22 ") })
+        XCTAssertTrue(assigned.lines.contains { $0.inferredCircuit && ($0.text.contains("22") || $0.text.hasPrefix("22 ")) })
     }
 
     func testPhotoRoleGuidanceAndReviewFilter() {
