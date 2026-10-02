@@ -20,6 +20,14 @@ struct SpanishTranslatorView: View {
     @State private var lastTestPhrase = ""
     @State private var lastAttentionPhrase = ""
 
+    // Deep South: comedy-only English dialect stylizer. Same-language
+    // wordplay, not a translation and not an accent/voice impression — see
+    // `DeepSouthDialect.honestLimit`. Its own synthesizer so this novelty
+    // button never touches the main engine's translation/speech state machine.
+    @State private var deepSouthOutput = ""
+    @State private var deepSouthSeed = 0
+    @State private var deepSouthSynthesizer = AVSpeechSynthesizer()
+
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
         nonmutating set { voiceModeRaw = newValue.rawValue }
@@ -44,6 +52,7 @@ struct SpanishTranslatorView: View {
             recordCard
             quickPhrasesCard
             textCards
+            deepSouthCard
             if showAdvanced {
                 advancedCard
             } else {
@@ -83,6 +92,7 @@ struct SpanishTranslatorView: View {
             typedLine = ""
             lastTestPhrase = ""
             lastAttentionPhrase = ""
+            deepSouthOutput = ""
             engine.setDirection(SpanishTranslateDirection.parse(raw))
         }
         .onDisappear {
@@ -428,6 +438,57 @@ struct SpanishTranslatorView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
         }
+    }
+
+    /// Comedy-only: stylizes whatever English text is on screen into an
+    /// exaggerated "Deep South" drawl. Not a translation, not a real accent —
+    /// see `DeepSouthDialect.honestLimit`. Uses its own synthesizer so it
+    /// never touches the main translate/speak state machine above.
+    @ViewBuilder
+    private var deepSouthCard: some View {
+        if !engine.englishText.isEmpty {
+            ResultCard(title: "Deep South (comedy)", copyText: deepSouthOutput.isEmpty ? nil : deepSouthOutput) {
+                Text(DeepSouthDialect.honestLimit)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !deepSouthOutput.isEmpty {
+                    Text(deepSouthOutput)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+
+                ThumbButtonRow {
+                    Button("Make it Deep South") {
+                        deepSouthSeed += 1
+                        deepSouthOutput = DeepSouthDialect.stylize(engine.englishText, seed: deepSouthSeed)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
+                    .frame(minHeight: Theme.touchTarget)
+                    .accessibilityIdentifier("spanishTranslator.deepSouthButton")
+
+                    if !deepSouthOutput.isEmpty {
+                        Button("Speak it") {
+                            speakDeepSouth()
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Theme.accent)
+                        .frame(minHeight: Theme.touchTarget)
+                    }
+                }
+            }
+        }
+    }
+
+    private func speakDeepSouth() {
+        guard !deepSouthOutput.isEmpty else { return }
+        let utterance = AVSpeechUtterance(string: deepSouthOutput)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
+        deepSouthSynthesizer.speak(utterance)
     }
 
     private var advancedCard: some View {
