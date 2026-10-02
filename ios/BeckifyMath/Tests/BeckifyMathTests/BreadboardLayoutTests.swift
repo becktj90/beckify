@@ -90,6 +90,31 @@ final class BreadboardLayoutTests: XCTestCase {
         }
     }
 
+    func testAnnotationEngineOmitsLabelsWhenNoClearPlacementExists() {
+        let canvas = LabRect2(x: 0, y: 0, width: 80, height: 60)
+        let requests = [
+            LabAnnotationRequest(
+                id: "blocked",
+                text: "Q",
+                anchor: LabVec2(x: 40, y: 30),
+                layer: .values
+            ),
+            LabAnnotationRequest(
+                id: "too-wide",
+                text: "A component label that cannot fit",
+                anchor: LabVec2(x: 40, y: 30),
+                layer: .values
+            ),
+        ]
+        let placed = LabAnnotationEngine.place(
+            requests: requests,
+            obstacles: [canvas],
+            canvas: canvas,
+            activeLayers: [.values]
+        )
+        XCTAssertTrue(placed.isEmpty)
+    }
+
     func testIdentityBookSharesNets() throws {
         let board = try layout(.voltageDivider)
         let info = ElectronicsLab.info(.voltageDivider)

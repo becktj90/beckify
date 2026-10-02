@@ -192,6 +192,32 @@ final class ElectronicsLabTests: XCTestCase {
         XCTAssertFalse(bias.io.plots.isEmpty)
     }
 
+    func testBJTDefaultSchematicNodesMeetTheirElectricalConnections() throws {
+        let bias = try ElectronicsLab.solve(
+            .bjtBias,
+            unknown: ElectronicsLab.info(.bjtBias).defaultUnknown,
+            inputs: ElectronicsLab.info(.bjtBias).defaults
+        )
+        let expectedConnections: [String: [String]] = [
+            "vcc": ["railL", "vcc"],
+            "b": ["r1", "r2", "base"],
+            "c": ["rc", "col"],
+            "e": ["re"],
+            "gnd": ["gndw", "g"],
+        ]
+
+        for (nodeID, elementIDs) in expectedConnections {
+            let node = try XCTUnwrap(bias.node(nodeID))
+            for elementID in elementIDs {
+                let element = try XCTUnwrap(bias.elements.first { $0.id == elementID })
+                XCTAssertTrue(
+                    element.a == node.at || element.b == node.at,
+                    "\(elementID) must terminate at the \(node.name) node"
+                )
+            }
+        }
+    }
+
     func testEngineeringSuffixesSolveTheBench() throws {
         let divider = try ElectronicsLab.solve(
             .voltageDivider,

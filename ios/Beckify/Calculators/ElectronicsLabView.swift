@@ -748,55 +748,82 @@ private enum SchematicDraw {
         for element in solution.elements where element.part != .wire && element.part != .line {
             let hot = highlightedNets.contains(element.label) || highlightedNets.contains(element.id)
             strokeElement(element, in: context, size: size, emphasized: hot)
-            // Part labels use the shared annotation format; dense values prefer Values+.
-            label(element, in: context, size: size, layer: annotationLayer)
         }
         let canvas = LabRect2(x: 0, y: 0, width: Double(size.width), height: Double(size.height))
         var obstacles: [LabRect2] = []
         var requests: [LabAnnotationRequest] = []
 
-        if annotationLayer == .measurements || annotationLayer == .all {
-            for node in solution.nodes {
-                let center = map(node.at, size)
-                let reading = labReading(node.value, unit: node.unit)
-                if let text = LabAnnotationFormat.measurementLabel(name: node.name, reading: reading, layer: annotationLayer) {
-                    requests.append(LabAnnotationRequest(
-                        id: "node-\(node.id)",
-                        text: text,
-                        anchor: LabVec2(x: Double(center.x), y: Double(center.y)),
-                        layer: .measurements,
-                        fontSize: 14
-                    ))
-                }
-                obstacles.append(LabRect2(x: Double(center.x - 10), y: Double(center.y - 10), width: 20, height: 20))
-            }
-            for branch in solution.branches {
-                let mid = CGPoint(
-                    x: (map(branch.a, size).x + map(branch.b, size).x) / 2,
-                    y: (map(branch.a, size).y + map(branch.b, size).y) / 2
-                )
-                let reading = labReading(abs(branch.value), unit: branch.unit.isEmpty ? "A" : branch.unit)
-                if let text = LabAnnotationFormat.measurementLabel(name: branch.name, reading: reading, layer: annotationLayer) {
-                    requests.append(LabAnnotationRequest(
-                        id: "branch-\(branch.id)",
-                        text: text,
-                        anchor: LabVec2(x: Double(mid.x), y: Double(mid.y)),
-                        layer: .measurements,
-                        fontSize: 14
-                    ))
-                }
-            }
-            let placed = LabAnnotationEngine.place(
-                requests: requests,
-                obstacles: obstacles,
-                canvas: canvas,
-                activeLayers: [.measurements]
-            )
-            for item in placed {
-                drawPlacedAnnotation(item, in: context, emphasized: false)
-            }
+        for element in solution.elements {
+            let a = map(element.a, size)
+            let b = map(element.b, size)
+            let isConnection = element.part == .wire || element.part == .line
+            let padding: CGFloat = isConnection ? 4 : 9
+            let minWidth: CGFloat = isConnection ? 8 : 28
+            let minHeight: CGFloat = isConnection ? 8 : 28
+            obstacles.append(LabRect2(
+                x: Double(min(a.x, b.x) - padding),
+                y: Double(min(a.y, b.y) - padding),
+                width: Double(max(abs(a.x - b.x) + 2 * padding, minWidth)),
+                height: Double(max(abs(a.y - b.y) + 2 * padding, minHeight))
+            ))
+
+            guard !isConnection, element.part != .ground, element.part != .voltageSource,
+                  let text = LabAnnotationFormat.partLabel(
+                    refdes: element.label.isEmpty ? element.id.uppercased() : element.label,
+                    valueText: element.detail.isEmpty ? nil : element.detail,
+                    layer: annotationLayer
+                  )
+            else { continue }
+
+            let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+            let delta = CGPoint(x: b.x - a.x, y: b.y - a.y)
+            let length = max(hypot(delta.x, delta.y), 1)
+            let normal = LabVec2(x: Double(-delta.y / length), y: Double(delta.x / length))
+            requests.append(LabAnnotationRequest(
+                id: "part-\(element.id)",
+                text: text,
+                anchor: LabVec2(x: Double(mid.x), y: Double(mid.y)),
+                layer: annotationLayer,
+                preferredOffsets: partOffsets(normal: normal),
+                fontSize: 13
+            ))
         }
 
+        for node in solution.nodes {
+            let center = map(node.at, size)
+            let reading = labReading(node.value, unit: node.unit)
+            let text = annotationLayer == .minimal ? node.name : "\(node.name)  \(reading)"
+            requests.append(LabAnnotationRequest(
+                id: "node-\(node.id)",
+                text: text,
+                anchor: LabVec2(x: Double(center.x), y: Double(center.y)),
+                layer: annotationLayer,
+                fontSize: 13
+            ))
+            obstacles.append(LabRect2(x: Double(center.x - 9), y: Double(center.y - 9), width: 18, height: 18))
+        }
+
+        for branch in solution.branches {
+            let a = map(branch.a, size)
+            let b = map(branch.b, size)
+            let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+            let reading = labReading(abs(branch.value), unit: branch.unit.isEmpty ? "A" : branch.unit)
+            let text = annotationLayer == .minimal ? branch.name : "\(branch.name)  \(reading)"
+            requests.append(LabAnnotationRequest(
+                id: "branch-\(branch.id)",
+                text: text,
+                anchor: LabVec2(x: Double(mid.x), y: Double(mid.y)),
+                layer: annotationLayer,
+                fontSize: 13
+            ))
+        }
+
+        let placed = LabAnnotationEngine.place(
+            requests: requests,
+            obstacles: obstacles,
+            canvas: canvas,
+            activeLayers: [annotationLayer]
+        )
         for branch in solution.branches {
             drawCurrent(
                 branch,
@@ -804,8 +831,11 @@ private enum SchematicDraw {
                 size: size,
                 phase: phase,
                 emphasized: branch.id == pickedBranchID,
-                showLabel: annotationLayer == .minimal || annotationLayer == .values
+                showLabel: false
             )
+        }
+        for item in placed {
+            drawPlacedAnnotation(item, in: context, emphasized: false)
         }
         for node in solution.nodes {
             drawNode(
@@ -813,21 +843,34 @@ private enum SchematicDraw {
                 in: context,
                 size: size,
                 emphasized: node.id == pickedNodeID,
-                showLabel: annotationLayer == .minimal || annotationLayer == .values
+                showLabel: false
             )
         }
     }
 
+    private static func partOffsets(normal: LabVec2) -> [LabVec2] {
+        [
+            LabVec2(x: normal.x * 20, y: normal.y * 20),
+            LabVec2(x: -normal.x * 20, y: -normal.y * 20),
+            LabVec2(x: normal.x * 34, y: normal.y * 34),
+            LabVec2(x: -normal.x * 34, y: -normal.y * 34),
+            LabVec2(x: 0, y: -24),
+            LabVec2(x: 0, y: 24),
+            LabVec2(x: 32, y: 0),
+            LabVec2(x: -32, y: 0),
+        ]
+    }
+
     private static func drawPlacedAnnotation(_ item: LabPlacedAnnotation, in context: GraphicsContext, emphasized: Bool) {
         let rect = CGRect(x: item.frame.x, y: item.frame.y, width: item.frame.width, height: item.frame.height)
-        context.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(Theme.surface.opacity(0.92)))
-        context.stroke(Path(roundedRect: rect, cornerRadius: 5), with: .color(Theme.border), lineWidth: 1)
         if let from = item.leaderFrom {
             var path = Path()
             path.move(to: CGPoint(x: from.x, y: from.y))
             path.addLine(to: CGPoint(x: item.leaderTo.x, y: item.leaderTo.y))
             context.stroke(path, with: .color(Theme.muted), lineWidth: 1)
         }
+        context.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(Theme.surface.opacity(0.96)))
+        context.stroke(Path(roundedRect: rect, cornerRadius: 5), with: .color(Theme.border), lineWidth: 1)
         let resolved = context.resolve(
             Text(item.text)
                 .font(.system(size: CGFloat(item.fontSize), weight: .semibold).monospacedDigit())
@@ -909,22 +952,6 @@ private enum SchematicDraw {
         case .zBlock:
             block(from: a, to: b, in: context, size: size)
         }
-    }
-
-    private static func label(_ element: LabElement, in context: GraphicsContext, size: CGSize, layer: LabAnnotationLayer = .values) {
-        let value = element.detail.isEmpty ? nil : element.detail
-        guard let text = LabAnnotationFormat.partLabel(refdes: element.label.isEmpty ? element.id.uppercased() : element.label, valueText: value, layer: layer) else { return }
-        let a = map(element.a, size)
-        let b = map(element.b, size)
-        let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
-        let delta = CGPoint(x: b.x - a.x, y: b.y - a.y)
-        let length = max(hypot(delta.x, delta.y), 1)
-        let normal = CGPoint(x: -delta.y / length, y: delta.x / length)
-        let point = CGPoint(x: mid.x + normal.x * 12, y: mid.y + normal.y * 12)
-        let resolved = context.resolve(
-            Text(text).font(.system(size: 13, weight: .medium).monospacedDigit()).foregroundColor(Theme.muted)
-        )
-        context.draw(resolved, at: point, anchor: .center)
     }
 
     private static func drawNode(_ node: LabNode, in context: GraphicsContext, size: CGSize, emphasized: Bool, showLabel: Bool = true) {
