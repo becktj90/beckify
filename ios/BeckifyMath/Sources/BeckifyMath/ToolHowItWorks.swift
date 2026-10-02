@@ -436,12 +436,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "switchgearLogicLab": ToolHowItWorks(
-            summary: "Models programmable switchgear logic (gates, timers, latches, one-shots) and runs static lint plus settled-state enumeration to surface candidate findings.",
-            context: "Offline check of transfer-scheme logic before trusting it in the field.",
+            summary: "Offline Switchgear Logic Lab: map signals and breakers, run transfer scenarios, Analyze findings, and share a review package.",
+            context: "Field → Controls. Same engine as the website tool — engineering review only, not a PE stamp or vendor settings file.",
             bullets: [
-                "Not a protection or control certification tool — findings are for engineering judgment, not pass/fail.",
-                "Vendor-specific timer field order, latch dominance, and scan order stay tagged UNVERIFIED until confirmed.",
-                "Exports are a printable review package, never a vendor-loadable settings file.",
+                "Build or load a one-line, map signals/breakers, script events, and watch transfer traces, timing, and explanations.",
+                "Analyze runs static lint, settled-state enumeration, latch comparison, and saved-scenario timer checks. Findings need judgment — not pass/fail.",
+                "Project autosaves on device (UserDefaults). Share JSON / CSV / HTML via the system share sheet — review export, never a vendor-loadable file.",
             ]
         ),
         "panelDirectory": ToolHowItWorks(
@@ -796,12 +796,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Record English or Spanish, translate the other way with Beckify AI (Clean or Jobsite), and play it loud — or fall back to on-device Apple Translation.",
+            summary: "Record English or Spanish, translate the other way with Beckify AI (Clean or Jobsite), play it loud, then Copy Audio or Share Audio — or fall back to on-device Apple Translation.",
             context: "Toolkit → Reference. Field helper — not a certified interpreter.",
             bullets: [
-                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Audio stays local; translate on Stop.",
-                "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → Apple Translation (iOS 18+).",
-                "Neural TTS: ES→EN is California stoner (onyx). Preparing voice… then Playing; Cancel skips Apple fallback; Still preparing… Ns ~3s.",
+                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Mic audio stays local; translate on Stop.",
+                "Clean or Jobsite (persisted). Jobsite is a gravelly fictional weathered tradesman; Clean EN leans California stoner (onyx). Hey! is English → Spanish only.",
+                "After Speak: Copy Audio / Share Audio for the clip (comedy character comes through on shared playback). Temp file for share only — not a recording library. Cancel skips Apple fallback.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(
