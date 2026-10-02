@@ -2901,14 +2901,23 @@ struct SeriesParallelNetworkDiagram: View {
         let midY = size.height / 2
 
         Canvas { context, _ in
+            let componentWidth = partWidth * 0.78
             var lead = Path()
-            lead.move(to: CGPoint(x: 8, y: midY))
+            var cursorX: CGFloat = 8
+            for index in 0..<max(count, 1) {
+                let centerX = startX + partWidth * (CGFloat(index) + 0.5)
+                let leftEdge = centerX - componentWidth / 2
+                lead.move(to: CGPoint(x: cursorX, y: midY))
+                lead.addLine(to: CGPoint(x: leftEdge, y: midY))
+                cursorX = centerX + componentWidth / 2
+            }
+            lead.move(to: CGPoint(x: cursorX, y: midY))
             lead.addLine(to: CGPoint(x: size.width - 8, y: midY))
             context.stroke(lead, with: .color(Theme.muted.opacity(0.5)), lineWidth: 2)
 
             for (index, value) in values.enumerated() {
                 let centerX = startX + partWidth * (CGFloat(index) + 0.5)
-                drawComponent(context: context, centerX: centerX, centerY: midY, width: partWidth * 0.78)
+                drawComponent(context: context, centerX: centerX, centerY: midY, width: componentWidth)
                 context.draw(
                     Text(Format.number(value, digits: value >= 1000 ? 0 : 3))
                         .font(.caption2.monospacedDigit())
@@ -2936,15 +2945,18 @@ struct SeriesParallelNetworkDiagram: View {
             rails.addLine(to: CGPoint(x: rightX, y: bottomY))
             context.stroke(rails, with: .color(Theme.muted), lineWidth: 2)
 
+            let centerX = (leftX + rightX) / 2
+            let componentWidth = (rightX - leftX) * 0.4
             for (index, value) in values.enumerated() {
                 let y = count > 1 ? topY + branchSpacing * CGFloat(index) : (topY + bottomY) / 2
                 var branch = Path()
                 branch.move(to: CGPoint(x: leftX, y: y))
+                branch.addLine(to: CGPoint(x: centerX - componentWidth / 2, y: y))
+                branch.move(to: CGPoint(x: centerX + componentWidth / 2, y: y))
                 branch.addLine(to: CGPoint(x: rightX, y: y))
                 context.stroke(branch, with: .color(Theme.accent.opacity(0.3)), lineWidth: 1.5)
 
-                let centerX = (leftX + rightX) / 2
-                drawComponent(context: context, centerX: centerX, centerY: y, width: (rightX - leftX) * 0.4)
+                drawComponent(context: context, centerX: centerX, centerY: y, width: componentWidth)
                 context.draw(
                     Text(Format.number(value, digits: value >= 1000 ? 0 : 3))
                         .font(.caption2.monospacedDigit())
@@ -2958,11 +2970,12 @@ struct SeriesParallelNetworkDiagram: View {
     private func drawComponent(context: GraphicsContext, centerX: CGFloat, centerY: CGFloat, width: CGFloat) {
         if isCapacitor {
             let gap: CGFloat = 6
+            let plateHeight = min(width, 24)
             var plates = Path()
-            plates.move(to: CGPoint(x: centerX - gap / 2, y: centerY - width / 2))
-            plates.addLine(to: CGPoint(x: centerX - gap / 2, y: centerY + width / 2))
-            plates.move(to: CGPoint(x: centerX + gap / 2, y: centerY - width / 2))
-            plates.addLine(to: CGPoint(x: centerX + gap / 2, y: centerY + width / 2))
+            plates.move(to: CGPoint(x: centerX - gap / 2, y: centerY - plateHeight / 2))
+            plates.addLine(to: CGPoint(x: centerX - gap / 2, y: centerY + plateHeight / 2))
+            plates.move(to: CGPoint(x: centerX + gap / 2, y: centerY - plateHeight / 2))
+            plates.addLine(to: CGPoint(x: centerX + gap / 2, y: centerY + plateHeight / 2))
             context.stroke(plates, with: .color(Theme.accent), lineWidth: 3)
         } else {
             let segments = 6
