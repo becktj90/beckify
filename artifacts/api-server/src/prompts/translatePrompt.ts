@@ -285,22 +285,18 @@ export function translateUserPrompt(
   });
 }
 
-/** Strips any source-language branding so a *-to-en response always reads as a
- * plain "english_jobsite" / "english_clean" label, regardless of which
- * source language (Spanish, Japanese, …) it was translated from. */
+/** Only passes a dialect label through unchanged when it's explicitly
+ * English-branded (e.g. "english_jobsite", "clear_english_clean") *and* has
+ * a recognized register. A source-language blacklist can't keep up with
+ * every language (and native-script labels like "日本語_jobsite" won't match
+ * any Latin-alphabet keyword at all) — requiring "english" by name instead
+ * means any non-English-branded label, in any script, safely falls back to
+ * the generic "english_jobsite" / "english_clean" label. */
 export function englishResponseDialect(mode: TranslateVoiceMode, parsedDialect: string): string {
   const folded = parsedDialect.trim().toLowerCase();
-  const branded = !folded
-    || folded.includes("cuba")
-    || folded.includes("florida")
-    || folded.includes("miami")
-    || folded.includes("latam")
-    || folded.includes("latin")
-    || folded.includes("spanish")
-    || folded.includes("japan")
-    || folded.includes("nihongo");
+  const looksEnglish = folded.includes("english");
   const hasRegister = folded.includes("jobsite") || folded.includes("clean") || folded.includes("polish");
-  if (branded || !hasRegister) {
+  if (!looksEnglish || !hasRegister) {
     return mode === "clean" ? "english_clean" : "english_jobsite";
   }
   return parsedDialect.trim().slice(0, 64);

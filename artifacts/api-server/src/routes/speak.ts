@@ -9,6 +9,7 @@ import {
   normalizeSpeakLanguage,
   speakVoiceInstructions,
   speakVoiceMode,
+  type SpeakLanguage,
 } from "../prompts/speakPrompt.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
 
@@ -172,7 +173,7 @@ function pickText(body: SpeakBody): string {
 function pickVoice(
   raw: unknown,
   mode: ReturnType<typeof speakVoiceMode> = "jobsite",
-  language: "en" | "es" = "es",
+  language: SpeakLanguage = "es",
 ): string {
   if (language === "en") {
     if (typeof raw === "string") {

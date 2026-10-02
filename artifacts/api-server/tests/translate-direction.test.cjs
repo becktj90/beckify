@@ -116,9 +116,14 @@ assert.match(translateSystemPrompt("clean", "ja-to-en"), /polished English|clear
 
 // A dialect label that names the *source* language (Japanese) rather than
 // the English output gets stripped to the generic label too, same as
-// Spanish-branded labels already do for es-to-en.
+// Spanish-branded labels already do for es-to-en — including a label in the
+// source language's own script, which a Latin-alphabet blacklist could never
+// catch (this is why the check whitelists "english" rather than blacklisting
+// every other language).
 assert.equal(englishResponseDialect("jobsite", "japanese_jobsite"), "english_jobsite");
 assert.equal(englishResponseDialect("clean", "japan_source_clean"), "english_clean");
+assert.equal(englishResponseDialect("jobsite", "日本語_jobsite"), "english_jobsite");
+assert.equal(englishResponseDialect("clean", "español_clean"), "english_clean");
 assert.equal(englishResponseDialect("jobsite", "english_jobsite"), "english_jobsite");
 assert.equal(translateFallbackDialect("en-to-ja", "jobsite"), "japanese_jobsite");
 assert.equal(translateFallbackDialect("en-to-ja", "clean"), "japanese_clean");
