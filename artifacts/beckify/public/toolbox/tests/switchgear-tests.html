@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Switchgear Logic Lab — Engine Self-Test</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#0b0f17;color:#e7ecf3;margin:0;padding:1.5rem}
+  h1{font-size:1.1rem}
+  #summary{font-weight:700;margin:1rem 0;padding:.75rem 1rem;border-radius:.4rem}
+  #summary.ok{background:#123a1c;color:#8df0a8}
+  #summary.bad{background:#3a1212;color:#f08d8d}
+  ul{list-style:none;padding:0;margin:0}
+  li{padding:.35rem .5rem;border-bottom:1px solid #1c2531;font-size:.9rem;font-family:ui-monospace,monospace}
+  li.pass{color:#8df0a8}
+  li.fail{color:#f08d8d}
+</style>
+</head>
+<body>
+  <h1>Switchgear Logic Lab — Engine Self-Test</h1>
+  <p>Runs entirely on-device. This is the same suite callable from the iOS self-test screen.</p>
+  <div id="summary">Running…</div>
+  <ul id="results"></ul>
+
+  <script src="../js/switchgear/model.js"></script>
+  <script src="../js/switchgear/profile.js"></script>
+  <script src="../js/switchgear/eval.js"></script>
+  <script src="../js/switchgear/plant.js"></script>
+  <script src="../js/switchgear/scenario.js"></script>
+  <script src="../js/switchgear/trace.js"></script>
+  <script src="../js/switchgear/lint.js"></script>
+  <script src="../js/switchgear/report.js"></script>
+  <script src="switchgear-tests.js"></script>
+  <script>
+    (function () {
+      var outcome = window.SwitchgearEngineTests.runAll(window.SwitchgearEngine);
+      var summary = document.getElementById('summary');
+      summary.textContent = outcome.passed + ' passed, ' + outcome.failed + ' failed';
+      summary.className = outcome.failed ? 'bad' : 'ok';
+      var list = document.getElementById('results');
+      outcome.results.forEach(function (r) {
+        var li = document.createElement('li');
+        li.className = r.pass ? 'pass' : 'fail';
+        li.textContent = (r.pass ? 'PASS' : 'FAIL') + ' — ' + r.name + (r.error ? ' :: ' + r.error : '');
+        list.appendChild(li);
+      });
+      window.switchgearTestOutcome = outcome;
+    })();
+  </script>
+</body>
+</html>
