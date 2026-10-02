@@ -1,11 +1,13 @@
 import Foundation
 import Combine
+import BeckifyMath
 
 struct SavedJob: Identifiable, Codable, Equatable {
     var id: UUID
     var name: String
     var toolID: ToolID
     var notes: String
+    var calculationBasis: String?
     var inputs: [String: String]
     var outputs: [String: String]
     var createdAt: Date
@@ -16,6 +18,7 @@ struct SavedJob: Identifiable, Codable, Equatable {
         name: String,
         toolID: ToolID,
         notes: String = "",
+        calculationBasis: String? = nil,
         inputs: [String: String],
         outputs: [String: String],
         createdAt: Date = Date(),
@@ -25,6 +28,7 @@ struct SavedJob: Identifiable, Codable, Equatable {
         self.name = name
         self.toolID = toolID
         self.notes = notes
+        self.calculationBasis = calculationBasis
         self.inputs = inputs
         self.outputs = outputs
         self.createdAt = createdAt
@@ -46,10 +50,18 @@ final class JobStore: ObservableObject {
     }
 
     func save(_ job: SavedJob) {
-        if let idx = jobs.firstIndex(where: { $0.id == job.id }) {
-            jobs[idx] = job
+        var savedJob = job
+        let code = ElectricalCode(
+            rawValue: defaults.string(forKey: ToolboxPreferenceKey.electricalCode) ?? ""
+        ) ?? .nec
+        if let notice = ElectricalCodeSupport.notice(toolID: job.toolID.rawValue, code: code) {
+            savedJob.calculationBasis = "\(notice.title). \(notice.message)"
+        }
+
+        if let idx = jobs.firstIndex(where: { $0.id == savedJob.id }) {
+            jobs[idx] = savedJob
         } else {
-            jobs.insert(job, at: 0)
+            jobs.insert(savedJob, at: 0)
         }
         persist()
         ReviewAskStore.shared.recordSavedJob()

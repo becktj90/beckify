@@ -175,7 +175,7 @@ struct ResultRow: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(label), \(value)")
+        .accessibilityLabel("\(label): \(value)")
     }
 }
 
@@ -283,21 +283,34 @@ struct SaveJobBar: View {
                     .formFieldFocus("jobName")
                     .frame(minHeight: Theme.touchTarget)
                     .accessibilityLabel("Saved note name")
+                    .accessibilityHint("Required. Give this result a name before saving.")
                 Button("Save", action: action)
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.accent)
                     .frame(minHeight: Theme.touchTarget)
-                    .disabled(!canSave || jobName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(!canSave || jobName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityHint(saveAccessibilityHint)
             }
             if let notes {
                 TextField("Optional note", text: notes)
                     .font(.subheadline)
                     .foregroundStyle(Theme.foreground)
                     .formFieldFocus("jobNotes")
+                    .accessibilityLabel("Optional additional note")
             }
         }
         .padding(14)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var saveAccessibilityHint: String {
+        if !canSave {
+            return "Save is unavailable until a current result is ready."
+        }
+        if jobName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Enter a name for this saved note."
+        }
+        return "Saves this result on this device."
     }
 }
 

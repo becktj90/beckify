@@ -136,6 +136,13 @@ struct JobDetailView: View {
                 .accessibilityIdentifier("openInToolButton")
                 .accessibilityHint("Restores saved inputs into the tool when they still match. Opens the tool even if some fields cannot be restored.")
             }
+            if let calculationBasis = job.calculationBasis {
+                Section("Code & method") {
+                    Text(calculationBasis)
+                        .font(.footnote)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             Section("Inputs") {
                 ForEach(job.inputs.keys.sorted(), id: \.self) { key in
                     LabeledContent(key, value: job.inputs[key] ?? "")
@@ -170,6 +177,9 @@ struct JobDetailView: View {
             ToolboxCatalog.tool(job.toolID).title,
             area.title,
         ]
+        if let calculationBasis = job.calculationBasis {
+            lines.append("Code & method: \(calculationBasis)")
+        }
         if !job.inputs.isEmpty {
             lines.append("Inputs")
             for key in job.inputs.keys.sorted() {
