@@ -391,7 +391,11 @@ enum ToolShelfGridLayout {
     }
 
     /// Fixed tile height so LazyVGrid rows do not reflow as cells appear.
-    static let tileHeight: CGFloat = 148
+    /// 160, not 148: the title moved from `.caption` to `.subheadline` (15–16pt
+    /// at default size, matching the rest of this screen's titles) and no
+    /// longer shrinks to fit, so a 2-line title needs the extra room to avoid
+    /// clipping the subtitle below it.
+    static let tileHeight: CGFloat = 160
 }
 
 /// Section chrome + LazyVGrid of tool tiles. Used by search results and shelf screens.
@@ -564,11 +568,10 @@ struct ToolTile: View {
 
             VStack(spacing: 3) {
                 Text(tool.title)
-                    .font(.caption.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.88)
                 if showArea {
                     HomeAreaBadge(area: area)
                 }
