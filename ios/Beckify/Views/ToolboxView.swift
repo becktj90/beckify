@@ -274,6 +274,7 @@ struct CalculatorHostView: View {
             case .magneticsLab: MagneticsLabView()
             case .emFields: EMFieldsView()
             case .statistics: StatisticsView()
+            case .switchgearLogicLab: SwitchgearLogicLabView()
             }
         }
     }

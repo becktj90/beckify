@@ -151,6 +151,7 @@ public enum ToolHomeAreaPolicy {
     private static let controlsIDs: Set<String> = [
         "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
         "controlSystems", "controlStrategies", "phasorImpedance", "phasorDiagram", "ul508aPanelLab",
+        "switchgearLogicLab",
     ]
 
     /// Field → Analysis: distributions, rescale, paired normals, covariance.

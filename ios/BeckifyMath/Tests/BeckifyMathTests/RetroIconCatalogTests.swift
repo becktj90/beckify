@@ -11,6 +11,7 @@ final class RetroIconCatalogTests: XCTestCase {
     /// Every live toolbox tool, including statistics and Spanish, has a tile.
     private let canvasFallbackToolIDs: Set<String> = [
         "powerWizard",
+        "switchgearLogicLab",
     ]
 
     /// Off the toolbox list, but related tools and deep links still draw a well.
@@ -53,7 +54,7 @@ final class RetroIconCatalogTests: XCTestCase {
             XCTAssertTrue(shipped.contains(id), "\(id) is off the grid but IconWell still needs its tile")
         }
 
-        let liveGrid = known.subtracting(["powerWizard", "phasorDiagram"])
+        let liveGrid = known.subtracting(["powerWizard", "phasorDiagram", "switchgearLogicLab"])
         let missingLive = liveGrid.subtracting(shipped).sorted()
         XCTAssertTrue(missingLive.isEmpty, "live tools still missing a tile: \(missingLive.joined(separator: ", "))")
         XCTAssertEqual(liveGrid.intersection(shipped).count, liveGrid.count)

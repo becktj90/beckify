@@ -93,6 +93,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case emFields
     case statistics
     case spanishTranslator
+    case switchgearLogicLab
 
     var id: String { rawValue }
 }
@@ -673,6 +674,14 @@ enum ToolboxCatalog {
             synonyms: ["plc", "timer", "ton", "tof", "rto", "preset", "timebase", "scan"]
         ),
         ToolDefinition(
+            id: .switchgearLogicLab,
+            kind: .calculator,
+            title: "Switchgear Logic Lab",
+            subtitle: "Build and stress-test programmable switchgear logic offline.",
+            symbol: "flowchart",
+            synonyms: ["switchgear", "logic lab", "flexlogic", "entellisys", "relay logic", "main tie main", "ats", "transfer scheme", "latch", "one-shot", "ladder logic"]
+        ),
+        ToolDefinition(
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
@@ -1095,7 +1104,7 @@ enum ToolboxCatalog {
         .controls: [
             .ul508aPanelLab,
             .signalScaling, .modbusAddress, .plcTimer, .rackCurrent,
-            .controlSystems, .controlStrategies, .phasorImpedance,
+            .controlSystems, .controlStrategies, .phasorImpedance, .switchgearLogicLab,
         ],
         .analysis: [
             .statistics,
@@ -1176,6 +1185,7 @@ enum ToolboxCatalog {
         .conductorLength: [.wireAmpacity, .voltageDrop, .circularMils],
         .transformer: [.threePhasePower, .power, .shortCircuit, .motorFLA],
         .timer555: [.electronicsLab, .plcTimer, .ledRC, .frequencyWave],
+        .switchgearLogicLab: [.plcTimer, .modbusAddress, .controlSystems],
         .motorFLA: [.ul508aPanelLab, .motorNameplateOCR, .motorNameplate, .motorSpeed],
         .wireAmpacity: [.ul508aPanelLab, .flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
         .flexibleCable: [.wireAmpacity, .conduitFill, .equipmentGround, .cableSchedule],
@@ -1207,7 +1217,7 @@ enum ToolboxCatalog {
         .loadFactors: [.panelDirectory, .power, .motorFLA],
         .signalScaling: [.modbusAddress, .plcTimer, .unitConverter, .controlSystems, .controlStrategies],
         .modbusAddress: [.signalScaling, .plcTimer],
-        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems, .controlStrategies],
+        .plcTimer: [.timer555, .modbusAddress, .signalScaling, .controlSystems, .controlStrategies, .switchgearLogicLab],
         .panelDirectory: [.ul508aPanelLab, .equipmentGround, .loadWorksheet, .necCircuit],
         .motorSpeed: [.motorNameplateOCR, .motorFLA, .motorNameplate],
         .rfLink: [.cellularStatus, .frequencyWave, .unitConverter],

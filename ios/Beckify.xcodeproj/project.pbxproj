@@ -94,6 +94,9 @@
 		BECF000000000000000000D7 /* UL508ASCCRWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000D6 /* UL508ASCCRWizardView.swift */; };
 		BECF000000000000000000D9 /* UL508AFeederBranchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000D8 /* UL508AFeederBranchViews.swift */; };
 		BECF000000000000000000DB /* UL508APanelSupportViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000DA /* UL508APanelSupportViews.swift */; };
+		BECF000000000000000000FC /* SwitchgearLogicLabBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000FD /* SwitchgearLogicLabBridge.swift */; };
+		BECF000000000000000000FE /* SwitchgearLogicLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000FF /* SwitchgearLogicLabView.swift */; };
+		BECF00000000000000000100 /* SwitchgearLogicLabWeb in Resources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000101 /* SwitchgearLogicLabWeb */; };
 		BECF000000000000000000B5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000B4 /* SettingsView.swift */; };
 		BECF00000000000000000090 /* ConductorLengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000008F /* ConductorLengthView.swift */; };
 		BECF00000000000000000092 /* CellularStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000091 /* CellularStatusView.swift */; };
@@ -216,6 +219,9 @@
 		BECF000000000000000000D6 /* UL508ASCCRWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508ASCCRWizardView.swift; sourceTree = "<group>"; };
 		BECF000000000000000000D8 /* UL508AFeederBranchViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508AFeederBranchViews.swift; sourceTree = "<group>"; };
 		BECF000000000000000000DA /* UL508APanelSupportViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UL508APanelSupportViews.swift; sourceTree = "<group>"; };
+		BECF000000000000000000FD /* SwitchgearLogicLabBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchgearLogicLabBridge.swift; sourceTree = "<group>"; };
+		BECF000000000000000000FF /* SwitchgearLogicLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchgearLogicLabView.swift; sourceTree = "<group>"; };
+		BECF00000000000000000101 /* SwitchgearLogicLabWeb */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SwitchgearLogicLabWeb; sourceTree = "<group>"; };
 		BECF000000000000000000B4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BECF0000000000000000008F /* ConductorLengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorLengthView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000091 /* CellularStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularStatusView.swift; sourceTree = "<group>"; };
@@ -367,6 +373,7 @@
 				BECF00000000000000000040 /* Sensors */,
 				BECF00000000000000000023 /* Assets.xcassets */,
 				BECF00000000000000000025 /* PrivacyInfo.xcprivacy */,
+				BECF00000000000000000101 /* SwitchgearLogicLabWeb */,
 			);
 			path = Beckify;
 			sourceTree = "<group>";
@@ -481,6 +488,8 @@
 				BECF000000000000000000D6 /* UL508ASCCRWizardView.swift */,
 				BECF000000000000000000D8 /* UL508AFeederBranchViews.swift */,
 				BECF000000000000000000DA /* UL508APanelSupportViews.swift */,
+				BECF000000000000000000FD /* SwitchgearLogicLabBridge.swift */,
+				BECF000000000000000000FF /* SwitchgearLogicLabView.swift */,
 			);
 			path = Calculators;
 			sourceTree = "<group>";
@@ -650,6 +659,7 @@
 			files = (
 				BECF00000000000000000024 /* Assets.xcassets in Resources */,
 				BECF00000000000000000026 /* PrivacyInfo.xcprivacy in Resources */,
+				BECF00000000000000000100 /* SwitchgearLogicLabWeb in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -779,6 +789,8 @@
 				BECF000000000000000000D7 /* UL508ASCCRWizardView.swift in Sources */,
 				BECF000000000000000000D9 /* UL508AFeederBranchViews.swift in Sources */,
 				BECF000000000000000000DB /* UL508APanelSupportViews.swift in Sources */,
+				BECF000000000000000000FC /* SwitchgearLogicLabBridge.swift in Sources */,
+				BECF000000000000000000FE /* SwitchgearLogicLabView.swift in Sources */,
 				BECF000000000000000000B5 /* SettingsView.swift in Sources */,
 				BECF00000000000000000090 /* ConductorLengthView.swift in Sources */,
 			);

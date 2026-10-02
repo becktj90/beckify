@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+  <meta name="beckify-api-base-url" content="">
+  <title>Switchgear Logic Lab | Beckify</title>
+  <meta name="description" content="Offline editor, simulator, and weakness analyzer for programmable switchgear logic (FlexLogic-style). Not a protection or control certification tool.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://beckify.com/toolbox/switchgear-logic-lab.html">
+  <meta property="og:title" content="Switchgear Logic Lab | Beckify">
+  <meta property="og:description" content="Offline editor, simulator, and weakness analyzer for programmable switchgear logic. Review export, not a vendor settings file.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Beckify">
+  <meta property="og:url" content="https://beckify.com/toolbox/switchgear-logic-lab.html">
+  <meta property="og:image" content="https://beckify.com/opengraph.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Switchgear Logic Lab | Beckify">
+  <meta name="twitter:description" content="Offline editor, simulator, and weakness analyzer for programmable switchgear logic.">
+  <meta name="twitter:image" content="https://beckify.com/opengraph.jpg">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": ["SoftwareApplication", "WebApplication"],
+      "name": "Switchgear Logic Lab",
+      "description": "Offline editor, simulator, and weakness analyzer for programmable switchgear logic.",
+      "url": "https://beckify.com/toolbox/switchgear-logic-lab.html",
+      "operatingSystem": "All",
+      "applicationCategory": "EngineeringApplication",
+      "isAccessibleForFree": true,
+      "publisher": { "@type": "Organization", "name": "Beckify", "url": "https://beckify.com" }
+    }
+  </script>
+  <link rel="stylesheet" href="css/switchgear-logic-lab.css">
+</head>
+<body>
+  <div class="sgll-shell">
+    <div class="sgll-safety-banner">
+      Offline model of programmable switchgear logic. Not a protection or control certification tool. Every finding below is a candidate for engineering judgment, not a pass/fail certification. Vendor-specific behavior is marked UNVERIFIED until you confirm it against your device's reference manual. Exports are review packages, never vendor-loadable settings files.
+    </div>
+
+    <div class="sgll-header">
+      <div>
+        <h1>Switchgear Logic Lab</h1>
+        <p>Build, simulate, and stress-test programmable switchgear logic entirely on this device. Phase 1: manual logic entry, one-line view, scenarios, timing, static lint, settled-state enumeration, and a printable review export.</p>
+      </div>
+      <div class="sgll-profile-pill" id="sgllProfilePill">Profile: —</div>
+    </div>
+
+    <div class="sgll-tabs" role="tablist" id="sgllTabs">
+      <button class="sgll-tab active" data-screen="project" role="tab">Project</button>
+      <button class="sgll-tab" data-screen="logic" role="tab">Logic</button>
+      <button class="sgll-tab" data-screen="equations" role="tab">Equations</button>
+      <button class="sgll-tab" data-screen="oneline" role="tab">One-line</button>
+      <button class="sgll-tab" data-screen="scenarios" role="tab">Scenarios</button>
+      <button class="sgll-tab" data-screen="timing" role="tab">Timing</button>
+      <button class="sgll-tab" data-screen="analyze" role="tab">Analyze</button>
+      <button class="sgll-tab" data-screen="export" role="tab">Export</button>
+    </div>
+
+    <section class="sgll-screen active" id="screen-project"></section>
+    <section class="sgll-screen" id="screen-logic"></section>
+    <section class="sgll-screen" id="screen-equations"></section>
+    <section class="sgll-screen" id="screen-oneline"></section>
+    <section class="sgll-screen" id="screen-scenarios"></section>
+    <section class="sgll-screen" id="screen-timing"></section>
+    <section class="sgll-screen" id="screen-analyze"></section>
+    <section class="sgll-screen" id="screen-export"></section>
+  </div>
+
+  <script src="js/switchgear/model.js"></script>
+  <script src="js/switchgear/profile.js"></script>
+  <script src="js/switchgear/eval.js"></script>
+  <script src="js/switchgear/plant.js"></script>
+  <script src="js/switchgear/scenario.js"></script>
+  <script src="js/switchgear/trace.js"></script>
+  <script src="js/switchgear/lint.js"></script>
+  <script src="js/switchgear/report.js"></script>
+  <script src="js/switchgear/seed-main-tie-main.js"></script>
+  <script src="js/switchgear-logic-lab-ui.js"></script>
+</body>
+</html>

@@ -293,6 +293,7 @@
       <button class="nav-btn" data-target="sec-ebus-budget" data-keywords="ebus e-bus rack current budget beckhoff el9410 coupler remaining milliamp reserve">E-bus / Rack Current</button>
       <button class="nav-btn" data-target="sec-modbus-address" data-keywords="modbus address converter holding coil 40001 400001 function code pdu offset">Modbus Address Converter</button>
       <button class="nav-btn" data-target="sec-plc-timer-preset" data-keywords="plc timer preset ton tof rto timebase milliseconds scan counts">PLC Timer Preset</button>
+      <button class="nav-btn" data-target="sec-switchgear-logic-lab" data-keywords="switchgear logic lab flexlogic entellisys main tie main generator relay logic programmable breaker timer latch one-shot scan evaluation weakness analyzer transfer scheme automatic transfer switch ats parallel backfeed interlock">Switchgear Logic Lab</button>
       <button class="nav-btn" data-target="sec-pitch-hum" data-keywords="pitch hum frequency identifier 60 hz 50 hz 120 hz mains ripple transformer buzz autocorrelation microphone field">Pitch / Hum Identifier</button>
       <button class="nav-btn" data-target="sec-audio-spectrum" data-keywords="fft audio spectrum analyzer harmonics transformer buzz motor noise microphone hann">FFT / Audio Spectrum</button>
       <button class="nav-btn" data-target="sec-sound-level" data-keywords="sound level meter spl dbfs a-weighting leq equipment room noise microphone relative db">Sound Level Meter</button>
@@ -404,6 +405,7 @@
             <li><a class="home-tool-link" href="#sec-ebus-budget">E-bus / Rack Current Budget</a></li>
             <li><a class="home-tool-link" href="#sec-modbus-address">Modbus Address Converter</a></li>
             <li><a class="home-tool-link" href="#sec-plc-timer-preset">PLC Timer Preset</a></li>
+            <li><a class="home-tool-link" href="#sec-switchgear-logic-lab">Switchgear Logic Lab</a></li>
             <li><a class="home-tool-link" href="#sec-pitch-hum">Pitch / Hum Identifier</a></li>
             <li><a class="home-tool-link" href="#sec-audio-spectrum">FFT / Audio Spectrum</a></li>
             <li><a class="home-tool-link" href="#sec-sound-level">Sound Level Meter</a></li>
@@ -8195,6 +8197,33 @@
         </div>
       </div>
     </section><!-- end sec-plc-timer-preset -->
+
+    <!-- ════════════════════════════════════════
+         SWITCHGEAR LOGIC LAB
+         ════════════════════════════════════════ -->
+    <section id="sec-switchgear-logic-lab" class="section">
+      <div class="section-header">
+        <h2>🧭 Switchgear Logic Lab</h2>
+        <p>Build, simulate, and stress-test programmable switchgear logic (FlexLogic-style: gates, timers, latches, one-shots) entirely on this device — never uploaded, never a vendor-loadable file.</p>
+        <details class="section-info">
+          <summary>&#8505; More Info &mdash; Switchgear Logic Lab</summary>
+          <div class="section-info-body">
+            Offline model of programmable switchgear logic. <strong>Not a protection or control certification tool.</strong> Enter signals and logic nodes by hand (block-form editor), lay out a main-tie-main one-line, script scenarios with fault injection, and run static lint plus settled-state enumeration. Every finding is a candidate for engineering judgment, not a pass/fail certification, and vendor-specific behavior (timer field order, latch dominance, evaluation order) stays tagged <strong>UNVERIFIED</strong> until you confirm it against your device's own reference manual. The review export is a printable PDF-style package for your team, never a settings file your switchgear could load.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Switchgear Logic Lab Tool</div>
+          <div class="card-body">
+            <div class="note">Phase 1: manual logic entry, one-line view, scripted scenarios, timing chart, static lint, settled-state enumeration, and a printable review export. Reachable-state exploration, the full state-visualization suite, a text importer, and a decoded seed project are planned for a later phase.</div>
+            <p style="margin-top:10px">
+              <a class="btn btn-accent" href="switchgear-logic-lab.html">Open Switchgear Logic Lab</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section><!-- end sec-switchgear-logic-lab -->
 
     <!-- ════════════════════════════════════════
          PHONE SENSOR FIELD TOOLS

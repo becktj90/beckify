@@ -444,6 +444,15 @@ public enum ToolHowItWorksCatalog {
                 "Does not model scan time or a specific PLC brand’s accumulator.",
             ]
         ),
+        "switchgearLogicLab": ToolHowItWorks(
+            summary: "Models programmable switchgear logic (gates, timers, latches, one-shots) and runs static lint plus settled-state enumeration to surface candidate findings.",
+            context: "Offline check of transfer-scheme logic before trusting it in the field.",
+            bullets: [
+                "Not a protection or control certification tool — findings are for engineering judgment, not pass/fail.",
+                "Vendor-specific timer field order, latch dominance, and scan order stay tagged UNVERIFIED until confirmed.",
+                "Exports are a printable review package, never a vendor-loadable settings file.",
+            ]
+        ),
         "panelDirectory": ToolHowItWorks(
             summary: "Take a picture of a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
             context: "Directory / Nameplate / Deadfront roles. Cloud Analyze uploads only if you tap it. Confirmed rows are not measured load — no capacity from trips alone.",
