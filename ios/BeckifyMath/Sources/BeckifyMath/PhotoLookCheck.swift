@@ -1,27 +1,30 @@
 import Foundation
 
-/// Roast tone for `/api/analyze-look`. Website and Toolbox omit this and the
-/// API defaults to `bro` (short BroGPT one-liner). The standalone Look Check
-/// app secretly coins `mean` or `nice` on each Analyze for a longer roast.
-/// That choice is not shown in Look Check UI or share copy.
+/// Roast tone for `/api/analyze-look`.
+/// Beckify Toolbox, website Look Check, and the standalone Look Check app all
+/// secretly coin `mean` or `nice` on Analyze (surprise mode). Older clients may
+/// still send `bro`. The chosen tone is never shown in UI or share copy.
 public enum LookRoastMode: String, Equatable, Sendable, CaseIterable {
     case mean
     case nice
     case bro
+    /// Server resolves randomly to mean or nice. Prefer client-side coin.
+    case surprise
 
     public var label: String {
         switch self {
         case .mean: return "Mean"
         case .nice: return "Nice"
         case .bro: return "Bro"
+        case .surprise: return "Surprise"
         }
     }
 
-    /// Standalone Look Check product: hidden mean vs nice only.
+    /// Surprise product path: hidden mean vs nice only (not bro).
     public static let standaloneTones: [LookRoastMode] = [.mean, .nice]
 
-    /// Fair coin between `mean` and `nice`. Look Check calls this on Analyze;
-    /// the result must not appear in user-facing strings.
+    /// Fair coin between `mean` and `nice`. All Look Check clients call this on
+    /// Analyze; the result must not appear in user-facing strings.
     public static func randomStandaloneTone() -> LookRoastMode {
         var generator = SystemRandomNumberGenerator()
         return randomStandaloneTone(using: &generator)
@@ -35,6 +38,7 @@ public enum LookRoastMode: String, Equatable, Sendable, CaseIterable {
 
     public static func parse(_ raw: String?) -> LookRoastMode {
         let folded = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if folded == "surprise" { return .surprise }
         return LookRoastMode(rawValue: folded) ?? .bro
     }
 }
@@ -71,11 +75,13 @@ public enum PhotoLookVerdict: String, Equatable, Sendable, CaseIterable {
 }
 
 /// 0…100 photo-quality scores. Null when declined or unused.
+/// Labels in UI: "Photo scores" / "Photo assessment" — never attractiveness.
 public struct PhotoLookMetrics: Equatable, Sendable {
     public var lighting: Int?
     public var framing: Int?
     public var expression: Int?
     public var sharpness: Int?
+    public var outfit: Int?
     public var overall: Int?
 
     public init(
@@ -83,17 +89,19 @@ public struct PhotoLookMetrics: Equatable, Sendable {
         framing: Int? = nil,
         expression: Int? = nil,
         sharpness: Int? = nil,
+        outfit: Int? = nil,
         overall: Int? = nil
     ) {
         self.lighting = lighting
         self.framing = framing
         self.expression = expression
         self.sharpness = sharpness
+        self.outfit = outfit
         self.overall = overall
     }
 
     public var hasAnyScore: Bool {
-        [lighting, framing, expression, sharpness, overall].contains { $0 != nil }
+        [lighting, framing, expression, sharpness, outfit, overall].contains { $0 != nil }
     }
 
     public static let metricRows: [(key: String, label: String)] = [
@@ -101,6 +109,7 @@ public struct PhotoLookMetrics: Equatable, Sendable {
         ("framing", "Framing"),
         ("expression", "Expression"),
         ("sharpness", "Sharpness"),
+        ("outfit", "Outfit"),
         ("overall", "Overall"),
     ]
 
@@ -110,6 +119,7 @@ public struct PhotoLookMetrics: Equatable, Sendable {
         case "framing": return framing
         case "expression": return expression
         case "sharpness": return sharpness
+        case "outfit": return outfit
         case "overall": return overall
         default: return nil
         }
@@ -222,7 +232,11 @@ public enum PhotoLookCheck {
     public static let maxUploadBytes = 8 * 1024 * 1024
     public static let maxUploadEdge = 2048
     public static let disclaimer =
-        "Entertainment only — not medical, dating, or beauty authority. Photos upload only when you tap Analyze Look."
+        "Honest photo feedback. You might get hyped. You might get fucking roasted. Entertainment only — not medical, dating, or beauty authority. Photos upload only when you tap Analyze Look."
+    public static let surprisePreAnalyze =
+        "Honest photo feedback. You might get hyped. You might get fucking roasted."
+    public static let photoScoresLabel = "Photo scores"
+    public static let photoAssessmentLabel = "Photo assessment"
     public static let standaloneBundleID = "com.beckify.lookcheck"
     public static let standaloneDisplayName = "Look Check"
 
@@ -337,7 +351,7 @@ public enum PhotoLookCheck {
     }
 
     /// POST body matching website `analyzeLook` / `lookRunSameOrigin`.
-    /// `roastMode` defaults to `bro` so Toolbox and the website stay on the short roast.
+    /// Prefer `randomStandaloneTone()` for surprise mean/nice. `bro` remains for older clients.
     public static func requestBody(
         imageBase64: String,
         mimeType: String,
@@ -472,6 +486,7 @@ public enum PhotoLookCheck {
             framing: asLookScore(src["framing"]),
             expression: asLookScore(src["expression"]),
             sharpness: asLookScore(src["sharpness"] ?? src["focus"]),
+            outfit: asLookScore(src["outfit"]),
             overall: asLookScore(src["overall"])
         )
         if metrics.overall == nil {
