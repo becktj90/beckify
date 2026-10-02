@@ -40,10 +40,37 @@ final class DeepSouthDialectTests: XCTestCase {
     }
 
     func testWordBoundaryDoesNotMangleLongerWords() {
-        // "your" must not be caught by the "you" rule, and "willing" must not
-        // be caught by the "will" rule.
-        let result = DeepSouthDialect.stylize("Your willingness helps.", seed: 0)
-        XCTAssertFalse(result.contains("yer"), "the word 'Your' should not partially match 'you': \(result)")
+        // "willingly" must not be partially caught by the "will" rule
+        // (-> "gonna"), and must not be caught by the -ing dropper either
+        // (it doesn't end in "ing" at a word boundary).
+        let result = DeepSouthDialect.stylize("She agreed willingly.", seed: 0)
+        XCTAssertFalse(result.contains("gonna"), "the word 'willingly' should not partially match 'will': \(result)")
+        XCTAssertTrue(result.contains("willingly"), "willingly should pass through unchanged: \(result)")
+    }
+
+    /// A longer overlapping phrase must win over a shorter one that is also
+    /// a substring of it, regardless of which is listed first in source.
+    func testLongerOverlappingPhraseWinsRegardlessOfListOrder() {
+        let result = DeepSouthDialect.stylize("I am going to fix the panel.", seed: 0)
+        XCTAssertTrue(result.contains("I'm fixin' to"), "expected the longer phrase rule to win: \(result)")
+    }
+
+    /// A replacement that happens to contain another rule's source word
+    /// (e.g. "fast" -> "...a hot tin roof") must not have that inserted text
+    /// re-matched and mangled by the other rule — everything is matched
+    /// against the original text in one pass.
+    func testReplacementTextIsNotReScannedByOtherRules() {
+        let result = DeepSouthDialect.stylize("That is fast.", seed: 0)
+        XCTAssertTrue(result.contains("quick as a cat on a hot tin roof"), "expected the literal reference text unmangled: \(result)")
+        XCTAssertFalse(result.contains("hotter than"), "the 'hot' inside fast's reference text must not be re-matched: \(result)")
+    }
+
+    /// Combined terminal punctuation (e.g. "?!") must be fully stripped, not
+    /// just the last character, before the closer is appended.
+    func testCombinedTrailingPunctuationIsFullyStripped() {
+        let result = DeepSouthDialect.stylize("Really?!", seed: 0)
+        XCTAssertFalse(result.contains("?,"), "should not leave a '?' before the inserted comma: \(result)")
+        XCTAssertFalse(result.contains("!,"), "should not leave a '!' before the inserted comma: \(result)")
     }
 
     func testSameInputAndSeedIsDeterministic() {

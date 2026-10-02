@@ -79,6 +79,7 @@ struct SpanishTranslatorView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 engine.invalidateOutdatedWork(markCancelled: true)
+                deepSouthSynthesizer.stopSpeaking(at: .immediate)
             }
         }
         .onAppear {
@@ -93,10 +94,12 @@ struct SpanishTranslatorView: View {
             lastTestPhrase = ""
             lastAttentionPhrase = ""
             deepSouthOutput = ""
+            deepSouthSynthesizer.stopSpeaking(at: .immediate)
             engine.setDirection(SpanishTranslateDirection.parse(raw))
         }
         .onDisappear {
             engine.invalidateOutdatedWork(markCancelled: true)
+            deepSouthSynthesizer.stopSpeaking(at: .immediate)
         }
     }
 

@@ -9,8 +9,11 @@ public enum DeepSouthDialect {
     public static let honestLimit =
         "Comedy word-swap on the English text only — not a translation, not a real accent, not a real place's dialect. For laughs."
 
-    /// Case-preserving whole-word substitutions, longest phrases first so
-    /// multi-word matches win before their single-word pieces do.
+    /// Case-preserving whole-word/phrase substitutions. Applied in a single
+    /// pass against the *original* text (see `applySubstitutions`), longest
+    /// pattern wins at each position — so this doesn't need to be hand-sorted
+    /// by length, and a replacement text can never be re-scanned and
+    /// mangled by a later rule in this same list.
     private static let phraseSwaps: [(String, String)] = [
         ("you all", "y'all"),
         ("you guys", "y'all"),
@@ -23,49 +26,49 @@ public enum DeepSouthDialect {
         ("i am going to", "i'm fixin' to"),
     ]
 
-    private static let wordSwaps: [String: String] = [
-        "you": "y'all",
-        "your": "yer",
-        "yours": "yer'n",
-        "is not": "ain't",
-        "isn't": "ain't",
-        "aren't": "ain't",
-        "am not": "ain't",
-        "doesn't": "don't",
-        "cannot": "cain't",
-        "can't": "cain't",
-        "will": "gonna",
-        "hello": "well howdy",
-        "hi": "howdy",
-        "hey": "hey there",
-        "friend": "buddy",
-        "yes": "yessiree",
-        "no": "nuh-uh, no sir",
-        "very": "mighty",
-        "really": "plumb",
-        "crazy": "nuttier than a fruitcake",
-        "tired": "wore slap out",
-        "hot": "hotter than a goat's rear end in a pepper patch",
-        "fast": "quick as a cat on a hot tin roof",
-        "angry": "madder than a wet hen",
-        "drunk": "three sheets to the wind",
-        "surprised": "like a possum caught in the headlights",
-        "wrong": "all catawampus",
-        "broken": "busted all to pieces",
-        "good": "finer than frog hair",
-        "great": "finer than frog hair split four ways",
-        "small": "little bitty",
-        "big": "big ol'",
-        "food": "vittles",
-        "breakfast": "brekfust",
-        "think": "reckon",
-        "guess": "reckon",
-        "child": "young'un",
-        "children": "young'uns",
-        "people": "folks",
-        "everyone": "all y'all",
-        "stop": "quit it now",
-        "please": "if you'd be so kind, sugar",
+    private static let wordSwaps: [(String, String)] = [
+        ("you", "y'all"),
+        ("your", "yer"),
+        ("yours", "yer'n"),
+        ("is not", "ain't"),
+        ("isn't", "ain't"),
+        ("aren't", "ain't"),
+        ("am not", "ain't"),
+        ("doesn't", "don't"),
+        ("cannot", "cain't"),
+        ("can't", "cain't"),
+        ("will", "gonna"),
+        ("hello", "well howdy"),
+        ("hi", "howdy"),
+        ("hey", "hey there"),
+        ("friend", "buddy"),
+        ("yes", "yessiree"),
+        ("no", "nuh-uh, no sir"),
+        ("very", "mighty"),
+        ("really", "plumb"),
+        ("crazy", "nuttier than a fruitcake"),
+        ("tired", "wore slap out"),
+        ("hot", "hotter than a goat's rear end in a pepper patch"),
+        ("fast", "quick as a cat on a hot tin roof"),
+        ("angry", "madder than a wet hen"),
+        ("drunk", "three sheets to the wind"),
+        ("surprised", "like a possum caught in the headlights"),
+        ("wrong", "all catawampus"),
+        ("broken", "busted all to pieces"),
+        ("good", "finer than frog hair"),
+        ("great", "finer than frog hair split four ways"),
+        ("small", "little bitty"),
+        ("big", "big ol'"),
+        ("food", "vittles"),
+        ("breakfast", "brekfust"),
+        ("think", "reckon"),
+        ("guess", "reckon"),
+        ("child", "young'un"),
+        ("children", "young'uns"),
+        ("people", "folks"),
+        ("everyone", "all y'all"),
+        ("stop", "quit it now"),
+        ("please", "if you'd be so kind, sugar"),
     ]
 
     /// One closing flavor phrase, chosen deterministically from `seed` so the
@@ -80,6 +83,17 @@ public enum DeepSouthDialect {
         "and that's the Lord's honest truth.",
     ]
 
+    /// All phrase + word rules, longest pattern first so that at any given
+    /// start position the longest overlapping match wins (e.g. "you all"
+    /// before "you", "i am going to" before "going to").
+    private static let allRulesByLength: [(String, String)] =
+        (phraseSwaps + wordSwaps).sorted { $0.0.count > $1.0.count }
+
+    /// Matched text (lowercased) -> replacement. Safe because every pattern
+    /// above is a distinct literal string.
+    private static let ruleLookup: [String: String] =
+        Dictionary(uniqueKeysWithValues: (phraseSwaps + wordSwaps).map { ($0.0.lowercased(), $0.1) })
+
     /// Rewrite `text` into an exaggerated, comedic Southern-drawl rendering.
     /// Deterministic for a given `seed` — same input and seed always give the
     /// same output. Empty or whitespace-only input returns unchanged.
@@ -87,29 +101,24 @@ public enum DeepSouthDialect {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return text }
 
-        var working = trimmed
-        for (phrase, replacement) in phraseSwaps {
-            working = replacing(phrase, in: working, with: replacement)
-        }
-        for (word, replacement) in wordSwaps {
-            working = replacing(word, in: working, with: replacement)
-        }
+        var working = applySubstitutions(to: trimmed)
         working = dropTrailingG(in: working)
 
         let closer = closers[((seed % closers.count) + closers.count) % closers.count]
-        if let last = working.last, ".!?,".contains(last) {
+        while let last = working.last, ".!?,".contains(last) {
             working.removeLast()
         }
         return working + ", " + closer
     }
 
-    /// Case-insensitive, word-boundary-respecting replace that preserves the
-    /// original match's capitalization style (all-caps, capitalized, or lowercase).
-    private static func replacing(_ target: String, in text: String, with replacement: String) -> String {
-        guard let regex = try? NSRegularExpression(
-            pattern: "\\b\(NSRegularExpression.escapedPattern(for: target))\\b",
-            options: [.caseInsensitive]
-        ) else { return text }
+    /// Every phrase/word rule applied in a *single* regex pass against the
+    /// original text, so a replacement's own text is never re-scanned and
+    /// mangled by a later rule (e.g. "fast" -> "...a hot tin roof" must not
+    /// then have "hot" caught by the "hot" rule).
+    private static func applySubstitutions(to text: String) -> String {
+        let alternatives = allRulesByLength.map { NSRegularExpression.escapedPattern(for: $0.0) }
+        let pattern = "\\b(" + alternatives.joined(separator: "|") + ")\\b"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return text }
 
         let nsText = text as NSString
         var result = ""
@@ -118,7 +127,11 @@ public enum DeepSouthDialect {
         for match in matches {
             result += nsText.substring(with: NSRange(location: lastEnd, length: match.range.location - lastEnd))
             let matched = nsText.substring(with: match.range)
-            result += matchCase(of: matched, applyTo: replacement)
+            if let replacement = ruleLookup[matched.lowercased()] {
+                result += matchCase(of: matched, applyTo: replacement)
+            } else {
+                result += matched
+            }
             lastEnd = match.range.location + match.range.length
         }
         result += nsText.substring(from: lastEnd)
