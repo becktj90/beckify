@@ -206,6 +206,7 @@ public enum ToolCalculationPolicy {
         "controlSystems", "controlStrategies", "electronicsLab", "phasorImpedance", "ul508aPanelLab",
         "magneticsLab", "emFields", "statistics",
         "spanishTranslator",
+        "switchgearLogicLab",
     ]
 
     public static var liveToolIDs: [String] {

@@ -478,6 +478,7 @@ extension GlyphKind {
         case .emFields: return .emFields
         case .statistics: return .statistics
         case .spanishTranslator: return .spanishTranslator
+        case .switchgearLogicLab: return .switchgearLogicLab
         }
     }
 }
@@ -574,6 +575,7 @@ enum GlyphKind {
     case emFields
     case statistics
     case spanishTranslator
+    case switchgearLogicLab
 
     func artwork(in rect: CGRect) -> GlyphArtwork {
         switch self {
@@ -620,6 +622,7 @@ enum GlyphKind {
         case .emFields: return Self.emFields(rect)
         case .statistics: return Self.statistics(rect)
         case .spanishTranslator: return Self.spanishTranslator(rect)
+        case .switchgearLogicLab: return Self.switchgearLogicLab(rect)
         case .cellularStatus: return Self.cellularStatus(rect)
         case .bluetoothScan: return Self.bluetoothScan(rect)
         case .noiseMeter: return Self.noiseMeter(rect)
@@ -1246,6 +1249,20 @@ enum GlyphKind {
         Glyph.line(&stroke, c, CGPoint(x: c.x, y: c.y - r.height * 0.26))
         Glyph.line(&stroke, c, CGPoint(x: c.x + r.width * 0.22, y: c.y + r.height * 0.06))
         return .both(fill: fill, stroke: stroke, openMark: true)
+    }
+
+    /// Ladder-diagram normally-open contact: —| |— across the rails.
+    private static func switchgearLogicLab(_ r: CGRect) -> GlyphArtwork {
+        let c = CGPoint(x: r.midX, y: r.midY)
+        let barHalf = r.height * 0.26
+        let barGap = r.width * 0.16
+        let inset = r.width * 0.08
+        var stroke = Path()
+        Glyph.line(&stroke, CGPoint(x: r.minX + inset, y: c.y), CGPoint(x: c.x - barGap, y: c.y))
+        Glyph.line(&stroke, CGPoint(x: c.x + barGap, y: c.y), CGPoint(x: r.maxX - inset, y: c.y))
+        Glyph.line(&stroke, CGPoint(x: c.x - barGap, y: c.y - barHalf), CGPoint(x: c.x - barGap, y: c.y + barHalf))
+        Glyph.line(&stroke, CGPoint(x: c.x + barGap, y: c.y - barHalf), CGPoint(x: c.x + barGap, y: c.y + barHalf))
+        return .stroke(stroke)
     }
 
     /// Filled rack unit + two rail holes.
