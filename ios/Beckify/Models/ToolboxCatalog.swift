@@ -227,7 +227,7 @@ extension ToolboxCatalog {
 
 enum ToolKind: String, Codable {
     case calculator
-    /// Bench / homework tools. About / How it works and Show Work default open.
+    /// Bench / learning tools. Explanations and Show Work start collapsed.
     case homework
     case sensor
 }

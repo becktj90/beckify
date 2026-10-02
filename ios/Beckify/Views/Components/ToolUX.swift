@@ -315,11 +315,11 @@ struct TryExampleButton: View {
 /// Shared AppStorage key so the toolbar About control and `AboutToolCard` stay in sync.
 enum HowItWorksExpansion {
     static func storageKey(for id: ToolID) -> String {
-        "com.beckify.toolbox.howItWorks.\(id.rawValue)"
+        "com.beckify.toolbox.howItWorks.v2.\(id.rawValue)"
     }
 
     static func defaultExpanded(for id: ToolID) -> Bool {
-        ToolboxCatalog.tool(id).kind == .homework
+        ToolHowItWorksCatalog.defaultExpanded(forToolID: id.rawValue)
     }
 }
 
@@ -351,13 +351,13 @@ struct HowItWorksToolbarButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(expanded ? "Hide how \(ToolboxCatalog.tool(toolID).title) works" : "How \(ToolboxCatalog.tool(toolID).title) works")
-        .accessibilityHint("Shows a short how-it-works note. Inputs stay first.")
+        .accessibilityHint("Opens a short explanation. The tool stays the focus.")
         .accessibilityIdentifier("howItWorksToolbar.\(toolID.rawValue)")
         .accessibilityAddTraits(expanded ? [.isSelected] : [])
     }
 }
 
-/// Collapsed-by-default Field About card. Homework tools start open, matching Show Work.
+/// Collapsed-by-default explanation card. The tool stays the focus in every area.
 struct AboutToolCard: View {
     let toolID: ToolID
     var showsWhenCollapsed: Bool = true
@@ -395,17 +395,19 @@ struct AboutToolCard: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("How it works")
+                .accessibilityLabel("How \(ToolboxCatalog.tool(toolID).title) works")
                 .accessibilityValue(expanded ? "Expanded" : "Collapsed")
                 .accessibilityHint("Short note on what this tool computes and its limits.")
                 .accessibilityIdentifier("howItWorksToggle.\(toolID.rawValue)")
 
                 if expanded {
+                    ExplanationSectionTitle(title: "WHAT IT DOES")
                     Text(copy.summary)
                         .font(Theme.TypeRole.body)
                         .foregroundStyle(Theme.foreground)
                         .fixedSize(horizontal: false, vertical: true)
 
+                    ExplanationSectionTitle(title: "WHEN TO USE IT")
                     Text(copy.context)
                         .font(Theme.TypeRole.help)
                         .foregroundStyle(Theme.muted)
@@ -413,6 +415,7 @@ struct AboutToolCard: View {
 
                     if !copy.bullets.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
+                            ExplanationSectionTitle(title: "DETAILS & LIMITS")
                             ForEach(Array(copy.bullets.enumerated()), id: \.offset) { _, bullet in
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                                     Text("·")
@@ -440,7 +443,19 @@ struct AboutToolCard: View {
     }
 }
 
-/// Formula with the user’s numbers substituted. Expanded for homework, collapsed for field.
+private struct ExplanationSectionTitle: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(Theme.TypeRole.sectionLabel)
+            .tracking(0.6)
+            .foregroundStyle(Theme.muted)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// Formula with the user’s numbers substituted. Collapsed until requested.
 struct ShowWorkCard: View {
     let toolID: ToolID
     var symbolic: String
@@ -468,10 +483,9 @@ struct ShowWorkCard: View {
         self.meaning = meaning
         self.citation = citation
         self.referenceTool = referenceTool
-        let homework = ToolboxCatalog.tool(toolID).kind == .homework
         _expanded = AppStorage(
-            wrappedValue: homework,
-            "com.beckify.toolbox.showWork.\(toolID.rawValue)"
+            wrappedValue: false,
+            "com.beckify.toolbox.showWork.v2.\(toolID.rawValue)"
         )
     }
 
@@ -498,17 +512,19 @@ struct ShowWorkCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Show work")
+            .accessibilityLabel("Show formula and explanation")
             .accessibilityValue(expanded ? "Expanded" : "Collapsed")
-            .accessibilityHint("Shows the formula with your numbers filled in.")
+            .accessibilityHint("Shows the formula, your values, and what they mean.")
 
             if expanded {
+                ExplanationSectionTitle(title: "FORMULA")
                 Text(symbolic)
                     .font(.body.monospaced())
                     .foregroundStyle(Theme.accent)
                     .textSelection(.enabled)
 
                 if let substituted, !substituted.isEmpty {
+                    ExplanationSectionTitle(title: "WITH YOUR VALUES")
                     Text(substituted)
                         .font(.body.monospacedDigit().weight(.medium))
                         .foregroundStyle(Theme.foreground)
@@ -521,6 +537,7 @@ struct ShowWorkCard: View {
                 }
 
                 if let citation, !citation.isEmpty {
+                    ExplanationSectionTitle(title: "REFERENCE")
                     Text(citation)
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
@@ -541,7 +558,7 @@ struct ShowWorkCard: View {
                 }
 
                 if let meaning, !meaning.isEmpty {
-                    DisclosureGroup("What this number means", isExpanded: $meaningOpen) {
+                    DisclosureGroup("Plain-language meaning", isExpanded: $meaningOpen) {
                         Text(meaning)
                             .font(.subheadline)
                             .foregroundStyle(Theme.muted)

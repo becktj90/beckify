@@ -174,6 +174,8 @@ struct ResultRow: View {
                 .multilineTextAlignment(.trailing)
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(value)")
     }
 }
 
@@ -189,6 +191,7 @@ struct ResultCard<Content: View>: View {
                     .font(.caption.weight(.semibold))
                     .tracking(0.8)
                     .foregroundStyle(Theme.muted)
+                    .accessibilityAddTraits(.isHeader)
                 Spacer(minLength: 8)
                 if let copyText, !copyText.isEmpty {
                     CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy \(title) results")
@@ -218,6 +221,7 @@ struct FormulaCard: View {
                 .font(.caption.weight(.semibold))
                 .tracking(0.8)
                 .foregroundStyle(Theme.muted)
+                .accessibilityAddTraits(.isHeader)
             Text(text)
                 .font(.body.monospaced())
                 .foregroundStyle(Theme.accent)
@@ -274,10 +278,11 @@ struct SaveJobBar: View {
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
             HStack(alignment: .center, spacing: 10) {
-                TextField("Name — e.g. lab 3, AHU-3 feeder", text: $jobName)
+                TextField("Name this saved note", text: $jobName)
                     .textInputAutocapitalization(.words)
                     .formFieldFocus("jobName")
                     .frame(minHeight: Theme.touchTarget)
+                    .accessibilityLabel("Saved note name")
                 Button("Save", action: action)
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.accent)

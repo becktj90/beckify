@@ -26,33 +26,24 @@ public enum ToolHowItWorksCatalog {
         entries[id]
     }
 
-    /// Homework-kind tools default the About disclosure open (same idea as Show Work).
-    /// Field calculators and instruments stay collapsed so inputs stay first.
-    public static func defaultExpanded(forToolID id: String) -> Bool {
-        homeworkIDs.contains(id)
+    /// Explanations stay collapsed by default so the tool remains the focus.
+    public static func defaultExpanded(forToolID _: String) -> Bool {
+        false
     }
 
     public static var coveredToolIDs: [String] {
         ToolCalculationPolicy.knownToolIDs.filter { entries[$0] != nil }
     }
 
-    // MARK: - Homework IDs (match `ToolKind.homework` on the iOS catalog)
-
-    private static let homeworkIDs: Set<String> = [
-        "voltageDivider", "seriesParallel", "resistorColor", "frequencyWave", "ledRC",
-        "phasorDiagram", "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV",
-        "analogWorkbench", "noiseSNR", "instrumentationAmp",
-    ]
-
     // MARK: - Copy
 
     private static let entries: [String: ToolHowItWorks] = [
         "ohmsLaw": ToolHowItWorks(
-            summary: "Solves any two of V, I, and R, then reports power from P = V × I.",
-            context: "First-stop DC identity — leave the unknown blank.",
+            summary: "Find voltage, current, or resistance from the other two, then see the resulting power.",
+            context: "Use for one resistor or a quick DC check—not a whole circuit network.",
             bullets: [
-                "Ohm’s law only: a single resistance, not a network.",
-                "Power is a follow-on, not a fourth independent unknown.",
+                "Voltage = current × resistance (V = I × R). Leave the value you want to find blank.",
+                "Power = voltage × current (P = V × I); it is calculated from the answer, not a fourth unknown.",
             ]
         ),
         "power": ToolHowItWorks(
@@ -84,13 +75,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "voltageDrop": ToolHowItWorks(
-            summary: "Voltage drop for the code in Settings. NEC is a field-K estimate. AS/NZS is a metric resistance path.",
-            context: "Feeder or branch check before you pull wire.",
+            summary: "Estimates how much voltage a conductor loses along a run using the code selected in Settings.",
+            context: "Check a feeder or branch circuit before choosing or pulling conductors.",
             bullets: [
-                "NEC VD uses field K (≈12.9 Cu / 21.2 Al near 75 °C), CM, operating amps, and one-way feet. K is not Ch.9 Table 9.",
-                "Strip and table % both use dropPercent. 3%/5% notes are this-run Informational Notes, not feeder+branch. Ampacity row: 310.16 × runs vs entered amps.",
-                "Long 480 V feeders at 2 AWG and up: Table 8 R plus Table 9 X. Steel raceway uses the higher Table 9 X column.",
-                "AS/NZS: mm² sizes, IEC 60228 maximum R, Clause 3.6.2’s 5% limit, and a Table 5.1 copper earth. Not an AS/NZS 3008 mV/A·m table.",
+                "NEC uses conductor material, area, current, and one-way length. This field-K estimate is not the Chapter 9 Table 9 method.",
+                "The 3% and 5% figures are informational design guidance for this run—not a combined feeder-and-branch limit.",
+                "For long 480 V NEC runs at 2 AWG and larger, the calculation includes resistance and reactance from Tables 8 and 9.",
+                "AS/NZS uses mm², IEC 60228 maximum resistance, and its stated 5% installation limit. It does not check ampacity.",
             ]
         ),
         "conduitFill": ToolHowItWorks(
@@ -191,11 +182,11 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "voltageDivider": ToolHowItWorks(
-            summary: "Vout from Vin, R1, and R2 — or solves the missing resistor.",
-            context: "Unloaded divider. A load on Vout changes the answer.",
+            summary: "Finds the output voltage from two resistors, or solves for a missing resistor.",
+            context: "Use for an unloaded two-resistor divider. A device connected to the output changes the result.",
             bullets: [
-                "Vout = Vin · R2 / (R1 + R2). Leave one unknown blank.",
-                "Ideal DC, no source resistance. Not a potentiometer taper model.",
+                "Output voltage = input voltage × R2 ÷ (R1 + R2). R1 is above the output; R2 connects to ground.",
+                "Assumes an ideal DC source and no load on the output. It does not model source resistance or potentiometer taper.",
             ]
         ),
         "seriesParallel": ToolHowItWorks(
