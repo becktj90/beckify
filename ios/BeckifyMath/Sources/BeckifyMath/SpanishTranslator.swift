@@ -5,6 +5,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     case bodieHale
     case titoSolano
     case juniePell
+    case pearl
 
     public static let storageKey = "crewTalk.member"
     /// Playback model sent to `/api/speak`. The key stays on the server.
@@ -15,6 +16,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "Bodie Hale"
         case .titoSolano: return "Tito Solano"
         case .juniePell: return "Junie Pell"
+        case .pearl: return "Pearl"
         }
     }
 
@@ -24,6 +26,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "XVO6RhOYU9ZEKHFXrx6b"
         case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
         case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
+        case .pearl: return "xDnrPZyqSbomyfOcnNpu"
         }
     }
 
@@ -33,6 +36,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "crewBodieHale"
         case .titoSolano: return "crewTitoSolano"
         case .juniePell: return "crewJuniePell"
+        case .pearl: return "crewPearl"
         }
     }
 
@@ -42,6 +46,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "crewBodieHaleTalk"
         case .titoSolano: return "crewTitoSolanoTalk"
         case .juniePell: return "crewJuniePellTalk"
+        case .pearl: return "crewPearlTalk"
         }
     }
 
@@ -50,6 +55,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "California beach English. Laid-back, warm, and unhurried."
         case .titoSolano: return "Cuban jobsite Spanish. Raspy, direct, and steady."
         case .juniePell: return "Rural Alabama English. Slow, low, and kind."
+        case .pearl: return "Warm English. Softens a blunt ask and still makes it."
         }
     }
 
@@ -57,11 +63,11 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     public var speakLanguage: String {
         switch self {
         case .titoSolano: return "es"
-        case .bodieHale, .juniePell: return "en"
+        case .bodieHale, .juniePell, .pearl: return "en"
         }
     }
 
-    public var prefersFemaleDeviceVoice: Bool { self == .juniePell }
+    public var prefersFemaleDeviceVoice: Bool { self == .juniePell || self == .pearl }
 
     /// Apple fallback pace. Cloud voice is the real character.
     public var appleRateFactor: Float {
@@ -69,6 +75,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return 0.92
         case .titoSolano: return 0.84
         case .juniePell: return 0.70
+        case .pearl: return 0.92
         }
     }
 
@@ -77,6 +84,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return 0.96
         case .titoSolano: return 0.86
         case .juniePell: return 0.90
+        case .pearl: return 1.0
         }
     }
 
@@ -90,6 +98,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch folded {
         case "bodiehale", "bodie": return .bodieHale
         case "juniepell", "junie": return .juniePell
+        case "pearl": return .pearl
         case "titosolano", "tito": return .titoSolano
         default: return .titoSolano
         }
@@ -380,7 +389,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, or Junie Pell — and that 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, Junie Pell, or Pearl — and that 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -965,10 +974,71 @@ public enum SpanishTranslatorAPI {
         spanish: String,
         fallback: String
     ) -> String {
+        if crew == .pearl {
+            let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
+            let source = englishLine.isEmpty
+                ? fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+                : englishLine
+            return pearlWarmRewrite(source)
+        }
         let preferred = crew.speakLanguage == "es" ? spanish : english
         let trimmed = preferred.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
         return fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Pearl speaks the same ask in warm, convincing English. She does not scold and does not drop the request.
+    public static func pearlWarmRewrite(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let key = pearlFold(trimmed)
+        if let known = pearlKnownWarmLines[key] { return known }
+        let lower = trimmed.lowercased()
+        let alreadyWarm = ["please ", "please,", "would you", "could you", "can you", "would you mind"]
+        if alreadyWarm.contains(where: { lower.hasPrefix($0) }) {
+            return pearlSentence(trimmed)
+        }
+        return "Would you please \(pearlSoftenImperative(trimmed))?"
+    }
+
+    private static let pearlKnownWarmLines: [String: String] = [
+        "kill the power": "Would you please cut the power?",
+        "thats live dont touch it": "That line is live — please don't touch it.",
+        "hand me that conduit": "Could you hand me that conduit?",
+        "move the ladder": "Would you move the ladder for me?",
+        "watch your head": "Please watch your head.",
+        "we need more wire": "Could we get a little more wire?",
+        "who left this mess": "Could you help me see who left this mess?",
+    ]
+
+    private static func pearlFold(_ raw: String) -> String {
+        var text = raw.lowercased()
+        let drop = CharacterSet.punctuationCharacters.union(.symbols)
+        text = text.unicodeScalars.filter { !drop.contains($0) }.map(String.init).joined()
+        return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
+    private static func pearlSoftenImperative(_ raw: String) -> String {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        while let last = text.last, ".!?".contains(last) {
+            text.removeLast()
+        }
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = text.lowercased()
+        if lower.hasPrefix("kill the ") {
+            text = "cut the " + text.dropFirst("kill the ".count)
+        } else if lower.hasPrefix("kill ") {
+            text = "cut " + text.dropFirst("kill ".count)
+        }
+        guard let first = text.first else { return text }
+        return String(first).lowercased() + text.dropFirst()
+    }
+
+    private static func pearlSentence(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "" }
+        if ".!?".contains(trimmed.last!) { return trimmed }
+        return trimmed + "."
     }
 
     /// Shown on the Deep South card. Same English words, different neural character.

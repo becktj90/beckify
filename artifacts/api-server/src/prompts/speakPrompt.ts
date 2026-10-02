@@ -135,6 +135,7 @@ export const CREW_TALK_ELEVEN_VOICES = {
   bodieHale: "XVO6RhOYU9ZEKHFXrx6b",
   titoSolano: "goyf4sY4AqSvMIeO1hb5",
   juniePell: "tdK8noxHGTBqk6F18tbZ",
+  pearl: "xDnrPZyqSbomyfOcnNpu",
 } as const;
 
 const CREW_TALK_VOICE_IDS = new Set<string>(Object.values(CREW_TALK_ELEVEN_VOICES));

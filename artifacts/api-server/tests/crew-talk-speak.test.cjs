@@ -17,6 +17,7 @@ assert.match(speakPrompt, /ELEVENLABS_TTS_MODEL = "eleven_v3"/);
 assert.match(speakPrompt, /bodieHale: "XVO6RhOYU9ZEKHFXrx6b"/);
 assert.match(speakPrompt, /titoSolano: "goyf4sY4AqSvMIeO1hb5"/);
 assert.match(speakPrompt, /juniePell: "tdK8noxHGTBqk6F18tbZ"/);
+assert.match(speakPrompt, /pearl: "xDnrPZyqSbomyfOcnNpu"/);
 assert.match(speakPrompt, /shouldUseElevenLabsSpeak/);
 assert.match(speakPrompt, /resolveElevenLabsVoiceId/);
 
