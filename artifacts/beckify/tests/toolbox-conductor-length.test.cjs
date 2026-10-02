@@ -137,24 +137,25 @@ const assert = (name, condition) => {
   if (!condition) failures++;
   console.log((condition ? '  PASS  ' : '  FAIL  ') + name);
 };
-assert('copper weight label', cuKft.weightLabel === 'Copper Weight');
-assert('aluminum weight label', alKft.weightLabel === 'Aluminum Weight');
+assert('copper weight label', cuKft.weightLabel === 'Estimated copper mass — one conductor');
+assert('aluminum weight label', alKft.weightLabel === 'Estimated aluminum mass — one conductor');
 const optionLabel = (value) => {
   const match = html.match(new RegExp('<option value="' + value + '">([^<]+)</option>'));
   return match ? match[1] : '';
 };
-assert('HTML option: short to parallel', /^Short to parallel\b/.test(optionLabel('loop2')));
+assert('HTML option: two-conductor loop', /^Two-conductor loop\b/.test(optionLabel('loop2')));
 assert('HTML option: end-to-end', /^End-to-end\b/.test(optionLabel('single')));
-assert('HTML option: 3-phase far-end short', /^3-phase far-end short\b/.test(optionLabel('loop3')));
-assert('iOS catalog subtitle mentions milliohm and short-to-parallel',
-  catalog.includes('milliohm (mΩ)') && catalog.includes('short-to-parallel'));
-assert('iOS catalog subtitle mentions estimated copper or aluminum weight',
-  catalog.includes('estimated copper or aluminum weight'));
-assert('iOS catalog synonyms include shorted parallel and kelvin',
-  catalog.includes('"shorted parallel"') && catalog.includes('"kelvin"') && catalog.includes('"mohm"'));
-assert('iOS catalog synonyms include copper weight', catalog.includes('"copper weight"'));
+assert('HTML option: 3-conductor far-end short', /^3-conductor far-end short\b/.test(optionLabel('loop3')));
+assert('iOS catalog title is Wire Length Estimator', catalog.includes('title: "Wire Length Estimator"'));
+assert('iOS catalog subtitle mentions estimating length from resistance',
+  catalog.includes('subtitle: "Estimate length from resistance."'));
+assert('iOS catalog synonyms include legacy aliases and kelvin',
+  catalog.includes('"conductor length"') && catalog.includes('"cable length"') &&
+  catalog.includes('"resistance to length"') && catalog.includes('"kelvin"') && catalog.includes('"mohm"'));
+assert('iOS catalog synonyms include two-conductor loop and copper weight',
+  catalog.includes('"two-conductor loop"') && catalog.includes('"copper weight"'));
 assert('HTML more-info documents book lb/kft × one-way weight',
-  html.includes('estimated metal weight') && html.includes('12.43') && html.includes('one-way length') && html.includes('8.89 g/cm³') && html.includes('2.70 g/cm³'));
+  html.includes('estimated metal mass') && html.includes('12.43') && html.includes('one-way length') && html.includes('8.89 g/cm³') && html.includes('2.70 g/cm³'));
 
 console.log('\n--- E-bike helpers ---');
 ok('2 kW to watts', ebPowerToWatts(2, 'kw'), 2000, 0);
