@@ -103,15 +103,12 @@ struct SpanishTranslatorView: View {
         return status
     }
 
+    /// Just the translated message — not the source text, labels, or
+    /// disclaimer. The toolbar/sticky-bar copy button is the one-tap "copy
+    /// what I just heard" action; the full EN/ES/engine breakdown is still
+    /// available per-field via each language card's own copy button.
     private var copyText: String {
-        var lines = ["Spanish Translator"]
-        if !engine.englishText.isEmpty { lines.append("EN: \(engine.englishText)") }
-        if !engine.spanishText.isEmpty { lines.append("ES: \(engine.spanishText)") }
-        if !engine.dialectLabel.isEmpty { lines.append(engine.dialectLabel) }
-        if !engine.engineLabel.isEmpty { lines.append(engine.engineLabel) }
-        if !engine.voiceNote.isEmpty { lines.append(engine.voiceNote) }
-        lines.append(SpanishTranslatorAPI.disclaimer)
-        return lines.joined(separator: "\n")
+        direction.listensInSpanish ? engine.englishText : engine.spanishText
     }
 
     /// One short phase word — no STATUS essay, engine/URL notes, or voice tech.
