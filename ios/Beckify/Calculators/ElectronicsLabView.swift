@@ -20,6 +20,11 @@ struct ElectronicsLabView: View {
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var picture: LabPicture = .schematic
+    @State private var annotationLayer: LabAnnotationLayer = .values
+    @State private var showInspector = false
+    @State private var inspectorQuery = ""
+    @State private var selectedIdentityID: String?
+    @State private var selectedComponentID: String?
 
     var body: some View {
         ToolScaffold(
@@ -37,7 +42,7 @@ struct ElectronicsLabView: View {
 
     private var hub: some View {
         VStack(alignment: .leading, spacing: Theme.Space.md) {
-            Text("Pick a circuit. The schematic, node voltages, and branch currents (A / mA / µA) update as you edit. Circuits that fit a solderless board also open a Breadboard with the whole board in view and on-board meters.")
+            Text("Pick a circuit. Schematic and breadboard share one electrical identity. Node volts and branch currents (A / mA / µA) update as you edit. Tap a part, node, or branch — or open Inspector — for searchable readings. Label layers keep the picture readable; All detail stays in the inspector.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -136,6 +141,18 @@ struct ElectronicsLabView: View {
 
             if let solution = model.solution {
                 let breadboard = BreadboardLayouts.make(solution)
+                let identities = LabIdentityBook.identities(solution: solution, layout: breadboard)
+                let selectedIdentity = identities.first { $0.id == selectedIdentityID }
+                let highlightedNets: Set<String> = {
+                    if let selectedIdentity {
+                        return LabIdentityBook.netsTouched(by: selectedIdentity, layout: breadboard)
+                    }
+                    if let selectedComponentID, let breadboard,
+                       let component = breadboard.component(selectedComponentID) {
+                        return Set(component.leads.map(\.net).filter { !$0.isEmpty })
+                    }
+                    return []
+                }()
                 if breadboard != nil {
                     Picker("View", selection: $picture) {
                         ForEach(LabPicture.allCases) { item in
@@ -145,21 +162,66 @@ struct ElectronicsLabView: View {
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("electronicsLab.viewMode")
                 }
+                labelLayerPicker
+                HStack {
+                    Button {
+                        showInspector = true
+                    } label: {
+                        Label("Inspector", systemImage: "list.bullet.rectangle")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.accent)
+                    .accessibilityIdentifier("electronicsLab.inspector")
+                    Spacer()
+                    Text(LabCircuitCoverage.row(for: circuit).mode.title)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
                 if picture == .breadboard, let breadboard {
-                    BreadboardCard(layout: breadboard)
+                    BreadboardCard(
+                        layout: breadboard,
+                        annotationLayer: annotationLayer,
+                        selectedComponentID: selectedComponentID,
+                        highlightedNets: highlightedNets,
+                        onSelectComponent: { id in
+                            selectedComponentID = id
+                            selectedIdentityID = identities.first { $0.id == "bb:\(id)" || $0.id == "comp:\(id)" }?.id
+                            model.pickedNodeID = nil
+                            model.pickedBranchID = nil
+                            showInspector = true
+                        }
+                    )
                 } else {
                 SchematicCard(
                     solution: solution,
                     pickedNodeID: model.pickedNodeID,
                     pickedBranchID: model.pickedBranchID,
+                    annotationLayer: annotationLayer,
+                    highlightedNets: highlightedNets,
                     reduceMotion: reduceMotion,
-                    onPickNode: { model.pickedNodeID = $0; model.pickedBranchID = nil },
-                    onPickBranch: { model.pickedBranchID = $0; model.pickedNodeID = nil }
+                    onPickNode: {
+                        model.pickedNodeID = $0
+                        model.pickedBranchID = nil
+                        selectedComponentID = nil
+                        selectedIdentityID = "node:\($0)"
+                    },
+                    onPickBranch: {
+                        model.pickedBranchID = $0
+                        model.pickedNodeID = nil
+                        selectedComponentID = nil
+                        selectedIdentityID = "branch:\($0)"
+                    }
                 )
                 }
                 if let callout = model.callout {
                     Text(callout)
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                        .accessibilityIdentifier("electronicsLab.callout")
+                } else if let selectedIdentity {
+                    Text(inspectorLine(selectedIdentity))
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
                         .foregroundStyle(Theme.accent)
                         .accessibilityIdentifier("electronicsLab.callout")
                 }
@@ -209,7 +271,56 @@ struct ElectronicsLabView: View {
         }
         .onChange(of: model.circuit?.rawValue) { _, _ in
             picture = .schematic
+            annotationLayer = .values
+            selectedIdentityID = nil
+            selectedComponentID = nil
+            inspectorQuery = ""
         }
+        .sheet(isPresented: $showInspector) {
+            if let solution = model.solution {
+                LabInspectorSheet(
+                    identities: LabIdentityBook.identities(
+                        solution: solution,
+                        layout: BreadboardLayouts.make(solution)
+                    ),
+                    query: $inspectorQuery,
+                    selectedID: $selectedIdentityID,
+                    onSelect: { identity in
+                        selectedIdentityID = identity.id
+                        selectedComponentID = identity.id.split(separator: ":").last.map(String.init)
+                        if identity.kind == .node {
+                            model.pickedNodeID = identity.id.replacingOccurrences(of: "node:", with: "")
+                            model.pickedBranchID = nil
+                        } else if identity.kind == .branch {
+                            model.pickedBranchID = identity.id.replacingOccurrences(of: "branch:", with: "")
+                            model.pickedNodeID = nil
+                        }
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    private var labelLayerPicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionLabel("Labels")
+            Picker("Labels", selection: $annotationLayer) {
+                ForEach(LabAnnotationLayer.allCases.filter { $0 != .all }) { layer in
+                    Text(layer.title).tag(layer)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("electronicsLab.labelLayer")
+            Text("All detail stays in the Inspector — it is not crammed onto the board.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+        }
+    }
+
+    private func inspectorLine(_ identity: LabIdentity) -> String {
+        let value = identity.valueText ?? "no reading"
+        return "\(identity.displayName)  \(value)"
     }
 
     private func unknownPicker(_ info: ElectronicsCircuitInfo) -> some View {
@@ -529,6 +640,8 @@ private struct SchematicCard: View {
     var solution: LabSolution
     var pickedNodeID: String?
     var pickedBranchID: String?
+    var annotationLayer: LabAnnotationLayer = .values
+    var highlightedNets: Set<String> = []
     var reduceMotion: Bool
     var onPickNode: (String) -> Void
     var onPickBranch: (String) -> Void
@@ -571,7 +684,9 @@ private struct SchematicCard: View {
                     size: size,
                     phase: phase,
                     pickedNodeID: pickedNodeID,
-                    pickedBranchID: pickedBranchID
+                    pickedBranchID: pickedBranchID,
+                    annotationLayer: annotationLayer,
+                    highlightedNets: highlightedNets
                 )
             }
             .gesture(
@@ -623,27 +738,102 @@ private enum SchematicDraw {
         size: CGSize,
         phase: Double,
         pickedNodeID: String?,
-        pickedBranchID: String?
+        pickedBranchID: String?,
+        annotationLayer: LabAnnotationLayer = .values,
+        highlightedNets: Set<String> = []
     ) {
         for element in solution.elements where element.part == .wire || element.part == .line {
             strokeElement(element, in: context, size: size, emphasized: false)
         }
         for element in solution.elements where element.part != .wire && element.part != .line {
-            strokeElement(element, in: context, size: size, emphasized: false)
-            label(element, in: context, size: size)
+            let hot = highlightedNets.contains(element.label) || highlightedNets.contains(element.id)
+            strokeElement(element, in: context, size: size, emphasized: hot)
+            // Part labels use the shared annotation format; dense values prefer Values+.
+            label(element, in: context, size: size, layer: annotationLayer)
         }
+        let canvas = LabRect2(x: 0, y: 0, width: Double(size.width), height: Double(size.height))
+        var obstacles: [LabRect2] = []
+        var requests: [LabAnnotationRequest] = []
+
+        if annotationLayer == .measurements || annotationLayer == .all {
+            for node in solution.nodes {
+                let center = map(node.at, size)
+                let reading = labReading(node.value, unit: node.unit)
+                if let text = LabAnnotationFormat.measurementLabel(name: node.name, reading: reading, layer: annotationLayer) {
+                    requests.append(LabAnnotationRequest(
+                        id: "node-\(node.id)",
+                        text: text,
+                        anchor: LabVec2(x: Double(center.x), y: Double(center.y)),
+                        layer: .measurements,
+                        fontSize: 14
+                    ))
+                }
+                obstacles.append(LabRect2(x: Double(center.x - 10), y: Double(center.y - 10), width: 20, height: 20))
+            }
+            for branch in solution.branches {
+                let mid = CGPoint(
+                    x: (map(branch.a, size).x + map(branch.b, size).x) / 2,
+                    y: (map(branch.a, size).y + map(branch.b, size).y) / 2
+                )
+                let reading = labReading(abs(branch.value), unit: branch.unit.isEmpty ? "A" : branch.unit)
+                if let text = LabAnnotationFormat.measurementLabel(name: branch.name, reading: reading, layer: annotationLayer) {
+                    requests.append(LabAnnotationRequest(
+                        id: "branch-\(branch.id)",
+                        text: text,
+                        anchor: LabVec2(x: Double(mid.x), y: Double(mid.y)),
+                        layer: .measurements,
+                        fontSize: 14
+                    ))
+                }
+            }
+            let placed = LabAnnotationEngine.place(
+                requests: requests,
+                obstacles: obstacles,
+                canvas: canvas,
+                activeLayers: [.measurements]
+            )
+            for item in placed {
+                drawPlacedAnnotation(item, in: context, emphasized: false)
+            }
+        }
+
         for branch in solution.branches {
             drawCurrent(
                 branch,
                 in: context,
                 size: size,
                 phase: phase,
-                emphasized: branch.id == pickedBranchID
+                emphasized: branch.id == pickedBranchID,
+                showLabel: annotationLayer == .minimal || annotationLayer == .values
             )
         }
         for node in solution.nodes {
-            drawNode(node, in: context, size: size, emphasized: node.id == pickedNodeID)
+            drawNode(
+                node,
+                in: context,
+                size: size,
+                emphasized: node.id == pickedNodeID,
+                showLabel: annotationLayer == .minimal || annotationLayer == .values
+            )
         }
+    }
+
+    private static func drawPlacedAnnotation(_ item: LabPlacedAnnotation, in context: GraphicsContext, emphasized: Bool) {
+        let rect = CGRect(x: item.frame.x, y: item.frame.y, width: item.frame.width, height: item.frame.height)
+        context.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(Theme.surface.opacity(0.92)))
+        context.stroke(Path(roundedRect: rect, cornerRadius: 5), with: .color(Theme.border), lineWidth: 1)
+        if let from = item.leaderFrom {
+            var path = Path()
+            path.move(to: CGPoint(x: from.x, y: from.y))
+            path.addLine(to: CGPoint(x: item.leaderTo.x, y: item.leaderTo.y))
+            context.stroke(path, with: .color(Theme.muted), lineWidth: 1)
+        }
+        let resolved = context.resolve(
+            Text(item.text)
+                .font(.system(size: CGFloat(item.fontSize), weight: .semibold).monospacedDigit())
+                .foregroundColor(emphasized ? Theme.good : Theme.foreground)
+        )
+        context.draw(resolved, at: CGPoint(x: item.frame.midX, y: item.frame.midY), anchor: .center)
     }
 
     static func hit(solution: LabSolution, at point: CGPoint, size: CGSize) -> SchematicHit {
@@ -669,12 +859,14 @@ private enum SchematicDraw {
     private static func strokeElement(_ element: LabElement, in context: GraphicsContext, size: CGSize, emphasized: Bool) {
         let a = map(element.a, size)
         let b = map(element.b, size)
+        let widthBoost: CGFloat = emphasized ? 1.35 : 1
+        let colorBoost = emphasized ? Theme.good : Theme.foreground
         var path = Path()
         switch element.part {
         case .wire:
             path.move(to: a)
             path.addLine(to: b)
-            stroke(path, in: context, color: Theme.foreground, width: 1.6)
+            stroke(path, in: context, color: colorBoost, width: 1.6 * widthBoost)
         case .line:
             transmission(from: a, to: b, into: &path)
             stroke(path, in: context, color: Theme.accent, width: 1.6)
@@ -717,11 +909,11 @@ private enum SchematicDraw {
         case .zBlock:
             block(from: a, to: b, in: context, size: size)
         }
-        _ = emphasized
     }
 
-    private static func label(_ element: LabElement, in context: GraphicsContext, size: CGSize) {
-        guard !element.label.isEmpty || !element.detail.isEmpty else { return }
+    private static func label(_ element: LabElement, in context: GraphicsContext, size: CGSize, layer: LabAnnotationLayer = .values) {
+        let value = element.detail.isEmpty ? nil : element.detail
+        guard let text = LabAnnotationFormat.partLabel(refdes: element.label.isEmpty ? element.id.uppercased() : element.label, valueText: value, layer: layer) else { return }
         let a = map(element.a, size)
         let b = map(element.b, size)
         let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
@@ -729,25 +921,25 @@ private enum SchematicDraw {
         let length = max(hypot(delta.x, delta.y), 1)
         let normal = CGPoint(x: -delta.y / length, y: delta.x / length)
         let point = CGPoint(x: mid.x + normal.x * 12, y: mid.y + normal.y * 12)
-        let text = [element.label, element.detail].filter { !$0.isEmpty }.joined(separator: " ")
         let resolved = context.resolve(
-            Text(text).font(.system(size: 10, weight: .medium)).foregroundColor(Theme.muted)
+            Text(text).font(.system(size: 13, weight: .medium).monospacedDigit()).foregroundColor(Theme.muted)
         )
         context.draw(resolved, at: point, anchor: .center)
     }
 
-    private static func drawNode(_ node: LabNode, in context: GraphicsContext, size: CGSize, emphasized: Bool) {
+    private static func drawNode(_ node: LabNode, in context: GraphicsContext, size: CGSize, emphasized: Bool, showLabel: Bool = true) {
         let center = map(node.at, size)
         let radius: CGFloat = emphasized ? 6 : 4.5
         let dot = Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
         context.fill(dot, with: .color(emphasized ? Theme.good : Theme.accent))
+        guard showLabel else { return }
         let reading = labReading(node.value, unit: node.unit)
         let resolved = context.resolve(
             Text("\(node.name) \(reading)")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
                 .foregroundColor(emphasized ? Theme.good : Theme.foreground)
         )
-        context.draw(resolved, at: CGPoint(x: center.x, y: center.y - 12), anchor: .bottom)
+        context.draw(resolved, at: CGPoint(x: center.x, y: center.y - 14), anchor: .bottom)
     }
 
     private static func drawCurrent(
@@ -755,7 +947,8 @@ private enum SchematicDraw {
         in context: GraphicsContext,
         size: CGSize,
         phase: Double,
-        emphasized: Bool
+        emphasized: Bool,
+        showLabel: Bool = true
     ) {
         guard abs(branch.value) > 1e-15 || branch.unit.isEmpty else { return }
         let start = map(branch.value >= 0 ? branch.a : branch.b, size)
@@ -779,10 +972,11 @@ private enum SchematicDraw {
         )
         let unitText = branch.unit.isEmpty ? "" : branch.unit
         let reading = labReading(abs(branch.value), unit: unitText.isEmpty ? "A" : unitText)
+        guard showLabel else { return }
         let label = "\(branch.name) \(reading)"
         let resolved = context.resolve(
             Text(label)
-                .font(.system(size: emphasized ? 11 : 10, weight: .semibold).monospacedDigit())
+                .font(.system(size: emphasized ? 14 : 13, weight: .semibold).monospacedDigit())
                 .foregroundColor(emphasized ? Theme.good : Theme.energized)
         )
         context.draw(resolved, at: labelAt, anchor: .center)
@@ -1064,5 +1258,79 @@ private enum SchematicDraw {
         let x = a.x + ab.x * t
         let y = a.y + ab.y * t
         return hypot(p.x - x, p.y - y)
+    }
+}
+
+
+private struct LabInspectorSheet: View {
+    var identities: [LabIdentity]
+    @Binding var query: String
+    @Binding var selectedID: String?
+    var onSelect: (LabIdentity) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            let rows = LabIdentityBook.filter(identities, query: query)
+            List {
+                Section {
+                    TextField("Search components, nets, readings", text: $query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .font(.body)
+                        .accessibilityIdentifier("electronicsLab.inspector.search")
+                }
+                Section("Electrical identity") {
+                    ForEach(rows) { item in
+                        Button {
+                            onSelect(item)
+                            selectedID = item.id
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(item.displayName)
+                                        .font(.body.weight(.semibold))
+                                        .foregroundStyle(Theme.foreground)
+                                    Spacer()
+                                    Text(item.kind.rawValue)
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.muted)
+                                }
+                                if let value = item.valueText {
+                                    Text(value)
+                                        .font(.body.monospacedDigit())
+                                        .foregroundStyle(Theme.accent)
+                                } else {
+                                    Text("No solved reading")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.muted)
+                                }
+                                if let net = item.net, !net.isEmpty {
+                                    Text("Net \(net)")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.muted)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(item.id == selectedID ? Theme.accent.opacity(0.12) : Theme.surface)
+                        .accessibilityLabel(accessibility(item))
+                    }
+                }
+            }
+            .navigationTitle("Inspector")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func accessibility(_ item: LabIdentity) -> String {
+        let value = item.valueText ?? "no reading"
+        return "\(item.kind.rawValue) \(item.displayName) \(value)"
     }
 }

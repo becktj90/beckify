@@ -3,6 +3,10 @@ import BeckifyMath
 
 struct BreadboardCard: View {
     var layout: BreadboardLayout
+    var annotationLayer: LabAnnotationLayer = .values
+    var selectedComponentID: String? = nil
+    var highlightedNets: Set<String> = []
+    var onSelectComponent: ((String) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -13,7 +17,7 @@ struct BreadboardCard: View {
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
                 PlotFullscreenControl(title: "Breadboard", plotName: "breadboard") {
-                    BreadboardFitView(layout: layout, baseHeight: 420)
+                    BreadboardFitView(layout: layout, baseHeight: 420, annotationLayer: annotationLayer, selectedComponentID: selectedComponentID, highlightedNets: highlightedNets, onSelectComponent: onSelectComponent)
                     meterStrip
                     Text(layout.caption)
                         .font(Theme.TypeRole.help)
@@ -25,10 +29,10 @@ struct BreadboardCard: View {
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
-            BreadboardFitView(layout: layout, baseHeight: 220)
+            BreadboardFitView(layout: layout, baseHeight: 220, annotationLayer: annotationLayer, selectedComponentID: selectedComponentID, highlightedNets: highlightedNets, onSelectComponent: onSelectComponent)
                 .accessibilityIdentifier("electronicsLab.breadboard")
             meterStrip
-            Text("Whole board on open. Pinch to zoom, drag when zoomed, double-tap to reset.")
+            Text("Whole board on open. Pinch to zoom, drag when zoomed, double-tap to reset. Tap a part to inspect. Dense readings stay in the inspector.")
                 .font(.caption2)
                 .foregroundStyle(Theme.muted)
         }
@@ -59,6 +63,10 @@ struct BreadboardCard: View {
 struct BreadboardFitView: View {
     var layout: BreadboardLayout
     var baseHeight: CGFloat
+    var annotationLayer: LabAnnotationLayer = .values
+    var selectedComponentID: String? = nil
+    var highlightedNets: Set<String> = []
+    var onSelectComponent: ((String) -> Void)? = nil
 
     @State private var zoom: CGFloat = 1
     @State private var liveZoom: CGFloat = 1
@@ -68,7 +76,7 @@ struct BreadboardFitView: View {
     var body: some View {
         GeometryReader { geo in
             let fitted = Self.fitPitch(forWidth: geo.size.width, height: geo.size.height)
-            let picture = BreadboardPicture(layout: layout, pitch: fitted)
+            let picture = BreadboardPicture(layout: layout, pitch: fitted, annotationLayer: annotationLayer, selectedComponentID: selectedComponentID, highlightedNets: highlightedNets)
             let size = BreadboardPaint.size(pitch: fitted)
             let framed = picture
                 .frame(width: size.width, height: size.height)
@@ -83,6 +91,21 @@ struct BreadboardFitView: View {
                     pan = .zero
                     panOrigin = .zero
                 }
+                .simultaneousGesture(
+                    SpatialTapGesture().onEnded { value in
+                        guard let onSelectComponent else { return }
+                        if let id = BreadboardPaint.hitComponent(
+                            layout,
+                            at: value.location,
+                            pitch: fitted,
+                            viewSize: geo.size,
+                            zoom: zoom * liveZoom,
+                            pan: pan
+                        ) {
+                            onSelectComponent(id)
+                        }
+                    }
+                )
             Group {
                 if zoom > 1.02 {
                     framed.simultaneousGesture(panGesture)
@@ -133,11 +156,21 @@ struct BreadboardFitView: View {
 struct BreadboardPicture: View {
     var layout: BreadboardLayout
     var pitch: CGFloat
+    var annotationLayer: LabAnnotationLayer = .values
+    var selectedComponentID: String? = nil
+    var highlightedNets: Set<String> = []
 
     var body: some View {
         let size = BreadboardPaint.size(pitch: pitch)
         Canvas { context, _ in
-            BreadboardPaint.draw(layout, in: context, pitch: pitch)
+            BreadboardPaint.draw(
+                layout,
+                in: context,
+                pitch: pitch,
+                annotationLayer: annotationLayer,
+                selectedComponentID: selectedComponentID,
+                highlightedNets: highlightedNets
+            )
         }
         .frame(width: size.width, height: size.height)
         .accessibilityElement(children: .ignore)
@@ -157,7 +190,14 @@ enum BreadboardPaint {
         return "Breadboard. \(parts). \(layout.caption)\(meterBit)"
     }
 
-    static func draw(_ layout: BreadboardLayout, in context: GraphicsContext, pitch: CGFloat) {
+    static func draw(
+        _ layout: BreadboardLayout,
+        in context: GraphicsContext,
+        pitch: CGFloat,
+        annotationLayer: LabAnnotationLayer = .values,
+        selectedComponentID: String? = nil,
+        highlightedNets: Set<String> = []
+    ) {
         let map = Map(pitch: pitch)
         drawBoard(in: context, map: map)
         drawRails(layout, in: context, map: map)
@@ -166,15 +206,62 @@ enum BreadboardPaint {
         for supply in layout.supplies {
             drawSupply(supply, in: context, map: map)
         }
+        for jumper in layout.jumpers {
+            drawJumper(jumper, in: context, map: map, emphasized: highlightedNets.contains(jumper.net))
+        }
         for component in layout.components {
             drawComponent(component, in: context, map: map)
+            if component.id == selectedComponentID {
+                highlightSelection(component, in: context, map: map)
+            }
         }
-        for jumper in layout.jumpers {
-            drawJumper(jumper, in: context, map: map)
+        let showMeters = annotationLayer == .measurements || annotationLayer == .all || (annotationLayer == .values && pitch >= 12)
+        if showMeters {
+            for meter in layout.meters.prefix(annotationLayer == .values ? 4 : layout.meters.count) {
+                drawMeter(meter, in: context, map: map)
+            }
         }
-        for meter in layout.meters {
-            drawMeter(meter, in: context, map: map)
+    }
+
+    static func hitComponent(
+        _ layout: BreadboardLayout,
+        at point: CGPoint,
+        pitch: CGFloat,
+        viewSize: CGSize,
+        zoom: CGFloat,
+        pan: CGSize
+    ) -> String? {
+        let map = Map(pitch: pitch)
+        let board = size(pitch: pitch)
+        let originX = (viewSize.width - board.width * zoom) / 2 + pan.width
+        let originY = (viewSize.height - board.height * zoom) / 2 + pan.height
+        let local = CGPoint(x: (point.x - originX) / zoom, y: (point.y - originY) / zoom)
+        var best: (String, CGFloat)?
+        for component in layout.components {
+            let centers = component.leads.map { map.center($0.hole) }
+            guard !centers.isEmpty else { continue }
+            let mid = CGPoint(
+                x: centers.map(\.x).reduce(0, +) / CGFloat(centers.count),
+                y: centers.map(\.y).reduce(0, +) / CGFloat(centers.count)
+            )
+            let distance = hypot(mid.x - local.x, mid.y - local.y)
+            if distance < pitch * 1.8, best == nil || distance < best!.1 {
+                best = (component.id, distance)
+            }
         }
+        return best?.0
+    }
+
+    private static func highlightSelection(_ component: BBComponent, in context: GraphicsContext, map: Map) {
+        let centers = component.leads.map { map.center($0.hole) }
+        guard !centers.isEmpty else { return }
+        let mid = CGPoint(
+            x: centers.map(\.x).reduce(0, +) / CGFloat(centers.count),
+            y: centers.map(\.y).reduce(0, +) / CGFloat(centers.count)
+        )
+        let radius = map.pitch * 1.6
+        let rect = CGRect(x: mid.x - radius, y: mid.y - radius, width: radius * 2, height: radius * 2)
+        context.stroke(Path(ellipseIn: rect), with: .color(Color.cyan.opacity(0.95)), lineWidth: 2)
     }
 
     private struct Map {
@@ -305,7 +392,7 @@ enum BreadboardPaint {
         }
     }
 
-    private static func drawJumper(_ jumper: BBJumper, in context: GraphicsContext, map: Map) {
+    private static func drawJumper(_ jumper: BBJumper, in context: GraphicsContext, map: Map, emphasized: Bool = false) {
         let points = BreadboardRoute.manhattan(from: jumper.a, to: jumper.b).map {
             CGPoint(x: map.origin.x + CGFloat($0.x - 1) * map.pitch, y: map.origin.y + CGFloat($0.y) * map.pitch)
         }
@@ -324,7 +411,7 @@ enum BreadboardPaint {
         context.stroke(
             path,
             with: .color(color),
-            style: StrokeStyle(lineWidth: map.pitch * 0.15, lineCap: .round, lineJoin: .round)
+            style: StrokeStyle(lineWidth: max(emphasized ? 3.4 : 2.2, map.pitch * (emphasized ? 0.22 : 0.16)), lineCap: .round, lineJoin: .round)
         )
         plug(at: points[0], color: color, pitch: map.pitch, in: context)
         plug(at: points[points.count - 1], color: color, pitch: map.pitch, in: context)
@@ -359,6 +446,8 @@ enum BreadboardPaint {
         case .npn(let name):
             drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["E", "B", "C"], pitch: map.pitch, in: context)
         case .nmos(let name):
+            drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["S", "G", "D"], pitch: map.pitch, in: context)
+        case .pmos(let name):
             drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["S", "G", "D"], pitch: map.pitch, in: context)
         case .dip8(let name, _):
             drawDIP(component.leads.map { map.center($0.hole) }, name: name, pitch: map.pitch, in: context)
@@ -640,7 +729,7 @@ enum BreadboardPaint {
         let anchor = map.center(meter.hole)
         let pitch = map.pitch
         let title = "\(meter.title) \(meter.reading)"
-        let fontSize = max(8, pitch * 0.38)
+        let fontSize = min(15, max(12, pitch * 0.55))
         let resolved = context.resolve(
             Text(title)
                 .font(.system(size: fontSize, weight: .bold).monospacedDigit())
@@ -673,10 +762,11 @@ enum BreadboardPaint {
     }
 
     private static func labelAbove(_ text: String, at point: CGPoint, pitch: CGFloat, in context: GraphicsContext) {
+        let fontSize = min(15, max(11, pitch * 0.55))
         let resolved = context.resolve(
-            Text(text).font(.system(size: max(8, pitch * 0.38), weight: .semibold)).foregroundColor(rgb(0x2C2924))
+            Text(text).font(.system(size: fontSize, weight: .semibold).monospacedDigit()).foregroundColor(rgb(0x2C2924))
         )
-        context.draw(resolved, at: CGPoint(x: point.x, y: point.y - pitch * 0.48), anchor: .bottom)
+        context.draw(resolved, at: CGPoint(x: point.x, y: point.y - pitch * 0.55), anchor: .bottom)
     }
 
     private static func plug(at point: CGPoint, color: Color, pitch: CGFloat, in context: GraphicsContext) {
@@ -701,7 +791,7 @@ enum BreadboardPaint {
         case .ceramic(_, let label), .electrolytic(_, let label): return label
         case .led(let label), .diode(let label): return label
         case .inductor(_, let label): return label
-        case .npn(let name), .nmos(let name): return name
+        case .npn(let name), .nmos(let name), .pmos(let name): return name
         case .dip8(let name, _): return name
         case .display(let name, let digit, _, _): return "\(name) digit \(digit)"
         case .source(let label): return label
