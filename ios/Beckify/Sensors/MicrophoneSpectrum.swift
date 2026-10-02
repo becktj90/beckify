@@ -69,8 +69,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
     private let worker = DispatchQueue(label: "com.beckify.toolbox.mic-dsp", qos: .userInitiated)
     private let workerLock = OSAllocatedUnfairLock(initialState: WorkerFlags())
     private var lastPublish = Date.distantPast
-    private var routeObserver: NSObjectProtocol?
-    private var mediaResetObserver: NSObjectProtocol?
+    private let notificationObservers = MicrophoneNotificationObservers()
     private var nextFrameID: UInt64 = 0
 
     private struct WorkerFlags: Sendable {
@@ -86,18 +85,6 @@ final class MicrophoneSpectrumCenter: ObservableObject {
 
     private init() {
         observeRouteChanges()
-    }
-
-    // `routeObserver`/`mediaResetObserver` are `NSObjectProtocol`, which is not Sendable,
-    // so a plain `nonisolated deinit` cannot read these @MainActor-isolated properties
-    // under Swift 6 concurrency checking. `isolated deinit` keeps teardown on the main actor.
-    isolated deinit {
-        if let routeObserver {
-            NotificationCenter.default.removeObserver(routeObserver)
-        }
-        if let mediaResetObserver {
-            NotificationCenter.default.removeObserver(mediaResetObserver)
-        }
     }
 
     func retain(_ token: UUID, role: String) {
@@ -153,14 +140,14 @@ final class MicrophoneSpectrumCenter: ObservableObject {
 
     private func observeRouteChanges() {
         let center = NotificationCenter.default
-        routeObserver = center.addObserver(
+        notificationObservers.routeObserver = center.addObserver(
             forName: AVAudioSession.routeChangeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.noteRouteOrGainChange() }
         }
-        mediaResetObserver = center.addObserver(
+        notificationObservers.mediaResetObserver = center.addObserver(
             forName: AVAudioSession.mediaServicesWereResetNotification,
             object: nil,
             queue: .main
@@ -898,5 +885,19 @@ final class WindowBox: @unchecked Sendable {
 
     func set(_ kind: SpectrumWindowKind) {
         lock.withLock { $0 = kind }
+    }
+}
+
+
+/// Owns notification tokens independently of the main-actor microphone center.
+/// NotificationCenter supports removing observers from any thread, so this
+/// teardown needs no experimental isolated-deinit language feature.
+private final class MicrophoneNotificationObservers {
+    var routeObserver: NSObjectProtocol?
+    var mediaResetObserver: NSObjectProtocol?
+
+    deinit {
+        if let routeObserver { NotificationCenter.default.removeObserver(routeObserver) }
+        if let mediaResetObserver { NotificationCenter.default.removeObserver(mediaResetObserver) }
     }
 }
