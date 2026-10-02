@@ -203,25 +203,26 @@ final class AmpacityDeratingTests: XCTestCase {
 
     func testDeratingStackParallelRunsStayOnTheRequiredTotal() throws {
         let r = try WireAmpacity.evaluate(AmpacityDeratingInput(
-            size: "3",
+            size: "1/0",
             material: .copper,
             insulation: .c90,
             termination: .c75,
             ambientC: 30,
             currentCarryingCount: 3,
             parallelRuns: 2,
-            loadAmps: 180
+            loadAmps: 280
         ))
         let stack = try XCTUnwrap(DeratingStackReadout(result: r))
         XCTAssertEqual(stack.parallelRuns, 2)
-        XCTAssertEqual(stack.stages[0].perConductorAmps, 115, accuracy: 1e-6)
-        XCTAssertEqual(stack.stages[0].ampacity, 230, accuracy: 1e-6)
+        XCTAssertEqual(stack.stages[0].perConductorAmps, 170, accuracy: 1e-6)
+        XCTAssertEqual(stack.stages[0].ampacity, 340, accuracy: 1e-6)
         XCTAssertEqual(stack.stages[3].ampacity, r.usableTotal, accuracy: 1e-6)
-        XCTAssertEqual(stack.designCurrent ?? -1, 180, accuracy: 1e-9)
+        XCTAssertEqual(stack.designCurrent ?? -1, 280, accuracy: 1e-9)
         XCTAssertEqual(stack.verdict, .meetsRequired)
-        XCTAssertTrue(stack.announcement.contains("200 A usable, 180 A required."))
+        XCTAssertTrue(stack.announcement.contains("300 A usable, 280 A required."))
         XCTAssertTrue(stack.announcement.contains("2 parallel runs."))
-        XCTAssertTrue(stack.caption.contains("Per conductor: 310.16 115 A"))
+        XCTAssertTrue(stack.caption.contains("Per conductor: 310.16 170 A"))
+        XCTAssertTrue(r.parallelEligible)
     }
 
     func testDeratingStackLabelMatchesResultRowRounding() {
@@ -232,6 +233,90 @@ final class AmpacityDeratingTests: XCTestCase {
         XCTAssertEqual(DeratingStackReadout.ampsLabel(1500), "1.5 kA")
         XCTAssertEqual(DeratingStackReadout.ampsLabel(12028), "12 kA")
     }
+
+    func testParallelRunsRejectZeroAndFractionsInsteadOfClamping() {
+        XCTAssertThrowsError(try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "1/0", material: .copper, parallelRuns: 0
+        )))
+        XCTAssertThrowsError(try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "1/0", material: .copper, parallelRuns: -2
+        )))
+        XCTAssertThrowsError(try WireAmpacity.selectConductor(
+            loadAmps: 95, material: .copper, parallelRuns: 0
+        ))
+    }
+
+    func testCCCFractionalCountIsRejectedNotTruncated() {
+        // WholeCount is the gate; UI must not Int-truncate before calling.
+        XCTAssertThrowsError(try WholeCount.parse(3.7, name: "Current-carrying conductor count"))
+        XCTAssertThrowsError(try WholeCount.parse(2.2, name: "Parallel runs"))
+        XCTAssertEqual(try WholeCount.parse(3.0, name: "Current-carrying conductor count"), 3)
+    }
+
+    func testAmbientOutsideDomainIsRejected() {
+        XCTAssertThrowsError(try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3", material: .copper, insulation: .c75, ambientC: 5
+        )))
+        XCTAssertThrowsError(try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3", material: .copper, insulation: .c75, ambientC: 71
+        )))
+        XCTAssertThrowsError(try NECAmpacityFactors.requireAmbientInDomain(ambientC: 90, insulation: .c90))
+        XCTAssertNoThrow(try NECAmpacityFactors.requireAmbientInDomain(ambientC: 25, insulation: .c60))
+    }
+
+    func testParallelEligibilityRejectsBelowOneAught() {
+        XCTAssertFalse(WireAmpacity.isParallelEligible(size: "3"))
+        XCTAssertTrue(WireAmpacity.isParallelEligible(size: "1/0"))
+        XCTAssertThrowsError(try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3", material: .copper, parallelRuns: 2, loadAmps: 180
+        )))
+    }
+
+    func testSmallConductorLimitsAreMaterialSpecific() {
+        XCTAssertEqual(WireAmpacity.smallConductorMaxOCPD(size: "14", material: .copper), 15)
+        XCTAssertEqual(WireAmpacity.smallConductorMaxOCPD(size: "12", material: .copper), 20)
+        XCTAssertEqual(WireAmpacity.smallConductorMaxOCPD(size: "10", material: .copper), 30)
+        XCTAssertEqual(WireAmpacity.smallConductorMaxOCPD(size: "12", material: .aluminum), 15)
+        XCTAssertEqual(WireAmpacity.smallConductorMaxOCPD(size: "10", material: .aluminum), 25)
+        XCTAssertNil(WireAmpacity.smallConductorMaxOCPD(size: "14", material: .aluminum))
+        XCTAssertNil(WireAmpacity.smallConductorMaxOCPD(size: "8", material: .copper))
+    }
+
+    func testSmallConductorOCPDBlocksNextSizeUp() throws {
+        let r = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "12",
+            material: .copper,
+            insulation: .c90,
+            termination: .c75,
+            ambientC: 30,
+            currentCarryingCount: 3,
+            loadAmps: 18,
+            ocpdAmps: 25
+        ))
+        XCTAssertEqual(r.nextSizeUpAllowed, false)
+        XCTAssertEqual(r.ocpdOK, false)
+        XCTAssertTrue(r.warnings.contains { $0.message.contains("240.4(D)") })
+    }
+
+    func testOCPDNextSizePrerequisitesBetweenStandardRatings() throws {
+        // #3 Cu 75 °C usable 100 A — exact standard rating, next-size-up not required.
+        let exact = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "3", material: .copper, insulation: .c75, termination: .c75,
+            ambientC: 30, currentCarryingCount: 3, loadAmps: 95
+        ))
+        XCTAssertEqual(exact.usablePerRun, 100, accuracy: 1e-9)
+        XCTAssertEqual(exact.nextSizeUpAllowed, false)
+
+        // 40 °C on #2 Cu 75 °C: base 115 × 0.88 = 101.2 — between 100 and 110.
+        let between = try WireAmpacity.evaluate(AmpacityDeratingInput(
+            size: "2", material: .copper, insulation: .c75, termination: .c75,
+            ambientC: 40, currentCarryingCount: 3, loadAmps: 90
+        ))
+        XCTAssertEqual(between.usablePerRun, 115 * 0.88, accuracy: 1e-9)
+        XCTAssertEqual(between.nextSizeUpAllowed, true)
+        XCTAssertTrue(between.ocpdGuidanceNote?.contains("240.4(B)") == true)
+    }
+
 }
 
 final class VoltageDropSizingTests: XCTestCase {
@@ -353,5 +438,64 @@ final class VoltageDropSizingTests: XCTestCase {
         ))
         XCTAssertTrue(r.candidates.contains { $0.size == "10" })
         XCTAssertGreaterThan(r.candidates.count, 5)
+    }
+}
+
+
+final class ConductorGeometryTests: XCTestCase {
+    func testTable5OverallIsSeparateFromTempColumn() throws {
+        let g90 = try XCTUnwrap(ConductorGeometryModel.resolve(size: "3", material: .copper, construction: .thhn))
+        let g60 = try XCTUnwrap(ConductorGeometryModel.resolve(size: "3", material: .copper, construction: .thhn))
+        XCTAssertEqual(g90.overallDiameterInches, g60.overallDiameterInches, accuracy: 1e-12)
+        XCTAssertTrue(g90.overallFromTable5)
+        XCTAssertGreaterThan(g90.overallDiameterInches, g90.metalDiameterInches)
+        XCTAssertEqual(g90.metalDiameterInches, sqrt(52620) / 1000, accuracy: 1e-12)
+        // Construction is not the ampacity column.
+        XCTAssertEqual(g90.construction.insulation, .thhn)
+    }
+
+    func testEquivalentAreaWhenUnknownUsesMetalOnlyAndLabels() throws {
+        let profile = ConductorConstructionProfile(insulation: .thhn, listedInTable5: false)
+        let g = try XCTUnwrap(ConductorGeometryModel.resolve(size: "3", material: .copper, construction: profile))
+        XCTAssertFalse(g.overallFromTable5)
+        XCTAssertEqual(g.overallDiameterInches, g.metalDiameterInches, accuracy: 1e-9)
+        XCTAssertTrue(g.geometryNote.localizedCaseInsensitiveContains("equivalent-area"))
+    }
+
+    func testParallelLayoutDrawsIndividualEqualsAndEGCSameScale() throws {
+        let phase = try XCTUnwrap(ConductorGeometryModel.resolve(size: "1/0", material: .copper, construction: .thhn))
+        let egc = try XCTUnwrap(ConductorGeometryModel.resolve(size: "6", material: .copper, construction: .thhn))
+        let layout = AmpacityConductorLayout.make(
+            phase: phase,
+            egc: egc,
+            parallelRuns: 3,
+            usableAmps: 300,
+            requiredAmps: 280,
+            ambientC: 30,
+            ccc: 3,
+            limitedByTermination: true
+        )
+        XCTAssertEqual(layout.conductors.filter { $0.role == .phase }.count, 3)
+        XCTAssertEqual(layout.conductors.filter { $0.role == .egc }.count, 1)
+        let ods = Set(layout.conductors.filter { $0.role == .phase }.map { $0.geometry.overallDiameterInches })
+        XCTAssertEqual(ods.count, 1)
+        XCTAssertTrue(layout.packingNote.contains("Drawn to scale"))
+        XCTAssertFalse(layout.packingNote.localizedCaseInsensitiveContains("Actual size"))
+        XCTAssertTrue(layout.callouts.contains { $0.kind == .geometry })
+        XCTAssertTrue(layout.callouts.contains { $0.kind == .ampacity })
+        XCTAssertTrue(layout.inspectorRows.contains { $0.section == .geometry && $0.id == "od" })
+        XCTAssertTrue(layout.inspectorRows.contains { $0.section == .ampacity && $0.id == "usable" })
+        // Leaders should not share identical label points.
+        let labelPoints = layout.callouts.map { ($0.labelXInches, $0.labelYInches) }
+        XCTAssertEqual(labelPoints.count, Set(labelPoints.map { "\($0.0):\($0.1)" }).count)
+    }
+
+    func testXHHWAndRHWOverallDifferFromTHHN() throws {
+        let thhn = try XCTUnwrap(ConductorGeometryModel.resolve(size: "4", material: .copper, construction: .thhn))
+        let xhhw = try XCTUnwrap(ConductorGeometryModel.resolve(size: "4", material: .copper, construction: .xhhw))
+        let rhw = try XCTUnwrap(ConductorGeometryModel.resolve(size: "4", material: .copper, construction: .rhw))
+        XCTAssertNotEqual(thhn.overallDiameterInches, rhw.overallDiameterInches)
+        XCTAssertEqual(thhn.metalDiameterInches, xhhw.metalDiameterInches, accuracy: 1e-12)
+        XCTAssertGreaterThan(rhw.overallDiameterInches, thhn.overallDiameterInches)
     }
 }
