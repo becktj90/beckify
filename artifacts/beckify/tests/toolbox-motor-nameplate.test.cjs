@@ -160,3 +160,13 @@ assert.equal(afterPick.extras.flaDisplay, '14');
 assert.ok(!schema.highlightReasons(afterPick).some((item) => item.kind === 'dual-fla'));
 
 console.log('Motor nameplate NEC percentage tables passed');
+
+const separated = api.analyze({ fla: 22, hp: 20, volts: 480, phase: 3, sf: 1.15 });
+assert.equal(separated.tableFullLoadAmps, 27);
+assert.equal(separated.overloadAmps, 27.5);
+assert.equal(separated.scpd.raw, 67.5);
+assert.equal(separated.conductor.required, 33.75);
+for (const extra of [{hp:19}, {volts:1000}, {motorType:'sync'}, {tableFullLoadAmps:'NaN'}]) {
+  assert.match(api.analyze(Object.assign({fla:22,hp:20,volts:480,phase:3},extra)).error, /reviewed NEC table FLC/);
+}
+assert.equal(api.analyze({fla:22,phase:3,motorType:'sync',tableFullLoadAmps:30}).scpd.raw,75);
