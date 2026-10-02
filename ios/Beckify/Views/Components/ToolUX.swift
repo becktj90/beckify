@@ -14,6 +14,10 @@ private struct ResultProvenanceKey: EnvironmentKey {
     static let defaultValue: String? = nil
 }
 
+private struct ResultCopyDisabledKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     var openRelatedTool: (ToolID) -> Void {
         get { self[OpenRelatedToolKey.self] }
@@ -29,6 +33,11 @@ extension EnvironmentValues {
     var resultProvenance: String? {
         get { self[ResultProvenanceKey.self] }
         set { self[ResultProvenanceKey.self] = newValue }
+    }
+
+    var resultCopyDisabled: Bool {
+        get { self[ResultCopyDisabledKey.self] }
+        set { self[ResultCopyDisabledKey.self] = newValue }
     }
 }
 
@@ -166,6 +175,7 @@ struct ToolScaffold<Content: View>: View {
         }
         .environment(\.toolChrome, chrome)
         .environment(\.resultProvenance, codeNotice?.accessibilityLabel)
+        .environment(\.resultCopyDisabled, isResultStale)
     }
 
     @ViewBuilder
@@ -251,6 +261,7 @@ struct CopyResultButton: View {
     @State private var copied = false
     @State private var resetTask: Task<Void, Never>?
     @Environment(\.resultProvenance) private var resultProvenance
+    @Environment(\.resultCopyDisabled) private var resultCopyDisabled
 
     private var copyPayload: String {
         guard let resultProvenance, !resultProvenance.isEmpty else { return text }
@@ -281,7 +292,7 @@ struct CopyResultButton: View {
         }
         .buttonStyle(.bordered)
         .tint(Theme.accent)
-        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        .disabled(resultCopyDisabled || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .accessibilityLabel(copied ? "Copied. \(accessibilityName)" : accessibilityName)
         .accessibilityValue(copyPayload)
         .onDisappear {
