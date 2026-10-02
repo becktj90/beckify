@@ -801,7 +801,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick phrase chips test translation. Mic audio stays local.",
                 "Clean or Jobsite persists. Spanish Jobsite is a Cuban / South American tradesman. English is California. Deep South is another English voice. Hey! is English → Spanish only.",
-                "Neural /api/speak (gpt-4o-mini-tts) or device voice. Copy Audio and Share Audio keep that character. Temp clips. Cancel skips Apple fallback.",
+                "Neural /api/speak (gpt-4o-mini-tts) or on-device voice. Copy Audio and Share Audio keep that character. Temp clips. Cancel skips Apple fallback.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(
