@@ -96,14 +96,20 @@ final class ToolHowItWorksTests: XCTestCase {
         }
     }
 
-    func testHomeworkDefaultsOpenFieldDefaultsCollapsed() {
-        XCTAssertTrue(ToolHowItWorksCatalog.defaultExpanded(forToolID: "voltageDivider"))
-        XCTAssertTrue(ToolHowItWorksCatalog.defaultExpanded(forToolID: "analogWorkbench"))
-        XCTAssertTrue(ToolHowItWorksCatalog.defaultExpanded(forToolID: "phasorDiagram"))
-        XCTAssertFalse(ToolHowItWorksCatalog.defaultExpanded(forToolID: "wireAmpacity"))
-        XCTAssertFalse(ToolHowItWorksCatalog.defaultExpanded(forToolID: "wifiStatus"))
-        XCTAssertFalse(ToolHowItWorksCatalog.defaultExpanded(forToolID: "controlSystems"))
-        XCTAssertFalse(ToolHowItWorksCatalog.defaultExpanded(forToolID: "ohmsLaw"))
+    func testAllToolExplanationsDefaultCollapsed() {
+        for id in ToolCalculationPolicy.knownToolIDs {
+            XCTAssertFalse(ToolHowItWorksCatalog.defaultExpanded(forToolID: id), id)
+        }
+    }
+
+    func testFoundationalExplanationsUsePlainLanguage() {
+        let ohmsLaw = ToolHowItWorksCatalog.copy(forToolID: "ohmsLaw")
+        XCTAssertTrue(ohmsLaw?.bullets.contains(where: { $0.contains("Voltage = current × resistance") }) == true)
+        XCTAssertTrue(ohmsLaw?.context.localizedCaseInsensitiveContains("one resistor") == true)
+
+        let voltageDivider = ToolHowItWorksCatalog.copy(forToolID: "voltageDivider")
+        XCTAssertTrue(voltageDivider?.summary.localizedCaseInsensitiveContains("output voltage") == true)
+        XCTAssertTrue(voltageDivider?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("connects to ground") }) == true)
     }
 
     func testConductorLengthHowItWorksMentionsMetalWeight() {
