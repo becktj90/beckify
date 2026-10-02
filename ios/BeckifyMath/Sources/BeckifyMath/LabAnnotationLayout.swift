@@ -225,13 +225,18 @@ public enum LabAnnotationEngine {
                     height: size.height
                 )
                 frame = clamp(frame, to: canvas)
+                var found = false
                 for nudge in [0.0, 40, -40, 80, -80, 120, -120] {
                     let trial = LabRect2(x: frame.x + nudge, y: frame.y, width: frame.width, height: frame.height)
                     let clamped = clamp(trial, to: canvas)
                     if !overlaps(clamped, occupied) {
                         frame = clamped
+                        found = true
                         break
                     }
+                }
+                if !found, let free = nearestFreeSlot(size: size, anchor: request.anchor, occupied: occupied, canvas: canvas) {
+                    frame = free
                 }
                 chosen = LabPlacedAnnotation(
                     id: request.id,
@@ -259,6 +264,32 @@ public enum LabAnnotationEngine {
             rects.append(item.frame)
         }
         return false
+    }
+
+    /// Scans the canvas on a coarse grid and returns the free slot closest to the anchor.
+    private static func nearestFreeSlot(
+        size: (width: Double, height: Double),
+        anchor: LabVec2,
+        occupied: [LabRect2],
+        canvas: LabRect2
+    ) -> LabRect2? {
+        guard size.width <= canvas.width, size.height <= canvas.height else { return nil }
+        let step = 8.0
+        var best: (frame: LabRect2, distance: Double)?
+        var y = canvas.minY
+        while y + size.height <= canvas.maxY {
+            var x = canvas.minX
+            while x + size.width <= canvas.maxX {
+                let frame = LabRect2(x: x, y: y, width: size.width, height: size.height)
+                if !overlaps(frame, occupied) {
+                    let distance = hypot(frame.midX - anchor.x, frame.midY - anchor.y)
+                    if best == nil || distance < best!.distance { best = (frame, distance) }
+                }
+                x += step
+            }
+            y += step
+        }
+        return best?.frame
     }
 
     private static func overlaps(_ frame: LabRect2, _ others: [LabRect2]) -> Bool {

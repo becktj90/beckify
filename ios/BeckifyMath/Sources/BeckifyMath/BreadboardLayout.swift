@@ -1233,7 +1233,7 @@ extension BreadboardBuilder {
             jumper("bBus", "VacB", 5, .j, 10, .g, .violet)
             jumper("vpkCross", "Vpk", 14, .e, 14, .f, .red)
             jumper("plus", "Vpk", 14, .a, 14, .topPlus, .red)
-            jumper("plusb", "Vpk", 14, .h, 20, .h, .red)
+            jumper("plusb", "Vpk", 14, .d, 20, .d, .red)
             jumper("g3", "GND", 7, .j, 7, .botMinus, .black)
             jumper("g4", "GND", 9, .j, 9, .botMinus, .black)
             resistor("rl", "RL", rload, hole(20, .e, "Vpk"), hole(20, .f, "GND"))
@@ -1328,7 +1328,7 @@ extension BreadboardBuilder {
             hole(6, .e, "Vin"),
             hole(6, .f, "GND"),
         ]))
-        jumper("out", "Vout", 16, .e, 16, .d, .green)
+        jumper("out", "Vout", 16, .e, 16, .g, .green)
         jumper("gatep", "Vin", 6, .c, 17, .a, .yellow)
         jumper("gaten", "Vin", 15, .i, 17, .e, .yellow)
         jumper("ps", "Vdd", 18, .a, 18, .topPlus, .red)

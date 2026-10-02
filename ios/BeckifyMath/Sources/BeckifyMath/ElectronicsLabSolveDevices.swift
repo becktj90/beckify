@@ -119,6 +119,11 @@ extension LabSolve {
                 q("vce", "Vce", bias.vce, "V"),
                 q("vc", "Vc", bias.vc, "V"),
                 q("vb", "Vb", bias.vb, "V"),
+                q("vcc", "Vcc", vcc, "V"),
+                q("r1", "R1", r1, "Ω"),
+                q("r2", "R2", r2, "Ω"),
+                q("re", "Re", re, "Ω"),
+                q("rl", "RL", rl, "Ω"),
             ],
             steps: [
                 "gm = Ic / 26 mV = \(eng(gmUsed)) S",
@@ -275,6 +280,9 @@ extension LabSolve {
                 q("gm", "gm", gm, "S"),
                 q("av", "Av", av, "", true),
                 q("rd", "Rd", rd, "Ω", unknown == "rd"),
+                q("vdd", "Vdd", vdd, "V"),
+                q("vg", "Vg", vg, "V"),
+                q("rs", "Rs", rs, "Ω"),
             ],
             steps: [
                 "Id = (kn/2)·(Vgs − Vt)²",
