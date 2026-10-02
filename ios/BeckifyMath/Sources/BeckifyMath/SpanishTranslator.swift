@@ -24,12 +24,13 @@ public enum SpanishVoiceMode: String, CaseIterable, Codable, Sendable {
         }
     }
 
-    /// Neural TTS voice id for `/api/speak`. English (ES→EN) always uses male `onyx`
-    /// with mode-specific delivery; Spanish still follows Clean / Jobsite.
+    /// Neural TTS voice id for `/api/speak`. English (ES→EN) uses male `echo`
+    /// (California). Spanish still follows Clean (`nova`) / Jobsite (`onyx`).
+    /// Deep South playback passes `ballad` itself — see `deepSouthSpeakVoice`.
     public func defaultSpeakVoice(language: String) -> String {
         let folded = SpanishTranslatorAPI.normalizeLocaleID(language)
         if SpanishTranslatorAPI.localePrimary(folded) == "en" {
-            return "onyx"
+            return SpanishTranslatorAPI.californiaSpeakVoice
         }
         return defaultSpeakVoice
     }
@@ -171,6 +172,12 @@ public enum SpanishTranslatorAPI {
     public static let speakPath = "/api/speak"
     /// Short neural TTS clips (cost control).
     public static let maxSpeakCharacters = 500
+    /// gpt-4o-mini-tts male voice for California English.
+    public static let californiaSpeakVoice = "echo"
+    /// gpt-4o-mini-tts storyteller voice for Deep South English. Not `echo`.
+    public static let deepSouthSpeakVoice = "ballad"
+    /// `/api/speak` voiceMode for the Deep South character. English words only.
+    public static let deepSouthDelivery = "deepSouth"
     public static let maxSourceCharacters = 2000
 
     /// Common English jobsite lines for one-tap translate → speak on the Beckify AI path.
@@ -276,7 +283,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. English → Spanish is the default: Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is rough banter; Clean is polished and warm). A Hey! button runs a short attention call on that direction only. Spanish → English listens in Spanish and returns English on the same API (Jobsite is blunt field English; Clean is clear and polished). If that API is unreachable, falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS from api.beckify.com/api/speak (short Spanish or English clips); Apple AVSpeech is the fallback if cloud TTS fails. Free to use. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default: Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is a weathered tradesman; Clean is polished and warm). A Hey! button runs a short attention call on that direction only. Spanish → English listens in Spanish and returns English on the same API, spoken as California (louder on Jobsite, warm on Clean). Deep South is a separate English voice on that speak API — the same words, not a rewrite. If translate is unreachable, falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS (gpt-4o-mini-tts) from api.beckify.com/api/speak (short Spanish or English clips); Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -320,18 +327,37 @@ public enum SpanishTranslatorAPI {
         voiceMode: SpanishVoiceMode = .jobsite,
         voice: String? = nil,
         format: String = "mp3",
-        language: String = "es"
+        language: String = "es",
+        delivery: String? = nil
     ) -> [String: Any] {
-        let resolvedVoice = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let resolvedLanguage = language.trimmingCharacters(in: .whitespacesAndNewlines)
+        let passedVoice = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var resolvedLanguage = language.trimmingCharacters(in: .whitespacesAndNewlines)
+        if resolvedLanguage.isEmpty { resolvedLanguage = "es" }
+        let foldedDelivery = (delivery ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        let isDeepSouth = foldedDelivery == "deepsouth"
+        if isDeepSouth { resolvedLanguage = "en" }
+        let modeValue = isDeepSouth ? deepSouthDelivery : voiceMode.apiValue
+        let resolvedVoice: String
+        if isDeepSouth {
+            resolvedVoice = deepSouthSpeakVoice
+        } else if !passedVoice.isEmpty {
+            resolvedVoice = passedVoice
+        } else {
+            resolvedVoice = voiceMode.defaultSpeakVoice(language: resolvedLanguage)
+        }
         return [
             "task": "speak",
             "text": text,
-            "voice": resolvedVoice.isEmpty ? voiceMode.defaultSpeakVoice(language: resolvedLanguage.isEmpty ? "es" : resolvedLanguage) : resolvedVoice,
+            "voice": resolvedVoice,
             "format": format,
-            "language": resolvedLanguage.isEmpty ? "es" : resolvedLanguage,
-            "voiceMode": voiceMode.apiValue,
-            "mode": voiceMode.apiValue,
+            "language": resolvedLanguage,
+            "voiceMode": modeValue,
+            "mode": modeValue,
         ]
     }
 
@@ -340,7 +366,8 @@ public enum SpanishTranslatorAPI {
         voiceMode: SpanishVoiceMode = .jobsite,
         voice: String? = nil,
         format: String = "mp3",
-        language: String = "es"
+        language: String = "es",
+        delivery: String? = nil
     ) throws -> Data {
         try JSONSerialization.data(
             withJSONObject: speakRequestBody(
@@ -348,7 +375,8 @@ public enum SpanishTranslatorAPI {
                 voiceMode: voiceMode,
                 voice: voice,
                 format: format,
-                language: language
+                language: language,
+                delivery: delivery
             ),
             options: []
         )
@@ -714,7 +742,7 @@ public enum SpanishTranslatorAPI {
         }
         let folded = normalizeLocaleID(lang)
         let localeNote = folded.hasPrefix("en-us") ? "en-US" : folded
-        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (onyx) from api.beckify.com when reachable. Device voices approximate pitch and pace; the gravelly Jobsite character needs cloud TTS."
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (echo) from api.beckify.com when reachable. Device voices approximate pitch and pace; California and Deep South need cloud TTS."
     }
 
     public static func normalizeLocaleID(_ raw: String) -> String {
@@ -811,13 +839,19 @@ public enum SpanishTranslatorAPI {
     public static func modeHelp(direction: SpanishTranslateDirection, voiceMode: SpanishVoiceMode) -> String {
         if direction.listensInSpanish {
             return voiceMode == .clean
-                ? "Clean: clear, polished English. Jobsite: blunt field English."
-                : "Jobsite: blunt field English. Clean: clear and polished."
+                ? "Clean English is warm California. Jobsite English is louder California. Deep South is the other English voice."
+                : "Jobsite English is louder California. Clean English is warm California. Deep South is separate."
         }
         return voiceMode == .clean
-            ? "Clean: polished, warm Spanish. Jobsite: rough banter."
-            : "Jobsite: rough banter Spanish. Clean: polished and warm."
+            ? "Clean: polished, warm Spanish. Jobsite: weathered Cuban / South American tradesman."
+            : "Jobsite: weathered Cuban / South American tradesman. Clean: polished and warm."
     }
+
+    /// Shown on the Deep South card. Same English words, different neural character.
+    public static let deepSouthCardTitle = "Deep South"
+    public static let deepSouthHelp =
+        "English only. Speaks this English as Deep South — not California. Same words, not a rewrite. Copy Audio and Share Audio keep that clip."
+    public static let deepSouthButtonTitle = "Speak Deep South"
 
     public static func statusHelp(direction: SpanishTranslateDirection) -> String {
         if direction.listensInSpanish {
@@ -859,19 +893,31 @@ public enum SpanishTranslatorAPI {
 
     public static func neuralVoiceNote(
         model: String = "gpt-4o-mini-tts",
-        voice: String = "onyx",
+        voice: String = "",
         voiceMode: SpanishVoiceMode = .jobsite,
-        language: String = "es"
+        language: String = "es",
+        delivery: String? = nil
     ) -> String {
         let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
         let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
+        let foldedDelivery = (delivery ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        if foldedDelivery == "deepsouth" {
+            let voiceLabel = v.isEmpty ? deepSouthSpeakVoice : v
+            let modelLabel = m.isEmpty ? "gpt-4o-mini-tts" : m
+            return "Neural TTS · \(voiceLabel) · \(modelLabel) · Deep South · max speaker volume"
+        }
         let fallbackVoice = voiceMode.defaultSpeakVoice(language: language)
         let label = [v.isEmpty ? fallbackVoice : v, m.isEmpty ? "gpt-4o-mini-tts" : m].joined(separator: " · ")
         let register = voiceMode == .clean ? "Clean" : "Jobsite"
         let folded = normalizeLocaleID(language)
         let accent: String
         if localePrimary(folded) == "en" {
-            accent = voiceMode == .jobsite ? " · gravelly, weathered tradesman" : " · California stoner male"
+            accent = voiceMode == .jobsite ? " · California, loud" : " · California"
         } else {
             accent = voiceMode == .jobsite ? " · gravelly, weathered tradesman" : ""
         }

@@ -734,9 +734,9 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Spanish Translator",
-            subtitle: "English ↔ Spanish. Clean or Jobsite (gravelly tradesman), Hey!, Speak, Copy/Share Audio — not a certified interpreter.",
+            subtitle: "English ↔ Spanish. California, Deep South, or Jobsite. Hey!, Speak, Copy/Share Audio.",
             symbol: "character.bubble",
-            synonyms: ["translator", "spanish", "translate", "interpreter", "español", "speech", "neural", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen"]
+            synonyms: ["translator", "spanish", "translate", "interpreter", "español", "speech", "neural", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "california", "deep south", "cuban"]
         ),
         ToolDefinition(
             id: .magneticCircuit,

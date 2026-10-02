@@ -18,19 +18,33 @@ export const SPEAK_DEFAULT_MODEL = "gpt-4o-mini-tts";
 
 export const SPEAK_MAX_INPUT_CHARS = 500;
 
-export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied Spanish text exactly, in the voice of a fictional older Cuban / South Florida tradesman whose voice sounds weathered by fifty years of cigarettes and hard jobsite work. Deep, chesty male register; coarse gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. A streetwise, roguish old hand: blunt confidence, skeptical dry humor in the delivery, no polished announcer sound. Natural Cuban-American Florida Spanish rhythm, with short deliberate phrases and a little bite on stressed words. Project enough to carry across a noisy site without screaming; keep consonants, electrical terms, numbers, units, and warnings crisp. The rasp must never swallow a word. Deliver profanity already in the text naturally — do not beep, sanitize, skip, or soften it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. Use a distinct believable character voice, not a cartoon accent or an impersonation of a real person. Preserve the text and its meaning; only the delivery changes.`;
+export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied Spanish text exactly, in the voice of a fictional older Cuban and South American tradesman whose voice sounds weathered by fifty years of cigarettes and hard jobsite work. Deep, chesty male register; coarse gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. Hilarious in the way a real old hand is hilarious: deadpan, skeptical, a dry bite on the stressed word, short deliberate phrases, never slapstick and never a cartoon. Cuban-American rhythm with South American warmth when the line asks for it — a believable working man, not a costume and not an impression of any real person. Project across a noisy site without screaming. The rasp must never swallow a word; electrical terms, numbers, units, and warnings stay crisp. Deliver profanity already in the text naturally — do not beep, sanitize, skip, or soften it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. Do not swap words into slang that is not already written. No slurs and no ethnicity mockery. Preserve the text and its meaning; only the delivery changes.`;
 
 export const SPEAK_CLEAN_VOICE_INSTRUCTIONS = `Speak like a polished Cuban / South Florida woman — warm, elegant, clear, and kind. Soft feminine Cuban-American Florida Spanish cadence with graceful confidence. Project enough to be heard, but never yell like a jobsite. Refined and welcoming — not crude, not sarcastic, not a cartoon, not Castilian Spain, not a mocking caricature accent. Do not invent swearing; if the text is already clean, keep it clean and musical. Never invent hate slurs. Pace is clear and unhurried, still lively and warm.`;
 
 /** @deprecated Prefer speakVoiceInstructions(mode). */
 export const SPEAK_VOICE_INSTRUCTIONS = SPEAK_JOBSITE_VOICE_INSTRUCTIONS;
 
-export function speakVoiceMode(raw: unknown): TranslateVoiceMode {
+export function speakVoiceMode(raw: unknown): SpeakVoiceMode {
+  if (typeof raw !== "string") return "jobsite";
+  const folded = raw.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  if (folded === "deepsouth" || folded === "south") return "deepSouth";
+  if (folded === "california" || folded === "socal" || folded === "westcoast") return "california";
+  if (folded === "cuban" || folded === "southamerican" || folded === "latam") return "cuban";
   return normalizeTranslateVoiceMode(raw);
 }
 
-/** Male lower voice for Spanish → English; Jobsite is gravelly and weathered. */
-export const SPEAK_EN_VOICE = "onyx";
+/**
+ * English California character. `echo` is a lighter male than Jobsite `onyx`
+ * so California and Deep South (`ballad`) do not share a timbre.
+ */
+export const SPEAK_EN_CALIFORNIA_VOICE = "echo";
+
+/** Storyteller timbre for the Deep South English character. Not California `echo`. */
+export const SPEAK_DEEP_SOUTH_VOICE = "ballad";
+
+/** @deprecated Prefer SPEAK_EN_CALIFORNIA_VOICE. English speak is California, not onyx. */
+export const SPEAK_EN_VOICE = SPEAK_EN_CALIFORNIA_VOICE;
 
 /** Japanese delivery reuses the same built-in voices as Spanish, distinguished by `instructions`. */
 export const SPEAK_JA_JOBSITE_VOICE = SPEAK_DEFAULT_VOICE;
@@ -39,26 +53,44 @@ export const SPEAK_JA_CLEAN_VOICE = SPEAK_CLEAN_VOICE;
 export type SpeakLanguage = "en" | "es" | "ja";
 
 /**
+ * Speak delivery. `clean` / `jobsite` stay the product modes.
+ * `california`, `cuban`, and `deepSouth` select a character directly.
+ * Deep South is English-only playback of the supplied words.
+ */
+export type SpeakVoiceMode = TranslateVoiceMode | "california" | "cuban" | "deepSouth";
+
+/**
  * Spanish and Japanese delivery follow Clean (nova) / Jobsite (onyx).
  * English uses the male voice (`onyx`) with mode-specific delivery.
  */
 export function speakDefaultVoiceForMode(
-  mode: TranslateVoiceMode,
+  mode: SpeakVoiceMode,
   language: SpeakLanguage = "es",
 ): string {
-  if (language === "en") return SPEAK_EN_VOICE;
+  if (mode === "deepSouth") return SPEAK_DEEP_SOUTH_VOICE;
+  if (mode === "california" || language === "en") return SPEAK_EN_CALIFORNIA_VOICE;
+  if (mode === "cuban") return SPEAK_DEFAULT_VOICE;
   return mode === "clean" ? SPEAK_CLEAN_VOICE : SPEAK_DEFAULT_VOICE;
 }
 
 /**
- * Classic California stoner dude English for Spanish → English
- * (mellow drawl, dude/man energy). Not corporate. Not a cartoon. Still clear.
- * Do not put trademark character names in user-visible UI copy.
+ * California adult — English playback for Clean.
+ * Funny through timing and attitude. The words stay exactly as supplied.
+ * Not a stoner bit, not a celebrity impression, not Deep South.
  */
-export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied English text exactly, in the voice of a fictional older tradesman whose voice sounds weathered by fifty years of cigarettes, long shifts, and hard outdoor work. Deep, chesty male register; heavy gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. Streetwise, roguish old-hand energy: blunt, world-weary confidence with a skeptical dry edge. Relaxed American field English, short deliberate phrases, clipped emphasis on the important words, and a rough low chuckle-like texture without actually laughing. This is a grizzled working man's voice, not a smooth corporate narrator or a cartoon surfer. Project firmly without screaming. Keep consonants, electrical terms, numbers, units, negations, and warnings clear; never let the gravel obscure them. Deliver swearing already in the text fully; do not beep or sanitize it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. Do not impersonate a real person. Preserve the text and its meaning; only the delivery changes.`;
+export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `Read the supplied English text exactly, as a fictional coastal California adult in his thirties: sunny, a little vain, and genuinely funny. Delivery is the joke — relaxed West Coast melody, friendly late punchlines, a soft rise at the end of a phrase, warm confidence like someone who has never been cold. Indoor volume, unhurried, still crisp. This is California, not the Deep South, not New York, not the Midwest, not Britain, and not a tech-campus narrator. Not a stoner, not a surfer cartoon, not a word-swap bit, and not an impression of any real person. Do not insert dude, man, like, or laughs. Do not add words, coughs, or stage directions. Do not invent swearing or slurs. No ethnicity mockery. Keep electrical terms, numbers, units, negations, and warnings perfectly clear. Preserve the text and its meaning; only the performance changes.`;
 
-/** Same California surfer-stoner male for Clean mode English; a touch softer, still not corporate. */
-export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `Speak like a classic California stoner dude — deep mellow male drawl, lazy SoCal cadence, warm “dude / man” energy, a little stoney but friendly. Soft projection for a room; still slow and easy, never rushed. Not a tech-campus corporate California accent, not Midwestern, not Southern, not New York, not British. Do not add swearing. Do not invent slurs. Not a cartoon surfer parody, not Spicoli overacting, not a whisper, not a Spanish accent on English. Clear and understandable with that mellow California stoner vibe.`;
+/**
+ * Same California adult, louder and drier, for Jobsite English.
+ * Still not the Deep South character and not the Spanish tradesman.
+ */
+export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied English text exactly, as the same fictional coastal California adult, now calling across a noisy jobsite: louder, drier, and funnier. Comic exasperation, a beat of silence before the important word, raised-eyebrow sarcasm you can hear, still a relaxed West Coast cadence — never a Southern drawl, never Cuban Spanish rhythm, never a gravelly cigarette rasp. Project so the far end of the site hears you; do not scream the consonants apart. Not a stoner, not a surfer cartoon, not a corporate narrator, not a word-swap rewrite, and not an impression of any real person. Do not add words, jokes, laughs, coughs, or threats. Deliver swearing already in the text; do not beep or sanitize it. Never invent slurs or mock an ethnicity. Keep electrical terms, numbers, units, negations, and warnings crisp. Preserve the text and its meaning; only the performance changes.`;
+
+/**
+ * Third English character. Slow Deep South storyteller on `ballad`.
+ * Hilarious understatement. Does not rewrite the words.
+ */
+export const SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS = `Read the supplied English text exactly, as a fictional Deep South adult storyteller: low, round, and unhurried, with a honeyed melody and a sly pause before the last stress of a sentence, like a porch punchline that never announces itself. Warm, understated, and funny — comic timing, not a costume. Clearly not California: no uptalk, no West Coast bounce, no beach attitude. Not Cuban or South American Spanish. Not a hillbilly cartoon, not a minstrel act, not a racial caricature, and not an impression of any real person. Do not add words. Do not insert y'all, howdy, bless your heart, fixin', or anything that is not already in the text. Do not drop g's, do not swap words, do not add laughs, coughs, or asides. Deliver swearing already in the text; do not beep it and do not add any. Never invent slurs or mock an ethnicity. Keep electrical terms, numbers, units, negations, and warnings intelligible even at the slow pace. Preserve the text and its meaning; only the performance changes.`;
 
 /**
  * Japanese delivery: a real, natural Japanese speaker — not an accent
@@ -79,11 +111,12 @@ export function normalizeSpeakLanguage(raw: unknown): SpeakLanguage {
   return "es";
 }
 
-export function speakVoiceInstructions(mode: TranslateVoiceMode, language: SpeakLanguage = "es"): string {
-  if (language === "en") {
-    return mode === "clean" ? SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS : SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS;
+export function speakVoiceInstructions(mode: SpeakVoiceMode, language: SpeakLanguage = "es"): string {
+  if (mode === "deepSouth") return SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS;
+  if (mode === "california" || (language === "en" && mode !== "cuban")) {
+    return mode === "jobsite" ? SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS : SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS;
   }
-  if (language === "ja") {
+  if (language === "ja" && mode !== "cuban") {
     return mode === "clean" ? SPEAK_JA_CLEAN_VOICE_INSTRUCTIONS : SPEAK_JA_JOBSITE_VOICE_INSTRUCTIONS;
   }
   return mode === "clean" ? SPEAK_CLEAN_VOICE_INSTRUCTIONS : SPEAK_JOBSITE_VOICE_INSTRUCTIONS;

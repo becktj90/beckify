@@ -1,13 +1,11 @@
 import Foundation
 
-/// Comedy-only English dialect stylizer — an exaggerated "Deep South" drawl
-/// for the Translator's novelty output. This is same-language wordplay, not
-/// a translation and not a voice/ethnicity impression: no accent synthesis,
-/// no claim about how anyone actually talks. Purely a text transform plus
-/// whatever TTS voice is already selected.
+/// Legacy same-language word substitutions. The Translator does not show
+/// this rewrite. Deep South playback is neural TTS of the original English
+/// (`voiceMode` deepSouth). Kept so existing tests still pin the transform.
 public enum DeepSouthDialect {
     public static let honestLimit =
-        "Comedy word-swap on the English text only — not a translation, not a real accent, not a real place's dialect. For laughs."
+        "Unused text transform. Translator Deep South speaks the original English."
 
     /// Case-preserving whole-word/phrase substitutions. Applied in a single
     /// pass against the *original* text (see `applySubstitutions`), longest
