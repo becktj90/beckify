@@ -121,8 +121,8 @@ table.sgll-table tbody tr:hover { background: rgba(255,255,255,0.025); }
 .sgll-oneline-svg text { fill: var(--sgll-text); font-size: 13px; font-family: inherit; }
 .sgll-bus-energized { stroke: var(--sgll-green); }
 .sgll-bus-dead { stroke: var(--sgll-muted); }
-.sgll-breaker-closed rect { fill: var(--sgll-green); }
-.sgll-breaker-open rect { fill: transparent; stroke: var(--sgll-muted); }
+rect.sgll-breaker-closed { fill: var(--sgll-green); }
+rect.sgll-breaker-open { fill: transparent; stroke: var(--sgll-muted); }
 
 .sgll-timing-svg { width: 100%; height: auto; background: var(--sgll-input); border: 1px solid var(--sgll-border); border-radius: 10px; }
 .sgll-timing-svg text { fill: var(--sgll-muted); font-size: 10px; }
@@ -150,3 +150,13 @@ table.sgll-table tbody tr:hover { background: rgba(255,255,255,0.025); }
   .sgll-grid { grid-template-columns: 1fr; }
   .sgll-node-block { grid-template-columns: 1fr; }
 }
+
+.sgll-chart-card { grid-column: span 2; min-width: 0; }
+.sgll-btn:focus-visible, .sgll-tab:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--sgll-accent); outline-offset: 3px; }
+@media (max-width: 720px) {
+  .sgll-chart-card { grid-column: auto; }
+  .sgll-row > input, .sgll-row > select { min-width: 0; max-width: 100%; }
+  .sgll-row { flex-wrap: wrap; }
+}
+
+.sgll-finding pre { white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -77,7 +77,7 @@ final class SwitchgearLogicLabSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     static func fileURL(for url: URL) -> URL? {
-        guard url.scheme == SwitchgearLogicLabOrigin.scheme else { return nil }
+        guard url.scheme == SwitchgearLogicLabOrigin.scheme, url.host == SwitchgearLogicLabOrigin.host else { return nil }
         var path = url.path
         if path.hasPrefix("/") { path.removeFirst() }
         if path.isEmpty { path = "index.html" }

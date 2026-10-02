@@ -108,6 +108,19 @@ final class ExponentialSweepMeasurementTests: XCTestCase {
         XCTAssertEqual(ExponentialSweepMeasurement.sweep(startHz: 100, endHz: 2_000, duration: 0, sampleRate: 8_000), [])
     }
 
+    func testPassThroughSweepHasNoArtificialFrequencyTilt() {
+        let sweep = ExponentialSweepMeasurement.sweep(startHz: startHz, endHz: endHz, duration: duration, sampleRate: sampleRate)
+        let filter = ExponentialSweepMeasurement.inverseFilter(startHz: startHz, endHz: endHz, duration: duration, sampleRate: sampleRate)
+        let impulse = ExponentialSweepMeasurement.impulseResponse(recorded: sweep, inverseFilter: filter)
+        let response = ExponentialSweepMeasurement.frequencyResponse(impulseResponse: impulse, sampleRate: sampleRate, windowSamples: 1_024)
+        guard let low = response.min(by: { abs($0.hz - 250) < abs($1.hz - 250) }),
+              let high = response.min(by: { abs($0.hz - 1_000) < abs($1.hz - 1_000) }) else {
+            return XCTFail("Expected a measured frequency response")
+        }
+        // A unity system must not inherit the sweep's spectral slope.
+        XCTAssertEqual(high.db - low.db, 0, accuracy: 2)
+    }
+
     func testDeconvolutionRecoversKnownDelayWithinTolerance() {
         let sweep = ExponentialSweepMeasurement.sweep(startHz: startHz, endHz: endHz, duration: duration, sampleRate: sampleRate)
         let filter = ExponentialSweepMeasurement.inverseFilter(startHz: startHz, endHz: endHz, duration: duration, sampleRate: sampleRate)

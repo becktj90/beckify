@@ -163,7 +163,9 @@ public enum ExponentialSweepMeasurement {
         let ratio = log(endHz / startHz)
         var filt = [Double](repeating: 0, count: n)
         for i in 0..<n {
-            let t = Double(i) / sampleRate
+            let t = Double(n - 1 - i) / sampleRate
+            // Apply the decay in reversed-filter time, emphasizing the
+            // high-frequency start rather than the low-frequency tail.
             let envelope = exp(-t * ratio / duration)
             filt[n - 1 - i] = x[i] * envelope
         }

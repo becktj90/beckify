@@ -278,7 +278,10 @@
       result = step(project, rt, externalInputs, dtMs);
       rt = result.runtime;
       var snapshot = JSON.stringify(result.signalValues);
-      if (snapshot === last) {
+      var timerPending = Object.keys(rt.timerState).some(function (id) {
+        return rt.timerState[id].phase === 'pickup' || rt.timerState[id].phase === 'dropout';
+      });
+      if (snapshot === last && !timerPending) {
         return { result: result, settled: true, scans: i + 1 };
       }
       last = snapshot;

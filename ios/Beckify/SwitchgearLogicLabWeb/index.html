@@ -9,12 +9,12 @@
   <title>Switchgear Logic Lab | Beckify</title>
   <meta name="description" content="Offline editor, simulator, and weakness analyzer for programmable switchgear logic (FlexLogic-style). Not a protection or control certification tool.">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="https://beckify.com/toolbox/switchgear-logic-lab.html">
+  <link rel="canonical" href="https://beckify.com/toolbox/switchgear-logic-lab/">
   <meta property="og:title" content="Switchgear Logic Lab | Beckify">
   <meta property="og:description" content="Offline editor, simulator, and weakness analyzer for programmable switchgear logic. Review export, not a vendor settings file.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Beckify">
-  <meta property="og:url" content="https://beckify.com/toolbox/switchgear-logic-lab.html">
+  <meta property="og:url" content="https://beckify.com/toolbox/switchgear-logic-lab/">
   <meta property="og:image" content="https://beckify.com/opengraph.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Switchgear Logic Lab | Beckify">
@@ -26,7 +26,7 @@
       "@type": ["SoftwareApplication", "WebApplication"],
       "name": "Switchgear Logic Lab",
       "description": "Offline editor, simulator, and weakness analyzer for programmable switchgear logic.",
-      "url": "https://beckify.com/toolbox/switchgear-logic-lab.html",
+      "url": "https://beckify.com/toolbox/switchgear-logic-lab/",
       "operatingSystem": "All",
       "applicationCategory": "EngineeringApplication",
       "isAccessibleForFree": true,
@@ -44,30 +44,30 @@
     <div class="sgll-header">
       <div>
         <h1>Switchgear Logic Lab</h1>
-        <p>Build, simulate, and stress-test programmable switchgear logic entirely on this device. Phase 1: manual logic entry, one-line view, scenarios, timing, static lint, settled-state enumeration, and a printable review export.</p>
+        <p>Build, simulate, and stress-test programmable switchgear logic entirely on this device. Edit logic and breaker mappings, simulate transfers and faults, inspect timing and signal explanations, and export a review package.</p>
       </div>
       <div class="sgll-profile-pill" id="sgllProfilePill">Profile: —</div>
     </div>
 
     <div class="sgll-tabs" role="tablist" id="sgllTabs">
-      <button class="sgll-tab active" data-screen="project" role="tab">Project</button>
-      <button class="sgll-tab" data-screen="logic" role="tab">Logic</button>
-      <button class="sgll-tab" data-screen="equations" role="tab">Equations</button>
-      <button class="sgll-tab" data-screen="oneline" role="tab">One-line</button>
-      <button class="sgll-tab" data-screen="scenarios" role="tab">Scenarios</button>
-      <button class="sgll-tab" data-screen="timing" role="tab">Timing</button>
-      <button class="sgll-tab" data-screen="analyze" role="tab">Analyze</button>
-      <button class="sgll-tab" data-screen="export" role="tab">Export</button>
+      <button class="sgll-tab active" data-screen="project" role="tab" id="tab-project" aria-controls="screen-project" aria-selected="true" tabindex="0">Project</button>
+      <button class="sgll-tab" data-screen="logic" role="tab" id="tab-logic" aria-controls="screen-logic" aria-selected="false" tabindex="-1">Logic</button>
+      <button class="sgll-tab" data-screen="equations" role="tab" id="tab-equations" aria-controls="screen-equations" aria-selected="false" tabindex="-1">Equations</button>
+      <button class="sgll-tab" data-screen="oneline" role="tab" id="tab-oneline" aria-controls="screen-oneline" aria-selected="false" tabindex="-1">One-line</button>
+      <button class="sgll-tab" data-screen="scenarios" role="tab" id="tab-scenarios" aria-controls="screen-scenarios" aria-selected="false" tabindex="-1">Scenarios</button>
+      <button class="sgll-tab" data-screen="timing" role="tab" id="tab-timing" aria-controls="screen-timing" aria-selected="false" tabindex="-1">Timing</button>
+      <button class="sgll-tab" data-screen="analyze" role="tab" id="tab-analyze" aria-controls="screen-analyze" aria-selected="false" tabindex="-1">Analyze</button>
+      <button class="sgll-tab" data-screen="export" role="tab" id="tab-export" aria-controls="screen-export" aria-selected="false" tabindex="-1">Export</button>
     </div>
 
-    <section class="sgll-screen active" id="screen-project"></section>
-    <section class="sgll-screen" id="screen-logic"></section>
-    <section class="sgll-screen" id="screen-equations"></section>
-    <section class="sgll-screen" id="screen-oneline"></section>
-    <section class="sgll-screen" id="screen-scenarios"></section>
-    <section class="sgll-screen" id="screen-timing"></section>
-    <section class="sgll-screen" id="screen-analyze"></section>
-    <section class="sgll-screen" id="screen-export"></section>
+    <section class="sgll-screen active" id="screen-project" role="tabpanel" aria-labelledby="tab-project"></section>
+    <section class="sgll-screen" id="screen-logic" role="tabpanel" aria-labelledby="tab-logic"></section>
+    <section class="sgll-screen" id="screen-equations" role="tabpanel" aria-labelledby="tab-equations"></section>
+    <section class="sgll-screen" id="screen-oneline" role="tabpanel" aria-labelledby="tab-oneline"></section>
+    <section class="sgll-screen" id="screen-scenarios" role="tabpanel" aria-labelledby="tab-scenarios"></section>
+    <section class="sgll-screen" id="screen-timing" role="tabpanel" aria-labelledby="tab-timing"></section>
+    <section class="sgll-screen" id="screen-analyze" role="tabpanel" aria-labelledby="tab-analyze"></section>
+    <section class="sgll-screen" id="screen-export" role="tabpanel" aria-labelledby="tab-export"></section>
   </div>
 
   <script src="js/switchgear/model.js"></script>

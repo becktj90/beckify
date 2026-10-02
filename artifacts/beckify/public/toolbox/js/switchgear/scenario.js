@@ -9,7 +9,7 @@
      { tMs, type: 'breakerPosition', breakerId, position: 'open'|'closed' }
      { tMs, type: 'sourceAvailable', sourceId, available }
      { tMs, type: 'fault',          fault: 'fail-to-open'|'fail-to-close'|'slow-breaker'
-                                            |'feedback-lie'|'source-flicker'|'sync-check-loss',
+                                            |'feedback-lie',
        targetId, active, params }
 
    A logic VO can also command a breaker directly: give the VO signal a
@@ -61,8 +61,37 @@
     });
   }
 
+  var FAULT_TYPES = ['fail-to-open', 'fail-to-close', 'slow-breaker', 'feedback-lie'];
+  function validateScenario(project, scenario) {
+    var errors = [];
+    if (!scenario || !Number.isFinite(scenario.dtMs) || scenario.dtMs < 1 ||
+        !Number.isFinite(scenario.durationMs) || scenario.durationMs < 0 ||
+        Math.floor(scenario.durationMs / scenario.dtMs) + 1 > 10000) {
+      return ['Use a scan period of at least 1 ms and a duration of at most 10,000 scan steps.'];
+    }
+    if (!Array.isArray(scenario.events) || scenario.events.length > 1000) return ['Use at most 1000 events.'];
+    function has(items, id) { return items.some(function (item) { return item.id === id; }); }
+    scenario.events.forEach(function (e) {
+      if (!e || !Number.isFinite(e.tMs) || e.tMs < 0 || e.tMs > scenario.durationMs) {
+        errors.push('Event time must be within the scenario duration.'); return;
+      }
+      if (e.type === 'input') {
+        if (!has(project.signals, e.signalId) || typeof e.value !== 'boolean') errors.push('Invalid input event.');
+      } else if (e.type === 'breakerPosition') {
+        if (!has(project.plant.breakers, e.breakerId) || ['open', 'closed'].indexOf(e.position) < 0) errors.push('Invalid breaker event.');
+      } else if (e.type === 'sourceAvailable') {
+        if (!has(project.plant.sources, e.sourceId) || typeof e.available !== 'boolean') errors.push('Invalid source event.');
+      } else if (e.type === 'fault') {
+        if (FAULT_TYPES.indexOf(e.fault) < 0 || !has(project.plant.breakers, e.targetId) || typeof e.active !== 'boolean') errors.push('Invalid fault event.');
+      } else errors.push('Unknown event type.');
+    });
+    return errors;
+  }
+
   function run(project, scenario, evalModule, plantModule, opts) {
     opts = opts || {};
+    var errors = validateScenario(project, scenario);
+    if (errors.length) throw new Error(errors.join(' '));
     var plant = project.plant;
     var rt = evalModule.newRuntime();
     var positions = initialPositions(plant);
@@ -75,7 +104,7 @@
 
     var eventsByTick = {};
     scenario.events.forEach(function (ev) {
-      var tick = Math.round(ev.tMs / scenario.dtMs) * scenario.dtMs;
+      var tick = Math.ceil(ev.tMs / scenario.dtMs) * scenario.dtMs;
       eventsByTick[tick] = eventsByTick[tick] || [];
       eventsByTick[tick].push(ev);
     });
@@ -108,6 +137,12 @@
         if (ev.type === 'input') externalInputs[ev.signalId] = !!ev.value;
       });
 
+      pendingOps = pendingOps.filter(function (op) {
+        if (op.readyAtMs > t) return true;
+        if (!faultActive(op.position === 'closed' ? 'fail-to-close' : 'fail-to-open', op.breakerId)) positions[op.breakerId] = op.position;
+        return false;
+      });
+
       fbSigs.forEach(function (sig) {
         var brk = plant.breakers.filter(function (b) { return b.id === sig.physical.breakerId; })[0];
         if (!brk) return;
@@ -115,12 +150,6 @@
         var reported = sig.physical.role === 'feedback-closed' ? actualClosed : !actualClosed;
         if (faultActive('feedback-lie', brk.id)) reported = !reported;
         externalInputs[sig.id] = reported;
-      });
-
-      pendingOps = pendingOps.filter(function (op) {
-        if (op.readyAtMs > t) return true;
-        positions[op.breakerId] = op.position;
-        return false;
       });
 
       var stepResult = evalModule.step(project, rt, externalInputs, scenario.dtMs);
@@ -132,14 +161,13 @@
         var commandedTrue = !!stepResult.signalValues[sig.id];
         var rising = commandedTrue && !prevCommand[sig.id];
         prevCommand[sig.id] = commandedTrue;
-        var shouldFire = project.profile.commandTypes && project.profile.commandTypes.indexOf('maintained') !== -1 && project.profile.commandTypes.indexOf('momentary') === -1
-          ? commandedTrue
-          : rising || commandedTrue;
+        var mode = sig.physical.commandType || (project.profile.commandTypes && project.profile.commandTypes.length === 1 ? project.profile.commandTypes[0] : 'momentary');
+        var shouldFire = mode === 'maintained' ? commandedTrue : rising;
         if (!shouldFire) return;
 
         var targetPosition = sig.physical.role === 'command-close' ? 'closed' : 'open';
         var faultType = targetPosition === 'closed' ? 'fail-to-close' : 'fail-to-open';
-        if (faultActive(faultType, brk.id)) return; // command issued, breaker never actually moves
+        if (brk.lockedOut || brk.primaryDisconnected || faultActive(faultType, brk.id)) return; // command issued, breaker never actually moves
 
         var delay = brk.operateDelayMs || 0;
         var slow = faultActive('slow-breaker', brk.id);
@@ -167,7 +195,25 @@
     return { steps: steps, findings: allFindings, finalRuntime: rt };
   }
 
+  function compareProfiles(project, scenario, evalModule, plantModule, field, values) {
+    var variants = values.map(function (value) {
+      var copy = JSON.parse(JSON.stringify(project));
+      copy.profile[field] = value;
+      return run(copy, scenario, evalModule, plantModule);
+    });
+    var signals = {};
+    variants[0].steps.forEach(function (step, idx) {
+      Object.keys(step.signalValues).forEach(function (id) {
+        if (!!step.signalValues[id] !== !!variants[1].steps[idx].signalValues[id]) signals[id] = true;
+      });
+    });
+    return Object.keys(signals);
+  }
+
   return {
+    compareProfiles: compareProfiles,
+    FAULT_TYPES: FAULT_TYPES,
+    validateScenario: validateScenario,
     newScenario: newScenario,
     initialPositions: initialPositions,
     initialAvailability: initialAvailability,

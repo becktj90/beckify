@@ -1,0 +1,31 @@
+name: Switchgear Logic Lab
+on:
+  pull_request:
+    paths:
+      - 'artifacts/beckify/public/toolbox/**'
+      - 'artifacts/beckify/tests/switchgear-final.test.cjs'
+      - 'ios/Beckify/SwitchgearLogicLabWeb/**'
+      - 'ios/Beckify/Calculators/SwitchgearLogicLab*.swift'
+      - 'ios/scripts/pack_switchgear_logic_lab.py'
+      - '.github/workflows/switchgear-logic-lab.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/beckify/public/toolbox/**'
+      - 'artifacts/beckify/tests/switchgear-final.test.cjs'
+      - 'ios/Beckify/SwitchgearLogicLabWeb/**'
+      - 'ios/Beckify/Calculators/SwitchgearLogicLab*.swift'
+      - 'ios/scripts/pack_switchgear_logic_lab.py'
+      - '.github/workflows/switchgear-logic-lab.yml'
+permissions:
+  contents: read
+jobs:
+  engine-and-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - run: node --test artifacts/beckify/tests/switchgear-final.test.cjs
+      - run: python3 ios/scripts/pack_switchgear_logic_lab.py --check
