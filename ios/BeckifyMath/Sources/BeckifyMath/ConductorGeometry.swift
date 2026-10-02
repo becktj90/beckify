@@ -72,7 +72,7 @@ public enum ConductorGeometryModel {
         if let listed = listedArea, listed > 0, construction.listedInTable5 {
             overallFromTable5 = true
             area = listed
-            note = "Overall OD from Chapter 9 Table 5 (\(construction.displayName)). Metal Ø from Table 8. Drawn to scale — not actual size on screen."
+            note = "Overall OD from Chapter 9 Table 5 (\(construction.displayName)). Metal Ø from Table 8. Drawn to scale — screen size is not physical size."
         } else {
             // Equivalent-area fallback: circle matching metal CM when insulation
             // area is unknown. Still labeled — never pretend it is Table 5.
@@ -262,9 +262,9 @@ public struct AmpacityConductorLayout: Equatable, Sendable {
 
         let packing: String
         if phase.overallFromTable5 {
-            packing = "Drawn to scale from Table 5 / Table 8 numbers. Not actual size on this screen."
+            packing = "Drawn to scale from Table 5 / Table 8 numbers. Screen size is not physical size."
         } else {
-            packing = "Drawn to scale on an equivalent-area metal circle. Insulation OD not listed — not actual size on this screen."
+            packing = "Drawn to scale on an equivalent-area metal circle. Insulation OD not listed — screen size is not physical size."
         }
 
         var summaryParts = [
