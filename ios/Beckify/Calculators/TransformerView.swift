@@ -60,8 +60,8 @@ struct TransformerView: View {
             if loadKind == .kw {
                 NumberField(title: "Power factor", unit: "%", text: $pf, fieldID: "pf", onSubmit: calculate)
             }
-            NumberField(title: "Primary voltage", unit: "V", text: $vp, fieldID: "vp", onSubmit: calculate)
-            NumberField(title: "Secondary voltage", unit: "V", text: $vs, fieldID: "vs", onSubmit: calculate)
+            NumberField(title: "Primary voltage", unit: "V", text: $vp, helpText: "Supply side — the winding fed from the source.", fieldID: "vp", onSubmit: calculate)
+            NumberField(title: "Secondary voltage", unit: "V", text: $vs, helpText: "Load side — the winding feeding the downstream system.", fieldID: "vs", onSubmit: calculate)
             Picker("Connection", selection: $connection) {
                 ForEach(TransformerConnection.allowed(system)) { item in
                     Text(item.title).tag(item)

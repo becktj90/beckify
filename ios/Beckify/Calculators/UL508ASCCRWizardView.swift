@@ -188,7 +188,16 @@ struct UL508ASCCRWizardView: View {
             NumberField(title: "Transformer", unit: "VA", text: $xfmrVA, fieldID: "xfmrVA", onSubmit: calculate)
             NumberField(title: "Secondary voltage", unit: "V", text: $xfmrV, fieldID: "xfmrV", onSubmit: calculate)
             NumberField(title: "Impedance", unit: "%Z", text: $xfmrZ, optional: true, fieldID: "xfmrZ", onSubmit: calculate)
-            NumberField(title: "Phases", unit: "", text: $xfmrPhases, fieldID: "xfmrPhases", onSubmit: calculate)
+            // Keep the existing String-backed storage so saved 1Ø selections
+            // survive upgrades. Normalize legacy free-text through the picker.
+            Picker("Phases", selection: Binding<Int>(
+                get: { panelParse(xfmrPhases) == 1 ? 1 : 3 },
+                set: { xfmrPhases = String($0) }
+            )) {
+                Text("1Ø").tag(1)
+                Text("3Ø").tag(3)
+            }
+            .segmentedControlStyle()
             NumberField(title: "Primary device IR", unit: "kA", text: $xfmrPrimaryIR, fieldID: "xfmrPrimaryIR", onSubmit: calculate)
             Text("Leave %Z blank when it is unmarked. Blank or under 2.1% is planned at 2.1%. Isc ≈ VA / (√3·V·%Z) on a three-phase secondary. Mark secondary components with the transformer-secondary role.")
                 .font(Theme.TypeRole.help)
@@ -280,13 +289,12 @@ struct UL508ASCCRWizardView: View {
         case .transformer:
             guard let va = panelParse(xfmrVA) else { throw CalcError.missing("transformer VA") }
             guard let volts = panelParse(xfmrV) else { throw CalcError.missing("secondary voltage") }
-            guard let phases = panelParse(xfmrPhases) else { throw CalcError.missing("phases") }
             guard let primary = panelParse(xfmrPrimaryIR) else { throw CalcError.missing("primary device interrupting rating") }
             return .transformer(
                 va: va,
                 secondaryVolts: volts,
                 percentZ: panelParse(xfmrZ),
-                phases: Int(phases.rounded()),
+                phases: panelParse(xfmrPhases) == 1 ? 1 : 3,
                 primaryInterruptKA: primary
             )
         }
