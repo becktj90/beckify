@@ -445,8 +445,8 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Photograph a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
-            context: "Directory / Nameplate / Deadfront roles. Confirming the schedule is not measured load — no capacity-to-add from trips alone.",
+            summary: "Take a picture of a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
+            context: "Directory / Nameplate / Deadfront roles. Cloud Analyze uploads only if you tap it. Confirmed rows are not measured load — no capacity from trips alone.",
             bullets: [
                 "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
                 "Conflicts queue instead of silent first-wins. Inferred circuit numbers and incomplete coverage stay visible.",
@@ -801,7 +801,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Audio stays local; translate on Stop.",
                 "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → Apple Translation (iOS 18+).",
-                "Speak uses neural TTS. Spanish → English is California stoner English (onyx). Preparing audio… until play; Apple voice fallback.",
+                "Neural TTS: ES→EN is California stoner (onyx). Preparing voice… then Playing; Cancel skips Apple fallback; Still preparing… Ns ~3s.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

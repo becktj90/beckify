@@ -56,6 +56,13 @@ final class TransientCircuitTests: XCTestCase {
         XCTAssertThrowsError(try TransientCircuit.rcTimeConstant(resistance: 0, capacitance: 1e-6))
         XCTAssertThrowsError(try TransientCircuit.rlTimeConstant(inductance: 0.5, resistance: 0))
     }
+
+    /// `curve` divides by (samples - 1); 0 or 1 sample must throw rather than
+    /// return an empty curve or a point with a NaN time.
+    func testTooFewSamplesThrow() {
+        XCTAssertThrowsError(try TransientCircuit.step(amplitude: 10, timeConstant: 1, time: 1, charging: true, samples: 0))
+        XCTAssertThrowsError(try TransientCircuit.step(amplitude: 10, timeConstant: 1, time: 1, charging: true, samples: 1))
+    }
 }
 
 final class RackCurrentBudgetTests: XCTestCase {
@@ -125,6 +132,12 @@ final class DiodeIVTests: XCTestCase {
         XCTAssertThrowsError(try DiodeIV.solve(saturationCurrent: 0, idealityFactor: 1, temperatureKelvin: 300, forwardVoltage: 0.6))
         XCTAssertThrowsError(try DiodeIV.solve(saturationCurrent: 1e-9, idealityFactor: 0, temperatureKelvin: 300, forwardVoltage: 0.6))
         XCTAssertThrowsError(try DiodeIV.thermalVoltage(temperatureKelvin: 0))
+    }
+
+    /// Same samples-1 division as TransientCircuit.step; 0 or 1 sample must throw.
+    func testTooFewSamplesThrow() {
+        XCTAssertThrowsError(try DiodeIV.solve(saturationCurrent: 1e-9, idealityFactor: 1, temperatureKelvin: 300, forwardVoltage: 0.6, samples: 0))
+        XCTAssertThrowsError(try DiodeIV.solve(saturationCurrent: 1e-9, idealityFactor: 1, temperatureKelvin: 300, forwardVoltage: 0.6, samples: 1))
     }
 }
 
@@ -295,5 +308,21 @@ final class GaussianBeamTests: XCTestCase {
     func testNonPositiveInputsThrow() {
         XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0, wavelengthNanometers: 633))
         XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 0))
+    }
+
+    /// `nil` means the field was left blank — radiusAtDistance is simply absent,
+    /// not an error.
+    func testOmittedDistanceIsNotAnError() throws {
+        let result = try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: nil)
+        XCTAssertNil(result.radiusAtDistance)
+    }
+
+    /// A distance that was actually typed but is negative, NaN, or infinite is
+    /// a bad value, not an omitted one — it must throw rather than silently
+    /// drop radiusAtDistance as if the field were blank.
+    func testInvalidSuppliedDistanceThrows() {
+        XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: -1))
+        XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: .nan))
+        XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: .infinity))
     }
 }

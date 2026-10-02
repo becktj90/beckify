@@ -83,8 +83,8 @@ public enum ReferenceLibrary {
             ReferenceEntry(code: "4X", title: "Watertight, corrosion resistant", detail: "Type 4 plus corrosion resistance — stainless or non-metallic. Food plants, coastal, chemical."),
             ReferenceEntry(code: "6", title: "Occasional submersion", detail: "Temporary submersion at limited depth."),
             ReferenceEntry(code: "6P", title: "Prolonged submersion", detail: "Extended submersion at limited depth."),
-            ReferenceEntry(code: "7", title: "Class I, Div 1 explosionproof", detail: "Contains an internal explosion of a gas or vapour so it cannot ignite the room."),
-            ReferenceEntry(code: "9", title: "Class II, Div 1 dust-ignitionproof", detail: "Combustible dust. Keeps dust out and the surface cool."),
+            ReferenceEntry(code: "7", title: "Indoor, Class I, Div 1 explosionproof", detail: "Indoor hazardous locations only. Contains an internal explosion of a gas or vapour so it cannot ignite the room."),
+            ReferenceEntry(code: "9", title: "Indoor, Class II, Div 1 dust-ignitionproof", detail: "Indoor hazardous locations only. Combustible dust. Keeps dust out and the surface cool."),
             ReferenceEntry(code: "12", title: "Industrial, dust and drip", detail: "The standard indoor panel enclosure. Circulating dust, lint, and dripping non-corrosive liquid."),
             ReferenceEntry(code: "13", title: "Oil and coolant", detail: "Type 12 plus sprayed oil and non-corrosive coolant. Machine tools."),
         ]
@@ -111,7 +111,7 @@ public enum ReferenceLibrary {
             ReferenceEntry(code: "IPX6", title: "Liquids: powerful jets", detail: "12.5 mm nozzle. Roughly the NEMA 4 hose test."),
             ReferenceEntry(code: "IPX7", title: "Liquids: immersion 1 m", detail: "30 minutes at up to one metre."),
             ReferenceEntry(code: "IPX8", title: "Liquids: continuous immersion", detail: "Deeper or longer than IPX7, to the maker's stated conditions."),
-            ReferenceEntry(code: "IPX9K", title: "Liquids: high-pressure steam", detail: "Close-range high-temperature jets. Vehicle and food-plant wash-down."),
+            ReferenceEntry(code: "IPX9K", title: "Liquids: high-pressure steam", detail: "Close-range high-temperature jets. Vehicle and food-plant wash-down. Defined by ISO 20653 (road vehicles) / DIN 40050-9, not IEC 60529 — IEC's own IP scale stops at IPX8."),
         ]
     )
 
@@ -126,7 +126,7 @@ public enum ReferenceLibrary {
             ReferenceEntry(code: "120/208 V", title: "Black · Red · Blue", detail: "Phases A, B, C. Neutral white, ground green."),
             ReferenceEntry(code: "277/480 V", title: "Brown · Orange · Yellow", detail: "Phases A, B, C. Neutral grey, ground green."),
             ReferenceEntry(code: "High leg", title: "Orange", detail: "The 208 V-to-neutral leg on a 4-wire delta must be orange, or durably marked, per 110.15."),
-            ReferenceEntry(code: "Grounded", title: "White or grey", detail: "White for a system under 6 AWG; grey when white would be ambiguous between systems."),
+            ReferenceEntry(code: "Grounded", title: "White or grey", detail: "A continuous white or grey finish is required for 6 AWG or smaller (NEC 200.6); either color is always acceptable, not just grey for disambiguating multiple systems. Larger sizes may use other identification methods at the termination."),
             ReferenceEntry(code: "Grounding", title: "Green, green/yellow, or bare", detail: "Equipment grounding conductor. Never used for a current-carrying leg."),
             ReferenceEntry(code: "AC control", title: "Red", detail: "UL 508A: AC control conductors powered by the panel."),
             ReferenceEntry(code: "DC control", title: "Blue", detail: "UL 508A: DC control conductors powered by the panel."),
