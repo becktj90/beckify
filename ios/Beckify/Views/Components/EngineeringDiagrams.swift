@@ -1343,6 +1343,360 @@ struct ConductorCostRankingDiagram: View {
     }
 }
 
+// MARK: - Heater electrical one-line
+
+/// One-line schematic of the heater's electrical connection: wye (star point)
+/// or delta (loop), or a plain two-wire single-phase leg. Illustrative
+/// topology only — not a wiring diagram for a specific heater.
+struct HeaterCircuitDiagram: View {
+    let phase: HeaterPhase
+    let connection: HeaterConnection
+    let lineVolts: Double
+    let phaseVolts: Double
+    let legResistanceOhms: Double
+    let lineAmps: Double
+    let designAmps: Double
+
+    private var legCount: Int { phase == .three ? 3 : 1 }
+
+    private var topologyLabel: String {
+        phase == .single ? "Single-phase, 2-wire" : (connection == .wye ? "3-phase wye (star point)" : "3-phase delta (loop)")
+    }
+
+    private var summary: String {
+        "\(topologyLabel). Line \(Format.volts(lineVolts)), \(legCount) element\(legCount == 1 ? "" : "s") at \(Format.volts(phaseVolts)) each, \(Format.number(legResistanceOhms, digits: 2)) ohms per leg. Line current \(Format.amps(lineAmps)), design current \(Format.amps(designAmps))."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Heater one-line", accessibilitySummary: summary, exportName: "heater-design-oneline") {
+            EngineeringDiagramFrame(summary: summary) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(topologyLabel)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                    Canvas { context, size in
+                        draw(in: context, size: size)
+                    }
+                    .frame(minHeight: 190)
+                    HStack {
+                        badge("Line", Format.amps(lineAmps), tone: Theme.good)
+                        Spacer(minLength: 8)
+                        badge("Design ×1.25", Format.amps(designAmps), tone: Theme.copper)
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("heaterDesign.oneline")
+    }
+
+    private func badge(_ title: String, _ value: String, tone: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title).font(.caption2).foregroundStyle(Theme.muted)
+            Text(value).font(.caption.monospacedDigit().weight(.semibold)).foregroundStyle(tone)
+        }
+    }
+
+    private func draw(in context: GraphicsContext, size: CGSize) {
+        switch phase {
+        case .single:
+            drawSinglePhaseLoop(in: context, size: size)
+        case .three:
+            if connection == .wye {
+                drawWye(in: context, size: size)
+            } else {
+                drawDelta(in: context, size: size)
+            }
+        }
+    }
+
+    private func ohmLabel(at point: CGPoint, context: GraphicsContext) {
+        context.draw(
+            Text("\(Format.number(legResistanceOhms, digits: 2)) Ω")
+                .font(.caption2.monospacedDigit())
+                .foregroundColor(Theme.foreground),
+            at: point
+        )
+    }
+
+    /// Three independent line leads (no bus tying them together — that would
+    /// short the supply phases) descending through a resistor to one shared
+    /// star point. Only the star point ties the three legs together.
+    private func drawWye(in context: GraphicsContext, size: CGSize) {
+        let legX = legPositions(width: size.width)
+        let leadTopY: CGFloat = 16
+        let legTopY: CGFloat = 30
+        let legBottomY: CGFloat = size.height - 46
+
+        for (index, x) in legX.enumerated() {
+            var lead = Path()
+            lead.move(to: CGPoint(x: x, y: leadTopY))
+            lead.addLine(to: CGPoint(x: x, y: legTopY))
+            context.stroke(lead, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+            context.stroke(
+                zigzagPath(x: x, topY: legTopY, bottomY: legBottomY),
+                with: .color(Theme.accent),
+                style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+            )
+            context.draw(
+                Text("L\(index + 1)").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted),
+                at: CGPoint(x: x, y: leadTopY - 10)
+            )
+            ohmLabel(at: CGPoint(x: x, y: legBottomY + 14), context: context)
+        }
+
+        let starPoint = CGPoint(x: legX[1], y: size.height - 18)
+        for x in legX {
+            var toStar = Path()
+            toStar.move(to: CGPoint(x: x, y: legBottomY))
+            toStar.addLine(to: starPoint)
+            context.stroke(toStar, with: .color(Theme.accent.opacity(0.8)), lineWidth: Theme.Stroke.hairline)
+        }
+        context.fill(Path(ellipseIn: CGRect(x: starPoint.x - 4, y: starPoint.y - 4, width: 8, height: 8)), with: .color(Theme.energized))
+        context.draw(
+            Text("N").font(.caption2.weight(.bold)).foregroundColor(Theme.energized),
+            at: CGPoint(x: starPoint.x, y: starPoint.y + 12)
+        )
+    }
+
+    /// Three independent line leads, each resistor wired between a distinct
+    /// *pair* of lines (L1–L2, L2–L3, L3–L1) — a true delta loop, not three
+    /// legs hanging off a shared bus. L1 and L3 each feed two resistors;
+    /// L2 feeds the two resistors that share its node.
+    private func drawDelta(in context: GraphicsContext, size: CGSize) {
+        let legX = legPositions(width: size.width)
+        let leadTopY: CGFloat = 16
+        let terminalY: CGFloat = 34
+        let midRowY: CGFloat = terminalY + (size.height - terminalY) * 0.45
+        let lowRowY: CGFloat = size.height - 24
+
+        for (index, x) in legX.enumerated() {
+            var lead = Path()
+            lead.move(to: CGPoint(x: x, y: leadTopY))
+            lead.addLine(to: CGPoint(x: x, y: terminalY))
+            context.stroke(lead, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+            context.draw(
+                Text("L\(index + 1)").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted),
+                at: CGPoint(x: x, y: leadTopY - 10)
+            )
+        }
+
+        func drop(_ x: CGFloat, from: CGFloat, to: CGFloat) {
+            var stub = Path()
+            stub.move(to: CGPoint(x: x, y: from))
+            stub.addLine(to: CGPoint(x: x, y: to))
+            context.stroke(stub, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+        }
+
+        // R12 between L1 and L2, R23 between L2 and L3 — both at midRowY.
+        drop(legX[0], from: terminalY, to: midRowY)
+        drop(legX[1], from: terminalY, to: midRowY)
+        drop(legX[2], from: terminalY, to: midRowY)
+        context.stroke(
+            zigzagPath(x: (legX[0] + legX[1]) / 2, topY: midRowY, bottomY: midRowY, horizontal: true, span: legX[1] - legX[0]),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+        context.stroke(
+            zigzagPath(x: (legX[1] + legX[2]) / 2, topY: midRowY, bottomY: midRowY, horizontal: true, span: legX[2] - legX[1]),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+        ohmLabel(at: CGPoint(x: (legX[0] + legX[1]) / 2, y: midRowY - 10), context: context)
+        ohmLabel(at: CGPoint(x: (legX[1] + legX[2]) / 2, y: midRowY - 10), context: context)
+
+        // R31 between L3 and L1 — L1 and L3's leads continue down past
+        // midRowY (still the same node) to a lower row so this third
+        // resistor closes the loop without touching L2.
+        drop(legX[0], from: midRowY, to: lowRowY)
+        drop(legX[2], from: midRowY, to: lowRowY)
+        context.stroke(
+            zigzagPath(x: (legX[0] + legX[2]) / 2, topY: lowRowY, bottomY: lowRowY, horizontal: true, span: legX[2] - legX[0]),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+        ohmLabel(at: CGPoint(x: (legX[0] + legX[2]) / 2, y: lowRowY + 14), context: context)
+    }
+
+    /// Single-phase: two independent leads to the two ends of one element —
+    /// no wire directly joins L1 and L2, or it would short the element.
+    private func drawSinglePhaseLoop(in context: GraphicsContext, size: CGSize) {
+        let leftX: CGFloat = min(36, size.width * 0.14)
+        let rightX: CGFloat = size.width - leftX
+        let topY: CGFloat = 20
+        let bottomY: CGFloat = size.height - 28
+
+        var leads = Path()
+        leads.move(to: CGPoint(x: leftX, y: topY))
+        leads.addLine(to: CGPoint(x: leftX, y: bottomY))
+        leads.move(to: CGPoint(x: rightX, y: topY))
+        leads.addLine(to: CGPoint(x: rightX, y: bottomY))
+        context.stroke(leads, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+
+        context.stroke(
+            zigzagPath(x: (leftX + rightX) / 2, topY: bottomY, bottomY: bottomY, horizontal: true, span: rightX - leftX),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+
+        context.draw(Text("L1").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted), at: CGPoint(x: leftX, y: topY - 10))
+        context.draw(Text("L2").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted), at: CGPoint(x: rightX, y: topY - 10))
+        ohmLabel(at: CGPoint(x: (leftX + rightX) / 2, y: bottomY + 14), context: context)
+    }
+
+    private func legPositions(width: CGFloat) -> [CGFloat] {
+        let inset: CGFloat = min(36, width * 0.14)
+        guard legCount > 1 else { return [width / 2] }
+        return (0..<legCount).map { i in
+            inset + (width - 2 * inset) * CGFloat(i) / CGFloat(legCount - 1)
+        }
+    }
+
+    /// Vertical zigzag between `topY` and `bottomY` at `x`, or — when
+    /// `horizontal` is set — a horizontal zigzag of width `span` centered on `x`.
+    private func zigzagPath(x: CGFloat, topY: CGFloat, bottomY: CGFloat, horizontal: Bool = false, span: CGFloat = 0) -> Path {
+        let segments = 6
+        let amplitude: CGFloat = 7
+        var path = Path()
+        if horizontal {
+            let startX = x - span / 2
+            path.move(to: CGPoint(x: startX, y: topY))
+            for i in 0..<segments {
+                let t0 = CGFloat(i) / CGFloat(segments)
+                let t1 = CGFloat(i + 1) / CGFloat(segments)
+                let x0 = startX + span * t0
+                let x1 = startX + span * t1
+                let dy = (i % 2 == 0) ? -amplitude : amplitude
+                path.addLine(to: CGPoint(x: (x0 + x1) / 2, y: topY + dy))
+                path.addLine(to: CGPoint(x: x1, y: topY))
+            }
+            return path
+        }
+        let verticalSpan = bottomY - topY
+        path.move(to: CGPoint(x: x, y: topY))
+        for i in 0..<segments {
+            let t0 = CGFloat(i) / CGFloat(segments)
+            let t1 = CGFloat(i + 1) / CGFloat(segments)
+            let y0 = topY + verticalSpan * t0
+            let y1 = topY + verticalSpan * t1
+            let dx = (i % 2 == 0) ? amplitude : -amplitude
+            path.addLine(to: CGPoint(x: x + dx, y: (y0 + y1) / 2))
+            path.addLine(to: CGPoint(x: x, y: y1))
+        }
+        return path
+    }
+}
+
+// MARK: - Motor nameplate analysis plate
+
+/// Drawn plate summarizing the NEC overload/SCPD/conductor answer for a
+/// motor nameplate. Same drawn-plate language as `TableFLAPlateCard`
+/// (Motor FLA) — double border, corner ticks, no motor body or brand block.
+struct MotorNameplateResultPlate: View {
+    let fla: Double
+    let horsepower: Double?
+    let overloadAmps: Double
+    let overloadPercent: Double
+    let scpdAmps: Int?
+    let conductorSize: String?
+
+    private var summary: String {
+        var parts = ["FLA \(Format.amps(fla))"]
+        if let horsepower { parts.append("\(Format.number(horsepower, digits: horsepower.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2)) HP") }
+        parts.append("Overload max \(Format.amps(overloadAmps)), \(Format.number(overloadPercent, digits: 0)) percent")
+        if let scpdAmps { parts.append("SCPD \(scpdAmps) amps") }
+        if let conductorSize { parts.append("Conductor \(conductorSize)") }
+        return parts.joined(separator: ". ") + "."
+    }
+
+    var body: some View {
+        DiagramCard(title: "Nameplate analysis", accessibilitySummary: summary, exportName: "motor-nameplate-plate") {
+            plateFace
+        }
+        .accessibilityIdentifier("motorNameplate.resultPlate")
+    }
+
+    private var plateFace: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                spec("FLA", Format.amps(fla))
+                Spacer(minLength: 8)
+                if let horsepower {
+                    spec("HP", Format.number(horsepower, digits: horsepower.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2))
+                }
+            }
+            Rectangle()
+                .fill(Theme.border)
+                .frame(height: Theme.Stroke.hairline)
+            callout("\(Format.amps(overloadAmps)) (\(Format.number(overloadPercent, digits: 0))%)", "Overload max", tone: Theme.good, prominent: true)
+            if let scpdAmps {
+                callout("\(scpdAmps) A", "SCPD", tone: Theme.copper, prominent: false)
+            }
+            if let conductorSize {
+                callout(conductorSize, "Conductor", tone: Theme.energized, prominent: false)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            Canvas { context, size in
+                platePath(in: context, size: size)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func spec(_ caption: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(caption).font(.caption2).foregroundStyle(Theme.muted)
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func callout(_ value: String, _ caption: String, tone: Color, prominent: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(value)
+                .font(prominent ? .title2.monospacedDigit().weight(.bold) : .title3.monospacedDigit().weight(.semibold))
+                .foregroundStyle(tone)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(caption)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(tone)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+    }
+
+    /// Double border with corner ticks — no motor body, no screw heads, no brand block.
+    private func platePath(in context: GraphicsContext, size: CGSize) {
+        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 1.25, dy: 1.25)
+        let outer = Path(roundedRect: rect, cornerRadius: 8)
+        context.fill(outer, with: .color(Theme.surface))
+        context.stroke(outer, with: .color(Theme.foreground.opacity(0.88)), lineWidth: Theme.Stroke.emphasis)
+        let inner = Path(roundedRect: rect.insetBy(dx: 5, dy: 5), cornerRadius: 4)
+        context.stroke(inner, with: .color(Theme.border), lineWidth: Theme.Stroke.hairline)
+        let tick: CGFloat = 9
+        let inset: CGFloat = 9
+        let corners: [(CGPoint, CGFloat, CGFloat)] = [
+            (CGPoint(x: rect.minX + inset, y: rect.minY + inset), 1, 1),
+            (CGPoint(x: rect.maxX - inset, y: rect.minY + inset), -1, 1),
+            (CGPoint(x: rect.minX + inset, y: rect.maxY - inset), 1, -1),
+            (CGPoint(x: rect.maxX - inset, y: rect.maxY - inset), -1, -1),
+        ]
+        for (origin, sx, sy) in corners {
+            var path = Path()
+            path.move(to: CGPoint(x: origin.x, y: origin.y + sy * tick))
+            path.addLine(to: origin)
+            path.addLine(to: CGPoint(x: origin.x + sx * tick, y: origin.y))
+            context.stroke(path, with: .color(Theme.accent), style: StrokeStyle(lineWidth: Theme.Stroke.hairline, lineCap: .round, lineJoin: .round))
+        }
+    }
+}
+
 // MARK: - Shared engineer XY plot (Swift Charts — Charty-class craft)
 
 struct EngineerSeries: Identifiable {
