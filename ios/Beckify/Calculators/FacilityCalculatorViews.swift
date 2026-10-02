@@ -469,6 +469,16 @@ struct MotorNameplateView: View {
             }
 
             if let r = session.displayedResult {
+                MotorNameplateResultPlate(
+                    fla: r.fla,
+                    horsepower: r.horsepower,
+                    overloadAmps: r.overload.amps,
+                    overloadPercent: r.overload.percent,
+                    scpdAmps: r.scpd.nextStandardAmps,
+                    conductorSize: r.suggestedConductorSize
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Overload max", value: "\(Format.number(r.overload.amps, digits: 1)) A (\(Format.number(r.overload.percent, digits: 0))%)", emphasis: true, tone: Theme.good)
                     ResultRow(label: "OL article", value: "\(r.overload.article) — \(r.overload.reason)", tone: Theme.muted)
@@ -607,6 +617,17 @@ struct HeaterDesignView: View {
             }
 
             if let r = session.displayedResult {
+                HeaterCircuitDiagram(
+                    phase: r.phase,
+                    connection: r.connection,
+                    lineVolts: r.lineVolts,
+                    phaseVolts: r.phaseVolts,
+                    legResistanceOhms: r.legResistanceOhms,
+                    lineAmps: r.lineAmps,
+                    designAmps: r.designAmps
+                )
+                .opacity(session.isStale ? 0.72 : 1)
+
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Line current", value: Format.amps(r.lineAmps), emphasis: true)
                     ResultRow(label: "Phase voltage", value: Format.volts(r.phaseVolts))

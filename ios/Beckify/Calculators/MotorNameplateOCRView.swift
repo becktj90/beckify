@@ -38,6 +38,13 @@ struct MotorNameplateOCRView: View {
     @State private var analyzeError: String?
     @State private var cloudWarnings: [String] = []
 
+    // NEC analysis, computed inline from the confirmed draft so scanning a
+    // plate answers the overload/SCPD/conductor question in this one tool —
+    // no hop to Motor Nameplate Analyzer required for the common case.
+    @StoredInput(.motorNameplateOCR, "necMotorType", default: "sc-bde") private var necMotorType
+    @StoredInput(.motorNameplateOCR, "necDevice", default: "inv") private var necDevice
+    @State private var necSession = ExplicitCalculationState<MotorNameplateResult>()
+
     private var inputFingerprint: String { text }
 
     private var reviewFields: [NameplateFieldID] { NameplateFieldID.allCases }
@@ -312,7 +319,99 @@ struct MotorNameplateOCRView: View {
                 ))
             }
 
+            necAnalysisSection
             handoffSection
+        }
+    }
+
+    // MARK: - Inline NEC analysis
+
+    /// Overload / SCPD / conductor sizing computed from the confirmed draft,
+    /// right in this tool — motor type and SCPD device aren't plate-printed
+    /// data, so they stay as the two small pickers here.
+    @ViewBuilder
+    private var necAnalysisSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            Text("NEC ANALYSIS")
+                .font(.caption.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(Theme.muted)
+            Text("Overload, SCPD, and conductor sizing from the confirmed FLA above. Motor type and SCPD device aren't on the plate, so pick them here.")
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+
+            MenuField(title: "Motor type", selection: $necMotorType, options: MotorNameplateType.allCases.map(\.rawValue)) { raw in
+                MotorNameplateType(rawValue: raw)?.label ?? raw
+            }
+            MenuField(title: "SCPD device", selection: $necDevice, options: MotorSCPDDevice.allCases.map(\.rawValue)) { raw in
+                MotorSCPDDevice(rawValue: raw)?.label ?? raw
+            }
+
+            Button("Calculate NEC values") {
+                calculateNEC()
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+            .disabled((filledDraft[.fla] ?? "").isEmpty)
+            .accessibilityIdentifier("motorNameplateOCR.calculateNEC")
+
+            if let error = necSession.lastValidationError ?? necSession.error {
+                ErrorText(message: error.message)
+            }
+
+            if let r = necSession.displayedResult {
+                MotorNameplateResultPlate(
+                    fla: r.fla,
+                    horsepower: r.horsepower,
+                    overloadAmps: r.overload.amps,
+                    overloadPercent: r.overload.percent,
+                    scpdAmps: r.scpd.nextStandardAmps,
+                    conductorSize: r.suggestedConductorSize
+                )
+                .opacity(necSession.isStale ? 0.72 : 1)
+
+                ResultCard(title: "NEC results") {
+                    ResultRow(label: "Overload max", value: "\(Format.number(r.overload.amps, digits: 1)) A (\(Format.number(r.overload.percent, digits: 0))%)", emphasis: true, tone: Theme.good)
+                    ResultRow(label: "OL article", value: "\(r.overload.article) — \(r.overload.reason)", tone: Theme.muted)
+                    ResultRow(label: "SCPD max", value: "\(Format.number(r.scpd.rawAmps, digits: 1)) A → \(r.scpd.nextStandardAmps.map(String.init) ?? "—") A", emphasis: true, tone: Theme.copper)
+                    ResultRow(label: "Conductor ≥", value: "\(Format.amps(r.conductorRequiredAmps))" + (r.suggestedConductorSize.map { " → \($0) AWG/kcmil" } ?? ""))
+                }
+                .opacity(necSession.isStale ? 0.72 : 1)
+                if let device = r.scpd.nextStandardAmps {
+                    EquipmentGroundingCard(
+                        recommendation: EquipmentGrounding.recommend(
+                            amps: Double(device),
+                            material: .copper,
+                            context: EquipmentGroundingContext.from(phases: Int(filledDraft[.phases] ?? "3") ?? 3),
+                            ampsAreOCPDRating: true,
+                            ungroundedSize: r.suggestedConductorSize,
+                            extraNote: "OCPD basis is the Table 430.52 next standard device, not nameplate FLA. A smaller breaker can allow a smaller EGC."
+                        )
+                    )
+                    .opacity(necSession.isStale ? 0.72 : 1)
+                }
+            }
+        }
+        .padding(12)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onChange(of: necMotorType) { _, _ in necSession.markInputsChanged() }
+        .onChange(of: necDevice) { _, _ in necSession.markInputsChanged() }
+    }
+
+    private func calculateNEC() {
+        necSession.calculate {
+            try MotorNameplate.analyze(
+                fla: filledDraft[.fla]?.parsedDouble ?? .nan,
+                phases: Int(filledDraft[.phases] ?? "3") ?? 3,
+                horsepower: filledDraft[.ratedHP]?.parsedDouble,
+                volts: filledDraft[.voltage]?.parsedDouble,
+                serviceFactor: filledDraft[.sf]?.parsedDouble,
+                temperatureRiseC: nil,
+                motorType: MotorNameplateType(rawValue: necMotorType) ?? .squirrelCageOther,
+                device: MotorSCPDDevice(rawValue: necDevice) ?? .inverseTimeBreaker,
+                codeLetter: filledDraft[.codeLetter]
+            )
         }
     }
 
