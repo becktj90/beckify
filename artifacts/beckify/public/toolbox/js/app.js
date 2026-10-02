@@ -1025,7 +1025,7 @@ function conductorMetalMassFromLength(lengthFt, circularMils, material) {
   const massLb = lbPerKft * lengthFt / 1000;
   return {
     metalName: aluminum ? 'Aluminum' : 'Copper',
-    weightLabel: aluminum ? 'Aluminum Weight' : 'Copper Weight',
+    weightLabel: aluminum ? 'Estimated aluminum mass — one conductor' : 'Estimated copper mass — one conductor',
     densityGPerCm3: densityGPerCm3,
     lbPerKft: lbPerKft,
     massKg: massLb * CLR_G_PER_LB / 1000,
@@ -1048,21 +1048,37 @@ function clrMethodCopy(method) {
   }
   if (method === 'loop3') {
     return {
-      detail: 'Symmetrical far-end short; distance to short = path ÷ 2',
-      primaryLabel: 'Distance to Short',
-      setupLabel: '3-phase far-end short: distance to short = path ÷ 2',
-      farLabel: 'Short / bond',
-      rule: 'Distance to short = total solved path ÷ 2',
-      factor: 'Path factor: ÷2 — distance to short is one-way'
+      detail: 'Three conductors with a far-end bond; the measured pair traverses two conductor lengths while the third near end is left open. One-way distance = total conductor path ÷ 2. Equal-conductor assumption required.',
+      primaryLabel: 'Distance to Far-End Jumper',
+      setupLabel: '3-conductor far-end short: distance to far-end jumper = path ÷ 2',
+      farLabel: 'Far-end jumper',
+      rule: 'Distance to far-end jumper = total solved path ÷ 2',
+      factor: 'Path factor: ÷2 — distance to far-end jumper is one-way'
     };
   }
   return {
-    detail: 'Measure between two parallels shorted/bonded along the run; distance to short = path ÷ 2',
-    primaryLabel: 'Distance to Short',
-    setupLabel: 'Short to parallel: distance to short = path ÷ 2',
-    farLabel: 'Short / bond',
-    rule: 'Distance to short = total solved path ÷ 2',
-    factor: 'Path factor: ÷2 — distance to short is one-way'
+    detail: 'Two equal-length, equal-size, same-material conductors joined at the far end; meter across the near ends. One-way distance = total conductor path ÷ 2. Additional bonds or connected loads invalidate this simple loop reading.',
+    primaryLabel: 'Distance to Far-End Jumper',
+    setupLabel: 'Two-conductor loop: distance to far-end jumper = path ÷ 2',
+    farLabel: 'Far-end jumper',
+    rule: 'Distance to far-end jumper = total solved path ÷ 2',
+    factor: 'Path factor: ÷2 — distance to far-end jumper is one-way'
+  };
+}
+
+/* Source/sense technique at the meter — distinct from measurement topology.
+   Four-wire Kelvin sensing cancels the meter's own lead resistance; it does
+   not automatically remove a remote far-end jumper's resistance. */
+function clrTechniqueCopy(technique) {
+  if (technique === 'fourWireKelvin') {
+    return {
+      label: '4-wire (Kelvin)',
+      detail: 'Separate source and sense leads cancel lead/fixture resistance at the meter. A remote far-end jumper is still inside the measured path.'
+    };
+  }
+  return {
+    label: '2-wire',
+    detail: 'Source and sense share the same leads. Lead/fixture resistance adds to the reading — correct it below.'
   };
 }
 
@@ -1187,11 +1203,11 @@ window.calcConductorLengthByResistance = function () {
       [result.weightLabel, fmt(result.oneWayMassLb, 2) + ' lb (' + fmt(result.oneWayMassKg, 2) + ' kg)'],
       ['Total Conductor Path', fmt(result.totalLengthFt, 2) + ' ft (' + fmt(result.totalLengthM, 2) + ' m)'],
       ['Temperature-Corrected Resistance @ ' + fmt(referenceTempC, 0) + '°C', fmt(result.resistanceAtRefTemp, 6) + ' Ω'],
-      ['Resistance Used', fmt(result.resistanceOhms, 6) + ' Ω'],
+      ['Net Conductor-Path Resistance', fmt(result.resistanceOhms, 6) + ' Ω'],
       ['Conductor Area', fmt(cmil, 0) + ' circular mils'],
       ['Material / ρ', materialLabel + ' — ' + fmt(rho, 4) + ' Ω·cmil/ft'],
-      ["What's Shorted?", copy.setupLabel],
-      ['Weight Basis', fmt(result.lbPerKft, 2) + ' lb/kft × one-way length (distance to short / end-to-end). Bare ' + result.metalName.toLowerCase() + ' book — not a scale reading.']
+      ['Measurement Setup', copy.setupLabel],
+      ['Mass Basis', fmt(result.lbPerKft, 2) + ' lb/kft × one-way length (distance to far-end jumper / end-to-end). Bare ' + result.metalName.toLowerCase() + ' book, one conductor — excludes insulation/jacket/armor, not a scale reading.']
     ]);
   } catch (err) {
     showError('clr_result', err && err.message ? err.message : 'Could not solve conductor length.');

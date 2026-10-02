@@ -28,7 +28,7 @@ public enum ConductorLengthTempUnit: String, Codable, CaseIterable, Sendable, Ha
 }
 
 /// Path geometry. Loop methods always divide solved length by 2 for one-way
-/// distance, including the 3-phase far-end short (website `loop3` rule).
+/// distance, including the 3-conductor far-end short (website `loop3` rule).
 public enum ConductorLengthMethod: String, Codable, CaseIterable, Sendable, Hashable {
     case single
     case loop2
@@ -37,22 +37,24 @@ public enum ConductorLengthMethod: String, Codable, CaseIterable, Sendable, Hash
     public var displayName: String {
         switch self {
         case .single: return "End-to-end"
-        case .loop2: return "Short to parallel"
-        case .loop3: return "3-phase far-end short"
+        case .loop2: return "Two-conductor loop"
+        case .loop3: return "3-conductor far-end short"
         }
     }
 
     public var detail: String {
         switch self {
         case .single: return "One conductor measured end-to-end; distance = solved path"
-        case .loop2: return "Measure between two parallels shorted/bonded along the run; distance to short = path ÷ 2"
-        case .loop3: return "Symmetrical far-end short; distance to short = path ÷ 2"
+        case .loop2: return "Two equal conductors joined at the far end; meter across the near ends; one-way distance = total path ÷ 2"
+        case .loop3: return "Three equal conductors bonded at the far end; measured pair traverses two conductor lengths; one-way distance = total path ÷ 2"
         }
     }
 
-    /// Sticky / result headline: end-to-end length vs one-way distance to the short.
+    /// Sticky / result headline: end-to-end length vs one-way distance to the
+    /// deliberate far-end jumper. This is a schematic loop test, not a fault
+    /// locator — avoid implying the resistance alone finds an unknown short.
     public var primaryLengthLabel: String {
-        self == .single ? "End-to-end length" : "Distance to short"
+        self == .single ? "End-to-end length" : "Distance to far-end jumper"
     }
 
     /// Website `clrPathFactor`: single is ×1, every loop method is ÷2.
@@ -78,9 +80,11 @@ public enum ConductorLengthMaterial: String, Codable, CaseIterable, Sendable, Ha
         self == .aluminum ? .aluminum : .copper
     }
 
-    /// Result-row / copy label. Copper (annealed or hard-drawn) stays "Copper weight".
+    /// Result-row / copy label. Labeled per-conductor because the displayed
+    /// mass is for one conductor's one-way length only — not the whole run,
+    /// bundle, or cable (insulation/jacket/armor excluded).
     public var weightLabel: String {
-        self == .aluminum ? "Aluminum weight" : "Copper weight"
+        self == .aluminum ? "Estimated aluminum mass — one conductor" : "Estimated copper mass — one conductor"
     }
 
     public var metalDisplayName: String {
@@ -127,6 +131,29 @@ public struct ConductorLengthPreset: Equatable, Sendable {
     }
 }
 
+/// Instrument technique at the meter, distinct from the measurement
+/// *topology* (end-to-end / two-conductor loop / three-conductor far-end
+/// short). Four-wire Kelvin sensing removes the meter's own lead-resistance
+/// error; it does not automatically remove a remote far-end jumper's
+/// resistance, which still sits inside the measured path.
+public enum ConductorLengthMeasurementTechnique: String, Codable, CaseIterable, Sendable, Hashable {
+    case twoWire
+    case fourWireKelvin
+
+    public var displayName: String {
+        self == .fourWireKelvin ? "4-wire (Kelvin)" : "2-wire"
+    }
+
+    public var detail: String {
+        switch self {
+        case .twoWire:
+            return "Source and sense share the same leads. Lead/fixture resistance adds to the reading — correct it below."
+        case .fourWireKelvin:
+            return "Separate source and sense leads cancel lead/fixture resistance at the meter. A remote far-end jumper is still inside the measured path."
+        }
+    }
+}
+
 public struct ConductorLengthInput: Equatable, Sendable {
     public var resistance: Double
     public var resistanceUnit: ConductorLengthResistanceUnit
@@ -139,6 +166,21 @@ public struct ConductorLengthInput: Equatable, Sendable {
     public var rho: Double
     /// Selects copper vs aluminum density for the metal-mass estimate.
     public var material: ConductorLengthMaterial
+    /// Source / sense topology at the meter. Informational for the
+    /// correction model below — see `ConductorLengthMeasurementTechnique`.
+    public var measurementTechnique: ConductorLengthMeasurementTechnique
+    /// Known test-lead / fixture resistance to subtract from a two-wire
+    /// reading before solving for length. In the resistance unit on screen.
+    public var leadResistance: Double
+    /// Known far-end jumper / bonded-contact resistance to subtract from a
+    /// loop (two- or three-conductor) reading. In the resistance unit on
+    /// screen. Four-wire sensing does not remove this — it is remote from
+    /// the meter's own leads.
+    public var jumperResistance: Double
+    /// Number of physical conductors the displayed metal mass should be
+    /// multiplied by for a "total metal mass" figure (e.g. a 3-conductor
+    /// parallel set). Defaults to 1 — the displayed one-conductor mass.
+    public var conductorQuantityForMass: Int
 
     public init(
         resistance: Double,
@@ -150,7 +192,11 @@ public struct ConductorLengthInput: Equatable, Sendable {
         referenceTempC: Double,
         alpha: Double,
         rho: Double,
-        material: ConductorLengthMaterial = .copperAnnealed
+        material: ConductorLengthMaterial = .copperAnnealed,
+        measurementTechnique: ConductorLengthMeasurementTechnique = .twoWire,
+        leadResistance: Double = 0,
+        jumperResistance: Double = 0,
+        conductorQuantityForMass: Int = 1
     ) {
         self.resistance = resistance
         self.resistanceUnit = resistanceUnit
@@ -162,11 +208,24 @@ public struct ConductorLengthInput: Equatable, Sendable {
         self.alpha = alpha
         self.rho = rho
         self.material = material
+        self.measurementTechnique = measurementTechnique
+        self.leadResistance = leadResistance
+        self.jumperResistance = jumperResistance
+        self.conductorQuantityForMass = conductorQuantityForMass
     }
 }
 
 public struct ConductorLengthResult: Equatable, Sendable {
+    /// Raw reading as entered, before any lead/jumper correction.
+    public var rawResistanceOhms: Double
+    /// Net conductor-path resistance after subtracting lead/jumper
+    /// corrections. This is what the length solve uses.
     public var resistanceOhms: Double
+    public var leadResistanceOhms: Double
+    public var jumperResistanceOhms: Double
+    /// Set when a correction is large relative to the raw reading
+    /// (>25%), so the UI can flag it instead of silently trusting it.
+    public var largeCorrectionWarning: Bool
     public var measuredTempC: Double
     public var referenceTempC: Double
     public var resistanceAtRefTemp: Double
@@ -180,11 +239,14 @@ public struct ConductorLengthResult: Equatable, Sendable {
     public var alpha: Double
     public var formula: String
     public var metalMass: ConductorMetalMass
+    public var conductorQuantityForMass: Int
 }
 
 /// Estimated metal mass from published bare-metal lb/kft × length.
-/// Displayed weight is always **one-way** (distance to short / end-to-end).
-/// Not a scale reading — insulation, compounds, and temperature are ignored.
+/// Displayed weight is always **one-way, one conductor** (distance to the
+/// far-end jumper / end-to-end). Not a scale reading — insulation,
+/// compounds, armor, and temperature are ignored. A separate total across
+/// `conductorQuantityForMass` conductors is offered when configured.
 public struct ConductorMetalMass: Equatable, Sendable {
     public var label: String
     public var metalName: String
@@ -195,6 +257,10 @@ public struct ConductorMetalMass: Equatable, Sendable {
     public var oneWayKg: Double
     public var totalPathLb: Double
     public var totalPathKg: Double
+    /// One-way mass × `conductorQuantityForMass`. Only meaningful when the
+    /// caller explicitly configured a conductor count > 1 — never invented.
+    public var configuredTotalLb: Double
+    public var configuredTotalKg: Double
 }
 
 /// Estimate one-way conductor distance from measured resistance.
@@ -316,8 +382,16 @@ public enum ConductorLength {
     }
 
     /// Port of `conductorLengthByResistanceModel` in toolbox `app.js`.
+    /// Order of operations: raw reading → subtract known lead/fixture and
+    /// far-end jumper corrections (net resistance) → temperature-correct to
+    /// the resistivity reference → solve for conductor path → one-way
+    /// distance → metal mass.
     public static func calculate(_ input: ConductorLengthInput) throws -> ConductorLengthResult {
-        let resistanceOhms = resistanceToOhms(input.resistance, unit: input.resistanceUnit)
+        let rawResistanceOhms = resistanceToOhms(input.resistance, unit: input.resistanceUnit)
+        let leadResistanceOhms = resistanceToOhms(input.leadResistance, unit: input.resistanceUnit)
+        let jumperResistanceOhms = input.method == .single
+            ? 0
+            : resistanceToOhms(input.jumperResistance, unit: input.resistanceUnit)
         let measuredTempC = temperatureToC(input.temperature, unit: input.temperatureUnit)
         let refTempC = input.referenceTempC
         let alpha = input.alpha
@@ -327,10 +401,14 @@ public enum ConductorLength {
         let denom = 1 + alpha * (measuredTempC - refTempC)
 
         // Match website `isPos` / `isNum` checks and error copy so iOS and web agree.
-        guard resistanceOhms.isFinite, resistanceOhms > 0,
+        guard rawResistanceOhms.isFinite, rawResistanceOhms > 0,
               cmil.isFinite, cmil > 0,
               rho.isFinite, rho > 0 else {
             throw CalcError.outOfRange("Resistance, conductor area, and ρ must be greater than zero.")
+        }
+        guard leadResistanceOhms.isFinite, leadResistanceOhms >= 0,
+              jumperResistanceOhms.isFinite, jumperResistanceOhms >= 0 else {
+            throw CalcError.outOfRange("Enter a lead/jumper correction of zero or more.")
         }
         guard measuredTempC.isFinite, refTempC.isFinite, alpha.isFinite, alpha >= 0 else {
             throw CalcError.outOfRange("Enter valid temperatures and α.")
@@ -338,8 +416,21 @@ public enum ConductorLength {
         if abs(denom) < 1e-9 || denom <= 0 {
             throw CalcError.outOfRange("Temperature compensation produced an invalid resistance factor.")
         }
+        guard input.conductorQuantityForMass >= 1 else {
+            throw CalcError.outOfRange("Conductor quantity for total mass must be at least 1.")
+        }
 
-        let resistanceAtRefTemp = resistanceOhms / denom
+        let totalCorrection = leadResistanceOhms + jumperResistanceOhms
+        let netResistanceOhms = rawResistanceOhms - totalCorrection
+        guard netResistanceOhms.isFinite, netResistanceOhms > 0 else {
+            throw CalcError.outOfRange("Lead/jumper correction leaves zero or negative net conductor-path resistance. Check the raw reading and corrections.")
+        }
+        // Flag (not block) when a correction dominates the reading — the
+        // net value is still usable, but the estimate rides mostly on the
+        // correction rather than the measured conductor.
+        let largeCorrectionWarning = totalCorrection > 0 && (totalCorrection / rawResistanceOhms) > 0.25
+
+        let resistanceAtRefTemp = netResistanceOhms / denom
         let totalLengthFt = resistanceAtRefTemp * cmil / rho
         let oneWayLengthFt = totalLengthFt / pathFactor
         let lbPerKft = bookLbPerKft(circularMils: cmil, material: input.material)
@@ -353,6 +444,7 @@ public enum ConductorLength {
             circularMils: cmil,
             material: input.material
         )
+        let quantity = Double(input.conductorQuantityForMass)
         let estimatedMass = ConductorMetalMass(
             label: input.material.weightLabel,
             metalName: input.material.metalDisplayName,
@@ -361,11 +453,17 @@ public enum ConductorLength {
             oneWayLb: oneWay.lb,
             oneWayKg: oneWay.kg,
             totalPathLb: totalPath.lb,
-            totalPathKg: totalPath.kg
+            totalPathKg: totalPath.kg,
+            configuredTotalLb: oneWay.lb * quantity,
+            configuredTotalKg: oneWay.kg * quantity
         )
 
         return ConductorLengthResult(
-            resistanceOhms: resistanceOhms,
+            rawResistanceOhms: rawResistanceOhms,
+            resistanceOhms: netResistanceOhms,
+            leadResistanceOhms: leadResistanceOhms,
+            jumperResistanceOhms: jumperResistanceOhms,
+            largeCorrectionWarning: largeCorrectionWarning,
             measuredTempC: measuredTempC,
             referenceTempC: refTempC,
             resistanceAtRefTemp: resistanceAtRefTemp,
@@ -378,7 +476,8 @@ public enum ConductorLength {
             rho: rho,
             alpha: alpha,
             formula: "L = R_ref × CM / ρ    R_ref = R / [1 + α × (T − T_ref)]",
-            metalMass: estimatedMass
+            metalMass: estimatedMass,
+            conductorQuantityForMass: input.conductorQuantityForMass
         )
     }
 }

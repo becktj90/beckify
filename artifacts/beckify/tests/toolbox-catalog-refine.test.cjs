@@ -70,8 +70,8 @@ const iosCat = fs.readFileSync(path.join(root, '../../ios/Beckify/Models/Toolbox
 ok('iOS keeps powerWizard as a hidden lookup', iosCat.includes('hiddenTools') && /id: \.powerWizard/.test(iosCat));
 ok('iOS toolbox list does not show a second Power Wizard',
   !/static let tools[\s\S]*id: \.powerWizard[\s\S]*static let hiddenTools/.test(iosCat));
-ok('iOS conductor-length catalog mentions milliohm and short-to-parallel',
-  /id: \.conductorLength[\s\S]*milliohm \(mΩ\)[\s\S]*short-to-parallel[\s\S]*id: \.receptacleSelector/.test(iosCat)
+ok('iOS conductor-length catalog mentions wire length estimator terminology',
+  /id: \.conductorLength[\s\S]*title: "Wire Length Estimator"[\s\S]*subtitle: "Estimate length from resistance\."[\s\S]*id: \.receptacleSelector/.test(iosCat)
   && iosCat.includes('"shorted parallel"') && iosCat.includes('"kelvin"'));
 
 console.log('\n--- I²R + MV ---');
