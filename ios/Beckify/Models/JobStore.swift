@@ -74,7 +74,7 @@ final class JobStore: ObservableObject {
         }
 
         do {
-            try SavedJobsArchive(
+            _ = try SavedJobsArchive(
                 jobs: updatedJobs.map { Self.archiveRecord(for: $0) }
             ).encodedData()
         } catch {
