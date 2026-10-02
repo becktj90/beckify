@@ -24,7 +24,7 @@ final class ConductorLengthTests: XCTestCase {
         XCTAssertEqual(result.resistanceOhms, 0.25, accuracy: 1e-12)
         XCTAssertEqual(result.totalLengthM, result.totalLengthFt * 0.3048, accuracy: 1e-12)
         XCTAssertEqual(result.oneWayLengthM, result.oneWayLengthFt * 0.3048, accuracy: 1e-12)
-        XCTAssertEqual(result.metalMass.label, "Copper weight")
+        XCTAssertEqual(result.metalMass.label, "Estimated copper mass — one conductor")
         XCTAssertEqual(result.metalMass.densityGPerCm3, 8.89, accuracy: 1e-12)
         XCTAssertEqual(result.metalMass.lbPerKft, 319.5, accuracy: 1e-12)
         XCTAssertEqual(result.metalMass.oneWayLb, result.metalMass.totalPathLb, accuracy: 1e-12)
@@ -70,7 +70,7 @@ final class ConductorLengthTests: XCTestCase {
         XCTAssertEqual(result.oneWayLengthFt, 1005.39, accuracy: 0.5)
         XCTAssertEqual(result.oneWayLengthFt, result.totalLengthFt / 2, accuracy: 1e-12)
         XCTAssertEqual(result.pathFactor, 2, accuracy: 1e-12)
-        XCTAssertEqual(result.metalMass.label, "Aluminum weight")
+        XCTAssertEqual(result.metalMass.label, "Estimated aluminum mass — one conductor")
         XCTAssertEqual(result.metalMass.densityGPerCm3, 2.70, accuracy: 1e-12)
         XCTAssertEqual(result.metalMass.oneWayLb, result.metalMass.totalPathLb / 2, accuracy: 1e-12)
         // Displayed weight stays one-way (distance to short), not total-path.
@@ -137,14 +137,14 @@ final class ConductorLengthTests: XCTestCase {
         XCTAssertEqual(ConductorLengthMethod.loop2.rawValue, "loop2")
         XCTAssertEqual(ConductorLengthMethod.loop3.rawValue, "loop3")
         XCTAssertEqual(ConductorLengthMethod.single.displayName, "End-to-end")
-        XCTAssertEqual(ConductorLengthMethod.loop2.displayName, "Short to parallel")
-        XCTAssertEqual(ConductorLengthMethod.loop3.displayName, "3-phase far-end short")
+        XCTAssertEqual(ConductorLengthMethod.loop2.displayName, "Two-conductor loop")
+        XCTAssertEqual(ConductorLengthMethod.loop3.displayName, "3-conductor far-end short")
         XCTAssertEqual(ConductorLengthMethod.single.pathFactor, 1, accuracy: 1e-12)
         XCTAssertEqual(ConductorLengthMethod.loop2.pathFactor, 2, accuracy: 1e-12)
         XCTAssertEqual(ConductorLengthMethod.loop3.pathFactor, 2, accuracy: 1e-12)
         XCTAssertEqual(ConductorLengthMethod.single.primaryLengthLabel, "End-to-end length")
-        XCTAssertEqual(ConductorLengthMethod.loop2.primaryLengthLabel, "Distance to short")
-        XCTAssertEqual(ConductorLengthMethod.loop3.primaryLengthLabel, "Distance to short")
+        XCTAssertEqual(ConductorLengthMethod.loop2.primaryLengthLabel, "Distance to far-end jumper")
+        XCTAssertEqual(ConductorLengthMethod.loop3.primaryLengthLabel, "Distance to far-end jumper")
         XCTAssertTrue(ConductorLengthMethod.single.detail.contains("end-to-end"))
         XCTAssertTrue(ConductorLengthMethod.loop2.detail.contains("path ÷ 2"))
         XCTAssertTrue(ConductorLengthMethod.loop3.detail.contains("path ÷ 2"))
@@ -229,7 +229,7 @@ final class ConductorLengthTests: XCTestCase {
         // Standard Wire 1/0 Cu is 319.5 lb/kft; density×CM at 8.89 g/cm³ is ~319.7.
         XCTAssertEqual(mass.lb, 319.5, accuracy: 0.4)
         XCTAssertEqual(mass.kg, mass.lb * ConductorLength.gramsPerPound / 1000, accuracy: 1e-9)
-        XCTAssertEqual(ConductorLengthMaterial.copperHardDrawn.weightLabel, "Copper weight")
+        XCTAssertEqual(ConductorLengthMaterial.copperHardDrawn.weightLabel, "Estimated copper mass — one conductor")
         XCTAssertEqual(ConductorLengthMaterial.copperHardDrawn.densityGPerCm3, 8.89, accuracy: 1e-12)
     }
 
@@ -249,7 +249,7 @@ final class ConductorLengthTests: XCTestCase {
             copper.lb * ConductorLength.aluminumDensityGPerCm3 / ConductorLength.copperDensityGPerCm3,
             accuracy: 1e-12
         )
-        XCTAssertEqual(ConductorLengthMaterial.aluminum.weightLabel, "Aluminum weight")
+        XCTAssertEqual(ConductorLengthMaterial.aluminum.weightLabel, "Estimated aluminum mass — one conductor")
         XCTAssertLessThan(aluminum.lb, copper.lb)
     }
 
@@ -282,5 +282,170 @@ final class ConductorLengthTests: XCTestCase {
             XCTAssertTrue(message.contains("Length and conductor area"))
             XCTAssertFalse(message.contains("density"))
         }
+    }
+
+    // MARK: - Measurement-quality corrections
+
+    func testLeadResistanceCorrectionReducesNetResistanceAndIsReported() throws {
+        let raw = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 260,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            leadResistance: 10,
+            jumperResistance: 0
+        ))
+
+        XCTAssertEqual(raw.rawResistanceOhms, 0.26, accuracy: 1e-12)
+        XCTAssertEqual(raw.leadResistanceOhms, 0.01, accuracy: 1e-12)
+        XCTAssertEqual(raw.jumperResistanceOhms, 0, accuracy: 1e-12)
+        // Net resistance used for the length solve is raw minus the lead correction.
+        XCTAssertEqual(raw.resistanceOhms, 0.25, accuracy: 1e-12)
+        XCTAssertFalse(raw.largeCorrectionWarning)
+    }
+
+    func testJumperResistanceCorrectionOnlyAppliesToLoopMethods() throws {
+        let single = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 250,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            jumperResistance: 50
+        ))
+        // End-to-end has no far-end jumper to subtract.
+        XCTAssertEqual(single.jumperResistanceOhms, 0, accuracy: 1e-12)
+        XCTAssertEqual(single.resistanceOhms, single.rawResistanceOhms, accuracy: 1e-12)
+
+        let loop = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 260,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .loop2,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            jumperResistance: 10
+        ))
+        XCTAssertEqual(loop.jumperResistanceOhms, 0.01, accuracy: 1e-12)
+        XCTAssertEqual(loop.resistanceOhms, 0.25, accuracy: 1e-12)
+    }
+
+    func testZeroOrNegativeNetResistanceAfterCorrectionThrows() {
+        XCTAssertThrowsError(try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 10,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            leadResistance: 20
+        ))) { error in
+            guard let calc = error as? CalcError, case .outOfRange(let message) = calc else {
+                return XCTFail("expected outOfRange, got \(error)")
+            }
+            XCTAssertTrue(message.contains("net conductor-path resistance"))
+        }
+    }
+
+    func testLargeCorrectionRelativeToReadingIsFlagged() throws {
+        let result = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 100,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            leadResistance: 40
+        ))
+        // 40/100 = 40% of the raw reading — should trip the warning.
+        XCTAssertTrue(result.largeCorrectionWarning)
+
+        let small = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 100,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            leadResistance: 1
+        ))
+        XCTAssertFalse(small.largeCorrectionWarning)
+    }
+
+    func testMeasurementTechniqueDisplayNamesDistinguishFromConductorCount() {
+        XCTAssertEqual(ConductorLengthMeasurementTechnique.twoWire.displayName, "2-wire")
+        XCTAssertEqual(ConductorLengthMeasurementTechnique.fourWireKelvin.displayName, "4-wire (Kelvin)")
+        XCTAssertTrue(ConductorLengthMeasurementTechnique.fourWireKelvin.detail.contains("remote far-end jumper"))
+    }
+
+    // MARK: - Total metal mass across configured conductor quantity
+
+    func testConductorQuantityScalesTotalMassButNotOneConductorMass() throws {
+        let one = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 250,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            conductorQuantityForMass: 1
+        ))
+        let three = try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 250,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            conductorQuantityForMass: 3
+        ))
+
+        // One-conductor mass is unchanged by the quantity configured for the total.
+        XCTAssertEqual(one.metalMass.oneWayLb, three.metalMass.oneWayLb, accuracy: 1e-12)
+        XCTAssertEqual(one.metalMass.configuredTotalLb, one.metalMass.oneWayLb, accuracy: 1e-12)
+        XCTAssertEqual(three.metalMass.configuredTotalLb, three.metalMass.oneWayLb * 3, accuracy: 1e-9)
+        XCTAssertEqual(three.conductorQuantityForMass, 3)
+    }
+
+    func testConductorQuantityLessThanOneThrows() {
+        XCTAssertThrowsError(try ConductorLength.calculate(ConductorLengthInput(
+            resistance: 250,
+            resistanceUnit: .milliohm,
+            circularMils: 105_600,
+            method: .single,
+            temperature: 20,
+            temperatureUnit: .celsius,
+            referenceTempC: 20,
+            alpha: 0.00393,
+            rho: 10.371,
+            conductorQuantityForMass: 0
+        )))
     }
 }
