@@ -44,5 +44,13 @@ assert.match(speak, /California|West Coast|SoCal/i);
 assert.match(speak, /SPEAK_EN_VOICE|onyx/);
 assert.match(speak, /not a cartoon surfer|not Spicoli|not.*corporate/i);
 assert.match(speak, /dude|man energy|drawl|mellow/i);
-assert.match(speak, /language: "en" \| "es" = "es"/);
+assert.match(speak, /language: SpeakLanguage = "es"/);
+
+// Japanese speak path: a real third language, not silently mapped to Spanish.
+assert.match(speak, /SpeakLanguage = "en" \| "es" \| "ja"/);
+assert.match(speak, /SPEAK_JA_JOBSITE_VOICE_INSTRUCTIONS/);
+assert.match(speak, /SPEAK_JA_CLEAN_VOICE_INSTRUCTIONS/);
+assert.match(speak, /if \(primary === "ja"\) return "ja";/);
+assert.match(speak, /not an accent impression|not a mocking caricature/i);
+
 console.log("spanish-translate-voice.test.cjs: ok");

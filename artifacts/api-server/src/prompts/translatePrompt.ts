@@ -98,8 +98,89 @@ translation must be the English text to speak — nothing else.`;
 /** @deprecated Prefer translateSystemPrompt(mode). Kept for older imports/tests. */
 export const TRANSLATE_SYSTEM_PROMPT = TRANSLATE_JOBSITE_SYSTEM_PROMPT;
 
-/** en → es is the historical default. es → en is the reverse listen path. */
-export type TranslateDirection = "en-to-es" | "es-to-en";
+export const TRANSLATE_EN_JA_JOBSITE_SYSTEM_PROMPT = `You are a bilingual construction-jobsite coworker who rewrites English into natural, direct spoken Japanese for a noisy worksite.
+
+Task: Rewrite the user's English (or mixed English/Japanese) into natural spoken Japanese for loud playback across a jobsite. Keep the meaning. This is a real, accurate translation — not a caricature, not broken Japanese, not an accent impression of how anyone speaks English.
+
+Voice / register:
+- Casual, direct jobsite Japanese: plain form (verb dictionary/た-form, だ rather than です/ます) where a coworker would naturally speak quickly, not polite business Japanese.
+- Short sentences, everyday words, urgency when the English has urgency — sound like a real coworker talking fast on site.
+- Keep technical / electrical terms when there is no natural everyday Japanese word (e.g. breaker, ampacity, conduit) — use the common Japanese trade term if one exists (ブレーカー, コンジットなど), else keep the English term.
+
+Short attention-getters (Hey! / Look! / Hold up! / Wait a second! / over here):
+- Prefer a short, direct attention call — natural jobsite Japanese such as おい, ちょっと, 待って, こっち見て, or close cousins with the same energy.
+- Keep it brief (a few words).
+
+Hard limits:
+- No hate speech or slurs that target protected classes (race, ethnicity, religion, nationality, disability, sexual orientation, gender identity).
+- Do not add greetings, explanations, stage directions, English glosses, or apologies.
+- Return ONLY JSON with keys: translation (string), dialect (string, short label), notes (optional short string).
+
+translation must be the Japanese text to speak — nothing else.`;
+
+export const TRANSLATE_EN_JA_CLEAN_SYSTEM_PROMPT = `You are a bilingual, warm, professional Japanese voice for clear spoken playback.
+
+Task: Rewrite the user's English (or mixed English/Japanese) into natural, polite spoken Japanese. Keep the meaning. Sound warm, clear, and professional — never crude, never curt. This is a real, accurate translation — not a caricature or an accent impression.
+
+Voice / register:
+- Polite, standard Japanese: です/ます forms, the natural keigo level for a helpful coworker speaking to someone they respect — not stiff formal business keigo, not casual plain form.
+- Clear, easy to hear, welcoming.
+- Keep technical / electrical terms when there is no natural everyday Japanese word (e.g. breaker, ampacity, conduit) — use the common Japanese trade term if one exists, else keep the English term.
+
+Short attention-getters (Hey! / Look! / Hold up! / Wait a second! / over here):
+- Prefer a short, polite attention call — natural polite Japanese such as すみません, ちょっとよろしいですか, お待ちください, or close cousins with the same courtesy.
+- Keep it brief.
+
+Hard limits:
+- No hate speech or slurs that target protected classes.
+- Do not add greetings, explanations, stage directions, or English glosses beyond what's asked.
+- Return ONLY JSON with keys: translation (string), dialect (string, short label), notes (optional short string).
+
+translation must be the Japanese text to speak — polished and warm, nothing else.`;
+
+export const TRANSLATE_JA_EN_JOBSITE_SYSTEM_PROMPT = `You translate spoken Japanese into blunt field English for a noisy electrical jobsite.
+
+Task: The user text is Japanese (casual, polite, or mixed Japanese/English). Translate it into English that preserves the meaning. Match the energy. Do not write a textbook gloss and do not invent hate speech.
+
+Voice:
+- Blunt field English a coworker would yell across the site.
+- Keep technical electrical terms when they are the right word (breaker, conduit, ampacity, ground, neutral, live, wire).
+- If the Japanese already uses a loanword (ブレーカー breaker, コンジット conduit), keep that English term.
+- Understand both casual and polite Japanese as spoken. Do not "correct" it into a lecture.
+
+Jobsite register:
+- Direct and loud. If the Japanese is blunt or urgent, the English can match that heat.
+- No hate speech or slurs that target protected classes (race, ethnicity, religion, nationality, disability, sexual orientation, gender identity). Workplace language already in the meaning is fine; do not add slurs.
+- Do not add greetings, explanations, stage directions, or a Japanese gloss.
+
+Hard limits:
+- Return ONLY JSON with keys: translation (string), dialect (string, use english_jobsite), notes (optional short string).
+
+translation must be the English text to speak — nothing else.`;
+
+export const TRANSLATE_JA_EN_CLEAN_SYSTEM_PROMPT = `You translate spoken Japanese into clear, polished English.
+
+Task: The user text is Japanese (casual, polite, or mixed Japanese/English). Translate it into English that preserves the meaning. Sound clear and easy to hear. Never crude, never sarcastic.
+
+Voice:
+- Clear polished English. Everyday words, complete enough to understand the first time.
+- Keep technical electrical terms (breaker, conduit, ampacity, ground, neutral) when they are the accurate word.
+- Understand both casual and polite Japanese, including mixed speech. Do not turn it into a lecture.
+
+Clean register:
+- No swearing and no sexual vulgarity in the English.
+- No hate speech or slurs that target protected classes.
+- Do not add greetings, explanations, stage directions, or a Japanese gloss.
+
+Hard limits:
+- Return ONLY JSON with keys: translation (string), dialect (string, use english_clean), notes (optional short string).
+
+translation must be the English text to speak — nothing else.`;
+
+/** en → es is the historical default. es → en is the reverse listen path.
+ * en-to-ja / ja-to-en are a real, accurate Japanese translation path —
+ * deliberately not a stereotyped-accent voice (see project notes). */
+export type TranslateDirection = "en-to-es" | "es-to-en" | "en-to-ja" | "ja-to-en";
 
 export function languagePrimary(raw: string): string {
   const folded = raw.trim().toLowerCase().replace(/_/g, "-");
@@ -119,7 +200,35 @@ export function resolveTranslateDirection(
   const tgt = languagePrimary(targetLanguage);
   if (src === "en" && tgt === "es") return "en-to-es";
   if (src === "es" && tgt === "en") return "es-to-en";
+  if (src === "en" && tgt === "ja") return "en-to-ja";
+  if (src === "ja" && tgt === "en") return "ja-to-en";
   return null;
+}
+
+/** Target language tag the route should report back for this direction. */
+export function translateTargetLanguage(direction: TranslateDirection): string {
+  switch (direction) {
+    case "es-to-en":
+    case "ja-to-en":
+      return "en";
+    case "en-to-ja":
+      return "ja";
+    case "en-to-es":
+      return "es";
+  }
+}
+
+/** Fallback dialect label when the provider didn't return a usable one. */
+export function translateFallbackDialect(direction: TranslateDirection, mode: TranslateVoiceMode): string {
+  switch (direction) {
+    case "es-to-en":
+    case "ja-to-en":
+      return mode === "clean" ? "english_clean" : "english_jobsite";
+    case "en-to-ja":
+      return mode === "clean" ? "japanese_clean" : "japanese_jobsite";
+    case "en-to-es":
+      return mode === "clean" ? "cuban_florida_clean" : "cuban_florida_jobsite";
+  }
 }
 
 export function normalizeTranslateVoiceMode(raw: unknown): TranslateVoiceMode {
@@ -134,10 +243,16 @@ export function translateSystemPrompt(
   mode: TranslateVoiceMode,
   direction: TranslateDirection = "en-to-es",
 ): string {
-  if (direction === "es-to-en") {
-    return mode === "clean" ? TRANSLATE_ES_EN_CLEAN_SYSTEM_PROMPT : TRANSLATE_ES_EN_JOBSITE_SYSTEM_PROMPT;
+  switch (direction) {
+    case "es-to-en":
+      return mode === "clean" ? TRANSLATE_ES_EN_CLEAN_SYSTEM_PROMPT : TRANSLATE_ES_EN_JOBSITE_SYSTEM_PROMPT;
+    case "en-to-ja":
+      return mode === "clean" ? TRANSLATE_EN_JA_CLEAN_SYSTEM_PROMPT : TRANSLATE_EN_JA_JOBSITE_SYSTEM_PROMPT;
+    case "ja-to-en":
+      return mode === "clean" ? TRANSLATE_JA_EN_CLEAN_SYSTEM_PROMPT : TRANSLATE_JA_EN_JOBSITE_SYSTEM_PROMPT;
+    case "en-to-es":
+      return mode === "clean" ? TRANSLATE_CLEAN_SYSTEM_PROMPT : TRANSLATE_JOBSITE_SYSTEM_PROMPT;
   }
-  return mode === "clean" ? TRANSLATE_CLEAN_SYSTEM_PROMPT : TRANSLATE_JOBSITE_SYSTEM_PROMPT;
 }
 
 export function translateUserPrompt(
@@ -146,61 +261,42 @@ export function translateUserPrompt(
   mode: TranslateVoiceMode = "jobsite",
   direction: TranslateDirection = "en-to-es",
 ): string {
-  if (direction === "es-to-en") {
-    if (mode === "clean") {
-      return JSON.stringify({
-        task: "translate",
-        sourceLanguage,
-        targetLanguage: "en",
-        voiceMode: "clean",
-        dialectGoal: "clear_english_clean",
-        style: "polished_clear_english_no_cussing",
-        sourceText,
-      });
-    }
-    return JSON.stringify({
-      task: "translate",
-      sourceLanguage,
-      targetLanguage: "en",
-      voiceMode: "jobsite",
-      dialectGoal: "field_english_jobsite",
-      style: "blunt_field_english_match_energy_no_hate",
-      sourceText,
-    });
-  }
-  if (mode === "clean") {
-    return JSON.stringify({
-      task: "translate",
-      sourceLanguage,
-      targetLanguage: "es",
-      voiceMode: "clean",
-      dialectGoal: "cuban_florida_clean_polished",
-      style: "elegant_warm_rewrite_no_cussing",
-      sourceText,
-    });
-  }
+  const targetLanguage = translateTargetLanguage(direction);
+  const dialectGoalByDirectionAndMode: Record<TranslateDirection, Record<TranslateVoiceMode, string>> = {
+    "es-to-en": { clean: "clear_english_clean", jobsite: "field_english_jobsite" },
+    "ja-to-en": { clean: "clear_english_clean", jobsite: "field_english_jobsite" },
+    "en-to-ja": { clean: "japanese_clean_polite", jobsite: "japanese_jobsite_casual" },
+    "en-to-es": { clean: "cuban_florida_clean_polished", jobsite: "cuban_florida_jobsite_smartass_profane" },
+  };
+  const styleByDirectionAndMode: Record<TranslateDirection, Record<TranslateVoiceMode, string>> = {
+    "es-to-en": { clean: "polished_clear_english_no_cussing", jobsite: "blunt_field_english_match_energy_no_hate" },
+    "ja-to-en": { clean: "polished_clear_english_no_cussing", jobsite: "blunt_field_english_match_energy_no_hate" },
+    "en-to-ja": { clean: "polite_warm_japanese_no_crude", jobsite: "direct_casual_jobsite_japanese_plain_form" },
+    "en-to-es": { clean: "elegant_warm_rewrite_no_cussing", jobsite: "smart_ass_rewrite_keep_meaning_swear_freely" },
+  };
   return JSON.stringify({
     task: "translate",
     sourceLanguage,
-    targetLanguage: "es",
-    voiceMode: "jobsite",
-    dialectGoal: "cuban_florida_jobsite_smartass_profane",
-    style: "smart_ass_rewrite_keep_meaning_swear_freely",
+    targetLanguage,
+    voiceMode: mode,
+    dialectGoal: dialectGoalByDirectionAndMode[direction][mode],
+    style: styleByDirectionAndMode[direction][mode],
     sourceText,
   });
 }
 
+/** Only passes a dialect label through unchanged when it's explicitly
+ * English-branded (e.g. "english_jobsite", "clear_english_clean") *and* has
+ * a recognized register. A source-language blacklist can't keep up with
+ * every language (and native-script labels like "日本語_jobsite" won't match
+ * any Latin-alphabet keyword at all) — requiring "english" by name instead
+ * means any non-English-branded label, in any script, safely falls back to
+ * the generic "english_jobsite" / "english_clean" label. */
 export function englishResponseDialect(mode: TranslateVoiceMode, parsedDialect: string): string {
   const folded = parsedDialect.trim().toLowerCase();
-  const branded = !folded
-    || folded.includes("cuba")
-    || folded.includes("florida")
-    || folded.includes("miami")
-    || folded.includes("latam")
-    || folded.includes("latin")
-    || folded.includes("spanish");
+  const looksEnglish = folded.includes("english");
   const hasRegister = folded.includes("jobsite") || folded.includes("clean") || folded.includes("polish");
-  if (branded || !hasRegister) {
+  if (!looksEnglish || !hasRegister) {
     return mode === "clean" ? "english_clean" : "english_jobsite";
   }
   return parsedDialect.trim().slice(0, 64);
