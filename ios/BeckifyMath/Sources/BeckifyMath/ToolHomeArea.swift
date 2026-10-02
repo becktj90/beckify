@@ -175,6 +175,8 @@ public enum ToolHomeAreaPolicy {
         "conductorLength": [
             "R": "resistance", "unit": "rUnit", "size": "size", "CM": "customCmil",
             "mat": "preset", "method": "method", "T": "temp",
+            "tempUnit": "tempUnit", "refTemp": "refTemp", "alpha": "alpha", "rho": "rho",
+            "technique": "technique", "leadR": "leadR", "jumperR": "jumperR", "qty": "qty",
         ],
         "motorFLA": ["HP": "hp", "V": "systemVolts"],
         "voltageDivider": ["Vin": "vin", "Vout": "vout", "R1": "r1", "R2": "r2"],

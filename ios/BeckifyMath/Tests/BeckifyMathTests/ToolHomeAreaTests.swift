@@ -247,4 +247,28 @@ final class ToolHomeAreaTests: XCTestCase {
         XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "conductorLength"), .field)
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "conductorLength"), .jobsite)
     }
+
+    func testConductorLengthRestoreMapsMeasurementQualityAndSnapshotFields() {
+        let mapped = ToolHomeAreaPolicy.storedFields(
+            toolID: "conductorLength",
+            inputs: [
+                "tempUnit": "celsius",
+                "refTemp": "75",
+                "alpha": "0.00393",
+                "rho": "10.371",
+                "technique": "fourWireKelvin",
+                "leadR": "0.002",
+                "jumperR": "0.01",
+                "qty": "3",
+            ]
+        )
+        XCTAssertEqual(mapped["tempUnit"], "celsius")
+        XCTAssertEqual(mapped["refTemp"], "75")
+        XCTAssertEqual(mapped["alpha"], "0.00393")
+        XCTAssertEqual(mapped["rho"], "10.371")
+        XCTAssertEqual(mapped["technique"], "fourWireKelvin")
+        XCTAssertEqual(mapped["leadR"], "0.002")
+        XCTAssertEqual(mapped["jumperR"], "0.01")
+        XCTAssertEqual(mapped["qty"], "3")
+    }
 }
