@@ -17,6 +17,20 @@ struct WireAmpacityView: View {
         var label: String { "\(rawValue) °C" }
     }
 
+    /// Construction / jacket family for the cross-section — not the ampacity column.
+    private enum ConstructionChoice: String, CaseIterable, Identifiable {
+        case thhn, xhhw, rhw
+        var id: String { rawValue }
+        var profile: ConductorConstructionProfile {
+            switch self {
+            case .thhn: return .thhn
+            case .xhhw: return .xhhw
+            case .rhw: return .rhw
+            }
+        }
+        var label: String { profile.displayName }
+    }
+
     private enum Mode: String, CaseIterable, Identifiable {
         case select = "Select size"
         case evaluate = "Evaluate size"
@@ -31,6 +45,7 @@ struct WireAmpacityView: View {
     @StoredChoice(.wireAmpacity, "circuit", default: EquipmentGroundingContext.none) private var circuit
     @StoredChoice(.wireAmpacity, "insulation", default: TempChoice.c90) private var insulation
     @StoredChoice(.wireAmpacity, "termination", default: TempChoice.c75) private var termination
+    @StoredChoice(.wireAmpacity, "construction", default: ConstructionChoice.thhn) private var construction
     @StoredInput(.wireAmpacity, "ambient", default: "30") private var ambient
     @StoredInput(.wireAmpacity, "ccc", default: "3") private var ccc
     @StoredInput(.wireAmpacity, "runs", default: "1") private var runs
@@ -51,7 +66,7 @@ struct WireAmpacityView: View {
     }
 
     private var inputFingerprint: String {
-        "\(mode)|\(amps)|\(material)|\(circuit)|\(insulation)|\(termination)|\(ambient)|\(ccc)|\(runs)|\(continuous)|\(size)|\(ocpd)"
+        "\(mode)|\(amps)|\(material)|\(circuit)|\(insulation)|\(termination)|\(construction)|\(ambient)|\(ccc)|\(runs)|\(continuous)|\(size)|\(ocpd)"
     }
 
     var body: some View {
@@ -97,15 +112,28 @@ struct WireAmpacityView: View {
             }
 
             NumberField(title: "Load current", unit: "A", text: $amps, fieldID: "amps", onSubmit: calculate)
-            MenuField(title: "Insulation", selection: $insulation, options: TempChoice.allCases) { $0.label }
+            MenuField(title: "Insulation column", selection: $insulation, options: TempChoice.allCases) { $0.label }
             MenuField(title: "Termination", selection: $termination, options: TempChoice.allCases) { $0.label }
+            MenuField(title: "Construction (drawing)", selection: $construction, options: ConstructionChoice.allCases) { $0.label }
+            Text("Construction is the Chapter 9 Table 5 jacket for the cross-section. It is not invented from the 60/75/90 °C ampacity columns.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
             NumberField(title: "Ambient", unit: "°C", text: $ambient, fieldID: "ambient", onSubmit: calculate)
             NumberField(title: "Current-carrying conductors", unit: "CCC", text: $ccc, fieldID: "ccc", onSubmit: calculate)
             NumberField(title: "Parallel runs per phase", unit: "runs", text: $runs, fieldID: "runs", onSubmit: calculate)
             Toggle("Continuous load (125%)", isOn: $continuous)
             if mode == .evaluate {
                 MenuField(title: "Conductor size", selection: $size, options: sizes, label: NECTables.wireLabel)
-                NumberField(title: "OCPD rating", unit: "A", text: $ocpd, optional: true, fieldID: "ocpd", onSubmit: calculate)
+            }
+            NumberField(title: "OCPD rating", unit: "A", text: $ocpd, optional: true, fieldID: "ocpd", onSubmit: calculate)
+            if circuit.impliesEquipmentGround {
+                Text(ocpd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                     ? "Leave OCPD blank for a provisional Table 250.122 EGC from load/required amps. Enter the device to lock the row."
+                     : "EGC uses the entered OCPD for Table 250.122.")
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             CalculatorActionBar(
@@ -149,6 +177,11 @@ struct WireAmpacityView: View {
     private func selectionResults(_ r: ConductorSelectionResult) -> some View {
         if let readout = DeratingStackReadout(result: r.selected) {
             DeratingStack(readout: readout)
+                .opacity(session.isStale ? 0.72 : 1)
+        }
+
+        if let section = conductorLayout(for: r.selected, egc: selectGround(for: r)) {
+            ConductorCrossSectionDiagram(layout: section)
                 .opacity(session.isStale ? 0.72 : 1)
         }
 
@@ -219,6 +252,11 @@ struct WireAmpacityView: View {
     private func evaluateResults(_ r: AmpacityDeratingResult) -> some View {
         if let readout = DeratingStackReadout(result: r) {
             DeratingStack(readout: readout)
+                .opacity(evaluateSession.isStale ? 0.72 : 1)
+        }
+
+        if let section = conductorLayout(for: r, egc: evaluateGround(for: r)) {
+            ConductorCrossSectionDiagram(layout: section)
                 .opacity(evaluateSession.isStale ? 0.72 : 1)
         }
 
@@ -354,28 +392,32 @@ struct WireAmpacityView: View {
     private func calculate() {
         if mode == .select {
             session.calculate {
+                let cccCount = try WholeCount.parse(ccc.parsedDouble ?? .nan, name: "Current-carrying conductor count")
+                let runCount = try WholeCount.parse(runs.parsedDouble ?? .nan, name: "Parallel runs")
                 try WireAmpacity.selectConductor(
                     loadAmps: amps.parsedDouble ?? .nan,
                     material: material,
                     insulation: insulation.column,
                     termination: termination.column,
                     ambientC: ambient.parsedDouble ?? .nan,
-                    currentCarryingCount: Int(ccc.parsedDouble ?? 0),
-                    parallelRuns: Int(runs.parsedDouble ?? 0),
+                    currentCarryingCount: cccCount,
+                    parallelRuns: runCount,
                     continuousLoad: continuous
                 )
             }
             if session.displayedResult != nil, !session.isStale, !reduceMotion { successTick += 1 }
         } else {
             evaluateSession.calculate {
+                let cccCount = try WholeCount.parse(ccc.parsedDouble ?? .nan, name: "Current-carrying conductor count")
+                let runCount = try WholeCount.parse(runs.parsedDouble ?? .nan, name: "Parallel runs")
                 try WireAmpacity.evaluate(AmpacityDeratingInput(
                     size: size,
                     material: material,
                     insulation: insulation.column,
                     termination: termination.column,
                     ambientC: ambient.parsedDouble ?? .nan,
-                    currentCarryingCount: Int(ccc.parsedDouble ?? 0),
-                    parallelRuns: Int(runs.parsedDouble ?? 1),
+                    currentCarryingCount: cccCount,
+                    parallelRuns: runCount,
                     continuousLoad: continuous,
                     loadAmps: amps.parsedDouble,
                     ocpdAmps: ocpd.trimmingCharacters(in: .whitespaces).isEmpty ? nil : ocpd.parsedDouble
@@ -430,6 +472,37 @@ struct WireAmpacityView: View {
         evaluateSession.prepareForNewInputs()
     }
 
+    private func conductorLayout(
+        for result: AmpacityDeratingResult,
+        egc: EquipmentGroundingRecommendation?
+    ) -> AmpacityConductorLayout? {
+        guard let phase = ConductorGeometryModel.resolve(
+            size: result.size,
+            material: result.material,
+            construction: construction.profile
+        ) else { return nil }
+        let egcGeometry: ConductorGeometry?
+        if let egc {
+            egcGeometry = ConductorGeometryModel.resolve(
+                size: egc.size,
+                material: egc.material,
+                construction: construction.profile
+            )
+        } else {
+            egcGeometry = nil
+        }
+        return AmpacityConductorLayout.make(
+            phase: phase,
+            egc: egcGeometry,
+            parallelRuns: result.parallelRuns,
+            usableAmps: result.usableTotal,
+            requiredAmps: result.requiredAmpacity,
+            ambientC: result.ambientC,
+            ccc: result.currentCarryingCount,
+            limitedByTermination: result.limitedByTermination
+        )
+    }
+
     private func clampLabel(_ result: AmpacityDeratingResult) -> String {
         result.limitedByTermination ? "Termination (110.14(C))" : "Ambient × CCC"
     }
@@ -447,13 +520,15 @@ struct WireAmpacityView: View {
     private var sticky: String? {
         if mode == .select, let r = session.displayedResult {
             if let egc = selectGround(for: r) {
-                return "\(r.selected.label)  ·  \(Format.amps(r.selected.usableTotal))  ·  EGC \(egc.label)"
+                let provisional = egc.isProvisionalOCPDBasis ? " provisional" : ""
+                return "\(r.selected.label)  ·  \(Format.amps(r.selected.usableTotal))  ·  EGC \(egc.label)\(provisional)"
             }
             return "\(r.selected.label)  ·  \(Format.amps(r.selected.usableTotal))"
         }
         if mode == .evaluate, let r = evaluateSession.displayedResult {
             if let egc = evaluateGround(for: r) {
-                return "\(r.label)  ·  \(Format.amps(r.usableTotal))  ·  EGC \(egc.label)"
+                let provisional = egc.isProvisionalOCPDBasis ? " provisional" : ""
+                return "\(r.label)  ·  \(Format.amps(r.usableTotal))  ·  EGC \(egc.label)\(provisional)"
             }
             return "\(r.label)  ·  \(Format.amps(r.usableTotal))"
         }

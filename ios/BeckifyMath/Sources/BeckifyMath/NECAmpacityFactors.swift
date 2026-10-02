@@ -46,6 +46,29 @@ public enum NECAmpacityFactors {
         sourceDescription: "Conductor ampacity limited by equipment termination temperature rating"
     )
 
+    /// Lowest ambient accepted for Table 310.15(B)(1) lookup in this tool (°C).
+    /// Rows start at the ≤25 °C band; colder than 10 °C is outside the modeled domain.
+    public static let ambientDomainMinimumC: Double = 10
+
+    /// Inclusive upper ambient (°C) for each insulation column.
+    public static func ambientDomainMaximumC(insulation: ConductorTempColumn) -> Double {
+        switch insulation {
+        case .c60: return 55
+        case .c75: return 70
+        case .c90: return 85
+        }
+    }
+
+    public static func requireAmbientInDomain(ambientC: Double, insulation: ConductorTempColumn) throws {
+        guard ambientC.isFinite else { throw CalcError.missing("ambient temperature") }
+        let maxC = ambientDomainMaximumC(insulation: insulation)
+        guard ambientC + 1e-9 >= ambientDomainMinimumC, ambientC <= maxC + 1e-9 else {
+            throw CalcError.outOfRange(
+                "Ambient \(FormatTrace.number(ambientC, digits: 0)) °C is outside the Table 310.15(B)(1) domain modeled here for \(insulation.displayName) (\(FormatTrace.number(ambientDomainMinimumC, digits: 0))–\(FormatTrace.number(maxC, digits: 0)) °C)."
+            )
+        }
+    }
+
     /// Returns 0 when ambient exceeds the insulation's tabulated range.
     public static func ambientCorrectionFactor(ambientC: Double, insulation: ConductorTempColumn) -> Double {
         guard ambientC.isFinite else { return 0 }

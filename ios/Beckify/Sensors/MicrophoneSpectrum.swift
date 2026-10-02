@@ -283,9 +283,10 @@ final class MicrophoneSpectrumCenter: ObservableObject {
             sampleRateHz = format.sampleRate
             let fingerprint = currentFingerprint()
             routeFingerprint = fingerprint
+            let enableBass = enableBassAnalysis
             workerLock.withLock {
                 $0.fingerprint = fingerprint
-                $0.enableBass = enableBassAnalysis
+                $0.enableBass = enableBass
             }
             if fftSetupLive == nil {
                 fftSetupLive = AudioBlockFFT.makeSetup(length: RoomRigMath.liveFFTLength)
@@ -332,6 +333,9 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         let stimulusPlayer = player
         let ringBuffer = ring
         let flags = workerLock
+        // FFTSetup is an opaque pointer; vDSP setups are safe to use from the worker once created.
+        nonisolated(unsafe) let liveSetup = liveSetup
+        nonisolated(unsafe) let bassSetup = bassSetup
         worker.async { [weak self] in
             var bassCursor: UInt64 = 0
             while flags.withLock({ $0.running }) {
@@ -494,7 +498,8 @@ final class MicrophoneSpectrumCenter: ObservableObject {
             bassBands = bass.bands
             bassFFTLength = bass.length
         }
-        workerLock.withLock { $0.enableBass = enableBassAnalysis }
+        let enableBass = enableBassAnalysis
+        workerLock.withLock { $0.enableBass = enableBass }
 
         let now = Date()
         guard now.timeIntervalSince(lastPublish) >= 1.0 / 20.0 else { return }
@@ -827,7 +832,8 @@ final class AudioRingBuffer: @unchecked Sendable {
         guard let channels = buffer.floatChannelData else { return }
         let frames = Int(buffer.frameLength)
         guard frames > 0 else { return }
-        let source = UnsafeBufferPointer(start: channels[0], count: frames)
+        // Only read synchronously inside withLock; the buffer outlives the call.
+        nonisolated(unsafe) let source = UnsafeBufferPointer(start: channels[0], count: frames)
         lock.withLock { state in
             state.channelCount = reading.count
             state.balance = reading.balance
