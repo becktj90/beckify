@@ -107,7 +107,7 @@ struct VoltageDropView: View {
             title: "Supply voltage",
             unit: "V",
             text: $voltage,
-            helpText: "Line-to-line for 3Ø, line-to-neutral for 1Ø/DC.",
+            helpText: "Voltage across the load: line-to-line for 3Ø; line-to-line or line-to-neutral as wired for 1Ø; DC supply voltage for DC.",
             fieldID: "voltage",
             onSubmit: calculateNEC
         )

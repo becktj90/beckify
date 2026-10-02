@@ -50,7 +50,7 @@ struct UL508ASCCRWizardView: View {
     @StoredInput(.ul508aPanelLab, "xfmrVA", default: "45000") private var xfmrVA
     @StoredInput(.ul508aPanelLab, "xfmrV", default: "480") private var xfmrV
     @StoredInput(.ul508aPanelLab, "xfmrZ", default: "") private var xfmrZ
-    @StoredCount(.ul508aPanelLab, "xfmrPhases", default: 3) private var xfmrPhases
+    @StoredInput(.ul508aPanelLab, "xfmrPhases", default: "3") private var xfmrPhases
     @StoredInput(.ul508aPanelLab, "xfmrPrimaryIR", default: "65") private var xfmrPrimaryIR
     @StoredInput(.ul508aPanelLab, "sccrJob", default: "Panel SCCR") private var jobName
     @State private var drafts: [SCCRDraft] = SCCRDraft.example
@@ -188,7 +188,12 @@ struct UL508ASCCRWizardView: View {
             NumberField(title: "Transformer", unit: "VA", text: $xfmrVA, fieldID: "xfmrVA", onSubmit: calculate)
             NumberField(title: "Secondary voltage", unit: "V", text: $xfmrV, fieldID: "xfmrV", onSubmit: calculate)
             NumberField(title: "Impedance", unit: "%Z", text: $xfmrZ, optional: true, fieldID: "xfmrZ", onSubmit: calculate)
-            Picker("Phases", selection: $xfmrPhases) {
+            // Keep the existing String-backed storage so saved 1Ø selections
+            // survive upgrades. Normalize legacy free-text through the picker.
+            Picker("Phases", selection: Binding<Int>(
+                get: { panelParse(xfmrPhases) == 1 ? 1 : 3 },
+                set: { xfmrPhases = String($0) }
+            )) {
                 Text("1Ø").tag(1)
                 Text("3Ø").tag(3)
             }
@@ -289,7 +294,7 @@ struct UL508ASCCRWizardView: View {
                 va: va,
                 secondaryVolts: volts,
                 percentZ: panelParse(xfmrZ),
-                phases: xfmrPhases,
+                phases: panelParse(xfmrPhases) == 1 ? 1 : 3,
                 primaryInterruptKA: primary
             )
         }
