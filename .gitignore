@@ -57,6 +57,7 @@ credentials.json
 .local/
 
 # iOS / Swift (see also ios/.gitignore)
+/.build/
 ios/.build/
 ios/**/.build/
 ios/**/.swiftpm/
