@@ -1,4 +1,5 @@
 import SwiftUI
+import Darwin
 import UIKit
 
 // MARK: - Beckify Flat Glyph System (app-only)
@@ -2238,7 +2239,7 @@ enum GlyphKind {
         for angle in [90.0, 210.0, 330.0] {
             let rad = angle * .pi / 180
             holes.append(Glyph.circlePath(
-                CGPoint(x: c.x + cos(rad) * r.width * 0.10, y: c.y + sin(rad) * r.width * 0.10),
+                CGPoint(x: c.x + CGFloat(Darwin.cos(rad)) * r.width * 0.10, y: c.y + CGFloat(Darwin.sin(rad)) * r.width * 0.10),
                 r.width * 0.045
             ))
         }

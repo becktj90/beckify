@@ -25,7 +25,7 @@ public enum SpanishVoiceMode: String, CaseIterable, Codable, Sendable {
     }
 
     /// Neural TTS voice id for `/api/speak`. English (ES→EN) always uses male `onyx`
-    /// for the California surfer-stoner path; Spanish still follows Clean / Jobsite.
+    /// with mode-specific delivery; Spanish still follows Clean / Jobsite.
     public func defaultSpeakVoice(language: String) -> String {
         let folded = SpanishTranslatorAPI.normalizeLocaleID(language)
         if SpanishTranslatorAPI.localePrimary(folded) == "en" {
@@ -615,7 +615,16 @@ public enum SpanishTranslatorAPI {
     /// Speech rate multiplier vs `AVSpeechUtteranceDefaultSpeechRate` for noisy sites.
     public static let jobsiteSpeechRateFactor: Float = 0.84
     /// Slight pitch drop so male system voices read a bit thicker / deeper.
-    public static let jobsitePitchMultiplier: Float = 0.92
+    public static let jobsitePitchMultiplier: Float = 0.86
+
+    /// Device voices cannot reproduce the cloud voice's rasp; keep the fallback intelligible.
+    public static func speechRateFactor(voiceMode: SpanishVoiceMode) -> Float {
+        voiceMode == .jobsite ? jobsiteSpeechRateFactor : 0.94
+    }
+
+    public static func speechPitchMultiplier(voiceMode: SpanishVoiceMode) -> Float {
+        voiceMode == .jobsite ? jobsitePitchMultiplier : 1.0
+    }
 
     /// Score a voice language for Florida Cuban / LatAm preference. Higher is better.
     public static func spanishVoiceScore(language: String) -> Int {
@@ -704,8 +713,8 @@ public enum SpanishTranslatorAPI {
             sex = "system"
         }
         let folded = normalizeLocaleID(lang)
-        let localeNote = folded.hasPrefix("en-us") ? "en-US (California stoner male)" : folded
-        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS — mellow California stoner male (onyx) — from api.beckify.com when reachable; this note is the on-device English fallback."
+        let localeNote = folded.hasPrefix("en-us") ? "en-US" : folded
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (onyx) from api.beckify.com when reachable. Device voices approximate pitch and pace; the gravelly Jobsite character needs cloud TTS."
     }
 
     public static func normalizeLocaleID(_ raw: String) -> String {
@@ -862,9 +871,9 @@ public enum SpanishTranslatorAPI {
         let folded = normalizeLocaleID(language)
         let accent: String
         if localePrimary(folded) == "en" {
-            accent = " · California stoner male"
+            accent = voiceMode == .jobsite ? " · gravelly, weathered tradesman" : " · California stoner male"
         } else {
-            accent = ""
+            accent = voiceMode == .jobsite ? " · gravelly, weathered tradesman" : ""
         }
         return "Neural TTS · \(label) · \(register)\(accent) · max speaker volume"
     }

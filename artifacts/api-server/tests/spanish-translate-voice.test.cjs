@@ -53,4 +53,13 @@ assert.match(speak, /SPEAK_JA_CLEAN_VOICE_INSTRUCTIONS/);
 assert.match(speak, /if \(primary === "ja"\) return "ja";/);
 assert.match(speak, /not an accent impression|not a mocking caricature/i);
 
+for (const name of ["SPEAK_JOBSITE_VOICE_INSTRUCTIONS", "SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS"]) {
+  const block = speak.match(new RegExp("export const " + name + " = `([\\s\\S]*?)`;"))[1];
+  assert.match(block, /fifty years of cigarettes/i);
+  assert.match(block, /gravel|rasp/i);
+  assert.match(block, /numbers, units/i);
+  assert.match(block, /Do not add words/i);
+  assert.match(block, /Preserve the text and its meaning/i);
+}
+
 console.log("spanish-translate-voice.test.cjs: ok");

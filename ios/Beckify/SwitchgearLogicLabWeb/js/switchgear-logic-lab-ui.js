@@ -23,15 +23,40 @@
 
   // ---------------------------------------------------------------- persistence
 
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.project)); } catch (e) { /* storage unavailable; project still works in-memory */ }
+  function resetResults() {
+    state.lastScenarioResult = null;
+    state.lastScenarioId = null;
+    state.lastTransferMatrix = null;
+    state.lastEnumeration = null;
+    state.timingSelection = {};
+    state.project.findings = [];
+    var oldRun = document.querySelector('#screen-scenarios .sgll-run-result');
+    if (oldRun) oldRun.remove();
+  }
+  function save(keepResults) {
+    if (!keepResults) {
+      resetResults();
+      renderTiming();
+      renderAnalyze();
+    }
+    var serialized = JSON.stringify(state.project);
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.switchgearSave) {
+      window.webkit.messageHandlers.switchgearSave.postMessage(serialized);
+    } else {
+      try { localStorage.setItem(STORAGE_KEY, serialized); } catch (e) {
+        $('sgllStorageStatus').textContent = 'Automatic saving is unavailable. Export your project before closing this page.';
+      }
+    }
     renderProfilePill();
   }
 
   function loadFromStorage() {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      var raw = window.beckifySwitchgearProject || localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var project = JSON.parse(raw);
+        if (!E.model.validateProject(project).length) return project;
+      }
     } catch (e) { /* ignore corrupt/blocked storage */ }
     return null;
   }
@@ -57,6 +82,10 @@
     }).join('');
   }
   function downloadBlob(filename, mime, content) {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.switchgearExport) {
+      window.webkit.messageHandlers.switchgearExport.postMessage({ filename: filename, mime: mime, content: content });
+      return;
+    }
     var blob = new Blob([content], { type: mime });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -74,8 +103,19 @@
     $('sgllTabs').addEventListener('click', function (e) {
       var btn = e.target.closest('.sgll-tab');
       if (!btn) return;
-      document.querySelectorAll('.sgll-tab').forEach(function (t) { t.classList.toggle('active', t === btn); });
+      document.querySelectorAll('.sgll-tab').forEach(function (t) {
+        t.classList.toggle('active', t === btn); t.setAttribute('aria-selected', String(t === btn));
+        t.tabIndex = t === btn ? 0 : -1;
+      });
       document.querySelectorAll('.sgll-screen').forEach(function (s) { s.classList.toggle('active', s.id === 'screen-' + btn.dataset.screen); });
+    });
+    $('sgllTabs').addEventListener('keydown', function (e) {
+      var tabs = Array.from(document.querySelectorAll('.sgll-tab'));
+      var idx = tabs.indexOf(document.activeElement);
+      if (idx < 0 || ['ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      var next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (idx + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      tabs[next].click(); tabs[next].focus();
     });
   }
 
@@ -108,7 +148,7 @@
             '<button class="sgll-btn" data-action="export-project">Export project JSON</button>' +
             '<label class="sgll-btn" style="text-align:center">Import project JSON<input type="file" accept="application/json" id="sgllImportFile" style="display:none"></label>' +
           '</div>' +
-          '<p class="sgll-empty">Saved automatically to this device only. Nothing here is uploaded or shared.</p>' +
+          '<p class="sgll-empty" id="sgllStorageStatus" role="status">Saved automatically to this device only. Nothing here is uploaded or shared.</p>' +
         '</div>' +
         '<div class="sgll-card">' +
           '<h2>System profile</h2>' +
@@ -146,12 +186,12 @@
 
     $('screen-project').querySelector('[data-action="new-project"]').addEventListener('click', function () {
       if (!confirm('Start a new blank project? This replaces the currently loaded project (export first if you want to keep it).')) return;
-      state.project = newBlankProject();
+      state.project = newBlankProject(); state.selectedScenarioIdx = 0;
       save(); renderAll();
     });
     $('screen-project').querySelector('[data-action="load-demo"]').addEventListener('click', function () {
       if (!confirm('Load the demo main-tie-main project? This replaces the currently loaded project.')) return;
-      state.project = E.seedMainTieMain.build(E.model, E.profile, E.plant);
+      state.project = E.seedMainTieMain.build(E.model, E.profile, E.plant); state.selectedScenarioIdx = 0;
       save(); renderAll();
     });
     $('screen-project').querySelector('[data-action="export-project"]').addEventListener('click', function () {
@@ -160,13 +200,14 @@
     $('sgllImportFile').addEventListener('change', function (e) {
       var file = e.target.files[0];
       if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { alert('Project files must be smaller than 2 MB.'); return; }
       var reader = new FileReader();
       reader.onload = function () {
         try {
           var imported = JSON.parse(reader.result);
           var errors = E.model.validateProject(imported);
           if (errors.length) { alert('This file has structural problems and was not loaded:\n' + errors.join('\n')); return; }
-          state.project = imported;
+          state.project = imported; state.selectedScenarioIdx = 0;
           save(); renderAll();
         } catch (err) {
           alert('Could not read this file as a Switchgear Logic Lab project: ' + err.message);
@@ -278,7 +319,7 @@
           } else {
             state.project.nodes.push(node);
           }
-          save(); renderLogic(); renderEquations();
+          save(); renderLogic(); renderEquations(); renderScenarios();
         } catch (err) {
           alert('Could not save this node: ' + err.message);
         }
@@ -292,7 +333,7 @@
     switch (node.type) {
       case 'LATCH': return 'LATCH(set=' + ref(node.inputs[0]) + ', reset=' + ref(node.inputs[1]) + ')';
       case 'TIMER': return 'TIMER(' + ref(node.inputs[0]) + ', fieldA=' + (node.params.fieldA || 0) + 'ms, fieldB=' + (node.params.fieldB || 0) + 'ms)';
-      case 'NOT': return 'NOT ' + sigName(node.inputs[0].ref);
+      case 'NOT': return 'NOT (' + ref(node.inputs[0]) + ')';
       case 'ONESHOT_POS': case 'ONESHOT_NEG': return node.type + '(' + ref(node.inputs[0]) + ')';
       case 'CONST_ON': return 'ON';
       case 'CONST_OFF': return 'OFF';
@@ -305,7 +346,7 @@
     var signalRows = p.signals.map(function (s) {
       return '<tr><td>' + esc(s.kind) + '</td><td>' + esc(s.name) + '</td><td><code>' + esc(s.id) + '</code></td><td>' + esc(s.number || '') + '</td>' +
         '<td>' + esc(s.description || '') + '</td>' +
-        '<td><button class="sgll-btn sgll-btn-sm sgll-btn-danger" data-action="delete-signal" data-id="' + esc(s.id) + '">Delete</button></td></tr>';
+        '<td><button class="sgll-btn sgll-btn-sm" data-action="edit-signal" data-id="' + esc(s.id) + '">Edit</button> <button class="sgll-btn sgll-btn-sm sgll-btn-danger" data-action="delete-signal" data-id="' + esc(s.id) + '">Delete</button></td></tr>';
     }).join('');
 
     var nodeRows = p.nodes.map(function (n) {
@@ -329,7 +370,7 @@
         '</div>' +
         '<div class="sgll-card">' +
           '<h2>Logic nodes (block form)</h2>' +
-          '<p class="sgll-empty">Phase 1 ships the block-form editor only. A drag-wire graph view is planned for Phase 2.</p>' +
+          '<p class="sgll-empty">Add signals, map breaker commands and feedback, then connect gates, timers, latches, and one-shots.</p>' +
           '<div id="sgllNodeForm"></div>' +
           '<button class="sgll-btn" data-action="add-node">+ Add node</button>' +
           '<div class="sgll-node-list" style="margin-top:10px">' + nodeRows + '</div>' +
@@ -341,12 +382,18 @@
         $('sgllSignalForm').innerHTML = signalFormHtml();
         wireSignalForm($('sgllSignalForm'));
       }
+      if (e.target.matches('[data-action="edit-signal"]')) {
+        var sig = E.model.findSignal(p, e.target.dataset.id);
+        $('sgllSignalForm').innerHTML = signalFormHtml(sig);
+        wireSignalForm($('sgllSignalForm'), sig.id);
+      }
       if (e.target.matches('[data-action="delete-signal"]')) {
         var id = e.target.dataset.id;
         var used = state.project.nodes.some(function (n) { return n.output === id || n.inputs.some(function (i) { return i.ref === id; }); });
-        if (used && !confirm('This signal is used by at least one node. Delete anyway?')) return;
+        if (used) { alert('Remove the nodes that use this signal before deleting it.'); return; }
+        if (state.project.scenarios.some(function (sc) { return sc.events.some(function (ev) { return ev.signalId === id; }); })) { alert('Remove scenario events that use this signal before deleting it.'); return; }
         state.project.signals = state.project.signals.filter(function (s) { return s.id !== id; });
-        save(); renderLogic(); renderEquations();
+        save(); renderLogic(); renderEquations(); renderScenarios();
       }
       if (e.target.matches('[data-action="add-node"]')) {
         if (!state.project.signals.length) { alert('Add at least one signal first.'); return; }
@@ -360,39 +407,51 @@
       }
       if (e.target.matches('[data-action="delete-node"]')) {
         state.project.nodes = state.project.nodes.filter(function (n) { return n.id !== e.target.dataset.id; });
-        save(); renderLogic(); renderEquations();
+        save(); renderLogic(); renderEquations(); renderScenarios();
       }
     };
   }
 
-  function signalFormHtml() {
+  function signalFormHtml(existing) {
+    existing = existing || {};
+    var physical = existing.physical || {};
+    var breakerOptions = opt('', 'No breaker mapping') + state.project.plant.breakers.map(function (b) {
+      return opt(b.id, b.label, b.id === physical.breakerId);
+    }).join('');
     return '<div class="sgll-card" style="margin-bottom:10px">' +
       '<div class="sgll-row">' +
-        '<div class="sgll-field"><label>Kind</label><select id="sgllSigKind">' + E.model.SIGNAL_KINDS.map(function (k) { return opt(k, k); }).join('') + '</select></div>' +
-        '<div class="sgll-field"><label>Name</label><input id="sgllSigName" placeholder="e.g. Main 1 Close Command"></div>' +
-        '<div class="sgll-field"><label>Number (optional)</label><input id="sgllSigNumber" placeholder="e.g. VO 156"></div>' +
+        '<div class="sgll-field"><label>Kind</label><select id="sgllSigKind">' + E.model.SIGNAL_KINDS.map(function (k) { return opt(k, k, k === existing.kind); }).join('') + '</select></div>' +
+        '<div class="sgll-field"><label>Name</label><input id="sgllSigName" value="' + esc(existing.name || '') + '" placeholder="e.g. Main 1 Close Command"></div>' +
+        '<div class="sgll-field"><label>Number (optional)</label><input id="sgllSigNumber" value="' + esc(existing.number || '') + '" placeholder="e.g. VO 156"></div>' +
       '</div>' +
-      '<div class="sgll-field"><label>Description (optional)</label><input id="sgllSigDesc"></div>' +
+      '<div class="sgll-field"><label>Description (optional)</label><input id="sgllSigDesc" value="' + esc(existing.description || '') + '"></div>' +
+      '<div class="sgll-row"><div class="sgll-field"><label>Breaker mapping</label><select id="sgllSigBreaker">' + breakerOptions + '</select></div>' +
+      '<div class="sgll-field"><label>Role</label><select id="sgllSigRole">' + ['command-close', 'command-open', 'feedback-closed', 'feedback-open'].map(function (role) { return opt(role, role, role === physical.role); }).join('') + '</select></div></div>' +
+      '<div class="sgll-field"><label>Command type</label><select id="sgllSigCommandType">' + ['momentary', 'maintained'].map(function (mode) { return opt(mode, mode, mode === (physical.commandType || 'momentary')); }).join('') + '</select></div>' +
+      '<p class="sgll-empty">Command signals operate the breaker; feedback signals report its actual position during scenarios.</p>' +
       '<div class="sgll-row">' +
-        '<button class="sgll-btn sgll-btn-primary" data-action="save-signal">Add signal</button>' +
+        '<button class="sgll-btn sgll-btn-primary" data-action="save-signal">Save signal</button>' +
         '<button class="sgll-btn" data-action="cancel-signal">Cancel</button>' +
       '</div></div>';
   }
 
-  function wireSignalForm(container) {
+  function wireSignalForm(container, existingId) {
     container.onclick = function (e) {
       if (e.target.matches('[data-action="cancel-signal"]')) { container.innerHTML = ''; }
       if (e.target.matches('[data-action="save-signal"]')) {
         var name = $('sgllSigName').value.trim();
         if (!name) { alert('Give the signal a name.'); return; }
         var sig = E.model.newSignal({
+          id: existingId,
           kind: $('sgllSigKind').value,
           name: name,
           number: $('sgllSigNumber').value.trim() || null,
           description: $('sgllSigDesc').value.trim(),
+          physical: $('sgllSigBreaker').value ? { breakerId: $('sgllSigBreaker').value, role: $('sgllSigRole').value, commandType: $('sgllSigCommandType').value } : null,
         });
-        state.project.signals.push(sig);
-        save(); renderLogic(); renderEquations();
+        if (existingId) state.project.signals[state.project.signals.findIndex(function (s) { return s.id === existingId; })] = sig;
+        else state.project.signals.push(sig);
+        save(); renderLogic(); renderEquations(); renderScenarios();
       }
     };
   }
@@ -408,7 +467,7 @@
     $('screen-equations').innerHTML =
       '<div class="sgll-card">' +
         '<h2>Equations</h2>' +
-        '<p class="sgll-empty">Auto-generated from the logic nodes, read-only in Phase 1. Edit logic on the Logic screen; a bidirectional equation editor is planned for Phase 2.</p>' +
+        '<p class="sgll-empty">Auto-generated from your logic nodes. Edit logic on the Logic screen.</p>' +
         '<div class="sgll-equations">' + (lines.length ? esc(lines.join('\n')) : 'No logic nodes yet.') + '</div>' +
       '</div>';
   }
@@ -440,7 +499,7 @@
       plant.breakers.push(E.plant.newBreaker({ id: 'gen1brk', label: 'Generator Breaker', role: 'generator', connectsBusA: 'bus2', sourceId: 'gen1', position: 'open' }));
     }
     state.project.plant = plant;
-    save(); renderOneline();
+    save(); renderOneline(); renderLogic(); renderScenarios();
   }
 
   function onelineSvg(plant, positions, avail) {
@@ -466,10 +525,14 @@
         var x = busX[b.connectsBusA];
         var src = plant.sources.filter(function (s) { return s.id === b.sourceId; })[0];
         var srcAvail = src && avail[src.id];
-        parts.push('<line x1="' + x + '" y1="40" x2="' + x + '" y2="' + busY + '" stroke="' + (srcAvail ? '#6bdc8f' : '#93a0b4') + '" stroke-width="3"/>');
-        parts.push('<rect x="' + (x - 10) + '" y="80" width="20" height="20" class="' + (closed ? 'sgll-breaker-closed' : 'sgll-breaker-open') + '"/>');
-        parts.push('<text x="' + x + '" y="30" text-anchor="middle">' + esc(src ? src.label : b.sourceId) + (srcAvail ? '' : ' (unavailable)') + '</text>');
-        parts.push('<text x="' + x + '" y="118" text-anchor="middle">' + esc(b.label) + '</text>');
+        var generator = b.role === 'generator';
+        var sourceY = generator ? 280 : 40;
+        var symbolY = generator ? 220 : 80;
+        var labelY = generator ? 210 : 118;
+        parts.push('<line x1="' + x + '" y1="' + sourceY + '" x2="' + x + '" y2="' + busY + '" stroke="' + (srcAvail ? '#6bdc8f' : '#93a0b4') + '" stroke-width="3"/>');
+        parts.push('<rect x="' + (x - 10) + '" y="' + symbolY + '" width="20" height="20" class="' + (closed ? 'sgll-breaker-closed' : 'sgll-breaker-open') + '"/>');
+        parts.push('<text x="' + x + '" y="' + (generator ? 302 : 30) + '" text-anchor="middle">' + esc(src ? src.label : b.sourceId) + (srcAvail ? '' : ' (unavailable)') + '</text>');
+        parts.push('<text x="' + x + '" y="' + labelY + '" text-anchor="middle">' + esc(b.label) + '</text>');
       } else if (b.connectsBusB) {
         var xa = busX[b.connectsBusA], xb = busX[b.connectsBusB];
         var mid = (xa + xb) / 2;
@@ -492,7 +555,7 @@
     var breakerControls = p.plant.breakers.map(function (b) {
       var closed = positions[b.id] === 'closed';
       return '<div class="sgll-row"><span style="flex:2">' + esc(b.label) + '</span>' +
-        '<button class="sgll-btn sgll-btn-sm" data-action="toggle-breaker" data-id="' + esc(b.id) + '">' + (closed ? 'Open it' : 'Close it') + '</button></div>';
+        '<button class="sgll-btn sgll-btn-sm" data-action="toggle-breaker" data-id="' + esc(b.id) + '">' + (closed ? 'Open it' : 'Close it') + '</button><label>Operate delay (ms) <input type="number" min="0" data-breaker-delay="' + esc(b.id) + '" value="' + b.operateDelayMs + '"></label></div>';
     }).join('') || '<p class="sgll-empty">No breakers yet.</p>';
 
     var sourceControls = p.plant.sources.map(function (s) {
@@ -524,14 +587,22 @@
       btn.addEventListener('click', function () {
         var b = state.project.plant.breakers.filter(function (x) { return x.id === btn.dataset.id; })[0];
         b.position = b.position === 'closed' ? 'open' : 'closed';
-        save(); renderOneline();
+        save(); renderOneline(); renderLogic(); renderScenarios();
+      });
+    });
+    $('screen-oneline').querySelectorAll('[data-breaker-delay]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var delay = Number(input.value);
+        if (!Number.isFinite(delay) || delay < 0) { alert('Enter a nonnegative operate delay.'); return; }
+        p.plant.breakers.find(function (b) { return b.id === input.dataset.breakerDelay; }).operateDelayMs = delay;
+        save();
       });
     });
     $('screen-oneline').querySelectorAll('[data-action="toggle-source"]').forEach(function (chk) {
       chk.addEventListener('change', function () {
         var s = state.project.plant.sources.filter(function (x) { return x.id === chk.dataset.id; })[0];
         s.available = chk.checked;
-        save(); renderOneline();
+        save(); renderOneline(); renderLogic(); renderScenarios();
       });
     });
   }
@@ -545,21 +616,24 @@
         ['input', 'breakerPosition', 'sourceAvailable', 'fault'].map(function (t) { return opt(t, t, t === ev.type); }).join('') +
       '</select>' +
       '<input class="sgll-ev-target" placeholder="signalId / breakerId / sourceId" value="' + esc(ev.signalId || ev.breakerId || ev.sourceId || ev.targetId || '') + '" style="flex:1">' +
-      '<input class="sgll-ev-value" placeholder="value (true/false/open/closed)" value="' + esc(ev.value != null ? ev.value : ev.position || ev.available || '') + '" style="flex:1">' +
+      '<input class="sgll-ev-value" placeholder="value (true/false/open/closed)" value="' + esc(ev.type === 'fault' ? ev.fault : ev.value != null ? ev.value : ev.position || String(ev.available == null ? false : ev.available)) + '" style="flex:1">' +
+      '<label><input type="checkbox" class="sgll-ev-active"' + (ev.active !== false ? ' checked' : '') + '> Fault active</label>' +
       '<button class="sgll-btn sgll-btn-sm sgll-btn-danger" data-action="remove-event" data-idx="' + idx + '">−</button>' +
       '</div>';
   }
 
   function parseEventRow(row) {
-    var t = parseInt(row.querySelector('.sgll-ev-t').value, 10) || 0;
+    var t = Number(row.querySelector('.sgll-ev-t').value);
     var type = row.querySelector('.sgll-ev-type').value;
     var target = row.querySelector('.sgll-ev-target').value.trim();
     var rawValue = row.querySelector('.sgll-ev-value').value.trim();
-    var boolValue = rawValue === 'true' || rawValue === 'closed';
+    if ((type === 'input' || type === 'sourceAvailable') && ['true', 'false'].indexOf(rawValue) < 0) throw new Error('Use true or false for input/source events.');
+    if (type === 'breakerPosition' && ['open', 'closed'].indexOf(rawValue) < 0) throw new Error('Use open or closed for breaker events.');
+    var boolValue = rawValue === 'true';
     if (type === 'input') return { tMs: t, type: type, signalId: target, value: boolValue };
     if (type === 'breakerPosition') return { tMs: t, type: type, breakerId: target, position: rawValue === 'closed' ? 'closed' : 'open' };
     if (type === 'sourceAvailable') return { tMs: t, type: type, sourceId: target, available: boolValue };
-    return { tMs: t, type: 'fault', fault: rawValue, targetId: target, active: true };
+    return { tMs: t, type: 'fault', fault: rawValue, targetId: target, active: row.querySelector('.sgll-ev-active').checked, params: (state.project.scenarios[state.selectedScenarioIdx || 0].events[Number(row.dataset.eventIdx)] || {}).params || {} };
   }
 
   function renderScenarios() {
@@ -568,7 +642,8 @@
       return '<button class="sgll-btn sgll-btn-sm" data-action="select-scenario" data-idx="' + idx + '">' + esc(s.name) + '</button>';
     }).join(' ');
 
-    var selected = p.scenarios[state.selectedScenarioIdx || 0];
+    if (state.selectedScenarioIdx == null || state.selectedScenarioIdx >= p.scenarios.length) state.selectedScenarioIdx = 0;
+    var selected = p.scenarios[state.selectedScenarioIdx];
 
     var body = '<p class="sgll-empty">No scenarios yet.</p>';
     if (selected) {
@@ -577,7 +652,7 @@
         '<div class="sgll-field"><label>Scenario name</label><input id="sgllScenName" value="' + esc(selected.name) + '"></div>' +
         '<div class="sgll-row"><div class="sgll-field"><label>Duration (ms)</label><input type="number" id="sgllScenDuration" value="' + selected.durationMs + '"></div>' +
         '<div class="sgll-field"><label>Scan dt (ms)</label><input type="number" id="sgllScenDt" value="' + selected.dtMs + '"></div></div>' +
-        '<h3>Events</h3><div id="sgllEventRows">' + rows + '</div>' +
+        '<h3>Events</h3><p class="sgll-empty">Use signal/breaker/source IDs shown in Logic and One-line. Faults: ' + E.scenario.FAULT_TYPES.join(', ') + '. Uncheck Fault active to clear a fault. Events between scans run at the next scan.</p><div id="sgllEventRows">' + rows + '</div>' +
         '<button class="sgll-btn sgll-btn-sm" data-action="add-event">+ Add event</button>' +
         '<div class="sgll-row" style="margin-top:10px">' +
           '<button class="sgll-btn sgll-btn-primary" data-action="save-run-scenario">Save &amp; run</button>' +
@@ -587,10 +662,11 @@
 
     var resultHtml = '';
     if (state.lastScenarioResult && state.lastScenarioId === (selected && selected.id)) {
-      var findings = state.lastScenarioResult.findings;
-      resultHtml = '<div class="sgll-card"><h3>Run result</h3>' +
-        '<p>' + state.lastScenarioResult.steps.length + ' scan steps. ' + findings.length + ' finding(s) over the run.</p>' +
+      var findings = uniqueFindings(state.lastScenarioResult.findings);
+      resultHtml = '<div class="sgll-card sgll-run-result"><h3>Run result</h3>' +
+        '<p>' + state.lastScenarioResult.steps.length + ' scan steps. ' + findings.length + ' finding occurrence(s) over the run.</p>' +
         (findings.length ? findings.slice(0, 20).map(findingCardHtml).join('') : '<p class="sgll-empty">No findings during this run.</p>') +
+        transferMatrixHtml() + tracePanelHtml() +
         '<p class="sgll-empty">See the Timing screen to plot signals from this run.</p>' +
         '</div>';
     }
@@ -611,6 +687,9 @@
       save(); renderScenarios();
     });
     if (!selected) return;
+    var traceSelect = screen.querySelector('#sgllTraceSignal');
+    if (traceSelect) traceSelect.addEventListener('change', renderTrace);
+    renderTrace();
 
     screen.querySelector('#sgllScenName').addEventListener('input', function () { selected.name = this.value; save(); });
     screen.querySelector('#sgllScenDuration').addEventListener('change', function () { selected.durationMs = parseInt(this.value, 10) || 0; save(); });
@@ -628,18 +707,51 @@
     screen.querySelectorAll('[data-action="remove-event"]').forEach(function (btn) {
       btn.addEventListener('click', function () { selected.events.splice(parseInt(btn.dataset.idx, 10), 1); save(); renderScenarios(); });
     });
+    screen.querySelector('#sgllEventRows').addEventListener('change', function (event) {
+      var row = event.target.closest('[data-event-idx]');
+      if (!row) return;
+      try { selected.events[Number(row.dataset.eventIdx)] = parseEventRow(row); save(); }
+      catch (err) { resetResults(); renderTiming(); renderAnalyze(); }
+    });
     screen.querySelector('[data-action="save-run-scenario"]').addEventListener('click', function () {
-      selected.events = Array.prototype.slice.call(screen.querySelectorAll('[data-event-idx]')).map(parseEventRow).sort(function (a, b) { return a.tMs - b.tMs; });
-      save();
       try {
+      selected.events = Array.prototype.slice.call(screen.querySelectorAll('[data-event-idx]')).map(parseEventRow).sort(function (a, b) { return a.tMs - b.tMs; });
+      var errors = E.scenario.validateScenario(p, selected);
+      if (errors.length) throw new Error(errors.join(' '));
+      save();
         var result = E.scenario.run(p, selected, E.eval, E.plant, {});
         state.lastScenarioResult = result;
         state.lastScenarioId = selected.id;
-        renderScenarios(); renderTiming();
+        state.lastTransferMatrix = E.report.buildTransferMatrix(result, p.plant, E.plant);
+        state.project.findings = uniqueFindings(result.findings);
+        p.signals.slice(0, 8).forEach(function (sig) { state.timingSelection[sig.id] = true; });
+        save(true);
+        renderScenarios(); renderTiming(); renderAnalyze();
       } catch (err) {
         alert('Could not run this scenario: ' + err.message);
       }
     });
+  }
+
+  function transferMatrixHtml() {
+    var rows = state.lastTransferMatrix || [];
+    return '<h3>Transfer sequence</h3><div style="overflow-x:auto"><table class="sgll-table"><thead><tr><th>Time (ms)</th><th>Breaker positions</th><th>Bus feeds</th></tr></thead><tbody>' + rows.map(function (row) {
+      return '<tr><td>' + row.tMsStart + '–' + row.tMsEnd + '</td><td>' + esc(JSON.stringify(row.breakerPositions)) + '</td><td>' + esc(JSON.stringify(row.busFeeds)) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function tracePanelHtml() {
+    return '<h3>Explain a signal at the final scan</h3><select id="sgllTraceSignal" aria-label="Signal to explain">' + signalOptions() + '</select><div id="sgllTraceResult"></div>';
+  }
+  function renderTrace() {
+    var select = $('sgllTraceSignal'), output = $('sgllTraceResult');
+    if (!select || !output || !state.lastScenarioResult || !select.value) return;
+    var rt = state.lastScenarioResult.finalRuntime;
+    var trace = E.trace.explain(state.project, rt.signalValues, select.value, rt);
+    function html(node) {
+      var signal = E.model.findSignal(state.project, node.signalId);
+      return '<li>' + esc(signal ? signal.name : node.signalId) + ': ' + (node.value ? 'ON' : 'OFF') + ' — ' + esc(node.note || '') + (node.children && node.children.length ? '<ul>' + node.children.map(html).join('') + '</ul>' : '') + '</li>';
+    }
+    output.innerHTML = '<ul class="sgll-trace-tree">' + html(trace) + '</ul>';
   }
 
   // ================================================================== TIMING SCREEN
@@ -661,7 +773,7 @@
         var v = !!step.signalValues[sigId];
         var x = xScale(step.tMs);
         var yTrace = y - (v ? 14 : 0);
-        points.push((i === 0 ? 'M' : 'L') + x + ' ' + yTrace);
+        points.push((i === 0 ? 'M' : 'H') + x + (i === 0 ? ' ' + yTrace : ' V' + yTrace));
       });
       parts.push('<path d="' + points.join(' ') + '" fill="none" stroke-width="2" class="sgll-timing-trace-high"/>');
       parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + (width - 20) + '" y2="' + y + '" class="sgll-timing-trace-low" stroke-width="1"/>');
@@ -687,7 +799,7 @@
     $('screen-timing').innerHTML =
       '<div class="sgll-grid">' +
         '<div class="sgll-card"><h3>Signals to plot</h3><div class="sgll-node-list">' + checks + '</div></div>' +
-        '<div class="sgll-card" style="grid-column:span 2"><h2>Timing chart</h2>' + timingSvg(state.lastScenarioResult.steps, selectedIds) + '</div>' +
+        '<div class="sgll-card sgll-chart-card"><h2>Timing chart</h2>' + timingSvg(state.lastScenarioResult.steps, selectedIds) + '</div>' +
       '</div>';
 
     $('screen-timing').querySelectorAll('[data-action="toggle-timing-signal"]').forEach(function (chk) {
@@ -755,8 +867,12 @@
     });
     screen.querySelector('[data-action="run-timer-check"]').addEventListener('click', function () {
       if (!p.nodes.some(function (n) { return n.type === 'TIMER'; })) { alert('No timers in this project yet.'); return; }
-      var diff = E.eval.stepBothTimerFieldOrders(p, E.eval.newRuntime(), {}, p.profile.scanMs);
-      var found = diff.divergentSignals.length ? [makeDivergenceFinding('timer-field-order-divergence', diff.divergentSignals)] : [];
+      var selected = p.scenarios[state.selectedScenarioIdx || 0];
+      if (!selected) { alert('Create and save a scenario that exercises the timers first.'); return; }
+      try {
+        var signals = E.scenario.compareProfiles(p, selected, E.eval, E.plant, 'timerFieldOrder', ['pickup-then-dropout', 'dropout-then-pickup']);
+        var found = signals.length ? [makeDivergenceFinding('timer-field-order-divergence', signals)] : [];
+      } catch (err) { alert('Could not compare the scenario: ' + err.message); return; }
       mergeFindings(found);
     });
 
@@ -774,10 +890,19 @@
     };
   }
 
+  function uniqueFindings(findings) {
+    var seen = Object.create(null);
+    return findings.filter(function (f) {
+      var key = f.category + '|' + f.title;
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
   function mergeFindings(newFindings) {
-    if (!newFindings.length) { alert('No new findings from this check.'); return; }
-    state.project.findings = (state.project.findings || []).concat(newFindings);
-    save(); renderAnalyze();
+    if (!newFindings.length) { alert('No differences found in the tested inputs/scans. This check does not cover every possible timing sequence.'); return; }
+    state.project.findings = uniqueFindings((state.project.findings || []).concat(newFindings));
+    save(true); renderAnalyze();
   }
 
   function renderEnumerationSummary() {
@@ -787,7 +912,7 @@
     if (!en) { el.innerHTML = ''; return; }
     el.innerHTML = '<div class="sgll-card"><h3>Settled-state coverage</h3>' +
       '<p>' + en.rows.length + ' of ' + en.totalPossible + ' input vectors ' + (en.exhaustive ? 'enumerated exhaustively.' : '<strong>sampled — bounded, not exhaustive.</strong>') + '</p>' +
-      '</div>';
+      '<p>' + en.unsettledCount + ' vector(s) did not settle within 500 scans; inspect timing before drawing conclusions.</p></div>';
   }
 
   function wireFindingActions() {
@@ -800,7 +925,7 @@
       var f = state.project.findings[idx];
       if (btn.dataset.findingAction === 'accept') f.status = 'accepted';
       if (btn.dataset.findingAction === 'dismiss') f.status = 'dismissed';
-      save(); renderAnalyze();
+      save(true); renderAnalyze();
     });
   }
 
@@ -809,6 +934,7 @@
     return '<div class="sgll-finding sev-' + esc(sev) + '">' +
       '<div class="sgll-finding-title"><span class="sgll-badge sgll-badge-' + esc(sev) + '">' + esc(sev) + '</span> ' + esc(f.title) + ' <span class="sgll-finding-meta">[' + esc(f.status || 'open') + ']</span></div>' +
       '<div class="sgll-finding-meta">' + esc(f.category) + (f.suggestedTest ? ' — ' + esc(f.suggestedTest) : '') + '</div>' +
+      '<details><summary>Evidence</summary><pre>' + esc(JSON.stringify(f.evidence || [], null, 2)) + '</pre></details>' +
       '<div class="sgll-finding-actions">' +
         '<button class="sgll-btn sgll-btn-sm" data-finding-action="accept" data-idx="' + idx + '">Accept</button>' +
         '<button class="sgll-btn sgll-btn-sm" data-finding-action="dismiss" data-idx="' + idx + '">Dismiss</button>' +
@@ -830,21 +956,27 @@
       '</div>';
 
     $('screen-export').querySelector('[data-action="open-review"]').addEventListener('click', function () {
-      var html = E.report.buildReviewExportHtml(state.project, state.project.findings || [], state.lastEnumeration);
+      var html = E.report.buildReviewExportHtml(state.project, state.project.findings || [], state.lastEnumeration, state.lastTransferMatrix);
       var blob = new Blob([html], { type: 'text/html' });
       var url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.switchgearExport) {
+        URL.revokeObjectURL(url); downloadBlob('switchgear-review-export.html', 'text/html', html);
+      } else {
+        window.open(url, '_blank'); setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      }
     });
     $('screen-export').querySelector('[data-action="download-review"]').addEventListener('click', function () {
-      var html = E.report.buildReviewExportHtml(state.project, state.project.findings || [], state.lastEnumeration);
+      var html = E.report.buildReviewExportHtml(state.project, state.project.findings || [], state.lastEnumeration, state.lastTransferMatrix);
       downloadBlob('switchgear-review-export.html', 'text/html', html);
     });
     $('screen-export').querySelector('[data-action="download-findings-csv"]').addEventListener('click', function () {
       var findings = state.project.findings || [];
-      var header = 'severity,category,title,status,suggestedTest\n';
+      var header = 'severity,category,title,status,suggestedTest,evidence\n';
       var rows = findings.map(function (f) {
-        return [f.severity, f.category, f.title, f.status, f.suggestedTest || ''].map(function (v) {
-          return '"' + String(v).replace(/"/g, '""') + '"';
+        return [f.severity, f.category, f.title, f.status || 'open', f.suggestedTest || '', JSON.stringify(f.evidence || [])].map(function (v) {
+          var cell = String(v == null ? '' : v);
+          if (/^[=+@-]/.test(cell)) cell = "'" + cell;
+          return '"' + cell.replace(/"/g, '""') + '"';
         }).join(',');
       }).join('\n');
       downloadBlob('switchgear-findings.csv', 'text/csv', header + rows);

@@ -88,6 +88,9 @@
     if (VARIADIC_TYPES[opts.type] && inputs.length < 1) {
       throw new Error(opts.type + ' requires at least 1 input');
     }
+    if (opts.type === 'TIMER' && ['fieldA', 'fieldB'].some(function (field) {
+      return opts.params && opts.params[field] != null && (!Number.isFinite(opts.params[field]) || opts.params[field] < 0);
+    })) throw new Error('Timer delays must be finite nonnegative milliseconds.');
     return {
       id: opts.id || uid('node'),
       type: opts.type,
@@ -139,21 +142,77 @@
 
   function validateProject(project) {
     var errors = [];
-    var signalIds = {};
-    project.signals.forEach(function (s) {
-      if (signalIds[s.id]) errors.push('Duplicate signal id: ' + s.id);
-      signalIds[s.id] = true;
-    });
-    project.nodes.forEach(function (n) {
-      if (!signalIds[n.output]) {
-        errors.push('Node ' + n.id + ' drives unknown signal: ' + n.output);
+    function object(v) { return v && typeof v === 'object' && !Array.isArray(v); }
+    function finite(v, min) { return typeof v === 'number' && Number.isFinite(v) && v >= min; }
+    if (!object(project)) return ['Project must be an object.'];
+    if (project.modelVersion !== MODEL_VERSION) errors.push('Unsupported project version.');
+    if (typeof project.name !== 'string') errors.push('Project name must be text.');
+    var profile = project.profile;
+    if (!object(profile) || !finite(profile.scanMs, 1) ||
+        ['pickup-then-dropout', 'dropout-then-pickup', 'unknown'].indexOf(profile.timerFieldOrder) < 0 ||
+        ['set', 'reset', 'unknown'].indexOf(profile.latchDominance) < 0 ||
+        ['declaration', 'reverse'].indexOf(profile.evalOrder) < 0 || typeof profile.verified !== 'boolean') {
+      errors.push('Invalid system profile.');
+    }
+    function records(items, label, limit) {
+      if (!Array.isArray(items) || items.length > limit) {
+        errors.push(label + ' must be an array of at most ' + limit + ' entries.');
+        return [];
       }
-      nodeInputRefs(n).forEach(function (ref) {
-        if (!signalIds[ref]) {
-          errors.push('Node ' + n.id + ' references unknown signal: ' + ref);
+      var seen = Object.create(null);
+      return items.filter(function (item) {
+        if (!object(item) || typeof item.id !== 'string' || !item.id ||
+            ['__proto__', 'constructor', 'prototype'].indexOf(item.id) >= 0) {
+          errors.push('Invalid ' + label + ' entry or id.'); return false;
+        }
+        if (seen[item.id]) errors.push('Duplicate ' + label + ' id: ' + item.id);
+        seen[item.id] = true;
+        return true;
+      });
+    }
+    var signals = records(project.signals, 'signal', 256);
+    var nodes = records(project.nodes, 'node', 256);
+    var signalIds = Object.create(null);
+    signals.forEach(function (s) {
+      signalIds[s.id] = true;
+      if (SIGNAL_KINDS.indexOf(s.kind) < 0 || typeof s.name !== 'string') errors.push('Invalid signal: ' + s.id);
+    });
+    nodes.forEach(function (n) {
+      try { newNode(n); } catch (e) { errors.push('Node ' + n.id + ': ' + e.message); return; }
+      if (!Array.isArray(n.inputs) || !object(n.params)) { errors.push('Invalid node fields: ' + n.id); return; }
+      if (!signalIds[n.output]) errors.push('Node ' + n.id + ' drives unknown signal: ' + n.output);
+      n.inputs.forEach(function (input) {
+        if (!object(input) || !signalIds[input.ref]) errors.push('Node ' + n.id + ' references unknown signal.');
+      });
+      if (n.type === 'TIMER' && !['fieldA', 'fieldB'].every(function (key) {
+        return n.params[key] == null || finite(n.params[key], 0);
+      })) errors.push('Timer fields must be finite nonnegative milliseconds: ' + n.id);
+    });
+    if (!object(project.plant)) errors.push('Missing plant.');
+    else {
+      var buses = records(project.plant.buses, 'bus', 32);
+      var sources = records(project.plant.sources, 'source', 32);
+      var breakers = records(project.plant.breakers, 'breaker', 64);
+      function has(items, id) { return items.some(function (item) { return item.id === id; }); }
+      breakers.forEach(function (b) {
+        if (!has(buses, b.connectsBusA) || (b.connectsBusB && !has(buses, b.connectsBusB)) ||
+            (b.sourceId && !has(sources, b.sourceId)) || ['open', 'closed'].indexOf(b.position) < 0 ||
+            !finite(b.operateDelayMs, 0)) errors.push('Invalid breaker topology or timing: ' + b.id);
+      });
+      signals.forEach(function (s) {
+        if (s.physical && (!object(s.physical) || !has(breakers, s.physical.breakerId) ||
+            ['command-close', 'command-open', 'feedback-closed', 'feedback-open'].indexOf(s.physical.role) < 0)) {
+          errors.push('Invalid breaker mapping: ' + s.id);
         }
       });
+    }
+    records(project.scenarios, 'scenario', 100).forEach(function (scenario) {
+      if (typeof scenario.name !== 'string' || !Array.isArray(scenario.events) || scenario.events.length > 1000 ||
+          !finite(scenario.durationMs, 0) || !finite(scenario.dtMs, 1)) errors.push('Invalid scenario: ' + scenario.id);
     });
+    if (!Array.isArray(project.findings) || project.findings.some(function (f) {
+      return !object(f) || typeof f.title !== 'string' || !Array.isArray(f.evidence);
+    })) errors.push('Invalid findings.');
     return errors;
   }
 

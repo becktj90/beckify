@@ -98,10 +98,30 @@ final class MotorNameplateTests: XCTestCase {
         )
         XCTAssertEqual(r.overload.percent, 125, accuracy: 1e-9)
         XCTAssertEqual(r.overload.amps, 27 * 1.25, accuracy: 1e-9)
-        XCTAssertEqual(r.conductorRequiredAmps, 27 * 1.25, accuracy: 1e-9)
+        XCTAssertEqual(r.conductorRequiredAmps, 14 * 1.25, accuracy: 1e-9)
+        XCTAssertEqual(r.tableFullLoadAmps, 14, accuracy: 1e-9)
+        XCTAssertEqual(r.scpd.rawAmps, 14 * 2.5, accuracy: 1e-9)
         XCTAssertEqual(r.scpd.percent, 250, accuracy: 1e-9)
         XCTAssertNotNil(r.lockedRotor)
         XCTAssertEqual(r.lockedRotor?.letter, "G")
+    }
+
+    func testNameplateAndTableCurrentHaveSeparatePurposes() throws {
+        let r = try MotorNameplate.analyze(fla: 22, phases: 3, horsepower: 20, volts: 480, serviceFactor: 1.15)
+        XCTAssertEqual(r.overload.amps, 27.5, accuracy: 1e-9)
+        XCTAssertEqual(r.tableFullLoadAmps, 27, accuracy: 1e-9)
+        XCTAssertEqual(r.conductorRequiredAmps, 33.75, accuracy: 1e-9)
+        XCTAssertEqual(r.scpd.rawAmps, 67.5, accuracy: 1e-9)
+    }
+
+    func testUnsupportedRatingsRequireReviewedTableCurrent() throws {
+        XCTAssertThrowsError(try MotorNameplate.analyze(fla: 22, phases: 3))
+        XCTAssertThrowsError(try MotorNameplate.analyze(fla: 22, phases: 3, horsepower: 19, volts: 460))
+        XCTAssertThrowsError(try MotorNameplate.analyze(fla: 22, phases: 3, horsepower: 20, volts: 1_000))
+        XCTAssertThrowsError(try MotorNameplate.analyze(fla: 22, phases: 3, horsepower: 20, volts: 460, motorType: .synchronous))
+        let r = try MotorNameplate.analyze(fla: 22, phases: 3, tableFullLoadAmps: 30)
+        XCTAssertEqual(r.conductorRequiredAmps, 37.5, accuracy: 1e-9)
+        XCTAssertThrowsError(try MotorNameplate.analyze(fla: 22, phases: 3, tableFullLoadAmps: .nan))
     }
 
     func testRejectsNonPositiveFLA() {

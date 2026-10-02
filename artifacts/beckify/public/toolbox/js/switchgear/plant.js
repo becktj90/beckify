@@ -161,7 +161,7 @@
     plant.sources.forEach(function (src) {
       if (sourceAvailable[src.id]) return;
       var feedingBreaker = plant.breakers.filter(function (b) { return b.sourceId === src.id; })[0];
-      if (!feedingBreaker) return;
+      if (!feedingBreaker || positions[feedingBreaker.id] !== 'closed' || feedingBreaker.primaryDisconnected) return;
       var bus = feedingBreaker.connectsBusA;
       var feeds = (energized[bus] || []).filter(function (f) { return f.sourceId !== src.id; });
       if (feeds.length) {

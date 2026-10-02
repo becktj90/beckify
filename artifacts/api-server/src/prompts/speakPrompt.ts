@@ -18,7 +18,7 @@ export const SPEAK_DEFAULT_MODEL = "gpt-4o-mini-tts";
 
 export const SPEAK_MAX_INPUT_CHARS = 500;
 
-export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `Speak like a real Cuban / South Florida construction guy yelling across a noisy jobsite — loud, clear, projected so someone on a scaffold can hear you. Warm Cuban-American Florida Spanish cadence. Deep male coworker energy: blunt, cocky, urgent when the words are urgent. Deliver every swear word and dirty slang in the text fully and naturally — do not beep, skip, soften, whisper, or sanitize profanity or sexual vulgarity. Workplace cussing and insult-as-banter should land hard and clear. Not a studio whisper, not a cartoon, not Castilian Spain, not a mocking caricature accent. Never invent hate slurs aimed at protected classes; if the text has ordinary jobsite swearing, speak it. Keep the pace intelligible over site noise: a touch slower than rapid Miami chatter, still energetic and projected.`;
+export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied Spanish text exactly, in the voice of a fictional older Cuban / South Florida tradesman whose voice sounds weathered by fifty years of cigarettes and hard jobsite work. Deep, chesty male register; coarse gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. A streetwise, roguish old hand: blunt confidence, skeptical dry humor in the delivery, no polished announcer sound. Natural Cuban-American Florida Spanish rhythm, with short deliberate phrases and a little bite on stressed words. Project enough to carry across a noisy site without screaming; keep consonants, electrical terms, numbers, units, and warnings crisp. The rasp must never swallow a word. Deliver profanity already in the text naturally — do not beep, sanitize, skip, or soften it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. Use a distinct believable character voice, not a cartoon accent or an impersonation of a real person. Preserve the text and its meaning; only the delivery changes.`;
 
 export const SPEAK_CLEAN_VOICE_INSTRUCTIONS = `Speak like a polished Cuban / South Florida woman — warm, elegant, clear, and kind. Soft feminine Cuban-American Florida Spanish cadence with graceful confidence. Project enough to be heard, but never yell like a jobsite. Refined and welcoming — not crude, not sarcastic, not a cartoon, not Castilian Spain, not a mocking caricature accent. Do not invent swearing; if the text is already clean, keep it clean and musical. Never invent hate slurs. Pace is clear and unhurried, still lively and warm.`;
 
@@ -29,7 +29,7 @@ export function speakVoiceMode(raw: unknown): TranslateVoiceMode {
   return normalizeTranslateVoiceMode(raw);
 }
 
-/** Male lower voice for Spanish → English (California stoner path). */
+/** Male lower voice for Spanish → English; Jobsite is gravelly and weathered. */
 export const SPEAK_EN_VOICE = "onyx";
 
 /** Japanese delivery reuses the same built-in voices as Spanish, distinguished by `instructions`. */
@@ -39,8 +39,8 @@ export const SPEAK_JA_CLEAN_VOICE = SPEAK_CLEAN_VOICE;
 export type SpeakLanguage = "en" | "es" | "ja";
 
 /**
- * Spanish and Japanese delivery both follow Clean (nova) / Jobsite (onyx).
- * English delivery always uses the male California stoner voice (`onyx`) — not nova.
+ * Spanish and Japanese delivery follow Clean (nova) / Jobsite (onyx).
+ * English uses the male voice (`onyx`) with mode-specific delivery.
  */
 export function speakDefaultVoiceForMode(
   mode: TranslateVoiceMode,
@@ -55,7 +55,7 @@ export function speakDefaultVoiceForMode(
  * (mellow drawl, dude/man energy). Not corporate. Not a cartoon. Still clear.
  * Do not put trademark character names in user-visible UI copy.
  */
-export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Speak like a classic California stoner dude — deep mellow male drawl, lazy SoCal cadence, “dude / man” energy, warm and stoney, still clear on a jobsite. Slow and easy: stretch vowels a touch, never rush, never clip words. Think van-in-the-lot after a session, not a tech-campus corporate California accent, not Midwestern, not Southern, not New York, not British. Deliver swearing already in the text fully; do not add words, do not beep, and do not invent slurs or hate speech. Not a cartoon surfer parody, not Spicoli overacting, not a whisper, not a Spanish accent on English. Intelligible first — mellow, not mushy.`;
+export const SPEAK_EN_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied English text exactly, in the voice of a fictional older tradesman whose voice sounds weathered by fifty years of cigarettes, long shifts, and hard outdoor work. Deep, chesty male register; heavy gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. Streetwise, roguish old-hand energy: blunt, world-weary confidence with a skeptical dry edge. Relaxed American field English, short deliberate phrases, clipped emphasis on the important words, and a rough low chuckle-like texture without actually laughing. This is a grizzled working man's voice, not a smooth corporate narrator or a cartoon surfer. Project firmly without screaming. Keep consonants, electrical terms, numbers, units, negations, and warnings clear; never let the gravel obscure them. Deliver swearing already in the text fully; do not beep or sanitize it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. Do not impersonate a real person. Preserve the text and its meaning; only the delivery changes.`;
 
 /** Same California surfer-stoner male for Clean mode English; a touch softer, still not corporate. */
 export const SPEAK_EN_CLEAN_VOICE_INSTRUCTIONS = `Speak like a classic California stoner dude — deep mellow male drawl, lazy SoCal cadence, warm “dude / man” energy, a little stoney but friendly. Soft projection for a room; still slow and easy, never rushed. Not a tech-campus corporate California accent, not Midwestern, not Southern, not New York, not British. Do not add swearing. Do not invent slurs. Not a cartoon surfer parody, not Spicoli overacting, not a whisper, not a Spanish accent on English. Clear and understandable with that mellow California stoner vibe.`;

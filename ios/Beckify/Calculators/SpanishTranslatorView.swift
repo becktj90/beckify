@@ -3,6 +3,8 @@ import AVFoundation
 import Speech
 import Translation
 import BeckifyMath
+import UniformTypeIdentifiers
+import UIKit
 
 /// Toolkit → Reference: English ↔ Spanish in one tool.
 /// Default is record/type English → Beckify AI Spanish (Clean / Jobsite) → neural TTS.
@@ -22,11 +24,9 @@ struct SpanishTranslatorView: View {
 
     // Deep South: comedy-only English dialect stylizer. Same-language
     // wordplay, not a translation and not an accent/voice impression — see
-    // `DeepSouthDialect.honestLimit`. Its own synthesizer so this novelty
-    // button never touches the main engine's translation/speech state machine.
+    // `DeepSouthDialect.honestLimit`. Playback uses the shared speech pipeline.
     @State private var deepSouthOutput = ""
     @State private var deepSouthSeed = 0
-    @State private var deepSouthSynthesizer = AVSpeechSynthesizer()
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -79,14 +79,17 @@ struct SpanishTranslatorView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 engine.invalidateOutdatedWork(markCancelled: true)
-                deepSouthSynthesizer.stopSpeaking(at: .immediate)
             }
         }
         .onAppear {
             engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
             engine.setDirection(direction)
         }
+        .onChange(of: engine.englishText) { _, _ in
+            deepSouthOutput = ""
+        }
         .onChange(of: voiceModeRaw) { _, raw in
+            deepSouthOutput = ""
             engine.applyVoiceMode(SpanishVoiceMode.parse(raw), invalidateInFlight: true)
         }
         .onChange(of: directionRaw) { _, raw in
@@ -94,12 +97,10 @@ struct SpanishTranslatorView: View {
             lastTestPhrase = ""
             lastAttentionPhrase = ""
             deepSouthOutput = ""
-            deepSouthSynthesizer.stopSpeaking(at: .immediate)
             engine.setDirection(SpanishTranslateDirection.parse(raw))
         }
         .onDisappear {
             engine.invalidateOutdatedWork(markCancelled: true)
-            deepSouthSynthesizer.stopSpeaking(at: .immediate)
         }
     }
 
@@ -167,6 +168,9 @@ struct SpanishTranslatorView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("spanishTranslator.voiceMode")
+            Text("Jobsite: gravelly, weathered tradesman. Clean: smooth and warm.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
         }
     }
 
@@ -270,6 +274,35 @@ struct SpanishTranslatorView: View {
 
             if showsActionBusyChrome {
                 actionBusyRow
+            }
+
+            if let audioURL = engine.translatedAudioURL {
+                HStack(spacing: 12) {
+                    Button {
+                        engine.copyTranslatedAudio()
+                    } label: {
+                        Label("Copy Audio", systemImage: "doc.on.doc")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("spanishTranslator.copyAudio")
+
+                    ShareLink(item: audioURL) {
+                        Label("Share Audio", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("spanishTranslator.shareAudio")
+                }
+                Text(engine.audioCopyNotice ?? "Copy the recording, then paste in Messages. You can also share it directly to Messages.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+            } else if let notice = engine.audioCopyNotice {
+                Text(notice)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.warn)
+            } else if !engine.voiceNote.isEmpty {
+                Text("The audio recording will be available to copy and share when voice generation finishes.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
             }
 
             if engine.phase == .preparingVoice, engine.canSpeakWithDeviceVoice {
@@ -445,8 +478,7 @@ struct SpanishTranslatorView: View {
 
     /// Comedy-only: stylizes whatever English text is on screen into an
     /// exaggerated "Deep South" drawl. Not a translation, not a real accent —
-    /// see `DeepSouthDialect.honestLimit`. Uses its own synthesizer so it
-    /// never touches the main translate/speak state machine above.
+    /// see `DeepSouthDialect.honestLimit`. Uses coordinated translator playback.
     @ViewBuilder
     private var deepSouthCard: some View {
         if !engine.englishText.isEmpty {
@@ -488,10 +520,7 @@ struct SpanishTranslatorView: View {
 
     private func speakDeepSouth() {
         guard !deepSouthOutput.isEmpty else { return }
-        let utterance = AVSpeechUtterance(string: deepSouthOutput)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
-        deepSouthSynthesizer.speak(utterance)
+        engine.speakComedy(deepSouthOutput)
     }
 
     private var advancedCard: some View {
@@ -662,6 +691,19 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     @Published var dialectLabel = ""
     @Published var engineLabel = ""
     @Published var voiceNote = ""
+    @Published private(set) var translatedAudioURL: URL?
+    @Published private(set) var audioCopyNotice: String?
+
+    func copyTranslatedAudio() {
+        guard let url = translatedAudioURL else { return }
+        do {
+            let data = try Data(contentsOf: url)
+            UIPasteboard.general.setItems([[(UTType(filenameExtension: url.pathExtension) ?? .audio).identifier: data]])
+            audioCopyNotice = "Audio copied. Open Messages and paste. If Paste isn’t available, use Share Audio."
+        } catch {
+            audioCopyNotice = "Couldn’t copy the recording. Try Speak again to generate a new recording."
+        }
+    }
     /// True only while preparing neural/device voice — not while Playing.
     @Published var isPreparingSpeak = false
     /// Elapsed seconds in `.preparingVoice` for “Still preparing…” copy.
@@ -684,6 +726,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     private let synthesizer = AVSpeechSynthesizer()
+    private var audioExporter: TranslatorAudioExporter?
     private var audioPlayer: AVAudioPlayer?
     private var activePlayerID: ObjectIdentifier?
     private var selectedVoice: AVSpeechSynthesisVoice?
@@ -1033,6 +1076,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     private func beginNewTurn(snapshotFromCurrent: Bool) {
+        translatedAudioURL = nil
+        audioCopyNotice = nil
         turnID &+= 1
         translateGeneration = turnID
         listenToken = turnID
@@ -1057,6 +1102,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
     private func cancelSpeakPipeline(silence: Bool) {
         speakGeneration &+= 1
+        audioExporter?.cancel()
+        audioExporter = nil
         speakTask?.cancel()
         speakTask = nil
         if silence {
@@ -1155,7 +1202,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             try session.overrideOutputAudioPort(.speaker)
         } catch {
@@ -1409,21 +1456,40 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             audioPlayer = nil
             throw VisionHTTPError(status: 0, message: "AVAudioPlayer failed to start.")
         }
+        // Keep a real MP3 attachment independent of the player's lifetime.
+        // A unique filename also prevents an open share sheet from reading a
+        // subsequent translation. The OS manages these temporary recordings.
+        let audioURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Beckify-Translation-\(UUID().uuidString).mp3")
+        do {
+            try data.write(to: audioURL, options: .atomic)
+            translatedAudioURL = audioURL
+            audioCopyNotice = nil
+        } catch {
+            translatedAudioURL = nil
+            audioCopyNotice = "Couldn’t save the recording. Try Speak again."
+        }
         clearPreparingIfCurrent(turn: turn)
         phase = .playing
         statusLabel = SpanishTranslatorAPI.statusPlaying
     }
 
-    private func speakWithAppleFallback(_ text: String, turn: UInt64, speakGen: UInt64) {
+    func speakComedy(_ text: String) {
+        invalidateOutdatedWork(markCancelled: false)
+        allowAppleSpeakFallback = true
+        speakWithAppleFallback(text, turn: turnID, speakGen: speakGeneration, language: "en-US")
+    }
+
+    private func speakWithAppleFallback(_ text: String, turn: UInt64, speakGen: UInt64, language: String? = nil) {
         guard turn == turnID, speakGen == speakGeneration else { return }
         refreshVoice()
         prepareLoudPlaybackSession()
 
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = selectedVoice
+        utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
         utterance.volume = 1.0
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * SpanishTranslatorAPI.jobsiteSpeechRateFactor
-        utterance.pitchMultiplier = SpanishTranslatorAPI.jobsitePitchMultiplier
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * SpanishTranslatorAPI.speechRateFactor(voiceMode: voiceMode)
+        utterance.pitchMultiplier = SpanishTranslatorAPI.speechPitchMultiplier(voiceMode: voiceMode)
         utterance.preUtteranceDelay = 0
         utterance.postUtteranceDelay = 0.08
 
@@ -1431,6 +1497,23 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         phase = .preparingVoice
         isPreparingSpeak = true
         statusLabel = SpanishTranslatorAPI.preparingVoiceStatus(elapsedSeconds: preparingElapsedSeconds)
+        translatedAudioURL = nil
+        audioCopyNotice = nil
+        let recordingUtterance = AVSpeechUtterance(string: text)
+        recordingUtterance.voice = utterance.voice
+        recordingUtterance.rate = utterance.rate
+        recordingUtterance.pitchMultiplier = utterance.pitchMultiplier
+        let exporter = TranslatorAudioExporter()
+        audioExporter = exporter
+        exporter.start(recordingUtterance) { [weak self] result in
+            Task { @MainActor [weak self] in
+                guard let self, turn == self.turnID, speakGen == self.speakGeneration else { return }
+                switch result {
+                case .success(let url): self.translatedAudioURL = url
+                case .failure: self.audioCopyNotice = "Couldn’t save device audio. Try Speak again."
+                }
+            }
+        }
         synthesizer.speak(utterance)
     }
 
@@ -1597,6 +1680,72 @@ extension SpanishTranslatorEngine: AVAudioPlayerDelegate {
                 phase = .ready
                 statusLabel = lastSuccessStatus.isEmpty ? SpanishTranslatorAPI.statusReady : lastSuccessStatus
             }
+        }
+    }
+}
+
+
+/// Writes device speech buffers directly to a shareable M4A file. The callback
+/// can run off the main thread; the lock protects the file and cancellation.
+private final class TranslatorAudioExporter: @unchecked Sendable {
+    private let synthesizer = AVSpeechSynthesizer()
+    private let lock = NSLock()
+    private var file: AVAudioFile?
+    private var finished = false
+    private var wroteFrames = false
+    private let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("Beckify-Translation-\(UUID().uuidString).m4a")
+
+    func cancel() {
+        lock.lock()
+        let wasFinished = finished
+        finished = true
+        file = nil
+        lock.unlock()
+        synthesizer.stopSpeaking(at: .immediate)
+        // Completed files may still be used by a presented share sheet.
+        if !wasFinished { try? FileManager.default.removeItem(at: url) }
+    }
+
+    func start(_ utterance: AVSpeechUtterance,
+               completion: @escaping @Sendable (Result<URL, Error>) -> Void) {
+        synthesizer.write(utterance) { [weak self] buffer in
+            guard let self, let pcm = buffer as? AVAudioPCMBuffer else { return }
+            self.lock.lock()
+            guard !self.finished else { self.lock.unlock(); return }
+            var result: Result<URL, Error>?
+            do {
+                if pcm.frameLength == 0 {
+                    self.finished = true
+                    self.file = nil // Close the file before exposing it to Messages.
+                    if self.wroteFrames {
+                        result = .success(self.url)
+                    } else {
+                        throw NSError(domain: "Beckify.AudioExport", code: 1)
+                    }
+                } else {
+                    if self.file == nil {
+                        self.file = try AVAudioFile(forWriting: self.url,
+                            settings: [
+                                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                                AVSampleRateKey: pcm.format.sampleRate,
+                                AVNumberOfChannelsKey: Int(pcm.format.channelCount),
+                                AVEncoderBitRateKey: 64_000,
+                            ],
+                            commonFormat: pcm.format.commonFormat,
+                            interleaved: pcm.format.isInterleaved)
+                    }
+                    try self.file?.write(from: pcm)
+                    self.wroteFrames = true
+                }
+            } catch {
+                self.finished = true
+                self.file = nil
+                try? FileManager.default.removeItem(at: self.url)
+                result = .failure(error)
+            }
+            self.lock.unlock()
+            if let result { completion(result) }
         }
     }
 }

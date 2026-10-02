@@ -2971,6 +2971,12 @@ struct SeriesParallelNetworkDiagram: View {
         if isCapacitor {
             let gap: CGFloat = 6
             let plateHeight = min(width, 24)
+            var leads = Path()
+            leads.move(to: CGPoint(x: centerX - width / 2, y: centerY))
+            leads.addLine(to: CGPoint(x: centerX - gap / 2, y: centerY))
+            leads.move(to: CGPoint(x: centerX + gap / 2, y: centerY))
+            leads.addLine(to: CGPoint(x: centerX + width / 2, y: centerY))
+            context.stroke(leads, with: .color(Theme.muted), lineWidth: 2)
             var plates = Path()
             plates.move(to: CGPoint(x: centerX - gap / 2, y: centerY - plateHeight / 2))
             plates.addLine(to: CGPoint(x: centerX - gap / 2, y: centerY + plateHeight / 2))

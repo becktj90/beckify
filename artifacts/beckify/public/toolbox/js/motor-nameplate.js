@@ -4,8 +4,8 @@
    Optional on-device OCR (shared BeckifyOcr helper) fills editable fields.
    Calculations run only after the user confirms review. Citations:
      NEC 430.32  overload (separate device) as % of nameplate FLA
-     NEC 430.52  Table 430.52 motor branch-circuit SCPD maximum % of FLA
-     NEC 430.22  branch-circuit conductor ampacity ≥ 125% of FLA
+     NEC 430.52  Table 430.52 motor branch-circuit SCPD maximum % of NEC table FLC
+     NEC 430.22  branch-circuit conductor ampacity ≥ 125% of NEC table FLC
      NEC 430.7(B) / NEMA MG-1 code letter → locked-rotor kVA/HP range
    ============================================================================ */
 (function (global) {
@@ -118,6 +118,26 @@
     return null;
   }
 
+  // NEC Tables 430.248 / 430.250, matching the native MotorFLA table.
+  var MOTOR_CURRENT_TABLES = [[{"hp": 0.16666666666666666, "amps": {"115": 4.4, "200": 2.5, "208": 2.4, "230": 2.2}}, {"hp": 0.25, "amps": {"115": 5.8, "200": 3.3, "208": 3.2, "230": 2.9}}, {"hp": 0.3333333333333333, "amps": {"115": 7.2, "200": 4.1, "208": 4.0, "230": 3.6}}, {"hp": 0.5, "amps": {"115": 9.8, "200": 5.6, "208": 5.4, "230": 4.9}}, {"hp": 0.75, "amps": {"115": 13.8, "200": 7.9, "208": 7.6, "230": 6.9}}, {"hp": 1.0, "amps": {"115": 16.0, "200": 9.2, "208": 8.8, "230": 8.0}}, {"hp": 1.5, "amps": {"115": 20.0, "200": 11.5, "208": 11.0, "230": 10.0}}, {"hp": 2.0, "amps": {"115": 24.0, "200": 13.8, "208": 13.2, "230": 12.0}}, {"hp": 3.0, "amps": {"115": 34.0, "200": 19.6, "208": 18.7, "230": 17.0}}, {"hp": 5.0, "amps": {"115": 56.0, "200": 32.2, "208": 30.8, "230": 28.0}}, {"hp": 7.5, "amps": {"115": 80.0, "200": 46.0, "208": 44.0, "230": 40.0}}, {"hp": 10.0, "amps": {"115": 100.0, "200": 57.5, "208": 55.0, "230": 50.0}}], [{"hp": 0.5, "amps": {"115": 4.4, "200": 2.5, "208": 2.4, "230": 2.2, "460": 1.1, "575": 0.9}}, {"hp": 0.75, "amps": {"115": 6.4, "200": 3.7, "208": 3.5, "230": 3.2, "460": 1.6, "575": 1.3}}, {"hp": 1.0, "amps": {"115": 8.4, "200": 4.8, "208": 4.6, "230": 4.2, "460": 2.1, "575": 1.7}}, {"hp": 1.5, "amps": {"115": 12.0, "200": 6.9, "208": 6.6, "230": 6.0, "460": 3.0, "575": 2.4}}, {"hp": 2.0, "amps": {"115": 13.6, "200": 7.8, "208": 7.5, "230": 6.8, "460": 3.4, "575": 2.7}}, {"hp": 3.0, "amps": {"115": null, "200": 11.0, "208": 10.6, "230": 9.6, "460": 4.8, "575": 3.9}}, {"hp": 5.0, "amps": {"115": null, "200": 17.5, "208": 16.7, "230": 15.2, "460": 7.6, "575": 6.1}}, {"hp": 7.5, "amps": {"115": null, "200": 25.3, "208": 24.2, "230": 22.0, "460": 11.0, "575": 9.0}}, {"hp": 10.0, "amps": {"115": null, "200": 32.2, "208": 30.8, "230": 28.0, "460": 14.0, "575": 11.0}}, {"hp": 15.0, "amps": {"115": null, "200": 48.3, "208": 46.2, "230": 42.0, "460": 21.0, "575": 17.0}}, {"hp": 20.0, "amps": {"115": null, "200": 62.1, "208": 59.4, "230": 54.0, "460": 27.0, "575": 22.0}}, {"hp": 25.0, "amps": {"115": null, "200": 78.2, "208": 74.8, "230": 68.0, "460": 34.0, "575": 27.0}}, {"hp": 30.0, "amps": {"115": null, "200": 92.0, "208": 88.0, "230": 80.0, "460": 40.0, "575": 32.0}}, {"hp": 40.0, "amps": {"115": null, "200": 120.0, "208": 114.0, "230": 104.0, "460": 52.0, "575": 41.0}}, {"hp": 50.0, "amps": {"115": null, "200": 150.0, "208": 143.0, "230": 130.0, "460": 65.0, "575": 52.0}}, {"hp": 60.0, "amps": {"115": null, "200": 177.0, "208": 169.0, "230": 154.0, "460": 77.0, "575": 62.0}}, {"hp": 75.0, "amps": {"115": null, "200": 221.0, "208": 211.0, "230": 192.0, "460": 96.0, "575": 77.0}}, {"hp": 100.0, "amps": {"115": null, "200": 285.0, "208": 273.0, "230": 248.0, "460": 124.0, "575": 99.0}}, {"hp": 125.0, "amps": {"115": null, "200": 359.0, "208": 343.0, "230": 312.0, "460": 156.0, "575": 125.0}}, {"hp": 150.0, "amps": {"115": null, "200": 414.0, "208": 396.0, "230": 360.0, "460": 180.0, "575": 144.0}}, {"hp": 200.0, "amps": {"115": null, "200": 552.0, "208": 528.0, "230": 480.0, "460": 240.0, "575": 192.0}}]];
+  function sizingCurrent(input, hp, phase) {
+    var manual = String(input.tableFullLoadAmps == null ? '' : input.tableFullLoadAmps).trim();
+    if (manual) {
+      var amps = Number(manual);
+      return Number.isFinite(amps) && amps > 0 ? amps : null;
+    }
+    if (!['1ph', 'sc-bde', 'sc-ee', 'wound'].includes(input.motorType || 'sc-bde')) return null;
+    var volts = Number(input.volts);
+    if (!Number.isFinite(volts) || volts <= 0) return null;
+    var row = MOTOR_CURRENT_TABLES[phase === 1 ? 0 : 1].find(function (r) { return Math.abs(r.hp - hp) < 1e-9; });
+    if (!row) return null;
+    var columns = Object.keys(row.amps).map(Number).sort(function (a, b) { return a - b; });
+    var below = columns.filter(function (v) { return v <= volts; });
+    var column = below.length ? below[below.length - 1] : columns[0];
+    if (volts / column < 0.95 || volts / column > 1.06) return null;
+    return row.amps[String(column)];
+  }
+
   function analyze(input) {
     var flaRaw = String(input.fla == null ? '' : input.fla).trim();
     if (/[\/,]/.test(flaRaw)) {
@@ -129,11 +149,13 @@
     if (!ph) return { error: 'Select 1-phase or 3-phase before calculating. OCR leaves phase blank when it cannot read it. Phase is never assumed.' };
     var hp = Number(input.hp);
     if ((!Number.isFinite(hp) || hp <= 0) && Number(input.kw) > 0) hp = hpFromKw(input.kw);
+    var tableAmps = sizingCurrent(input, hp, ph);
+    if (!Number.isFinite(tableAmps) || tableAmps <= 0) return { error: 'Enter reviewed NEC table FLC for conductor and SCPD sizing. Automatic lookup requires a listed HP, supported AC motor type, and a single matching voltage.' };
     var ol = overloadPercent(input.sf, input.riseC);
     var olNext = overloadNextHigherPercent(input.sf, input.riseC);
-    var scpd = scpdFromFla(fla, input.motorType || 'sc-bde', input.device || 'inv');
+    var scpd = scpdFromFla(tableAmps, input.motorType || 'sc-bde', input.device || 'inv');
     var cond = (global.BeckifyWireMath && typeof global.BeckifyWireMath.suggestSizeForFla === 'function')
-      ? global.BeckifyWireMath.suggestSizeForFla(fla, input.material || 'cu')
+      ? global.BeckifyWireMath.suggestSizeForFla(tableAmps, input.material || 'cu')
       : null;
     var vd = null;
     var length = Number(input.lengthFt);
@@ -148,6 +170,7 @@
     var lra = lockedRotorRange(input.code, hp, input.volts, ph);
     return {
       fla: fla,
+      tableFullLoadAmps: tableAmps,
       hp: hp,
       overload: ol,
       overloadAmps: fla * ol.pct / 100,
@@ -160,8 +183,8 @@
       math: [
         'Overload setting ≤ ' + ol.pct + '% × FLA = ' + ol.pct + '% × ' + fla + ' A = ' + (fla * ol.pct / 100).toFixed(1) + ' A  (' + ol.article + ', ' + ol.reason + ')',
         'If that will not start the motor, NEC 430.32(C) allows the next higher size not exceeding ' + olNext.pct + '% = ' + (fla * olNext.pct / 100).toFixed(1) + ' A',
-        'SCPD maximum = ' + scpd.pct + '% × ' + fla + ' A = ' + scpd.raw.toFixed(1) + ' A  (' + scpd.article + ', ' + scpd.label + ')',
-        cond ? 'Conductor ampacity ≥ 125% × FLA = 1.25 × ' + fla + ' A = ' + cond.required.toFixed(1) + ' A → ' + cond.size + ' ' + (cond.material === 'al' ? 'Al' : 'Cu') + ' 75°C lists ' + cond.ampacity + ' A (NEC 430.22, Table 310.16)' : 'Conductor size needs BeckifyWireMath (NEC Table 310.16).',
+        'SCPD maximum = ' + scpd.pct + '% × NEC table FLC ' + tableAmps + ' A = ' + scpd.raw.toFixed(1) + ' A  (' + scpd.article + ', ' + scpd.label + ')',
+        cond ? 'Conductor ampacity ≥ 125% × NEC table FLC = 1.25 × ' + tableAmps + ' A = ' + cond.required.toFixed(1) + ' A → ' + cond.size + ' ' + (cond.material === 'al' ? 'Al' : 'Cu') + ' 75°C lists ' + cond.ampacity + ' A (NEC 430.22, Table 310.16)' : 'Conductor size needs BeckifyWireMath (NEC Table 310.16).',
       ],
     };
   }
@@ -179,6 +202,7 @@
       kw: val('mnp_kw'),
       volts: val('mnp_volts'),
       fla: val('mnp_fla'),
+      tableFullLoadAmps: val('mnp_table_flc'),
       rpm: val('mnp_rpm'),
       hz: val('mnp_hz'),
       phase: val('mnp_phase'),
@@ -196,7 +220,7 @@
   }
 
   var PARSED_FIELD_IDS = [
-    'mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_hz', 'mnp_phase',
+    'mnp_table_flc', 'mnp_hp', 'mnp_kw', 'mnp_volts', 'mnp_fla', 'mnp_rpm', 'mnp_hz', 'mnp_phase',
     'mnp_frame', 'mnp_sf', 'mnp_design', 'mnp_insul', 'mnp_code', 'mnp_rise',
     'mnp_mfr', 'mnp_model', 'mnp_serial', 'mnp_encl', 'mnp_poles', 'mnp_eff', 'mnp_pf',
     'mnp_mocp', 'mnp_lra', 'mnp_sfa', 'mnp_notes',
@@ -493,7 +517,7 @@
     }
     row('Overload (NEC 430.32(A)(1))', '≤ ' + result.overload.pct + '% of FLA = ' + fmt(result.overloadAmps) + ' A — ' + result.overload.reason);
     row('If starting needs more (430.32(C))', 'next size not exceeding ' + result.overloadNext.pct + '% = ' + fmt(result.overloadNextAmps) + ' A');
-    row('Branch-circuit SCPD (Table 430.52)', result.scpd.pct + '% × FLA = ' + fmt(result.scpd.raw) + ' A max; next standard ' + (result.scpd.next || '—') + ' A (' + result.scpd.label + ')');
+    row('Branch-circuit SCPD (Table 430.52)', result.scpd.pct + '% × NEC table FLC (' + fmt(result.tableFullLoadAmps) + ' A) = ' + fmt(result.scpd.raw) + ' A max; next standard ' + (result.scpd.next || '—') + ' A (' + result.scpd.label + ')');
     if (result.conductor) {
       var matLabel = result.conductor.material === 'al' ? 'Al' : 'Cu';
       row('Suggested conductor (NEC 430.22)', result.conductor.size + ' ' + matLabel + ' @ 75°C lists ' + result.conductor.ampacity + ' A; need ≥ ' + fmt(result.conductor.required) + ' A');

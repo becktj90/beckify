@@ -64,6 +64,8 @@ public struct LockedRotorResult: Equatable, Sendable {
 
 public struct MotorNameplateResult: Equatable, Sendable {
     public var fla: Double
+    public var tableFullLoadAmps: Double
+    public var sizingCurrentBasis: String
     public var horsepower: Double?
     public var overload: MotorOverloadResult
     public var overloadNext: MotorOverloadResult
@@ -165,7 +167,8 @@ public enum MotorNameplate {
         motorType: MotorNameplateType = .squirrelCageOther,
         device: MotorSCPDDevice = .inverseTimeBreaker,
         material: ConductorMaterial = .copper,
-        codeLetter: String? = nil
+        codeLetter: String? = nil,
+        tableFullLoadAmps: Double? = nil
     ) throws -> MotorNameplateResult {
         let i = try Positive.require(fla, name: "Nameplate FLA")
         guard phases == 1 || phases == 3 else {
@@ -177,11 +180,35 @@ public enum MotorNameplate {
             hp = kw / 0.746
         }
 
+        // 430.6(A)(1): table FLC sizes branch conductors and SCPD;
+        // reviewed nameplate FLA remains the overload basis (430.32).
+        let sizingAmps: Double
+        let sizingBasis: String
+        if let supplied = tableFullLoadAmps {
+            sizingAmps = try Positive.require(supplied, name: "Reviewed NEC table FLC")
+            sizingBasis = "User-reviewed NEC table FLC (430.6(A)(1))"
+        } else {
+            let supported = motorType == .singlePhase || motorType == .squirrelCageOther ||
+                motorType == .squirrelCageEnergyEfficient || motorType == .woundRotor
+            let table = phases == 3 ? MotorFLA.table430_250 : MotorFLA.table430_248
+            guard supported,
+                  let hp, hp.isFinite, hp > 0,
+                  let volts, volts.isFinite, volts > 0,
+                  let column = MotorFLA.tableVoltage(forSystemVolts: volts, threePhase: phases == 3),
+                  let columnVolts = Double(column), (0.95...1.06).contains(volts / columnVolts),
+                  let row = table.first(where: { abs((MotorFLA.horsepowerValue($0.horsepower) ?? .infinity) - hp) < 1e-9 }),
+                  let amps = row.amps(at: column) else {
+                throw CalcError.missing("reviewed NEC table FLC — provide HP and a supported voltage, or enter table current explicitly; do not substitute nameplate FLA")
+            }
+            sizingAmps = amps
+            sizingBasis = "NEC Table \(phases == 3 ? "430.250" : "430.248"), \(row.horsepower) HP, \(column) V (430.6(A)(1))"
+        }
+
         let ol = overloadPercent(serviceFactor: serviceFactor, temperatureRiseC: temperatureRiseC)
         let olNextPct = overloadNextHigherPercent(serviceFactor: serviceFactor, temperatureRiseC: temperatureRiseC)
         let scpdPct = scpdPercent(motorType: motorType, device: device)
-        let scpdRaw = i * scpdPct / 100
-        let conductorNeed = MotorFLA.conductorAmps(fla: i)
+        let scpdRaw = sizingAmps * scpdPct / 100
+        let conductorNeed = MotorFLA.conductorAmps(fla: sizingAmps)
 
         var size: String?
         var sizeAmp: Double?
@@ -192,6 +219,8 @@ public enum MotorNameplate {
 
         return MotorNameplateResult(
             fla: i,
+            tableFullLoadAmps: sizingAmps,
+            sizingCurrentBasis: sizingBasis,
             horsepower: hp,
             overload: MotorOverloadResult(
                 percent: ol.pct,
@@ -217,7 +246,7 @@ public enum MotorNameplate {
             suggestedConductorSize: size,
             suggestedConductorAmpacity: sizeAmp,
             lockedRotor: lockedRotor(codeLetter: codeLetter, horsepower: hp, volts: volts, phases: phases),
-            formula: "OL ≤ % × FLA; SCPD ≤ Table 430.52 % × FLA; conductor ≥ 125% × FLA (430.22)"
+            formula: "OL ≤ % × nameplate FLA; SCPD ≤ Table 430.52 % × table FLC; conductor ≥ 125% × table FLC (430.6(A)(1), 430.22)"
         )
     }
 }

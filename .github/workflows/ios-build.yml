@@ -1,0 +1,37 @@
+name: iOS app build
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-build.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-build:
+    name: Beckify iOS ${{ matrix.configuration }} build
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build the app without signing
+        run: >-
+          xcodebuild -project ios/Beckify.xcodeproj
+          -scheme Beckify -configuration ${{ matrix.configuration }}
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath '${{ runner.temp }}/BeckifyDerivedData'
+          CODE_SIGNING_ALLOWED=NO build
