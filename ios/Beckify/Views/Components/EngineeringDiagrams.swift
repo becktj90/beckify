@@ -991,6 +991,11 @@ struct TransientResponseChart: View {
     let currentValue: Double
     let unit: String
     var timeConstant: Double? = nil
+    /// `currentTime` reads the live Time field while `currentValue`/`curve` hold
+    /// the last calculated result — after an edit without recalculating, those
+    /// disagree. Suppress the marker rather than plot it at a point the curve
+    /// never actually passes through.
+    var isStale: Bool = false
 
     private var summary: String {
         "Step response curve. At \(Format.number(currentTime, digits: 3)) s, value is \(Format.number(currentValue, digits: 3)) \(unit)."
@@ -1006,7 +1011,7 @@ struct TransientResponseChart: View {
                 series: [EngineerSeries(name: unit, points: points, color: Theme.chartPrimary, fills: true)],
                 xLabel: "Time (s)",
                 yLabel: unit,
-                markers: [
+                markers: isStale ? [] : [
                     EngineerMarker(x: currentTime, y: currentValue, label: "t", color: Theme.energized),
                 ],
                 xGuides: timeConstant.map { [EngineerGuide(value: $0, label: "τ", axis: .x)] } ?? []
