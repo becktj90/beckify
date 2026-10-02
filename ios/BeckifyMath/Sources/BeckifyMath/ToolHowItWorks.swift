@@ -796,7 +796,7 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Pick Bodie Hale, Tito Solano, or Junie Pell. Their 16-bit sprite stays up and bobs while audio plays.",
+            summary: "English ↔ Spanish with Bodie Hale, Tito Solano, or Junie Pell. Their 16-bit sprite stays up and bobs while audio plays.",
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
