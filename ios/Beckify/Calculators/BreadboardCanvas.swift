@@ -184,7 +184,7 @@ enum BreadboardPaint {
     }
 
     static func summary(_ layout: BreadboardLayout) -> String {
-        let parts = layout.components.map { partName($0) }.joined(separator: ", ")
+        let parts = layout.components.map { partName($0, layer: .values) }.joined(separator: ", ")
         let meters = BreadboardMeters.summaryLine(layout.meters)
         let meterBit = meters.isEmpty ? "" : " Readings: \(meters)."
         return "Breadboard. \(parts). \(layout.caption)\(meterBit)"

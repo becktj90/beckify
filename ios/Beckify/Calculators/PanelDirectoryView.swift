@@ -882,90 +882,79 @@ struct PanelDirectoryView: View {
                 analyzing = false
             }
         }
-        do {
-            var merged: PanelScheduleExtraction?
-            var warnings: [String] = []
-            var rawParts: [String] = []
-            var conflicts: [PanelFieldConflict] = []
-            let total = capturedImages.count
-            for (index, image) in capturedImages.enumerated() {
+        var merged: PanelScheduleExtraction?
+        var warnings: [String] = []
+        var rawParts: [String] = []
+        var conflicts: [PanelFieldConflict] = []
+        let total = capturedImages.count
+        for (index, image) in capturedImages.enumerated() {
+            if analyzeCancelled || generation != analyzeGeneration { break }
+            let start = Double(index) / Double(total)
+            analyzeProgress = min(0.85, start + 0.15 / Double(total))
+            analyzeStatus = total == 1
+                ? "Analyze stage: uploading \(photoRole.label.lowercased())…"
+                : "Analyze stage: tile \(index + 1)/\(total)…"
+            do {
+                let payload = try await BeckifyVisionClient.analyze(
+                    image: image,
+                    task: .panel,
+                    customEndpoint: customEndpoint,
+                    token: token,
+                    timeout: 90
+                )
                 if analyzeCancelled || generation != analyzeGeneration { break }
-                let start = Double(index) / Double(total)
-                analyzeProgress = min(0.85, start + 0.15 / Double(total))
-                analyzeStatus = total == 1
-                    ? "Analyze stage: uploading \(photoRole.label.lowercased())…"
-                    : "Analyze stage: tile \(index + 1)/\(total)…"
-                do {
-                    let payload = try await BeckifyVisionClient.analyze(
-                        image: image,
-                        task: .panel,
-                        customEndpoint: customEndpoint,
-                        token: token,
-                        timeout: 90
-                    )
-                    if analyzeCancelled || generation != analyzeGeneration { break }
-                    let cloud = PanelCloudAnalyze.normalize(payload)
-                    warnings.append(contentsOf: cloud.warnings)
-                    if !cloud.rawOCR.isEmpty { rawParts.append(cloud.rawOCR) }
-                    if let existing = merged {
-                        let merge = PanelCloudAnalyze.mergeWithConflicts(existing, cloud.extraction)
-                        merged = merge.extraction
-                        conflicts.append(contentsOf: merge.conflicts)
-                    } else {
-                        merged = cloud.extraction
-                    }
-                    analyzeStatus = "Analyze stage: merged tile \(index + 1)/\(total)"
-                } catch {
-                    // Preserve successes when one tile fails.
-                    warnings.append("Tile \(index + 1) failed: \(error.localizedDescription)")
-                    analyzeStatus = "Analyze stage: tile \(index + 1) failed — keeping prior successes"
+                let cloud = PanelCloudAnalyze.normalize(payload)
+                warnings.append(contentsOf: cloud.warnings)
+                if !cloud.rawOCR.isEmpty { rawParts.append(cloud.rawOCR) }
+                if let existing = merged {
+                    let merge = PanelCloudAnalyze.mergeWithConflicts(existing, cloud.extraction)
+                    merged = merge.extraction
+                    conflicts.append(contentsOf: merge.conflicts)
+                } else {
+                    merged = cloud.extraction
                 }
+                analyzeStatus = "Analyze stage: merged tile \(index + 1)/\(total)"
+            } catch {
+                // Preserve successes when one tile fails.
+                warnings.append("Tile \(index + 1) failed: \(error.localizedDescription)")
+                analyzeStatus = "Analyze stage: tile \(index + 1) failed — keeping prior successes"
             }
-            if analyzeCancelled || generation != analyzeGeneration {
-                analyzeProgress = 0
-                analyzeStatus = "Cancelled — previous draft unchanged"
-                return
-            }
-            guard var extracted = merged, !extracted.circuits.isEmpty else {
-                analyzeError = warnings.isEmpty
-                    ? "Need circuit rows with a number and a name."
-                    : warnings.joined(separator: " ")
-                analyzeProgress = 0
-                analyzeStatus = "Panel analysis failed"
-                return
-            }
-            if let current = session.displayedResult?.applying(draft: draft) {
-                let merge = PanelCloudAnalyze.mergeWithConflicts(existing: current, incoming: extracted)
-                extracted = merge.extraction
-                conflicts.append(contentsOf: merge.conflicts)
-            }
-            // Do not overwrite schedule text with a stale empty OCR blob.
-            if !rawParts.isEmpty {
-                text = rawParts.joined(separator: "\n")
-                recognizedLines = []
-            }
-            session.calculate { extracted }
-            if let result = session.displayedResult, !session.isStale {
-                apply(result)
-            }
-            openConflicts = conflicts.filter(\.isOpen)
-            cloudWarnings = warnings
-            confirmed = false
-            analyzeProgress = 1
-            analyzeStatus = openConflicts.isEmpty
-                ? "Cloud draft ready. Confirm every row against the photo."
-                : "Cloud draft ready with \(openConflicts.count) conflict(s) — resolve before confirm."
-            if !reduceMotion { successTick += 1 }
-        } catch {
-            if analyzeCancelled || generation != analyzeGeneration {
-                analyzeStatus = "Cancelled — previous draft unchanged"
-                analyzeProgress = 0
-                return
-            }
-            analyzeError = error.localizedDescription
+        }
+        if analyzeCancelled || generation != analyzeGeneration {
+            analyzeProgress = 0
+            analyzeStatus = "Cancelled — previous draft unchanged"
+            return
+        }
+        guard var extracted = merged, !extracted.circuits.isEmpty else {
+            analyzeError = warnings.isEmpty
+                ? "Need circuit rows with a number and a name."
+                : warnings.joined(separator: " ")
             analyzeProgress = 0
             analyzeStatus = "Panel analysis failed"
+            return
         }
+        if let current = session.displayedResult?.applying(draft: draft) {
+            let merge = PanelCloudAnalyze.mergeWithConflicts(existing: current, incoming: extracted)
+            extracted = merge.extraction
+            conflicts.append(contentsOf: merge.conflicts)
+        }
+        // Do not overwrite schedule text with a stale empty OCR blob.
+        if !rawParts.isEmpty {
+            text = rawParts.joined(separator: "\n")
+            recognizedLines = []
+        }
+        session.calculate { extracted }
+        if let result = session.displayedResult, !session.isStale {
+            apply(result)
+        }
+        openConflicts = conflicts.filter(\.isOpen)
+        cloudWarnings = warnings
+        confirmed = false
+        analyzeProgress = 1
+        analyzeStatus = openConflicts.isEmpty
+            ? "Cloud draft ready. Confirm every row against the photo."
+            : "Cloud draft ready with \(openConflicts.count) conflict(s) — resolve before confirm."
+        if !reduceMotion { successTick += 1 }
     }
 
     private func cancelAnalyze() {
