@@ -1,7 +1,7 @@
 import Foundation
 
 /// Normalized rectangle in Vision space: origin at the bottom-left, each edge in 0…1.
-public struct PanelOCRBox: Equatable, Sendable {
+public struct PanelOCRBox: Equatable, Sendable, Codable {
     public var x: Double
     public var y: Double
     public var width: Double

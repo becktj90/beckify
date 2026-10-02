@@ -229,7 +229,7 @@ public enum PanelConflictMerge {
             if key.isEmpty { order.append(row); return }
             var next = row
             next.circuit = key
-            if var dest = byKey[key] {
+            if let dest = byKey[key] {
                 let merged = mergeRow(dest, next, key: key, conflicts: &conflicts)
                 byKey[key] = merged
                 if let index = order.firstIndex(where: { PanelCloudAnalyze.normalizeCircuitKey($0.circuit) == key }) {
