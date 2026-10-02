@@ -1,4 +1,5 @@
 import SwiftUI
+import Darwin
 import BeckifyMath
 
 struct ReceptacleSelectorView: View {
@@ -564,8 +565,8 @@ struct ReceptacleFaceView: View {
             let inner = radius * 0.88
             let outer = radius * 0.96
             var tick = Path()
-            tick.move(to: CGPoint(x: cx + inner * cos(ang), y: cy + inner * sin(ang)))
-            tick.addLine(to: CGPoint(x: cx + outer * cos(ang), y: cy + outer * sin(ang)))
+            tick.move(to: CGPoint(x: cx + inner * CGFloat(Darwin.cos(ang)), y: cy + inner * CGFloat(Darwin.sin(ang))))
+            tick.addLine(to: CGPoint(x: cx + outer * CGFloat(Darwin.cos(ang)), y: cy + outer * CGFloat(Darwin.sin(ang))))
             let opacity = h == earth ? 1.0 : 0.35
             let width: CGFloat = h % 3 == 0 ? 2 : 1
             context.stroke(tick, with: .color(Theme.muted.opacity(opacity)), lineWidth: width)

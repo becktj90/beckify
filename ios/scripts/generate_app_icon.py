@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Beckify iOS App Icon: white tunnel, shared bottom tangent.
+"""Generate the legacy Beckify iOS App Icon: white tunnel, shared bottom tangent.
 
 Four nested pure-white rings on opaque black. Circle midlines share one
 bottom tangent (tunnel / aperture — not concentric). Stroke weights are
@@ -8,7 +8,7 @@ heavy enough to survive ~60pt home-screen size.
 Writes an opaque RGB PNG (no alpha) to the App Icon catalog slot.
 
 Usage:
-    python3 ios/scripts/generate_app_icon.py
+    python3 ios/scripts/generate_app_icon.py --legacy
     python3 ios/scripts/generate_app_icon.py --out /tmp/AppIcon.png
 """
 
@@ -93,7 +93,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=default_out())
     parser.add_argument("--size", type=int, default=SIZE)
+    parser.add_argument("--legacy", action="store_true", help="Explicitly replace the supplied 1.0.3 artwork with the legacy generated icon.")
     args = parser.parse_args()
+    if args.out.resolve() == default_out().resolve() and not args.legacy:
+        parser.error("Version 1.0.3 uses supplied artwork. Use --out for a preview, or --legacy to explicitly replace the app icon.")
     image = render(args.size)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     image.save(args.out, format="PNG")
