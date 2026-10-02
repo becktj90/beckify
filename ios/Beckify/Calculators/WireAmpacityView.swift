@@ -394,7 +394,7 @@ struct WireAmpacityView: View {
             session.calculate {
                 let cccCount = try WholeCount.parse(ccc.parsedDouble ?? .nan, name: "Current-carrying conductor count")
                 let runCount = try WholeCount.parse(runs.parsedDouble ?? .nan, name: "Parallel runs")
-                try WireAmpacity.selectConductor(
+                return try WireAmpacity.selectConductor(
                     loadAmps: amps.parsedDouble ?? .nan,
                     material: material,
                     insulation: insulation.column,
@@ -410,7 +410,7 @@ struct WireAmpacityView: View {
             evaluateSession.calculate {
                 let cccCount = try WholeCount.parse(ccc.parsedDouble ?? .nan, name: "Current-carrying conductor count")
                 let runCount = try WholeCount.parse(runs.parsedDouble ?? .nan, name: "Parallel runs")
-                try WireAmpacity.evaluate(AmpacityDeratingInput(
+                return try WireAmpacity.evaluate(AmpacityDeratingInput(
                     size: size,
                     material: material,
                     insulation: insulation.column,
