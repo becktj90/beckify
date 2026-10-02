@@ -446,7 +446,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "panelDirectory": ToolHowItWorks(
             summary: "Take a picture of a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
-            context: "Directory / Nameplate / Deadfront roles. Confirming the schedule is not measured load — no capacity-to-add from trips alone.",
+            context: "Directory / Nameplate / Deadfront roles. Not measured load — no capacity-to-add from trips alone. Analyze uploads only if you tap.",
             bullets: [
                 "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
                 "Conflicts queue instead of silent first-wins. Inferred circuit numbers and incomplete coverage stay visible.",
