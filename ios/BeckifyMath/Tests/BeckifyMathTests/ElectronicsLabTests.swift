@@ -192,6 +192,66 @@ final class ElectronicsLabTests: XCTestCase {
         XCTAssertFalse(bias.io.plots.isEmpty)
     }
 
+    func testBJTDefaultSchematicNodesMeetTheirElectricalConnections() throws {
+        let bias = try ElectronicsLab.solve(
+            .bjtBias,
+            unknown: ElectronicsLab.info(.bjtBias).defaultUnknown,
+            inputs: ElectronicsLab.info(.bjtBias).defaults
+        )
+        let expectedConnections: [String: [String]] = [
+            "vcc": ["railL", "vcc"],
+            "b": ["r1", "r2", "base"],
+            "c": ["rc", "col"],
+            "e": ["re"],
+            "gnd": ["gndw", "g"],
+        ]
+
+        for (nodeID, elementIDs) in expectedConnections {
+            let node = try XCTUnwrap(bias.node(nodeID))
+            for elementID in elementIDs {
+                let element = try XCTUnwrap(bias.elements.first { $0.id == elementID })
+                XCTAssertTrue(
+                    element.a == node.at || element.b == node.at,
+                    "\(elementID) must terminate at the \(node.name) node"
+                )
+            }
+        }
+
+        XCTAssertEqual(bias.elements.first { $0.id == "base" }?.b, LabPoint(x: 36, y: 44))
+        XCTAssertEqual(bias.elements.first { $0.id == "col" }?.b, LabPoint(x: 62, y: 28))
+        XCTAssertEqual(bias.elements.first { $0.id == "re" }?.a, LabPoint(x: 62, y: 60))
+        XCTAssertEqual(bias.node("e")?.at, LabPoint(x: 62, y: 60))
+    }
+
+    func testSwitchAndMOSFETSchematicWiresReachDeviceTerminals() throws {
+        func solution(_ circuit: ElectronicsCircuit) throws -> LabSolution {
+            let info = ElectronicsLab.info(circuit)
+            return try ElectronicsLab.solve(circuit, unknown: info.defaultUnknown, inputs: info.defaults)
+        }
+        func endpoints(_ id: String, in solution: LabSolution) throws -> (LabPoint, LabPoint) {
+            let element = try XCTUnwrap(solution.elements.first { $0.id == id })
+            return (element.a, element.b)
+        }
+
+        let bjt = try solution(.bjtSwitch)
+        XCTAssertEqual(try endpoints("base", in: bjt).1, LabPoint(x: 34, y: 40))
+        XCTAssertEqual(try endpoints("ecol", in: bjt).1, LabPoint(x: 60, y: 24))
+        XCTAssertEqual(try endpoints("emitter", in: bjt).0, LabPoint(x: 60, y: 56))
+        XCTAssertEqual(bjt.node("e")?.at, LabPoint(x: 60, y: 56))
+
+        let commonSource = try solution(.csAmp)
+        XCTAssertEqual(try endpoints("g", in: commonSource).1, LabPoint(x: 32, y: 44))
+        XCTAssertEqual(try endpoints("d", in: commonSource).1, LabPoint(x: 62, y: 26))
+        XCTAssertEqual(try endpoints("rs", in: commonSource).0, LabPoint(x: 58, y: 62))
+        XCTAssertEqual(commonSource.node("s")?.at, LabPoint(x: 58, y: 62))
+
+        let mos = try solution(.mosSwitch)
+        XCTAssertEqual(try endpoints("g", in: mos).1, LabPoint(x: 30, y: 46))
+        XCTAssertEqual(try endpoints("d", in: mos).1, LabPoint(x: 60, y: 28))
+        XCTAssertEqual(try endpoints("s", in: mos).0, LabPoint(x: 56, y: 64))
+        XCTAssertEqual(mos.node("s")?.at, LabPoint(x: 56, y: 64))
+    }
+
     func testEngineeringSuffixesSolveTheBench() throws {
         let divider = try ElectronicsLab.solve(
             .voltageDivider,

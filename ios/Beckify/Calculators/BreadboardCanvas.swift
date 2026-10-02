@@ -221,6 +221,7 @@ enum BreadboardPaint {
                 drawMeter(meter, in: context, map: map)
             }
         }
+        drawComponentLabels(layout, in: context, map: map, annotationLayer: annotationLayer)
     }
 
     static func hitComponent(
@@ -419,43 +420,139 @@ enum BreadboardPaint {
 
     private static func drawComponent(_ component: BBComponent, in context: GraphicsContext, map: Map) {
         switch component.part {
-        case .resistor(_, let label, let bands):
+        case .resistor(_, _, let bands):
             guard component.leads.count == 2 else { return }
-            drawResistor(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), bands: bands, label: label, pitch: map.pitch, in: context)
-        case .ceramic(_, let label):
+            drawResistor(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), bands: bands, label: "", pitch: map.pitch, in: context)
+        case .ceramic:
             guard component.leads.count == 2 else { return }
-            drawDisc(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
-        case .electrolytic(_, let label):
+            drawDisc(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), label: "", pitch: map.pitch, in: context)
+        case .electrolytic:
             guard component.leads.count == 2 else { return }
             drawCan(
                 positive: map.center(component.leads[0].hole),
                 negative: map.center(component.leads[1].hole),
-                label: label,
+                label: "",
                 pitch: map.pitch,
                 in: context
             )
-        case .led(let label):
+        case .led:
             guard component.leads.count == 2 else { return }
-            drawLED(anode: map.center(component.leads[0].hole), cathode: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
-        case .diode(let label):
+            drawLED(anode: map.center(component.leads[0].hole), cathode: map.center(component.leads[1].hole), label: "", pitch: map.pitch, in: context)
+        case .diode:
             guard component.leads.count == 2 else { return }
-            drawDiode(anode: map.center(component.leads[0].hole), cathode: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
-        case .inductor(_, let label):
+            drawDiode(anode: map.center(component.leads[0].hole), cathode: map.center(component.leads[1].hole), label: "", pitch: map.pitch, in: context)
+        case .inductor:
             guard component.leads.count == 2 else { return }
-            drawInductor(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
-        case .npn(let name):
-            drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["E", "B", "C"], pitch: map.pitch, in: context)
-        case .nmos(let name):
-            drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["S", "G", "D"], pitch: map.pitch, in: context)
-        case .pmos(let name):
-            drawTO92(component.leads.map { map.center($0.hole) }, name: name, marks: ["S", "G", "D"], pitch: map.pitch, in: context)
+            drawInductor(from: map.center(component.leads[0].hole), to: map.center(component.leads[1].hole), label: "", pitch: map.pitch, in: context)
+        case .npn:
+            drawTO92(component.leads.map { map.center($0.hole) }, name: "Q", marks: ["E", "B", "C"], pitch: map.pitch, in: context)
+        case .nmos:
+            drawTO92(component.leads.map { map.center($0.hole) }, name: "M", marks: ["S", "G", "D"], pitch: map.pitch, in: context)
+        case .pmos:
+            drawTO92(component.leads.map { map.center($0.hole) }, name: "M", marks: ["S", "G", "D"], pitch: map.pitch, in: context)
         case .dip8(let name, _):
             drawDIP(component.leads.map { map.center($0.hole) }, name: name, pitch: map.pitch, in: context)
         case .display(_, let digit, let mask, _):
             drawDisplay(component.leads.map { map.center($0.hole) }, digit: digit, mask: mask, pitch: map.pitch, in: context)
-        case .source(let label):
+        case .source:
             guard component.leads.count == 2 else { return }
-            drawCell(positive: map.center(component.leads[0].hole), negative: map.center(component.leads[1].hole), label: label, pitch: map.pitch, in: context)
+            drawCell(positive: map.center(component.leads[0].hole), negative: map.center(component.leads[1].hole), label: "", pitch: map.pitch, in: context)
+        }
+    }
+
+    private static func drawComponentLabels(
+        _ layout: BreadboardLayout,
+        in context: GraphicsContext,
+        map: Map,
+        annotationLayer: LabAnnotationLayer
+    ) {
+        let boardSize = size(pitch: map.pitch)
+        var obstacles: [LabRect2] = []
+        var requests: [LabAnnotationRequest] = []
+
+        for component in layout.components {
+            let centers = component.leads.map { map.center($0.hole) }
+            guard !centers.isEmpty else { continue }
+            let padding = map.pitch * 0.65
+            let minX = centers.map(\.x).min() ?? 0
+            let maxX = centers.map(\.x).max() ?? 0
+            let minY = centers.map(\.y).min() ?? 0
+            let maxY = centers.map(\.y).max() ?? 0
+            obstacles.append(LabRect2(
+                x: Double(minX - padding),
+                y: Double(minY - padding),
+                width: Double(max(maxX - minX + padding * 2, map.pitch * 1.7)),
+                height: Double(max(maxY - minY + padding * 2, map.pitch * 1.7))
+            ))
+            let anchor = CGPoint(
+                x: centers.map(\.x).reduce(0, +) / CGFloat(centers.count),
+                y: centers.map(\.y).reduce(0, +) / CGFloat(centers.count)
+            )
+            requests.append(LabAnnotationRequest(
+                id: "component-\(component.id)",
+                text: partName(component, layer: annotationLayer),
+                anchor: LabVec2(x: Double(anchor.x), y: Double(anchor.y)),
+                layer: annotationLayer,
+                fontSize: 13
+            ))
+        }
+
+        for jumper in layout.jumpers {
+            let points = BreadboardRoute.manhattan(from: jumper.a, to: jumper.b).map {
+                CGPoint(x: map.origin.x + CGFloat($0.x - 1) * map.pitch, y: map.origin.y + CGFloat($0.y) * map.pitch)
+            }
+            for (a, b) in zip(points, points.dropFirst()) {
+                let padding: CGFloat = 3
+                obstacles.append(LabRect2(
+                    x: Double(min(a.x, b.x) - padding),
+                    y: Double(min(a.y, b.y) - padding),
+                    width: Double(max(abs(a.x - b.x) + padding * 2, padding * 2)),
+                    height: Double(max(abs(a.y - b.y) + padding * 2, padding * 2))
+                ))
+            }
+        }
+
+        for supply in layout.supplies {
+            guard let first = supply.leads.first else { continue }
+            let anchor = map.center(first.hole)
+            let height = 36 + CGFloat(max(0, supply.leads.count - 1)) * map.pitch * 0.9
+            obstacles.append(LabRect2(x: 8, y: Double(anchor.y - 16), width: 52, height: Double(height)))
+        }
+
+        for meter in layout.meters {
+            let anchor = map.center(meter.hole)
+            let title = "\(meter.title) \(meter.reading)"
+            let measured = LabAnnotationEngine.measure(title, fontSize: 13)
+            obstacles.append(LabRect2(
+                x: Double(anchor.x) - measured.width / 2 - 6,
+                y: Double(anchor.y - map.pitch * 0.95 - 12),
+                width: measured.width + 12,
+                height: 24
+            ))
+        }
+
+        let placed = LabAnnotationEngine.place(
+            requests: requests,
+            obstacles: obstacles,
+            canvas: LabRect2(x: 0, y: 0, width: Double(boardSize.width), height: Double(boardSize.height)),
+            activeLayers: [.values]
+        )
+        for item in placed {
+            let rect = CGRect(x: item.frame.x, y: item.frame.y, width: item.frame.width, height: item.frame.height)
+            if let from = item.leaderFrom {
+                var leader = Path()
+                leader.move(to: CGPoint(x: from.x, y: from.y))
+                leader.addLine(to: CGPoint(x: item.leaderTo.x, y: item.leaderTo.y))
+                context.stroke(leader, with: .color(rgb(0x6E675C)), lineWidth: 0.8)
+            }
+            context.fill(Path(roundedRect: rect, cornerRadius: 4), with: .color(rgb(0xE4DDD2).opacity(0.98)))
+            context.stroke(Path(roundedRect: rect, cornerRadius: 4), with: .color(rgb(0x8E877C)), lineWidth: 0.8)
+            let text = context.resolve(
+                Text(item.text)
+                    .font(.system(size: CGFloat(item.fontSize), weight: .semibold).monospacedDigit())
+                    .foregroundColor(rgb(0x2C2924))
+            )
+            context.draw(text, at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
         }
     }
 
@@ -575,7 +672,7 @@ enum BreadboardPaint {
         shape.closeSubpath()
         context.fill(shape, with: .color(rgb(0x1A1A1A)))
         context.stroke(shape, with: .color(rgb(0x0A0A0A)), lineWidth: 0.8)
-        let title = context.resolve(Text(name).font(.system(size: max(7, pitch * 0.34), weight: .bold)).foregroundColor(.white))
+        let title = context.resolve(Text(name).font(.system(size: max(6, min(9, pitch * 0.48)), weight: .bold)).foregroundColor(.white))
         context.draw(title, at: CGPoint(x: body.midX, y: body.midY - 1), anchor: .center)
         for (pin, mark) in zip(pins, marks) {
             let text = context.resolve(Text(mark).font(.system(size: max(7, pitch * 0.32), weight: .bold)).foregroundColor(rgb(0x3E3A34)))
@@ -762,6 +859,7 @@ enum BreadboardPaint {
     }
 
     private static func labelAbove(_ text: String, at point: CGPoint, pitch: CGFloat, in context: GraphicsContext) {
+        guard !text.isEmpty else { return }
         let fontSize = min(15, max(11, pitch * 0.55))
         let resolved = context.resolve(
             Text(text).font(.system(size: fontSize, weight: .semibold).monospacedDigit()).foregroundColor(rgb(0x2C2924))
@@ -785,17 +883,20 @@ enum BreadboardPaint {
         context.draw(text, at: CGPoint(x: point.x + pitch * 0.34, y: point.y), anchor: .leading)
     }
 
-    private static func partName(_ component: BBComponent) -> String {
+    private static func partName(_ component: BBComponent, layer: LabAnnotationLayer) -> String {
+        let fullName: String
         switch component.part {
-        case .resistor(_, let label, _): return label
-        case .ceramic(_, let label), .electrolytic(_, let label): return label
-        case .led(let label), .diode(let label): return label
-        case .inductor(_, let label): return label
-        case .npn(let name), .nmos(let name), .pmos(let name): return name
-        case .dip8(let name, _): return name
-        case .display(let name, let digit, _, _): return "\(name) digit \(digit)"
-        case .source(let label): return label
+        case .resistor(_, let label, _): fullName = label
+        case .ceramic(_, let label), .electrolytic(_, let label): fullName = label
+        case .led(let label), .diode(let label): fullName = label
+        case .inductor(_, let label): fullName = label
+        case .npn(let name), .nmos(let name), .pmos(let name): fullName = "\(component.id.uppercased())  \(name)"
+        case .dip8(let name, _): fullName = "\(component.id.uppercased())  \(name)"
+        case .display(let name, let digit, _, _): fullName = "\(component.id.uppercased())  \(name) digit \(digit)"
+        case .source(let label): fullName = label
         }
+        guard layer == .minimal else { return fullName }
+        return fullName.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? fullName
     }
 
     private static func wireColor(_ color: BBWireColor) -> Color {

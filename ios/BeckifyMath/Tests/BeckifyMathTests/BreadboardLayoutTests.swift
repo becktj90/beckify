@@ -90,6 +90,31 @@ final class BreadboardLayoutTests: XCTestCase {
         }
     }
 
+    func testAnnotationEngineOmitsLabelsWhenNoClearPlacementExists() {
+        let canvas = LabRect2(x: 0, y: 0, width: 80, height: 60)
+        let requests = [
+            LabAnnotationRequest(
+                id: "blocked",
+                text: "Q",
+                anchor: LabVec2(x: 40, y: 30),
+                layer: .values
+            ),
+            LabAnnotationRequest(
+                id: "too-wide",
+                text: "A component label that cannot fit",
+                anchor: LabVec2(x: 40, y: 30),
+                layer: .values
+            ),
+        ]
+        let placed = LabAnnotationEngine.place(
+            requests: requests,
+            obstacles: [canvas],
+            canvas: canvas,
+            activeLayers: [.values]
+        )
+        XCTAssertTrue(placed.isEmpty)
+    }
+
     func testIdentityBookSharesNets() throws {
         let board = try layout(.voltageDivider)
         let info = ElectronicsLab.info(.voltageDivider)
@@ -196,6 +221,18 @@ final class BreadboardLayoutTests: XCTestCase {
         XCTAssertEqual(bias.component("r2")?.leads.map(\.net), ["Vb", "GND"])
         XCTAssertEqual(bias.component("rc")?.leads.map(\.net), ["Vc", "Vcc"])
         XCTAssertEqual(bias.component("re")?.leads.map(\.net), ["Ve", "GND"])
+        XCTAssertEqual(
+            BreadboardBoard.group(try XCTUnwrap(bias.component("r1")).leads[1].hole),
+            BreadboardBoard.group(npn.leads[1].hole)
+        )
+        XCTAssertEqual(
+            BreadboardBoard.group(try XCTUnwrap(bias.component("rc")).leads[0].hole),
+            BreadboardBoard.group(npn.leads[2].hole)
+        )
+        XCTAssertEqual(
+            BreadboardBoard.group(try XCTUnwrap(bias.component("re")).leads[0].hole),
+            BreadboardBoard.group(npn.leads[0].hole)
+        )
         if case .resistor(let ohms, _, let bands) = bias.component("r1")?.part {
             XCTAssertEqual(ohms, 47_000, accuracy: 1)
             XCTAssertEqual(bands.first, "yellow")

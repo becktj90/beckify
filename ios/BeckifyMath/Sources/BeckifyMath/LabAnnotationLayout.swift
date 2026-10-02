@@ -191,6 +191,7 @@ public enum LabAnnotationEngine {
             guard !trimmed.isEmpty else { continue }
             let font = min(max(request.fontSize, minFontSize), maxFontSize)
             let size = measure(trimmed, fontSize: font)
+            guard size.width <= canvas.width, size.height <= canvas.height else { continue }
             var chosen: LabPlacedAnnotation?
 
             for (index, offset) in request.preferredOffsets.enumerated() {
@@ -235,7 +236,10 @@ public enum LabAnnotationEngine {
                         break
                     }
                 }
-                if !found, let free = nearestFreeSlot(size: size, anchor: request.anchor, occupied: occupied, canvas: canvas) {
+                if !found {
+                    guard let free = nearestFreeSlot(size: size, anchor: request.anchor, occupied: occupied, canvas: canvas) else {
+                        continue
+                    }
                     frame = free
                 }
                 chosen = LabPlacedAnnotation(
