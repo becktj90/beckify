@@ -796,12 +796,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Pick Bodie Hale, Tito Solano, or Junie Pell. Their portrait stays up. Record, translate Clean or Jobsite, then hear that person.",
+            summary: "Pick Bodie Hale, Tito Solano, or Junie Pell. Their 16-bit sprite stays up and bobs while audio plays.",
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
                 "Bodie is California beach English. Tito is Cuban jobsite Spanish. Junie is rural Alabama English. Clean or Jobsite is wording, not another person.",
-                "Speak posts that voice to /api/speak (eleven_v3). Copy Audio and Share Audio keep the clip. Apple voice if cloud TTS fails.",
+                "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

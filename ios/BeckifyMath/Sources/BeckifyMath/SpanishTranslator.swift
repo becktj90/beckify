@@ -27,12 +27,21 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         }
     }
 
-    /// Imageset in the Beckify asset catalog.
+    /// Idle 16-bit sprite. Shown whenever audio is not playing.
     public var portraitAssetName: String {
         switch self {
         case .bodieHale: return "crewBodieHale"
         case .titoSolano: return "crewTitoSolano"
         case .juniePell: return "crewJuniePell"
+        }
+    }
+
+    /// Talk frame. Swapped with the idle sprite while audio plays.
+    public var talkAssetName: String {
+        switch self {
+        case .bodieHale: return "crewBodieHaleTalk"
+        case .titoSolano: return "crewTitoSolanoTalk"
+        case .juniePell: return "crewJuniePellTalk"
         }
     }
 
@@ -371,7 +380,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, or Junie Pell — and that portrait stays on screen. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, or Junie Pell — and that 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)

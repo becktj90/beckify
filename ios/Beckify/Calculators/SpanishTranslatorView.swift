@@ -477,17 +477,10 @@ struct SpanishTranslatorView: View {
     }
 
     /// Selected helper. Stays pinned while the rest of the tool scrolls.
+    /// Idle sprite until playback; idle/talk swap plus a small bob while audio plays.
     private var crewHelperBar: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(crew.portraitAssetName)
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity)
-                .frame(height: 148)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .accessibilityIdentifier("spanishTranslator.crewPortrait")
-                .accessibilityLabel(crew.displayName)
+            CrewTalkSprite(crew: crew, isTalking: engine.phase == .playing)
             Text(crew.displayName)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.foreground)
@@ -508,6 +501,40 @@ struct SpanishTranslatorView: View {
         .padding(.bottom, Theme.Space.sm)
         .background(Theme.background)
     }
+
+
+/// Full-body 16-bit helper. Two frames only, nearest-neighbor so pixels stay crisp.
+private struct CrewTalkSprite: View {
+    let crew: CrewTalkMember
+    let isTalking: Bool
+
+    var body: some View {
+        Group {
+            if isTalking {
+                TimelineView(.animation(minimumInterval: 0.15, paused: false)) { context in
+                    let tick = Int(context.date.timeIntervalSinceReferenceDate / 0.15)
+                    frame(mouthOpen: tick % 2 == 1)
+                }
+            } else {
+                frame(mouthOpen: false)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("spanishTranslator.crewPortrait")
+        .accessibilityLabel(isTalking ? "\(crew.displayName), talking" : crew.displayName)
+    }
+
+    private func frame(mouthOpen: Bool) -> some View {
+        Image(mouthOpen ? crew.talkAssetName : crew.portraitAssetName)
+            .interpolation(.none)
+            .resizable()
+            .scaledToFit()
+            .frame(maxWidth: .infinity)
+            .frame(height: 220)
+            .offset(y: mouthOpen ? -5 : 0)
+            .animation(.linear(duration: 0.12), value: mouthOpen)
+    }
+}
 
     private var advancedCard: some View {
         ResultCard(title: "Beckify API", copyText: endpointHint) {
