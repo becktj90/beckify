@@ -676,7 +676,7 @@ enum ToolboxCatalog {
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
-            subtitle: "Photo a schedule. On-device Vision, scan quality, editable rows, then confirm demand.",
+            subtitle: "Local OCR default. Needs review / Conflict / Verified — no capacity from trips alone.",
             symbol: "list.bullet.rectangle",
             synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm", "analyze"]
         ),
