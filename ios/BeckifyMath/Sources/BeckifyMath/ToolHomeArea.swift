@@ -81,7 +81,8 @@ public enum ToolHomeAreaPolicy {
 
     // MARK: - Membership
 
-    /// Compact Field-home Quick strip — one-tap jobsite calcs plus Wi-Fi Path.
+    /// Default home Pinned seeds (FavoritesStore) — one-tap jobsite calcs plus Wi-Fi Path.
+    /// Editable after first launch; Translator and others pin via star / context menu.
     public static let fieldQuickIDs: [String] = [
         "voltageDrop", "wireAmpacity", "motorFLA",
         "receptacleSelector", "wifiStatus", "conduitFill",

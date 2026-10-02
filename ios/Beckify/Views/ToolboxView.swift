@@ -68,7 +68,7 @@ struct ToolboxView: View {
                 }
             }
             .navigationTitle("Beckify")
-            .searchable(text: $query, prompt: "Search Field and Toolkit…")
+            .searchable(text: $query, prompt: "Search tools…")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     SettingsToolbarButton()

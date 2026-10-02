@@ -47,40 +47,34 @@ struct ToolGridView: View {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private var favoriteTools: [ToolDefinition] {
-        ToolboxCatalog.tools.filter { favorites.isFavorite($0.id) }
-    }
-
-    /// Pinned one-tap jobsite tools on Field home. Policy owns the ID list.
-    private var fieldQuickTools: [ToolDefinition] {
-        ToolHomeAreaPolicy.fieldQuickIDs.compactMap { raw in
-            ToolboxCatalog.tools.first { $0.id.rawValue == raw }
+    /// Editable Pinned strip — same store as Favorites tab (ordered).
+    private var pinnedTools: [ToolDefinition] {
+        favorites.orderedIDs.compactMap { id in
+            ToolboxCatalog.tools.first { $0.id == id }
         }
     }
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Space.lg) {
+                VStack(alignment: .leading, spacing: Theme.Space.md) {
                     if !isSearching {
                         homeHeader
                             .opacity(appeared || reduceMotion ? 1 : 0)
                             .offset(y: appeared || reduceMotion ? 0 : 10)
-                        if !favoriteTools.isEmpty {
-                            avatarStrip(title: "Favorites", tools: favoriteTools)
-                        }
                         // Cold start: hide Recents entirely. Do not seed fake
                         // tools or leave an empty strip for App Store shots.
                         if !recents.tools.isEmpty {
                             avatarStrip(title: "Recent", tools: Array(recents.tools.prefix(5)))
                         }
-                        if homeArea == .field {
+                        if !pinnedTools.isEmpty {
                             avatarStrip(
-                                title: "Quick",
-                                tools: fieldQuickTools,
-                                accessibilityNamePrefix: "Quick"
+                                title: "Pinned",
+                                tools: pinnedTools,
+                                accessibilityNamePrefix: "Pinned",
+                                pinContextMenu: true
                             )
-                            .accessibilityIdentifier("fieldQuickStrip")
+                            .accessibilityIdentifier("homePinnedStrip")
                         }
                         homeShelfCards
                     } else {
@@ -88,12 +82,12 @@ struct ToolGridView: View {
                     }
                 }
                 .padding(.horizontal, 18)
-                .padding(.bottom, 28)
-                .padding(.top, 10)
+                .padding(.bottom, 24)
+                .padding(.top, 4)
                 // Favorites / Recents membership changes must not animate the
                 // root layout — that was the main "menu hop" when starring or
                 // returning from a tool that updates Recents.
-                .animation(nil, value: favorites.ids)
+                .animation(nil, value: favorites.orderedIDs)
                 .animation(nil, value: recents.recentIDs)
                 .animation(nil, value: homeArea)
                 .animation(nil, value: isSearching)
@@ -106,8 +100,8 @@ struct ToolGridView: View {
                 }
             }
             .navigationTitle("Beckify")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $query, prompt: "Search Field and Toolkit…")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, prompt: "Search tools…")
             .safeAreaInset(edge: .top, spacing: 0) {
                 if !isSearching && path.isEmpty {
                     stickyAreaPicker
@@ -171,7 +165,7 @@ struct ToolGridView: View {
         }
         .segmentedControlStyle()
         .padding(.horizontal, 18)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
         .accessibilityIdentifier("homeAreaPicker")
@@ -180,42 +174,33 @@ struct ToolGridView: View {
     // MARK: - Header
 
     private var homeHeader: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Beckify")
-                    .font(.caption.weight(.semibold))
-                    .tracking(0.6)
-                    .foregroundStyle(Color.white.opacity(0.62))
-                Text(homeArea.headline)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.white)
-                Text(homeArea.blurb)
-                    .font(.caption)
-                    .foregroundStyle(Color.white.opacity(0.78))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        HStack(alignment: .center, spacing: 10) {
+            Text(homeArea.headline)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             Spacer(minLength: 8)
-            IconWell(
-                toolID: homeArea == .field ? .voltageDrop : .ohmsLaw,
-                size: 44,
-                selected: true
-            )
-            .opacity(0.35)
-            .accessibilityHidden(true)
+            Text(homeArea.blurb)
+                .font(.caption2)
+                .foregroundStyle(Color.white.opacity(0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, Theme.Space.md)
-        .padding(.vertical, Theme.Space.sm)
+        .padding(.horizontal, Theme.Space.sm)
+        .padding(.vertical, Theme.Space.xxs + 2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
                 .fill(Theme.instrumentPanel)
                 .overlay(
-                    RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
                         .stroke(Color.white.opacity(0.12), lineWidth: Theme.Stroke.hairline)
                 )
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Beckify. \(homeArea.headline). \(homeArea.blurb)")
+        .accessibilityLabel("\(homeArea.headline). \(homeArea.blurb)")
         .accessibilityIdentifier("homeHeader")
     }
 
@@ -233,7 +218,7 @@ struct ToolGridView: View {
     /// One card per shelf in the selected home area — opens a dedicated grid.
     @ViewBuilder
     private var homeShelfCards: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.md) {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
             HStack(spacing: 8) {
                 Capsule(style: .continuous)
                     .fill(Theme.accent.opacity(0.85))
@@ -243,9 +228,9 @@ struct ToolGridView: View {
                     .tracking(1.0)
                     .foregroundStyle(Theme.muted)
             }
-            .padding(.top, 4)
+            .padding(.top, 2)
 
-            VStack(alignment: .leading, spacing: Theme.Space.md) {
+            VStack(alignment: .leading, spacing: Theme.Space.sm) {
                 ForEach(ToolShelfKind.shelves(in: homeArea), id: \.self) { shelf in
                     let tools = ToolboxCatalog.tools(on: shelf)
                     if !tools.isEmpty {
@@ -279,19 +264,21 @@ struct ToolGridView: View {
     private func avatarStrip(
         title: String,
         tools: [ToolDefinition],
-        accessibilityNamePrefix: String? = nil
+        accessibilityNamePrefix: String? = nil,
+        pinContextMenu: Bool = false
     ) -> some View {
-        let strip = VStack(alignment: .leading, spacing: Theme.Space.xs) {
+        let strip = VStack(alignment: .leading, spacing: Theme.Space.xxs) {
             Text(title.uppercased())
                 .font(Theme.TypeRole.sectionLabel)
                 .tracking(1.0)
                 .foregroundStyle(Theme.muted)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.Space.md) {
+                HStack(spacing: Theme.Space.sm) {
                     ForEach(tools) { tool in
                         avatarStripLink(
                             tool: tool,
-                            accessibilityNamePrefix: accessibilityNamePrefix
+                            accessibilityNamePrefix: accessibilityNamePrefix,
+                            pinContextMenu: pinContextMenu
                         )
                     }
                 }
@@ -301,7 +288,7 @@ struct ToolGridView: View {
         if accessibilityNamePrefix != nil {
             strip
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel("Quick access")
+                .accessibilityLabel(accessibilityNamePrefix == "Pinned" ? "Pinned tools" : "\(accessibilityNamePrefix ?? "") access")
         } else {
             strip
         }
@@ -310,11 +297,12 @@ struct ToolGridView: View {
     @ViewBuilder
     private func avatarStripLink(
         tool: ToolDefinition,
-        accessibilityNamePrefix: String?
+        accessibilityNamePrefix: String?,
+        pinContextMenu: Bool = false
     ) -> some View {
         let link = NavigationLink(value: ToolboxHomeRoute.tool(tool.id)) {
-            VStack(spacing: 6) {
-                IconWell(toolID: tool.id, size: 52, circular: true)
+            VStack(spacing: 5) {
+                IconWell(toolID: tool.id, size: 48, circular: true)
                     .tileLift(
                         tint: Theme.categoryColors(
                             ToolboxCatalog.category(of: tool.id) ?? .power
@@ -328,7 +316,7 @@ struct ToolGridView: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
-                    .frame(width: 80)
+                    .frame(width: 76)
             }
         }
         .buttonStyle(.plain)
@@ -336,7 +324,21 @@ struct ToolGridView: View {
             accessibilityNamePrefix.map { "\($0), \(tool.title)" } ?? tool.title
         )
         .accessibilityHint(tool.subtitle)
-        if accessibilityNamePrefix != nil {
+        .contextMenu {
+            if pinContextMenu {
+                Button {
+                    favorites.toggle(tool.id)
+                } label: {
+                    Label(
+                        favorites.isFavorite(tool.id) ? "Unpin" : "Pin",
+                        systemImage: favorites.isFavorite(tool.id) ? "star.slash" : "star"
+                    )
+                }
+            }
+        }
+        if accessibilityNamePrefix == "Pinned" {
+            link.accessibilityIdentifier("pinnedTool.\(tool.id.rawValue)")
+        } else if accessibilityNamePrefix != nil {
             link.accessibilityIdentifier("quickTool.\(tool.id.rawValue)")
         } else {
             link
@@ -389,7 +391,11 @@ enum ToolShelfGridLayout {
     }
 
     /// Fixed tile height so LazyVGrid rows do not reflow as cells appear.
-    static let tileHeight: CGFloat = 148
+    /// 160, not 148: the title moved from `.caption` to `.subheadline` (15–16pt
+    /// at default size, matching the rest of this screen's titles) and no
+    /// longer shrinks to fit, so a 2-line title needs the extra room to avoid
+    /// clipping the subtitle below it.
+    static let tileHeight: CGFloat = 160
 }
 
 /// Section chrome + LazyVGrid of tool tiles. Used by search results and shelf screens.
@@ -431,7 +437,7 @@ struct ToolCategoryGrid: View {
                             favorites.toggle(tool.id)
                         } label: {
                             Label(
-                                favorites.isFavorite(tool.id) ? "Remove from Favorites" : "Add to Favorites",
+                                favorites.isFavorite(tool.id) ? "Unpin from home" : "Pin to home",
                                 systemImage: favorites.isFavorite(tool.id) ? "star.slash" : "star"
                             )
                         }
@@ -504,9 +510,9 @@ private struct ShelfCard: View {
                 .foregroundStyle(Theme.muted)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
         .glassCard(corner: Theme.Radius.tile, tint: borderTint)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)
@@ -522,7 +528,7 @@ private struct ShelfCard: View {
         case .controls: return "Loops, panels, phasors, Modbus…"
         case .magnetics: return "Cores, flux, and EM fields."
         case .analysis: return "Distributions and Monte Carlo."
-        case .instruments: return "RF, mic, motion…"
+        case .instruments: return "RF, mic, motion, RigScope…"
         case .basics: return "Ohm's Law, divider, RC, units…"
         case .bench: return "Lab, RF, e-bike, analog…"
         case .reference: return "Tables, schedules, Spanish…"
@@ -562,11 +568,10 @@ struct ToolTile: View {
 
             VStack(spacing: 3) {
                 Text(tool.title)
-                    .font(.caption.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.88)
                 if showArea {
                     HomeAreaBadge(area: area)
                 }

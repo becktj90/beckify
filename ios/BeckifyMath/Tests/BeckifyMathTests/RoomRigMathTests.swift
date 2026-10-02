@@ -168,15 +168,29 @@ final class RoomRigMathTests: XCTestCase {
         let copy = ToolHowItWorksCatalog.copy(forToolID: "setupCheck")
         XCTAssertNotNil(copy)
         let blob = ([copy?.summary, copy?.context].compactMap { $0 } + (copy?.bullets ?? [])).joined(separator: " ")
+        XCTAssertTrue(blob.localizedCaseInsensitiveContains("RigScope"))
         XCTAssertTrue(blob.localizedCaseInsensitiveContains("relative"))
         XCTAssertTrue(blob.localizedCaseInsensitiveContains("calibrat"))
-        XCTAssertTrue(blob.localizedCaseInsensitiveContains("FFT") || blob.localizedCaseInsensitiveContains("RTA"))
+        XCTAssertTrue(blob.localizedCaseInsensitiveContains("Music") || blob.localizedCaseInsensitiveContains("Gaming"))
         XCTAssertFalse(blob.localizedCaseInsensitiveContains("THX certification"))
         XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "setupCheck"), .field)
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "setupCheck"), .instruments)
         XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "setupCheck"), .sensor)
         XCTAssertTrue(RoomRigMath.honestLimit.localizedCaseInsensitiveContains("not a calibrated"))
         XCTAssertTrue(RoomRigMath.honestLimit.localizedCaseInsensitiveContains("dB SPL"))
+        XCTAssertEqual(RoomRigDisplayName.title, "RigScope")
+    }
+
+    func testListeningPurposeTargetNotes() {
+        XCTAssertEqual(RoomRigListeningPurpose.parse("movies"), .movies)
+        XCTAssertEqual(RoomRigListeningPurpose.parse("nope"), .music)
+        for purpose in RoomRigListeningPurpose.allCases {
+            XCTAssertFalse(purpose.targetCurveNote.isEmpty)
+            XCTAssertTrue(purpose.targetCurveNote.localizedCaseInsensitiveContains("not scored yet"))
+            XCTAssertTrue(purpose.scoreTargetLabel.localizedCaseInsensitiveContains("future score"))
+            XCTAssertLessThanOrEqual(purpose.targetCurveNote.count, 180)
+        }
+        XCTAssertTrue(RoomRigTestCopy.purposeHelp.localizedCaseInsensitiveContains("future score"))
     }
 
     func testListenTestCentroidBalanceAndSnapshot() {
@@ -224,4 +238,129 @@ final class RoomRigMathTests: XCTestCase {
         XCTAssertTrue(RoomRigTestCopy.versusA.localizedCaseInsensitiveContains("not a calibrated"))
         XCTAssertEqual(RoomRigTestMath.windowSeconds, 8, accuracy: 1e-9)
     }
+
+
+    func testQuietBaselineAndSignalAboveBackground() {
+        let fingerprint = RoomRigRouteFingerprint(
+            sampleRateHz: 48_000,
+            channelCount: 1,
+            routeUID: "Receiver",
+            inputGain: 0.5
+        )
+        let baseline = RoomRigBaselineMath.baseline(
+            levels: [-50, -48, -52, -49, -51],
+            bandRows: [[-60, -55], [-58, -54], [-62, -56]],
+            fingerprint: fingerprint,
+            sampleCount: 9_600,
+            capturedAt: 100
+        )
+        XCTAssertNotNil(baseline)
+        XCTAssertTrue(baseline!.isValid(for: fingerprint))
+        let other = RoomRigRouteFingerprint(
+            sampleRateHz: 48_000,
+            channelCount: 1,
+            routeUID: "Speaker",
+            inputGain: 0.5
+        )
+        XCTAssertFalse(baseline!.isValid(for: other))
+        let above = RoomRigBaselineMath.signalAboveBackgroundDB(levelDBFS: -20, baseline: baseline)
+        XCTAssertEqual(above ?? 0, -20 - baseline!.floorDBFS, accuracy: 1e-9)
+        XCTAssertTrue(RoomRigTestCopy.signalAboveBackground.localizedCaseInsensitiveContains("not snr"))
+        XCTAssertTrue(RoomRigTestCopy.baselineHelp.localizedCaseInsensitiveContains("invalidat"))
+    }
+
+    func testCaptureProtocolLocksAndCancels() {
+        let fingerprint = RoomRigRouteFingerprint(
+            sampleRateHz: 48_000,
+            channelCount: 1,
+            routeUID: "Mic",
+            inputGain: 0.4
+        )
+        let metadata = RoomRigPassMetadata(
+            stimulus: .pink,
+            fingerprint: fingerprint,
+            windowKind: "Hann",
+            isPhoneSpeakerDemo: true
+        )
+        var proto = RoomRigCaptureProtocol(
+            metadata: metadata,
+            startedSampleCount: 0,
+            startedHostTime: 0
+        )
+        let good = RoomRigMeasurementFrame(
+            frameID: 1,
+            sampleCount: 1024,
+            hostTimeSeconds: 0.1,
+            rmsDBFS: -20,
+            peakDBFS: -12,
+            crestDB: 8,
+            clipFraction: 0,
+            peakHz: 1_000,
+            bands: [],
+            rtaBands: [
+                AcousticDisplayBand(lowHz: 80, highHz: 120, centerHz: 100, dbFS: -18, isAvailable: true),
+                AcousticDisplayBand(lowHz: 800, highHz: 1_200, centerHz: 1_000, dbFS: -20, isAvailable: true),
+                AcousticDisplayBand(lowHz: 3_000, highHz: 5_000, centerHz: 4_000, dbFS: -22, isAvailable: true),
+            ],
+            fingerprint: fingerprint,
+            headroomDB: 12
+        )
+        XCTAssertNil(proto.append(good))
+        let snap = proto.finish(durationSeconds: 8, floorDBFS: -50)
+        XCTAssertEqual(snap?.stimulus, "Pink · demo")
+        XCTAssertEqual(snap?.aboveFloorDB ?? 0, 30, accuracy: 1e-9)
+
+        var clipped = proto
+        clipped = RoomRigCaptureProtocol(metadata: metadata, startedSampleCount: 0, startedHostTime: 0)
+        var hot = good
+        hot.clipFraction = 0.05
+        XCTAssertEqual(clipped.append(hot), .clipping)
+        XCTAssertNil(clipped.finish(durationSeconds: 1, floorDBFS: -50))
+
+        var route = RoomRigCaptureProtocol(metadata: metadata, startedSampleCount: 0, startedHostTime: 0)
+        var moved = good
+        moved.fingerprint = RoomRigRouteFingerprint(
+            sampleRateHz: 48_000,
+            channelCount: 1,
+            routeUID: "BT",
+            inputGain: 0.4
+        )
+        XCTAssertEqual(route.append(moved), .routeOrGainChanged)
+
+        let listenMeta = RoomRigPassMetadata(
+            stimulus: .listen,
+            fingerprint: fingerprint,
+            windowKind: "Hann",
+            isPhoneSpeakerDemo: false
+        )
+        XCTAssertFalse(RoomRigABMath.canCompare(a: metadata, b: listenMeta))
+        XCTAssertTrue(RoomRigABMath.canCompare(a: metadata, b: metadata))
+        let gamingMeta = RoomRigPassMetadata(
+            stimulus: .pink,
+            fingerprint: fingerprint,
+            windowKind: "Hann",
+            listeningPurpose: .gaming,
+            isPhoneSpeakerDemo: true
+        )
+        XCTAssertFalse(RoomRigABMath.canCompare(a: metadata, b: gamingMeta))
+        XCTAssertEqual(RoomRigMath.liveFFTLength, 1_024)
+        XCTAssertEqual(RoomRigMath.bassFFTLengthPreferred, 16_384)
+        XCTAssertEqual(RoomRigMath.bassFFTLengthLong, 32_768)
+        XCTAssertEqual(
+            RoomRigMeasurementFrame.headroomDB(peakDBFS: -6) ?? 0,
+            6,
+            accuracy: 1e-9
+        )
+    }
+
+    func testThirdOctaveEmptyBandUnavailable() {
+        let bands = RoomRigMath.thirdOctaveBands(
+            linearMagnitudes: [Double](repeating: 0, count: 512),
+            sampleRate: 48_000,
+            fftLength: 1024
+        )
+        XCTAssertFalse(bands.isEmpty)
+        XCTAssertTrue(bands.allSatisfy { !$0.isAvailable })
+    }
 }
+

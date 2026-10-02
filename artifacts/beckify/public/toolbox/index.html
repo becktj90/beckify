@@ -10210,7 +10210,7 @@
     <section id="sec-look-check" class="section">
       <div class="section-header">
         <h2>Look Check</h2>
-        <p>Take a camera photo of a person, then get lighting / framing / expression scores, a brief how-you-look summary, and a roast. Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
+        <p>Take a camera photo of a person, then get honest photo feedback — lighting / framing / expression / outfit scores, a brief how-you-look summary, and a surprise roast. Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
         <details class="section-info">
           <summary>ℹ More Info — Look Check</summary>
           <div class="section-info-body">
@@ -10226,7 +10226,7 @@
           <div class="card-title">Take or choose a photo</div>
           <div class="card-body">
             <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
-            <div class="photo-safety"><strong>Entertainment only.</strong> Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
+            <div class="photo-safety"><strong>Honest photo feedback. You might get hyped. You might get fucking roasted.</strong> Entertainment only. Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
             <div id="look_vlm_settings" class="vlm-settings">
               <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
               <div class="input-group">
@@ -10296,13 +10296,14 @@
                 </div>
                 <div id="look-score-wrap">
                   <div id="look-score" class="look-score">—</div>
-                  <div class="note">out of 100</div>
+                  <div class="note">Photo assessment · out of 100</div>
                 </div>
               </div>
               <p id="look-summary" class="look-summary" hidden></p>
               <figure id="look-roast" class="look-roast" hidden>
                 <figcaption class="look-roast-label">Roast</figcaption>
                 <blockquote id="look-roast-text" class="look-roast-text"></blockquote>
+                <p class="note" style="margin-top:8px">Entertainment only. Comedy roast of this frame — not a beauty score. Photo assessment stays honest.</p>
               </figure>
               <div id="look-metrics" class="look-metrics" hidden></div>
               <div>

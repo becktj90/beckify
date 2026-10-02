@@ -24,7 +24,7 @@ final class PhotoLookCheckTests: XCTestCase {
           "headline": "Strong light",
           "summary": "You look sharp in this frame.",
           "roast": "  Chin up like you billed overtime for that jawline.  ",
-          "metrics": { "lighting": 90.2, "framing": 70, "expression": 84, "sharpness": 88 },
+          "metrics": { "lighting": 90.2, "framing": 70, "expression": 84, "sharpness": 88, "outfit": 66 },
           "reasons": ["Even light"],
           "fixes": ["Smile"]
         }
@@ -39,6 +39,7 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertEqual(draft.headline, "Strong light")
         XCTAssertEqual(draft.metrics.lighting, 90)
         XCTAssertEqual(draft.metrics.overall, 88)
+        XCTAssertEqual(draft.metrics.outfit, 66)
         XCTAssertTrue(draft.showsMetrics)
         XCTAssertTrue(draft.showsScore)
         XCTAssertEqual(draft.verdict.badge, "Looks good")
@@ -204,9 +205,15 @@ final class PhotoLookCheckTests: XCTestCase {
     func testRoastModeParseAndShareCard() {
         XCTAssertEqual(LookRoastMode.parse("MEAN"), .mean)
         XCTAssertEqual(LookRoastMode.parse("nice"), .nice)
+        XCTAssertEqual(LookRoastMode.parse("surprise"), .surprise)
         XCTAssertEqual(LookRoastMode.parse(nil), .bro)
         XCTAssertEqual(LookRoastMode.parse("nope"), .bro)
         XCTAssertEqual(LookRoastMode.standaloneTones, [.mean, .nice])
+        XCTAssertEqual(PhotoLookCheck.photoAssessmentLabel, "Photo assessment")
+        XCTAssertEqual(PhotoLookCheck.photoScoresLabel, "Photo scores")
+        XCTAssertTrue(PhotoLookCheck.surprisePreAnalyze.contains("fucking roasted"))
+        XCTAssertFalse(PhotoLookCheck.photoAssessmentLabel.lowercased().contains("ai"))
+        XCTAssertFalse(PhotoLookCheck.photoScoresLabel.lowercased().contains("ai"))
         XCTAssertEqual(PhotoLookCheck.standaloneBundleID, "com.beckify.lookcheck")
 
         let wrapped = PhotoLookCheck.normalizeDraft([

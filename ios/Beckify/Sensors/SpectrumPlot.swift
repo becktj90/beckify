@@ -13,7 +13,7 @@ struct SpectrumPlot: View {
     /// 0…1 from the bottom. A median or display floor, not a calibrated noise spec.
     var referenceHeight: Double?
     var peakIndex: Int?
-    /// Room & Rig Check opts in. The axis titles stay on every spectrum either way.
+    /// RigScope opts in. The axis titles stay on every spectrum either way.
     var showsRelativeDBFSScale: Bool
     var xAxis: PlotAxis
     var yAxis: PlotAxis
@@ -71,14 +71,19 @@ struct SpectrumPlot: View {
     ) {
         // Locals only. A closure over `self.heights` here captures every stored
         // property, including `showsRelativeDBFSScale`, before it is set.
-        let levels = bands.map { AcousticSpectrum.heat(dbFS: $0.dbFS) }
+        let levels = bands.map { AcousticSpectrum.heat(dbFS: $0.dbFS, isAvailable: $0.isAvailable) }
         let showsRelative = showsRelativeDBFSScale
-        let finite = levels.filter(\.isFinite).sorted()
-        let peak = levels.indices.max { levels[$0] < levels[$1] }
+        let finite = zip(bands, levels).compactMap { band, level -> Double? in
+            band.isAvailable && level.isFinite ? level : nil
+        }.sorted()
+        let peak = bands.indices.filter { bands[$0].isAvailable }.max { levels[$0] < levels[$1] }
         let leading = bands.first.map { Self.hertz($0.lowHz) }
         let trailing = bands.last.map { Self.hertz($0.highHz) }
         let readouts = bands.map { band in
-            "\(Self.hertz(band.centerHz)), \(Format.number(band.dbFS, digits: 0)) dBFS"
+            if band.isAvailable {
+                return "\(Self.hertz(band.centerHz)), \(Format.number(band.dbFS, digits: 0)) dBFS"
+            }
+            return "\(Self.hertz(band.centerHz)), unavailable"
         }
         heights = levels
         leadingCaption = leading

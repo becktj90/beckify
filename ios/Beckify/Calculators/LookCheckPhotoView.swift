@@ -54,7 +54,7 @@ struct LookCheckPhotoView: View {
             } else if preview == nil {
                 ToolEmptyState(
                     title: "Take or choose a photo",
-                    detail: "The image stays on this device until you tap Analyze Look. Entertainment only — not medical or dating advice. Do not use this on photos of children.",
+                    detail: "\(PhotoLookCheck.surprisePreAnalyze) The image stays on this device until you tap Analyze Look. Entertainment only — not medical or dating advice. Do not use this on photos of children.",
                     systemImage: "person.crop.rectangle"
                 )
             } else {
@@ -97,6 +97,9 @@ struct LookCheckPhotoView: View {
             Text("Privacy: this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you tap Analyze Look. Anyone who appears under 18 is not rated.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
+            Text(PhotoLookCheck.surprisePreAnalyze)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.foreground)
             Text("Entertainment only. Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
@@ -277,6 +280,9 @@ struct LookCheckPhotoView: View {
                     Text(draft.roast)
                         .font(.body.weight(.medium))
                         .foregroundStyle(Theme.foreground)
+                    Text("Entertainment only. Comedy roast of this frame — not a beauty score. Photo assessment stays honest.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -289,11 +295,15 @@ struct LookCheckPhotoView: View {
                 .accessibilityLabel("Roast. \(draft.roast)")
             }
             if draft.showsScore, let score = draft.score {
-                ResultRow(label: "Score", value: "\(score)", emphasis: true, tone: verdictTone(draft.verdict))
+                ResultRow(label: PhotoLookCheck.photoAssessmentLabel, value: "\(score)", emphasis: true, tone: verdictTone(draft.verdict))
             }
 
             if draft.showsMetrics {
                 VStack(alignment: .leading, spacing: 10) {
+                    Text(PhotoLookCheck.photoScoresLabel.uppercased())
+                        .font(.caption.weight(.semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(Theme.muted)
                     ForEach(PhotoLookMetrics.metricRows, id: \.key) { row in
                         metricRow(label: row.label, value: draft.metrics.value(forKey: row.key))
                     }
@@ -422,7 +432,7 @@ struct LookCheckPhotoView: View {
                 mimeType: prepared.mimeType,
                 url: url,
                 token: PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token),
-                roastMode: .bro
+                roastMode: LookRoastMode.randomStandaloneTone()
             )
             progress = 0.92
             status = "Reading the verdict…"

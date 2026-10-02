@@ -114,7 +114,7 @@ enum ToolCategory: String, CaseIterable, Identifiable {
     /// Operator-facing shelf title. Raw values stay unchanged for merge stability.
     var displayName: String {
         switch self {
-        case .field: return "Field"
+        case .field: return "Jobsite"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .homework: return "Bench"
@@ -143,9 +143,9 @@ extension ToolHomeArea {
     var blurb: String {
         switch self {
         case .field:
-            return "Field calculators, wizards, and instruments."
+            return "Jobsite calcs and instruments."
         case .toolkit:
-            return "Basics, bench, and references."
+            return "Basics, bench, references."
         }
     }
 }
@@ -153,7 +153,7 @@ extension ToolHomeArea {
 extension ToolShelfKind {
     var title: String {
         switch self {
-        case .jobsite: return "Field"
+        case .jobsite: return "Jobsite"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .magnetics: return "Magnetics & Fields"
@@ -532,14 +532,16 @@ enum ToolboxCatalog {
         ToolDefinition(
             id: .setupCheck,
             kind: .sensor,
-            title: "Room & Rig Check",
-            subtitle: "Leave it open, then run a relative listen test. Not a lab mic.",
+            title: "RigScope",
+            subtitle: "Speaker and room analysis.",
             symbol: "speaker.wave.2.fill",
             synonyms: [
-                "room & rig check", "room and rig", "setup check", "speaker setup", "acoustic setup",
+                "rigscope", "rig scope", "room & rig", "room and rig", "room & rig check",
+                "setup check", "setupcheck", "speaker setup", "acoustic setup",
                 "room", "rig", "audiophile", "listening", "rta", "test",
                 "fft", "spectrogram", "pink noise", "sweep", "speaker",
-                "frequency response", "crest", "waterfall",
+                "frequency response", "crest", "waterfall", "music", "movies", "gaming",
+                "speaker analysis", "room analysis",
             ]
         ),
         ToolDefinition(
@@ -826,7 +828,7 @@ enum ToolboxCatalog {
             id: .lookCheck,
             kind: .calculator,
             title: "Look Check",
-            subtitle: "Take or choose a photo for a playful look verdict plus a roast. Entertainment only.",
+            subtitle: "Honest photo feedback. You might get hyped. You might get fucking roasted.",
             symbol: "person.crop.rectangle",
             synonyms: [
                 "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",

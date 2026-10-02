@@ -1,8 +1,20 @@
 export type LookRoastMode = "mean" | "nice" | "bro";
 
+/** Client may send surprise; server resolves to mean or nice. Older clients keep mean/nice/bro. */
+export type LookRoastModeInput = LookRoastMode | "surprise";
+
 export const LOOK_ROAST_MODES: readonly LookRoastMode[] = ["mean", "nice", "bro"];
 
-const SHARED_JSON_SHAPE = [
+/** Temp 0 for frozen photo assessment (scores/verdict/retake). */
+export const LOOK_ASSESSMENT_TEMPERATURE = 0;
+
+/**
+ * Comedy-only text pass. Raised carefully above 0 so roasts are wilder without
+ * touching assessment scores. Keep below 1.0 to limit total gibberish.
+ */
+export const LOOK_COMEDY_TEMPERATURE = 0.9;
+
+const ASSESSMENT_JSON_SHAPE = [
   "Return one JSON object only. No markdown, no prose, no code fences.",
   "Use this shape:",
   "{",
@@ -10,8 +22,8 @@ const SHARED_JSON_SHAPE = [
   '  "score": number|null,',
   '  "headline": string,',
   '  "summary": string,',
-  '  "roast": string,',
-  '  "metrics": { "lighting": number|null, "framing": number|null, "expression": number|null, "sharpness": number|null, "overall": number|null },',
+  '  "roast": "",',
+  '  "metrics": { "lighting": number|null, "framing": number|null, "expression": number|null, "sharpness": number|null, "outfit": number|null, "overall": number|null },',
   '  "reasons": string[],',
   '  "fixes": string[],',
   '  "photo_notes": string[],',
@@ -19,78 +31,140 @@ const SHARED_JSON_SHAPE = [
   "}",
 ].join("\n");
 
-const SHARED_RAILS = [
+const ASSESSMENT_RAILS = [
+  "You are Look Check photo assessment only. Honest, specific, field-plain.",
+  "This pass is NOT comedy. Do not roast, hype, insult, or compliment for laughs.",
+  "Set roast to an empty string always on this pass.",
   "Rules:",
-  "- If anyone in the photo appears under 18, set verdict to declined, score and every metric to null, roast to \"\", and refuse to rate appearance. No roast. No appearance rating.",
-  "- If there is no person, rate the photo (light, framing, sharpness) and set verdict to no_person. expression is null. roast is \"\".",
-  "- If an adult is in frame: verdict is looks_good, mixed, or looks_bad. Be decisive. roast is required.",
+  "- If anyone in the photo appears under 18, set verdict to declined, score and every metric to null, roast to \"\", and refuse to rate appearance.",
+  "- If there is no person, rate the photo (light, framing, sharpness, outfit if visible clothing/props) and set verdict to no_person. expression is null. roast is \"\".",
+  "- If an adult is in frame: verdict is looks_good, mixed, or looks_bad. Be decisive.",
   "- score and each metric are 0..100 when you rate; null when declined. overall should match score.",
-  "- summary: 1–2 short sentences on how they look in this frame (or why the photo was not rated). Not a medical or dating opinion.",
-  "- metrics are honest photo-quality scores, not beauty, health, or attractiveness authority. Do not invent fake confidence.",
-  "- reasons: 2–5 specific observations (lighting, angle, expression, framing, grooming, outfit as visible).",
-  "- fixes: 1–4 practical retake tips. Empty if declined.",
+  "- Metrics are photo-quality / presentation scores for THIS frame — never attractiveness, beauty, health, dating worth, or body-shaming scores.",
+  "- Score lighting (exposure + light quality), framing (angle + crop), sharpness, expression (subjective face/energy in frame), outfit (clothes/grooming as visible), overall.",
+  "- summary: 1–2 short factual sentences on how the photo reads (or why it was not rated). Not medical or dating advice.",
+  "- reasons: 2–5 specific observations covering lighting/exposure, framing/angle, sharpness, expression, outfit as visible.",
+  "- fixes: exactly 2 or 3 practical retake tips when rating an adult or no_person photo. Empty if declined. Keep tips honest even if the shot is strong.",
   "- No sexual or graphic content.",
-  "- Never comment on race, disability, or body in a shaming way. Roast photo, vibe, style, grooming, and angle — not protected traits.",
-  "- Mean mode is savage comedy about look, vibe, fit, angle, lighting, and photo quality — never hate speech or harassment of protected classes.",
+  "- Never comment on race, disability, or body in a shaming way.",
   "- Phone photos may be rotated. Upright them first.",
+  "- A great photo can still get blunt notes. A weak photo still gets accurate retake advice.",
 ].join("\n");
 
-const MODE_INTRO: Record<LookRoastMode, string> = {
+const COMEDY_JSON_SHAPE = [
+  "Return one JSON object only. No markdown, no prose, no code fences.",
+  'Use this exact shape: { "roast": string }',
+].join("\n");
+
+const COMEDY_SHARED_RAILS = [
+  "You write ONLY the comedy roast string for Look Check.",
+  "The photo assessment below is FROZEN. Do not change scores, verdict, summary, reasons, or retake tips.",
+  "Do not contradict the factual assessment. Comedy can be savage or over-the-top hype about the SAME frame the assessment describes.",
+  "A strong photo can get a brutal roast. A weak photo can get outrageous hype — still grounded in what is visible.",
+  "Profane, specific, hilarious, unpredictable is encouraged. Comedy may make people uncomfortable.",
+  "Never attack race, disability, or body-shame protected traits. Roast vibe, style, grooming, fit, angle, lighting, photo quality, and energy.",
+  "No sexual or graphic content.",
+  "If verdict is declined or no_person, roast MUST be an empty string.",
+].join("\n");
+
+const MODE_COMEDY: Record<LookRoastMode, string> = {
   bro: [
-    "You are BroGPT doing Look Check: a playful, hyped, dude-energy photo verdict plus a short comedy roast of how they look in this frame.",
-    "Entertainment only — AI comedy. Not medical advice, not dating advice, not a beauty contest.",
+    "Tone: BroGPT — short, hyped, dude-energy one-liner (1–3 sentences).",
+    "Playful blunt comedy of THIS frame. Meme-adjacent. Empty string when no_person or declined.",
   ].join("\n"),
   mean: [
-    "You are Look Check in Mean mode: a photo verdict plus a long, exaggerated, savage comedy roast of how they look in this frame.",
-    "Entertainment only — AI comedy. Not medical advice, not dating advice, not a beauty contest.",
+    "Tone: MEAN — brutal funny roast. Turn the heat way up.",
+    "Write a detailed exaggerated savage comedy roast of THIS frame — several sentences, a short paragraph is OK (about 4–8 sentences).",
+    "Profane OK. Specific to what is visible. Unpredictable. Can make people uncomfortable.",
+    "Still comedy, never hate speech. Empty string when no_person or declined.",
   ].join("\n"),
   nice: [
-    "You are Look Check in Nice mode: a photo verdict plus a long, exaggerated, over-the-top complimentary roast of what works in this frame.",
-    "Entertainment only — AI comedy. Not medical advice, not dating advice, not a beauty contest.",
+    "Tone: NICE — outrageous complimentary hype.",
+    "Write a detailed exaggerated over-the-top complimentary roast of THIS frame — several sentences, a short paragraph is OK (about 4–8 sentences).",
+    "Profane OK when it lands as wild praise. Specific to this frame, not generic. Empty string when no_person or declined.",
   ].join("\n"),
 };
 
-const MODE_ROAST: Record<LookRoastMode, string> = {
-  bro: "- roast: when rating an adult, a short BroGPT comedy roast of how they look in THIS frame — lighting, fit, face angle, vibe, style, grooming. Playful, hyped, meme-adjacent. Can be blunt and funny. Empty string when no_person or declined.",
-  mean: [
-    "- roast: when rating an adult, write a detailed exaggerated Mean-mode comedy roast of THIS frame — several sentences, a short paragraph is OK (about 4–8 sentences).",
-    "  Cover look, vibe, fit, angle, lighting, grooming, and photo quality with blunt meme energy. Super savage and highly specific to what is visible.",
-    "  Comedy only. No hate speech. No attacks on race, disability, or body-shaming. Empty string when no_person or declined.",
-  ].join("\n"),
-  nice: [
-    "- roast: when rating an adult, write a detailed exaggerated Nice-mode roast of THIS frame — several sentences, a short paragraph is OK (about 4–8 sentences).",
-    "  Super sweet, over-the-top complimentary hype of lighting, fit, face angle, vibe, style, grooming, and what the camera caught well.",
-    "  Specific to this frame, not generic praise. Empty string when no_person or declined.",
-  ].join("\n"),
-};
-
-export function parseLookRoastMode(raw: unknown): LookRoastMode {
+export function parseLookRoastMode(raw: unknown): LookRoastMode | "surprise" {
   const folded = String(raw ?? "").trim().toLowerCase();
-  if (folded === "mean" || folded === "nice" || folded === "bro") return folded;
+  if (folded === "mean" || folded === "nice" || folded === "bro" || folded === "surprise") {
+    return folded;
+  }
+  // Older clients that omit roastMode stay on bro.
   return "bro";
 }
 
-export function lookVisionSystemPrompt(mode: LookRoastMode): string {
-  return [MODE_INTRO[mode], "", SHARED_JSON_SHAPE, "", SHARED_RAILS, MODE_ROAST[mode]].join("\n");
+/** Resolve surprise (or passthrough) to a concrete mean|nice|bro mode. */
+export function resolveLookRoastMode(
+  raw: unknown,
+  random: () => number = Math.random,
+): LookRoastMode {
+  const parsed = parseLookRoastMode(raw);
+  if (parsed === "surprise") {
+    return random() < 0.5 ? "mean" : "nice";
+  }
+  return parsed;
 }
 
-/** BroGPT one-liner prompt — default for website / Toolbox clients that omit roastMode. */
-export const LOOK_VISION_SYSTEM_PROMPT = lookVisionSystemPrompt("bro");
+export function lookAssessmentSystemPrompt(): string {
+  return [ASSESSMENT_RAILS, "", ASSESSMENT_JSON_SHAPE].join("\n");
+}
 
-export function lookVisionUserText(mode: LookRoastMode): string {
+export function lookAssessmentUserText(): string {
+  return [
+    "Upright the photo if it is rotated.",
+    "Assess this frame only: lighting/exposure, framing/angle, sharpness, expression (subjective), outfit, overall score,",
+    "verdict, brief factual summary, 2–5 reasons, and 2–3 retake tips when rating.",
+    "roast must be an empty string. Follow the JSON shape.",
+  ].join(" ");
+}
+
+export function lookComedySystemPrompt(mode: LookRoastMode): string {
+  return [COMEDY_SHARED_RAILS, "", MODE_COMEDY[mode], "", COMEDY_JSON_SHAPE].join("\n");
+}
+
+export function lookComedyUserText(mode: LookRoastMode, frozenAssessment: unknown): string {
+  const frozen = JSON.stringify(frozenAssessment);
   if (mode === "mean") {
-    return "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary and a detailed exaggerated Mean-mode comedy roast (several sentences) of how they look in this frame. If no_person or declined, roast must be an empty string. Follow the JSON shape.";
+    return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only the MEAN brutal funny roast for an adult rating, or "" if declined/no_person. Follow the JSON shape.`;
   }
   if (mode === "nice") {
-    return "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary and a detailed exaggerated Nice-mode complimentary roast (several sentences) of what works in this frame. If no_person or declined, roast must be an empty string. Follow the JSON shape.";
+    return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only the NICE outrageous complimentary roast for an adult rating, or "" if declined/no_person. Follow the JSON shape.`;
   }
-  return "Upright the photo if it is rotated. If an adult is in frame, score lighting, framing, expression, sharpness, and overall, plus a brief summary and a BroGPT roast of how they look in this frame. If no_person or declined, roast must be an empty string. Follow the JSON shape.";
+  return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only a short BroGPT comedy roast for an adult rating, or "" if declined/no_person. Follow the JSON shape.`;
 }
 
-/** Mean/nice need more room than the BroGPT one-liner. */
 export function lookVisionMaxTokens(mode: LookRoastMode): number {
-  return mode === "bro" ? 1600 : 2800;
+  return mode === "bro" ? 900 : 1800;
 }
+
+export function lookAssessmentMaxTokens(): number {
+  return 1600;
+}
+
+/** @deprecated Single-call prompt kept for tests/docs that reference the old export. Prefer assessment + comedy. */
+export function lookVisionSystemPrompt(mode: LookRoastMode): string {
+  return [
+    mode === "bro"
+      ? "You are BroGPT doing Look Check: honest photo assessment plus a short comedy roast."
+      : mode === "mean"
+        ? "You are Look Check in Mean mode: honest photo assessment plus a brutal funny roast."
+        : "You are Look Check in Nice mode: honest photo assessment plus outrageous complimentary hype.",
+    "Entertainment only. Not medical advice, not dating advice, not a beauty contest.",
+    "",
+    ASSESSMENT_JSON_SHAPE.replace('"roast": "",', '  "roast": string,'),
+    "",
+    ASSESSMENT_RAILS.replace("Set roast to an empty string always on this pass.", MODE_COMEDY[mode]),
+  ].join("\n");
+}
+
+/** @deprecated */
+export function lookVisionUserText(mode: LookRoastMode): string {
+  return lookComedyUserText(mode, { note: "single-call fallback — prefer two-pass API" });
+}
+
+/** BroGPT one-liner prompt — default export for older docs. */
+export const LOOK_VISION_SYSTEM_PROMPT = lookVisionSystemPrompt("bro");
 
 export type LookVerdict = "looks_good" | "mixed" | "looks_bad" | "no_person" | "declined";
 
@@ -99,6 +173,7 @@ export interface LookVisionMetrics {
   framing: number | null;
   expression: number | null;
   sharpness: number | null;
+  outfit: number | null;
   overall: number | null;
 }
 
@@ -120,4 +195,89 @@ export function normalizeLookRoast(raw: unknown, verdict: LookVerdict): string {
   if (verdict === "declined" || verdict === "no_person") return "";
   if (raw == null) return "";
   return String(raw).trim();
+}
+
+function asScore(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function asStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item).trim()).filter(Boolean);
+}
+
+function asVerdict(raw: unknown): LookVerdict {
+  const folded = String(raw ?? "").trim().toLowerCase();
+  if (
+    folded === "looks_good"
+    || folded === "mixed"
+    || folded === "looks_bad"
+    || folded === "no_person"
+    || folded === "declined"
+  ) {
+    return folded;
+  }
+  return "mixed";
+}
+
+/** Freeze assessment fields; overlay comedy roast only. Comedy cannot change scores/verdict/retake. */
+export function mergeLookAssessmentWithComedy(
+  assessmentRaw: unknown,
+  comedyRaw: unknown,
+): LookVisionAnalysis {
+  const assessment = (assessmentRaw && typeof assessmentRaw === "object")
+    ? assessmentRaw as Record<string, unknown>
+    : {};
+  const metricsSrc = (assessment.metrics && typeof assessment.metrics === "object")
+    ? assessment.metrics as Record<string, unknown>
+    : assessment;
+  const verdict = asVerdict(assessment.verdict);
+  let score = asScore(assessment.score);
+  if (verdict === "declined") score = null;
+
+  const metrics: LookVisionMetrics = {
+    lighting: asScore(metricsSrc.lighting),
+    framing: asScore(metricsSrc.framing),
+    expression: asScore(metricsSrc.expression),
+    sharpness: asScore(metricsSrc.sharpness ?? metricsSrc.focus),
+    outfit: asScore(metricsSrc.outfit),
+    overall: asScore(metricsSrc.overall),
+  };
+  if (metrics.overall == null) metrics.overall = score;
+  if (verdict === "declined") {
+    metrics.lighting = null;
+    metrics.framing = null;
+    metrics.expression = null;
+    metrics.sharpness = null;
+    metrics.outfit = null;
+    metrics.overall = null;
+  } else if (verdict === "no_person") {
+    metrics.expression = null;
+  }
+
+  const comedy = (comedyRaw && typeof comedyRaw === "object")
+    ? comedyRaw as Record<string, unknown>
+    : {};
+  const roast = normalizeLookRoast(comedy.roast ?? assessment.roast, verdict);
+
+  let summary = String(assessment.summary ?? assessment.brief ?? "").trim();
+  if (verdict === "declined" && !summary) {
+    summary = String(assessment.headline ?? "").trim();
+  }
+
+  return {
+    verdict,
+    score,
+    headline: String(assessment.headline ?? ""),
+    summary,
+    roast,
+    metrics,
+    reasons: asStringList(assessment.reasons),
+    fixes: asStringList(assessment.fixes),
+    photo_notes: asStringList(assessment.photo_notes ?? assessment.photoNotes),
+    warnings: asStringList(assessment.warnings),
+  };
 }

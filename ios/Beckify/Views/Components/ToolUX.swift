@@ -275,7 +275,7 @@ struct CopyResultButton: View {
     }
 }
 
-/// Star toggle for pinning a tool to the Favorites tab. Used in tool rows and the tool toolbar.
+/// Star toggle for pinning a tool to home Pinned / Favorites. Used in tool rows and the tool toolbar.
 struct FavoriteToggleButton: View {
     var isOn: Bool
     var name: String
@@ -290,7 +290,7 @@ struct FavoriteToggleButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isOn ? "Remove \(name) from favorites" : "Add \(name) to favorites")
+        .accessibilityLabel(isOn ? "Unpin \(name) from home" : "Pin \(name) to home")
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }
@@ -573,7 +573,7 @@ struct ShowWorkCard: View {
 
 /// Deliberately quiet: a single-line strip of compact chips, not a second
 /// list of cards competing with the calculator above it. A tool that wants
-/// prominence earns it by being in Favorites or Quick Tools, not by showing up
+/// prominence earns it by being in Pinned / Favorites, not by showing up
 /// here three times over. Icons use `IconWell` so they follow Dynamic Type.
 struct RelatedToolsSection: View {
     let current: ToolID

@@ -63,8 +63,13 @@ public struct AmpacityDeratingResult: Equatable, Sendable {
     public var marginAmps: Double?
 
     public var recommendedOCPD: Int?
+    /// When true, `recommendedOCPD` may use 240.4(B) next-size-up above usable ampacity.
+    public var nextSizeUpAllowed: Bool
+    public var ocpdGuidanceNote: String?
     public var ocpdOK: Bool?
     public var nextLargerSize: String?
+    /// False when parallel runs were requested for a size below 1/0 AWG (310.10(H)).
+    public var parallelEligible: Bool
 
     public var trace: [CalculationTraceStep]
     public var warnings: [DesignWarning]
@@ -137,14 +142,23 @@ public enum WireAmpacity {
     }
 
     public static func evaluate(_ input: AmpacityDeratingInput) throws -> AmpacityDeratingResult {
-        let runs = try WholeCount.parse(Double(max(input.parallelRuns, 1)), name: "Parallel runs")
+        // Reject ≤0 and fractional counts. Do not clamp bad parallel input to 1.
+        let runs = try WholeCount.parse(Double(input.parallelRuns), name: "Parallel runs")
         let ccc = try WholeCount.parse(Double(input.currentCarryingCount), name: "Current-carrying conductor count")
         guard input.ambientC.isFinite else {
             throw CalcError.missing("ambient temperature")
         }
+        try NECAmpacityFactors.requireAmbientInDomain(ambientC: input.ambientC, insulation: input.insulation)
         guard input.termination.rawValue <= input.insulation.rawValue else {
             throw CalcError.outOfRange(
                 "Termination rating (\(input.termination.displayName)) cannot exceed insulation rating (\(input.insulation.displayName))."
+            )
+        }
+
+        let parallelEligible = isParallelEligible(size: input.size)
+        if runs > 1, !parallelEligible {
+            throw CalcError.outOfRange(
+                "NEC 310.10(H) generally permits paralleling only for 1/0 AWG and larger. \(NECTables.wireLabel(input.size)) is not eligible for parallel runs in this tool."
             )
         }
 
@@ -175,13 +189,6 @@ public enum WireAmpacity {
                 provenance: .codeRequirement
             ))
         }
-        if runs > 1, let cm = NECTables.circularMils[input.size], let minParallel = NECTables.circularMils["1/0"], cm + 1e-9 < minParallel {
-            warnings.append(DesignWarning(
-                severity: .critical,
-                message: "NEC 310.10(H) generally permits paralleling only for 1/0 AWG and larger. Verify exceptions before paralleling \(NECTables.wireLabel(input.size)).",
-                provenance: .codeRequirement
-            ))
-        }
 
         var required: Double?
         var passes: Bool?
@@ -201,22 +208,39 @@ public enum WireAmpacity {
             }
         }
 
-        var ocpdOK: Bool?
-        var recommendedOCPD: Int?
-        if let need = required {
-            recommendedOCPD = NECTables.nextStandardOCPD(need)
+        let ocpdPlan = ocpdGuidance(
+            usableTotal: usableTotal,
+            requiredAmpacity: required,
+            size: input.size,
+            material: input.material
+        )
+        let recommendedOCPD = ocpdPlan.recommended
+        let nextSizeUpAllowed = ocpdPlan.nextSizeUpAllowed
+        let ocpdGuidanceNote = ocpdPlan.note
+        if let note = ocpdGuidanceNote {
+            warnings.append(DesignWarning(severity: .info, message: note, provenance: .codeRequirement))
         }
+
+        var ocpdOK: Bool?
         if let ocpd = input.ocpdAmps {
             let device = try Positive.require(ocpd, name: "OCPD rating")
-            if let smallMax = smallConductorMaxOCPD(size: input.size), device > Double(smallMax) + 1e-9 {
+            if let smallMax = smallConductorMaxOCPD(size: input.size, material: input.material), device > Double(smallMax) + 1e-9 {
                 ocpdOK = false
                 warnings.append(DesignWarning(
                     severity: .critical,
-                    message: "240.4(D) generally limits \(NECTables.wireLabel(input.size)) overcurrent protection to \(smallMax) A unless an exception applies.",
+                    message: "240.4(D) generally limits \(NECTables.wireLabel(input.size)) \(input.material.displayName) overcurrent protection to \(smallMax) A unless an exception applies.",
                     provenance: .codeRequirement
                 ))
-            } else if let usable = Optional(usableTotal) {
-                ocpdOK = device <= usable + 1e-9 || (recommendedOCPD.map { device <= Double($0) + 1e-9 } ?? false)
+            } else {
+                let ceiling = ocpdPlan.conductorCeiling.map(Double.init) ?? usableTotal
+                ocpdOK = device <= ceiling + 1e-9
+                if ocpdOK == false {
+                    warnings.append(DesignWarning(
+                        severity: .critical,
+                        message: "OCPD \(FormatTrace.amps(device)) exceeds the conductor protection ceiling \(FormatTrace.amps(ceiling)) for this size under the 240.4 rules applied here.",
+                        provenance: .codeRequirement
+                    ))
+                }
             }
         }
 
@@ -295,8 +319,11 @@ public enum WireAmpacity {
             passesLoad: passes,
             marginAmps: margin,
             recommendedOCPD: recommendedOCPD,
+            nextSizeUpAllowed: nextSizeUpAllowed,
+            ocpdGuidanceNote: ocpdGuidanceNote,
             ocpdOK: ocpdOK,
             nextLargerSize: next,
+            parallelEligible: parallelEligible,
             trace: trace,
             warnings: warnings,
             citations: [
@@ -321,7 +348,7 @@ public enum WireAmpacity {
     ) throws -> ConductorSelectionResult {
         let amps = try Positive.require(loadAmps, name: "Load current")
         let required = continuousLoad ? amps * 1.25 : amps
-        let runs = try WholeCount.parse(Double(max(parallelRuns, 1)), name: "Parallel runs")
+        let runs = try WholeCount.parse(Double(parallelRuns), name: "Parallel runs")
 
         var selected: AmpacityDeratingResult?
         for size in NECTables.wireSizeOrder {
@@ -391,13 +418,85 @@ public enum WireAmpacity {
         return nil
     }
 
-    private static func smallConductorMaxOCPD(size: String) -> Int? {
-        switch size {
-        case "14": return 15
-        case "12": return 20
-        case "10": return 30
+    /// 240.4(D) small-conductor limits — material-specific.
+    public static func smallConductorMaxOCPD(size: String, material: ConductorMaterial) -> Int? {
+        switch (material, size) {
+        case (.copper, "14"): return 15
+        case (.copper, "12"): return 20
+        case (.copper, "10"): return 30
+        case (.aluminum, "12"): return 15
+        case (.aluminum, "10"): return 25
         default: return nil
         }
+    }
+
+    public static func isParallelEligible(size: String) -> Bool {
+        guard let cm = NECTables.circularMils[size],
+              let minParallel = NECTables.circularMils["1/0"]
+        else { return false }
+        return cm + 1e-9 >= minParallel
+    }
+
+    /// Conductor protection ceiling and optional next-size-up under 240.4(B)/(D).
+    private struct OCPDPlan {
+        var recommended: Int?
+        var conductorCeiling: Int?
+        var nextSizeUpAllowed: Bool
+        var note: String?
+    }
+
+    private static func ocpdGuidance(
+        usableTotal: Double,
+        requiredAmpacity: Double?,
+        size: String,
+        material: ConductorMaterial
+    ) -> OCPDPlan {
+        let smallMax = smallConductorMaxOCPD(size: size, material: material)
+        let atOrBelow = NECTables.largestStandardOCPD(atOrBelow: usableTotal)
+
+        if let smallMax {
+            let ceiling = min(smallMax, atOrBelow ?? smallMax)
+            let loadNext = requiredAmpacity.flatMap { NECTables.nextStandardOCPD($0) }
+            let recommended = loadNext.map { min($0, ceiling) } ?? ceiling
+            return OCPDPlan(
+                recommended: recommended,
+                conductorCeiling: ceiling,
+                nextSizeUpAllowed: false,
+                note: "240.4(D) limits \(NECTables.wireLabel(size)) \(material.displayName) to \(smallMax) A unless an exception applies. Next-size-up under 240.4(B) is not offered for this size."
+            )
+        }
+
+        if let exact = atOrBelow, abs(Double(exact) - usableTotal) <= 1e-9 {
+            return OCPDPlan(
+                recommended: requiredAmpacity.flatMap { NECTables.nextStandardOCPD($0) } ?? exact,
+                conductorCeiling: exact,
+                nextSizeUpAllowed: false,
+                note: nil
+            )
+        }
+
+        let nextAboveUsable = NECTables.nextStandardOCPD(usableTotal + 1e-9)
+        let nextSizeOK = nextAboveUsable != nil && (atOrBelow == nil || nextAboveUsable != atOrBelow)
+        let ceiling = nextSizeOK ? (nextAboveUsable ?? atOrBelow) : atOrBelow
+        let loadNext = requiredAmpacity.flatMap { NECTables.nextStandardOCPD($0) }
+        let recommended: Int?
+        if let loadNext, let ceiling, loadNext <= ceiling {
+            recommended = loadNext
+        } else {
+            recommended = ceiling
+        }
+        let note: String?
+        if nextSizeOK, let nextAboveUsable, let atOrBelow {
+            note = "Usable \(FormatTrace.amps(usableTotal)) is between standard ratings \(atOrBelow) A and \(nextAboveUsable) A. 240.4(B) next-size-up may apply when the ampacity does not correspond to a standard OCPD — confirm conditions and exceptions."
+        } else {
+            note = nil
+        }
+        return OCPDPlan(
+            recommended: recommended,
+            conductorCeiling: ceiling,
+            nextSizeUpAllowed: nextSizeOK,
+            note: note
+        )
     }
 }
 

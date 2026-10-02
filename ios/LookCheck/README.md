@@ -1,6 +1,6 @@
 # Look Check (standalone iOS app)
 
-Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen: take or choose a photo, tap **Analyze**, get a useful verdict plus a long exaggerated roast. Roast tone is a hidden surprise — the app never shows which one it picked.
+Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen: take or choose a photo, tap **Analyze**, get useful candid photo feedback plus a long exaggerated roast. Pre-Analyze copy warns: you might get hyped or fucking roasted. Roast tone (mean vs nice) stays a hidden surprise — the app never shows which one it picked.
 
 This is not a website wrapper and not a second copy of the Field EE toolbox.
 
@@ -14,7 +14,7 @@ This is not a website wrapper and not a second copy of the Field EE toolbox.
 | Connect / TestFlight name | LookCheck5000 (do not rename the Xcode product unless Trevor asks) |
 | Bundle ID | `com.beckify.lookcheck` |
 | SKU | `look-check` |
-| Version | **1.0 (1)** — matches TestFlight as of ~2026-09-17/18. Connect record exists. Archive scheme **LookCheck** |
+| Version | **1.0 (2)** — matches TestFlight as of ~2026-09-17/18. Connect record exists. Archive scheme **LookCheck** |
 | Team prefix | `9TR6R5LV8M` (same Apple Developer team as Beckify Toolbox) |
 | Deployment | iOS 17+, iPhone + iPad |
 | Price | Free, no IAP, no ads (v1) |
@@ -29,7 +29,7 @@ The shared contract lives in `ios/BeckifyMath` (`PhotoLookCheck`, `LookRoastMode
 2. **Analyze** secretly coins `mean` or `nice` (fair coin) and POSTs an upright JPEG to `https://api.beckify.com/api/analyze-look` with that `roastMode`. The user never sees the choice — no toggle, badge, or share-card label.
 3. Result: verdict, photo metrics, detailed roast card, Share.
 
-Toolbox / website clients omit `roastMode` (or send `bro`) and keep the short BroGPT one-liner.
+Beckify Toolbox and the website also secretly coin `mean` or `nice` (same surprise). Older clients may still send `bro`. API assessment is frozen at temp 0; comedy is a separate text-only pass.
 
 ## Hard safety
 

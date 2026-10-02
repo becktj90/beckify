@@ -13,13 +13,13 @@ This Linux environment has not compiled the SwiftUI target, signed a binary, cap
 **SKU:** `look-check`  
 **Team prefix / `DEVELOPMENT_TEAM`:** `9TR6R5LV8M`  
 **Devices:** iPhone and iPad (`TARGETED_DEVICE_FAMILY` 1,2)  
-**Version:** **1.0 (1)** — `MARKETING_VERSION` **1.0**, `CURRENT_PROJECT_VERSION` **1**. Matches Trevor’s TestFlight as of ~2026-09-17/18.  
+**Version:** **1.0 (2)** — `MARKETING_VERSION` **1.0**, `CURRENT_PROJECT_VERSION` **2**. Matches Trevor’s TestFlight as of ~2026-09-17/18.  
 **Category:** Entertainment  
 **Secondary (optional):** Photo & Video  
 **Age rating (draft):** 12+ — mature comedy roast of look / vibe / photo quality. No sexual content, no UGC feed, no unrestricted web. Confirm in the Connect questionnaire. Do **not** ship as 4+.  
 **Price:** Free, no in-app purchases, no ads (v1)
 
-**Connect / TestFlight exists.** Trevor’s TestFlight shows this app as **LookCheck5000** at **1.0 (1)** (~2026-09-17/18). This repo did not query App Store Connect and does not record an Apple ID. Do not create a second app record.
+**Connect / TestFlight exists.** Trevor’s TestFlight shows this app as **LookCheck5000** at **1.0 (2)** (~2026-09-17/18). This repo did not query App Store Connect and does not record an Apple ID. Do not create a second app record.
 
 **Display-name drift (do not rename):** Xcode `INFOPLIST_KEY_CFBundleDisplayName` is **Look Check**. App Store Connect / TestFlight shows **LookCheck5000**. Leave the Xcode product, display name, and target as they are unless Trevor asks to rename. Archive scheme is **LookCheck** (`com.beckify.lookcheck`), not Beckify and not KestrelHeavy.
 
@@ -95,10 +95,10 @@ Suggested 3–6 shots:
 ## Remaining steps (Mac + App Store Connect)
 
 1. Register bundle ID `com.beckify.lookcheck` on the `9TR6R5LV8M` team if it is not already created.
-2. The App Store Connect / TestFlight record already exists (display name **LookCheck5000**, build **1.0 (1)** as of ~2026-09-17/18). Do not create a second record. Do not rename the Xcode display name **Look Check** to match Connect unless Trevor asks.
+2. The App Store Connect / TestFlight record already exists (display name **LookCheck5000**, build **1.0 (2)** as of ~2026-09-17/18). Do not create a second record. Do not rename the Xcode display name **Look Check** to match Connect unless Trevor asks.
 3. Open `ios/Beckify.xcodeproj`, scheme **LookCheck**, confirm Signing & Capabilities.
 4. Run on a physical device at least once.
 5. Capture screenshots at required sizes.
-6. Archive **LookCheck** (not Beckify, not KestrelHeavy), upload, attach listing copy, submit. Xcode Cloud Archive for this product uses scheme **LookCheck**; do not point Toolbox Archive-iOS at this scheme. The next upload after **1.0 (1)** must use a higher `CURRENT_PROJECT_VERSION` if **1** is already on TestFlight.
+6. Archive **LookCheck** (not Beckify, not KestrelHeavy), upload, attach listing copy, submit. Xcode Cloud Archive for this product uses scheme **LookCheck**; do not point Toolbox Archive-iOS at this scheme. The next upload after **1.0 (2)** must use a higher `CURRENT_PROJECT_VERSION` if **1** is already on TestFlight.
 
 This repository does **not** submit anything to the App Store.
