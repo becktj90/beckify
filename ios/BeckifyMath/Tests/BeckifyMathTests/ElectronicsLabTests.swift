@@ -216,6 +216,11 @@ final class ElectronicsLabTests: XCTestCase {
                 )
             }
         }
+
+        XCTAssertEqual(bias.elements.first { $0.id == "base" }?.b, LabPoint(x: 36, y: 44))
+        XCTAssertEqual(bias.elements.first { $0.id == "col" }?.b, LabPoint(x: 62, y: 28))
+        XCTAssertEqual(bias.elements.first { $0.id == "re" }?.a, LabPoint(x: 62, y: 60))
+        XCTAssertEqual(bias.node("e")?.at, LabPoint(x: 62, y: 60))
     }
 
     func testEngineeringSuffixesSolveTheBench() throws {

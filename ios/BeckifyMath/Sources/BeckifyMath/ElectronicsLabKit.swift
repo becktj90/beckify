@@ -321,10 +321,10 @@ enum LabKit {
             wire("railL", 18, 14, 72, 14),
             res("r1", "R1", eng(r1) + " Ω", 28, 14, 28, 40),
             res("r2", "R2", eng(r2) + " Ω", 28, 40, 28, 70),
-            wire("base", 28, 40, 44, 44),
+            wire("base", 28, 40, 36, 44),
             res("rc", "Rc", eng(rc) + " Ω", 70, 14, 70, 32),
-            wire("col", 70, 32, 56, 34),
-            res("re", "Re", eng(re) + " Ω", 52, 56, 52, 70),
+            wire("col", 70, 32, 62, 28),
+            res("re", "Re", eng(re) + " Ω", 62, 60, 62, 70),
             wire("gndw", 28, 70, 70, 70),
             gnd("g", 70, 70),
             part("vcc", .voltageSource, "Vcc", eng(vcc) + " V", 18, 70, 18, 14),
@@ -336,7 +336,7 @@ enum LabKit {
             node("vcc", "Vcc", vcc, "V", 18, 14),
             node("b", "Vb", bias.vb, "V", 28, 40),
             node("c", "Vc", bias.vc, "V", 70, 32),
-            node("e", "Ve", bias.ve, "V", 52, 56),
+            node("e", "Ve", bias.ve, "V", 62, 60),
             node("gnd", "GND", 0, "V", 70, 70),
         ]
     }
@@ -345,7 +345,7 @@ enum LabKit {
         [
             branch("ir1", "IR1", bias.iR1, "A", 28, 18, 28, 36),
             branch("ic", "Ic", bias.ic, "A", 70, 18, 70, 30),
-            branch("ie", "Ie", bias.ie, "A", 52, 58, 52, 68),
+            branch("ie", "Ie", bias.ie, "A", 62, 62, 62, 68),
         ]
     }
 
