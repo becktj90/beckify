@@ -1,9 +1,15 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import BeckifyMath
 
 struct JobsView: View {
     @EnvironmentObject private var jobs: JobStore
     @Environment(\.browseFieldHome) private var browseFieldHome
+    @State private var document = SavedJobsDocument(data: Data())
+    @State private var presentsExporter = false
+    @State private var presentsImporter = false
+    @State private var transferMessage: String?
+    @State private var presentsTransferAlert = false
 
     private var fieldJobs: [SavedJob] {
         jobs.jobs
@@ -24,7 +30,7 @@ struct JobsView: View {
                     ContentUnavailableView {
                         Label("No field notes yet", systemImage: "note.text")
                     } description: {
-                        Text("Run a Field calc, then save the result as an on-device note. Nothing is uploaded — this is not a project gallery.")
+                        Text("Run a Field calc, save an on-device note, or import notes from a Beckify archive. Exported files stay wherever you choose to save them.")
                     } actions: {
                         Button("Browse Field") {
                             browseFieldHome()
@@ -66,6 +72,18 @@ struct JobsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     SettingsToolbarButton()
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button("Export saved notes…", systemImage: "square.and.arrow.up", action: export)
+                            .disabled(jobs.jobs.isEmpty)
+                        Button("Import saved notes…", systemImage: "square.and.arrow.down") {
+                            presentsImporter = true
+                        }
+                    } label: {
+                        Label("Transfer notes", systemImage: "arrow.left.arrow.right")
+                    }
+                    .accessibilityLabel("Import or export saved notes")
+                }
                 if !jobs.jobs.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
                         EditButton()
@@ -73,13 +91,95 @@ struct JobsView: View {
                 }
             }
             .background(Theme.ambientBackground.ignoresSafeArea())
+            .fileExporter(
+                isPresented: $presentsExporter,
+                document: document,
+                contentType: .json,
+                defaultFilename: "beckify-saved-jobs"
+            ) { result in
+                if case .failure(let error) = result, !isCancellation(error) {
+                    presentTransferMessage("Could not export saved notes: \(error.localizedDescription)")
+                }
+            }
+            .fileImporter(
+                isPresented: $presentsImporter,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false,
+                onCompletion: importArchive
+            )
+            .alert("Saved notes", isPresented: $presentsTransferAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(transferMessage ?? "")
+            }
         }
+    }
+
+    private func export() {
+        do {
+            document = SavedJobsDocument(data: try jobs.archiveData())
+            presentsExporter = true
+        } catch {
+            presentTransferMessage("Could not prepare saved notes for export: \(error.localizedDescription)")
+        }
+    }
+
+    private func importArchive(_ result: Result<[URL], Error>) {
+        do {
+            guard let url = try result.get().first else { return }
+            let canAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if canAccess { url.stopAccessingSecurityScopedResource() }
+            }
+            let values = try url.resourceValues(forKeys: [.fileSizeKey])
+            guard let size = values.fileSize, size <= SavedJobsArchive.maximumFileSize else {
+                throw SavedJobsArchiveError.fileTooLarge
+            }
+            let imported = try jobs.importArchive(Data(contentsOf: url))
+            presentTransferMessage(imported == 0
+                ? "No new notes were imported. Notes with IDs already on this device were left unchanged."
+                : "Imported \(imported) saved \(imported == 1 ? "note" : "notes"). Existing notes were left unchanged.")
+        } catch {
+            guard !isCancellation(error) else { return }
+            presentTransferMessage("Could not import saved notes: \(error.localizedDescription)")
+        }
+    }
+
+    private func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        return (error as? CocoaError)?.code == .userCancelled
+    }
+
+    private func presentTransferMessage(_ message: String) {
+        transferMessage = message
+        presentsTransferAlert = true
     }
 
     private func delete(jobs list: [SavedJob], at offsets: IndexSet) {
         for index in offsets {
             self.jobs.delete(list[index])
         }
+    }
+}
+
+private struct SavedJobsDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    var data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw SavedJobsArchiveError.invalidJob("The selected file does not contain readable data.")
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }
 

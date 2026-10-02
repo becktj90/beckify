@@ -10,6 +10,10 @@ private struct BrowseFieldHomeKey: EnvironmentKey {
     static let defaultValue: () -> Void = {}
 }
 
+private struct ResultProvenanceKey: EnvironmentKey {
+    static let defaultValue: String? = nil
+}
+
 extension EnvironmentValues {
     var openRelatedTool: (ToolID) -> Void {
         get { self[OpenRelatedToolKey.self] }
@@ -20,6 +24,11 @@ extension EnvironmentValues {
     var browseFieldHome: () -> Void {
         get { self[BrowseFieldHomeKey.self] }
         set { self[BrowseFieldHomeKey.self] = newValue }
+    }
+
+    var resultProvenance: String? {
+        get { self[ResultProvenanceKey.self] }
+        set { self[ResultProvenanceKey.self] = newValue }
     }
 }
 
@@ -156,6 +165,7 @@ struct ToolScaffold<Content: View>: View {
             }
         }
         .environment(\.toolChrome, chrome)
+        .environment(\.resultProvenance, codeNotice?.accessibilityLabel)
     }
 
     @ViewBuilder
@@ -240,10 +250,16 @@ struct CopyResultButton: View {
     var accessibilityName: String = "Copy result"
     @State private var copied = false
     @State private var resetTask: Task<Void, Never>?
+    @Environment(\.resultProvenance) private var resultProvenance
+
+    private var copyPayload: String {
+        guard let resultProvenance, !resultProvenance.isEmpty else { return text }
+        return "\(text)\n\n\(resultProvenance)"
+    }
 
     var body: some View {
         Button {
-            UIPasteboard.general.string = text
+            UIPasteboard.general.string = copyPayload
             copied = true
             resetTask?.cancel()
             resetTask = Task { @MainActor in
@@ -267,7 +283,7 @@ struct CopyResultButton: View {
         .tint(Theme.accent)
         .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .accessibilityLabel(copied ? "Copied. \(accessibilityName)" : accessibilityName)
-        .accessibilityValue(text)
+        .accessibilityValue(copyPayload)
         .onDisappear {
             resetTask?.cancel()
             copied = false

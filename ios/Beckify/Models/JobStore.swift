@@ -77,6 +77,54 @@ final class JobStore: ObservableObject {
         persist()
     }
 
+    func archiveData() throws -> Data {
+        let records = jobs.map { job in
+            SavedJobArchiveRecord(
+                id: job.id.uuidString,
+                name: job.name,
+                toolID: job.toolID.rawValue,
+                notes: job.notes,
+                calculationBasis: job.calculationBasis,
+                inputs: job.inputs,
+                outputs: job.outputs,
+                createdAt: job.createdAt,
+                updatedAt: job.updatedAt
+            )
+        }
+        return try SavedJobsArchive(jobs: records).encodedData()
+    }
+
+    @discardableResult
+    func importArchive(_ data: Data) throws -> Int {
+        let archive = try SavedJobsArchive.decode(data)
+        let existingIDs = Set(jobs.map(\.id))
+        let additions = archive.jobs.compactMap { record -> SavedJob? in
+            guard let id = UUID(uuidString: record.id),
+                  !existingIDs.contains(id),
+                  let toolID = ToolID(rawValue: record.toolID) else {
+                return nil
+            }
+            return SavedJob(
+                id: id,
+                name: record.name,
+                toolID: toolID,
+                notes: record.notes,
+                calculationBasis: record.calculationBasis,
+                inputs: record.inputs,
+                outputs: record.outputs,
+                createdAt: record.createdAt,
+                updatedAt: record.updatedAt
+            )
+        }
+        guard jobs.count + additions.count <= SavedJobsArchive.maximumJobCount else {
+            throw SavedJobsArchiveError.tooManyJobs
+        }
+        guard !additions.isEmpty else { return 0 }
+        jobs = (jobs + additions).sorted { $0.updatedAt > $1.updatedAt }
+        persist()
+        return additions.count
+    }
+
     private func load() {
         guard let data = defaults.data(forKey: key) else { return }
         if let decoded = try? JSONDecoder().decode([SavedJob].self, from: data) {

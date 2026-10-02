@@ -163,7 +163,7 @@ Selected existing calculators show **engineer plots** (Swift Charts) and can **S
 
 Field → Instruments plot notes name the axes. Coupled Vibration A/B bars are frequency bands with height |B − A| (the readout keeps the sign in g; not ISO 10816). Noise Meter’s rough-harmonics line is leftover energy outside the loudest bin (not THD, not dB SPL). RigScope’s Listening card explains crest, harmonics, loop delay, signal above background, and relative range. Acoustic Imager time activity reads left as lower frequency and bottom as newer. Catalog tools are unchanged.
 
-Local **Saved Jobs** are on-device bench / field notes, not a projects product. Field jobs sort first. Standards-aware notes retain the applicable code path and its scope alongside inputs and results. Opening a job restores matching inputs into the tool when they still map — it does not block if some fields cannot be restored. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, can reveal the formula with your numbers plugged in, and has a **How it works** note (toolbar About / collapsed disclosure) for what it computes, when to use it, and its limits. Explanations and formulas start collapsed so inputs and results stay primary. Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
+Local **Saved Jobs** are on-device bench / field notes, not a synced projects product. Field jobs sort first. Standards-aware notes retain the applicable code path and its scope alongside inputs and results. Use **Jobs → Transfer notes** to export or import a versioned JSON archive; imports validate the complete file, preserve existing notes when IDs collide, and stay on device unless you explicitly choose a file destination or source. Opening a job restores matching inputs into the tool when they still map — it does not block if some fields cannot be restored. Each tool keeps last-used inputs on device, copies a numeric result, lists related tools from the same catalog, can reveal the formula with your numbers plugged in, and has a **How it works** note (toolbar About / collapsed disclosure) for what it computes, when to use it, and its limits. Explanations and formulas start collapsed so inputs and results stay primary. Tap the star on any tool (in the list or its toolbar) to pin it to the **Favorites** tab for one-tap access. Disclaimer on every tool: design aid, not a PE stamp or calibrated instrument. No ads, analytics, tracking, games, store, or phone number. App Store v1 is **free** ($0): no IAP, no StoreKit.
 
 ## Linux (this repo)
 
@@ -175,6 +175,8 @@ swift test
 ```
 
 You cannot build or run the app UI, CoreMotion, AVFoundation, or CoreBluetooth on Linux. Simulator, signing, archive, and App Store upload require a Mac. This repository does not claim those happened. The electrical-code Settings screen and in-tool banners were not exercised in Simulator or on a device.
+
+Accessibility and field-use verification steps are tracked in [`docs/ACCESSIBILITY_QA.md`](docs/ACCESSIBILITY_QA.md). Complete them on Simulator and physical iPhone/iPad before claiming those checks passed.
 
 ## Mac — open and run
 
