@@ -88,7 +88,10 @@ final class MicrophoneSpectrumCenter: ObservableObject {
         observeRouteChanges()
     }
 
-    deinit {
+    // `routeObserver`/`mediaResetObserver` are `NSObjectProtocol`, which is not Sendable,
+    // so a plain `nonisolated deinit` cannot read these @MainActor-isolated properties
+    // under Swift 6 concurrency checking. `isolated deinit` keeps teardown on the main actor.
+    isolated deinit {
         if let routeObserver {
             NotificationCenter.default.removeObserver(routeObserver)
         }
@@ -426,8 +429,13 @@ final class MicrophoneSpectrumCenter: ObservableObject {
                     headroomDB: RoomRigMeasurementFrame.headroomDB(peakDBFS: stats.peakDBFS)
                 )
 
+                // Snapshot into a `let` before crossing into the Sendable closure: a `var`
+                // captured by [weak self] / mutated earlier in the loop triggers
+                // "mutated/captured after capture" errors in the Swift 6 language mode.
+                let finishedBass = bassResult
+                guard let self else { continue }
                 DispatchQueue.main.async {
-                    self?.publish(
+                    self.publish(
                         frame: frame,
                         harmonicRatio: ratio,
                         harmonics: harmonics,
@@ -436,7 +444,7 @@ final class MicrophoneSpectrumCenter: ObservableObject {
                         balance: block.balance,
                         latency: latency,
                         sampleRateHz: sampleRate,
-                        bass: bassResult
+                        bass: finishedBass
                     )
                 }
             }
