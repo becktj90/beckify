@@ -54,7 +54,8 @@ ok('3/4" EMT, #8  THHN  (C.1 = 5)',  Math.floor(E['3/4'] * 0.4 / A['8']), 5, 0);
 ok('2"   EMT, 4/0 THHN  (C.1 = 4)',  Math.floor(E['2'] * 0.4 / A['4/0']), 4, 0);
 ok('1"   EMT, #10 THHN  (C.1 = 16)', Math.floor(E['1'] * 0.4 / A['10']), 16, 0);
 ok('2"   EMT, #2  THHN  (C.1 = 11)', Math.floor(E['2'] * 0.4 / A['2']), 11, 0);
-ok('4"   EMT, 500 kcmil (C.1 = 7)',  Math.floor(E['4'] * 0.4 / A['500']), 7, 0);
+// Current Table 4 bore is 14.753 in²: eight fit at 40%; nine do not.
+ok('4"   EMT, 500 kcmil (Table 4/5 = 8)', Math.floor(E['4'] * 0.4 / A['500']), 8, 0);
 
 console.log('\n--- Ch.9 Table 1 fill limits ---');
 ok('1 conductor  = 53%', conduitFillLimit(1, false).pct, 53, 0);

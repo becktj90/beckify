@@ -44,6 +44,7 @@ struct MotorNameplateOCRView: View {
     @StoredInput(.motorNameplateOCR, "necMotorType", default: "sc-bde") private var necMotorType
     @StoredInput(.motorNameplateOCR, "necDevice", default: "inv") private var necDevice
     @StoredInput(.motorNameplateOCR, "necRise", default: "") private var necRise
+    @StoredInput(.motorNameplateOCR, "necTableFLC", default: "") private var necTableFLC
     @State private var necSession = ExplicitCalculationState<MotorNameplateResult>()
 
     private var inputFingerprint: String { text }
@@ -347,7 +348,7 @@ struct MotorNameplateOCRView: View {
                 .font(.caption.weight(.semibold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.muted)
-            Text("Overload, SCPD, and conductor sizing from the confirmed FLA above. Motor type and SCPD device aren't on the plate, so pick them here.")
+            Text("Overloads use confirmed nameplate FLA. Conductors and SCPD use NEC table FLC from HP/voltage (430.6(A)(1)). Enter reviewed table FLC if the rating is unsupported.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
 
@@ -366,6 +367,10 @@ struct MotorNameplateOCRView: View {
                 fieldID: "necRise",
                 onSubmit: calculateNEC
             )
+
+            NumberField(title: "Reviewed NEC table FLC", unit: "A", text: $necTableFLC, optional: true,
+                        helpText: "Leave blank for supported HP/voltage lookup. This is not the current printed on the nameplate.",
+                        fieldID: "necTableFLC", onSubmit: calculateNEC)
 
             Button("Calculate NEC values") {
                 calculateNEC()
@@ -392,6 +397,8 @@ struct MotorNameplateOCRView: View {
                 .opacity(necSession.isStale ? 0.72 : 1)
 
                 ResultCard(title: "NEC results") {
+                    ResultRow(label: "Sizing table FLC", value: Format.amps(r.tableFullLoadAmps))
+                    Text(r.sizingCurrentBasis).font(Theme.TypeRole.help).foregroundStyle(Theme.muted)
                     ResultRow(label: "Overload max", value: "\(Format.number(r.overload.amps, digits: 1)) A (\(Format.number(r.overload.percent, digits: 0))%)", emphasis: true, tone: Theme.good)
                     ResultRow(label: "OL article", value: "\(r.overload.article) — \(r.overload.reason)", tone: Theme.muted)
                     ResultRow(label: "SCPD max", value: "\(Format.number(r.scpd.rawAmps, digits: 1)) A → \(r.scpd.nextStandardAmps.map(String.init) ?? "—") A", emphasis: true, tone: Theme.copper)
@@ -417,21 +424,26 @@ struct MotorNameplateOCRView: View {
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .onChange(of: necMotorType) { _, _ in necSession.markInputsChanged() }
         .onChange(of: necDevice) { _, _ in necSession.markInputsChanged() }
+        .onChange(of: necTableFLC) { _, _ in necSession.markInputsChanged() }
         .onChange(of: necRise) { _, _ in necSession.markInputsChanged() }
     }
 
     private func calculateNEC() {
         necSession.calculate {
-            try MotorNameplate.analyze(
+            guard let phase = filledDraft[.phases]?.parsedDouble, phase == 1 || phase == 3 else {
+                throw CalcError.missing("confirmed phase count (1 or 3)")
+            }
+            return try MotorNameplate.analyze(
                 fla: filledDraft[.fla]?.parsedDouble ?? .nan,
-                phases: Int(filledDraft[.phases] ?? "3") ?? 3,
+                phases: Int(phase),
                 horsepower: filledDraft[.ratedHP]?.parsedDouble,
                 volts: filledDraft[.voltage]?.parsedDouble,
                 serviceFactor: filledDraft[.sf]?.parsedDouble,
                 temperatureRiseC: necRise.parsedDouble,
                 motorType: MotorNameplateType(rawValue: necMotorType) ?? .squirrelCageOther,
                 device: MotorSCPDDevice(rawValue: necDevice) ?? .inverseTimeBreaker,
-                codeLetter: filledDraft[.codeLetter]
+                codeLetter: filledDraft[.codeLetter],
+                tableFullLoadAmps: necTableFLC.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : (necTableFLC.parsedDouble ?? .nan)
             )
         }
     }

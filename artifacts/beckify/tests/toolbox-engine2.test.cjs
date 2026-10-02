@@ -110,10 +110,10 @@ ok('1ph = 2', G.xeConductorsPerRun('1ph', 'single'), 2, 0);
 
 console.log('\n--- Conduit at 40% fill ---');
 // 4 x 300 kcmil THHN (0.4608) + 1 x 4 AWG EGC (0.0824) = 1.9256 in2
-// 2-1/2" EMT 40% = 1.9152 (short), 3" EMT 40% = 2.9572 -> 3"
+// Current EMT: 2" at 40% = 1.3424 (short); 2-1/2" = 2.3432 (fits).
 const cd = G.xeConduit('EMT', 4, '300', '4', 'THHN');
 ok('4x300kcmil + 4AWG EGC area', cd.totalArea, 1.9256, 1e-4);
-ok('  needs 3" EMT', cd.size, '3');
+ok('  needs 2-1/2" EMT with current Table 4 bore', cd.size, '2-1/2');
 ok('  counts 5 conductors', cd.conductorCount, 5, 0);
 
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nAll checks passed');

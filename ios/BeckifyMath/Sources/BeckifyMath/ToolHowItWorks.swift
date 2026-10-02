@@ -584,7 +584,7 @@ public enum ToolHowItWorksCatalog {
         ),
         "motorNameplate": ToolHowItWorks(
             summary: "Overload (430.32), Table 430.52 SCPD, 430.22 conductor, and code-letter LRA from the plate.",
-            context: "You have HP, FLA, SF, and code letter — this walks the usual 430 picks.",
+            context: "Overloads use nameplate FLA; conductors and SCPD use reviewed NEC table FLC (430.6(A)(1)).",
             bullets: [
                 "MOCP and LRA are never treated as FLA.",
                 "EGC uses NEC 2023 Table 250.122 from the Table 430.52 device, not from FLA.",
@@ -799,9 +799,9 @@ public enum ToolHowItWorksCatalog {
             summary: "Record English or Spanish, translate the other way with Beckify AI (Clean or Jobsite), play it loud, then Copy Audio or Share Audio — or fall back to on-device Apple Translation.",
             context: "Toolkit → Reference. Field helper — not a certified interpreter.",
             bullets: [
-                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Mic audio stays local; translate on Stop.",
+                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick phrase chips test translation. Mic audio stays local.",
                 "Clean or Jobsite (persisted). Jobsite is a gravelly fictional weathered tradesman; Clean EN leans California stoner (onyx). Hey! is English → Spanish only.",
-                "After Speak: Copy Audio / Share Audio for the clip (comedy character comes through on shared playback). Temp file for share only — not a recording library. Cancel skips Apple fallback.",
+                "Neural /api/speak or device voice: Copy Audio or Share Audio in Messages. Clips use temporary files. Cancel skips Apple fallback.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

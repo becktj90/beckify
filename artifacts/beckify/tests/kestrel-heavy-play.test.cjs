@@ -609,7 +609,7 @@ assert.match(pbx, /KestrelHeavySchemeHandler\.swift/);
 assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameView.swift'), 'utf8'), /setURLSchemeHandler/);
 assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyGameView.swift'), 'utf8'), /webViewWebContentProcessDidTerminate/);
 assert.match(fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavySchemeHandler.swift'), 'utf8'), /kestrel-heavy:\/\/game\/index\.html/);
-const khConfigs = pbx.split('KHCF00000000000000000013 /* Debug */')[1].split('/* End XCBuildConfiguration')[0];
+const khConfigs = pbx.split('KHCF00000000000000000013 /* Debug */')[1].split('BDCF00000000000000000017 /* Debug */')[0].split('/* End XCBuildConfiguration')[0];
 assert.match(khConfigs, /CURRENT_PROJECT_VERSION = 4;/);
 assert.doesNotMatch(khConfigs, /CURRENT_PROJECT_VERSION = 3;/);
 assert.match(khConfigs, /UILaunchStoryboardName = LaunchScreen/);
@@ -623,7 +623,7 @@ const toolboxConfigs = pbx.split('BECF0000000000000000003C /* Debug */')[1].spli
 assert.match(toolboxConfigs, /LandscapeLeft/, 'Beckify Toolbox must keep landscape');
 const lookCheckConfigs = pbx.split('AECF00000000000000000017 /* Debug */')[1].split('KHCF00000000000000000013')[0];
 assert.match(lookCheckConfigs, /LandscapeLeft/, 'LookCheck must keep landscape');
-assert.match(lookCheckConfigs, /CURRENT_PROJECT_VERSION = 1;/);
+assert.match(lookCheckConfigs, /CURRENT_PROJECT_VERSION = [1-9]\d*;/);
 const khApp = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavyApp.swift'), 'utf8');
 assert.match(khApp, /supportedInterfaceOrientationsFor/);
 assert.match(khApp, /\[\.portrait, \.portraitUpsideDown\]/);

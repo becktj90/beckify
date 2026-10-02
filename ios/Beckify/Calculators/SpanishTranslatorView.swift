@@ -1202,7 +1202,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             try session.overrideOutputAudioPort(.speaker)
         } catch {
@@ -1685,7 +1685,7 @@ extension SpanishTranslatorEngine: AVAudioPlayerDelegate {
 }
 
 
-/// Writes device speech buffers directly to a shareable CAF file. The callback
+/// Writes device speech buffers directly to a shareable M4A file. The callback
 /// can run off the main thread; the lock protects the file and cancellation.
 private final class TranslatorAudioExporter: @unchecked Sendable {
     private let synthesizer = AVSpeechSynthesizer()
@@ -1694,7 +1694,7 @@ private final class TranslatorAudioExporter: @unchecked Sendable {
     private var finished = false
     private var wroteFrames = false
     private let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("Beckify-Translation-\(UUID().uuidString).caf")
+        .appendingPathComponent("Beckify-Translation-\(UUID().uuidString).m4a")
 
     func cancel() {
         lock.lock()
@@ -1726,7 +1726,12 @@ private final class TranslatorAudioExporter: @unchecked Sendable {
                 } else {
                     if self.file == nil {
                         self.file = try AVAudioFile(forWriting: self.url,
-                            settings: pcm.format.settings,
+                            settings: [
+                                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                                AVSampleRateKey: pcm.format.sampleRate,
+                                AVNumberOfChannelsKey: Int(pcm.format.channelCount),
+                                AVEncoderBitRateKey: 64_000,
+                            ],
                             commonFormat: pcm.format.commonFormat,
                             interleaved: pcm.format.isInterleaved)
                     }

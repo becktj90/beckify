@@ -403,6 +403,7 @@ struct UPSSizingView: View {
 struct MotorNameplateView: View {
     @EnvironmentObject private var jobs: JobStore
     @StoredInput(.motorNameplate, "fla", default: "27") private var fla
+    @StoredInput(.motorNameplate, "tableFLC", default: "") private var tableFLC
     @StoredInput(.motorNameplate, "hp", default: "10") private var hp
     @StoredInput(.motorNameplate, "volts", default: "460") private var volts
     @StoredInput(.motorNameplate, "sf", default: "1.15") private var sf
@@ -417,7 +418,7 @@ struct MotorNameplateView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var inputFingerprint: String {
-        "\(fla)|\(hp)|\(volts)|\(sf)|\(rise)|\(code)|\(phases)|\(motorType)|\(device)"
+        "\(fla)|\(tableFLC)|\(hp)|\(volts)|\(sf)|\(rise)|\(code)|\(phases)|\(motorType)|\(device)"
     }
 
     var body: some View {
@@ -429,13 +430,16 @@ struct MotorNameplateView: View {
         ) {
             ShowWorkCard(
                 toolID: .motorNameplate,
-                symbolic: "OL ≤ %×FLA; SCPD ≤ T430.52 %×FLA; cond ≥ 125%×FLA",
+                symbolic: "OL uses nameplate FLA; SCPD and conductor use NEC table FLC",
                 substituted: substituted,
-                meaning: "Enter reviewed nameplate values, or seed them from Motor Nameplate OCR after you confirm the plate. Uses NEC 430.32, Table 430.52, and 430.22. Design aid — confirm with the nameplate and AHJ.",
+                meaning: "Enter reviewed nameplate values, or seed them from Motor Nameplate OCR after you confirm the plate. Nameplate current sizes overloads. HP and voltage select table FLC for conductors and SCPD (430.6(A)(1)); enter reviewed table FLC for unsupported ratings. Design aid — confirm with the nameplate and AHJ.",
                 citation: "NEC 430.32, Table 430.52, 430.22, 430.7(B) / NEMA MG-1."
             )
 
             NumberField(title: "Nameplate FLA", unit: "A", text: $fla, fieldID: "fla", onSubmit: calculate)
+            NumberField(title: "Reviewed NEC table FLC", unit: "A", text: $tableFLC, optional: true,
+                        helpText: "Leave blank for automatic HP/voltage table lookup. Required for unsupported ratings or motor types. This is not nameplate FLA.",
+                        fieldID: "tableFLC", onSubmit: calculate)
             NumberField(title: "Horsepower", unit: "HP", text: $hp, optional: true, fieldID: "hp", onSubmit: calculate)
             NumberField(title: "Voltage", unit: "V", text: $volts, optional: true, fieldID: "volts", onSubmit: calculate)
             NumberField(title: "Service factor", unit: "", text: $sf, optional: true, fieldID: "sf", onSubmit: calculate)
@@ -452,12 +456,12 @@ struct MotorNameplateView: View {
             CalculatorActionBar(
                 onCalculate: calculate,
                 onReset: {
-                    fla = ""; hp = ""; volts = ""; sf = ""; rise = ""; code = ""
+                    fla = ""; tableFLC = ""; hp = ""; volts = ""; sf = ""; rise = ""; code = ""
                     phases = "3"; motorType = "sc-bde"; device = "inv"
                     session.reset()
                 },
                 onExample: {
-                    fla = "27"; hp = "10"; volts = "460"; sf = "1.15"; rise = ""
+                    fla = "27"; tableFLC = ""; hp = "10"; volts = "460"; sf = "1.15"; rise = ""
                     code = "G"; phases = "3"; motorType = "sc-bde"; device = "inv"
                     session.prepareForNewInputs()
                 },
@@ -480,6 +484,8 @@ struct MotorNameplateView: View {
                 .opacity(session.isStale ? 0.72 : 1)
 
                 ResultCard(copyText: copyText) {
+                    ResultRow(label: "Sizing table FLC", value: Format.amps(r.tableFullLoadAmps))
+                    Text(r.sizingCurrentBasis).font(Theme.TypeRole.help).foregroundStyle(Theme.muted)
                     ResultRow(label: "Overload max", value: "\(Format.number(r.overload.amps, digits: 1)) A (\(Format.number(r.overload.percent, digits: 0))%)", emphasis: true, tone: Theme.good)
                     ResultRow(label: "OL article", value: "\(r.overload.article) — \(r.overload.reason)", tone: Theme.muted)
                     ResultRow(label: "OL next higher", value: "\(Format.number(r.overloadNext.amps, digits: 1)) A (\(Format.number(r.overloadNext.percent, digits: 0))%)")
@@ -516,7 +522,7 @@ struct MotorNameplateView: View {
                     jobs.save(SavedJob(
                         name: jobName,
                         toolID: .motorNameplate,
-                        inputs: ["FLA": fla, "HP": hp, "V": volts],
+                        inputs: ["FLA": fla, "Table FLC": String(r.tableFullLoadAmps), "HP": hp, "V": volts, "Phases": phases, "SF": sf, "Rise": rise, "Motor type": motorType, "SCPD device": device, "Code": code],
                         outputs: [
                             "OL": Format.number(r.overload.amps, digits: 1),
                             "SCPD": r.scpd.nextStandardAmps.map(String.init) ?? "",
@@ -540,7 +546,8 @@ struct MotorNameplateView: View {
                 temperatureRiseC: rise.parsedDouble,
                 motorType: MotorNameplateType(rawValue: motorType) ?? .squirrelCageOther,
                 device: MotorSCPDDevice(rawValue: device) ?? .inverseTimeBreaker,
-                codeLetter: code
+                codeLetter: code,
+                tableFullLoadAmps: tableFLC.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : (tableFLC.parsedDouble ?? .nan)
             )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion { successTick += 1 }
