@@ -103,7 +103,14 @@ struct VoltageDropView: View {
         }
         .segmentedControlStyle()
 
-        NumberField(title: "Supply voltage", unit: "V", text: $voltage, fieldID: "voltage", onSubmit: calculateNEC)
+        NumberField(
+            title: "Supply voltage",
+            unit: "V",
+            text: $voltage,
+            helpText: "Line-to-line for 3Ø, line-to-neutral for 1Ø/DC.",
+            fieldID: "voltage",
+            onSubmit: calculateNEC
+        )
         NumberField(title: "Load current", unit: "A", text: $current, fieldID: "current", onSubmit: calculateNEC)
         NumberField(title: "One-way length", unit: lengthUnit.symbol, text: $length, fieldID: "length", onSubmit: calculateNEC)
         MenuField(title: "Conductor", selection: $size, options: necSizes, label: NECTables.wireLabel)

@@ -605,8 +605,8 @@ struct EbikePackDesignerView: View {
                 NumberField(title: "Continuous current", unit: "A", text: $current, optional: true, fieldID: "current", onSubmit: calculate)
                 NumberField(title: "Continuous power", unit: "W", text: $power, optional: true, fieldID: "power", onSubmit: calculate)
             } else {
-                NumberField(title: "Series count", unit: "S", text: $series, fieldID: "series", onSubmit: calculate)
-                NumberField(title: "Parallel count", unit: "P", text: $parallel, fieldID: "parallel", onSubmit: calculate)
+                NumberField(title: "Series count", unit: "S", text: $series, helpText: "Cells wired in series — adds voltage.", fieldID: "series", onSubmit: calculate)
+                NumberField(title: "Parallel count", unit: "P", text: $parallel, helpText: "Strings wired in parallel — adds capacity.", fieldID: "parallel", onSubmit: calculate)
                 NumberField(title: "Pack load current", unit: "A", text: $loadA, optional: true, fieldID: "loadA", onSubmit: calculate)
             }
 

@@ -50,7 +50,7 @@ struct UL508ASCCRWizardView: View {
     @StoredInput(.ul508aPanelLab, "xfmrVA", default: "45000") private var xfmrVA
     @StoredInput(.ul508aPanelLab, "xfmrV", default: "480") private var xfmrV
     @StoredInput(.ul508aPanelLab, "xfmrZ", default: "") private var xfmrZ
-    @StoredInput(.ul508aPanelLab, "xfmrPhases", default: "3") private var xfmrPhases
+    @StoredCount(.ul508aPanelLab, "xfmrPhases", default: 3) private var xfmrPhases
     @StoredInput(.ul508aPanelLab, "xfmrPrimaryIR", default: "65") private var xfmrPrimaryIR
     @StoredInput(.ul508aPanelLab, "sccrJob", default: "Panel SCCR") private var jobName
     @State private var drafts: [SCCRDraft] = SCCRDraft.example
@@ -188,7 +188,11 @@ struct UL508ASCCRWizardView: View {
             NumberField(title: "Transformer", unit: "VA", text: $xfmrVA, fieldID: "xfmrVA", onSubmit: calculate)
             NumberField(title: "Secondary voltage", unit: "V", text: $xfmrV, fieldID: "xfmrV", onSubmit: calculate)
             NumberField(title: "Impedance", unit: "%Z", text: $xfmrZ, optional: true, fieldID: "xfmrZ", onSubmit: calculate)
-            NumberField(title: "Phases", unit: "", text: $xfmrPhases, fieldID: "xfmrPhases", onSubmit: calculate)
+            Picker("Phases", selection: $xfmrPhases) {
+                Text("1Ø").tag(1)
+                Text("3Ø").tag(3)
+            }
+            .segmentedControlStyle()
             NumberField(title: "Primary device IR", unit: "kA", text: $xfmrPrimaryIR, fieldID: "xfmrPrimaryIR", onSubmit: calculate)
             Text("Leave %Z blank when it is unmarked. Blank or under 2.1% is planned at 2.1%. Isc ≈ VA / (√3·V·%Z) on a three-phase secondary. Mark secondary components with the transformer-secondary role.")
                 .font(Theme.TypeRole.help)
@@ -280,13 +284,12 @@ struct UL508ASCCRWizardView: View {
         case .transformer:
             guard let va = panelParse(xfmrVA) else { throw CalcError.missing("transformer VA") }
             guard let volts = panelParse(xfmrV) else { throw CalcError.missing("secondary voltage") }
-            guard let phases = panelParse(xfmrPhases) else { throw CalcError.missing("phases") }
             guard let primary = panelParse(xfmrPrimaryIR) else { throw CalcError.missing("primary device interrupting rating") }
             return .transformer(
                 va: va,
                 secondaryVolts: volts,
                 percentZ: panelParse(xfmrZ),
-                phases: Int(phases.rounded()),
+                phases: xfmrPhases,
                 primaryInterruptKA: primary
             )
         }
