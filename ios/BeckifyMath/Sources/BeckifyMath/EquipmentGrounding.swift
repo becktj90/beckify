@@ -68,11 +68,14 @@ public struct EquipmentGroundingRecommendation: Equatable, Sendable {
     public var citation: CodeCitation
     public var notes: [String]
 
+    /// True when the OCPD was inferred from load / required amps, not entered.
+    public var isProvisionalOCPDBasis: Bool { !ampsAreOCPDRating }
+
     public var basisLabel: String {
         if ampsAreOCPDRating {
             return "OCPD \(FormatTrace.amps(enteredAmps)) entered"
         }
-        return "Next 240.6(A) device \(FormatTrace.amps(basisAmps)) from \(FormatTrace.amps(enteredAmps))"
+        return "Provisional — next 240.6(A) device \(FormatTrace.amps(basisAmps)) from \(FormatTrace.amps(enteredAmps))"
     }
 
     public var copyLine: String {
@@ -156,6 +159,12 @@ public enum EquipmentGrounding {
             "250.122(B) proportional increase when ungrounded conductors are upsized for voltage drop is not applied here.",
             "A service grounding electrode conductor is Table 250.66, not this row.",
         ]
+        if !ampsAreOCPDRating {
+            notes.insert(
+                "Provisional EGC — OCPD was not entered. Sized from the next 240.6(A) device above the entered load/required amps. Enter the real OCPD to lock the Table 250.122 row.",
+                at: 0
+            )
+        }
 
         if let ungrounded = ungroundedSize,
            let egcCM = NECTables.circularMils[size],

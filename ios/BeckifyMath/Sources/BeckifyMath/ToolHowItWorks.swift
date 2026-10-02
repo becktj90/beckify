@@ -162,12 +162,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "wireAmpacity": ToolHowItWorks(
-            summary: "NEC Table 310.16 ampacity with ambient correction, CCC adjustment, termination cap, and continuous load.",
+            summary: "NEC Table 310.16 ampacity with a to-scale conductor cross-section, ambient/CCC derating, termination cap, and continuous load.",
             context: "Pick a copper or aluminum size that still carries the load after derating.",
             bullets: [
                 "Usable ampacity = min(table × ambient × CCC, termination column). The result names which clamp won.",
-                "A neutral is a CCC when it carries unbalanced or harmonic current. A balanced motor neutral is not.",
-                "The EGC counts in fill. It is not a CCC. Steel raceway X is the higher Chapter 9 Table 9 column.",
+                "Cross-section uses Chapter 9 Table 5 construction (THHN/XHHW/RHW) and Table 8 metal Ø — drawn to scale, not actual size. Construction is not invented from 60/75/90 °C.",
+                "Parallels are 1/0 and larger (310.10(H)). 240.4(D) small-conductor OCPD limits are material-specific. EGC from an entered OCPD; otherwise provisional.",
                 "Continuous loads use 125% as the required amps. Ambient is 310.15(B)(1). CCC adjustment is 310.15(C)(1).",
             ]
         ),
@@ -445,13 +445,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Take a picture of a panel schedule. On-device Vision fills an editable table and shows a scan-quality score. Optional Analyze, then confirm demand.",
-            context: "Directory photo or typed legend — verify rows. A low score means retake. Analyze uploads only if you tap it.",
+            summary: "Photograph a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
+            context: "Directory / Nameplate / Deadfront roles. Confirming the schedule is not measured load — no capacity-to-add from trips alone.",
             bullets: [
                 "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
-                "Odd/even circuit numbers can be inferred when the print is missing. Yellow rows are guesses — confirm them.",
-                "Trip is not measured load. FLA and kAIC reads are not measured. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
-                "A main rating shows a copper Table 250.122 feeder EGC. Aluminum is Equipment Grounding. Not a service GEC.",
+                "Conflicts queue instead of silent first-wins. Inferred circuit numbers and incomplete coverage stay visible.",
+                "Trip-as-conservative-connected is a labeled scenario — not measured load and not available capacity from OCR.",
+                "Worksheet handoff previews merge or replace with provenance. Design aid — not a PE stamp or code-compliance claim.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(

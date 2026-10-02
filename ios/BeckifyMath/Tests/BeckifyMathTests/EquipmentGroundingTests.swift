@@ -72,6 +72,8 @@ final class EquipmentGroundingTests: XCTestCase {
         XCTAssertEqual(rec?.basisAmps, 45)
         XCTAssertEqual(rec?.size, "10")
         XCTAssertTrue(rec?.basisLabel.contains("240.6") == true)
+        XCTAssertEqual(rec?.isProvisionalOCPDBasis, true)
+        XCTAssertTrue(rec?.notes.contains(where: { $0.contains("Provisional EGC") }) == true)
 
         let justOver = EquipmentGrounding.recommend(
             amps: 21,
