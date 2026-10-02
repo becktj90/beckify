@@ -342,6 +342,22 @@ sandbox.BECKIFY_API_BASE_URL = '';
     api.formatVisionError(api.VisionHttpError('', 503)),
     /not configured/,
   );
+  assert.equal(typeof api.formatLookError, 'function');
+  assert.match(
+    api.formatLookError(api.VisionHttpError('', 429, 120)),
+    /Too many look checks/i,
+  );
+  assert.doesNotMatch(
+    api.formatLookError(api.VisionHttpError('', 429, 120)),
+    /\bAI\b|OCR/i,
+  );
+  assert.doesNotMatch(
+    api.formatLookError(api.VisionHttpError('', 413)),
+    /\bAI\b|OCR/i,
+  );
+  assert.match(lookJs, /Never pipe shared VLM/);
+  assert.doesNotMatch(lookJs, /onProgress:[\s\S]{0,80}label\)/);
+  assert.match(html, /Photo assessment stays honest/);
   assert.match(lookJs, /look-camera/);
   assert.match(lookJs, /lookRenderMetrics/);
   assert.match(lookJs, /lookCopyLine/);

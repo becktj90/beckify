@@ -1,11 +1,21 @@
 import { Router, type IRouter } from "express";
 import {
+  LOOK_ASSESSMENT_TEMPERATURE,
+  LOOK_COMEDY_TEMPERATURE,
+  lookAssessmentMaxTokens,
+  lookAssessmentSystemPrompt,
+  lookAssessmentUserText,
+  lookComedySystemPrompt,
+  lookComedyUserText,
   lookVisionMaxTokens,
-  lookVisionSystemPrompt,
-  lookVisionUserText,
-  parseLookRoastMode,
+  mergeLookAssessmentWithComedy,
+  resolveLookRoastMode,
+  type LookRoastMode,
+  type LookVerdict,
 } from "../prompts/lookVisionPrompt.js";
 import {
+  analyzeTextWithAnthropic,
+  analyzeTextWithOpenAI,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
   configuredModel,
@@ -33,12 +43,76 @@ const serverProvider = configuredProvider();
 const serverModel = configuredModel(serverProvider);
 const router: IRouter = Router();
 
+function assessmentVerdict(raw: unknown): LookVerdict {
+  const folded = String((raw as { verdict?: unknown } | null)?.verdict ?? "").trim().toLowerCase();
+  if (
+    folded === "looks_good"
+    || folded === "mixed"
+    || folded === "looks_bad"
+    || folded === "no_person"
+    || folded === "declined"
+  ) {
+    return folded;
+  }
+  return "mixed";
+}
+
+async function runAssessment(image: string, mimeType: string): Promise<unknown> {
+  const system = lookAssessmentSystemPrompt();
+  const userText = lookAssessmentUserText();
+  const maxTokens = lookAssessmentMaxTokens();
+  const temperature = LOOK_ASSESSMENT_TEMPERATURE;
+  if (serverProvider === "anthropic") {
+    return analyzeWithAnthropic({
+      image,
+      mimeType,
+      model: serverModel,
+      system,
+      userText,
+      maxTokens,
+      temperature,
+    });
+  }
+  return analyzeWithOpenAI({
+    image,
+    mimeType,
+    model: serverModel,
+    system,
+    userText,
+    maxTokens,
+    temperature,
+  });
+}
+
+async function runComedy(mode: LookRoastMode, frozenAssessment: unknown): Promise<unknown> {
+  const system = lookComedySystemPrompt(mode);
+  const userText = lookComedyUserText(mode, frozenAssessment);
+  const maxTokens = lookVisionMaxTokens(mode);
+  const temperature = LOOK_COMEDY_TEMPERATURE;
+  if (serverProvider === "anthropic") {
+    return analyzeTextWithAnthropic({
+      model: serverModel,
+      system,
+      userText,
+      maxTokens,
+      temperature,
+    });
+  }
+  return analyzeTextWithOpenAI({
+    model: serverModel,
+    system,
+    userText,
+    maxTokens,
+    temperature,
+  });
+}
+
 router.post("/analyze-look", async (req, res) => {
   const body = (req.body || {}) as AnalyzeBody;
   const picked = pickImage(body);
   if ("error" in picked) return res.status(picked.status).json({ error: picked.error });
 
-  const roastMode = parseLookRoastMode(body.roastMode ?? body.roast_mode);
+  const roastMode = resolveLookRoastMode(body.roastMode ?? body.roast_mode);
   const clientKey = getClientKey(req);
   const bucket = consumeRateLimit(rateBuckets, clientKey);
   if (!bucket.allowed) {
@@ -52,34 +126,25 @@ router.post("/analyze-look", async (req, res) => {
   }
   bucket.inFlight += 1;
 
-  const system = lookVisionSystemPrompt(roastMode);
-  const userText = lookVisionUserText(roastMode);
-  const maxTokens = lookVisionMaxTokens(roastMode);
-
   try {
-    const result = serverProvider === "anthropic"
-      ? await analyzeWithAnthropic({
-        image: picked.image.base64,
-        mimeType: picked.image.mimeType,
-        model: serverModel,
-        system,
-        userText,
-        maxTokens,
-      })
-      : await analyzeWithOpenAI({
-        image: picked.image.base64,
-        mimeType: picked.image.mimeType,
-        model: serverModel,
-        system,
-        userText,
-        maxTokens,
-      });
+    // Pass 1: frozen photo assessment at temp 0 (image).
+    const assessment = await runAssessment(picked.image.base64, picked.image.mimeType);
+    const verdict = assessmentVerdict(assessment);
+
+    let comedy: unknown = { roast: "" };
+    // Pass 2: text-only comedy at higher temp. Skip when there is nothing to roast.
+    // Cost: second call has no image tokens. Latency: roughly one extra text completion for adult ratings.
+    if (verdict !== "declined" && verdict !== "no_person") {
+      comedy = await runComedy(roastMode, assessment);
+    }
+
+    const analysis = mergeLookAssessmentWithComedy(assessment, comedy);
 
     return res.json({
       provider: serverProvider,
       model: serverModel,
       roastMode,
-      analysis: result,
+      analysis,
     });
   } catch (error) {
     const failure = visionProviderFailure(error);

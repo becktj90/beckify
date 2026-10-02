@@ -55,7 +55,7 @@ public enum PanelCloudAnalyze {
         let warnings = BeckifyVisionAPI.stringList(envelope["warnings"])
         let slotCount = parseSlotCount(envelope["slotCount"] ?? envelope["slot_count"] ?? panel["slotCount"] ?? panel["spaces"])
 
-        let extraction = PanelScheduleExtraction(
+        var extraction = PanelScheduleExtraction(
             circuits: circuits,
             panelName: panelName,
             voltage: voltage,
@@ -63,12 +63,24 @@ public enum PanelCloudAnalyze {
             phases: phases,
             rawLines: rawOCR.split(whereSeparator: \.isNewline).map(String.init),
             agentID: agentID,
-            leavesDevice: true
+            leavesDevice: true,
+            expectedSlotCount: slotCount > 0 ? slotCount : nil,
+            voltageNeedsVerify: voltage.isPresent,
+            phasesNeedsVerify: phases.isPresent
         )
+        extraction.coverage = PanelCoverage.from(
+            circuits: circuits,
+            expectedSlots: extraction.expectedSlotCount,
+            inferredSlots: 0
+        )
+        var outWarnings = warnings
+        if slotCount > 0, circuits.count < slotCount {
+            outWarnings.append("Incomplete coverage: \(circuits.count) of \(slotCount) slots in this draft.")
+        }
         return PanelCloudDraft(
             extraction: extraction,
             rawOCR: rawOCR,
-            warnings: warnings,
+            warnings: outWarnings,
             slotCount: slotCount
         )
     }
@@ -85,51 +97,21 @@ public enum PanelCloudAnalyze {
         return try normalize(jsonData: data)
     }
 
-    /// Union by circuit number. Empty slots on the left take values from the right.
-    /// Operator-edited (`user`) rows win. Header fills only when the left is blank.
+    /// Union by circuit number. Conflicts queue instead of silent first-wins.
     public static func merge(_ left: PanelScheduleExtraction, _ right: PanelScheduleExtraction) -> PanelScheduleExtraction {
-        var byKey: [String: PanelCircuitDraft] = [:]
-        var order: [PanelCircuitDraft] = []
+        mergeWithConflicts(left, right).extraction
+    }
 
-        func take(_ row: PanelCircuitDraft) {
-            let key = normalizeCircuitKey(row.circuit)
-            if key.isEmpty {
-                order.append(row)
-                return
-            }
-            var next = row
-            next.circuit = key
-            if var dest = byKey[key] {
-                dest = fillEmpty(dest, from: next)
-                byKey[key] = dest
-                if let index = order.firstIndex(where: { normalizeCircuitKey($0.circuit) == key }) {
-                    order[index] = dest
-                }
-                return
-            }
-            byKey[key] = next
-            order.append(next)
-        }
-
-        left.circuits.forEach(take)
-        right.circuits.forEach(take)
-        order = sortCircuits(Array(order.prefix(maxCircuits)))
-
-        return PanelScheduleExtraction(
-            circuits: order,
-            panelName: preferHeader(left.panelName, right.panelName),
-            voltage: preferHeader(left.voltage, right.voltage),
-            mainRating: preferHeader(left.mainRating, right.mainRating),
-            phases: preferHeader(left.phases, right.phases),
-            rawLines: [left.rawLines, right.rawLines].flatMap { $0 }.filter { !$0.isEmpty },
-            agentID: right.agentID.isEmpty ? left.agentID : right.agentID,
-            leavesDevice: left.leavesDevice || right.leavesDevice
-        )
+    public static func mergeWithConflicts(_ left: PanelScheduleExtraction, _ right: PanelScheduleExtraction) -> PanelMergeResult {
+        PanelConflictMerge.merge(left, right)
     }
 
     public static func merge(existing: PanelScheduleExtraction?, incoming: PanelScheduleExtraction) -> PanelScheduleExtraction {
-        guard let existing else { return incoming }
-        return merge(existing, incoming)
+        mergeWithConflicts(existing: existing, incoming: incoming).extraction
+    }
+
+    public static func mergeWithConflicts(existing: PanelScheduleExtraction?, incoming: PanelScheduleExtraction) -> PanelMergeResult {
+        PanelConflictMerge.merge(existing: existing, incoming: incoming)
     }
 
     public static func normalizeCircuitKey(_ raw: String) -> String {

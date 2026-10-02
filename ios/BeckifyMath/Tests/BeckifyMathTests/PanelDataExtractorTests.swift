@@ -45,9 +45,10 @@ final class PanelDataExtractorTests: XCTestCase {
     }
 
     func testMissingNumbersOnATwoColumnGridAreInferred() {
+        // Printed anchor (21) unlocks odd/even fill for the opposite column (22).
         let lines = [
             PanelOCRLine(
-                text: "LIGHTING OFFICE 20A 1P",
+                text: "21 LIGHTING OFFICE 20A 1P",
                 confidence: 0.9,
                 box: PanelOCRBox(x: 0.05, y: 0.70, width: 0.34, height: 0.04)
             ),
@@ -58,10 +59,9 @@ final class PanelDataExtractorTests: XCTestCase {
             ),
         ]
         let scan = PanelDataExtractor.extract(lines: lines)
-        XCTAssertEqual(scan.extraction.circuits.map(\.circuit), ["1", "2"])
-        XCTAssertEqual(scan.extraction.inferredSlots, 2)
-        XCTAssertTrue(scan.extraction.circuits.allSatisfy(\.guessed))
-        XCTAssertTrue(scan.extraction.scanNotes.contains { $0.contains("odd left") })
+        XCTAssertEqual(scan.extraction.circuits.map(\.circuit), ["21", "22"])
+        XCTAssertEqual(scan.extraction.inferredSlots, 1)
+        XCTAssertTrue(scan.extraction.circuits.contains(where: { $0.circuit == "22" && $0.guessed }))
     }
 
     func testLowConfidenceEmptyReadPromptsRetake() {

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Normalized rectangle in Vision space: origin at the bottom-left, each edge in 0…1.
-public struct PanelOCRBox: Equatable, Sendable {
+public struct PanelOCRBox: Equatable, Sendable, Codable {
     public var x: Double
     public var y: Double
     public var width: Double
@@ -71,6 +71,11 @@ public struct PanelCircuitDraft: Equatable, Sendable, Identifiable, Codable {
     public var source: PanelFieldSource
     /// True when the heuristic rewrote a hard-to-read token (UGHTING → LIGHTING).
     public var guessed: Bool
+    public var circuitNumberInferred: Bool
+    public var slotKind: PanelSlotKind
+    public var reviewState: PanelFieldReviewState
+    public var evidence: PanelFieldEvidence?
+    public var poleGroupID: String?
 
     public init(
         id: String = UUID().uuidString,
@@ -82,7 +87,12 @@ public struct PanelCircuitDraft: Equatable, Sendable, Identifiable, Codable {
         confidence: Double,
         reviewed: Bool = false,
         source: PanelFieldSource = .heuristic,
-        guessed: Bool = false
+        guessed: Bool = false,
+        circuitNumberInferred: Bool = false,
+        slotKind: PanelSlotKind? = nil,
+        reviewState: PanelFieldReviewState? = nil,
+        evidence: PanelFieldEvidence? = nil,
+        poleGroupID: String? = nil
     ) {
         self.id = id
         self.circuit = circuit
@@ -94,6 +104,17 @@ public struct PanelCircuitDraft: Equatable, Sendable, Identifiable, Codable {
         self.reviewed = reviewed
         self.source = source
         self.guessed = guessed
+        self.circuitNumberInferred = circuitNumberInferred
+        self.slotKind = slotKind ?? PanelSlotKind.infer(fromName: name, poles: poles)
+        if let reviewState {
+            self.reviewState = reviewState
+        } else if reviewed {
+            self.reviewState = .verified
+        } else {
+            self.reviewState = .needsReview
+        }
+        self.evidence = evidence
+        self.poleGroupID = poleGroupID
     }
 
     public var isLowConfidence: Bool {
@@ -101,7 +122,7 @@ public struct PanelCircuitDraft: Equatable, Sendable, Identifiable, Codable {
     }
 
     public var isSpareOrSpace: Bool {
-        PanelScheduleParser.isSpareOrSpace(name)
+        slotKind == .spare || slotKind == .space || PanelScheduleParser.isSpareOrSpace(name)
     }
 
     public var asCircuit: PanelCircuit {
@@ -133,17 +154,23 @@ public struct PanelHeaderField: Equatable, Sendable, Codable {
     public var confidence: Double
     public var reviewed: Bool
     public var source: PanelFieldSource
+    public var review: PanelFieldReviewState
+    public var evidence: PanelFieldEvidence?
 
     public init(
         value: String = "",
         confidence: Double = 0,
         reviewed: Bool = false,
-        source: PanelFieldSource = .heuristic
+        source: PanelFieldSource = .heuristic,
+        review: PanelFieldReviewState? = nil,
+        evidence: PanelFieldEvidence? = nil
     ) {
         self.value = value
         self.confidence = min(max(confidence, 0), 1)
         self.reviewed = reviewed
         self.source = source
+        self.review = review ?? (reviewed ? .verified : .needsReview)
+        self.evidence = evidence
     }
 
     public static var empty: PanelHeaderField { PanelHeaderField() }
@@ -158,7 +185,7 @@ public struct PanelHeaderField: Equatable, Sendable, Codable {
 
     public func markingReviewedIfPresent() -> PanelHeaderField {
         guard isPresent else { return self }
-        return PanelHeaderField(value: value, confidence: confidence, reviewed: true, source: source)
+        return PanelHeaderField(value: value, confidence: confidence, reviewed: true, source: source, review: .verified, evidence: evidence)
     }
 }
 
@@ -179,6 +206,14 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
     /// Circuit numbers the odd/even grid filled in because the print was missing.
     public var inferredSlots: Int
     public var scanNotes: [String]
+    public var busRating: PanelHeaderField
+    public var feederRating: PanelHeaderField
+    public var spacesCount: Int?
+    public var expectedSlotCount: Int?
+    public var coverage: PanelCoverage?
+    public var conflicts: [PanelFieldConflict]
+    public var voltageNeedsVerify: Bool
+    public var phasesNeedsVerify: Bool
 
     public init(
         circuits: [PanelCircuitDraft],
@@ -193,7 +228,15 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
         fla: PanelHeaderField = .empty,
         kaic: PanelHeaderField = .empty,
         inferredSlots: Int = 0,
-        scanNotes: [String] = []
+        scanNotes: [String] = [],
+        busRating: PanelHeaderField = .empty,
+        feederRating: PanelHeaderField = .empty,
+        spacesCount: Int? = nil,
+        expectedSlotCount: Int? = nil,
+        coverage: PanelCoverage? = nil,
+        conflicts: [PanelFieldConflict] = [],
+        voltageNeedsVerify: Bool = false,
+        phasesNeedsVerify: Bool = false
     ) {
         self.circuits = circuits
         self.panelName = panelName
@@ -208,6 +251,14 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
         self.kaic = kaic
         self.inferredSlots = inferredSlots
         self.scanNotes = scanNotes
+        self.busRating = busRating
+        self.feederRating = feederRating
+        self.spacesCount = spacesCount
+        self.expectedSlotCount = expectedSlotCount
+        self.coverage = coverage
+        self.conflicts = conflicts
+        self.voltageNeedsVerify = voltageNeedsVerify
+        self.phasesNeedsVerify = phasesNeedsVerify
     }
 
     public var populatedCount: Int { circuits.count }
@@ -217,12 +268,17 @@ public struct PanelScheduleExtraction: Equatable, Sendable {
         copy.circuits = circuits.map { row in
             var next = row
             next.reviewed = true
+            next.reviewState = .verified
             return next
         }
         copy.panelName = panelName.markingReviewedIfPresent()
         copy.voltage = voltage.markingReviewedIfPresent()
         copy.mainRating = mainRating.markingReviewedIfPresent()
+        copy.busRating = busRating.markingReviewedIfPresent()
+        copy.feederRating = feederRating.markingReviewedIfPresent()
         copy.phases = phases.markingReviewedIfPresent()
+        copy.voltageNeedsVerify = false
+        copy.phasesNeedsVerify = false
         return copy
     }
 
@@ -801,14 +857,12 @@ public struct PanelDemandResult: Equatable, Sendable {
     public var caveats: [String]
 
     public var copyLine: String {
-        var parts = [
+        [
+            PanelDemandScenario.tripAsConservativeConnected.label,
             "Demand \(formatVA(totalDemandVA)) VA",
             "\(formatA(demandAmps)) A",
-        ]
-        if let add = capacityToAddAmps {
-            parts.append("capacity to add \(formatA(add)) A")
-        }
-        return parts.joined(separator: " · ")
+            "No capacity-to-add from trips alone",
+        ].joined(separator: " · ")
     }
 
     private func formatVA(_ value: Double) -> String {
@@ -891,8 +945,11 @@ public enum PanelScheduleDemand {
         }
 
         var caveats = [
-            "Breaker trip is not measured load. This treats trip as a conservative connected-amp estimate.",
-            "Design aid — not a stamped NEC 220 load calculation or a PE stamp.",
+            "Scenario: trip as conservative connected — not measured load.",
+            "Confirming the schedule is not the same as a measured load study.",
+            "No capacity-to-add from breaker trips alone. Remaining main is withheld on this scenario.",
+            "Design aid — not a stamped NEC 220 load calculation, code-compliance claim, or PE stamp.",
+            "OCR alone never establishes available capacity.",
         ]
         if missingTrip > 0 {
             caveats.append("\(missingTrip) circuit\(missingTrip == 1 ? "" : "s") skipped — no trip to convert to VA.")

@@ -43,6 +43,7 @@ public enum TransientCircuit {
         let final = try Positive.require(amplitude, name: "Amplitude")
         let tau = try Positive.require(timeConstant, name: "Time constant")
         guard time.isFinite, time >= 0 else { throw CalcError.nonPositive("Time") }
+        guard samples >= 2 else { throw CalcError.outOfRange("Curve needs at least 2 samples.") }
 
         func value(at t: Double) -> Double {
             charging ? final * (1 - exp(-t / tau)) : final * exp(-t / tau)
@@ -153,6 +154,7 @@ public enum DiodeIV {
         let n = try Positive.require(idealityFactor, name: "Ideality factor")
         let vt = try thermalVoltage(temperatureKelvin: temperatureKelvin)
         guard forwardVoltage.isFinite else { throw CalcError.missing("a forward voltage") }
+        guard samples >= 2 else { throw CalcError.outOfRange("Curve needs at least 2 samples.") }
 
         func current(at v: Double) -> Double {
             saturation * (exp(v / (n * vt)) - 1)
@@ -384,7 +386,8 @@ public enum GaussianBeam {
         let theta = lambda / (.pi * w0)
 
         var radiusAtZ: Double?
-        if let z = propagationDistance, z.isFinite, z >= 0 {
+        if let z = propagationDistance {
+            guard z.isFinite, z >= 0 else { throw CalcError.nonPositive("Distance") }
             radiusAtZ = w0 * (1 + (z / zR) * (z / zR)).squareRoot()
         }
 

@@ -108,6 +108,7 @@ public enum FuzzyPanelGrid {
         var nextOdd = 1
         var nextEven = 2
         var output: [PanelOCRLine] = []
+        var hasPrintedAnchor = lines.contains { leadingCircuitNumber(in: $0.text) != nil }
 
         for row in rows {
             let cells: [(side: Side, line: PanelOCRLine)]
@@ -119,7 +120,7 @@ public enum FuzzyPanelGrid {
                     (.right, join(right)),
                 ].filter { !$0.line.text.trimmingCharacters(in: .whitespaces).isEmpty }
                 if cells.isEmpty, let only = row.first {
-                    cellsPlaceholder(&output, line: only, split: nil, nextOdd: &nextOdd, nextEven: &nextEven)
+                    cellsPlaceholder(&output, line: only, split: nil, nextOdd: &nextOdd, nextEven: &nextEven, allowInfer: hasPrintedAnchor)
                     continue
                 }
             } else if let only = join(row).text.isEmpty ? nil : join(row) {
@@ -129,13 +130,16 @@ public enum FuzzyPanelGrid {
             }
 
             for cell in cells {
-                output.append(place(
+                let placed = place(
                     cell.line,
                     side: cell.side,
                     split: split,
                     nextOdd: &nextOdd,
-                    nextEven: &nextEven
-                ))
+                    nextEven: &nextEven,
+                    allowInfer: hasPrintedAnchor
+                )
+                if leadingCircuitNumber(in: placed.text) != nil { hasPrintedAnchor = true }
+                output.append(placed)
             }
         }
 
@@ -330,9 +334,10 @@ public enum FuzzyPanelGrid {
         line: PanelOCRLine,
         split: Double?,
         nextOdd: inout Int,
-        nextEven: inout Int
+        nextEven: inout Int,
+        allowInfer: Bool
     ) {
-        output.append(place(line, side: .single, split: split, nextOdd: &nextOdd, nextEven: &nextEven))
+        output.append(place(line, side: .single, split: split, nextOdd: &nextOdd, nextEven: &nextEven, allowInfer: allowInfer))
     }
 
     private static func place(
@@ -340,7 +345,8 @@ public enum FuzzyPanelGrid {
         side: Side,
         split: Double?,
         nextOdd: inout Int,
-        nextEven: inout Int
+        nextEven: inout Int,
+        allowInfer: Bool
     ) -> PanelOCRLine {
         let text = stripSmudgePrefix(line.text)
         if PanelDirectory.isIgnored(text) {
@@ -354,7 +360,7 @@ public enum FuzzyPanelGrid {
             copy.text = text
             return copy
         }
-        guard split != nil, side == .left || side == .right, looksLikeUnnumberedLoad(text) else {
+        guard allowInfer, split != nil, side == .left || side == .right, looksLikeUnnumberedLoad(text) else {
             var copy = line
             copy.text = text
             return copy
@@ -373,10 +379,14 @@ public enum FuzzyPanelGrid {
     }
 
     private static func notePrinted(_ number: Int, nextOdd: inout Int, nextEven: inout Int) {
+        // Keep the opposite column in lockstep so a printed 21 yields 22 next,
+        // not a restart at 2 (which would invent a top-of-panel from a mid-frame).
         if number % 2 == 0 {
             nextEven = max(nextEven, number + 2)
+            nextOdd = max(nextOdd, number + 1)
         } else {
             nextOdd = max(nextOdd, number + 2)
+            nextEven = max(nextEven, number + 1)
         }
     }
 

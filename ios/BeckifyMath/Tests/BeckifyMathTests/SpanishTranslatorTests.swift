@@ -467,7 +467,16 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(neuralEN.lowercased().contains("onyx"))
         let neuralES = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .jobsite, language: "es")
         XCTAssertFalse(neuralES.lowercased().contains("california"))
-        XCTAssertEqual(SpanishTranslatorAPI.preparingAudioStatus, "Preparing audio…")
+        XCTAssertEqual(SpanishTranslatorAPI.preparingAudioStatus, "Preparing voice…")
+        XCTAssertEqual(SpanishTranslatorAPI.statusPreparingVoice, "Preparing voice…")
+        XCTAssertEqual(SpanishTranslatorAPI.statusFinishingTranscript, "Finishing transcript")
+        XCTAssertEqual(SpanishTranslatorAPI.statusPlaying, "Playing")
+        XCTAssertEqual(SpanishTranslatorAPI.statusCancelled, "Cancelled")
+        XCTAssertEqual(SpanishTranslatorAPI.preparingVoiceStatus(elapsedSeconds: 2), "Preparing voice…")
+        XCTAssertEqual(SpanishTranslatorAPI.preparingVoiceStatus(elapsedSeconds: 3), "Still preparing your voice… 3s")
+        XCTAssertEqual(SpanishTranslatorAPI.preparingVoiceStatus(elapsedSeconds: 12), "Still preparing your voice… 12s")
+        XCTAssertEqual(SpanishTranslatorAPI.speakNowDeviceVoiceTitle, "Speak now with device voice")
+        XCTAssertEqual(SpanishTranslatorAPI.cancelActionTitle, "Cancel")
     }
 
     func testDisclaimerMentionsSpeakAPI() {

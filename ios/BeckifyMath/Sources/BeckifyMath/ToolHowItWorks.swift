@@ -162,12 +162,12 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "wireAmpacity": ToolHowItWorks(
-            summary: "NEC Table 310.16 ampacity with ambient correction, CCC adjustment, termination cap, and continuous load.",
+            summary: "NEC Table 310.16 ampacity with a to-scale conductor cross-section, ambient/CCC derating, termination cap, and continuous load.",
             context: "Pick a copper or aluminum size that still carries the load after derating.",
             bullets: [
                 "Usable ampacity = min(table × ambient × CCC, termination column). The result names which clamp won.",
-                "A neutral is a CCC when it carries unbalanced or harmonic current. A balanced motor neutral is not.",
-                "The EGC counts in fill. It is not a CCC. Steel raceway X is the higher Chapter 9 Table 9 column.",
+                "Cross-section uses Chapter 9 Table 5 construction (THHN/XHHW/RHW) and Table 8 metal Ø — drawn to scale, not actual size. Construction is not invented from 60/75/90 °C.",
+                "Parallels are 1/0 and larger (310.10(H)). 240.4(D) small-conductor OCPD limits are material-specific. EGC from an entered OCPD; otherwise provisional.",
                 "Continuous loads use 125% as the required amps. Ambient is 310.15(B)(1). CCC adjustment is 310.15(C)(1).",
             ]
         ),
@@ -445,13 +445,13 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "panelDirectory": ToolHowItWorks(
-            summary: "Take a picture of a panel schedule. On-device Vision fills an editable table and shows a scan-quality score. Optional Analyze, then confirm demand.",
-            context: "Directory photo or typed legend — verify rows. A low score means retake. Analyze uploads only if you tap it.",
+            summary: "Take a picture of a panel directory. Local OCR is the default; optional Analyze after an explicit tap. Confirm rows with Needs review / Conflict / Verified.",
+            context: "Directory / Nameplate / Deadfront roles. Cloud Analyze uploads only if you tap it. Confirmed rows are not measured load — no capacity from trips alone.",
             bullets: [
                 "On-device flatten, contrast, and two Vision passes when the first read is weak. Analyze POSTs to /api/analyze-panel only if you tap it.",
-                "Odd/even circuit numbers can be inferred when the print is missing. Yellow rows are guesses — confirm them.",
-                "Trip is not measured load. FLA and kAIC reads are not measured. Demand uses the same 220.42 worksheet as Load Calculation Worksheet.",
-                "A main rating shows a copper Table 250.122 feeder EGC. Aluminum is Equipment Grounding. Not a service GEC.",
+                "Conflicts queue instead of silent first-wins. Inferred circuit numbers and incomplete coverage stay visible.",
+                "Trip-as-conservative-connected is a labeled scenario — not measured load and not available capacity from OCR.",
+                "Worksheet handoff previews merge or replace with provenance. Design aid — not a PE stamp or code-compliance claim.",
             ]
         ),
         "motorSpeed": ToolHowItWorks(
@@ -600,8 +600,8 @@ public enum ToolHowItWorksCatalog {
             ]
         ),
         "lookCheck": ToolHowItWorks(
-            summary: "Camera or library photo, then Analyze Look for a playful look verdict, lighting metrics, and a roast.",
-            context: "Entertainment only. The photo stays on this device until you tap Analyze Look.",
+            summary: "Camera or library photo, then Analyze Look for honest Photo assessment scores plus a surprise roast.",
+            context: "Honest photo feedback. You might get hyped. You might get fucking roasted. Photo stays on device until Analyze Look.",
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
                 "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
@@ -801,7 +801,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Audio stays local; translate on Stop.",
                 "Clean or Jobsite (persisted). Hey! is English → Spanish only. Chips follow direction. API down → Apple Translation (iOS 18+).",
-                "Speak uses neural TTS. Spanish → English is California stoner English (onyx). Preparing audio… until play; Apple voice fallback.",
+                "Neural TTS: ES→EN is California stoner (onyx). Preparing voice… then Playing; Cancel skips Apple fallback; Still preparing… Ns ~3s.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

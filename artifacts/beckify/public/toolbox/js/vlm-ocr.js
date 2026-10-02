@@ -314,6 +314,28 @@
     return err.message || 'Vision request failed.';
   }
 
+  /** Look Check UI must never show the word AI (or on-device OCR). Shared VLM errors stay OCR-flavored. */
+  function formatLookError(err) {
+    if (!err) return 'Look check failed.';
+    var status = err.status || 0;
+    if (status === 429) {
+      var wait = err.retryAfter;
+      if (wait >= 60) return 'Too many look checks. Try again in about ' + Math.ceil(wait / 60) + ' min.';
+      if (wait > 0) return 'Too many look checks. Try again in ' + wait + ' s.';
+      return 'Too many look checks right now. Wait a few minutes.';
+    }
+    if (status === 413) return err.message || 'The photo is too large for Analyze Look (8 MB after JPEG encode).';
+    if (status === 504) return 'The look check timed out. Please try again.';
+    if (status === 404 || status === 405) {
+      if (hostIsGitHubPages(err.url)) {
+        return 'The Beckify look-check API is unavailable (HTTP ' + status + '). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com or a custom HTTPS endpoint.';
+      }
+      return 'The Beckify look-check API is unavailable (HTTP ' + status + '). A stale or missing /api/analyze-look route also returns this. Use https://api.beckify.com or a custom HTTPS endpoint.';
+    }
+    if (status === 503) return err.message || 'The Beckify look-check API is not configured (missing provider key).';
+    return err.message || 'Look check failed.';
+  }
+
   function knownTask(task) {
     if (task === TASK_PANEL || task === TASK_TDR || task === TASK_LOOK) return task;
     return TASK_NAMEPLATE;
@@ -334,11 +356,12 @@
       framing: asLookScore(src.framing),
       expression: asLookScore(src.expression),
       sharpness: asLookScore(src.sharpness != null ? src.sharpness : src.focus),
+      outfit: asLookScore(src.outfit),
       overall: asLookScore(src.overall),
     };
     if (metrics.overall == null) metrics.overall = overallScore;
     if (verdict === 'declined') {
-      return { lighting: null, framing: null, expression: null, sharpness: null, overall: null };
+      return { lighting: null, framing: null, expression: null, sharpness: null, outfit: null, overall: null };
     }
     if (verdict === 'no_person') metrics.expression = null;
     return metrics;
@@ -427,12 +450,17 @@
   function analyze(file, opts) {
     opts = opts || {};
     var task = knownTask(opts.task);
+    var isLook = task === TASK_LOOK;
     var config = resolveConfig(opts.enhanceOn);
     if (!opts.enhanceOn) {
-      return Promise.reject(new Error('AI enhance is off. On-device OCR will be used instead.'));
+      return Promise.reject(new Error(isLook
+        ? 'Look check needs Analyze enabled.'
+        : 'AI enhance is off. On-device OCR will be used instead.'));
     }
     if (!config.ready) {
-      return Promise.reject(new Error('AI enhance is on but no HTTPS endpoint is configured. Use on-device OCR or set a VLM endpoint.'));
+      return Promise.reject(new Error(isLook
+        ? 'No HTTPS look-check endpoint is configured. Set a custom endpoint or use the Beckify API.'
+        : 'AI enhance is on but no HTTPS endpoint is configured. Use on-device OCR or set a VLM endpoint.'));
     }
     var url = endpointFor(config, task);
     var lastProgress = 0;
@@ -442,21 +470,23 @@
       lastProgress = next;
       onProgress(next, status || '');
     }
-    report(0.15, 'Preparing photo for optional AI enhance…');
+    // Look Check must never surface shared OCR "AI enhance / AI draft" copy into #look-status.
+    report(0.15, isLook ? 'Preparing photo…' : 'Preparing photo for optional AI enhance…');
     return prepareUploadDataUrl(file).then(function (dataUrl) {
-      report(0.4, 'Uploading photo for optional AI enhance…');
+      report(0.4, isLook ? 'Sending upright photo…' : 'Uploading photo for optional AI enhance…');
       var body = {
         imageBase64: dataUrl,
         mimeType: uploadMimeType(dataUrl, 'image/jpeg'),
         task: task,
       };
       if (task === TASK_PANEL && opts.view) body.view = String(opts.view);
+      if (isLook && opts.roastMode) body.roastMode = String(opts.roastMode);
       var token = config.mode === 'custom' ? config.token : '';
       return postVision(url, body, token).then(function (payload) {
-        report(0.85, 'Reading AI draft…');
+        report(0.85, isLook ? 'Reading the verdict…' : 'Reading AI draft…');
         var analysis = visionDraftInput(payload);
         var draft = analyzePayload(analysis, task, 'vlm-' + config.mode, payload.raw_ocr || analysis.raw_ocr);
-        report(1, 'AI draft ready. Review every field.');
+        report(1, isLook ? 'Look check ready.' : 'AI draft ready. Review every field.');
         return {
           task: task,
           draft: draft,
@@ -466,7 +496,7 @@
           model: payload.model || '',
         };
       }).catch(function (err) {
-        err.message = formatVisionError(err);
+        err.message = isLook ? formatLookError(err) : formatVisionError(err);
         throw err;
       });
     });
@@ -614,6 +644,7 @@
     extractJsonObject: extractJsonObject,
     safeExtractJsonObject: safeExtractJsonObject,
     formatVisionError: formatVisionError,
+    formatLookError: formatLookError,
     VisionHttpError: VisionHttpError,
     analyzePayload: analyzePayload,
     prepareUploadDataUrl: prepareUploadDataUrl,

@@ -676,7 +676,7 @@ enum ToolboxCatalog {
             id: .panelDirectory,
             kind: .calculator,
             title: "Panel Directory",
-            subtitle: "Photo a schedule. On-device Vision, scan quality, editable rows, then confirm demand.",
+            subtitle: "Local OCR default. Needs review / Conflict / Verified — no capacity from trips alone.",
             symbol: "list.bullet.rectangle",
             synonyms: ["panel", "directory", "schedule", "circuit", "breaker", "ocr", "sticker", "legend", "demand", "capacity", "vision", "confirm", "analyze"]
         ),
@@ -828,7 +828,7 @@ enum ToolboxCatalog {
             id: .lookCheck,
             kind: .calculator,
             title: "Look Check",
-            subtitle: "Take or choose a photo for a playful look verdict plus a roast. Entertainment only.",
+            subtitle: "Honest photo feedback. You might get hyped. You might get fucking roasted.",
             symbol: "person.crop.rectangle",
             synonyms: [
                 "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",

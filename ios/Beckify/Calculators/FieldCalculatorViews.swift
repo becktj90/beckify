@@ -1759,7 +1759,7 @@ struct FiberLinkView: View {
             )
             TryExampleButton(title: "62.5/125 µm multimode at 1310 nm") {
                 coreIndex = "1.48"; claddingIndex = "1.46"
-                coreRadius = "4.5"; wavelength = "1310"
+                coreRadius = "31.25"; wavelength = "1310"
                 checkMode = true
                 session.prepareForNewInputs()
             }
@@ -1780,7 +1780,7 @@ struct FiberLinkView: View {
                 onReset: reset,
                 onExample: {
                     coreIndex = "1.48"; claddingIndex = "1.46"
-                    coreRadius = "4.5"; wavelength = "1310"
+                    coreRadius = "31.25"; wavelength = "1310"
                     checkMode = true
                     session.prepareForNewInputs()
                 },
@@ -1853,10 +1853,15 @@ struct FiberLinkView: View {
     private func save(_ r: FiberLinkResult) {
         var outputs = ["NA": Format.number(r.numericalAperture, digits: 4), "angle": Format.degrees(r.acceptanceAngleDegrees)]
         if let v = r.vNumber { outputs["V"] = Format.number(v, digits: 3) }
+        var inputs = ["n1": coreIndex, "n2": claddingIndex, "Single-mode check": checkMode ? "on" : "off"]
+        if checkMode {
+            inputs["Core radius"] = "\(coreRadius) µm"
+            inputs["Wavelength"] = "\(wavelength) nm"
+        }
         jobs.save(SavedJob(
             name: jobName,
             toolID: .fiberLink,
-            inputs: ["n1": coreIndex, "n2": claddingIndex],
+            inputs: inputs,
             outputs: outputs
         ))
     }
@@ -1964,11 +1969,15 @@ struct GaussianBeamView: View {
 
     private func save(_ r: GaussianBeamResult) {
         var outputs = ["zR": "\(Format.number(r.rayleighRange, digits: 2)) mm", "theta": "\(Format.number(r.divergenceHalfAngleMilliradians, digits: 3)) mrad"]
-        if let radius = r.radiusAtDistance { outputs["w(z)"] = "\(Format.number(radius, digits: 4)) mm" }
+        var inputs = ["w0": "\(waist) mm", "lambda": "\(wavelength) nm"]
+        if let radius = r.radiusAtDistance {
+            outputs["w(z)"] = "\(Format.number(radius, digits: 4)) mm"
+            inputs["z"] = "\(distance) mm"
+        }
         jobs.save(SavedJob(
             name: jobName,
             toolID: .gaussianBeam,
-            inputs: ["w0": "\(waist) mm", "lambda": "\(wavelength) nm"],
+            inputs: inputs,
             outputs: outputs
         ))
     }
@@ -2018,9 +2027,9 @@ struct TransientCircuitView: View {
         ) {
             ShowWorkCard(
                 toolID: .transientCircuit,
-                symbolic: direction == .charging
-                    ? "v(t) = A(1 − e^(−t/τ))"
-                    : "v(t) = A · e^(−t/τ)",
+                symbolic: (kind == .rl ? "i(t)" : "v(t)") + (direction == .charging
+                    ? " = A(1 − e^(−t/τ))"
+                    : " = A · e^(−t/τ)"),
                 substituted: substituted,
                 meaning: "One time constant τ covers about 63 % of the change; five time constants is close enough to call it settled. RC and RL share this exact shape — only what τ is made of changes."
             )
@@ -2068,7 +2077,8 @@ struct TransientCircuitView: View {
                     currentTime: time.parsedDouble ?? 0,
                     currentValue: r.valueAtTime,
                     unit: unit,
-                    timeConstant: r.timeConstant
+                    timeConstant: r.timeConstant,
+                    isStale: session.isStale
                 )
                     .opacity(session.isStale ? 0.72 : 1)
                 ResultCard(copyText: sticky) {
@@ -2541,7 +2551,13 @@ struct ISLoopVerifierView: View {
         jobs.save(SavedJob(
             name: jobName,
             toolID: .isLoopVerifier,
-            inputs: ["Voc": "\(voc) V", "Isc": "\(iscMilliamps) mA", "Vmax": "\(vmax) V", "Imax": "\(imaxMilliamps) mA"],
+            inputs: [
+                "Voc": "\(voc) V", "Isc": "\(iscMilliamps) mA",
+                "Ca": "\(caMicrofarads) µF", "La": "\(laMillihenries) mH",
+                "Vmax": "\(vmax) V", "Imax": "\(imaxMilliamps) mA",
+                "Ci": "\(ciNanofarads) nF", "Li": "\(liMillihenries) mH",
+                "Cable C": "\(cableCNanofaradsPerCore) nF", "Cable L": "\(cableLMillihenries) mH",
+            ],
             outputs: ["result": r.isSafe ? "OK" : "FAILS"]
         ))
     }
