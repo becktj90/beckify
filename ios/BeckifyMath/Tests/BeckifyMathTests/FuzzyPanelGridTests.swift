@@ -90,15 +90,18 @@ final class FuzzyPanelGridTests: XCTestCase {
     }
 
     func testPrepareIsIdempotentForInferredSlots() {
+        // Cleanup stays idempotent; circuit numbers are not invented without a printed anchor.
         let once = FuzzyPanelGrid.prepare([
             line("LIGHTING OFFICE ZO A IP", x: 0.08, y: 0.70),
             line("REC 20A 1P", x: 0.60, y: 0.69),
         ])
-        XCTAssertEqual(once.inferredSlots, 2)
+        XCTAssertEqual(once.inferredSlots, 0)
         XCTAssertTrue(once.lines[0].text.contains("20A"))
         XCTAssertTrue(once.lines[0].text.contains("1P"))
+        XCTAssertFalse(once.lines[0].text.hasPrefix("1 "))
+        XCTAssertFalse(once.lines[1].text.hasPrefix("2 "))
         let twice = FuzzyPanelGrid.prepare(once.lines)
-        XCTAssertEqual(twice.inferredSlots, 2)
+        XCTAssertEqual(twice.inferredSlots, 0)
         XCTAssertEqual(twice.lines.map(\.text), once.lines.map(\.text))
     }
 

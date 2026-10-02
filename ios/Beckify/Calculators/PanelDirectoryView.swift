@@ -46,6 +46,17 @@ struct PanelDirectoryView: View {
     @State private var analyzeStatus = ""
     @State private var analyzeError: String?
     @State private var cloudWarnings: [String] = []
+    @State private var photoRole: PanelPhotoRole = .directory
+    @State private var reviewFilter: PanelReviewFilter = .all
+    @State private var openConflicts: [PanelFieldConflict] = []
+    @State private var coverage: PanelCoverage = PanelCoverage()
+    @State private var handoffMode: PanelHandoffMode = .replace
+    @State private var showHandoffPreview = false
+    @State private var handoffPreview: PanelWorksheetHandoffPreview?
+    @State private var analyzeGeneration = 0
+    @State private var analyzeCancelled = false
+    @State private var evidenceCrop: PanelOCRBox?
+    @State private var evidenceTitle = ""
 
     private var inputFingerprint: String { text }
 
@@ -71,7 +82,7 @@ struct PanelDirectoryView: View {
             stickyAnswer: sticky,
             copyText: copyText,
             disclaimer: .designAidExtra(
-                "On-device Vision is the default. A scan-quality score can ask for a retake — it is not a confidence interval. Recognition can invent or drop circuits — confirm every row against the photo before trusting demand or capacity-to-add. Breaker trip is not measured load. FLA and kAIC reads are not measured values. The photo leaves this device only if you tap Analyze."
+                "On-device Vision is the default. Cloud only after you tap Analyze. Confirming the schedule is not a measured load study — no capacity-to-add from trips alone, and OCR never claims code compliance or available capacity. Fields show Needs review / Conflict / Verified (not a calibrated %). FLA and kAIC reads are not measured values."
             ),
             isResultStale: session.isStale
         ) {
@@ -83,9 +94,13 @@ struct PanelDirectoryView: View {
                 citation: "Apple Vision on-device. Optional cloud Analyze uses the same JSON contract as the website. Parser is a heuristic agent unless you tap Analyze. NEC Table 220.42 as coded in Load Worksheet."
             )
 
+            photoRolePicker
+
             photoBlock
 
             scanQualityBlock
+
+            coverageBlock
 
             panelInputs
             feederGroundCard
@@ -135,6 +150,18 @@ struct PanelDirectoryView: View {
                 token: $token,
                 onAnalyze: { Task { await analyzeCloud() } }
             )
+
+            if analyzing {
+                Button(role: .cancel) {
+                    cancelAnalyze()
+                } label: {
+                    Label("Cancel Analyze", systemImage: "xmark.circle")
+                        .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("cancelPanelAnalyzeButton")
+                .accessibilityHint("Stops in-flight Analyze. Keeps the previous draft — no stale overwrite.")
+            }
 
             CalculatorActionBar(
                 onCalculate: calculate,
@@ -205,6 +232,50 @@ struct PanelDirectoryView: View {
     // MARK: - Photo + capture
 
     @ViewBuilder
+    private var photoRolePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("PHOTO ROLE")
+                .font(.caption.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(Theme.muted)
+            Picker("Photo role", selection: $photoRole) {
+                ForEach(PanelPhotoRole.allCases, id: \.self) { role in
+                    Text(role.label).tag(role)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("panelPhotoRole")
+            Text(photoRole.guidance)
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+            Text("Crop tight, rotate upright, reduce glare. Partial cards are OK — do not invent missing circuits from 1.")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
+        }
+    }
+
+    @ViewBuilder
+    private var coverageBlock: some View {
+        if coverage.photographedSlots > 0 || coverage.expectedSlots != nil || !coverage.notes.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("COVERAGE")
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(coverage.isComplete ? Theme.muted : Theme.warn)
+                    .accessibilityIdentifier("panelCoverage")
+                Text(coverage.summaryLine)
+                    .font(.subheadline)
+                    .foregroundStyle(coverage.isComplete ? Theme.muted : Theme.warn)
+                ForEach(coverage.notes, id: \.self) { note in
+                    Text(note)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var photoBlock: some View {
         if !capturedImages.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
@@ -235,16 +306,15 @@ struct PanelDirectoryView: View {
     @ViewBuilder
     private var scanQualityBlock: some View {
         if let scanQuality {
-            let percent = Int((scanQuality * 100).rounded())
             VStack(alignment: .leading, spacing: 6) {
-                Text("SCAN QUALITY \(percent)%")
+                Text(scanQuality < PanelScanResult.retakeThreshold ? "NEEDS REVIEW — RETAKE" : "READ CHECK")
                     .font(.caption.weight(.semibold))
                     .tracking(0.6)
                     .foregroundStyle(scanQuality < PanelScanResult.retakeThreshold ? Theme.warn : Theme.muted)
                     .accessibilityIdentifier("panelScanQuality")
-                    .accessibilityLabel("Scan quality \(percent) percent")
+                    .accessibilityLabel(scanQuality < PanelScanResult.retakeThreshold ? "Needs review, retake photo" : "Read check passed")
                 if scanQuality < PanelScanResult.retakeThreshold {
-                    Text("Low scan quality — retake a flatter photo with less glare. The rows below stay editable. This is not a stamped schedule.")
+                    Text("Needs review — retake a flatter photo with less glare. Not a calibrated confidence percent. Rows stay editable; this is not a stamped schedule.")
                         .font(.subheadline)
                         .foregroundStyle(Theme.warn)
                 }
@@ -314,11 +384,17 @@ struct PanelDirectoryView: View {
             autocapitalization: .characters,
             fieldID: "panelName"
         )
-        NumberField(title: "Voltage", unit: "V", text: $volts, fieldID: "volts")
-        MenuField(title: "System", selection: $phases, options: ["1", "3"]) {
+        NumberField(title: "Voltage (verify)", unit: "V", text: $volts, fieldID: "volts")
+        Text("Voltage and phase are user defaults or weak reads until you verify them against the nameplate.")
+            .font(.caption)
+            .foregroundStyle(Theme.warn)
+        MenuField(title: "System (verify)", selection: $phases, options: ["1", "3"]) {
             $0 == "1" ? "1-phase" : "3-phase"
         }
         NumberField(title: "Main rating", unit: "A", text: $mainAmps, optional: true, fieldID: "mainAmps")
+        Text("Main, bus, and feeder ratings are separate when printed. Trip amps are not a main rating.")
+            .font(.caption)
+            .foregroundStyle(Theme.muted)
         MenuField(title: "Occupancy", selection: $occupancy, options: LoadWorksheetOccupancy.allCases.map(\.rawValue)) {
             LoadWorksheetOccupancy(rawValue: $0)?.label ?? $0
         }
@@ -333,10 +409,34 @@ struct PanelDirectoryView: View {
 
         ResultCard(title: "Editable schedule", copyText: tsv) {
             Text(confirmed
-                 ? "Confirmed. Demand below uses these rows. You can save a job or seed Load Calculation Worksheet."
-                 : "Correct any row against the photo, then confirm. Yellow fields are low confidence or guessed.")
+                 ? "Confirmed. Labeled trip scenario below uses these rows. Seed worksheet via merge/replace preview."
+                 : "Correct any row against the photo, then confirm. Needs review / Conflict / Verified — not a calibrated %.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
+
+            Picker("Filter", selection: $reviewFilter) {
+                ForEach(PanelReviewFilter.allCases, id: \.self) { filter in
+                    Text(filter.label).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("panelReviewFilter")
+
+            if !openConflicts.isEmpty, !confirmed {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("CONFLICT QUEUE")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.warn)
+                    ForEach(openConflicts.filter(\.isOpen)) { conflict in
+                        Text(conflict.label)
+                            .font(.caption)
+                            .foregroundStyle(Theme.warn)
+                    }
+                    Text("Conflicts are not silent first-wins — resolve by editing the row.")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
 
             if lowCount > 0, !confirmed {
                 Text("\(lowCount) row\(lowCount == 1 ? "" : "s") flagged for a closer look.")
@@ -351,7 +451,7 @@ struct PanelDirectoryView: View {
                 }
             }
 
-            ForEach(Array(draft.enumerated()), id: \.element.id) { index, _ in
+            ForEach(filteredDraftIndices, id: \.self) { index in
                 circuitEditor(index)
             }
 
@@ -395,10 +495,28 @@ struct PanelDirectoryView: View {
                     .font(.caption.weight(.semibold))
                     .tracking(0.6)
                     .foregroundStyle(Theme.muted)
-                if low {
-                    Text(draft[index].guessed ? "guessed" : "check")
+                Text(draft[index].reviewState.label)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(draft[index].reviewState == .verified ? Theme.good : Theme.warn)
+                if draft[index].circuitNumberInferred {
+                    Text("inferred #")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Theme.warn)
+                }
+                if draft[index].slotKind != .circuit {
+                    Text(draft[index].slotKind.rawValue)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+                if let evidence = draft[index].evidence, evidence.crop != nil {
+                    Button {
+                        evidenceCrop = evidence.crop
+                        evidenceTitle = "Ckt \(draft[index].circuit) source"
+                    } label: {
+                        Text("source")
+                            .font(.caption2.weight(.semibold))
+                    }
+                    .accessibilityLabel("Show source crop for circuit \(draft[index].circuit)")
                 }
                 Spacer()
                 Button(role: .destructive) {
@@ -501,16 +619,21 @@ struct PanelDirectoryView: View {
                 if let main = demand.mainAmps {
                     ResultRow(label: "Main", value: Format.amps(main))
                 }
-                if let add = demand.capacityToAddAmps {
-                    ResultRow(
-                        label: "Capacity to add",
-                        value: Format.amps(add),
-                        emphasis: true,
-                        tone: add >= 0 ? Theme.good : Theme.bad
-                    )
+                ResultRow(label: "Scenario", value: "Trip as connected")
+                ResultRow(
+                    label: "Capacity to add",
+                    value: "Withheld",
+                    emphasis: true,
+                    tone: Theme.warn
+                )
+                Text(demandPresentation(demand).capacityWithheldReason ?? "No capacity-to-add from trips alone")
+                    .font(.caption)
+                    .foregroundStyle(Theme.warn)
+                if !coverage.isComplete {
+                    ResultRow(label: "Coverage", value: coverage.summaryLine, tone: Theme.warn)
                 }
                 if let util = demand.utilization {
-                    ResultRow(label: "Main utilization", value: "\(Format.number(util * 100, digits: 0)) %")
+                    ResultRow(label: "Main util. (scenario only)", value: "\(Format.number(util * 100, digits: 0)) %")
                 }
                 if demand.unusedPositions > 0 {
                     ResultRow(label: "Spare / space", value: "\(demand.unusedPositions)")
@@ -526,7 +649,7 @@ struct PanelDirectoryView: View {
             .opacity(session.isStale || !confirmed ? 0.72 : 1)
 
             if !confirmed {
-                Text("Confirm the schedule before treating these amps as reviewed.")
+                Text("Confirm the schedule before treating this labeled trip scenario as reviewed. Confirming ≠ measured loads. No capacity-to-add from trips alone.")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.warn)
             }
@@ -575,26 +698,64 @@ struct PanelDirectoryView: View {
                 .font(.caption.weight(.semibold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.muted)
-            Text("Writes confirmed category VA totals into that tool’s last-used fields on this device.")
+            Text("Preview merge or replace before writing category VA into Load Calculation Worksheet. Provenance is stored on-device.")
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
 
+            Picker("Handoff", selection: $handoffMode) {
+                Text("Replace").tag(PanelHandoffMode.replace)
+                Text("Merge").tag(PanelHandoffMode.merge)
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Worksheet handoff mode")
+
             Button {
-                PanelScheduleHandoff.seedWorksheet(
+                let preview = PanelScheduleHandoff.preview(
                     circuits: draft,
                     voltage: volts.parsedDouble ?? .nan,
                     phases: phaseCount,
-                    occupancy: occupancyValue
+                    occupancy: occupancyValue,
+                    mode: handoffMode,
+                    coverage: coverage,
+                    confirmed: confirmed,
+                    agentID: session.displayedResult?.agentID ?? "heuristic-v1"
                 )
-                openRelated(.loadWorksheet)
+                handoffPreview = preview
+                showHandoffPreview = true
             } label: {
-                Label("Open Load Calculation Worksheet with these totals", systemImage: "list.clipboard")
+                Label("Preview worksheet handoff", systemImage: "list.clipboard")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
             }
             .buttonStyle(.bordered)
             .tint(Theme.accent)
-            .accessibilityLabel("Seed Load Calculation Worksheet from confirmed panel rows")
+            .accessibilityLabel("Preview Load Calculation Worksheet handoff")
+
+            if showHandoffPreview, let preview = handoffPreview {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("HANDOFF PREVIEW — \(preview.mode.rawValue.uppercased())")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                    ForEach(preview.summaryLines, id: \.self) { line in
+                        Text(line).font(.caption).foregroundStyle(Theme.foreground)
+                    }
+                    ForEach(preview.provenance, id: \.self) { line in
+                        Text(line).font(.caption2).foregroundStyle(Theme.muted)
+                    }
+                    Button {
+                        PanelScheduleHandoff.apply(preview)
+                        showHandoffPreview = false
+                        openRelated(.loadWorksheet)
+                    } label: {
+                        Label("Apply \(preview.mode.rawValue) and open worksheet", systemImage: "arrow.right.circle")
+                            .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
+                }
+                .padding(10)
+                .background(Theme.surfaceRaised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
         }
     }
 
@@ -638,6 +799,12 @@ struct PanelDirectoryView: View {
         scanNotes = extracted.scanNotes
         scanFLA = extracted.fla.value
         scanKAIC = extracted.kaic.value
+        coverage = extracted.coverage ?? PanelCoverage.from(
+            circuits: extracted.circuits,
+            expectedSlots: extracted.expectedSlotCount ?? extracted.spacesCount,
+            inferredSlots: extracted.inferredSlots
+        )
+        openConflicts = extracted.conflicts.filter(\.isOpen)
         if let guess = PanelScheduleParser.parseVoltage(extracted.voltage.value) {
             if let ll = guess.lineToLine {
                 volts = ll == floor(ll) ? String(Int(ll)) : String(format: "%.1f", ll)
@@ -680,6 +847,12 @@ struct PanelDirectoryView: View {
         analyzeProgress = 0
         analyzeStatus = ""
         cloudWarnings = []
+        openConflicts = []
+        coverage = PanelCoverage()
+        handoffPreview = nil
+        showHandoffPreview = false
+        analyzeCancelled = false
+        analyzeGeneration += 1
         capturedImages = []
         photoItems = []
         pendingCameraImage = nil
@@ -696,44 +869,77 @@ struct PanelDirectoryView: View {
     @MainActor
     private func analyzeCloud() async {
         guard !capturedImages.isEmpty, !analyzing else { return }
+        analyzeGeneration += 1
+        let generation = analyzeGeneration
         analyzing = true
+        analyzeCancelled = false
         analyzeError = nil
         recognizeError = nil
-        analyzeProgress = 0.12
-        analyzeStatus = "Preparing photo…"
-        defer { analyzing = false }
+        analyzeProgress = 0.08
+        analyzeStatus = "Preparing upright \(photoRole.label.lowercased()) photo…"
+        defer {
+            if generation == analyzeGeneration {
+                analyzing = false
+            }
+        }
         do {
             var merged: PanelScheduleExtraction?
             var warnings: [String] = []
             var rawParts: [String] = []
+            var conflicts: [PanelFieldConflict] = []
             let total = capturedImages.count
             for (index, image) in capturedImages.enumerated() {
+                if analyzeCancelled || generation != analyzeGeneration { break }
                 let start = Double(index) / Double(total)
-                analyzeProgress = min(0.9, start + 0.2 / Double(total))
+                analyzeProgress = min(0.85, start + 0.15 / Double(total))
                 analyzeStatus = total == 1
-                    ? "Sending upright photo for a panel draft…"
-                    : "Sending photo \(index + 1) of \(total)…"
-                let payload = try await BeckifyVisionClient.analyze(
-                    image: image,
-                    task: .panel,
-                    customEndpoint: customEndpoint,
-                    token: token,
-                    timeout: 90
-                )
-                let cloud = PanelCloudAnalyze.normalize(payload)
-                warnings.append(contentsOf: cloud.warnings)
-                if !cloud.rawOCR.isEmpty { rawParts.append(cloud.rawOCR) }
-                merged = merged.map { PanelCloudAnalyze.merge($0, cloud.extraction) } ?? cloud.extraction
+                    ? "Analyze stage: uploading \(photoRole.label.lowercased())…"
+                    : "Analyze stage: tile \(index + 1)/\(total)…"
+                do {
+                    let payload = try await BeckifyVisionClient.analyze(
+                        image: image,
+                        task: .panel,
+                        customEndpoint: customEndpoint,
+                        token: token,
+                        timeout: 90
+                    )
+                    if analyzeCancelled || generation != analyzeGeneration { break }
+                    let cloud = PanelCloudAnalyze.normalize(payload)
+                    warnings.append(contentsOf: cloud.warnings)
+                    if !cloud.rawOCR.isEmpty { rawParts.append(cloud.rawOCR) }
+                    if let existing = merged {
+                        let merge = PanelCloudAnalyze.mergeWithConflicts(existing, cloud.extraction)
+                        merged = merge.extraction
+                        conflicts.append(contentsOf: merge.conflicts)
+                    } else {
+                        merged = cloud.extraction
+                    }
+                    analyzeStatus = "Analyze stage: merged tile \(index + 1)/\(total)"
+                } catch {
+                    // Preserve successes when one tile fails.
+                    warnings.append("Tile \(index + 1) failed: \(error.localizedDescription)")
+                    analyzeStatus = "Analyze stage: tile \(index + 1) failed — keeping prior successes"
+                }
+            }
+            if analyzeCancelled || generation != analyzeGeneration {
+                analyzeProgress = 0
+                analyzeStatus = "Cancelled — previous draft unchanged"
+                return
             }
             guard var extracted = merged, !extracted.circuits.isEmpty else {
-                analyzeError = "Need circuit rows with a number and a name."
+                analyzeError = warnings.isEmpty
+                    ? "Need circuit rows with a number and a name."
+                    : warnings.joined(separator: " ")
                 analyzeProgress = 0
                 analyzeStatus = "Panel analysis failed"
                 return
             }
             if let current = session.displayedResult?.applying(draft: draft) {
-                extracted = PanelCloudAnalyze.merge(existing: current, incoming: extracted)
+                let merge = PanelCloudAnalyze.mergeWithConflicts(existing: current, incoming: extracted)
+                extracted = merge.extraction
+                conflicts.append(contentsOf: merge.conflicts)
             }
+            // Do not overwrite schedule text with a stale empty OCR blob.
             if !rawParts.isEmpty {
                 text = rawParts.joined(separator: "\n")
                 recognizedLines = []
@@ -742,16 +948,32 @@ struct PanelDirectoryView: View {
             if let result = session.displayedResult, !session.isStale {
                 apply(result)
             }
+            openConflicts = conflicts.filter(\.isOpen)
             cloudWarnings = warnings
             confirmed = false
             analyzeProgress = 1
-            analyzeStatus = "Cloud draft ready. Confirm every row against the photo."
+            analyzeStatus = openConflicts.isEmpty
+                ? "Cloud draft ready. Confirm every row against the photo."
+                : "Cloud draft ready with \(openConflicts.count) conflict(s) — resolve before confirm."
             if !reduceMotion { successTick += 1 }
         } catch {
+            if analyzeCancelled || generation != analyzeGeneration {
+                analyzeStatus = "Cancelled — previous draft unchanged"
+                analyzeProgress = 0
+                return
+            }
             analyzeError = error.localizedDescription
             analyzeProgress = 0
             analyzeStatus = "Panel analysis failed"
         }
+    }
+
+    private func cancelAnalyze() {
+        analyzeCancelled = true
+        analyzeGeneration += 1
+        analyzing = false
+        analyzeProgress = 0
+        analyzeStatus = "Cancelled — previous draft unchanged"
     }
 
     private func loadExample() {
@@ -797,6 +1019,19 @@ struct PanelDirectoryView: View {
         )
     }
 
+
+    private var filteredDraftIndices: [Int] {
+        draft.indices.filter { reviewFilter.includes(draft[$0]) }
+    }
+
+    private func demandPresentation(_ demand: PanelDemandResult) -> PanelDemandPresentation {
+        PanelDemandAnalysis.present(
+            result: demand,
+            coverage: coverage,
+            scenario: .tripAsConservativeConnected
+        )
+    }
+
     private func nextCircuitNumber() -> String {
         let used = Set(draft.compactMap { Int($0.circuit) })
         var n = 1
@@ -816,10 +1051,8 @@ struct PanelDirectoryView: View {
         guard !draft.isEmpty else { return nil }
         if let demand = currentDemand() {
             let prefix = confirmed ? "Confirmed" : "Review"
-            if let add = demand.capacityToAddAmps {
-                return "\(prefix)  ·  \(Format.amps(demand.demandAmps))  ·  add \(Format.amps(add))"
-            }
-            return "\(prefix)  ·  \(draft.count) ckt  ·  \(Format.amps(demand.demandAmps))"
+            let cover = coverage.isComplete ? "coverage OK" : "incomplete coverage"
+            return "\(prefix)  ·  \(Format.amps(demand.demandAmps)) trip-scenario  ·  \(cover)"
         }
         return confirmed
             ? "Confirmed  ·  \(draft.count) circuit\(draft.count == 1 ? "" : "s")"

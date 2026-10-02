@@ -124,4 +124,19 @@ final class PanelCloudAnalyzeTests: XCTestCase {
         XCTAssertTrue(copy?.bullets.contains(where: { $0.contains("/api/analyze-panel") }) == true)
         XCTAssertTrue(copy?.context.localizedCaseInsensitiveContains("uploads only if you tap") == true)
     }
+
+    func testMergeQueuesNameConflictsInsteadOfSilentFirstWins() {
+        let left = PanelScheduleParser.extract(text: "1 LIGHTING OFFICE 20A 1P")
+        let right = PanelCloudAnalyze.normalize([
+            "circuits": [[
+                "circuit": ["value": "1"],
+                "description": ["value": "LIGHTING LOBBY"],
+                "trip": ["value": 20],
+            ]],
+        ] as [String: Any]).extraction
+        let merge = PanelCloudAnalyze.mergeWithConflicts(left, right)
+        XCTAssertEqual(merge.extraction.circuits[0].name, "LIGHTING OFFICE")
+        XCTAssertFalse(merge.conflicts.isEmpty)
+        XCTAssertEqual(merge.openConflictCount, merge.conflicts.filter(\.isOpen).count)
+    }
 }

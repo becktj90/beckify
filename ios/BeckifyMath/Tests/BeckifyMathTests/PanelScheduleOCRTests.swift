@@ -191,7 +191,7 @@ final class PanelScheduleOCRTests: XCTestCase {
         XCTAssertLessThan(result.utilization ?? 1, 1)
         XCTAssertTrue(result.caveats.contains(where: { $0.localizedCaseInsensitiveContains("not measured load") }))
         XCTAssertTrue(result.caveats.contains(where: { $0.localizedCaseInsensitiveContains("design aid") }))
-        XCTAssertTrue(result.copyLine.contains("capacity to add"))
+        XCTAssertTrue(result.copyLine.localizedCaseInsensitiveContains("No capacity-to-add from trips alone"))
 
         let lightingVA = PanelScheduleParser.connectedVA(tripAmps: 20, poles: 1, voltage: 208, phases: 3)
         let receptVA = PanelScheduleParser.connectedVA(tripAmps: 20, poles: 1, voltage: 208, phases: 3)
