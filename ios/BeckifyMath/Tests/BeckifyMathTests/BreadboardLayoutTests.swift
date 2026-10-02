@@ -22,9 +22,8 @@ final class BreadboardLayoutTests: XCTestCase {
         }
     }
 
-    func testHiddenCircuitsStayOffTheBoard() throws {
+    func testNonBreadboardCircuitsStayOffTheBoard() throws {
         let hidden: [ElectronicsCircuit] = [
-            .seriesRLC, .fullBridge, .cmosInverter, .ceAmp, .csAmp,
             .idealBuck, .quarterWave, .stubCancel, .lMatch, .classOverview,
             .discretePower, .opAmpPower, .complexConvert, .impedanceCombo,
         ]
@@ -33,6 +32,76 @@ final class BreadboardLayoutTests: XCTestCase {
             let info = ElectronicsLab.info(circuit)
             let solved = try ElectronicsLab.solve(circuit, unknown: info.defaultUnknown, inputs: info.defaults)
             XCTAssertNil(BreadboardLayouts.make(solved))
+        }
+    }
+
+    func testPriorityBoardsAudit() throws {
+        let priority: [ElectronicsCircuit] = [
+            .seriesRLC, .fullBridge, .ceAmp, .csAmp, .cmosInverter,
+        ]
+        for circuit in priority {
+            XCTAssertTrue(BreadboardLayouts.supports(circuit), circuit.rawValue)
+            let board = try layout(circuit)
+            let audit = BreadboardNetlist.audit(board)
+            XCTAssertTrue(audit.ok, "\(circuit.rawValue) \(audit)")
+            XCTAssertFalse(board.components.isEmpty, circuit.rawValue)
+        }
+    }
+
+    func testCoverageMatrixCoversCatalog() {
+        XCTAssertEqual(LabCircuitCoverage.matrix.count, ElectronicsCircuit.allCases.count)
+        for circuit in ElectronicsCircuit.allCases {
+            let row = LabCircuitCoverage.row(for: circuit)
+            XCTAssertEqual(row.circuit, circuit)
+            if BreadboardLayouts.supports(circuit) {
+                XCTAssertEqual(row.mode, .breadboard)
+            } else {
+                XCTAssertNotEqual(row.mode, .breadboard)
+            }
+        }
+        XCTAssertFalse(LabCircuitCoverage.markdownTable().isEmpty)
+    }
+
+    func testAnnotationEngineAvoidsOverlap() {
+        let canvas = LabRect2(x: 0, y: 0, width: 320, height: 240)
+        let obstacles = [
+            LabRect2(x: 140, y: 100, width: 40, height: 40),
+        ]
+        let requests = (0..<8).map { index in
+            LabAnnotationRequest(
+                id: "a\(index)",
+                text: "R\(index + 1)  4.7 kΩ",
+                anchor: LabVec2(x: 160, y: 120),
+                layer: .values,
+                fontSize: 14
+            )
+        }
+        let placed = LabAnnotationEngine.place(
+            requests: requests,
+            obstacles: obstacles,
+            canvas: canvas,
+            activeLayers: [.values]
+        )
+        XCTAssertEqual(placed.count, 8)
+        XCTAssertFalse(LabAnnotationEngine.hasOverlap(placed: placed, obstacles: obstacles))
+        for item in placed {
+            XCTAssertGreaterThanOrEqual(item.fontSize, 13)
+            XCTAssertLessThanOrEqual(item.fontSize, 15)
+        }
+    }
+
+    func testIdentityBookSharesNets() throws {
+        let board = try layout(.voltageDivider)
+        let info = ElectronicsLab.info(.voltageDivider)
+        let solved = try ElectronicsLab.solve(.voltageDivider, unknown: info.defaultUnknown, inputs: info.defaults)
+        let ids = LabIdentityBook.identities(solution: solved, layout: board)
+        XCTAssertTrue(ids.contains { $0.kind == .node && $0.displayName == "Vout" })
+        XCTAssertTrue(ids.contains { $0.kind == .component })
+        let filtered = LabIdentityBook.filter(ids, query: "vout")
+        XCTAssertFalse(filtered.isEmpty)
+        // No invented readings: every valueText comes from the solve or part label.
+        for item in ids where item.kind == .node || item.kind == .branch {
+            XCTAssertNotNil(item.valueText)
         }
     }
 
