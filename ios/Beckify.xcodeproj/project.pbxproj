@@ -930,7 +930,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 241;
+				CURRENT_PROJECT_VERSION = 242;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -942,8 +942,8 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition, or a Look Check photo. Nameplate and panel photos stay on this device. A Look Check photo uploads only when you tap Analyze Look.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Spanish Translator. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Spanish Translator on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -974,7 +974,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 241;
+				CURRENT_PROJECT_VERSION = 242;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -986,8 +986,8 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition, or a Look Check photo. Nameplate and panel photos stay on this device. A Look Check photo uploads only when you tap Analyze Look.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Spanish Translator. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Spanish Translator on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

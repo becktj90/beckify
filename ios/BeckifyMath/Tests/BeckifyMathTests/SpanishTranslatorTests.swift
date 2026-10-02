@@ -112,12 +112,13 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(copy!.summary.lowercased().contains("spanish"))
         let joined = (copy!.summary + " " + copy!.bullets.joined(separator: " ")).lowercased()
         XCTAssertTrue(joined.contains("clean") && joined.contains("jobsite"))
-        XCTAssertTrue(joined.contains("cuban") && joined.contains("south american"))
+        XCTAssertTrue(joined.contains("bodie") && joined.contains("tito") && joined.contains("junie"))
+        XCTAssertTrue(joined.contains("cuban"))
         XCTAssertFalse(joined.contains("florida"))
         XCTAssertFalse(joined.contains("smart-ass"))
         XCTAssertFalse(joined.contains("profane"))
         XCTAssertFalse(joined.contains("comedy"))
-        XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation"))
+        XCTAssertTrue(joined.contains("on-device") || joined.contains("apple translation") || joined.contains("apple voice"))
         XCTAssertTrue(joined.contains("chip") || joined.contains("quick") || joined.contains("test"))
         XCTAssertTrue(joined.contains("hey") || joined.contains("attention"))
         XCTAssertTrue(joined.contains("/api/speak") || joined.contains("neural") || joined.contains("openai"))
@@ -453,8 +454,8 @@ final class SpanishTranslatorTests: XCTestCase {
         let joined = ((how?.summary ?? "") + " " + (how?.bullets.joined(separator: " ") ?? "")).lowercased()
         XCTAssertTrue(joined.contains("spanish → english") || joined.contains("spanish speech"))
         XCTAssertTrue(joined.contains("english → spanish") || joined.contains("english speech"))
-        XCTAssertTrue(joined.contains("california"))
-        XCTAssertTrue(joined.contains("deep south"))
+        XCTAssertTrue(joined.contains("bodie") && joined.contains("tito") && joined.contains("junie"))
+        XCTAssertTrue(joined.contains("eleven_v3") || joined.contains("/api/speak"))
         XCTAssertFalse(joined.contains("comedy"))
         XCTAssertFalse(joined.contains("stoner"))
     }
@@ -475,8 +476,7 @@ final class SpanishTranslatorTests: XCTestCase {
         let note = SpanishTranslatorAPI.englishVoiceFallbackNote(selectedLanguage: "en-US", genderLabel: "male", voiceName: "Aaron")
         XCTAssertTrue(note.lowercased().contains("en-us") || note.lowercased().contains("aaron"))
         XCTAssertTrue(note.lowercased().contains("device voices"))
-        XCTAssertTrue(note.lowercased().contains("california"))
-        XCTAssertTrue(note.lowercased().contains("deep south"))
+        XCTAssertTrue(note.lowercased().contains("crew"))
         XCTAssertFalse(note.lowercased().contains("cuban"))
         XCTAssertFalse(note.lowercased().contains("comedy"))
         let neuralEN = SpanishTranslatorAPI.neuralVoiceNote(voiceMode: .clean, language: "en")
@@ -516,8 +516,64 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertFalse(d.contains("profane"))
         XCTAssertFalse(d.contains("smart-ass"))
         XCTAssertFalse(d.contains("comedy"))
-        XCTAssertTrue(d.contains("california"))
-        XCTAssertTrue(d.contains("deep south"))
+        XCTAssertFalse(d.contains("stoner"))
+        XCTAssertTrue(d.contains("bodie hale"))
+        XCTAssertTrue(d.contains("tito solano"))
+        XCTAssertTrue(d.contains("junie pell"))
+        XCTAssertTrue(d.contains("eleven_v3"))
+    }
+
+
+    func testCrewTalkMembersAndSpeakBody() throws {
+        XCTAssertEqual(CrewTalkMember.allCases.count, 3)
+        XCTAssertEqual(CrewTalkMember.parse(nil), .titoSolano)
+        XCTAssertEqual(CrewTalkMember.parse("bodie"), .bodieHale)
+        XCTAssertEqual(CrewTalkMember.parse("Junie Pell"), .juniePell)
+        XCTAssertEqual(CrewTalkMember.bodieHale.voiceID, "XVO6RhOYU9ZEKHFXrx6b")
+        XCTAssertEqual(CrewTalkMember.titoSolano.voiceID, "goyf4sY4AqSvMIeO1hb5")
+        XCTAssertEqual(CrewTalkMember.juniePell.voiceID, "tdK8noxHGTBqk6F18tbZ")
+        XCTAssertEqual(CrewTalkMember.speakModel, "eleven_v3")
+        XCTAssertEqual(CrewTalkMember.bodieHale.speakLanguage, "en")
+        XCTAssertEqual(CrewTalkMember.titoSolano.speakLanguage, "es")
+        XCTAssertEqual(CrewTalkMember.juniePell.speakLanguage, "en")
+        XCTAssertEqual(CrewTalkMember.bodieHale.portraitAssetName, "crewBodieHale")
+        XCTAssertEqual(CrewTalkMember.titoSolano.portraitAssetName, "crewTitoSolano")
+        XCTAssertEqual(CrewTalkMember.juniePell.portraitAssetName, "crewJuniePell")
+        XCTAssertTrue(CrewTalkMember.juniePell.prefersFemaleDeviceVoice)
+        XCTAssertFalse(CrewTalkMember.bodieHale.prefersFemaleDeviceVoice)
+        let names = CrewTalkMember.allCases.map(\.displayName).joined(separator: " ").lowercased()
+        XCTAssertFalse(names.contains("comedy"))
+        XCTAssertFalse(names.contains("stoner"))
+
+        let tito = SpanishTranslatorAPI.speakRequestBody(text: "Pásame el conduit.", voiceMode: .jobsite, crew: .titoSolano)
+        XCTAssertEqual(tito["voice"] as? String, CrewTalkMember.titoSolano.voiceID)
+        XCTAssertEqual(tito["model"] as? String, "eleven_v3")
+        XCTAssertEqual(tito["language"] as? String, "es")
+        XCTAssertEqual(tito["voiceMode"] as? String, "jobsite")
+        let bodie = SpanishTranslatorAPI.speakRequestBody(text: "Kill the power.", voiceMode: .clean, language: "es", crew: .bodieHale)
+        XCTAssertEqual(bodie["voice"] as? String, "XVO6RhOYU9ZEKHFXrx6b")
+        XCTAssertEqual(bodie["language"] as? String, "en")
+        XCTAssertEqual(bodie["model"] as? String, "eleven_v3")
+        let junie = try SpanishTranslatorAPI.speakRequestJSON(text: "Leave that breaker be.", crew: .juniePell)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: junie) as? [String: Any])
+        XCTAssertEqual(object["voice"] as? String, "tdK8noxHGTBqk6F18tbZ")
+        XCTAssertEqual(object["model"] as? String, "eleven_v3")
+        let note = SpanishTranslatorAPI.neuralVoiceNote(model: "", crew: .bodieHale)
+        XCTAssertTrue(note.contains("Bodie Hale"))
+        XCTAssertTrue(note.contains("eleven_v3"))
+        XCTAssertFalse(note.lowercased().contains("comedy"))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.lineForCrew(crew: .titoSolano, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope"),
+            "Corta la corriente."
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.lineForCrew(crew: .juniePell, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope"),
+            "Kill the power."
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.lineForCrew(crew: .bodieHale, english: "  ", spanish: "Hola", fallback: "Hola"),
+            "Hola"
+        )
     }
 
 }

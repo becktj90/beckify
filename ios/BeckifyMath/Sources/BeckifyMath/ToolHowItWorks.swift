@@ -796,12 +796,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "Record English or Spanish, translate with Beckify AI (Clean or Jobsite), play California, Deep South, or Jobsite voices, then Copy or Share Audio.",
-            context: "Toolkit → Reference. Field helper — not a certified interpreter.",
+            summary: "Pick Bodie Hale, Tito Solano, or Junie Pell. Their portrait stays up. Record, translate Clean or Jobsite, then hear that person.",
+            context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
-                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick phrase chips test translation. Mic audio stays local.",
-                "Clean or Jobsite persists. Spanish Jobsite is a Cuban / South American tradesman. English is California. Deep South is another English voice. Hey! is English → Spanish only.",
-                "Neural /api/speak (gpt-4o-mini-tts) or on-device voice. Copy Audio and Share Audio keep that character. Temp clips. Cancel skips Apple fallback.",
+                "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
+                "Bodie is California beach English. Tito is Cuban jobsite Spanish. Junie is rural Alabama English. Clean or Jobsite is wording, not another person.",
+                "Speak posts that voice to /api/speak (eleven_v3). Copy Audio and Share Audio keep the clip. Apple voice if cloud TTS fails.",
             ]
         ),
         "controlStrategies": ToolHowItWorks(

@@ -733,10 +733,10 @@ enum ToolboxCatalog {
         ToolDefinition(
             id: .spanishTranslator,
             kind: .sensor,
-            title: "Spanish Translator",
-            subtitle: "English ↔ Spanish. California, Deep South, or Jobsite. Hey!, Speak, Copy/Share Audio.",
+            title: "Crew Talk",
+            subtitle: "Bodie Hale, Tito Solano, or Junie Pell. Portrait stays up. English ↔ Spanish.",
             symbol: "character.bubble",
-            synonyms: ["translator", "spanish", "translate", "interpreter", "español", "speech", "neural", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "california", "deep south", "cuban"]
+            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "bodie", "tito", "junie"]
         ),
         ToolDefinition(
             id: .magneticCircuit,

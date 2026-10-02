@@ -8,7 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node ./tests/look-roast-mode.test.cjs && node ./tests/spanish-translate-voice.test.cjs && node ./tests/translate-direction.test.cjs && node ./tests/panel-vision-validate.test.cjs",
+    "test": "node ./tests/look-roast-mode.test.cjs && node ./tests/spanish-translate-voice.test.cjs && node ./tests/translate-direction.test.cjs && node ./tests/panel-vision-validate.test.cjs && node ./tests/crew-talk-speak.test.cjs",
     "smoke": "pnpm run build && node ./smoke-vision-routes.mjs"
   },
   "dependencies": {

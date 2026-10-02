@@ -1,5 +1,93 @@
 import Foundation
 
+/// Who Crew Talk is speaking as. Portrait stays on screen. Speech uses that ElevenLabs voice.
+public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
+    case bodieHale
+    case titoSolano
+    case juniePell
+
+    public static let storageKey = "crewTalk.member"
+    /// Playback model sent to `/api/speak`. The key stays on the server.
+    public static let speakModel = "eleven_v3"
+
+    public var displayName: String {
+        switch self {
+        case .bodieHale: return "Bodie Hale"
+        case .titoSolano: return "Tito Solano"
+        case .juniePell: return "Junie Pell"
+        }
+    }
+
+    /// ElevenLabs voice id. Case-sensitive. Not an OpenAI voice name.
+    public var voiceID: String {
+        switch self {
+        case .bodieHale: return "XVO6RhOYU9ZEKHFXrx6b"
+        case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
+        case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
+        }
+    }
+
+    /// Imageset in the Beckify asset catalog.
+    public var portraitAssetName: String {
+        switch self {
+        case .bodieHale: return "crewBodieHale"
+        case .titoSolano: return "crewTitoSolano"
+        case .juniePell: return "crewJuniePell"
+        }
+    }
+
+    public var blurb: String {
+        switch self {
+        case .bodieHale: return "California beach English. Laid-back, warm, and unhurried."
+        case .titoSolano: return "Cuban jobsite Spanish. Raspy, direct, and steady."
+        case .juniePell: return "Rural Alabama English. Slow, low, and kind."
+        }
+    }
+
+    /// Language this person speaks. Tito is Spanish; Bodie and Junie are English.
+    public var speakLanguage: String {
+        switch self {
+        case .titoSolano: return "es"
+        case .bodieHale, .juniePell: return "en"
+        }
+    }
+
+    public var prefersFemaleDeviceVoice: Bool { self == .juniePell }
+
+    /// Apple fallback pace. Cloud voice is the real character.
+    public var appleRateFactor: Float {
+        switch self {
+        case .bodieHale: return 0.92
+        case .titoSolano: return 0.84
+        case .juniePell: return 0.70
+        }
+    }
+
+    public var applePitchMultiplier: Float {
+        switch self {
+        case .bodieHale: return 0.96
+        case .titoSolano: return 0.86
+        case .juniePell: return 0.90
+        }
+    }
+
+    public static func parse(_ raw: String?) -> CrewTalkMember {
+        let folded = (raw ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: "_", with: "")
+        switch folded {
+        case "bodiehale", "bodie": return .bodieHale
+        case "juniepell", "junie": return .juniePell
+        case "titosolano", "tito": return .titoSolano
+        default: return .titoSolano
+        }
+    }
+}
+
+
 /// Cloud translate / speak register. UI labels stay generic (`Clean` / `Jobsite`).
 public enum SpanishVoiceMode: String, CaseIterable, Codable, Sendable {
     case jobsite
@@ -283,7 +371,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. English → Spanish is the default: Beckify AI offers Clean or Jobsite Spanish via api.beckify.com (Jobsite is a weathered tradesman; Clean is polished and warm). A Hey! button runs a short attention call on that direction only. Spanish → English listens in Spanish and returns English on the same API, spoken as California (louder on Jobsite, warm on Clean). Deep South is a separate English voice on that speak API — the same words, not a rewrite. If translate is unreachable, falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback prefers OpenAI neural TTS (gpt-4o-mini-tts) from api.beckify.com/api/speak (short Spanish or English clips); Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, or Junie Pell — and that portrait stays on screen. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -328,8 +416,21 @@ public enum SpanishTranslatorAPI {
         voice: String? = nil,
         format: String = "mp3",
         language: String = "es",
-        delivery: String? = nil
+        delivery: String? = nil,
+        crew: CrewTalkMember? = nil
     ) -> [String: Any] {
+        if let crew {
+            return [
+                "task": "speak",
+                "text": text,
+                "voice": crew.voiceID,
+                "model": CrewTalkMember.speakModel,
+                "format": format,
+                "language": crew.speakLanguage,
+                "voiceMode": voiceMode.apiValue,
+                "mode": voiceMode.apiValue,
+            ]
+        }
         let passedVoice = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         var resolvedLanguage = language.trimmingCharacters(in: .whitespacesAndNewlines)
         if resolvedLanguage.isEmpty { resolvedLanguage = "es" }
@@ -367,7 +468,8 @@ public enum SpanishTranslatorAPI {
         voice: String? = nil,
         format: String = "mp3",
         language: String = "es",
-        delivery: String? = nil
+        delivery: String? = nil,
+        crew: CrewTalkMember? = nil
     ) throws -> Data {
         try JSONSerialization.data(
             withJSONObject: speakRequestBody(
@@ -376,7 +478,8 @@ public enum SpanishTranslatorAPI {
                 voice: voice,
                 format: format,
                 language: language,
-                delivery: delivery
+                delivery: delivery,
+                crew: crew
             ),
             options: []
         )
@@ -727,7 +830,7 @@ public enum SpanishTranslatorAPI {
     ) -> String {
         let lang = (selectedLanguage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if lang.isEmpty {
-            return "No English system voice found for Apple fallback. Install an English voice in Settings → Accessibility → Spoken Content → Voices. Prefers OpenAI neural TTS from api.beckify.com/api/speak."
+            return "No English system voice found for Apple fallback. Install an English voice in Settings → Accessibility → Spoken Content → Voices. Prefers neural crew speech from api.beckify.com/api/speak."
         }
         let gender = (genderLabel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let name = (voiceName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -742,7 +845,7 @@ public enum SpanishTranslatorAPI {
         }
         let folded = normalizeLocaleID(lang)
         let localeNote = folded.hasPrefix("en-us") ? "en-US" : folded
-        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (echo) from api.beckify.com when reachable. Device voices approximate pitch and pace; California and Deep South need cloud TTS."
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers the selected crew voice from api.beckify.com when reachable. Device voices approximate pace only."
     }
 
     public static func normalizeLocaleID(_ raw: String) -> String {
@@ -837,14 +940,26 @@ public enum SpanishTranslatorAPI {
     }
 
     public static func modeHelp(direction: SpanishTranslateDirection, voiceMode: SpanishVoiceMode) -> String {
+        let register = voiceMode == .clean
+            ? "Clean keeps the wording polished and warm. Jobsite keeps it direct on a noisy site."
+            : "Jobsite keeps the wording direct on a noisy site. Clean keeps it polished and warm."
         if direction.listensInSpanish {
-            return voiceMode == .clean
-                ? "Clean English is warm California. Jobsite English is louder California. Deep South is the other English voice."
-                : "Jobsite English is louder California. Clean English is warm California. Deep South is separate."
+            return register + " Who speaks is the person you pick."
         }
-        return voiceMode == .clean
-            ? "Clean: polished, warm Spanish. Jobsite: weathered Cuban / South American tradesman."
-            : "Jobsite: weathered Cuban / South American tradesman. Clean: polished and warm."
+        return register + " Who speaks is the person you pick."
+    }
+
+    /// Line the selected person should say. Falls back when that language is still empty.
+    public static func lineForCrew(
+        crew: CrewTalkMember,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
+        let preferred = crew.speakLanguage == "es" ? spanish : english
+        let trimmed = preferred.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        return fallback.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Shown on the Deep South card. Same English words, different neural character.
@@ -896,8 +1011,14 @@ public enum SpanishTranslatorAPI {
         voice: String = "",
         voiceMode: SpanishVoiceMode = .jobsite,
         language: String = "es",
-        delivery: String? = nil
+        delivery: String? = nil,
+        crew: CrewTalkMember? = nil
     ) -> String {
+        if let crew {
+            let shown = model.trimmingCharacters(in: .whitespacesAndNewlines)
+            let modelLabel = shown.isEmpty ? CrewTalkMember.speakModel : shown
+            return "Neural TTS · \(crew.displayName) · \(modelLabel) · max speaker volume"
+        }
         let m = model.trimmingCharacters(in: .whitespacesAndNewlines)
         let v = voice.trimmingCharacters(in: .whitespacesAndNewlines)
         let foldedDelivery = (delivery ?? "")
@@ -963,7 +1084,7 @@ public enum SpanishTranslatorAPI {
     ) -> String {
         let lang = (selectedLanguage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if lang.isEmpty {
-            return "No Spanish system voice found for Apple fallback. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Prefers OpenAI neural TTS from api.beckify.com/api/speak."
+            return "No Spanish system voice found for Apple fallback. Install a Spanish voice in Settings → Accessibility → Spoken Content → Voices. Prefers neural crew speech from api.beckify.com/api/speak."
         }
         let gender = (genderLabel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let name = (voiceName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -987,7 +1108,7 @@ public enum SpanishTranslatorAPI {
         } else {
             localeNote = "closest Spanish"
         }
-        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers OpenAI neural TTS (onyx) from api.beckify.com when reachable; this note is the on-device fallback path."
+        return "Apple fallback: \(who), \(sex), \(localeNote). Prefers neural crew speech from api.beckify.com when reachable; this note is the on-device fallback path."
     }
 
     // MARK: - Internals

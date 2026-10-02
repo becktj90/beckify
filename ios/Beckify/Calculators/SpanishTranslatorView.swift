@@ -6,15 +6,15 @@ import BeckifyMath
 import UniformTypeIdentifiers
 import UIKit
 
-/// Toolkit → Reference: English ↔ Spanish in one tool.
-/// Default is record/type English → Beckify AI Spanish (Clean / Jobsite) → neural TTS.
-/// Spanish → English listens in Spanish and speaks English. On-device Apple Translation is the fallback.
+/// Toolkit → Reference: Crew Talk. English ↔ Spanish, spoken by the person you pick.
+/// Bodie Hale, Tito Solano, or Junie Pell stays on screen. Clean / Jobsite is wording only.
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var engine = SpanishTranslatorEngine()
     @AppStorage(SpanishVoiceMode.storageKey) private var voiceModeRaw = SpanishVoiceMode.jobsite.rawValue
     @AppStorage(SpanishTranslateDirection.storageKey) private var directionRaw = SpanishTranslateDirection.englishToSpanish.rawValue
+    @AppStorage(CrewTalkMember.storageKey) private var crewRaw = CrewTalkMember.titoSolano.rawValue
     @State private var typedLine = ""
     @State private var customEndpoint = ""
     @State private var apiToken = ""
@@ -32,6 +32,11 @@ struct SpanishTranslatorView: View {
         nonmutating set { directionRaw = newValue.rawValue }
     }
 
+    private var crew: CrewTalkMember {
+        get { CrewTalkMember.parse(crewRaw) }
+        nonmutating set { crewRaw = newValue.rawValue }
+    }
+
     var body: some View {
         ToolScaffold(
             toolID: .spanishTranslator,
@@ -46,7 +51,6 @@ struct SpanishTranslatorView: View {
             recordCard
             quickPhrasesCard
             textCards
-            deepSouthCard
             if showAdvanced {
                 advancedCard
             } else {
@@ -75,12 +79,19 @@ struct SpanishTranslatorView: View {
                 engine.invalidateOutdatedWork(markCancelled: true)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            crewHelperBar
+        }
         .onAppear {
             engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+            engine.applyCrew(crew, invalidateInFlight: false)
             engine.setDirection(direction)
         }
         .onChange(of: voiceModeRaw) { _, raw in
             engine.applyVoiceMode(SpanishVoiceMode.parse(raw), invalidateInFlight: true)
+        }
+        .onChange(of: crewRaw) { _, raw in
+            engine.applyCrew(CrewTalkMember.parse(raw), invalidateInFlight: true)
         }
         .onChange(of: directionRaw) { _, raw in
             typedLine = ""
@@ -465,25 +476,37 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    /// English-only neural character. Speaks the English already on screen.
-    /// Does not rewrite the words. Share uses the same clip as Speak.
-    @ViewBuilder
-    private var deepSouthCard: some View {
-        if !engine.englishText.isEmpty {
-            ResultCard(title: SpanishTranslatorAPI.deepSouthCardTitle, copyText: engine.englishText) {
-                Text(SpanishTranslatorAPI.deepSouthHelp)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(SpanishTranslatorAPI.deepSouthButtonTitle) {
-                    engine.speakDeepSouth(engine.englishText)
+    /// Selected helper. Stays pinned while the rest of the tool scrolls.
+    private var crewHelperBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(crew.portraitAssetName)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: 148)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityIdentifier("spanishTranslator.crewPortrait")
+                .accessibilityLabel(crew.displayName)
+            Text(crew.displayName)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.foreground)
+            Text(crew.blurb)
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Picker("Talking with", selection: $crewRaw) {
+                ForEach(CrewTalkMember.allCases, id: \.rawValue) { member in
+                    Text(member.displayName).tag(member.rawValue)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
-                .frame(minHeight: Theme.touchTarget)
-                .accessibilityIdentifier("spanishTranslator.deepSouthButton")
             }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("spanishTranslator.crew")
         }
+        .padding(.horizontal, Theme.Space.lg)
+        .padding(.top, Theme.Space.xs)
+        .padding(.bottom, Theme.Space.sm)
+        .background(Theme.background)
     }
 
     private var advancedCard: some View {
@@ -679,8 +702,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     @Published var pendingOnDeviceSource = ""
     /// Direction captured when the on-device request was armed.
     @Published var onDeviceDirection: SpanishTranslateDirection = .englishToSpanish
-    /// Active Clean / Jobsite register for translate + speak (set from the view).
+    /// Active Clean / Jobsite register for translate wording (set from the view).
     private(set) var voiceMode: SpanishVoiceMode = .jobsite
+    /// Person on screen. Their ElevenLabs voice speaks.
+    private(set) var crew: CrewTalkMember = .titoSolano
     /// English → Spanish by default. Recreated speech recognizer follows this.
     private(set) var direction: SpanishTranslateDirection = .englishToSpanish
 
@@ -700,8 +725,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private var speakTask: Task<Void, Never>?
     private var translateTask: Task<Void, Never>?
     private var preparingTicker: Task<Void, Never>?
-    private var lastTTSModel = "gpt-4o-mini-tts"
-    private var lastTTSVoice = "onyx"
+    private var lastTTSModel = CrewTalkMember.speakModel
+    private var lastTTSVoice = CrewTalkMember.titoSolano.voiceID
     private var lastAPIError: String?
     private var translateGeneration: UInt64 = 0
     private var onDeviceGeneration: UInt64 = 0
@@ -712,6 +737,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private var turnID: UInt64 = 0
     private var turnDirection: SpanishTranslateDirection = .englishToSpanish
     private var turnVoiceMode: SpanishVoiceMode = .jobsite
+    private var turnCrew: CrewTalkMember = .titoSolano
     /// When false, cancelled cloud speak must not fall through to Apple TTS.
     private var allowAppleSpeakFallback = true
 
@@ -770,6 +796,15 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     func applyVoiceMode(_ newMode: SpanishVoiceMode, invalidateInFlight: Bool) {
         let changed = voiceMode != newMode
         voiceMode = newMode
+        if changed, invalidateInFlight {
+            invalidateOutdatedWork(markCancelled: true)
+        }
+    }
+
+    func applyCrew(_ newCrew: CrewTalkMember, invalidateInFlight: Bool) {
+        let changed = crew != newCrew
+        crew = newCrew
+        refreshVoice()
         if changed, invalidateInFlight {
             invalidateOutdatedWork(markCancelled: true)
         }
@@ -1008,14 +1043,24 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     func speakResultAgain() {
-        let text = resultText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = SpanishTranslatorAPI.lineForCrew(
+            crew: crew,
+            english: englishText,
+            spanish: spanishText,
+            fallback: resultText
+        )
         guard !text.isEmpty else { return }
         speakResult(text, preferNeural: true)
     }
 
     /// Optional: once translation text is ready, cancel cloud speak and use Apple now.
     func speakNowWithDeviceVoice() {
-        let text = resultText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = SpanishTranslatorAPI.lineForCrew(
+            crew: crew,
+            english: englishText,
+            spanish: spanishText,
+            fallback: resultText
+        )
         guard !text.isEmpty else { return }
         allowAppleSpeakFallback = true
         cancelSpeakPipeline(silence: true)
@@ -1049,6 +1094,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         if snapshotFromCurrent {
             turnDirection = direction
             turnVoiceMode = voiceMode
+            turnCrew = crew
         }
     }
 
@@ -1110,7 +1156,13 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         lastSuccessStatus = successStatus
         statusLabel = successStatus
         pendingOnDeviceSource = ""
-        speakResult(draft.translation, preferNeural: true)
+        let spoken = SpanishTranslatorAPI.lineForCrew(
+            crew: turnCrew,
+            english: englishText,
+            spanish: spanishText,
+            fallback: draft.translation
+        )
+        speakResult(spoken, preferNeural: true)
     }
 
     private var sourceText: String {
@@ -1238,34 +1290,41 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     private func refreshVoice() {
-        let wantEnglish = direction.listensInSpanish
+        let wantEnglish = crew.speakLanguage != "es"
+        let preferFemale = crew.prefersFemaleDeviceVoice
         let voices = AVSpeechSynthesisVoice.speechVoices().filter {
             if wantEnglish {
                 return SpanishTranslatorAPI.englishVoiceScore(language: $0.language) >= 0
             }
             return SpanishTranslatorAPI.spanishVoiceScore(language: $0.language) >= 0
         }
+        func genderForScore(_ raw: Int) -> Int {
+            guard preferFemale else { return raw }
+            if raw == 1 { return 2 }
+            if raw == 2 { return 1 }
+            return raw
+        }
         let ranked = voices.sorted { lhs, rhs in
             let l = wantEnglish
                 ? SpanishTranslatorAPI.englishPlaybackVoiceScore(
                     language: lhs.language,
-                    genderRaw: lhs.gender.rawValue,
+                    genderRaw: genderForScore(lhs.gender.rawValue),
                     qualityRaw: lhs.quality.rawValue
                 )
                 : SpanishTranslatorAPI.jobsiteVoiceScore(
                     language: lhs.language,
-                    genderRaw: lhs.gender.rawValue,
+                    genderRaw: genderForScore(lhs.gender.rawValue),
                     qualityRaw: lhs.quality.rawValue
                 )
             let r = wantEnglish
                 ? SpanishTranslatorAPI.englishPlaybackVoiceScore(
                     language: rhs.language,
-                    genderRaw: rhs.gender.rawValue,
+                    genderRaw: genderForScore(rhs.gender.rawValue),
                     qualityRaw: rhs.quality.rawValue
                 )
                 : SpanishTranslatorAPI.jobsiteVoiceScore(
                     language: rhs.language,
-                    genderRaw: rhs.gender.rawValue,
+                    genderRaw: genderForScore(rhs.gender.rawValue),
                     qualityRaw: rhs.quality.rawValue
                 )
             if l != r { return l > r }
@@ -1309,11 +1368,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         }
     }
 
-    func speakDeepSouth(_ text: String) {
-        speakResult(text, preferNeural: true, delivery: SpanishTranslatorAPI.deepSouthDelivery)
-    }
-
-    private func speakResult(_ text: String, preferNeural: Bool, delivery: String? = nil) {
+    private func speakResult(_ text: String, preferNeural: Bool) {
         let trimmed = SpanishTranslatorAPI.clampSpeakText(text)
         guard !trimmed.isEmpty else { return }
         allowAppleSpeakFallback = preferNeural
@@ -1322,10 +1377,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let generation = speakGeneration
         let turn = turnID
         let snapshotMode = turnVoiceMode
-        let snapshotDelivery = delivery
-        let speakLanguage = snapshotDelivery == SpanishTranslatorAPI.deepSouthDelivery
-            ? "en"
-            : turnDirection.speakLanguage
+        let snapshotCrew = turnCrew
+        let speakLanguage = snapshotCrew.speakLanguage
 
         phase = .preparingVoice
         isPreparingSpeak = true
@@ -1335,7 +1388,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         startPreparingTicker(turn: turn)
 
         guard preferNeural else {
-            speakWithAppleFallback(trimmed, turn: turn, speakGen: generation, delivery: snapshotDelivery)
+            speakWithAppleFallback(trimmed, turn: turn, speakGen: generation)
             return
         }
 
@@ -1348,7 +1401,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     token: self.pendingToken,
                     voiceMode: snapshotMode,
                     language: speakLanguage,
-                    delivery: snapshotDelivery
+                    crew: snapshotCrew
                 )
                 try Task.checkCancellation()
                 guard generation == self.speakGeneration, turn == self.turnID else { return }
@@ -1360,7 +1413,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     voice: self.lastTTSVoice,
                     voiceMode: snapshotMode,
                     language: speakLanguage,
-                    delivery: snapshotDelivery
+                    crew: snapshotCrew
                 )
             } catch is CancellationError {
                 guard generation == self.speakGeneration else { return }
@@ -1380,7 +1433,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                 if !detail.isEmpty {
                     self.errorMessage = "Neural TTS unavailable — Apple voice. (\(detail))"
                 }
-                self.speakWithAppleFallback(trimmed, turn: turn, speakGen: generation, delivery: snapshotDelivery)
+                self.speakWithAppleFallback(trimmed, turn: turn, speakGen: generation)
             }
         }
     }
@@ -1446,21 +1499,16 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         statusLabel = SpanishTranslatorAPI.statusPlaying
     }
 
-    private func speakWithAppleFallback(_ text: String, turn: UInt64, speakGen: UInt64, language: String? = nil, delivery: String? = nil) {
+    private func speakWithAppleFallback(_ text: String, turn: UInt64, speakGen: UInt64, language: String? = nil) {
         guard turn == turnID, speakGen == speakGeneration else { return }
         refreshVoice()
         prepareLoudPlaybackSession()
 
-        let deepSouth = delivery == SpanishTranslatorAPI.deepSouthDelivery
         let utterance = AVSpeechUtterance(string: text)
-        if deepSouth {
-            utterance.voice = AVSpeechSynthesisVoice(language: "en-US") ?? selectedVoice
-        } else {
-            utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
-        }
+        utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
         utterance.volume = 1.0
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * (deepSouth ? 0.72 : SpanishTranslatorAPI.speechRateFactor(voiceMode: voiceMode))
-        utterance.pitchMultiplier = deepSouth ? 0.82 : SpanishTranslatorAPI.speechPitchMultiplier(voiceMode: voiceMode)
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * crew.appleRateFactor
+        utterance.pitchMultiplier = crew.applePitchMultiplier
         utterance.preUtteranceDelay = 0
         utterance.postUtteranceDelay = 0.08
 
@@ -1505,7 +1553,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         token: String,
         voiceMode: SpanishVoiceMode,
         language: String,
-        delivery: String? = nil
+        crew: CrewTalkMember
     ) async throws -> (data: Data, model: String?, voice: String?) {
         guard let url = SpanishTranslatorAPI.speakURL(customEndpoint: customEndpoint) else {
             throw VisionHTTPError(
@@ -1517,7 +1565,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             text: text,
             voiceMode: voiceMode,
             language: language,
-            delivery: delivery
+            crew: crew
         )
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
         do {

@@ -8,6 +8,9 @@ import {
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
   normalizeSpeakLanguage,
+  resolveElevenLabsModel,
+  resolveElevenLabsVoiceId,
+  shouldUseElevenLabsSpeak,
   speakVoiceInstructions,
   speakVoiceMode,
   type SpeakLanguage,
@@ -65,12 +68,23 @@ router.post("/speak", async (req, res) => {
 
   const voiceMode = speakVoiceMode(body.voiceMode ?? body.mode ?? body.style);
   const language = normalizeSpeakLanguage(body.language);
-  const voice = pickVoice(body.voice, voiceMode, language);
   const format = pickFormat(body.format);
-  const model =
-    (typeof body.model === "string" && body.model.trim()) ||
-    process.env["TTS_MODEL"] ||
-    SPEAK_DEFAULT_MODEL;
+  const rawVoice = typeof body.voice === "string" ? body.voice.trim() : "";
+  const rawModel = typeof body.model === "string" ? body.model.trim() : "";
+  const useEleven = shouldUseElevenLabsSpeak(rawVoice, rawModel);
+  let voice: string;
+  let model: string;
+  if (useEleven) {
+    const elevenVoice = resolveElevenLabsVoiceId(rawVoice);
+    if (!elevenVoice) {
+      return res.status(400).json({ error: "ElevenLabs speech needs a voice id." });
+    }
+    voice = elevenVoice;
+    model = resolveElevenLabsModel(rawModel);
+  } else {
+    voice = pickVoice(body.voice, voiceMode, language);
+    model = rawModel || process.env["TTS_MODEL"] || SPEAK_DEFAULT_MODEL;
+  }
 
   const clientKey = getClientKey(req);
   const bucket = consumeLocalRateLimit(clientKey);
@@ -89,28 +103,9 @@ router.post("/speak", async (req, res) => {
   bucket.inFlight += 1;
 
   try {
-    const apiKey = process.env["OPENAI_API_KEY"];
-    if (!apiKey) throw new MissingProviderKeyError("OPENAI_API_KEY");
-
-    const payload: Record<string, unknown> = {
-      model,
-      voice,
-      input: text,
-      response_format: format,
-    };
-    if (speakSupportsInstructions(model)) {
-      payload.instructions = speakVoiceInstructions(voiceMode, language);
-    }
-
-    const response = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
-      body: JSON.stringify(payload),
-    });
+    const response = useEleven
+      ? await synthesizeElevenLabs(text, voice, model, format)
+      : await synthesizeOpenAI(text, voice, model, format, voiceMode, language);
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
@@ -134,7 +129,9 @@ router.post("/speak", async (req, res) => {
     return res.status(200).send(audio);
   } catch (error) {
     if (error instanceof MissingProviderKeyError) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({
+        error: `The speech provider key is missing (${error.envName}).`,
+      });
     }
     if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
       return res.status(504).json({ error: "The speech provider timed out. Please try again." });
@@ -145,6 +142,64 @@ router.post("/speak", async (req, res) => {
     bucket.inFlight -= 1;
   }
 });
+
+
+async function synthesizeOpenAI(
+  text: string,
+  voice: string,
+  model: string,
+  format: "mp3" | "wav",
+  voiceMode: ReturnType<typeof speakVoiceMode>,
+  language: SpeakLanguage,
+): Promise<Response> {
+  const apiKey = process.env["OPENAI_API_KEY"];
+  if (!apiKey) throw new MissingProviderKeyError("OPENAI_API_KEY");
+  const payload: Record<string, unknown> = {
+    model,
+    voice,
+    input: text,
+    response_format: format,
+  };
+  if (speakSupportsInstructions(model)) {
+    payload.instructions = speakVoiceInstructions(voiceMode, language);
+  }
+  return fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+    body: JSON.stringify(payload),
+  });
+}
+
+async function synthesizeElevenLabs(
+  text: string,
+  voiceId: string,
+  model: string,
+  format: "mp3" | "wav",
+): Promise<Response> {
+  const apiKey = process.env["ELEVENLABS_API_KEY"];
+  if (!apiKey) {
+    throw new MissingProviderKeyError("ELEVENLABS_API_KEY");
+  }
+  const outputFormat = format === "wav" ? "wav_44100" : "mp3_44100_128";
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: format === "wav" ? "audio/wav" : "audio/mpeg",
+      "xi-api-key": apiKey,
+    },
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+    body: JSON.stringify({
+      text,
+      model_id: model,
+    }),
+  });
+}
 
 function consumeLocalRateLimit(clientKey: string) {
   const now = Date.now();
