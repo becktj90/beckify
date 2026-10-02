@@ -43,6 +43,7 @@ struct MotorNameplateOCRView: View {
     // no hop to Motor Nameplate Analyzer required for the common case.
     @StoredInput(.motorNameplateOCR, "necMotorType", default: "sc-bde") private var necMotorType
     @StoredInput(.motorNameplateOCR, "necDevice", default: "inv") private var necDevice
+    @StoredInput(.motorNameplateOCR, "necRise", default: "") private var necRise
     @State private var necSession = ExplicitCalculationState<MotorNameplateResult>()
 
     private var inputFingerprint: String { text }
@@ -161,6 +162,16 @@ struct MotorNameplateOCRView: View {
             guard !analyzing else { return }
             session.markInputsChanged()
             confirmed = false
+        }
+        .onChange(of: confirmed) { _, isConfirmed in
+            // Confirmation is revoked whenever a reviewed field changes, a
+            // new photo is scanned, or the tool is reset — in every one of
+            // those cases the last NEC answer no longer matches what's on
+            // screen, so clear it rather than let it reappear unchanged
+            // (and at full opacity) the next time this section remounts.
+            if !isConfirmed {
+                necSession.reset()
+            }
         }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
@@ -346,6 +357,15 @@ struct MotorNameplateOCRView: View {
             MenuField(title: "SCPD device", selection: $necDevice, options: MotorSCPDDevice.allCases.map(\.rawValue)) { raw in
                 MotorSCPDDevice(rawValue: raw)?.label ?? raw
             }
+            NumberField(
+                title: "Temp rise (optional)",
+                unit: "°C",
+                text: $necRise,
+                optional: true,
+                helpText: "On the plate if printed. A rise of 40 °C or less can allow a larger overload percentage per 430.32 — leave blank if it isn't on the plate.",
+                fieldID: "necRise",
+                onSubmit: calculateNEC
+            )
 
             Button("Calculate NEC values") {
                 calculateNEC()
@@ -397,6 +417,7 @@ struct MotorNameplateOCRView: View {
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .onChange(of: necMotorType) { _, _ in necSession.markInputsChanged() }
         .onChange(of: necDevice) { _, _ in necSession.markInputsChanged() }
+        .onChange(of: necRise) { _, _ in necSession.markInputsChanged() }
     }
 
     private func calculateNEC() {
@@ -407,7 +428,7 @@ struct MotorNameplateOCRView: View {
                 horsepower: filledDraft[.ratedHP]?.parsedDouble,
                 volts: filledDraft[.voltage]?.parsedDouble,
                 serviceFactor: filledDraft[.sf]?.parsedDouble,
-                temperatureRiseC: nil,
+                temperatureRiseC: necRise.parsedDouble,
                 motorType: MotorNameplateType(rawValue: necMotorType) ?? .squirrelCageOther,
                 device: MotorSCPDDevice(rawValue: necDevice) ?? .inverseTimeBreaker,
                 codeLetter: filledDraft[.codeLetter]

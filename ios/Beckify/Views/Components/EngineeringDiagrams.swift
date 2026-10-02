@@ -1397,24 +1397,39 @@ struct HeaterCircuitDiagram: View {
     }
 
     private func draw(in context: GraphicsContext, size: CGSize) {
-        guard phase == .three else {
+        switch phase {
+        case .single:
             drawSinglePhaseLoop(in: context, size: size)
-            return
+        case .three:
+            if connection == .wye {
+                drawWye(in: context, size: size)
+            } else {
+                drawDelta(in: context, size: size)
+            }
         }
+    }
 
+    private func ohmLabel(at point: CGPoint, context: GraphicsContext) {
+        context.draw(
+            Text("\(Format.number(legResistanceOhms, digits: 2)) Ω")
+                .font(.caption2.monospacedDigit())
+                .foregroundColor(Theme.foreground),
+            at: point
+        )
+    }
+
+    /// Three independent line leads (no bus tying them together — that would
+    /// short the supply phases) descending through a resistor to one shared
+    /// star point. Only the star point ties the three legs together.
+    private func drawWye(in context: GraphicsContext, size: CGSize) {
         let legX = legPositions(width: size.width)
-        let busY: CGFloat = 16
+        let leadTopY: CGFloat = 16
         let legTopY: CGFloat = 30
-        let legBottomY: CGFloat = size.height - (connection == .wye ? 46 : 30)
-
-        var bus = Path()
-        bus.move(to: CGPoint(x: legX.first!, y: busY))
-        bus.addLine(to: CGPoint(x: legX.last!, y: busY))
-        context.stroke(bus, with: .color(Theme.foreground.opacity(0.7)), lineWidth: Theme.Stroke.emphasis)
+        let legBottomY: CGFloat = size.height - 46
 
         for (index, x) in legX.enumerated() {
             var lead = Path()
-            lead.move(to: CGPoint(x: x, y: busY))
+            lead.move(to: CGPoint(x: x, y: leadTopY))
             lead.addLine(to: CGPoint(x: x, y: legTopY))
             context.stroke(lead, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
             context.stroke(
@@ -1424,56 +1439,98 @@ struct HeaterCircuitDiagram: View {
             )
             context.draw(
                 Text("L\(index + 1)").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted),
-                at: CGPoint(x: x, y: busY - 10)
+                at: CGPoint(x: x, y: leadTopY - 10)
             )
-            context.draw(
-                Text("\(Format.number(legResistanceOhms, digits: 2)) Ω")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundColor(Theme.foreground),
-                at: CGPoint(x: x, y: legBottomY + (connection == .wye ? 14 : 12))
-            )
+            ohmLabel(at: CGPoint(x: x, y: legBottomY + 14), context: context)
         }
 
-        if connection == .wye {
-            // Join all three legs at one common star point below center.
-            let starPoint = CGPoint(x: legX[1], y: size.height - 18)
-            for x in legX {
-                var toStar = Path()
-                toStar.move(to: CGPoint(x: x, y: legBottomY))
-                toStar.addLine(to: starPoint)
-                context.stroke(toStar, with: .color(Theme.accent.opacity(0.8)), lineWidth: Theme.Stroke.hairline)
-            }
-            context.fill(Path(ellipseIn: CGRect(x: starPoint.x - 4, y: starPoint.y - 4, width: 8, height: 8)), with: .color(Theme.energized))
-            context.draw(
-                Text("N").font(.caption2.weight(.bold)).foregroundColor(Theme.energized),
-                at: CGPoint(x: starPoint.x, y: starPoint.y + 12)
-            )
-        } else {
-            // Delta: loop each leg's bottom to the next, closing the triangle across the bottom edge.
-            for i in 0..<legX.count {
-                var loop = Path()
-                loop.move(to: CGPoint(x: legX[i], y: legBottomY))
-                loop.addLine(to: CGPoint(x: legX[(i + 1) % legX.count], y: legBottomY))
-                context.stroke(loop, with: .color(Theme.accent.opacity(0.8)), lineWidth: Theme.Stroke.hairline)
-            }
+        let starPoint = CGPoint(x: legX[1], y: size.height - 18)
+        for x in legX {
+            var toStar = Path()
+            toStar.move(to: CGPoint(x: x, y: legBottomY))
+            toStar.addLine(to: starPoint)
+            context.stroke(toStar, with: .color(Theme.accent.opacity(0.8)), lineWidth: Theme.Stroke.hairline)
         }
+        context.fill(Path(ellipseIn: CGRect(x: starPoint.x - 4, y: starPoint.y - 4, width: 8, height: 8)), with: .color(Theme.energized))
+        context.draw(
+            Text("N").font(.caption2.weight(.bold)).foregroundColor(Theme.energized),
+            at: CGPoint(x: starPoint.x, y: starPoint.y + 12)
+        )
     }
 
-    /// Single-phase: a plain two-wire loop, element across the bottom.
+    /// Three independent line leads, each resistor wired between a distinct
+    /// *pair* of lines (L1–L2, L2–L3, L3–L1) — a true delta loop, not three
+    /// legs hanging off a shared bus. L1 and L3 each feed two resistors;
+    /// L2 feeds the two resistors that share its node.
+    private func drawDelta(in context: GraphicsContext, size: CGSize) {
+        let legX = legPositions(width: size.width)
+        let leadTopY: CGFloat = 16
+        let terminalY: CGFloat = 34
+        let midRowY: CGFloat = terminalY + (size.height - terminalY) * 0.45
+        let lowRowY: CGFloat = size.height - 24
+
+        for (index, x) in legX.enumerated() {
+            var lead = Path()
+            lead.move(to: CGPoint(x: x, y: leadTopY))
+            lead.addLine(to: CGPoint(x: x, y: terminalY))
+            context.stroke(lead, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+            context.draw(
+                Text("L\(index + 1)").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted),
+                at: CGPoint(x: x, y: leadTopY - 10)
+            )
+        }
+
+        func drop(_ x: CGFloat, from: CGFloat, to: CGFloat) {
+            var stub = Path()
+            stub.move(to: CGPoint(x: x, y: from))
+            stub.addLine(to: CGPoint(x: x, y: to))
+            context.stroke(stub, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+        }
+
+        // R12 between L1 and L2, R23 between L2 and L3 — both at midRowY.
+        drop(legX[0], from: terminalY, to: midRowY)
+        drop(legX[1], from: terminalY, to: midRowY)
+        drop(legX[2], from: terminalY, to: midRowY)
+        context.stroke(
+            zigzagPath(x: (legX[0] + legX[1]) / 2, topY: midRowY, bottomY: midRowY, horizontal: true, span: legX[1] - legX[0]),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+        context.stroke(
+            zigzagPath(x: (legX[1] + legX[2]) / 2, topY: midRowY, bottomY: midRowY, horizontal: true, span: legX[2] - legX[1]),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+        ohmLabel(at: CGPoint(x: (legX[0] + legX[1]) / 2, y: midRowY - 10), context: context)
+        ohmLabel(at: CGPoint(x: (legX[1] + legX[2]) / 2, y: midRowY - 10), context: context)
+
+        // R31 between L3 and L1 — L1 and L3's leads continue down past
+        // midRowY (still the same node) to a lower row so this third
+        // resistor closes the loop without touching L2.
+        drop(legX[0], from: midRowY, to: lowRowY)
+        drop(legX[2], from: midRowY, to: lowRowY)
+        context.stroke(
+            zigzagPath(x: (legX[0] + legX[2]) / 2, topY: lowRowY, bottomY: lowRowY, horizontal: true, span: legX[2] - legX[0]),
+            with: .color(Theme.accent),
+            style: StrokeStyle(lineWidth: Theme.Stroke.emphasis, lineCap: .round, lineJoin: .round)
+        )
+        ohmLabel(at: CGPoint(x: (legX[0] + legX[2]) / 2, y: lowRowY + 14), context: context)
+    }
+
+    /// Single-phase: two independent leads to the two ends of one element —
+    /// no wire directly joins L1 and L2, or it would short the element.
     private func drawSinglePhaseLoop(in context: GraphicsContext, size: CGSize) {
         let leftX: CGFloat = min(36, size.width * 0.14)
         let rightX: CGFloat = size.width - leftX
         let topY: CGFloat = 20
         let bottomY: CGFloat = size.height - 28
 
-        var loop = Path()
-        loop.move(to: CGPoint(x: leftX, y: topY))
-        loop.addLine(to: CGPoint(x: rightX, y: topY))
-        loop.move(to: CGPoint(x: leftX, y: topY))
-        loop.addLine(to: CGPoint(x: leftX, y: bottomY))
-        loop.move(to: CGPoint(x: rightX, y: topY))
-        loop.addLine(to: CGPoint(x: rightX, y: bottomY))
-        context.stroke(loop, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
+        var leads = Path()
+        leads.move(to: CGPoint(x: leftX, y: topY))
+        leads.addLine(to: CGPoint(x: leftX, y: bottomY))
+        leads.move(to: CGPoint(x: rightX, y: topY))
+        leads.addLine(to: CGPoint(x: rightX, y: bottomY))
+        context.stroke(leads, with: .color(Theme.accent), lineWidth: Theme.Stroke.emphasis)
 
         context.stroke(
             zigzagPath(x: (leftX + rightX) / 2, topY: bottomY, bottomY: bottomY, horizontal: true, span: rightX - leftX),
@@ -1483,12 +1540,7 @@ struct HeaterCircuitDiagram: View {
 
         context.draw(Text("L1").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted), at: CGPoint(x: leftX, y: topY - 10))
         context.draw(Text("L2").font(.caption2.weight(.semibold)).foregroundColor(Theme.muted), at: CGPoint(x: rightX, y: topY - 10))
-        context.draw(
-            Text("\(Format.number(legResistanceOhms, digits: 2)) Ω")
-                .font(.caption2.monospacedDigit())
-                .foregroundColor(Theme.foreground),
-            at: CGPoint(x: (leftX + rightX) / 2, y: bottomY + 14)
-        )
+        ohmLabel(at: CGPoint(x: (leftX + rightX) / 2, y: bottomY + 14), context: context)
     }
 
     private func legPositions(width: CGFloat) -> [CGFloat] {
