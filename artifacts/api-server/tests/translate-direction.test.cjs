@@ -27,7 +27,9 @@ function loadPromptModule() {
 const {
   englishResponseDialect,
   resolveTranslateDirection,
+  translateFallbackDialect,
   translateSystemPrompt,
+  translateTargetLanguage,
   translateUserPrompt,
 } = loadPromptModule();
 
@@ -72,5 +74,55 @@ assert.equal(englishResponseDialect("jobsite", ""), "english_jobsite");
 assert.equal(englishResponseDialect("clean", "cuban_florida_clean"), "english_clean");
 assert.equal(englishResponseDialect("jobsite", "english_jobsite"), "english_jobsite");
 assert.equal(englishResponseDialect("clean", "clear_english_clean"), "clear_english_clean");
+
+// English <-> Japanese: a real translation path, not a stereotyped-accent
+// voice. Verify the prompts ask for an accurate translation and explicitly
+// forbid hate speech / slurs, same as every other direction.
+assert.equal(resolveTranslateDirection("en", "ja"), "en-to-ja");
+assert.equal(resolveTranslateDirection("en-US", "ja-JP"), "en-to-ja");
+assert.equal(resolveTranslateDirection("ja", "en"), "ja-to-en");
+assert.equal(resolveTranslateDirection("ja-JP", "en-US"), "ja-to-en");
+assert.equal(resolveTranslateDirection("ja", "es"), null);
+assert.equal(resolveTranslateDirection("ja", "ja"), null);
+
+assert.equal(translateTargetLanguage("en-to-ja"), "ja");
+assert.equal(translateTargetLanguage("ja-to-en"), "en");
+
+const jaForwardJobsite = JSON.parse(translateUserPrompt("Where's the breaker?", "en", "jobsite", "en-to-ja"));
+assert.equal(jaForwardJobsite.targetLanguage, "ja");
+assert.equal(jaForwardJobsite.voiceMode, "jobsite");
+const jaJobsitePrompt = translateSystemPrompt("jobsite", "en-to-ja");
+assert.match(jaJobsitePrompt, /Japanese/i);
+assert.match(jaJobsitePrompt, /real.+translation|not a caricature|not an accent/i);
+assert.match(jaJobsitePrompt, /hate speech|protected classes/i);
+assert.doesNotMatch(jaJobsitePrompt, /broken English|Engrish/i);
+
+const jaForwardClean = JSON.parse(translateUserPrompt("Hand me that wire.", "en", "clean", "en-to-ja"));
+assert.equal(jaForwardClean.targetLanguage, "ja");
+assert.equal(jaForwardClean.voiceMode, "clean");
+assert.match(translateSystemPrompt("clean", "en-to-ja"), /polite|warm/i);
+
+const jaReverseJobsite = JSON.parse(
+  translateUserPrompt("ブレーカーはどこ？", "ja", "jobsite", "ja-to-en"),
+);
+assert.equal(jaReverseJobsite.targetLanguage, "en");
+assert.equal(jaReverseJobsite.sourceLanguage, "ja");
+assert.match(translateSystemPrompt("jobsite", "ja-to-en"), /blunt field English/);
+assert.match(translateSystemPrompt("jobsite", "ja-to-en"), /hate speech|protected classes/i);
+
+const jaReverseClean = JSON.parse(translateUserPrompt("電源を切って。", "ja", "clean", "ja-to-en"));
+assert.equal(jaReverseClean.targetLanguage, "en");
+assert.match(translateSystemPrompt("clean", "ja-to-en"), /polished English|clear, polished English/i);
+
+// A dialect label that names the *source* language (Japanese) rather than
+// the English output gets stripped to the generic label too, same as
+// Spanish-branded labels already do for es-to-en.
+assert.equal(englishResponseDialect("jobsite", "japanese_jobsite"), "english_jobsite");
+assert.equal(englishResponseDialect("clean", "japan_source_clean"), "english_clean");
+assert.equal(englishResponseDialect("jobsite", "english_jobsite"), "english_jobsite");
+assert.equal(translateFallbackDialect("en-to-ja", "jobsite"), "japanese_jobsite");
+assert.equal(translateFallbackDialect("en-to-ja", "clean"), "japanese_clean");
+assert.equal(translateFallbackDialect("ja-to-en", "jobsite"), "english_jobsite");
+assert.equal(translateFallbackDialect("en-to-es", "jobsite"), "cuban_florida_jobsite");
 
 console.log("translate-direction.test.cjs: ok");

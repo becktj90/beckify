@@ -5,7 +5,9 @@ import {
   englishResponseDialect,
   normalizeTranslateVoiceMode,
   resolveTranslateDirection,
+  translateFallbackDialect,
   translateSystemPrompt,
+  translateTargetLanguage,
   translateUserPrompt,
 } from "../prompts/translatePrompt.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
@@ -48,7 +50,7 @@ router.post("/translate", async (req, res) => {
   const direction = resolveTranslateDirection(sourceLanguage, targetLanguage);
   if (!direction) {
     return res.status(400).json({
-      error: "This route translates English → Spanish (`targetLanguage` es / es-*) or Spanish → English (`sourceLanguage` es / es-*, `targetLanguage` en / en-*).",
+      error: "This route translates English ↔ Spanish (`targetLanguage`/`sourceLanguage` es / es-*) or English ↔ Japanese (ja / ja-*).",
     });
   }
 
@@ -114,10 +116,10 @@ router.post("/translate", async (req, res) => {
       return res.status(502).json({ error: "The translation provider returned invalid JSON." });
     }
 
-    const responseTarget = direction === "es-to-en" ? "en" : "es";
-    const dialect = direction === "es-to-en"
+    const responseTarget = translateTargetLanguage(direction);
+    const dialect = responseTarget === "en"
       ? englishResponseDialect(voiceMode, parsed.dialect)
-      : (parsed.dialect || (voiceMode === "clean" ? "cuban_florida_clean" : "cuban_florida_jobsite"));
+      : (parsed.dialect || translateFallbackDialect(direction, voiceMode));
 
     return res.json({
       task: "translate",
