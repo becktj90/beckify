@@ -8,6 +8,8 @@ import {
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
   normalizeSpeakLanguage,
+  BODIE_ELEVEN_VOICE_SETTINGS,
+  BODIE_HALE_VOICE_ID,
   CASSIAN_ELEVEN_VOICE_SETTINGS,
   CASSIAN_VALE_SEED,
   CASSIAN_VALE_VOICE_ID,
@@ -37,7 +39,7 @@ interface SpeakBody {
   mode?: unknown;
   /** OpenAI voice-mode alias when it is a string. Numeric ElevenLabs style is ignored. */
   style?: unknown;
-  /** Ignored. ElevenLabs stability is server-side for Junie and Cassian only. */
+  /** Ignored. ElevenLabs stability is server-side for Bodie, Junie, and Cassian. */
   stability?: unknown;
   /** Ignored. */
   similarity_boost?: unknown;
@@ -229,16 +231,18 @@ async function synthesizeElevenLabs(
 
 
 /**
- * Junie and Cassian presets stay server-side.
+ * Bodie, Junie, and Cassian presets stay server-side.
  * Client stability, similarity, style, and speed are ignored.
  * Other allowlisted voices use the provider default.
  */
 function elevenVoiceSettings(voiceId: string): Record<string, number | boolean> | undefined {
-  const preset = voiceId === JUNIE_PELL_VOICE_ID
-    ? JUNIE_ELEVEN_VOICE_SETTINGS
-    : voiceId === CASSIAN_VALE_VOICE_ID
-      ? CASSIAN_ELEVEN_VOICE_SETTINGS
-      : undefined;
+  const preset = voiceId === BODIE_HALE_VOICE_ID
+    ? BODIE_ELEVEN_VOICE_SETTINGS
+    : voiceId === JUNIE_PELL_VOICE_ID
+      ? JUNIE_ELEVEN_VOICE_SETTINGS
+      : voiceId === CASSIAN_VALE_VOICE_ID
+        ? CASSIAN_ELEVEN_VOICE_SETTINGS
+        : undefined;
   if (!preset) return undefined;
   return {
     stability: preset.stability,

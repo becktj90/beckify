@@ -162,6 +162,20 @@ export const JUNIE_ELEVEN_VOICE_SETTINGS = {
   use_speaker_boost: true,
 } as const;
 
+/**
+ * Bodie Hale. If Voice Design is regenerated, swap this id and keep it
+ * in lockstep with CrewTalkMember.voiceID.
+ */
+export const BODIE_HALE_VOICE_ID = "XVO6RhOYU9ZEKHFXrx6b";
+
+export const BODIE_ELEVEN_VOICE_SETTINGS = {
+  stability: 0,
+  similarity_boost: 0.75,
+  style: 0.8,
+  speed: 0.9,
+  use_speaker_boost: true,
+} as const;
+
 export const CREW_TALK_ELEVEN_VOICES = {
   bodieHale: "XVO6RhOYU9ZEKHFXrx6b",
   titoSolano: "goyf4sY4AqSvMIeO1hb5",

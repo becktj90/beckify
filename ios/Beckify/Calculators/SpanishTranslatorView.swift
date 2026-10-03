@@ -122,9 +122,9 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    /// Copy the dock Speak string — the other-language line on screen.
+    /// Copy the dock Speak string — the other-language line on screen, without laugh tags.
     private var copyText: String {
-        dockSpokenAnswer
+        SpanishTranslatorAPI.displayText(dockSpokenAnswer)
     }
 
     /// English / Spanish slots for dock + dialect. Typed input wins for the listen side.
@@ -486,15 +486,15 @@ struct SpanishTranslatorView: View {
                 .accessibilityIdentifier("spanishTranslator.composer")
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(dockSpokenAnswer.isEmpty ? "—" : dockSpokenAnswer)
+                    Text(SpanishTranslatorAPI.displayText(dockSpokenAnswer).isEmpty ? "—" : SpanishTranslatorAPI.displayText(dockSpokenAnswer))
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(Theme.foreground)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(4)
                         .textSelection(.enabled)
                         .accessibilityIdentifier("spanishTranslator.answer")
-                    if !dockDialectHelper.isEmpty {
-                        Text(dockDialectHelper)
+                    if !SpanishTranslatorAPI.displayText(dockDialectHelper).isEmpty {
+                        Text(SpanishTranslatorAPI.displayText(dockDialectHelper))
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(Theme.muted)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1680,8 +1680,11 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         guard turn == turnID, speakGen == speakGeneration else { return }
         refreshVoice()
         prepareLoudPlaybackSession()
+        // Apple reads the line a person sees. ElevenLabs still gets the tags.
+        let spoken = SpanishTranslatorAPI.displayText(text)
+        guard !spoken.isEmpty else { return }
 
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: spoken)
         utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
         utterance.volume = 1.0
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * crew.appleRateFactor
@@ -1695,7 +1698,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         statusLabel = SpanishTranslatorAPI.preparingVoiceStatus(elapsedSeconds: preparingElapsedSeconds)
         translatedAudioURL = nil
         audioCopyNotice = nil
-        let recordingUtterance = AVSpeechUtterance(string: text)
+        let recordingUtterance = AVSpeechUtterance(string: spoken)
         recordingUtterance.voice = utterance.voice
         recordingUtterance.rate = utterance.rate
         recordingUtterance.pitchMultiplier = utterance.pitchMultiplier

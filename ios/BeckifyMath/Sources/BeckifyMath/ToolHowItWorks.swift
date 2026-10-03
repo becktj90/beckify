@@ -792,7 +792,8 @@ public enum ToolHowItWorksCatalog {
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Five helpers—Bodie, Tito, Junie, Pearl, and Sloane. The dock shows the other language. Speak plays the rewritten line on screen, never the raw text field. Cuban Spanish included.",
+                "Five helpers—Bodie, Tito, Junie, Pearl, and Sloane. The dock shows the other language. Speak plays the rewritten line, never the raw text field. Cuban Spanish included.",
+                "Bodie: Laid-back California stoner buddy. Slow, raspy, and always laughing.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),

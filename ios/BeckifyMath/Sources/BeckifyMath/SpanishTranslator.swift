@@ -75,7 +75,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
 
     public var blurb: String {
         switch self {
-        case .bodieHale: return "California beach English. Laid-back, warm, and unhurried."
+        case .bodieHale: return "Laid-back California stoner buddy. Slow, raspy, and always laughing."
         case .titoSolano: return "Cuban jobsite Spanish. Raspy, direct, and steady."
         case .juniePell: return "Rural Alabama English. Slow, low, and kind."
         case .pearl: return "Warm English. Softens a blunt ask and still makes it."
@@ -96,7 +96,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     /// Apple fallback pace. Cloud voice is the real character.
     public var appleRateFactor: Float {
         switch self {
-        case .bodieHale: return 0.92
+        case .bodieHale: return 0.86
         case .titoSolano: return 0.84
         case .juniePell: return 0.70
         case .pearl: return 0.92
@@ -106,7 +106,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
 
     public var applePitchMultiplier: Float {
         switch self {
-        case .bodieHale: return 0.96
+        case .bodieHale: return 0.92
         case .titoSolano: return 0.86
         case .juniePell: return 0.90
         case .pearl: return 1.0
@@ -1175,6 +1175,11 @@ public enum SpanishTranslatorAPI {
 
     public static func bodieDialectRewrite(_ raw: String) -> String {
         CrewDialectRewrite.rewrite(crew: .bodieHale, raw: raw)
+    }
+
+    /// Strips ElevenLabs laugh tags for anything a person reads or Apple speaks.
+    public static func displayText(_ raw: String) -> String {
+        CrewDialectRewrite.displayText(raw)
     }
 
     public static func titoDialectRewrite(_ raw: String) -> String {
