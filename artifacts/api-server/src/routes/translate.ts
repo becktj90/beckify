@@ -11,6 +11,7 @@ import {
   translateUserPrompt,
 } from "../prompts/translatePrompt.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
+import { OutputTruncatedError, assertNotTruncated, chargeBudget, logAIUsage, refundBudget, textMaxOutputTokens } from "../lib/usageBudget.js";
 
 interface TranslateBody {
   text?: unknown;
@@ -26,7 +27,7 @@ interface TranslateBody {
 
 const router: IRouter = Router();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 40;
+const MAX_REQUESTS_PER_WINDOW = 30;
 const MAX_IN_FLIGHT_PER_CLIENT = 3;
 const PROVIDER_TIMEOUT_MS = 25_000;
 const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
@@ -57,8 +58,18 @@ router.post("/translate", async (req, res) => {
   const voiceMode = normalizeTranslateVoiceMode(body.voiceMode ?? body.mode ?? body.style ?? body.dialect);
 
   const clientKey = getClientKey(req);
+  const textCharge = chargeBudget("text", clientKey, 1);
+  if (!textCharge.allowed) {
+    logAIUsage({ route: "/api/translate", kind: "text", outcome: "blocked", clientKey, units: 1, status: 429 });
+    res.setHeader("Retry-After", String(textCharge.retryAfter));
+    return res.status(429).json({
+      error: "AI text budget exceeded. Please try again later.",
+      retryAfter: textCharge.retryAfter,
+    });
+  }
   const bucket = consumeLocalRateLimit(clientKey);
   if (!bucket.allowed) {
+    refundBudget("text", clientKey, 1);
     const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
     res.setHeader("Retry-After", String(Math.max(1, retryAfter)));
     return res.status(429).json({
@@ -67,6 +78,8 @@ router.post("/translate", async (req, res) => {
     });
   }
   if (bucket.inFlight >= MAX_IN_FLIGHT_PER_CLIENT) {
+    refundBudget("text", clientKey, 1);
+    logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 429 });
     res.setHeader("Retry-After", "10");
     return res.status(429).json({ error: "Too many translations in progress.", retryAfter: 10 });
   }
@@ -89,7 +102,7 @@ router.post("/translate", async (req, res) => {
         model,
         temperature: 0.75,
         response_format: { type: "json_object" },
-        max_tokens: TRANSLATE_MAX_OUTPUT_TOKENS,
+        max_tokens: Math.min(TRANSLATE_MAX_OUTPUT_TOKENS, textMaxOutputTokens()),
         messages: [
           { role: "system", content: translateSystemPrompt(voiceMode, direction) },
           { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode, direction) },
@@ -100,19 +113,26 @@ router.post("/translate", async (req, res) => {
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
       console.error("Translate provider HTTP", response.status, errText.slice(0, 400));
+      refundBudget("text", clientKey, 1);
+      logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 502 });
       return res.status(502).json({ error: "The translation provider could not translate this text." });
     }
 
     const payload = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
+      choices?: Array<{ finish_reason?: string | null; message?: { content?: string | null } }>;
     };
+    assertNotTruncated(payload.choices?.[0]?.finish_reason);
     const content = payload.choices?.[0]?.message?.content;
     if (!content) {
+      refundBudget("text", clientKey, 1);
+      logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 502 });
       return res.status(502).json({ error: "The translation provider returned no content." });
     }
 
     const parsed = parseTranslateJSON(content);
     if (!parsed) {
+      refundBudget("text", clientKey, 1);
+      logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 502 });
       return res.status(502).json({ error: "The translation provider returned invalid JSON." });
     }
 
@@ -121,6 +141,7 @@ router.post("/translate", async (req, res) => {
       ? englishResponseDialect(voiceMode, parsed.dialect)
       : (parsed.dialect || translateFallbackDialect(direction, voiceMode));
 
+    logAIUsage({ route: "/api/translate", kind: "text", outcome: "ok", clientKey, units: 1, model });
     return res.json({
       task: "translate",
       provider: "openai",
@@ -134,12 +155,20 @@ router.post("/translate", async (req, res) => {
       notes: parsed.notes || undefined,
     });
   } catch (error) {
+    if (error instanceof OutputTruncatedError) {
+      logAIUsage({ route: "/api/translate", kind: "text", outcome: "error", clientKey, units: 1, status: 502 });
+      return res.status(502).json({ error: error.message });
+    }
+    refundBudget("text", clientKey, 1);
     if (error instanceof MissingProviderKeyError) {
+      logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 503 });
       return res.status(503).json({ error: error.message });
     }
     if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 504 });
       return res.status(504).json({ error: "The translation provider timed out. Please try again." });
     }
+    logAIUsage({ route: "/api/translate", kind: "text", outcome: "refund", clientKey, units: 1, status: 502 });
     console.error("Translate provider request failed", error);
     return res.status(502).json({ error: "The translation provider could not translate this text." });
   } finally {

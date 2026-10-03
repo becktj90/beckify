@@ -103,7 +103,7 @@ async function loadSpeakRouter() {
     platform: "node",
     target: "node20",
     write: false,
-    external: ["express"],
+    external: ["express", "pino", "pino-pretty", "thread-stream"],
     logLevel: "silent",
   });
   const code = result.outputFiles[0].text;

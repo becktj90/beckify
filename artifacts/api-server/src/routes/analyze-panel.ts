@@ -1,17 +1,17 @@
 import { Router, type IRouter } from "express";
 import { BREAKER_VISION_SYSTEM_PROMPT, PANEL_VISION_SYSTEM_PROMPT } from "../prompts/panelVisionPrompt.js";
 import {
-  PANEL_MAX_OUTPUT_TOKENS,
   PANEL_PROVIDER_TIMEOUT_MS,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
+  beginSharedVisionRequest,
   configuredModel,
   configuredProvider,
-  consumeRateLimit,
   getClientKey,
   pickImage,
   visionProviderFailure,
 } from "../lib/visionClient.js";
+import { logAIUsage, panelMaxOutputTokens, refundBudget, shouldRefundAICharge } from "../lib/usageBudget.js";
 import {
   panelVisionMetrics,
   recallIdempotent,
@@ -32,7 +32,6 @@ interface AnalyzeBody {
   idempotencyKey?: string;
 }
 
-const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
 const serverProvider = configuredProvider();
 const serverModel = configuredModel(serverProvider);
 const router: IRouter = Router();
@@ -69,23 +68,15 @@ router.post("/analyze-panel", async (req, res) => {
   }
 
   const clientKey = getClientKey(req);
-  const bucket = consumeRateLimit(rateBuckets, clientKey);
-  if (!bucket.allowed) {
-    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
-    res.setHeader("Retry-After", String(retryAfter));
-    return res.status(429).json({
-      error: "Too many panel analyses. Please try again later.",
-      retryAfter,
-    });
+  const gate = beginSharedVisionRequest(clientKey);
+  if (!gate.ok) {
+    logAIUsage({ route: "/api/analyze-panel", kind: "vision", outcome: gate.reason === "budget" ? "blocked" : "refund", clientKey, units: 1, status: 429 });
+    res.setHeader("Retry-After", String(gate.retryAfter));
+    const error = gate.reason === "burst"
+      ? "Too many panel analyses in progress."
+      : "Too many panel analyses. Please try again later.";
+    return res.status(429).json({ error, retryAfter: gate.retryAfter });
   }
-  if (bucket.inFlight >= 2) {
-    res.setHeader("Retry-After", "15");
-    return res.status(429).json({
-      error: "Too many panel analyses in progress.",
-      retryAfter: 15,
-    });
-  }
-  bucket.inFlight += 1;
 
   const breakerView = String(body.view || "").toLowerCase() === "breakers";
   const userText = breakerView
@@ -117,7 +108,7 @@ router.post("/analyze-panel", async (req, res) => {
           model: serverModel,
           system,
           userText,
-          maxTokens: PANEL_MAX_OUTPUT_TOKENS,
+          maxTokens: panelMaxOutputTokens(),
           timeoutMs: PANEL_PROVIDER_TIMEOUT_MS,
         })
         : await analyzeWithOpenAI({
@@ -126,7 +117,7 @@ router.post("/analyze-panel", async (req, res) => {
           model: serverModel,
           system,
           userText,
-          maxTokens: PANEL_MAX_OUTPUT_TOKENS,
+          maxTokens: panelMaxOutputTokens(),
           timeoutMs: PANEL_PROVIDER_TIMEOUT_MS,
         });
     }, { attempts: 2, label: "analyze-panel" });
@@ -158,9 +149,16 @@ router.post("/analyze-panel", async (req, res) => {
       circuitCount: validated.analysis.circuits.length,
       durationMs: Date.now() - started,
     });
+    logAIUsage({ route: "/api/analyze-panel", kind: "vision", outcome: "ok", clientKey, units: 1, model: serverModel });
     return res.json(payload);
   } catch (error) {
     const failure = visionProviderFailure(error);
+    if (shouldRefundAICharge(error)) {
+      refundBudget("vision", clientKey, 1);
+      logAIUsage({ route: "/api/analyze-panel", kind: "vision", outcome: "refund", clientKey, units: 1, status: failure.status });
+    } else {
+      logAIUsage({ route: "/api/analyze-panel", kind: "vision", outcome: "error", clientKey, units: 1, status: failure.status });
+    }
     // Do not log photo bytes.
     console.error("Panel vision provider request failed", {
       status: failure.status,
@@ -178,7 +176,7 @@ router.post("/analyze-panel", async (req, res) => {
     });
     return res.status(failure.status).json({ error: failure.error });
   } finally {
-    bucket.inFlight -= 1;
+    gate.release();
   }
 });
 

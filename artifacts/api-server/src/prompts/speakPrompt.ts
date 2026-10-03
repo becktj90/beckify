@@ -134,7 +134,7 @@ export const CASSIAN_VALE_VOICE_ID = "uYsaRSYDSuxmtyipO9Qt";
 /** Deterministic ElevenLabs seed for this roast voice. Posted when the speak route sends seed. */
 export const CASSIAN_VALE_SEED = 60606;
 /** Paragraph roast. Crew Talk clips stay on SPEAK_MAX_INPUT_CHARS. */
-export const LOOK_CHECK_SPEAK_MAX_CHARS = 1500;
+export const LOOK_CHECK_SPEAK_MAX_CHARS = 900;
 
 /**
  * Relish without a scream. High style exaggeration, close to the designed voice,
