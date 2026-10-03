@@ -605,7 +605,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
                 "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
-                "A non-empty adult roast is spoken from the loudspeaker via /api/speak, and that text stays on screen. Declined, no person, and an empty roast stay silent.",
+                "A non-empty adult roast plays in full from the loudspeaker via /api/speak, not the earpiece, and that text stays on screen. Declined, no person, and an empty roast stay silent.",
             ]
         ),
         "heaterDesign": ToolHowItWorks(
@@ -801,7 +801,7 @@ public enum ToolHowItWorksCatalog {
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Five helpers—Bodie, Tito, Junie, Pearl, and Sloane. The dock shows the other language; Speak plays that line. A short helper line carries the dialect. Cuban Spanish included.",
+                "Five helpers—Bodie, Tito, Junie, Pearl, and Sloane. The dock shows the other language. Speak plays the rewritten line on screen, never the raw text field. Cuban Spanish included.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),

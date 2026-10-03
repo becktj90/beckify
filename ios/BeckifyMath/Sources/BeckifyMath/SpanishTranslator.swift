@@ -1076,6 +1076,68 @@ public enum SpanishTranslatorAPI {
         return flavor
     }
 
+    /// What Speak must say: the dialect / other-language / rewritten line on screen.
+    /// Never the raw text field. English helpers speak their rewrite even when the
+    /// dock's big line is still the typed sentence (translation not back yet).
+    public static func lineToSpeak(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
+        let helper = dialectHelperLine(
+            crew: crew,
+            direction: direction,
+            english: english,
+            spanish: spanish,
+            fallback: fallback
+        )
+        if !helper.isEmpty { return helper }
+        let dock = spokenAnswerForDock(
+            crew: crew,
+            direction: direction,
+            english: english,
+            spanish: spanish,
+            fallback: fallback
+        )
+        let rewrite = lineForCrew(crew: crew, english: english, spanish: spanish, fallback: fallback)
+        let source = (direction.listensInSpanish ? spanish : english)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let dockTrim = dock.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !rewrite.isEmpty {
+            let rewriteIsRaw = !source.isEmpty && rewrite.compare(source, options: .caseInsensitive) == .orderedSame
+            let dockIsRaw = dockTrim.isEmpty || (!source.isEmpty && dockTrim.compare(source, options: .caseInsensitive) == .orderedSame)
+            if dockIsRaw && !rewriteIsRaw { return rewrite }
+        }
+        if !dockTrim.isEmpty { return dockTrim }
+        return rewrite
+    }
+
+    /// BCP-47 language for `lineToSpeak`. English rewrites stay English even when
+    /// the direction's other language is Spanish. Tito stays Spanish.
+    public static func speakLanguageForLineToSpeak(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
+        if crew == .titoSolano { return "es" }
+        let line = lineToSpeak(
+            crew: crew,
+            direction: direction,
+            english: english,
+            spanish: spanish,
+            fallback: fallback
+        )
+        let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !spanishLine.isEmpty && line.compare(spanishLine, options: .caseInsensitive) == .orderedSame {
+            return "es"
+        }
+        return "en"
+    }
+
     /// BCP-47 language Speak should use for the dock string.
     public static func speakLanguageForDirection(_ direction: SpanishTranslateDirection) -> String {
         direction.targetLanguage.hasPrefix("en") ? "en" : "es"

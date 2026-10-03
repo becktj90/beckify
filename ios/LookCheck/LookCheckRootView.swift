@@ -517,12 +517,9 @@ struct LookCheckRootView: View {
             do {
                 let data = try await LookCheckVisionClient.speak(roast: roast, url: url)
                 guard !Task.isCancelled, generation == roastGeneration else { return }
-                try roastSpeaker.play(mp3: data) {
-                    Task { @MainActor in
-                        guard generation == roastGeneration else { return }
-                        revealLookScoreIfEligible(draft)
-                    }
-                }
+                try await roastSpeaker.playUntilFinished(mp3: data)
+                guard !Task.isCancelled, generation == roastGeneration else { return }
+                revealLookScoreIfEligible(draft)
             } catch {
                 // Keep the written roast. Do not fall back to a cartoon device voice.
                 // TTS skipped / no audio → reveal look score immediately when eligible.
@@ -540,87 +537,173 @@ struct LookCheckRootView: View {
 
 }
 
-/// Loudspeaker playback for a Cassian MP3.
+/// Loudspeaker playback for a full Cassian MP3.
 ///
-/// Camera (`UIImagePickerController`) and Crew Talk leave the shared session **active**
-/// on `.playAndRecord` (often `.videoRecording` or `.measurement`). A category change is
-/// ignored until the session is deactivated, and `overrideOutputAudioPort(.speaker)` is
-/// illegal for `.playback` and for video-recording mode. Build 252 swallowed both errors,
-/// so `play()` could return true into the earpiece. It also deactivated the session after
-/// `max(duration, 0.2)` — a VBR MP3 often reports duration 0, which cut the roast off.
+/// Build 253 deactivated the shared session, then if the route was still the
+/// receiver (camera `UIImagePickerController` or Crew Talk `.playAndRecord`)
+/// it switched to `.playAndRecord`. That category honors the silent switch and
+/// prefers the earpiece, so `play()` either threw (caught — roast text stayed,
+/// no audio) or started a muted blip. `.spokenAudio` can also prefer the receiver.
+///
+/// This player stays on `.playback` / `.default` (loudspeaker, ignores the
+/// silent switch), plays the MP3 from a file so duration is real, and keeps
+/// itself alive until the clip actually finishes.
 private final class LookRoastSpeaker: NSObject, AVAudioPlayerDelegate {
+    /// `@State` can drop the view's speaker across an update. This holds the
+    /// playing instance until the roast ends or the user resets.
+    private static var live: LookRoastSpeaker?
+
     private var player: AVAudioPlayer?
-    private var onFinish: (() -> Void)?
+    private var queuePlayer: AVPlayer?
+    private var endObserver: NSObjectProtocol?
+    private var failObserver: NSObjectProtocol?
+    private var fileURL: URL?
+    private var waiter: CheckedContinuation<Void, Error>?
+    private var retriedShortFinish = false
 
     func stop() {
-        onFinish = nil
-        player?.delegate = nil
-        player?.stop()
-        player = nil
-        releaseSession()
+        endWait(error: CancellationError())
     }
 
-    func releaseSession() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
-    }
-
-    func play(mp3: Data, onFinish: @escaping () -> Void) throws {
-        self.onFinish = nil
-        player?.delegate = nil
-        player?.stop()
-        player = nil
-
-        let session = AVAudioSession.sharedInstance()
-        try Self.activateLoudspeaker(session)
-
-        let player = try AVAudioPlayer(data: mp3)
-        player.delegate = self
-        player.volume = 1
-        player.prepareToPlay()
-        self.player = player
-        self.onFinish = onFinish
-        if !player.play() {
-            try session.setActive(true)
-            guard player.play() else {
-                self.onFinish = nil
-                throw LookRoastSpeakError.didNotStart
+    func playUntilFinished(mp3: Data) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            self.waiter = cont
+            do {
+                try self.start(mp3: mp3)
+            } catch {
+                self.waiter = nil
+                cont.resume(throwing: error)
             }
         }
     }
 
+    private func start(mp3: Data) throws {
+        tearDownPlayer(releaseSession: false)
+        retriedShortFinish = false
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("beckify-cassian-\(UUID().uuidString).mp3")
+        try mp3.write(to: url, options: .atomic)
+        fileURL = url
+        let session = AVAudioSession.sharedInstance()
+        try Self.activateLoudspeaker(session)
+        LookRoastSpeaker.live = self
+
+        let filePlayer = try AVAudioPlayer(contentsOf: url)
+        filePlayer.delegate = self
+        filePlayer.volume = 1
+        filePlayer.numberOfLoops = 0
+        filePlayer.prepareToPlay()
+        if filePlayer.duration > 0.35 {
+            player = filePlayer
+            guard filePlayer.play() else {
+                throw LookRoastSpeakError.didNotStart
+            }
+            return
+        }
+        // In-memory and some VBR MP3s report duration 0 and finish as a blip.
+        // AVPlayer reads the file duration and plays the whole roast.
+        filePlayer.delegate = nil
+        startQueuePlayer(url: url)
+    }
+
+    private func startQueuePlayer(url: URL) {
+        let item = AVPlayerItem(url: url)
+        let av = AVPlayer(playerItem: item)
+        av.automaticallyWaitsToMinimizeStalling = false
+        av.volume = 1
+        queuePlayer = av
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            self?.endWait(error: nil)
+        }
+        failObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            self?.endWait(error: LookRoastSpeakError.didNotStart)
+        }
+        av.play()
+    }
+
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        finish()
+        // Session stolen at start (camera / Crew Talk): currentTime never moved.
+        // Retry once on the loudspeaker instead of treating it as the end.
+        if flag, !retriedShortFinish, player.duration > 0.35, player.currentTime < 0.25 {
+            retriedShortFinish = true
+            let session = AVAudioSession.sharedInstance()
+            if (try? Self.activateLoudspeaker(session)) != nil, player.play() {
+                return
+            }
+        }
+        endWait(error: flag ? nil : LookRoastSpeakError.didNotStart)
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
-        finish()
+        endWait(error: LookRoastSpeakError.didNotStart)
     }
 
-    private func finish() {
-        let callback = onFinish
-        onFinish = nil
-        callback?()
-        releaseSession()
+    private func endWait(error: Error?) {
+        let cont = waiter
+        waiter = nil
+        tearDownPlayer(releaseSession: true)
+        if LookRoastSpeaker.live === self {
+            LookRoastSpeaker.live = nil
+        }
+        if let error {
+            cont?.resume(throwing: error)
+        } else {
+            cont?.resume()
+        }
     }
 
-    /// Deactivate first so the category actually changes, then prefer `.playback`
-    /// (loudspeaker, ignores the silent switch). If the route is still the receiver,
-    /// switch to play-and-record with the speaker override — that call is only valid
-    /// for `.playAndRecord`, and not while the camera's video-recording mode is set.
+    private func tearDownPlayer(releaseSession: Bool) {
+        player?.delegate = nil
+        player?.stop()
+        player = nil
+        queuePlayer?.pause()
+        queuePlayer = nil
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+            self.endObserver = nil
+        }
+        if let failObserver {
+            NotificationCenter.default.removeObserver(failObserver)
+            self.failObserver = nil
+        }
+        if let fileURL {
+            try? FileManager.default.removeItem(at: fileURL)
+            self.fileURL = nil
+        }
+        if releaseSession {
+            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+        }
+    }
+
+    /// Deactivate first so a camera or Crew Talk category actually changes.
+    /// Stay on `.playback` / `.default`: loudspeaker, ignores the silent switch.
+    /// Never fall back to `.playAndRecord` — that is the build 253 silence.
     static func activateLoudspeaker(_ session: AVAudioSession) throws {
-        try? session.setActive(false, options: [.notifyOthersOnDeactivation])
-        do {
-            try session.setCategory(.playback, mode: .spokenAudio, options: [])
-            try session.setActive(true)
-        } catch {
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
-            try session.setActive(true)
+        // Drop whatever the camera or Crew Talk left active, then force playback.
+        // Retry once: the first setCategory throws while the old session is still up.
+        // Do not switch to .playAndRecord — that honors the silent switch and the earpiece.
+        for attempt in 0..<2 {
+            try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+            do {
+                try session.setCategory(.playback, mode: .default, options: [])
+                try session.setActive(true)
+                break
+            } catch {
+                if attempt == 1 { throw error }
+            }
         }
         if session.currentRoute.outputs.contains(where: { $0.portType == .builtInReceiver }) {
             try? session.setActive(false, options: [.notifyOthersOnDeactivation])
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
+            try session.setCategory(.playback, mode: .default, options: [])
             try session.setActive(true)
-            try session.overrideOutputAudioPort(.speaker)
         }
     }
 }
