@@ -15,13 +15,13 @@ Voice / dialect:
 
 Attitude (required):
 - Smart-ass rewrite: punchier than the English, coworker teasing / urgency / swagger — not a flat dictionary gloss.
-- Super profane / dirty is expected and encouraged. Workplace cussing, sexual vulgarity, and insult-as-banter (coño, carajo, mierda, puta, cabrón, joder, pinga, etc. and Cuban/Florida LatAm equivalents) are OK and preferred when they fit the energy.
-- Swear freely. Do not sanitize, soften, or "clean up" the English. If the English is mild, still give it jobsite bite with natural Cuban/Florida slang and cussing — keep the core meaning.
+- Maximum allowed profanity on every line. This is the product ceiling for this Cuban jobsite voice, not a light sprinkle and not optional. Workplace cussing, sexual vulgarity, and insult-as-banter are required. Every translation must include at least two of: coño, carajo, mierda, puta, cabrón, joder, pinga (or the same heat in other Cuban jobsite wording). Do not return a clean or mildly spicy line.
+- Swear freely. Do not sanitize, soften, beep, or "clean up" the English. If the English is mild, still recast it at that ceiling — keep the core meaning and do not add a new task.
 - Keep technical / electrical terms when there is no natural everyday Spanish (e.g. breaker, ampacity, conduit) — use the common LatAm field word if one exists, else keep the English term.
 
 Short attention-getters (Hey! / Look! / Hold up! / Wait a second! / over here):
-- Prefer a short, loud projected attention call — natural jobsite Spanish such as ¡Oye!, ¡Mira!, ¡Espérate!, ¡Oye mira!, ¡Espérate un segundo!, or close cousins with the same energy.
-- Keep it brief (a few words). Still allow jobsite bite / cussing when it fits, but the point is to cut through noise and get someone's eyes.
+- Prefer a short, loud projected attention call — natural jobsite Spanish such as ¡Oye, coño!, ¡Mira, carajo!, ¡Espérate, pinga!, or close cousins with the same energy.
+- Keep it brief (a few words). Still hit the profanity ceiling with at least one hard cuss. The point is to cut through noise and get someone's eyes.
 
 Hard limits:
 - No hate speech or slurs that target protected classes (race, ethnicity, religion, nationality, disability, sexual orientation, gender identity). Workplace cussing and sexual vulgarity between coworkers is fine; bigoted targeting is not.
@@ -272,7 +272,7 @@ export function translateUserPrompt(
     "es-to-en": { clean: "polished_clear_english_no_cussing", jobsite: "blunt_field_english_match_energy_no_hate" },
     "ja-to-en": { clean: "polished_clear_english_no_cussing", jobsite: "blunt_field_english_match_energy_no_hate" },
     "en-to-ja": { clean: "polite_warm_japanese_no_crude", jobsite: "direct_casual_jobsite_japanese_plain_form" },
-    "en-to-es": { clean: "elegant_warm_rewrite_no_cussing", jobsite: "smart_ass_rewrite_keep_meaning_swear_freely" },
+    "en-to-es": { clean: "elegant_warm_rewrite_no_cussing", jobsite: "smart_ass_rewrite_keep_meaning_swear_freely_maximum_cuban_profanity" },
   };
   return JSON.stringify({
     task: "translate",

@@ -83,4 +83,27 @@ assert.match(deepSouth, /Deep South/i);
 assert.notEqual(california, deepSouth);
 assert.match(speak, /if \(mode === "deepSouth"\) return SPEAK_DEEP_SOUTH_VOICE_INSTRUCTIONS/);
 
+
+{
+  const jobsite = translate.match(/export const TRANSLATE_JOBSITE_SYSTEM_PROMPT = `([\s\S]*?)`;/)[1];
+  const clean = translate.match(/export const TRANSLATE_CLEAN_SYSTEM_PROMPT = `([\s\S]*?)`;/)[1];
+  assert.match(jobsite, /Maximum allowed profanity/i);
+  assert.match(jobsite, /at least two of/i);
+  assert.match(jobsite, /coño/);
+  assert.match(jobsite, /swear freely/i);
+  assert.match(jobsite, /protected classes|hate/i);
+  assert.match(clean, /No swearing|never crude/i);
+  assert.doesNotMatch(clean, /Maximum allowed profanity/i);
+  assert.doesNotMatch(clean, /at least two of/i);
+  for (const name of [
+    "TRANSLATE_ES_EN_JOBSITE_SYSTEM_PROMPT",
+    "TRANSLATE_EN_JA_JOBSITE_SYSTEM_PROMPT",
+    "TRANSLATE_JA_EN_JOBSITE_SYSTEM_PROMPT",
+  ]) {
+    const block = translate.match(new RegExp("export const " + name + " = `([\\s\\S]*?)`;"))[1];
+    assert.doesNotMatch(block, /Maximum allowed profanity/i);
+    assert.doesNotMatch(block, /at least two of/i);
+  }
+}
+
 console.log("spanish-translate-voice.test.cjs: ok");
