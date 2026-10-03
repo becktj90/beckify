@@ -6,6 +6,8 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     case titoSolano
     case juniePell
     case pearl
+    /// ElevenLabs seed Cos locked for this voice: 50505. Speak client does not POST seed yet (route has no seed field).
+    case sloaneMerritt
 
     public static let storageKey = "crewTalk.member"
     /// Playback model sent to `/api/speak`. The key stays on the server.
@@ -17,6 +19,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "Tito Solano"
         case .juniePell: return "Junie Pell"
         case .pearl: return "Pearl"
+        case .sloaneMerritt: return "Sloane Merritt"
         }
     }
 
@@ -27,6 +30,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
         case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
         case .pearl: return "xDnrPZyqSbomyfOcnNpu"
+        case .sloaneMerritt: return "qMmZtYs7EKOOIm0u211n"
         }
     }
 
@@ -37,6 +41,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "crewTitoSolano"
         case .juniePell: return "crewJuniePell"
         case .pearl: return "crewPearl"
+        case .sloaneMerritt: return "crewSloaneMerritt"
         }
     }
 
@@ -47,6 +52,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "crewTitoSolanoTalk"
         case .juniePell: return "crewJuniePellTalk"
         case .pearl: return "crewPearlTalk"
+        case .sloaneMerritt: return "crewSloaneMerrittTalk"
         }
     }
 
@@ -56,6 +62,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "Cuban jobsite Spanish. Raspy, direct, and steady."
         case .juniePell: return "Rural Alabama English. Slow, low, and kind."
         case .pearl: return "Warm English. Softens a blunt ask and still makes it."
+        case .sloaneMerritt: return "A polished HR lead who turns a blunt ask into a meeting."
         }
     }
 
@@ -63,11 +70,11 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     public var speakLanguage: String {
         switch self {
         case .titoSolano: return "es"
-        case .bodieHale, .juniePell, .pearl: return "en"
+        case .bodieHale, .juniePell, .pearl, .sloaneMerritt: return "en"
         }
     }
 
-    public var prefersFemaleDeviceVoice: Bool { self == .juniePell || self == .pearl }
+    public var prefersFemaleDeviceVoice: Bool { self == .juniePell || self == .pearl || self == .sloaneMerritt }
 
     /// Apple fallback pace. Cloud voice is the real character.
     public var appleRateFactor: Float {
@@ -76,6 +83,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return 0.84
         case .juniePell: return 0.70
         case .pearl: return 0.92
+        case .sloaneMerritt: return 0.94
         }
     }
 
@@ -85,6 +93,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return 0.86
         case .juniePell: return 0.90
         case .pearl: return 1.0
+        case .sloaneMerritt: return 1.0
         }
     }
 
@@ -99,6 +108,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case "bodiehale", "bodie": return .bodieHale
         case "juniepell", "junie": return .juniePell
         case "pearl": return .pearl
+        case "sloanemerritt", "sloane": return .sloaneMerritt
         case "titosolano", "tito": return .titoSolano
         default: return .titoSolano
         }
@@ -389,7 +399,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, Junie Pell, or Pearl — and that 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, Junie Pell, Pearl, or Sloane Merritt — and that 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -981,6 +991,13 @@ public enum SpanishTranslatorAPI {
                 : englishLine
             return pearlWarmRewrite(source)
         }
+        if crew == .sloaneMerritt {
+            let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
+            let source = englishLine.isEmpty
+                ? fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+                : englishLine
+            return sloaneCorporateRewrite(source)
+        }
         let preferred = crew.speakLanguage == "es" ? spanish : english
         let trimmed = preferred.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
@@ -1035,6 +1052,63 @@ public enum SpanishTranslatorAPI {
     }
 
     private static func pearlSentence(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "" }
+        if ".!?".contains(trimmed.last!) { return trimmed }
+        return trimmed + "."
+    }
+
+    /// Sloane speaks as a polished HR lead: blunt English becomes meeting-speak only
+    /// (circle back, piggyback, align, take offline) while keeping the ask. Fun, not offensive.
+    public static func sloaneCorporateRewrite(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let key = sloaneFold(trimmed)
+        if let known = sloaneKnownCorporateLines[key] { return known }
+        let lower = trimmed.lowercased()
+        if lower.contains("circle back") || lower.contains("piggyback") || lower.contains("take this offline") || lower.contains("take the rest offline") {
+            return sloaneSentence(trimmed)
+        }
+        let topic = sloaneTopicPhrase(trimmed)
+        return "Team, I want to circle back on \(topic). If we align on that, I'll piggyback with leadership so they hear it was you, and we can take the rest offline."
+    }
+
+    private static let sloaneKnownCorporateLines: [String: String] = [
+        "stop talking and get that feeder in before lunch": "Team, I want to circle back on the feeder. If we align on landing it before lunch, the rest of the floor stays on schedule. I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+        "kill the power": "Team, I want to circle back on cutting the power. If we align on that now, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+        "hand me that conduit": "Team, I want to circle back on that conduit handoff. If we align on moving it over, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+        "move the ladder": "Team, I want to circle back on relocating the ladder. If we align on that, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+        "watch your head": "Team, I want to circle back on head clearance. If we align on watching that, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+        "we need more wire": "Team, I want to circle back on wire supply. If we align on landing more wire, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+        "who left this mess": "Team, I want to circle back on the open housekeeping item. If we align on who owns the cleanup, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
+    ]
+
+    private static func sloaneFold(_ raw: String) -> String {
+        var text = raw.lowercased()
+        let drop = CharacterSet.punctuationCharacters.union(.symbols)
+        text = text.unicodeScalars.filter { !drop.contains($0) }.map(String.init).joined()
+        return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
+    private static func sloaneTopicPhrase(_ raw: String) -> String {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        while let last = text.last, ".!?".contains(last) {
+            text.removeLast()
+        }
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = text.lowercased()
+        if lower.hasPrefix("stop talking and ") {
+            text = String(text.dropFirst("stop talking and ".count))
+        } else if lower.hasPrefix("kill the ") {
+            text = "cutting the " + text.dropFirst("kill the ".count)
+        } else if lower.hasPrefix("kill ") {
+            text = "cutting " + text.dropFirst("kill ".count)
+        }
+        guard let first = text.first else { return "that ask" }
+        return String(first).lowercased() + text.dropFirst()
+    }
+
+    private static func sloaneSentence(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return "" }
         if ".!?".contains(trimmed.last!) { return trimmed }

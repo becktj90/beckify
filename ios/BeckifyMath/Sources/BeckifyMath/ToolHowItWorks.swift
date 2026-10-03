@@ -796,11 +796,11 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "English ↔ Spanish with Bodie Hale, Tito Solano, Junie Pell, or Pearl. Their 16-bit sprite stays up and bobs while audio plays.",
+            summary: "English ↔ Spanish with Bodie Hale, Tito Solano, Junie Pell, Pearl, or Sloane Merritt. Their 16-bit sprite stays up and bobs while audio plays.",
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Bodie is California beach English. Tito is Cuban jobsite Spanish. Junie is rural Alabama English. Pearl warms a blunt ask. Clean or Jobsite is wording.",
+                "Bodie is California beach English. Tito is Cuban jobsite Spanish. Junie is rural Alabama English. Pearl warms a blunt ask. Sloane turns a blunt ask into meeting-speak. Clean or Jobsite is wording.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),

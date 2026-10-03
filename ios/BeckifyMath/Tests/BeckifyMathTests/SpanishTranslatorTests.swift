@@ -112,7 +112,7 @@ final class SpanishTranslatorTests: XCTestCase {
         let joined = (copy!.summary + " " + copy!.bullets.joined(separator: " ")).lowercased()
         XCTAssertTrue(joined.contains("spanish"))
         XCTAssertTrue(joined.contains("clean") && joined.contains("jobsite"))
-        XCTAssertTrue(joined.contains("bodie") && joined.contains("tito") && joined.contains("junie") && joined.contains("pearl"))
+        XCTAssertTrue(joined.contains("bodie") && joined.contains("tito") && joined.contains("junie") && joined.contains("pearl") && joined.contains("sloane"))
         XCTAssertTrue(joined.contains("cuban"))
         XCTAssertFalse(joined.contains("florida"))
         XCTAssertFalse(joined.contains("smart-ass"))
@@ -521,12 +521,13 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(d.contains("tito solano"))
         XCTAssertTrue(d.contains("junie pell"))
         XCTAssertTrue(d.contains("pearl"))
+        XCTAssertTrue(d.contains("sloane merritt"))
         XCTAssertTrue(d.contains("eleven_v3"))
     }
 
 
     func testCrewTalkMembersAndSpeakBody() throws {
-        XCTAssertEqual(CrewTalkMember.allCases.count, 4)
+        XCTAssertEqual(CrewTalkMember.allCases.count, 5)
         XCTAssertEqual(CrewTalkMember.parse(nil), .titoSolano)
         XCTAssertEqual(CrewTalkMember.parse("bodie"), .bodieHale)
         XCTAssertEqual(CrewTalkMember.parse("Junie Pell"), .juniePell)
@@ -614,6 +615,69 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(
             SpanishTranslatorAPI.lineForCrew(crew: .pearl, english: "  ", spanish: "Hola", fallback: "Move the ladder."),
             "Would you move the ladder for me?"
+        )
+        XCTAssertEqual(CrewTalkMember.parse("Sloane Merritt"), .sloaneMerritt)
+        XCTAssertEqual(CrewTalkMember.parse("sloane"), .sloaneMerritt)
+        XCTAssertEqual(CrewTalkMember.sloaneMerritt.displayName, "Sloane Merritt")
+        XCTAssertEqual(CrewTalkMember.sloaneMerritt.voiceID, "qMmZtYs7EKOOIm0u211n")
+        XCTAssertEqual(CrewTalkMember.sloaneMerritt.speakLanguage, "en")
+        XCTAssertEqual(CrewTalkMember.sloaneMerritt.portraitAssetName, "crewSloaneMerritt")
+        XCTAssertEqual(CrewTalkMember.sloaneMerritt.talkAssetName, "crewSloaneMerrittTalk")
+        XCTAssertTrue(CrewTalkMember.sloaneMerritt.prefersFemaleDeviceVoice)
+        XCTAssertEqual(
+            CrewTalkMember.sloaneMerritt.blurb,
+            "A polished HR lead who turns a blunt ask into a meeting."
+        )
+        let sloaneBody = SpanishTranslatorAPI.speakRequestBody(
+            text: "Stop talking and get that feeder in before lunch.",
+            voiceMode: .clean,
+            crew: .sloaneMerritt
+        )
+        XCTAssertEqual(sloaneBody["voice"] as? String, "qMmZtYs7EKOOIm0u211n")
+        XCTAssertEqual(sloaneBody["model"] as? String, "eleven_v3")
+        XCTAssertEqual(sloaneBody["language"] as? String, "en")
+        let feeder = SpanishTranslatorAPI.sloaneCorporateRewrite(
+            "Stop talking and get that feeder in before lunch."
+        )
+        XCTAssertEqual(
+            feeder,
+            "Team, I want to circle back on the feeder. If we align on landing it before lunch, the rest of the floor stays on schedule. I'll piggyback with leadership so they hear it was you, and we can take the rest offline."
+        )
+        XCTAssertTrue(feeder.lowercased().contains("circle back"))
+        XCTAssertTrue(feeder.lowercased().contains("piggyback"))
+        XCTAssertTrue(feeder.lowercased().contains("align"))
+        XCTAssertTrue(feeder.lowercased().contains("offline"))
+        XCTAssertTrue(feeder.lowercased().contains("feeder"))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.lineForCrew(
+                crew: .sloaneMerritt,
+                english: "Stop talking and get that feeder in before lunch.",
+                spanish: "Corta la corriente.",
+                fallback: "nope"
+            ),
+            feeder
+        )
+        let genericSloane = SpanishTranslatorAPI.sloaneCorporateRewrite("Hold this for a second.")
+        XCTAssertTrue(genericSloane.lowercased().contains("circle back"))
+        XCTAssertTrue(genericSloane.lowercased().contains("piggyback"))
+        XCTAssertTrue(genericSloane.lowercased().contains("align"))
+        XCTAssertTrue(genericSloane.lowercased().contains("offline"))
+        let corporate = (
+            feeder + " " + genericSloane + " " + CrewTalkMember.sloaneMerritt.blurb
+        ).lowercased()
+        XCTAssertFalse(corporate.contains("comedy"))
+        XCTAssertFalse(corporate.contains("stoner"))
+        XCTAssertFalse(corporate.contains("smart-ass"))
+        XCTAssertFalse(corporate.contains("florida"))
+        XCTAssertFalse(corporate.contains("profanity"))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.lineForCrew(
+                crew: .sloaneMerritt,
+                english: "  ",
+                spanish: "Hola",
+                fallback: "Kill the power."
+            ),
+            SpanishTranslatorAPI.sloaneCorporateRewrite("Kill the power.")
         )
     }
 
