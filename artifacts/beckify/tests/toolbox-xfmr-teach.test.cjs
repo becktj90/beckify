@@ -165,7 +165,7 @@ assert.match(html, /js\/xfmr-teach\.js/);
 assert.match(families, /Teach & size/);
 assert.match(registry, /Teach & size/);
 assert.equal((registry.match(/slug: "transformer-design"/g) || []).length, 1);
-assert.match(fs.readFileSync(path.join(root, 'public', 'toolbox', 'sw.js'), 'utf8'), /CACHE_VERSION = 'v48'/);
+assert.match(fs.readFileSync(path.join(root, 'public', 'toolbox', 'sw.js'), 'utf8'), /CACHE_VERSION = 'v49'/);
 
 const highLegDiagram = T.diagramSpec('high-leg', 240, 480);
 assert.ok(highLegDiagram.banks.some(function (bank) { return (bank.windings || []).length >= 3; }));

@@ -18,7 +18,7 @@ struct LookCheckRootView: View {
     @State private var errorMessage: String?
     @State private var draft: PhotoLookDraft?
     @State private var successTick = 0
-    @State private var roastPlayer: AVAudioPlayer?
+    @State private var roastSpeaker = LookRoastSpeaker()
     @State private var roastSpeakTask: Task<Void, Never>?
     /// Look score (1…10) stays hidden until Cassian finishes — or shows immediately if TTS is skipped.
     @State private var lookScoreVisible = false
@@ -495,8 +495,7 @@ struct LookCheckRootView: View {
     private func stopRoastSpeech() {
         roastSpeakTask?.cancel()
         roastSpeakTask = nil
-        roastPlayer?.stop()
-        roastPlayer = nil
+        roastSpeaker.stop()
     }
 
     /// Speak the roast only. Declined, no person, and empty text never call /api/speak.
@@ -514,21 +513,16 @@ struct LookCheckRootView: View {
             do {
                 let data = try await LookCheckVisionClient.speak(roast: roast, url: url)
                 guard !Task.isCancelled else { return }
-                let session = AVAudioSession.sharedInstance()
-                try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-                try? session.setActive(true, options: .notifyOthersOnDeactivation)
-                let player = try AVAudioPlayer(data: data)
-                player.volume = 1
-                player.prepareToPlay()
-                roastPlayer = player
-                _ = player.play()
-                let wait = max(player.duration, 0.05)
+                try roastSpeaker.play(mp3: data)
+                let wait = max(roastSpeaker.duration, 0.2)
                 try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
                 guard !Task.isCancelled else { return }
                 revealLookScoreIfEligible(draft)
+                roastSpeaker.releaseSession()
             } catch {
                 // Keep the written roast. Do not fall back to a cartoon device voice.
                 // TTS skipped / no audio → reveal look score immediately when eligible.
+                roastSpeaker.stop()
                 if !Task.isCancelled {
                     revealLookScoreIfEligible(draft)
                 }
@@ -540,6 +534,54 @@ struct LookCheckRootView: View {
         lookScoreVisible = draft.showsLookScore
     }
 
+}
+
+/// Loudspeaker playback for a Cassian MP3.
+/// Crew Talk can leave the session on playAndRecord, which routes later audio to the earpiece.
+/// `notifyOthersOnDeactivation` is only valid when deactivating; passing it while activating
+/// makes `setActive` fail and `play()` return false, which the old path ignored.
+private final class LookRoastSpeaker {
+    private var player: AVAudioPlayer?
+    private var fileURL: URL?
+
+    var duration: TimeInterval { player?.duration ?? 0 }
+
+    func stop() {
+        player?.stop()
+        player = nil
+        if let fileURL {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+        fileURL = nil
+        releaseSession()
+    }
+
+    func releaseSession() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+    }
+
+    func play(mp3: Data) throws {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try? session.setActive(true)
+        try? session.overrideOutputAudioPort(.speaker)
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("beckify-look-roast-\(UUID().uuidString).mp3")
+        try mp3.write(to: url, options: .atomic)
+        fileURL = url
+        let player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
+        player.volume = 1
+        player.prepareToPlay()
+        self.player = player
+        guard player.play() else {
+            throw LookRoastSpeakError.didNotStart
+        }
+    }
+}
+
+private enum LookRoastSpeakError: Error {
+    case didNotStart
 }
 
 struct LookCheckRoastCard: View {

@@ -22,6 +22,9 @@ const lookState = {
   draft: null,
   busy: false,
   lookScoreVisible: false,
+  audioCtx: null,
+  roastSource: null,
+  roastObjectURL: '',
 };
 
 const lookEl = {};
@@ -42,10 +45,82 @@ function lookShouldSpeak(draft) {
 
 function lookStopRoastSpeech() {
   lookSpeakGen += 1;
+  if (lookState.roastSource) {
+    try { lookState.roastSource.onended = null; lookState.roastSource.stop(); } catch (_) { /* ignore */ }
+    lookState.roastSource = null;
+  }
   if (lookRoastAudio) {
     try { lookRoastAudio.pause(); } catch (_) { /* ignore */ }
     lookRoastAudio = null;
   }
+  if (lookState.roastObjectURL) {
+    URL.revokeObjectURL(lookState.roastObjectURL);
+    lookState.roastObjectURL = '';
+  }
+}
+
+/** Resume Web Audio inside the Analyze click, before any await, so Safari
+ *  still allows the roast after analyze + speak return. */
+function lookUnlockPlayback() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  if (!lookState.audioCtx || lookState.audioCtx.state === 'closed') {
+    lookState.audioCtx = new AC();
+  }
+  const ctx = lookState.audioCtx;
+  if (ctx.state === 'suspended') {
+    const pending = ctx.resume();
+    if (pending && typeof pending.catch === 'function') pending.catch(function () {});
+  }
+  // A zero-gain oscillator keeps the context running across the analyze wait.
+  // A one-sample blip ends immediately and iOS suspends the context again.
+  if (!lookState.keepAlive) {
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(0);
+      lookState.keepAlive = osc;
+    } catch (_) { /* prime is best-effort */ }
+  }
+}
+
+function lookReleaseKeepAlive() {
+  if (!lookState.keepAlive) return;
+  try { lookState.keepAlive.stop(); } catch (_) { /* already stopped */ }
+  lookState.keepAlive = null;
+}
+
+async function lookPlayThroughUnlockedContext(bytes, gen, draft) {
+  const ctx = lookState.audioCtx;
+  if (!ctx || typeof ctx.decodeAudioData !== 'function') return false;
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch (_) { return false; }
+  }
+  let audioBuffer;
+  try {
+    audioBuffer = await ctx.decodeAudioData(bytes.slice(0));
+  } catch (_) {
+    return false;
+  }
+  if (gen !== lookSpeakGen) return true;
+  const source = ctx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(ctx.destination);
+  lookState.roastSource = source;
+  source.onended = function () {
+    if (gen !== lookSpeakGen) return;
+    lookRevealLookScore(draft);
+  };
+  try {
+    source.start(0);
+  } catch (_) {
+    return false;
+  }
+  lookReleaseKeepAlive();
+  return true;
 }
 
 function lookShowsLookScore(draft) {
@@ -55,6 +130,7 @@ function lookShowsLookScore(draft) {
 }
 
 function lookRevealLookScore(draft) {
+  lookReleaseKeepAlive();
   lookState.lookScoreVisible = lookShowsLookScore(draft);
   lookRenderLookScore(draft);
 }
@@ -75,7 +151,10 @@ async function lookSpeakRoast(draft) {
   lookState.lookScoreVisible = false;
   lookRenderLookScore(draft);
   const gen = lookSpeakGen;
-  if (!lookShouldSpeak(draft)) return;
+  if (!lookShouldSpeak(draft)) {
+    lookReleaseKeepAlive();
+    return;
+  }
   const text = String(draft.roast).trim().slice(0, 1500);
   const url = lookApiUrl('/api/speak');
   try {
@@ -108,7 +187,12 @@ async function lookSpeakRoast(draft) {
       if (gen === lookSpeakGen) lookRevealLookScore(draft);
       return;
     }
-    const audio = new Audio(URL.createObjectURL(blob));
+    const bytes = await blob.arrayBuffer();
+    if (gen !== lookSpeakGen) return;
+    if (await lookPlayThroughUnlockedContext(bytes, gen, draft)) return;
+    const objectURL = URL.createObjectURL(blob);
+    lookState.roastObjectURL = objectURL;
+    const audio = new Audio(objectURL);
     lookRoastAudio = audio;
     audio.onended = function () {
       if (gen !== lookSpeakGen) return;
@@ -419,6 +503,8 @@ async function lookRunSameOrigin(file) {
 
 async function lookRunAnalysis() {
   if (!lookState.file || lookState.busy) return;
+  // Must run before the first await so the Analyze click still counts as a gesture.
+  lookUnlockPlayback();
   lookStopRoastSpeech();
   lookState.lookScoreVisible = false;
   lookSetBusy(true);
@@ -452,6 +538,7 @@ async function lookRunAnalysis() {
     lookSpeakRoast(draft);
     if (typeof window.showToast === 'function') window.showToast('Look check complete');
   } catch (error) {
+    lookReleaseKeepAlive();
     let message = error instanceof Error ? error.message : 'Unknown look-check error';
     // Never show the word AI (or OCR assist copy) on the Look Check path.
     if (/\bAI\b/i.test(message) || /on-device OCR/i.test(message)) {
@@ -501,6 +588,7 @@ function lookHandleFile(file) {
 
 function lookReset() {
   lookStopRoastSpeech();
+  lookReleaseKeepAlive();
   if (lookState.imageUrl) URL.revokeObjectURL(lookState.imageUrl);
   lookState.file = null;
   lookState.imageUrl = '';
