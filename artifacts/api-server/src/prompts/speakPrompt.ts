@@ -131,6 +131,17 @@ export function speakSupportsInstructions(model: string): boolean {
 /** Crew Talk playback. ElevenLabs voice ids are case-sensitive. */
 export const ELEVENLABS_TTS_MODEL = "eleven_v3";
 
+/** Junie Pell only. Thick, slow delivery on the existing voice id. */
+export const JUNIE_PELL_VOICE_ID = "tdK8noxHGTBqk6F18tbZ";
+
+export const JUNIE_ELEVEN_VOICE_SETTINGS = {
+  stability: 0.15,
+  similarity_boost: 0.72,
+  style: 1,
+  speed: 0.64,
+  use_speaker_boost: true,
+} as const;
+
 export const CREW_TALK_ELEVEN_VOICES = {
   bodieHale: "XVO6RhOYU9ZEKHFXrx6b",
   titoSolano: "goyf4sY4AqSvMIeO1hb5",
