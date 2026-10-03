@@ -19,7 +19,7 @@ struct FavoritesView: View {
                     ContentUnavailableView {
                         Label("No pinned tools yet", systemImage: "star")
                     } description: {
-                        Text("Pin tools from a shelf or search — including Spanish Translator — for one-tap access here and on home.")
+                        Text("Pin tools from a shelf or search — including Crew Talk — for one-tap access here and on home.")
                     } actions: {
                         Button("Browse Field") {
                             browseFieldHome()
