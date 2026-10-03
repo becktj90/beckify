@@ -597,14 +597,22 @@ final class SpanishTranslatorTests: XCTestCase {
             "Hola",
             "Stop talking and get that feeder in before lunch.",
             "Corta la corriente ahora.",
-            "Hold this breaker.",
-            "Bring the torque wrench over here.",
         ]
         for sample in titoSamples {
             let line = SpanishTranslatorAPI.titoDialectRewrite(sample)
             assertTitoHitsProfanityCeiling(line)
             XCTAssertFalse(line.lowercased().contains(sample.lowercased()), sample)
         }
+        // A2: Tito has no .free template. Unmatched text is empty so callers use the translation.
+        XCTAssertEqual(
+            SpanishTranslatorAPI.titoDialectRewrite("Bring the torque wrench over here."),
+            ""
+        )
+        // hold + breaker is two intents, so the guard refuses a template (A2 empty, not a free line).
+        XCTAssertEqual(
+            SpanishTranslatorAPI.titoDialectRewrite("Hold this breaker."),
+            ""
+        )
         XCTAssertTrue(SpanishTranslatorAPI.titoDialectRewrite("Hand me that conduit.").lowercased().contains("conduit"))
         XCTAssertTrue(SpanishTranslatorAPI.titoDialectRewrite("Move the ladder.").lowercased().contains("escalera"))
         XCTAssertTrue(SpanishTranslatorAPI.titoDialectRewrite("We need more wire.").lowercased().contains("cable")
