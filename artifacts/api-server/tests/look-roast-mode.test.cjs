@@ -28,6 +28,11 @@ assert.match(prompt, /attractiveness|beauty/);
 assert.doesNotMatch(prompt, /Never be cruel/);
 assert.doesNotMatch(prompt, /Prefer kind-honest/);
 
+assert.match(prompt, /filthy-sweet/);
+assert.match(prompt, /No slurs/);
+assert.match(prompt, /No threats/);
+assert.match(prompt, /Do not print a mode name/);
+
 assert.match(route, /resolveLookRoastMode\(body\.roastMode/);
 assert.match(route, /roastMode,/);
 assert.match(route, /mergeLookAssessmentWithComedy/);

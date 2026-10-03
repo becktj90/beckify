@@ -211,7 +211,9 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertEqual(LookRoastMode.standaloneTones, [.mean, .nice])
         XCTAssertEqual(PhotoLookCheck.photoAssessmentLabel, "Photo assessment")
         XCTAssertEqual(PhotoLookCheck.photoScoresLabel, "Photo scores")
-        XCTAssertTrue(PhotoLookCheck.surprisePreAnalyze.contains("fucking roasted"))
+        XCTAssertTrue(PhotoLookCheck.surprisePreAnalyze.contains("roasted"))
+        XCTAssertFalse(PhotoLookCheck.surprisePreAnalyze.localizedCaseInsensitiveContains("fuck"))
+        XCTAssertFalse(PhotoLookCheck.disclaimer.localizedCaseInsensitiveContains("fuck"))
         XCTAssertFalse(PhotoLookCheck.photoAssessmentLabel.lowercased().contains("ai"))
         XCTAssertFalse(PhotoLookCheck.photoScoresLabel.lowercased().contains("ai"))
         XCTAssertEqual(PhotoLookCheck.standaloneBundleID, "com.beckify.lookcheck")
@@ -372,6 +374,32 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertTrue(v.copyLine.contains("Online / Captive: No captive portal"))
         XCTAssertFalse(v.copyLine.localizedCaseInsensitiveContains("Look Check"))
     }
+    func testRoastSpeechSkipsDeclinedAndUsesCassian() throws {
+        XCTAssertEqual(PhotoLookCheck.roastVoiceID, "uYsaRSYDSuxmtyipO9Qt")
+        XCTAssertEqual(PhotoLookCheck.roastSpeakModel, "eleven_v3")
+        XCTAssertEqual(PhotoLookCheck.roastSpeakSeed, 60606)
+        XCTAssertEqual(PhotoLookCheck.roastSpeakStyle, 1.0, accuracy: 0.001)
+        XCTAssertFalse(PhotoLookCheck.shouldSpeakRoast(PhotoLookDraft(verdict: .declined, roast: "no")))
+        XCTAssertFalse(PhotoLookCheck.shouldSpeakRoast(PhotoLookDraft(verdict: .noPerson, roast: "no")))
+        XCTAssertFalse(PhotoLookCheck.shouldSpeakRoast(PhotoLookDraft(verdict: .mixed, roast: "   ")))
+        XCTAssertTrue(PhotoLookCheck.shouldSpeakRoast(PhotoLookDraft(verdict: .looksGood, roast: "This lighting is a crime.")))
+        let body = PhotoLookCheck.speakRequestBody(roast: "This lighting is a crime.")
+        XCTAssertEqual(body["voice"] as? String, PhotoLookCheck.roastVoiceID)
+        XCTAssertEqual(body["model"] as? String, "eleven_v3")
+        XCTAssertEqual(body["seed"] as? Int, 60606)
+        XCTAssertEqual(body["style"] as? Double, 1.0)
+        XCTAssertEqual(body["language"] as? String, "en")
+        XCTAssertNil(body["apiKey"])
+        XCTAssertEqual(PhotoLookCheck.speakURL(customEndpoint: nil)?.absoluteString, "https://api.beckify.com/api/speak")
+        XCTAssertEqual(
+            PhotoLookCheck.speakURL(customEndpoint: "https://example.com/api/analyze-look")?.absoluteString,
+            "https://example.com/api/speak"
+        )
+        let how = ToolHowItWorksCatalog.copy(forToolID: "lookCheck")
+        let blob = ([how?.summary, how?.context].compactMap { $0 } + (how?.bullets ?? [])).joined(separator: " ")
+        XCTAssertFalse(blob.localizedCaseInsensitiveContains("fuck"))
+        XCTAssertTrue(blob.contains("/api/speak"))
+    }
 }
 
 private struct LCGRandomNumberGenerator: RandomNumberGenerator {
@@ -387,4 +415,5 @@ private struct ConstantRandomNumberGenerator: RandomNumberGenerator {
     let value: UInt64
 
     mutating func next() -> UInt64 { value }
+
 }

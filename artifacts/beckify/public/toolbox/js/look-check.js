@@ -13,7 +13,7 @@ function lookRandomSurpriseTone() {
   return Math.random() < 0.5 ? 'mean' : 'nice';
 }
 
-const LOOK_SURPRISE_COPY = 'Honest photo feedback. You might get hyped. You might get fucking roasted.';
+const LOOK_SURPRISE_COPY = 'Honest photo feedback. You might get hyped. You might get roasted.';
 
 
 const lookState = {
@@ -24,6 +24,67 @@ const lookState = {
 };
 
 const lookEl = {};
+
+const LOOK_ROAST_VOICE_ID = 'uYsaRSYDSuxmtyipO9Qt';
+const LOOK_ROAST_MODEL = 'eleven_v3';
+const LOOK_ROAST_SEED = 60606;
+let lookRoastAudio = null;
+let lookSpeakGen = 0;
+
+function lookShouldSpeak(draft) {
+  if (!draft) return false;
+  const verdict = String(draft.verdict || '');
+  if (verdict === 'declined' || verdict === 'no_person') return false;
+  const roast = String(draft.roast || '').trim();
+  return roast.length > 0;
+}
+
+function lookStopRoastSpeech() {
+  lookSpeakGen += 1;
+  if (lookRoastAudio) {
+    try { lookRoastAudio.pause(); } catch (_) { /* ignore */ }
+    lookRoastAudio = null;
+  }
+}
+
+/** Speak the roast only. Key stays on the server. Skip declined, no person, and empty text. */
+async function lookSpeakRoast(draft) {
+  lookStopRoastSpeech();
+  const gen = lookSpeakGen;
+  if (!lookShouldSpeak(draft)) return;
+  const text = String(draft.roast).trim().slice(0, 1500);
+  const url = lookApiUrl('/api/speak');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task: 'speak',
+        text,
+        voice: LOOK_ROAST_VOICE_ID,
+        model: LOOK_ROAST_MODEL,
+        format: 'mp3',
+        language: 'en',
+        seed: LOOK_ROAST_SEED,
+        stability: 0.38,
+        similarity_boost: 0.82,
+        style: 1,
+        speed: 0.86,
+      }),
+    });
+    if (gen !== lookSpeakGen) return;
+    if (!response.ok) return;
+    const blob = await response.blob();
+    if (gen !== lookSpeakGen || !blob || !blob.size) return;
+    if (gen !== lookSpeakGen) return;
+    const audio = new Audio(URL.createObjectURL(blob));
+    lookRoastAudio = audio;
+    await audio.play();
+  } catch (_) {
+    // Written roast stays. No cartoon fallback.
+  }
+}
+
 
 function lookApiUrl(path) {
   const configured = document.querySelector('meta[name="beckify-api-base-url"]')?.getAttribute('content')
@@ -311,6 +372,7 @@ async function lookRunSameOrigin(file) {
 
 async function lookRunAnalysis() {
   if (!lookState.file || lookState.busy) return;
+  lookStopRoastSpeech();
   lookSetBusy(true);
   lookSetProgress(16, 'Preparing photo…');
   try {
@@ -339,6 +401,7 @@ async function lookRunAnalysis() {
     lookSetProgress(92, 'Reading the verdict…');
     lookRenderDraft(draft);
     lookSetProgress(100, 'Done. Entertainment only — not a beauty contest.');
+    lookSpeakRoast(draft);
     if (typeof window.showToast === 'function') window.showToast('Look check complete');
   } catch (error) {
     let message = error instanceof Error ? error.message : 'Unknown look-check error';

@@ -232,13 +232,80 @@ public enum PhotoLookCheck {
     public static let maxUploadBytes = 8 * 1024 * 1024
     public static let maxUploadEdge = 2048
     public static let disclaimer =
-        "Honest photo feedback. You might get hyped. You might get fucking roasted. Entertainment only — not medical, dating, or beauty authority. Photos upload only when you tap Analyze Look."
+        "Honest photo feedback. You might get hyped. You might get roasted. Entertainment only — not medical, dating, or beauty authority. Photos upload only when you tap Analyze Look."
     public static let surprisePreAnalyze =
-        "Honest photo feedback. You might get hyped. You might get fucking roasted."
+        "Honest photo feedback. You might get hyped. You might get roasted."
     public static let photoScoresLabel = "Photo scores"
     public static let photoAssessmentLabel = "Photo assessment"
     public static let standaloneBundleID = "com.beckify.lookcheck"
     public static let standaloneDisplayName = "Look Check"
+
+    /// Cassian Vale. The ElevenLabs key stays on the server.
+    public static let roastVoiceName = "Cassian Vale"
+    public static let roastVoiceID = "uYsaRSYDSuxmtyipO9Qt"
+    public static let roastSpeakModel = "eleven_v3"
+    public static let roastSpeakSeed = 60606
+    public static let roastSpeakStability = 0.38
+    public static let roastSpeakSimilarity = 0.82
+    public static let roastSpeakStyle = 1.0
+    public static let roastSpeakSpeed = 0.86
+    public static let roastSpeakMaxCharacters = 1500
+    public static let speakPath = "/api/speak"
+
+    /// Speak only an adult roast. Declined, no person, and empty text stay silent.
+    public static func shouldSpeakRoast(_ draft: PhotoLookDraft) -> Bool {
+        switch draft.verdict {
+        case .declined, .noPerson:
+            return false
+        default:
+            let roast = draft.roast.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !roast.isEmpty
+        }
+    }
+
+    public static func clampRoastForSpeech(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.count <= roastSpeakMaxCharacters { return trimmed }
+        let end = trimmed.index(trimmed.startIndex, offsetBy: roastSpeakMaxCharacters)
+        return String(trimmed[..<end])
+    }
+
+    /// Map a custom analyze URL onto `/api/speak` on the same host. Otherwise api.beckify.com.
+    public static func speakURL(customEndpoint: String?, apiBase: String? = defaultAPIBase) -> URL? {
+        if let custom = httpsBase(customEndpoint) {
+            let folded = custom.lowercased()
+            if folded.contains(analyzePath) {
+                let mapped = custom.replacingOccurrences(
+                    of: analyzePath,
+                    with: speakPath,
+                    options: [.caseInsensitive]
+                )
+                return URL(string: mapped)
+            }
+        }
+        guard let base = httpsBase(apiBase), !base.isEmpty else { return nil }
+        return URL(string: base + speakPath)
+    }
+
+    public static func speakRequestBody(roast: String) -> [String: Any] {
+        [
+            "task": "speak",
+            "text": clampRoastForSpeech(roast),
+            "voice": roastVoiceID,
+            "model": roastSpeakModel,
+            "format": "mp3",
+            "language": "en",
+            "seed": roastSpeakSeed,
+            "stability": roastSpeakStability,
+            "similarity_boost": roastSpeakSimilarity,
+            "style": roastSpeakStyle,
+            "speed": roastSpeakSpeed,
+        ]
+    }
+
+    public static func speakRequestJSON(roast: String) throws -> Data {
+        try JSONSerialization.data(withJSONObject: speakRequestBody(roast: roast), options: [])
+    }
 
     public static func defaultAnalyzeURL() -> URL? {
         analyzeURL(customEndpoint: nil, apiBase: defaultAPIBase)

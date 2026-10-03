@@ -1,6 +1,6 @@
 # Look Check (standalone iOS app)
 
-Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen: take or choose a photo, tap **Analyze**, get useful candid photo feedback plus a long exaggerated roast. Pre-Analyze copy warns: you might get hyped or fucking roasted. Roast tone (mean vs nice) stays a hidden surprise — the app never shows which one it picked.
+Native SwiftUI App Store product, **separate from Beckify Toolbox**. One screen: take or choose a photo, tap **Analyze**, get useful candid photo feedback plus a long exaggerated roast. Pre-Analyze copy warns: you might get hyped or roasted. A non-empty adult roast is spoken. Declined, no person, and an empty roast stay silent. Roast tone (mean vs nice) stays a hidden surprise — the app never shows which one it picked.
 
 This is not a website wrapper and not a second copy of the Field EE toolbox.
 

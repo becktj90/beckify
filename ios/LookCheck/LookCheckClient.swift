@@ -36,6 +36,23 @@ enum LookCheckVisionClient {
         }
     }
 
+
+    static func speak(roast: String, url: URL) async throws -> Data {
+        let body = try PhotoLookCheck.speakRequestJSON(roast: roast)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("audio/mpeg, application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 45
+        request.httpBody = body
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status), !data.isEmpty else {
+            throw LookCheckHTTPError(status: status, message: "Roast voice unavailable.")
+        }
+        return data
+    }
+
     private static func post(url: URL, body: Data) async throws -> PhotoLookDraft {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

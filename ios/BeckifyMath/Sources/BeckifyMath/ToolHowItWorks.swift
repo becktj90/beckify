@@ -601,10 +601,10 @@ public enum ToolHowItWorksCatalog {
         ),
         "lookCheck": ToolHowItWorks(
             summary: "Camera or library photo, then Analyze Look for honest Photo assessment scores plus a surprise roast.",
-            context: "Honest photo feedback. You might get hyped. You might get fucking roasted. Photo stays on device until Analyze Look.",
+            context: "Honest photo feedback. You might get hyped. You might get roasted. Photo stays on device until Analyze Look.",
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
-                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
+                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it. A non-empty adult roast is spoken via /api/speak. Declined, no person, and an empty roast stay silent.",
             ]
         ),
         "heaterDesign": ToolHowItWorks(

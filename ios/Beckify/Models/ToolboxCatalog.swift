@@ -838,7 +838,7 @@ enum ToolboxCatalog {
             id: .lookCheck,
             kind: .calculator,
             title: "Look Check",
-            subtitle: "Honest photo feedback. You might get hyped. You might get fucking roasted.",
+            subtitle: "Honest photo feedback. You might get hyped. You might get roasted.",
             symbol: "person.crop.rectangle",
             synonyms: [
                 "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",

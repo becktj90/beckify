@@ -8,8 +8,12 @@ import {
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
   normalizeSpeakLanguage,
+  CASSIAN_ELEVEN_VOICE_SETTINGS,
+  CASSIAN_VALE_SEED,
+  CASSIAN_VALE_VOICE_ID,
   JUNIE_ELEVEN_VOICE_SETTINGS,
   JUNIE_PELL_VOICE_ID,
+  LOOK_CHECK_SPEAK_MAX_CHARS,
   resolveElevenLabsModel,
   resolveElevenLabsVoiceId,
   shouldUseElevenLabsSpeak,
@@ -34,6 +38,7 @@ interface SpeakBody {
   similarity_boost?: unknown;
   similarityBoost?: unknown;
   speed?: unknown;
+  seed?: unknown;
 }
 
 const router: IRouter = Router();
@@ -63,12 +68,7 @@ router.post("/speak", async (req, res) => {
   const text = pickText(body);
   if (!text) {
     return res.status(400).json({
-      error: "Provide text in `text`, `input`, or `translation` (1–500 characters).",
-    });
-  }
-  if (text.length > SPEAK_MAX_INPUT_CHARS) {
-    return res.status(413).json({
-      error: `Text must be ${SPEAK_MAX_INPUT_CHARS} characters or fewer for short jobsite clips.`,
+      error: "Provide text in `text`, `input`, or `translation` (1–500 characters, or up to 1500 for a Look Check roast).",
     });
   }
 
@@ -92,6 +92,13 @@ router.post("/speak", async (req, res) => {
     model = rawModel || process.env["TTS_MODEL"] || SPEAK_DEFAULT_MODEL;
   }
 
+  const maxChars = voice === CASSIAN_VALE_VOICE_ID ? LOOK_CHECK_SPEAK_MAX_CHARS : SPEAK_MAX_INPUT_CHARS;
+  if (text.length > maxChars) {
+    return res.status(413).json({
+      error: `Text must be ${maxChars} characters or fewer.`,
+    });
+  }
+
   const clientKey = getClientKey(req);
   const bucket = consumeLocalRateLimit(clientKey);
   if (!bucket.allowed) {
@@ -110,7 +117,7 @@ router.post("/speak", async (req, res) => {
 
   try {
     const response = useEleven
-      ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice, body))
+      ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice, body), pickSpeakSeed(body.seed, voice))
       : await synthesizeOpenAI(text, voice, model, format, voiceMode, language);
 
     if (!response.ok) {
@@ -186,6 +193,7 @@ async function synthesizeElevenLabs(
   model: string,
   format: "mp3" | "wav",
   voiceSettings?: Record<string, number | boolean>,
+  seed?: number,
 ): Promise<Response> {
   const apiKey = process.env["ELEVENLABS_API_KEY"];
   if (!apiKey) {
@@ -205,6 +213,7 @@ async function synthesizeElevenLabs(
       text,
       model_id: model,
       ...(voiceSettings ? { voice_settings: voiceSettings } : {}),
+      ...(seed != null ? { seed } : {}),
     }),
   });
 }
@@ -222,23 +231,33 @@ function clampSpeed(raw: unknown, fallback: number): number {
   return Math.min(1.2, Math.max(0.5, value));
 }
 
-/** Junie gets a thick preset. Other crew voices stay on the provider default unless the body sets knobs. */
+/** Junie and Cassian Vale get presets. Other voices stay on the provider default unless the body sets knobs. */
 function elevenVoiceSettings(voiceId: string, body: SpeakBody): Record<string, number | boolean> | undefined {
   const junie = voiceId === JUNIE_PELL_VOICE_ID;
-  const preset = JUNIE_ELEVEN_VOICE_SETTINGS;
+  const cassian = voiceId === CASSIAN_VALE_VOICE_ID;
+  const preset = junie ? JUNIE_ELEVEN_VOICE_SETTINGS : CASSIAN_ELEVEN_VOICE_SETTINGS;
   const stability = body.stability;
   const similarity = body.similarity_boost ?? body.similarityBoost;
   const style = body.style;
   const speed = body.speed;
   const hasOverride = stability != null || similarity != null || (typeof style === "number") || speed != null;
-  if (!junie && !hasOverride) return undefined;
+  if (!junie && !cassian && !hasOverride) return undefined;
   return {
-    stability: clampUnit(stability, junie ? preset.stability : 0.5),
-    similarity_boost: clampUnit(similarity, junie ? preset.similarity_boost : 0.75),
-    style: clampUnit(typeof style === "number" ? style : undefined, junie ? preset.style : 0),
+    stability: clampUnit(stability, junie || cassian ? preset.stability : 0.5),
+    similarity_boost: clampUnit(similarity, junie || cassian ? preset.similarity_boost : 0.75),
+    style: clampUnit(typeof style === "number" ? style : undefined, junie || cassian ? preset.style : 0),
     use_speaker_boost: true,
-    speed: clampSpeed(speed, junie ? preset.speed : 1),
+    speed: clampSpeed(speed, junie || cassian ? preset.speed : 1),
   };
+}
+
+/** Look Check posts seed 60606. Other voices omit seed unless the body sets one. */
+function pickSpeakSeed(raw: unknown, voiceId: string): number | undefined {
+  const fallback = voiceId === CASSIAN_VALE_VOICE_ID ? CASSIAN_VALE_SEED : undefined;
+  if (raw == null || raw === "") return fallback;
+  const value = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isInteger(value) || value < 0 || value > 4294967295) return fallback;
+  return value;
 }
 
 function consumeLocalRateLimit(clientKey: string) {

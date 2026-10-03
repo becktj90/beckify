@@ -62,8 +62,10 @@ const COMEDY_SHARED_RAILS = [
   "Do not contradict the factual assessment. Comedy can be savage or over-the-top hype about the SAME frame the assessment describes.",
   "A strong photo can get a brutal roast. A weak photo can get outrageous hype — still grounded in what is visible.",
   "Profane, specific, hilarious, unpredictable is encouraged. Comedy may make people uncomfortable.",
-  "Never attack race, disability, or body-shame protected traits. Roast vibe, style, grooming, fit, angle, lighting, photo quality, and energy.",
-  "No sexual or graphic content.",
+  "Grotesque comic exaggeration of THIS frame is the job: style, vibe, fit, grooming, angle, lighting, photo quality, and energy.",
+  "Never attack race, disability, or body-shame protected traits. No slurs. No hate. No threats.",
+  "No sexual or graphic content. Do not sexualize anyone. Do not describe sex acts, genitals, or gore.",
+  "Do not print a mode name. Plain spoken sentences only — this string is read aloud.",
   "If verdict is declined or no_person, roast MUST be an empty string.",
 ].join("\n");
 
@@ -73,14 +75,14 @@ const MODE_COMEDY: Record<LookRoastMode, string> = {
     "Playful blunt comedy of THIS frame. Meme-adjacent. Empty string when no_person or declined.",
   ].join("\n"),
   mean: [
-    "Tone: MEAN — brutal funny roast. Turn the heat way up.",
-    "Write a detailed exaggerated savage comedy roast of THIS frame — several sentences, a short paragraph is OK (about 4–8 sentences).",
-    "Profane OK. Specific to what is visible. Unpredictable. Can make people uncomfortable.",
+    "Tone: savage and delighted. The speaker is enjoying the cruelty. Brutal funny roast. Not a cartoon, not goofy, not a pun list.",
+    "Write a detailed grotesque comic exaggeration of THIS frame — style, vibe, fit, grooming, angle, lighting, and photo quality. About 4–6 spoken sentences.",
+    "Profanity should be heavy, specific, and inventive. Delighted cruelty about the photograph, never a threat.",
     "Still comedy, never hate speech. Empty string when no_person or declined.",
   ].join("\n"),
   nice: [
-    "Tone: NICE — outrageous complimentary hype.",
-    "Write a detailed exaggerated over-the-top complimentary roast of THIS frame — several sentences, a short paragraph is OK (about 4–8 sentences).",
+    "Tone: filthy-sweet hype. Over-the-top complimentary adoration that is delighted, unhinged, and still kind in intent. Not an insult and not a cartoon.",
+    "Write a detailed grotesque comic exaggeration that lands as wild praise of THIS frame — style, vibe, fit, grooming, angle, lighting, and photo quality. About 4–6 spoken sentences.",
     "Profane OK when it lands as wild praise. Specific to this frame, not generic. Empty string when no_person or declined.",
   ].join("\n"),
 };
@@ -126,10 +128,10 @@ export function lookComedySystemPrompt(mode: LookRoastMode): string {
 export function lookComedyUserText(mode: LookRoastMode, frozenAssessment: unknown): string {
   const frozen = JSON.stringify(frozenAssessment);
   if (mode === "mean") {
-    return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only the MEAN brutal funny roast for an adult rating, or "" if declined/no_person. Follow the JSON shape.`;
+    return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only the savage delighted roast for an adult rating, or "" if declined/no_person. Do not name the mode. Follow the JSON shape.`;
   }
   if (mode === "nice") {
-    return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only the NICE outrageous complimentary roast for an adult rating, or "" if declined/no_person. Follow the JSON shape.`;
+    return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only the filthy-sweet hype for an adult rating, or "" if declined/no_person. Do not name the mode. Follow the JSON shape.`;
   }
   return `Frozen photo assessment JSON (do not change it):\n${frozen}\n\nWrite only a short BroGPT comedy roast for an adult rating, or "" if declined/no_person. Follow the JSON shape.`;
 }

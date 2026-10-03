@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -20,6 +21,8 @@ struct LookCheckPhotoView: View {
     @State private var errorMessage: String?
     @State private var draft: PhotoLookDraft?
     @State private var successTick = 0
+    @State private var roastPlayer: AVAudioPlayer?
+    @State private var roastSpeakTask: Task<Void, Never>?
 
     var body: some View {
         ToolScaffold(
@@ -379,6 +382,7 @@ struct LookCheckPhotoView: View {
     // MARK: - Actions
 
     private func reset() {
+        stopRoastSpeech()
         photoItem = nil
         preview = nil
         draft = nil
@@ -411,6 +415,7 @@ struct LookCheckPhotoView: View {
             errorMessage = "Analyze Look needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com, or enter a https:// URL."
             return
         }
+        stopRoastSpeech()
         busy = true
         errorMessage = nil
         draft = nil
@@ -440,6 +445,7 @@ struct LookCheckPhotoView: View {
             progress = 1
             status = "Done. Entertainment only — not a beauty contest."
             successTick += 1
+            speakRoastIfNeeded(result)
         } catch {
             errorMessage = error.localizedDescription
             progress = 0
@@ -474,6 +480,45 @@ struct LookCheckPhotoView: View {
         case .declined, .noPerson, .mixed: return Theme.warn
         }
     }
+
+    private func stopRoastSpeech() {
+        roastSpeakTask?.cancel()
+        roastSpeakTask = nil
+        roastPlayer?.stop()
+        roastPlayer = nil
+    }
+
+    /// Speak the roast only. Declined, no person, and empty text never call /api/speak.
+    private func speakRoastIfNeeded(_ draft: PhotoLookDraft) {
+        stopRoastSpeech()
+        guard PhotoLookCheck.shouldSpeakRoast(draft) else { return }
+        guard let url = PhotoLookCheck.speakURL(customEndpoint: customEndpoint) else { return }
+        let roast = draft.roast
+        let bearer = PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
+        roastSpeakTask = Task { @MainActor in
+            do {
+                let body = try PhotoLookCheck.speakRequestJSON(roast: roast)
+                let result = try await BeckifyAIClient.postAudio(
+                    url: url,
+                    body: body,
+                    bearerToken: bearer,
+                    timeout: 45
+                )
+                guard !Task.isCancelled else { return }
+                let session = AVAudioSession.sharedInstance()
+                try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+                try? session.setActive(true, options: .notifyOthersOnDeactivation)
+                let player = try AVAudioPlayer(data: result.data)
+                player.volume = 1
+                player.prepareToPlay()
+                roastPlayer = player
+                _ = player.play()
+            } catch {
+                // Keep the written roast. Do not fall back to a cartoon device voice.
+            }
+        }
+    }
+
 }
 
 /// URLSession client for `/api/analyze-look`. Encoding happens only here.
