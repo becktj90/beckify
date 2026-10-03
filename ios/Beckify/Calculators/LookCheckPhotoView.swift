@@ -23,6 +23,7 @@ struct LookCheckPhotoView: View {
     @State private var successTick = 0
     @State private var roastSpeaker = LookRoastSpeaker()
     @State private var roastSpeakTask: Task<Void, Never>?
+    @State private var roastGeneration: UInt64 = 0
     /// Look score (1…10) stays hidden until Cassian finishes — or shows immediately if TTS is skipped.
     @State private var lookScoreVisible = false
 
@@ -499,13 +500,15 @@ struct LookCheckPhotoView: View {
     }
 
     private func stopRoastSpeech() {
+        roastGeneration &+= 1
         roastSpeakTask?.cancel()
         roastSpeakTask = nil
         roastSpeaker.stop()
     }
 
     /// Speak the roast only. Declined, no person, and empty text never call /api/speak.
-    /// Look score reveals after playback finishes, or immediately if TTS is skipped (no audio).
+    /// The written roast stays on screen either way. Look score reveals after playback
+    /// finishes, or immediately if TTS is skipped (no audio).
     private func speakRoastIfNeeded(_ draft: PhotoLookDraft) {
         stopRoastSpeech()
         lookScoreVisible = false
@@ -516,6 +519,7 @@ struct LookCheckPhotoView: View {
         }
         let roast = draft.roast
         let bearer = PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
+        let generation = roastGeneration
         roastSpeakTask = Task { @MainActor in
             do {
                 let body = try PhotoLookCheck.speakRequestJSON(roast: roast)
@@ -525,18 +529,18 @@ struct LookCheckPhotoView: View {
                     bearerToken: bearer,
                     timeout: 45
                 )
-                guard !Task.isCancelled else { return }
-                try roastSpeaker.play(mp3: result.data)
-                let wait = max(roastSpeaker.duration, 0.2)
-                try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
-                guard !Task.isCancelled else { return }
-                revealLookScoreIfEligible(draft)
-                roastSpeaker.releaseSession()
+                guard !Task.isCancelled, generation == roastGeneration else { return }
+                try roastSpeaker.play(mp3: result.data) {
+                    Task { @MainActor in
+                        guard generation == roastGeneration else { return }
+                        revealLookScoreIfEligible(draft)
+                    }
+                }
             } catch {
                 // Keep the written roast. Do not fall back to a cartoon device voice.
                 // TTS skipped / no audio → reveal look score immediately when eligible.
                 roastSpeaker.stop()
-                if !Task.isCancelled {
+                if !Task.isCancelled, generation == roastGeneration {
                     revealLookScoreIfEligible(draft)
                 }
             }
@@ -550,22 +554,22 @@ struct LookCheckPhotoView: View {
 }
 
 /// Loudspeaker playback for a Cassian MP3.
-/// Crew Talk can leave the session on playAndRecord, which routes later audio to the earpiece.
-/// `notifyOthersOnDeactivation` is only valid when deactivating; passing it while activating
-/// makes `setActive` fail and `play()` return false, which the old path ignored.
-private final class LookRoastSpeaker {
+///
+/// Camera (`UIImagePickerController`) and Crew Talk leave the shared session **active**
+/// on `.playAndRecord` (often `.videoRecording` or `.measurement`). A category change is
+/// ignored until the session is deactivated, and `overrideOutputAudioPort(.speaker)` is
+/// illegal for `.playback` and for video-recording mode. Build 252 swallowed both errors,
+/// so `play()` could return true into the earpiece. It also deactivated the session after
+/// `max(duration, 0.2)` — a VBR MP3 often reports duration 0, which cut the roast off.
+private final class LookRoastSpeaker: NSObject, AVAudioPlayerDelegate {
     private var player: AVAudioPlayer?
-    private var fileURL: URL?
-
-    var duration: TimeInterval { player?.duration ?? 0 }
+    private var onFinish: (() -> Void)?
 
     func stop() {
+        onFinish = nil
+        player?.delegate = nil
         player?.stop()
         player = nil
-        if let fileURL {
-            try? FileManager.default.removeItem(at: fileURL)
-        }
-        fileURL = nil
         releaseSession()
     }
 
@@ -573,22 +577,63 @@ private final class LookRoastSpeaker {
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
     }
 
-    func play(mp3: Data) throws {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-        try? session.setActive(true)
-        try? session.overrideOutputAudioPort(.speaker)
+    func play(mp3: Data, onFinish: @escaping () -> Void) throws {
+        self.onFinish = nil
+        player?.delegate = nil
+        player?.stop()
+        player = nil
 
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("beckify-look-roast-\(UUID().uuidString).mp3")
-        try mp3.write(to: url, options: .atomic)
-        fileURL = url
-        let player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
+        let session = AVAudioSession.sharedInstance()
+        try Self.activateLoudspeaker(session)
+
+        let player = try AVAudioPlayer(data: mp3)
+        player.delegate = self
         player.volume = 1
         player.prepareToPlay()
         self.player = player
-        guard player.play() else {
-            throw LookRoastSpeakError.didNotStart
+        self.onFinish = onFinish
+        if !player.play() {
+            try session.setActive(true)
+            guard player.play() else {
+                self.onFinish = nil
+                throw LookRoastSpeakError.didNotStart
+            }
+        }
+    }
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        finish()
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        finish()
+    }
+
+    private func finish() {
+        let callback = onFinish
+        onFinish = nil
+        callback?()
+        releaseSession()
+    }
+
+    /// Deactivate first so the category actually changes, then prefer `.playback`
+    /// (loudspeaker, ignores the silent switch). If the route is still the receiver,
+    /// switch to play-and-record with the speaker override — that call is only valid
+    /// for `.playAndRecord`, and not while the camera's video-recording mode is set.
+    static func activateLoudspeaker(_ session: AVAudioSession) throws {
+        try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+        do {
+            try session.setCategory(.playback, mode: .spokenAudio, options: [])
+            try session.setActive(true)
+        } catch {
+            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
+            try session.setActive(true)
+        }
+        if session.currentRoute.outputs.contains(where: { $0.portType == .builtInReceiver }) {
+            try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
+            try session.setActive(true)
+            try session.overrideOutputAudioPort(.speaker)
         }
     }
 }

@@ -605,7 +605,7 @@ public enum ToolHowItWorksCatalog {
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
                 "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
-                "A non-empty adult roast is spoken via /api/speak. Declined, no person, and an empty roast stay silent.",
+                "A non-empty adult roast is spoken from the loudspeaker via /api/speak, and that text stays on screen. Declined, no person, and an empty roast stay silent.",
             ]
         ),
         "heaterDesign": ToolHowItWorks(
