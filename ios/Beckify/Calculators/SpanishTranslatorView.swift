@@ -162,6 +162,29 @@ struct SpanishTranslatorView: View {
         )
     }
 
+    /// Speak string: dialect / other-language / rewrite on screen, never the raw field.
+    private var dockSpeakLine: String {
+        let pair = dockEnglishSpanish
+        return SpanishTranslatorAPI.lineToSpeak(
+            crew: crew,
+            direction: direction,
+            english: pair.english,
+            spanish: pair.spanish,
+            fallback: pair.fallback
+        )
+    }
+
+    private var dockSpeakLanguage: String {
+        let pair = dockEnglishSpanish
+        return SpanishTranslatorAPI.speakLanguageForLineToSpeak(
+            crew: crew,
+            direction: direction,
+            english: pair.english,
+            spanish: pair.spanish,
+            fallback: pair.fallback
+        )
+    }
+
     /// One short phase word — no STATUS essay, engine/URL notes, or voice tech.
     private var phaseLine: some View {
         Text(engine.statusLabel)
@@ -401,7 +424,7 @@ struct SpanishTranslatorView: View {
     }
 
     private var speakAgainDisabled: Bool {
-        dockSpokenAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        dockSpeakLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || engine.phase == .listening
             || engine.phase == .finishingTranscript
             || engine.phase == .translating
@@ -481,7 +504,7 @@ struct SpanishTranslatorView: View {
                 }
                 Button {
                     engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.speakDockAnswer(dockSpokenAnswer)
+                    engine.speakDockAnswer(dockSpeakLine, language: dockSpeakLanguage)
                 } label: {
                     Label("Speak", systemImage: "speaker.wave.3.fill")
                         .font(.headline.weight(.bold))
@@ -1154,14 +1177,19 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     func speakResultAgain() {
-        speakDockAnswer(currentDockSpokenAnswer())
+        speakDockAnswer(currentLineToSpeak(), language: currentSpeakLanguage())
     }
 
-    /// Speak the exact string the dock is showing (other language / Tito rewrite).
-    func speakDockAnswer(_ text: String) {
+    /// Speak the dialect / other-language / rewritten line, never the raw field.
+    func speakDockAnswer(_ text: String, language: String? = nil) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        speakResult(trimmed, preferNeural: true)
+        // Snapshot the person on screen. A Speak tap is not a translate turn,
+        // and turnCrew would otherwise stay the last translation's helper.
+        turnCrew = crew
+        turnDirection = direction
+        turnVoiceMode = voiceMode
+        speakResult(trimmed, preferNeural: true, language: language)
     }
 
     private func currentDockSpokenAnswer() -> String {
@@ -1174,11 +1202,34 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         )
     }
 
+    private func currentLineToSpeak() -> String {
+        SpanishTranslatorAPI.lineToSpeak(
+            crew: crew,
+            direction: direction,
+            english: englishText,
+            spanish: spanishText,
+            fallback: resultText
+        )
+    }
+
+    private func currentSpeakLanguage() -> String {
+        SpanishTranslatorAPI.speakLanguageForLineToSpeak(
+            crew: crew,
+            direction: direction,
+            english: englishText,
+            spanish: spanishText,
+            fallback: resultText
+        )
+    }
+
     /// Optional: once translation text is ready, cancel cloud speak and use Apple now.
     func speakNowWithDeviceVoice() {
-        let text = currentDockSpokenAnswer()
+        let text = currentLineToSpeak()
         guard !text.isEmpty else { return }
         allowAppleSpeakFallback = true
+        turnCrew = crew
+        turnDirection = direction
+        turnVoiceMode = voiceMode
         cancelSpeakPipeline(silence: true)
         let generation = speakGeneration
         let turn = turnID
@@ -1187,7 +1238,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         isPreparingSpeak = true
         preparingElapsedSeconds = 0
         statusLabel = SpanishTranslatorAPI.statusPreparingVoice
-        speakWithAppleFallback(SpanishTranslatorAPI.clampSpeakText(text), turn: turn, speakGen: generation)
+        let apple = currentSpeakLanguage() == "es" ? "es-US" : "en-US"
+        speakWithAppleFallback(SpanishTranslatorAPI.clampSpeakText(text), turn: turn, speakGen: generation, language: apple)
     }
 
     /// Legacy name used by older call sites; silences without Apple fallback.
@@ -1272,14 +1324,21 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         lastSuccessStatus = successStatus
         statusLabel = successStatus
         pendingOnDeviceSource = ""
-        let spoken = SpanishTranslatorAPI.spokenAnswerForDock(
+        let spoken = SpanishTranslatorAPI.lineToSpeak(
             crew: turnCrew,
             direction: turnDirection,
             english: englishText,
             spanish: spanishText,
             fallback: draft.translation
         )
-        speakResult(spoken, preferNeural: true)
+        let language = SpanishTranslatorAPI.speakLanguageForLineToSpeak(
+            crew: turnCrew,
+            direction: turnDirection,
+            english: englishText,
+            spanish: spanishText,
+            fallback: draft.translation
+        )
+        speakResult(spoken, preferNeural: true, language: language)
     }
 
     private var sourceText: String {
@@ -1485,7 +1544,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         }
     }
 
-    private func speakResult(_ text: String, preferNeural: Bool) {
+    private func speakResult(_ text: String, preferNeural: Bool, language: String? = nil) {
         let trimmed = SpanishTranslatorAPI.clampSpeakText(text)
         guard !trimmed.isEmpty else { return }
         allowAppleSpeakFallback = preferNeural
@@ -1495,7 +1554,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let turn = turnID
         let snapshotMode = turnVoiceMode
         let snapshotCrew = turnCrew
-        let speakLanguage = SpanishTranslatorAPI.speakLanguageForDirection(turnDirection)
+        let speakLanguage = language ?? SpanishTranslatorAPI.speakLanguageForDirection(turnDirection)
+        let appleLanguage = speakLanguage == "es" ? "es-US" : "en-US"
 
         phase = .preparingVoice
         isPreparingSpeak = true
@@ -1505,7 +1565,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         startPreparingTicker(turn: turn)
 
         guard preferNeural else {
-            speakWithAppleFallback(trimmed, turn: turn, speakGen: generation)
+            speakWithAppleFallback(trimmed, turn: turn, speakGen: generation, language: appleLanguage)
             return
         }
 
@@ -1550,7 +1610,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                 if !detail.isEmpty {
                     self.errorMessage = "Neural TTS unavailable — Apple voice. (\(detail))"
                 }
-                self.speakWithAppleFallback(trimmed, turn: turn, speakGen: generation)
+                self.speakWithAppleFallback(trimmed, turn: turn, speakGen: generation, language: appleLanguage)
             }
         }
     }

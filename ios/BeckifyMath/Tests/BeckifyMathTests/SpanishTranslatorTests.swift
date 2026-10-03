@@ -652,15 +652,20 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(pearlBody["model"] as? String, "eleven_v3")
         XCTAssertEqual(pearlBody["language"] as? String, "en")
         let kill = SpanishTranslatorAPI.pearlWarmRewrite("Kill the power.")
-        XCTAssertEqual(kill, "Would you please cut the power?")
+        XCTAssertFalse(CrewDialectRewrite.fold(kill).contains("kill the power"))
+        XCTAssertFalse(kill.lowercased().hasPrefix("would you please"))
         XCTAssertTrue(kill.lowercased().contains("power"))
         XCTAssertFalse(kill.lowercased().contains("kill"))
         XCTAssertEqual(
             SpanishTranslatorAPI.lineForCrew(crew: .pearl, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope"),
             kill
         )
-        XCTAssertEqual(SpanishTranslatorAPI.pearlWarmRewrite("Hand me that conduit."), "Could you hand me that conduit?")
-        XCTAssertEqual(SpanishTranslatorAPI.pearlWarmRewrite("Move the ladder."), "Would you move the ladder for me?")
+        let conduit = SpanishTranslatorAPI.pearlWarmRewrite("Hand me that conduit.")
+        XCTAssertTrue(conduit.lowercased().contains("conduit"))
+        XCTAssertFalse(CrewDialectRewrite.fold(conduit).contains("hand me that conduit"))
+        let ladder = SpanishTranslatorAPI.pearlWarmRewrite("Move the ladder.")
+        XCTAssertTrue(ladder.lowercased().contains("ladder"))
+        XCTAssertFalse(CrewDialectRewrite.fold(ladder).contains("move the ladder"))
         XCTAssertTrue(SpanishTranslatorAPI.pearlWarmRewrite("Watch your head.").lowercased().contains("head"))
         let generic = SpanishTranslatorAPI.pearlWarmRewrite("Hold this for a second.")
         XCTAssertTrue(generic.lowercased().contains("hold this"))
@@ -674,8 +679,9 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertFalse(warmed.contains("florida"))
         XCTAssertEqual(
             SpanishTranslatorAPI.lineForCrew(crew: .pearl, english: "  ", spanish: "Hola", fallback: "Move the ladder."),
-            "Would you move the ladder for me?"
+            ladder
         )
+        XCTAssertFalse(ladder.lowercased().contains("hola"))
         XCTAssertEqual(CrewTalkMember.parse("Sloane Merritt"), .sloaneMerritt)
         XCTAssertEqual(CrewTalkMember.parse("sloane"), .sloaneMerritt)
         XCTAssertEqual(CrewTalkMember.sloaneMerritt.displayName, "Sloane Merritt")
@@ -828,6 +834,28 @@ final class SpanishTranslatorTests: XCTestCase {
         let sloane = SpanishTranslatorAPI.sloaneCorporateRewrite("Hi I need you to clean up all these racks")
         XCTAssertFalse(sloane.lowercased().contains("hi i need you to clean up all these racks"))
         XCTAssertTrue(sloane.lowercased().contains("rack"))
+
+        let praise = "You are so good at this"
+        for line in [
+            SpanishTranslatorAPI.bodieDialectRewrite(praise),
+            SpanishTranslatorAPI.junieDialectRewrite(praise),
+            SpanishTranslatorAPI.pearlWarmRewrite(praise),
+            SpanishTranslatorAPI.sloaneCorporateRewrite(praise),
+            SpanishTranslatorAPI.titoDialectRewrite(praise),
+        ] {
+            let folded = CrewDialectRewrite.fold(line)
+            XCTAssertFalse(folded.contains(CrewDialectRewrite.fold(praise)), line)
+            XCTAssertFalse(folded.contains("im fixin to " + CrewDialectRewrite.fold(praise)), line)
+            XCTAssertFalse(folded.contains("would you please " + CrewDialectRewrite.fold(praise)), line)
+            XCTAssertFalse(folded.hasPrefix("im fixin to"), line)
+            XCTAssertFalse(folded.hasPrefix("would you please"), line)
+        }
+        XCTAssertTrue(SpanishTranslatorAPI.junieDialectRewrite(praise).lowercased().contains("gift"))
+        XCTAssertTrue(SpanishTranslatorAPI.pearlWarmRewrite(praise).lowercased().contains("gift"))
+        XCTAssertTrue(SpanishTranslatorAPI.bodieDialectRewrite(praise).lowercased().contains("natural"))
+        XCTAssertTrue(SpanishTranslatorAPI.sloaneCorporateRewrite(praise).lowercased().contains("strong")
+            || SpanishTranslatorAPI.sloaneCorporateRewrite(praise).lowercased().contains("circle"))
+        assertTitoHitsProfanityCeiling(SpanishTranslatorAPI.titoDialectRewrite(praise))
         // Meeting-speak, two sentences.
         let sentenceEnds = sloane.filter { ".!?".contains($0) }.count
         XCTAssertLessThanOrEqual(sentenceEnds, 2)
@@ -910,6 +938,75 @@ final class SpanishTranslatorTests: XCTestCase {
         )
         XCTAssertEqual(SpanishTranslatorAPI.speakLanguageForDirection(.englishToSpanish), "es")
         XCTAssertEqual(SpanishTranslatorAPI.speakLanguageForDirection(.spanishToEnglish), "en")
+
+        let typed = "You are so good at this"
+        let junieSpoken = SpanishTranslatorAPI.lineToSpeak(
+            crew: .juniePell,
+            direction: .englishToSpanish,
+            english: typed,
+            spanish: "",
+            fallback: typed
+        )
+        XCTAssertEqual(
+            junieSpoken,
+            SpanishTranslatorAPI.dialectHelperLine(
+                crew: .juniePell,
+                direction: .englishToSpanish,
+                english: typed,
+                spanish: "",
+                fallback: typed
+            )
+        )
+        XCTAssertNotEqual(junieSpoken, typed)
+        XCTAssertFalse(CrewDialectRewrite.fold(junieSpoken).contains(CrewDialectRewrite.fold(typed)))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.speakLanguageForLineToSpeak(
+                crew: .juniePell,
+                direction: .englishToSpanish,
+                english: typed,
+                spanish: "",
+                fallback: typed
+            ),
+            "en"
+        )
+        let junieWithSpanish = SpanishTranslatorAPI.lineToSpeak(
+            crew: .juniePell,
+            direction: .englishToSpanish,
+            english: typed,
+            spanish: "Eres muy bueno en esto.",
+            fallback: typed
+        )
+        XCTAssertEqual(junieWithSpanish, SpanishTranslatorAPI.junieDialectRewrite(typed))
+        XCTAssertNotEqual(junieWithSpanish, "Eres muy bueno en esto.")
+        XCTAssertEqual(
+            SpanishTranslatorAPI.speakLanguageForLineToSpeak(
+                crew: .juniePell,
+                direction: .englishToSpanish,
+                english: typed,
+                spanish: "Eres muy bueno en esto.",
+                fallback: typed
+            ),
+            "en"
+        )
+        let titoLineToSpeak = SpanishTranslatorAPI.lineToSpeak(
+            crew: .titoSolano,
+            direction: .englishToSpanish,
+            english: typed,
+            spanish: "",
+            fallback: typed
+        )
+        XCTAssertNotEqual(titoLineToSpeak, typed)
+        XCTAssertFalse(CrewDialectRewrite.fold(titoLineToSpeak).contains(CrewDialectRewrite.fold(typed)))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.speakLanguageForLineToSpeak(
+                crew: .titoSolano,
+                direction: .englishToSpanish,
+                english: typed,
+                spanish: "",
+                fallback: typed
+            ),
+            "es"
+        )
         XCTAssertEqual(CrewTalkMember.pearl.firstName, "Pearl")
         XCTAssertEqual(CrewTalkMember.sloaneMerritt.firstName, "Sloane")
         XCTAssertEqual(CrewTalkMember.bodieHale.firstName, "Bodie")

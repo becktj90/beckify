@@ -2,7 +2,8 @@ import Foundation
 
 /// Turns a user's line into one crew member's dialect.
 /// Wording may change a lot. The ask survives. Slurs and insults are never echoed.
-/// Never glue a stock opener onto the raw sentence ("Would you please hi I need…").
+/// Never glue a stock opener onto the raw sentence ("I'm fixin' to you are so good…",
+/// "Would you please hi I need…").
 enum CrewDialectRewrite {
     static func rewrite(crew: CrewTalkMember, raw: String) -> String {
         switch crew {
@@ -14,57 +15,123 @@ enum CrewDialectRewrite {
         }
     }
 
+    // MARK: - Intent
+
+    private enum Intent {
+        case cutPower
+        case conduit
+        case ladder
+        case head
+        case wire
+        case mess
+        case feeder
+        case breaker
+        case racks
+        case hold
+        case compliment
+        case greeting
+        case free
+    }
+
+    private static func intent(for scrubbed: String) -> Intent {
+        let key = fold(scrubbed)
+        if key == "hola" || key == "hi" || key == "hey" || key == "hello" { return .greeting }
+        let lower = scrubbed.lowercased()
+        if lower.contains("good at") || lower.contains("so good") || lower.contains("great at")
+            || (lower.contains("you are") && lower.contains("good"))
+            || (lower.contains("you're") && lower.contains("good"))
+            || (lower.contains("youre") && lower.contains("good")) {
+            return .compliment
+        }
+        if lower.contains("power") || lower.contains("corriente") { return .cutPower }
+        if lower.contains("conduit") { return .conduit }
+        if lower.contains("ladder") || lower.contains("escalera") { return .ladder }
+        if lower.contains("head") || lower.contains("cabeza") { return .head }
+        if lower.contains("wire") || lower.contains("alambre") || lower.contains("cable") { return .wire }
+        if lower.contains("mess") || lower.contains("desorden") { return .mess }
+        if lower.contains("feeder") || lower.contains("aliment") { return .feeder }
+        if lower.contains("breaker") { return .breaker }
+        if lower.contains("rack") { return .racks }
+        if lower.contains("hold") { return .hold }
+        return .free
+    }
+
+    /// Content words with the original sentence broken apart so a template cannot
+    /// paste the raw line back on the end of a stock opener.
+    private static func voicedWords(_ raw: String) -> String {
+        let stop: Set<String> = [
+            "the", "a", "an", "and", "or", "to", "for", "of", "me", "my", "that", "this",
+            "please", "you", "your", "just", "now", "get", "it", "with", "from", "into",
+            "hi", "hey", "hello", "need", "want", "are", "was", "were", "been", "have",
+            "has", "had", "so", "very", "really", "all", "these", "those", "them",
+        ]
+        let words = extractAsk(raw).split(separator: " ").map(String.init).filter { word in
+            word.count > 2 && !stop.contains(word)
+        }
+        if words.isEmpty { return "that open item" }
+        if words.count == 1 { return words[0] }
+        let head = words.dropLast().joined(separator: ", ")
+        return "\(head), then \(words.last!)"
+    }
+
+    private static func safe(_ line: String, raw: String, fallback: String) -> String {
+        let foldedRaw = fold(raw)
+        guard foldedRaw.count >= 8 else { return line }
+        if fold(line).contains(foldedRaw) { return fallback }
+        return line
+    }
+
     // MARK: - Pearl
 
     static func pearl(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
-        let key = fold(trimmed)
-        if let known = pearlKnown[key] { return known }
         let cleaned = scrub(trimmed)
         guard !cleaned.isEmpty else {
-            return "Would you please tell me what you need, when you have a moment?"
+            return "When you have a moment, tell me what you need."
         }
-        let ask = extractAsk(cleaned)
-        guard !ask.isEmpty else {
-            return "Would you please tell me what you need, when you have a moment?"
+        let line: String
+        switch intent(for: cleaned) {
+        case .cutPower:
+            line = "Please cut the power, and let's stay clear of it."
+        case .conduit:
+            line = "When you have a moment, that conduit needs to come this way."
+        case .ladder:
+            line = "The ladder needs to move over, if you have a moment."
+        case .head:
+            line = "Please mind the clearance above your head."
+        case .wire:
+            line = "A little more wire would help, whenever you have a moment."
+        case .mess:
+            line = "Someone left a mess, and I'd like to know who, when you have a moment."
+        case .feeder:
+            line = "Please land that feeder before lunch, if you would."
+        case .breaker:
+            line = "Please leave that breaker alone until we're ready."
+        case .racks:
+            line = "Those racks could use a proper clean, whenever you have a moment."
+        case .hold:
+            line = "Please hold this steady for a moment."
+        case .compliment:
+            line = "You've got such a gift for this, and I wanted you to hear it."
+        case .greeting:
+            line = "Hello there. Tell me what you need, when you have a moment."
+        case .free:
+            line = "When you have a moment, the thing to handle is \(voicedWords(cleaned))."
         }
-        let lower = ask.lowercased()
-        if lower.hasPrefix("please ") || lower.hasPrefix("would you") || lower.hasPrefix("could you") {
-            return sentence(capitalize(ask))
-        }
-        let frames: [(String) -> String] = [
-            { ask in "Would you please \(ask)?" },
-            { ask in "Could you \(ask) for me?" },
-            { ask in "Would you mind \(gerundish(ask))?" },
-            { ask in "Please \(ask) when you have a moment." },
-            { ask in "Could we \(ask)?" },
-        ]
-        return frames[rotate(key, frames.count)](ask)
+        return safe(line, raw: trimmed, fallback: "When you have a moment, tell me the part you need help with.")
     }
-
-    private static let pearlKnown: [String: String] = [
-        "kill the power": "Would you please cut the power?",
-        "thats live dont touch it": "That line is live — please don't touch it.",
-        "hand me that conduit": "Could you hand me that conduit?",
-        "move the ladder": "Would you move the ladder for me?",
-        "watch your head": "Please watch your head.",
-        "we need more wire": "Could we get a little more wire?",
-        "who left this mess": "Could you help me see who left this mess?",
-        "hi i need you to clean up all these racks": "Would you please clean up all these racks?",
-        "i need you to clean up all these racks": "Would you please clean up all these racks?",
-        "clean up all these racks": "Would you please clean up all these racks?",
-    ]
 
     // MARK: - Sloane
 
-    /// Meeting-speak only. Two lines. A rude line still leaves as a meeting, never as the original words.
+    /// Meeting-speak only. A rude line still leaves as a meeting, never as the original words.
     static func sloane(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
         let key = fold(trimmed)
         if let known = sloaneKnown[key] { return known }
-        let topic = sloaneTopic(trimmed)
+        let cleaned = scrub(trimmed)
+        let topic = sloaneTopic(cleaned.isEmpty ? trimmed : cleaned)
         let templates: [(String) -> String] = [
             { topic in
                 "Team, I want to circle back on \(topic). I'll keep you in the loop and take the rest offline."
@@ -91,7 +158,8 @@ enum CrewDialectRewrite {
                 "Let's align the flywheel on \(topic). I'll keep it on my radar and bifurcate the rest."
             },
         ]
-        return templates[rotate(key, templates.count)](topic)
+        let line = templates[rotate(key, templates.count)](topic)
+        return safe(line, raw: trimmed, fallback: "Team, I want to circle back on the open item. I'll take the rest offline.")
     }
 
     private static let sloaneKnown: [String: String] = [
@@ -105,29 +173,23 @@ enum CrewDialectRewrite {
     ]
 
     private static func sloaneTopic(_ raw: String) -> String {
-        let scrubbed = scrub(raw).lowercased()
-        if scrubbed.contains("feeder") {
-            return scrubbed.contains("lunch") ? "landing the feeder before lunch" : "the feeder"
+        switch intent(for: raw) {
+        case .cutPower: return "cutting the power"
+        case .conduit: return "that conduit handoff"
+        case .ladder: return "relocating the ladder"
+        case .head: return "head clearance"
+        case .wire: return "wire supply"
+        case .mess: return "the open housekeeping item"
+        case .feeder:
+            return raw.lowercased().contains("lunch") ? "landing the feeder before lunch" : "the feeder"
+        case .breaker: return "that breaker"
+        case .racks: return "clearing those racks"
+        case .hold: return "holding that for a moment"
+        case .compliment: return "how strong this work is"
+        case .greeting: return "the open item"
+        case .free:
+            return voicedWords(raw)
         }
-        if scrubbed.contains("power") { return "cutting the power" }
-        if scrubbed.contains("conduit") { return "that conduit handoff" }
-        if scrubbed.contains("ladder") { return "relocating the ladder" }
-        if scrubbed.contains("head") { return "head clearance" }
-        if scrubbed.contains("wire") { return "wire supply" }
-        if scrubbed.contains("mess") { return "the open housekeeping item" }
-        if scrubbed.contains("hold") { return "holding that for a moment" }
-        if scrubbed.contains("breaker") { return "that breaker" }
-        if scrubbed.contains("rack") { return "clearing those racks" }
-        let stop: Set<String> = [
-            "the", "a", "an", "and", "or", "to", "for", "of", "me", "my", "that", "this",
-            "please", "you", "your", "just", "now", "get", "it", "with", "from", "into",
-            "hi", "hey", "hello", "need", "want",
-        ]
-        let words = extractAsk(scrubbed).split(separator: " ").map(String.init).filter { word in
-            word.count > 2 && !stop.contains(word)
-        }
-        if words.isEmpty { return "the open item" }
-        return words.prefix(6).joined(separator: " ")
     }
 
     // MARK: - Junie
@@ -135,69 +197,76 @@ enum CrewDialectRewrite {
     static func junie(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
-        let key = fold(trimmed)
-        if let known = junieKnown[key] { return known }
-        let ask = extractAsk(scrub(trimmed))
-        let color = junieColors[rotate(key, junieColors.count)]
-        let frames: [(String, String) -> String] = [
-            { ask, color in "Well, I'm fixin' to \(ask). \(color)." },
-            { ask, color in "Listen here — \(ask), over yonder. \(color)." },
-            { ask, color in "Bless your heart, \(ask). \(color)." },
-            { ask, color in "Heavens to Betsy, \(ask) till the cows come home if we have to. \(color)." },
-            { ask, color in "I'm fixin' to \(ask), and don't get your knickers in a knot. \(color)." },
-            { ask, color in "Well I'll be Sam Browned — \(ask). \(color)." },
-        ]
-        return frames[rotate(key + "|j", frames.count)](ask.isEmpty ? "take care of that" : ask, color)
+        let cleaned = scrub(trimmed)
+        let line: String
+        switch intent(for: cleaned.isEmpty ? trimmed : cleaned) {
+        case .cutPower:
+            line = "That power needs to come off, bless your heart. Don't get your knickers in a knot."
+        case .conduit:
+            line = "That conduit belongs over yonder in a working hand. It'll fit better than a sock on a rooster."
+        case .ladder:
+            line = "That ladder needs to slide a fur piece. Don't take any wooden nickels while it moves."
+        case .head:
+            line = "Mind the clearance above you. I'm nervous as a long-tailed cat in a room full of rocking chairs."
+        case .wire:
+            line = "We're shy on wire, and more has to come from over yonder. Bless your heart."
+        case .mess:
+            line = "Well I'll be Sam Browned — this mess needs setting right. Bless your heart, let's own it."
+        case .feeder:
+            line = "That feeder has to land before lunch. Don't get your knickers in a knot — we'll beat the cows home."
+        case .breaker:
+            line = "Leave that breaker be, over yonder. Heavens to Betsy, it stays off."
+        case .racks:
+            line = "Those racks need a real clean, bless your heart. We'll set them right over yonder."
+        case .hold:
+            line = "Keep a gentle hold on this for a moment, and don't get your knickers in a knot."
+        case .compliment:
+            line = "Bless your heart, you've got a real gift for this. Slick as a ribbon on an ice cube."
+        case .greeting:
+            line = "Hey there, bless your heart. Good to see you over yonder."
+        case .free:
+            line = "Listen here — \(voicedWords(cleaned)), over yonder. Bless your heart."
+        }
+        return safe(line, raw: trimmed, fallback: "Bless your heart, say that once more in plain words and I'll tend to it.")
     }
-
-    private static let junieColors = [
-        "Don't get your knickers in a knot",
-        "Don't take any wooden nickels",
-        "Slick as a ribbon on an ice cube",
-        "Fitter than a fiddle",
-        "Well I'll be Sam Browned",
-        "Heavens to Betsy",
-        "Bless your heart",
-        "Madder than a wet hen if we leave it",
-    ]
-
-    private static let junieKnown: [String: String] = [
-        "kill the power": "I'm fixin' to cut that power. Don't get your knickers in a knot — bless your heart, it'll be off.",
-        "hand me that conduit": "Hand me that conduit over yonder. It'll fit the job better than a sock on a rooster.",
-        "move the ladder": "I'm fixin' to move that ladder a fur piece. Don't take any wooden nickels while I do.",
-        "watch your head": "Watch your head, now. I'm nervous as a long-tailed cat in a room full of rocking chairs about that clearance.",
-        "we need more wire": "We're shy on wire, and I'm fixin' to fetch more from over yonder.",
-        "who left this mess": "Well I'll be Sam Browned, somebody left this mess and ain't got the sense of a sack of wet hammers. Bless your heart, let's set it right.",
-        "stop talking and get that feeder in before lunch": "I'm fixin' to get that feeder in before lunch. Don't get your knickers in a knot — we'll be done before the cows even look up.",
-    ]
 
     // MARK: - Bodie
 
     static func bodie(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
-        let key = fold(trimmed)
-        if let known = bodieKnown[key] { return known }
-        let ask = extractAsk(scrub(trimmed))
-        let frames: [(String) -> String] = [
-            { ask in "Hey, let's \(ask). Easy does it out here — we're good." },
-            { ask in "No rush. \(capitalize(ask)), then we can leave it and enjoy the rest of the day." },
-            { ask in "Alright, \(ask). Keep it light, keep it easy, and we're done." },
-            { ask in "Hey, \(ask) when the moment's right. The work can breathe a second." },
-            { ask in "Let's \(ask) and call it good. Nothing out here needs a panic." },
-        ]
-        return frames[rotate(key, frames.count)](ask.isEmpty ? "take care of that" : ask)
+        let cleaned = scrub(trimmed)
+        let line: String
+        switch intent(for: cleaned.isEmpty ? trimmed : cleaned) {
+        case .cutPower:
+            line = "Hey, let's cut the power and call it good. Easy does it — we're set once it's off."
+        case .conduit:
+            line = "Hey, pass that conduit over when you can. No rush, we're good."
+        case .ladder:
+            line = "Let's slide that ladder over, nice and easy. We'll be set."
+        case .head:
+            line = "Hey, mind your head up there. Easy does it."
+        case .wire:
+            line = "We're light on wire. Let's grab a little more and keep it easy."
+        case .mess:
+            line = "Hey, this spot got away from us. Let's tidy it and call it good."
+        case .feeder:
+            line = "Hey, let's land that feeder before lunch and call it good. Easy does it."
+        case .breaker:
+            line = "Hey, leave that breaker be. No rush — we're good."
+        case .racks:
+            line = "Hey, let's get these racks cleaned up and call it good. Easy does it — we're good."
+        case .hold:
+            line = "No rush. Keep a hold on this for a breath, then we're good."
+        case .compliment:
+            line = "Hey, you're a natural at this. Easy does it — we're good."
+        case .greeting:
+            line = "Hey, good to see you out here. We're good."
+        case .free:
+            line = "Hey, let's take care of \(voicedWords(cleaned)) and call it good. Easy does it."
+        }
+        return safe(line, raw: trimmed, fallback: "Hey, let's take care of that and call it good. Easy does it.")
     }
-
-    private static let bodieKnown: [String: String] = [
-        "kill the power": "Hey, let's cut the power and call it good. Easy does it — we're set once it's off.",
-        "hand me that conduit": "Hey, pass that conduit over when you can. No rush, we're good.",
-        "move the ladder": "Let's slide that ladder over, nice and easy. We'll be set.",
-        "watch your head": "Hey, mind your head up there. Easy does it.",
-        "we need more wire": "We're light on wire. Let's grab a little more and keep it easy.",
-        "who left this mess": "Hey, this spot got away from us. Let's tidy it and call it good.",
-        "hola": "Hey, good to see you out here. We're good.",
-    ]
 
     // MARK: - Tito
 
@@ -216,14 +285,36 @@ enum CrewDialectRewrite {
             let reshaped = reshapeSpanish(scrubbed)
             return "Óyeme, coño, \(reshaped). Ahora mismo, carajo, con cuidado, ¿me oyes, pinga?"
         }
-        let ask = titoAsk(scrubbed)
-        let frames: [(String) -> String] = [
-            { ask in "Óyeme, coño, \(ask). Hazlo firme y rápido, carajo, ¿sí?" },
-            { ask in "Mira, \(ask), mierda. Sin distracción, pinga, que el trabajo no espera." },
-            { ask in "A ver, cabrón, \(ask). Con calma y con fuerza, joder, mi hermano." },
-            { ask in "Escúchame, \(ask), coño. Ya, carajo, que estamos en la obra." },
-        ]
-        return frames[rotate(key, frames.count)](ask)
+        let line: String
+        switch intent(for: scrubbed) {
+        case .cutPower:
+            line = "¡Coño, corta esa pinga de corriente ahora mismo, carajo!"
+        case .conduit:
+            line = "Pásame ese conduit, cabrón, que lo necesito en la mano ahora, coño."
+        case .ladder:
+            line = "Mueve esa escalera, mi hermano, coño, y déjala firme, carajo."
+        case .head:
+            line = "Ojo con la cabeza, coño. No te me golpees ahí arriba, mierda."
+        case .wire:
+            line = "Falta cable, mierda. Tráeme más alambre ya, coño, carajo."
+        case .mess:
+            line = "¿Quién dejó este desorden de mierda? Recógelo ahora, cabrón, coño."
+        case .feeder:
+            line = "¡Coño, deja la habladera y mete ese alimentador antes del almuerzo, carajo!"
+        case .breaker:
+            line = "Óyeme, coño, deja ese breaker quieto, carajo. Ahora, mierda."
+        case .racks:
+            line = "Óyeme, coño, limpia esos racks ya, carajo. Sin excusa, mierda."
+        case .hold:
+            line = "Óyeme, coño, sostén eso un momento, carajo. Firme, mierda."
+        case .compliment:
+            line = "Óyeme, coño, esto lo haces de pinga, carajo. Sigue así, mierda."
+        case .greeting:
+            line = "¿Qué bolá, coño? Aquí estoy, carajo."
+        case .free:
+            line = "Óyeme, coño, encárgate de \(voicedWords(scrubbed)), carajo. Ahora, mierda."
+        }
+        return safe(line, raw: trimmed, fallback: "Óyeme, coño, dime qué carajo necesitas en la obra, mierda.")
     }
 
     private static let titoKnown: [String: String] = [
@@ -237,24 +328,6 @@ enum CrewDialectRewrite {
         "hola": "¿Qué bolá, coño? Aquí estoy, carajo.",
         "stop talking and get that feeder in before lunch": "¡Coño, deja la habladera y mete ese alimentador antes del almuerzo, carajo!",
     ]
-
-    private static func titoAsk(_ scrubbed: String) -> String {
-        let lower = scrubbed.lowercased()
-        if lower.contains("power") || lower.contains("corriente") { return "corta esa corriente" }
-        if lower.contains("conduit") { return "pásame ese conduit" }
-        if lower.contains("ladder") || lower.contains("escalera") { return "mueve esa escalera" }
-        if lower.contains("head") || lower.contains("cabeza") { return "cuida la cabeza" }
-        if lower.contains("wire") || lower.contains("cable") { return "trae más cable" }
-        if lower.contains("mess") || lower.contains("desorden") { return "recoge este desorden" }
-        if lower.contains("feeder") || lower.contains("aliment") { return "mete ese alimentador" }
-        if lower.contains("breaker") { return "deja ese breaker" }
-        if lower.contains("hold") { return "sostén eso un momento" }
-        if lower.contains("rack") { return "limpia esos racks" }
-        let stop: Set<String> = ["the", "a", "an", "and", "to", "for", "me", "that", "this", "you", "please", "hi", "hey", "hello", "need", "want"]
-        let words = extractAsk(lower).split(separator: " ").map(String.init).filter { !stop.contains($0) && $0.count > 1 }
-        if words.isEmpty { return "haz lo que te pedí" }
-        return "haz esto: " + words.prefix(5).joined(separator: " ")
-    }
 
     private static func looksSpanish(_ text: String) -> Bool {
         let lower = text.lowercased()
@@ -283,7 +356,6 @@ enum CrewDialectRewrite {
     // MARK: - Shared
 
     /// Pull the real ask out of greetings and "I need you to…" wrappers.
-    /// Prevents stock openers from gluing onto the raw sentence.
     static func extractAsk(_ raw: String) -> String {
         var text = scrub(raw)
         if text.isEmpty { return "" }
@@ -323,31 +395,6 @@ enum CrewDialectRewrite {
         return String(first).lowercased() + text.dropFirst()
     }
 
-    private static func plainAsk(_ raw: String) -> String {
-        let ask = extractAsk(raw)
-        return ask.isEmpty ? "take care of that" : ask
-    }
-
-    private static func gerundish(_ ask: String) -> String {
-        let lower = ask.lowercased()
-        if lower.hasPrefix("clean up ") {
-            return "cleaning up " + String(ask.dropFirst("clean up ".count))
-        }
-        if lower.hasPrefix("cut ") {
-            return "cutting " + String(ask.dropFirst("cut ".count))
-        }
-        if lower.hasPrefix("move ") {
-            return "moving " + String(ask.dropFirst("move ".count))
-        }
-        if lower.hasPrefix("hand me ") {
-            return "handing me " + String(ask.dropFirst("hand me ".count))
-        }
-        if lower.hasPrefix("hold ") {
-            return "holding " + String(ask.dropFirst("hold ".count))
-        }
-        return ask
-    }
-
     private static func scrub(_ raw: String) -> String {
         var text = raw
         let phrases = [
@@ -382,18 +429,6 @@ enum CrewDialectRewrite {
         let drop = CharacterSet.punctuationCharacters.union(.symbols)
         text = text.unicodeScalars.filter { !drop.contains($0) }.map(String.init).joined()
         return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-    }
-
-    private static func sentence(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "" }
-        if let last = trimmed.last, ".!?".contains(last) { return trimmed }
-        return trimmed + "."
-    }
-
-    private static func capitalize(_ raw: String) -> String {
-        guard let first = raw.first else { return raw }
-        return String(first).uppercased() + raw.dropFirst()
     }
 
     private static func rotate(_ key: String, _ count: Int) -> Int {
