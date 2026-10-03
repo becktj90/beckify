@@ -66,9 +66,9 @@ export const PAGE_SEO = {
       "Trevor Beck is an electrical engineer in aerospace. Beckify is his public set of field calculators, NEC references, and hands-on conversion journals.",
   },
   "/privacy": {
-    title: "Beckify iOS privacy policy — photos, sensors, and Saved Jobs",
+    title: "Beckify iOS privacy policy — Look Check, sensors, and Saved Jobs",
     description:
-      "Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Look Check is a separate app, not a toolbox tool. Nameplate and panel photos upload only when you tap Analyze. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts.",
+      "Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Look Check uploads a photo only when you tap Analyze Look. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts.",
   },
   "/projects": {
     title: "EV conversions and engineering build logs",
