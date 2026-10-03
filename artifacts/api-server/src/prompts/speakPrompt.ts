@@ -170,35 +170,44 @@ export const CREW_TALK_ELEVEN_VOICES = {
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
 } as const;
 
+/** Deterministic ElevenLabs seed for Sloane Merritt. Other crew voices omit seed. */
+export const SLOANE_MERRITT_SEED = 50505;
+
 const CREW_TALK_VOICE_IDS = new Set<string>(Object.values(CREW_TALK_ELEVEN_VOICES));
+
+/** Five Crew Talk ids plus Cassian Vale. Client ids outside this set are rejected. */
+const ELEVENLABS_SPEAK_ALLOWLIST = new Set<string>([
+  ...CREW_TALK_VOICE_IDS,
+  CASSIAN_VALE_VOICE_ID,
+]);
 
 export function isElevenLabsVoiceId(raw: string): boolean {
   return /^[A-Za-z0-9]{16,30}$/.test(raw);
 }
 
 /**
- * ElevenLabs when the client sends a Crew Talk voice id and/or an eleven_* model
- * (`eleven_v3`). OpenAI voice names stay on the OpenAI path for older clients.
+ * ElevenLabs when the client sends an allowlisted voice (five crew ids or Cassian),
+ * an eleven_* model, or a provider-shaped id that must be rejected instead of
+ * falling through to OpenAI. Built-in OpenAI voice names stay on the OpenAI path.
  */
 export function shouldUseElevenLabsSpeak(voice: unknown, model: unknown): boolean {
   const voiceText = typeof voice === "string" ? voice.trim() : "";
   const modelText = typeof model === "string" ? model.trim().toLowerCase() : "";
   if (modelText === ELEVENLABS_TTS_MODEL || modelText.startsWith("eleven_")) return true;
-  if (voiceText && CREW_TALK_VOICE_IDS.has(voiceText)) return true;
+  if (voiceText && ELEVENLABS_SPEAK_ALLOWLIST.has(voiceText)) return true;
+  if (voiceText && isElevenLabsVoiceId(voiceText)) return true;
   return false;
 }
 
+/** Allowlisted ElevenLabs ids only. Case-sensitive. Unknown ids are not resolved. */
 export function resolveElevenLabsVoiceId(voice: unknown): string | null {
   if (typeof voice !== "string") return null;
   const trimmed = voice.trim();
-  if (!isElevenLabsVoiceId(trimmed)) return null;
+  if (!ELEVENLABS_SPEAK_ALLOWLIST.has(trimmed)) return null;
   return trimmed;
 }
 
-export function resolveElevenLabsModel(model: unknown): string {
-  if (typeof model === "string") {
-    const trimmed = model.trim();
-    if (trimmed.toLowerCase().startsWith("eleven_")) return trimmed;
-  }
+/** Any requested model other than eleven_v3 is coerced to eleven_v3. */
+export function resolveElevenLabsModel(_model: unknown): string {
   return ELEVENLABS_TTS_MODEL;
 }
