@@ -60,7 +60,7 @@ struct ToolboxView: View {
                                     Text("Ampacity is used by Voltage Drop, Wire Size & Ampacity (310.16), and Conductor Cost Optimizer.")
                                 }
                                 if shelf == .instruments {
-                                    Text("Wi-Fi Path leads with Online / Captive (Apple hotspot-detect — local / online), then Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows the same Online / Captive card, carrier / RAT, and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP). Look Check is the separate photo verdict tool on Field.")
+                                    Text("Wi-Fi Path leads with Online / Captive (Apple hotspot-detect — local / online), then Apple’s 0…1 signalStrength as percent and bars, plus TCP RTT. Cellular Path shows the same Online / Captive card, carrier / RAT, and cellular-path RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP).")
                                 }
                             }
                         }
@@ -123,13 +123,7 @@ struct ToolboxView: View {
             || query.localizedCaseInsensitiveContains("captive")
             || query.localizedCaseInsensitiveContains("online")
         {
-            return "Wi-Fi Path leads with Online / Captive (Apple hotspot-detect), then Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports the same Online / Captive card, carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR). Look Check is the photo verdict tool on Field."
-        }
-        if query.localizedCaseInsensitiveContains("look check")
-            || query.localizedCaseInsensitiveContains("analyze look")
-            || query.localizedCaseInsensitiveContains("selfie")
-        {
-            return "Look Check is the photo verdict tool — Analyze Look uploads. Wi-Fi Path and Cellular Path use Online / Captive (Apple hotspot-detect), not this product."
+            return "Wi-Fi Path leads with Online / Captive (Apple hotspot-detect), then Apple’s 0…1 strength as percent/bars plus TCP RTT. Cellular Path reports the same Online / Captive card, carrier, RAT, and cellular-path TCP RTT. iOS does not give third-party apps Wi-Fi or cellular dBm (no RSRP / RSRQ / SINR)."
         }
         return nil
     }
@@ -248,7 +242,6 @@ struct CalculatorHostView: View {
             case .upsSizing: UPSSizingView()
             case .motorNameplate: MotorNameplateView()
             case .motorNameplateOCR: MotorNameplateOCRView()
-            case .lookCheck: LookCheckPhotoView()
             case .heaterDesign: HeaterDesignView()
             case .empEmc: EMPEMCView()
             case .necCircuit: NECCircuitView()

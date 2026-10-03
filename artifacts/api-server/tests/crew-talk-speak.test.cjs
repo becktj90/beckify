@@ -19,6 +19,7 @@ assert.match(speakPrompt, /titoSolano: "goyf4sY4AqSvMIeO1hb5"/);
 assert.match(speakPrompt, /juniePell: "tdK8noxHGTBqk6F18tbZ"/);
 assert.match(speakPrompt, /pearl: "xDnrPZyqSbomyfOcnNpu"/);
 assert.match(speakPrompt, /sloaneMerritt: "qMmZtYs7EKOOIm0u211n"/);
+assert.match(speakPrompt, /lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr"/);
 assert.match(speakPrompt, /shouldUseElevenLabsSpeak/);
 assert.match(speakPrompt, /resolveElevenLabsVoiceId/);
 
@@ -32,6 +33,14 @@ assert.match(speakPrompt, /similarity_boost: 0\.72/);
 assert.match(speakPrompt, /style: 1/);
 assert.match(speakPrompt, /speed: 0\.64/);
 assert.match(speakRoute, /JUNIE_ELEVEN_VOICE_SETTINGS/);
+assert.match(speakPrompt, /BODIE_HALE_VOICE_ID = "XVO6RhOYU9ZEKHFXrx6b"/);
+assert.match(speakPrompt, /stability: 0,/);
+assert.match(speakPrompt, /similarity_boost: 0\.75/);
+assert.match(speakPrompt, /style: 0\.8/);
+assert.match(speakPrompt, /speed: 0\.9/);
+assert.match(speakPrompt, /CrewTalkMember\.voiceID/);
+assert.match(speakRoute, /BODIE_ELEVEN_VOICE_SETTINGS/);
+
 assert.match(speakRoute, /shouldUseElevenLabsSpeak/);
 assert.match(speakRoute, /https:\/\/api\.openai\.com\/v1\/audio\/speech/);
 assert.match(speakRoute, /OPENAI_API_KEY/);

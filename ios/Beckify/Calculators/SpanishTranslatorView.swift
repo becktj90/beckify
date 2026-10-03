@@ -101,9 +101,10 @@ struct SpanishTranslatorView: View {
             }
         }
         .onAppear {
+            alignCrewWithDirectionRoster()
             engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-            engine.applyCrew(crew, invalidateInFlight: false)
             engine.setDirection(direction)
+            engine.applyCrew(crew, invalidateInFlight: false)
         }
         .onChange(of: voiceModeRaw) { _, raw in
             engine.applyVoiceMode(SpanishVoiceMode.parse(raw), invalidateInFlight: true)
@@ -115,16 +116,29 @@ struct SpanishTranslatorView: View {
             typedLine = ""
             lastTestPhrase = ""
             lastAttentionPhrase = ""
-            engine.setDirection(SpanishTranslateDirection.parse(raw))
+            let next = SpanishTranslateDirection.parse(raw)
+            alignCrewWithDirectionRoster(next)
+            engine.setDirection(next)
+            engine.applyCrew(crew, invalidateInFlight: true)
         }
         .onDisappear {
             engine.invalidateOutdatedWork(markCancelled: true)
         }
     }
 
-    /// Copy the dock Speak string — the other-language line on screen.
+    /// D1: the picker and stored helper stay on this direction's roster.
+    /// English → Spanish is Tito only. Spanish → English is Bodie, Junie, Pearl, Sloane.
+    private func alignCrewWithDirectionRoster(_ next: SpanishTranslateDirection? = nil) {
+        let way = next ?? direction
+        let roster = CrewTalkMember.roster(for: way)
+        if !roster.contains(crew) {
+            crewRaw = CrewTalkMember.defaultMember(for: way).rawValue
+        }
+    }
+
+    /// Copy the dock Speak string — the other-language line on screen, without laugh tags.
     private var copyText: String {
-        dockSpokenAnswer
+        SpanishTranslatorAPI.displayText(dockSpokenAnswer)
     }
 
     /// English / Spanish slots for dock + dialect. Typed input wins for the listen side.
@@ -175,14 +189,8 @@ struct SpanishTranslatorView: View {
     }
 
     private var dockSpeakLanguage: String {
-        let pair = dockEnglishSpanish
-        return SpanishTranslatorAPI.speakLanguageForLineToSpeak(
-            crew: crew,
-            direction: direction,
-            english: pair.english,
-            spanish: pair.spanish,
-            fallback: pair.fallback
-        )
+        // Each helper speaks only their own language. Tito is Spanish; the English roster is English.
+        crew.speakLanguage
     }
 
     /// One short phase word — no STATUS essay, engine/URL notes, or voice tech.
@@ -486,15 +494,15 @@ struct SpanishTranslatorView: View {
                 .accessibilityIdentifier("spanishTranslator.composer")
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(dockSpokenAnswer.isEmpty ? "—" : dockSpokenAnswer)
+                    Text(SpanishTranslatorAPI.displayText(dockSpokenAnswer).isEmpty ? "—" : SpanishTranslatorAPI.displayText(dockSpokenAnswer))
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(Theme.foreground)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(4)
                         .textSelection(.enabled)
                         .accessibilityIdentifier("spanishTranslator.answer")
-                    if !dockDialectHelper.isEmpty {
-                        Text(dockDialectHelper)
+                    if !SpanishTranslatorAPI.displayText(dockDialectHelper).isEmpty {
+                        Text(SpanishTranslatorAPI.displayText(dockDialectHelper))
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(Theme.muted)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -558,7 +566,7 @@ struct SpanishTranslatorView: View {
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(CrewTalkMember.allCases, id: \.rawValue) { member in
+                    ForEach(CrewTalkMember.roster(for: direction), id: \.rawValue) { member in
                         Button {
                             crewRaw = member.rawValue
                         } label: {
@@ -924,7 +932,16 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         super.init()
         synthesizer.delegate = self
         rebuildSpeechRecognizer()
+        snapCrewToRoster()
         refreshVoice()
+    }
+
+    /// Tito is not offered on Spanish → English, and English helpers are not offered the other way.
+    private func snapCrewToRoster() {
+        let roster = CrewTalkMember.roster(for: direction)
+        if !roster.contains(crew) {
+            crew = CrewTalkMember.defaultMember(for: direction)
+        }
     }
 
     func applyVoiceMode(_ newMode: SpanishVoiceMode, invalidateInFlight: Bool) {
@@ -936,8 +953,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     func applyCrew(_ newCrew: CrewTalkMember, invalidateInFlight: Bool) {
-        let changed = crew != newCrew
-        crew = newCrew
+        let roster = CrewTalkMember.roster(for: direction)
+        let resolved = roster.contains(newCrew) ? newCrew : CrewTalkMember.defaultMember(for: direction)
+        let changed = crew != resolved
+        crew = resolved
         refreshVoice()
         if changed, invalidateInFlight {
             invalidateOutdatedWork(markCancelled: true)
@@ -947,7 +966,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     /// Switch direction. Stops the mic and any in-flight translate/speak so a flip
     /// cannot finish against the previous locale.
     func setDirection(_ newDirection: SpanishTranslateDirection) {
-        guard direction != newDirection else { return }
+        if direction == newDirection {
+            snapCrewToRoster()
+            return
+        }
         invalidateOutdatedWork(markCancelled: true)
         pendingOnDeviceSource = ""
         direction = newDirection
@@ -961,6 +983,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         phase = .ready
         statusLabel = SpanishTranslatorAPI.statusReady
         rebuildSpeechRecognizer()
+        snapCrewToRoster()
         refreshVoice()
     }
 
@@ -1213,13 +1236,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     private func currentSpeakLanguage() -> String {
-        SpanishTranslatorAPI.speakLanguageForLineToSpeak(
-            crew: crew,
-            direction: direction,
-            english: englishText,
-            spanish: spanishText,
-            fallback: resultText
-        )
+        crew.speakLanguage
     }
 
     /// Optional: once translation text is ready, cancel cloud speak and use Apple now.
@@ -1331,13 +1348,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             spanish: spanishText,
             fallback: draft.translation
         )
-        let language = SpanishTranslatorAPI.speakLanguageForLineToSpeak(
-            crew: turnCrew,
-            direction: turnDirection,
-            english: englishText,
-            spanish: spanishText,
-            fallback: draft.translation
-        )
+        let language = turnCrew.speakLanguage
         speakResult(spoken, preferNeural: true, language: language)
     }
 
@@ -1680,8 +1691,11 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         guard turn == turnID, speakGen == speakGeneration else { return }
         refreshVoice()
         prepareLoudPlaybackSession()
+        // Apple reads the line a person sees. ElevenLabs still gets the tags.
+        let spoken = SpanishTranslatorAPI.displayText(text)
+        guard !spoken.isEmpty else { return }
 
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: spoken)
         utterance.voice = language.flatMap { AVSpeechSynthesisVoice(language: $0) } ?? selectedVoice
         utterance.volume = 1.0
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * crew.appleRateFactor
@@ -1695,7 +1709,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         statusLabel = SpanishTranslatorAPI.preparingVoiceStatus(elapsedSeconds: preparingElapsedSeconds)
         translatedAudioURL = nil
         audioCopyNotice = nil
-        let recordingUtterance = AVSpeechUtterance(string: text)
+        let recordingUtterance = AVSpeechUtterance(string: spoken)
         recordingUtterance.voice = utterance.voice
         recordingUtterance.rate = utterance.rate
         recordingUtterance.pitchMultiplier = utterance.pitchMultiplier

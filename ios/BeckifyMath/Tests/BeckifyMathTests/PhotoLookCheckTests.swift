@@ -372,15 +372,9 @@ final class PhotoLookCheckTests: XCTestCase {
         )
     }
 
-    func testPolicyToolIDIsExplicitAndOnJobsite() {
-        XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "lookCheck"), .explicit)
-        XCTAssertTrue(ToolCalculationPolicy.knownToolIDs.contains("lookCheck"))
-        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "lookCheck"), .field)
-        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "lookCheck"), .jobsite)
-        let copy = ToolHowItWorksCatalog.copy(forToolID: "lookCheck")
-        XCTAssertNotNil(copy)
-        XCTAssertTrue(copy?.summary.localizedCaseInsensitiveContains("Analyze Look") == true)
-        XCTAssertTrue(copy?.bullets.contains(where: { $0.localizedCaseInsensitiveContains("not medical") }) == true)
+    func testLookCheckIsNotAToolboxTool() {
+        XCTAssertFalse(ToolCalculationPolicy.knownToolIDs.contains("lookCheck"))
+        XCTAssertNil(ToolHowItWorksCatalog.copy(forToolID: "lookCheck"))
     }
 
     func testConnectivityCopyLineNoLongerSaysLookCheck() {
@@ -435,14 +429,6 @@ final class PhotoLookCheckTests: XCTestCase {
             PhotoLookCheck.speakURL(customEndpoint: "https://example.com/api/analyze-look")?.absoluteString,
             "https://example.com/api/speak"
         )
-        let how = ToolHowItWorksCatalog.copy(forToolID: "lookCheck")
-        let blob = ([how?.summary, how?.context].compactMap { $0 } + (how?.bullets ?? [])).joined(separator: " ")
-        XCTAssertFalse(blob.localizedCaseInsensitiveContains("fuck"))
-        XCTAssertTrue(blob.contains("/api/speak"))
-        XCTAssertTrue(blob.localizedCaseInsensitiveContains("loudspeaker"))
-        XCTAssertTrue(blob.localizedCaseInsensitiveContains("text stays on screen"))
-        XCTAssertLessThanOrEqual(how?.bullets.count ?? 99, 4)
-        XCTAssertFalse(blob.localizedCaseInsensitiveContains("look score"))
     }
 }
 

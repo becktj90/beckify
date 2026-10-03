@@ -16,7 +16,7 @@ const lookPrompt = fs.readFileSync(path.join(src, 'prompts', 'lookVisionPrompt.t
 
 assert.match(speakPrompt, /CASSIAN_VALE_VOICE_ID = "uYsaRSYDSuxmtyipO9Qt"/);
 assert.match(speakPrompt, /CASSIAN_VALE_SEED = 60606/);
-assert.match(speakPrompt, /LOOK_CHECK_SPEAK_MAX_CHARS = 1500/);
+assert.match(speakPrompt, /LOOK_CHECK_SPEAK_MAX_CHARS = 900/);
 assert.match(speakPrompt, /stability: 0\.38/);
 assert.match(speakPrompt, /similarity_boost: 0\.82/);
 assert.match(speakPrompt, /style: 1/);

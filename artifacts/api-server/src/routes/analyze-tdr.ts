@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request } from "express";
+import { Router, type IRouter } from "express";
 import {
   TDR_VISION_SYSTEM_PROMPT,
   type TdrVisionAnalysis,
@@ -6,9 +6,21 @@ import {
 import {
   MissingProviderKeyError,
   ProviderTimeoutError,
+  beginSharedVisionRequest,
+  getClientKey,
   pickImage,
   visionProviderFailure,
 } from "../lib/visionClient.js";
+import {
+  assertNotTruncated,
+  isRetryableProviderStatus,
+  logAIUsage,
+  refundBudget,
+  shouldRefundAICharge,
+  visionMaxOutputTokens,
+  withRetries,
+  ProviderStatusError,
+} from "../lib/usageBudget.js";
 
 type VisionProvider = "openai" | "anthropic";
 
@@ -21,11 +33,7 @@ interface AnalyzeTdrRequestBody {
   model?: string;
 }
 
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 5;
-const MAX_IN_FLIGHT_PER_CLIENT = 2;
 const PROVIDER_TIMEOUT_MS = 45_000;
-const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
 const serverProvider = configuredProvider();
 const serverModel = process.env["TDR_VISION_MODEL"]
   || (serverProvider === "anthropic" ? "claude-3-5-sonnet-latest" : "gpt-4o");
@@ -41,17 +49,15 @@ router.post("/analyze-tdr", async (req, res) => {
   const provider = serverProvider;
   const model = serverModel;
   const clientKey = getClientKey(req);
-  const bucket = consumeRateLimit(clientKey);
-  if (!bucket.allowed) {
-    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
-    res.setHeader("Retry-After", String(retryAfter));
-    return res.status(429).json({ error: "Too many TDR analyses. Please try again later.", retryAfter });
+  const gate = beginSharedVisionRequest(clientKey);
+  if (!gate.ok) {
+    logAIUsage({ route: "/api/analyze-tdr", kind: "vision", outcome: gate.reason === "budget" ? "blocked" : "refund", clientKey, units: 1, status: 429 });
+    res.setHeader("Retry-After", String(gate.retryAfter));
+    const error = gate.reason === "burst"
+      ? "Too many TDR analyses in progress."
+      : "Too many TDR analyses. Please try again later.";
+    return res.status(429).json({ error, retryAfter: gate.retryAfter });
   }
-  if (bucket.inFlight >= MAX_IN_FLIGHT_PER_CLIENT) {
-    res.setHeader("Retry-After", "15");
-    return res.status(429).json({ error: "Too many TDR analyses in progress.", retryAfter: 15 });
-  }
-  bucket.inFlight += 1;
 
   try {
     const result = provider === "anthropic"
@@ -59,6 +65,7 @@ router.post("/analyze-tdr", async (req, res) => {
       : await analyzeWithOpenAI({ image: image.base64, mimeType: image.mimeType, model });
 
     const parsed = normalizeAnalysis(result);
+    logAIUsage({ route: "/api/analyze-tdr", kind: "vision", outcome: "ok", clientKey, units: 1, model });
     return res.json({
       provider,
       model,
@@ -66,10 +73,16 @@ router.post("/analyze-tdr", async (req, res) => {
     });
   } catch (error) {
     const failure = visionProviderFailure(error);
+    if (shouldRefundAICharge(error)) {
+      refundBudget("vision", clientKey, 1);
+      logAIUsage({ route: "/api/analyze-tdr", kind: "vision", outcome: "refund", clientKey, units: 1, status: failure.status });
+    } else {
+      logAIUsage({ route: "/api/analyze-tdr", kind: "vision", outcome: "error", clientKey, units: 1, status: failure.status });
+    }
     console.error("TDR vision provider request failed", error);
     return res.status(failure.status).json({ error: failure.error });
   } finally {
-    bucket.inFlight -= 1;
+    gate.release();
   }
 });
 
@@ -79,26 +92,6 @@ function configuredProvider(): VisionProvider {
     throw new Error("TDR_VISION_PROVIDER must be openai or anthropic.");
   }
   return provider;
-}
-
-function getClientKey(req: Request): string {
-  return req.ip || req.socket.remoteAddress || "unknown";
-}
-
-function consumeRateLimit(clientKey: string) {
-  const now = Date.now();
-  const current = rateBuckets.get(clientKey);
-  const bucket = !current || current.resetAt <= now
-    ? { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS, inFlight: 0 }
-    : current;
-  bucket.count += 1;
-  rateBuckets.set(clientKey, bucket);
-  if (rateBuckets.size > 10_000) {
-    for (const [key, value] of rateBuckets) {
-      if (value.resetAt <= now) rateBuckets.delete(key);
-    }
-  }
-  return Object.assign(bucket, { allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW });
 }
 
 function stripDataUrl(image: string): string {
@@ -189,6 +182,7 @@ async function analyzeWithOpenAI(args: { image: string; mimeType: string; model:
     body: JSON.stringify({
       model: args.model,
       temperature: 0,
+      max_tokens: visionMaxOutputTokens(),
       response_format: { type: "json_object" },
       messages: [
         {
@@ -216,7 +210,7 @@ async function analyzeWithOpenAI(args: { image: string; mimeType: string; model:
   });
 
   const payload = await response.json() as {
-    choices?: Array<{ message?: { content?: string | null } }>;
+    choices?: Array<{ finish_reason?: string | null; message?: { content?: string | null } }>;
     error?: { message?: string };
   };
 
@@ -224,6 +218,7 @@ async function analyzeWithOpenAI(args: { image: string; mimeType: string; model:
     throw new Error(payload.error?.message || `OpenAI request failed with HTTP ${response.status}.`);
   }
 
+  assertNotTruncated(payload.choices?.[0]?.finish_reason);
   const content = payload.choices?.[0]?.message?.content;
   if (!content) {
     throw new Error("OpenAI returned no analysis content.");
@@ -247,7 +242,7 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
     },
     body: JSON.stringify({
       model: args.model,
-      max_tokens: 2400,
+      max_tokens: Math.min(2400, visionMaxOutputTokens()),
       temperature: 0,
       system: TDR_VISION_SYSTEM_PROMPT,
       messages: [
@@ -274,6 +269,7 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
 
   const payload = await response.json() as {
     content?: Array<{ text?: string }>;
+    stop_reason?: string | null;
     error?: { message?: string };
   };
 
@@ -281,6 +277,7 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
     throw new Error(payload.error?.message || `Anthropic request failed with HTTP ${response.status}.`);
   }
 
+  assertNotTruncated(payload.stop_reason);
   const content = payload.content?.find((part) => typeof part.text === "string")?.text;
   if (!content) {
     throw new Error("Anthropic returned no analysis content.");
@@ -290,16 +287,23 @@ async function analyzeWithAnthropic(args: { image: string; mimeType: string; mod
 }
 
 async function fetchWithTimeout(input: string, init: RequestInit): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") throw new ProviderTimeoutError();
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return withRetries(async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      if (!response.ok && isRetryableProviderStatus(response.status)) {
+        throw new ProviderStatusError(response.status);
+      }
+      return response;
+    } catch (error) {
+      if (error instanceof ProviderStatusError) throw error;
+      if (error instanceof Error && error.name === "AbortError") throw new ProviderTimeoutError();
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
 }
 
 export default router;

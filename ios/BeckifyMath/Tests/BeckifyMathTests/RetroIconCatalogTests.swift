@@ -18,7 +18,7 @@ final class RetroIconCatalogTests: XCTestCase {
     private let hiddenWithTile: Set<String> = ["phasorDiagram"]
 
     /// Shipped imagesets kept for asset continuity after the tool left the catalog.
-    private let retiredImagesets: Set<String> = ["breathFlute"]
+    private let retiredImagesets: Set<String> = ["breathFlute", "lookCheck"]
 
     func testEveryLiveToolHasAnOriginalColorTile() throws {
         let root = retroRoot()
@@ -29,7 +29,7 @@ final class RetroIconCatalogTests: XCTestCase {
         let imagesets = entries
             .filter { $0.pathExtension == "imageset" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        XCTAssertEqual(imagesets.count, 90, "88-tool pack plus statistics, spanishTranslator, and retired breathFlute")
+        XCTAssertEqual(imagesets.count, 90, "live tiles plus retired breathFlute and lookCheck")
 
         var shipped = Set<String>()
         for imageset in imagesets {

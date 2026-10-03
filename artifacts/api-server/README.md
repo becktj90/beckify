@@ -47,7 +47,7 @@ Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sou
 
 ### `POST /api/speak`
 
-Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for translator clips. Look Check roast playback may send up to **1500** characters with voice id `uYsaRSYDSuxmtyipO9Qt` (Cassian Vale), model `eleven_v3`, and seed **60606**. That voice uses server voice_settings for a slow, close, delighted delivery (stability 0.38, similarity_boost 0.82, style 1, speed 0.86). The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Look Check roasts; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en). Look Check does not fall back to a device voice.
+Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for translator clips. Look Check roast playback may send up to **900** characters with voice id `uYsaRSYDSuxmtyipO9Qt` (Cassian Vale), model `eleven_v3`, and seed **60606**. That voice uses server voice_settings for a slow, close, delighted delivery (stability 0.38, similarity_boost 0.82, style 1, speed 0.86). The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Look Check roasts; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en). Look Check does not fall back to a device voice.
 
 ### `POST /api/share` and `GET /api/share/:token`
 
@@ -142,6 +142,15 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
 | `NAMEPLATE_VISION_PROVIDER` / `NAMEPLATE_VISION_MODEL` | Optional | Nameplate route |
 | `TDR_VISION_PROVIDER` / `TDR_VISION_MODEL` | Optional | TDR route |
 | `LOG_LEVEL` | Optional | Defaults to `info` |
+| `AI_BUDGET_VISION` | Optional | Shared image analyses per client per 15 min. Default **5**. |
+| `AI_BUDGET_ELEVEN_CHARS` | Optional | ElevenLabs characters per client per 15 min. Default **8000**. |
+| `AI_BUDGET_OPENAI` | Optional | OpenAI speech requests per client per 15 min. Default **20**. |
+| `AI_BUDGET_TEXT` | Optional | Text completions (translate, review, look comedy) per client per 15 min. Default **30**. |
+| `AI_TEXT_MAX_OUTPUT_TOKENS` | Optional | Ceiling for text completions. Default **1800**. |
+| `AI_VISION_MAX_OUTPUT_TOKENS` | Optional | Ceiling for image completions. Default **8192**. |
+| `AI_PANEL_MAX_OUTPUT_TOKENS` | Optional | Panel directory output tokens. Default **8192**. |
+
+Speak is also capped at **20** requests per 15 minutes. Translate is capped at **30**. IPv6 clients share a **/64** budget. Toolbox math is not metered. There is no login.
 
 `FLY_APP_NAME` is injected by Fly (used to enable `trust proxy`).
 

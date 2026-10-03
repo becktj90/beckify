@@ -66,7 +66,6 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case upsSizing
     case motorNameplate
     case motorNameplateOCR
-    case lookCheck
     case heaterDesign
     case empEmc
     case necCircuit
@@ -734,9 +733,9 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Crew Talk",
-            subtitle: "Bodie, Tito, Junie, Pearl, or Sloane. The person, the line, and Speak.",
+            subtitle: "Tito, Lupita, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.",
             symbol: "character.bubble",
-            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "junie"]
+            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "lupita reyes", "lupita", "junie"]
         ),
         ToolDefinition(
             id: .magneticCircuit,
@@ -833,18 +832,6 @@ enum ToolboxCatalog {
             subtitle: "Take a picture of a plate; Vision first, optional Analyze, then you confirm.",
             symbol: "text.viewfinder",
             synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan", "analyze"]
-        ),
-        ToolDefinition(
-            id: .lookCheck,
-            kind: .calculator,
-            title: "Look Check",
-            subtitle: "Honest photo feedback. You might get hyped. You might get roasted.",
-            symbol: "person.crop.rectangle",
-            synonyms: [
-                "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",
-                "analyze look", "camera", "lighting", "framing", "expression", "entertainment",
-                "roast",
-            ]
         ),
         ToolDefinition(
             id: .heaterDesign,
@@ -1094,7 +1081,7 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .cableLadder, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
-            .motorNameplateOCR, .lookCheck,
+            .motorNameplateOCR,
             .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
         ],
@@ -1232,7 +1219,7 @@ enum ToolboxCatalog {
         .eBikePackDesigner: [.batteryBank, .nickelStrip, .eBikeRange],
         .nickelStrip: [.eBikePackDesigner, .batteryBank, .circularMils],
         .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector, .spanishTranslator],
-        .spanishTranslator: [.referenceLibrary, .noiseMeter, .lookCheck],
+        .spanishTranslator: [.referenceLibrary, .noiseMeter],
         .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
         .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],
         .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],
@@ -1245,7 +1232,6 @@ enum ToolboxCatalog {
         .upsSizing: [.batteryBank, .power, .rackCurrent],
         .motorNameplate: [.motorNameplateOCR, .motorFLA, .motorSpeed],
         .motorNameplateOCR: [.motorNameplate, .motorFLA, .motorSpeed],
-        .lookCheck: [.motorNameplateOCR, .panelDirectory],
         .heaterDesign: [.ohmsLaw, .wireAmpacity, .power],
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.equipmentGround, .wireAmpacity, .voltageDrop],

@@ -16,8 +16,16 @@ const CREW = {
   juniePell: "tdK8noxHGTBqk6F18tbZ",
   pearl: "xDnrPZyqSbomyfOcnNpu",
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
+  lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",
 };
 const CASSIAN = "uYsaRSYDSuxmtyipO9Qt";
+const BODIE_SETTINGS = {
+  stability: 0,
+  similarity_boost: 0.75,
+  style: 0.8,
+  speed: 0.9,
+  use_speaker_boost: true,
+};
 const JUNIE_SETTINGS = {
   stability: 0.15,
   similarity_boost: 0.72,
@@ -95,7 +103,7 @@ async function loadSpeakRouter() {
     platform: "node",
     target: "node20",
     write: false,
-    external: ["express"],
+    external: ["express", "pino", "pino-pretty", "thread-stream"],
     logLevel: "silent",
   });
   const code = result.outputFiles[0].text;
@@ -180,13 +188,30 @@ async function main() {
     await expectUnknown(port, { voice: `  ${CASSIAN.toLowerCase()}  `, model: "eleven_v3" });
 
     const bodie = await speakEleven(port, `  ${CREW.bodieHale}  `);
-    assert.equal(bodie.voice_settings, undefined);
+    assert.deepEqual(bodie.voice_settings, BODIE_SETTINGS);
     assert.equal(bodie.seed, undefined);
     assert.equal(calls[calls.length - 1].url.includes(CREW.bodieHale), true);
+    const bodieOverride = await postJson(port, {
+      text: "Panel is dead.",
+      voice: CREW.bodieHale,
+      model: "eleven_v3",
+      stability: 0.99,
+      similarity_boost: 0.1,
+      style: 0.1,
+      speed: 1.4,
+    });
+    assert.equal(bodieOverride.status, 200, JSON.stringify(bodieOverride.json));
+    const bodiePayload = JSON.parse(calls[calls.length - 1].init.body);
+    assert.deepEqual(bodiePayload.voice_settings, BODIE_SETTINGS);
 
     const tito = await speakEleven(port, CREW.titoSolano);
     assert.equal(tito.voice_settings, undefined);
     assert.equal(tito.seed, undefined);
+
+    const lupita = await speakEleven(port, CREW.lupitaReyes);
+    assert.equal(lupita.voice_settings, undefined);
+    assert.equal(lupita.seed, undefined);
+    assert.equal(calls[calls.length - 1].url.includes(CREW.lupitaReyes), true);
 
     const junie = await speakEleven(port, CREW.juniePell);
     assert.deepEqual(junie.voice_settings, JUNIE_SETTINGS);

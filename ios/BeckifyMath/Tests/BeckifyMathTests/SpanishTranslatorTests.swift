@@ -529,12 +529,20 @@ final class SpanishTranslatorTests: XCTestCase {
 
 
     func testCrewTalkMembersAndSpeakBody() throws {
-        XCTAssertEqual(CrewTalkMember.allCases.count, 5)
+        XCTAssertEqual(CrewTalkMember.allCases.count, 6)
         XCTAssertEqual(CrewTalkMember.parse(nil), .titoSolano)
         XCTAssertEqual(CrewTalkMember.parse("bodie"), .bodieHale)
         XCTAssertEqual(CrewTalkMember.parse("Junie Pell"), .juniePell)
         XCTAssertEqual(CrewTalkMember.bodieHale.voiceID, "XVO6RhOYU9ZEKHFXrx6b")
         XCTAssertEqual(CrewTalkMember.titoSolano.voiceID, "goyf4sY4AqSvMIeO1hb5")
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.voiceID, "iGXRQ0smdhSFlb6iV1Pr")
+        XCTAssertTrue(CrewTalkMember.lupitaReyes.isReleased)
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.speakLanguage, "es")
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.portraitAssetName, "crewLupitaReyes")
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.talkAssetName, "crewLupitaReyesTalk")
+        XCTAssertTrue(CrewTalkMember.lupitaReyes.prefersFemaleDeviceVoice)
+        XCTAssertEqual(CrewTalkMember.parse("lupita"), .lupitaReyes)
+
         XCTAssertEqual(CrewTalkMember.juniePell.voiceID, "tdK8noxHGTBqk6F18tbZ")
         XCTAssertEqual(CrewTalkMember.speakModel, "eleven_v3")
         XCTAssertEqual(CrewTalkMember.bodieHale.speakLanguage, "en")
@@ -763,8 +771,9 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertFalse(junieHostile.lowercased().contains("damn"))
         XCTAssertNotEqual(junieHostile.lowercased(), "shut up you idiot and kill the damn power.")
         let bodieLine = SpanishTranslatorAPI.bodieDialectRewrite("Kill the power.")
-        XCTAssertFalse(bodieLine.lowercased().contains("kill"))
+        XCTAssertTrue(bodieLine.lowercased().contains("kill"))
         XCTAssertTrue(bodieLine.lowercased().contains("power"))
+        XCTAssertFalse(bodieLine.lowercased().contains("kill the power"))
         let pearlHostile = SpanishTranslatorAPI.pearlWarmRewrite("Shut up you idiot and kill the damn power.")
         XCTAssertFalse(pearlHostile.lowercased().contains("idiot"))
         XCTAssertFalse(pearlHostile.lowercased().contains("shut"))
@@ -1029,6 +1038,64 @@ final class SpanishTranslatorTests: XCTestCase {
         for word in banned {
             XCTAssertFalse(folded.contains(word), file: file, line: lineNumber)
         }
+    }
+
+
+    func testBodieVoiceKeepsTheAskAndStripsLaughTagsForDisplay() throws {
+        XCTAssertEqual(
+            CrewTalkMember.bodieHale.blurb,
+            "Laid-back California stoner buddy. Slow, raspy, and always laughing."
+        )
+        XCTAssertEqual(CrewTalkMember.bodieHale.appleRateFactor, 0.86)
+        XCTAssertEqual(CrewTalkMember.bodieHale.applePitchMultiplier, 0.92)
+
+        let samples: [(String, String)] = [
+            ("Kill the power.", "power"),
+            ("Hand me that conduit.", "conduit"),
+            ("Move the ladder.", "ladder"),
+            ("Watch your head.", "head"),
+            ("We need more wire.", "wire"),
+            ("Someone left this mess.", "mess"),
+            ("Land that feeder before lunch.", "feeder"),
+            ("Leave the breaker alone.", "breaker"),
+            ("Clean up all these racks.", "rack"),
+            ("Hold this for a second.", "hold"),
+            ("You are so good at this.", "natural"),
+            ("Hey", "hey"),
+            ("Bring the drill to the truck", "drill"),
+        ]
+        let tag = #"\[[^\]]{1,24}\]"#
+        var laughing = 0
+        for (raw, ask) in samples {
+            let line = SpanishTranslatorAPI.bodieDialectRewrite(raw)
+            XCTAssertTrue(line.lowercased().contains(ask), "\(raw) -> \(line)")
+            XCTAssertLessThan(line.count, 200, line)
+            var tagCount = 0
+            var rest = line.startIndex..<line.endIndex
+            while let found = line.range(of: tag, options: .regularExpression, range: rest) {
+                tagCount += 1
+                rest = found.upperBound..<line.endIndex
+            }
+            XCTAssertLessThanOrEqual(tagCount, 2, line)
+            if tagCount > 0 { laughing += 1 }
+            let shown = CrewDialectRewrite.displayText(line)
+            XCTAssertFalse(shown.contains("["), shown)
+            XCTAssertFalse(shown.contains("]"), shown)
+            XCTAssertFalse(shown.contains("  "), shown)
+            XCTAssertTrue(shown.lowercased().contains(ask), shown)
+        }
+        XCTAssertGreaterThanOrEqual(laughing, samples.count / 2)
+
+        let cut = SpanishTranslatorAPI.bodieDialectRewrite("Kill the power.")
+        let power = try XCTUnwrap(cut.range(of: "power"))
+        let laugh = try XCTUnwrap(cut.range(of: "["))
+        XCTAssertGreaterThanOrEqual(laugh.lowerBound, power.upperBound, cut)
+        XCTAssertFalse(CrewDialectRewrite.displayText(cut).contains("chuckles"))
+
+        let rejected = SpanishTranslatorAPI.bodieDialectRewrite("Don't kill the power")
+        XCTAssertFalse(rejected.lowercased().contains("kill"), rejected)
+        XCTAssertTrue(rejected.contains("[chuckles]"), rejected)
+        XCTAssertFalse(CrewDialectRewrite.displayText(rejected).contains("["))
     }
 
 }

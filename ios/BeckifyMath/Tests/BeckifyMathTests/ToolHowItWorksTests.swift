@@ -124,7 +124,7 @@ final class ToolHowItWorksTests: XCTestCase {
     }
 
     func testOCRCopyUsesHumanPhotoLanguage() {
-        for id in ["panelDirectory", "motorNameplateOCR", "lookCheck"] {
+        for id in ["panelDirectory", "motorNameplateOCR"] {
             guard let copy = ToolHowItWorksCatalog.copy(forToolID: id) else {
                 XCTFail("missing \(id)")
                 continue

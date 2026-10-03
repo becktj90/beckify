@@ -3,13 +3,14 @@ import { NAMEPLATE_VISION_SYSTEM_PROMPT } from "../prompts/nameplateVisionPrompt
 import {
   analyzeWithAnthropic,
   analyzeWithOpenAI,
+  beginSharedVisionRequest,
   configuredModel,
   configuredProvider,
-  consumeRateLimit,
   getClientKey,
   pickImage,
   visionProviderFailure,
 } from "../lib/visionClient.js";
+import { logAIUsage, refundBudget, shouldRefundAICharge } from "../lib/usageBudget.js";
 
 interface AnalyzeBody {
   base64Image?: string;
@@ -21,7 +22,6 @@ interface AnalyzeBody {
   task?: string;
 }
 
-const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
 const serverProvider = configuredProvider();
 const serverModel = configuredModel(serverProvider);
 const router: IRouter = Router();
@@ -32,23 +32,15 @@ router.post("/analyze-nameplate", async (req, res) => {
   if ("error" in picked) return res.status(picked.status).json({ error: picked.error });
 
   const clientKey = getClientKey(req);
-  const bucket = consumeRateLimit(rateBuckets, clientKey);
-  if (!bucket.allowed) {
-    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
-    res.setHeader("Retry-After", String(retryAfter));
-    return res.status(429).json({
-      error: "Too many nameplate analyses. Please try again later.",
-      retryAfter,
-    });
+  const gate = beginSharedVisionRequest(clientKey);
+  if (!gate.ok) {
+    logAIUsage({ route: "/api/analyze-nameplate", kind: "vision", outcome: gate.reason === "budget" ? "blocked" : "refund", clientKey, units: 1, status: 429 });
+    res.setHeader("Retry-After", String(gate.retryAfter));
+    const error = gate.reason === "burst"
+      ? "Too many nameplate analyses in progress."
+      : "Too many nameplate analyses. Please try again later.";
+    return res.status(429).json({ error, retryAfter: gate.retryAfter });
   }
-  if (bucket.inFlight >= 2) {
-    res.setHeader("Retry-After", "15");
-    return res.status(429).json({
-      error: "Too many nameplate analyses in progress.",
-      retryAfter: 15,
-    });
-  }
-  bucket.inFlight += 1;
 
   try {
     const result = serverProvider === "anthropic"
@@ -67,6 +59,7 @@ router.post("/analyze-nameplate", async (req, res) => {
         userText: "Upright the plate if the photo is rotated. Extract this motor nameplate into the structured JSON draft. Ignore glare. Never treat MOCP or LRA as FLA. Never steal HP from a catalog/model string. Dual FLA stays in dualFla with fla null. Phase is only 1 or 3 when printed.",
       });
 
+    logAIUsage({ route: "/api/analyze-nameplate", kind: "vision", outcome: "ok", clientKey, units: 1, model: serverModel });
     return res.json({
       provider: serverProvider,
       model: serverModel,
@@ -74,10 +67,16 @@ router.post("/analyze-nameplate", async (req, res) => {
     });
   } catch (error) {
     const failure = visionProviderFailure(error);
+    if (shouldRefundAICharge(error)) {
+      refundBudget("vision", clientKey, 1);
+      logAIUsage({ route: "/api/analyze-nameplate", kind: "vision", outcome: "refund", clientKey, units: 1, status: failure.status });
+    } else {
+      logAIUsage({ route: "/api/analyze-nameplate", kind: "vision", outcome: "error", clientKey, units: 1, status: failure.status });
+    }
     console.error("Nameplate vision provider request failed", error);
     return res.status(failure.status).json({ error: failure.error });
   } finally {
-    bucket.inFlight -= 1;
+    gate.release();
   }
 });
 

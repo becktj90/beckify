@@ -9,6 +9,7 @@ enum CrewDialectRewrite {
         switch crew {
         case .bodieHale: return bodie(raw)
         case .titoSolano: return tito(raw)
+        case .lupitaReyes: return lupita(raw)
         case .juniePell: return junie(raw)
         case .pearl: return pearl(raw)
         case .sloaneMerritt: return sloane(raw)
@@ -211,39 +212,100 @@ enum CrewDialectRewrite {
 
     // MARK: - Bodie
 
+    /// Shown, copied, shared, docked, and spoken by Apple. Laugh tags stay in the
+    /// string `/api/speak` receives so ElevenLabs can perform them.
+    static func displayText(_ raw: String) -> String {
+        let stripped = raw.replacingOccurrences(
+            of: #"\[[^\]]{1,24}\]"#,
+            with: "",
+            options: .regularExpression
+        )
+        let collapsed = stripped.replacingOccurrences(
+            of: #"\s+"#,
+            with: " ",
+            options: .regularExpression
+        )
+        return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Mellow California helper. Drawn-out vowels, filler, warm. Laugh tags sit
+    /// after the ask, never before a safety instruction, and at most twice.
     static func bodie(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
         let cleaned = scrub(trimmed)
         let line: String
-        let fallback = "Hey, let's take care of that and call it good. Easy does it."
+        let fallback = "Okaaay, so let's just ease into that open item, maaan. [chuckles] Easy does it."
         switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
-            line = "Hey, let's cut the power and call it good. Easy does it — we're set once it's off."
+            line = "Duuude, kill that power first, okay. For real. [chuckles] Then we're golden, man."
         case .conduit:
-            line = "Hey, pass that conduit over when you can. No rush, we're good."
+            line = "Duuude, pass that conduit over when you can, maaan. Easy does it."
         case .ladder:
-            line = "Let's slide that ladder over, nice and easy. We'll be set."
+            line = "Okaaay, slide that ladder over, nice and easy, man. Then we're golden."
         case .head:
-            line = "Hey, mind your head up there. Easy does it."
+            line = "Duuude, mind your head up there, okay. For real. [exhales] Easy does it, man."
         case .wire:
-            line = "We're light on wire. Let's grab a little more and keep it easy."
+            line = "Duuude, grab more wire, maaan. Easy does it, for real."
         case .mess:
-            line = "Hey, this spot got away from us. Let's tidy it and call it good."
+            line = "Whoa, this mess got away from us, man. [giggles] Let's tidy it and we're golden."
         case .feeder:
-            line = "Hey, let's land that feeder before lunch and call it good. Easy does it."
+            line = "Duuude, get that feeder set before the lunch bell, okay. For real. Then we're golden, man."
         case .breaker:
-            line = "Hey, leave that breaker be. No rush — we're good."
+            line = "Duuude, that breaker stays put, okay. For real. [chuckles] Then we're golden, man."
         case .racks:
-            line = "Hey, let's get these racks cleaned up and call it good. Easy does it — we're good."
+            line = "Okaaay, let's get these racks cleaned up, maaan. Easy does it."
         case .hold:
-            line = "No rush. Keep a hold on this for a breath, then we're good."
+            line = "Maaan, keep a hold on this for a breath. [wheezing] Then we're golden."
         case .compliment:
-            line = "Hey, you're a natural at this. Easy does it — we're good."
+            line = "Whoa, look at you, man — you're, like, a natural. [laughs] Heh-heh. Totally."
         case .greeting:
-            line = "Hey, good to see you out here. We're good."
+            line = "Heyyy, good to see you out here, man. Totally."
         case .free:
-            line = "Hey, let's take care of \(voicedWords(cleaned)) and call it good. Easy does it."
+            line = "Okay okay, so let's handle \(voicedWords(cleaned)), maaan. [giggles] Easy does it."
+        case nil:
+            line = fallback
+        }
+        return guarded(line, raw: trimmed, fallback: fallback)
+    }
+
+    // MARK: - Lupita
+
+    /// Mexican Spanish, Jalisco and Mexico City. Diminutives and light asides.
+    /// No heavy profanity, no caricature spelling, no real person.
+    static func lupita(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let cleaned = scrub(trimmed)
+        let line: String
+        let fallback = "Órale, dime eso otra vez, despacito, y lo vemos juntos."
+        switch CrewRewriteGuard.intent(trimmed) {
+        case .cutPower:
+            line = "Chin, corta la corriente primero. No manches, luego quedamos tranquilos."
+        case .conduit:
+            line = "Pásame ese conduit, ahorita, un ladito más cerca."
+        case .ladder:
+            line = "Mueve esa escalera un poquito, despacito, y déjala firme."
+        case .head:
+            line = "Cuidado con la cabeza, chin. Despacito ahí arriba."
+        case .wire:
+            line = "Nos falta un poquito de cable. Tráeme más alambre, ahorita."
+        case .mess:
+            line = "Chin, este desorden se nos fue. Lo acomodamos juntitos y quedamos en paz."
+        case .feeder:
+            line = "Hay que aterrizar ese alimentador antes del almuerzo, despacito."
+        case .breaker:
+            line = "Deja ese breaker quieto, chin. Ahorita no lo toques."
+        case .racks:
+            line = "Esos racks piden una limpiadita, órale. Los dejamos bonitos."
+        case .hold:
+            line = "Sostén esto un momentito, despacito. Ahí mero."
+        case .compliment:
+            line = "Mira nada más, lo haces muy bonito. Eres un naturalito, chin."
+        case .greeting:
+            line = "Hola, qué gusto verte. Aquí andamos, despacito."
+        case .free:
+            line = "Órale, vamos con \(voicedWords(cleaned)), despacito."
         case nil:
             line = fallback
         }

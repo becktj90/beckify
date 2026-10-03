@@ -18,13 +18,14 @@ import {
   analyzeTextWithOpenAI,
   analyzeWithAnthropic,
   analyzeWithOpenAI,
+  beginSharedVisionRequest,
   configuredModel,
   configuredProvider,
-  consumeRateLimit,
   getClientKey,
   pickImage,
   visionProviderFailure,
 } from "../lib/visionClient.js";
+import { chargeBudget, logAIUsage, refundBudget, shouldRefundAICharge } from "../lib/usageBudget.js";
 
 interface AnalyzeBody {
   base64Image?: string;
@@ -38,7 +39,6 @@ interface AnalyzeBody {
   roast_mode?: string;
 }
 
-const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
 const serverProvider = configuredProvider();
 const serverModel = configuredModel(serverProvider);
 const router: IRouter = Router();
@@ -114,18 +114,17 @@ router.post("/analyze-look", async (req, res) => {
 
   const roastMode = resolveLookRoastMode(body.roastMode ?? body.roast_mode);
   const clientKey = getClientKey(req);
-  const bucket = consumeRateLimit(rateBuckets, clientKey);
-  if (!bucket.allowed) {
-    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
-    res.setHeader("Retry-After", String(retryAfter));
-    return res.status(429).json({ error: "Too many look checks. Please try again later.", retryAfter });
+  const gate = beginSharedVisionRequest(clientKey);
+  if (!gate.ok) {
+    logAIUsage({ route: "/api/analyze-look", kind: "vision", outcome: gate.reason === "budget" ? "blocked" : "refund", clientKey, units: 1, status: 429 });
+    res.setHeader("Retry-After", String(gate.retryAfter));
+    const error = gate.reason === "burst"
+      ? "Too many look checks in progress."
+      : "Too many look checks. Please try again later.";
+    return res.status(429).json({ error, retryAfter: gate.retryAfter });
   }
-  if (bucket.inFlight >= 2) {
-    res.setHeader("Retry-After", "15");
-    return res.status(429).json({ error: "Too many look checks in progress.", retryAfter: 15 });
-  }
-  bucket.inFlight += 1;
 
+  let textCharged = false;
   try {
     // Pass 1: frozen photo assessment at temp 0 (image).
     const assessment = await runAssessment(picked.image.base64, picked.image.mimeType);
@@ -135,10 +134,21 @@ router.post("/analyze-look", async (req, res) => {
     // Pass 2: text-only comedy at higher temp. Skip when there is nothing to roast.
     // Cost: second call has no image tokens. Latency: roughly one extra text completion for adult ratings.
     if (verdict !== "declined" && verdict !== "no_person") {
+      const textCharge = chargeBudget("text", clientKey, 1);
+      if (!textCharge.allowed) {
+        logAIUsage({ route: "/api/analyze-look", kind: "text", outcome: "blocked", clientKey, units: 1, status: 429 });
+        res.setHeader("Retry-After", String(textCharge.retryAfter));
+        return res.status(429).json({
+          error: "Too many text analyses. Please try again later.",
+          retryAfter: textCharge.retryAfter,
+        });
+      }
+      textCharged = true;
       comedy = await runComedy(roastMode, assessment);
     }
 
     const analysis = mergeLookAssessmentWithComedy(assessment, comedy);
+    logAIUsage({ route: "/api/analyze-look", kind: "vision", outcome: "ok", clientKey, units: 1, model: serverModel });
 
     return res.json({
       provider: serverProvider,
@@ -148,10 +158,17 @@ router.post("/analyze-look", async (req, res) => {
     });
   } catch (error) {
     const failure = visionProviderFailure(error);
+    if (shouldRefundAICharge(error)) {
+      refundBudget("vision", clientKey, 1);
+      if (textCharged) refundBudget("text", clientKey, 1);
+      logAIUsage({ route: "/api/analyze-look", kind: "vision", outcome: "refund", clientKey, units: 1, status: failure.status });
+    } else {
+      logAIUsage({ route: "/api/analyze-look", kind: "vision", outcome: "error", clientKey, units: 1, status: failure.status });
+    }
     console.error("Look vision provider request failed", error);
     return res.status(failure.status).json({ error: failure.error });
   } finally {
-    bucket.inFlight -= 1;
+    gate.release();
   }
 });
 

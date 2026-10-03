@@ -1,4 +1,16 @@
 import type { Request } from "express";
+import {
+  OutputTruncatedError,
+  ProviderStatusError,
+  assertNotTruncated,
+  chargeBudget,
+  clientKeyFromAddress,
+  isRetryableProviderStatus,
+  refundBudget,
+  textMaxOutputTokens,
+  visionMaxOutputTokens,
+  withRetries,
+} from "./usageBudget.js";
 
 export type VisionProvider = "openai" | "anthropic";
 
@@ -43,6 +55,9 @@ export function visionProviderFailure(error: unknown): { status: number; error: 
   if (error instanceof MissingProviderKeyError) {
     return { status: 503, error: error.message };
   }
+  if (error instanceof OutputTruncatedError) {
+    return { status: 502, error: error.message };
+  }
   if (error instanceof ProviderTimeoutError) {
     return { status: 504, error: "The vision provider timed out. Please try again." };
   }
@@ -76,7 +91,49 @@ export function configuredModel(provider: VisionProvider, envName = "NAMEPLATE_V
 }
 
 export function getClientKey(req: Request): string {
-  return req.ip || req.socket.remoteAddress || "unknown";
+  return clientKeyFromAddress(req.ip || req.socket.remoteAddress || "unknown");
+}
+
+const sharedAnalyzeBurst = new Map<string, { inFlight: number }>();
+
+/** One in-flight cap for every analyze route, so look+panel cannot stack. */
+export function tryAcquireSharedAnalyzeBurst(
+  clientKey: string,
+  maxInFlight = MAX_IN_FLIGHT_PER_CLIENT,
+): { ok: true; release: () => void } | { ok: false } {
+  const key = clientKey || "unknown";
+  const current = sharedAnalyzeBurst.get(key) ?? { inFlight: 0 };
+  if (current.inFlight >= maxInFlight) return { ok: false };
+  current.inFlight += 1;
+  sharedAnalyzeBurst.set(key, current);
+  return {
+    ok: true,
+    release() {
+      current.inFlight = Math.max(0, current.inFlight - 1);
+      if (current.inFlight === 0) sharedAnalyzeBurst.delete(key);
+    },
+  };
+}
+
+export function resetSharedAnalyzeBurstForTests(): void {
+  sharedAnalyzeBurst.clear();
+}
+
+/**
+ * Charge the shared vision budget, then take one slot of the shared in-flight burst.
+ * A burst rejection refunds the charge because no provider call was made.
+ */
+export function beginSharedVisionRequest(clientKey: string):
+  | { ok: true; release: () => void }
+  | { ok: false; retryAfter: number; reason: "budget" | "burst" } {
+  const charge = chargeBudget("vision", clientKey, 1);
+  if (!charge.allowed) return { ok: false, retryAfter: charge.retryAfter, reason: "budget" };
+  const burst = tryAcquireSharedAnalyzeBurst(clientKey);
+  if (!burst.ok) {
+    refundBudget("vision", clientKey, 1);
+    return { ok: false, retryAfter: 15, reason: "burst" };
+  }
+  return { ok: true, release: burst.release };
 }
 
 export function consumeRateLimit(
@@ -192,12 +249,10 @@ export async function analyzeWithOpenAI(args: {
       },
     ],
   };
-  body.max_tokens = typeof args.maxTokens === "number" && args.maxTokens > 0
-    ? args.maxTokens
-    : DEFAULT_MAX_OUTPUT_TOKENS;
+  body.max_tokens = cappedOutputTokens(args.maxTokens, visionMaxOutputTokens());
 
   const { ok, status, payload } = await fetchJsonWithTimeout<{
-    choices?: Array<{ message?: { content?: string | null } }>;
+    choices?: Array<{ finish_reason?: string | null; message?: { content?: string | null } }>;
     error?: { message?: string };
   }>("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -209,6 +264,7 @@ export async function analyzeWithOpenAI(args: {
   }, args.timeoutMs);
 
   if (!ok) throw new Error(payload.error?.message || `OpenAI request failed with HTTP ${status}.`);
+  assertNotTruncated(payload.choices?.[0]?.finish_reason);
   const content = payload.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenAI returned no analysis content.");
   return extractJsonObject(content);
@@ -234,6 +290,7 @@ export async function analyzeWithAnthropic(args: {
 
   const { ok, status, payload } = await fetchJsonWithTimeout<{
     content?: Array<{ text?: string }>;
+    stop_reason?: string | null;
     error?: { message?: string };
   }>("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -244,9 +301,7 @@ export async function analyzeWithAnthropic(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      max_tokens: typeof args.maxTokens === "number" && args.maxTokens > 0
-        ? args.maxTokens
-        : DEFAULT_MAX_OUTPUT_TOKENS,
+      max_tokens: cappedOutputTokens(args.maxTokens, visionMaxOutputTokens()),
       temperature,
       system: args.system,
       messages: [
@@ -265,6 +320,7 @@ export async function analyzeWithAnthropic(args: {
   }, args.timeoutMs);
 
   if (!ok) throw new Error(payload.error?.message || `Anthropic request failed with HTTP ${status}.`);
+  assertNotTruncated(payload.stop_reason);
   const content = payload.content?.find((part) => typeof part.text === "string")?.text;
   if (!content) throw new Error("Anthropic returned no analysis content.");
   return extractJsonObject(content);
@@ -275,20 +331,31 @@ async function fetchJsonWithTimeout<T>(
   init: RequestInit,
   timeoutMs = PROVIDER_TIMEOUT_MS,
 ): Promise<{ ok: boolean; status: number; payload: T }> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(input, { ...init, signal: controller.signal });
-    // Keep the abort timer active while the body streams — a stall after
-    // headers should still become ProviderTimeoutError / 504.
-    const payload = await response.json() as T;
-    return { ok: response.ok, status: response.status, payload };
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") throw new ProviderTimeoutError();
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return withRetries(async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      // Keep the abort timer active while the body streams — a stall after
+      // headers should still become ProviderTimeoutError / 504.
+      const payload = await response.json() as T;
+      if (!response.ok && isRetryableProviderStatus(response.status)) {
+        throw new ProviderStatusError(response.status);
+      }
+      return { ok: response.ok, status: response.status, payload };
+    } catch (error) {
+      if (error instanceof OutputTruncatedError || error instanceof ProviderStatusError) throw error;
+      if (error instanceof Error && error.name === "AbortError") throw new ProviderTimeoutError();
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+}
+
+function cappedOutputTokens(requested: number | undefined, cap: number): number {
+  const value = typeof requested === "number" && requested > 0 ? requested : cap;
+  return Math.min(value, cap);
 }
 
 /** Text-only JSON completion — used for Look Check comedy after assessment is frozen. */
@@ -316,12 +383,10 @@ export async function analyzeTextWithOpenAI(args: {
       { role: "user", content: args.userText },
     ],
   };
-  body.max_tokens = typeof args.maxTokens === "number" && args.maxTokens > 0
-    ? args.maxTokens
-    : DEFAULT_MAX_OUTPUT_TOKENS;
+  body.max_tokens = cappedOutputTokens(args.maxTokens, textMaxOutputTokens());
 
   const { ok, status, payload } = await fetchJsonWithTimeout<{
-    choices?: Array<{ message?: { content?: string | null } }>;
+    choices?: Array<{ finish_reason?: string | null; message?: { content?: string | null } }>;
     error?: { message?: string };
   }>("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -333,6 +398,7 @@ export async function analyzeTextWithOpenAI(args: {
   }, args.timeoutMs);
 
   if (!ok) throw new Error(payload.error?.message || `OpenAI request failed with HTTP ${status}.`);
+  assertNotTruncated(payload.choices?.[0]?.finish_reason);
   const content = payload.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenAI returned no analysis content.");
   return extractJsonObject(content);
@@ -355,6 +421,7 @@ export async function analyzeTextWithAnthropic(args: {
 
   const { ok, status, payload } = await fetchJsonWithTimeout<{
     content?: Array<{ text?: string }>;
+    stop_reason?: string | null;
     error?: { message?: string };
   }>("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -365,9 +432,7 @@ export async function analyzeTextWithAnthropic(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      max_tokens: typeof args.maxTokens === "number" && args.maxTokens > 0
-        ? args.maxTokens
-        : DEFAULT_MAX_OUTPUT_TOKENS,
+      max_tokens: cappedOutputTokens(args.maxTokens, textMaxOutputTokens()),
       temperature,
       system: args.system,
       messages: [
@@ -377,6 +442,7 @@ export async function analyzeTextWithAnthropic(args: {
   }, args.timeoutMs);
 
   if (!ok) throw new Error(payload.error?.message || `Anthropic request failed with HTTP ${status}.`);
+  assertNotTruncated(payload.stop_reason);
   const content = payload.content?.find((part) => typeof part.text === "string")?.text;
   if (!content) throw new Error("Anthropic returned no analysis content.");
   return extractJsonObject(content);

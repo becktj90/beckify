@@ -1,4 +1,6 @@
 import { Router, type IRouter } from "express";
+import { getClientKey } from "../lib/visionClient.js";
+import { chargeBudget, logAIUsage, refundBudget, textMaxOutputTokens } from "../lib/usageBudget.js";
 
 const router: IRouter = Router();
 const allowedOrigins = new Set((process.env["CORS_ORIGINS"] ?? "https://beckify.com,https://www.beckify.com,http://localhost:3000").split(",").map((value) => value.trim()));
@@ -15,7 +17,7 @@ router.post("/review-calculation", async (req, res) => {
   const origin = req.get("origin");
   if (origin && !allowedOrigins.has(origin)) return res.status(403).json({ error: "Origin not allowed." });
 
-  const clientKey = req.ip || req.socket.remoteAddress || "unknown";
+  const clientKey = getClientKey(req);
   const bucket = consumeRateLimit(clientKey);
   if (!bucket.allowed) {
     res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - Date.now()) / 1000)));
@@ -29,13 +31,35 @@ router.post("/review-calculation", async (req, res) => {
   res.setHeader("Content-Type", "text/event-stream; charset=utf-8"); res.setHeader("Cache-Control", "no-cache, no-transform"); res.setHeader("Connection", "keep-alive");
   const fallback = reviewFor(body.calculation, body.values);
   const key = process.env["OPENAI_API_KEY"];
+  let textCharged = false;
   try {
     if (!key) { res.write(`data: ${JSON.stringify(fallback)}\n\n`); return res.end(); }
-    const response = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(20_000), body: JSON.stringify({ model: process.env["REVIEW_MODEL"] ?? "gpt-4o-mini", temperature: 0.2, response_format: { type: "json_object" }, messages: [{ role: "system", content: "You are a concise senior electrical engineer. Return only JSON with verdict (sound, check, or unsafe), snide_summary (1-2 witty sentences), and fix_recommendation (one technical sentence). Be candid, never reckless, and do not invent code requirements." }, { role: "user", content: JSON.stringify({ calculation: body.calculation, values: body.values }) }] }) });
-    if (!response.ok) throw new Error("provider error");
-    const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> }; const candidate = JSON.parse(payload.choices?.[0]?.message?.content ?? "{}");
+    const textCharge = chargeBudget("text", clientKey, 1);
+    if (!textCharge.allowed) {
+      logAIUsage({ route: "/api/review-calculation", kind: "text", outcome: "blocked", clientKey, units: 1, status: 429 });
+      res.status(429);
+      res.setHeader("Retry-After", String(textCharge.retryAfter));
+      res.write(`data: ${JSON.stringify({ error: "AI text budget exceeded. Please try again later.", retryAfter: textCharge.retryAfter })}\n\n`);
+      return res.end();
+    }
+    textCharged = true;
+    const response = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(20_000), body: JSON.stringify({ model: process.env["REVIEW_MODEL"] ?? "gpt-4o-mini", temperature: 0.2, max_tokens: textMaxOutputTokens(), response_format: { type: "json_object" }, messages: [{ role: "system", content: "You are a concise senior electrical engineer. Return only JSON with verdict (sound, check, or unsafe), snide_summary (1-2 witty sentences), and fix_recommendation (one technical sentence). Be candid, never reckless, and do not invent code requirements." }, { role: "user", content: JSON.stringify({ calculation: body.calculation, values: body.values }) }] }) });
+    if (!response.ok) {
+      refundBudget("text", clientKey, 1);
+      textCharged = false;
+      logAIUsage({ route: "/api/review-calculation", kind: "text", outcome: "refund", clientKey, units: 1, status: response.status });
+      throw new Error("provider error");
+    }
+const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> }; const candidate = JSON.parse(payload.choices?.[0]?.message?.content ?? "{}");
     res.write(`data: ${JSON.stringify(isReview(candidate) ? candidate : fallback)}\n\n`);
-  } catch { res.write(`data: ${JSON.stringify(fallback)}\n\n`); }
+    logAIUsage({ route: "/api/review-calculation", kind: "text", outcome: "ok", clientKey, units: 1 });
+  } catch {
+    if (textCharged) {
+      refundBudget("text", clientKey, 1);
+      logAIUsage({ route: "/api/review-calculation", kind: "text", outcome: "refund", clientKey, units: 1, status: 502 });
+    }
+    res.write(`data: ${JSON.stringify(fallback)}\n\n`);
+  }
   finally { bucket.inFlight -= 1; }
   return res.end();
 });
@@ -59,7 +83,7 @@ function consumeRateLimit(clientKey: string) {
       if (value.resetAt <= now) reviewRateBuckets.delete(key);
     }
   }
-  return { ...bucket, allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW };
+  return Object.assign(bucket, { allowed: bucket.count <= MAX_REQUESTS_PER_WINDOW });
 }
 
 function isReview(value: unknown): value is { verdict: "sound" | "check" | "unsafe"; snide_summary: string; fix_recommendation: string } { if (!value || typeof value !== "object") return false; const row = value as Record<string, unknown>; return (row.verdict === "sound" || row.verdict === "check" || row.verdict === "unsafe") && typeof row.snide_summary === "string" && row.snide_summary.length <= 360 && typeof row.fix_recommendation === "string" && row.fix_recommendation.length <= 240; }

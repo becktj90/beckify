@@ -105,4 +105,34 @@ final class CrewDialectRewriteSafetyTests: XCTestCase {
         XCTAssertTrue(line.lowercased().contains("corriente"), line)
         XCTAssertFalse(line.lowercased().contains("fuck"))
     }
+
+    func testLupitaKeepsTheAskWithoutHeavyProfanity() {
+        XCTAssertTrue(CrewTalkMember.lupitaReyes.isReleased)
+        let cut = CrewDialectRewrite.lupita("Kill the power.")
+        XCTAssertTrue(cut.lowercased().contains("corriente"), cut)
+        XCTAssertFalse(cut.contains("?"), cut)
+        let heavy = ["coño", "carajo", "mierda", "pinga", "joder", "cabrón", "puta", "fuck"]
+        XCTAssertTrue(cut.lowercased().contains("no manches") || cut.lowercased().contains("chin"), cut)
+        for word in heavy {
+            XCTAssertFalse(cut.lowercased().contains(word), word)
+        }
+        let rejected = CrewDialectRewrite.lupita("Don't kill the power")
+        XCTAssertFalse(rejected.lowercased().contains("corriente"), rejected)
+        XCTAssertFalse(rejected.lowercased().contains("corta"), rejected)
+        let samples = [
+            ("Hand me that conduit.", "conduit"),
+            ("Move the ladder.", "escalera"),
+            ("Watch your head.", "cabeza"),
+            ("We need more wire.", "cable"),
+            ("Someone left this mess.", "desorden"),
+        ]
+        for (raw, ask) in samples {
+            let line = CrewDialectRewrite.lupita(raw)
+            XCTAssertTrue(line.lowercased().contains(ask), "\(raw) -> \(line)")
+            for word in heavy {
+                XCTAssertFalse(line.lowercased().contains(word), "\(word) in \(line)")
+            }
+        }
+    }
+
 }

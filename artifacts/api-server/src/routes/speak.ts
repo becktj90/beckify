@@ -8,6 +8,8 @@ import {
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
   normalizeSpeakLanguage,
+  BODIE_ELEVEN_VOICE_SETTINGS,
+  BODIE_HALE_VOICE_ID,
   CASSIAN_ELEVEN_VOICE_SETTINGS,
   CASSIAN_VALE_SEED,
   CASSIAN_VALE_VOICE_ID,
@@ -24,6 +26,7 @@ import {
   type SpeakLanguage,
 } from "../prompts/speakPrompt.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
+import { chargeBudget, logAIUsage, refundBudget } from "../lib/usageBudget.js";
 
 interface SpeakBody {
   text?: unknown;
@@ -37,7 +40,7 @@ interface SpeakBody {
   mode?: unknown;
   /** OpenAI voice-mode alias when it is a string. Numeric ElevenLabs style is ignored. */
   style?: unknown;
-  /** Ignored. ElevenLabs stability is server-side for Junie and Cassian only. */
+  /** Ignored. ElevenLabs stability is server-side for Bodie, Junie, and Cassian. */
   stability?: unknown;
   /** Ignored. */
   similarity_boost?: unknown;
@@ -51,7 +54,7 @@ interface SpeakBody {
 
 const router: IRouter = Router();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 30;
+const MAX_REQUESTS_PER_WINDOW = 20;
 const MAX_IN_FLIGHT_PER_CLIENT = 2;
 const PROVIDER_TIMEOUT_MS = 30_000;
 const ALLOWED_VOICES = new Set([
@@ -76,7 +79,7 @@ router.post("/speak", async (req, res) => {
   const text = pickText(body);
   if (!text) {
     return res.status(400).json({
-      error: "Provide text in `text`, `input`, or `translation` (1–500 characters, or up to 1500 for a Look Check roast).",
+      error: "Provide text in `text`, `input`, or `translation` (1–500 characters, or up to 900 for a Look Check roast).",
     });
   }
 
@@ -108,8 +111,20 @@ router.post("/speak", async (req, res) => {
   }
 
   const clientKey = getClientKey(req);
+  const budgetKind = useEleven ? "eleven" as const : "openai" as const;
+  const budgetUnits = useEleven ? text.length : 1;
+  const budget = chargeBudget(budgetKind, clientKey, budgetUnits);
+  if (!budget.allowed) {
+    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "blocked", clientKey, units: budgetUnits, status: 429 });
+    res.setHeader("Retry-After", String(budget.retryAfter));
+    return res.status(429).json({
+      error: "AI budget exceeded for speech. Please try again later.",
+      retryAfter: budget.retryAfter,
+    });
+  }
   const bucket = consumeLocalRateLimit(clientKey);
   if (!bucket.allowed) {
+    refundBudget(budgetKind, clientKey, budgetUnits);
     const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
     res.setHeader("Retry-After", String(Math.max(1, retryAfter)));
     return res.status(429).json({
@@ -118,6 +133,8 @@ router.post("/speak", async (req, res) => {
     });
   }
   if (bucket.inFlight >= MAX_IN_FLIGHT_PER_CLIENT) {
+    refundBudget(budgetKind, clientKey, budgetUnits);
+    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 429 });
     res.setHeader("Retry-After", "10");
     return res.status(429).json({ error: "Too many speak requests in progress.", retryAfter: 10 });
   }
@@ -131,11 +148,15 @@ router.post("/speak", async (req, res) => {
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
       console.error("Speak provider HTTP", response.status, errText.slice(0, 400));
+      refundBudget(budgetKind, clientKey, budgetUnits);
+      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
       return res.status(502).json({ error: "The speech provider could not synthesize this text." });
     }
 
     const audio = Buffer.from(await response.arrayBuffer());
     if (!audio.length) {
+      refundBudget(budgetKind, clientKey, budgetUnits);
+      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
       return res.status(502).json({ error: "The speech provider returned empty audio." });
     }
 
@@ -147,17 +168,24 @@ router.post("/speak", async (req, res) => {
     res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
     res.setHeader("X-Beckify-TTS-Language", language);
     if (useEleven) res.setHeader("X-Beckify-TTS-Cacheable", "1");
+    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "ok", clientKey, units: budgetUnits, model });
     res.setHeader("Content-Length", String(audio.length));
     return res.status(200).send(audio);
   } catch (error) {
     if (error instanceof MissingProviderKeyError) {
+      refundBudget(budgetKind, clientKey, budgetUnits);
+      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 503 });
       return res.status(503).json({
         error: `The speech provider key is missing (${error.envName}).`,
       });
     }
     if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      refundBudget(budgetKind, clientKey, budgetUnits);
+      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 504 });
       return res.status(504).json({ error: "The speech provider timed out. Please try again." });
     }
+    refundBudget(budgetKind, clientKey, budgetUnits);
+    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
     console.error("Speak provider request failed", error);
     return res.status(502).json({ error: "The speech provider could not synthesize this text." });
   } finally {
@@ -229,16 +257,18 @@ async function synthesizeElevenLabs(
 
 
 /**
- * Junie and Cassian presets stay server-side.
+ * Bodie, Junie, and Cassian presets stay server-side.
  * Client stability, similarity, style, and speed are ignored.
  * Other allowlisted voices use the provider default.
  */
 function elevenVoiceSettings(voiceId: string): Record<string, number | boolean> | undefined {
-  const preset = voiceId === JUNIE_PELL_VOICE_ID
-    ? JUNIE_ELEVEN_VOICE_SETTINGS
-    : voiceId === CASSIAN_VALE_VOICE_ID
-      ? CASSIAN_ELEVEN_VOICE_SETTINGS
-      : undefined;
+  const preset = voiceId === BODIE_HALE_VOICE_ID
+    ? BODIE_ELEVEN_VOICE_SETTINGS
+    : voiceId === JUNIE_PELL_VOICE_ID
+      ? JUNIE_ELEVEN_VOICE_SETTINGS
+      : voiceId === CASSIAN_VALE_VOICE_ID
+        ? CASSIAN_ELEVEN_VOICE_SETTINGS
+        : undefined;
   if (!preset) return undefined;
   return {
     stability: preset.stability,

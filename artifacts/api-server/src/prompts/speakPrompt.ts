@@ -134,7 +134,7 @@ export const CASSIAN_VALE_VOICE_ID = "uYsaRSYDSuxmtyipO9Qt";
 /** Deterministic ElevenLabs seed for this roast voice. Posted when the speak route sends seed. */
 export const CASSIAN_VALE_SEED = 60606;
 /** Paragraph roast. Crew Talk clips stay on SPEAK_MAX_INPUT_CHARS. */
-export const LOOK_CHECK_SPEAK_MAX_CHARS = 1500;
+export const LOOK_CHECK_SPEAK_MAX_CHARS = 900;
 
 /**
  * Relish without a scream. High style exaggeration, close to the designed voice,
@@ -162,12 +162,27 @@ export const JUNIE_ELEVEN_VOICE_SETTINGS = {
   use_speaker_boost: true,
 } as const;
 
+/**
+ * Bodie Hale. If Voice Design is regenerated, swap this id and keep it
+ * in lockstep with CrewTalkMember.voiceID.
+ */
+export const BODIE_HALE_VOICE_ID = "XVO6RhOYU9ZEKHFXrx6b";
+
+export const BODIE_ELEVEN_VOICE_SETTINGS = {
+  stability: 0,
+  similarity_boost: 0.75,
+  style: 0.8,
+  speed: 0.9,
+  use_speaker_boost: true,
+} as const;
+
 export const CREW_TALK_ELEVEN_VOICES = {
   bodieHale: "XVO6RhOYU9ZEKHFXrx6b",
   titoSolano: "goyf4sY4AqSvMIeO1hb5",
   juniePell: "tdK8noxHGTBqk6F18tbZ",
   pearl: "xDnrPZyqSbomyfOcnNpu",
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
+  lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",
 } as const;
 
 /** Deterministic ElevenLabs seed for Sloane Merritt. Other crew voices omit seed. */

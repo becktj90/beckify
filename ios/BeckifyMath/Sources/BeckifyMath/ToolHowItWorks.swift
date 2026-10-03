@@ -599,15 +599,6 @@ public enum ToolHowItWorksCatalog {
                 "MOCP and LRA are never used as FLA. Recognition can misread a stamped plate.",
             ]
         ),
-        "lookCheck": ToolHowItWorks(
-            summary: "Camera or library photo, then Analyze Look for honest Photo assessment scores plus a surprise roast.",
-            context: "Honest photo feedback. You might get hyped. You might get roasted. Photo stays on device until Analyze Look.",
-            bullets: [
-                "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
-                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
-                "A non-empty adult roast plays in full from the loudspeaker via /api/speak, not the earpiece, and that text stays on screen. Declined, no person, and an empty roast stay silent.",
-            ]
-        ),
         "heaterDesign": ToolHowItWorks(
             summary: "Resistive heater line current, leg resistance, and resistance-wire length.",
             context: "Nichrome / Kanthal element planning for wye or delta.",
@@ -797,11 +788,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "English ↔ Spanish with Bodie Hale, Tito Solano, Junie Pell, Pearl, or Sloane Merritt. Their 16-bit sprite stays up and bobs while audio plays.",
+            summary: "English ↔ Spanish with Tito Solano, Lupita Reyes, Bodie Hale, Junie Pell, Pearl, or Sloane Merritt. Their 16-bit sprite stays up and bobs while audio plays.",
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Five helpers—Bodie, Tito, Junie, Pearl, and Sloane. The dock shows the other language. Speak plays the rewritten line on screen, never the raw text field. Cuban Spanish included.",
+                "Tito and Lupita speak Spanish. Bodie, Junie, Pearl, and Sloane speak English. Speak plays their line, never the raw text field.",
+                "The dock shows the other language. Cuban and Mexican Spanish included.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),
