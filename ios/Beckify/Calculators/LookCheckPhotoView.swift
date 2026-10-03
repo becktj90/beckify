@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -20,6 +21,10 @@ struct LookCheckPhotoView: View {
     @State private var errorMessage: String?
     @State private var draft: PhotoLookDraft?
     @State private var successTick = 0
+    @State private var roastPlayer: AVAudioPlayer?
+    @State private var roastSpeakTask: Task<Void, Never>?
+    /// Look score (1…10) stays hidden until Cassian finishes — or shows immediately if TTS is skipped.
+    @State private var lookScoreVisible = false
 
     var body: some View {
         ToolScaffold(
@@ -78,6 +83,7 @@ struct LookCheckPhotoView: View {
         .onChange(of: preview) { _, image in
             guard image != nil else { return }
             draft = nil
+            lookScoreVisible = false
             errorMessage = nil
             progress = 0
             status = "Photo is on this device only. Analyze Look uploads it. Taking or choosing a photo does not."
@@ -294,6 +300,15 @@ struct LookCheckPhotoView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Roast. \(draft.roast)")
             }
+            if lookScoreVisible, draft.showsLookScore, let lookScore = draft.lookScore {
+                ResultRow(
+                    label: PhotoLookCheck.lookScoreLabel,
+                    value: "\(lookScore) / 10",
+                    emphasis: true,
+                    tone: verdictTone(draft.verdict)
+                )
+                .accessibilityLabel("\(PhotoLookCheck.lookScoreLabel) \(lookScore) out of 10")
+            }
             if draft.showsScore, let score = draft.score {
                 ResultRow(label: PhotoLookCheck.photoAssessmentLabel, value: "\(score)", emphasis: true, tone: verdictTone(draft.verdict))
             }
@@ -379,9 +394,11 @@ struct LookCheckPhotoView: View {
     // MARK: - Actions
 
     private func reset() {
+        stopRoastSpeech()
         photoItem = nil
         preview = nil
         draft = nil
+        lookScoreVisible = false
         errorMessage = nil
         progress = 0
         status = "Ready for a camera photo or a file. Taking or choosing a photo does not upload it."
@@ -411,9 +428,11 @@ struct LookCheckPhotoView: View {
             errorMessage = "Analyze Look needs an HTTPS endpoint. Leave the custom URL blank to use api.beckify.com, or enter a https:// URL."
             return
         }
+        stopRoastSpeech()
         busy = true
         errorMessage = nil
         draft = nil
+        lookScoreVisible = false
         progress = 0.16
         status = "Preparing photo…"
         defer { busy = false }
@@ -440,6 +459,7 @@ struct LookCheckPhotoView: View {
             progress = 1
             status = "Done. Entertainment only — not a beauty contest."
             successTick += 1
+            speakRoastIfNeeded(result)
         } catch {
             errorMessage = error.localizedDescription
             progress = 0
@@ -456,6 +476,9 @@ struct LookCheckPhotoView: View {
 
     private var sticky: String? {
         guard let draft else { return nil }
+        if lookScoreVisible, draft.showsLookScore, let lookScore = draft.lookScore {
+            return "\(draft.verdict.badge) · look \(lookScore)/10"
+        }
         if draft.showsScore, let score = draft.score {
             return "\(draft.verdict.badge) · \(score)"
         }
@@ -474,6 +497,62 @@ struct LookCheckPhotoView: View {
         case .declined, .noPerson, .mixed: return Theme.warn
         }
     }
+
+    private func stopRoastSpeech() {
+        roastSpeakTask?.cancel()
+        roastSpeakTask = nil
+        roastPlayer?.stop()
+        roastPlayer = nil
+    }
+
+    /// Speak the roast only. Declined, no person, and empty text never call /api/speak.
+    /// Look score reveals after playback finishes, or immediately if TTS is skipped (no audio).
+    private func speakRoastIfNeeded(_ draft: PhotoLookDraft) {
+        stopRoastSpeech()
+        lookScoreVisible = false
+        guard PhotoLookCheck.shouldSpeakRoast(draft) else { return }
+        guard let url = PhotoLookCheck.speakURL(customEndpoint: customEndpoint) else {
+            revealLookScoreIfEligible(draft)
+            return
+        }
+        let roast = draft.roast
+        let bearer = PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
+        roastSpeakTask = Task { @MainActor in
+            do {
+                let body = try PhotoLookCheck.speakRequestJSON(roast: roast)
+                let result = try await BeckifyAIClient.postAudio(
+                    url: url,
+                    body: body,
+                    bearerToken: bearer,
+                    timeout: 45
+                )
+                guard !Task.isCancelled else { return }
+                let session = AVAudioSession.sharedInstance()
+                try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+                try? session.setActive(true, options: .notifyOthersOnDeactivation)
+                let player = try AVAudioPlayer(data: result.data)
+                player.volume = 1
+                player.prepareToPlay()
+                roastPlayer = player
+                _ = player.play()
+                let wait = max(player.duration, 0.05)
+                try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                revealLookScoreIfEligible(draft)
+            } catch {
+                // Keep the written roast. Do not fall back to a cartoon device voice.
+                // TTS skipped / no audio → reveal look score immediately when eligible.
+                if !Task.isCancelled {
+                    revealLookScoreIfEligible(draft)
+                }
+            }
+        }
+    }
+
+    private func revealLookScoreIfEligible(_ draft: PhotoLookDraft) {
+        lookScoreVisible = draft.showsLookScore
+    }
+
 }
 
 /// URLSession client for `/api/analyze-look`. Encoding happens only here.

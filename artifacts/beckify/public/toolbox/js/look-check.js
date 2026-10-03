@@ -13,7 +13,7 @@ function lookRandomSurpriseTone() {
   return Math.random() < 0.5 ? 'mean' : 'nice';
 }
 
-const LOOK_SURPRISE_COPY = 'Honest photo feedback. You might get hyped. You might get fucking roasted.';
+const LOOK_SURPRISE_COPY = 'Honest photo feedback. You might get hyped. You might get roasted.';
 
 
 const lookState = {
@@ -21,9 +21,110 @@ const lookState = {
   imageUrl: '',
   draft: null,
   busy: false,
+  lookScoreVisible: false,
 };
 
 const lookEl = {};
+
+const LOOK_ROAST_VOICE_ID = 'uYsaRSYDSuxmtyipO9Qt';
+const LOOK_ROAST_MODEL = 'eleven_v3';
+const LOOK_ROAST_SEED = 60606;
+let lookRoastAudio = null;
+let lookSpeakGen = 0;
+
+function lookShouldSpeak(draft) {
+  if (!draft) return false;
+  const verdict = String(draft.verdict || '');
+  if (verdict === 'declined' || verdict === 'no_person') return false;
+  const roast = String(draft.roast || '').trim();
+  return roast.length > 0;
+}
+
+function lookStopRoastSpeech() {
+  lookSpeakGen += 1;
+  if (lookRoastAudio) {
+    try { lookRoastAudio.pause(); } catch (_) { /* ignore */ }
+    lookRoastAudio = null;
+  }
+}
+
+function lookShowsLookScore(draft) {
+  if (!draft) return false;
+  if (!lookShouldSpeak(draft)) return false;
+  return draft.lookScore != null;
+}
+
+function lookRevealLookScore(draft) {
+  lookState.lookScoreVisible = lookShowsLookScore(draft);
+  lookRenderLookScore(draft);
+}
+
+function lookRenderLookScore(draft) {
+  if (!lookEl.lookScoreWrap) return;
+  const show = lookState.lookScoreVisible && lookShowsLookScore(draft);
+  lookEl.lookScoreWrap.hidden = !show;
+  if (lookEl.lookScoreValue) {
+    lookEl.lookScoreValue.textContent = show ? String(draft.lookScore) : '—';
+  }
+}
+
+/** Speak the roast only. Key stays on the server. Skip declined, no person, and empty text.
+ *  Look score reveals after playback finishes, or immediately if TTS is skipped (no audio). */
+async function lookSpeakRoast(draft) {
+  lookStopRoastSpeech();
+  lookState.lookScoreVisible = false;
+  lookRenderLookScore(draft);
+  const gen = lookSpeakGen;
+  if (!lookShouldSpeak(draft)) return;
+  const text = String(draft.roast).trim().slice(0, 1500);
+  const url = lookApiUrl('/api/speak');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task: 'speak',
+        text,
+        voice: LOOK_ROAST_VOICE_ID,
+        model: LOOK_ROAST_MODEL,
+        format: 'mp3',
+        language: 'en',
+        seed: LOOK_ROAST_SEED,
+        stability: 0.38,
+        similarity_boost: 0.82,
+        style: 1,
+        speed: 0.86,
+      }),
+    });
+    if (gen !== lookSpeakGen) return;
+    if (!response.ok) {
+      // TTS skipped → reveal look score immediately when eligible.
+      if (gen === lookSpeakGen) lookRevealLookScore(draft);
+      return;
+    }
+    const blob = await response.blob();
+    if (gen !== lookSpeakGen) return;
+    if (!blob || !blob.size) {
+      if (gen === lookSpeakGen) lookRevealLookScore(draft);
+      return;
+    }
+    const audio = new Audio(URL.createObjectURL(blob));
+    lookRoastAudio = audio;
+    audio.onended = function () {
+      if (gen !== lookSpeakGen) return;
+      lookRevealLookScore(draft);
+    };
+    try {
+      await audio.play();
+    } catch (_) {
+      if (gen === lookSpeakGen) lookRevealLookScore(draft);
+    }
+  } catch (_) {
+    // Written roast stays. No cartoon fallback. TTS skipped → reveal immediately.
+    if (gen === lookSpeakGen) lookRevealLookScore(draft);
+  }
+}
+
 
 function lookApiUrl(path) {
   const configured = document.querySelector('meta[name="beckify-api-base-url"]')?.getAttribute('content')
@@ -122,6 +223,9 @@ function lookCopyLine(draft) {
   if (draft.verdict !== 'declined' && draft.score != null) {
     parts.push('score ' + draft.score);
   }
+  if (lookShowsLookScore(draft)) {
+    parts.push('look score ' + draft.lookScore);
+  }
   const head = String(draft.headline || lookDefaultHeadline(draft.verdict)).trim();
   if (head) parts.push(head);
   const roast = String(draft.roast || '').trim();
@@ -212,6 +316,8 @@ function lookRenderDraft(draft) {
   if (!lookEl.verdictCard || !draft) {
     if (lookEl.verdictCard) lookEl.verdictCard.hidden = true;
     if (lookEl.roast) lookEl.roast.hidden = true;
+    lookState.lookScoreVisible = false;
+    lookRenderLookScore(null);
     return;
   }
   lookEl.verdictCard.hidden = false;
@@ -230,6 +336,8 @@ function lookRenderDraft(draft) {
   const showScore = draft.verdict !== 'declined' && draft.score != null;
   if (lookEl.scoreWrap) lookEl.scoreWrap.hidden = !showScore;
   if (lookEl.score) lookEl.score.textContent = showScore ? String(draft.score) : '—';
+  // Look score stays hidden until speech ends (or TTS is skipped).
+  lookRenderLookScore(draft);
   lookFillList(lookEl.reasons, draft.reasons, 'No specific notes.');
   lookFillList(lookEl.fixes, draft.fixes, draft.verdict === 'declined' ? 'No retake tips for this photo.' : 'No retake tips.');
   lookFillList(lookEl.photoNotes, draft.photoNotes, 'No photo notes.');
@@ -311,6 +419,8 @@ async function lookRunSameOrigin(file) {
 
 async function lookRunAnalysis() {
   if (!lookState.file || lookState.busy) return;
+  lookStopRoastSpeech();
+  lookState.lookScoreVisible = false;
   lookSetBusy(true);
   lookSetProgress(16, 'Preparing photo…');
   try {
@@ -339,6 +449,7 @@ async function lookRunAnalysis() {
     lookSetProgress(92, 'Reading the verdict…');
     lookRenderDraft(draft);
     lookSetProgress(100, 'Done. Entertainment only — not a beauty contest.');
+    lookSpeakRoast(draft);
     if (typeof window.showToast === 'function') window.showToast('Look check complete');
   } catch (error) {
     let message = error instanceof Error ? error.message : 'Unknown look-check error';
@@ -389,10 +500,12 @@ function lookHandleFile(file) {
 }
 
 function lookReset() {
+  lookStopRoastSpeech();
   if (lookState.imageUrl) URL.revokeObjectURL(lookState.imageUrl);
   lookState.file = null;
   lookState.imageUrl = '';
   lookState.draft = null;
+  lookState.lookScoreVisible = false;
   if (lookEl.fileInput) lookEl.fileInput.value = '';
   if (lookEl.cameraInput) lookEl.cameraInput.value = '';
   lookRenderDraft(null);
@@ -480,6 +593,8 @@ function lookCacheElements() {
   lookEl.metrics = document.getElementById('look-metrics');
   lookEl.score = document.getElementById('look-score');
   lookEl.scoreWrap = document.getElementById('look-score-wrap');
+  lookEl.lookScoreWrap = document.getElementById('look-look-score-wrap');
+  lookEl.lookScoreValue = document.getElementById('look-look-score');
   lookEl.reasons = document.getElementById('look-reasons');
   lookEl.fixes = document.getElementById('look-fixes');
   lookEl.photoNotes = document.getElementById('look-photo-notes');

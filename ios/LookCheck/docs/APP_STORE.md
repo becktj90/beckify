@@ -30,7 +30,7 @@ Take a photo. Get a verdict and a detailed comedy roast of this frame. Entertain
 
 Look Check is a one-screen photo roast. Take a picture or pick one from your library, then tap Analyze.
 
-You get an honest photo verdict — lighting, framing, expression, sharpness — plus a longer roast of the look, vibe, fit, angle, and lighting in *this* frame. Each Analyze picks a surprise roast tone. Share the roast card.
+You get an honest photo verdict — lighting, framing, expression, sharpness — plus a longer roast of the look, vibe, fit, angle, and lighting in *this* frame. Each Analyze picks a surprise roast tone. When the roast is not empty, the app speaks it. Share the roast card.
 
 Entertainment only. Not medical advice, not dating advice, not beauty authority.
 

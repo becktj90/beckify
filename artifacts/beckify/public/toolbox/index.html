@@ -171,6 +171,34 @@
     .look-verdict-card[data-verdict="looks_good"] .look-score { color: #4ade80; }
     .look-verdict-card[data-verdict="looks_bad"] .look-score { color: #f87171; }
     .look-verdict-card[data-verdict="mixed"] .look-score { color: #fbbf24; }
+    .look-look-score-wrap {
+      margin: 14px 0 0;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .look-look-score-wrap[hidden] { display: none; }
+    .look-look-score {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .look-verdict-card[data-verdict="looks_good"] .look-look-score { color: #4ade80; }
+    .look-verdict-card[data-verdict="looks_bad"] .look-look-score { color: #f87171; }
+    .look-verdict-card[data-verdict="mixed"] .look-look-score { color: #fbbf24; }
+    .look-look-score-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
     .look-verdict-list { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.55; }
     .look-summary { margin: 0; line-height: 1.55; max-width: 70ch; }
     .look-summary[hidden] { display: none; }
@@ -10256,8 +10284,8 @@
         <div class="card" style="grid-column:1/-1">
           <div class="card-title">Take or choose a photo</div>
           <div class="card-body">
-            <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated.</div>
-            <div class="photo-safety"><strong>Honest photo feedback. You might get hyped. You might get fucking roasted.</strong> Entertainment only. Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
+            <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated. A non-empty adult roast is sent as text to the speak API and played; declined, no person, and empty roasts are not spoken.</div>
+            <div class="photo-safety"><strong>Honest photo feedback. You might get hyped. You might get roasted.</strong> Entertainment only. Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
             <div id="look_vlm_settings" class="vlm-settings">
               <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
               <div class="input-group">
@@ -10336,6 +10364,15 @@
                 <blockquote id="look-roast-text" class="look-roast-text"></blockquote>
                 <p class="note" style="margin-top:8px">Entertainment only. Comedy roast of this frame — not a beauty score. Photo assessment stays honest.</p>
               </figure>
+              <div id="look-look-score-wrap" class="look-look-score-wrap" hidden>
+                <div>
+                  <div class="look-look-score-label">Look score</div>
+                  <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+                    <div id="look-look-score" class="look-look-score">—</div>
+                    <div class="note">/ 10</div>
+                  </div>
+                </div>
+              </div>
               <div id="look-metrics" class="look-metrics" hidden></div>
               <div>
                 <strong>Why</strong>
