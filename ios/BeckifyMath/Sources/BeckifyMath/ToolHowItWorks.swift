@@ -82,6 +82,7 @@ public enum ToolHowItWorksCatalog {
                 "The 3% and 5% figures are informational design guidance for this run—not a combined feeder-and-branch limit.",
                 "For long 480 V NEC runs at 2 AWG and larger, the calculation includes resistance and reactance from Tables 8 and 9.",
                 "AS/NZS uses mm², IEC 60228 maximum resistance, and its stated 5% installation limit. It does not check ampacity.",
+                "After Calculate, Share link posts this snapshot and the name you type, then opens the share sheet. Copy and Jobs stay on this device.",
             ]
         ),
         "conduitFill": ToolHowItWorks(
@@ -92,6 +93,7 @@ public enum ToolHowItWorksCatalog {
                 "Compact or XHHW uses that insulation’s Table 5, not the THHN column. The cross-section is a sketch, not a pull check.",
                 "Count EGC adds the Table 250.122 conductor to fill. The EGC is not a current-carrying conductor.",
                 "AS/NZS shows Appendix C C6.2 (50/33/40) as guidance. The pass/fail row stays NEC Table 1. Metric bores are not listed.",
+                "After Calculate, Share link posts this snapshot and the name you type, then opens the share sheet. Copy and Jobs stay on this device.",
             ]
         ),
         "cableLadder": ToolHowItWorks(

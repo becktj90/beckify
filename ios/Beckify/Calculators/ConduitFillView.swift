@@ -215,6 +215,7 @@ struct ConduitFillView: View {
                 }
                 EquipmentGroundingCard(recommendation: displayedEGC, countedInFill: displayedEGC == nil ? nil : egcCounted)
                 .opacity(session.isStale ? 0.72 : 1)
+                ContractorShareBar(tool: .conduitFill, fields: shareFields(r), enabled: !session.isStale)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                     jobs.save(SavedJob(
                         name: jobName,
@@ -429,6 +430,25 @@ struct ConduitFillView: View {
         let fill = "\(Format.percent(r.actualFillPercent))  ·  \(r.passes ? "PASS" : "FAIL")"
         guard let displayedEGC else { return fill }
         return "\(fill)  ·  EGC \(displayedEGC.label)"
+    }
+
+    private func shareFields(_ r: ConduitFillResult) -> [ContractorShareField] {
+        var rows = [
+            ContractorShareField(label: "Raceway", value: r.raceway.displayName),
+            ContractorShareField(label: "Trade size", value: "\(trade)\""),
+            ContractorShareField(label: "Conductors", value: "\(r.conductorCount)"),
+            ContractorShareField(label: "Wire area", value: "\(Format.number(r.totalWireArea, digits: 4)) in²"),
+            ContractorShareField(label: "Table 1 limit", value: Format.percent(r.maxFillPercent)),
+            ContractorShareField(label: "Actual fill", value: Format.percent(r.actualFillPercent)),
+            ContractorShareField(label: "Status", value: r.passes ? "PASS" : "FAIL"),
+        ]
+        if let displayedEGC {
+            rows.append(ContractorShareField(label: "Minimum EGC", value: "\(displayedEGC.label) \(displayedEGC.material.displayName)"))
+        }
+        if let sug = r.suggestedTradeSize {
+            rows.append(ContractorShareField(label: "Minimum trade", value: "\(sug)\""))
+        }
+        return rows
     }
 
     private var copyText: String? {

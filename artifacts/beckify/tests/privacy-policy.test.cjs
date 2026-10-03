@@ -26,13 +26,14 @@ ok("policy URL is https://beckify.com/privacy", /https:\/\/beckify.com\/privacy/
 ok("nutrition label documents Look Check photo upload", /Analyze Look/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd));
 ok("Look Check posts to api.beckify.com, not GitHub Pages", /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyMd) && /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyPage) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyMd) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyPage));
 ok("sensors and Saved Jobs stay on device", /Saved Jobs stay on the device/.test(privacyMd));
+ok("hosted share is user-initiated", /api\/share/.test(privacyMd) && /Nothing is sent until you tap Share/.test(privacyMd) && /Hosted calculation link/.test(privacyPage));
 ok("no analytics, ads, tracking, or accounts", /No analytics/.test(privacyMd) && /No ads/.test(privacyMd) && /no tracking/.test(privacyMd) && /No user accounts/.test(privacyMd));
 ok("permissions only when tools are used", /only when the related tool is used/.test(privacyMd));
 ok("Wi-Fi uses public 0–1 signalStrength, not dBm", /signalStrength/.test(privacyMd) && /does \*\*not\*\* give third-party apps Wi-Fi RSSI in dBm/.test(privacyMd));
 ok("App Store listing URL is https://beckify.com/privacy", /\*\*Privacy Policy URL:\*\* https:\/\/beckify.com\/privacy/.test(appStoreMd));
 ok("Apple Developer Program noted as signed up on 2026-09-02", /2026-09-02/.test(appStoreMd) && /Apple Developer Program/.test(appStoreMd));
 ok("remaining Mac steps still listed", /Archive in Xcode/.test(appStoreMd) && /Attach screenshots/.test(appStoreMd) && /set \*\*Team\*\*/.test(appStoreMd) && /Create the app record/.test(appStoreMd));
-ok("bundle ID, name, devices, price, age stay honest", /com\.beckify\.toolbox/.test(appStoreMd) && /\*\*Name:\*\* Beckify/.test(appStoreMd) && /iPhone and iPad/.test(appStoreMd) && /no in-app purchases, no ads/.test(appStoreMd) && /4\+/.test(appStoreMd));
+ok("bundle ID, name, devices, price, age stay honest", /com\.beckify\.toolbox/.test(appStoreMd) && /\*\*Name:\*\* Beckify/.test(appStoreMd) && /iPhone and iPad/.test(appStoreMd) && /Free to use, no ads/.test(appStoreMd) && /Optional tips in Settings are in-app purchases/.test(appStoreMd) && /Calculators are not paywalled/.test(appStoreMd) && /4\+/.test(appStoreMd));
 ok("support and marketing URLs are beckify.com", /\*\*Support URL:\*\* https:\/\/beckify.com/.test(appStoreMd) && /\*\*Marketing URL:\*\* https:\/\/beckify.com/.test(appStoreMd));
 ok("React privacy page is a live policy", /Analyze Look/.test(privacyPage) && /com.beckify.toolbox/.test(privacyPage) && !/not published/.test(privacyPage));
 ok("Kestrel Heavy standalone iOS app is on the public privacy page", /com\.beckify\.kestrelheavy/.test(privacyPage) && /does not collect/.test(privacyPage) && /\/games\/kestrel-heavy/.test(privacyPage));

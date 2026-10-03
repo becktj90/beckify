@@ -20,6 +20,7 @@ const KestrelHeavyPage = lazy(() => import("@/pages/kestrel-heavy"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const HondaXR650RPage = lazy(() => import("@/pages/honda-xr650r"));
 const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
+const SharePage = lazy(() => import("@/pages/share"));
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,8 @@ function Router() {
         <Route path="/games/new-glenn-runner/">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
         <Route path="/sitemap" component={SiteMapPage} />
         <Route path="/sitemap/" component={SiteMapPage} />
+        <Route path="/share/:token" component={SharePage} />
+        <Route path="/share/:token/" component={SharePage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
