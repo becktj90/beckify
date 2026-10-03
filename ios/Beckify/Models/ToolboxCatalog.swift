@@ -734,7 +734,7 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Crew Talk",
-            subtitle: "Bodie, Tito, Junie, Pearl, or Sloane rewrite the line. 16-bit sprite stays up.",
+            subtitle: "Bodie, Tito, Junie, Pearl, or Sloane. The person, the line, and Speak.",
             symbol: "character.bubble",
             synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "junie"]
         ),

@@ -29,6 +29,17 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         }
     }
 
+    /// First name for 44 pt crew chips (not truncated full names).
+    public var firstName: String {
+        switch self {
+        case .bodieHale: return "Bodie"
+        case .titoSolano: return "Tito"
+        case .juniePell: return "Junie"
+        case .pearl: return "Pearl"
+        case .sloaneMerritt: return "Sloane"
+        }
+    }
+
     /// ElevenLabs voice id. Case-sensitive. Not an OpenAI voice name.
     public var voiceID: String {
         switch self {
@@ -449,18 +460,20 @@ public enum SpanishTranslatorAPI {
         voiceMode: SpanishVoiceMode = .jobsite,
         voice: String? = nil,
         format: String = "mp3",
-        language: String = "es",
+        language: String = "",
         delivery: String? = nil,
         crew: CrewTalkMember? = nil
     ) -> [String: Any] {
         if let crew {
+            var resolvedLanguage = language.trimmingCharacters(in: .whitespacesAndNewlines)
+            if resolvedLanguage.isEmpty { resolvedLanguage = crew.speakLanguage }
             var body: [String: Any] = [
                 "task": "speak",
                 "text": text,
                 "voice": crew.voiceID,
                 "model": CrewTalkMember.speakModel,
                 "format": format,
-                "language": crew.speakLanguage,
+                "language": resolvedLanguage,
                 "voiceMode": voiceMode.apiValue,
                 "mode": voiceMode.apiValue,
             ]
@@ -508,7 +521,7 @@ public enum SpanishTranslatorAPI {
         voiceMode: SpanishVoiceMode = .jobsite,
         voice: String? = nil,
         format: String = "mp3",
-        language: String = "es",
+        language: String = "",
         delivery: String? = nil,
         crew: CrewTalkMember? = nil
     ) throws -> Data {
@@ -990,8 +1003,8 @@ public enum SpanishTranslatorAPI {
         return register + " Who speaks is the person you pick."
     }
 
-    /// Line the selected person should say. Every voice rewrites the wording.
-    /// English crew uses the English line (or the fallback). Tito rewrites into jobsite Spanish.
+    /// Dialect flavor for the selected person. Not the dock Speak string.
+    /// English crew rewrites English. Tito rewrites into jobsite Spanish.
     public static func lineForCrew(
         crew: CrewTalkMember,
         english: String,
@@ -1014,6 +1027,58 @@ public enum SpanishTranslatorAPI {
             source = spanishLine
         }
         return CrewDialectRewrite.rewrite(crew: crew, raw: source)
+    }
+
+    /// Dock Speak string: the other language for the active direction.
+    /// Tito's Cuban rewrite is the Spanish result. Bodie/Junie/Pearl/Sloane show
+    /// the translated other-language line (not their English dialect).
+    public static func spokenAnswerForDock(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
+        let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
+        let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+        if crew == .titoSolano {
+            return lineForCrew(crew: crew, english: englishLine, spanish: spanishLine, fallback: fallbackLine)
+        }
+        if direction.listensInSpanish {
+            if !englishLine.isEmpty { return englishLine }
+            if !fallbackLine.isEmpty { return fallbackLine }
+            return spanishLine
+        }
+        if !spanishLine.isEmpty { return spanishLine }
+        if !fallbackLine.isEmpty { return fallbackLine }
+        return englishLine
+    }
+
+    /// Short dialect flavor under the dock answer. Empty for Tito (rewrite is the answer).
+    public static func dialectHelperLine(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
+        if crew == .titoSolano { return "" }
+        let flavor = lineForCrew(crew: crew, english: english, spanish: spanish, fallback: fallback)
+        let spoken = spokenAnswerForDock(
+            crew: crew,
+            direction: direction,
+            english: english,
+            spanish: spanish,
+            fallback: fallback
+        )
+        if flavor.isEmpty || flavor == spoken { return "" }
+        return flavor
+    }
+
+    /// BCP-47 language Speak should use for the dock string.
+    public static func speakLanguageForDirection(_ direction: SpanishTranslateDirection) -> String {
+        direction.targetLanguage.hasPrefix("en") ? "en" : "es"
     }
 
     /// Pearl speaks the same ask in warm, convincing English. She does not scold and does not drop the request.
