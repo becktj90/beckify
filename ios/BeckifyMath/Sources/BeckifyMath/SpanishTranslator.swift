@@ -1065,8 +1065,9 @@ public enum SpanishTranslatorAPI {
     }
 
     /// Dock Speak string: the other language for the active direction.
-    /// Tito's Cuban rewrite is the Spanish result. Bodie/Junie/Pearl/Sloane show
-    /// the translated other-language line (not their English dialect).
+    /// A matching Cuban/Mexican template is the Spanish result. Unmatched Tito
+    /// (empty rewrite, A2) uses the API Spanish, then fallback — never "".
+    /// Bodie/Junie/Pearl/Sloane show the translated other-language line.
     public static func spokenAnswerForDock(
         crew: CrewTalkMember,
         direction: SpanishTranslateDirection,
@@ -1078,7 +1079,10 @@ public enum SpanishTranslatorAPI {
         let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
         if crew.speakLanguage == "es" {
-            return lineForCrew(crew: crew, english: englishLine, spanish: spanishLine, fallback: fallbackLine)
+            let rewrite = lineForCrew(crew: crew, english: englishLine, spanish: spanishLine, fallback: fallbackLine)
+            if !rewrite.isEmpty { return rewrite }
+            if !spanishLine.isEmpty { return spanishLine }
+            return fallbackLine
         }
         if direction.listensInSpanish {
             if !englishLine.isEmpty { return englishLine }
@@ -1146,7 +1150,47 @@ public enum SpanishTranslatorAPI {
             if dockIsRaw && !rewriteIsRaw { return rewrite }
         }
         if !dockTrim.isEmpty { return dockTrim }
+        if !rewrite.isEmpty { return rewrite }
+        // A2: Tito has no template. Speak the API Spanish, else the fallback,
+        // so Speak is not handed "" after a successful translate.
+        if crew.speakLanguage == "es" {
+            let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !spanishLine.isEmpty { return spanishLine }
+            let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !fallbackLine.isEmpty { return fallbackLine }
+        }
         return rewrite
+    }
+
+    /// What to do once a draft is applied. `.speak` leaves `.translating`.
+    /// `.ready` is the empty-text escape so translate cannot stick.
+    public enum FinishSpeak: Equatable, Sendable {
+        case speak(String)
+        case ready
+    }
+
+    /// Prefer the dock/speak line. If that is empty, speak `draftTranslation`.
+    /// If both are empty, finish `.ready` instead of staying in translating.
+    public static func finishSpeakAfterDraft(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        draftTranslation: String
+    ) -> FinishSpeak {
+        var spoken = lineToSpeak(
+            crew: crew,
+            direction: direction,
+            english: english,
+            spanish: spanish,
+            fallback: draftTranslation
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+        if spoken.isEmpty {
+            spoken = draftTranslation.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        spoken = clampSpeakText(spoken)
+        if spoken.isEmpty { return .ready }
+        return .speak(spoken)
     }
 
     /// BCP-47 language for `lineToSpeak`. English rewrites stay English even when

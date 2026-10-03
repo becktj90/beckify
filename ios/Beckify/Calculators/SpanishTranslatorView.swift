@@ -1341,15 +1341,22 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         lastSuccessStatus = successStatus
         statusLabel = successStatus
         pendingOnDeviceSource = ""
-        let spoken = SpanishTranslatorAPI.lineToSpeak(
+        // Empty Tito rewrite must not leave phase on .translating.
+        // Prefer the dock line, then the API translation, else go ready.
+        switch SpanishTranslatorAPI.finishSpeakAfterDraft(
             crew: turnCrew,
             direction: turnDirection,
             english: englishText,
             spanish: spanishText,
-            fallback: draft.translation
-        )
-        let language = turnCrew.speakLanguage
-        speakResult(spoken, preferNeural: true, language: language)
+            draftTranslation: draft.translation
+        ) {
+        case .ready:
+            phase = .ready
+            isPreparingSpeak = false
+            preparingElapsedSeconds = 0
+        case .speak(let spoken):
+            speakResult(spoken, preferNeural: true, language: turnCrew.speakLanguage)
+        }
     }
 
     private var sourceText: String {
@@ -1558,7 +1565,18 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
     private func speakResult(_ text: String, preferNeural: Bool, language: String? = nil) {
         let trimmed = SpanishTranslatorAPI.clampSpeakText(text)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            // Nothing to say after a draft. Exit .translating so the UI cannot hang.
+            if phase == .translating {
+                phase = .ready
+                statusLabel = lastSuccessStatus.isEmpty
+                    ? SpanishTranslatorAPI.statusReady
+                    : lastSuccessStatus
+                isPreparingSpeak = false
+                preparingElapsedSeconds = 0
+            }
+            return
+        }
         allowAppleSpeakFallback = preferNeural
         cancelSpeakPipeline(silence: true)
         // cancelSpeakPipeline already advanced speakGeneration; never reset it downward.
