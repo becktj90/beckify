@@ -20,6 +20,8 @@ struct LookCheckRootView: View {
     @State private var successTick = 0
     @State private var roastPlayer: AVAudioPlayer?
     @State private var roastSpeakTask: Task<Void, Never>?
+    /// Look score (1…10) stays hidden until Cassian finishes — or shows immediately if TTS is skipped.
+    @State private var lookScoreVisible = false
 
     var body: some View {
         NavigationStack {
@@ -78,6 +80,7 @@ struct LookCheckRootView: View {
         .onChange(of: preview) { _, image in
             guard image != nil else { return }
             draft = nil
+            lookScoreVisible = false
             errorMessage = nil
             progress = 0
             status = "Photo is on this device only. Analyze uploads it. Taking or choosing a photo does not."
@@ -281,6 +284,32 @@ struct LookCheckRootView: View {
                 LookCheckRoastCard(draft: draft)
             }
 
+            if lookScoreVisible, draft.showsLookScore, let lookScore = draft.lookScore {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(PhotoLookCheck.lookScoreLabel.uppercased())
+                        .font(.caption.weight(.bold))
+                        .tracking(0.8)
+                        .foregroundStyle(LookTheme.muted)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("\(lookScore)")
+                            .font(.system(size: 48, weight: .bold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(verdictColor(draft.verdict))
+                        Text("/ 10")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(LookTheme.muted)
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(LookTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(LookTheme.border, lineWidth: 1)
+                )
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(PhotoLookCheck.lookScoreLabel) \(lookScore) out of 10")
+            }
+
             if draft.showsMetrics {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(PhotoLookCheck.photoScoresLabel.uppercased())
@@ -387,6 +416,7 @@ struct LookCheckRootView: View {
         photoItem = nil
         preview = nil
         draft = nil
+        lookScoreVisible = false
         errorMessage = nil
         progress = 0
         status = "Ready. Taking or choosing a photo does not upload it."
@@ -420,6 +450,7 @@ struct LookCheckRootView: View {
         busy = true
         errorMessage = nil
         draft = nil
+        lookScoreVisible = false
         progress = 0.16
         status = "Preparing photo…"
         defer { busy = false }
@@ -469,10 +500,15 @@ struct LookCheckRootView: View {
     }
 
     /// Speak the roast only. Declined, no person, and empty text never call /api/speak.
+    /// Look score reveals after playback finishes, or immediately if TTS is skipped (no audio).
     private func speakRoastIfNeeded(_ draft: PhotoLookDraft) {
         stopRoastSpeech()
+        lookScoreVisible = false
         guard PhotoLookCheck.shouldSpeakRoast(draft) else { return }
-        guard let url = PhotoLookCheck.speakURL(customEndpoint: nil) else { return }
+        guard let url = PhotoLookCheck.speakURL(customEndpoint: nil) else {
+            revealLookScoreIfEligible(draft)
+            return
+        }
         let roast = draft.roast
         roastSpeakTask = Task { @MainActor in
             do {
@@ -486,10 +522,22 @@ struct LookCheckRootView: View {
                 player.prepareToPlay()
                 roastPlayer = player
                 _ = player.play()
+                let wait = max(player.duration, 0.05)
+                try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                revealLookScoreIfEligible(draft)
             } catch {
                 // Keep the written roast. Do not fall back to a cartoon device voice.
+                // TTS skipped / no audio → reveal look score immediately when eligible.
+                if !Task.isCancelled {
+                    revealLookScoreIfEligible(draft)
+                }
             }
         }
+    }
+
+    private func revealLookScoreIfEligible(_ draft: PhotoLookDraft) {
+        lookScoreVisible = draft.showsLookScore
     }
 
 }

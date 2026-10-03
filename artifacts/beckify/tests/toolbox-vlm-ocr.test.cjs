@@ -261,6 +261,7 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(lookGood.task, 'look');
   assert.equal(lookGood.verdict, 'looks_good');
   assert.equal(lookGood.score, 88);
+  assert.equal(lookGood.lookScore, 9); // fallback from 88
   assert.equal(lookGood.summary, 'You look sharp in this frame.');
   assert.equal(lookGood.roast, 'Chin up like you billed overtime for that jawline.');
   assert.equal(lookGood.metrics.lighting, 90);
@@ -277,17 +278,28 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(lookDeclined.metrics.lighting, null);
   assert.equal(lookDeclined.metrics.overall, null);
   assert.equal(lookDeclined.roast, '');
+  assert.equal(lookDeclined.lookScore, null);
   const lookRoastAbsent = api.normalizeLookDraft({
     verdict: 'looks_good',
     score: 80,
   });
   assert.equal(lookRoastAbsent.roast, '');
+  assert.equal(lookRoastAbsent.lookScore, null);
   const lookNoPersonRoast = api.normalizeLookDraft({
     verdict: 'no_person',
     score: 55,
     roast: 'nope',
+    lookScore: 4,
   });
   assert.equal(lookNoPersonRoast.roast, '');
+  assert.equal(lookNoPersonRoast.lookScore, null);
+  const lookExplicit = api.normalizeLookDraft({
+    verdict: 'mixed',
+    score: 61,
+    lookScore: 7,
+    roast: 'Lighting said maybe.',
+  });
+  assert.equal(lookExplicit.lookScore, 7);
   const lookUnknown = api.analyzePayload({ verdict: 'amazing', score: 200 }, 'look');
   assert.equal(lookUnknown.verdict, 'mixed');
   assert.equal(lookUnknown.score, 100);
@@ -312,11 +324,18 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(html, /id="look-summary"/);
   assert.match(html, /id="look-roast"/);
   assert.match(html, /look-roast-label">Roast</);
+  assert.match(html, /id="look-look-score-wrap"/);
+  assert.match(html, /id="look-look-score"/);
+  assert.match(html, /Look score/);
   assert.match(html, /id="look-metrics"/);
   assert.match(html, /js\/look-check\.js/);
   assert.match(html, /id="tdr_privacy"/);
   const lookJs = fs.readFileSync(path.join(root, 'look-check.js'), 'utf8');
   assert.match(lookJs, /12 \* 1024 \* 1024/);
+  assert.match(lookJs, /lookRevealLookScore/);
+  assert.match(lookJs, /lookScoreVisible/);
+  assert.match(lookJs, /look-look-score/);
+  assert.match(lookJs, /onended/);
   assert.match(lookJs, /does not upload/);
   assert.match(lookJs, /analyzeLook/);
   assert.match(lookJs, /\/api\/analyze-look/);
@@ -369,7 +388,8 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.match(lookPrompt, /parseLookRoastMode/);
   assert.match(lookPrompt, /"mean"/);
   assert.match(lookPrompt, /"nice"/);
-  assert.match(lookPrompt, /several sentences/);
+  assert.match(lookPrompt, /4–6 spoken sentences|several sentences/);
+  assert.match(lookPrompt, /lookScore/);
   assert.match(lookPrompt, /under 18/);
   assert.match(lookPrompt, /No sexual or graphic content/);
   assert.match(lookPrompt, /never hate speech/);

@@ -131,6 +131,8 @@ public struct PhotoLookDraft: Equatable, Sendable {
     public var task: String
     public var verdict: PhotoLookVerdict
     public var score: Int?
+    /// Integer 1…10 look score for this frame. Nil when declined, no person, or empty roast.
+    public var lookScore: Int?
     public var headline: String
     public var summary: String
     public var roast: String
@@ -145,6 +147,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         task: String = PhotoLookCheck.task,
         verdict: PhotoLookVerdict,
         score: Int? = nil,
+        lookScore: Int? = nil,
         headline: String = "",
         summary: String = "",
         roast: String = "",
@@ -158,6 +161,7 @@ public struct PhotoLookDraft: Equatable, Sendable {
         self.task = task
         self.verdict = verdict
         self.score = score
+        self.lookScore = lookScore
         self.headline = headline
         self.summary = summary
         self.roast = roast
@@ -186,10 +190,18 @@ public struct PhotoLookDraft: Equatable, Sendable {
         !roast.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Look score only when there is a non-empty adult roast (and a 1…10 value).
+    public var showsLookScore: Bool {
+        showsRoast && lookScore != nil
+    }
+
     public var copyLine: String {
         var parts = ["Look Check: \(verdict.badge)"]
         if showsScore, let score {
             parts.append("score \(score)")
+        }
+        if showsLookScore, let lookScore {
+            parts.append("look score \(lookScore)")
         }
         let head = displayHeadline.trimmingCharacters(in: .whitespacesAndNewlines)
         if !head.isEmpty { parts.append(head) }
@@ -200,8 +212,11 @@ public struct PhotoLookDraft: Equatable, Sendable {
 
     public var shareCardText: String {
         var lines = ["Look Check · \(verdict.badge)"]
+        if showsLookScore, let lookScore {
+            lines.append("Look score \(lookScore)/10")
+        }
         if showsScore, let score {
-            lines.append("Score \(score)")
+            lines.append("Photo assessment \(score)")
         }
         let head = displayHeadline.trimmingCharacters(in: .whitespacesAndNewlines)
         if !head.isEmpty { lines.append(head) }
@@ -237,6 +252,7 @@ public enum PhotoLookCheck {
         "Honest photo feedback. You might get hyped. You might get roasted."
     public static let photoScoresLabel = "Photo scores"
     public static let photoAssessmentLabel = "Photo assessment"
+    public static let lookScoreLabel = "Look score"
     public static let standaloneBundleID = "com.beckify.lookcheck"
     public static let standaloneDisplayName = "Look Check"
 
@@ -356,6 +372,32 @@ public enum PhotoLookCheck {
         Int((min(100, max(0, n))).rounded())
     }
 
+    /// Clamp a look score to 1…10.
+    public static func asTenLookScore(_ value: Any?) -> Int? {
+        guard let value else { return nil }
+        if value is NSNull { return nil }
+        if let s = value as? String {
+            let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { return nil }
+            guard let n = Double(trimmed), n.isFinite else { return nil }
+            return clampTenLookScore(n)
+        }
+        if let n = value as? Int { return clampTenLookScore(Double(n)) }
+        if let n = value as? Double, n.isFinite { return clampTenLookScore(n) }
+        if let n = value as? NSNumber { return clampTenLookScore(n.doubleValue) }
+        return nil
+    }
+
+    public static func clampTenLookScore(_ n: Double) -> Int {
+        Int((min(10, max(1, n))).rounded())
+    }
+
+    /// Fallback when the API omits lookScore: map photo assessment 0…100 → 1…10.
+    public static func lookScoreFromPhotoScore(_ score: Int?) -> Int? {
+        guard let score else { return nil }
+        return clampTenLookScore(Double(score) / 10.0)
+    }
+
     public static func parseVerdict(_ raw: String?) -> PhotoLookVerdict {
         let folded = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return PhotoLookVerdict(rawValue: folded) ?? .mixed
@@ -389,10 +431,20 @@ public enum PhotoLookCheck {
             )
         )
 
+        // lookScore only when there is a roast. Assessment field preferred; photo score fallback.
+        var lookScore: Int? = nil
+        if !roast.isEmpty {
+            lookScore = asTenLookScore(object["lookScore"] ?? object["look_score"])
+            if lookScore == nil {
+                lookScore = lookScoreFromPhotoScore(score)
+            }
+        }
+
         return PhotoLookDraft(
             task: task,
             verdict: verdict,
             score: score,
+            lookScore: lookScore,
             headline: stringValue(object["headline"]) ?? "",
             summary: summary.trimmingCharacters(in: .whitespacesAndNewlines),
             roast: roast,

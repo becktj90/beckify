@@ -35,5 +35,7 @@ assert.match(lookPrompt, /No threats/);
 assert.match(lookPrompt, /No sexual or graphic content/);
 assert.match(lookPrompt, /under 18/);
 assert.match(lookPrompt, /declined or no_person/);
+assert.match(lookPrompt, /lookScore/);
+assert.match(lookPrompt, /Do not mention lookScore/);
 
 console.log('look-check-speak.test.cjs: ok');

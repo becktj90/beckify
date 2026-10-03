@@ -349,6 +349,19 @@
     return Math.max(0, Math.min(100, Math.round(n)));
   }
 
+  function asTenLookScore(value) {
+    if (value == null || value === '') return null;
+    if (typeof value === 'string' && !String(value).trim()) return null;
+    var n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(1, Math.min(10, Math.round(n)));
+  }
+
+  function lookScoreFromPhotoScore(score) {
+    if (score == null) return null;
+    return Math.max(1, Math.min(10, Math.round(score / 10)));
+  }
+
   function normalizeLookMetrics(raw, overallScore, verdict) {
     var src = raw && typeof raw === 'object' ? (raw.metrics || raw) : {};
     var metrics = {
@@ -380,13 +393,20 @@
     if (verdict === 'declined') score = null;
     var summary = String((raw && (raw.summary || raw.brief)) || '').trim();
     if (verdict === 'declined' && !summary) summary = String((raw && raw.headline) || '').trim();
+    var roast = normalizeLookRoast(raw, verdict);
+    var lookScore = null;
+    if (roast) {
+      lookScore = asTenLookScore(raw && (raw.lookScore != null ? raw.lookScore : raw.look_score));
+      if (lookScore == null) lookScore = lookScoreFromPhotoScore(score);
+    }
     return {
       task: TASK_LOOK,
       verdict: verdict,
       score: score,
+      lookScore: lookScore,
       headline: String((raw && raw.headline) || ''),
       summary: summary,
-      roast: normalizeLookRoast(raw, verdict),
+      roast: roast,
       metrics: normalizeLookMetrics(raw, score, verdict),
       reasons: Array.isArray(raw && raw.reasons) ? raw.reasons.map(String) : [],
       fixes: Array.isArray(raw && raw.fixes) ? raw.fixes.map(String) : [],
@@ -641,6 +661,8 @@
     normalizeLookDraft: normalizeLookDraft,
     normalizeLookRoast: normalizeLookRoast,
     asLookScore: asLookScore,
+    asTenLookScore: asTenLookScore,
+    lookScoreFromPhotoScore: lookScoreFromPhotoScore,
     extractJsonObject: extractJsonObject,
     safeExtractJsonObject: safeExtractJsonObject,
     formatVisionError: formatVisionError,

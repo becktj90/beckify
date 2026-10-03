@@ -32,6 +32,9 @@ assert.match(prompt, /filthy-sweet/);
 assert.match(prompt, /No slurs/);
 assert.match(prompt, /No threats/);
 assert.match(prompt, /Do not print a mode name/);
+assert.match(prompt, /lookScore/);
+assert.match(prompt, /1\.\.10|1–10/);
+assert.match(prompt, /Do not mention lookScore/);
 
 assert.match(route, /resolveLookRoastMode\(body\.roastMode/);
 assert.match(route, /roastMode,/);
@@ -54,9 +57,14 @@ Function('exports', 'module', 'require', transpiled)(promptModule.exports, promp
 const {
   resolveLookRoastMode,
   mergeLookAssessmentWithComedy,
+  asTenLookScore,
+  lookScoreFromPhotoScore,
   LOOK_ASSESSMENT_TEMPERATURE,
   LOOK_COMEDY_TEMPERATURE,
 } = promptModule.exports;
+assert.equal(asTenLookScore(7.4), 7);
+assert.equal(asTenLookScore(0), 1);
+assert.equal(lookScoreFromPhotoScore(88), 9);
 
 assert.equal(LOOK_ASSESSMENT_TEMPERATURE, 0);
 assert.ok(LOOK_COMEDY_TEMPERATURE > 0 && LOOK_COMEDY_TEMPERATURE < 1.05);
@@ -72,6 +80,7 @@ const merged = mergeLookAssessmentWithComedy(
   {
     verdict: 'looks_good',
     score: 91,
+    lookScore: 8,
     headline: 'Strong frame.',
     summary: 'Light and framing work.',
     roast: 'IGNORED ASSESSMENT ROAST',
@@ -81,22 +90,37 @@ const merged = mergeLookAssessmentWithComedy(
     photo_notes: ['Phone JPEG'],
     warnings: [],
   },
-  { roast: 'This fit is committing vehicular manslaughter on blandness, you absolute menace.', score: 1, verdict: 'looks_bad' },
+  { roast: 'This fit is committing vehicular manslaughter on blandness, you absolute menace.', score: 1, verdict: 'looks_bad', lookScore: 1 },
 );
 
 assert.equal(merged.verdict, 'looks_good');
 assert.equal(merged.score, 91);
+assert.equal(merged.lookScore, 8); // comedy lookScore ignored
 assert.equal(merged.metrics.outfit, 70);
 assert.equal(merged.metrics.lighting, 90);
 assert.match(merged.roast, /vehicular manslaughter/);
 assert.deepEqual(merged.fixes, ['Step one foot left', 'Chin slightly down']);
 
 const declined = mergeLookAssessmentWithComedy(
-  { verdict: 'declined', score: 50, metrics: { lighting: 10 }, roast: 'nope' },
+  { verdict: 'declined', score: 50, lookScore: 9, metrics: { lighting: 10 }, roast: 'nope' },
   { roast: 'should clear' },
 );
 assert.equal(declined.roast, '');
 assert.equal(declined.score, null);
+assert.equal(declined.lookScore, null);
 assert.equal(declined.metrics.lighting, null);
+
+const emptyRoast = mergeLookAssessmentWithComedy(
+  { verdict: 'looks_good', score: 80, lookScore: 7 },
+  { roast: '   ' },
+);
+assert.equal(emptyRoast.roast, '');
+assert.equal(emptyRoast.lookScore, null);
+
+const fallback = mergeLookAssessmentWithComedy(
+  { verdict: 'mixed', score: 61 },
+  { roast: 'Lighting said maybe.' },
+);
+assert.equal(fallback.lookScore, 6); // 61 → 6
 
 console.log('look roast-mode prompt + route + merge contract passed');

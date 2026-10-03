@@ -33,6 +33,8 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertEqual(draft.task, "look")
         XCTAssertEqual(draft.verdict, .looksGood)
         XCTAssertEqual(draft.score, 88)
+        XCTAssertEqual(draft.lookScore, 9) // fallback from photo score 88 → 1…10
+        XCTAssertTrue(draft.showsLookScore)
         XCTAssertEqual(draft.summary, "You look sharp in this frame.")
         XCTAssertEqual(draft.roast, "Chin up like you billed overtime for that jawline.")
         XCTAssertTrue(draft.showsRoast)
@@ -68,16 +70,32 @@ final class PhotoLookCheckTests: XCTestCase {
         let declined = PhotoLookCheck.normalizeDraft([
             "verdict": "declined",
             "roast": "should be stripped",
+            "lookScore": 7,
         ] as [String: Any])
         XCTAssertEqual(declined.roast, "")
         XCTAssertFalse(declined.showsRoast)
+        XCTAssertNil(declined.lookScore)
+        XCTAssertFalse(declined.showsLookScore)
 
         let noPerson = PhotoLookCheck.normalizeDraft([
             "verdict": "no_person",
             "roast": "nope",
+            "lookScore": 5,
         ] as [String: Any])
         XCTAssertEqual(noPerson.roast, "")
         XCTAssertFalse(noPerson.showsRoast)
+        XCTAssertNil(noPerson.lookScore)
+        XCTAssertFalse(noPerson.showsLookScore)
+
+        let emptyRoast = PhotoLookCheck.normalizeDraft([
+            "verdict": "looks_good",
+            "score": 80,
+            "lookScore": 8,
+            "roast": "   ",
+        ] as [String: Any])
+        XCTAssertEqual(emptyRoast.roast, "")
+        XCTAssertNil(emptyRoast.lookScore)
+        XCTAssertFalse(emptyRoast.showsLookScore)
     }
 
     func testNormalizeWrappedAnalysisPayload() throws {
@@ -229,9 +247,10 @@ final class PhotoLookCheckTests: XCTestCase {
             ],
         ] as [String: Any])
         XCTAssertEqual(wrapped.roastMode, .mean)
+        XCTAssertEqual(wrapped.lookScore, 8)
         XCTAssertEqual(
             wrapped.copyLine,
-            "Look Check: Looks good · score 80 · Sharp · Roast: That jawline filed overtime and still asked for a bonus. The shirt is trying. The angle is winning."
+            "Look Check: Looks good · score 80 · look score 8 · Sharp · Roast: That jawline filed overtime and still asked for a bonus. The shirt is trying. The angle is winning."
         )
         XCTAssertFalse(wrapped.copyLine.contains("Mean"))
         XCTAssertFalse(wrapped.copyLine.contains("Nice"))
@@ -239,7 +258,8 @@ final class PhotoLookCheckTests: XCTestCase {
             wrapped.shareCardText,
             """
             Look Check · Looks good
-            Score 80
+            Look score 8/10
+            Photo assessment 80
             Sharp
             Light is doing you a favor.
 
@@ -374,6 +394,26 @@ final class PhotoLookCheckTests: XCTestCase {
         XCTAssertTrue(v.copyLine.contains("Online / Captive: No captive portal"))
         XCTAssertFalse(v.copyLine.localizedCaseInsensitiveContains("Look Check"))
     }
+    func testLookScoreTenClampAndOnlyWithRoast() {
+        XCTAssertEqual(PhotoLookCheck.lookScoreLabel, "Look score")
+        XCTAssertEqual(PhotoLookCheck.asTenLookScore(7.4), 7)
+        XCTAssertEqual(PhotoLookCheck.asTenLookScore(0), 1)
+        XCTAssertEqual(PhotoLookCheck.asTenLookScore(99), 10)
+        XCTAssertEqual(PhotoLookCheck.lookScoreFromPhotoScore(88), 9)
+        XCTAssertNil(PhotoLookCheck.lookScoreFromPhotoScore(nil))
+
+        let explicit = PhotoLookCheck.normalizeDraft([
+            "verdict": "looks_good",
+            "score": 50,
+            "lookScore": 7,
+            "roast": "This lighting is a crime scene.",
+        ] as [String: Any])
+        XCTAssertEqual(explicit.lookScore, 7)
+        XCTAssertTrue(explicit.showsLookScore)
+        XCTAssertFalse(explicit.copyLine.contains("Mean"))
+        XCTAssertFalse(explicit.copyLine.contains("Nice"))
+    }
+
     func testRoastSpeechSkipsDeclinedAndUsesCassian() throws {
         XCTAssertEqual(PhotoLookCheck.roastVoiceID, "uYsaRSYDSuxmtyipO9Qt")
         XCTAssertEqual(PhotoLookCheck.roastSpeakModel, "eleven_v3")
@@ -399,6 +439,7 @@ final class PhotoLookCheckTests: XCTestCase {
         let blob = ([how?.summary, how?.context].compactMap { $0 } + (how?.bullets ?? [])).joined(separator: " ")
         XCTAssertFalse(blob.localizedCaseInsensitiveContains("fuck"))
         XCTAssertTrue(blob.contains("/api/speak"))
+        XCTAssertFalse(blob.localizedCaseInsensitiveContains("look score"))
     }
 }
 
