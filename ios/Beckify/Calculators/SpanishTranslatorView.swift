@@ -477,7 +477,8 @@ struct SpanishTranslatorView: View {
     }
 
     /// Selected helper. Stays pinned while the rest of the tool scrolls.
-    /// Idle sprite until playback; idle/talk swap plus a small bob while audio plays.
+    /// Idle sprite until playback. While audio plays, the talk pose flashes
+    /// on a short syllable beat and the body bobs a little.
     private var crewHelperBar: some View {
         VStack(alignment: .leading, spacing: 8) {
             CrewTalkSprite(crew: crew, isTalking: engine.phase == .playing)
@@ -503,20 +504,34 @@ struct SpanishTranslatorView: View {
     }
 
 
-/// Full-body 16-bit helper. Two frames only, nearest-neighbor so pixels stay crisp.
+/// Full-body 16-bit helper. Two existing frames, nearest-neighbor so pixels stay crisp.
+/// Talk is a syllable beat (idle held longer than the talk pose), not a 150 ms hard swap.
+/// The bob is a small continuous offset, independent of the frame cut.
 private struct CrewTalkSprite: View {
     let crew: CrewTalkMember
     let isTalking: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One beat. Longer than a display frame so a timeline tick cannot skip the pose.
+    private static let beat: TimeInterval = 0.10
+    /// Closed, closed, open, closed, closed, open, closed, open.
+    private static let mouthOpenOnBeat: [Bool] = [false, false, true, false, false, true, false, true]
+    /// Gentle whole-sprite bob. Not locked to the mouth, and much smaller than the old 5 pt jump.
+    private static let bobPeriod: TimeInterval = 0.70
+    private static let bobAmplitude: CGFloat = 1.25
+
     var body: some View {
         Group {
-            if isTalking {
-                TimelineView(.animation(minimumInterval: 0.15, paused: false)) { context in
-                    let tick = Int(context.date.timeIntervalSinceReferenceDate / 0.15)
-                    frame(mouthOpen: tick % 2 == 1)
+            if isTalking, !reduceMotion {
+                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    let beatIndex = Int(t / Self.beat) % Self.mouthOpenOnBeat.count
+                    let bob = CGFloat(sin(t * (2 * .pi) / Self.bobPeriod)) * Self.bobAmplitude
+                    frame(mouthOpen: Self.mouthOpenOnBeat[beatIndex], bob: bob)
                 }
             } else {
-                frame(mouthOpen: false)
+                frame(mouthOpen: isTalking, bob: 0)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -524,15 +539,18 @@ private struct CrewTalkSprite: View {
         .accessibilityLabel(isTalking ? "\(crew.displayName), talking" : crew.displayName)
     }
 
-    private func frame(mouthOpen: Bool) -> some View {
+    private func frame(mouthOpen: Bool, bob: CGFloat) -> some View {
         Image(mouthOpen ? crew.talkAssetName : crew.portraitAssetName)
             .interpolation(.none)
             .resizable()
             .scaledToFit()
             .frame(maxWidth: .infinity)
             .frame(height: 220)
-            .offset(y: mouthOpen ? -5 : 0)
-            .animation(.linear(duration: 0.12), value: mouthOpen)
+            .offset(y: bob)
+            // Instant cut. A linear animation on the frame smears two poses and fights nearest-neighbor.
+            .transaction { transaction in
+                transaction.animation = nil
+            }
     }
 }
 
