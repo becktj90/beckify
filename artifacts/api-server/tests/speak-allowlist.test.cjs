@@ -16,6 +16,7 @@ const CREW = {
   juniePell: "tdK8noxHGTBqk6F18tbZ",
   pearl: "xDnrPZyqSbomyfOcnNpu",
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
+  lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",
 };
 const CASSIAN = "uYsaRSYDSuxmtyipO9Qt";
 const BODIE_SETTINGS = {
@@ -206,6 +207,11 @@ async function main() {
     const tito = await speakEleven(port, CREW.titoSolano);
     assert.equal(tito.voice_settings, undefined);
     assert.equal(tito.seed, undefined);
+
+    const lupita = await speakEleven(port, CREW.lupitaReyes);
+    assert.equal(lupita.voice_settings, undefined);
+    assert.equal(lupita.seed, undefined);
+    assert.equal(calls[calls.length - 1].url.includes(CREW.lupitaReyes), true);
 
     const junie = await speakEleven(port, CREW.juniePell);
     assert.deepEqual(junie.voice_settings, JUNIE_SETTINGS);

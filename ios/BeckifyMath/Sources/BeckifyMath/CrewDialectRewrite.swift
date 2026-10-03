@@ -9,6 +9,7 @@ enum CrewDialectRewrite {
         switch crew {
         case .bodieHale: return bodie(raw)
         case .titoSolano: return tito(raw)
+        case .lupitaReyes: return lupita(raw)
         case .juniePell: return junie(raw)
         case .pearl: return pearl(raw)
         case .sloaneMerritt: return sloane(raw)
@@ -245,11 +246,11 @@ enum CrewDialectRewrite {
         case .head:
             line = "Duuude, mind your head up there, okay. For real. [exhales] Easy does it, man."
         case .wire:
-            line = "We're, like, light on wire, maaan. Let's grab a little more. Easy does it."
+            line = "Duuude, grab more wire, maaan. Easy does it, for real."
         case .mess:
             line = "Whoa, this mess got away from us, man. [giggles] Let's tidy it and we're golden."
         case .feeder:
-            line = "Duuude, let's land that feeder before lunch, okay. For real. Then we're golden, man."
+            line = "Duuude, get that feeder set before the lunch bell, okay. For real. Then we're golden, man."
         case .breaker:
             line = "Duuude, that breaker stays put, okay. For real. [chuckles] Then we're golden, man."
         case .racks:
@@ -259,9 +260,52 @@ enum CrewDialectRewrite {
         case .compliment:
             line = "Whoa, look at you, man — you're, like, a natural. [laughs] Heh-heh. Totally."
         case .greeting:
-            line = "Heeey, good to see you out here, man. Totally."
+            line = "Heyyy, good to see you out here, man. Totally."
         case .free:
             line = "Okay okay, so let's handle \(voicedWords(cleaned)), maaan. [giggles] Easy does it."
+        case nil:
+            line = fallback
+        }
+        return guarded(line, raw: trimmed, fallback: fallback)
+    }
+
+    // MARK: - Lupita
+
+    /// Mexican Spanish, Jalisco and Mexico City. Diminutives and light asides.
+    /// No heavy profanity, no caricature spelling, no real person.
+    static func lupita(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let cleaned = scrub(trimmed)
+        let line: String
+        let fallback = "Órale, dime eso otra vez, despacito, y lo vemos juntos."
+        switch CrewRewriteGuard.intent(trimmed) {
+        case .cutPower:
+            line = "Chin, corta la corriente primero. No manches, luego quedamos tranquilos."
+        case .conduit:
+            line = "Pásame ese conduit, ahorita, un ladito más cerca."
+        case .ladder:
+            line = "Mueve esa escalera un poquito, despacito, y déjala firme."
+        case .head:
+            line = "Cuidado con la cabeza, chin. Despacito ahí arriba."
+        case .wire:
+            line = "Nos falta un poquito de cable. Tráeme más alambre, ahorita."
+        case .mess:
+            line = "Chin, este desorden se nos fue. Lo acomodamos juntitos y quedamos en paz."
+        case .feeder:
+            line = "Hay que aterrizar ese alimentador antes del almuerzo, despacito."
+        case .breaker:
+            line = "Deja ese breaker quieto, chin. Ahorita no lo toques."
+        case .racks:
+            line = "Esos racks piden una limpiadita, órale. Los dejamos bonitos."
+        case .hold:
+            line = "Sostén esto un momentito, despacito. Ahí mero."
+        case .compliment:
+            line = "Mira nada más, lo haces muy bonito. Eres un naturalito, chin."
+        case .greeting:
+            line = "Hola, qué gusto verte. Aquí andamos, despacito."
+        case .free:
+            line = "Órale, vamos con \(voicedWords(cleaned)), despacito."
         case nil:
             line = fallback
         }

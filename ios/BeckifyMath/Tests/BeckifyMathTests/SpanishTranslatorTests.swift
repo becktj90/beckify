@@ -529,12 +529,20 @@ final class SpanishTranslatorTests: XCTestCase {
 
 
     func testCrewTalkMembersAndSpeakBody() throws {
-        XCTAssertEqual(CrewTalkMember.allCases.count, 5)
+        XCTAssertEqual(CrewTalkMember.allCases.count, 6)
         XCTAssertEqual(CrewTalkMember.parse(nil), .titoSolano)
         XCTAssertEqual(CrewTalkMember.parse("bodie"), .bodieHale)
         XCTAssertEqual(CrewTalkMember.parse("Junie Pell"), .juniePell)
         XCTAssertEqual(CrewTalkMember.bodieHale.voiceID, "XVO6RhOYU9ZEKHFXrx6b")
         XCTAssertEqual(CrewTalkMember.titoSolano.voiceID, "goyf4sY4AqSvMIeO1hb5")
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.voiceID, "iGXRQ0smdhSFlb6iV1Pr")
+        XCTAssertTrue(CrewTalkMember.lupitaReyes.isReleased)
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.speakLanguage, "es")
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.portraitAssetName, "crewLupitaReyes")
+        XCTAssertEqual(CrewTalkMember.lupitaReyes.talkAssetName, "crewLupitaReyesTalk")
+        XCTAssertTrue(CrewTalkMember.lupitaReyes.prefersFemaleDeviceVoice)
+        XCTAssertEqual(CrewTalkMember.parse("lupita"), .lupitaReyes)
+
         XCTAssertEqual(CrewTalkMember.juniePell.voiceID, "tdK8noxHGTBqk6F18tbZ")
         XCTAssertEqual(CrewTalkMember.speakModel, "eleven_v3")
         XCTAssertEqual(CrewTalkMember.bodieHale.speakLanguage, "en")
@@ -1033,15 +1041,13 @@ final class SpanishTranslatorTests: XCTestCase {
     }
 
 
-    func testBodieVoiceKeepsTheAskAndStripsLaughTagsForDisplay() {
+    func testBodieVoiceKeepsTheAskAndStripsLaughTagsForDisplay() throws {
         XCTAssertEqual(
             CrewTalkMember.bodieHale.blurb,
             "Laid-back California stoner buddy. Slow, raspy, and always laughing."
         )
         XCTAssertEqual(CrewTalkMember.bodieHale.appleRateFactor, 0.86)
         XCTAssertEqual(CrewTalkMember.bodieHale.applePitchMultiplier, 0.92)
-        let how = ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")
-        XCTAssertTrue(how?.bullets.contains(where: { $0.contains(CrewTalkMember.bodieHale.blurb) }) == true)
 
         let samples: [(String, String)] = [
             ("Kill the power.", "power"),

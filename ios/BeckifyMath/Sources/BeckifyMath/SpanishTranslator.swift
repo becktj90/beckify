@@ -4,6 +4,7 @@ import Foundation
 public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     case bodieHale
     case titoSolano
+    case lupitaReyes
     case juniePell
     case pearl
     /// ElevenLabs seed Cos locked for this voice: 50505. Speak client does not POST seed yet (route has no seed field).
@@ -23,6 +24,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return "Bodie Hale"
         case .titoSolano: return "Tito Solano"
+        case .lupitaReyes: return "Lupita Reyes"
         case .juniePell: return "Junie Pell"
         case .pearl: return "Pearl"
         case .sloaneMerritt: return "Sloane Merritt"
@@ -34,6 +36,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return "Bodie"
         case .titoSolano: return "Tito"
+        case .lupitaReyes: return "Lupita"
         case .juniePell: return "Junie"
         case .pearl: return "Pearl"
         case .sloaneMerritt: return "Sloane"
@@ -45,6 +48,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return "XVO6RhOYU9ZEKHFXrx6b"
         case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
+        case .lupitaReyes: return "iGXRQ0smdhSFlb6iV1Pr"
         case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
         case .pearl: return "xDnrPZyqSbomyfOcnNpu"
         case .sloaneMerritt: return "qMmZtYs7EKOOIm0u211n"
@@ -56,6 +60,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return "crewBodieHale"
         case .titoSolano: return "crewTitoSolano"
+        case .lupitaReyes: return "crewLupitaReyes"
         case .juniePell: return "crewJuniePell"
         case .pearl: return "crewPearl"
         case .sloaneMerritt: return "crewSloaneMerritt"
@@ -67,6 +72,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return "crewBodieHaleTalk"
         case .titoSolano: return "crewTitoSolanoTalk"
+        case .lupitaReyes: return "crewLupitaReyesTalk"
         case .juniePell: return "crewJuniePellTalk"
         case .pearl: return "crewPearlTalk"
         case .sloaneMerritt: return "crewSloaneMerrittTalk"
@@ -77,6 +83,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return "Laid-back California stoner buddy. Slow, raspy, and always laughing."
         case .titoSolano: return "Cuban jobsite Spanish. Raspy, direct, and steady."
+        case .lupitaReyes: return "Mexican Spanish, Jalisco and Mexico City. Warm diminutives, light asides."
         case .juniePell: return "Rural Alabama English. Slow, low, and kind."
         case .pearl: return "Warm English. Softens a blunt ask and still makes it."
         case .sloaneMerritt: return "A polished HR lead who turns a blunt ask into a meeting."
@@ -86,18 +93,29 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     /// Language this person speaks. Tito is Spanish; Bodie and Junie are English.
     public var speakLanguage: String {
         switch self {
-        case .titoSolano: return "es"
+        case .titoSolano, .lupitaReyes: return "es"
         case .bodieHale, .juniePell, .pearl, .sloaneMerritt: return "en"
         }
     }
 
-    public var prefersFemaleDeviceVoice: Bool { self == .juniePell || self == .pearl || self == .sloaneMerritt }
+    /// Shipped crew are on a direction roster. A hidden voice would be false.
+    public var isReleased: Bool {
+        switch self {
+        case .bodieHale, .titoSolano, .lupitaReyes, .juniePell, .pearl, .sloaneMerritt:
+            return true
+        }
+    }
+
+    public var prefersFemaleDeviceVoice: Bool {
+        self == .lupitaReyes || self == .juniePell || self == .pearl || self == .sloaneMerritt
+    }
 
     /// Apple fallback pace. Cloud voice is the real character.
     public var appleRateFactor: Float {
         switch self {
         case .bodieHale: return 0.86
         case .titoSolano: return 0.84
+        case .lupitaReyes: return 0.92
         case .juniePell: return 0.70
         case .pearl: return 0.92
         case .sloaneMerritt: return 0.94
@@ -108,6 +126,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         switch self {
         case .bodieHale: return 0.92
         case .titoSolano: return 0.86
+        case .lupitaReyes: return 1.05
         case .juniePell: return 0.90
         case .pearl: return 1.0
         case .sloaneMerritt: return 1.0
@@ -127,6 +146,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case "pearl": return .pearl
         case "sloanemerritt", "sloane": return .sloaneMerritt
         case "titosolano", "tito": return .titoSolano
+        case "lupitareyes", "lupita": return .lupitaReyes
         default: return .titoSolano
         }
     }
@@ -1030,7 +1050,7 @@ public enum SpanishTranslatorAPI {
         let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
         let source: String
-        if crew == .titoSolano {
+        if crew.speakLanguage == "es" {
             if !englishLine.isEmpty { source = englishLine }
             else if !spanishLine.isEmpty { source = spanishLine }
             else { source = fallbackLine }
@@ -1057,7 +1077,7 @@ public enum SpanishTranslatorAPI {
         let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
         let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
-        if crew == .titoSolano {
+        if crew.speakLanguage == "es" {
             return lineForCrew(crew: crew, english: englishLine, spanish: spanishLine, fallback: fallbackLine)
         }
         if direction.listensInSpanish {
@@ -1078,7 +1098,7 @@ public enum SpanishTranslatorAPI {
         spanish: String,
         fallback: String
     ) -> String {
-        if crew == .titoSolano { return "" }
+        if crew.speakLanguage == "es" { return "" }
         let flavor = lineForCrew(crew: crew, english: english, spanish: spanish, fallback: fallback)
         let spoken = spokenAnswerForDock(
             crew: crew,
@@ -1138,7 +1158,7 @@ public enum SpanishTranslatorAPI {
         spanish: String,
         fallback: String
     ) -> String {
-        if crew == .titoSolano { return "es" }
+        if crew.speakLanguage == "es" { return "es" }
         let line = lineToSpeak(
             crew: crew,
             direction: direction,

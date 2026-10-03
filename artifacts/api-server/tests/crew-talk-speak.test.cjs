@@ -19,6 +19,7 @@ assert.match(speakPrompt, /titoSolano: "goyf4sY4AqSvMIeO1hb5"/);
 assert.match(speakPrompt, /juniePell: "tdK8noxHGTBqk6F18tbZ"/);
 assert.match(speakPrompt, /pearl: "xDnrPZyqSbomyfOcnNpu"/);
 assert.match(speakPrompt, /sloaneMerritt: "qMmZtYs7EKOOIm0u211n"/);
+assert.match(speakPrompt, /lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr"/);
 assert.match(speakPrompt, /shouldUseElevenLabsSpeak/);
 assert.match(speakPrompt, /resolveElevenLabsVoiceId/);
 

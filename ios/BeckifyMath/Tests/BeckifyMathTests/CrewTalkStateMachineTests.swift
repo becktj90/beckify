@@ -308,7 +308,9 @@ final class CrewTalkStateMachineTests: XCTestCase {
     }
 
     func testInvariantI9_crewAlwaysOnTheRoster() {
-        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish), [.titoSolano])
+        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish), [.titoSolano, .lupitaReyes])
+        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish).count, 2)
+        XCTAssertEqual(CrewTalkMember.roster(for: .spanishToEnglish).count, 4)
         XCTAssertEqual(
             CrewTalkMember.roster(for: .spanishToEnglish),
             [.bodieHale, .juniePell, .pearl, .sloaneMerritt]
@@ -320,14 +322,19 @@ final class CrewTalkStateMachineTests: XCTestCase {
         var english = CrewTalkState()
         for member in CrewTalkMember.allCases {
             let result = step(english, .setCrew(member))
-            XCTAssertTrue(CrewTalkMember.roster(for: result.state.direction).contains(result.state.crew))
-            XCTAssertEqual(result.state.crew, .titoSolano)
+            let roster = CrewTalkMember.roster(for: .englishToSpanish)
+            XCTAssertTrue(roster.contains(result.state.crew))
+            if roster.contains(member) {
+                XCTAssertEqual(result.state.crew, member)
+            } else {
+                XCTAssertEqual(result.state.crew, .titoSolano)
+            }
             english = result.state
         }
 
         var spanish = step(CrewTalkState(), .setDirection(.spanishToEnglish)).state
         XCTAssertEqual(spanish.crew, .bodieHale)
-        for member in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt, .titoSolano] {
+        for member in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt, .titoSolano, .lupitaReyes] {
             let result = step(spanish, .setCrew(member))
             let roster = CrewTalkMember.roster(for: .spanishToEnglish)
             XCTAssertTrue(roster.contains(result.state.crew))
@@ -515,7 +522,7 @@ final class CrewTalkStateMachineTests: XCTestCase {
     private func fuzz(seed: UInt64, steps: Int) -> CrewTalkState {
         var rng = LCG(state: seed)
         var state = CrewTalkState()
-        let members: [CrewTalkMember] = [.titoSolano, .bodieHale, .juniePell, .pearl, .sloaneMerritt]
+        let members: [CrewTalkMember] = [.titoSolano, .lupitaReyes, .bodieHale, .juniePell, .pearl, .sloaneMerritt]
         let directions: [SpanishTranslateDirection] = [.englishToSpanish, .spanishToEnglish]
         let auths: [CrewTalkSpeechAuthorization] = [.authorized, .denied, .restricted, .notDetermined]
         let statuses = [0, 200, 204, 401, 404, 408, 429, 500]
