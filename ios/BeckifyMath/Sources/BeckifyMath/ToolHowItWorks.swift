@@ -604,7 +604,8 @@ public enum ToolHowItWorksCatalog {
             context: "Honest photo feedback. You might get hyped. You might get roasted. Photo stays on device until Analyze Look.",
             bullets: [
                 "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
-                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it. A non-empty adult roast is spoken via /api/speak. Declined, no person, and an empty roast stay silent.",
+                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
+                "A non-empty adult roast is spoken via /api/speak. Declined, no person, and an empty roast stay silent.",
             ]
         ),
         "heaterDesign": ToolHowItWorks(
