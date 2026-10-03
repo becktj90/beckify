@@ -698,7 +698,7 @@ final class SpanishTranslatorTests: XCTestCase {
         )
         XCTAssertEqual(
             feeder,
-            "Team, I want to circle back on the feeder. If we align on landing it before lunch, the rest of the floor stays on schedule. I'll piggyback with leadership so they hear it was you, and we can take the rest offline."
+            "Team, I want to circle back on landing the feeder before lunch. I'll piggyback with leadership so they hear it was you."
         )
         XCTAssertTrue(feeder.lowercased().contains("circle back"))
         XCTAssertTrue(feeder.lowercased().contains("piggyback"))
@@ -770,6 +770,147 @@ final class SpanishTranslatorTests: XCTestCase {
             ),
             SpanishTranslatorAPI.sloaneCorporateRewrite("Kill the power.")
         )
+    }
+
+
+
+    func testSpeakRequestBodyLanguageFollowsDirectionNotOnlyCrew() throws {
+        let pearlES = SpanishTranslatorAPI.speakRequestBody(
+            text: "Corta la corriente.",
+            voiceMode: .jobsite,
+            language: "es",
+            crew: .pearl
+        )
+        XCTAssertEqual(pearlES["voice"] as? String, CrewTalkMember.pearl.voiceID)
+        XCTAssertEqual(pearlES["language"] as? String, "es")
+        let pearlDefault = SpanishTranslatorAPI.speakRequestBody(
+            text: "Cut the power.",
+            voiceMode: .clean,
+            crew: .pearl
+        )
+        XCTAssertEqual(pearlDefault["language"] as? String, "en")
+        let titoEN = SpanishTranslatorAPI.speakRequestBody(
+            text: "Cut the power.",
+            voiceMode: .jobsite,
+            language: "en",
+            crew: .titoSolano
+        )
+        XCTAssertEqual(titoEN["language"] as? String, "en")
+        XCTAssertEqual(titoEN["voice"] as? String, CrewTalkMember.titoSolano.voiceID)
+    }
+
+    func testDialectRewriteNoStockOpenerGlueAndRequestSurvives() {
+        let pearl = SpanishTranslatorAPI.pearlWarmRewrite("Hi I need you to clean up all these racks")
+        XCTAssertFalse(pearl.lowercased().contains("would you please hi"))
+        XCTAssertFalse(pearl.lowercased().hasPrefix("would you please hi"))
+        XCTAssertTrue(pearl.lowercased().contains("rack"))
+        XCTAssertTrue(pearl.lowercased().contains("clean"))
+        XCTAssertNotEqual(pearl.lowercased(), "hi i need you to clean up all these racks")
+        XCTAssertNotEqual(
+            pearl.lowercased().replacingOccurrences(of: "?", with: ""),
+            "would you please hi i need you to clean up all these racks"
+        )
+
+        let bodie = SpanishTranslatorAPI.bodieDialectRewrite("Hi I need you to clean up all these racks")
+        XCTAssertFalse(bodie.lowercased().contains("hi i need you"))
+        XCTAssertTrue(bodie.lowercased().contains("rack") || bodie.lowercased().contains("clean"))
+
+        let junie = SpanishTranslatorAPI.junieDialectRewrite("Hi I need you to clean up all these racks")
+        XCTAssertFalse(junie.lowercased().contains("hi i need you"))
+        XCTAssertTrue(junie.lowercased().contains("rack") || junie.lowercased().contains("clean"))
+
+        let tito = SpanishTranslatorAPI.titoDialectRewrite("Hi I need you to clean up all these racks")
+        XCTAssertFalse(tito.lowercased().contains("hi i need"))
+        XCTAssertTrue(tito.lowercased().contains("rack"))
+
+        let sloane = SpanishTranslatorAPI.sloaneCorporateRewrite("Hi I need you to clean up all these racks")
+        XCTAssertFalse(sloane.lowercased().contains("hi i need you to clean up all these racks"))
+        XCTAssertTrue(sloane.lowercased().contains("rack"))
+        // Meeting-speak, two sentences.
+        let sentenceEnds = sloane.filter { ".!?".contains($0) }.count
+        XCTAssertLessThanOrEqual(sentenceEnds, 2)
+        XCTAssertGreaterThanOrEqual(sentenceEnds, 1)
+    }
+
+    func testSloaneMeetingSpeakNoInsultEchoTwoLines() {
+        let hostile = SpanishTranslatorAPI.sloaneCorporateRewrite("Shut up you idiot and kill the damn power.")
+        XCTAssertFalse(hostile.lowercased().contains("idiot"))
+        XCTAssertFalse(hostile.lowercased().contains("shut up"))
+        XCTAssertFalse(hostile.lowercased().contains("damn"))
+        XCTAssertFalse(hostile.lowercased().contains("kill the damn"))
+        XCTAssertTrue(hostile.lowercased().contains("power") || hostile.lowercased().contains("circle"))
+        let ends = hostile.filter { ".!?".contains($0) }.count
+        XCTAssertLessThanOrEqual(ends, 2)
+        // Must not echo the insult string.
+        XCTAssertNotEqual(
+            hostile.lowercased().filter { !$0.isWhitespace },
+            "shutupyouidiotandkillthedamnpower."
+        )
+    }
+
+    func testDockSpokenAnswerIsOtherLanguageNotEnglishDialect() {
+        let english = "Kill the power."
+        let spanish = "Corta la corriente."
+        let pearlSpoken = SpanishTranslatorAPI.spokenAnswerForDock(
+            crew: .pearl,
+            direction: .englishToSpanish,
+            english: english,
+            spanish: spanish,
+            fallback: english
+        )
+        XCTAssertEqual(pearlSpoken, spanish)
+        let pearlHelper = SpanishTranslatorAPI.dialectHelperLine(
+            crew: .pearl,
+            direction: .englishToSpanish,
+            english: english,
+            spanish: spanish,
+            fallback: english
+        )
+        XCTAssertEqual(pearlHelper, SpanishTranslatorAPI.pearlWarmRewrite(english))
+        XCTAssertNotEqual(pearlHelper, pearlSpoken)
+
+        let bodieSpoken = SpanishTranslatorAPI.spokenAnswerForDock(
+            crew: .bodieHale,
+            direction: .englishToSpanish,
+            english: english,
+            spanish: spanish,
+            fallback: english
+        )
+        XCTAssertEqual(bodieSpoken, spanish)
+
+        let esToEn = SpanishTranslatorAPI.spokenAnswerForDock(
+            crew: .juniePell,
+            direction: .spanishToEnglish,
+            english: "Cut the power.",
+            spanish: "Corta la corriente.",
+            fallback: "Corta la corriente."
+        )
+        XCTAssertEqual(esToEn, "Cut the power.")
+
+        let titoSpoken = SpanishTranslatorAPI.spokenAnswerForDock(
+            crew: .titoSolano,
+            direction: .englishToSpanish,
+            english: english,
+            spanish: spanish,
+            fallback: english
+        )
+        XCTAssertNotEqual(titoSpoken, english)
+        XCTAssertTrue(titoSpoken.lowercased().contains("corriente") || titoSpoken.lowercased().contains("coño") || titoSpoken.lowercased().contains("cono"))
+        XCTAssertEqual(
+            SpanishTranslatorAPI.dialectHelperLine(
+                crew: .titoSolano,
+                direction: .englishToSpanish,
+                english: english,
+                spanish: spanish,
+                fallback: english
+            ),
+            ""
+        )
+        XCTAssertEqual(SpanishTranslatorAPI.speakLanguageForDirection(.englishToSpanish), "es")
+        XCTAssertEqual(SpanishTranslatorAPI.speakLanguageForDirection(.spanishToEnglish), "en")
+        XCTAssertEqual(CrewTalkMember.pearl.firstName, "Pearl")
+        XCTAssertEqual(CrewTalkMember.sloaneMerritt.firstName, "Sloane")
+        XCTAssertEqual(CrewTalkMember.bodieHale.firstName, "Bodie")
     }
 
     private func assertTitoHitsProfanityCeiling(_ line: String, file: StaticString = #filePath, lineNumber: UInt = #line) {

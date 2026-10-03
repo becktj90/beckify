@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 import UIKit
 
 /// Toolkit → Reference: Crew Talk. English ↔ Spanish, spoken by the person you pick.
-/// Bodie Hale, Tito Solano, or Junie Pell stays on screen. Clean / Jobsite is wording only.
+/// Person, line, and Speak. Dialect rewrite is a short helper. Clean/Jobsite is off this screen.
 struct SpanishTranslatorView: View {
     @Environment(\.scenePhase) private var scenePhase
 
@@ -48,7 +48,6 @@ struct SpanishTranslatorView: View {
         ) {
             phaseLine
             directionCard
-            modeCard
             attentionCard
             recordCard
             quickPhrasesCard
@@ -123,33 +122,43 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    /// Just the translated message — not the source text, labels, or
-    /// disclaimer. The toolbar/sticky-bar copy button is the one-tap "copy
-    /// what I just heard" action; the full EN/ES/engine breakdown is still
-    /// available per-field via each language card's own copy button.
+    /// Copy the dock Speak string — the other-language line on screen.
     private var copyText: String {
-        crewAnswer
+        dockSpokenAnswer
     }
 
-    /// Dialect line for the person on screen. Typed text wins over a stale translation.
-    private var crewAnswer: String {
+    /// English / Spanish slots for dock + dialect. Typed input wins for the listen side.
+    private var dockEnglishSpanish: (english: String, spanish: String, fallback: String) {
         let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
         let heardEnglish = engine.englishText.trimmingCharacters(in: .whitespacesAndNewlines)
         let heardSpanish = engine.spanishText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let english: String
-        let spanish: String
         if direction.listensInSpanish {
-            spanish = typed.isEmpty ? heardSpanish : typed
-            english = heardEnglish
-        } else {
-            english = typed.isEmpty ? heardEnglish : typed
-            spanish = heardSpanish
+            return (heardEnglish, typed.isEmpty ? heardSpanish : typed, typed)
         }
-        return SpanishTranslatorAPI.lineForCrew(
+        return (typed.isEmpty ? heardEnglish : typed, heardSpanish, typed)
+    }
+
+    /// Other-language line Speak plays. Tito's rewrite is the Spanish result.
+    private var dockSpokenAnswer: String {
+        let pair = dockEnglishSpanish
+        return SpanishTranslatorAPI.spokenAnswerForDock(
             crew: crew,
-            english: english,
-            spanish: spanish,
-            fallback: typed
+            direction: direction,
+            english: pair.english,
+            spanish: pair.spanish,
+            fallback: pair.fallback
+        )
+    }
+
+    /// Short dialect flavor under the answer. Empty for Tito.
+    private var dockDialectHelper: String {
+        let pair = dockEnglishSpanish
+        return SpanishTranslatorAPI.dialectHelperLine(
+            crew: crew,
+            direction: direction,
+            english: pair.english,
+            spanish: pair.spanish,
+            fallback: pair.fallback
         )
     }
 
@@ -187,21 +196,6 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    private var modeCard: some View {
-        ResultCard(title: "Clean / Jobsite", copyText: voiceMode.uiLabel) {
-            Picker("Mode", selection: $voiceModeRaw) {
-                ForEach(SpanishVoiceMode.allCases, id: \.rawValue) { mode in
-                    Text(mode.uiLabel).tag(mode.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("spanishTranslator.voiceMode")
-            Text(SpanishTranslatorAPI.modeHelp(direction: direction, voiceMode: voiceMode))
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-        }
-    }
-
     private var directionCard: some View {
         ResultCard(title: "Direction", copyText: direction.uiLabel) {
             Picker("Direction", selection: $directionRaw) {
@@ -230,11 +224,11 @@ struct SpanishTranslatorView: View {
                     )
                 } label: {
                     Label(SpanishTranslatorAPI.attentionButtonTitle, systemImage: "hand.wave.fill")
-                        .font(.system(size: 30, weight: .heavy, design: .rounded))
-                        .frame(maxWidth: .infinity, minHeight: 76)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .frame(maxWidth: 120, minHeight: Theme.touchTarget)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.warn)
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
                 .disabled(engine.isBusyForNewInput)
                 .accessibilityIdentifier("spanishTranslator.attention")
                 .accessibilityLabel(SpanishTranslatorAPI.attentionButtonAccessibilityLabel)
@@ -260,45 +254,30 @@ struct SpanishTranslatorView: View {
                     primaryRecordLabel,
                     systemImage: primaryRecordSymbol
                 )
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .frame(maxWidth: .infinity, minHeight: 72)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
             }
             .buttonStyle(.borderedProminent)
-            .tint(primaryRecordIsStop ? Theme.warn : Theme.copper)
+            .tint(primaryRecordIsStop ? Theme.warn : Theme.accent)
             .accessibilityIdentifier("spanishTranslator.record")
 
-            HStack(spacing: 12) {
-                Button {
-                    let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let heard = direction.listensInSpanish ? engine.spanishText : engine.englishText
-                    let source = typed.isEmpty ? heard : typed
-                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.setDirection(direction)
-                    engine.translateText(
-                        source,
-                        customEndpoint: customEndpoint,
-                        token: apiToken
-                    )
-                } label: {
-                    Label("Translate", systemImage: "globe")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                }
-                .buttonStyle(.bordered)
-                .disabled(translateDisabled)
-
-                Button {
-                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.speakResultAgain()
-                } label: {
-                    Label("Speak", systemImage: "speaker.wave.3.fill")
-                        .font(.headline.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.good)
-                .disabled(speakAgainDisabled)
-                .accessibilityIdentifier("spanishTranslator.speakAgain")
+            Button {
+                let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
+                let heard = direction.listensInSpanish ? engine.spanishText : engine.englishText
+                let source = typed.isEmpty ? heard : typed
+                engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+                engine.setDirection(direction)
+                engine.translateText(
+                    source,
+                    customEndpoint: customEndpoint,
+                    token: apiToken
+                )
+            } label: {
+                Label("Translate", systemImage: "globe")
+                    .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
             }
+            .buttonStyle(.bordered)
+            .disabled(translateDisabled)
 
             if showsActionBusyChrome {
                 actionBusyRow
@@ -422,8 +401,7 @@ struct SpanishTranslatorView: View {
     }
 
     private var speakAgainDisabled: Bool {
-        let result = direction.listensInSpanish ? engine.englishText : engine.spanishText
-        return result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        dockSpokenAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || engine.phase == .listening
             || engine.phase == .finishingTranscript
             || engine.phase == .translating
@@ -472,7 +450,7 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    /// Input and the dialect answer stay in one dock above the keyboard.
+    /// Input, other-language answer, and Speak stay in one dock above the keyboard.
     /// One Done lives on the shared keyboard toolbar — this dock does not add another.
     private var composerDock: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -483,31 +461,49 @@ struct SpanishTranslatorView: View {
                 .submitLabel(.send)
                 .onSubmit { submitTypedLine() }
                 .accessibilityIdentifier("spanishTranslator.composer")
-            Text(composerAnswerTitle)
-                .font(.caption2.weight(.semibold))
-                .tracking(0.6)
-                .foregroundStyle(Theme.accent)
-            Text(crewAnswer.isEmpty ? "—" : crewAnswer)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(Theme.foreground)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .lineLimit(4)
-                .textSelection(.enabled)
-                .accessibilityIdentifier("spanishTranslator.answer")
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(dockSpokenAnswer.isEmpty ? "—" : dockSpokenAnswer)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.foreground)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(4)
+                        .textSelection(.enabled)
+                        .accessibilityIdentifier("spanishTranslator.answer")
+                    if !dockDialectHelper.isEmpty {
+                        Text(dockDialectHelper)
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(Theme.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .lineLimit(3)
+                            .accessibilityIdentifier("spanishTranslator.dialectHelper")
+                    }
+                }
+                Button {
+                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+                    engine.speakDockAnswer(dockSpokenAnswer)
+                } label: {
+                    Label("Speak", systemImage: "speaker.wave.3.fill")
+                        .font(.headline.weight(.bold))
+                        .labelStyle(.iconOnly)
+                        .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .disabled(speakAgainDisabled)
+                .accessibilityIdentifier("spanishTranslator.speakAgain")
+                .accessibilityLabel("Speak")
+            }
         }
         .padding(.horizontal, Theme.Space.lg)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .background(Theme.surface)
+        .background(Theme.surfaceRaised.opacity(0.96))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Theme.accent)
                 .frame(height: 2)
         }
-    }
-
-    private var composerAnswerTitle: String {
-        "ANSWER · \(crew.displayName.uppercased())"
     }
 
     private func submitTypedLine() {
@@ -521,27 +517,48 @@ struct SpanishTranslatorView: View {
     /// Idle sprite until playback. While audio plays, the talk pose flashes
     /// on a short syllable beat and the body bobs a little.
     private var crewHelperBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .center, spacing: 8) {
             CrewTalkSprite(
                 crew: crew,
                 isTalking: engine.phase == .playing,
                 height: composerFocused ? 96 : 168
             )
-            Text(crew.displayName)
+            Text(crew.firstName)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.foreground)
             if !composerFocused {
                 Text(crew.blurb)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
+                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Picker("Talking with", selection: $crewRaw) {
-                ForEach(CrewTalkMember.allCases, id: \.rawValue) { member in
-                    Text(member.displayName).tag(member.rawValue)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(CrewTalkMember.allCases, id: \.rawValue) { member in
+                        Button {
+                            crewRaw = member.rawValue
+                        } label: {
+                            Text(member.firstName)
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundStyle(member == crew ? Theme.background : Theme.foreground)
+                                .frame(minWidth: Theme.touchTarget, minHeight: Theme.touchTarget)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .fill(member == crew ? Theme.accent : Theme.surfaceRaised)
+                                )
+                                .overlay(
+                                    Capsule(style: .continuous)
+                                        .stroke(Theme.border, lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(member.displayName)
+                    }
                 }
+                .padding(.vertical, 2)
             }
-            .pickerStyle(.segmented)
             .accessibilityIdentifier("spanishTranslator.crew")
         }
         .padding(.horizontal, Theme.Space.lg)
@@ -553,6 +570,7 @@ struct SpanishTranslatorView: View {
 
 /// Full-body 16-bit helper. Two existing frames, nearest-neighbor so pixels stay crisp.
 /// Talk is a syllable beat (idle held longer than the talk pose), not a 150 ms hard swap.
+/// Junie's talk frame is the idle pose with the mouth open. Sloane is centered on the canvas.
 /// The bob is a small continuous offset, independent of the frame cut.
 private struct CrewTalkSprite: View {
     let crew: CrewTalkMember
@@ -1136,24 +1154,29 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     func speakResultAgain() {
-        let text = SpanishTranslatorAPI.lineForCrew(
+        speakDockAnswer(currentDockSpokenAnswer())
+    }
+
+    /// Speak the exact string the dock is showing (other language / Tito rewrite).
+    func speakDockAnswer(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        speakResult(trimmed, preferNeural: true)
+    }
+
+    private func currentDockSpokenAnswer() -> String {
+        SpanishTranslatorAPI.spokenAnswerForDock(
             crew: crew,
+            direction: direction,
             english: englishText,
             spanish: spanishText,
             fallback: resultText
         )
-        guard !text.isEmpty else { return }
-        speakResult(text, preferNeural: true)
     }
 
     /// Optional: once translation text is ready, cancel cloud speak and use Apple now.
     func speakNowWithDeviceVoice() {
-        let text = SpanishTranslatorAPI.lineForCrew(
-            crew: crew,
-            english: englishText,
-            spanish: spanishText,
-            fallback: resultText
-        )
+        let text = currentDockSpokenAnswer()
         guard !text.isEmpty else { return }
         allowAppleSpeakFallback = true
         cancelSpeakPipeline(silence: true)
@@ -1249,8 +1272,9 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         lastSuccessStatus = successStatus
         statusLabel = successStatus
         pendingOnDeviceSource = ""
-        let spoken = SpanishTranslatorAPI.lineForCrew(
+        let spoken = SpanishTranslatorAPI.spokenAnswerForDock(
             crew: turnCrew,
+            direction: turnDirection,
             english: englishText,
             spanish: spanishText,
             fallback: draft.translation
@@ -1383,7 +1407,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     }
 
     private func refreshVoice() {
-        let wantEnglish = crew.speakLanguage != "es"
+        let wantEnglish = SpanishTranslatorAPI.speakLanguageForDirection(direction) != "es"
         let preferFemale = crew.prefersFemaleDeviceVoice
         let voices = AVSpeechSynthesisVoice.speechVoices().filter {
             if wantEnglish {
@@ -1471,7 +1495,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         let turn = turnID
         let snapshotMode = turnVoiceMode
         let snapshotCrew = turnCrew
-        let speakLanguage = snapshotCrew.speakLanguage
+        let speakLanguage = SpanishTranslatorAPI.speakLanguageForDirection(turnDirection)
 
         phase = .preparingVoice
         isPreparingSpeak = true
