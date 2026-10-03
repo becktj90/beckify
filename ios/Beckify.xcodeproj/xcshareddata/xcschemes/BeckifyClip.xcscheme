@@ -14,20 +14,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BECF00000000000000000033"
-               BuildableName = "Beckify.app"
-               BlueprintName = "Beckify"
-               ReferencedContainer = "container:Beckify.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "CLCF00000000000000000014"
                BuildableName = "BeckifyClip.app"
                BlueprintName = "BeckifyClip"
@@ -40,8 +26,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -57,9 +42,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BECF00000000000000000033"
-            BuildableName = "Beckify.app"
-            BlueprintName = "Beckify"
+            BlueprintIdentifier = "CLCF00000000000000000014"
+            BuildableName = "BeckifyClip.app"
+            BlueprintName = "BeckifyClip"
             ReferencedContainer = "container:Beckify.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -74,9 +59,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BECF00000000000000000033"
-            BuildableName = "Beckify.app"
-            BlueprintName = "Beckify"
+            BlueprintIdentifier = "CLCF00000000000000000014"
+            BuildableName = "BeckifyClip.app"
+            BlueprintName = "BeckifyClip"
             ReferencedContainer = "container:Beckify.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

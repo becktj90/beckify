@@ -32,6 +32,13 @@ struct ToolGridView: View {
         _homeArea = homeArea
     }
 
+    private func openVoltageDropIfPending() {
+        guard VoltageDropInvocation.consumePending() else { return }
+        query = ""
+        homeArea = .field
+        path = [.tool(.voltageDrop)]
+    }
+
     /// Wide enough that two-line titles like "Conductor Cost Optimizer"
     /// fit on iPhone without a mid-word ellipsis. Compact phones land on
     /// two columns; iPad still uses an adaptive grid.
@@ -140,7 +147,11 @@ struct ToolGridView: View {
                 // Area switch replaces shelf cards only; keep scroll calm.
                 query = ""
             }
+            .onReceive(NotificationCenter.default.publisher(for: .beckifyOpenVoltageDrop)) { _ in
+                openVoltageDropIfPending()
+            }
             .onAppear {
+                openVoltageDropIfPending()
                 guard !appeared else { return }
                 BeckifyMotion.withOptionalAnimation(
                     BeckifyMotion.homeReveal,

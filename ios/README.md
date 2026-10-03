@@ -32,8 +32,9 @@ Session state (`ExplicitCalculationState`, `LiveCalculationState`) is pure Swift
 
 ```text
 ios/
-  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, LookCheck, KestrelHeavy, BeckifyDrive
+  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, BeckifyClip, LookCheck, KestrelHeavy, BeckifyDrive
   Beckify/               SwiftUI Toolbox app (Calculators + Sensors)
+  BeckifyClip/           Voltage Drop App Clip only (`com.beckify.toolbox.Clip`)
   LookCheck/             Standalone Look Check App Store app (`com.beckify.lookcheck`)
   KestrelHeavy/          Standalone Kestrel Heavy App Store app (`com.beckify.kestrelheavy`)
   BeckifyDrive/          Standalone Beckify Drive app (`com.beckify.drive`) — OBD dashboard + CarPlay
@@ -41,6 +42,13 @@ ios/
   docs/APP_STORE.md            Toolbox listing copy and App Store Connect checklist
   docs/FIVE_STAR_READINESS.md  Competitor 1★ patterns, review-ask policy, pre-submit gate
 ```
+
+
+## Voltage Drop App Clip
+
+**BeckifyClip** is a thin App Clip embedded in the Beckify target. Bundle id `com.beckify.toolbox.Clip`, version **1.0.3 (244)** (same as the parent). It shows Voltage Drop only — charcoal header, deep navy, cyan, and the small pixel voltage-drop tile — using `BeckifyMath` `VoltageDropSizing`. It does not include the catalog, sensors, Crew Talk, camera, microphone, BLE, or TTS.
+
+Invocation URL: `https://beckify.com/toolbox/voltage-drop/` (existing permalink). Archive scheme **Beckify** so the clip is embedded. Scheme **BeckifyClip** is for running the clip on a device. The Connect App Clip experience is **not** live until Trevor registers the identifier, turns on Associated Domains + App Clip, points an Advanced App Clip Experience at that URL, and confirms `https://beckify.com/.well-known/apple-app-site-association` is JSON with no redirect. Details: [`docs/APP_STORE.md`](docs/APP_STORE.md).
 
 ## Field (jobsite — opens first)
 
@@ -257,7 +265,7 @@ Push to `main`. Xcode Cloud then starts both Toolbox workflows:
 
 Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`), **KestrelHeavy** (`com.beckify.kestrelheavy`), or **BeckifyDrive** (`com.beckify.drive`). Those products keep their own Archive schemes and bundle IDs. Beckify Drive does not change Toolbox marketing **1.0.3** / build **231**.
 
-Connect version **1.0.3** exists (Trevor created it; **1.0** and **1.0.1** are closed — Connect rejected **1.0.1 (160)** with ITMS-90186 / ITMS-90062). **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). Repo `MARKETING_VERSION` is **1.0.3** and `CURRENT_PROJECT_VERSION` is **241**. Xcode Cloud Build and Archive on **174** failed to compile `PhasorImpedanceView.swift` and `PlotChrome.swift` and did not upload. Xcode Cloud Build - iOS on **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive of **158** and **159** compiled and failed while preparing the App Store Connect upload. Next Archive binary is **1.0.3 (241)** (must be **>230**). A higher build on **1.0.1** will not upload.
+Connect version **1.0.3** exists (Trevor created it; **1.0** and **1.0.1** are closed — Connect rejected **1.0.1 (160)** with ITMS-90186 / ITMS-90062). **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). Repo `MARKETING_VERSION` is **1.0.3** and `CURRENT_PROJECT_VERSION` is **244**. Xcode Cloud Build and Archive on **174** failed to compile `PhasorImpedanceView.swift` and `PlotChrome.swift` and did not upload. Xcode Cloud Build - iOS on **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive of **158** and **159** compiled and failed while preparing the App Store Connect upload. Next Archive binary is **1.0.3 (244)** (must be **>230**). A higher build on **1.0.1** will not upload.
 
 #### Mac fallback
 

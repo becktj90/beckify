@@ -16,6 +16,37 @@ struct BeckifyApp: App {
     }
 }
 
+
+extension Notification.Name {
+    /// Full app received the Voltage Drop permalink. Opens that tool only.
+    static let beckifyOpenVoltageDrop = Notification.Name("beckify.openVoltageDrop")
+}
+
+enum VoltageDropInvocation {
+    private static let pendingKey = "beckify.pendingVoltageDrop"
+
+    /// Existing toolbox permalink (`#sec-vdrop` is a fragment; the path is the match).
+    static func matches(_ url: URL) -> Bool {
+        let host = url.host?.lowercased() ?? ""
+        guard host == "beckify.com" || host == "www.beckify.com" else { return false }
+        var path = url.path
+        if path.count > 1, path.hasSuffix("/") { path.removeLast() }
+        return path.lowercased() == "/toolbox/voltage-drop"
+    }
+
+    /// Survives the gap before Toolbox home is on screen.
+    static func requestOpen() {
+        UserDefaults.standard.set(true, forKey: pendingKey)
+        NotificationCenter.default.post(name: .beckifyOpenVoltageDrop, object: nil)
+    }
+
+    static func consumePending() -> Bool {
+        guard UserDefaults.standard.bool(forKey: pendingKey) else { return false }
+        UserDefaults.standard.set(false, forKey: pendingKey)
+        return true
+    }
+}
+
 private enum RootTab: Hashable {
     case toolbox
     case favorites
@@ -79,6 +110,11 @@ struct RootView: View {
         .onChange(of: tab) { _, newTab in
             guard didFinishFirstAppear, newTab == .toolbox else { return }
             reviewAsk.presentIfEligible({ requestReview() }, currentVersion: ReviewAskStore.marketingVersion)
+        }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            guard let url = activity.webpageURL, VoltageDropInvocation.matches(url) else { return }
+            tab = .toolbox
+            VoltageDropInvocation.requestOpen()
         }
     }
 }

@@ -1,0 +1,31 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "9TR6R5LV8M.com.beckify.toolbox",
+          "9TR6R5LV8M.com.beckify.toolbox.Clip"
+        ],
+        "components": [
+          {
+            "/": "/toolbox/voltage-drop",
+            "comment": "Voltage Drop permalink without trailing slash"
+          },
+          {
+            "/": "/toolbox/voltage-drop/",
+            "comment": "Voltage Drop permalink with trailing slash"
+          },
+          {
+            "/": "/toolbox/voltage-drop/*",
+            "comment": "Voltage Drop permalink prefix, including #sec-vdrop on this path"
+          }
+        ]
+      }
+    ]
+  },
+  "appclips": {
+    "apps": [
+      "9TR6R5LV8M.com.beckify.toolbox.Clip"
+    ]
+  }
+}
