@@ -243,6 +243,10 @@ public struct SpanishTranslationDraft: Equatable, Sendable {
     public var notes: String
     /// `beckify` = cloud API; `apple` = on-device Translation framework fallback.
     public var engine: String
+    /// Crew line from a newer translate payload. Nil when the field is missing or blank.
+    public var personaLine: String?
+    /// Crew id from a newer translate payload. Nil when the field is missing or blank.
+    public var personaCrew: String?
 
     public init(
         translation: String,
@@ -253,7 +257,9 @@ public struct SpanishTranslationDraft: Equatable, Sendable {
         provider: String = "",
         model: String = "",
         notes: String = "",
-        engine: String = "beckify"
+        engine: String = "beckify",
+        personaLine: String? = nil,
+        personaCrew: String? = nil
     ) {
         self.translation = translation
         self.dialect = dialect
@@ -264,6 +270,8 @@ public struct SpanishTranslationDraft: Equatable, Sendable {
         self.model = model
         self.notes = notes
         self.engine = engine
+        self.personaLine = personaLine
+        self.personaCrew = personaCrew
     }
 
     /// Result language for chrome. English when `targetLanguage` is en / en-*.
@@ -680,15 +688,20 @@ public enum SpanishTranslatorAPI {
         )
     }
 
-    /// Network / HTTP failures that should trigger on-device fallback (not auth-only client errors we cannot recover).
+    /// Network / HTTP failures that should trigger on-device fallback.
+    /// Recoverable: transport (0), missing route (404/405), timeout (408), rate limit (429), and 5xx.
+    /// Not recoverable on device: bad payload (400), auth (401/403), and oversize (413).
+    /// Any other non-2xx still falls back. 2xx does not.
     public static func shouldAttemptOnDeviceFallback(httpStatus: Int) -> Bool {
-        if httpStatus == 0 { return true } // transport / DNS / offline
-        if httpStatus == 404 || httpStatus == 405 { return true }
-        if httpStatus == 408 || httpStatus == 429 { return true }
-        if httpStatus >= 500 { return true }
-        // Treat unexpected 3xx / other failures as fallback-worthy so the Answer never sticks on English-only.
-        if httpStatus < 200 || httpStatus >= 300 { return true }
-        return false
+        if (200..<300).contains(httpStatus) { return false }
+        switch httpStatus {
+        case 0, 404, 405, 408, 429:
+            return true
+        case 400, 401, 403, 413:
+            return false
+        default:
+            return true
+        }
     }
 
     public static func onDeviceUnavailableMessage(apiError: String?) -> String {
@@ -748,7 +761,9 @@ public enum SpanishTranslatorAPI {
             provider: stringValue(object["provider"]) ?? "",
             model: stringValue(object["model"]) ?? "",
             notes: stringValue(object["notes"]) ?? "",
-            engine: "beckify"
+            engine: "beckify",
+            personaLine: stringValue(object["personaLine"]),
+            personaCrew: stringValue(object["personaCrew"])
         )
     }
 
