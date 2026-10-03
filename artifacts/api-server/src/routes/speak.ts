@@ -11,9 +11,11 @@ import {
   CASSIAN_ELEVEN_VOICE_SETTINGS,
   CASSIAN_VALE_SEED,
   CASSIAN_VALE_VOICE_ID,
+  CREW_TALK_ELEVEN_VOICES,
   JUNIE_ELEVEN_VOICE_SETTINGS,
   JUNIE_PELL_VOICE_ID,
   LOOK_CHECK_SPEAK_MAX_CHARS,
+  SLOANE_MERRITT_SEED,
   resolveElevenLabsModel,
   resolveElevenLabsVoiceId,
   shouldUseElevenLabsSpeak,
@@ -33,11 +35,17 @@ interface SpeakBody {
   language?: unknown;
   voiceMode?: unknown;
   mode?: unknown;
+  /** OpenAI voice-mode alias when it is a string. Numeric ElevenLabs style is ignored. */
   style?: unknown;
+  /** Ignored. ElevenLabs stability is server-side for Junie and Cassian only. */
   stability?: unknown;
+  /** Ignored. */
   similarity_boost?: unknown;
+  /** Ignored. */
   similarityBoost?: unknown;
+  /** Ignored. */
   speed?: unknown;
+  /** Ignored. Seed is server-side for Cassian and Sloane only. */
   seed?: unknown;
 }
 
@@ -83,7 +91,7 @@ router.post("/speak", async (req, res) => {
   if (useEleven) {
     const elevenVoice = resolveElevenLabsVoiceId(rawVoice);
     if (!elevenVoice) {
-      return res.status(400).json({ error: "ElevenLabs speech needs a voice id." });
+      return res.status(400).json({ error: "Unknown voice." });
     }
     voice = elevenVoice;
     model = resolveElevenLabsModel(rawModel);
@@ -117,7 +125,7 @@ router.post("/speak", async (req, res) => {
 
   try {
     const response = useEleven
-      ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice, body), pickSpeakSeed(body.seed, voice))
+      ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice), pickSpeakSeed(voice))
       : await synthesizeOpenAI(text, voice, model, format, voiceMode, language);
 
     if (!response.ok) {
@@ -138,6 +146,7 @@ router.post("/speak", async (req, res) => {
     res.setHeader("X-Beckify-TTS-Voice", voice);
     res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
     res.setHeader("X-Beckify-TTS-Language", language);
+    if (useEleven) res.setHeader("X-Beckify-TTS-Cacheable", "1");
     res.setHeader("Content-Length", String(audio.length));
     return res.status(200).send(audio);
   } catch (error) {
@@ -219,45 +228,32 @@ async function synthesizeElevenLabs(
 }
 
 
-function clampUnit(raw: unknown, fallback: number): number {
-  const value = typeof raw === "number" ? raw : Number(raw);
-  if (!Number.isFinite(value)) return fallback;
-  return Math.min(1, Math.max(0, value));
-}
-
-function clampSpeed(raw: unknown, fallback: number): number {
-  const value = typeof raw === "number" ? raw : Number(raw);
-  if (!Number.isFinite(value)) return fallback;
-  return Math.min(1.2, Math.max(0.5, value));
-}
-
-/** Junie and Cassian Vale get presets. Other voices stay on the provider default unless the body sets knobs. */
-function elevenVoiceSettings(voiceId: string, body: SpeakBody): Record<string, number | boolean> | undefined {
-  const junie = voiceId === JUNIE_PELL_VOICE_ID;
-  const cassian = voiceId === CASSIAN_VALE_VOICE_ID;
-  const preset = junie ? JUNIE_ELEVEN_VOICE_SETTINGS : CASSIAN_ELEVEN_VOICE_SETTINGS;
-  const stability = body.stability;
-  const similarity = body.similarity_boost ?? body.similarityBoost;
-  const style = body.style;
-  const speed = body.speed;
-  const hasOverride = stability != null || similarity != null || (typeof style === "number") || speed != null;
-  if (!junie && !cassian && !hasOverride) return undefined;
+/**
+ * Junie and Cassian presets stay server-side.
+ * Client stability, similarity, style, and speed are ignored.
+ * Other allowlisted voices use the provider default.
+ */
+function elevenVoiceSettings(voiceId: string): Record<string, number | boolean> | undefined {
+  const preset = voiceId === JUNIE_PELL_VOICE_ID
+    ? JUNIE_ELEVEN_VOICE_SETTINGS
+    : voiceId === CASSIAN_VALE_VOICE_ID
+      ? CASSIAN_ELEVEN_VOICE_SETTINGS
+      : undefined;
+  if (!preset) return undefined;
   return {
-    stability: clampUnit(stability, junie || cassian ? preset.stability : 0.5),
-    similarity_boost: clampUnit(similarity, junie || cassian ? preset.similarity_boost : 0.75),
-    style: clampUnit(typeof style === "number" ? style : undefined, junie || cassian ? preset.style : 0),
-    use_speaker_boost: true,
-    speed: clampSpeed(speed, junie || cassian ? preset.speed : 1),
+    stability: preset.stability,
+    similarity_boost: preset.similarity_boost,
+    style: preset.style,
+    use_speaker_boost: preset.use_speaker_boost,
+    speed: preset.speed,
   };
 }
 
-/** Look Check posts seed 60606. Other voices omit seed unless the body sets one. */
-function pickSpeakSeed(raw: unknown, voiceId: string): number | undefined {
-  const fallback = voiceId === CASSIAN_VALE_VOICE_ID ? CASSIAN_VALE_SEED : undefined;
-  if (raw == null || raw === "") return fallback;
-  const value = typeof raw === "number" ? raw : Number(raw);
-  if (!Number.isInteger(value) || value < 0 || value > 4294967295) return fallback;
-  return value;
+/** Seed only for Cassian (60606) and Sloane (50505). Client seed is ignored. */
+function pickSpeakSeed(voiceId: string): number | undefined {
+  if (voiceId === CASSIAN_VALE_VOICE_ID) return CASSIAN_VALE_SEED;
+  if (voiceId === CREW_TALK_ELEVEN_VOICES.sloaneMerritt) return SLOANE_MERRITT_SEED;
+  return undefined;
 }
 
 function consumeLocalRateLimit(clientKey: string) {
