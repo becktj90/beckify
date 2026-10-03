@@ -188,35 +188,41 @@ enum CrewDialectRewrite {
 
     // MARK: - Tito
 
+    /// Cuban jobsite rewrite. The ask stays. Slurs are still scrubbed and never echoed.
+    /// Workplace cussing is the ceiling this character is allowed to hit.
     static func tito(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
         let key = fold(trimmed)
         if let known = titoKnown[key] { return known }
         let scrubbed = scrub(trimmed)
+        if scrubbed.isEmpty {
+            return "Óyeme, coño, dime qué carajo necesitas en la obra, mierda."
+        }
         if looksSpanish(scrubbed) {
             let reshaped = reshapeSpanish(scrubbed)
-            return "Óyeme, \(reshaped). Ahora mismo, con cuidado, ¿me oyes?"
+            return "Óyeme, coño, \(reshaped). Ahora mismo, carajo, con cuidado, ¿me oyes, pinga?"
         }
         let ask = titoAsk(scrubbed)
         let frames: [(String) -> String] = [
-            { ask in "Óyeme, \(ask). Hazlo firme y rápido, ¿sí?" },
-            { ask in "Mira, \(ask). Sin distracción, que el trabajo no espera." },
-            { ask in "A ver, \(ask). Con calma y con fuerza, mi hermano." },
-            { ask in "Escúchame, \(ask). Ya, que estamos en la obra." },
+            { ask in "Óyeme, coño, \(ask). Hazlo firme y rápido, carajo, ¿sí?" },
+            { ask in "Mira, \(ask), mierda. Sin distracción, pinga, que el trabajo no espera." },
+            { ask in "A ver, cabrón, \(ask). Con calma y con fuerza, joder, mi hermano." },
+            { ask in "Escúchame, \(ask), coño. Ya, carajo, que estamos en la obra." },
         ]
         return frames[rotate(key, frames.count)](ask)
     }
 
     private static let titoKnown: [String: String] = [
-        "kill the power": "Óyeme, corta esa corriente ahora mismo.",
-        "corta la corriente": "Óyeme, la corriente córtala ya, con cuidado.",
-        "hand me that conduit": "Pásame ese conduit, que lo necesito en la mano ahora.",
-        "move the ladder": "Mueve esa escalera, mi hermano, y déjala firme.",
-        "watch your head": "Ojo con la cabeza. No te me golpees ahí arriba.",
-        "we need more wire": "Falta cable. Tráeme más alambre, ya.",
-        "who left this mess": "¿Quién dejó este desorden? Vamos a recogerlo ahora.",
-        "hola": "¿Qué bolá? Aquí estoy, oye.",
+        "kill the power": "¡Coño, corta esa pinga de corriente ahora mismo, carajo!",
+        "corta la corriente": "Óyeme, la corriente córtala ya, coño, con cuidado, mierda.",
+        "hand me that conduit": "Pásame ese conduit, cabrón, que lo necesito en la mano ahora, coño.",
+        "move the ladder": "Mueve esa escalera, mi hermano, coño, y déjala firme, carajo.",
+        "watch your head": "Ojo con la cabeza, coño. No te me golpees ahí arriba, mierda.",
+        "we need more wire": "Falta cable, mierda. Tráeme más alambre ya, coño, carajo.",
+        "who left this mess": "¿Quién dejó este desorden de mierda? Recógelo ahora, cabrón, coño.",
+        "hola": "¿Qué bolá, coño? Aquí estoy, carajo.",
+        "stop talking and get that feeder in before lunch": "¡Coño, deja la habladera y mete ese alimentador antes del almuerzo, carajo!",
     ]
 
     private static func titoAsk(_ scrubbed: String) -> String {
@@ -249,7 +255,6 @@ enum CrewDialectRewrite {
         while let last = line.last, ".!?".contains(last) { line.removeLast() }
         line = line.trimmingCharacters(in: .whitespacesAndNewlines)
         if line.isEmpty { return "hazlo ya" }
-        // Flip a leading verb so the line is not a copy.
         let lower = line.lowercased()
         if lower.hasPrefix("corta ") {
             let rest = String(line.dropFirst("corta ".count))
@@ -317,6 +322,7 @@ enum CrewDialectRewrite {
         "idiot", "idiots", "stupid", "dumb", "moron", "retard", "retarded",
         "dick", "cock", "piss", "pissed", "whore", "slut", "hell",
         "nigger", "nigga", "spic", "chink", "kike", "fag", "faggot", "tranny", "wetback",
+        "maricon", "maricón", "mayate", "sudaca",
     ]
 
     static func fold(_ raw: String) -> String {

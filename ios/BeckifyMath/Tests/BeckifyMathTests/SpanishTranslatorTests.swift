@@ -584,6 +584,59 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertNotEqual(titoLine, "Kill the power.")
         XCTAssertNotEqual(titoLine, "Corta la corriente.")
         XCTAssertTrue(titoLine.lowercased().contains("corriente"))
+        assertTitoHitsProfanityCeiling(titoLine)
+        let titoSamples = [
+            "Hand me that conduit.",
+            "Move the ladder.",
+            "Watch your head.",
+            "We need more wire.",
+            "Who left this mess?",
+            "Hola",
+            "Stop talking and get that feeder in before lunch.",
+            "Corta la corriente ahora.",
+            "Hold this breaker.",
+            "Bring the torque wrench over here.",
+        ]
+        for sample in titoSamples {
+            let line = SpanishTranslatorAPI.titoDialectRewrite(sample)
+            assertTitoHitsProfanityCeiling(line)
+            XCTAssertFalse(line.lowercased().contains(sample.lowercased()), sample)
+        }
+        XCTAssertTrue(SpanishTranslatorAPI.titoDialectRewrite("Hand me that conduit.").lowercased().contains("conduit"))
+        XCTAssertTrue(SpanishTranslatorAPI.titoDialectRewrite("Move the ladder.").lowercased().contains("escalera"))
+        XCTAssertTrue(SpanishTranslatorAPI.titoDialectRewrite("We need more wire.").lowercased().contains("cable")
+            || SpanishTranslatorAPI.titoDialectRewrite("We need more wire.").lowercased().contains("alambre"))
+        let hostile = SpanishTranslatorAPI.titoDialectRewrite("Shut up you idiot and kill the damn power.")
+        assertTitoHitsProfanityCeiling(hostile)
+        XCTAssertTrue(hostile.lowercased().contains("corriente"))
+        XCTAssertFalse(hostile.lowercased().contains("idiot"))
+        XCTAssertFalse(hostile.lowercased().contains("damn"))
+        XCTAssertFalse(hostile.lowercased().contains("shut"))
+        let slur = SpanishTranslatorAPI.titoDialectRewrite("you spic kill the power")
+        assertTitoHitsProfanityCeiling(slur)
+        XCTAssertFalse(slur.lowercased().contains("spic"))
+        XCTAssertTrue(slur.lowercased().contains("corriente"))
+        let onlyInsult = SpanishTranslatorAPI.titoDialectRewrite("fuck you")
+        assertTitoHitsProfanityCeiling(onlyInsult)
+        XCTAssertFalse(onlyInsult.lowercased().contains("fuck"))
+        let others = [
+            SpanishTranslatorAPI.bodieDialectRewrite("Kill the power."),
+            SpanishTranslatorAPI.junieDialectRewrite("Kill the power."),
+            SpanishTranslatorAPI.pearlWarmRewrite("Kill the power."),
+            SpanishTranslatorAPI.sloaneCorporateRewrite("Kill the power."),
+        ].joined(separator: " ").lowercased()
+        for word in ["coño", "carajo", "mierda", "pinga", "joder", "cabrón", "puta"] {
+            XCTAssertFalse(others.contains(word), word)
+        }
+        let chrome = (
+            CrewTalkMember.titoSolano.displayName + " "
+            + CrewTalkMember.titoSolano.blurb + " "
+            + (ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")?.summary ?? "") + " "
+            + SpanishTranslatorAPI.disclaimer
+        ).lowercased()
+        for word in ["coño", "carajo", "mierda", "pinga", "joder", "cabrón", "puta", "profanity", "smart-ass", "comedy", "stoner"] {
+            XCTAssertFalse(chrome.contains(word), word)
+        }
         let junieLine = SpanishTranslatorAPI.lineForCrew(crew: .juniePell, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope")
         XCTAssertNotEqual(junieLine.lowercased(), "kill the power.")
         XCTAssertTrue(junieLine.lowercased().contains("power"))
@@ -664,12 +717,12 @@ final class SpanishTranslatorTests: XCTestCase {
         let genericSloane = SpanishTranslatorAPI.sloaneCorporateRewrite("Hold this for a second.")
         XCTAssertFalse(genericSloane.lowercased().contains("hold this for a second"))
         XCTAssertTrue(genericSloane.lowercased().contains("hold"))
-        let hostile = SpanishTranslatorAPI.sloaneCorporateRewrite("Shut up you idiot and kill the damn power.")
-        XCTAssertFalse(hostile.lowercased().contains("idiot"))
-        XCTAssertFalse(hostile.lowercased().contains("shut up"))
-        XCTAssertFalse(hostile.lowercased().contains("damn"))
-        XCTAssertTrue(hostile.lowercased().contains("power"))
-        XCTAssertNotEqual(hostile.lowercased().filter { !$0.isWhitespace }, "shutupyouidiotandkillthedamnpower.")
+        let sloaneHostile = SpanishTranslatorAPI.sloaneCorporateRewrite("Shut up you idiot and kill the damn power.")
+        XCTAssertFalse(sloaneHostile.lowercased().contains("idiot"))
+        XCTAssertFalse(sloaneHostile.lowercased().contains("shut up"))
+        XCTAssertFalse(sloaneHostile.lowercased().contains("damn"))
+        XCTAssertTrue(sloaneHostile.lowercased().contains("power"))
+        XCTAssertNotEqual(sloaneHostile.lowercased().filter { !$0.isWhitespace }, "shutupyouidiotandkillthedamnpower.")
         let jargon = [
             "north star", "flywheel", "paradigm shift", "synergy", "move the needle",
             "boil the ocean", "low-hanging fruit", "pivot", "touch base", "ping",
@@ -701,7 +754,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertFalse(pearlHostile.lowercased().contains("shut"))
         XCTAssertTrue(pearlHostile.lowercased().contains("please") || pearlHostile.lowercased().contains("would you"))
         let corporate = (
-            feeder + " " + genericSloane + " " + hostile + " " + CrewTalkMember.sloaneMerritt.blurb
+            feeder + " " + genericSloane + " " + sloaneHostile + " " + CrewTalkMember.sloaneMerritt.blurb
         ).lowercased()
         XCTAssertFalse(corporate.contains("comedy"))
         XCTAssertFalse(corporate.contains("stoner"))
@@ -717,6 +770,17 @@ final class SpanishTranslatorTests: XCTestCase {
             ),
             SpanishTranslatorAPI.sloaneCorporateRewrite("Kill the power.")
         )
+    }
+
+    private func assertTitoHitsProfanityCeiling(_ line: String, file: StaticString = #filePath, lineNumber: UInt = #line) {
+        let folded = line.folding(options: .diacriticInsensitive, locale: Locale(identifier: "es")).lowercased()
+        let markers = ["cono", "carajo", "mierda", "pinga", "joder", "cabron", "puta"]
+        let hits = markers.filter { folded.contains($0) }
+        XCTAssertGreaterThanOrEqual(hits.count, 2, "Tito line should hit the profanity ceiling, got \(line)", file: file, line: lineNumber)
+        let banned = ["nigger", "nigga", "spic", "chink", "kike", "faggot", "wetback", "retard"]
+        for word in banned {
+            XCTAssertFalse(folded.contains(word), file: file, line: lineNumber)
+        }
     }
 
 }
