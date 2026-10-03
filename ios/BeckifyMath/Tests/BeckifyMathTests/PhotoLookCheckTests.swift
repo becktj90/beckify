@@ -439,6 +439,9 @@ final class PhotoLookCheckTests: XCTestCase {
         let blob = ([how?.summary, how?.context].compactMap { $0 } + (how?.bullets ?? [])).joined(separator: " ")
         XCTAssertFalse(blob.localizedCaseInsensitiveContains("fuck"))
         XCTAssertTrue(blob.contains("/api/speak"))
+        XCTAssertTrue(blob.localizedCaseInsensitiveContains("loudspeaker"))
+        XCTAssertTrue(blob.localizedCaseInsensitiveContains("text stays on screen"))
+        XCTAssertLessThanOrEqual(how?.bullets.count ?? 99, 4)
         XCTAssertFalse(blob.localizedCaseInsensitiveContains("look score"))
     }
 }
