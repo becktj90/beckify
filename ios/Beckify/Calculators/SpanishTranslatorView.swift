@@ -127,7 +127,7 @@ struct SpanishTranslatorView: View {
     }
 
     /// D1: the picker and stored helper stay on this direction's roster.
-    /// English → Spanish is Tito only. Spanish → English is Bodie, Junie, Pearl, Sloane.
+    /// English → Spanish is Tito and Lupita. Spanish → English is Bodie, Junie, Pearl, Sloane.
     private func alignCrewWithDirectionRoster(_ next: SpanishTranslateDirection? = nil) {
         let way = next ?? direction
         let roster = CrewTalkMember.roster(for: way)
