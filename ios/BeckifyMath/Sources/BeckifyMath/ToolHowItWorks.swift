@@ -76,24 +76,22 @@ public enum ToolHowItWorksCatalog {
         ),
         "voltageDrop": ToolHowItWorks(
             summary: "Estimates how much voltage a conductor loses along a run using the code selected in Settings.",
-            context: "Check a feeder or branch circuit before choosing or pulling conductors.",
+            context: "Check a feeder or branch before pulling. After Calculate, Share posts this snapshot + name; Copy and Jobs stay on-device.",
             bullets: [
                 "NEC uses conductor material, area, current, and one-way length. This field-K estimate is not the Chapter 9 Table 9 method.",
                 "The 3% and 5% figures are informational design guidance for this run—not a combined feeder-and-branch limit.",
                 "For long 480 V NEC runs at 2 AWG and larger, the calculation includes resistance and reactance from Tables 8 and 9.",
                 "AS/NZS uses mm², IEC 60228 maximum resistance, and its stated 5% installation limit. It does not check ampacity.",
-                "After Calculate, Share link posts this snapshot and the name you type, then opens the share sheet. Copy and Jobs stay on this device.",
             ]
         ),
         "conduitFill": ToolHowItWorks(
             summary: "Chapter 9 fill with a to-scale bore: wall, each conductor, and the Table 1 limit for this run.",
-            context: "Raceway pick on the truck — EMT, IMC, RMC, PVC, ENT, FMC, LFMC.",
+            context: "Raceway pick on the truck. After Calculate, Share posts this snapshot + name; Copy and Jobs stay on-device.",
             bullets: [
                 "Areas are Ch.9 Table 4 and Table 5. Annex C is same-size max counts, not the area source. Nipple ≤ 24 in is 60% (Note 4).",
                 "Compact or XHHW uses that insulation’s Table 5, not the THHN column. The cross-section is a sketch, not a pull check.",
                 "Count EGC adds the Table 250.122 conductor to fill. The EGC is not a current-carrying conductor.",
                 "AS/NZS shows Appendix C C6.2 (50/33/40) as guidance. The pass/fail row stays NEC Table 1. Metric bores are not listed.",
-                "After Calculate, Share link posts this snapshot and the name you type, then opens the share sheet. Copy and Jobs stay on this device.",
             ]
         ),
         "cableLadder": ToolHowItWorks(
