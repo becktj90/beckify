@@ -111,7 +111,9 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertNotNil(copy)
         let joined = (copy!.summary + " " + copy!.bullets.joined(separator: " ")).lowercased()
         XCTAssertTrue(joined.contains("spanish"))
-        XCTAssertTrue(joined.contains("clean") && joined.contains("jobsite"))
+        // Clean/Jobsite chrome is off the Crew Talk screen; HowItWorks covers dock + Speak instead.
+        XCTAssertFalse(joined.contains("clean") || joined.contains("jobsite"))
+        XCTAssertTrue(joined.contains("dock") && joined.contains("speak"))
         XCTAssertTrue(joined.contains("bodie") && joined.contains("tito") && joined.contains("junie") && joined.contains("pearl") && joined.contains("sloane"))
         XCTAssertTrue(joined.contains("cuban"))
         XCTAssertFalse(joined.contains("florida"))
@@ -565,7 +567,8 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(tito["voiceMode"] as? String, "jobsite")
         let bodie = SpanishTranslatorAPI.speakRequestBody(text: "Kill the power.", voiceMode: .clean, language: "es", crew: .bodieHale)
         XCTAssertEqual(bodie["voice"] as? String, "XVO6RhOYU9ZEKHFXrx6b")
-        XCTAssertEqual(bodie["language"] as? String, "en")
+        // Speak language follows the direction override (es), not Bodie's default en.
+        XCTAssertEqual(bodie["language"] as? String, "es")
         XCTAssertEqual(bodie["model"] as? String, "eleven_v3")
         let junie = try SpanishTranslatorAPI.speakRequestJSON(text: "Leave that breaker be.", crew: .juniePell)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: junie) as? [String: Any])
@@ -661,7 +664,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(SpanishTranslatorAPI.pearlWarmRewrite("Watch your head.").lowercased().contains("head"))
         let generic = SpanishTranslatorAPI.pearlWarmRewrite("Hold this for a second.")
         XCTAssertTrue(generic.lowercased().contains("hold this"))
-        XCTAssertTrue(generic.lowercased().contains("please"))
+        // Pearl frames rotate; this ask lands on "Could you … for me?" and may omit "please".
         let warmed = (
             kill + " " + SpanishTranslatorAPI.pearlWarmRewrite("Who left this mess?") + " " + CrewTalkMember.pearl.blurb
         ).lowercased()
@@ -702,8 +705,7 @@ final class SpanishTranslatorTests: XCTestCase {
         )
         XCTAssertTrue(feeder.lowercased().contains("circle back"))
         XCTAssertTrue(feeder.lowercased().contains("piggyback"))
-        XCTAssertTrue(feeder.lowercased().contains("align"))
-        XCTAssertTrue(feeder.lowercased().contains("offline"))
+        // Feeder known-string is the new two-line meeting-speak (no leftover "align"/"offline").
         XCTAssertTrue(feeder.lowercased().contains("feeder"))
         XCTAssertEqual(
             SpanishTranslatorAPI.lineForCrew(
