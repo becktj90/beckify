@@ -55,8 +55,39 @@ final class CrewDialectRewriteSafetyTests: XCTestCase {
 
     /// A2: unmatched Tito text is empty so the caller speaks the translation.
     func testTitoFreeTextReturnsEmpty() {
-        XCTAssertEqual(CrewDialectRewrite.tito("Bring the drill to the truck"), "")
-        XCTAssertEqual(CrewRewriteGuard.intent("Bring the drill to the truck"), .free)
+        let english = "Bring the drill to the truck"
+        let spanish = "Trae el taladro al camión."
+        XCTAssertEqual(CrewDialectRewrite.tito(english), "")
+        XCTAssertEqual(CrewRewriteGuard.intent(english), .free)
+        XCTAssertEqual(
+            SpanishTranslatorAPI.spokenAnswerForDock(
+                crew: .titoSolano,
+                direction: .englishToSpanish,
+                english: english,
+                spanish: spanish,
+                fallback: english
+            ),
+            spanish
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.lineToSpeak(
+                crew: .titoSolano,
+                direction: .englishToSpanish,
+                english: english,
+                spanish: spanish,
+                fallback: english
+            ),
+            spanish
+        )
+        let finish = SpanishTranslatorAPI.finishSpeakAfterDraft(
+            crew: .titoSolano,
+            direction: .englishToSpanish,
+            english: english,
+            spanish: spanish,
+            draftTranslation: spanish
+        )
+        XCTAssertEqual(finish, .speak(spanish))
+        XCTAssertNotEqual(finish, .ready)
     }
 
     func testEnglishUnmatchedKeepsShortOpenerWithoutRawGlue() {
