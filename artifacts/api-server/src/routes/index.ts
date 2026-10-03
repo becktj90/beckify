@@ -6,6 +6,7 @@ import analyzeLookRouter from "./analyze-look.js";
 import healthRouter from "./health.js";
 import reviewCalculationRouter from "./review-calculation.js";
 import translateRouter from "./translate.js";
+import shareRouter from "./share.js";
 import speakRouter from "./speak.js";
 
 const router: IRouter = Router();
@@ -17,6 +18,7 @@ router.use(analyzeLookRouter);
 router.use(healthRouter);
 router.use(reviewCalculationRouter);
 router.use(translateRouter);
+router.use(shareRouter);
 router.use(speakRouter);
 
 export default router;

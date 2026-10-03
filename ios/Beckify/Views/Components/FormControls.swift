@@ -314,6 +314,103 @@ struct SaveJobBar: View {
     }
 }
 
+/// Name plus a hostable page for a finished Voltage Drop or Conduit Fill result.
+/// Sits with Save a note. Copy and Jobs stay on device. Not a prompt and not required.
+struct ContractorShareBar: View {
+    let tool: ContractorShareTool
+    let fields: [ContractorShareField]
+    var enabled: Bool
+
+    @AppStorage("com.beckify.toolbox.contractorDisplayName") private var contractorName = ""
+    @State private var busy = false
+    @State private var errorText: String?
+    @State private var hosted: HostedShareLink?
+
+    private var trimmedName: String {
+        contractorName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SHARE A LINK")
+                .font(.caption.weight(.semibold))
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+            Text("Public page with this result and the name. Text it from the share sheet. Copy and Jobs stay on this device.")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .center, spacing: 10) {
+                TextField("Contractor or company", text: $contractorName)
+                    .textInputAutocapitalization(.words)
+                    .formFieldFocus("contractorName")
+                    .frame(minHeight: Theme.touchTarget)
+                    .accessibilityLabel("Contractor or company")
+                Button(busy ? "Sharing…" : "Share") {
+                    Task { await host() }
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.touchTarget)
+                .disabled(!enabled || busy || trimmedName.isEmpty)
+                .accessibilityIdentifier("contractorShareButton")
+            }
+            if let errorText {
+                Text(errorText)
+                    .font(.caption)
+                    .foregroundStyle(Theme.bad)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("contractorShareError")
+            }
+        }
+        .padding(14)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .sheet(item: $hosted) { link in
+            ActivityShareSheet(items: [link.url])
+        }
+    }
+
+    private func host() async {
+        guard enabled, !busy else { return }
+        guard let body = ContractorShareValidation.requestJSON(tool: tool, contractor: contractorName, fields: fields) else {
+            errorText = "Enter a name. Calculate again if this result is stale."
+            return
+        }
+        busy = true
+        errorText = nil
+        defer { busy = false }
+        var request = URLRequest(url: ContractorShareLink.createURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+        request.timeoutInterval = 20
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 429 {
+                errorText = "Too many links. Try again later."
+                return
+            }
+            if status == 503 {
+                errorText = "Link hosting is not available right now."
+                return
+            }
+            guard status == 200, let url = ContractorShareLink.acceptedPageURL(from: data) else {
+                errorText = "Could not create a link."
+                return
+            }
+            hosted = HostedShareLink(url: url)
+        } catch {
+            errorText = "Could not create a link."
+        }
+    }
+}
+
+private struct HostedShareLink: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 /// Compact Table 250.122 size shown beside inputs (conduit fill, before Calculate).
 struct EquipmentGroundingSummary: View {
     var recommendation: EquipmentGroundingRecommendation

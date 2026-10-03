@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import BeckifyMath
 
 enum ToolboxAppearance: String, CaseIterable, Identifiable {
@@ -111,6 +112,8 @@ struct SettingsView: View {
                 } header: {
                     Text("Design aid")
                 }
+
+                ToolboxTipJarSection()
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -169,5 +172,95 @@ struct ElectricalCodeBannerView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(notice.accessibilityLabel)
         .accessibilityIdentifier("electricalCodeBanner")
+    }
+}
+
+
+/// Optional StoreKit tips. Easy to miss: Settings only, no prompt, not required to calculate or share.
+private struct ToolboxTipJarSection: View {
+    @StateObject private var store = ToolboxTipStore()
+
+    var body: some View {
+        Section {
+            if store.products.isEmpty {
+                Text("Optional.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(store.products) { product in
+                    Button {
+                        Task { await store.buy(product) }
+                    } label: {
+                        HStack {
+                            Text(product.displayName)
+                            Spacer()
+                            Text(product.displayPrice)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .disabled(store.purchasing)
+                    .accessibilityIdentifier("tipProduct.\(product.id)")
+                }
+            }
+            if let note = store.note {
+                Text(note)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Tip")
+        } footer: {
+            Text("Optional. Calculators, copy, and saved jobs stay free. Apple processes the payment.")
+        }
+        .task { await store.load() }
+        .accessibilityIdentifier("tipJar")
+    }
+}
+
+@MainActor
+private final class ToolboxTipStore: ObservableObject {
+    /// Consumable products Trevor creates in App Store Connect. Prices come from the store, not this app.
+    static let ids: Set<String> = [
+        "com.beckify.toolbox.tip.small",
+        "com.beckify.toolbox.tip.medium",
+        "com.beckify.toolbox.tip.large",
+    ]
+
+    @Published private(set) var products: [Product] = []
+    @Published private(set) var purchasing = false
+    @Published private(set) var note: String?
+
+    func load() async {
+        do {
+            let found = try await Product.products(for: Self.ids)
+            products = found.sorted { $0.price < $1.price }
+        } catch {
+            products = []
+        }
+    }
+
+    func buy(_ product: Product) async {
+        guard !purchasing else { return }
+        purchasing = true
+        defer { purchasing = false }
+        do {
+            let result = try await product.purchase()
+            switch result {
+            case .success(let verification):
+                switch verification {
+                case .verified(let transaction):
+                    await transaction.finish()
+                    note = "Thanks."
+                case .unverified:
+                    note = "That purchase could not be verified."
+                }
+            case .userCancelled, .pending:
+                break
+            @unknown default:
+                break
+            }
+        } catch {
+            note = "Purchase did not complete."
+        }
     }
 }

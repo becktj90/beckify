@@ -13,6 +13,7 @@ Registered POST routes (must be present after every production deploy):
 - `/api/review-calculation`
 - `/api/translate`
 - `/api/speak`
+- `POST /api/share` and `GET /api/share/:token` — hosted Voltage Drop or Conduit Fill snapshot (HMAC token, no database)
 
 `GET /api/healthz` returns `status: "ok"` plus that route list.
 
@@ -47,6 +48,10 @@ Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sou
 ### `POST /api/speak`
 
 Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for translator clips. Look Check roast playback may send up to **1500** characters with voice id `uYsaRSYDSuxmtyipO9Qt` (Cassian Vale), model `eleven_v3`, and seed **60606**. That voice uses server voice_settings for a slow, close, delighted delivery (stability 0.38, similarity_boost 0.82, style 1, speed 0.86). The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Look Check roasts; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en). Look Check does not fall back to a device voice.
+
+### `POST /api/share` and `GET /api/share/:token`
+
+Creates and reads a hosted Voltage Drop or Conduit Fill snapshot. The token is HMAC-SHA256 over the JSON payload using `SHARE_HMAC_SECRET` (at least 16 characters). Fly scale-to-zero does not drop existing links because nothing is stored in memory or on a volume. `POST` body: `{ "tool": "voltage-drop" | "conduit-fill", "contractor": "…", "fields": [{ "label": "…", "value": "…" }] }`. Success: `{ "url": "https://beckify.com/share/…", "tool", "title" }`. Missing secret → **503**. Bad payload → **400**. Bad or tampered token → **404**. Create is capped at 20 per 15 minutes per IP; reads at 120. No API key in the client. This does not meter translate, speak, or look.
 
 ## Local
 
@@ -87,6 +92,8 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
    # fly secrets set CORS_ORIGINS=https://beckify.com,https://www.beckify.com
    # fly secrets set TRANSLATE_MODEL=gpt-4o-mini
    # fly secrets set REVIEW_MODEL=gpt-4o-mini
+   # Required before hosted share links work (scale-to-zero safe; not a database):
+   # fly secrets set SHARE_HMAC_SECRET="$(openssl rand -base64 32)"
    ```
 
 4. First deploy (local CLI or wait for Actions after step 5):

@@ -7,8 +7,8 @@ router.get("/healthz", (_req, res) => {
   res.json({
     status: "ok",
     routes: {
-      get: ["/api/healthz"],
-      post: [...VISION_POST_PATHS, "/api/review-calculation", "/api/translate", "/api/speak"],
+      get: ["/api/healthz", "/api/share/:token"],
+      post: [...VISION_POST_PATHS, "/api/review-calculation", "/api/translate", "/api/speak", "/api/share"],
     },
   });
 });

@@ -250,6 +250,18 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="font-display text-xl font-bold tracking-tight">Hosted calculation link</h2>
+            <p className="text-base leading-relaxed">
+              On Voltage Drop or Conduit Fill, <strong>Share</strong> can send a contractor or company name
+              and that result snapshot to{" "}
+              <code className="font-mono text-[0.9em]">https://api.beckify.com/api/share</code>. The page at{" "}
+              <code className="font-mono text-[0.9em]">https://beckify.com/share/…</code> shows that name and
+              the snapshot. Nothing is sent until you tap Share. Copy and Saved Jobs stay on the device.
+              Optional tips in Settings are not required.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="font-display text-xl font-bold tracking-tight">Children’s privacy</h2>
             <p className="text-base leading-relaxed">
               The app is rated 4+ and does not collect data from anyone, including children.

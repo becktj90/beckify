@@ -247,6 +247,8 @@ struct VoltageDropView: View {
                 }
             }
 
+            ContractorShareBar(tool: .voltageDrop, fields: necShareFields(r), enabled: !session.isStale)
+
             SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
                 jobs.save(SavedJob(
                     name: jobName,
@@ -420,6 +422,8 @@ struct VoltageDropView: View {
                     ResultRow(label: cite.articleOrTable, value: cite.edition.displayName, tone: Theme.muted)
                 }
             }
+
+            ContractorShareBar(tool: .voltageDrop, fields: asnzsShareFields(r), enabled: !asnzsSession.isStale)
 
             SaveJobBar(jobName: $jobName, canSave: !asnzsSession.isStale) {
                 jobs.save(SavedJob(
@@ -632,6 +636,47 @@ struct VoltageDropView: View {
         guard let r = session.displayedResult else { return nil }
         let rec = r.recommendedLabel.map { "  ·  rec \($0)" } ?? ""
         return "\(Format.volts(r.dropVolts))  ·  \(Format.percent(r.dropPercent))\(rec)"
+    }
+
+    private func necShareFields(_ r: VoltageDropSizingResult) -> [ContractorShareField] {
+        var rows = [
+            ContractorShareField(label: "Code", value: ElectricalCode.nec.displayName),
+            ContractorShareField(label: "System", value: system.displayName),
+            ContractorShareField(label: "Voltage", value: "\(voltage) V"),
+            ContractorShareField(label: "Current", value: "\(current) A"),
+            ContractorShareField(label: "One-way length", value: "\(length) \(lengthUnit.symbol)"),
+            ContractorShareField(label: "Conductor", value: "\(NECTables.wireLabel(size)) \(material.displayName)"),
+            ContractorShareField(label: "Runs", value: runs),
+            ContractorShareField(label: "Voltage drop", value: Format.volts(r.dropVolts)),
+            ContractorShareField(label: "Drop", value: Format.percent(r.dropPercent)),
+            ContractorShareField(label: "Receiving end", value: Format.volts(r.receivingVolts)),
+            ContractorShareField(label: "Target", value: r.meetsTarget ? "Meets \(Format.percent(r.targetDropPercent))" : "Over \(Format.percent(r.targetDropPercent))"),
+        ]
+        if let rec = r.recommendedLabel {
+            rows.append(ContractorShareField(label: "Recommended", value: rec))
+        }
+        return rows
+    }
+
+    private func asnzsShareFields(_ r: ASNZSVoltageDropResult) -> [ContractorShareField] {
+        var rows = [
+            ContractorShareField(label: "Code", value: ElectricalCode.asnzs.displayName),
+            ContractorShareField(label: "System", value: system.displayName),
+            ContractorShareField(label: "Voltage", value: "\(asVoltage) V"),
+            ContractorShareField(label: "Current", value: "\(asCurrent) A"),
+            ContractorShareField(label: "One-way length", value: "\(asLength) \(lengthUnit.symbol)"),
+            ContractorShareField(label: "Conductor", value: "\(asSize) mm² \(ASNZSTables.materialName(material))"),
+            ContractorShareField(label: "Voltage drop", value: Format.volts(r.dropVolts)),
+            ContractorShareField(label: "Drop", value: Format.percent(r.dropPercent)),
+            ContractorShareField(label: "Receiving end", value: Format.volts(r.receivingVolts)),
+        ]
+        if let rec = r.recommendedLabel {
+            rows.append(ContractorShareField(label: "Recommended", value: rec))
+        }
+        if let earth = r.earth {
+            rows.append(ContractorShareField(label: "Earth", value: earth.copyLine))
+        }
+        return rows
     }
 
     private var necCopy: String? { sticky }
