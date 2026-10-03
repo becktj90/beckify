@@ -21,6 +21,7 @@ struct SpanishTranslatorView: View {
     @State private var showAdvanced = false
     @State private var lastTestPhrase = ""
     @State private var lastAttentionPhrase = ""
+    @FocusState private var composerFocused: Bool
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -40,9 +41,10 @@ struct SpanishTranslatorView: View {
     var body: some View {
         ToolScaffold(
             toolID: .spanishTranslator,
-            stickyAnswer: sticky,
+            stickyAnswer: nil,
             copyText: copyText,
-            disclaimer: .designAidExtra(SpanishTranslatorAPI.disclaimer)
+            disclaimer: .designAidExtra(SpanishTranslatorAPI.disclaimer),
+            showsKeyboardToolbar: false
         ) {
             phaseLine
             directionCard
@@ -50,7 +52,6 @@ struct SpanishTranslatorView: View {
             attentionCard
             recordCard
             quickPhrasesCard
-            textCards
             if showAdvanced {
                 advancedCard
             } else {
@@ -82,6 +83,24 @@ struct SpanishTranslatorView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             crewHelperBar
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            composerDock
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    composerFocused = false
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
+                }
+                .accessibilityIdentifier("keyboardDone")
+            }
+        }
         .onAppear {
             engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
             engine.applyCrew(crew, invalidateInFlight: false)
@@ -104,25 +123,34 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    private var sticky: String {
-        let status = engine.statusLabel
-        let answer = direction.listensInSpanish ? engine.englishText : engine.spanishText
-        let source = direction.listensInSpanish ? engine.spanishText : engine.englishText
-        if !answer.isEmpty {
-            return "\(status) · \(answer)"
-        }
-        if !source.isEmpty {
-            return "\(status) · \(source)"
-        }
-        return status
-    }
-
     /// Just the translated message — not the source text, labels, or
     /// disclaimer. The toolbar/sticky-bar copy button is the one-tap "copy
     /// what I just heard" action; the full EN/ES/engine breakdown is still
     /// available per-field via each language card's own copy button.
     private var copyText: String {
-        direction.listensInSpanish ? engine.englishText : engine.spanishText
+        crewAnswer
+    }
+
+    /// Dialect line for the person on screen. Typed text wins over a stale translation.
+    private var crewAnswer: String {
+        let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        let heardEnglish = engine.englishText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let heardSpanish = engine.spanishText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let english: String
+        let spanish: String
+        if direction.listensInSpanish {
+            spanish = typed.isEmpty ? heardSpanish : typed
+            english = heardEnglish
+        } else {
+            english = typed.isEmpty ? heardEnglish : typed
+            spanish = heardSpanish
+        }
+        return SpanishTranslatorAPI.lineForCrew(
+            crew: crew,
+            english: english,
+            spanish: spanish,
+            fallback: typed
+        )
     }
 
     /// One short phase word — no STATUS essay, engine/URL notes, or voice tech.
@@ -353,15 +381,6 @@ struct SpanishTranslatorView: View {
             .disabled(engine.isBusyForNewInput)
             .accessibilityIdentifier("spanishTranslator.testRandom")
             .accessibilityLabel("Test with a random phrase")
-
-            TextField(SpanishTranslatorAPI.typedPlaceholder(direction: direction), text: $typedLine, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(2...5)
-                .onSubmit {
-                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.setDirection(direction)
-                    engine.translateText(typedLine, customEndpoint: customEndpoint, token: apiToken)
-                }
         }
         .padding(.vertical, 4)
     }
@@ -453,27 +472,49 @@ struct SpanishTranslatorView: View {
         }
     }
 
-    private var textCards: some View {
-        VStack(spacing: 12) {
-            if direction.listensInSpanish {
-                languageCard(title: "Spanish (heard / typed)", text: engine.spanishText, prominent: false)
-                languageCard(title: "Answer · English", text: engine.englishText, prominent: true)
-            } else {
-                languageCard(title: "English (heard / typed)", text: engine.englishText, prominent: false)
-                languageCard(title: "Answer · Spanish", text: engine.spanishText, prominent: true)
-            }
+    /// Input and the dialect answer stay in one dock above the keyboard.
+    /// One Done lives on the shared keyboard toolbar — this dock does not add another.
+    private var composerDock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField(SpanishTranslatorAPI.typedPlaceholder(direction: direction), text: $typedLine, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(1...3)
+                .focused($composerFocused)
+                .submitLabel(.send)
+                .onSubmit { submitTypedLine() }
+                .accessibilityIdentifier("spanishTranslator.composer")
+            Text(composerAnswerTitle)
+                .font(.caption2.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(Theme.accent)
+            Text(crewAnswer.isEmpty ? "—" : crewAnswer)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundStyle(Theme.foreground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(4)
+                .textSelection(.enabled)
+                .accessibilityIdentifier("spanishTranslator.answer")
+        }
+        .padding(.horizontal, Theme.Space.lg)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(Theme.surface)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Theme.accent)
+                .frame(height: 2)
         }
     }
 
-    private func languageCard(title: String, text: String, prominent: Bool) -> some View {
-        ResultCard(title: title, copyText: text) {
-            Text(text.isEmpty ? "—" : text)
-                .font(prominent
-                      ? .system(size: 22, weight: .semibold, design: .rounded)
-                      : Theme.TypeRole.body)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-        }
+    private var composerAnswerTitle: String {
+        "ANSWER · \(crew.displayName.uppercased())"
+    }
+
+    private func submitTypedLine() {
+        composerFocused = false
+        engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+        engine.setDirection(direction)
+        engine.translateText(typedLine, customEndpoint: customEndpoint, token: apiToken)
     }
 
     /// Selected helper. Stays pinned while the rest of the tool scrolls.
@@ -481,14 +522,20 @@ struct SpanishTranslatorView: View {
     /// on a short syllable beat and the body bobs a little.
     private var crewHelperBar: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CrewTalkSprite(crew: crew, isTalking: engine.phase == .playing)
+            CrewTalkSprite(
+                crew: crew,
+                isTalking: engine.phase == .playing,
+                height: composerFocused ? 96 : 168
+            )
             Text(crew.displayName)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.foreground)
-            Text(crew.blurb)
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .fixedSize(horizontal: false, vertical: true)
+            if !composerFocused {
+                Text(crew.blurb)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Picker("Talking with", selection: $crewRaw) {
                 ForEach(CrewTalkMember.allCases, id: \.rawValue) { member in
                     Text(member.displayName).tag(member.rawValue)
@@ -510,6 +557,7 @@ struct SpanishTranslatorView: View {
 private struct CrewTalkSprite: View {
     let crew: CrewTalkMember
     let isTalking: Bool
+    var height: CGFloat = 168
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -545,7 +593,7 @@ private struct CrewTalkSprite: View {
             .resizable()
             .scaledToFit()
             .frame(maxWidth: .infinity)
-            .frame(height: 220)
+            .frame(height: height)
             .offset(y: bob)
             // Instant cut. A linear animation on the frame smears two poses and fights nearest-neighbor.
             .transaction { transaction in

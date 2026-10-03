@@ -12,6 +12,12 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     public static let storageKey = "crewTalk.member"
     /// Playback model sent to `/api/speak`. The key stays on the server.
     public static let speakModel = "eleven_v3"
+    /// ElevenLabs `/api/speak` settings for Junie only. Thick, slow, barely-straight delivery.
+    /// The key stays on the server. Voice id stays `tdK8noxHGTBqk6F18tbZ`.
+    public static let junieSpeakStability = 0.15
+    public static let junieSpeakSimilarity = 0.72
+    public static let junieSpeakStyle = 1.0
+    public static let junieSpeakSpeed = 0.64
 
     public var displayName: String {
         switch self {
@@ -399,7 +405,7 @@ public enum SpanishTranslatorAPI {
     }
 
     public static let disclaimer =
-        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, Junie Pell, Pearl, or Sloane Merritt — and that 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
+        "Speech stays on this device for recognition. English → Spanish is the default. Beckify AI offers Clean or Jobsite wording via api.beckify.com. Pick who you are talking with — Bodie Hale, Tito Solano, Junie Pell, Pearl, or Sloane Merritt — and that person rewrites the line into their own wording while the meaning stays. Their 16-bit sprite stays on screen, swapping idle and talk frames while audio plays. Hey! is a short attention call on English → Spanish only. If translate is unreachable, the app falls back to on-device Apple Translation on iOS 18+ in the same direction. Translation text uploads only when the Beckify path runs. Loud playback sends the short line to api.beckify.com/api/speak with that person's voice (model eleven_v3). Apple AVSpeech is the fallback if cloud TTS fails. Copy Audio and Share Audio use that clip. Free to use. Not a certified interpreter."
 
     public static func defaultTranslateURL() -> URL? {
         translateURL(customEndpoint: nil, apiBase: defaultAPIBase)
@@ -448,7 +454,7 @@ public enum SpanishTranslatorAPI {
         crew: CrewTalkMember? = nil
     ) -> [String: Any] {
         if let crew {
-            return [
+            var body: [String: Any] = [
                 "task": "speak",
                 "text": text,
                 "voice": crew.voiceID,
@@ -458,6 +464,13 @@ public enum SpanishTranslatorAPI {
                 "voiceMode": voiceMode.apiValue,
                 "mode": voiceMode.apiValue,
             ]
+            if crew == .juniePell {
+                body["stability"] = CrewTalkMember.junieSpeakStability
+                body["similarity_boost"] = CrewTalkMember.junieSpeakSimilarity
+                body["style"] = CrewTalkMember.junieSpeakStyle
+                body["speed"] = CrewTalkMember.junieSpeakSpeed
+            }
+            return body
         }
         let passedVoice = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         var resolvedLanguage = language.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -977,142 +990,53 @@ public enum SpanishTranslatorAPI {
         return register + " Who speaks is the person you pick."
     }
 
-    /// Line the selected person should say. Falls back when that language is still empty.
+    /// Line the selected person should say. Every voice rewrites the wording.
+    /// English crew uses the English line (or the fallback). Tito rewrites into jobsite Spanish.
     public static func lineForCrew(
         crew: CrewTalkMember,
         english: String,
         spanish: String,
         fallback: String
     ) -> String {
-        if crew == .pearl {
-            let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
-            let source = englishLine.isEmpty
-                ? fallback.trimmingCharacters(in: .whitespacesAndNewlines)
-                : englishLine
-            return pearlWarmRewrite(source)
+        let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
+        let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+        let source: String
+        if crew == .titoSolano {
+            if !englishLine.isEmpty { source = englishLine }
+            else if !spanishLine.isEmpty { source = spanishLine }
+            else { source = fallbackLine }
+        } else if !englishLine.isEmpty {
+            source = englishLine
+        } else if !fallbackLine.isEmpty {
+            source = fallbackLine
+        } else {
+            source = spanishLine
         }
-        if crew == .sloaneMerritt {
-            let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
-            let source = englishLine.isEmpty
-                ? fallback.trimmingCharacters(in: .whitespacesAndNewlines)
-                : englishLine
-            return sloaneCorporateRewrite(source)
-        }
-        let preferred = crew.speakLanguage == "es" ? spanish : english
-        let trimmed = preferred.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { return trimmed }
-        return fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+        return CrewDialectRewrite.rewrite(crew: crew, raw: source)
     }
 
     /// Pearl speaks the same ask in warm, convincing English. She does not scold and does not drop the request.
     public static func pearlWarmRewrite(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "" }
-        let key = pearlFold(trimmed)
-        if let known = pearlKnownWarmLines[key] { return known }
-        let lower = trimmed.lowercased()
-        let alreadyWarm = ["please ", "please,", "would you", "could you", "can you", "would you mind"]
-        if alreadyWarm.contains(where: { lower.hasPrefix($0) }) {
-            return pearlSentence(trimmed)
-        }
-        return "Would you please \(pearlSoftenImperative(trimmed))?"
+        CrewDialectRewrite.rewrite(crew: .pearl, raw: raw)
     }
 
-    private static let pearlKnownWarmLines: [String: String] = [
-        "kill the power": "Would you please cut the power?",
-        "thats live dont touch it": "That line is live — please don't touch it.",
-        "hand me that conduit": "Could you hand me that conduit?",
-        "move the ladder": "Would you move the ladder for me?",
-        "watch your head": "Please watch your head.",
-        "we need more wire": "Could we get a little more wire?",
-        "who left this mess": "Could you help me see who left this mess?",
-    ]
-
-    private static func pearlFold(_ raw: String) -> String {
-        var text = raw.lowercased()
-        let drop = CharacterSet.punctuationCharacters.union(.symbols)
-        text = text.unicodeScalars.filter { !drop.contains($0) }.map(String.init).joined()
-        return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-    }
-
-    private static func pearlSoftenImperative(_ raw: String) -> String {
-        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        while let last = text.last, ".!?".contains(last) {
-            text.removeLast()
-        }
-        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let lower = text.lowercased()
-        if lower.hasPrefix("kill the ") {
-            text = "cut the " + text.dropFirst("kill the ".count)
-        } else if lower.hasPrefix("kill ") {
-            text = "cut " + text.dropFirst("kill ".count)
-        }
-        guard let first = text.first else { return text }
-        return String(first).lowercased() + text.dropFirst()
-    }
-
-    private static func pearlSentence(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "" }
-        if ".!?".contains(trimmed.last!) { return trimmed }
-        return trimmed + "."
-    }
-
-    /// Sloane speaks as a polished HR lead: blunt English becomes meeting-speak only
-    /// (circle back, piggyback, align, take offline) while keeping the ask. Fun, not offensive.
+    /// Sloane speaks as a polished HR lead. Blunt or hostile English still leaves as meeting-speak.
+    /// Jargon rotates. The original insult is not echoed.
     public static func sloaneCorporateRewrite(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "" }
-        let key = sloaneFold(trimmed)
-        if let known = sloaneKnownCorporateLines[key] { return known }
-        let lower = trimmed.lowercased()
-        if lower.contains("circle back") || lower.contains("piggyback") || lower.contains("take this offline") || lower.contains("take the rest offline") {
-            return sloaneSentence(trimmed)
-        }
-        let topic = sloaneTopicPhrase(trimmed)
-        return "Team, I want to circle back on \(topic). If we align on that, I'll piggyback with leadership so they hear it was you, and we can take the rest offline."
+        CrewDialectRewrite.rewrite(crew: .sloaneMerritt, raw: raw)
     }
 
-    private static let sloaneKnownCorporateLines: [String: String] = [
-        "stop talking and get that feeder in before lunch": "Team, I want to circle back on the feeder. If we align on landing it before lunch, the rest of the floor stays on schedule. I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-        "kill the power": "Team, I want to circle back on cutting the power. If we align on that now, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-        "hand me that conduit": "Team, I want to circle back on that conduit handoff. If we align on moving it over, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-        "move the ladder": "Team, I want to circle back on relocating the ladder. If we align on that, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-        "watch your head": "Team, I want to circle back on head clearance. If we align on watching that, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-        "we need more wire": "Team, I want to circle back on wire supply. If we align on landing more wire, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-        "who left this mess": "Team, I want to circle back on the open housekeeping item. If we align on who owns the cleanup, I'll piggyback with leadership so they hear it was you, and we can take the rest offline.",
-    ]
-
-    private static func sloaneFold(_ raw: String) -> String {
-        var text = raw.lowercased()
-        let drop = CharacterSet.punctuationCharacters.union(.symbols)
-        text = text.unicodeScalars.filter { !drop.contains($0) }.map(String.init).joined()
-        return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    public static func junieDialectRewrite(_ raw: String) -> String {
+        CrewDialectRewrite.rewrite(crew: .juniePell, raw: raw)
     }
 
-    private static func sloaneTopicPhrase(_ raw: String) -> String {
-        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        while let last = text.last, ".!?".contains(last) {
-            text.removeLast()
-        }
-        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let lower = text.lowercased()
-        if lower.hasPrefix("stop talking and ") {
-            text = String(text.dropFirst("stop talking and ".count))
-        } else if lower.hasPrefix("kill the ") {
-            text = "cutting the " + text.dropFirst("kill the ".count)
-        } else if lower.hasPrefix("kill ") {
-            text = "cutting " + text.dropFirst("kill ".count)
-        }
-        guard let first = text.first else { return "that ask" }
-        return String(first).lowercased() + text.dropFirst()
+    public static func bodieDialectRewrite(_ raw: String) -> String {
+        CrewDialectRewrite.rewrite(crew: .bodieHale, raw: raw)
     }
 
-    private static func sloaneSentence(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "" }
-        if ".!?".contains(trimmed.last!) { return trimmed }
-        return trimmed + "."
+    public static func titoDialectRewrite(_ raw: String) -> String {
+        CrewDialectRewrite.rewrite(crew: .titoSolano, raw: raw)
     }
 
     /// Shown on the Deep South card. Same English words, different neural character.

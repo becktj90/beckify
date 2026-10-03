@@ -8,6 +8,8 @@ import {
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
   normalizeSpeakLanguage,
+  JUNIE_ELEVEN_VOICE_SETTINGS,
+  JUNIE_PELL_VOICE_ID,
   resolveElevenLabsModel,
   resolveElevenLabsVoiceId,
   shouldUseElevenLabsSpeak,
@@ -28,6 +30,10 @@ interface SpeakBody {
   voiceMode?: unknown;
   mode?: unknown;
   style?: unknown;
+  stability?: unknown;
+  similarity_boost?: unknown;
+  similarityBoost?: unknown;
+  speed?: unknown;
 }
 
 const router: IRouter = Router();
@@ -104,7 +110,7 @@ router.post("/speak", async (req, res) => {
 
   try {
     const response = useEleven
-      ? await synthesizeElevenLabs(text, voice, model, format)
+      ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice, body))
       : await synthesizeOpenAI(text, voice, model, format, voiceMode, language);
 
     if (!response.ok) {
@@ -179,6 +185,7 @@ async function synthesizeElevenLabs(
   voiceId: string,
   model: string,
   format: "mp3" | "wav",
+  voiceSettings?: Record<string, number | boolean>,
 ): Promise<Response> {
   const apiKey = process.env["ELEVENLABS_API_KEY"];
   if (!apiKey) {
@@ -197,8 +204,41 @@ async function synthesizeElevenLabs(
     body: JSON.stringify({
       text,
       model_id: model,
+      ...(voiceSettings ? { voice_settings: voiceSettings } : {}),
     }),
   });
+}
+
+
+function clampUnit(raw: unknown, fallback: number): number {
+  const value = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(1, Math.max(0, value));
+}
+
+function clampSpeed(raw: unknown, fallback: number): number {
+  const value = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(1.2, Math.max(0.5, value));
+}
+
+/** Junie gets a thick preset. Other crew voices stay on the provider default unless the body sets knobs. */
+function elevenVoiceSettings(voiceId: string, body: SpeakBody): Record<string, number | boolean> | undefined {
+  const junie = voiceId === JUNIE_PELL_VOICE_ID;
+  const preset = JUNIE_ELEVEN_VOICE_SETTINGS;
+  const stability = body.stability;
+  const similarity = body.similarity_boost ?? body.similarityBoost;
+  const style = body.style;
+  const speed = body.speed;
+  const hasOverride = stability != null || similarity != null || (typeof style === "number") || speed != null;
+  if (!junie && !hasOverride) return undefined;
+  return {
+    stability: clampUnit(stability, junie ? preset.stability : 0.5),
+    similarity_boost: clampUnit(similarity, junie ? preset.similarity_boost : 0.75),
+    style: clampUnit(typeof style === "number" ? style : undefined, junie ? preset.style : 0),
+    use_speaker_boost: true,
+    speed: clampSpeed(speed, junie ? preset.speed : 1),
+  };
 }
 
 function consumeLocalRateLimit(clientKey: string) {

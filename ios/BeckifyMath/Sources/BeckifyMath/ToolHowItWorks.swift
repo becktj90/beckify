@@ -800,7 +800,7 @@ public enum ToolHowItWorksCatalog {
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Bodie: California English. Tito: Cuban jobsite Spanish. Junie: rural Alabama English. Pearl warms a blunt ask; Sloane turns one into meeting-speak. Clean/Jobsite is wording.",
+                "Five helpers—Bodie, Tito, Junie, Pearl, and Sloane—rewrite your line in their dialect; tap Speak to hear it. Cuban Spanish is included. Clean/Jobsite is wording.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),

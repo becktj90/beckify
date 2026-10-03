@@ -571,22 +571,26 @@ final class SpanishTranslatorTests: XCTestCase {
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: junie) as? [String: Any])
         XCTAssertEqual(object["voice"] as? String, "tdK8noxHGTBqk6F18tbZ")
         XCTAssertEqual(object["model"] as? String, "eleven_v3")
+        XCTAssertEqual(object["stability"] as? Double ?? -1, CrewTalkMember.junieSpeakStability, accuracy: 0.001)
+        XCTAssertEqual(object["similarity_boost"] as? Double ?? -1, CrewTalkMember.junieSpeakSimilarity, accuracy: 0.001)
+        XCTAssertEqual(object["style"] as? Double ?? -1, CrewTalkMember.junieSpeakStyle, accuracy: 0.001)
+        XCTAssertEqual(object["speed"] as? Double ?? -1, CrewTalkMember.junieSpeakSpeed, accuracy: 0.001)
+        XCTAssertNil(bodie["stability"])
         let note = SpanishTranslatorAPI.neuralVoiceNote(model: "", crew: .bodieHale)
         XCTAssertTrue(note.contains("Bodie Hale"))
         XCTAssertTrue(note.contains("eleven_v3"))
         XCTAssertFalse(note.lowercased().contains("comedy"))
-        XCTAssertEqual(
-            SpanishTranslatorAPI.lineForCrew(crew: .titoSolano, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope"),
-            "Corta la corriente."
-        )
-        XCTAssertEqual(
-            SpanishTranslatorAPI.lineForCrew(crew: .juniePell, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope"),
-            "Kill the power."
-        )
-        XCTAssertEqual(
-            SpanishTranslatorAPI.lineForCrew(crew: .bodieHale, english: "  ", spanish: "Hola", fallback: "Hola"),
-            "Hola"
-        )
+        let titoLine = SpanishTranslatorAPI.lineForCrew(crew: .titoSolano, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope")
+        XCTAssertNotEqual(titoLine, "Kill the power.")
+        XCTAssertNotEqual(titoLine, "Corta la corriente.")
+        XCTAssertTrue(titoLine.lowercased().contains("corriente"))
+        let junieLine = SpanishTranslatorAPI.lineForCrew(crew: .juniePell, english: "Kill the power.", spanish: "Corta la corriente.", fallback: "nope")
+        XCTAssertNotEqual(junieLine.lowercased(), "kill the power.")
+        XCTAssertTrue(junieLine.lowercased().contains("power"))
+        XCTAssertFalse(junieLine.lowercased().contains("kill"))
+        let bodieHello = SpanishTranslatorAPI.lineForCrew(crew: .bodieHale, english: "  ", spanish: "Hola", fallback: "Hola")
+        XCTAssertNotEqual(bodieHello, "Hola")
+        XCTAssertTrue(bodieHello.lowercased().contains("hey") || bodieHello.lowercased().contains("good"))
         let pearlBody = SpanishTranslatorAPI.speakRequestBody(text: "Kill the power.", voiceMode: .clean, crew: .pearl)
         XCTAssertEqual(pearlBody["voice"] as? String, "xDnrPZyqSbomyfOcnNpu")
         XCTAssertEqual(pearlBody["model"] as? String, "eleven_v3")
@@ -658,12 +662,46 @@ final class SpanishTranslatorTests: XCTestCase {
             feeder
         )
         let genericSloane = SpanishTranslatorAPI.sloaneCorporateRewrite("Hold this for a second.")
-        XCTAssertTrue(genericSloane.lowercased().contains("circle back"))
-        XCTAssertTrue(genericSloane.lowercased().contains("piggyback"))
-        XCTAssertTrue(genericSloane.lowercased().contains("align"))
-        XCTAssertTrue(genericSloane.lowercased().contains("offline"))
+        XCTAssertFalse(genericSloane.lowercased().contains("hold this for a second"))
+        XCTAssertTrue(genericSloane.lowercased().contains("hold"))
+        let hostile = SpanishTranslatorAPI.sloaneCorporateRewrite("Shut up you idiot and kill the damn power.")
+        XCTAssertFalse(hostile.lowercased().contains("idiot"))
+        XCTAssertFalse(hostile.lowercased().contains("shut up"))
+        XCTAssertFalse(hostile.lowercased().contains("damn"))
+        XCTAssertTrue(hostile.lowercased().contains("power"))
+        XCTAssertNotEqual(hostile.lowercased().filter { !$0.isWhitespace }, "shutupyouidiotandkillthedamnpower.")
+        let jargon = [
+            "north star", "flywheel", "paradigm shift", "synergy", "move the needle",
+            "boil the ocean", "low-hanging fruit", "pivot", "touch base", "ping",
+            "offline", "circle back", "bifurcate", "bandwidth", "on my radar",
+            "in the loop", "hard stop", "piggyback",
+        ]
+        let samples = [
+            "Hold this for a second.",
+            "Shut up you idiot and kill the damn power.",
+            "We are out of staples.",
+            "The panel is buzzing.",
+            "Bring the torque wrench.",
+            "Tell them the inspection moved.",
+            "Leave the breaker off.",
+            "Call me when the lift is free.",
+        ].map { SpanishTranslatorAPI.sloaneCorporateRewrite($0).lowercased() }
+        let hit = Set(jargon.filter { term in samples.contains { $0.contains(term) } })
+        XCTAssertGreaterThanOrEqual(hit.count, 6, "Sloane should rotate a wide jargon bank, hit \(hit)")
+        XCTAssertGreaterThanOrEqual(Set(samples).count, 4)
+        let junieHostile = SpanishTranslatorAPI.junieDialectRewrite("Shut up you idiot and kill the damn power.")
+        XCTAssertFalse(junieHostile.lowercased().contains("idiot"))
+        XCTAssertFalse(junieHostile.lowercased().contains("damn"))
+        XCTAssertNotEqual(junieHostile.lowercased(), "shut up you idiot and kill the damn power.")
+        let bodieLine = SpanishTranslatorAPI.bodieDialectRewrite("Kill the power.")
+        XCTAssertFalse(bodieLine.lowercased().contains("kill"))
+        XCTAssertTrue(bodieLine.lowercased().contains("power"))
+        let pearlHostile = SpanishTranslatorAPI.pearlWarmRewrite("Shut up you idiot and kill the damn power.")
+        XCTAssertFalse(pearlHostile.lowercased().contains("idiot"))
+        XCTAssertFalse(pearlHostile.lowercased().contains("shut"))
+        XCTAssertTrue(pearlHostile.lowercased().contains("please") || pearlHostile.lowercased().contains("would you"))
         let corporate = (
-            feeder + " " + genericSloane + " " + CrewTalkMember.sloaneMerritt.blurb
+            feeder + " " + genericSloane + " " + hostile + " " + CrewTalkMember.sloaneMerritt.blurb
         ).lowercased()
         XCTAssertFalse(corporate.contains("comedy"))
         XCTAssertFalse(corporate.contains("stoner"))

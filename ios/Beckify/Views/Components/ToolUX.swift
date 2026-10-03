@@ -62,6 +62,8 @@ struct ToolScaffold<Content: View>: View {
     /// Toolbar favorite + How-it-works `i` stay so honesty copy is one tap away.
     var immersivePlay: Bool = false
     var isResultStale: Bool = false
+    /// Crew Talk supplies its own single keyboard Done. Other tools keep this one.
+    var showsKeyboardToolbar: Bool = true
     @ViewBuilder var content: Content
 
     @EnvironmentObject private var favorites: FavoritesStore
@@ -129,21 +131,6 @@ struct ToolScaffold<Content: View>: View {
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    UIApplication.shared.sendAction(
-                        #selector(UIResponder.resignFirstResponder),
-                        to: nil,
-                        from: nil,
-                        for: nil
-                    )
-                }
-                .font(.body.weight(.semibold))
-                .frame(minHeight: Theme.touchTarget)
-                .accessibilityLabel("Done")
-                .accessibilityHint("Dismisses the keyboard so you can Calculate or copy.")
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
                     favorites.toggle(toolID)
@@ -157,19 +144,21 @@ struct ToolScaffold<Content: View>: View {
                     CopyResultButton(text: copyText, compact: true, accessibilityName: "Copy result from toolbar")
                 }
             }
-            ToolbarItemGroup(placement: .keyboard) {
-                Button("Done") { chrome.dismissKeyboard() }
-                    .accessibilityIdentifier("keyboardDone")
-                if chrome.hasNextField {
-                    Button("Next") { chrome.focusNext() }
-                        .accessibilityIdentifier("keyboardNext")
-                }
-                Spacer()
-                if chrome.hasCalculate {
-                    Button("Calculate") { chrome.performCalculate() }
-                        .fontWeight(.semibold)
-                        .disabled(!chrome.calculateEnabled)
-                        .accessibilityIdentifier("keyboardCalculate")
+            if showsKeyboardToolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button("Done") { chrome.dismissKeyboard() }
+                        .accessibilityIdentifier("keyboardDone")
+                    if chrome.hasNextField {
+                        Button("Next") { chrome.focusNext() }
+                            .accessibilityIdentifier("keyboardNext")
+                    }
+                    Spacer()
+                    if chrome.hasCalculate {
+                        Button("Calculate") { chrome.performCalculate() }
+                            .fontWeight(.semibold)
+                            .disabled(!chrome.calculateEnabled)
+                            .accessibilityIdentifier("keyboardCalculate")
+                    }
                 }
             }
         }
