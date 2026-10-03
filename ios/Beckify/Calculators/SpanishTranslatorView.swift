@@ -1404,6 +1404,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
+            // allowBluetoothHFP not in Xcode 16.4 SDK; rename when CI upgrades.
             try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             try session.overrideOutputAudioPort(.speaker)
