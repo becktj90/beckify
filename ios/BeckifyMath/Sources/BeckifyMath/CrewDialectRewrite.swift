@@ -16,44 +16,14 @@ enum CrewDialectRewrite {
     }
 
     // MARK: - Intent
+    //
+    // Keyword hits go through CrewRewriteGuard (word boundaries on folded text).
+    // Nil means do not template: negation, question, opposing polarity,
+    // more than one intent, or more than 12 words.
 
-    private enum Intent {
-        case cutPower
-        case conduit
-        case ladder
-        case head
-        case wire
-        case mess
-        case feeder
-        case breaker
-        case racks
-        case hold
-        case compliment
-        case greeting
-        case free
-    }
-
-    private static func intent(for scrubbed: String) -> Intent {
-        let key = fold(scrubbed)
-        if key == "hola" || key == "hi" || key == "hey" || key == "hello" { return .greeting }
-        let lower = scrubbed.lowercased()
-        if lower.contains("good at") || lower.contains("so good") || lower.contains("great at")
-            || (lower.contains("you are") && lower.contains("good"))
-            || (lower.contains("you're") && lower.contains("good"))
-            || (lower.contains("youre") && lower.contains("good")) {
-            return .compliment
-        }
-        if lower.contains("power") || lower.contains("corriente") { return .cutPower }
-        if lower.contains("conduit") { return .conduit }
-        if lower.contains("ladder") || lower.contains("escalera") { return .ladder }
-        if lower.contains("head") || lower.contains("cabeza") { return .head }
-        if lower.contains("wire") || lower.contains("alambre") || lower.contains("cable") { return .wire }
-        if lower.contains("mess") || lower.contains("desorden") { return .mess }
-        if lower.contains("feeder") || lower.contains("aliment") { return .feeder }
-        if lower.contains("breaker") { return .breaker }
-        if lower.contains("rack") { return .racks }
-        if lower.contains("hold") { return .hold }
-        return .free
+    private static func guarded(_ line: String, raw: String, fallback: String) -> String {
+        guard CrewRewriteGuard.isConsistent(translation: raw, persona: line) else { return fallback }
+        return safe(line, raw: raw, fallback: fallback)
     }
 
     /// Content words with the original sentence broken apart so a template cannot
@@ -91,7 +61,8 @@ enum CrewDialectRewrite {
             return "When you have a moment, tell me what you need."
         }
         let line: String
-        switch intent(for: cleaned) {
+        let fallback = "When you have a moment, tell me the part you need help with."
+        switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
             line = "Please cut the power, and let's stay clear of it."
         case .conduit:
@@ -118,8 +89,10 @@ enum CrewDialectRewrite {
             line = "Hello there. Tell me what you need, when you have a moment."
         case .free:
             line = "When you have a moment, the thing to handle is \(voicedWords(cleaned))."
+        case nil:
+            line = fallback
         }
-        return safe(line, raw: trimmed, fallback: "When you have a moment, tell me the part you need help with.")
+        return guarded(line, raw: trimmed, fallback: fallback)
     }
 
     // MARK: - Sloane
@@ -130,8 +103,8 @@ enum CrewDialectRewrite {
         guard !trimmed.isEmpty else { return "" }
         let key = fold(trimmed)
         if let known = sloaneKnown[key] { return known }
-        let cleaned = scrub(trimmed)
-        let topic = sloaneTopic(cleaned.isEmpty ? trimmed : cleaned)
+        // Pass the raw line. scrub() splits "Don't" into "Don t" and would hide the negation.
+        let topic = sloaneTopic(trimmed)
         let templates: [(String) -> String] = [
             { topic in
                 "Team, I want to circle back on \(topic). I'll keep you in the loop and take the rest offline."
@@ -173,7 +146,7 @@ enum CrewDialectRewrite {
     ]
 
     private static func sloaneTopic(_ raw: String) -> String {
-        switch intent(for: raw) {
+        switch CrewRewriteGuard.intent(raw) {
         case .cutPower: return "cutting the power"
         case .conduit: return "that conduit handoff"
         case .ladder: return "relocating the ladder"
@@ -189,6 +162,9 @@ enum CrewDialectRewrite {
         case .greeting: return "the open item"
         case .free:
             return voicedWords(raw)
+        case nil:
+            // Rejected asks keep a neutral topic so a stock line cannot flip polarity.
+            return "the open item"
         }
     }
 
@@ -199,7 +175,8 @@ enum CrewDialectRewrite {
         guard !trimmed.isEmpty else { return "" }
         let cleaned = scrub(trimmed)
         let line: String
-        switch intent(for: cleaned.isEmpty ? trimmed : cleaned) {
+        let fallback = "Bless your heart, say that once more in plain words and I'll tend to it."
+        switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
             line = "That power needs to come off, bless your heart. Don't get your knickers in a knot."
         case .conduit:
@@ -226,8 +203,10 @@ enum CrewDialectRewrite {
             line = "Hey there, bless your heart. Good to see you over yonder."
         case .free:
             line = "Listen here — \(voicedWords(cleaned)), over yonder. Bless your heart."
+        case nil:
+            line = fallback
         }
-        return safe(line, raw: trimmed, fallback: "Bless your heart, say that once more in plain words and I'll tend to it.")
+        return guarded(line, raw: trimmed, fallback: fallback)
     }
 
     // MARK: - Bodie
@@ -237,7 +216,8 @@ enum CrewDialectRewrite {
         guard !trimmed.isEmpty else { return "" }
         let cleaned = scrub(trimmed)
         let line: String
-        switch intent(for: cleaned.isEmpty ? trimmed : cleaned) {
+        let fallback = "Hey, let's take care of that and call it good. Easy does it."
+        switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
             line = "Hey, let's cut the power and call it good. Easy does it — we're set once it's off."
         case .conduit:
@@ -264,8 +244,10 @@ enum CrewDialectRewrite {
             line = "Hey, good to see you out here. We're good."
         case .free:
             line = "Hey, let's take care of \(voicedWords(cleaned)) and call it good. Easy does it."
+        case nil:
+            line = fallback
         }
-        return safe(line, raw: trimmed, fallback: "Hey, let's take care of that and call it good. Easy does it.")
+        return guarded(line, raw: trimmed, fallback: fallback)
     }
 
     // MARK: - Tito
@@ -281,12 +263,9 @@ enum CrewDialectRewrite {
         if scrubbed.isEmpty {
             return "Óyeme, coño, dime qué carajo necesitas en la obra, mierda."
         }
-        if looksSpanish(scrubbed) {
-            let reshaped = reshapeSpanish(scrubbed)
-            return "Óyeme, coño, \(reshaped). Ahora mismo, carajo, con cuidado, ¿me oyes, pinga?"
-        }
+        // A2: no .free template. Unmatched or rejected text is empty so callers use the translation.
         let line: String
-        switch intent(for: scrubbed) {
+        switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
             line = "¡Coño, corta esa pinga de corriente ahora mismo, carajo!"
         case .conduit:
@@ -311,10 +290,10 @@ enum CrewDialectRewrite {
             line = "Óyeme, coño, esto lo haces de pinga, carajo. Sigue así, mierda."
         case .greeting:
             line = "¿Qué bolá, coño? Aquí estoy, carajo."
-        case .free:
-            line = "Óyeme, coño, encárgate de \(voicedWords(scrubbed)), carajo. Ahora, mierda."
+        case .free, nil:
+            return ""
         }
-        return safe(line, raw: trimmed, fallback: "Óyeme, coño, dime qué carajo necesitas en la obra, mierda.")
+        return guarded(line, raw: trimmed, fallback: "")
     }
 
     private static let titoKnown: [String: String] = [
@@ -328,30 +307,6 @@ enum CrewDialectRewrite {
         "hola": "¿Qué bolá, coño? Aquí estoy, carajo.",
         "stop talking and get that feeder in before lunch": "¡Coño, deja la habladera y mete ese alimentador antes del almuerzo, carajo!",
     ]
-
-    private static func looksSpanish(_ text: String) -> Bool {
-        let lower = text.lowercased()
-        if lower.range(of: "[áéíóúñ¿¡]", options: .regularExpression) != nil { return true }
-        let markers = [" el ", " la ", " que ", " corta", " pásame", " pasame", " corriente", " mira", " oye"]
-        let padded = " " + lower + " "
-        return markers.contains { padded.contains($0) }
-    }
-
-    private static func reshapeSpanish(_ text: String) -> String {
-        var line = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        while let last = line.last, ".!?".contains(last) { line.removeLast() }
-        line = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        if line.isEmpty { return "hazlo ya" }
-        let lower = line.lowercased()
-        if lower.hasPrefix("corta ") {
-            let rest = String(line.dropFirst("corta ".count))
-            return "\(rest) córtala ya"
-        }
-        if lower.hasPrefix("pásame ") || lower.hasPrefix("pasame ") {
-            return "eso que te pedí, pásamelo ya"
-        }
-        return line
-    }
 
     // MARK: - Shared
 
@@ -395,7 +350,7 @@ enum CrewDialectRewrite {
         return String(first).lowercased() + text.dropFirst()
     }
 
-    private static func scrub(_ raw: String) -> String {
+    fileprivate static func scrub(_ raw: String) -> String {
         var text = raw
         let phrases = [
             "shut your mouth", "shut up", "fuck you", "screw you", "piss off", "go to hell",
@@ -438,5 +393,159 @@ enum CrewDialectRewrite {
             hash = hash &* 33 &+ UInt64(byte)
         }
         return Int(hash % UInt64(count))
+    }
+}
+
+/// Decides whether a crew template may stand in for a line.
+/// `intent` matches whole words on folded text. Substring hits (`overhead`, `track`, `Household`) do not count.
+public enum CrewRewriteGuard {
+    enum Intent: Equatable {
+        case cutPower
+        case conduit
+        case ladder
+        case head
+        case wire
+        case mess
+        case feeder
+        case breaker
+        case racks
+        case hold
+        case compliment
+        case greeting
+        /// No keyword. English crew may add a short opener. Tito returns empty (A2).
+        case free
+    }
+
+    /// Word-boundary intent on folded text. Nil when a template would be unsafe.
+    static func intent(_ text: String) -> Intent? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nil }
+        if isQuestion(trimmed) { return nil }
+        let scrubbed = CrewDialectRewrite.scrub(trimmed)
+        if scrubbed.isEmpty { return .free }
+        let folded = CrewDialectRewrite.fold(scrubbed)
+        let words = folded.split(whereSeparator: { $0.isWhitespace })
+        if words.count > 12 { return nil }
+        // Fold the original so "Don't" stays one token. scrub() would split it on the apostrophe.
+        if hasCommandNegation(trimmed) { return nil }
+        if hasOpposingPowerPolarity(folded) { return nil }
+
+        var found: [Intent] = []
+        if isDeenergizePower(folded) { found.append(.cutPower) }
+        let patterns: [(Intent, String)] = [
+            (.conduit, #"\bconduits?\b"#),
+            (.ladder, #"\b(ladders?|escaleras?)\b"#),
+            (.head, #"\b(head|cabeza)\b"#),
+            (.wire, #"\b(wires?|alambres?|cables?)\b"#),
+            (.mess, #"\b(mess|messes|desorden)\b"#),
+            (.feeder, #"\b(feeders?|aliment\w*)\b"#),
+            (.breaker, #"\bbreakers?\b"#),
+            (.racks, #"\bracks?\b"#),
+            (.hold, #"\bhold\b"#),
+        ]
+        for (intent, pattern) in patterns where matches(pattern, in: folded) {
+            found.append(intent)
+        }
+        if matches(#"\b(good at|so good|great at)\b|\byou are\b.*\bgood\b|\byoure\b.*\bgood\b"#, in: folded) {
+            found.append(.compliment)
+        }
+        if found.count > 1 { return nil }
+        if let only = found.first { return only }
+        if folded == "hola" || folded == "hi" || folded == "hey" || folded == "hello" {
+            return .greeting
+        }
+        return .free
+    }
+
+    /// Persona wording must not flip polarity, negation, or question-ness against the translation.
+    public static func isConsistent(translation: String, persona: String) -> Bool {
+        if hasCommandNegation(translation) != hasCommandNegation(persona) { return false }
+        if isQuestion(translation) != isQuestion(persona) { return false }
+        switch (powerPolarity(translation), powerPolarity(persona)) {
+        case (.deenergize, .energize), (.energize, .deenergize):
+            return false
+        default:
+            return true
+        }
+    }
+
+    private enum PowerPolarity {
+        case deenergize
+        case energize
+    }
+
+    private static let powerWord = #"\b(power|corriente)\b"#
+    private static let deenergizeWord = #"\b(kill|kills|killed|killing|cut|cuts|cutting|corta|corte|cortes|corten|cortar|apaga|apagar|desconecta|desconectar|disconnect|disconnects|off|mata|matar)\b"#
+    private static let energizeWord = #"\b(on|prende|prender|enciende|encender|energize|energizes|restore|restores)\b"#
+
+    private static let negationTokens: Set<String> = [
+        "dont", "never", "not", "no", "cant", "cannot", "nunca", "jamas", "jamás",
+    ]
+
+    private static let questionStarters: Set<String> = [
+        "is", "are", "was", "were", "am", "do", "does", "did",
+        "can", "could", "would", "will", "shall", "should",
+        "what", "who", "whom", "whose", "where", "why", "how", "which",
+        "donde", "que", "qué", "como", "cómo", "cual", "cuál", "quien", "quién",
+    ]
+
+    /// `cutPower` only when the power words are a deenergize, not a restore.
+    private static func isDeenergizePower(_ folded: String) -> Bool {
+        guard matches(powerWord, in: folded) else { return false }
+        return matches(deenergizeWord, in: folded) && !matches(energizeWord, in: folded)
+    }
+
+    /// Energize (or mixed energize + deenergize) on a power line. Not a cut template.
+    private static func hasOpposingPowerPolarity(_ folded: String) -> Bool {
+        guard matches(powerWord, in: folded) else { return false }
+        return matches(energizeWord, in: folded)
+    }
+
+    private static func powerPolarity(_ text: String) -> PowerPolarity? {
+        let folded = CrewDialectRewrite.fold(text)
+        guard matches(powerWord, in: folded) else { return nil }
+        let de = matches(deenergizeWord, in: folded)
+        let en = matches(energizeWord, in: folded)
+        if de && !en { return .deenergize }
+        if en && !de { return .energize }
+        return nil
+    }
+
+    /// Command negation near the start of the first sentence. Later flavor ("Don't get your knickers…") does not count.
+    private static func hasCommandNegation(_ text: String) -> Bool {
+        let folded = CrewDialectRewrite.fold(firstClause(text))
+        let tokens = folded.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+        if tokens.count >= 2 && tokens[0] == "do" && tokens[1] == "not" { return true }
+        let window = Array(tokens.prefix(6))
+        if window.contains(where: { negationTokens.contains($0) }) { return true }
+        // scrub() splits the apostrophe in "Don't" / "can't" before fold can join them.
+        for index in window.indices.dropLast() where window[index + 1] == "t" {
+            if window[index] == "don" || window[index] == "can" || window[index] == "won" {
+                return true
+            }
+        }
+        return false
+    }
+
+    private static func isQuestion(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.contains("?") || trimmed.contains("¿") { return true }
+        let folded = CrewDialectRewrite.fold(firstClause(trimmed))
+        guard let first = folded.split(whereSeparator: { $0.isWhitespace }).first else { return false }
+        return questionStarters.contains(String(first))
+    }
+
+    private static func firstClause(_ text: String) -> String {
+        var rest = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        while let first = rest.first, "¡¿".contains(first) {
+            rest.removeFirst()
+        }
+        rest = rest.trimmingCharacters(in: .whitespacesAndNewlines)
+        let end = rest.firstIndex(where: { ".!?".contains($0) }) ?? rest.endIndex
+        return String(rest[..<end])
+    }
+
+    private static func matches(_ pattern: String, in text: String) -> Bool {
+        text.range(of: pattern, options: .regularExpression) != nil
     }
 }
