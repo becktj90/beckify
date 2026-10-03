@@ -23,7 +23,7 @@ console.log("\n--- Privacy policy ---");
 ok("live policy is not a draft", !/Status:\s*Draft/i.test(privacyMd) && !/not published on https:\/\/beckify.com/i.test(privacyMd));
 ok("policy names Trevor Beck and contact email", /Trevor Beck/.test(privacyMd) && /trevorjohnbeck@gmail.com/.test(privacyMd));
 ok("policy URL is https://beckify.com/privacy", /https:\/\/beckify.com\/privacy/.test(privacyMd));
-ok("nutrition label documents Look Check photo upload", /Analyze Look/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd));
+ok("nutrition label documents nameplate and panel photo upload, not catalog Look Check", /Analyze/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd) && /not a tool in this toolbox/.test(privacyMd));
 ok("Look Check posts to api.beckify.com, not GitHub Pages", /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyMd) && /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyPage) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyMd) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyPage));
 ok("sensors and Saved Jobs stay on device", /Saved Jobs stay on the device/.test(privacyMd));
 ok("hosted share is user-initiated", /api\/share/.test(privacyMd) && /Nothing is sent until you tap Share/.test(privacyMd) && /Hosted calculation link/.test(privacyPage));

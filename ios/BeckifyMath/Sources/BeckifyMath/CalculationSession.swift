@@ -197,7 +197,6 @@ public enum ToolCalculationPolicy {
         "referenceLibrary", "magneticCircuit", "fiberLink", "gaussianBeam",
         "transientCircuit", "rackCurrent", "diodeIV", "isLoopVerifier",
         "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate", "motorNameplateOCR",
-        "lookCheck",
         "heaterDesign",
         "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
         "solarDesign",

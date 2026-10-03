@@ -42,7 +42,6 @@ GLYPHS = [
     ("necCircuit", "NEC Circuit", "field", "jobsite"),
     ("shortCircuit", "Short Circuit", "field", "jobsite"),
     ("motorNameplate", "Nameplate", "field", "jobsite"),
-    ("lookCheck", "Look Check", "field", "jobsite"),
     # Power + Bench
     ("batteryBank", "Battery", "power", "power"),
     ("upsSizing", "UPS", "power", "power"),

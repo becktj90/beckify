@@ -452,7 +452,6 @@ extension GlyphKind {
         case .upsSizing: return .upsSizing
         case .motorNameplate: return .motorNameplate
         case .motorNameplateOCR: return .motorNameplateOCR
-        case .lookCheck: return .lookCheck
         case .heaterDesign: return .heaterDesign
         case .empEmc: return .empEmc
         case .necCircuit: return .necCircuit
@@ -549,7 +548,6 @@ enum GlyphKind {
     case upsSizing
     case motorNameplate
     case motorNameplateOCR
-    case lookCheck
     case heaterDesign
     case empEmc
     case necCircuit
@@ -599,7 +597,6 @@ enum GlyphKind {
         case .motorSpeed: return Self.motorSpeed(rect)
         case .motorNameplate: return Self.motorNameplate(rect)
         case .motorNameplateOCR: return Self.motorNameplateOCR(rect)
-        case .lookCheck: return Self.lookCheck(rect)
         case .power: return Self.power(rect)
         case .threePhasePower: return Self.threePhasePower(rect)
         case .powerWizard: return Self.powerWizard(rect)
@@ -1047,23 +1044,6 @@ enum GlyphKind {
         Glyph.lBracket(&stroke, CGPoint(x: r.minX + r.width * 0.04, y: r.maxY - r.height * 0.06), dx: arm, dy: -arm)
         Glyph.lBracket(&stroke, CGPoint(x: r.maxX - r.width * 0.04, y: r.maxY - r.height * 0.06), dx: -arm, dy: -arm)
         return .both(fill: Glyph.punched(body, slot), stroke: stroke)
-    }
-
-    /// Filled almond eye + pupil hole — Look Check, not OCR.
-    private static func lookCheck(_ r: CGRect) -> GlyphArtwork {
-        var eye = Path()
-        eye.move(to: CGPoint(x: r.minX + r.width * 0.06, y: r.midY))
-        eye.addQuadCurve(
-            to: CGPoint(x: r.maxX - r.width * 0.06, y: r.midY),
-            control: CGPoint(x: r.midX, y: r.minY + r.height * 0.08)
-        )
-        eye.addQuadCurve(
-            to: CGPoint(x: r.minX + r.width * 0.06, y: r.midY),
-            control: CGPoint(x: r.midX, y: r.maxY - r.height * 0.08)
-        )
-        eye.closeSubpath()
-        let pupil = Glyph.circlePath(CGPoint(x: r.midX, y: r.midY), r.width * 0.14)
-        return .fill(Glyph.punched(eye, pupil))
     }
 
     // MARK: - Field · Power

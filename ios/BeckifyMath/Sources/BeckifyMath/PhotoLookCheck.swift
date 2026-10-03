@@ -1,7 +1,7 @@
 import Foundation
 
 /// Roast tone for `/api/analyze-look`.
-/// Beckify Toolbox, website Look Check, and the standalone Look Check app all
+/// Website Look Check and the standalone Look Check app
 /// secretly coin `mean` or `nice` on Analyze (surprise mode). Older clients may
 /// still send `bro`. The chosen tone is never shown in UI or share copy.
 public enum LookRoastMode: String, Equatable, Sendable, CaseIterable {

@@ -66,7 +66,6 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case upsSizing
     case motorNameplate
     case motorNameplateOCR
-    case lookCheck
     case heaterDesign
     case empEmc
     case necCircuit
@@ -835,18 +834,6 @@ enum ToolboxCatalog {
             synonyms: ["ocr", "nameplate", "camera", "vision", "motor plate", "hp", "rpm", "fla", "scan", "analyze"]
         ),
         ToolDefinition(
-            id: .lookCheck,
-            kind: .calculator,
-            title: "Look Check",
-            subtitle: "Honest photo feedback. You might get hyped. You might get roasted.",
-            symbol: "person.crop.rectangle",
-            synonyms: [
-                "look check", "looks good", "looks bad", "selfie", "appearance", "photo verdict",
-                "analyze look", "camera", "lighting", "framing", "expression", "entertainment",
-                "roast",
-            ]
-        ),
-        ToolDefinition(
             id: .heaterDesign,
             kind: .calculator,
             title: "Heater Design Wizard",
@@ -1094,7 +1081,7 @@ enum ToolboxCatalog {
     static let categories: [ToolCategory: [ToolID]] = [
         .field: [
             .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .cableLadder, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
-            .motorNameplateOCR, .lookCheck,
+            .motorNameplateOCR,
             .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
         ],
@@ -1232,7 +1219,7 @@ enum ToolboxCatalog {
         .eBikePackDesigner: [.batteryBank, .nickelStrip, .eBikeRange],
         .nickelStrip: [.eBikePackDesigner, .batteryBank, .circularMils],
         .referenceLibrary: [.wireAmpacity, .conduitFill, .receptacleSelector, .spanishTranslator],
-        .spanishTranslator: [.referenceLibrary, .noiseMeter, .lookCheck],
+        .spanishTranslator: [.referenceLibrary, .noiseMeter],
         .magneticCircuit: [.reactance, .transformer, .ohmsLaw],
         .fiberLink: [.rfLink, .gaussianBeam, .unitConverter],
         .gaussianBeam: [.fiberLink, .frequencyWave, .unitConverter],
@@ -1245,7 +1232,6 @@ enum ToolboxCatalog {
         .upsSizing: [.batteryBank, .power, .rackCurrent],
         .motorNameplate: [.motorNameplateOCR, .motorFLA, .motorSpeed],
         .motorNameplateOCR: [.motorNameplate, .motorFLA, .motorSpeed],
-        .lookCheck: [.motorNameplateOCR, .panelDirectory],
         .heaterDesign: [.ohmsLaw, .wireAmpacity, .power],
         .empEmc: [.rfLink, .magneticCircuit, .reactance],
         .necCircuit: [.equipmentGround, .wireAmpacity, .voltageDrop],

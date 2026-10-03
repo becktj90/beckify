@@ -599,15 +599,6 @@ public enum ToolHowItWorksCatalog {
                 "MOCP and LRA are never used as FLA. Recognition can misread a stamped plate.",
             ]
         ),
-        "lookCheck": ToolHowItWorks(
-            summary: "Camera or library photo, then Analyze Look for honest Photo assessment scores plus a surprise roast.",
-            context: "Honest photo feedback. You might get hyped. You might get roasted. Photo stays on device until Analyze Look.",
-            bullets: [
-                "Not medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.",
-                "Analyze Look POSTs the same /api/analyze-look JSON as the website. Taking or choosing a photo does not upload it.",
-                "A non-empty adult roast plays in full from the loudspeaker via /api/speak, not the earpiece, and that text stays on screen. Declined, no person, and an empty roast stay silent.",
-            ]
-        ),
         "heaterDesign": ToolHowItWorks(
             summary: "Resistive heater line current, leg resistance, and resistance-wire length.",
             context: "Nichrome / Kanthal element planning for wye or delta.",

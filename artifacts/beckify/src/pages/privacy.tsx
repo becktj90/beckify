@@ -38,7 +38,7 @@ export default function PrivacyPage() {
         <SectionHeader
           title="Privacy Policy"
           level="h1"
-          subtitle="Beckify for iPhone and iPad. Look Check uploads only when you tap Analyze Look."
+          subtitle="Beckify for iPhone and iPad. Nameplate and panel photos upload only when you tap Analyze."
           icon={Shield}
         />
       </FadeIn>
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               </a>
             </dd>
             <dt className="text-[var(--muted)]">Last updated</dt>
-            <dd>13 September 2026</dd>
+            <dd>3 October 2026</dd>
           </dl>
 
           <p className="text-base leading-relaxed text-[var(--muted)]">
@@ -78,9 +78,9 @@ export default function PrivacyPage() {
 
           <p className="text-base leading-relaxed">
             Apple’s App Privacy nutrition label for this app is <strong>Photos</strong> (App Functionality)
-            when you use Look Check <strong>Analyze Look</strong>. That upload is user-initiated, not linked
-            to an account, and not used for tracking. Sensor readings, Saved Jobs, Motor Nameplate OCR, and
-            Panel Directory stay on the device.
+            when you tap <strong>Analyze</strong> in Motor Nameplate OCR or Panel Directory. That upload is
+            user-initiated, not linked to an account, and not used for tracking. Look Check is not a tool in
+            this toolbox. Sensor readings and Saved Jobs stay on the device.
           </p>
 
           <section className="space-y-3">
@@ -168,10 +168,10 @@ export default function PrivacyPage() {
                   </tr>
                   <tr>
                     <td className="border-b border-[var(--border)] p-3 align-top">Camera</td>
-                    <td className="border-b border-[var(--border)] p-3 align-top">Motor Nameplate OCR; Look Check</td>
+                    <td className="border-b border-[var(--border)] p-3 align-top">Motor Nameplate OCR; Panel Directory</td>
                     <td className="border-b border-[var(--border)] p-3 align-top">
-                      Nameplate photos stay on this device. A Look Check photo uploads only when you tap
-                      Analyze Look.
+                      Nameplate and panel photos stay on this device until you tap Analyze. Look Check is not
+                      in this toolbox.
                     </td>
                   </tr>
                   <tr>
@@ -195,20 +195,21 @@ export default function PrivacyPage() {
               iOS does <strong>not</strong> give third-party apps Wi-Fi RSSI in dBm. The Wi-Fi Path tool leads
               with <strong>Online / Captive</strong> (Apple hotspot-detect) and shows Apple’s public 0…1{" "}
               <code className="font-mono text-[0.9em]">signalStrength</code> (percent and bars) and an
-              on-device coverage sketch. It does not invent dBm. Catalog Look Check is a separate photo tool.
+              on-device coverage sketch. It does not invent dBm. The standalone Look Check app is a separate product, not this probe.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="font-display text-xl font-bold tracking-tight">Look Check (iOS photo tool)</h2>
+            <h2 className="font-display text-xl font-bold tracking-tight">Look Check (standalone app)</h2>
             <p className="text-base leading-relaxed">
-              Catalog Look Check is the website photo product — not the Wi-Fi / Cellular{" "}
-              <strong>Online / Captive</strong> hotspot-detect card. Taking or choosing a photo does not
-              upload it. <strong>Analyze Look</strong> POSTs an upright JPEG to{" "}
-              <code className="font-mono text-[0.9em]">https://api.beckify.com/api/analyze-look</code> (or a
-              HTTPS endpoint you enter). The Beckify API may forward that photo to OpenAI and/or Anthropic.
-              Entertainment only — not medical or dating advice. Anyone who
-              appears under 18 is not rated and gets no roast. The photo is not saved in Saved Jobs.
+              Look Check is not a Beckify toolbox tool. The standalone app (bundle ID{" "}
+              <code className="font-mono text-[0.9em]">com.beckify.lookcheck</code>) and the website photo
+              product are separate from the Wi-Fi / Cellular <strong>Online / Captive</strong> card. Taking
+              or choosing a photo does not upload it. <strong>Analyze Look</strong> on those products POSTs
+              an upright JPEG to{" "}
+              <code className="font-mono text-[0.9em]">https://api.beckify.com/api/analyze-look</code>. The
+              Beckify API may forward that photo to OpenAI and/or Anthropic. Entertainment only — not
+              medical or dating advice. Anyone who appears under 18 is not rated and gets no roast.
             </p>
           </section>
 
@@ -286,7 +287,7 @@ export default function PrivacyPage() {
               <a className="text-[var(--accent)] underline-offset-4 hover:underline" href={`${SITE_URL}/toolbox/`}>
                 {SITE_URL}/toolbox/
               </a>
-              . The native iOS Look Check tool uses the same Analyze Look upload rule.
+              . The Beckify toolbox app does not include Look Check. The standalone Look Check app uses the same Analyze Look upload as this website.
             </p>
             <p className="text-base leading-relaxed">
               Motor nameplate and panel directory tools default to on-device Tesseract.js. Choosing a photo does

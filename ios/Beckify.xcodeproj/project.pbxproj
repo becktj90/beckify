@@ -102,7 +102,6 @@
 		BECF00000000000000000092 /* CellularStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000091 /* CellularStatusView.swift */; };
 		BECF00000000000000000094 /* ReviewAskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000093 /* ReviewAskStore.swift */; };
 		BECF00000000000000000096 /* LookCheckClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000095 /* LookCheckClient.swift */; };
-		BECF00000000000000000098 /* LookCheckPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000097 /* LookCheckPhotoView.swift */; };
 		BECF0000000000000000009A /* PanelScheduleHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000099 /* PanelScheduleHandoff.swift */; };
 		BECF0000000000000000009C /* BeckifyVisionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000009B /* BeckifyVisionClient.swift */; };
 		AECF0000000000000000000A /* LookCheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000001 /* LookCheckApp.swift */; };
@@ -235,7 +234,6 @@
 		BECF00000000000000000091 /* CellularStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularStatusView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000093 /* ReviewAskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewAskStore.swift; sourceTree = "<group>"; };
 		BECF00000000000000000095 /* LookCheckClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckClient.swift; sourceTree = "<group>"; };
-		BECF00000000000000000097 /* LookCheckPhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckPhotoView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000099 /* PanelScheduleHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelScheduleHandoff.swift; sourceTree = "<group>"; };
 		BECF0000000000000000009B /* BeckifyVisionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyVisionClient.swift; sourceTree = "<group>"; };
 		AECF00000000000000000001 /* LookCheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookCheckApp.swift; sourceTree = "<group>"; };
@@ -488,7 +486,6 @@
 				BECF00000000000000000081 /* SolarDesignWizardView.swift */,
 				BECF00000000000000000083 /* AnalogCalculatorViews.swift */,
 				BECF00000000000000000085 /* MotorNameplateOCRView.swift */,
-				BECF00000000000000000097 /* LookCheckPhotoView.swift */,
 				BECF0000000000000000008B /* EbikeCalculatorViews.swift */,
 				BECF0000000000000000008D /* ControlSystemsLabView.swift */,
 				BECF000000000000000000AE /* ControlStrategiesView.swift */,
@@ -801,7 +798,6 @@
 				BECF00000000000000000082 /* SolarDesignWizardView.swift in Sources */,
 				BECF00000000000000000084 /* AnalogCalculatorViews.swift in Sources */,
 				BECF00000000000000000086 /* MotorNameplateOCRView.swift in Sources */,
-				BECF00000000000000000098 /* LookCheckPhotoView.swift in Sources */,
 				BECF00000000000000000088 /* MotorNameplateHandoff.swift in Sources */,
 				BECF0000000000000000009A /* PanelScheduleHandoff.swift in Sources */,
 				BECF0000000000000000008A /* ConductorCostView.swift in Sources */,
@@ -981,7 +977,7 @@
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition, or a Look Check photo. Nameplate and panel photos stay on this device. A Look Check photo uploads only when you tap Analyze Look.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition. Nameplate and panel photos stay on this device until you tap Analyze.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
@@ -1025,7 +1021,7 @@
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Beckify scans for nearby Bluetooth Low Energy devices so you can note name, identifier, RSSI, and advertised services. Scanning stays on this device and is not uploaded.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition, or a Look Check photo. Nameplate and panel photos stay on this device. A Look Check photo uploads only when you tap Analyze Look.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition. Nameplate and panel photos stay on this device until you tap Analyze.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
