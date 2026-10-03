@@ -717,12 +717,12 @@ final class SpanishTranslatorTests: XCTestCase {
         let genericSloane = SpanishTranslatorAPI.sloaneCorporateRewrite("Hold this for a second.")
         XCTAssertFalse(genericSloane.lowercased().contains("hold this for a second"))
         XCTAssertTrue(genericSloane.lowercased().contains("hold"))
-        let hostile = SpanishTranslatorAPI.sloaneCorporateRewrite("Shut up you idiot and kill the damn power.")
-        XCTAssertFalse(hostile.lowercased().contains("idiot"))
-        XCTAssertFalse(hostile.lowercased().contains("shut up"))
-        XCTAssertFalse(hostile.lowercased().contains("damn"))
-        XCTAssertTrue(hostile.lowercased().contains("power"))
-        XCTAssertNotEqual(hostile.lowercased().filter { !$0.isWhitespace }, "shutupyouidiotandkillthedamnpower.")
+        let sloaneHostile = SpanishTranslatorAPI.sloaneCorporateRewrite("Shut up you idiot and kill the damn power.")
+        XCTAssertFalse(sloaneHostile.lowercased().contains("idiot"))
+        XCTAssertFalse(sloaneHostile.lowercased().contains("shut up"))
+        XCTAssertFalse(sloaneHostile.lowercased().contains("damn"))
+        XCTAssertTrue(sloaneHostile.lowercased().contains("power"))
+        XCTAssertNotEqual(sloaneHostile.lowercased().filter { !$0.isWhitespace }, "shutupyouidiotandkillthedamnpower.")
         let jargon = [
             "north star", "flywheel", "paradigm shift", "synergy", "move the needle",
             "boil the ocean", "low-hanging fruit", "pivot", "touch base", "ping",
@@ -754,7 +754,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertFalse(pearlHostile.lowercased().contains("shut"))
         XCTAssertTrue(pearlHostile.lowercased().contains("please") || pearlHostile.lowercased().contains("would you"))
         let corporate = (
-            feeder + " " + genericSloane + " " + hostile + " " + CrewTalkMember.sloaneMerritt.blurb
+            feeder + " " + genericSloane + " " + sloaneHostile + " " + CrewTalkMember.sloaneMerritt.blurb
         ).lowercased()
         XCTAssertFalse(corporate.contains("comedy"))
         XCTAssertFalse(corporate.contains("stoner"))
