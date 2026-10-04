@@ -930,6 +930,7 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
         private weak var navigation: UINavigationController?
         private weak var gesture: UIGestureRecognizer?
         private var previousDelegate: UIGestureRecognizerDelegate?
+        private var gestureAttempts = 0
 
         func install(in view: UIView) {
             guard let root = view.window?.rootViewController,
@@ -953,7 +954,7 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
             func hierarchy(_ controller: UIViewController) -> String {
                 "\(type(of: controller))[\(controller.children.map(hierarchy).joined(separator: ","))]"
             }
-            return "nav=\(String(describing: current.map { type(of: $0) })) count=\(current?.viewControllers.count ?? -1) enabled=\(recognizer?.isEnabled ?? false) delegate=\(String(describing: recognizer?.delegate)) transition=\(current?.transitionCoordinator != nil) hierarchy=\(view.window?.rootViewController.map(hierarchy) ?? "no window")"
+            return "attempts=\(gestureAttempts) nav=\(String(describing: current.map { type(of: $0) })) count=\(current?.viewControllers.count ?? -1) enabled=\(recognizer?.isEnabled ?? false) delegate=\(String(describing: recognizer?.delegate)) transition=\(current?.transitionCoordinator != nil) hierarchy=\(view.window?.rootViewController.map(hierarchy) ?? "no window")"
         }
 
         func restore() {
@@ -965,6 +966,7 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
         }
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            gestureAttempts += 1
             guard let navigation else { return false }
             return navigation.viewControllers.count > 1 && navigation.transitionCoordinator == nil
         }
